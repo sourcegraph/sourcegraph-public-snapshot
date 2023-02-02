@@ -66,9 +66,7 @@ type PolicyUpdater = <K extends keyof CodeIntelligenceConfigurationPolicyFields>
     [P in K]: CodeIntelligenceConfigurationPolicyFields[P]
 }) => void
 
-export const CodeIntelConfigurationPolicyPage: FunctionComponent<
-    React.PropsWithChildren<CodeIntelConfigurationPolicyPageProps>
-> = ({
+export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfigurationPolicyPageProps> = ({
     repo,
     authenticatedUser,
     indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,

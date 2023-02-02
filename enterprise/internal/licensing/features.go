@@ -32,6 +32,10 @@ func (f BasicFeature) Check(info *Info) error {
 
 	// Check if the feature is explicitly allowed via license tag.
 	hasFeature := func(want Feature) bool {
+		// if license is expired, do not look at tags anymore
+		if info.IsExpired() {
+			return false
+		}
 		for _, t := range info.Tags {
 			// We have been issuing licenses with trailing spaces in the tags for a while.
 			// Eventually we should be able to remove these `TrimSpace` calls again,
@@ -43,7 +47,7 @@ func (f BasicFeature) Check(info *Info) error {
 		}
 		return false
 	}
-	if !info.Plan().HasFeature(featureTrimmed) && !hasFeature(featureTrimmed) {
+	if !(info.Plan().HasFeature(featureTrimmed, info.IsExpired()) || hasFeature(featureTrimmed)) {
 		return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", f))
 	}
 	return nil

@@ -21,7 +21,7 @@ export interface ConfigurationEditorProps extends ThemeProps, TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
 }
 
-export const ConfigurationEditor: FunctionComponent<React.PropsWithChildren<ConfigurationEditorProps>> = ({
+export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = ({
     repoId,
     authenticatedUser,
     isLightTheme,

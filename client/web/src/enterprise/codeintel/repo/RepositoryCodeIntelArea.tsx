@@ -10,16 +10,15 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { AuthenticatedUser } from '../../../auth'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 import { NotFoundPage } from '../../../components/HeroPage'
+import { RedirectRoute } from '../../../components/RedirectRoute'
 import { RepositoryFields } from '../../../graphql-operations'
 import { RouteV6Descriptor } from '../../../util/contributions'
 import { CodeIntelConfigurationPageProps } from '../configuration/pages/CodeIntelConfigurationPage'
 import { CodeIntelConfigurationPolicyPageProps } from '../configuration/pages/CodeIntelConfigurationPolicyPage'
 import { CodeIntelInferenceConfigurationPageProps } from '../configuration/pages/CodeIntelInferenceConfigurationPage'
 import { CodeIntelRepositoryIndexConfigurationPageProps } from '../configuration/pages/CodeIntelRepositoryIndexConfigurationPage'
-import { CodeIntelIndexesPageProps } from '../indexes/pages/CodeIntelIndexesPage'
-import { CodeIntelIndexPageProps } from '../indexes/pages/CodeIntelIndexPage'
-import { CodeIntelUploadPageProps } from '../uploads/pages/CodeIntelUploadPage'
-import { CodeIntelUploadsPageProps } from '../uploads/pages/CodeIntelUploadsPage'
+import { CodeIntelPreciseIndexesPageProps } from '../indexes/pages/CodeIntelPreciseIndexesPage'
+import { CodeIntelPreciseIndexPageProps } from '../indexes/pages/CodeIntelPreciseIndexPage'
 
 import { CodeIntelSidebar, CodeIntelSideBarGroups } from './CodeIntelSidebar'
 
@@ -30,22 +29,13 @@ export interface CodeIntelAreaRouteContext extends ThemeProps, TelemetryProps {
 
 export interface CodeIntelAreaRoute extends RouteV6Descriptor<CodeIntelAreaRouteContext> {}
 
-const CodeIntelUploadsPage = lazyComponent<CodeIntelUploadsPageProps, 'CodeIntelUploadsPage'>(
-    () => import('../uploads/pages/CodeIntelUploadsPage'),
-    'CodeIntelUploadsPage'
+const CodeIntelPreciseIndexesPage = lazyComponent<CodeIntelPreciseIndexesPageProps, 'CodeIntelPreciseIndexesPage'>(
+    () => import('../indexes/pages/CodeIntelPreciseIndexesPage'),
+    'CodeIntelPreciseIndexesPage'
 )
-const CodeIntelUploadPage = lazyComponent<CodeIntelUploadPageProps, 'CodeIntelUploadPage'>(
-    () => import('../uploads/pages/CodeIntelUploadPage'),
-    'CodeIntelUploadPage'
-)
-
-const CodeIntelIndexesPage = lazyComponent<CodeIntelIndexesPageProps, 'CodeIntelIndexesPage'>(
-    () => import('../indexes/pages/CodeIntelIndexesPage'),
-    'CodeIntelIndexesPage'
-)
-const CodeIntelIndexPage = lazyComponent<CodeIntelIndexPageProps, 'CodeIntelIndexPage'>(
-    () => import('../indexes/pages/CodeIntelIndexPage'),
-    'CodeIntelIndexPage'
+const CodeIntelPreciseIndexPage = lazyComponent<CodeIntelPreciseIndexPageProps, 'CodeIntelPreciseIndexPage'>(
+    () => import('../indexes/pages/CodeIntelPreciseIndexPage'),
+    'CodeIntelPreciseIndexPage'
 )
 
 const CodeIntelConfigurationPage = lazyComponent<CodeIntelConfigurationPageProps, 'CodeIntelConfigurationPage'>(
@@ -74,25 +64,25 @@ const CodeIntelConfigurationPolicyPage = lazyComponent<
 export const codeIntelAreaRoutes: readonly CodeIntelAreaRoute[] = [
     {
         path: '/',
-        render: () => <Redirect to="./code-graph/uploads" />,
-    },
-    {
-        path: '/uploads',
-        render: props => <CodeIntelUploadsPage {...props} />,
-    },
-    {
-        path: '/uploads/:id',
-        render: props => <CodeIntelUploadPage {...props} />,
+        render: () => <Redirect to="./code-graph/indexes" />,
     },
     {
         path: '/indexes',
-        render: props => <CodeIntelIndexesPage {...props} />,
-        condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
+        render: props => <CodeIntelPreciseIndexesPage {...props} />,
     },
     {
         path: '/indexes/:id',
-        render: props => <CodeIntelIndexPage {...props} />,
-        condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
+        render: props => <CodeIntelPreciseIndexPage {...props} />,
+    },
+    {
+        path: '/uploads/:id',
+        render: () => (
+            <RedirectRoute
+                getRedirectURL={({ params }) =>
+                    `../indexes/${btoa(`PreciseIndex:"U:${(atob(params.id!).match(/(\d+)/) ?? [''])[0]}"`)}`
+                }
+            />
+        ),
     },
     {
         path: '/configuration',
@@ -126,13 +116,8 @@ const sidebarRoutes: CodeIntelSideBarGroups = [
         header: { label: 'Code graph data' },
         items: [
             {
-                to: '/uploads',
-                label: 'Uploads',
-            },
-            {
                 to: '/indexes',
-                label: 'Auto-indexing',
-                condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
+                label: 'Precise indexes',
             },
             {
                 to: '/configuration',

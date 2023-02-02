@@ -66,6 +66,18 @@ func (teams *fakeTeamsDb) GetTeamByName(_ context.Context, name string) (*types.
 	return nil, database.TeamNotFoundError{}
 }
 
+func (teams *fakeTeamsDb) DeleteTeam(_ context.Context, id int32) error {
+	for i, t := range teams.list {
+		if t.ID == id {
+			maxI := len(teams.list) - 1
+			teams.list[i], teams.list[maxI] = teams.list[maxI], teams.list[i]
+			teams.list = teams.list[:maxI]
+			return nil
+		}
+	}
+	return database.TeamNotFoundError{}
+}
+
 func setupDB() (*database.MockDB, *fakeTeamsDb) {
 	ts := &fakeTeamsDb{}
 	db := database.NewMockDB()
@@ -348,7 +360,7 @@ func TestUpdateTeamErrorBothNameAndID(t *testing.T) {
 		ExpectedResult: "null",
 		ExpectedErrors: []*gqlerrors.QueryError{
 			{
-				Message: "team to update is identifier by either id or name, but both were specified",
+				Message: "team to update is identified by either id or name, but both were specified",
 				Path:    []any{"updateTeam"},
 			},
 		},
@@ -464,6 +476,179 @@ func TestUpdateParentErrorBothNameAndID(t *testing.T) {
 			"name":          "team",
 			"newParentID":   string(relay.MarshalID("Team", parentTeam.ID)),
 			"newParentName": parentTeam.Name,
+		},
+	})
+}
+
+func TestDeleteTeamByID(t *testing.T) {
+	db, ts := setupDB()
+	ctx, _, _ := fakeUser(t, context.Background(), db, true)
+	if err := ts.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+		t.Fatalf("failed to create a team: %s", err)
+	}
+	team, err := ts.GetTeamByName(ctx, "team")
+	if err != nil {
+		t.Fatalf("cannot find fake team: %s", err)
+	}
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `mutation DeleteTeam($id: ID!) {
+			deleteTeam(id: $id) {
+				alwaysNil
+			}
+		}`,
+		ExpectedResult: `{
+			"deleteTeam": {
+				"alwaysNil": null
+			}
+		}`,
+		Variables: map[string]any{
+			"id": string(relay.MarshalID("Team", team.ID)),
+		},
+	})
+	if diff := cmp.Diff([]*types.Team{}, ts.list); diff != "" {
+		t.Errorf("expected no teams in fake db after deleting, (-want,+got):\n%s", diff)
+	}
+}
+
+func TestDeleteTeamByName(t *testing.T) {
+	db, ts := setupDB()
+	ctx, _, _ := fakeUser(t, context.Background(), db, true)
+	if err := ts.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+		t.Fatalf("failed to create a team: %s", err)
+	}
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `mutation DeleteTeam($name: String!) {
+			deleteTeam(name: $name) {
+				alwaysNil
+			}
+		}`,
+		ExpectedResult: `{
+			"deleteTeam": {
+				"alwaysNil": null
+			}
+		}`,
+		Variables: map[string]any{
+			"name": "team",
+		},
+	})
+	if diff := cmp.Diff([]*types.Team{}, ts.list); diff != "" {
+		t.Errorf("expected no teams in fake db after deleting, (-want,+got):\n%s", diff)
+	}
+}
+
+func TestDeleteTeamErrorBothIDAndNameGiven(t *testing.T) {
+	db, ts := setupDB()
+	ctx, _, _ := fakeUser(t, context.Background(), db, true)
+	if err := ts.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+		t.Fatalf("failed to create a team: %s", err)
+	}
+	team, err := ts.GetTeamByName(ctx, "team")
+	if err != nil {
+		t.Fatalf("cannot find fake team: %s", err)
+	}
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `mutation DeleteTeam($id: ID!, $name: String!) {
+			deleteTeam(id: $id, name: $name) {
+				alwaysNil
+			}
+		}`,
+		ExpectedResult: `{
+			"deleteTeam": null
+		}`,
+		ExpectedErrors: []*gqlerrors.QueryError{
+			{
+				Message: "team to delete is identified by either id or name, but both were specified",
+				Path:    []any{"deleteTeam"},
+			},
+		},
+		Variables: map[string]any{
+			"id":   string(relay.MarshalID("Team", team.ID)),
+			"name": "team",
+		},
+	})
+}
+
+func TestDeleteTeamNoIdentifierGiven(t *testing.T) {
+	db, _ := setupDB()
+	ctx, _, _ := fakeUser(t, context.Background(), db, true)
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `mutation DeleteTeam() {
+			deleteTeam() {
+				alwaysNil
+			}
+		}`,
+		ExpectedResult: `{
+			"deleteTeam": null
+		}`,
+		ExpectedErrors: []*gqlerrors.QueryError{
+			{
+				Message: "team to delete is identified by either id or name, but neither was specified",
+				Path:    []any{"deleteTeam"},
+			},
+		},
+	})
+}
+
+func TestDeleteTeamNotFound(t *testing.T) {
+	db, _ := setupDB()
+	ctx, _, _ := fakeUser(t, context.Background(), db, true)
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `mutation DeleteTeam($name: String!) {
+			deleteTeam(name: $name) {
+				alwaysNil
+			}
+		}`,
+		ExpectedResult: `{
+			"deleteTeam": null
+		}`,
+		ExpectedErrors: []*gqlerrors.QueryError{
+			{
+				Message: `team name="does-not-exist" not found: team not found: <nil>`,
+				Path:    []any{"deleteTeam"},
+			},
+		},
+		Variables: map[string]any{
+			"name": "does-not-exist",
+		},
+	})
+}
+
+func TestDeleteTeamUnauthorized(t *testing.T) {
+	db, ts := setupDB()
+	// false in the next line indicates not-site-admin
+	ctx, _, _ := fakeUser(t, context.Background(), db, false)
+	if err := ts.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+		t.Fatalf("failed to create a team: %s", err)
+	}
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `mutation DeleteTeam($name: String!) {
+			deleteTeam(name: $name) {
+				alwaysNil
+			}
+		}`,
+		ExpectedResult: `{
+			"deleteTeam": null
+		}`,
+		ExpectedErrors: []*gqlerrors.QueryError{
+			{
+				Message: "only site admins can delete teams",
+				Path:    []any{"deleteTeam"},
+			},
+		},
+		Variables: map[string]any{
+			"name": "team",
 		},
 	})
 }

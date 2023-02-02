@@ -242,6 +242,9 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 		if ap.Gitlab != nil {
 			oldSecrets[ap.Gitlab.ClientID] = ap.Gitlab.ClientSecret
 		}
+		if ap.Bitbucketcloud != nil {
+			oldSecrets[ap.Bitbucketcloud.ClientKey] = ap.Bitbucketcloud.ClientSecret
+		}
 	}
 
 	newCfg, err := ParseConfig(conftypes.RawUnified{
@@ -259,6 +262,9 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 		}
 		if ap.Gitlab != nil && ap.Gitlab.ClientSecret == redactedSecret {
 			ap.Gitlab.ClientSecret = oldSecrets[ap.Gitlab.ClientID]
+		}
+		if ap.Bitbucketcloud != nil && ap.Bitbucketcloud.ClientSecret == redactedSecret {
+			ap.Bitbucketcloud.ClientSecret = oldSecrets[ap.Bitbucketcloud.ClientKey]
 		}
 	}
 	unredactedSite, err := jsonc.Edit(input, newCfg.AuthProviders, "auth.providers")
@@ -323,6 +329,9 @@ func redactConfSecrets(raw conftypes.RawUnified, hashSecrets bool) (empty confty
 		}
 		if ap.Gitlab != nil {
 			ap.Gitlab.ClientSecret = getRedactedSecret(ap.Gitlab.ClientSecret)
+		}
+		if ap.Bitbucketcloud != nil {
+			ap.Bitbucketcloud.ClientSecret = getRedactedSecret(ap.Bitbucketcloud.ClientSecret)
 		}
 	}
 	redactedSite := raw.Site

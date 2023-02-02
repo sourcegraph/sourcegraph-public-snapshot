@@ -15,7 +15,7 @@ import { useObservable, ErrorMessage } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage, NotFoundPage } from '../../components/HeroPage'
-import { RepositoryFields, SettingsAreaRepositoryFields } from '../../graphql-operations'
+import { SettingsAreaRepositoryFields } from '../../graphql-operations'
 import { RouteV6Descriptor } from '../../util/contributions'
 
 import { fetchSettingsAreaRepository } from './backend'
@@ -32,7 +32,7 @@ export interface RepoSettingsAreaRoute extends RouteV6Descriptor<RepoSettingsAre
 interface Props extends BreadcrumbSetters, ThemeProps, TelemetryProps {
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: RepoSettingsSideBarGroups
-    repo: RepositoryFields
+    repoName: string
     authenticatedUser: AuthenticatedUser | null
 }
 
@@ -44,7 +44,7 @@ export const RepoSettingsArea: React.FunctionComponent<React.PropsWithChildren<P
     useBreadcrumb,
     ...props
 }) => {
-    const repoName = props.repo.name
+    const repoName = props.repoName
     const repoOrError = useObservable(
         useMemo(
             () => fetchSettingsAreaRepository(repoName).pipe(catchError(error => of<ErrorLike>(asError(error)))),
@@ -57,12 +57,15 @@ export const RepoSettingsArea: React.FunctionComponent<React.PropsWithChildren<P
     if (repoOrError === undefined) {
         return null
     }
+
     if (isErrorLike(repoOrError)) {
         return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={<ErrorMessage error={repoOrError.message} />} />
     }
+
     if (repoOrError === null) {
         return <NotFoundPage />
     }
+
     if (!repoOrError.viewerCanAdminister) {
         return (
             <HeroPage

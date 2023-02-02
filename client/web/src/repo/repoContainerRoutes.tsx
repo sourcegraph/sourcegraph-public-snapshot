@@ -15,7 +15,6 @@ const RepositoryReleasesArea = lazyComponent(
     () => import('./releases/RepositoryReleasesArea'),
     'RepositoryReleasesArea'
 )
-const RepoSettingsArea = lazyComponent(() => import('./settings/RepoSettingsArea'), 'RepoSettingsArea')
 const RepositoryCompareArea = lazyComponent(() => import('./compare/RepositoryCompareArea'), 'RepositoryCompareArea')
 const RepositoryStatsArea = lazyComponent(() => import('./stats/RepositoryStatsArea'), 'RepositoryStatsArea')
 const ActionItemsBar = lazyComponent<ActionItemsBarProps, 'ActionItemsBar'>(
@@ -71,9 +70,5 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/stats/contributors',
         render: context => <RepositoryStatsArea {...context} />,
-    },
-    {
-        path: '/-/settings/*',
-        render: context => <RepoSettingsArea {...context} />,
     },
 ]

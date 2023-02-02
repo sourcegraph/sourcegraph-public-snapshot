@@ -805,6 +805,13 @@ type User struct {
 	Searchable            bool
 }
 
+// UserForSCIM extends user with email addresses and SCIM external ID.
+type UserForSCIM struct {
+	User
+	Emails         []string
+	SCIMExternalID string
+}
+
 type SystemRole string
 
 var (

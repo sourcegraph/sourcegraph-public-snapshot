@@ -11,10 +11,8 @@ import (
 	"github.com/elimity-com/scim/schema"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // UserResourceHandler implements the scim.ResourceHandler interface for users.
@@ -71,7 +69,7 @@ func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestPar
 	}
 
 	// Get users
-	users, err := h.db.Users().List(r.Context(), &database.UsersListOptions{
+	users, err := h.db.Users().ListForSCIM(r.Context(), &database.UsersListOptions{
 		LimitOffset: &database.LimitOffset{
 			Limit:  params.Count,
 			Offset: offset,
@@ -83,13 +81,7 @@ func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestPar
 
 	resources := make([]scim.Resource, 0, len(users))
 	for _, user := range users {
-		resource, err := h.convertUserToSCIMResource(r.Context(), user)
-		if err != nil {
-			// Log error and skip user
-			h.observationCtx.Logger.Error("Error converting user to SCIM resource", log.String("username", user.Username), log.Error(err))
-			continue
-		}
-		resources = append(resources, *resource)
+		resources = append(resources, *h.convertUserToSCIMResource(user))
 	}
 
 	return scim.Page{
@@ -99,44 +91,20 @@ func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestPar
 }
 
 // convertUserToSCIMResource converts a Sourcegraph user to a SCIM resource.
-func (h *UserResourceHandler) convertUserToSCIMResource(ctx context.Context, user *types.User) (*scim.Resource, error) {
-	// Get names
+func (h *UserResourceHandler) convertUserToSCIMResource(user *types.UserForSCIM) *scim.Resource {
+	// Convert names
 	firstName, middleName, lastName := displayNameToPieces(user.DisplayName)
 
-	// Get SCIM external account ID if available
-	var scimAccount *extsvc.Account
-	extAccounts, err := h.db.UserExternalAccounts().List(h.ctx, database.ExternalAccountsListOptions{UserID: user.ID})
-	if err != nil {
-		return nil, errors.Wrap(err, "list external accounts")
-	}
-	for _, acct := range extAccounts {
-		if acct.ServiceType == "scim" { // TODO: Also filter by service ID that we should be getting from the request
-			scimAccount = acct
-			break
-		}
-	}
-	var externalID string
-	if scimAccount != nil {
-		externalID = scimAccount.AccountID
-	}
+	// Convert external ID
 	externalIDOptional := optional.String{}
-	if scimAccount != nil {
-		externalIDOptional = optional.NewString(scimAccount.AccountID)
+	if user.SCIMExternalID != "" {
+		externalIDOptional = optional.NewString(user.SCIMExternalID)
 	}
 
-	// Get verified email addresses
-	verifiedEmails, err := h.db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
-		UserID:       user.ID,
-		OnlyVerified: true,
-	})
-	if err != nil {
-		return nil, err
-	}
-	emailStrings := make([]interface{}, len(verifiedEmails))
-	for i := range verifiedEmails {
-		emailStrings[i] = map[string]interface{}{
-			"value": verifiedEmails[i].Email,
-		}
+	// Convert emails
+	emailMap := make([]interface{}, 0, len(user.Emails))
+	for _, email := range user.Emails {
+		emailMap = append(emailMap, map[string]interface{}{"value": email})
 	}
 
 	return &scim.Resource{
@@ -144,7 +112,7 @@ func (h *UserResourceHandler) convertUserToSCIMResource(ctx context.Context, use
 		ExternalID: externalIDOptional,
 		Attributes: scim.ResourceAttributes{
 			"userName":   user.Username,
-			"externalId": externalID,
+			"externalId": user.SCIMExternalID,
 			"name": map[string]interface{}{
 				"givenName":  firstName,
 				"middleName": middleName,
@@ -152,10 +120,10 @@ func (h *UserResourceHandler) convertUserToSCIMResource(ctx context.Context, use
 				"formatted":  user.DisplayName,
 			},
 			"displayName": user.DisplayName,
-			"emails":      emailStrings,
+			"emails":      emailMap,
 			"active":      true,
 		},
-	}, nil
+	}
 }
 
 // displayNameToPieces splits a display name into first, middle, and last name.

@@ -46,6 +46,10 @@ type AutoindexingServiceResolver interface {
 
 	PreciseIndexByID(ctx context.Context, id graphql.ID) (PreciseIndexResolver, error)
 	PreciseIndexes(ctx context.Context, args *PreciseIndexesQueryArgs) (PreciseIndexConnectionResolver, error)
+	DeletePreciseIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error)
+	DeletePreciseIndexes(ctx context.Context, args *DeletePreciseIndexesArgs) (*EmptyResponse, error)
+	ReindexPreciseIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error)
+	ReindexPreciseIndexes(ctx context.Context, args *ReindexPreciseIndexesArgs) (*EmptyResponse, error)
 }
 
 type UploadsServiceResolver interface {
@@ -588,6 +592,20 @@ type DeleteLSIFIndexesArgs struct {
 	Query      *string
 	State      *string
 	Repository *graphql.ID
+}
+
+type DeletePreciseIndexesArgs struct {
+	Query           *string
+	States          *[]string
+	Repository      *graphql.ID
+	IsLatestForRepo *bool
+}
+
+type ReindexPreciseIndexesArgs struct {
+	Query           *string
+	States          *[]string
+	Repository      *graphql.ID
+	IsLatestForRepo *bool
 }
 
 type LSIFRepositoryIndexesQueryArgs struct {
