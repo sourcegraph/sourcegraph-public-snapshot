@@ -484,7 +484,7 @@ replace (
 // or issues with specific versions.
 replace (
 	// Forked until PR is merged upstream TODO @jhchabran
-	github.com/XSAM/otelsql => github.com/sourcegraph/otelsql v0.0.0-20220905085252-74375c884fff
+	github.com/XSAM/otelsql => github.com/sourcegraph/otelsql v0.0.0-20230202200901-38f4a6e4fbed
 	// Pending: https://github.com/crewjam/saml/pull/450
 	github.com/crewjam/saml => github.com/sourcegraph/saml v0.0.0-20220728002234-ab6b53f6f94d
 	// Pending: https://github.com/ghodss/yaml/pull/65

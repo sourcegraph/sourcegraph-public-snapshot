@@ -2130,8 +2130,8 @@ github.com/sourcegraph/mountinfo v0.0.0-20221027185101-272dd8baaf4a h1:fD9C4qHZW
 github.com/sourcegraph/mountinfo v0.0.0-20221027185101-272dd8baaf4a/go.mod h1:SrU3BANBcV8XmM6ul5PBvBXDwTliGyjwiklR8OW61hI=
 github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c h1:HGa4iJr6MGKnB5qbU7tI511NdGuHUHnNCqP67G6KmfE=
 github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c/go.mod h1:KelEdhl1UZF7XfJ4dDtk6s++YSgaE7mD/BuKKDLBl4A=
-github.com/sourcegraph/otelsql v0.0.0-20220905085252-74375c884fff h1:u/Lf5xLBDYfRjyeGk8+zUqXrWwRzMIwFbhqKPIWo79Q=
-github.com/sourcegraph/otelsql v0.0.0-20220905085252-74375c884fff/go.mod h1:DpO7NCSeqQdr23nU0yapjR3jGx2OdO/PihPRG+/PV0Y=
+github.com/sourcegraph/otelsql v0.0.0-20230202200901-38f4a6e4fbed h1:Xr3gSyYor5xGZt3hn3JIb9xKGWJ3R4mTub9gh4VmY9w=
+github.com/sourcegraph/otelsql v0.0.0-20230202200901-38f4a6e4fbed/go.mod h1:M0w5PR/rB7GdEBiHsJ9C91NEKkD2uWFcKj+l5xj8K+c=
 github.com/sourcegraph/run v0.9.0 h1:mj4pwBqCB+5qEaTp+rhauh5ubYI8n/icOkeiLTCT9Xg=
 github.com/sourcegraph/run v0.9.0/go.mod h1:j6Do38ccF+w/rSWgOuu4Ou/eOIDiU6pC87BZmq0DXDY=
 github.com/sourcegraph/saml v0.0.0-20220728002234-ab6b53f6f94d h1:S9aS/W4oJ5gSUJuTv94Gurm/3vh/qJATjfkEUrrnszU=
