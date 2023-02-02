@@ -18,6 +18,13 @@
     }
 }
 
+.readme-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 30rem;
+}
+
 .card-col-header-wrapper {
     background-color: var(--color-bg-2);
 
