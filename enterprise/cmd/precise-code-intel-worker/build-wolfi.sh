@@ -23,6 +23,7 @@ go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/vers
 
 echo "--- docker build"
 docker build -f enterprise/cmd/precise-code-intel-worker/Dockerfile.wolfi -t "$IMAGE" "$OUTPUT" \
+  --platform="${PLATFORM:-linux/amd64}" \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
