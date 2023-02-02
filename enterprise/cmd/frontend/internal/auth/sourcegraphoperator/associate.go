@@ -59,9 +59,9 @@ func addSourcegraphOperatorExternalAccount(ctx context.Context, db database.DB, 
 
 	// Run account count verification and association in a single transaction, to ensure
 	// we have no funny business with accounts being created in the time between the two.
-	return db.WithTransact(ctx, func(tx database.DB) error {
+	return db.WithTransact(ctx, func(db database.DB) error {
 		// Make sure this user has no other SOAP accounts.
-		numSOAPAccounts, err := tx.UserExternalAccounts().Count(ctx, database.ExternalAccountsListOptions{
+		numSOAPAccounts, err := db.UserExternalAccounts().Count(ctx, database.ExternalAccountsListOptions{
 			UserID: userID,
 			// For provider matching, we explicitly do not provider the service ID - there
 			// should only be one SOAP registered.
