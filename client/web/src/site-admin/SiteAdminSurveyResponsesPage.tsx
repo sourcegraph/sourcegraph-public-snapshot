@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react'
 
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
@@ -312,17 +311,14 @@ class SiteAdminSurveyResponsesSummary extends React.PureComponent<{}, SiteAdminS
     }
 }
 
-interface Props extends RouteComponentProps<{}> {}
-
-class FilteredSurveyResponseConnection extends FilteredConnection<SurveyResponseFields, {}> {}
-class FilteredUserSurveyResponseConnection extends FilteredConnection<UserWithSurveyResponseFields, {}> {}
+interface Props {}
 
 const LAST_TAB_STORAGE_KEY = 'site-admin-survey-responses-last-tab'
 /**
  * A page displaying the survey responses on this site.
  */
 
-export const SiteAdminSurveyResponsesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
+export const SiteAdminSurveyResponsesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
     const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
 
     useEffect(() => {
@@ -350,7 +346,7 @@ export const SiteAdminSurveyResponsesPage: React.FunctionComponent<React.PropsWi
                 </TabList>
                 <TabPanels>
                     <TabPanel>
-                        <FilteredSurveyResponseConnection
+                        <FilteredConnection<SurveyResponseFields, {}>
                             key="chronological"
                             className="list-group list-group-flush"
                             hideSearch={true}
@@ -358,12 +354,10 @@ export const SiteAdminSurveyResponsesPage: React.FunctionComponent<React.PropsWi
                             pluralNoun="survey responses"
                             queryConnection={fetchAllSurveyResponses}
                             nodeComponent={SurveyResponseNode}
-                            history={props.history}
-                            location={props.location}
                         />
                     </TabPanel>
                     <TabPanel>
-                        <FilteredUserSurveyResponseConnection
+                        <FilteredConnection<UserWithSurveyResponseFields, {}>
                             key="by-user"
                             listComponent="table"
                             headComponent={UserSurveyResponsesHeader}
@@ -374,8 +368,6 @@ export const SiteAdminSurveyResponsesPage: React.FunctionComponent<React.PropsWi
                             pluralNoun="users"
                             queryConnection={fetchAllUsersWithSurveyResponses}
                             nodeComponent={UserSurveyResponseNode}
-                            history={props.history}
-                            location={props.location}
                         />
                     </TabPanel>
                 </TabPanels>

@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // DB is an interface that embeds dbutil.DB, adding methods to
@@ -36,7 +35,6 @@ type DB interface {
 	OrgInvitations() OrgInvitationStore
 	OrgMembers() OrgMemberStore
 	Orgs() OrgStore
-	OrgStats() OrgStatsStore
 	OutboundWebhooks(encryption.Key) OutboundWebhookStore
 	OutboundWebhookJobs(encryption.Key) OutboundWebhookJobStore
 	OutboundWebhookLogs(encryption.Key) OutboundWebhookLogStore
@@ -63,10 +61,9 @@ type DB interface {
 	ExecutorSecrets(encryption.Key) ExecutorSecretStore
 	ExecutorSecretAccessLogs() ExecutorSecretAccessLogStore
 	ZoektRepos() ZoektReposStore
+	Teams() TeamStore
 
-	Transact(context.Context) (DB, error)
 	WithTransact(context.Context, func(tx DB) error) error
-	Done(error) error
 }
 
 var _ DB = (*db)(nil)
@@ -106,28 +103,10 @@ func (d *db) Transact(ctx context.Context) (DB, error) {
 	return &db{logger: d.logger, Store: tx}, nil
 }
 
-var ErrPanicDuringTransaction = errors.New("encountered panic during transaction")
-
-func (d *db) WithTransact(ctx context.Context, f func(tx DB) error) (err error) {
-	tx, err := d.Store.Transact(ctx)
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		if r := recover(); r != nil {
-			// If we're panicking, roll back the transaction
-			// even when err is nil.
-			err = tx.Done(ErrPanicDuringTransaction)
-			// Re-throw the panic after rolling back the transaction
-			panic(r)
-		} else {
-			// If we're not panicking, roll back the transaction if the
-			// operation on the transaction failed for whatever reason.
-			err = tx.Done(err)
-		}
-	}()
-	return f(&db{logger: d.logger, Store: tx})
+func (d *db) WithTransact(ctx context.Context, f func(tx DB) error) error {
+	return d.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&db{logger: d.logger, Store: tx})
+	})
 }
 
 func (d *db) Done(err error) error {
@@ -195,10 +174,6 @@ func (d *db) OrgMembers() OrgMemberStore {
 
 func (d *db) Orgs() OrgStore {
 	return OrgsWith(d.Store)
-}
-
-func (d *db) OrgStats() OrgStatsStore {
-	return OrgStatsWith(d.Store)
 }
 
 func (d *db) OutboundWebhooks(key encryption.Key) OutboundWebhookStore {
@@ -303,4 +278,8 @@ func (d *db) ExecutorSecretAccessLogs() ExecutorSecretAccessLogStore {
 
 func (d *db) ZoektRepos() ZoektReposStore {
 	return ZoektReposWith(d.Store)
+}
+
+func (d *db) Teams() TeamStore {
+	return TeamsWith(d.Store)
 }

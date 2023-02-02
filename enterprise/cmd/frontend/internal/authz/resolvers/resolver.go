@@ -183,7 +183,7 @@ func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *
 		return nil, err
 	}
 
-	req := protocol.PermsSyncRequest{RepoIDs: []api.RepoID{repoID}, Reason: permssync.ReasonManualRepoSync, TriggeredByUserID: actor.FromContext(ctx).UID}
+	req := protocol.PermsSyncRequest{RepoIDs: []api.RepoID{repoID}, Reason: database.ReasonManualRepoSync, TriggeredByUserID: actor.FromContext(ctx).UID}
 	permssync.SchedulePermsSync(ctx, r.logger, r.db, req)
 
 	return &graphqlbackend.EmptyResponse{}, nil
@@ -204,7 +204,7 @@ func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphq
 		return nil, err
 	}
 
-	req := protocol.PermsSyncRequest{UserIDs: []int32{userID}, Reason: permssync.ReasonManualUserSync, TriggeredByUserID: actor.FromContext(ctx).UID}
+	req := protocol.PermsSyncRequest{UserIDs: []int32{userID}, Reason: database.ReasonManualUserSync, TriggeredByUserID: actor.FromContext(ctx).UID}
 	if args.Options != nil && args.Options.InvalidateCaches != nil && *args.Options.InvalidateCaches {
 		req.Options.InvalidateCaches = true
 	}
@@ -232,79 +232,77 @@ func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args
 		return nil, err
 	}
 
-	ossDB, err := r.db.Transact(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "start transaction")
-	}
-	defer func() { err = ossDB.Done(err) }()
-	db := edb.NewEnterpriseDB(ossDB)
+	err = r.db.WithTransact(ctx, func(tx database.DB) error {
+		db := edb.NewEnterpriseDB(tx)
 
-	// Make sure the repo ID is valid.
-	if _, err = db.Repos().Get(ctx, repoID); err != nil {
-		return nil, err
-	}
-
-	bindIDs := make([]string, 0, len(args.UserPermissions))
-	for _, up := range args.UserPermissions {
-		bindIDs = append(bindIDs, up.BindID)
-	}
-
-	mapping, err := r.db.Perms().MapUsers(ctx, bindIDs, globals.PermissionsUserMapping())
-	if err != nil {
-		return nil, err
-	}
-
-	for _, perm := range args.UserPermissions {
-		if (perm.PathIncludes == nil || perm.PathExcludes == nil) && perm.Paths == nil {
-			return nil, errors.New("either both pathIncludes and pathExcludes needs to be set, or paths needs to be set")
-		}
-	}
-
-	for _, perm := range args.UserPermissions {
-		userID, ok := mapping[perm.BindID]
-		if !ok {
-			return nil, errors.Errorf("user %q not found", perm.BindID)
+		// Make sure the repo ID is valid.
+		if _, err = db.Repos().Get(ctx, repoID); err != nil {
+			return err
 		}
 
-		var paths []string
-		if perm.Paths == nil {
-			paths = make([]string, 0, len(*perm.PathIncludes)+len(*perm.PathExcludes))
-			for _, include := range *perm.PathIncludes {
-				if !strings.HasPrefix(include, "/") { // ensure leading slash
-					include = "/" + include
-				}
-				paths = append(paths, include)
+		bindIDs := make([]string, 0, len(args.UserPermissions))
+		for _, up := range args.UserPermissions {
+			bindIDs = append(bindIDs, up.BindID)
+		}
+
+		mapping, err := r.db.Perms().MapUsers(ctx, bindIDs, globals.PermissionsUserMapping())
+		if err != nil {
+			return err
+		}
+
+		for _, perm := range args.UserPermissions {
+			if (perm.PathIncludes == nil || perm.PathExcludes == nil) && perm.Paths == nil {
+				return errors.New("either both pathIncludes and pathExcludes needs to be set, or paths needs to be set")
 			}
-			for _, exclude := range *perm.PathExcludes {
-				if !strings.HasPrefix(exclude, "/") { // ensure leading slash
-					exclude = "/" + exclude
-				}
-				paths = append(paths, "-"+exclude) // excludes start with a minus (-)
+		}
+
+		for _, perm := range args.UserPermissions {
+			userID, ok := mapping[perm.BindID]
+			if !ok {
+				return errors.Errorf("user %q not found", perm.BindID)
 			}
-		} else {
-			paths = make([]string, 0, len(*perm.Paths))
-			for _, path := range *perm.Paths {
-				if strings.HasPrefix(path, "-") {
-					if !strings.HasPrefix(path, "-/") {
-						path = "-/" + strings.TrimPrefix(path, "-")
+
+			var paths []string
+			if perm.Paths == nil {
+				paths = make([]string, 0, len(*perm.PathIncludes)+len(*perm.PathExcludes))
+				for _, include := range *perm.PathIncludes {
+					if !strings.HasPrefix(include, "/") { // ensure leading slash
+						include = "/" + include
 					}
-				} else {
-					if !strings.HasPrefix(path, "/") {
-						path = "/" + path
-					}
+					paths = append(paths, include)
 				}
-				paths = append(paths, path)
+				for _, exclude := range *perm.PathExcludes {
+					if !strings.HasPrefix(exclude, "/") { // ensure leading slash
+						exclude = "/" + exclude
+					}
+					paths = append(paths, "-"+exclude) // excludes start with a minus (-)
+				}
+			} else {
+				paths = make([]string, 0, len(*perm.Paths))
+				for _, path := range *perm.Paths {
+					if strings.HasPrefix(path, "-") {
+						if !strings.HasPrefix(path, "-/") {
+							path = "-/" + strings.TrimPrefix(path, "-")
+						}
+					} else {
+						if !strings.HasPrefix(path, "/") {
+							path = "/" + path
+						}
+					}
+					paths = append(paths, path)
+				}
+			}
+
+			if err := db.SubRepoPerms().Upsert(ctx, userID, repoID, authz.SubRepoPermissions{
+				Paths: paths,
+			}); err != nil {
+				return errors.Wrap(err, "upserting sub-repo permissions")
 			}
 		}
+		return nil
+	})
 
-		if err := db.SubRepoPerms().Upsert(ctx, userID, repoID, authz.SubRepoPermissions{
-			Paths: paths,
-		}); err != nil {
-			return nil, errors.Wrap(err, "upserting sub-repo permissions")
-		}
-	}
-
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &graphqlbackend.EmptyResponse{}, err
 }
 
 func (r *Resolver) SetRepositoryPermissionsForBitbucketProject(

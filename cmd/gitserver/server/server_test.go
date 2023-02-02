@@ -37,6 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/log/logtest"
@@ -221,7 +222,7 @@ func TestExecRequest(t *testing.T) {
 			m := runCommandMock
 			runCommandMock = nil
 			defer func() { runCommandMock = m }()
-			return runCommand(ctx, cmd)
+			return runCommand(ctx, wrexec.Wrap(ctx, logtest.Scoped(t), cmd))
 		}
 		return 0, nil
 	}
@@ -555,13 +556,14 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
 			return &GitRepoSyncer{}, nil
 		},
-		DB:               db,
-		CloneQueue:       NewCloneQueue(list.New()),
-		ctx:              ctx,
-		locker:           &RepositoryLocker{},
-		cloneLimiter:     mutablelimiter.New(1),
-		cloneableLimiter: mutablelimiter.New(1),
-		rpsLimiter:       ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
+		DB:                      db,
+		CloneQueue:              NewCloneQueue(list.New()),
+		ctx:                     ctx,
+		locker:                  &RepositoryLocker{},
+		cloneLimiter:            mutablelimiter.New(1),
+		cloneableLimiter:        mutablelimiter.New(1),
+		rpsLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
+		recordingCommandFactory: wrexec.NewRecordingCommandFactory(nil, 0),
 	}
 
 	s.StartClonePipeline(ctx)
@@ -1591,7 +1593,7 @@ func TestRunCommandGraceful(t *testing.T) {
 		logger := logtest.Scoped(t)
 		ctx := context.Background()
 		cmd := exec.Command("sleep", "0.1")
-		exitStatus, err := runCommandGraceful(ctx, logger, cmd)
+		exitStatus, err := runCommandGraceful(ctx, logger, wrexec.Wrap(ctx, logger, cmd))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1610,7 +1612,7 @@ func TestRunCommandGraceful(t *testing.T) {
 		var stdOut bytes.Buffer
 		cmd.Stdout = &stdOut
 
-		exitStatus, err := runCommandGraceful(ctx, logger, cmd)
+		exitStatus, err := runCommandGraceful(ctx, logger, wrexec.Wrap(ctx, logger, cmd))
 		assert.ErrorIs(t, err, context.DeadlineExceeded)
 		assert.Equal(t, 0, exitStatus)
 		assert.Equal(t, "trapped the INT signal\n", stdOut.String())
@@ -1625,7 +1627,8 @@ func TestRunCommandGraceful(t *testing.T) {
 
 		cmd := exec.Command("testdata/signaltest_noexit.sh")
 
-		exitStatus, err := runCommandGraceful(ctx, logger, cmd)
+		exitStatus, err := runCommandGraceful(ctx, logger, wrexec.Wrap(ctx, logger, cmd))
+
 		assert.ErrorIs(t, err, context.DeadlineExceeded)
 		assert.Equal(t, -1, exitStatus)
 	})

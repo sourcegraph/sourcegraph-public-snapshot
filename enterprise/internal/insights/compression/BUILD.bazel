@@ -2,22 +2,14 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "compression",
-    srcs = [
-        "compression.go",
-        "observability.go",
-    ],
+    srcs = ["compression.go"],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/insights/gitserver",
         "//enterprise/internal/insights/store",
         "//internal/api",
-        "//internal/database",
         "//internal/gitserver/gitdomain",
-        "//internal/metrics",
-        "//internal/observation",
-        "@com_github_prometheus_client_golang//prometheus",
-        "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_log//:log",
     ],
 )

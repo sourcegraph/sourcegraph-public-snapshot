@@ -147,8 +147,6 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
                 defaultFirst={15}
                 noun="changeset"
                 pluralNoun="changesets"
-                history={history}
-                location={location}
                 useURLQuery={true}
                 listClassName={styles.previewListGrid}
                 headComponent={PreviewListHeader}

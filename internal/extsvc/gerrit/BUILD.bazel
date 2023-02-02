@@ -11,9 +11,10 @@ go_library(
     deps = [
         "//internal/encryption",
         "//internal/extsvc",
+        "//internal/extsvc/auth",
         "//internal/httpcli",
         "//internal/ratelimit",
-        "//schema",
+        "//lib/errors",
     ],
 )
 
@@ -27,7 +28,6 @@ go_test(
         "//internal/httptestutil",
         "//internal/lazyregexp",
         "//internal/testutil",
-        "//schema",
         "@com_github_dnaeon_go_vcr//cassette",
     ],
 )

@@ -150,6 +150,66 @@ extend type Mutation {
     ): EmptyResponse
 
     """
+    Deletes a precise index.
+    """
+    deletePreciseIndex(id: ID!): EmptyResponse
+
+    """
+    Deletes precise indexes by filter criteria.
+    """
+    deletePreciseIndexes(
+        """
+        An (optional) search query that filters the state, repository name, commit, root, and indexer properties.
+        """
+        query: String
+
+        """
+        The index state.
+        """
+        states: [PreciseIndexState!]
+
+        """
+        When specified, only deletes indexes that are latest for the given repository.
+        """
+        isLatestForRepo: Boolean
+
+        """
+        The repository.
+        """
+        repository: ID
+    ): EmptyResponse
+
+    """
+    Marks a precise index as replaceable by auto-indexing.
+    """
+    reindexPreciseIndex(id: ID!): EmptyResponse
+
+    """
+    Marks precise indexes by filter criteria as replaceable by auto-indexing.
+    """
+    reindexPreciseIndexes(
+        """
+        An (optional) search query that filters the state, repository name, commit, root, and indexer properties.
+        """
+        query: String
+
+        """
+        The index state.
+        """
+        states: [PreciseIndexState!]
+
+        """
+        When specified, only modifies indexes that are latest for the given repository.
+        """
+        isLatestForRepo: Boolean
+
+        """
+        The repository.
+        """
+        repository: ID
+    ): EmptyResponse
+
+    """
     Request support for a particular language.
     """
     requestLanguageSupport(language: String!): EmptyResponse
@@ -206,6 +266,51 @@ extend type Query {
         """
         after: String
     ): CodeIntelligenceConfigurationPolicyConnection!
+
+    """
+    Query precise code intelligence indexes.
+    """
+    preciseIndexes(
+        """
+        If supplied, only precise indexes for the given repository will be returned.
+        """
+        repo: ID
+
+        """
+        If supplied, only precise indexes that match the given terms by their state,
+        repository name, commit, root, and indexer fields will be returned..
+        """
+        query: String
+
+        """
+        If supplied, only precise indexes in one of the provided states are returned.
+        """
+        states: [PreciseIndexState!]
+
+        """
+        If supplied, only precise indexes that are a dependency of the specified index are returned.
+        """
+        dependencyOf: ID
+
+        """
+        If supplied, only precise indexes that are a dependent of the specified index are returned.
+        """
+        dependentOf: ID
+
+        """
+        If specified, this limits the number of results per request.
+        """
+        first: Int
+
+        """
+        If specified, this indicates that the request should be paginated and to fetch results starting
+        at this cursor.
+
+        A future request can be made for more results by passing in the 'PreciseIndexConnection.pageInfo.endCursor'
+        that is returned.
+        """
+        after: String
+    ): PreciseIndexConnection!
 
     """
     The repository's LSIF uploads.
@@ -303,19 +408,9 @@ extend type Query {
         patterns: [String!]!
 
         """
-        When specified, indicates that this request should be paginated and
-        the first N results (relative to the cursor) should be returned. i.e.
-        how many results to return per page.
+        When specified, indicates that this request should return the first N items.
         """
         first: Int
-
-        """
-        When specified, indicates that this request should be paginated and
-        to fetch results starting at this cursor.
-        A future request can be made for more results by passing in the
-        'RepositoryFilterPreview.pageInfo.endCursor' that is returned.
-        """
-        after: String
     ): RepositoryFilterPreview!
 
     """
@@ -344,11 +439,6 @@ type RepositoryFilterPreview {
     The total number of repositories in this result set.
     """
     totalCount: Int!
-
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
 
     """
     The maximum number of repository matches a single policy can make.
@@ -610,7 +700,19 @@ extend type Repository {
         A pattern matching the name of the matching Git object.
         """
         pattern: String!
-    ): [GitObjectFilterPreview!]!
+
+        """
+        When specified, indicates that this request should return the first N items.
+        """
+        first: Int
+
+        """
+        When specified, the total number of matching Git objects younger than this value
+        will be returned along with the total number of matching objects. This does not
+        affect the set of objects returned as items.
+        """
+        countObjectsYoungerThanHours: Int
+    ): GitObjectFilterPreview!
 }
 
 extend interface TreeEntry {
@@ -842,10 +944,32 @@ type LSIFIndexesWithRepositoryNamespace {
 }
 
 """
+A decorated connection of Git objects resulting from 'previewGitObjectFilter'.
+"""
+type GitObjectFilterPreview {
+    """
+    A list of Git objects composing the current page.
+    """
+    nodes: [CodeIntelGitObject!]!
+
+    """
+    The total number of Git objects in this result set.
+    """
+    totalCount: Int!
+
+    """
+    When countObjectsYoungerThanHours is supplied, this holds the total number of Git
+    objects in the result set that have an associated commit date younger than the
+    supplied threshold.
+    """
+    totalCountYoungerThanThreshold: Int
+}
+
+"""
 A git object that matches a git object type and glob pattern. This type is used by
 the UI to preview what names match a code intelligence policy in a given repository.
 """
-type GitObjectFilterPreview {
+type CodeIntelGitObject {
     """
     The relevant branch or tag name.
     """
@@ -855,6 +979,11 @@ type GitObjectFilterPreview {
     The full 40-char revhash.
     """
     rev: String!
+
+    """
+    The time that the underlying commit was created.
+    """
+    committedAt: DateTime!
 }
 
 """
@@ -1068,6 +1197,160 @@ enum LSIFUploadState {
     audit log entries.
     """
     DELETED
+}
+
+"""
+A list of precise code intelligence indexes.
+"""
+type PreciseIndexConnection {
+    """
+    The current page of indexes.
+    """
+    nodes: [PreciseIndex!]!
+
+    """
+    The total number of results (over all pages) in this list.
+    """
+    totalCount: Int
+
+    """
+    Metadata about the current page of results.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+Possible states for PreciseIndexes.
+"""
+enum PreciseIndexState {
+    UPLOADING_INDEX
+    QUEUED_FOR_PROCESSING
+    PROCESSING
+    PROCESSING_ERRORED
+    COMPLETED
+    DELETING
+    DELETED
+    QUEUED_FOR_INDEXING
+    INDEXING
+    INDEXING_ERRORED
+    INDEXING_COMPLETED
+}
+
+"""
+Metadata and status about a precise code intelligence index.
+"""
+type PreciseIndex implements Node {
+    """
+    The ID.
+    """
+    id: ID!
+
+    """
+    The project for which this index provides code intelligence.
+    """
+    projectRoot: CodeIntelGitTree
+
+    """
+    The original 40-character commit commit supplied at creation.
+    """
+    inputCommit: String!
+
+    """
+    The original root supplied at creation.
+    """
+    inputRoot: String!
+
+    """
+    The original indexer name supplied at creation.
+    """
+    inputIndexer: String!
+
+    """
+    The tags, if any, associated with this commit.
+    """
+    tags: [String!]!
+
+    """
+    The indexer used to produce this index.
+    """
+    indexer: CodeIntelIndexer
+
+    """
+    The current state.
+    """
+    state: PreciseIndexState!
+
+    """
+    The time the index was queued for indexing.
+    """
+    queuedAt: DateTime
+
+    """
+    The time the index job started running.
+    """
+    indexingStartedAt: DateTime
+
+    """
+    The time the index job stopped running.
+    """
+    indexingFinishedAt: DateTime
+
+    """
+    The time the index data file was uploaded.
+    """
+    uploadedAt: DateTime
+
+    """
+    The time the upload data file started being processed.
+    """
+    processingStartedAt: DateTime
+
+    """
+    The time the upload data file stopped being processed.
+    """
+    processingFinishedAt: DateTime
+
+    """
+    The indexing or processing error message.
+    """
+    failure: String
+
+    """
+    The rank of this index job or processing job in its respective queue.
+    """
+    placeInQueue: Int
+
+    """
+    The configuration and execution summary (if completed or errored) of this index job.
+    """
+    steps: IndexSteps
+
+    """
+    If set, this index has been marked as replaceable by a new auto-indexing job.
+    """
+    shouldReindex: Boolean!
+
+    """
+    Whether or not this index provides intelligence for the tip of the default branch. Find reference
+    queries will return symbols from remote repositories only when this property is true. This property
+    is updated asynchronously and is eventually consistent with the git data known by the instance.
+    """
+    isLatestForRepo: Boolean!
+
+    """
+    The list of retention policies associated with this index.
+    """
+    retentionPolicyOverview(
+        matchesOnly: Boolean!
+        query: String
+        after: String
+        first: Int
+    ): CodeIntelligenceRetentionPolicyMatchesConnection!
+
+    """
+    Audit logs representing each state change of the upload in order from earliest to latest.
+    """
+    auditLogs: [LSIFUploadAuditLog!]
 }
 
 """

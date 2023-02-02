@@ -5,13 +5,15 @@ go_library(
     srcs = [
         "client.go",
         "observability.go",
-        "telemetry.go",
+        "options.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue",
     visibility = ["//enterprise/cmd/executor:__subpackages__"],
     deps = [
         "//enterprise/cmd/executor/internal/apiclient",
+        "//enterprise/cmd/executor/internal/command",
         "//enterprise/internal/executor",
+        "//internal/executor",
         "//internal/metrics",
         "//internal/observation",
         "//internal/version",
@@ -27,12 +29,11 @@ go_library(
 go_test(
     name = "queue_test",
     srcs = ["client_test.go"],
-    embed = [":queue"],
     deps = [
+        ":queue",
         "//enterprise/cmd/executor/internal/apiclient",
-        "//enterprise/internal/executor",
+        "//internal/executor",
         "//internal/observation",
-        "//internal/workerutil",
         "@com_github_google_go_cmp//cmp",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_model//go",

@@ -38,7 +38,7 @@ func (ExecutorSecretAccessLogNotFoundErr) NotFound() bool {
 type ExecutorSecretAccessLogStore interface {
 	basestore.ShareableStore
 	With(basestore.ShareableStore) ExecutorSecretAccessLogStore
-	Transact(context.Context) (ExecutorSecretAccessLogStore, error)
+	WithTransact(context.Context, func(ExecutorSecretAccessLogStore) error) error
 
 	// Create inserts the given ExecutorSecretAccessLog into the database.
 	Create(ctx context.Context, log *ExecutorSecretAccessLog) error
@@ -101,11 +101,12 @@ func (s *executorSecretAccessLogStore) With(other basestore.ShareableStore) Exec
 	}
 }
 
-func (s *executorSecretAccessLogStore) Transact(ctx context.Context) (ExecutorSecretAccessLogStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	return &executorSecretAccessLogStore{
-		Store: txBase,
-	}, err
+func (s *executorSecretAccessLogStore) WithTransact(ctx context.Context, f func(ExecutorSecretAccessLogStore) error) error {
+	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&executorSecretAccessLogStore{
+			Store: tx,
+		})
+	})
 }
 
 func (s *executorSecretAccessLogStore) Create(ctx context.Context, log *ExecutorSecretAccessLog) error {

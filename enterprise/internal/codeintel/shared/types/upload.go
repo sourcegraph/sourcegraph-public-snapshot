@@ -26,6 +26,7 @@ type Upload struct {
 	Rank              *int
 	AssociatedIndexID *int
 	ContentType       string
+	ShouldReindex     bool
 }
 
 func (u Upload) RecordID() int {

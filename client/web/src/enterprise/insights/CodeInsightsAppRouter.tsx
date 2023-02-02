@@ -35,7 +35,6 @@ export interface CodeInsightsAppRouter extends TelemetryProps {
 
 export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter>(props => {
     const { telemetryService } = props
-    const match = useRouteMatch()
 
     const fetched = useLicense()
     const api = useApi()
@@ -49,29 +48,26 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
             <Route path="*" component={GaConfirmationModal} />
 
             <Switch>
-                <Route path={match.url} exact={true} component={CodeInsightsSmartRoutingRedirect} />
+                <Route path="/insights" exact={true} component={CodeInsightsSmartRoutingRedirect} />
+
+                <Route path="/insights/create" render={() => <CreationRoutes telemetryService={telemetryService} />} />
 
                 <Route
-                    path={`${match.url}/create`}
-                    render={() => <CreationRoutes telemetryService={telemetryService} />}
-                />
-
-                <Route
-                    path={`${match.url}/dashboards/:dashboardId/edit`}
+                    path="/insights/dashboards/:dashboardId/edit"
                     render={props => <EditDashboardPage dashboardId={props.match.params.dashboardId} />}
                 />
 
                 <Route
-                    path={`${match.url}/add-dashboard`}
+                    path="/insights/add-dashboard"
                     render={() => <InsightsDashboardCreationPage telemetryService={telemetryService} />}
                 />
 
                 <Route
-                    path={[`${match.url}/dashboards/:dashboardId?`, `${match.url}/all`, `${match.url}/about`]}
+                    path={['/insights/dashboards/:dashboardId?', '/insights/all', '/insights/about']}
                     render={(props: RouteComponentProps<{ dashboardId?: string }>) => (
                         <CodeInsightsRootPage
                             dashboardId={props.match.params.dashboardId}
-                            activeTab={getActiveTabByURL(match.url, props)}
+                            activeTab={getActiveTabByURL('/insights', props)}
                             telemetryService={telemetryService}
                         />
                     )}
@@ -79,23 +75,23 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
 
                 <Route
                     // Deprecated URL, delete this in the 4.10
-                    path={`${match.url}/edit/:insightId`}
-                    render={props => <Redirect to={`${match.url}/${props.match.params.insightId}/edit`} />}
+                    path="/insights/edit/:insightId"
+                    render={props => <Redirect to={`/insights/${props.match.params.insightId}/edit`} />}
                 />
 
                 <Route
-                    path={`${match.url}/:insightId/edit`}
+                    path="/insights/:insightId/edit"
                     render={props => <EditInsightLazyPage insightID={props.match.params.insightId} />}
                 />
 
                 <Route
                     // Deprecated URL, delete this in the 4.10
-                    path={`${match.url}/insight/:id`}
-                    render={props => <Redirect to={`${match.url}/${props.match.params.id}`} />}
+                    path="/insights/insight/:id"
+                    render={props => <Redirect to={`/insights/${props.match.params.id}`} />}
                 />
 
                 <Route
-                    path={`${match.url}/:id`}
+                    path="/insights/:id"
                     render={props => (
                         <CodeInsightIndependentPage
                             insightId={props.match.params.id}
@@ -121,18 +117,18 @@ const CodeInsightsSmartRoutingRedirect: FC = () => {
     // No dashboards status means that there are no insights either, so redirect
     // to the getting started page in this case
     if (state.status === 'noDashboards') {
-        return <Redirect from={match.url} exact={true} to={`${match.url}/about`} />
+        return <Redirect from={match.url} exact={true} to="/insights/about" />
     }
 
     // There are some dashboards, but we didn't find any particular dashboard in the user
     // temporal settings so redirect to the dashboard tab and select first private dashboard
     if (state.status === 'availableDashboard') {
-        return <Redirect from={match.url} exact={true} to={`${match.url}/dashboards`} />
+        return <Redirect from={match.url} exact={true} to="/insights/dashboards" />
     }
 
     // We found a recently viewed dashboard id in the temporal settings, so redirect to this
     // dashboard.
-    return <Redirect from={match.url} exact={true} to={`${match.url}/dashboards/${state.dashboardId}`} />
+    return <Redirect from={match.url} exact={true} to={`/insights/dashboards/${state.dashboardId}`} />
 }
 
 type DashboardExistence =

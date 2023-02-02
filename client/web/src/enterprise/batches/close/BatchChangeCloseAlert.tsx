@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
-import * as H from 'history'
+import { useNavigate } from 'react-router-dom-v5-compat'
 
 import { isErrorLike, asError, pluralize } from '@sourcegraph/common'
 import { Button, AlertLink, CardBody, Card, Alert, Checkbox, Text, ErrorAlert } from '@sourcegraph/wildcard'
@@ -17,7 +17,6 @@ export interface BatchChangeCloseAlertProps {
     viewerCanAdminister: boolean
     totalCount: number
     setCloseChangesets: (newValue: boolean) => void
-    history: H.History
 
     /** For testing only. */
     closeBatchChange?: typeof _closeBatchChange
@@ -30,9 +29,9 @@ export const BatchChangeCloseAlert: React.FunctionComponent<React.PropsWithChild
     totalCount,
     setCloseChangesets,
     viewerCanAdminister,
-    history,
     closeBatchChange = _closeBatchChange,
 }) => {
+    const navigate = useNavigate()
     const onChangeCloseChangesets = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
         event => {
             setCloseChangesets(event.target.checked)
@@ -40,18 +39,18 @@ export const BatchChangeCloseAlert: React.FunctionComponent<React.PropsWithChild
         [setCloseChangesets]
     )
     const onCancel = useCallback<React.MouseEventHandler>(() => {
-        history.push(batchChangeURL)
-    }, [history, batchChangeURL])
+        navigate(batchChangeURL)
+    }, [navigate, batchChangeURL])
     const [isClosing, setIsClosing] = useState<boolean | Error>(false)
     const onClose = useCallback<React.MouseEventHandler>(async () => {
         setIsClosing(true)
         try {
             await closeBatchChange({ batchChange: batchChangeID, closeChangesets })
-            history.push(batchChangeURL)
+            navigate(batchChangeURL)
         } catch (error) {
             setIsClosing(asError(error))
         }
-    }, [history, closeChangesets, closeBatchChange, batchChangeID, batchChangeURL])
+    }, [navigate, closeChangesets, closeBatchChange, batchChangeID, batchChangeURL])
     return (
         <>
             <Card className="mb-3">

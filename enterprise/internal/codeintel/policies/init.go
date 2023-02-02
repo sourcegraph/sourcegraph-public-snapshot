@@ -2,7 +2,7 @@ package policies
 
 import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/internal/background"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/internal/store"
+	policiesstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -14,7 +14,7 @@ func NewService(
 	uploadSvc UploadService,
 	gitserver GitserverClient,
 ) *Service {
-	store := store.New(scopedContext("store", observationCtx), db)
+	store := policiesstore.New(scopedContext("store", observationCtx), db)
 
 	return newService(
 		observationCtx,

@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 
-import { useHistory, useLocation } from 'react-router'
+import { useLocation } from 'react-router'
 import { of } from 'rxjs'
 
 import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
@@ -34,7 +34,6 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
     toggleCodeMonitorEnabled,
 }) => {
     const location = useLocation()
-    const history = useHistory()
     const isSourcegraphDotCom: boolean = window.context?.sourcegraphDotComMode || false
 
     const queryConnection = useCallback(
@@ -83,8 +82,6 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
                             Omit<CodeMonitorNodeProps, 'node'>,
                             (ListUserCodeMonitorsResult['node'] & { __typename: 'User' })['monitors']
                         >
-                            location={location}
-                            history={history}
                             defaultFirst={10}
                             queryConnection={queryConnection}
                             hideSearch={true}

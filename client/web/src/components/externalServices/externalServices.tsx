@@ -43,6 +43,8 @@ import {
 } from '../../graphql-operations'
 import { EditorAction } from '../../settings/EditorActionsGroup'
 
+import { GerritIcon } from './GerritIcon'
+
 /**
  * Metadata associated with adding a given external service.
  */
@@ -88,6 +90,11 @@ export interface AddExternalServiceOptions {
      * Default external service configuration
      */
     defaultConfig: string
+
+    /**
+     * If present, denotes that we should show a status label, e.g. Beta or Experimental
+     */
+    status?: 'experimental' | 'beta'
 }
 
 const defaultModificationOptions: ModificationOptions = {
@@ -1260,7 +1267,7 @@ const PAGURE: AddExternalServiceOptions = {
 const GERRIT: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GERRIT,
     title: 'Gerrit',
-    icon: GitIcon,
+    icon: GerritIcon,
     jsonSchema: gerritSchemaJSON,
     defaultDisplayName: 'Gerrit',
     defaultConfig: `{
@@ -1276,6 +1283,7 @@ const GERRIT: AddExternalServiceOptions = {
         </div>
     ),
     editorActions: [],
+    status: 'beta',
 }
 
 const AZUREDEVOPS: AddExternalServiceOptions = {
@@ -1484,6 +1492,7 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     srcservegit: SRC_SERVE_GIT,
     gitolite: GITOLITE,
     git: GENERIC_GIT,
+    gerrit: GERRIT,
     ...(window.context?.experimentalFeatures?.pythonPackages === 'enabled' ? { pythonPackages: PYTHON_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.rustPackages === 'enabled' ? { rustPackages: RUST_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.rubyPackages === 'enabled' ? { rubyPackages: RUBY_PACKAGES } : {}),
@@ -1492,7 +1501,6 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     ...(window.context?.experimentalFeatures?.npmPackages === 'enabled' ? { npmPackages: NPM_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.perforce === 'enabled' ? { perforce: PERFORCE } : {}),
     ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
-    ...(window.context?.experimentalFeatures?.gerrit === 'enabled' ? { gerrit: GERRIT } : {}),
     ...(window.context?.experimentalFeatures?.azureDevOps === 'enabled' ? { azuredevops: AZUREDEVOPS } : {}),
 }
 

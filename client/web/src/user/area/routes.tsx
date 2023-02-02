@@ -24,7 +24,7 @@ export const userAreaRoutes: readonly UserAreaRoute[] = [
     },
     {
         path: '/profile',
-        render: props => <UserProfile user={props.user} isSourcegraphDotCom={props.isSourcegraphDotCom} />,
+        render: props => <UserProfile user={props.user} />,
     },
     ...namespaceAreaRoutes,
 

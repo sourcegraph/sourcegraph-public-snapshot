@@ -55,7 +55,7 @@ func contentMatch(repo, path string, repoID int32, chunks ...string) result.Matc
 			Repo: internaltypes.MinimalRepo{Name: api.RepoName(repo), ID: api.RepoID(repoID)},
 			Path: path,
 		},
-		ChunkMatches: result.ChunkMatches(matches),
+		ChunkMatches: matches,
 	}
 }
 
@@ -145,7 +145,7 @@ func diffMatch(repo, author string, repoID int) result.Match {
 	}
 }
 
-var sampleDate time.Time = time.Date(2022, time.April, 1, 0, 0, 0, 0, time.UTC)
+var sampleDate = time.Date(2022, time.April, 1, 0, 0, 0, 0, time.UTC)
 
 func TestRepoAggregation(t *testing.T) {
 	testCases := []struct {

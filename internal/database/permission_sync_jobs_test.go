@@ -16,13 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	// ReasonManualRepoSync and ReasonManualUserSync are copied from permssync
-	// package to avoid import cycles.
-	ReasonManualRepoSync = "REASON_MANUAL_REPO_SYNC"
-	ReasonManualUserSync = "REASON_MANUAL_USER_SYNC"
-)
-
 func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -55,7 +48,7 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, jobs, 0, "jobs returned even though database is empty")
 
-	opts := PermissionSyncJobOpts{Priority: HighPriorityPermissionSync, InvalidateCaches: true, Reason: ReasonManualRepoSync, TriggeredByUserID: user.ID}
+	opts := PermissionSyncJobOpts{Priority: HighPriorityPermissionSync, InvalidateCaches: true, Reason: ReasonUserNoPermissions, NoPerms: true, TriggeredByUserID: user.ID}
 	err = store.CreateRepoSyncJob(ctx, repo1.ID, opts)
 	require.NoError(t, err)
 
@@ -81,7 +74,8 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 			RepositoryID:      int(repo1.ID),
 			Priority:          HighPriorityPermissionSync,
 			InvalidateCaches:  true,
-			Reason:            ReasonManualRepoSync,
+			Reason:            ReasonUserNoPermissions,
+			NoPerms:           true,
 			TriggeredByUserID: user.ID,
 		},
 		{

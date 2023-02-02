@@ -61,10 +61,10 @@ func TestPush(t *testing.T) {
    ]
 }`
 
-		svr, cli := newTestServer(t, eventHandler(func(body []byte) int {
+		svr, cli := newTestServer(t, func(body []byte) int {
 			assert.JSONEq(t, wantJSON, string(body))
 			return 200
-		}))
+		})
 		defer svr.Close()
 
 		err := cli.Push(&okay.Event{

@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var update = flag.Bool("update", false, "update testdata")
@@ -60,11 +59,12 @@ func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 	}
 	hc = httpcli.GerritUnauthenticateMiddleware(hc)
 
-	c := &schema.GerritConnection{
-		Url: "https://gerrit-review.googlesource.com",
+	u, err := url.Parse("https://gerrit-review.googlesource.com")
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	cli, err := NewClient("urn", c, hc)
+	cli, err := NewClient("urn", u, &AccountCredentials{}, hc)
 	if err != nil {
 		t.Fatal(err)
 	}

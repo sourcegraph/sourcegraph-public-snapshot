@@ -218,12 +218,6 @@
           "enum": ["enabled", "disabled"],
           "default": "disabled"
         },
-        "gerrit": {
-          "description": "Allow adding Gerrit code host connections",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "disabled"
-        },
         "azureDevOps": {
           "description": "Allow adding Azure DevOps code host connections",
           "type": "string",
@@ -413,6 +407,13 @@
               "type": "integer",
               "default": 0,
               "group": "Search"
+            },
+            "documentRanksWeight": {
+              "description": "Controls the impact of document ranks on the final ranking when the 'search-ranking' feature is enabled. This is intended for internal testing purposes only, it's not recommended for users to change this.",
+              "type": "number",
+              "default": 4500,
+              "group": "Search",
+              "!go": { "pointer": true }
             }
           }
         },
@@ -804,6 +805,12 @@
           "minimum": 0
         }
       }
+    },
+    "scim.authToken": {
+      "type": "string",
+      "description": "DISCLAIMER: UNDER DEVELOPMENT. THE ENDPOINT DOES NOT COMPLY WITH THE SCIM STANDARD YET. The SCIM auth token is used to authenticate SCIM requests. If not set, SCIM is disabled.",
+      "default": "",
+      "group": "External services"
     },
     "maxReposToSearch": {
       "description": "DEPRECATED: Configure maxRepos in search.limits. The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.",
@@ -1502,6 +1509,24 @@
         }
       }
     },
+    "gitRecorder": {
+      "description": "Record git operations that are executed on configured repositories. The following commands are not recorded: show, log, rev-parse and diff.",
+      "type": "object",
+      "properties": {
+        "size": {
+          "description": "Defines how many recordings to keep. Once this size is reached, the oldest entry will be removed.",
+          "type": "integer",
+          "default": 100000
+        },
+        "repos": {
+          "description": "List of repositories whose git operations should be recorded.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "dotcom": {
       "description": "Configuration options for Sourcegraph.com only.",
       "type": "object",
@@ -1576,7 +1601,7 @@
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["builtin", "saml", "openidconnect", "http-header", "github", "gitlab", "bitbucketcloud"]
+            "enum": ["builtin", "saml", "openidconnect", "http-header", "github", "gitlab", "bitbucketcloud", "gerrit"]
           }
         },
         "oneOf": [
@@ -1586,7 +1611,8 @@
           { "$ref": "#/definitions/HTTPHeaderAuthProvider" },
           { "$ref": "#/definitions/GitHubAuthProvider" },
           { "$ref": "#/definitions/GitLabAuthProvider" },
-          { "$ref": "#/definitions/BitbucketCloudAuthProvider" }
+          { "$ref": "#/definitions/BitbucketCloudAuthProvider" },
+          { "$ref": "#/definitions/GerritAuthProvider" }
         ],
         "!go": {
           "taggedUnionType": true
@@ -2158,6 +2184,23 @@
           "description": "Allows new visitors to sign up for accounts via Bitbucket Cloud authentication. If false, users signing in via Bitbucket Cloud must have an existing Sourcegraph account, which will be linked to their Bitbucket Cloud identity after sign-in.",
           "default": true,
           "type": "boolean"
+        }
+      }
+    },
+    "GerritAuthProvider": {
+      "description": "Gerrit auth provider",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "url"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "gerrit"
+        },
+        "url": {
+          "type": "string",
+          "description": "URL of the Gerrit instance, such as https://gerrit-review.googlesource.com or https://gerrit.example.com.",
+          "default": "https://gerrit-review.googlesource.com/"
         }
       }
     },

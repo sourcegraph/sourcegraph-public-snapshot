@@ -23,17 +23,17 @@ type File struct {
 }
 
 func (f *File) URL() *url.URL {
-	var path strings.Builder
-	path.Grow(len("/@/-/blob/") + len(f.Repo.Name) + len(f.Path) + 20)
-	path.WriteRune('/')
-	path.WriteString(string(f.Repo.Name))
+	var urlPath strings.Builder
+	urlPath.Grow(len("/@/-/blob/") + len(f.Repo.Name) + len(f.Path) + 20)
+	urlPath.WriteRune('/')
+	urlPath.WriteString(string(f.Repo.Name))
 	if f.InputRev != nil && len(*f.InputRev) > 0 {
-		path.WriteRune('@')
-		path.WriteString(*f.InputRev)
+		urlPath.WriteRune('@')
+		urlPath.WriteString(*f.InputRev)
 	}
-	path.WriteString("/-/blob/")
-	path.WriteString(f.Path)
-	return &url.URL{Path: path.String()}
+	urlPath.WriteString("/-/blob/")
+	urlPath.WriteString(f.Path)
+	return &url.URL{Path: urlPath.String()}
 }
 
 // FileMatch represents either:

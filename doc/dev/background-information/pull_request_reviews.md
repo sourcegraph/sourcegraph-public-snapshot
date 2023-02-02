@@ -134,7 +134,7 @@ Special care should be taken when reviewing a diff that contains, or is adjacent
 
 ### When is an in-depth review not required?
 
-We do technically prevent PRs from being merged before being explicitly approved in order to meet security certification compliance requirements. However, there exist PRs that are appropriate to merge without waiting for a full review - in these cases, a reviewer may opt to give an approval without performing an in-depth review, and the author may opt to merge the PR without waiting for a reviewer to provide an in-depth review.
+We do technically prevent PRs from being merged before being explicitly approved in order to meet security certification compliance requirements. However, there exist PRs that are appropriate to merge without waiting for a full review—in these cases, a reviewer may opt to give an approval without performing an in-depth review, and the author may opt to merge the PR without waiting for a reviewer to provide an in-depth review.
 
 > NOTE: When in doubt, reviewers should prefer to provide an in-depth review, and authors should prefer to wait for an in-depth review.
 

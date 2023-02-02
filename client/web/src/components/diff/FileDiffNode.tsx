@@ -2,7 +2,6 @@ import React, { useState, useCallback } from 'react'
 
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
 import prettyBytes from 'pretty-bytes'
 
 import { Button, Badge, Link, Icon, Text, createLinkUrl, Tooltip } from '@sourcegraph/wildcard'
@@ -20,7 +19,6 @@ export interface FileDiffNodeProps {
     node: FileDiffFields
     lineNumbers: boolean
     className?: string
-    location: H.Location
 
     /** Reflect selected line in url */
     persistLines?: boolean
@@ -30,7 +28,6 @@ export interface FileDiffNodeProps {
 /** A file diff. */
 export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileDiffNodeProps>> = ({
     lineNumbers,
-    location,
     node,
     className,
     persistLines,

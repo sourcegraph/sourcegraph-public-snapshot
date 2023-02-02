@@ -1,7 +1,6 @@
 package proto
 
 import (
-	"fmt"
 	"math/big"
 	"strings"
 
@@ -225,26 +224,4 @@ func (glob globPattern) consume(part string, current, next *big.Int) {
 			next.SetBit(next, i, 1)
 		}
 	}
-}
-
-// debugString prints out given state for this glob pattern
-// where glob is printed, but instead of `/` separators,
-// there is either X or _ which indicate bit set or unset
-// in state. Very helpful for debugging.
-func (glob globPattern) debugString(state *big.Int) string {
-	var s strings.Builder
-	for i, globPart := range glob {
-		if state.Bit(i) != 0 {
-			s.WriteByte('X')
-		} else {
-			s.WriteByte('_')
-		}
-		fmt.Fprint(&s, globPart.String())
-	}
-	if state.Bit(len(glob)) != 0 {
-		s.WriteByte('X')
-	} else {
-		s.WriteByte('_')
-	}
-	return s.String()
 }

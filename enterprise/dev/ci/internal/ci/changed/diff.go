@@ -27,6 +27,7 @@ const (
 	DockerImages
 	WolfiPackages
 	WolfiBaseImages
+	Protobuf
 
 	// All indicates all changes should be considered included in this diff, except None.
 	All
@@ -97,8 +98,8 @@ func ParseDiff(files []string) (diff Diff, changedFiles ChangedFiles) {
 			diff |= Client
 		}
 		// dev/release contains a nodejs script that doesn't have tests but needs to be
-		// linted with Client linters
-		if strings.HasPrefix(p, "dev/release/") {
+		// linted with Client linters. We skip the release config file to reduce friction editing during releases.
+		if strings.HasPrefix(p, "dev/release/") && !strings.Contains(p, "release-config") {
 			diff |= Client
 		}
 
@@ -109,7 +110,7 @@ func ParseDiff(files []string) (diff Diff, changedFiles ChangedFiles) {
 
 		// Affects DB schema
 		if strings.HasPrefix(p, "migrations/") {
-			diff |= (DatabaseSchema | Go)
+			diff |= DatabaseSchema | Go
 		}
 		if strings.HasPrefix(p, "dev/ci/go-backcompat") {
 			diff |= DatabaseSchema
@@ -128,7 +129,7 @@ func ParseDiff(files []string) (diff Diff, changedFiles ChangedFiles) {
 
 		// Affects Dockerfiles (which assumes images are being changed as well)
 		if strings.HasPrefix(p, "Dockerfile") || strings.HasSuffix(p, "Dockerfile") {
-			diff |= (Dockerfiles | DockerImages)
+			diff |= Dockerfiles | DockerImages
 		}
 		// Affects anything in docker-images directories (which implies image build
 		// scripts and/or resources are affected)
@@ -191,7 +192,28 @@ func ParseDiff(files []string) (diff Diff, changedFiles ChangedFiles) {
 			diff |= WolfiBaseImages
 			changedFiles[WolfiBaseImages] = append(changedFiles[WolfiBaseImages], p)
 		}
+
+		// Affects Protobuf files and configuration
+		if strings.HasSuffix(p, ".proto") {
+			diff |= Protobuf
+		}
+
+		// Affects generated Protobuf files
+		if strings.HasSuffix(p, "buf.gen.yaml") {
+			diff |= Protobuf
+		}
+
+		// Affects configuration for Buf and associated linters
+		if strings.HasSuffix(p, "buf.yaml") {
+			diff |= Protobuf
+		}
+
+		// Generated Go code from Protobuf definitions
+		if strings.HasSuffix(p, ".pb.go") {
+			diff |= Protobuf
+		}
 	}
+
 	return
 }
 
@@ -230,6 +252,8 @@ func (d Diff) String() string {
 		return "WolfiPackages"
 	case WolfiBaseImages:
 		return "WolfiBaseImages"
+	case Protobuf:
+		return "Protobuf"
 
 	case All:
 		return "All"

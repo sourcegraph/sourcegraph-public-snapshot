@@ -52,8 +52,7 @@ export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps, Se
 export const BatchChangeDetailsPage: React.FunctionComponent<
     React.PropsWithChildren<BatchChangeDetailsPageProps>
 > = props => {
-    const { namespaceID, batchChangeName, history, location, telemetryService, authenticatedUser, deleteBatchChange } =
-        props
+    const { namespaceID, batchChangeName, telemetryService, authenticatedUser, deleteBatchChange } = props
 
     useEffect(() => {
         telemetryService.logViewEvent('BatchChangeDetailsPage')
@@ -129,7 +128,6 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
                             deleteBatchChange={deleteBatchChange}
                             batchChangeNamespaceURL={batchChange.namespace.url}
                             batchChangeURL={batchChange.url}
-                            history={history}
                             settingsCascade={props.settingsCascade}
                         />
                     ) : null
@@ -144,7 +142,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
                     <PageHeader.Breadcrumb>{batchChange.name}</PageHeader.Breadcrumb>
                 </PageHeader.Heading>
             </PageHeader>
-            <BulkOperationsAlerts location={location} bulkOperations={batchChange.activeBulkOperations} />
+            <BulkOperationsAlerts bulkOperations={batchChange.activeBulkOperations} />
             {batchChange.viewerCanAdminister && (
                 <MissingCredentialsAlert
                     authenticatedUser={authenticatedUser}
@@ -167,7 +165,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
                     className="mb-3"
                 />
             )}
-            <ChangesetsArchivedNotice history={history} location={location} />
+            <ChangesetsArchivedNotice />
             {/* Temporarily disabled due to bug with discovery. */}
             {/* See https://github.com/sourcegraph/sourcegraph/issues/45919 */}
             {/* <WebhookAlert batchChange={batchChange} /> */}

@@ -59,7 +59,6 @@ type statusInfo struct {
 	totalPoints, pendingJobs, completedJobs, failedJobs int32
 	backfillQueuedAt                                    *time.Time
 	isLoading                                           bool
-	incompletedDatapoints                               []store.IncompleteDatapoint
 }
 
 type GetSeriesQueueStatusFunc func(ctx context.Context, seriesID string) (*queryrunner.JobsStatus, error)
@@ -330,7 +329,7 @@ func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, timeseriesS
 		return nil, errors.Wrap(err, "GetOffsetNRecordingTime")
 	}
 	if !oldest.IsZero() {
-		opts.After = &oldest
+		opts.From = &oldest
 	}
 
 	includeRepo := func(regex ...string) {
