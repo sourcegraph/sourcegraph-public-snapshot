@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -478,13 +479,13 @@ func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatc
 	return EnterpriseResolvers.batchChangesResolver.BatchChangesCodeHosts(ctx, args)
 }
 
-func (r *UserResolver) Roles(ctx context.Context, args *ListRoleArgs) (RoleConnectionResolver, error) {
+func (r *UserResolver) Roles(ctx context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error) {
 	id := r.ID()
 	args.User = &id
 	return EnterpriseResolvers.rbacResolver.Roles(ctx, args)
 }
 
-func (r *UserResolver) Permissions(ctx context.Context, args *ListPermissionArgs) (PermissionConnectionResolver, error) {
+func (r *UserResolver) Permissions(ctx context.Context, args *ListPermissionArgs) (*graphqlutil.ConnectionResolver[PermissionResolver], error) {
 	id := r.ID()
 	args.User = &id
 	return EnterpriseResolvers.rbacResolver.Permissions(ctx, args)

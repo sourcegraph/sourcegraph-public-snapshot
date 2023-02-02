@@ -59,7 +59,6 @@ type (
 )
 
 type RolesListOptions struct {
-	*LimitOffset
 	System bool
 	UserID int32
 }
@@ -180,10 +179,6 @@ func (r *roleStore) list(ctx context.Context, opts RolesListOptions, selects, or
 		orderByQuery,
 	)
 
-	if opts.LimitOffset != nil {
-		q = sqlf.Sprintf("%s\n%s", q, opts.LimitOffset.SQL())
-	}
-
 	rows, err := r.Query(ctx, q)
 	if err != nil {
 		return errors.Wrap(err, "error running query")
@@ -228,7 +223,6 @@ func (r *roleStore) Create(ctx context.Context, name string, isSystemRole bool) 
 }
 
 func (r *roleStore) Count(ctx context.Context, opts RolesListOptions) (c int, err error) {
-	opts.LimitOffset = nil
 	err = r.list(ctx, opts, sqlf.Sprintf("COUNT(1)"), sqlf.Sprintf(""), func(rows *sql.Rows) error {
 		return rows.Scan(&c)
 	})

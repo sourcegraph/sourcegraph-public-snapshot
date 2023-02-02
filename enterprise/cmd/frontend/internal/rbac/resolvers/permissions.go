@@ -2,10 +2,13 @@ package resolvers
 
 import (
 	"context"
+	"errors"
 
 	"github.com/graph-gophers/graphql-go"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -28,17 +31,27 @@ func (r *Resolver) permissionByID(ctx context.Context, id graphql.ID) (gql.Permi
 	return &permissionResolver{permission: permission}, nil
 }
 
-func (r *Resolver) Permissions(ctx context.Context, args *gql.ListPermissionArgs) (gql.PermissionConnectionResolver, error) {
-	var err error
-	var opts = database.PermissionListOpts{}
+func (r *Resolver) Permissions(ctx context.Context, args *gql.ListPermissionArgs) (*graphqlutil.ConnectionResolver[gql.PermissionResolver], error) {
+	connectionStore := permisionConnectionStore{
+		db: r.db,
+	}
 
 	if args.Role != nil {
+		// 🚨 SECURITY: Only site admins can query user permissions.
+		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+			return nil, err
+		}
+
 		roleID, err := unmarshalRoleID(*args.Role)
 		if err != nil {
 			return nil, err
 		}
 
-		opts.RoleID = roleID
+		if roleID == 0 {
+			return nil, errors.New("invalid role id provided")
+		}
+
+		connectionStore.roleID = roleID
 	}
 
 	if args.User != nil {
@@ -47,16 +60,25 @@ func (r *Resolver) Permissions(ctx context.Context, args *gql.ListPermissionArgs
 			return nil, err
 		}
 
-		opts.UserID = userID
+		if userID == 0 {
+			return nil, errors.New("invalid user id provided")
+		}
+
+		// 🚨 SECURITY: Only viewable for self or by site admins.
+		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+			return nil, err
+		}
+
+		connectionStore.userID = userID
 	}
 
-	opts.LimitOffset, err = args.LimitOffset()
-	if err != nil {
-		return nil, err
-	}
-
-	return &permissionConnectionResolver{
-		db:   r.db,
-		opts: opts,
-	}, nil
+	return graphqlutil.NewConnectionResolver[gql.PermissionResolver](
+		&connectionStore,
+		&args.ConnectionResolverArgs,
+		&graphqlutil.ConnectionResolverOptions{
+			OrderBy: database.OrderBy{
+				{Field: "permissions.id"},
+			},
+		},
+	)
 }

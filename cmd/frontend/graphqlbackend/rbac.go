@@ -6,7 +6,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
@@ -15,13 +14,7 @@ type RoleResolver interface {
 	Name() string
 	System() bool
 	CreatedAt() gqlutil.DateTime
-	Permissions() PermissionConnectionResolver
-}
-
-type RoleConnectionResolver interface {
-	Nodes(ctx context.Context) ([]RoleResolver, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	Permissions(context.Context, *ListPermissionArgs) (*graphqlutil.ConnectionResolver[PermissionResolver], error)
 }
 
 type PermissionResolver interface {
@@ -31,56 +24,26 @@ type PermissionResolver interface {
 	CreatedAt() gqlutil.DateTime
 }
 
-type PermissionConnectionResolver interface {
-	Nodes(ctx context.Context) ([]PermissionResolver, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-}
-
 type RBACResolver interface {
 	// MUTATIONS
 
 	// QUERIES
-	Roles(ctx context.Context, args *ListRoleArgs) (RoleConnectionResolver, error)
-
-	Permissions(ctx context.Context, args *ListPermissionArgs) (PermissionConnectionResolver, error)
+	Roles(ctx context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error)
+	Permissions(ctx context.Context, args *ListPermissionArgs) (*graphqlutil.ConnectionResolver[PermissionResolver], error)
 
 	NodeResolvers() map[string]NodeByIDFunc
 }
 
 type ListRoleArgs struct {
-	User  *graphql.ID
-	First int32
-	After *string
-}
+	graphqlutil.ConnectionResolverArgs
 
-func (l ListRoleArgs) LimitOffset() (*database.LimitOffset, error) {
-	limit := &database.LimitOffset{Limit: int(l.First)}
-	if l.After != nil {
-		offset, err := graphqlutil.DecodeIntCursor(l.After)
-		if err != nil {
-			return nil, err
-		}
-		limit.Offset = offset
-	}
-	return limit, nil
+	System bool
+	User   *graphql.ID
 }
 
 type ListPermissionArgs struct {
-	Role  *graphql.ID
-	User  *graphql.ID
-	First int32
-	After *string
-}
+	graphqlutil.ConnectionResolverArgs
 
-func (l ListPermissionArgs) LimitOffset() (*database.LimitOffset, error) {
-	limit := &database.LimitOffset{Limit: int(l.First)}
-	if l.After != nil {
-		offset, err := graphqlutil.DecodeIntCursor(l.After)
-		if err != nil {
-			return nil, err
-		}
-		limit.Offset = offset
-	}
-	return limit, nil
+	Role *graphql.ID
+	User *graphql.ID
 }

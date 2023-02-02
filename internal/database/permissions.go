@@ -62,7 +62,6 @@ type (
 )
 
 type PermissionListOpts struct {
-	*LimitOffset
 	RoleID int32
 	UserID int32
 }
@@ -285,6 +284,7 @@ func (p *permissionStore) list(ctx context.Context, opts PermissionListOpts, sel
 	}
 
 	if opts.UserID != 0 {
+		fmt.Println("+++++ inside userID")
 		preds = sqlf.Sprintf("user_roles.user_id = %s", opts.UserID)
 		joins = sqlf.Sprintf(`
 INNER JOIN role_permissions ON role_permissions.permission_id = permissions.id
@@ -303,10 +303,6 @@ INNER JOIN user_roles ON user_roles.role_id = role_permissions.role_id
 		q = sqlf.Sprintf("%s\n%s", q, sqlf.Sprintf("GROUP BY permissions.id"))
 	}
 
-	if opts.LimitOffset != nil {
-		q = sqlf.Sprintf("%s\n%s", q, opts.LimitOffset.SQL())
-	}
-
 	rows, err := p.Query(ctx, q)
 	if err != nil {
 		return errors.Wrap(err, "error running query")
@@ -323,7 +319,6 @@ INNER JOIN user_roles ON user_roles.role_id = role_permissions.role_id
 }
 
 func (p *permissionStore) Count(ctx context.Context, opts PermissionListOpts) (c int, err error) {
-	opts.LimitOffset = nil
 	err = p.list(ctx, opts, sqlf.Sprintf("COUNT(1)"), func(rows *sql.Rows) error {
 		return rows.Scan(&c)
 	})

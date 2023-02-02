@@ -17,7 +17,24 @@ type Role implements Node {
     """
     The list of permissions that will be granted to any user with this role.
     """
-    permissions: PermissionConnection!
+    permissions(
+        """
+        The limit argument for forward pagination.
+        """
+        first: Int
+        """
+        The limit argument for backward pagination.
+        """
+        last: Int
+        """
+        The cursor argument for forward pagination.
+        """
+        after: String
+        """
+        The cursor argument for backward pagination.
+        """
+        before: String
+    ): PermissionConnection!
     """
     The date and time when the role was created.
     """
@@ -73,7 +90,7 @@ type Permission implements Node {
     """
     namespace: String!
     """
-    The action in which the bearer of this permission is allowed.
+    The unique action which is granted to a bearer of this permission.
     """
     action: String!
     """
@@ -88,17 +105,21 @@ extend type Query {
     """
     roles(
         """
-        Only return N records.
+        The limit argument for forward pagination.
         """
-        first: Int = 50
+        first: Int
         """
-        Opaque cursor for pagination.
+        The limit argument for backward pagination.
+        """
+        last: Int
+        """
+        The cursor argument for forward pagination.
         """
         after: String
         """
-        User which this role is assigned to
+        The cursor argument for backward pagination.
         """
-        user: ID
+        before: String
     ): RoleConnection!
 
     """
@@ -106,21 +127,21 @@ extend type Query {
     """
     permissions(
         """
-        Only return N records.
+        The limit argument for forward pagination.
         """
-        first: Int = 50
+        first: Int
         """
-        Opaque cursor for pagination.
+        The limit argument for backward pagination.
+        """
+        last: Int
+        """
+        The cursor argument for forward pagination.
         """
         after: String
         """
-        Only return permissions associated with the role with this ID.
+        The cursor argument for backward pagination.
         """
-        role: ID
-        """
-        Only return permissions associated with the user with this ID.
-        """
-        user: ID
+        before: String
     ): PermissionConnection!
 }
 
@@ -130,25 +151,41 @@ extend type User {
     """
     roles(
         """
-        Only return N records.
+        The limit argument for forward pagination.
         """
-        first: Int = 50
+        first: Int
         """
-        Opaque cursor for pagination.
+        The limit argument for backward pagination.
+        """
+        last: Int
+        """
+        The cursor argument for forward pagination.
         """
         after: String
+        """
+        The cursor argument for backward pagination.
+        """
+        before: String
     ): RoleConnection!
     """
     The list of permissions granted to this user based on their roles.
     """
     permissions(
         """
-        Only return N records.
+        The limit argument for forward pagination.
         """
-        first: Int = 50
+        first: Int
         """
-        Opaque cursor for pagination.
+        The limit argument for backward pagination.
+        """
+        last: Int
+        """
+        The cursor argument for forward pagination.
         """
         after: String
+        """
+        The cursor argument for backward pagination.
+        """
+        before: String
     ): PermissionConnection!
 }

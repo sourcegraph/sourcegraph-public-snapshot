@@ -25,7 +25,6 @@ func unmarshalPermissionID(id graphql.ID) (permissionID int32, err error) {
 }
 
 func (r *permissionResolver) ID() graphql.ID {
-	// 🚨 SECURITY: This needs to be the marshalled.
 	return marshalPermissionID(r.permission.ID)
 }
 
