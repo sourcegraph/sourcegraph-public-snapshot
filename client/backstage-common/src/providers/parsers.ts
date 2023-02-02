@@ -1,10 +1,11 @@
 import { ANNOTATION_LOCATION, ANNOTATION_ORIGIN_LOCATION, ApiEntity } from '@backstage/catalog-model'
 import { CatalogProcessorEntityResult, DeferredEntity, parseEntityYaml } from '@backstage/plugin-catalog-backend'
 import { SearchResult } from '../client'
+import type { EntityType } from './providers'
 
 export type ParserFunction = (results: SearchResult[], providerName: string) => DeferredEntity[];
 
-const parseEntityAsType = (searchResults: SearchResult[], providerName: string, entityType: string): DeferredEntity[] => {
+const parseEntityWithDefinition = (searchResults: SearchResult[], providerName: string, entityType: EntityType): DeferredEntity[] => {
   const results: DeferredEntity[] = []
 
   console.log(`parsing ${searchResults.length} proto results`)
@@ -13,7 +14,7 @@ const parseEntityAsType = (searchResults: SearchResult[], providerName: string, 
       type: 'url',
       target: `${r.repository}/${r.filename}`,
     }
-    const protoContent = Buffer.from(r.fileContent, 'utf8').toString()
+    const definition = Buffer.from(r.fileContent, 'utf8').toString()
     const entity: ApiEntity = {
       kind: 'API',
       apiVersion: 'backstage.io/v1alpha1',
@@ -28,7 +29,7 @@ const parseEntityAsType = (searchResults: SearchResult[], providerName: string, 
         type: entityType,
         lifecycle: 'production',
         owner: 'engineering',
-        definition: protoContent,
+        definition: definition,
       }
 
     }
@@ -38,14 +39,14 @@ const parseEntityAsType = (searchResults: SearchResult[], providerName: string, 
     })
   });
 
-  console.log(`${results.length} api entities`)
+  console.log(`${results.length} ${entityType} entities`)
   return results;
 }
 
-export const parseCatalog: ParserFunction = (src: SearchResult[], providerName: string): DeferredEntity[] => {
+export const parseCatalogContent: ParserFunction = (searchResults: SearchResult[], providerName: string): DeferredEntity[] => {
   const results: DeferredEntity[] = []
 
-  src.forEach((r: SearchResult) => {
+  searchResults.forEach((r: SearchResult) => {
     const location = {
       type: 'url',
       target: `https://${r.repository}/${r.filename}`,
@@ -73,9 +74,14 @@ export const parseCatalog: ParserFunction = (src: SearchResult[], providerName: 
   return results
 }
 
-export const parserForType = (type: string): ParserFunction => {
-  return (src: SearchResult[], providerName: string): DeferredEntity[] => parseEntityAsType(src, providerName, type)
-}
+const definitionParser = (type: EntityType): ParserFunction => (src: SearchResult[], providerName: string): DeferredEntity[] => parseEntityWithDefinition(src, providerName, type)
 
-export const parserGrpc = parserForType('grpc')
-export const parserGraphQL = parserForType('graphql')
+export const parserForType = (entityType: EntityType): ParserFunction => {
+  if (entityType === 'file') {
+    return parseCatalogContent
+  } else if (entityType === 'grpc' || entityType === 'graphql') {
+    return definitionParser(entityType)
+  } else {
+    throw new Error(`unknown Entity Type: ${entityType}`)
+  }
+}

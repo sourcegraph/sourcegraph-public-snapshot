@@ -1,11 +1,11 @@
 import { Config } from '@backstage/config'
 import { SearchService, createService, createDummySearch } from '../client'
-import { parserForType, ParserFunction } from '../catalog/parsers'
+import { parserForType, ParserFunction } from './parsers'
 import { withDefault } from './util'
 import { EntityProvider, EntityProviderConnection } from '@backstage/plugin-catalog-backend'
 
 
-type EntityType = 'file' | 'grpc' | 'graphql';
+export type EntityType = 'file' | 'grpc' | 'graphql';
 
 abstract class BaseEntityProvider implements EntityProvider {
   private connection?: EntityProviderConnection
@@ -19,10 +19,12 @@ abstract class BaseEntityProvider implements EntityProvider {
   protected constructor(config: Config, entityType: EntityType) {
     const token = config.getString('sourcegraph.token')
     const sudoUsername = config.getOptionalString('sourcegraph.sudoUsername')
+    const queryConfig = config.getConfig(`sourcegraph.${entityType}`)
+
     this.endpoint = config.getString('sourcegraph.endpoint')
     this.entityType = entityType
     this.entityParseFn = parserForType(entityType)
-    this.query = withDefault(config.getOptionalString(`sourcegraph.${entityType}.query`), "")
+    this.query = withDefault(queryConfig.getString("query"), "")
 
     console.log(entityType, "QUERY", this.query)
     this.disabled = this.query == ""
