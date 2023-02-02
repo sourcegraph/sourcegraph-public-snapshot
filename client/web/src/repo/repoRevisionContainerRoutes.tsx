@@ -26,12 +26,12 @@ const ActionItemsBar = lazyComponent<ActionItemsBarProps, 'ActionItemsBar'>(
 //
 // This splat should be used for all routes inside of `RepoContainer`.
 export const repoSplat =
-    '/:repo_one/:repo_two?/:repo_three?/:repo_four?/:repo_five?/:repo_six?/:repo_seven?/:repo_eight?/:repo_nine?/:repo_ten?'
+    '/:repo_one?/:repo_two?/:repo_three?/:repo_four?/:repo_five?/:repo_six?/:repo_seven?/:repo_eight?/:repo_nine?/:repo_ten?'
 
 const routeToObjectType = {
     [repoSplat + '/-/blob/*']: 'blob',
     [repoSplat + '/-/tree/*']: 'tree',
-    [repoSplat]: undefined,
+    ['*']: undefined,
 } as const
 
 export const commitsPath = repoSplat + '/-/commits/*'
