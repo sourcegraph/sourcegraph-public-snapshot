@@ -7,7 +7,7 @@ import "google/protobuf/duration.proto";
 option go_package = "github.com/sourcegraph/sourcegraph/internal/symbols/proto";
 
 service SymbolsService {
-  rpc Search(SearchRequest) returns (SymbolsResponse) {}
+  rpc Search(SearchRequest) returns (SearchResponse) {}
   rpc LocalCodeIntel(LocalCodeIntelRequest) returns (LocalCodeIntelResponse) {}
   rpc ListLanguages(ListLanguagesRequest) returns (ListLanguagesResponse) {}
   rpc SymbolInfo(SymbolInfoRequest) returns (SymbolInfoResponse) {}
@@ -53,7 +53,7 @@ message SearchRequest {
   google.protobuf.Duration timeout = 9;
 }
 
-message SymbolsResponse {
+message SearchResponse {
   // Symbol is a code symbol
   message Symbol {
     // name is the name of the symbol

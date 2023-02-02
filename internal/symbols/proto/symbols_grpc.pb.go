@@ -22,7 +22,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SymbolsServiceClient interface {
-	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*SymbolsResponse, error)
+	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*SearchResponse, error)
 	LocalCodeIntel(ctx context.Context, in *LocalCodeIntelRequest, opts ...grpc.CallOption) (*LocalCodeIntelResponse, error)
 	ListLanguages(ctx context.Context, in *ListLanguagesRequest, opts ...grpc.CallOption) (*ListLanguagesResponse, error)
 	SymbolInfo(ctx context.Context, in *SymbolInfoRequest, opts ...grpc.CallOption) (*SymbolInfoResponse, error)
@@ -37,8 +37,8 @@ func NewSymbolsServiceClient(cc grpc.ClientConnInterface) SymbolsServiceClient {
 	return &symbolsServiceClient{cc}
 }
 
-func (c *symbolsServiceClient) Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*SymbolsResponse, error) {
-	out := new(SymbolsResponse)
+func (c *symbolsServiceClient) Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*SearchResponse, error) {
+	out := new(SearchResponse)
 	err := c.cc.Invoke(ctx, "/symbols.v1.SymbolsService/Search", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -86,7 +86,7 @@ func (c *symbolsServiceClient) Healthz(ctx context.Context, in *HealthzRequest, 
 // All implementations must embed UnimplementedSymbolsServiceServer
 // for forward compatibility
 type SymbolsServiceServer interface {
-	Search(context.Context, *SearchRequest) (*SymbolsResponse, error)
+	Search(context.Context, *SearchRequest) (*SearchResponse, error)
 	LocalCodeIntel(context.Context, *LocalCodeIntelRequest) (*LocalCodeIntelResponse, error)
 	ListLanguages(context.Context, *ListLanguagesRequest) (*ListLanguagesResponse, error)
 	SymbolInfo(context.Context, *SymbolInfoRequest) (*SymbolInfoResponse, error)
@@ -98,7 +98,7 @@ type SymbolsServiceServer interface {
 type UnimplementedSymbolsServiceServer struct {
 }
 
-func (UnimplementedSymbolsServiceServer) Search(context.Context, *SearchRequest) (*SymbolsResponse, error) {
+func (UnimplementedSymbolsServiceServer) Search(context.Context, *SearchRequest) (*SearchResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Search not implemented")
 }
 func (UnimplementedSymbolsServiceServer) LocalCodeIntel(context.Context, *LocalCodeIntelRequest) (*LocalCodeIntelResponse, error) {

@@ -33,8 +33,8 @@ type grpcService struct {
 	logger logger.Logger
 }
 
-func (s *grpcService) Search(ctx context.Context, r *proto.SearchRequest) (*proto.SymbolsResponse, error) {
-	var response proto.SymbolsResponse
+func (s *grpcService) Search(ctx context.Context, r *proto.SearchRequest) (*proto.SearchResponse, error) {
+	var response proto.SearchResponse
 
 	params := r.ToInternal()
 	symbols, err := s.searchFunc(ctx, params)
