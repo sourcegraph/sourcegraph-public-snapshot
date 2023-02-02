@@ -1759,6 +1759,11 @@ Foreign-key constraints:
 Indexes:
     "lsif_dependency_repos_pkey" PRIMARY KEY, btree (id)
     "lsif_dependency_repos_unique_triplet" UNIQUE CONSTRAINT, btree (scheme, name, version)
+    "lsif_dependency_repos_name_idx" btree (name)
+Referenced by:
+    TABLE "package_repo_versions" CONSTRAINT "package_id_fk" FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos(id) ON DELETE CASCADE
+Triggers:
+    lsif_dependency_repos_backfill AFTER INSERT ON lsif_dependency_repos FOR EACH ROW WHEN (new.version <> '👁️temporary_sentinel_value👁️'::text) EXECUTE FUNCTION func_lsif_dependency_repos_backfill()
 
 ```
 
@@ -2631,6 +2636,22 @@ Foreign-key constraints:
 Referenced by:
     TABLE "outbound_webhook_event_types" CONSTRAINT "outbound_webhook_event_types_outbound_webhook_id_fkey" FOREIGN KEY (outbound_webhook_id) REFERENCES outbound_webhooks(id) ON UPDATE CASCADE ON DELETE CASCADE
     TABLE "outbound_webhook_logs" CONSTRAINT "outbound_webhook_logs_outbound_webhook_id_fkey" FOREIGN KEY (outbound_webhook_id) REFERENCES outbound_webhooks(id) ON UPDATE CASCADE ON DELETE CASCADE
+
+```
+
+# Table "public.package_repo_versions"
+```
+   Column   |  Type  | Collation | Nullable |                      Default                      
+------------+--------+-----------+----------+---------------------------------------------------
+ id         | bigint |           | not null | nextval('package_repo_versions_id_seq'::regclass)
+ package_id | bigint |           | not null | 
+ version    | text   |           | not null | 
+Indexes:
+    "package_repo_versions_pkey" PRIMARY KEY, btree (id)
+    "package_repo_versions_unique_version_per_package" UNIQUE, btree (package_id, version)
+    "package_repo_versions_fk_idx" btree (package_id)
+Foreign-key constraints:
+    "package_id_fk" FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos(id) ON DELETE CASCADE
 
 ```
 

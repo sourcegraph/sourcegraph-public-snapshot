@@ -36,9 +36,9 @@ import (
 // github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/background)
 // used for unit testing.
 type MockDependenciesService struct {
-	// UpsertDependencyReposFunc is an instance of a mock function object
-	// controlling the behavior of the method UpsertDependencyRepos.
-	UpsertDependencyReposFunc *DependenciesServiceUpsertDependencyReposFunc
+	// InsertPackageRepoRefsFunc is an instance of a mock function object
+	// controlling the behavior of the method InsertPackageRepoRefs.
+	InsertPackageRepoRefsFunc *DependenciesServiceInsertPackageRepoRefsFunc
 }
 
 // NewMockDependenciesService creates a new mock of the DependenciesService
@@ -46,8 +46,8 @@ type MockDependenciesService struct {
 // overwritten.
 func NewMockDependenciesService() *MockDependenciesService {
 	return &MockDependenciesService{
-		UpsertDependencyReposFunc: &DependenciesServiceUpsertDependencyReposFunc{
-			defaultHook: func(context.Context, []shared.Repo) (r0 []shared.Repo, r1 error) {
+		InsertPackageRepoRefsFunc: &DependenciesServiceInsertPackageRepoRefsFunc{
+			defaultHook: func(context.Context, []shared.MinimalPackageRepoRef) (r0 []shared.PackageRepoReference, r1 []shared.PackageRepoRefVersion, r2 error) {
 				return
 			},
 		},
@@ -59,9 +59,9 @@ func NewMockDependenciesService() *MockDependenciesService {
 // overwritten.
 func NewStrictMockDependenciesService() *MockDependenciesService {
 	return &MockDependenciesService{
-		UpsertDependencyReposFunc: &DependenciesServiceUpsertDependencyReposFunc{
-			defaultHook: func(context.Context, []shared.Repo) ([]shared.Repo, error) {
-				panic("unexpected invocation of MockDependenciesService.UpsertDependencyRepos")
+		InsertPackageRepoRefsFunc: &DependenciesServiceInsertPackageRepoRefsFunc{
+			defaultHook: func(context.Context, []shared.MinimalPackageRepoRef) ([]shared.PackageRepoReference, []shared.PackageRepoRefVersion, error) {
+				panic("unexpected invocation of MockDependenciesService.InsertPackageRepoRefs")
 			},
 		},
 	}
@@ -72,43 +72,43 @@ func NewStrictMockDependenciesService() *MockDependenciesService {
 // implementation, unless overwritten.
 func NewMockDependenciesServiceFrom(i DependenciesService) *MockDependenciesService {
 	return &MockDependenciesService{
-		UpsertDependencyReposFunc: &DependenciesServiceUpsertDependencyReposFunc{
-			defaultHook: i.UpsertDependencyRepos,
+		InsertPackageRepoRefsFunc: &DependenciesServiceInsertPackageRepoRefsFunc{
+			defaultHook: i.InsertPackageRepoRefs,
 		},
 	}
 }
 
-// DependenciesServiceUpsertDependencyReposFunc describes the behavior when
-// the UpsertDependencyRepos method of the parent MockDependenciesService
+// DependenciesServiceInsertPackageRepoRefsFunc describes the behavior when
+// the InsertPackageRepoRefs method of the parent MockDependenciesService
 // instance is invoked.
-type DependenciesServiceUpsertDependencyReposFunc struct {
-	defaultHook func(context.Context, []shared.Repo) ([]shared.Repo, error)
-	hooks       []func(context.Context, []shared.Repo) ([]shared.Repo, error)
-	history     []DependenciesServiceUpsertDependencyReposFuncCall
+type DependenciesServiceInsertPackageRepoRefsFunc struct {
+	defaultHook func(context.Context, []shared.MinimalPackageRepoRef) ([]shared.PackageRepoReference, []shared.PackageRepoRefVersion, error)
+	hooks       []func(context.Context, []shared.MinimalPackageRepoRef) ([]shared.PackageRepoReference, []shared.PackageRepoRefVersion, error)
+	history     []DependenciesServiceInsertPackageRepoRefsFuncCall
 	mutex       sync.Mutex
 }
 
-// UpsertDependencyRepos delegates to the next hook function in the queue
+// InsertPackageRepoRefs delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockDependenciesService) UpsertDependencyRepos(v0 context.Context, v1 []shared.Repo) ([]shared.Repo, error) {
-	r0, r1 := m.UpsertDependencyReposFunc.nextHook()(v0, v1)
-	m.UpsertDependencyReposFunc.appendCall(DependenciesServiceUpsertDependencyReposFuncCall{v0, v1, r0, r1})
-	return r0, r1
+func (m *MockDependenciesService) InsertPackageRepoRefs(v0 context.Context, v1 []shared.MinimalPackageRepoRef) ([]shared.PackageRepoReference, []shared.PackageRepoRefVersion, error) {
+	r0, r1, r2 := m.InsertPackageRepoRefsFunc.nextHook()(v0, v1)
+	m.InsertPackageRepoRefsFunc.appendCall(DependenciesServiceInsertPackageRepoRefsFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the
-// UpsertDependencyRepos method of the parent MockDependenciesService
+// InsertPackageRepoRefs method of the parent MockDependenciesService
 // instance is invoked and the hook queue is empty.
-func (f *DependenciesServiceUpsertDependencyReposFunc) SetDefaultHook(hook func(context.Context, []shared.Repo) ([]shared.Repo, error)) {
+func (f *DependenciesServiceInsertPackageRepoRefsFunc) SetDefaultHook(hook func(context.Context, []shared.MinimalPackageRepoRef) ([]shared.PackageRepoReference, []shared.PackageRepoRefVersion, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// UpsertDependencyRepos method of the parent MockDependenciesService
+// InsertPackageRepoRefs method of the parent MockDependenciesService
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *DependenciesServiceUpsertDependencyReposFunc) PushHook(hook func(context.Context, []shared.Repo) ([]shared.Repo, error)) {
+func (f *DependenciesServiceInsertPackageRepoRefsFunc) PushHook(hook func(context.Context, []shared.MinimalPackageRepoRef) ([]shared.PackageRepoReference, []shared.PackageRepoRefVersion, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -116,20 +116,20 @@ func (f *DependenciesServiceUpsertDependencyReposFunc) PushHook(hook func(contex
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *DependenciesServiceUpsertDependencyReposFunc) SetDefaultReturn(r0 []shared.Repo, r1 error) {
-	f.SetDefaultHook(func(context.Context, []shared.Repo) ([]shared.Repo, error) {
-		return r0, r1
+func (f *DependenciesServiceInsertPackageRepoRefsFunc) SetDefaultReturn(r0 []shared.PackageRepoReference, r1 []shared.PackageRepoRefVersion, r2 error) {
+	f.SetDefaultHook(func(context.Context, []shared.MinimalPackageRepoRef) ([]shared.PackageRepoReference, []shared.PackageRepoRefVersion, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *DependenciesServiceUpsertDependencyReposFunc) PushReturn(r0 []shared.Repo, r1 error) {
-	f.PushHook(func(context.Context, []shared.Repo) ([]shared.Repo, error) {
-		return r0, r1
+func (f *DependenciesServiceInsertPackageRepoRefsFunc) PushReturn(r0 []shared.PackageRepoReference, r1 []shared.PackageRepoRefVersion, r2 error) {
+	f.PushHook(func(context.Context, []shared.MinimalPackageRepoRef) ([]shared.PackageRepoReference, []shared.PackageRepoRefVersion, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *DependenciesServiceUpsertDependencyReposFunc) nextHook() func(context.Context, []shared.Repo) ([]shared.Repo, error) {
+func (f *DependenciesServiceInsertPackageRepoRefsFunc) nextHook() func(context.Context, []shared.MinimalPackageRepoRef) ([]shared.PackageRepoReference, []shared.PackageRepoRefVersion, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -142,52 +142,55 @@ func (f *DependenciesServiceUpsertDependencyReposFunc) nextHook() func(context.C
 	return hook
 }
 
-func (f *DependenciesServiceUpsertDependencyReposFunc) appendCall(r0 DependenciesServiceUpsertDependencyReposFuncCall) {
+func (f *DependenciesServiceInsertPackageRepoRefsFunc) appendCall(r0 DependenciesServiceInsertPackageRepoRefsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
 // History returns a sequence of
-// DependenciesServiceUpsertDependencyReposFuncCall objects describing the
+// DependenciesServiceInsertPackageRepoRefsFuncCall objects describing the
 // invocations of this function.
-func (f *DependenciesServiceUpsertDependencyReposFunc) History() []DependenciesServiceUpsertDependencyReposFuncCall {
+func (f *DependenciesServiceInsertPackageRepoRefsFunc) History() []DependenciesServiceInsertPackageRepoRefsFuncCall {
 	f.mutex.Lock()
-	history := make([]DependenciesServiceUpsertDependencyReposFuncCall, len(f.history))
+	history := make([]DependenciesServiceInsertPackageRepoRefsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// DependenciesServiceUpsertDependencyReposFuncCall is an object that
-// describes an invocation of method UpsertDependencyRepos on an instance of
+// DependenciesServiceInsertPackageRepoRefsFuncCall is an object that
+// describes an invocation of method InsertPackageRepoRefs on an instance of
 // MockDependenciesService.
-type DependenciesServiceUpsertDependencyReposFuncCall struct {
+type DependenciesServiceInsertPackageRepoRefsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 []shared.Repo
+	Arg1 []shared.MinimalPackageRepoRef
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared.Repo
+	Result0 []shared.PackageRepoReference
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 []shared.PackageRepoRefVersion
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c DependenciesServiceUpsertDependencyReposFuncCall) Args() []interface{} {
+func (c DependenciesServiceInsertPackageRepoRefsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c DependenciesServiceUpsertDependencyReposFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+func (c DependenciesServiceInsertPackageRepoRefsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // MockExternalServiceStore is a mock implementation of the
