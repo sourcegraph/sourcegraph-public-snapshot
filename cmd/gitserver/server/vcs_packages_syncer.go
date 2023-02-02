@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/exec"
 	"path"
@@ -349,7 +348,7 @@ func (s *vcsPackagesSyncer) versions(ctx context.Context, packageName reposource
 	}
 
 	if len(listedPackages) > 1 {
-		panic(fmt.Sprintf("unexpectedly got more than 1 dependency repo for (scheme=%q,name=%q)", s.scheme, packageName))
+		return nil, errors.Newf("unexpectedly got more than 1 dependency repo for (scheme=%q,name=%q)", s.scheme, packageName)
 	}
 
 	if len(listedPackages) == 0 {
