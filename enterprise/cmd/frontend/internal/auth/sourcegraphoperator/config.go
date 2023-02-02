@@ -49,7 +49,7 @@ func Init() {
 	providers.Update(auth.SourcegraphOperatorProviderType, []providers.Provider{p})
 
 	// Register enterprise handler implementation in OSS
-	osssourcegraphoperator.AddSourcegraphOperatorExternalAccount = addSourcegraphOperatorExternalAccount
+	osssourcegraphoperator.RegisterAddSourcegraphOperatorExternalAccountHandler(addSourcegraphOperatorExternalAccount)
 }
 
 func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {

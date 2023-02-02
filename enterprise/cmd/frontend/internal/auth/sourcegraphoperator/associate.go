@@ -25,12 +25,16 @@ type accountDetailsBody struct {
 // It implements internal/auth/sourcegraphoperator.AddSourcegraphOperatorExternalAccount
 //
 // 🚨 SECURITY: Some important things to note:
-//   - The caller must check that the user is a site administrator.
 //   - Being a SOAP user does not grant any extra privilege over being a site admin.
 //   - The operation will fail if the user is already a SOAP user, which prevents escalating
 //     time-bound accounts to permanent service accounts.
 //   - Both the client ID and the service ID must match the SOAP configuration exactly.
 func addSourcegraphOperatorExternalAccount(ctx context.Context, db database.DB, userID int32, serviceID string, accountDetails string) error {
+	// 🚨 SECURITY: Caller must be a site admin.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+		return err
+	}
+
 	p := providers.GetProviderByConfigID(providers.ConfigID{
 		Type: auth.SourcegraphOperatorProviderType,
 		ID:   serviceID,

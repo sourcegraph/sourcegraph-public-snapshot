@@ -13,11 +13,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	osssourcegraphoperator "github.com/sourcegraph/sourcegraph/internal/auth/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestAddSourcegraphOperatorExternalAccountBinding(t *testing.T) {
@@ -32,8 +34,14 @@ func TestAddSourcegraphOperatorExternalAccountBinding(t *testing.T) {
 	defer cloud.MockSiteConfig(t, nil)
 	// Initialize package
 	Init()
-	// Assert handler is registered
-	assert.NotNil(t, osssourcegraphoperator.AddSourcegraphOperatorExternalAccount)
+	// Assert handler is registered - we check this by making sure we get a site admin
+	// error instead of an "unimplemented" error.
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
+	db := database.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	err := osssourcegraphoperator.AddSourcegraphOperatorExternalAccount(context.Background(), db, 1, "foo", "")
+	assert.ErrorIs(t, err, auth.ErrMustBeSiteAdmin)
 }
 
 func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
@@ -42,6 +50,16 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 		ClientID: "soap_client",
 	})
 	serviceID := soap.ConfigID().ID
+
+	mockDB := func(siteAdmin bool) database.DB {
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{
+			SiteAdmin: siteAdmin,
+		}, nil)
+		db := database.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		return db
+	}
 
 	for _, tc := range []struct {
 		name string
@@ -55,9 +73,26 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 		assert func(t *testing.T, uid int32, db database.DB)
 	}{
 		{
+			name: "user is not a side admin",
+			setup: func(t *testing.T) (int32, database.DB) {
+				providers.MockProviders = []providers.Provider{soap}
+				t.Cleanup(func() { providers.MockProviders = nil })
+
+				return 42, mockDB(false)
+			},
+			accountDetails: &accountDetailsBody{
+				ClientID:  "foobar",
+				AccountID: "bob",
+				ExternalAccountData: ExternalAccountData{
+					ServiceAccount: true,
+				},
+			},
+			expectErr: autogold.Expect(`must be site admin`),
+		},
+		{
 			name: "provider does not exist",
 			setup: func(t *testing.T) (int32, database.DB) {
-				return 42, database.NewMockDB()
+				return 42, mockDB(true)
 			},
 			expectErr: autogold.Expect("provider does not exist"),
 		},
@@ -67,7 +102,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 				providers.MockProviders = []providers.Provider{soap}
 				t.Cleanup(func() { providers.MockProviders = nil })
 
-				return 42, database.NewMockDB()
+				return 42, mockDB(true)
 			},
 			accountDetails: &accountDetailsBody{
 				ClientID:  "foobar",
@@ -96,6 +131,8 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 						Username: "logan",
 					},
 				)
+				require.NoError(t, err)
+				err = db.Users().SetIsSiteAdmin(ctx, u.ID, true)
 				require.NoError(t, err)
 				return u.ID, db
 			},
@@ -142,6 +179,8 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 					},
 				)
 				require.NoError(t, err)
+				err = db.Users().SetIsSiteAdmin(ctx, u.ID, true)
+				require.NoError(t, err)
 				err = db.UserExternalAccounts().AssociateUserAndSave(ctx, u.ID, extsvc.AccountSpec{
 					ServiceType: auth.SourcegraphOperatorProviderType,
 					ServiceID:   serviceID,
@@ -180,6 +219,8 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 			uid, db := tc.setup(t)
 			details, err := json.Marshal(tc.accountDetails)
 			require.NoError(t, err)
+
+			ctx := actor.WithActor(context.Background(), actor.FromMockUser(uid))
 			err = addSourcegraphOperatorExternalAccount(ctx, db, uid, serviceID, string(details))
 			if err != nil {
 				tc.expectErr.Equal(t, err.Error())

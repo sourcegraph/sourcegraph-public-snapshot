@@ -107,16 +107,11 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 			wantErr:        false,
 			accountDetails: `{"username": "alice", "password": "test"}`,
 		},
-		"Sourcegraph operator account can only be added by site admins": {
-			user:            &types.User{ID: 1, SiteAdmin: false},
-			serviceType:     auth.SourcegraphOperatorProviderType,
-			wantErr:         true,
-			wantErrContains: "must be site admin",
-		},
 		// OSS packages cannot import enterprise packages, but when we build the entire
 		// application this will be implemented.
 		//
 		// See enterprise/cmd/frontend/internal/auth/sourcegraphoperator for more details
+		// and additional test coverage on the functionality.
 		"Sourcegraph operator unimplemented in OSS": {
 			user:            &types.User{ID: 1, SiteAdmin: true},
 			serviceType:     auth.SourcegraphOperatorProviderType,
