@@ -11,7 +11,7 @@ service Symbols {
   rpc LocalCodeIntel(LocalCodeIntelRequest) returns (LocalCodeIntelResponse) {}
   rpc ListLanguages(ListLanguagesRequest) returns (ListLanguagesResponse) {}
   rpc SymbolInfo(SymbolInfoRequest) returns (SymbolInfoResponse) {}
-  rpc Healthz(SymbolsHealthzRequest) returns (SymbolsHealthzResponse) {}
+  rpc Healthz(HealthzRequest) returns (HealthzResponse) {}
 }
 
 message SearchRequest {
@@ -197,8 +197,8 @@ message Point {
 
 // TODO@ggilmore: Note - GRPC has its own healthchecking protocol that we should use instead of this.
 // See https://github.com/grpc/grpc/blob/master/doc/health-checking.md for more information.
-message SymbolsHealthzRequest {}
+message HealthzRequest {}
 
 // TODO@ggilmore: Note - GRPC has its own healthchecking protocol that we should use instead of this.
 // See https://github.com/grpc/grpc/blob/master/doc/health-checking.md for more information.
-message SymbolsHealthzResponse {}
+message HealthzResponse {}

@@ -68,13 +68,13 @@ func (s *grpcService) ListLanguages(ctx context.Context, _ *proto.ListLanguagesR
 	}, nil
 }
 
-func (s *grpcService) Healthz(ctx context.Context, _ *proto.SymbolsHealthzRequest) (*proto.SymbolsHealthzResponse, error) {
+func (s *grpcService) Healthz(ctx context.Context, _ *proto.HealthzRequest) (*proto.HealthzResponse, error) {
 	// Note: Kubernetes only has beta support for GRPC Healthchecks since version >= 1.23. This means
 	// that we probably need the old non-GRPC healthcheck endpoint for a while.
 	//
 	// See https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-a-grpc-liveness-probe
 	// for more information.
-	return &proto.SymbolsHealthzResponse{}, nil
+	return &proto.HealthzResponse{}, nil
 }
 
 func NewHandler(

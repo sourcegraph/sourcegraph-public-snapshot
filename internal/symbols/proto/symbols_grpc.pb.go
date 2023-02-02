@@ -26,7 +26,7 @@ type SymbolsClient interface {
 	LocalCodeIntel(ctx context.Context, in *LocalCodeIntelRequest, opts ...grpc.CallOption) (*LocalCodeIntelResponse, error)
 	ListLanguages(ctx context.Context, in *ListLanguagesRequest, opts ...grpc.CallOption) (*ListLanguagesResponse, error)
 	SymbolInfo(ctx context.Context, in *SymbolInfoRequest, opts ...grpc.CallOption) (*SymbolInfoResponse, error)
-	Healthz(ctx context.Context, in *SymbolsHealthzRequest, opts ...grpc.CallOption) (*SymbolsHealthzResponse, error)
+	Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error)
 }
 
 type symbolsClient struct {
@@ -73,8 +73,8 @@ func (c *symbolsClient) SymbolInfo(ctx context.Context, in *SymbolInfoRequest, o
 	return out, nil
 }
 
-func (c *symbolsClient) Healthz(ctx context.Context, in *SymbolsHealthzRequest, opts ...grpc.CallOption) (*SymbolsHealthzResponse, error) {
-	out := new(SymbolsHealthzResponse)
+func (c *symbolsClient) Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error) {
+	out := new(HealthzResponse)
 	err := c.cc.Invoke(ctx, "/symbols.v1.Symbols/Healthz", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -90,7 +90,7 @@ type SymbolsServer interface {
 	LocalCodeIntel(context.Context, *LocalCodeIntelRequest) (*LocalCodeIntelResponse, error)
 	ListLanguages(context.Context, *ListLanguagesRequest) (*ListLanguagesResponse, error)
 	SymbolInfo(context.Context, *SymbolInfoRequest) (*SymbolInfoResponse, error)
-	Healthz(context.Context, *SymbolsHealthzRequest) (*SymbolsHealthzResponse, error)
+	Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error)
 	mustEmbedUnimplementedSymbolsServer()
 }
 
@@ -110,7 +110,7 @@ func (UnimplementedSymbolsServer) ListLanguages(context.Context, *ListLanguagesR
 func (UnimplementedSymbolsServer) SymbolInfo(context.Context, *SymbolInfoRequest) (*SymbolInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SymbolInfo not implemented")
 }
-func (UnimplementedSymbolsServer) Healthz(context.Context, *SymbolsHealthzRequest) (*SymbolsHealthzResponse, error) {
+func (UnimplementedSymbolsServer) Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Healthz not implemented")
 }
 func (UnimplementedSymbolsServer) mustEmbedUnimplementedSymbolsServer() {}
@@ -199,7 +199,7 @@ func _Symbols_SymbolInfo_Handler(srv interface{}, ctx context.Context, dec func(
 }
 
 func _Symbols_Healthz_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SymbolsHealthzRequest)
+	in := new(HealthzRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -211,7 +211,7 @@ func _Symbols_Healthz_Handler(srv interface{}, ctx context.Context, dec func(int
 		FullMethod: "/symbols.v1.Symbols/Healthz",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SymbolsServer).Healthz(ctx, req.(*SymbolsHealthzRequest))
+		return srv.(SymbolsServer).Healthz(ctx, req.(*HealthzRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
