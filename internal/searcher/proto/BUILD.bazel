@@ -14,7 +14,10 @@ proto_library(
 
 go_proto_library(
     name = "proto_go_proto",
-    compilers = ["@io_bazel_rules_go//proto:go_proto", "//:gen-go-grpc"], # keep
+    compilers = [
+        "@io_bazel_rules_go//proto:go_proto",
+        "//:gen-go-grpc",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/searcher/proto",
     proto = ":proto_proto",
     visibility = ["//visibility:public"],
