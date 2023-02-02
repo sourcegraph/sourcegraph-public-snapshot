@@ -6833,10 +6833,19 @@ type SiteConfigurationChange implements Node {
     via an internal process (example: site startup or SITE_CONFIG_FILE being reloaded).
     """
     author: User
+
     """
-    The diff string when diffed against the site config at previousID.
+    A flag to indicate if the diff of changes to the previous site configuration
+    was reproduced or not. Sometimes it may not be possible to generate a diff
+    (for example the redacted contents are not available) in which case the
+    value of the flag will be false.
     """
-    diff: String!
+    reproducedDiff: Boolean!
+
+    """
+    The diff string when diffed against the previous site config. When this is null there was no diff to the previous change.
+    """
+    diff: String
     """
     The timestamp when this change in the site config was applied.
     """
