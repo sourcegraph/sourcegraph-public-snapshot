@@ -7,10 +7,10 @@ import (
 	"encoding/csv"
 	"fmt"
 	"net/http"
-	"regexp"
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/grafana/regexp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 

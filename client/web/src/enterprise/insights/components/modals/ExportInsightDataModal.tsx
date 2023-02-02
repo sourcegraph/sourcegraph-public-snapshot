@@ -2,7 +2,7 @@ import { FC } from 'react'
 
 import { escapeRegExp } from 'lodash'
 
-import {Modal, Text, H2, Link} from '@sourcegraph/wildcard'
+import { Modal, Text, H2, Link } from '@sourcegraph/wildcard'
 
 import { DownloadFileButton } from '../DownloadFileButton'
 
@@ -23,7 +23,11 @@ export const ExportInsightDataModal: FC<ExportInsightDataModalProps> = props => 
 
             <Text className="mt-4 mb-2">
                 This will create a CSV archive of all data for this Code Insight, including
-                <Link to="/help/code_insights/explanations/data_retention" target="_blank" rel="noopener"> data that has been archived</Link>.
+                <Link to="/help/code_insights/explanations/data_retention" target="_blank" rel="noopener">
+                    {' '}
+                    data that has been archived
+                </Link>
+                .
             </Text>
             <Text>This will only include data that you are permitted to see.</Text>
             <div className="d-flex justify-content-end mt-5">
