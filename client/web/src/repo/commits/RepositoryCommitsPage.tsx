@@ -1,6 +1,6 @@
 import { FC, useEffect, useMemo } from 'react'
 
-import { useParams } from 'react-router-dom-v5-compat'
+import { useLocation } from 'react-router-dom-v5-compat'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
@@ -33,6 +33,7 @@ import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { GitCommitNode } from './GitCommitNode'
 
 import styles from './RepositoryCommitsPage.module.scss'
+import { parseBrowserRepoURL } from '../../util/url'
 
 export const gitCommitFragment = gql`
     fragment GitCommitFields on GitCommit {
@@ -112,7 +113,9 @@ export interface RepositoryCommitsPageProps extends RevisionSpec, BreadcrumbSett
 // A page that shows a repository's commits at the current revision.
 export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
     const { useBreadcrumb, repo } = props
-    const { '*': filePath } = useParams<{ '*': string }>()
+
+    const location = useLocation()
+    const { filePath = '' } = parseBrowserRepoURL(location.pathname)
 
     const { connection, error, loading, hasNextPage, fetchMore } = useShowMorePagination<
         RepositoryGitCommitsResult,

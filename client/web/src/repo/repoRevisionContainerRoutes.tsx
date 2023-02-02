@@ -15,13 +15,26 @@ const ActionItemsBar = lazyComponent<ActionItemsBarProps, 'ActionItemsBar'>(
     'ActionItemsBar'
 )
 
+// Work around the issue that react router can not match nested splats when the URL contains spaces
+// by expanding the repo matcher to an optional path of up to 10 segments.
+//
+// We don't rely on the route param names anyway and use `parseBrowserRepoURL`
+// instead to parse the repo name.
+//
+// More info about the issue
+// https://github.com/remix-run/react-router/pull/10028
+//
+// This splat should be used for all routes inside of `RepoContainer`.
+export const repoSplat =
+    '/:repo_one/:repo_two?/:repo_three?/:repo_four?/:repo_five?/:repo_six?/:repo_seven?/:repo_eight?/:repo_nine?/:repo_ten?'
+
 const routeToObjectType = {
-    '/-/blob/*': 'blob',
-    '/-/tree/*': 'tree',
-    '': undefined,
+    [repoSplat + '/-/blob/*']: 'blob',
+    [repoSplat + '/-/tree/*']: 'tree',
+    [repoSplat]: undefined,
 } as const
 
-export const commitsPath = '/-/commits/*'
+export const commitsPath = repoSplat + '/-/commits/*'
 
 export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] = [
     ...Object.entries(routeToObjectType).map<RepoRevisionContainerRoute>(([routePath, objectType]) => ({

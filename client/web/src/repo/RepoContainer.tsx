@@ -56,7 +56,7 @@ import {
     RepoRevisionContainerContext,
     RepoRevisionContainerRoute,
 } from './RepoRevisionContainer'
-import { commitsPath } from './repoRevisionContainerRoutes'
+import { commitsPath, repoSplat } from './repoRevisionContainerRoutes'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 import { repoSettingsAreaPath } from './settings/routes'
@@ -306,7 +306,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
     // for repo errors beyond revision not found (aka empty repository)
     // we defer to RepoContainerError for every repo container request
     if (isError && !isEmptyRepo) {
-        const viewerCanAdminister = !!props.authenticatedUser && props.authenticatedUser.siteAdmin
+        const viewerCanAdminister = !!authenticatedUser && authenticatedUser.siteAdmin
 
         return (
             <RepoContainerError
@@ -359,12 +359,12 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
             }
 
             return [
-                ...props.repoContainerRoutes.map(
+                ...repoContainerRoutes.map(
                     ({ path, render, condition = () => true }) =>
                         condition(repoContainerContext) && (
                             <Route
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                path={repoMatchURL + path}
+                                path={repoSplat + path}
                                 element={render(repoContainerContext)}
                             />
                         )
@@ -448,9 +448,14 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
             <ErrorBoundary location={location}>
                 <Suspense fallback={null}>
                     <Routes>
+                        {getRepoContainerContextRoutes()}
+                        <Route
+                            path={repoSplat + repoSettingsAreaPath}
+                            element={<RepoSettingsArea {...repoRevisionContainerContext} repoName={repoName} />}
+                        />
                         <Route
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            path={repoMatchURL + '/*'}
+                            path="*"
                             element={
                                 <RepoRevisionContainer
                                     {...repoRevisionContainerContext}
@@ -459,11 +464,6 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                                 />
                             }
                         />
-                        <Route
-                            path={repoMatchURL + repoSettingsAreaPath}
-                            element={<RepoSettingsArea {...repoRevisionContainerContext} repoName={repoName} />}
-                        />
-                        {getRepoContainerContextRoutes()}
                     </Routes>
                 </Suspense>
             </ErrorBoundary>

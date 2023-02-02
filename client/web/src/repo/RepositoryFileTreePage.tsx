@@ -11,7 +11,7 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { NotebookProps } from '../notebooks'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
-import { formatHash, formatLineOrPositionOrRange } from '../util/url'
+import { formatHash, formatLineOrPositionOrRange, parseBrowserRepoURL } from '../util/url'
 
 import { BlobPage } from './blob/BlobPage'
 import { RepoRevisionContainerContext } from './RepoRevisionContainer'
@@ -33,7 +33,7 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
     const { repo, resolvedRevision, repoName, globbing, objectType: maybeObjectType, ...context } = props
 
     const location = useLocation()
-    const { '*': filePath = '' } = useParams<{ '*': string }>()
+    const { filePath = '' } = parseBrowserRepoURL(location.pathname)
 
     // Redirect tree and blob routes pointing to the root to the repo page
     if (maybeObjectType && filePath.replace(/\/+$/g, '') === '') {
