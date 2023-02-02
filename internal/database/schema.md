@@ -2680,6 +2680,9 @@ Foreign-key constraints:
  invalidate_caches    | boolean                  |           | not null | false
  cancellation_reason  | text                     |           |          | 
  no_perms             | boolean                  |           | not null | false
+ permissions_added    | integer                  |           |          | 
+ permissions_removed  | integer                  |           |          | 
+ permissions_found    | integer                  |           |          | 
 Indexes:
     "permission_sync_jobs_pkey" PRIMARY KEY, btree (id)
     "permission_sync_jobs_unique" UNIQUE, btree (priority, user_id, repository_id, cancel, process_after) WHERE state = 'queued'::text
