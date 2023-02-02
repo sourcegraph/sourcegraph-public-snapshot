@@ -1568,6 +1568,19 @@
           "Comment": ""
         },
         {
+          "Name": "num_samples",
+          "Index": 14,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "other_threshold",
           "Index": 7,
           "TypeName": "double precision",
