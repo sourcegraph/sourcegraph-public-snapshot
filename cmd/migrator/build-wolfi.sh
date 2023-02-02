@@ -86,6 +86,7 @@ done
 
 echo "--- docker build"
 docker build -f cmd/migrator/Dockerfile.wolfi -t "$IMAGE" "$OUTPUT" \
+  --platform="${PLATFORM:-linux/amd64}" \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
