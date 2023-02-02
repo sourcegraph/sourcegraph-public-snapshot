@@ -2,9 +2,9 @@ package sourcegraphoperator
 
 import (
 	"context"
-	"errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type addSourcegraphOperatorExternalAccountFunc func(ctx context.Context, db database.DB, userID int32, serviceID string, accountDetails string) error
