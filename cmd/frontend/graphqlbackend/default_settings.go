@@ -81,13 +81,13 @@ func marshalDefaultSettingsGQLID(defaultSettingsID string) graphql.ID {
 
 func (r *defaultSettingsResolver) ID() graphql.ID { return marshalDefaultSettingsGQLID(r.gqlID) }
 
-func (r *defaultSettingsResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
+func (r *defaultSettingsResolver) LatestSettings(ctx context.Context) (*SettingsResolver, error) {
 	contents, err := json.Marshal(defaultSettings())
 	if err != nil {
 		return nil, err
 	}
 	settings := &api.Settings{Subject: api.SettingsSubject{Default: true}, Contents: string(contents)}
-	return &settingsResolver{r.db, &settingsSubject{defaultSettings: r}, settings, nil}, nil
+	return &SettingsResolver{r.db, &settingsSubject{defaultSettings: r}, settings, nil}, nil
 }
 
 func (r *defaultSettingsResolver) SettingsURL() *string { return nil }

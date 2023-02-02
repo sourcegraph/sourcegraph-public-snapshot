@@ -170,7 +170,7 @@ func (r *UserResolver) settingsSubject() api.SettingsSubject {
 	return api.SettingsSubject{User: &r.user.ID}
 }
 
-func (r *UserResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
+func (r *UserResolver) LatestSettings(ctx context.Context) (*SettingsResolver, error) {
 	// 🚨 SECURITY: Only the authenticated user can view their settings on
 	// Sourcegraph.com.
 	if envvar.SourcegraphDotComMode() {
@@ -192,7 +192,7 @@ func (r *UserResolver) LatestSettings(ctx context.Context) (*settingsResolver, e
 	if settings == nil {
 		return nil, nil
 	}
-	return &settingsResolver{r.db, &settingsSubject{user: r}, settings, nil}, nil
+	return &SettingsResolver{r.db, &settingsSubject{user: r}, settings, nil}, nil
 }
 
 func (r *UserResolver) SettingsCascade() *settingsCascade {
@@ -292,7 +292,7 @@ func CurrentUser(ctx context.Context, db database.DB) (*UserResolver, error) {
 	return NewUserResolver(db, user), nil
 }
 
-func (r *UserResolver) Organizations(ctx context.Context) (*orgConnectionStaticResolver, error) {
+func (r *UserResolver) Organizations(ctx context.Context) (*OrgConnectionStaticResolver, error) {
 	// 🚨 SECURITY: Only the user and admins are allowed to access the user's
 	// organisations.
 	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
@@ -302,7 +302,7 @@ func (r *UserResolver) Organizations(ctx context.Context) (*orgConnectionStaticR
 	if err != nil {
 		return nil, err
 	}
-	c := orgConnectionStaticResolver{nodes: make([]*OrgResolver, len(orgs))}
+	c := OrgConnectionStaticResolver{nodes: make([]*OrgResolver, len(orgs))}
 	for i, org := range orgs {
 		c.nodes[i] = &OrgResolver{r.db, org}
 	}

@@ -105,7 +105,7 @@ func (s *settingsSubject) ID() (graphql.ID, error) {
 	}
 }
 
-func (s *settingsSubject) LatestSettings(ctx context.Context) (*settingsResolver, error) {
+func (s *settingsSubject) LatestSettings(ctx context.Context) (*SettingsResolver, error) {
 	switch {
 	case s.defaultSettings != nil:
 		return s.defaultSettings.LatestSettings(ctx)

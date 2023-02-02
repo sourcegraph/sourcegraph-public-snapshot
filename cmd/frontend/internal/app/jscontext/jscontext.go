@@ -4,14 +4,12 @@ package jscontext
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -23,14 +21,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -56,8 +51,8 @@ type authPasswordPolicy struct {
 	RequireUpperAndLowerCase  bool `json:"requireUpperAndLowerCase"`
 }
 type UserLatestSettings struct {
-	ID       int32  // the unique ID of this settings value
-	Contents string // the raw JSON (with comments and trailing commas allowed)
+	ID       int32                      // the unique ID of this settings value
+	Contents graphqlbackend.JSONCString // the raw JSON (with comments and trailing commas allowed)
 }
 type UserOrganization struct {
 	ID          graphql.ID
@@ -173,7 +168,7 @@ type JSContext struct {
 // request.
 func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	ctx := req.Context()
-	a := actor.FromContext(ctx)
+	a := sgactor.FromContext(ctx)
 
 	headers := make(map[string]string)
 	headers["x-sourcegraph-client"] = globals.ExternalURL().String()
@@ -321,119 +316,72 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 	if user == nil {
 		return nil
 	}
-	url := fmt.Sprintf("/users/%s", user.Username)
-	settingsURL := fmt.Sprintf("%s/settings", url)
+
+	userResolver := graphqlbackend.NewUserResolver(db, user)
+
+	siteAdmin, _ := userResolver.SiteAdmin(ctx)
+	canAdminister, _ := userResolver.ViewerCanAdminister(ctx)
+	tags, _ := userResolver.Tags(ctx)
+
+	canSignOut := new(bool)
+	if session, err := userResolver.Session(ctx); err == nil {
+		*canSignOut = session.CanSignOut()
+	}
 
 	return &CurrentUser{
-		ID: relay.MarshalID("User", user.ID),
-		// DatabaseID is just a user ID
-		DatabaseID:          user.ID,
-		Username:            user.Username,
-		AvatarURL:           user.AvatarURL,
-		DisplayName:         user.DisplayName,
-		SiteAdmin:           user.SiteAdmin,
-		URL:                 url,
-		SettingsURL:         settingsURL,
-		ViewerCanAdminister: resolveViewerCanAdminister(ctx, user, db),
-		Tags:                user.Tags,
-		TosAccepted:         user.TosAccepted,
-		Searchable:          user.Searchable,
-		Organizations:       resolveUserOrgs(ctx, user, db),
-		CanSignOut:          resolveUserCanSignOut(ctx, user),
-		Emails:              resolveUserEmails(ctx, user, db),
-		LatestSettings:      resolveLatestSettings(ctx, user, db),
+		AvatarURL:           derefString(userResolver.AvatarURL()),
+		CanSignOut:          canSignOut,
+		DatabaseID:          userResolver.DatabaseID(),
+		DisplayName:         derefString(userResolver.DisplayName()),
+		Emails:              resolveUserEmails(ctx, userResolver),
+		ID:                  userResolver.ID(),
+		LatestSettings:      resolveLatestSettings(ctx, userResolver),
+		Organizations:       resolveUserOrganizations(ctx, userResolver),
+		Searchable:          userResolver.Searchable(ctx),
+		SettingsURL:         derefString(userResolver.SettingsURL()),
+		SiteAdmin:           siteAdmin,
+		Tags:                tags,
+		TosAccepted:         userResolver.TosAccepted(ctx),
+		URL:                 userResolver.URL(),
+		Username:            userResolver.Username(),
+		ViewerCanAdminister: canAdminister,
 	}
 }
 
-func resolveViewerCanAdminister(ctx context.Context, user *types.User, db database.DB) bool {
-	// 🚨 SECURITY: Only the authenticated user can administrate themselves on
-	// Sourcegraph.com.
-	var err error
-	if envvar.SourcegraphDotComMode() {
-		err = auth.CheckSameUser(ctx, user.ID)
-	} else {
-		err = auth.CheckSiteAdminOrSameUser(ctx, db, user.ID)
+func derefString(s *string) string {
+	if s == nil {
+		return ""
 	}
-	if envvar.SourcegraphDotComMode() {
-		if err := auth.CheckSameUser(ctx, user.ID); err != nil {
-			return false
-		}
-	} else {
-		if err := auth.CheckSiteAdminOrSameUser(ctx, db, user.ID); err != nil {
-			return false
-		}
-	}
-	if errcode.IsUnauthorized(err) {
-		return false
-	} else if err != nil {
-		return false
-	}
-	return true
+	return *s
 }
 
-func resolveUserOrgs(ctx context.Context, user *types.User, db database.DB) []*UserOrganization {
-	// 🚨 SECURITY: Only the user and admins are allowed to access user
-	// organisations.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, db, user.ID); err != nil {
-		return nil
-	}
-	orgs, err := db.Orgs().GetByUserID(ctx, user.ID)
+func resolveUserOrganizations(ctx context.Context, user *graphqlbackend.UserResolver) []*UserOrganization {
+	orgs, err := user.Organizations(ctx)
 	if err != nil {
 		return nil
 	}
-	userOrganizations := make([]*UserOrganization, 0, len(orgs))
-	for _, org := range orgs {
-		userOrganizations = append(userOrganizations, convertOrgToUserOrganization(db, org))
+	userOrganizations := make([]*UserOrganization, 0, len(orgs.Nodes()))
+	for _, org := range orgs.Nodes() {
+		userOrganizations = append(userOrganizations, &UserOrganization{
+			ID:          org.ID(),
+			Name:        org.Name(),
+			DisplayName: org.DisplayName(),
+			URL:         org.URL(),
+			SettingsURL: org.SettingsURL(),
+		})
 	}
 	return userOrganizations
 }
 
-func convertOrgToUserOrganization(db database.DB, org *types.Org) *UserOrganization {
-	orgResolver := graphqlbackend.NewOrg(db, org)
-
-	return &UserOrganization{
-		ID:          orgResolver.ID(),
-		Name:        orgResolver.Name(),
-		DisplayName: orgResolver.DisplayName(),
-		URL:         orgResolver.URL(),
-		SettingsURL: orgResolver.SettingsURL(),
-	}
-}
-
-func resolveUserCanSignOut(ctx context.Context, user *types.User) *bool {
-	// 🚨 SECURITY: Only the user can view their session information, because it is
-	// retrieved from the context of this request (and not persisted in a way that is
-	// queryable).
-	a := actor.FromContext(ctx)
-	if !a.IsAuthenticated() || a.UID != user.ID {
-		return nil
-	}
-
-	canSignOut := false
-	if a.FromSessionCookie {
-		// The http-header auth provider is the only auth provider that a user cannot
-		// sign out from.
-		for _, p := range conf.Get().AuthProviders {
-			if p.HttpHeader == nil {
-				canSignOut = true
-				break
-			}
-		}
-	}
-	return &canSignOut
-}
-
-func resolveUserEmails(ctx context.Context, user *types.User, db database.DB) []UserEmail {
-	userResolver := graphqlbackend.NewUserResolver(db, user)
-	emailResolvers, err := userResolver.Emails(ctx)
-
+func resolveUserEmails(ctx context.Context, user *graphqlbackend.UserResolver) []UserEmail {
+	emails, err := user.Emails(ctx)
 	if err != nil {
 		return nil
 	}
 
-	userEmails := make([]UserEmail, 0, len(emailResolvers))
+	userEmails := make([]UserEmail, 0, len(emails))
 
-	for _, emailResolver := range emailResolvers {
+	for _, emailResolver := range emails {
 		userEmail := UserEmail{
 			Email:     emailResolver.Email(),
 			IsPrimary: emailResolver.IsPrimary(),
@@ -445,30 +393,15 @@ func resolveUserEmails(ctx context.Context, user *types.User, db database.DB) []
 	return userEmails
 }
 
-func resolveLatestSettings(ctx context.Context, user *types.User, db database.DB) *UserLatestSettings {
-	// 🚨 SECURITY: Only the authenticated user can view their settings on
-	// Sourcegraph.com.
-	if envvar.SourcegraphDotComMode() {
-		if err := auth.CheckSameUser(ctx, user.ID); err != nil {
-			return nil
-		}
-	} else {
-		// 🚨 SECURITY: Only the user and admins are allowed to access other user
-		// settings, because they may contain secrets or other sensitive data.
-		if err := auth.CheckSiteAdminOrSameUser(ctx, db, user.ID); err != nil {
-			return nil
-		}
-	}
-
-	settings, err := db.Settings().GetLatest(ctx, api.SettingsSubject{User: &user.ID})
+func resolveLatestSettings(ctx context.Context, user *graphqlbackend.UserResolver) *UserLatestSettings {
+	settings, err := user.LatestSettings(ctx)
 	if err != nil {
 		return nil
 	}
-	if settings == nil {
-		return nil
+	return &UserLatestSettings{
+		ID:       settings.ID(),
+		Contents: settings.Contents(),
 	}
-
-	return &UserLatestSettings{ID: settings.ID, Contents: settings.Contents}
 }
 
 // publicSiteConfiguration is the subset of the site.schema.json site
