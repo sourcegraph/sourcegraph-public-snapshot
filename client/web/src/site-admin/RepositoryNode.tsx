@@ -18,7 +18,7 @@ interface RepositoryNodeProps {
 }
 
 export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({ node }) => {
-    let status: string = 'queued'
+    let status = 'queued'
     if (node.mirrorInfo.cloned && !node.mirrorInfo.lastError) {
         status = 'cloned'
     } else if (node.mirrorInfo.cloneInProgress) {
@@ -37,7 +37,12 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
             <div className="d-flex align-items-center justify-content-between">
                 <div className="d-flex col-7 pl-0">
                     <div className={classNames('d-flex col-2 px-0 justify-content-between h-100', styles.badgeWrapper)}>
-                        <Badge className={classNames(styles[status], 'py-0 px-1 text-uppercase font-weight-normal')}>
+                        <Badge
+                            className={classNames(
+                                styles[status as keyof typeof styles],
+                                'py-0 px-1 text-uppercase font-weight-normal'
+                            )}
+                        >
                             {status}
                         </Badge>
                         {node.mirrorInfo.cloneInProgress && <LoadingSpinner />}

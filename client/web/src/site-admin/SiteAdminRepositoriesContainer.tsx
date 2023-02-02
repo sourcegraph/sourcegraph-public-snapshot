@@ -26,10 +26,10 @@ import {
     SiteAdminRepositoryFields,
 } from '../graphql-operations'
 
+import { PageRoutes } from '../routes.constants'
 import { ValueLegendList, ValueLegendListProps } from './analytics/components/ValueLegendList'
-import { RepositoryNode } from './RepositoryNode'
 import { REPOSITORY_STATS, REPO_PAGE_POLL_INTERVAL, REPOSITORIES_QUERY } from './backend'
-import { PageRoutes } from './../routes.constants'
+import { RepositoryNode } from './RepositoryNode'
 
 const STATUS_FILTERS: { [label: string]: FilteredConnectionFilterValue } = {
     All: {
@@ -197,7 +197,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<
             })
         }
         return filtersWithExternalServices
-    }, [extSvcs])
+    }, [extSvcs, location.pathname])
 
     const [filterValues, setFilterValues] = useState<Map<string, FilteredConnectionFilterValue>>(() =>
         getFilterFromURL(new URLSearchParams(location.search), filters)
@@ -257,8 +257,6 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<
         getConnection: ({ data }) => data?.repositories || undefined,
         options: { pollInterval: 5000 },
     })
-
-    console.log(connection?.nodes)
 
     useEffect(() => {
         refetch(variables)
