@@ -33,7 +33,12 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
     const { repo, resolvedRevision, repoName, globbing, objectType: maybeObjectType, ...context } = props
 
     const location = useLocation()
-    const { filePath = '' } = parseBrowserRepoURL(location.pathname)
+    const { filePath: encodedFilePath = '' } = parseBrowserRepoURL(location.pathname) // empty string is root
+
+    // The decoding depends on the pinned `history` version.
+    // See https://github.com/sourcegraph/sourcegraph/issues/4408
+    // and https://github.com/ReactTraining/history/issues/505
+    const filePath = decodeURIComponent(encodedFilePath)
 
     // Redirect tree and blob routes pointing to the root to the repo page
     if (maybeObjectType && filePath.replace(/\/+$/g, '') === '') {
