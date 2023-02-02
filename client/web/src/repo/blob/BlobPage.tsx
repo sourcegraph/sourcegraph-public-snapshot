@@ -442,7 +442,7 @@ export const BlobPage: FC<BlobPageProps> = ({ className, ...props }) => {
         // they cannot easily determine eagerly if a file path is a tree or a blob.
         // We don't have error names on GraphQL errors.
         if (/not a blob/i.test(blobInfoOrError.message)) {
-            return <Navigate to={toTreeURL(props)} />
+            return <Navigate to={toTreeURL(props)} replace={true} />
         }
         return (
             <>

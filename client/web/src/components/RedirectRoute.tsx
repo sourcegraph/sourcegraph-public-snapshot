@@ -12,5 +12,5 @@ export const RedirectRoute: FC<RedirectRouteProps> = props => {
     const location = useLocation()
     const params = useParams()
 
-    return <Navigate to={getRedirectURL({ location, params })} />
+    return <Navigate to={getRedirectURL({ location, params })} replace={true} />
 }

@@ -170,7 +170,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
     }, [id, indexOrError, handleReindexPreciseIndex, navigate])
 
     return deletionOrError === 'deleted' ? (
-        <Navigate to="." />
+        <Navigate to="." replace={true} />
     ) : isErrorLike(deletionOrError) ? (
         <ErrorAlert prefix="Error deleting precise index" error={deletionOrError} />
     ) : isErrorLike(reindexOrError) ? (

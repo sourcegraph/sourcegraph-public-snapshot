@@ -300,7 +300,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     // If the tree is actually a blob, be helpful and redirect to the blob page.
                     // We don't have error names on GraphQL errors.
                     /not a directory/i.test(treeOrError.message) ? (
-                        <Navigate to={toPrettyBlobURL({ repoName, revision, commitID, filePath })} />
+                        <Navigate to={toPrettyBlobURL({ repoName, revision, commitID, filePath })} replace={true} />
                     ) : (
                         <ErrorAlert error={treeOrError} />
                     )

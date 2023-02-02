@@ -37,7 +37,7 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
 
     // Redirect tree and blob routes pointing to the root to the repo page
     if (maybeObjectType && filePath.replace(/\/+$/g, '') === '') {
-        return <Navigate to={toRepoURL({ repoName, revision: context.revision })} />
+        return <Navigate to={toRepoURL({ repoName, revision: context.revision })} replace={true} />
     }
 
     const objectType = maybeObjectType || 'tree'
@@ -52,7 +52,7 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
             location.pathname + location.search,
             `L${startLineNumber}` + (endLineNumber ? `-${endLineNumber}` : '')
         )
-        return <Navigate to={url} />
+        return <Navigate to={url} replace={true} />
     }
 
     // For blob pages with legacy URL fragment hashes like "#L17:19-21:23$foo:bar"
@@ -65,7 +65,7 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
         }
         const range = formatLineOrPositionOrRange(parsedQuery)
         const url = appendLineRangeQueryParameter(location.pathname + location.search, range ? `L${range}` : undefined)
-        return <Navigate to={url + formatHash(hashParameters)} />
+        return <Navigate to={url + formatHash(hashParameters)} replace={true} />
     }
 
     return (

@@ -1,7 +1,6 @@
 import { FC } from 'react'
 
-import { Redirect } from 'react-router'
-import { Routes, Route } from 'react-router-dom-v5-compat'
+import { Routes, Route, Navigate } from 'react-router-dom-v5-compat'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -64,7 +63,7 @@ const CodeIntelConfigurationPolicyPage = lazyComponent<
 export const codeIntelAreaRoutes: readonly CodeIntelAreaRoute[] = [
     {
         path: '/',
-        render: () => <Redirect to="./code-graph/indexes" />,
+        render: () => <Navigate to="./indexes" replace={true} />,
     },
     {
         path: '/indexes',
