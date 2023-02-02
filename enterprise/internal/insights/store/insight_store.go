@@ -262,7 +262,7 @@ func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.Insig
 			SeriesOptions: types.SeriesDisplayOptions{
 				SortOptions: sortOptions,
 				Limit:       seriesSet[0].SeriesLimit,
-				NumSamples:  defaultNumSamples(seriesSet[0].SeriesNumSamples),
+				NumSamples:  seriesSet[0].SeriesNumSamples,
 			},
 		})
 	}
@@ -271,13 +271,6 @@ func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.Insig
 		return results[i].UniqueID < results[j].UniqueID
 	})
 	return results
-}
-
-func defaultNumSamples(numSamples *int32) int32 {
-	if numSamples == nil {
-		return 90
-	}
-	return *numSamples
 }
 
 type GetDataSeriesArgs struct {
