@@ -270,5 +270,5 @@ func (r *schemaResolver) Team(ctx context.Context, args *TeamArgs) (*teamResolve
 		return nil, err
 	}
 
-	return &teamResolver{teamsDb: r.db.Teams(), team: t}, nil
+	return &teamResolver{db: r.db, team: t}, nil
 }
