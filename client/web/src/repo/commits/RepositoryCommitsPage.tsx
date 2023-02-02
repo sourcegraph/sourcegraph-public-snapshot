@@ -27,13 +27,13 @@ import {
 } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { basename } from '../../util/path'
+import { parseBrowserRepoURL } from '../../util/url'
 import { externalLinkFieldsFragment } from '../backend'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 
 import { GitCommitNode } from './GitCommitNode'
 
 import styles from './RepositoryCommitsPage.module.scss'
-import { parseBrowserRepoURL } from '../../util/url'
 
 export const gitCommitFragment = gql`
     fragment GitCommitFields on GitCommit {
