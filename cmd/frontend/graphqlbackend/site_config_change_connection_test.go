@@ -212,8 +212,8 @@ func TestSiteConfigConnection(t *testing.T) {
 								  username,
 								  displayName
 							  }
-                              reproducedDiff
-                              diff
+							  reproducedDiff
+							  diff
 						  }
 						  pageInfo {
 							hasNextPage
@@ -242,8 +242,8 @@ func TestSiteConfigConnection(t *testing.T) {
 										"username": "foo",
 										"displayName": "foo user"
 									},
-                                    "reproducedDiff": true,
-                                    "diff": %[3]q
+									"reproducedDiff": true,
+									"diff": %[3]q
 								},
 								{
 									"id": %[2]q,
@@ -252,8 +252,8 @@ func TestSiteConfigConnection(t *testing.T) {
 										"username": "foo",
 										"displayName": "foo user"
 									},
-                                    "reproducedDiff": true,
-                                    "diff": %[4]q
+									"reproducedDiff": true,
+									"diff": %[4]q
 								}
 							],
 							"pageInfo": {
@@ -266,8 +266,7 @@ func TestSiteConfigConnection(t *testing.T) {
 					}
 				}
 			}
-		`, marshalSiteConfigurationChangeID(5), marshalSiteConfigurationChangeID(4), expectedDiffs[5], expectedDiffs[4],
-			),
+		`, marshalSiteConfigurationChangeID(5), marshalSiteConfigurationChangeID(4), expectedDiffs[5], expectedDiffs[4]),
 		},
 		{
 			Schema:  mustParseGraphQLSchema(t, stubs.db),
@@ -288,8 +287,8 @@ func TestSiteConfigConnection(t *testing.T) {
 											username,
 											displayName
 										}
-                                        reproducedDiff
-                                        diff
+										reproducedDiff
+										diff
 									}
 									pageInfo {
 									  hasNextPage
@@ -318,20 +317,20 @@ func TestSiteConfigConnection(t *testing.T) {
 												"username": "bar",
 												"displayName": "bar user"
 											},
-                                            "reproducedDiff": true,
-                                            "diff": %[4]q
+											"reproducedDiff": true,
+											"diff": %[4]q
 										},
 										{
 											"id": %[2]q,
 											"author": null,
-                                            "reproducedDiff": true,
-                                            "diff": %[5]q
+											"reproducedDiff": true,
+											"diff": %[5]q
 										},
 										{
 											"id": %[3]q,
 											"author": null,
-                                            "reproducedDiff": true,
-                                            "diff": %[6]q
+											"reproducedDiff": true,
+											"diff": %[6]q
 										}
 									],
 									"pageInfo": {
