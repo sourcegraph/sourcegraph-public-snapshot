@@ -316,6 +316,7 @@ func (p *PersistentRepoIterator) insertIterationError(ctx context.Context, store
 
 	v, ok := p.errors[repoId]
 	if !ok {
+		// The db defaults the failure count to 1
 		query = sqlf.Sprintf("INSERT INTO repo_iterator_errors(repo_iterator_id, repo_id, error_message) VALUES (%S, %S, %S) RETURNING %S", p.Id, repoId, pq.Array([]string{msg}), errorJoinCols)
 		row := store.QueryRow(ctx, query)
 		var tmp IterationError
@@ -375,7 +376,7 @@ func (p *PersistentRepoIterator) doFinishN(ctx context.Context, store *basestore
 			if err = p.insertIterationError(ctx, tx, repoID, maybeErr.Error()); err != nil {
 				return errors.Wrapf(err, "unable to upsert error for repo iterator id: %d", p.Id)
 			}
-			if config.MaxFailures != 0 && p.errors.FailureCount(repoID)+1 >= config.MaxFailures {
+			if config.MaxFailures != 0 && p.errors.FailureCount(repoID) >= config.MaxFailures {
 				// the condition is if there was an error, and we have configured both a max attempts, and the total attempts exceeds the config
 				if config.OnTerminal != nil {
 					err = config.OnTerminal(ctx, tx, repoID, maybeErr)
