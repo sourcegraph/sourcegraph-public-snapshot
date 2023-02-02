@@ -27,7 +27,6 @@ import { AuthenticatedUser } from '../auth'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
 import { Tree } from '../tree/Tree'
-import { dirname } from '../util/path'
 
 import { RepoRevisionSidebarFileTree } from './RepoRevisionSidebarFileTree'
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
@@ -66,14 +65,10 @@ export const RepoRevisionSidebar: React.FunctionComponent<
 
     const [initialFilePath, setInitialFilePath] = useState<string>(props.filePath)
     const [initialFilePathIsDir, setInitialFilePathIsDir] = useState<boolean>(props.isDir)
-    const onExpandParent = useCallback(() => {
-        let parent = initialFilePathIsDir ? dirname(initialFilePath) : dirname(dirname(initialFilePath))
-        if (parent === '.') {
-            parent = ''
-        }
+    const onExpandParent = useCallback((parent: string) => {
         setInitialFilePath(parent)
         setInitialFilePathIsDir(true)
-    }, [initialFilePath, initialFilePathIsDir])
+    }, [])
 
     const handleSidebarToggle = useCallback(
         (value: boolean) => {
@@ -162,6 +157,8 @@ export const RepoRevisionSidebar: React.FunctionComponent<
                                             commitID={props.commitID}
                                             initialFilePath={initialFilePath}
                                             initialFilePathIsDirectory={initialFilePathIsDir}
+                                            filePath={props.filePath}
+                                            filePathIsDirectory={props.isDir}
                                             telemetryService={props.telemetryService}
                                             alwaysLoadAncestors={enableAccessibleFileTreeAlwaysLoadAncestors}
                                         />

@@ -8,6 +8,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -18,6 +20,47 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type RecoverUsersRequest struct {
+	UserIDs []graphql.ID
+}
+
+func (r *schemaResolver) RecoverUsers(ctx context.Context, args *RecoverUsersRequest) (*EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins can recover users.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	if len(args.UserIDs) == 0 {
+		return nil, errors.New("must specify at least one user ID")
+	}
+
+	// a must be authenticated at this point, CheckCurrentUserIsSiteAdmin enforces it.
+	a := actor.FromContext(ctx)
+
+	ids := make([]int32, len(args.UserIDs))
+	for index, user := range args.UserIDs {
+		id, err := UnmarshalUserID(user)
+		if err != nil {
+			return nil, err
+		}
+		if a.UID == id {
+			return nil, errors.New("unable to recover current user")
+		}
+		ids[index] = id
+	}
+
+	users, err := r.db.Users().RecoverUsersList(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(users) != len(ids) {
+		missingUserIds := missingUserIds(ids, users)
+		return nil, errors.Errorf("some users were not found, expected to recover %d users, but found only %d users. Missing user IDs: %s", len(ids), len(users), missingUserIds)
+	}
+
+	return &EmptyResponse{}, nil
+}
 func (r *schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	User graphql.ID
 	Hard *bool
@@ -59,6 +102,9 @@ func (r *schemaResolver) DeleteUsers(ctx context.Context, args *struct {
 		ids[index] = id
 	}
 
+	logger := r.logger.Scoped("DeleteUsers", "delete users mutation").
+		With(log.Int32s("users", ids))
+
 	// Collect username, verified email addresses, and external accounts to be used
 	// for revoking user permissions later, otherwise they will be removed from database
 	// if it's a hard delete.
@@ -67,6 +113,11 @@ func (r *schemaResolver) DeleteUsers(ctx context.Context, args *struct {
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "list users by IDs")
+	}
+	if len(users) == 0 {
+		logger.Info("requested users to delete do not exist")
+	} else {
+		logger.Debug("attempting to delete requested users")
 	}
 
 	accountsList := make([][]*extsvc.Accounts, len(users))
@@ -79,6 +130,15 @@ func (r *schemaResolver) DeleteUsers(ctx context.Context, args *struct {
 			return nil, errors.Wrap(err, "list external accounts")
 		}
 		for _, acct := range extAccounts {
+			// If the delete target is a SOAP user, make sure the actor is also a SOAP
+			// user - regular users should not be able to delete SOAP users.
+			if acct.ServiceType == auth.SourcegraphOperatorProviderType {
+				if !a.SourcegraphOperator {
+					return nil, errors.Newf("%[1]q user %[2]d cannot be deleted by a non-%[1]q user",
+						auth.SourcegraphOperatorProviderType, user.ID)
+				}
+			}
+
 			accounts = append(accounts, &extsvc.Accounts{
 				ServiceType: acct.ServiceType,
 				ServiceID:   acct.ServiceID,
@@ -322,4 +382,19 @@ func logRoleChangeAttempt(ctx context.Context, db database.DB, name *database.Se
 	}
 
 	db.SecurityEventLogs().LogEvent(ctx, event)
+}
+
+func missingUserIds(id, affectedIds []int32) []graphql.ID {
+	maffectedIds := make(map[int32]struct{}, len(affectedIds))
+	for _, x := range affectedIds {
+		maffectedIds[x] = struct{}{}
+	}
+	var diff []graphql.ID
+	for _, x := range id {
+		if _, found := maffectedIds[x]; !found {
+			strId := MarshalUserID(x)
+			diff = append(diff, strId)
+		}
+	}
+	return diff
 }

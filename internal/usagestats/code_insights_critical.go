@@ -36,7 +36,7 @@ func totalCountCritical(ctx context.Context, db database.DB) (types.CodeInsights
 
 	latest := all[0]
 	var criticalCount types.CodeInsightsCriticalTelemetry
-	err = json.Unmarshal([]byte(latest.Argument), &criticalCount)
+	err = json.Unmarshal(latest.Argument, &criticalCount)
 	if err != nil {
 		return types.CodeInsightsCriticalTelemetry{}, errors.Wrap(err, "Unmarshal")
 	}

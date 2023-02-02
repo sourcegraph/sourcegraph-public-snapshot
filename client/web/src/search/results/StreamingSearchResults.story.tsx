@@ -36,8 +36,6 @@ const defaultProps: StreamingSearchResultsProps = {
     extensionsController,
     telemetryService: NOOP_TELEMETRY_SERVICE,
 
-    history,
-    location: history.location,
     authenticatedUser: {
         url: '/users/alice',
         displayName: 'Alice',

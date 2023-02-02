@@ -137,8 +137,6 @@ export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageP
                         hideSearch={true}
                         noSummaryIfAllNodesVisible={true}
                         withCenteredSummary={true}
-                        history={props.history}
-                        location={props.location}
                         cursorPaging={true}
                     />
                 </>

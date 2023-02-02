@@ -22,7 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/repostatistics"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/zoektrepos"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
+	workerjob "github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -45,12 +45,12 @@ type namedBackgroundRoutine struct {
 	JobName string
 }
 
-func LoadConfig(additionalJobs map[string]job.Job, registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) *Config {
+func LoadConfig(additionalJobs map[string]workerjob.Job, registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) *Config {
 	symbols.LoadConfig()
 
 	registerMigrators := oobmigration.ComposeRegisterMigratorsFuncs(migrations.RegisterOSSMigrators, registerEnterpriseMigrators)
 
-	builtins := map[string]job.Job{
+	builtins := map[string]workerjob.Job{
 		"webhook-log-janitor":       webhooks.NewJanitor(),
 		"out-of-band-migrations":    workermigrations.NewMigrator(registerMigrators),
 		"codeintel-crates-syncer":   codeintel.NewCratesSyncerJob(),
@@ -62,7 +62,7 @@ func LoadConfig(additionalJobs map[string]job.Job, registerEnterpriseMigrators o
 	}
 
 	var config Config
-	config.Jobs = map[string]job.Job{}
+	config.Jobs = map[string]workerjob.Job{}
 
 	for name, job := range builtins {
 		config.Jobs[name] = job
@@ -148,7 +148,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 // loadConfigs calls Load on the configs of each of the jobs registered in this binary.
 // All configs will be loaded regardless if they would later be validated - this is the
 // best place we have to manipulate the environment before the call to env.Lock.
-func loadConfigs(jobs map[string]job.Job) {
+func loadConfigs(jobs map[string]workerjob.Job) {
 	// Load the worker config
 	config.names = jobNames(jobs)
 	config.Load()
@@ -164,7 +164,7 @@ func loadConfigs(jobs map[string]job.Job) {
 // validateConfigs calls Validate on the configs of each of the jobs that will be run
 // by this instance of the worker. If any config has a validation error, an error is
 // returned.
-func validateConfigs(jobs map[string]job.Job) error {
+func validateConfigs(jobs map[string]workerjob.Job) error {
 	validationErrors := map[string][]error{}
 	if err := config.Validate(); err != nil {
 		return errors.Wrap(err, "Failed to load configuration")
@@ -206,7 +206,7 @@ func validateConfigs(jobs map[string]job.Job) error {
 // the jobs that will be run by this instance of the worker. Since these metrics are summed
 // over all instances (and we don't change the jobs that are registered to a running worker),
 // we only need to emit an initial count once.
-func emitJobCountMetrics(jobs map[string]job.Job) {
+func emitJobCountMetrics(jobs map[string]workerjob.Job) {
 	gauge := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "src_worker_jobs",
 		Help: "Total number of jobs running in the worker.",
@@ -226,7 +226,7 @@ func emitJobCountMetrics(jobs map[string]job.Job) {
 // createBackgroundRoutines runs the Routines function of each of the given jobs concurrently.
 // If an error occurs from any of them, a fatal log message will be emitted. Otherwise, the set
 // of background routines from each job will be returned.
-func createBackgroundRoutines(observationCtx *observation.Context, jobs map[string]job.Job) ([]namedBackgroundRoutine, error) {
+func createBackgroundRoutines(observationCtx *observation.Context, jobs map[string]workerjob.Job) ([]namedBackgroundRoutine, error) {
 	var (
 		allRoutinesWithJobNames []namedBackgroundRoutine
 		descriptions            []string
@@ -257,7 +257,7 @@ type routinesResult struct {
 // runRoutinesConcurrently returns a channel that will be populated with the return value of
 // the Routines function from each given job. Each function is called concurrently. If an
 // error occurs in one function, the context passed to all its siblings will be canceled.
-func runRoutinesConcurrently(observationCtx *observation.Context, jobs map[string]job.Job) chan routinesResult {
+func runRoutinesConcurrently(observationCtx *observation.Context, jobs map[string]workerjob.Job) chan routinesResult {
 	results := make(chan routinesResult, len(jobs))
 	defer close(results)
 
@@ -303,7 +303,7 @@ func runRoutinesConcurrently(observationCtx *observation.Context, jobs map[strin
 }
 
 // jobNames returns an ordered slice of keys from the given map.
-func jobNames(jobs map[string]job.Job) []string {
+func jobNames(jobs map[string]workerjob.Job) []string {
 	names := make([]string, 0, len(jobs))
 	for name := range jobs {
 		names = append(names, name)

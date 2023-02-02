@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 
-import * as H from 'history'
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
 
 import { Input, Form } from '@sourcegraph/wildcard'
 
@@ -16,16 +16,14 @@ export interface ChangesetFilters {
 }
 
 export interface ChangesetFilterRowProps {
-    history: H.History
-    location: H.Location
     onFiltersChange: (newFilters: ChangesetFilters) => void
 }
 
 export const ChangesetFilterRow: React.FunctionComponent<React.PropsWithChildren<ChangesetFilterRowProps>> = ({
-    history,
-    location,
     onFiltersChange,
 }) => {
+    const location = useLocation()
+    const navigate = useNavigate()
     const searchElement = useRef<HTMLInputElement | null>(null)
     const searchParameters = new URLSearchParams(location.search)
     const [state, setState] = useState<ChangesetState | undefined>(() => {
@@ -64,7 +62,7 @@ export const ChangesetFilterRow: React.FunctionComponent<React.PropsWithChildren
             searchParameters.delete('search')
         }
         if (location.search !== searchParameters.toString()) {
-            history.replace({ ...location, search: searchParameters.toString() })
+            navigate({ ...location, search: searchParameters.toString() }, { replace: true })
         }
         // Update the filters in the parent component.
         onFiltersChange({
@@ -75,7 +73,7 @@ export const ChangesetFilterRow: React.FunctionComponent<React.PropsWithChildren
         })
         // We cannot depend on the history, since it's modified by this hook and that would cause an infinite render loop.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [state, reviewState, checkState, search])
+    }, [state, reviewState, checkState, search, onFiltersChange])
 
     const onSubmit = useCallback(
         (event?: React.FormEvent<HTMLFormElement>): void => {

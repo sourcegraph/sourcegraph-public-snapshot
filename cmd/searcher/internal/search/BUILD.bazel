@@ -36,6 +36,7 @@ go_library(
         "//internal/search/searcher",
         "//internal/search/streaming/http",
         "//internal/search/zoekt",
+        "//internal/searcher/proto",
         "//internal/trace",
         "//internal/trace/ot",
         "//lib/errors",

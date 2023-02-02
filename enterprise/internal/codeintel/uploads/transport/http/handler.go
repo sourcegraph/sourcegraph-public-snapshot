@@ -6,7 +6,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	uploads "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"

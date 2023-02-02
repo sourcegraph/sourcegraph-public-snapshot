@@ -218,19 +218,26 @@ func TestEnforcement_PreSetUserIsSiteAdmin(t *testing.T) {
 		wantErr     bool
 	}{
 		{
-			name:        "promote to site admin is OK",
+			name:        "promote to site admin with a valid license is OK",
+			license:     &license.Info{ExpiresAt: time.Now().Add(1 * time.Hour)},
 			isSiteAdmin: true,
 			wantErr:     false,
 		},
 		{
 			name:        "revoke site admin with a valid license is OK",
-			license:     &license.Info{UserCount: 10},
+			license:     &license.Info{UserCount: 10, ExpiresAt: time.Now().Add(1 * time.Hour)},
 			isSiteAdmin: false,
 			wantErr:     false,
 		},
 		{
 			name:        "revoke site admin without a license is not OK",
 			isSiteAdmin: false,
+			wantErr:     true,
+		},
+		{
+			name:        "promote to site admin with expired license is not OK",
+			license:     &license.Info{UserCount: 10, ExpiresAt: time.Now().Add(-1 * time.Hour)},
+			isSiteAdmin: true,
 			wantErr:     true,
 		},
 	}

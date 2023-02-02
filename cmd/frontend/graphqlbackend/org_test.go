@@ -323,7 +323,7 @@ func TestCreateOrganization(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: "no current user",
-					Path:    []any{string("createOrganization")},
+					Path:    []any{"createOrganization"},
 				},
 			},
 			Variables: map[string]any{
@@ -349,7 +349,7 @@ func TestCreateOrganization(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: `rejected suspicious name "test"`,
-					Path:    []any{string("createOrganization")},
+					Path:    []any{"createOrganization"},
 				},
 			},
 			Variables: map[string]any{
@@ -431,7 +431,7 @@ func TestAddOrganizationMember(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: "Must be a member of the organization to add members%!(EXTRA *withstack.withStack=current user is not an org member)",
-					Path:    []any{string("addUserToOrganization")},
+					Path:    []any{"addUserToOrganization"},
 				},
 			},
 			Variables: map[string]any{

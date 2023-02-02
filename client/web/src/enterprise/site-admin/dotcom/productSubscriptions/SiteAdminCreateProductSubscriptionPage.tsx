@@ -119,11 +119,6 @@ const UserCreateSubscriptionNode: React.FunctionComponent<React.PropsWithChildre
     )
 }
 
-class FilteredUserConnection extends FilteredConnection<
-    ProductSubscriptionAccountFields,
-    Pick<UserCreateSubscriptionNodeProps, 'history'>
-> {}
-
 interface Props extends RouteComponentProps<{}> {
     authenticatedUser: AuthenticatedUser
 }
@@ -143,7 +138,7 @@ export const SiteAdminCreateProductSubscriptionPage: React.FunctionComponent<
         <div className="site-admin-create-product-subscription-page">
             <PageTitle title="Create product subscription" />
             <H2>Create product subscription</H2>
-            <FilteredUserConnection
+            <FilteredConnection<ProductSubscriptionAccountFields, Pick<UserCreateSubscriptionNodeProps, 'history'>>
                 {...props}
                 className="list-group list-group-flush mt-3"
                 noun="user"

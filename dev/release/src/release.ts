@@ -1,4 +1,4 @@
-import { readFileSync, rmdirSync, writeFileSync, readdirSync } from 'fs'
+import { readFileSync, rmdirSync, writeFileSync } from 'fs'
 import * as path from 'path'
 
 import commandExists from 'command-exists'
@@ -25,7 +25,6 @@ import {
 } from './github'
 import { ensureEvent, getClient, EventOptions, calendarTime } from './google-calendar'
 import { postMessage, slackURL } from './slack'
-import * as update from './update'
 import {
     cacheFolder,
     formatDate,
@@ -36,6 +35,8 @@ import {
     ensureSrcCliEndpoint,
     ensureSrcCliUpToDate,
     getLatestTag,
+    getAllUpgradeGuides,
+    updateUpgradeGuides,
 } from './util'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
@@ -65,6 +66,8 @@ export type StepID =
     | '_test:config'
     | '_test:dockerensure'
     | '_test:srccliensure'
+    | '_test:release-guide-content'
+    | '_test:release-guide-update'
 
 /**
  * Runs given release step with the provided configuration and arguments.
@@ -428,7 +431,6 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
 
             // default values
             const notPatchRelease = release.patch === 0
-            const previousNotPatchRelease = previous.patch === 0
             const versionRegex = '[0-9]+\\.[0-9]+\\.[0-9]+'
             const batchChangeURL = batchChanges.batchChangeURL(batchChange)
             const trackingIssue = await getTrackingIssue(await getAuthenticatedGitHubClient(), release)
@@ -513,26 +515,7 @@ cc @${config.captainGitHubUsername}
                             notPatchRelease
                                 ? `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version}"' enterprise/dev/ci/internal/ci/*.go`
                                 : 'echo "Skipping minimumUpgradeableVersion bump on patch release"',
-
-                            // Cut udpate guides with entries from unreleased.
-                            (directory: string, updateDirectory = '/doc/admin/updates') => {
-                                updateDirectory = directory + updateDirectory
-                                for (const file of readdirSync(updateDirectory)) {
-                                    const fullPath = path.join(updateDirectory, file)
-                                    let updateContents = readFileSync(fullPath).toString()
-                                    if (notPatchRelease) {
-                                        const releaseHeader = `## v${previousVersion} ➔ v${nextVersion}`
-                                        const unreleasedHeader = '## Unreleased'
-                                        updateContents = updateContents.replace(unreleasedHeader, releaseHeader)
-                                        updateContents = updateContents.replace(update.divider, update.releaseTemplate)
-                                    } else if (previousNotPatchRelease) {
-                                        updateContents = updateContents.replace(previousVersion, release.version)
-                                    } else {
-                                        updateContents = updateContents.replace(previous.version, release.version)
-                                    }
-                                    writeFileSync(fullPath, updateContents)
-                                }
-                            },
+                            updateUpgradeGuides(previousVersion, nextVersion),
                         ],
                         ...prBodyAndDraftState(
                             ((): string[] => {
@@ -822,6 +805,24 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         description: 'Clear release tool cache',
         run: () => {
             rmdirSync(cacheFolder, { recursive: true })
+        },
+    },
+    {
+        id: '_test:release-guide-content',
+        description: 'Generate upgrade guides',
+        argNames: ['previous', 'next'],
+        run: (config, previous, next) => {
+            for (const content of getAllUpgradeGuides(previous, next)) {
+                console.log(content)
+            }
+        },
+    },
+    {
+        id: '_test:release-guide-update',
+        description: 'Test update the upgrade guides',
+        argNames: ['previous', 'next', 'dir'],
+        run: (config, previous, next, dir) => {
+            updateUpgradeGuides(previous, next)(dir)
         },
     },
     {

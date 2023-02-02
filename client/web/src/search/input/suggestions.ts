@@ -1,6 +1,6 @@
 import { EditorState } from '@codemirror/state'
 import { mdiFilterOutline, mdiTextSearchVariant, mdiSourceRepository, mdiStar, mdiFileOutline } from '@mdi/js'
-import { extendedMatch, Fzf, FzfOptions, FzfResultItem } from 'fzf'
+import { byLengthAsc, extendedMatch, Fzf, FzfOptions, FzfResultItem } from 'fzf'
 
 import { tokenAt, tokens as queryTokens } from '@sourcegraph/branded'
 // This module implements suggestions for the experimental search input
@@ -15,6 +15,7 @@ import {
     queryRenderer,
     filterRenderer,
     filterValueRenderer,
+    shortenPath,
 } from '@sourcegraph/branded/src/search-ui/experimental'
 import { getParsedQuery } from '@sourcegraph/branded/src/search-ui/input/codemirror/parsedQuery'
 import { isDefined } from '@sourcegraph/common'
@@ -27,6 +28,7 @@ import { Node, OperatorKind } from '@sourcegraph/shared/src/search/query/parser'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { CharacterRange, Filter, PatternKind, Token } from '@sourcegraph/shared/src/search/query/token'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { getSymbolIconSVGPath } from '@sourcegraph/shared/src/symbols/symbolIcons'
 
 import { AuthenticatedUser } from '../../auth'
 import {
@@ -34,6 +36,9 @@ import {
     SuggestionsRepoVariables,
     SuggestionsFileResult,
     SuggestionsFileVariables,
+    SuggestionsSymbolResult,
+    SuggestionsSymbolVariables,
+    SymbolKind,
 } from '../../graphql-operations'
 
 /**
@@ -96,6 +101,28 @@ const FILE_QUERY = gql`
     }
 `
 
+const SYMBOL_QUERY = gql`
+    query SuggestionsSymbol($query: String!) {
+        search(patternType: regexp, query: $query) {
+            results {
+                results {
+                    ... on FileMatch {
+                        __typename
+                        file {
+                            path
+                        }
+                        symbols {
+                            kind
+                            url
+                            name
+                        }
+                    }
+                }
+            }
+        }
+    }
+`
+
 interface Repo {
     name: string
     stars: number
@@ -115,6 +142,13 @@ interface File {
     stars: number
     repository: string
     url: string
+}
+
+interface CodeSymbol {
+    kind: SymbolKind
+    name: string
+    url: string
+    path: string
 }
 
 /**
@@ -236,6 +270,28 @@ function toFileSuggestion(result: FzfResultItem<File>, from: number, to?: number
     }
     option.render = filterValueRenderer
     return option
+}
+
+/**
+ * Converts a File value to a (jump) target suggestion.
+ */
+function toSymbolSuggestion({ item, positions }: FzfResultItem<CodeSymbol>, from: number, to?: number): Option {
+    return {
+        label: item.name,
+        matches: positions,
+        description: shortenPath(item.path, 20),
+        icon: getSymbolIconSVGPath(item.kind),
+        action: {
+            type: 'completion',
+            insertValue: item.name + ' type:symbol ',
+            from,
+            to,
+        },
+        alternativeAction: {
+            type: 'goto',
+            url: item.url,
+        },
+    }
 }
 
 /**
@@ -467,7 +523,7 @@ function repoSuggestions(cache: Caches['repo']): InternalSource {
             results => [
                 {
                     title: 'Repositories',
-                    options: results.slice(0, 5).map(result => toRepoSuggestion(result, token.range.start)),
+                    options: results.slice(0, 3).map(result => toRepoSuggestion(result, token.range.start)),
                 },
             ],
             parsedQuery,
@@ -483,9 +539,8 @@ function repoSuggestions(cache: Caches['repo']): InternalSource {
  */
 function fileSuggestions(cache: Caches['file'], isSourcegraphDotCom?: boolean): InternalSource {
     return ({ token, tokens, parsedQuery, position }) => {
-        // Only show file suggestions when
-        // - the query contains at least one repo: filter
-        // - if this is dotcom, contains at least one context: filter that is not 'global'
+        // Only show file suggestions on dotcom if the query contains at least
+        // one context: filter that is not 'global', or a repo: filter.
         const showFileSuggestions =
             token?.type === 'pattern' &&
             (!isSourcegraphDotCom ||
@@ -515,6 +570,47 @@ function fileSuggestions(cache: Caches['file'], isSourcegraphDotCom?: boolean): 
 }
 
 /**
+ * Returns file (jump) target suggestions matching the term at the cursor,
+ * but only if the query contains suitable filters. On dotcom we only show file
+ * suggestions if the query contains at least one context: or repo: filter.
+ */
+function symbolSuggestions(cache: Caches['symbol'], isSourcegraphDotCom?: boolean): InternalSource {
+    return ({ token, tokens, parsedQuery, position }) => {
+        if (token?.type !== 'pattern') {
+            return null
+        }
+
+        // Only show symbol suggestions if the query contains a context:, repo:
+        // or file: filter. On dotcom the context must by different from
+        // "global".
+
+        if (
+            !tokens.some(
+                token =>
+                    token.type === 'filter' &&
+                    ((token.field.value === 'context' && (!isSourcegraphDotCom || token.value?.value !== 'global')) ||
+                        token.field.value === 'repo' ||
+                        token.field.value === 'file')
+            )
+        ) {
+            return null
+        }
+
+        return cache.query(
+            token.value,
+            results => [
+                {
+                    title: 'Symbols',
+                    options: results.slice(0, 5).map(result => toSymbolSuggestion(result, token.range.start)),
+                },
+            ],
+            parsedQuery,
+            position
+        )
+    }
+}
+
+/**
  * A contextual cache not only uses the provided value to find suggestions but
  * also the current (parsed) query input.
  */
@@ -524,6 +620,7 @@ interface Caches {
     repo: ContextualCache<Repo, FzfResultItem<Repo>>
     context: Cache<Context, FzfResultItem<Context>>
     file: ContextualCache<File, FzfResultItem<File>>
+    symbol: ContextualCache<CodeSymbol, FzfResultItem<CodeSymbol>>
 }
 
 interface SuggestionsSourceConfig
@@ -563,8 +660,14 @@ export const createSuggestionsSource = ({
         tiebreakers: [starTiebraker],
     }
 
+    const symbolFzfOptions: FzfOptions<CodeSymbol> = {
+        selector: item => item.name,
+        tiebreakers: [byLengthAsc],
+    }
+
     // Relevant query filters for file suggestions
     const fileFilters: Set<FilterType> = new Set([FilterType.repo, FilterType.rev, FilterType.context, FilterType.lang])
+    const symbolFilters: Set<FilterType> = new Set([...fileFilters, FilterType.file])
 
     // TODO: Initialize outside to persist cache across page navigation
     const caches: Caches = {
@@ -675,6 +778,51 @@ export const createSuggestionsSource = ({
                 return fzf.find(cleanRegex(query))
             },
         }),
+        symbol: new Cache({
+            dataCacheKey: (parsedQuery, position) =>
+                parsedQuery
+                    ? buildSuggestionQuery(
+                          parsedQuery,
+                          { start: position, end: position },
+                          token =>
+                              token.type === 'parameter' &&
+                              !!token.value &&
+                              symbolFilters.has(token.field as FilterType)
+                      )
+                    : '',
+            queryKey: (value, dataCacheKey = '') => `${dataCacheKey} type:symbol count:50 ${value}`,
+            async query(query) {
+                const response = await platformContext
+                    .requestGraphQL<SuggestionsSymbolResult, SuggestionsSymbolVariables>({
+                        request: SYMBOL_QUERY,
+                        variables: { query },
+                        mightContainPrivateInfo: true,
+                    })
+                    .toPromise()
+                return (
+                    response.data?.search?.results?.results?.reduce((results, result) => {
+                        if (result.__typename === 'FileMatch') {
+                            for (const symbol of result.symbols) {
+                                results.push([
+                                    symbol.url,
+                                    {
+                                        name: symbol.name,
+                                        kind: symbol.kind,
+                                        path: result.file.path,
+                                        url: symbol.url,
+                                    },
+                                ])
+                            }
+                        }
+                        return results
+                    }, [] as [string, CodeSymbol][]) ?? []
+                )
+            },
+            filter(files, query) {
+                const fzf = new Fzf(files, symbolFzfOptions)
+                return fzf.find(query)
+            },
+        }),
     }
 
     const sources: InternalSource[] = [
@@ -683,6 +831,7 @@ export const createSuggestionsSource = ({
         filterSuggestions,
         repoSuggestions(caches.repo),
         fileSuggestions(caches.file, isSourcegraphDotCom),
+        symbolSuggestions(caches.symbol, isSourcegraphDotCom),
     ]
 
     return (state, position) => {
@@ -748,7 +897,7 @@ class Cache<T, U, E extends any[] = []> {
         const queryKey = this.config.queryKey(value, dataCacheKey)
         let dataCache = this.dataCache
         if (dataCacheKey) {
-            dataCache = this.dataCacheByQuery.get(dataCacheKey) ?? new Map()
+            dataCache = this.dataCacheByQuery.get(dataCacheKey) ?? new Map<string, T>()
             if (!this.dataCacheByQuery.has(dataCacheKey)) {
                 this.dataCacheByQuery.set(dataCacheKey, dataCache)
             }

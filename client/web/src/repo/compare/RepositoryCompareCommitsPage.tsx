@@ -119,8 +119,6 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
                         hideSearch={true}
                         noSummaryIfAllNodesVisible={true}
                         updates={this.updates}
-                        history={this.props.history}
-                        location={this.props.location}
                     />
                 </Card>
             </div>

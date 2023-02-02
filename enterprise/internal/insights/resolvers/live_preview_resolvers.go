@@ -64,7 +64,7 @@ func (r *Resolver) SearchInsightPreview(ctx context.Context, args graphqlbackend
 		return nil, err
 	}
 	if len(repos) > maxPreviewRepos {
-		return nil, errors.Newf("live preview is limited to %d repositories", maxPreviewRepos)
+		return nil, &livePreviewError{Code: repoLimitExceededErrorCode, Message: fmt.Sprintf("live preview is limited to %d repositories", maxPreviewRepos)}
 	}
 	foundData := false
 	for _, seriesArgs := range args.Input.Series {
@@ -116,7 +116,7 @@ func (r *Resolver) SearchInsightPreview(ctx context.Context, args graphqlbackend
 	}
 
 	if !foundData {
-		return nil, errors.Newf("Data for %s not found", pluralize("this repository", "these repositories", len(repos)))
+		return nil, &livePreviewError{Code: noDataErrorCode, Message: fmt.Sprintf("Data for %s not found", pluralize("this repository", "these repositories", len(repos)))}
 	}
 
 	return resolvers, nil
@@ -195,21 +195,40 @@ func getPreviewRepos(ctx context.Context, repoScope graphqlbackend.RepositorySco
 
 func isValidPreviewArgs(args graphqlbackend.SearchInsightPreviewArgs) error {
 	if args.Input.TimeScope.StepInterval == nil {
-		return errors.New("live preview currently only supports a time interval time scope")
+		return &livePreviewError{Code: invalidArgsErrorCode, Message: "live preview currently only supports a time interval time scope"}
 	}
 	hasRepoCriteria := args.Input.RepositoryScope.RepositoryCriteria != nil
 	// Error if both are provided
 	if hasRepoCriteria && len(args.Input.RepositoryScope.Repositories) > 0 {
-		return errors.New("can not specify both a repository list and a repository search")
+		return &livePreviewError{Code: invalidArgsErrorCode, Message: "can not specify both a repository list and a repository search"}
 	}
 
 	if hasRepoCriteria {
 		for i := 0; i < len(args.Input.Series); i++ {
 			if args.Input.Series[i].GroupBy != nil {
-				return errors.New("group by insights do not support selecting repositories using a search")
+				return &livePreviewError{Code: invalidArgsErrorCode, Message: "group by insights do not support selecting repositories using a search"}
 			}
 		}
 	}
 
 	return nil
+}
+
+const repoLimitExceededErrorCode = "RepoLimitExceeded"
+const noDataErrorCode = "NoData"
+const invalidArgsErrorCode = "InvalidArgs"
+
+type livePreviewError struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+func (e livePreviewError) Error() string {
+	return e.Message
+}
+
+func (e livePreviewError) Extensions() map[string]interface{} {
+	return map[string]interface{}{
+		"code": e.Code,
+	}
 }

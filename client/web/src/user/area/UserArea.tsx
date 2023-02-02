@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { Route, Switch } from 'react-router'
+import { useParams, useLocation } from 'react-router-dom-v5-compat'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -63,8 +64,7 @@ export interface UserAreaRoute extends RouteDescriptor<UserAreaRouteContext> {
 }
 
 interface UserAreaProps
-    extends RouteComponentProps<{ username: string }>,
-        PlatformContextProps,
+    extends PlatformContextProps,
         SettingsCascadeProps,
         ThemeProps,
         TelemetryProps,
@@ -124,16 +124,16 @@ export interface UserAreaRouteContext
 export const UserArea: React.FunctionComponent<React.PropsWithChildren<UserAreaProps>> = ({
     useBreadcrumb,
     userAreaRoutes,
-    match: {
-        url,
-        params: { username },
-    },
     ...props
 }) => {
+    const location = useLocation()
+    const { username } = useParams()
+    const userAreaMainUrl = `/users/${username}`
+
     const { data, error, loading, previousData } = useQuery<UserAreaUserProfileResult, UserAreaUserProfileVariables>(
         USER_AREA_USER_PROFILE,
         {
-            variables: { username },
+            variables: { username: username! },
         }
     )
 
@@ -171,14 +171,14 @@ export const UserArea: React.FunctionComponent<React.PropsWithChildren<UserAreaP
 
     const context: UserAreaRouteContext = {
         ...props,
-        url,
+        url: userAreaMainUrl,
         user,
         namespace: user,
         ...childBreadcrumbSetters,
     }
 
     return (
-        <ErrorBoundary location={props.location}>
+        <ErrorBoundary location={location}>
             <React.Suspense
                 fallback={
                     <div className="w-100 text-center">
@@ -208,7 +208,7 @@ export const UserArea: React.FunctionComponent<React.PropsWithChildren<UserAreaP
                                             </Page>
                                         )
                                     }
-                                    path={url + path}
+                                    path={userAreaMainUrl + path}
                                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                     exact={exact}
                                 />

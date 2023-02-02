@@ -93,12 +93,12 @@ func (r *rootResolver) CodeIntelligenceConfigurationPolicies(ctx context.Context
 		opts.ForIndexing = *args.ForIndexing
 	}
 
-	policies, totalCount, err := r.policySvc.GetConfigurationPolicies(ctx, opts)
+	configPolicies, totalCount, err := r.policySvc.GetConfigurationPolicies(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewCodeIntelligenceConfigurationPolicyConnectionResolver(r.policySvc, policies, totalCount, traceErrs), nil
+	return NewCodeIntelligenceConfigurationPolicyConnectionResolver(r.policySvc, configPolicies, totalCount, traceErrs), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies

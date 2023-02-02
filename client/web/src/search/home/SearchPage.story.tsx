@@ -1,5 +1,4 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import { createMemoryHistory } from 'history'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -16,15 +15,12 @@ import { ThemePreference } from '../../theme'
 
 import { SearchPage, SearchPageProps } from './SearchPage'
 
-const history = createMemoryHistory()
 const defaultProps = (props: ThemeProps): SearchPageProps => ({
     isSourcegraphDotCom: false,
     settingsCascade: {
         final: null,
         subjects: null,
     },
-    location: history.location,
-    history,
     extensionsController,
     telemetryService: NOOP_TELEMETRY_SERVICE,
     themePreference: ThemePreference.Light,

@@ -16,7 +16,7 @@ import { useObservable, ErrorMessage } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
-import { RepositoryFields, SettingsAreaRepositoryFields } from '../../graphql-operations'
+import { SettingsAreaRepositoryFields } from '../../graphql-operations'
 import { RouteDescriptor } from '../../util/contributions'
 
 import { fetchSettingsAreaRepository } from './backend'
@@ -41,7 +41,7 @@ export interface RepoSettingsAreaRoute extends RouteDescriptor<RepoSettingsAreaR
 interface Props extends RouteComponentProps<{}>, BreadcrumbSetters, ThemeProps, TelemetryProps {
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: RepoSettingsSideBarGroups
-    repo: RepositoryFields
+    repoName: string
     authenticatedUser: AuthenticatedUser | null
 }
 
@@ -54,7 +54,7 @@ export const RepoSettingsArea: React.FunctionComponent<React.PropsWithChildren<P
 
     ...props
 }) => {
-    const repoName = props.repo.name
+    const repoName = props.repoName
     const repoOrError = useObservable(
         useMemo(
             () => fetchSettingsAreaRepository(repoName).pipe(catchError(error => of<ErrorLike>(asError(error)))),

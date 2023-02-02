@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { mdiFileDocumentOutline, mdiSourceRepository, mdiFolderOutline, mdiFolderOpenOutline } from '@mdi/js'
 import classNames from 'classnames'
@@ -38,7 +38,7 @@ const QUERY = gql`
                 tree(path: $filePath) {
                     isRoot
                     url
-                    entries(first: $first, ancestors: $ancestors) {
+                    entries(first: $first, ancestors: $ancestors, recursiveSingleChild: true) {
                         name
                         path
                         isDirectory
@@ -74,7 +74,9 @@ interface Props {
     commitID: string
     initialFilePath: string
     initialFilePathIsDirectory: boolean
-    onExpandParent: () => void
+    filePath: string
+    filePathIsDirectory: boolean
+    onExpandParent: (parent: string) => void
     repoName: string
     revision: string
     telemetryService: TelemetryService
@@ -83,14 +85,25 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
     const { telemetryService, onExpandParent, alwaysLoadAncestors } = props
 
     // Ensure that the initial file path does not update when the props change
-    const [initialFilePath] = useState(() => {
-        let path = props.initialFilePathIsDirectory ? props.initialFilePath : dirname(props.initialFilePath)
-        if (path === '.') {
-            path = ''
-        }
-        return path
-    })
+    const [initialFilePath] = useState(() =>
+        props.initialFilePathIsDirectory ? props.initialFilePath : getParentPath(props.initialFilePath)
+    )
     const [treeData, setTreeData] = useState<TreeData | null>(null)
+
+    const defaultNodeId = treeData?.pathToId.get(props.initialFilePath)
+    const defaultNode = defaultNodeId ? treeData?.nodes[defaultNodeId] : undefined
+    const allParentsOfDefaultNode = treeData
+        ? getAllParentsOfPath(treeData, defaultNode?.path ?? '').map(node => node.id)
+        : []
+    const defaultSelectedIds = defaultNodeId ? [defaultNodeId] : []
+    const defaultExpandedIds =
+        treeData && defaultNode && defaultNodeId
+            ? defaultNode?.isBranch
+                ? [defaultNodeId, ...allParentsOfDefaultNode]
+                : allParentsOfDefaultNode
+            : []
+
+    const [selectedIds, setSelectedIds] = useState<number[]>(defaultSelectedIds)
 
     const navigate = useNavigate()
 
@@ -127,19 +140,6 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
             }
         },
     })
-
-    const defaultNodeId = treeData?.pathToId.get(props.initialFilePath)
-    const defaultNode = defaultNodeId ? treeData?.nodes[defaultNodeId] : undefined
-    const allParentsOfDefaultNode = treeData
-        ? getAllParentsOfPath(treeData, defaultNode?.path ?? '').map(node => node.id)
-        : []
-    const defaultSelectedIds = defaultNodeId ? [defaultNodeId] : []
-    const defaultExpandedIds =
-        treeData && defaultNode && defaultNodeId
-            ? defaultNode?.isBranch
-                ? [defaultNodeId, ...allParentsOfDefaultNode]
-                : allParentsOfDefaultNode
-            : []
 
     const onLoadData = useCallback(
         async ({ element }: { element: TreeNode }) => {
@@ -178,16 +178,48 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
             if (element.dotdot) {
                 telemetryService.log('FileTreeLoadParent')
                 navigate(element.dotdot)
-                onExpandParent()
+
+                let parent = props.initialFilePathIsDirectory
+                    ? dirname(initialFilePath)
+                    : dirname(dirname(initialFilePath))
+                if (parent === '.') {
+                    parent = ''
+                }
+                onExpandParent(parent)
+                return
             }
 
             if (element.entry) {
                 telemetryService.log('FileTreeClick')
                 navigate(element.entry.url)
             }
+            setSelectedIds([element.id])
         },
-        [defaultNodeId, navigate, telemetryService, onExpandParent]
+        [defaultNodeId, telemetryService, navigate, props.initialFilePathIsDirectory, initialFilePath, onExpandParent]
     )
+
+    // We need a mutable reference to the tree data since we don't want the
+    // below hook to run when the tree data changes.
+    const treeDataRef = useRef<TreeData | null>(treeData)
+    useEffect(() => {
+        treeDataRef.current = treeData
+    }, [treeData])
+    useEffect(() => {
+        const id = treeDataRef.current?.pathToId.get(props.filePath)
+        if (id) {
+            setSelectedIds([id])
+        } else {
+            // When a file is opened that is not inside the tree, we want the tree
+            // to expand to the parent directory of the file.
+            let path = props.filePathIsDirectory ? props.filePath : dirname(props.filePath)
+            if (path === '.') {
+                path = ''
+            }
+            if (props.initialFilePath.length > path.length && props.initialFilePath.startsWith(path)) {
+                onExpandParent(path)
+            }
+        }
+    }, [onExpandParent, props.filePath, props.filePathIsDirectory, props.initialFilePath])
 
     if (error) {
         return (
@@ -204,7 +236,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
         <Tree<TreeNode>
             data={treeData.nodes}
             aria-label="file tree"
-            defaultSelectedIds={defaultSelectedIds}
+            selectedIds={selectedIds}
             defaultExpandedIds={defaultExpandedIds}
             onSelect={onSelect}
             onLoadData={onLoadData}
@@ -218,17 +250,18 @@ function renderNode({
     isBranch,
     isExpanded,
     handleSelect,
+    handleExpand,
     props,
 }: {
     element: TreeNode
     isBranch: boolean
     isExpanded: boolean
     handleSelect: (event: React.MouseEvent) => {}
+    handleExpand: (event: React.MouseEvent) => {}
     props: { className: string }
 }): React.ReactNode {
-    const { entry, error, dotdot } = element
+    const { entry, error, dotdot, name } = element
     const submodule = entry?.submodule
-    const name = entry?.name
     const url = entry?.url
 
     if (error) {
@@ -302,6 +335,11 @@ function renderNode({
             onClick={event => {
                 event.preventDefault()
                 handleSelect(event)
+                // When clicking on a non-expanded folder, we want to navigate
+                // to it _and_ expand it.
+                if (isBranch && !isExpanded) {
+                    handleExpand(event)
+                }
             }}
         >
             <Icon
@@ -319,6 +357,10 @@ type TreeNode = WildcardTreeNode & {
     entry: FileTreeEntry | null
     error: string | null
     dotdot: string | null
+
+    // In case of a single child expansion, this is the path that should be used
+    // when finding the right parent
+    singleChildParentPath: string | null
 }
 interface TreeData {
     // The flat nodes list used by react-accessible-treeview
@@ -353,10 +395,27 @@ function appendTreeData(
 ): TreeData {
     tree = { ...tree, nodes: [...tree.nodes], pathToId: new Map(tree.pathToId) }
 
-    // Insert a root node
-    if (tree.nodes.length === 0) {
+    const isNewTree = tree.nodes.length === 0
+    if (isNewTree) {
         insertRootNode(tree, rootTreeUrl, alwaysLoadAncestors)
     }
+
+    // Bookkeeping for single child expansion:
+    //
+    // - `singleChildFolderPath`: This is a list of all folder names that are
+    //   to be combined into the single child. This is needed to update the
+    //   parent name properly.
+    // - `singleChildParentPathForPath`: When set, this tuple is used to find
+    //   the parent for a single child substitution.
+    let singleChildFolderPath: string[] = []
+    let singleChildParentPathForPath:
+        | null
+        | [
+              // parent path to use for the next entries
+              string,
+              // entry parent path for which the substitution is valid
+              string
+          ] = null
 
     let siblingCount = 0
     for (let idx = 0; idx < entries.length; idx++) {
@@ -373,9 +432,54 @@ function appendTreeData(
             siblingCount = 0
         }
 
+        // When entry.isSingleChild is true, it means that the entry is the only
+        // child of its parents.
+        //
+        // When we encounter such entries, we skip over them and instead update
+        // the respective parent when we finish the list. Since this child
+        // is already entered before, we need to update it.
+        //
+        // If we start the tree on a single child, we add the first entry to
+        // have a visible parent to append things to.
+        if (entry.isSingleChild && !(isNewTree && idx === 0)) {
+            if (singleChildParentPathForPath === null) {
+                singleChildParentPathForPath = [getParentPath(entry.path), entry.path]
+            } else {
+                singleChildParentPathForPath = [singleChildParentPathForPath[0], entry.path]
+            }
+            singleChildFolderPath.push(entry.name)
+
+            // Single child entries are not rendered, so we're skipping over
+            // them.
+            continue
+        }
+
+        // If we skipped over various single child entries, we need to find the
+        // parent and update it.
+        //
+        // This is only done for the first entry after a series of single child
+        // entries are skipped over.
+        if (singleChildFolderPath.length > 0 && singleChildParentPathForPath) {
+            const parentId = tree.pathToId.get(singleChildParentPathForPath[0])
+            if (parentId) {
+                const parent = tree.nodes[parentId]
+                tree.nodes[parentId] = {
+                    ...parent,
+                    name: parent.name + '/' + singleChildFolderPath.join('/'),
+                    entry: entries[idx - 1],
+                }
+            }
+            singleChildFolderPath = []
+        }
+
+        // Unset singleChildParentPathForPath when the parent path no longer matches
+        if (singleChildParentPathForPath !== null && singleChildParentPathForPath[1] !== getParentPath(entry.path)) {
+            singleChildParentPathForPath = null
+        }
+
         const id = tree.nodes.length
         const node: TreeNode = {
-            name: entry.name,
+            name: singleChildFolderPath.length > 0 ? `${singleChildFolderPath.join('/')}/${entry.name}` : entry.name,
             id,
             isBranch: entry.isDirectory,
             parent: 0,
@@ -384,6 +488,7 @@ function appendTreeData(
             entry,
             error: null,
             dotdot: null,
+            singleChildParentPath: singleChildParentPathForPath ? singleChildParentPathForPath[0] : null,
         }
         appendNode(tree, node)
 
@@ -405,6 +510,7 @@ function appendTreeData(
                 entry: null,
                 error: errorMessage,
                 dotdot: null,
+                singleChildParentPath: singleChildParentPathForPath ? singleChildParentPathForPath[0] : null,
             }
             appendNode(tree, node)
         }
@@ -424,6 +530,7 @@ function insertRootNode(tree: TreeData, rootTreeUrl: string, alwaysLoadAncestors
         entry: null,
         error: null,
         dotdot: null,
+        singleChildParentPath: null,
     }
     tree.nodes.push(root)
     tree.pathToId.set(tree.rootPath, 0)
@@ -441,14 +548,15 @@ function insertRootNode(tree: TreeData, rootTreeUrl: string, alwaysLoadAncestors
             entry: null,
             error: null,
             dotdot: dirname(rootTreeUrl),
+            singleChildParentPath: null,
         }
         appendNode(tree, node)
     }
 }
 
 function appendNode(tree: TreeData, node: TreeNode): void {
-    const children = tree.nodes.filter(potentialChild => isAParentOfB(node.path, potentialChild.path))
-    const parent = tree.nodes.find(potentialParent => isAParentOfB(potentialParent.path, node.path))
+    const children = tree.nodes.filter(potentialChild => nodeIsImmediateParentOf(node, potentialChild))
+    const parent = tree.nodes.find(potentialParent => nodeIsImmediateParentOf(potentialParent, node))
 
     // Fix all children references
     node.children = children.map(child => child.id)
@@ -480,23 +588,38 @@ function setLoadedPath(tree: TreeData, path: string): TreeData {
     return tree
 }
 
-function isAParentOfB(fullPathA: string, fullPathB: string): boolean {
+function nodeIsImmediateParentOf(nodeA: TreeNode, nodeB: TreeNode): boolean {
+    // B is the root so it can not have a parent
+    if (nodeB.path === '') {
+        return false
+    }
+    let bParentPath = getParentPath(nodeB.path)
+    if (nodeB.singleChildParentPath !== null) {
+        bParentPath = nodeB.singleChildParentPath
+    }
+    return nodeA.path === bParentPath
+}
+
+function isImmediateParentOf(fullPathA: string, fullPathB: string): boolean {
     // B is the root so it can not have a parent
     if (fullPathB === '') {
         return false
     }
-    const bParentPath = fullPathB.split('/').slice(0, -1).join('/') || ''
-    return fullPathA === bParentPath
+    return fullPathA === getParentPath(fullPathB)
 }
 
 function getAllParentsOfPath(tree: TreeData, fullPath: string): TreeNode[] {
     const parents = []
 
-    let parent = tree.nodes.find(potentialParent => isAParentOfB(potentialParent.path, fullPath))
+    let parent = tree.nodes.find(potentialParent => isImmediateParentOf(potentialParent.path, fullPath))
     while (parent) {
         parents.push(parent)
 
-        parent = tree.nodes.find(potentialParent => isAParentOfB(potentialParent.path, parent!.path))
+        parent = tree.nodes.find(potentialParent => isImmediateParentOf(potentialParent.path, parent!.path))
     }
     return parents
+}
+
+function getParentPath(path: string): string {
+    return path.split('/').slice(0, -1).join('/') || ''
 }
