@@ -12,7 +12,7 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
-import { HeroPage } from '../../components/HeroPage'
+import { HeroPage, NotFoundPage } from '../../components/HeroPage'
 import {
     UserAreaUserFields,
     UserSettingsAreaUserFields,
@@ -27,10 +27,6 @@ import { EditUserProfilePageGQLFragment } from './profile/UserSettingsProfilePag
 import { UserSettingsSidebar, UserSettingsSidebarItems } from './UserSettingsSidebar'
 
 import styles from './UserSettingsArea.module.scss'
-
-const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
-)
 
 export interface UserSettingsAreaRoute extends RouteDescriptor<UserSettingsAreaRouteContext> {}
 

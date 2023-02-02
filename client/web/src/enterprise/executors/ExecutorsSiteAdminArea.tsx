@@ -1,11 +1,10 @@
 import React from 'react'
 
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { HeroPage } from '../../components/HeroPage'
+import { NotFoundPage } from '../../components/HeroPage'
 
 import type { ExecutorsListPageProps } from './instances/ExecutorsListPage'
 import type { GlobalExecutorSecretsListPageProps } from './secrets/ExecutorSecretsListPage'
@@ -38,8 +37,4 @@ export const ExecutorsSiteAdminArea: React.FunctionComponent<React.PropsWithChil
             <Route component={NotFoundPage} key="hardcoded-key" />
         </Switch>
     </>
-)
-
-const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 )
