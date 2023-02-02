@@ -58,6 +58,31 @@ describe('SignInPage', () => {
 
     it('renders sign in page (server)', () => {
         const rendered = render('/sign-in', {})
+        expect(
+            within(rendered.baseElement)
+                .queryByText(txt => txt.includes('Continue with Email'))
+                ?.closest('a')
+        ).toHaveAttribute('href', '/sign-in?email=1')
+
+        expect(rendered.asFragment()).toMatchSnapshot()
+    })
+
+    it('renders sign in page (server) with email form expanded', () => {
+        const rendered = render('/sign-in?email=1', {})
+        expect(
+            within(rendered.baseElement).queryByText(txt => txt.includes('Continue with Email'))
+        ).not.toBeInTheDocument()
+        expect(rendered.asFragment()).toMatchSnapshot()
+    })
+
+    it('renders sign in page (server) with only builtin authProvider', () => {
+        const rendered = render('/sign-in', {
+            authProviders: authProviders.filter(authProvider => authProvider.serviceType === 'builtin'),
+        })
+        expect(
+            within(rendered.baseElement).queryByText(txt => txt.includes('Continue with Email'))
+        ).not.toBeInTheDocument()
+
         expect(rendered.asFragment()).toMatchSnapshot()
     })
 

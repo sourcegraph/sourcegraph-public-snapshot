@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react'
 
-import { mdiBitbucket, mdiGithub, mdiGitlab } from '@mdi/js'
+import { mdiBitbucket, mdiGithub, mdiGitlab, mdiEmail } from '@mdi/js'
 import classNames from 'classnames'
 import { partition } from 'lodash'
 import { Navigate, useLocation } from 'react-router-dom-v5-compat'
 
-import { Alert, Icon, Text, Link, AnchorLink, Button, ErrorAlert } from '@sourcegraph/wildcard'
+import { Alert, Icon, Text, Link, Button, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
@@ -59,6 +59,11 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
 
     const thirdPartyAuthProviders = nonBuiltinAuthProviders.filter(provider => shouldShowProvider(provider))
 
+    const searchParams = new URLSearchParams(location.search)
+    const showBuiltInAuthForm = searchParams.has('email') || thirdPartyAuthProviders.length === 0
+    searchParams.set('email', '1')
+    const builtInAuthProviderURL = `${location.pathname}?${searchParams.toString()}`
+
     const body =
         !builtInAuthProvider && thirdPartyAuthProviders.length === 0 ? (
             <Alert className="mt-3" variant="info">
@@ -74,39 +79,39 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                         error ? 'mt-3' : 'mt-4'
                     )}
                 >
-                    {builtInAuthProvider && (
+                    {builtInAuthProvider && showBuiltInAuthForm && (
                         <UsernamePasswordSignInForm
                             {...props}
                             onAuthError={setError}
-                            noThirdPartyProviders={thirdPartyAuthProviders.length === 0}
+                            className={classNames(thirdPartyAuthProviders.length > 0 && 'mb-3')}
                         />
                     )}
-                    {builtInAuthProvider && thirdPartyAuthProviders.length > 0 && <OrDivider className="mb-3 py-1" />}
+                    {builtInAuthProvider && showBuiltInAuthForm && thirdPartyAuthProviders.length > 0 && (
+                        <OrDivider className="mb-3 py-1" />
+                    )}
                     {thirdPartyAuthProviders.map((provider, index) => (
                         // Use index as key because display name may not be unique. This is OK
                         // here because this list will not be updated during this component's lifetime.
                         /* eslint-disable react/no-array-index-key */
                         <div className="mb-2" key={index}>
-                            <Button to={provider.authenticationURL} display="block" variant="secondary" as={AnchorLink}>
-                                {provider.serviceType === 'github' && (
-                                    <>
-                                        <Icon aria-hidden={true} svgPath={mdiGithub} />{' '}
-                                    </>
-                                )}
-                                {provider.serviceType === 'gitlab' && (
-                                    <>
-                                        <Icon aria-hidden={true} svgPath={mdiGitlab} />{' '}
-                                    </>
-                                )}
+                            <Button to={provider.authenticationURL} display="block" variant="secondary" as={Link}>
+                                {provider.serviceType === 'github' && <Icon aria-hidden={true} svgPath={mdiGithub} />}
+                                {provider.serviceType === 'gitlab' && <Icon aria-hidden={true} svgPath={mdiGitlab} />}
                                 {provider.serviceType === 'bitbucketCloud' && (
-                                    <>
-                                        <Icon aria-hidden={true} svgPath={mdiBitbucket} />{' '}
-                                    </>
-                                )}
+                                    <Icon aria-hidden={true} svgPath={mdiBitbucket} />
+                                )}{' '}
                                 Continue with {provider.displayName}
                             </Button>
                         </div>
                     ))}
+                    {builtInAuthProvider && !showBuiltInAuthForm && (
+                        <div className="mb-2">
+                            <Button to={builtInAuthProviderURL} display="block" variant="secondary" as={Link}>
+                                <Icon aria-hidden={true} svgPath={mdiEmail} />
+                                Continue with Email
+                            </Button>
+                        </div>
+                    )}
                 </div>
                 {props.context.allowSignup ? (
                     <Text>
