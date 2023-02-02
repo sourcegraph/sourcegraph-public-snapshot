@@ -580,10 +580,11 @@ interface RepositorySettingsSectionProps {
 
 const RepositorySettingsSection: FunctionComponent<RepositorySettingsSectionProps> = ({ policy, updatePolicy }) => (
     <div className="form-group">
-        <H4 className="d-inline">Which repositories match this policy?</H4>
+        <Label id="beans">Define the repositories matched by this policy</Label>
 
         <Text size="small" className="text-muted">
-            Configuration policies can apply to one, a set, or to all repositories on a Sourcegraph instance.
+            If you wish to limit the number of repositories with auto indexing, enter a filter such as a code host or
+            organization.
         </Text>
 
         <RepositoryPatternList

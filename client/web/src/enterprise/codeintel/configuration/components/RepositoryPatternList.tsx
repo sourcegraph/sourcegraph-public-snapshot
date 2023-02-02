@@ -5,7 +5,17 @@ import classNames from 'classnames'
 import { debounce } from 'lodash'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
-import { Alert, Button, ErrorAlert, Icon, Input, LoadingSpinner, Text, Tooltip } from '@sourcegraph/wildcard'
+import {
+    Alert,
+    Button,
+    ErrorAlert,
+    Icon,
+    Input,
+    InputStatus,
+    LoadingSpinner,
+    Text,
+    Tooltip,
+} from '@sourcegraph/wildcard'
 
 import { ExternalRepositoryIcon } from '../../../../site-admin/components/ExternalRepositoryIcon'
 import { usePreviewRepositoryFilter } from '../hooks/usePreviewRepositoryFilter'
@@ -48,7 +58,7 @@ export const RepositoryPatternList: FunctionComponent<RepositoryPatternListProps
     } = usePreviewRepositoryFilter(repositoryPatterns || [])
 
     return (
-        <div>
+        <div className={styles.container}>
             {repositoryPatterns === null || repositoryPatterns.length === 0 ? (
                 <div>
                     <Text>
@@ -203,8 +213,8 @@ const RepositoryPattern: FunctionComponent<RepositoryPatternProps> = ({
     return (
         <div className="pb-2">
             <div className="input-group">
-                <div className="input-group-prepend ml-2">
-                    <span className="input-group-text">{index === 0 ? 'Repositories matching' : 'or'}</span>
+                <div className="input-group-prepend">
+                    <span className="input-group-text">{index === 0 ? 'Filter' : 'or'}</span>
                 </div>
 
                 <Input
@@ -218,6 +228,8 @@ const RepositoryPattern: FunctionComponent<RepositoryPatternProps> = ({
                     autoFocus={autoFocus}
                     disabled={disabled}
                     required={true}
+                    status={previewLoading ? InputStatus.loading : undefined}
+                    error={localPattern === '' ? 'Please supply a value.' : undefined}
                 />
 
                 <Tooltip content="Delete this repository pattern">
@@ -233,27 +245,29 @@ const RepositoryPattern: FunctionComponent<RepositoryPatternProps> = ({
                 </Tooltip>
             </div>
 
-            {previewError ? (
-                localPattern !== '' && (
-                    <ErrorAlert prefix="Error fetching matching repositories" error={previewError} className="mt-2" />
-                )
-            ) : (
-                <div className="text-right pr-4">
-                    {localPattern === '' ? (
-                        <small className="text-danger">Please supply a value.</small>
-                    ) : previewLoading ? (
-                        <LoadingSpinner inline={true} />
-                    ) : preview && preview.totalMatches > 0 ? (
-                        <small className="text/muted">
-                            This pattern matches{' '}
-                            {localPattern === '*' && preview.totalMatches !== 1 && <strong>all</strong>}{' '}
-                            {preview.totalMatches} {preview.totalMatches === 1 ? 'repository' : 'repositories'}.
-                        </small>
-                    ) : (
-                        <small className="text-warning">This pattern does not match any repositories.</small>
-                    )}
-                </div>
+            {previewError && (
+                <ErrorAlert prefix="Error fetching matching repositories" error={previewError} className="mt-2" />
             )}
+            <div className="text-right pr-4">
+                {previewLoading && (
+                    <div className="text-right pr-4">
+                        <LoadingSpinner inline={true} />
+                    </div>
+                )}
+                {localPattern === '' ? (
+                    <small className="text-danger">Please supply a value.</small>
+                ) : previewLoading ? (
+                    <LoadingSpinner inline={true} />
+                ) : preview && preview.totalMatches > 0 ? (
+                    <small className="text/muted">
+                        This pattern matches{' '}
+                        {localPattern === '*' && preview.totalMatches !== 1 && <strong>all</strong>}{' '}
+                        {preview.totalMatches} {preview.totalMatches === 1 ? 'repository' : 'repositories'}.
+                    </small>
+                ) : (
+                    <small className="text-warning">This pattern does not match any repositories.</small>
+                )}
+            </div>
         </div>
     )
 }
