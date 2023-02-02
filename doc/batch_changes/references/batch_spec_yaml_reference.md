@@ -921,7 +921,7 @@ steps:
   - run: |
       echo Path is: ${{ steps.path }} | tee path.txt
     container: alpine:3
-    # Only creates changesets for package.json instances found within client subdirectories
+    # Only creates changesets in subdirectories of client containing package.json files
     if: ${{ matches steps.path "client*" }}
 
 changesetTemplate:
