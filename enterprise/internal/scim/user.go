@@ -198,7 +198,23 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 
 // createUserResourceType creates a SCIM resource type for users.
 func createUserResourceType(userResourceHandler *UserResourceHandler) scim.ResourceType {
-	coreUserSchema := schema.Schema{
+	coreUserSchema := createCoreSchema()
+	schemaExtensions := createSchemaExtensions()
+
+	return scim.ResourceType{
+		ID:               optional.NewString("User"),
+		Name:             "User",
+		Endpoint:         "/Users",
+		Description:      optional.NewString("User Account"),
+		Schema:           coreUserSchema,
+		SchemaExtensions: schemaExtensions,
+		Handler:          userResourceHandler,
+	}
+}
+
+// createCoreSchema creates a SCIM core schema for users.
+func createCoreSchema() schema.Schema {
+	return schema.Schema{
 		ID:          "urn:ietf:params:scim:schemas:core:2.0:User",
 		Name:        optional.NewString("User"),
 		Description: optional.NewString("User Account"),
@@ -210,7 +226,10 @@ func createUserResourceType(userResourceHandler *UserResourceHandler) scim.Resou
 			})),
 		},
 	}
+}
 
+// createSchemaExtensions creates a SCIM schema extension for users.
+func createSchemaExtensions() []scim.SchemaExtension {
 	extensionUserSchema := schema.Schema{
 		ID:          "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
 		Name:        optional.NewString("EnterpriseUser"),
@@ -225,17 +244,10 @@ func createUserResourceType(userResourceHandler *UserResourceHandler) scim.Resou
 		},
 	}
 
-	return scim.ResourceType{
-		ID:          optional.NewString("User"),
-		Name:        "User",
-		Endpoint:    "/Users",
-		Description: optional.NewString("User Account"),
-		Schema:      coreUserSchema,
-		SchemaExtensions: []scim.SchemaExtension{
-			{Schema: extensionUserSchema},
-		},
-		Handler: userResourceHandler,
+	schemaExtensions := []scim.SchemaExtension{
+		{Schema: extensionUserSchema},
 	}
+	return schemaExtensions
 }
 
 // TODO: Temporary function to log attributes
