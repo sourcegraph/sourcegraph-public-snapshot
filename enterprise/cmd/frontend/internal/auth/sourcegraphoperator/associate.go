@@ -59,7 +59,7 @@ func addSourcegraphOperatorExternalAccount(ctx context.Context, db database.DB, 
 		return errors.Newf("unknown client ID %q", details.ClientID)
 	}
 	// Make sure this user has no other SOAP accounts.
-	soapAccounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
+	numSOAPAccounts, err := db.UserExternalAccounts().Count(ctx, database.ExternalAccountsListOptions{
 		UserID: userID,
 		// For provider matching, we explicitly do not provider the service ID - there
 		// should only be one SOAP registered.
@@ -68,8 +68,8 @@ func addSourcegraphOperatorExternalAccount(ctx context.Context, db database.DB, 
 	if err != nil {
 		return err
 	}
-	if len(soapAccounts) > 0 {
-		return errors.New("user already has an associated SOAP account")
+	if numSOAPAccounts > 0 {
+		return errors.New("user already has an associated Sourcegraph Operator account")
 	}
 
 	// Create an association

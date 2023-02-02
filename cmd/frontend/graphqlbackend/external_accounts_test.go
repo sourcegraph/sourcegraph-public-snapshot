@@ -107,7 +107,7 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 			wantErr:        false,
 			accountDetails: `{"username": "alice", "password": "test"}`,
 		},
-		"SOAP account can only be added to site admins": {
+		"Sourcegraph operator account can only be added by site admins": {
 			user:            &types.User{ID: 1, SiteAdmin: false},
 			serviceType:     auth.SourcegraphOperatorProviderType,
 			wantErr:         true,
@@ -117,7 +117,7 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 		// application this will be implemented.
 		//
 		// See enterprise/cmd/frontend/internal/auth/sourcegraphoperator for more details
-		"SOAP unimplemented in OSS": {
+		"Sourcegraph operator unimplemented in OSS": {
 			user:            &types.User{ID: 1, SiteAdmin: true},
 			serviceType:     auth.SourcegraphOperatorProviderType,
 			wantErr:         true,
