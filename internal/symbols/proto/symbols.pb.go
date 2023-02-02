@@ -657,6 +657,86 @@ func (x *Point) GetColumn() int32 {
 	return 0
 }
 
+// TODO@ggilmore: Note - GRPC has its own healthchecking protocol that we should use instead of this.
+// See https://github.com/grpc/grpc/blob/master/doc/health-checking.md for more information.
+type SymbolsHealthzRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *SymbolsHealthzRequest) Reset() {
+	*x = SymbolsHealthzRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_symbols_proto_msgTypes[10]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SymbolsHealthzRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SymbolsHealthzRequest) ProtoMessage() {}
+
+func (x *SymbolsHealthzRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_symbols_proto_msgTypes[10]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SymbolsHealthzRequest.ProtoReflect.Descriptor instead.
+func (*SymbolsHealthzRequest) Descriptor() ([]byte, []int) {
+	return file_symbols_proto_rawDescGZIP(), []int{10}
+}
+
+// TODO@ggilmore: Note - GRPC has its own healthchecking protocol that we should use instead of this.
+// See https://github.com/grpc/grpc/blob/master/doc/health-checking.md for more information.
+type SymbolsHealthzResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *SymbolsHealthzResponse) Reset() {
+	*x = SymbolsHealthzResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_symbols_proto_msgTypes[11]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SymbolsHealthzResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SymbolsHealthzResponse) ProtoMessage() {}
+
+func (x *SymbolsHealthzResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_symbols_proto_msgTypes[11]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SymbolsHealthzResponse.ProtoReflect.Descriptor instead.
+func (*SymbolsHealthzResponse) Descriptor() ([]byte, []int) {
+	return file_symbols_proto_rawDescGZIP(), []int{11}
+}
+
 // Symbol is a code symbol
 type SymbolsResponse_Symbol struct {
 	state         protoimpl.MessageState
@@ -689,7 +769,7 @@ type SymbolsResponse_Symbol struct {
 func (x *SymbolsResponse_Symbol) Reset() {
 	*x = SymbolsResponse_Symbol{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_symbols_proto_msgTypes[10]
+		mi := &file_symbols_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -702,7 +782,7 @@ func (x *SymbolsResponse_Symbol) String() string {
 func (*SymbolsResponse_Symbol) ProtoMessage() {}
 
 func (x *SymbolsResponse_Symbol) ProtoReflect() protoreflect.Message {
-	mi := &file_symbols_proto_msgTypes[10]
+	mi := &file_symbols_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -806,7 +886,7 @@ type LocalCodeIntelResponse_Symbol struct {
 func (x *LocalCodeIntelResponse_Symbol) Reset() {
 	*x = LocalCodeIntelResponse_Symbol{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_symbols_proto_msgTypes[11]
+		mi := &file_symbols_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -819,7 +899,7 @@ func (x *LocalCodeIntelResponse_Symbol) String() string {
 func (*LocalCodeIntelResponse_Symbol) ProtoMessage() {}
 
 func (x *LocalCodeIntelResponse_Symbol) ProtoReflect() protoreflect.Message {
-	mi := &file_symbols_proto_msgTypes[11]
+	mi := &file_symbols_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -874,7 +954,7 @@ type ListLanguagesResponse_GlobFilePatterns struct {
 func (x *ListLanguagesResponse_GlobFilePatterns) Reset() {
 	*x = ListLanguagesResponse_GlobFilePatterns{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_symbols_proto_msgTypes[12]
+		mi := &file_symbols_proto_msgTypes[14]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -887,7 +967,7 @@ func (x *ListLanguagesResponse_GlobFilePatterns) String() string {
 func (*ListLanguagesResponse_GlobFilePatterns) ProtoMessage() {}
 
 func (x *ListLanguagesResponse_GlobFilePatterns) ProtoReflect() protoreflect.Message {
-	mi := &file_symbols_proto_msgTypes[12]
+	mi := &file_symbols_proto_msgTypes[14]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -924,7 +1004,7 @@ type SymbolInfoResponse_Definition struct {
 func (x *SymbolInfoResponse_Definition) Reset() {
 	*x = SymbolInfoResponse_Definition{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_symbols_proto_msgTypes[14]
+		mi := &file_symbols_proto_msgTypes[16]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -937,7 +1017,7 @@ func (x *SymbolInfoResponse_Definition) String() string {
 func (*SymbolInfoResponse_Definition) ProtoMessage() {}
 
 func (x *SymbolInfoResponse_Definition) ProtoReflect() protoreflect.Message {
-	mi := &file_symbols_proto_msgTypes[14]
+	mi := &file_symbols_proto_msgTypes[16]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -981,7 +1061,7 @@ type SymbolInfoResponse_DefinitionResult struct {
 func (x *SymbolInfoResponse_DefinitionResult) Reset() {
 	*x = SymbolInfoResponse_DefinitionResult{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_symbols_proto_msgTypes[15]
+		mi := &file_symbols_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -994,7 +1074,7 @@ func (x *SymbolInfoResponse_DefinitionResult) String() string {
 func (*SymbolInfoResponse_DefinitionResult) ProtoMessage() {}
 
 func (x *SymbolInfoResponse_DefinitionResult) ProtoReflect() protoreflect.Message {
-	mi := &file_symbols_proto_msgTypes[15]
+	mi := &file_symbols_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1161,36 +1241,41 @@ var file_symbols_proto_rawDesc = []byte{
 	0x28, 0x05, 0x52, 0x06, 0x6c, 0x65, 0x6e, 0x67, 0x74, 0x68, 0x22, 0x31, 0x0a, 0x05, 0x50, 0x6f,
 	0x69, 0x6e, 0x74, 0x12, 0x10, 0x0a, 0x03, 0x72, 0x6f, 0x77, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05,
 	0x52, 0x03, 0x72, 0x6f, 0x77, 0x12, 0x16, 0x0a, 0x06, 0x63, 0x6f, 0x6c, 0x75, 0x6d, 0x6e, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x06, 0x63, 0x6f, 0x6c, 0x75, 0x6d, 0x6e, 0x32, 0x82, 0x03,
-	0x0a, 0x07, 0x53, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x73, 0x12, 0x42, 0x0a, 0x06, 0x53, 0x65, 0x61,
-	0x72, 0x63, 0x68, 0x12, 0x19, 0x2e, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x73, 0x2e, 0x76, 0x31,
-	0x2e, 0x53, 0x65, 0x61, 0x72, 0x63, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1b,
-	0x2e, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x79, 0x6d, 0x62,
-	0x6f, 0x6c, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x59, 0x0a,
-	0x0e, 0x4c, 0x6f, 0x63, 0x61, 0x6c, 0x43, 0x6f, 0x64, 0x65, 0x49, 0x6e, 0x74, 0x65, 0x6c, 0x12,
-	0x21, 0x2e, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x4c, 0x6f, 0x63,
-	0x61, 0x6c, 0x43, 0x6f, 0x64, 0x65, 0x49, 0x6e, 0x74, 0x65, 0x6c, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x1a, 0x22, 0x2e, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x73, 0x2e, 0x76, 0x31, 0x2e,
+	0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x06, 0x63, 0x6f, 0x6c, 0x75, 0x6d, 0x6e, 0x22, 0x17, 0x0a,
+	0x15, 0x53, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x73, 0x48, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x7a, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x18, 0x0a, 0x16, 0x53, 0x79, 0x6d, 0x62, 0x6f, 0x6c,
+	0x73, 0x48, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x7a, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x32, 0x99, 0x03, 0x0a, 0x07, 0x53, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x73, 0x12, 0x42, 0x0a, 0x06,
+	0x53, 0x65, 0x61, 0x72, 0x63, 0x68, 0x12, 0x19, 0x2e, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x73,
+	0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x61, 0x72, 0x63, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x1b, 0x2e, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x53,
+	0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00,
+	0x12, 0x59, 0x0a, 0x0e, 0x4c, 0x6f, 0x63, 0x61, 0x6c, 0x43, 0x6f, 0x64, 0x65, 0x49, 0x6e, 0x74,
+	0x65, 0x6c, 0x12, 0x21, 0x2e, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x73, 0x2e, 0x76, 0x31, 0x2e,
 	0x4c, 0x6f, 0x63, 0x61, 0x6c, 0x43, 0x6f, 0x64, 0x65, 0x49, 0x6e, 0x74, 0x65, 0x6c, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x4c, 0x0a, 0x0d, 0x4c, 0x69, 0x73, 0x74,
-	0x4c, 0x61, 0x6e, 0x67, 0x75, 0x61, 0x67, 0x65, 0x73, 0x12, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67,
-	0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74,
-	0x79, 0x1a, 0x21, 0x2e, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x73, 0x2e, 0x76, 0x31, 0x2e, 0x4c,
-	0x69, 0x73, 0x74, 0x4c, 0x61, 0x6e, 0x67, 0x75, 0x61, 0x67, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x4d, 0x0a, 0x0a, 0x53, 0x79, 0x6d, 0x62, 0x6f, 0x6c,
-	0x49, 0x6e, 0x66, 0x6f, 0x12, 0x1d, 0x2e, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x73, 0x2e, 0x76,
-	0x31, 0x2e, 0x53, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x1a, 0x1e, 0x2e, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x73, 0x2e, 0x76, 0x31,
-	0x2e, 0x53, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x3b, 0x0a, 0x07, 0x48, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x7a,
-	0x12, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62,
-	0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c,
-	0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79,
-	0x22, 0x00, 0x42, 0x3b, 0x5a, 0x39, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d,
-	0x2f, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x67, 0x72, 0x61, 0x70, 0x68, 0x2f, 0x73, 0x6f, 0x75,
-	0x72, 0x63, 0x65, 0x67, 0x72, 0x61, 0x70, 0x68, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61,
-	0x6c, 0x2f, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x73, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x22, 0x2e, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x73, 0x2e,
+	0x76, 0x31, 0x2e, 0x4c, 0x6f, 0x63, 0x61, 0x6c, 0x43, 0x6f, 0x64, 0x65, 0x49, 0x6e, 0x74, 0x65,
+	0x6c, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x4c, 0x0a, 0x0d, 0x4c,
+	0x69, 0x73, 0x74, 0x4c, 0x61, 0x6e, 0x67, 0x75, 0x61, 0x67, 0x65, 0x73, 0x12, 0x16, 0x2e, 0x67,
+	0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45,
+	0x6d, 0x70, 0x74, 0x79, 0x1a, 0x21, 0x2e, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x73, 0x2e, 0x76,
+	0x31, 0x2e, 0x4c, 0x69, 0x73, 0x74, 0x4c, 0x61, 0x6e, 0x67, 0x75, 0x61, 0x67, 0x65, 0x73, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x4d, 0x0a, 0x0a, 0x53, 0x79, 0x6d,
+	0x62, 0x6f, 0x6c, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x1d, 0x2e, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c,
+	0x73, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x49, 0x6e, 0x66, 0x6f, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1e, 0x2e, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x73,
+	0x2e, 0x76, 0x31, 0x2e, 0x53, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x52, 0x0a, 0x07, 0x48, 0x65, 0x61, 0x6c,
+	0x74, 0x68, 0x7a, 0x12, 0x21, 0x2e, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x73, 0x2e, 0x76, 0x31,
+	0x2e, 0x53, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x73, 0x48, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x7a, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x22, 0x2e, 0x73, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x73,
+	0x2e, 0x76, 0x31, 0x2e, 0x53, 0x79, 0x6d, 0x62, 0x6f, 0x6c, 0x73, 0x48, 0x65, 0x61, 0x6c, 0x74,
+	0x68, 0x7a, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x3b, 0x5a, 0x39,
+	0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x6f, 0x75, 0x72, 0x63,
+	0x65, 0x67, 0x72, 0x61, 0x70, 0x68, 0x2f, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x67, 0x72, 0x61,
+	0x70, 0x68, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x73, 0x79, 0x6d, 0x62,
+	0x6f, 0x6c, 0x73, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x33,
 }
 
 var (
@@ -1205,7 +1290,7 @@ func file_symbols_proto_rawDescGZIP() []byte {
 	return file_symbols_proto_rawDescData
 }
 
-var file_symbols_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_symbols_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_symbols_proto_goTypes = []interface{}{
 	(*SearchRequest)(nil),                          // 0: symbols.v1.SearchRequest
 	(*SymbolsResponse)(nil),                        // 1: symbols.v1.SymbolsResponse
@@ -1217,40 +1302,42 @@ var file_symbols_proto_goTypes = []interface{}{
 	(*RepoCommitPath)(nil),                         // 7: symbols.v1.RepoCommitPath
 	(*Range)(nil),                                  // 8: symbols.v1.Range
 	(*Point)(nil),                                  // 9: symbols.v1.Point
-	(*SymbolsResponse_Symbol)(nil),                 // 10: symbols.v1.SymbolsResponse.Symbol
-	(*LocalCodeIntelResponse_Symbol)(nil),          // 11: symbols.v1.LocalCodeIntelResponse.Symbol
-	(*ListLanguagesResponse_GlobFilePatterns)(nil), // 12: symbols.v1.ListLanguagesResponse.GlobFilePatterns
-	nil,                                   // 13: symbols.v1.ListLanguagesResponse.LanguageFileNameMapEntry
-	(*SymbolInfoResponse_Definition)(nil), // 14: symbols.v1.SymbolInfoResponse.Definition
-	(*SymbolInfoResponse_DefinitionResult)(nil), // 15: symbols.v1.SymbolInfoResponse.DefinitionResult
-	(*durationpb.Duration)(nil),                 // 16: google.protobuf.Duration
-	(*emptypb.Empty)(nil),                       // 17: google.protobuf.Empty
+	(*SymbolsHealthzRequest)(nil),                  // 10: symbols.v1.SymbolsHealthzRequest
+	(*SymbolsHealthzResponse)(nil),                 // 11: symbols.v1.SymbolsHealthzResponse
+	(*SymbolsResponse_Symbol)(nil),                 // 12: symbols.v1.SymbolsResponse.Symbol
+	(*LocalCodeIntelResponse_Symbol)(nil),          // 13: symbols.v1.LocalCodeIntelResponse.Symbol
+	(*ListLanguagesResponse_GlobFilePatterns)(nil), // 14: symbols.v1.ListLanguagesResponse.GlobFilePatterns
+	nil,                                   // 15: symbols.v1.ListLanguagesResponse.LanguageFileNameMapEntry
+	(*SymbolInfoResponse_Definition)(nil), // 16: symbols.v1.SymbolInfoResponse.Definition
+	(*SymbolInfoResponse_DefinitionResult)(nil), // 17: symbols.v1.SymbolInfoResponse.DefinitionResult
+	(*durationpb.Duration)(nil),                 // 18: google.protobuf.Duration
+	(*emptypb.Empty)(nil),                       // 19: google.protobuf.Empty
 }
 var file_symbols_proto_depIdxs = []int32{
-	16, // 0: symbols.v1.SearchRequest.timeout:type_name -> google.protobuf.Duration
-	10, // 1: symbols.v1.SymbolsResponse.symbols:type_name -> symbols.v1.SymbolsResponse.Symbol
+	18, // 0: symbols.v1.SearchRequest.timeout:type_name -> google.protobuf.Duration
+	12, // 1: symbols.v1.SymbolsResponse.symbols:type_name -> symbols.v1.SymbolsResponse.Symbol
 	7,  // 2: symbols.v1.LocalCodeIntelRequest.repo_commit_path:type_name -> symbols.v1.RepoCommitPath
-	11, // 3: symbols.v1.LocalCodeIntelResponse.symbols:type_name -> symbols.v1.LocalCodeIntelResponse.Symbol
-	13, // 4: symbols.v1.ListLanguagesResponse.language_file_name_map:type_name -> symbols.v1.ListLanguagesResponse.LanguageFileNameMapEntry
+	13, // 3: symbols.v1.LocalCodeIntelResponse.symbols:type_name -> symbols.v1.LocalCodeIntelResponse.Symbol
+	15, // 4: symbols.v1.ListLanguagesResponse.language_file_name_map:type_name -> symbols.v1.ListLanguagesResponse.LanguageFileNameMapEntry
 	7,  // 5: symbols.v1.SymbolInfoRequest.repo_commit_path:type_name -> symbols.v1.RepoCommitPath
 	9,  // 6: symbols.v1.SymbolInfoRequest.point:type_name -> symbols.v1.Point
-	15, // 7: symbols.v1.SymbolInfoResponse.result:type_name -> symbols.v1.SymbolInfoResponse.DefinitionResult
+	17, // 7: symbols.v1.SymbolInfoResponse.result:type_name -> symbols.v1.SymbolInfoResponse.DefinitionResult
 	8,  // 8: symbols.v1.LocalCodeIntelResponse.Symbol.def:type_name -> symbols.v1.Range
 	8,  // 9: symbols.v1.LocalCodeIntelResponse.Symbol.refs:type_name -> symbols.v1.Range
-	12, // 10: symbols.v1.ListLanguagesResponse.LanguageFileNameMapEntry.value:type_name -> symbols.v1.ListLanguagesResponse.GlobFilePatterns
+	14, // 10: symbols.v1.ListLanguagesResponse.LanguageFileNameMapEntry.value:type_name -> symbols.v1.ListLanguagesResponse.GlobFilePatterns
 	7,  // 11: symbols.v1.SymbolInfoResponse.Definition.repo_commit_path:type_name -> symbols.v1.RepoCommitPath
 	8,  // 12: symbols.v1.SymbolInfoResponse.Definition.range:type_name -> symbols.v1.Range
-	14, // 13: symbols.v1.SymbolInfoResponse.DefinitionResult.definition:type_name -> symbols.v1.SymbolInfoResponse.Definition
+	16, // 13: symbols.v1.SymbolInfoResponse.DefinitionResult.definition:type_name -> symbols.v1.SymbolInfoResponse.Definition
 	0,  // 14: symbols.v1.Symbols.Search:input_type -> symbols.v1.SearchRequest
 	2,  // 15: symbols.v1.Symbols.LocalCodeIntel:input_type -> symbols.v1.LocalCodeIntelRequest
-	17, // 16: symbols.v1.Symbols.ListLanguages:input_type -> google.protobuf.Empty
+	19, // 16: symbols.v1.Symbols.ListLanguages:input_type -> google.protobuf.Empty
 	5,  // 17: symbols.v1.Symbols.SymbolInfo:input_type -> symbols.v1.SymbolInfoRequest
-	17, // 18: symbols.v1.Symbols.Healthz:input_type -> google.protobuf.Empty
+	10, // 18: symbols.v1.Symbols.Healthz:input_type -> symbols.v1.SymbolsHealthzRequest
 	1,  // 19: symbols.v1.Symbols.Search:output_type -> symbols.v1.SymbolsResponse
 	3,  // 20: symbols.v1.Symbols.LocalCodeIntel:output_type -> symbols.v1.LocalCodeIntelResponse
 	4,  // 21: symbols.v1.Symbols.ListLanguages:output_type -> symbols.v1.ListLanguagesResponse
 	6,  // 22: symbols.v1.Symbols.SymbolInfo:output_type -> symbols.v1.SymbolInfoResponse
-	17, // 23: symbols.v1.Symbols.Healthz:output_type -> google.protobuf.Empty
+	11, // 23: symbols.v1.Symbols.Healthz:output_type -> symbols.v1.SymbolsHealthzResponse
 	19, // [19:24] is the sub-list for method output_type
 	14, // [14:19] is the sub-list for method input_type
 	14, // [14:14] is the sub-list for extension type_name
@@ -1385,7 +1472,7 @@ func file_symbols_proto_init() {
 			}
 		}
 		file_symbols_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SymbolsResponse_Symbol); i {
+			switch v := v.(*SymbolsHealthzRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1397,7 +1484,7 @@ func file_symbols_proto_init() {
 			}
 		}
 		file_symbols_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LocalCodeIntelResponse_Symbol); i {
+			switch v := v.(*SymbolsHealthzResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1409,7 +1496,19 @@ func file_symbols_proto_init() {
 			}
 		}
 		file_symbols_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListLanguagesResponse_GlobFilePatterns); i {
+			switch v := v.(*SymbolsResponse_Symbol); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_symbols_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*LocalCodeIntelResponse_Symbol); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1421,6 +1520,18 @@ func file_symbols_proto_init() {
 			}
 		}
 		file_symbols_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ListLanguagesResponse_GlobFilePatterns); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_symbols_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*SymbolInfoResponse_Definition); i {
 			case 0:
 				return &v.state
@@ -1432,7 +1543,7 @@ func file_symbols_proto_init() {
 				return nil
 			}
 		}
-		file_symbols_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
+		file_symbols_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*SymbolInfoResponse_DefinitionResult); i {
 			case 0:
 				return &v.state
@@ -1447,15 +1558,15 @@ func file_symbols_proto_init() {
 	}
 	file_symbols_proto_msgTypes[1].OneofWrappers = []interface{}{}
 	file_symbols_proto_msgTypes[6].OneofWrappers = []interface{}{}
-	file_symbols_proto_msgTypes[14].OneofWrappers = []interface{}{}
-	file_symbols_proto_msgTypes[15].OneofWrappers = []interface{}{}
+	file_symbols_proto_msgTypes[16].OneofWrappers = []interface{}{}
+	file_symbols_proto_msgTypes[17].OneofWrappers = []interface{}{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_symbols_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   16,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

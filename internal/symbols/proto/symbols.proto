@@ -12,7 +12,7 @@ service Symbols {
   rpc LocalCodeIntel(LocalCodeIntelRequest) returns (LocalCodeIntelResponse) {}
   rpc ListLanguages(google.protobuf.Empty) returns (ListLanguagesResponse) {}
   rpc SymbolInfo(SymbolInfoRequest) returns (SymbolInfoResponse) {}
-  rpc Healthz(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc Healthz(SymbolsHealthzRequest) returns (SymbolsHealthzResponse) {}
 }
 
 message SearchRequest {
@@ -190,3 +190,11 @@ message Point {
   // col is the character offset of the point
   int32 column = 2;
 }
+
+// TODO@ggilmore: Note - GRPC has its own healthchecking protocol that we should use instead of this.
+// See https://github.com/grpc/grpc/blob/master/doc/health-checking.md for more information.
+message SymbolsHealthzRequest {}
+
+// TODO@ggilmore: Note - GRPC has its own healthchecking protocol that we should use instead of this.
+// See https://github.com/grpc/grpc/blob/master/doc/health-checking.md for more information.
+message SymbolsHealthzResponse {}

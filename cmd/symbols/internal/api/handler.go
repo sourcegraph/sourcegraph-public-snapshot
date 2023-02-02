@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/go-ctags"
 	logger "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -68,13 +69,13 @@ func (s *grpcService) ListLanguages(ctx context.Context, _ *emptypb.Empty) (*pro
 	}, nil
 }
 
-func (s *grpcService) Healthz(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
+func (s *grpcService) Healthz(ctx context.Context, _ *proto.SymbolsHealthzRequest) (*proto.SymbolsHealthzResponse, error) {
 	// Note: Kubernetes only has beta support for GRPC Healthchecks since version >= 1.23. This means
 	// that we probably need the old non-GRPC healthcheck endpoint for a while.
 	//
 	// See https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-a-grpc-liveness-probe
 	// for more information.
-	return &emptypb.Empty{}, nil
+	return &proto.SymbolsHealthzResponse{}, nil
 }
 
 func NewHandler(
