@@ -76,8 +76,11 @@ func (c *Client) do(ctx context.Context, req *http.Request, urlOverride string, 
 			return "", err
 		}
 	}
-	req.URL = u.ResolveReference(req.URL)
 
+	queryParams := req.URL.Query()
+	queryParams.Set("api-version", apiVersion)
+	req.URL.RawQuery = queryParams.Encode()
+	req.URL = u.ResolveReference(req.URL)
 	if req.Body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}

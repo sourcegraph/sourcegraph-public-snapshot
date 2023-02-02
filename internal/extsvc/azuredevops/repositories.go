@@ -12,12 +12,9 @@ import (
 )
 
 func (c *Client) GetRepo(ctx context.Context, args OrgProjectRepoArgs) (Repository, error) {
-	queryParams := make(url.Values)
-	queryParams.Set("api-version", apiVersion)
+	reqURL := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s", args.Org, args.Project, args.RepoNameOrID)}
 
-	urlRepositoriesByProjects := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s", args.Org, args.Project, args.RepoNameOrID), RawQuery: queryParams.Encode()}
-
-	req, err := http.NewRequest("GET", urlRepositoriesByProjects.String(), nil)
+	req, err := http.NewRequest("GET", reqURL.String(), nil)
 	if err != nil {
 		return Repository{}, err
 	}
@@ -31,12 +28,9 @@ func (c *Client) GetRepo(ctx context.Context, args OrgProjectRepoArgs) (Reposito
 }
 
 func (c *Client) ListRepositoriesByProjectOrOrg(ctx context.Context, args ListRepositoriesByProjectOrOrgArgs) ([]Repository, error) {
-	queryParams := make(url.Values)
-	queryParams.Set("api-version", apiVersion)
+	reqURL := url.URL{Path: fmt.Sprintf("%s/_apis/git/repositories", args.ProjectOrOrgName)}
 
-	urlRepositoriesByProjects := url.URL{Path: fmt.Sprintf("%s/_apis/git/repositories", args.ProjectOrOrgName), RawQuery: queryParams.Encode()}
-
-	req, err := http.NewRequest("GET", urlRepositoriesByProjects.String(), nil)
+	req, err := http.NewRequest("GET", reqURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -50,17 +44,14 @@ func (c *Client) ListRepositoriesByProjectOrOrg(ctx context.Context, args ListRe
 }
 
 func (c *Client) ForkRepository(ctx context.Context, org string, input ForkRepositoryInput) (Repository, error) {
-	queryParams := make(url.Values)
-	queryParams.Set("api-version", apiVersion)
-
 	data, err := json.Marshal(&input)
 	if err != nil {
 		return Repository{}, errors.Wrap(err, "marshalling request")
 	}
 
-	urlRepositoriesByProjects := url.URL{Path: fmt.Sprintf("%s/_apis/git/repositories", org), RawQuery: queryParams.Encode()}
+	reqURL := url.URL{Path: fmt.Sprintf("%s/_apis/git/repositories", org)}
 
-	req, err := http.NewRequest("POST", urlRepositoriesByProjects.String(), bytes.NewBuffer(data))
+	req, err := http.NewRequest("POST", reqURL.String(), bytes.NewBuffer(data))
 	if err != nil {
 		return Repository{}, err
 	}
@@ -73,21 +64,19 @@ func (c *Client) ForkRepository(ctx context.Context, org string, input ForkRepos
 	return repo, nil
 }
 
-func (c *Client) GetCommitForRepositoryBranchHead(ctx context.Context, args OrgProjectRepoArgs, branchName string) (Ref, error) {
+func (c *Client) GetRepositoryBranch(ctx context.Context, args OrgProjectRepoArgs, branchName string) (Ref, error) {
 	var allRefs []Ref
 	continuationToken := ""
-
+	queryParams := make(url.Values)
+	// The filter here by branch name is only a substring match, so we aren't guaranteed to only get one result.
+	queryParams.Set("filter", fmt.Sprintf("heads/%s", branchName))
+	reqURL := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/refs", args.Org, args.Project, args.RepoNameOrID)}
 	for {
-		queryParams := make(url.Values)
-		queryParams.Set("api-version", apiVersion)
-		// The filter here by branch name is only a substring match, so we aren't guaranteed to only get one result.
-		queryParams.Set("filter", fmt.Sprintf("heads/%s", branchName))
 		if continuationToken != "" {
 			queryParams.Set("continuationToken", continuationToken)
 		}
-		urlRepositoriesByProjects := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/refs", args.Org, args.Project, args.RepoNameOrID), RawQuery: queryParams.Encode()}
-
-		req, err := http.NewRequest("GET", urlRepositoriesByProjects.String(), nil)
+		reqURL.RawQuery = queryParams.Encode()
+		req, err := http.NewRequest("GET", reqURL.String(), nil)
 		if err != nil {
 			return Ref{}, err
 		}
@@ -110,5 +99,5 @@ func (c *Client) GetCommitForRepositoryBranchHead(ctx context.Context, args OrgP
 		}
 	}
 
-	return Ref{}, errors.New("branch not found")
+	return Ref{}, errors.Newf("branch %q not found", branchName)
 }

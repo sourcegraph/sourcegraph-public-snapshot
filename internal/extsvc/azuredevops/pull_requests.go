@@ -13,10 +13,7 @@ import (
 
 // AbandonPullRequest abandons (closes) the specified PR, returns the updated PR.
 func (c *Client) AbandonPullRequest(ctx context.Context, args PullRequestCommonArgs) (PullRequest, error) {
-	queryParams := make(url.Values)
-	queryParams.Set("api-version", apiVersion)
-
-	urlRepositoriesByProjects := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/pullrequests/%s", args.Org, args.Project, args.RepoNameOrID, args.PullRequestID), RawQuery: queryParams.Encode()}
+	reqURL := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/pullrequests/%s", args.Org, args.Project, args.RepoNameOrID, args.PullRequestID)}
 
 	abandoned := PullRequestStatusAbandoned
 	data, err := json.Marshal(PullRequestUpdateInput{Status: &abandoned})
@@ -24,7 +21,7 @@ func (c *Client) AbandonPullRequest(ctx context.Context, args PullRequestCommonA
 		return PullRequest{}, errors.Wrap(err, "marshalling request")
 	}
 
-	req, err := http.NewRequest("PATCH", urlRepositoriesByProjects.String(), bytes.NewBuffer(data))
+	req, err := http.NewRequest("PATCH", reqURL.String(), bytes.NewBuffer(data))
 	if err != nil {
 		return PullRequest{}, err
 	}
@@ -40,17 +37,14 @@ func (c *Client) AbandonPullRequest(ctx context.Context, args PullRequestCommonA
 // CreatePullRequest creates a new PR with the specified properties, returns the newly created PR.
 // NOTE: this API needs repository ID specified not repository Name in OrgProjectRepoArgs.
 func (c *Client) CreatePullRequest(ctx context.Context, args OrgProjectRepoArgs, input CreatePullRequestInput) (PullRequest, error) {
-	queryParams := make(url.Values)
-	queryParams.Set("api-version", apiVersion)
-
 	data, err := json.Marshal(&input)
 	if err != nil {
 		return PullRequest{}, errors.Wrap(err, "marshalling request")
 	}
 
-	urlRepositoriesByProjects := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/pullrequests", args.Org, args.Project, args.RepoNameOrID), RawQuery: queryParams.Encode()}
+	reqURL := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/pullrequests", args.Org, args.Project, args.RepoNameOrID)}
 
-	req, err := http.NewRequest("POST", urlRepositoriesByProjects.String(), bytes.NewBuffer(data))
+	req, err := http.NewRequest("POST", reqURL.String(), bytes.NewBuffer(data))
 	if err != nil {
 		return PullRequest{}, err
 	}
@@ -65,12 +59,9 @@ func (c *Client) CreatePullRequest(ctx context.Context, args OrgProjectRepoArgs,
 
 // GetPullRequest gets the specified PR.
 func (c *Client) GetPullRequest(ctx context.Context, args PullRequestCommonArgs) (PullRequest, error) {
-	queryParams := make(url.Values)
-	queryParams.Set("api-version", apiVersion)
+	reqURL := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/pullrequests/%s", args.Org, args.Project, args.RepoNameOrID, args.PullRequestID)}
 
-	urlRepositoriesByProjects := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/pullrequests/%s", args.Org, args.Project, args.RepoNameOrID, args.PullRequestID), RawQuery: queryParams.Encode()}
-
-	req, err := http.NewRequest("GET", urlRepositoriesByProjects.String(), nil)
+	req, err := http.NewRequest("GET", reqURL.String(), nil)
 	if err != nil {
 		return PullRequest{}, err
 	}
@@ -85,12 +76,9 @@ func (c *Client) GetPullRequest(ctx context.Context, args PullRequestCommonArgs)
 
 // GetPullRequestStatuses returns the build statuses associated with the specified PR.
 func (c *Client) GetPullRequestStatuses(ctx context.Context, args PullRequestCommonArgs) ([]PullRequestBuildStatus, error) {
-	queryParams := make(url.Values)
-	queryParams.Set("api-version", apiVersion)
+	reqURL := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/pullrequests/%s/statuses", args.Org, args.Project, args.RepoNameOrID, args.PullRequestID)}
 
-	urlRepositoriesByProjects := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/pullrequests/%s/statuses", args.Org, args.Project, args.RepoNameOrID, args.PullRequestID), RawQuery: queryParams.Encode()}
-
-	req, err := http.NewRequest("GET", urlRepositoriesByProjects.String(), nil)
+	req, err := http.NewRequest("GET", reqURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -107,17 +95,14 @@ func (c *Client) GetPullRequestStatuses(ctx context.Context, args PullRequestCom
 //
 // Warning: If you are setting the TargetRefName in the PullRequestUpdateInput, it will be the only thing to get updated (bug in the ADO API).
 func (c *Client) UpdatePullRequest(ctx context.Context, args PullRequestCommonArgs, input PullRequestUpdateInput) (PullRequest, error) {
-	queryParams := make(url.Values)
-	queryParams.Set("api-version", apiVersion)
-
-	urlRepositoriesByProjects := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/pullrequests/%s", args.Org, args.Project, args.RepoNameOrID, args.PullRequestID), RawQuery: queryParams.Encode()}
+	reqURL := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/pullrequests/%s", args.Org, args.Project, args.RepoNameOrID, args.PullRequestID)}
 
 	data, err := json.Marshal(input)
 	if err != nil {
 		return PullRequest{}, errors.Wrap(err, "marshalling request")
 	}
 
-	req, err := http.NewRequest("PATCH", urlRepositoriesByProjects.String(), bytes.NewBuffer(data))
+	req, err := http.NewRequest("PATCH", reqURL.String(), bytes.NewBuffer(data))
 	if err != nil {
 		return PullRequest{}, err
 	}
@@ -132,17 +117,14 @@ func (c *Client) UpdatePullRequest(ctx context.Context, args PullRequestCommonAr
 
 // CreatePullRequestCommentThread creates a new comment Thread specified PR, returns the updated PR.
 func (c *Client) CreatePullRequestCommentThread(ctx context.Context, args PullRequestCommonArgs, input PullRequestCommentInput) (PullRequestCommentResponse, error) {
-	queryParams := make(url.Values)
-	queryParams.Set("api-version", apiVersion)
-
-	urlRepositoriesByProjects := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/pullrequests/%s/threads", args.Org, args.Project, args.RepoNameOrID, args.PullRequestID), RawQuery: queryParams.Encode()}
+	reqURL := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/pullrequests/%s/threads", args.Org, args.Project, args.RepoNameOrID, args.PullRequestID)}
 
 	data, err := json.Marshal(input)
 	if err != nil {
 		return PullRequestCommentResponse{}, errors.Wrap(err, "marshalling request")
 	}
 
-	req, err := http.NewRequest("POST", urlRepositoriesByProjects.String(), bytes.NewBuffer(data))
+	req, err := http.NewRequest("POST", reqURL.String(), bytes.NewBuffer(data))
 	if err != nil {
 		return PullRequestCommentResponse{}, err
 	}
@@ -157,10 +139,7 @@ func (c *Client) CreatePullRequestCommentThread(ctx context.Context, args PullRe
 
 // CompletePullRequest completes(merges) the specified PR, returns the updated PR.
 func (c *Client) CompletePullRequest(ctx context.Context, args PullRequestCommonArgs, input PullRequestCommitRef) (PullRequest, error) {
-	queryParams := make(url.Values)
-	queryParams.Set("api-version", apiVersion)
-
-	urlRepositoriesByProjects := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/pullrequests/%s", args.Org, args.Project, args.RepoNameOrID, args.PullRequestID), RawQuery: queryParams.Encode()}
+	reqURL := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/pullrequests/%s", args.Org, args.Project, args.RepoNameOrID, args.PullRequestID)}
 
 	completed := PullRequestStatusCompleted
 	data, err := json.Marshal(PullRequestUpdateInput{Status: &completed, LastMergeSourceCommit: &input})
@@ -168,7 +147,7 @@ func (c *Client) CompletePullRequest(ctx context.Context, args PullRequestCommon
 		return PullRequest{}, errors.Wrap(err, "marshalling request")
 	}
 
-	req, err := http.NewRequest("PATCH", urlRepositoriesByProjects.String(), bytes.NewBuffer(data))
+	req, err := http.NewRequest("PATCH", reqURL.String(), bytes.NewBuffer(data))
 	if err != nil {
 		return PullRequest{}, err
 	}

@@ -66,8 +66,8 @@ func TestClient_ForkRepository(t *testing.T) {
 	testutil.AssertGolden(t, "testdata/golden/ForkRepository.json", *update, resp)
 }
 
-func TestClient_GetCommitForRepositoryBranchHead(t *testing.T) {
-	cli, save := NewTestClient(t, "GetCommitForRepositoryBranchHead", *update)
+func TestClient_GetRepositoryBranch(t *testing.T) {
+	cli, save := NewTestClient(t, "GetRepositoryBranch", *update)
 	t.Cleanup(save)
 
 	args := OrgProjectRepoArgs{
@@ -76,10 +76,10 @@ func TestClient_GetCommitForRepositoryBranchHead(t *testing.T) {
 		RepoNameOrID: "sgtestazure3",
 	}
 
-	resp, err := cli.GetCommitForRepositoryBranchHead(context.Background(), args, "main")
+	resp, err := cli.GetRepositoryBranch(context.Background(), args, "main")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	testutil.AssertGolden(t, "testdata/golden/GetCommitForRepositoryBranchHead.json", *update, resp)
+	testutil.AssertGolden(t, "testdata/golden/GetRepositoryBranch.json", *update, resp)
 }
