@@ -2882,6 +2882,7 @@ Referenced by:
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "sub_repo_permissions" CONSTRAINT "sub_repo_permissions_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "user_repo_permissions" CONSTRAINT "user_repo_permissions_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "zoekt_repos" CONSTRAINT "zoekt_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 Triggers:
     trig_create_zoekt_repo_on_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_zoekt_repo()
@@ -3353,6 +3354,8 @@ Indexes:
     "user_external_accounts_user_id" btree (user_id) WHERE deleted_at IS NULL
 Foreign-key constraints:
     "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+Referenced by:
+    TABLE "user_repo_permissions" CONSTRAINT "user_repo_permissions_user_external_account_id_fkey" FOREIGN KEY (user_external_account_id) REFERENCES user_external_accounts(id) ON DELETE CASCADE
 
 ```
 
@@ -3400,6 +3403,32 @@ Indexes:
 Foreign-key constraints:
     "user_public_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     "user_public_repos_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+
+```
+
+# Table "public.user_repo_permissions"
+```
+          Column          |           Type           | Collation | Nullable |                      Default                      
+--------------------------+--------------------------+-----------+----------+---------------------------------------------------
+ id                       | integer                  |           | not null | nextval('user_repo_permissions_id_seq'::regclass)
+ user_id                  | integer                  |           |          | 
+ repo_id                  | integer                  |           | not null | 
+ user_external_account_id | integer                  |           |          | 
+ created_at               | timestamp with time zone |           | not null | now()
+ updated_at               | timestamp with time zone |           | not null | now()
+ source                   | text                     |           | not null | 'sync'::text
+Indexes:
+    "user_repo_permissions_pkey" PRIMARY KEY, btree (id)
+    "user_repo_permissions_perms_unique_idx" UNIQUE, btree (user_id, user_external_account_id, repo_id)
+    "user_repo_permissions_repo_id_idx" btree (repo_id)
+    "user_repo_permissions_source_idx" btree (source)
+    "user_repo_permissions_updated_at_idx" btree (updated_at)
+    "user_repo_permissions_user_external_account_id_idx" btree (user_external_account_id)
+    "user_repo_permissions_user_id_idx" btree (user_id)
+Foreign-key constraints:
+    "user_repo_permissions_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+    "user_repo_permissions_user_external_account_id_fkey" FOREIGN KEY (user_external_account_id) REFERENCES user_external_accounts(id) ON DELETE CASCADE
+    "user_repo_permissions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 
 ```
 
@@ -3515,6 +3544,7 @@ Referenced by:
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "user_repo_permissions" CONSTRAINT "user_repo_permissions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "user_roles" CONSTRAINT "user_roles_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "webhooks" CONSTRAINT "webhooks_created_by_user_id_fkey" FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL
     TABLE "webhooks" CONSTRAINT "webhooks_updated_by_user_id_fkey" FOREIGN KEY (updated_by_user_id) REFERENCES users(id) ON DELETE SET NULL
