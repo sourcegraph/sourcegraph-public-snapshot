@@ -5,7 +5,7 @@ import type { EntityType } from './providers'
 
 export type ParserFunction = (results: SearchResult[], providerName: string) => DeferredEntity[];
 
-const parseEntityWithDefinition = (searchResults: SearchResult[], providerName: string, entityType: EntityType): DeferredEntity[] => {
+const apiEntityDefinitionParser = (searchResults: SearchResult[], providerName: string, entityType: EntityType): DeferredEntity[] => {
   const results: DeferredEntity[] = []
 
   console.log(`parsing ${searchResults.length} proto results`)
@@ -74,13 +74,13 @@ export const parseCatalogContent: ParserFunction = (searchResults: SearchResult[
   return results
 }
 
-const definitionParser = (type: EntityType): ParserFunction => (src: SearchResult[], providerName: string): DeferredEntity[] => parseEntityWithDefinition(src, providerName, type)
+const apiEntityParser = (type: EntityType): ParserFunction => (src: SearchResult[], providerName: string): DeferredEntity[] => apiEntityDefinitionParser(src, providerName, type)
 
 export const parserForType = (entityType: EntityType): ParserFunction => {
   if (entityType === 'file') {
     return parseCatalogContent
   } else if (entityType === 'grpc' || entityType === 'graphql') {
-    return definitionParser(entityType)
+    return apiEntityParser(entityType)
   } else {
     throw new Error(`unknown Entity Type: ${entityType}`)
   }
