@@ -4974,6 +4974,8 @@ CREATE UNIQUE INDEX user_external_accounts_account ON user_external_accounts USI
 
 CREATE INDEX user_external_accounts_user_id ON user_external_accounts USING btree (user_id) WHERE (deleted_at IS NULL);
 
+CREATE UNIQUE INDEX user_repo_permissions_perms_unique_idx ON user_repo_permissions USING btree (user_id, user_external_account_id, repo_id);
+
 CREATE INDEX user_repo_permissions_repo_id_idx ON user_repo_permissions USING btree (repo_id);
 
 CREATE INDEX user_repo_permissions_source_idx ON user_repo_permissions USING btree (source);

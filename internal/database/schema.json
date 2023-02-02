@@ -21540,6 +21540,16 @@
       ],
       "Indexes": [
         {
+          "Name": "user_repo_permissions_perms_unique_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX user_repo_permissions_perms_unique_idx ON user_repo_permissions USING btree (user_id, user_external_account_id, repo_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "user_repo_permissions_pkey",
           "IsPrimaryKey": true,
           "IsUnique": true,

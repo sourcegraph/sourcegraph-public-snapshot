@@ -3370,6 +3370,7 @@ Foreign-key constraints:
  source                   | text                     |           | not null | 'sync'::text
 Indexes:
     "user_repo_permissions_pkey" PRIMARY KEY, btree (id)
+    "user_repo_permissions_perms_unique_idx" UNIQUE, btree (user_id, user_external_account_id, repo_id)
     "user_repo_permissions_repo_id_idx" btree (repo_id)
     "user_repo_permissions_source_idx" btree (source)
     "user_repo_permissions_updated_at_idx" btree (updated_at)
