@@ -73,7 +73,7 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                     )}
                     {/* TODO: New error view design pending */}
                     {/* TODO: Corruption log action ? */}
-                    {node.mirrorInfo.lastError && (
+                    {(node.mirrorInfo.lastError || !!node.mirrorInfo.corruptionLogs.length) && (
                         <Button to={`/${node.name}/-/settings/mirror`} variant="secondary" size="sm" as={Link}>
                             <Icon aria-hidden={true} svgPath={mdiFileDocumentOutline} /> See errors
                         </Button>
