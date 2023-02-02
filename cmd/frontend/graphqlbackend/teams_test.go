@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -86,6 +87,76 @@ func setupDB() (*database.MockDB, *fakeTeamsDb) {
 		return callback(db)
 	})
 	return db, ts
+}
+
+func TestQuery(t *testing.T) {
+	db, ts := setupDB()
+	ctx, _, _ := fakeUser(t, context.Background(), db, true)
+	if err := ts.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+		t.Fatalf("failed to create fake team: %s", err)
+	}
+	team, err := ts.GetTeamByName(ctx, "team")
+	if err != nil {
+		t.Fatalf("failed to get fake team: %s", err)
+	}
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `query TeamByID($id: ID!){
+			node(id: $id) {
+				__typename
+				... on Team {
+				  name
+				}
+			}
+		}`,
+		ExpectedResult: `{
+			"node": {
+				"__typename": "Team",
+				"name": "team"
+			}
+		}`,
+		Variables: map[string]any{
+			"id": string(relay.MarshalID("Team", team.ID)),
+		},
+	})
+}
+
+func TestQuerySiteAdminCanAdminister(t *testing.T) {
+	for _, isAdmin := range []bool{true, false} {
+		t.Run(fmt.Sprintf("viewer is admin = %v", isAdmin), func(t *testing.T) {
+			db, ts := setupDB()
+			ctx, _, _ := fakeUser(t, context.Background(), db, isAdmin)
+			if err := ts.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+				t.Fatalf("failed to create fake team: %s", err)
+			}
+			team, err := ts.GetTeamByName(ctx, "team")
+			if err != nil {
+				t.Fatalf("failed to get fake team: %s", err)
+			}
+			RunTest(t, &Test{
+				Schema:  mustParseGraphQLSchema(t, db),
+				Context: ctx,
+				Query: `query TeamByID($id: ID!){
+					node(id: $id) {
+						__typename
+						... on Team {
+							viewerCanAdminister
+						}
+					}
+				}`,
+				ExpectedResult: fmt.Sprintf(`{
+					"node": {
+						"__typename": "Team",
+						"viewerCanAdminister": %v
+					}
+				}`, isAdmin),
+				Variables: map[string]any{
+					"id": string(relay.MarshalID("Team", team.ID)),
+				},
+			})
+		})
+	}
 }
 
 func TestCreateTeamBare(t *testing.T) {
