@@ -33,7 +33,7 @@ func TestExternalAccounts_LookupUserAndSave(t *testing.T) {
 		ClientID:    "xc",
 		AccountID:   "xd",
 	}
-	userID, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
+	user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,8 +42,8 @@ func TestExternalAccounts_LookupUserAndSave(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if lookedUpUserID != userID {
-		t.Errorf("got %d, want %d", lookedUpUserID, userID)
+	if lookedUpUserID != user.ID {
+		t.Errorf("got %d, want %d", lookedUpUserID, user.ID)
 	}
 }
 
@@ -121,12 +121,7 @@ func TestExternalAccounts_CreateUserAndSave(t *testing.T) {
 		AuthData: extsvc.NewUnencryptedData(authData),
 		Data:     extsvc.NewUnencryptedData(data),
 	}
-	userID, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, accountData)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	user, err := db.Users().GetByID(ctx, userID)
+	user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, accountData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -146,7 +141,7 @@ func TestExternalAccounts_CreateUserAndSave(t *testing.T) {
 	account.ID = 0
 
 	want := &extsvc.Account{
-		UserID:      userID,
+		UserID:      user.ID,
 		AccountSpec: spec,
 		AccountData: accountData,
 	}
@@ -171,12 +166,7 @@ func TestExternalAccounts_CreateUserAndSave_NilData(t *testing.T) {
 		AccountID:   "xd",
 	}
 
-	userID, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	user, err := db.Users().GetByID(ctx, userID)
+	user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -196,7 +186,7 @@ func TestExternalAccounts_CreateUserAndSave_NilData(t *testing.T) {
 	account.ID = 0
 
 	want := &extsvc.Account{
-		UserID:      userID,
+		UserID:      user.ID,
 		AccountSpec: spec,
 	}
 	if diff := cmp.Diff(want, account, et.CompareEncryptable); diff != "" {
@@ -236,11 +226,11 @@ func TestExternalAccounts_List(t *testing.T) {
 	userIDs := make([]int32, 0, len(specs))
 
 	for i, spec := range specs {
-		id, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: fmt.Sprintf("u%d", i)}, spec, extsvc.AccountData{})
+		user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: fmt.Sprintf("u%d", i)}, spec, extsvc.AccountData{})
 		if err != nil {
 			t.Fatal(err)
 		}
-		userIDs = append(userIDs, id)
+		userIDs = append(userIDs, user.ID)
 	}
 
 	specByID := make(map[int32]extsvc.AccountSpec)
@@ -363,7 +353,7 @@ func TestExternalAccounts_Encryption(t *testing.T) {
 	}
 
 	// store with encrypted authdata
-	userID, err := store.CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, accountData)
+	user, err := store.CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, accountData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -397,7 +387,7 @@ func TestExternalAccounts_Encryption(t *testing.T) {
 	// List should return decrypted data
 	account := listFirstAccount(store)
 	want := extsvc.Account{
-		UserID:      userID,
+		UserID:      user.ID,
 		AccountSpec: spec,
 		AccountData: accountData,
 	}
@@ -406,7 +396,7 @@ func TestExternalAccounts_Encryption(t *testing.T) {
 	}
 
 	// LookupUserAndSave should encrypt the accountData correctly
-	userID, err = store.LookupUserAndSave(ctx, spec, accountData)
+	userID, err := store.LookupUserAndSave(ctx, spec, accountData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -446,12 +436,12 @@ func TestExternalAccounts_expiredAt(t *testing.T) {
 		ClientID:    "xc",
 		AccountID:   "xd",
 	}
-	userID, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
+	user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: userID})
+	accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: user.ID})
 	if err != nil {
 		t.Fatal(err)
 	} else if len(accts) != 1 {
@@ -466,7 +456,7 @@ func TestExternalAccounts_expiredAt(t *testing.T) {
 		}
 
 		accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{
-			UserID:         userID,
+			UserID:         user.ID,
 			ExcludeExpired: true,
 		})
 		if err != nil {
@@ -485,7 +475,7 @@ func TestExternalAccounts_expiredAt(t *testing.T) {
 		}
 
 		accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{
-			UserID:      userID,
+			UserID:      user.ID,
 			OnlyExpired: true,
 		})
 		if err != nil {
@@ -509,7 +499,7 @@ func TestExternalAccounts_expiredAt(t *testing.T) {
 		}
 
 		accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{
-			UserID:         userID,
+			UserID:         user.ID,
 			ExcludeExpired: true,
 		})
 		if err != nil {
@@ -527,13 +517,13 @@ func TestExternalAccounts_expiredAt(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = db.UserExternalAccounts().AssociateUserAndSave(ctx, userID, spec, extsvc.AccountData{})
+		err = db.UserExternalAccounts().AssociateUserAndSave(ctx, user.ID, spec, extsvc.AccountData{})
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{
-			UserID:         userID,
+			UserID:         user.ID,
 			ExcludeExpired: true,
 		})
 		if err != nil {
@@ -557,7 +547,7 @@ func TestExternalAccounts_expiredAt(t *testing.T) {
 		}
 
 		accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{
-			UserID:         userID,
+			UserID:         user.ID,
 			ExcludeExpired: true,
 		})
 		if err != nil {
@@ -585,13 +575,13 @@ func TestExternalAccounts_DeleteList(t *testing.T) {
 		AccountID:   "xd",
 	}
 
-	userID, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
+	user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
 	spec.ServiceID = "xb2"
 	require.NoError(t, err)
-	err = db.UserExternalAccounts().Insert(ctx, userID, spec, extsvc.AccountData{})
+	err = db.UserExternalAccounts().Insert(ctx, user.ID, spec, extsvc.AccountData{})
 	require.NoError(t, err)
 	spec.ServiceID = "xb3"
-	err = db.UserExternalAccounts().Insert(ctx, userID, spec, extsvc.AccountData{})
+	err = db.UserExternalAccounts().Insert(ctx, user.ID, spec, extsvc.AccountData{})
 	require.NoError(t, err)
 
 	accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1})
@@ -628,13 +618,13 @@ func TestExternalAccounts_TouchExpiredList(t *testing.T) {
 			AccountID:   "xd",
 		}
 
-		userID, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
+		user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
 		spec.ServiceID = "xb2"
 		require.NoError(t, err)
-		err = db.UserExternalAccounts().Insert(ctx, userID, spec, extsvc.AccountData{})
+		err = db.UserExternalAccounts().Insert(ctx, user.ID, spec, extsvc.AccountData{})
 		require.NoError(t, err)
 		spec.ServiceID = "xb3"
-		err = db.UserExternalAccounts().Insert(ctx, userID, spec, extsvc.AccountData{})
+		err = db.UserExternalAccounts().Insert(ctx, user.ID, spec, extsvc.AccountData{})
 		require.NoError(t, err)
 
 		accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1})
