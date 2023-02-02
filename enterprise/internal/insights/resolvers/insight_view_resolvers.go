@@ -589,6 +589,7 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 		SeriesSortMode:      seriesSortMode,
 		SeriesSortDirection: seriesSortDirection,
 		SeriesLimit:         args.Input.ViewControls.SeriesDisplayOptions.Limit,
+		SeriesNumSamples:    args.Input.ViewControls.SeriesDisplayOptions.NumSamples,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "UpdateView")
@@ -1303,8 +1304,8 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, startSer
 	}
 
 	// Don't try to match on non-global series, since they are always replaced
-	// Also don't try to match on series that use repo critieria
-	// TODO: Reconsider matching on on criteria based series. If so the edit case would need work to ensure other insights remain the same.
+	// Also don't try to match on series that use repo criteria
+	// TODO: Reconsider matching åon criteria based series. If so the edit case would need work to ensure other insights remain the same.
 	if len(series.RepositoryScope.Repositories) == 0 && series.RepositoryScope.RepositoryCriteria == nil {
 		matchingSeries, foundSeries, err = tx.FindMatchingSeries(ctx, store.MatchSeriesArgs{
 			Query:                     series.Query,
