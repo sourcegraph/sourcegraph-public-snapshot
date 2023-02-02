@@ -25,8 +25,8 @@ import {
     RepositoryStatsVariables,
     SiteAdminRepositoryFields,
 } from '../graphql-operations'
-
 import { PageRoutes } from '../routes.constants'
+
 import { ValueLegendList, ValueLegendListProps } from './analytics/components/ValueLegendList'
 import { REPOSITORY_STATS, REPO_PAGE_POLL_INTERVAL, REPOSITORIES_QUERY } from './backend'
 import { RepositoryNode } from './RepositoryNode'
