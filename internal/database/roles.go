@@ -192,8 +192,6 @@ func (r *roleStore) list(ctx context.Context, opts RolesListOptions, selects *sq
 		sqlf.Join(conds, " AND "),
 	)
 
-	fmt.Println(query.Query(sqlf.PostgresBindVar), " ===== ", query.Args())
-
 	query = queryArgs.AppendOrderToQuery(query)
 	query = queryArgs.AppendLimitToQuery(query)
 

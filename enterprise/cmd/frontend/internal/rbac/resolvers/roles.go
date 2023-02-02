@@ -39,7 +39,11 @@ func (r *Resolver) Roles(ctx context.Context, args *gql.ListRoleArgs) (*graphqlu
 	return graphqlutil.NewConnectionResolver[gql.RoleResolver](
 		&connectionStore,
 		&args.ConnectionResolverArgs,
-		nil,
+		&graphqlutil.ConnectionResolverOptions{
+			OrderBy: database.OrderBy{
+				{Field: "roles.id"},
+			},
+		},
 	)
 }
 
