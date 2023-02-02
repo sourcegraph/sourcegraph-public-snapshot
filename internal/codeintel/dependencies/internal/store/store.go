@@ -329,7 +329,7 @@ CREATE TEMPORARY TABLE t_package_repo_versions (
 
 const transferPackageRepoRefsQuery = `
 INSERT INTO lsif_dependency_repos (scheme, name, version)
-SELECT scheme, name, '👁️ temporary_sentintel_value 👁️'
+SELECT scheme, name, '👁️temporary_sentinel_value👁️'
 FROM (
 	SELECT scheme, name
 	FROM t_package_repo_refs t
@@ -362,10 +362,13 @@ ORDER BY package_id, version
 RETURNING id, package_id, version
 `
 
+// Always use the lowest ID for a given (scheme,name), like in the migration
+// migrations/frontend/1674669326_package_repos_separate_versions_table/up.sql#L41
 const getAttemptedInsertDependencyReposQuery = `
-SELECT id FROM lsif_dependency_repos
+SELECT MIN(id) FROM lsif_dependency_repos
 WHERE (scheme, name) IN (VALUES %s)
-ORDER BY scheme, name
+GROUP BY (scheme, name)
+ORDER BY (scheme, name)
 `
 
 // DeleteDependencyReposByID removes the dependency repos with the given ids, if they exist.
