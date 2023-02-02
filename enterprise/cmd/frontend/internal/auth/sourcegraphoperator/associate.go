@@ -52,34 +52,38 @@ func addSourcegraphOperatorExternalAccount(ctx context.Context, db database.DB, 
 	if details.ClientID != p.CachedInfo().ClientID {
 		return errors.Newf("unknown client ID %q", details.ClientID)
 	}
-	// Make sure this user has no other SOAP accounts.
-	numSOAPAccounts, err := db.UserExternalAccounts().Count(ctx, database.ExternalAccountsListOptions{
-		UserID: userID,
-		// For provider matching, we explicitly do not provider the service ID - there
-		// should only be one SOAP registered.
-		ServiceType: auth.SourcegraphOperatorProviderType,
+
+	// Run account count verification and association in a single transaction, to ensure
+	// we have no funny business with accounts being created in the time between the two.
+	return db.WithTransact(ctx, func(tx database.DB) error {
+		// Make sure this user has no other SOAP accounts.
+		numSOAPAccounts, err := tx.UserExternalAccounts().Count(ctx, database.ExternalAccountsListOptions{
+			UserID: userID,
+			// For provider matching, we explicitly do not provider the service ID - there
+			// should only be one SOAP registered.
+			ServiceType: auth.SourcegraphOperatorProviderType,
+		})
+		if err != nil {
+			return errors.Wrap(err, "failed to check for an existing Sourcegraph Operator accounts")
+		}
+		if numSOAPAccounts > 0 {
+			return errors.New("user already has an associated Sourcegraph Operator account")
+		}
+
+		// Create an association
+		accountData, err := MarshalAccountData(details.ExternalAccountData)
+		if err != nil {
+			return errors.Wrap(err, "failed to marshal account data")
+		}
+		if err := db.UserExternalAccounts().AssociateUserAndSave(ctx, userID, extsvc.AccountSpec{
+			ServiceType: auth.SourcegraphOperatorProviderType,
+			ServiceID:   serviceID,
+			ClientID:    details.ClientID,
+
+			AccountID: details.AccountID,
+		}, accountData); err != nil {
+			return errors.Wrap(err, "failed to associate user with Sourcegraph Operator provider")
+		}
+		return nil
 	})
-	if err != nil {
-		return err
-	}
-	if numSOAPAccounts > 0 {
-		return errors.New("user already has an associated Sourcegraph Operator account")
-	}
-
-	// Create an association
-	accountData, err := MarshalAccountData(details.ExternalAccountData)
-	if err != nil {
-		return errors.Wrap(err, "failed to marshal account data")
-	}
-	if err := db.UserExternalAccounts().AssociateUserAndSave(ctx, userID, extsvc.AccountSpec{
-		ServiceType: auth.SourcegraphOperatorProviderType,
-		ServiceID:   serviceID,
-		ClientID:    details.ClientID,
-
-		AccountID: details.AccountID,
-	}, accountData); err != nil {
-		return errors.Wrap(err, "failed to associate user with SOAP provider")
-	}
-
-	return nil
 }

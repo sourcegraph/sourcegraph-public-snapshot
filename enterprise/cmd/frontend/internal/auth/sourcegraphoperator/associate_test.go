@@ -158,7 +158,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 					ServiceAccount: true, // trying to promote themselves to service account
 				},
 			},
-			expectErr: autogold.Expect("user already has an associated SOAP account"),
+			expectErr: autogold.Expect("user already has an associated Sourcegraph Operator account"),
 			assert: func(t *testing.T, uid int32, db database.DB) {
 				accts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
 					UserID: uid,
