@@ -559,6 +559,75 @@ func TestUpdateInsight(t *testing.T) {
 		}
 	})
 
+	t.Run("default filters are saved on update", func(t *testing.T) {
+		repos := []string{"repo1"}
+		intervalUnit := "MONTH"
+		intervalValue := 4
+		dataSeries := map[string]any{
+			"query": "lang:css",
+			"options": map[string]string{
+				"label":     "insights",
+				"lineColor": "#6495ED",
+			},
+		}
+		repoScope := map[string]any{
+			"repositories": repos,
+		}
+		timeScope := map[string]any{
+			"stepInterval": map[string]any{
+				"unit":  intervalUnit,
+				"value": intervalValue,
+			},
+		}
+		insight, err := client.CreateSearchInsight("my gqltest insight", dataSeries, repoScope, timeScope)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if insight.InsightViewId == "" {
+			t.Fatal("Did not get an insight view ID")
+		}
+		defer func() {
+			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
+				t.Fatalf("couldn't disable insight series: %v", err)
+			}
+		}()
+
+		if insight.Label != "insights" {
+			t.Errorf("wrong label: %v", insight.Label)
+		}
+		if insight.Color != "#6495ED" {
+			t.Errorf("wrong color: %v", insight.Color)
+		}
+
+		dataSeries["seriesId"] = insight.SeriesId
+		dataSeries["options"] = map[string]any{
+			"label":     "insights 2",
+			"lineColor": "green",
+		}
+
+		var numSamples int32 = 32
+		updatedInsight, err := client.UpdateSearchInsight(insight.InsightViewId, map[string]any{
+			"dataSeries": []any{
+				dataSeries,
+			},
+			"presentationOptions": map[string]string{},
+			"viewControls": map[string]any{
+				"filters": struct{}{},
+				"seriesDisplayOptions": map[string]int32{
+					"numSamples": numSamples,
+				},
+			},
+			"repositoryScope": repoScope,
+			"timeScope":       timeScope,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if updatedInsight.NumSamples != numSamples {
+			t.Errorf("wrong number of samples: %d", updatedInsight.NumSamples)
+		}
+	})
 }
 
 func TestSaveInsightAsNewView(t *testing.T) {

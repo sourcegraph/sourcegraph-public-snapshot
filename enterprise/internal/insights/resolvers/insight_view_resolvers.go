@@ -105,7 +105,6 @@ func (i *insightViewSeriesDisplayOptionsResolver) SortOptions(ctx context.Contex
 func (i *insightViewSeriesDisplayOptionsResolver) NumSamples() *int32 {
 	v := int32(i.seriesDisplayOptions.NumSamples)
 	return &v
-
 }
 
 type insightViewSeriesSortOptionsResolver struct {
@@ -1095,9 +1094,9 @@ func (d *InsightViewQueryConnectionResolver) Nodes(ctx context.Context) ([]graph
 					Direction: types.SeriesSortDirection(d.args.SeriesDisplayOptions.SortOptions.Direction),
 				}
 			}
-			numSamples := 90
+			numSamples := int32(90)
 			if d.args.SeriesDisplayOptions.NumSamples != nil {
-				numSamples = int(*d.args.SeriesDisplayOptions.NumSamples)
+				numSamples = *d.args.SeriesDisplayOptions.NumSamples
 				if numSamples > 90 {
 					numSamples = 90
 				}

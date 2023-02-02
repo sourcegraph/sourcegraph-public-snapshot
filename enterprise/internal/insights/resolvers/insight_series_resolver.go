@@ -324,7 +324,7 @@ func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, timeseriesS
 	opts.ID = &definition.InsightSeriesID
 	opts.SupportsAugmentation = definition.SupportsAugmentation
 
-	oldest, err := timeseriesStore.GetOffsetNRecordingTime(ctx, definition.InsightSeriesID, options.NumSamples, false)
+	oldest, err := timeseriesStore.GetOffsetNRecordingTime(ctx, definition.InsightSeriesID, int(options.NumSamples), false)
 	if err != nil {
 		return nil, errors.Wrap(err, "GetOffsetNRecordingTime")
 	}
