@@ -14,6 +14,8 @@ import (
 	"go.opentelemetry.io/otel"
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/metric"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
 
@@ -126,10 +128,10 @@ func Register(ctx context.Context, logger log.Logger, protocol otlpenv.Protocol,
 }
 
 func mustMetricsProvider(l log.Logger) metric.MeterProvider {
-	mp, err := otelprometheus.New(otelprometheus.WithRegisterer(prometheus.DefaultRegisterer))
+	prom, err := otelprometheus.New(otelprometheus.WithRegisterer(prometheus.DefaultRegisterer))
 	if err != nil {
 		l.Error("failed to register prometheus metrics for otlpadapter", log.Error(err))
 		return metric.NewNoopMeterProvider()
 	}
-	return mp
+	return sdkmetric.NewMeterProvider(sdkmetric.WithReader(prom))
 }
