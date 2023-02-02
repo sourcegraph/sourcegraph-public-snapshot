@@ -24,7 +24,7 @@ export const enterpriseRepoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[] 
         render: () => <RedirectRoute getRedirectURL={({ params }) => `../uploads/${params.id}`} />,
     },
     {
-        path: '/code-intelligence',
+        path: '/code-intelligence/*',
         render: () => <RedirectRoute getRedirectURL={({ location }) => location.pathname.replace('/settings/', '/')} />,
     },
 ]
