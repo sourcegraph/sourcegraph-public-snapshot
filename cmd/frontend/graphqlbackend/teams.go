@@ -34,6 +34,8 @@ type teamConnectionResolver struct {
 	err      error
 }
 
+// applyArgs unmarshals query conditions and limites set in `ListTeamsArgs`
+// into `teamConnectionResolver` fields for convenient use in database query.
 func (r *teamConnectionResolver) applyArgs(args *ListTeamsArgs) error {
 	if args.After != nil {
 		cursor, err := graphqlutil.DecodeIntCursor(args.After)
@@ -54,6 +56,11 @@ func (r *teamConnectionResolver) applyArgs(args *ListTeamsArgs) error {
 	return nil
 }
 
+// compute resolves teams queried for this resolver.
+// The result of running it is setting `teams`, `next` and `err`
+// fields on the resolver. This ensures that resolving multiple
+// graphQL attributes that require listing (like `pageInfo` and `nodes`)
+// results in just one query.
 func (r *teamConnectionResolver) compute(ctx context.Context) {
 	r.once.Do(func() {
 		opts := database.ListTeamsOpts{

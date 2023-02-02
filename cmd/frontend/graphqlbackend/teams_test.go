@@ -988,6 +988,12 @@ func TestChildTeams(t *testing.T) {
 			t.Fatalf("cannot create child team: %s", err)
 		}
 	}
+	for i := 6; i <= 10; i++ {
+		name := fmt.Sprintf("not-child-%d", i)
+		if err := ts.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
+			t.Fatalf("cannot create a team: %s", err)
+		}
+	}
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
 		Context: ctx,
