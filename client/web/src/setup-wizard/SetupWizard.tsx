@@ -1,13 +1,12 @@
 import { FC, useState } from 'react'
 
-import { H1, H2 } from '@sourcegraph/wildcard'
+import { H1, H2, Text } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { PageTitle } from '../components/PageTitle'
-import { SiteAdminRepositoriesContainer } from '../site-admin/SiteAdminRepositoriesPage'
+import { SiteAdminRepositoriesContainer } from '../site-admin/SiteAdminRepositoriesContainer'
 
 import { SetupSteps, SetupTabs, SetupList, SetupTab } from './components/SetupTabs'
-import { Text } from '@sourcegraph/wildcard'
 
 import styles from './Setup.module.scss'
 

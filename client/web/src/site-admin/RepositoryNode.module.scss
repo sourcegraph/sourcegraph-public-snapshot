@@ -4,6 +4,10 @@
     max-height: 25rem;
 }
 
+.badge-wrapper {
+    min-width: 100px;
+}
+
 .alert-content {
     white-space: break-spaces;
 }
@@ -20,6 +24,6 @@
 }
 
 .failed {
-    background-color: var(--warning ) !important;
+    background-color: var(--warning) !important;
     color: var(--white) !important;
 }

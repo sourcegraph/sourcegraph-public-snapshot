@@ -1,8 +1,18 @@
 :global(.theme-dark) {
-    --header-gradient: radial-gradient(130.33% 541.14% at 48.47% 231.96%, var(--violet-06) 0%, var(--violet-07) 42.62%, var(--violet-08) 68.83%);
+    --header-gradient: radial-gradient(
+        130.33% 541.14% at 48.47% 231.96%,
+        var(--violet-06) 0%,
+        var(--violet-07) 42.62%,
+        var(--violet-08) 68.83%
+    );
 }
 :global(.theme-light) {
-    --header-gradient: radial-gradient(113.96% 113.96% at 50% -8.21%, var(--violet-06) 0%, var(--violet-07) 57.81%, var(--violet-08) 100%);
+    --header-gradient: radial-gradient(
+        113.96% 113.96% at 50% -8.21%,
+        var(--violet-06) 0%,
+        var(--violet-07) 57.81%,
+        var(--violet-08) 100%
+    );
 }
 
 .root {

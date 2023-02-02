@@ -55,7 +55,13 @@ export const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({
                         {formattedNumber}
                     </Link>
                 ) : (
-                    <Text as="span" alignment="center" style={{ color }} className={styles.count} onClick={onClick}>
+                    <Text
+                        as="span"
+                        alignment="center"
+                        style={{ color }}
+                        className={classNames(styles.count, 'cursor-pointer')}
+                        onClick={onClick}
+                    >
                         {formattedNumber}
                     </Text>
                 )}

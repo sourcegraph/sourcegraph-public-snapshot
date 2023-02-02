@@ -5,9 +5,9 @@ import classNames from 'classnames'
 import { Link } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../components/DismissibleAlert'
+import { PageRoutes } from '../routes.constants'
 import { useExperimentalFeatures } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
-import { PageRoutes } from './../routes.constants'
 
 const onClickCTA = (): void => {
     eventLogger.log('AlertNeedsRepoConfigCTAClicked')
