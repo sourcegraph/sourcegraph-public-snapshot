@@ -145,8 +145,7 @@ export interface HoverThresholdProps {
  * Renders a horizontal bar and content for a repository page.
  */
 export const RepoContainer: FC<RepoContainerProps> = props => {
-    const { extensionsController, globbing, repoContainerRoutes, repoRevisionContainerRoutes, authenticatedUser } =
-        props
+    const { extensionsController, globbing, repoContainerRoutes, authenticatedUser } = props
 
     const location = useLocation()
 
