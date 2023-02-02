@@ -597,7 +597,6 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 			return nil, err
 		}
 
-		println(addr)
 		conn, err := grpc.DialContext(ctx, addr, defaults.DialOptions()...)
 		if err != nil {
 			return nil, err
