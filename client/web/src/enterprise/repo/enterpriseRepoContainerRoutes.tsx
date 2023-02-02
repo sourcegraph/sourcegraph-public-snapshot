@@ -18,7 +18,7 @@ export const enterpriseRepoContainerRoutes: readonly RepoContainerRoute[] = [
     ...repoContainerRoutes,
 
     {
-        path: '/-/code-intelligence',
+        path: '/-/code-intelligence/*',
         render: () => (
             <RedirectRoute
                 getRedirectURL={({ location }) => location.pathname.replace('/code-intelligence', '/code-graph')}
