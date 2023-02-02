@@ -34,6 +34,7 @@ func TestAddSourcegraphOperatorExternalAccountBinding(t *testing.T) {
 	defer cloud.MockSiteConfig(t, nil)
 	// Initialize package
 	Init()
+	t.Cleanup(func() { providers.Update(auth.SourcegraphOperatorProviderType, nil) })
 	// Assert handler is registered - we check this by making sure we get a site admin
 	// error instead of an "unimplemented" error.
 	users := database.NewMockUserStore()
@@ -92,6 +93,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 		{
 			name: "provider does not exist",
 			setup: func(t *testing.T) (int32, database.DB) {
+				providers.MockProviders = nil
 				return 42, mockDB(true)
 			},
 			expectErr: autogold.Expect("provider does not exist"),
