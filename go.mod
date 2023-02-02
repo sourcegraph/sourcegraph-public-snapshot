@@ -489,7 +489,7 @@ replace (
 // These entries indicate temporary replace directives due to a pending pull request upstream
 // or issues with specific versions.
 replace (
-	// Forked until PR is merged upstream TODO @jhchabran
+	// TODO(@jhchabran): Forked until PR is merged upstream: https://github.com/XSAM/otelsql/pull/115 and https://github.com/sourcegraph/otelsql/pull/1
 	github.com/XSAM/otelsql => github.com/sourcegraph/otelsql v0.0.0-20230202200901-38f4a6e4fbed
 	// Pending: https://github.com/crewjam/saml/pull/450
 	github.com/crewjam/saml => github.com/sourcegraph/saml v0.0.0-20220728002234-ab6b53f6f94d

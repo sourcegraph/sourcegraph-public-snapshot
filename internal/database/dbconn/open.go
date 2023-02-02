@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -17,6 +18,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/qustavo/sqlhooks/v2"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -229,13 +231,22 @@ func open(cfg *pgx.ConnConfig) (*sql.DB, error) {
 			OmitConnPrepare:      true,
 			OmitRows:             true,
 			OmitConnectorConnect: true,
-			ArgumentOptions: otelsql.ArgumentOptions{
-				EnableAttributes: true,
-				Skip: func(ctx context.Context, query string, args []any) bool {
-					// Do not decorate span with args as attributes if that's a bulk insertion
-					// or if we have too many args (it's unreadable anyway).
-					return isBulkInsertion(ctx) || len(args) > 24
-				}},
+		}),
+		otelsql.WithAttributesGetter(func(ctx context.Context, method otelsql.Method, query string, args []driver.NamedValue) []attribute.KeyValue {
+			// Do not decorate span with args as attributes if that's a bulk insertion
+			// or if we have too many args (it's unreadable anyway).
+			if isBulkInsertion(ctx) || len(args) > 24 {
+				return []attribute.KeyValue{attribute.Bool("db.args.skipped", true)}
+			}
+
+			argsValues := namedToInterface(args)
+			attrs := make([]attribute.KeyValue, len(argsValues))
+			for i, arg := range argsValues {
+				attrs[i] = attribute.String(
+					fmt.Sprintf("db.args.$%d", i+1),
+					fmt.Sprintf("%v", arg))
+			}
+			return attrs
 		}),
 	)
 	if err != nil {
@@ -274,4 +285,12 @@ func isDatabaseLikelyStartingUp(err error) bool {
 	}
 
 	return false
+}
+
+func namedToInterface(args []driver.NamedValue) []interface{} {
+	list := make([]interface{}, len(args))
+	for i, a := range args {
+		list[i] = a.Value
+	}
+	return list
 }
