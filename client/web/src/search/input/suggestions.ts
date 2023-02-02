@@ -24,8 +24,9 @@ import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { regexInsertText } from '@sourcegraph/shared/src/search/query/completion-utils'
 import { FILTERS, FilterType, ResolvedFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { Node, OperatorKind } from '@sourcegraph/shared/src/search/query/parser'
+import { predicateCompletion } from '@sourcegraph/shared/src/search/query/predicates'
 import { selectorHasFields } from '@sourcegraph/shared/src/search/query/selectFilter'
-import { CharacterRange, Filter, PatternKind, Token } from '@sourcegraph/shared/src/search/query/token'
+import { CharacterRange, Filter, Literal, PatternKind, Token } from '@sourcegraph/shared/src/search/query/token'
 import { isFilterOfType, resolveFilterMemoized } from '@sourcegraph/shared/src/search/query/utils'
 import { getSymbolIconSVGPath } from '@sourcegraph/shared/src/symbols/symbolIcons'
 
@@ -39,6 +40,17 @@ import {
     SuggestionsSymbolVariables,
     SymbolKind,
 } from '../../graphql-operations'
+
+// The number of entries we want to show in various situations
+//
+// The number of filter values to show when there are multiple sections (e.g. values and predicates)
+const MULTIPLE_FILTER_VALUE_LIST_SIZE = 7
+// The number of filter values to show when there is only one section
+const ALL_FILTER_VALUE_LIST_SIZE = 12
+// The number of default suggestions
+const DEFAULT_SUGGESTIONS_LIST_SIZE = 3
+// The number of default suggestions for important types
+const DEFAULT_SUGGESTIONS_HIGH_PRI_LIST_SIZE = 5
 
 /**
  * Used to organize the various sources that contribute to the final list of
@@ -381,28 +393,66 @@ function filterValueSuggestions(caches: Caches): InternalSource {
 
         switch (resolvedFilter.definition.suggestions) {
             case 'repo': {
+                const predicates = staticFilterPredicateOptions('repo', token.value, position)
                 return caches.repo.query(
                     value,
-                    entries => [
-                        {
-                            title: 'Repositories',
-                            options: entries.slice(0, 12).map(item => toRepoCompletion(item, from, to)),
-                        },
-                    ],
+                    entries => {
+                        const groups = [
+                            {
+                                title: 'Repositories',
+                                options: entries
+                                    .slice(
+                                        0,
+                                        predicates.length === 0
+                                            ? ALL_FILTER_VALUE_LIST_SIZE
+                                            : MULTIPLE_FILTER_VALUE_LIST_SIZE
+                                    )
+                                    .map(item => toRepoCompletion(item, from, to)),
+                            },
+                        ]
+
+                        if (predicates.length > 0) {
+                            groups.push({
+                                title: 'Predicates',
+                                options: predicates,
+                            })
+                        }
+
+                        return groups
+                    },
                     parsedQuery,
                     position
                 )
             }
 
             case 'path': {
+                const predicates = staticFilterPredicateOptions('file', token.value, position)
                 return caches.file.query(
                     value,
-                    entries => [
-                        {
-                            title: 'Files',
-                            options: entries.map(item => toFileCompletion(item, from, to)).slice(0, 12),
-                        },
-                    ],
+                    entries => {
+                        const groups = [
+                            {
+                                title: 'Files',
+                                options: entries
+                                    .map(item => toFileCompletion(item, from, to))
+                                    .slice(
+                                        0,
+                                        predicates.length === 0
+                                            ? ALL_FILTER_VALUE_LIST_SIZE
+                                            : MULTIPLE_FILTER_VALUE_LIST_SIZE
+                                    ),
+                            },
+                        ]
+
+                        if (predicates.length > 0) {
+                            groups.push({
+                                title: 'Predicates',
+                                options: predicates,
+                            })
+                        }
+
+                        return groups
+                    },
                     parsedQuery,
                     position
                 )
@@ -416,7 +466,7 @@ function filterValueSuggestions(caches: Caches): InternalSource {
                     // search input.
                     case FilterType.context:
                         return caches.context.query(value, entries => {
-                            entries = value.trim() === '' ? entries.slice(0, 12) : entries
+                            entries = value.trim() === '' ? entries.slice(0, ALL_FILTER_VALUE_LIST_SIZE) : entries
                             return [
                                 {
                                     title: 'Search contexts',
@@ -426,8 +476,8 @@ function filterValueSuggestions(caches: Caches): InternalSource {
                             ]
                         })
                     default: {
-                        const suggestions = staticFilterValueSuggestions(token, resolvedFilter)
-                        return suggestions ? { result: [suggestions] } : null
+                        const options = staticFilterValueOptions(token, resolvedFilter)
+                        return options.length > 0 ? { result: [{ title: '', options }] } : null
                     }
                 }
             }
@@ -441,12 +491,12 @@ const filterValueFzfOptions: Partial<Record<FilterType, Partial<FzfOptions<Optio
     },
 }
 
-function staticFilterValueSuggestions(
+function staticFilterValueOptions(
     token: Extract<Token, { type: 'filter' }>,
     resolvedFilter: NonNullable<ResolvedFilter>
-): Group | null {
+): Option[] {
     if (!resolvedFilter.definition.discreteValues) {
-        return null
+        return []
     }
 
     const value = token.value?.value ?? ''
@@ -517,8 +567,34 @@ function staticFilterValueSuggestions(
         options = fzf.find(value).map(match => ({ ...match.item, matches: match.positions }))
     }
 
-    // TODO: Determine appropriate title
-    return options.length > 0 ? { title: '', options } : null
+    return options
+}
+
+type PredicateFzfOptions = FzfOptions<{ label: string; asSnippet?: boolean; insertText?: string }>
+const predicateFzfOption: PredicateFzfOptions = {
+    selector: completion => completion.label,
+    fuzzy: false,
+    forward: false,
+    tiebreakers: [byStartDesc, byLengthAsc],
+}
+
+/**
+ * Returns predicate options for the provided filter type.
+ */
+function staticFilterPredicateOptions(type: 'repo' | 'file', value: Literal | undefined, position: number): Option[] {
+    const fzf = new Fzf(predicateCompletion(type), predicateFzfOption)
+    return fzf.find(value?.value || '').map(({ item, positions }) => ({
+        label: item.label,
+        matches: positions,
+        action: {
+            type: 'completion',
+            from: value?.range.start ?? position,
+            to: value?.range.end,
+            // insertText is always set for prediction completions
+            insertValue: item.insertText! + ' ${}',
+            asSnippet: item.asSnippet,
+        },
+    }))
 }
 
 /**
@@ -539,7 +615,9 @@ function repoSuggestions(cache: Caches['repo']): InternalSource {
             results => [
                 {
                     title: 'Repositories',
-                    options: results.slice(0, 3).map(result => toRepoSuggestion(result, token.range.start)),
+                    options: results
+                        .slice(0, DEFAULT_SUGGESTIONS_LIST_SIZE)
+                        .map(result => toRepoSuggestion(result, token.range.start)),
                 },
             ],
             parsedQuery,
@@ -579,7 +657,9 @@ function fileSuggestions(cache: Caches['file'], isSourcegraphDotCom?: boolean): 
             results => [
                 {
                     title: 'Files',
-                    options: results.slice(0, 5).map(result => toFileSuggestion(result, token.range.start)),
+                    options: results
+                        .slice(0, DEFAULT_SUGGESTIONS_HIGH_PRI_LIST_SIZE)
+                        .map(result => toFileSuggestion(result, token.range.start)),
                 },
             ],
             parsedQuery,
@@ -624,7 +704,9 @@ function symbolSuggestions(cache: Caches['symbol'], isSourcegraphDotCom?: boolea
             results => [
                 {
                     title: 'Symbols',
-                    options: results.slice(0, 5).map(result => toSymbolSuggestion(result, token.range.start)),
+                    options: results
+                        .slice(0, DEFAULT_SUGGESTIONS_HIGH_PRI_LIST_SIZE)
+                        .map(result => toSymbolSuggestion(result, token.range.start)),
                 },
             ],
             parsedQuery,
@@ -1170,4 +1252,8 @@ function containsFilterType(filterTypes: Set<FilterType>, filterType: string): b
         return false
     }
     return filterTypes.has(resolvedFilter.type)
+}
+
+function byStartDesc(itemA: FzfResultItem<unknown>, itemB: FzfResultItem<unknown>): number {
+    return itemB.start - itemA.start
 }

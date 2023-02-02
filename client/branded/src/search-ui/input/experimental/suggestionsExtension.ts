@@ -1,5 +1,6 @@
 import React from 'react'
 
+import { snippet } from '@codemirror/autocomplete'
 import {
     EditorSelection,
     EditorState,
@@ -122,6 +123,7 @@ export interface CompletionAction {
      * If present this component is rendered as part of the footer.
      */
     info?: CustomRenderer<Action>
+    asSnippet?: boolean
 }
 export type Action = CommandAction | GoToAction | CompletionAction
 
@@ -536,24 +538,32 @@ function applyAction(view: EditorView, action: Action, option: Option): void {
     switch (action.type) {
         case 'completion':
             {
-                const text = action.insertValue ?? option.label
-                const changeSet = view.state.changeByRange(range => {
-                    if (range === view.state.selection.main) {
-                        return {
-                            changes: {
-                                from: action.from,
-                                to: action.to ?? view.state.selection.main.head,
-                                insert: text,
-                            },
-                            range: EditorSelection.cursor(action.from + text.length),
+                const to = action.to ?? view.state.selection.main.to
+                const value = action.insertValue ?? option.label
+                if (action.asSnippet) {
+                    const apply = snippet(value)
+                    // {label: value} is just a dummy value to be able to use
+                    // snippet(...)
+                    apply(view, { label: value }, action.from, to)
+                } else {
+                    const changeSet = view.state.changeByRange(range => {
+                        if (range === view.state.selection.main) {
+                            return {
+                                changes: {
+                                    from: action.from,
+                                    to,
+                                    insert: value,
+                                },
+                                range: EditorSelection.cursor(action.from + value.length),
+                            }
                         }
-                    }
-                    return { range }
-                })
-                view.dispatch({
-                    ...changeSet,
-                    effects: changeSet.effects.concat(setModeEffect.of(null)),
-                })
+                        return { range }
+                    })
+                    view.dispatch({
+                        ...changeSet,
+                        effects: changeSet.effects.concat(setModeEffect.of(null)),
+                    })
+                }
             }
             break
         case 'command':
