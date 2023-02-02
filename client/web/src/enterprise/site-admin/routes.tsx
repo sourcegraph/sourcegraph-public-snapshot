@@ -1,4 +1,4 @@
-import { Navigate, useLocation } from 'react-router-dom-v5-compat'
+import { Navigate, useLocation, useParams } from 'react-router-dom-v5-compat'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
@@ -44,6 +44,14 @@ const BatchChangesSiteConfigSettingsArea = lazyComponent(
 )
 const BatchSpecsPage = lazyComponent(() => import('../batches/BatchSpecsPage'), 'BatchSpecsPage')
 const WebhookLogPage = lazyComponent(() => import('../../site-admin/webhooks/WebhookLogPage'), 'WebhookLogPage')
+const CodeIntelPreciseIndexesPage = lazyComponent(
+    () => import('../codeintel/indexes/pages/CodeIntelPreciseIndexesPage'),
+    'CodeIntelPreciseIndexesPage'
+)
+const CodeIntelPreciseIndexPage = lazyComponent(
+    () => import('../codeintel/indexes/pages/CodeIntelPreciseIndexPage'),
+    'CodeIntelPreciseIndexPage'
+)
 const CodeIntelConfigurationPage = lazyComponent(
     () => import('../codeintel/configuration/pages/CodeIntelConfigurationPage'),
     'CodeIntelConfigurationPage'
@@ -133,19 +141,11 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
         // Precise index routes
         {
             path: '/code-graph/indexes',
-            render: lazyComponent(
-                () => import('../codeintel/indexes/pages/CodeIntelPreciseIndexesPage'),
-                'CodeIntelPreciseIndexesPage'
-            ),
-            exact: true,
+            render: props => <CodeIntelPreciseIndexesPage {...props} />,
         },
         {
             path: '/code-graph/indexes/:id',
-            render: lazyComponent(
-                () => import('../codeintel/indexes/pages/CodeIntelPreciseIndexPage'),
-                'CodeIntelPreciseIndexPage'
-            ),
-            exact: true,
+            render: props => <CodeIntelPreciseIndexPage {...props} />,
         },
 
         // Code graph configuration
@@ -165,14 +165,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
         // Legacy routes
         {
             path: '/code-graph/uploads/:id',
-            render: props => (
-                <Redirect
-                    to={`../indexes/${btoa(
-                        `PreciseIndex:"U:${(atob(props.match.params.id).match(/(\d+)/) ?? [''])[0]}"`
-                    )}`}
-                />
-            ),
-            exact: true,
+            render: () => <NavigateToLegacyUploadPage />,
         },
         {
             path: '/lsif-uploads/:id',
@@ -196,4 +189,13 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
 function NavigateToCodeGraph(): JSX.Element {
     const location = useLocation()
     return <Navigate to={location.pathname.replace('/code-intelligence', '/code-graph')} />
+}
+
+function NavigateToLegacyUploadPage(): JSX.Element {
+    const { id = '' } = useParams<{ id: string }>()
+    return (
+        <Navigate
+            to={`/site-admin/code-graph/indexes/${btoa(`PreciseIndex:"U:${(atob(id).match(/(\d+)/) ?? [''])[0]}"`)}`}
+        />
+    )
 }
