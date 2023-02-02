@@ -6,7 +6,7 @@ import "google/protobuf/duration.proto";
 
 option go_package = "github.com/sourcegraph/sourcegraph/internal/symbols/proto";
 
-service Symbols {
+service SymbolsService {
   rpc Search(SearchRequest) returns (SymbolsResponse) {}
   rpc LocalCodeIntel(LocalCodeIntelRequest) returns (LocalCodeIntelResponse) {}
   rpc ListLanguages(ListLanguagesRequest) returns (ListLanguagesResponse) {}

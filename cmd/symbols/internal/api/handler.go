@@ -29,7 +29,7 @@ type grpcService struct {
 	searchFunc   types.SearchFunc
 	readFileFunc func(context.Context, internaltypes.RepoCommitPath) ([]byte, error)
 	ctagsBinary  string
-	proto.UnimplementedSymbolsServer
+	proto.UnimplementedSymbolsServiceServer
 	logger logger.Logger
 }
 
@@ -99,7 +99,7 @@ func NewHandler(
 	grpcServer := grpc.NewServer(
 		defaults.ServerOptions(rootLogger)...,
 	)
-	grpcServer.RegisterService(&proto.Symbols_ServiceDesc, &grpcService{
+	grpcServer.RegisterService(&proto.SymbolsService_ServiceDesc, &grpcService{
 		searchFunc:   searchFuncWrapper,
 		readFileFunc: readFileFunc,
 		ctagsBinary:  ctagsBinary,

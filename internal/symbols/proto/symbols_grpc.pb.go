@@ -18,10 +18,10 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// SymbolsClient is the client API for Symbols service.
+// SymbolsServiceClient is the client API for SymbolsService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type SymbolsClient interface {
+type SymbolsServiceClient interface {
 	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*SymbolsResponse, error)
 	LocalCodeIntel(ctx context.Context, in *LocalCodeIntelRequest, opts ...grpc.CallOption) (*LocalCodeIntelResponse, error)
 	ListLanguages(ctx context.Context, in *ListLanguagesRequest, opts ...grpc.CallOption) (*ListLanguagesResponse, error)
@@ -29,219 +29,219 @@ type SymbolsClient interface {
 	Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error)
 }
 
-type symbolsClient struct {
+type symbolsServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewSymbolsClient(cc grpc.ClientConnInterface) SymbolsClient {
-	return &symbolsClient{cc}
+func NewSymbolsServiceClient(cc grpc.ClientConnInterface) SymbolsServiceClient {
+	return &symbolsServiceClient{cc}
 }
 
-func (c *symbolsClient) Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*SymbolsResponse, error) {
+func (c *symbolsServiceClient) Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*SymbolsResponse, error) {
 	out := new(SymbolsResponse)
-	err := c.cc.Invoke(ctx, "/symbols.v1.Symbols/Search", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/symbols.v1.SymbolsService/Search", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *symbolsClient) LocalCodeIntel(ctx context.Context, in *LocalCodeIntelRequest, opts ...grpc.CallOption) (*LocalCodeIntelResponse, error) {
+func (c *symbolsServiceClient) LocalCodeIntel(ctx context.Context, in *LocalCodeIntelRequest, opts ...grpc.CallOption) (*LocalCodeIntelResponse, error) {
 	out := new(LocalCodeIntelResponse)
-	err := c.cc.Invoke(ctx, "/symbols.v1.Symbols/LocalCodeIntel", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/symbols.v1.SymbolsService/LocalCodeIntel", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *symbolsClient) ListLanguages(ctx context.Context, in *ListLanguagesRequest, opts ...grpc.CallOption) (*ListLanguagesResponse, error) {
+func (c *symbolsServiceClient) ListLanguages(ctx context.Context, in *ListLanguagesRequest, opts ...grpc.CallOption) (*ListLanguagesResponse, error) {
 	out := new(ListLanguagesResponse)
-	err := c.cc.Invoke(ctx, "/symbols.v1.Symbols/ListLanguages", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/symbols.v1.SymbolsService/ListLanguages", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *symbolsClient) SymbolInfo(ctx context.Context, in *SymbolInfoRequest, opts ...grpc.CallOption) (*SymbolInfoResponse, error) {
+func (c *symbolsServiceClient) SymbolInfo(ctx context.Context, in *SymbolInfoRequest, opts ...grpc.CallOption) (*SymbolInfoResponse, error) {
 	out := new(SymbolInfoResponse)
-	err := c.cc.Invoke(ctx, "/symbols.v1.Symbols/SymbolInfo", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/symbols.v1.SymbolsService/SymbolInfo", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *symbolsClient) Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error) {
+func (c *symbolsServiceClient) Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error) {
 	out := new(HealthzResponse)
-	err := c.cc.Invoke(ctx, "/symbols.v1.Symbols/Healthz", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/symbols.v1.SymbolsService/Healthz", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// SymbolsServer is the server API for Symbols service.
-// All implementations must embed UnimplementedSymbolsServer
+// SymbolsServiceServer is the server API for SymbolsService service.
+// All implementations must embed UnimplementedSymbolsServiceServer
 // for forward compatibility
-type SymbolsServer interface {
+type SymbolsServiceServer interface {
 	Search(context.Context, *SearchRequest) (*SymbolsResponse, error)
 	LocalCodeIntel(context.Context, *LocalCodeIntelRequest) (*LocalCodeIntelResponse, error)
 	ListLanguages(context.Context, *ListLanguagesRequest) (*ListLanguagesResponse, error)
 	SymbolInfo(context.Context, *SymbolInfoRequest) (*SymbolInfoResponse, error)
 	Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error)
-	mustEmbedUnimplementedSymbolsServer()
+	mustEmbedUnimplementedSymbolsServiceServer()
 }
 
-// UnimplementedSymbolsServer must be embedded to have forward compatible implementations.
-type UnimplementedSymbolsServer struct {
+// UnimplementedSymbolsServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedSymbolsServiceServer struct {
 }
 
-func (UnimplementedSymbolsServer) Search(context.Context, *SearchRequest) (*SymbolsResponse, error) {
+func (UnimplementedSymbolsServiceServer) Search(context.Context, *SearchRequest) (*SymbolsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Search not implemented")
 }
-func (UnimplementedSymbolsServer) LocalCodeIntel(context.Context, *LocalCodeIntelRequest) (*LocalCodeIntelResponse, error) {
+func (UnimplementedSymbolsServiceServer) LocalCodeIntel(context.Context, *LocalCodeIntelRequest) (*LocalCodeIntelResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LocalCodeIntel not implemented")
 }
-func (UnimplementedSymbolsServer) ListLanguages(context.Context, *ListLanguagesRequest) (*ListLanguagesResponse, error) {
+func (UnimplementedSymbolsServiceServer) ListLanguages(context.Context, *ListLanguagesRequest) (*ListLanguagesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListLanguages not implemented")
 }
-func (UnimplementedSymbolsServer) SymbolInfo(context.Context, *SymbolInfoRequest) (*SymbolInfoResponse, error) {
+func (UnimplementedSymbolsServiceServer) SymbolInfo(context.Context, *SymbolInfoRequest) (*SymbolInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SymbolInfo not implemented")
 }
-func (UnimplementedSymbolsServer) Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error) {
+func (UnimplementedSymbolsServiceServer) Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Healthz not implemented")
 }
-func (UnimplementedSymbolsServer) mustEmbedUnimplementedSymbolsServer() {}
+func (UnimplementedSymbolsServiceServer) mustEmbedUnimplementedSymbolsServiceServer() {}
 
-// UnsafeSymbolsServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to SymbolsServer will
+// UnsafeSymbolsServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to SymbolsServiceServer will
 // result in compilation errors.
-type UnsafeSymbolsServer interface {
-	mustEmbedUnimplementedSymbolsServer()
+type UnsafeSymbolsServiceServer interface {
+	mustEmbedUnimplementedSymbolsServiceServer()
 }
 
-func RegisterSymbolsServer(s grpc.ServiceRegistrar, srv SymbolsServer) {
-	s.RegisterService(&Symbols_ServiceDesc, srv)
+func RegisterSymbolsServiceServer(s grpc.ServiceRegistrar, srv SymbolsServiceServer) {
+	s.RegisterService(&SymbolsService_ServiceDesc, srv)
 }
 
-func _Symbols_Search_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SymbolsService_Search_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SearchRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SymbolsServer).Search(ctx, in)
+		return srv.(SymbolsServiceServer).Search(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/symbols.v1.Symbols/Search",
+		FullMethod: "/symbols.v1.SymbolsService/Search",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SymbolsServer).Search(ctx, req.(*SearchRequest))
+		return srv.(SymbolsServiceServer).Search(ctx, req.(*SearchRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Symbols_LocalCodeIntel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SymbolsService_LocalCodeIntel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(LocalCodeIntelRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SymbolsServer).LocalCodeIntel(ctx, in)
+		return srv.(SymbolsServiceServer).LocalCodeIntel(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/symbols.v1.Symbols/LocalCodeIntel",
+		FullMethod: "/symbols.v1.SymbolsService/LocalCodeIntel",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SymbolsServer).LocalCodeIntel(ctx, req.(*LocalCodeIntelRequest))
+		return srv.(SymbolsServiceServer).LocalCodeIntel(ctx, req.(*LocalCodeIntelRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Symbols_ListLanguages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SymbolsService_ListLanguages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListLanguagesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SymbolsServer).ListLanguages(ctx, in)
+		return srv.(SymbolsServiceServer).ListLanguages(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/symbols.v1.Symbols/ListLanguages",
+		FullMethod: "/symbols.v1.SymbolsService/ListLanguages",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SymbolsServer).ListLanguages(ctx, req.(*ListLanguagesRequest))
+		return srv.(SymbolsServiceServer).ListLanguages(ctx, req.(*ListLanguagesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Symbols_SymbolInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SymbolsService_SymbolInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SymbolInfoRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SymbolsServer).SymbolInfo(ctx, in)
+		return srv.(SymbolsServiceServer).SymbolInfo(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/symbols.v1.Symbols/SymbolInfo",
+		FullMethod: "/symbols.v1.SymbolsService/SymbolInfo",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SymbolsServer).SymbolInfo(ctx, req.(*SymbolInfoRequest))
+		return srv.(SymbolsServiceServer).SymbolInfo(ctx, req.(*SymbolInfoRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Symbols_Healthz_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SymbolsService_Healthz_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(HealthzRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SymbolsServer).Healthz(ctx, in)
+		return srv.(SymbolsServiceServer).Healthz(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/symbols.v1.Symbols/Healthz",
+		FullMethod: "/symbols.v1.SymbolsService/Healthz",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SymbolsServer).Healthz(ctx, req.(*HealthzRequest))
+		return srv.(SymbolsServiceServer).Healthz(ctx, req.(*HealthzRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// Symbols_ServiceDesc is the grpc.ServiceDesc for Symbols service.
+// SymbolsService_ServiceDesc is the grpc.ServiceDesc for SymbolsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var Symbols_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "symbols.v1.Symbols",
-	HandlerType: (*SymbolsServer)(nil),
+var SymbolsService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "symbols.v1.SymbolsService",
+	HandlerType: (*SymbolsServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "Search",
-			Handler:    _Symbols_Search_Handler,
+			Handler:    _SymbolsService_Search_Handler,
 		},
 		{
 			MethodName: "LocalCodeIntel",
-			Handler:    _Symbols_LocalCodeIntel_Handler,
+			Handler:    _SymbolsService_LocalCodeIntel_Handler,
 		},
 		{
 			MethodName: "ListLanguages",
-			Handler:    _Symbols_ListLanguages_Handler,
+			Handler:    _SymbolsService_ListLanguages_Handler,
 		},
 		{
 			MethodName: "SymbolInfo",
-			Handler:    _Symbols_SymbolInfo_Handler,
+			Handler:    _SymbolsService_SymbolInfo_Handler,
 		},
 		{
 			MethodName: "Healthz",
-			Handler:    _Symbols_Healthz_Handler,
+			Handler:    _SymbolsService_Healthz_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

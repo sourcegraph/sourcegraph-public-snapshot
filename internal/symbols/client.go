@@ -137,7 +137,7 @@ func (c *Client) listLanguageMappingsGRPC(ctx context.Context, repository api.Re
 
 	defer conn.Close()
 
-	client := proto.NewSymbolsClient(conn)
+	client := proto.NewSymbolsServiceClient(conn)
 	resp, err := client.ListLanguages(ctx, &proto.ListLanguagesRequest{})
 	if err != nil {
 		return nil, err
@@ -244,7 +244,7 @@ func (c *Client) searchGRPC(ctx context.Context, args search.SymbolsParameters) 
 
 	defer conn.Close()
 
-	grpcClient := proto.NewSymbolsClient(conn)
+	grpcClient := proto.NewSymbolsServiceClient(conn)
 
 	var protoArgs proto.SearchRequest
 	protoArgs.FromInternal(&args)
@@ -314,7 +314,7 @@ func (c *Client) localCodeIntelGRPC(ctx context.Context, path types.RepoCommitPa
 
 	defer conn.Close()
 
-	grpcClient := proto.NewSymbolsClient(conn)
+	grpcClient := proto.NewSymbolsServiceClient(conn)
 
 	var rcp proto.RepoCommitPath
 	rcp.FromInternal(&path)
@@ -411,7 +411,7 @@ func (c *Client) symbolInfoGRPC(ctx context.Context, args types.RepoCommitPathPo
 
 	defer conn.Close()
 
-	client := proto.NewSymbolsClient(conn)
+	client := proto.NewSymbolsServiceClient(conn)
 
 	var rcp proto.RepoCommitPath
 	rcp.FromInternal(&args.RepoCommitPath)
