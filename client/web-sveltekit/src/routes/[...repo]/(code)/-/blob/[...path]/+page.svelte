@@ -13,7 +13,7 @@
     $: highlights = data.highlights
     $: loading = $blob.loading
     let blobData: BlobFileFields
-    $: if ($blob && !$blob.loading && $blob.data) {
+    $: if (!$blob.loading && $blob.data) {
         blobData = $blob.data
     }
     $: formatted = !!blobData?.richHTML
