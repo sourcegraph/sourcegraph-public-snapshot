@@ -21,6 +21,18 @@ import (
 )
 
 func TestAddSourcegraphOperatorExternalAccountBinding(t *testing.T) {
+	// Enable SOAP
+	cloud.MockSiteConfig(t, &cloud.SchemaSiteConfig{
+		AuthProviders: &cloud.SchemaAuthProviders{
+			SourcegraphOperator: &cloud.SchemaAuthProviderSourcegraphOperator{
+				ClientID: "foobar",
+			},
+		},
+	})
+	defer cloud.MockSiteConfig(t, nil)
+	// Initialize package
+	Init()
+	// Assert handler is registered
 	assert.NotNil(t, osssourcegraphoperator.AddSourcegraphOperatorExternalAccount)
 }
 

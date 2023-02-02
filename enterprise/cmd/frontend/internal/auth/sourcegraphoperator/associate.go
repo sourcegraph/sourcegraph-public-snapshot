@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	osssourcegraphoperator "github.com/sourcegraph/sourcegraph/internal/auth/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -17,11 +16,6 @@ type accountDetailsBody struct {
 	AccountID string `json:"accountID"`
 
 	ExternalAccountData
-}
-
-func init() {
-	// Register enterprise handler implementation in OSS
-	osssourcegraphoperator.AddSourcegraphOperatorExternalAccount = addSourcegraphOperatorExternalAccount
 }
 
 // addSourcegraphOperatorExternalAccount links the given user with a Sourcegraph Operator
