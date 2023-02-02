@@ -1,5 +1,9 @@
 # Installation Guide - Amazon Elastic Kubernetes Service (EKS)
 
+<div class="warning-banner"> 
+⛔️ The new Kustomize setup for deploying Sourcegraph is currently in beta. We do not recommend using this setup in production environments.
+</div>
+
 This section is aimed at providing high-level guidance on deploying Sourcegraph using a Kustomize overlay on Amazon Elastic Kubernetes Service (EKS). 
 
 ## Overview

@@ -1094,3 +1094,12 @@ a.cloud-cta {
         margin: 0 40px 0 auto;
     }
 }
+
+
+.warning-banner {
+    background-color: #ffc9c9;
+    padding: .2em .4em;
+    border-radius: 0.2em;
+    margin: 0;
+    font-size: 85%;
+}

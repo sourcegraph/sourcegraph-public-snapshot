@@ -1,5 +1,9 @@
 # Sourcegraph on Kubernetes
 
+<div class="warning-banner"> 
+⛔️ The new Kustomize setup for deploying Sourcegraph is currently in beta. We do not recommend using this setup in production environments.
+</div>
+
 Deploying on Kubernetes is for organizations that need highly scalable and available code search and code navigation. 
 
 <div class="getting-started">
@@ -8,6 +12,7 @@ Deploying on Kubernetes is for organizations that need highly scalable and avail
   <a class="btn text-center" href="./configure">Configuration</a>
   <a class="btn text-center" href="operations">Maintenance</a>
 </div>
+
 
 Below is an overview of installing Sourcegraph using Kustomize.
 
@@ -166,7 +171,7 @@ After the initial deployment, additional configuration might be required for Sou
 Common configurations that are strongly recommended for all Sourcegraph deployments:
 
 - [Enable the Sourcegraph monitoring stack](configure.md#monitoring-stack)
-- [Adjust resource allocations based on your instance size](configure.md#instance-size-based-resources) (refer to our [instance size chart](../instance-size.md))
+- [Adjust resource allocations based on your instance size](configure.md#instance-size-based-resources)
 - [Configure ingress](configure.md#ingress)
 - [Enable TLS](configure.md#tls)
 
