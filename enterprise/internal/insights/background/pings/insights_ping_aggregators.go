@@ -215,7 +215,7 @@ const pingSeriesType = `
 CONCAT(
    CASE WHEN ((generation_method = 'search' or generation_method = 'search-compute') and generated_from_capture_groups) THEN 'capture-groups' ELSE generation_method END,
     '::',
-   CASE WHEN (cardinality(repositories) = 0 or repositories is null) THEN 'global' ELSE 'scoped' END,
+   CASE WHEN (repositories IS NOT NULL AND cardinality(repositories) > 0) THEN 'scoped' WHEN repository_criteria IS NOT NULL THEN 'repo-search' ELSE 'global' END,
     '::',
    CASE WHEN (just_in_time = true) THEN 'jit' ELSE 'recorded' END
     ) as ping_series_type
