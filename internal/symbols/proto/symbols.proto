@@ -3,14 +3,13 @@ syntax = "proto3";
 package symbols.v1;
 
 import "google/protobuf/duration.proto";
-import "google/protobuf/empty.proto";
 
 option go_package = "github.com/sourcegraph/sourcegraph/internal/symbols/proto";
 
 service Symbols {
   rpc Search(SearchRequest) returns (SymbolsResponse) {}
   rpc LocalCodeIntel(LocalCodeIntelRequest) returns (LocalCodeIntelResponse) {}
-  rpc ListLanguages(google.protobuf.Empty) returns (ListLanguagesResponse) {}
+  rpc ListLanguages(ListLanguagesRequest) returns (ListLanguagesResponse) {}
   rpc SymbolInfo(SymbolInfoRequest) returns (SymbolInfoResponse) {}
   rpc Healthz(SymbolsHealthzRequest) returns (SymbolsHealthzResponse) {}
 }
@@ -114,6 +113,11 @@ message LocalCodeIntelResponse {
   }
 
   repeated Symbol symbols = 1;
+}
+
+// ListLanguagesRequest is the request to the ListLanguages method.
+message ListLanguagesRequest {
+  // All fields are empty.
 }
 
 // ListLanguagesResponse is the response from the ListLanguages method.

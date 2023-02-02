@@ -11,7 +11,6 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -25,7 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 type SymbolsClient interface {
 	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*SymbolsResponse, error)
 	LocalCodeIntel(ctx context.Context, in *LocalCodeIntelRequest, opts ...grpc.CallOption) (*LocalCodeIntelResponse, error)
-	ListLanguages(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListLanguagesResponse, error)
+	ListLanguages(ctx context.Context, in *ListLanguagesRequest, opts ...grpc.CallOption) (*ListLanguagesResponse, error)
 	SymbolInfo(ctx context.Context, in *SymbolInfoRequest, opts ...grpc.CallOption) (*SymbolInfoResponse, error)
 	Healthz(ctx context.Context, in *SymbolsHealthzRequest, opts ...grpc.CallOption) (*SymbolsHealthzResponse, error)
 }
@@ -56,7 +55,7 @@ func (c *symbolsClient) LocalCodeIntel(ctx context.Context, in *LocalCodeIntelRe
 	return out, nil
 }
 
-func (c *symbolsClient) ListLanguages(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListLanguagesResponse, error) {
+func (c *symbolsClient) ListLanguages(ctx context.Context, in *ListLanguagesRequest, opts ...grpc.CallOption) (*ListLanguagesResponse, error) {
 	out := new(ListLanguagesResponse)
 	err := c.cc.Invoke(ctx, "/symbols.v1.Symbols/ListLanguages", in, out, opts...)
 	if err != nil {
@@ -89,7 +88,7 @@ func (c *symbolsClient) Healthz(ctx context.Context, in *SymbolsHealthzRequest, 
 type SymbolsServer interface {
 	Search(context.Context, *SearchRequest) (*SymbolsResponse, error)
 	LocalCodeIntel(context.Context, *LocalCodeIntelRequest) (*LocalCodeIntelResponse, error)
-	ListLanguages(context.Context, *emptypb.Empty) (*ListLanguagesResponse, error)
+	ListLanguages(context.Context, *ListLanguagesRequest) (*ListLanguagesResponse, error)
 	SymbolInfo(context.Context, *SymbolInfoRequest) (*SymbolInfoResponse, error)
 	Healthz(context.Context, *SymbolsHealthzRequest) (*SymbolsHealthzResponse, error)
 	mustEmbedUnimplementedSymbolsServer()
@@ -105,7 +104,7 @@ func (UnimplementedSymbolsServer) Search(context.Context, *SearchRequest) (*Symb
 func (UnimplementedSymbolsServer) LocalCodeIntel(context.Context, *LocalCodeIntelRequest) (*LocalCodeIntelResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LocalCodeIntel not implemented")
 }
-func (UnimplementedSymbolsServer) ListLanguages(context.Context, *emptypb.Empty) (*ListLanguagesResponse, error) {
+func (UnimplementedSymbolsServer) ListLanguages(context.Context, *ListLanguagesRequest) (*ListLanguagesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListLanguages not implemented")
 }
 func (UnimplementedSymbolsServer) SymbolInfo(context.Context, *SymbolInfoRequest) (*SymbolInfoResponse, error) {
@@ -164,7 +163,7 @@ func _Symbols_LocalCodeIntel_Handler(srv interface{}, ctx context.Context, dec f
 }
 
 func _Symbols_ListLanguages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(ListLanguagesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -176,7 +175,7 @@ func _Symbols_ListLanguages_Handler(srv interface{}, ctx context.Context, dec fu
 		FullMethod: "/symbols.v1.Symbols/ListLanguages",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SymbolsServer).ListLanguages(ctx, req.(*emptypb.Empty))
+		return srv.(SymbolsServer).ListLanguages(ctx, req.(*ListLanguagesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

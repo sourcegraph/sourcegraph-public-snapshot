@@ -21,7 +21,6 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 const maxNumSymbolResults = 500
@@ -53,7 +52,7 @@ func (s *grpcService) Search(ctx context.Context, r *proto.SearchRequest) (*prot
 	return &response, nil
 }
 
-func (s *grpcService) ListLanguages(ctx context.Context, _ *emptypb.Empty) (*proto.ListLanguagesResponse, error) {
+func (s *grpcService) ListLanguages(ctx context.Context, _ *proto.ListLanguagesRequest) (*proto.ListLanguagesResponse, error) {
 	rawMapping, err := ctags.ListLanguageMappings(ctx, s.ctagsBinary)
 	if err != nil {
 		return nil, errors.Wrap(err, "listing ctags language mappings")
