@@ -8,7 +8,7 @@ import { RouteComponentProps, useHistory, useLocation } from 'react-router'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { useLazyQuery } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
+import { displayRepoName, RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -20,7 +20,7 @@ import {
     Code,
     Container,
     ErrorAlert,
-    H3,
+    H4,
     Icon,
     Input,
     Label,
@@ -349,7 +349,7 @@ const NameSettingsSection: FunctionComponent<NameSettingsSectionProps> = ({ repo
             <Input
                 id="name"
                 label="Policy name"
-                className={classNames('', styles.nameInput)}
+                className="w-50 mb-0"
                 value={policy.name}
                 onChange={({ target: { value: name } }) => updatePolicy({ name })}
                 disabled={policy.protected}
@@ -357,7 +357,7 @@ const NameSettingsSection: FunctionComponent<NameSettingsSectionProps> = ({ repo
                 error={policy.name === '' ? 'Please supply a value' : undefined}
                 placeholder={`Custom ${!repo ? 'global ' : ''}${
                     policy.indexingEnabled ? 'indexing ' : policy.retentionEnabled ? 'retention ' : ''
-                }policy${repo ? ` for ${repo.name}` : ''}`}
+                }policy${repo ? ` for ${displayRepoName(repo.name)}` : ''}`}
             />
         </div>
     </div>
@@ -389,7 +389,7 @@ const GitObjectSettingsSection: FunctionComponent<GitObjectSettingsSectionProps>
 
     return (
         <div className="form-group">
-            <H3 className="d-inline">
+            <Label className="d-inline" id="git-type-label">
                 Which{' '}
                 {policy.type === GitObjectType.GIT_COMMIT
                     ? 'commits'
@@ -399,9 +399,9 @@ const GitObjectSettingsSection: FunctionComponent<GitObjectSettingsSectionProps>
                     ? 'tags'
                     : ''}{' '}
                 match this policy?
-            </H3>
+            </Label>
 
-            <Text size="small" className="text-muted">
+            <Text size="small" className="text-muted mb-2">
                 Configuration policies apply to code intelligence data for specific revisions of{' '}
                 {repo ? 'this repository' : 'matching repositories'}.
             </Text>
@@ -409,10 +409,10 @@ const GitObjectSettingsSection: FunctionComponent<GitObjectSettingsSectionProps>
             <div className="input-group">
                 <Select
                     id="git-type"
-                    label=""
+                    aria-labelledby="git-type-label"
                     labelVariant="inline"
                     labelClassName="d-inline"
-                    className="flex-1 mb-0"
+                    className="mb-0"
                     value={policy.type}
                     onChange={({ target: { value } }) => {
                         const type = value as GitObjectType
@@ -452,6 +452,7 @@ const GitObjectSettingsSection: FunctionComponent<GitObjectSettingsSectionProps>
                                 setLocalGitPattern(value)
                                 debouncedSetGitPattern(value)
                             }}
+                            message="beans"
                             placeholder={policy.type === GitObjectType.GIT_TAG ? 'v*' : 'feat/*'}
                             disabled={policy.protected}
                             required={true}
@@ -579,7 +580,7 @@ interface RepositorySettingsSectionProps {
 
 const RepositorySettingsSection: FunctionComponent<RepositorySettingsSectionProps> = ({ policy, updatePolicy }) => (
     <div className="form-group">
-        <H3 className="d-inline">Which repositories match this policy?</H3>
+        <H4 className="d-inline">Which repositories match this policy?</H4>
 
         <Text size="small" className="text-muted">
             Configuration policies can apply to one, a set, or to all repositories on a Sourcegraph instance.
@@ -605,14 +606,13 @@ interface IndexSettingsSectionProps {
 
 const IndexSettingsSection: FunctionComponent<IndexSettingsSectionProps> = ({ policy, updatePolicy, repo }) => (
     <div className="form-group">
-        <div>
-            <H3 className="d-inline">Auto-indexing</H3>
-
-            <div className="float-right">
+        <Label className="mb-0">
+            Auto-indexing
+            <div className="d-flex align-items-center">
                 <Toggle
                     id="indexing-enabled"
-                    title="Enabled"
                     value={policy.indexingEnabled}
+                    className={styles.toggle}
                     onToggle={indexingEnabled => {
                         if (indexingEnabled) {
                             updatePolicy({ indexingEnabled })
@@ -625,23 +625,20 @@ const IndexSettingsSection: FunctionComponent<IndexSettingsSectionProps> = ({ po
                         }
                     }}
                 />
-                <Label htmlFor="indexing-enabled" className="ml-2">
-                    {policy.indexingEnabled ? 'Enabled' : 'Disabled'}
-                </Label>
-            </div>
 
-            <Text size="small" className="text-muted">
-                Sourcegraph will automatically generate precise code intelligence data for matching
-                {repo ? '' : ' repositories and'} revisions. Indexing configuration will be inferred from the content at
-                matching revisions if not explicitly configured for {repo ? 'this repository' : 'matching repositories'}
-                .{' '}
-                {repo && (
-                    <>
-                        See this repository's <Link to="../index-configuration">index configuration</Link>.
-                    </>
-                )}
-            </Text>
-        </div>
+                <Text size="small" className="text-muted mb-0 font-weight-normal">
+                    Sourcegraph will automatically generate precise code intelligence data for matching
+                    {repo ? '' : ' repositories and'} revisions. Indexing configuration will be inferred from the
+                    content at matching revisions if not explicitly configured for{' '}
+                    {repo ? 'this repository' : 'matching repositories'}.{' '}
+                    {repo && (
+                        <>
+                            See this repository's <Link to="../index-configuration">index configuration</Link>.
+                        </>
+                    )}
+                </Text>
+            </div>
+        </Label>
 
         <IndexSettings policy={policy} updatePolicy={updatePolicy} />
     </div>
@@ -703,13 +700,13 @@ interface RetentionSettingsSectionProps {
 
 const RetentionSettingsSection: FunctionComponent<RetentionSettingsSectionProps> = ({ policy, updatePolicy }) => (
     <div className="form-group">
-        <div>
-            <H3 className="d-inline">Precise code intelligence index retention</H3>
-            <div className="float-right">
+        <Label className="mb-0">
+            Precise code intelligence index retention
+            <div className="d-flex align-items-center">
                 <Toggle
                     id="retention-enabled"
-                    title="Enabled"
                     value={policy.retentionEnabled}
+                    className={styles.toggle}
                     onToggle={retentionEnabled => {
                         if (retentionEnabled) {
                             updatePolicy({ retentionEnabled })
@@ -723,17 +720,14 @@ const RetentionSettingsSection: FunctionComponent<RetentionSettingsSectionProps>
                     }}
                     disabled={policy.protected || policy.type === GitObjectType.GIT_COMMIT}
                 />
-                <Label htmlFor="retention-enabled" className="ml-2">
-                    {policy.retentionEnabled ? 'Enabled' : 'Disabled'}
-                </Label>
-            </div>
 
-            <Text size="small" className="text-muted">
-                Precise code intelligence indexes will expire once they no longer serve data for a revision matched by a
-                configuration policy. Expired indexes are remove once they are no longer referenced by any unexpired
-                index. Enabling retention keeps data for matching revisions longer than the default.
-            </Text>
-        </div>
+                <Text size="small" className="text-muted mb-0 font-weight-normal">
+                    Precise code intelligence indexes will expire once they no longer serve data for a revision matched
+                    by a configuration policy. Expired indexes are remove once they are no longer referenced by any
+                    unexpired index. Enabling retention keeps data for matching revisions longer than the default.
+                </Text>
+            </div>
+        </Label>
 
         <RetentionSettings policy={policy} updatePolicy={updatePolicy} />
     </div>
@@ -746,7 +740,7 @@ interface RetentionSettingsProps {
 
 const RetentionSettings: FunctionComponent<RetentionSettingsProps> = ({ policy, updatePolicy }) =>
     policy.type === GitObjectType.GIT_COMMIT ? (
-        <Alert variant="info">
+        <Alert variant="info" className="mt-2">
             Precise code intelligence indexes serving data for the tip of the default branch are retained implicitly.
         </Alert>
     ) : policy.retentionEnabled ? (
