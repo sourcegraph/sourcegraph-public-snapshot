@@ -3,6 +3,7 @@ import { FunctionComponent, useCallback } from 'react'
 import { useApolloClient } from '@apollo/client'
 import { mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
+import { useNavigate } from 'react-router-dom-v5-compat'
 import { Observable } from 'rxjs'
 
 import { H3, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
@@ -19,7 +20,6 @@ import { PreciseIndexLastUpdated } from './CodeIntelLastUpdated'
 import { ProjectDescription } from './ProjectDescription'
 
 import styles from './Dependencies.module.scss'
-import { useNavigate } from 'react-router-dom-v5-compat'
 
 export interface DependencyListProps {
     index: PreciseIndexFields

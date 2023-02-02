@@ -4,6 +4,7 @@ import { useApolloClient } from '@apollo/client'
 import { mdiDelete, mdiGraph, mdiHistory, mdiRecycle, mdiRedo, mdiTimerSand } from '@mdi/js'
 import classNames from 'classnames'
 import { Redirect, useLocation } from 'react-router'
+import { useNavigate, useParams } from 'react-router-dom-v5-compat'
 import { takeWhile } from 'rxjs/operators'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
@@ -48,7 +49,6 @@ import { useDeletePreciseIndex as defaultUseDeletePreciseIndex } from '../hooks/
 import { useReindexPreciseIndex as defaultUseReindexPreciseIndex } from '../hooks/useReindexPreciseIndex'
 
 import styles from './CodeIntelPreciseIndexPage.module.scss'
-import { useNavigate, useParams } from 'react-router-dom-v5-compat'
 
 export interface CodeIntelPreciseIndexPageProps extends ThemeProps, TelemetryProps {
     authenticatedUser: AuthenticatedUser | null

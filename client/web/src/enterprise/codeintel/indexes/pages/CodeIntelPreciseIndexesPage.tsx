@@ -4,6 +4,7 @@ import { useApolloClient } from '@apollo/client'
 import { mdiDelete, mdiMapSearch, mdiRedo } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation } from 'react-router'
+import { useNavigate } from 'react-router-dom-v5-compat'
 import { of, Subject } from 'rxjs'
 import { tap } from 'rxjs/operators'
 
@@ -48,7 +49,6 @@ import { useReindexPreciseIndex as defaultUseReindexPreciseIndex } from '../hook
 import { useReindexPreciseIndexes as defaultUseReindexPreciseIndexes } from '../hooks/useReindexPreciseIndexes'
 
 import styles from './CodeIntelPreciseIndexesPage.module.scss'
-import { useNavigate } from 'react-router-dom-v5-compat'
 
 export interface CodeIntelPreciseIndexesPageProps extends ThemeProps, TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
