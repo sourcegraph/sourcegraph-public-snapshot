@@ -915,36 +915,26 @@ func TestTeamsNameSearch(t *testing.T) {
 			t.Fatalf("failed to create a team: %s", err)
 		}
 	}
-	query := `{
-		teams(search: "hit") {
-			nodes {
-				name
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `{
+			teams(search: "hit") {
+				nodes {
+					name
+				}
 			}
-		}
-	}`
-	operationName := ""
-	var gotNames []string
-	variables := map[string]any{}
-	r := mustParseGraphQLSchema(t, db).Exec(ctx, query, operationName, variables)
-	var wantErrors []*gqlerrors.QueryError
-	checkErrors(t, wantErrors, r.Errors)
-	var result struct {
-		Teams *struct {
-			Nodes []struct {
-				Name string
+		}`,
+		ExpectedResult: `{
+			"teams": {
+				"nodes": [
+					{"name": "hit-1"},
+					{"name": "Hit-2"},
+					{"name": "HIT-3"}
+				]
 			}
-		}
-	}
-	if err := json.Unmarshal(r.Data, &result); err != nil {
-		t.Fatalf("cannot interpret graphQL query result: %s", err)
-	}
-	for _, node := range result.Teams.Nodes {
-		gotNames = append(gotNames, node.Name)
-	}
-	wantNames := []string{"hit-1", "Hit-2", "HIT-3"}
-	if diff := cmp.Diff(wantNames, gotNames); diff != "" {
-		t.Errorf("unexpected team names (-want,+got):\n%s", diff)
-	}
+		}`,
+	})
 }
 
 func TestTeamsCount(t *testing.T) {
@@ -956,46 +946,30 @@ func TestTeamsCount(t *testing.T) {
 			t.Fatalf("failed to create a team: %s", err)
 		}
 	}
-	query := `query Teams() {
-		teams(first: 5) {
-			totalCount
-			nodes {
-				name
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `{
+			teams(first: 5) {
+				totalCount
+				nodes {
+					name
+				}
 			}
-		}
-	}`
-	operationName := ""
-	variables := map[string]any{}
-	r := mustParseGraphQLSchema(t, db).Exec(ctx, query, operationName, variables)
-	var wantErrors []*gqlerrors.QueryError
-	checkErrors(t, wantErrors, r.Errors)
-	type Teams struct {
-		TotalCount int
-		Nodes      []struct {
-			Name string
-		}
-	}
-	var gotResult struct{ Teams *Teams }
-	if err := json.Unmarshal(r.Data, &gotResult); err != nil {
-		t.Fatalf("cannot interpret graphQL query result: %s", err)
-	}
-	wantResult := struct{ Teams *Teams }{
-		Teams: &Teams{
-			// All matching entries are counted.
-			TotalCount: 25,
-			// At most `$first` (here: 5) entries are returned.
-			Nodes: []struct{ Name string }{
-				{Name: "team-1"},
-				{Name: "team-2"},
-				{Name: "team-3"},
-				{Name: "team-4"},
-				{Name: "team-5"},
-			},
-		},
-	}
-	if diff := cmp.Diff(wantResult, gotResult); diff != "" {
-		t.Errorf("unexpected query result (-want,+got):\n%s", diff)
-	}
+		}`,
+		ExpectedResult: `{
+			"teams": {
+				"totalCount": 25,
+				"nodes": [
+					{"name": "team-1"},
+					{"name": "team-2"},
+					{"name": "team-3"},
+					{"name": "team-4"},
+					{"name": "team-5"}
+				]
+			}
+		}`,
+	})
 }
 
 func TestChildTeams(t *testing.T) {
@@ -1039,8 +1013,5 @@ func TestChildTeams(t *testing.T) {
 				}
 			}
 		}`,
-		Variables: map[string]any{
-			"name": "parent",
-		},
 	})
 }
