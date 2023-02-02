@@ -7,6 +7,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -61,7 +62,7 @@ func (h *ExportHandler) ExportFunc() http.HandlerFunc {
 			return
 		}
 		w.Header().Set("Content-Type", "application/zip")
-		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"CodeInsightsDataExport-%s.zip\"", archive.name))
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.zip\"", archive.name))
 
 		_, err = w.Write(archive.data)
 		if err != nil {
@@ -133,7 +134,8 @@ func (h *ExportHandler) exportCodeInsightData(ctx context.Context, id string) (*
 	zw := zip.NewWriter(&buf)
 
 	timestamp := time.Now().Format(time.RFC3339)
-	name := fmt.Sprintf("%s-%s", insightViewId, timestamp)
+	escapedInsightViewTitle := regexp.MustCompile(`\W+`).ReplaceAllString(visibleViewSeries[0].Title, "-")
+	name := fmt.Sprintf("%s-%s", escapedInsightViewTitle, timestamp)
 
 	dataFile, err := zw.Create(fmt.Sprintf("%s.csv", name))
 	if err != nil {
