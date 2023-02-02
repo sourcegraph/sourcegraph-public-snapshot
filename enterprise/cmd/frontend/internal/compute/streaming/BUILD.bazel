@@ -8,7 +8,7 @@ go_library(
         "stream.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/compute/streaming",
-    visibility = ["//visibility:public"],
+    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/envvar",
         "//cmd/frontend/graphqlbackend",

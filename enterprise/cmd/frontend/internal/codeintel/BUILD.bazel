@@ -8,7 +8,7 @@ go_library(
         "resolvers.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel",
-    visibility = ["//visibility:public"],
+    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/enterprise",
         "//cmd/frontend/graphqlbackend",

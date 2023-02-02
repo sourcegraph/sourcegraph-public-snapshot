@@ -10,7 +10,7 @@ go_library(
         "users.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/resolvers",
-    visibility = ["//visibility:public"],
+    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/envvar",
         "//cmd/frontend/globals",

@@ -16,7 +16,7 @@ go_library(
     ],
     embedsrcs = ["frozen_legacy_extensions.json"],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry",
-    visibility = ["//visibility:public"],
+    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/envvar",
         "//cmd/frontend/graphqlbackend",
