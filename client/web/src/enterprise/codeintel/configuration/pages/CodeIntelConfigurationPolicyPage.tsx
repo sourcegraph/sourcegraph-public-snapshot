@@ -50,6 +50,8 @@ import {
     PREVIEW_GIT_OBJECT_FILTER,
 } from '../hooks/usePreviewGitObjectFilter'
 import { useSavePolicyConfiguration } from '../hooks/useSavePolicyConfiguration'
+import styles from './CodeIntelConfigurationPolicyPage.module.scss'
+import classNames from 'classnames'
 
 const DEBOUNCED_WAIT = 250
 
@@ -343,25 +345,20 @@ interface NameSettingsSectionProps {
 
 const NameSettingsSection: FunctionComponent<NameSettingsSectionProps> = ({ repo, policy, updatePolicy }) => (
     <div className="form-group">
-        <H3 className="d-inline">Policy name</H3>
-
         <div className="input-group">
             <Input
                 id="name"
-                className="form-group"
+                label="Policy name"
+                className={classNames('', styles.nameInput)}
                 value={policy.name}
                 onChange={({ target: { value: name } }) => updatePolicy({ name })}
                 disabled={policy.protected}
                 required={true}
+                error={policy.name === '' ? 'Please supply a value' : undefined}
                 placeholder={`Custom ${!repo ? 'global ' : ''}${
                     policy.indexingEnabled ? 'indexing ' : policy.retentionEnabled ? 'retention ' : ''
                 }policy${repo ? ` for ${repo.name}` : ''}`}
             />
-        </div>
-
-        <div className="text-right">
-            &nbsp;
-            {policy.name === '' && <small className="text-danger">Please supply a value.</small>}
         </div>
     </div>
 )
