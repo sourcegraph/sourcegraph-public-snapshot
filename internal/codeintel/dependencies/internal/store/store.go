@@ -168,6 +168,10 @@ func (s *store) InsertPackageRepoRefs(ctx context.Context, deps []shared.Minimal
 		}})
 	}()
 
+	if len(deps) == 0 {
+		return
+	}
+
 	slices.SortStableFunc(deps, func(a, b shared.MinimalPackageRepoRef) bool {
 		if a.Scheme != b.Scheme {
 			return a.Scheme < b.Scheme
@@ -333,7 +337,8 @@ SELECT scheme, name, '👁️temporary_sentinel_value👁️'
 FROM (
 	SELECT scheme, name
 	FROM t_package_repo_refs t
-	-- we reduce all package repo refs before insert, so this is fine
+	-- we reduce all package repo refs before insert, so nothing in
+	-- t_package_repo_refs to dedupe
 	EXCEPT ALL
 	(
 		SELECT scheme, name

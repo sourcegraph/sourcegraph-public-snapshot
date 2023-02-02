@@ -13,7 +13,8 @@ BEGIN
             ON rpv.package_id = lr.id
         )
         INSERT INTO lsif_dependency_repos (scheme, name, version)
-        SELECT * FROM matched_triplets;
+        SELECT * FROM matched_triplets
+        ON CONFLICT DO NOTHING;
     END IF;
 END
 $$;
