@@ -97,6 +97,11 @@ func (teams *fakeTeamsDb) ListTeams(_ context.Context, opts database.ListTeamsOp
 	return selected, next, nil
 }
 
+func (teams *fakeTeamsDb) CountTeams(ctx context.Context, opts database.ListTeamsOpts) (int32, error) {
+	selected, _, err := teams.ListTeams(ctx, opts)
+	return int32(len(selected)), err
+}
+
 func matches(team *types.Team, opts database.ListTeamsOpts) bool {
 	if opts.Cursor != 0 && team.ID < opts.Cursor {
 		return false
@@ -899,4 +904,143 @@ func TestTeamsPaginated(t *testing.T) {
 	if diff := cmp.Diff(wantNames, gotNames); diff != "" {
 		t.Errorf("unexpected team names (-want,+got):\n%s", diff)
 	}
+}
+
+// Skip testing DisplayName search as this is the same except the fake behavior.
+func TestTeamsNameSearch(t *testing.T) {
+	db, ts := setupDB()
+	ctx, _, _ := fakeUser(t, context.Background(), db, true)
+	for _, name := range []string{"hit-1", "Hit-2", "HIT-3", "miss-4", "mIss-5", "MISS-6"} {
+		if err := ts.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
+			t.Fatalf("failed to create a team: %s", err)
+		}
+	}
+	query := `{
+		teams(search: "hit") {
+			nodes {
+				name
+			}
+		}
+	}`
+	operationName := ""
+	var gotNames []string
+	variables := map[string]any{}
+	r := mustParseGraphQLSchema(t, db).Exec(ctx, query, operationName, variables)
+	var wantErrors []*gqlerrors.QueryError
+	checkErrors(t, wantErrors, r.Errors)
+	var result struct {
+		Teams *struct {
+			Nodes []struct {
+				Name string
+			}
+		}
+	}
+	if err := json.Unmarshal(r.Data, &result); err != nil {
+		t.Fatalf("cannot interpret graphQL query result: %s", err)
+	}
+	for _, node := range result.Teams.Nodes {
+		gotNames = append(gotNames, node.Name)
+	}
+	wantNames := []string{"hit-1", "Hit-2", "HIT-3"}
+	if diff := cmp.Diff(wantNames, gotNames); diff != "" {
+		t.Errorf("unexpected team names (-want,+got):\n%s", diff)
+	}
+}
+
+func TestTeamsCount(t *testing.T) {
+	db, ts := setupDB()
+	ctx, _, _ := fakeUser(t, context.Background(), db, true)
+	for i := 1; i <= 25; i++ {
+		name := fmt.Sprintf("team-%d", i)
+		if err := ts.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
+			t.Fatalf("failed to create a team: %s", err)
+		}
+	}
+	query := `query Teams() {
+		teams(first: 5) {
+			totalCount
+			nodes {
+				name
+			}
+		}
+	}`
+	operationName := ""
+	variables := map[string]any{}
+	r := mustParseGraphQLSchema(t, db).Exec(ctx, query, operationName, variables)
+	var wantErrors []*gqlerrors.QueryError
+	checkErrors(t, wantErrors, r.Errors)
+	type Teams struct {
+		TotalCount int
+		Nodes      []struct {
+			Name string
+		}
+	}
+	var gotResult struct{ Teams *Teams }
+	if err := json.Unmarshal(r.Data, &gotResult); err != nil {
+		t.Fatalf("cannot interpret graphQL query result: %s", err)
+	}
+	wantResult := struct{ Teams *Teams }{
+		Teams: &Teams{
+			// All matching entries are counted.
+			TotalCount: 25,
+			// At most `$first` (here: 5) entries are returned.
+			Nodes: []struct{ Name string }{
+				{Name: "team-1"},
+				{Name: "team-2"},
+				{Name: "team-3"},
+				{Name: "team-4"},
+				{Name: "team-5"},
+			},
+		},
+	}
+	if diff := cmp.Diff(wantResult, gotResult); diff != "" {
+		t.Errorf("unexpected query result (-want,+got):\n%s", diff)
+	}
+}
+
+func TestChildTeams(t *testing.T) {
+	db, ts := setupDB()
+	ctx, _, _ := fakeUser(t, context.Background(), db, true)
+	if err := ts.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
+		t.Fatalf("failed to create parent team: %s", err)
+	}
+	parent, err := ts.GetTeamByName(ctx, "parent")
+	if err != nil {
+		t.Fatalf("cannot fetch parent team: %s", err)
+	}
+	for i := 1; i <= 5; i++ {
+		name := fmt.Sprintf("child-%d", i)
+		if err := ts.CreateTeam(ctx, &types.Team{Name: name, ParentTeamID: parent.ID}); err != nil {
+			t.Fatalf("cannot create child team: %s", err)
+		}
+	}
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `{
+			team(name: "parent") {
+				childTeams {
+					nodes {
+						name
+					}
+				}
+			}
+		}`,
+		ExpectedResult: `{
+			"team": {
+				"childTeams": {
+					"nodes": [
+						{"name": "child-1"},
+						{"name": "child-2"},
+						{"name": "child-3"},
+						{"name": "child-4"},
+						{"name": "child-5"}
+					]
+				}
+			}
+		}`,
+		Variables: map[string]any{
+			"name": "parent",
+		},
+	})
 }
