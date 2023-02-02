@@ -1,2 +1,2 @@
-name: add_unified_source_perms_table
+name: add_user_repo_permissions_table_for_unified_permissions
 parents: [1674669794]
