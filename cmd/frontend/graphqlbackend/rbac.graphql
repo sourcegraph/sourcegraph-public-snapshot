@@ -39,7 +39,7 @@ type RoleConnection {
     """
     Pagination information.
     """
-    pageInfo: PageInfo!
+    pageInfo: ConnectionPageInfo!
 }
 
 """
@@ -57,7 +57,7 @@ type PermissionConnection {
     """
     Pagination information.
     """
-    pageInfo: PageInfo!
+    pageInfo: ConnectionPageInfo!
 }
 
 """
