@@ -329,7 +329,7 @@ func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, timeseriesS
 		return nil, errors.Wrap(err, "GetOffsetNRecordingTime")
 	}
 	if !oldest.IsZero() {
-		opts.From = &oldest
+		opts.After = &oldest
 	}
 
 	includeRepo := func(regex ...string) {
@@ -359,7 +359,7 @@ func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, timeseriesS
 var loadingStrategyRED = metrics.NewREDMetrics(prometheus.DefaultRegisterer, "src_insights_loading_strategy", metrics.WithLabels("in_mem", "capture"))
 
 func fetchSeries(ctx context.Context, definition types.InsightViewSeries, filters types.InsightViewFilters, options types.SeriesDisplayOptions, r *baseInsightResolver) (points []store.SeriesPoint, err error) {
-	opts, err := getRecordedSeriesPointOpts(ctx, database.NewDBWith(log.Scoped("recordedSeries", ""), r.workerBaseStore), r.timeSeriesStore, definition, filters, options)
+	opts, err := getRecordedSeriesPointOpts(ctx, database.NewDBWith(log.Scoped("recordedSeries", ""), r.postgresDB), r.timeSeriesStore, definition, filters, options)
 	if err != nil {
 		return nil, errors.Wrap(err, "getRecordedSeriesPointOpts")
 	}
