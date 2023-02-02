@@ -102,6 +102,8 @@ func TestSiteConfigurationDiff(t *testing.T) {
 		t.Fatalf("failed to create schemaResolver: %v", err)
 	}
 
+	expectedDiffs := stubs.expectedDiffs
+
 	expectedNodes := []struct {
 		ID           int32
 		AuthorUserID int32
@@ -110,95 +112,27 @@ func TestSiteConfigurationDiff(t *testing.T) {
 		{
 			ID:           5,
 			AuthorUserID: 1,
-			Diff: stringPtr(`--- ID: 4
-+++ ID: 5
-@@ -1,4 +1,3 @@
- {
--  "disableAutoGitUpdates": false,
-   "auth.Providers": []
- }
-\ No newline at end of file
-`),
+			Diff:         stringPtr(expectedDiffs[5]),
 		},
 		{
 			ID:           4,
 			AuthorUserID: 1,
-			Diff: stringPtr(`--- ID: 3
-+++ ID: 4
-@@ -1,4 +1,4 @@
- {
--  "disableAutoGitUpdates": true,
-+  "disableAutoGitUpdates": false,
-   "auth.Providers": []
- }
-\ No newline at end of file
-`),
+			Diff:         stringPtr(expectedDiffs[4]),
 		},
 		{
 			ID:           3,
 			AuthorUserID: 2,
-			Diff: stringPtr(`--- ID: 2
-+++ ID: 3
-@@ -1,3 +1,4 @@
- {
-+  "disableAutoGitUpdates": true,
-   "auth.Providers": []
- }
-\ No newline at end of file
-`),
+			Diff:         stringPtr(expectedDiffs[3]),
 		},
 		{
 			ID:           2,
 			AuthorUserID: 0,
-			Diff: stringPtr(`--- ID: 1
-+++ ID: 2
-@@ -1,17 +1,3 @@
- {
--  // The externally accessible URL for Sourcegraph (i.e., what you type into your browser)
--  // This is required to be configured for Sourcegraph to work correctly.
--  // "externalURL": "https://sourcegraph.example.com",
--  // The authentication provider to use for identifying and signing in users.
--  // Only one entry is supported.
--  //
--  // The builtin auth provider with signup disallowed (shown below) means that
--  // after the initial site admin signs in, all other users must be invited.
--  //
--  // Other providers are documented at https://docs.sourcegraph.com/admin/auth.
--  "auth.providers": [
--    {
--      "type": "builtin"
--    }
--  ],
-+  "auth.Providers": []
- }
-\ No newline at end of file
-`),
+			Diff:         stringPtr(expectedDiffs[2]),
 		},
 		{
 			ID:           1,
 			AuthorUserID: 0,
-			Diff: stringPtr(`--- ID: 0
-+++ ID: 1
-@@ -1 +1,17 @@
-+{
-+  // The externally accessible URL for Sourcegraph (i.e., what you type into your browser)
-+  // This is required to be configured for Sourcegraph to work correctly.
-+  // "externalURL": "https://sourcegraph.example.com",
-+  // The authentication provider to use for identifying and signing in users.
-+  // Only one entry is supported.
-+  //
-+  // The builtin auth provider with signup disallowed (shown below) means that
-+  // after the initial site admin signs in, all other users must be invited.
-+  //
-+  // Other providers are documented at https://docs.sourcegraph.com/admin/auth.
-+  "auth.providers": [
-+    {
-+      "type": "builtin"
-+    }
-+  ],
-+}
-\ No newline at end of file
-`),
+			Diff:         stringPtr(expectedDiffs[1]),
 		},
 	}
 
