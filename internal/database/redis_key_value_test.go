@@ -55,4 +55,10 @@ func TestRedisKeyValue(t *testing.T) {
 	binary := string([]byte{0, 1, 0}) // use string to ensure we don't mutate in Set.
 	require.NoError(kv.Set(ctx, "namespace", "binary", []byte(binary)))
 	requireValue("namespace", "binary", binary)
+
+	// nil should be treated like an empty slice
+	require.NoError(kv.Set(ctx, "namespace", "nil", nil))
+	require.NoError(kv.Set(ctx, "namespace", "empty", []byte{}))
+	requireValue("namespace", "nil", "")
+	requireValue("namespace", "empty", "")
 }

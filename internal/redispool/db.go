@@ -18,7 +18,8 @@ type DBStore interface {
 	// Get returns the value for (namespace, key). ok is false if the
 	// (namespace, key) has not been set.
 	Get(ctx context.Context, namespace, key string) (value []byte, ok bool, err error)
-	// Set will upsert value for (namespace, key).
+	// Set will upsert value for (namespace, key). If value is nil it should
+	// be persisted as an empty byte slice.
 	Set(ctx context.Context, namespace, key string, value []byte) (err error)
 	// Delete will remove (namespace, key). If (namespace, key) is not in the
 	// store, the delete is a noop.

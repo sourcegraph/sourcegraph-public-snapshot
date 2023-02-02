@@ -54,6 +54,13 @@ func (s *redisKeyValueStore) Get(ctx context.Context, namespace, key string) ([]
 }
 
 func (s *redisKeyValueStore) Set(ctx context.Context, namespace, key string, value []byte) error {
+	// value schema does not allow null, nor do we need to preserve nil. So
+	// convert to empty string for robustness. This invariant is documented in
+	// redispool.DBStore and enforced by tests.
+	if value == nil {
+		value = []byte{}
+	}
+
 	q := sqlf.Sprintf(`
 	INSERT INTO redis_key_value (namespace, key, value)
 	VALUES (%s, %s, %s)
