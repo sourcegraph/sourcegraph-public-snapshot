@@ -71,9 +71,6 @@ func (r SiteConfigurationChangeResolver) Diff() *string {
 		// "siteConfig.Contents" to generate the diff because we do not want to leak secrets in the
 		// diff.
 		prevRedactedContents = r.previousSiteConfig.RedactedContents
-	} else {
-		prevID = 0
-		prevRedactedContents = ""
 	}
 
 	prettyID := func(id int32) string { return fmt.Sprintf("ID: %d", id) }
