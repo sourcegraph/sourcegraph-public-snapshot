@@ -2,7 +2,7 @@
 # This is currently being tested in parallel to Alpine - you don't need to update this
 #   file if you change the regular Dockerfile.
 
-FROM cgr.dev/chainguard/go:latest AS symbols-build
+FROM golang:1.19.3 AS symbols-build
 # hadolint ignore=DL3002
 USER root
 
@@ -10,6 +10,11 @@ ENV GO111MODULE on
 ENV GOARCH amd64
 ENV GOOS linux
 ENV CGO_ENABLED 1
+
+RUN apt-get update && \
+    apt-get install -y \
+    gcc \
+    g++
 
 COPY . /repo
 
