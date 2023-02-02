@@ -6843,7 +6843,7 @@ type SiteConfigurationChange implements Node {
     reproducedDiff: Boolean!
 
     """
-    The diff string when diffed against the previous site config.
+    The diff string when diffed against the previous site config. When this is null there was no diff to the previous change.
     """
     diff: String
     """
