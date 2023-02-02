@@ -58,6 +58,13 @@ func NewJobTokenStore(observationCtx *observation.Context, db database.DB) JobTo
 }
 
 func (s *jobTokenStore) Create(ctx context.Context, jobId int, queue string) (string, error) {
+	if jobId == 0 {
+		return "", errors.New("missing jobId")
+	}
+	if len(queue) == 0 {
+		return "", errors.New("missing queue")
+	}
+
 	var b [20]byte
 	if _, err := rand.Read(b[:]); err != nil {
 		return "", err
@@ -83,12 +90,20 @@ VALUES (%s, %s, %s)
 `
 
 func (s *jobTokenStore) Regenerate(ctx context.Context, jobId int, queue string) (string, error) {
+	exists, err := s.Exists(ctx, jobId, queue)
+	if err != nil {
+		return "", err
+	}
+	if !exists {
+		return "", errors.New("job token does not exist")
+	}
+
 	var b [20]byte
-	if _, err := rand.Read(b[:]); err != nil {
+	if _, err = rand.Read(b[:]); err != nil {
 		return "", err
 	}
 
-	err := s.Exec(
+	err = s.Exec(
 		ctx,
 		sqlf.Sprintf(
 			updateExecutorJobTokenFmtstr,
@@ -113,7 +128,7 @@ func (s *jobTokenStore) Exists(ctx context.Context, jobId int, queue string) (bo
 }
 
 const existsExecutorJobTokenFmtstr = `
-SELECT EXISTS(SELECT 1 FROM executor_job_tokens WHERE job_id = %s AND queue = %s)
+SELECT EXISTS(SELECT 1 FROM executor_job_tokens WHERE job_id=%s AND queue=%s)
 `
 
 func (s *jobTokenStore) Get(ctx context.Context, jobId int, queue string) (JobToken, error) {
