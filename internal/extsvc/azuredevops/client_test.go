@@ -1,11 +1,9 @@
 package azuredevops
 
 import (
-	"context"
 	"flag"
 	"net/http"
 	"net/url"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -13,34 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var update = flag.Bool("update", false, "update testdata")
-
-func TestClient_ListRepositoriesByProjectOrOrg(t *testing.T) {
-	cli, save := NewTestClient(t, "ListRepositoriesByProjectOrOrg", *update)
-	defer save()
-
-	ctx := context.Background()
-
-	opts := ListRepositoriesByProjectOrOrgArgs{
-		// TODO: use an sg owned org rather than a personal.
-		ProjectOrOrgName: "sgadotest",
-	}
-
-	resp, err := cli.ListRepositoriesByProjectOrOrg(ctx, opts)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	testutil.AssertGolden(t, "testdata/golden/ListProjects.json", *update, resp)
-}
-
-func TestMain(m *testing.M) {
-	flag.Parse()
-	os.Exit(m.Run())
-}
 
 // NewTestClient returns an azuredevops.Client that records its interactions
 // to testdata/vcr/.
@@ -59,9 +33,10 @@ func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 		t.Fatal(err)
 	}
 
-	c := &ADOConnection{
+	c := &schema.AzureDevOpsConnection{
+		Url:      "https://dev.azure.com",
 		Username: "testuser",
-		Token:    "testpassword",
+		Token:    "testtoken",
 	}
 
 	cli, err := NewClient("urn", c, hc)

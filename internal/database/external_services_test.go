@@ -177,6 +177,24 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			config:  `{"url": "https://github.com", "projectQuery": ["none"], "token": "` + types.RedactedSecret + `"}`,
 			wantErr: "unable to write external service config as it contains redacted fields, this is likely a bug rather than a problem with your config",
 		},
+		{
+			name:    "1 errors - dev.azure.com",
+			kind:    extsvc.KindAzureDevOps,
+			config:  `{"url": "https://dev.azure.com", "token": "token", "username": "username"}`,
+			wantErr: "either 'projects' or 'orgs' must be set",
+		},
+		{
+			name:    "0 errors - dev.azure.com",
+			kind:    extsvc.KindAzureDevOps,
+			config:  `{"url": "https://dev.azure.com", "token": "token", "username": "username", "projects":[]}`,
+			wantErr: "<nil>",
+		},
+		{
+			name:    "0 errors - dev.azure.com",
+			kind:    extsvc.KindAzureDevOps,
+			config:  `{"url": "https://dev.azure.com", "token": "token", "username": "username", "orgs":[]}`,
+			wantErr: "<nil>",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

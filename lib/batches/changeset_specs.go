@@ -4,15 +4,13 @@ import (
 	"context"
 	"strings"
 
-	"github.com/sourcegraph/go-diff/diff"
+	godiff "github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-var errOptionalPublishedUnsupported = NewValidationError(errors.New(`This Sourcegraph version requires the "published" field to be specified in the batch spec; upgrade to version 3.30.0 or later to be able to omit the published field and control publication from the UI.`))
 
 // Repository is a repository in which the steps of a batch spec are executed.
 //
@@ -242,7 +240,7 @@ func validateGroups(repoName, defaultBranch string, groups []Group) error {
 }
 
 func groupFileDiffs(completeDiff []byte, defaultBranch string, groups []Group) (map[string][]byte, error) {
-	fileDiffs, err := diff.ParseMultiFileDiff(completeDiff)
+	fileDiffs, err := godiff.ParseMultiFileDiff(completeDiff)
 	if err != nil {
 		return nil, err
 	}
@@ -257,8 +255,8 @@ func groupFileDiffs(completeDiff []byte, defaultBranch string, groups []Group) (
 		dirs = append(dirs, g.Directory)
 	}
 
-	byBranch := make(map[string][]*diff.FileDiff, len(groups))
-	byBranch[defaultBranch] = []*diff.FileDiff{}
+	byBranch := make(map[string][]*godiff.FileDiff, len(groups))
+	byBranch[defaultBranch] = []*godiff.FileDiff{}
 
 	// For each file diff...
 	for _, f := range fileDiffs {
@@ -294,7 +292,7 @@ func groupFileDiffs(completeDiff []byte, defaultBranch string, groups []Group) (
 
 	finalDiffsByBranch := make(map[string][]byte, len(byBranch))
 	for branch, diffs := range byBranch {
-		printed, err := diff.PrintMultiFileDiff(diffs)
+		printed, err := godiff.PrintMultiFileDiff(diffs)
 		if err != nil {
 			return nil, errors.Wrap(err, "printing multi file diff failed")
 		}

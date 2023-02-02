@@ -45,9 +45,38 @@ import { readEnvironmentBoolean, retry } from './utils'
 export const oncePageEvent = <E extends keyof PageEventObject>(page: Page, eventName: E): Promise<PageEventObject[E]> =>
     new Promise(resolve => page.once(eventName, resolve))
 
-export const percySnapshot = readEnvironmentBoolean({ variable: 'PERCY_ON', defaultValue: false })
-    ? realPercySnapshot
-    : () => Promise.resolve()
+export const extractStyles = (page: puppeteer.Page): Promise<string> =>
+    page.evaluate(() =>
+        [...document.styleSheets].reduce(
+            (styleSheetRules, styleSheet) =>
+                styleSheetRules.concat(
+                    [...styleSheet.cssRules].reduce((rules, rule) => rules.concat(rule.cssText), '')
+                ),
+            ''
+        )
+    )
+
+interface CommonSnapshotOptions {
+    widths?: number[]
+    minHeight?: number
+    percyCSS?: string
+    enableJavaScript?: boolean
+    devicePixelRatio?: number
+    scope?: string
+}
+
+export const percySnapshot = async (
+    page: puppeteer.Page,
+    name: string,
+    options: CommonSnapshotOptions = {}
+): Promise<void> => {
+    if (!readEnvironmentBoolean({ variable: 'PERCY_ON', defaultValue: false })) {
+        return Promise.resolve()
+    }
+
+    const pageStyles = await extractStyles(page)
+    return realPercySnapshot(page, name, { ...options, percyCSS: pageStyles.concat(options.percyCSS || '') })
+}
 
 export const BROWSER_EXTENSION_DEV_ID = 'bmfbcejdknlknpncfpeloejonjoledha'
 

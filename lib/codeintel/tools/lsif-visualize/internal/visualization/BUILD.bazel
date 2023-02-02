@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "visualization",
+    srcs = [
+        "context.go",
+        "util.go",
+        "visualizer.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/tools/lsif-visualize/internal/visualization",
+    visibility = ["//lib/codeintel/tools/lsif-visualize:__subpackages__"],
+    deps = [
+        "//lib/codeintel/lsif/protocol/reader",
+        "//lib/codeintel/lsif/reader",
+        "@com_github_grafana_regexp//:regexp",
+    ],
+)

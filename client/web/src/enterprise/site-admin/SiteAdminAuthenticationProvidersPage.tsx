@@ -1,6 +1,5 @@
 import * as React from 'react'
 
-import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -64,9 +63,7 @@ const authProviderFragment = gql`
     }
 `
 
-interface Props extends RouteComponentProps<{}> {}
-
-class FilteredAuthProviderConnection extends FilteredConnection<AuthProviderFields> {}
+interface Props {}
 
 /**
  * A page displaying the auth providers in site configuration.
@@ -87,15 +84,13 @@ export class SiteAdminAuthenticationProvidersPage extends React.Component<Props>
                     (SSO) via SAML and OpenID Connect. Configure authentication providers in the{' '}
                     <Link to="/help/admin/config/site_config">site configuration</Link>.
                 </Text>
-                <FilteredAuthProviderConnection
+                <FilteredConnection<AuthProviderFields>
                     className="list-group list-group-flush mt-3"
                     noun="authentication provider"
                     pluralNoun="authentication providers"
                     queryConnection={this.queryAuthProviders}
                     nodeComponent={AuthProviderNode}
                     hideSearch={true}
-                    history={this.props.history}
-                    location={this.props.location}
                 />
             </div>
         )

@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/app"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/bitbucketcloudoauth"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/gerrit"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/githuboauth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/gitlaboauth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/httpheader"
@@ -35,6 +36,7 @@ func Init(logger log.Logger, db database.DB) {
 	githuboauth.Init(logger, db)
 	gitlaboauth.Init(logger, db)
 	bitbucketcloudoauth.Init(logger, db)
+	gerrit.Init()
 
 	// Register enterprise auth middleware
 	auth.RegisterMiddlewares(

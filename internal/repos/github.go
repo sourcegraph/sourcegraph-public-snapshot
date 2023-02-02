@@ -262,7 +262,11 @@ func (s *GitHubSource) Version(ctx context.Context) (string, error) {
 }
 
 func (s *GitHubSource) CheckConnection(ctx context.Context) error {
-	return checkConnection(s.config.Url)
+	_, err := s.v3Client.GetAuthenticatedUser(ctx)
+	if err != nil {
+		return errors.Wrap(err, "connection check failed. could not fetch authenticated user")
+	}
+	return nil
 }
 
 // ListRepos returns all Github repositories accessible to all connections configured
@@ -344,8 +348,8 @@ func (s *GitHubSource) makeRepo(r *github.Repository) *types.Repo {
 // if you need to get an authenticated clone url use repos.CloneURL
 func (s *GitHubSource) remoteURL(repo *github.Repository) string {
 	if s.config.GitURLType == "ssh" {
-		url := fmt.Sprintf("git@%s:%s.git", s.originalHostname, repo.NameWithOwner)
-		return url
+		assembledURL := fmt.Sprintf("git@%s:%s.git", s.originalHostname, repo.NameWithOwner)
+		return assembledURL
 	}
 
 	return repo.URL

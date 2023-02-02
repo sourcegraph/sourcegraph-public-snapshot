@@ -36,6 +36,11 @@ type Services struct {
 	ReposBitbucketServerWebhook webhooks.Registerer
 	ReposBitbucketCloudWebhook  webhooks.Registerer
 
+	SCIMHandler http.Handler
+
+	// Handler for exporting code insights data.
+	CodeInsightsDataExportHandler http.Handler
+
 	PermissionsGitHubWebhook    webhooks.Registerer
 	NewCodeIntelUploadHandler   NewCodeIntelUploadHandler
 	RankingService              RankingService
@@ -94,11 +99,13 @@ func DefaultServices() Services {
 		BatchesChangesFileGetHandler:    makeNotFoundHandler("batches file get handler"),
 		BatchesChangesFileExistsHandler: makeNotFoundHandler("batches file exists handler"),
 		BatchesChangesFileUploadHandler: makeNotFoundHandler("batches file upload handler"),
+		SCIMHandler:                     makeNotFoundHandler("SCIM handler"),
 		NewCodeIntelUploadHandler:       func(_ bool) http.Handler { return makeNotFoundHandler("code intel upload") },
 		RankingService:                  stubRankingService{},
 		NewExecutorProxyHandler:         func() http.Handler { return makeNotFoundHandler("executor proxy") },
 		NewGitHubAppSetupHandler:        func() http.Handler { return makeNotFoundHandler("Sourcegraph GitHub App setup") },
 		NewComputeStreamHandler:         func() http.Handler { return makeNotFoundHandler("compute streaming endpoint") },
+		CodeInsightsDataExportHandler:   makeNotFoundHandler("code insights data export handler"),
 	}
 }
 

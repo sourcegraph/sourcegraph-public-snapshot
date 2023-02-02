@@ -7,7 +7,9 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -16,16 +18,61 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+)
+
+const CancellationReasonHigherPriority = "A job with higher priority was added."
+
+type PermissionSyncJobPriority int
+
+const (
+	LowPriorityPermissionSync    PermissionSyncJobPriority = 0
+	MediumPriorityPermissionSync PermissionSyncJobPriority = 5
+	HighPriorityPermissionSync   PermissionSyncJobPriority = 10
+)
+
+type PermissionSyncJobReason string
+
+const (
+	// ReasonUserOutdatedPermissions and below are reasons of scheduled permission
+	// syncs.
+	ReasonUserOutdatedPermissions PermissionSyncJobReason = "REASON_USER_OUTDATED_PERMS"
+	ReasonUserNoPermissions       PermissionSyncJobReason = "REASON_USER_NO_PERMS"
+	ReasonUserEmailRemoved        PermissionSyncJobReason = "REASON_USER_EMAIL_REMOVED"
+	ReasonUserEmailVerified       PermissionSyncJobReason = "REASON_USER_EMAIL_VERIFIED"
+	ReasonUserAddedToOrg          PermissionSyncJobReason = "REASON_USER_ADDED_TO_ORG"
+	ReasonUserRemovedFromOrg      PermissionSyncJobReason = "REASON_USER_REMOVED_FROM_ORG"
+	ReasonUserAcceptedOrgInvite   PermissionSyncJobReason = "REASON_USER_ACCEPTED_ORG_INVITE"
+	ReasonRepoOutdatedPermissions PermissionSyncJobReason = "REASON_REPO_OUTDATED_PERMS"
+	ReasonRepoNoPermissions       PermissionSyncJobReason = "REASON_REPO_NO_PERMS"
+	ReasonRepoUpdatedFromCodeHost PermissionSyncJobReason = "REASON_REPO_UPDATED_FROM_CODE_HOST"
+
+	// ReasonGitHubUserEvent and below are reasons of permission syncs triggered by
+	// webhook events.
+	ReasonGitHubUserEvent                  PermissionSyncJobReason = "REASON_GITHUB_USER_EVENT"
+	ReasonGitHubUserAddedEvent             PermissionSyncJobReason = "REASON_GITHUB_USER_ADDED_EVENT"
+	ReasonGitHubUserRemovedEvent           PermissionSyncJobReason = "REASON_GITHUB_USER_REMOVED_EVENT"
+	ReasonGitHubUserMembershipAddedEvent   PermissionSyncJobReason = "REASON_GITHUB_USER_MEMBERSHIP_ADDED_EVENT"
+	ReasonGitHubUserMembershipRemovedEvent PermissionSyncJobReason = "REASON_GITHUB_USER_MEMBERSHIP_REMOVED_EVENT"
+	ReasonGitHubTeamAddedToRepoEvent       PermissionSyncJobReason = "REASON_GITHUB_TEAM_ADDED_TO_REPO_EVENT"
+	ReasonGitHubTeamRemovedFromRepoEvent   PermissionSyncJobReason = "REASON_GITHUB_TEAM_REMOVED_FROM_REPO_EVENT"
+	ReasonGitHubOrgMemberAddedEvent        PermissionSyncJobReason = "REASON_GITHUB_ORG_MEMBER_ADDED_EVENT"
+	ReasonGitHubOrgMemberRemovedEvent      PermissionSyncJobReason = "REASON_GITHUB_ORG_MEMBER_REMOVED_EVENT"
+	ReasonGitHubRepoEvent                  PermissionSyncJobReason = "REASON_GITHUB_REPO_EVENT"
+	ReasonGitHubRepoMadePrivateEvent       PermissionSyncJobReason = "REASON_GITHUB_REPO_MADE_PRIVATE_EVENT"
+
+	// ReasonManualRepoSync and below are reasons of permission syncs triggered
+	// manually.
+	ReasonManualRepoSync PermissionSyncJobReason = "REASON_MANUAL_REPO_SYNC"
+	ReasonManualUserSync PermissionSyncJobReason = "REASON_MANUAL_USER_SYNC"
 )
 
 type PermissionSyncJobOpts struct {
-	HighPriority      bool
+	Priority          PermissionSyncJobPriority
 	InvalidateCaches  bool
-	NextSyncAt        time.Time
-	Reason            string
+	ProcessAfter      time.Time
+	Reason            PermissionSyncJobReason
 	TriggeredByUserID int32
+	NoPerms           bool
 }
 
 type PermissionSyncJobStore interface {
@@ -39,7 +86,7 @@ type PermissionSyncJobStore interface {
 	CreateRepoSyncJob(ctx context.Context, repo api.RepoID, opts PermissionSyncJobOpts) error
 
 	List(ctx context.Context, opts ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error)
-	CancelQueuedJob(ctx context.Context, id int) error
+	CancelQueuedJob(ctx context.Context, reason string, id int) error
 }
 
 type permissionSyncJobStore struct {
@@ -73,13 +120,14 @@ func (s *permissionSyncJobStore) Done(err error) error {
 func (s *permissionSyncJobStore) CreateUserSyncJob(ctx context.Context, user int32, opts PermissionSyncJobOpts) error {
 	job := &PermissionSyncJob{
 		UserID:            int(user),
-		HighPriority:      opts.HighPriority,
+		Priority:          opts.Priority,
 		InvalidateCaches:  opts.InvalidateCaches,
 		Reason:            opts.Reason,
 		TriggeredByUserID: opts.TriggeredByUserID,
+		NoPerms:           opts.NoPerms,
 	}
-	if !opts.NextSyncAt.IsZero() {
-		job.ProcessAfter = opts.NextSyncAt
+	if !opts.ProcessAfter.IsZero() {
+		job.ProcessAfter = opts.ProcessAfter
 	}
 	return s.createSyncJob(ctx, job)
 }
@@ -87,13 +135,14 @@ func (s *permissionSyncJobStore) CreateUserSyncJob(ctx context.Context, user int
 func (s *permissionSyncJobStore) CreateRepoSyncJob(ctx context.Context, repo api.RepoID, opts PermissionSyncJobOpts) error {
 	job := &PermissionSyncJob{
 		RepositoryID:      int(repo),
-		HighPriority:      opts.HighPriority,
+		Priority:          opts.Priority,
 		InvalidateCaches:  opts.InvalidateCaches,
 		Reason:            opts.Reason,
 		TriggeredByUserID: opts.TriggeredByUserID,
+		NoPerms:           opts.NoPerms,
 	}
-	if !opts.NextSyncAt.IsZero() {
-		job.ProcessAfter = opts.NextSyncAt
+	if !opts.ProcessAfter.IsZero() {
+		job.ProcessAfter = opts.ProcessAfter
 	}
 	return s.createSyncJob(ctx, job)
 }
@@ -105,10 +154,12 @@ INSERT INTO permission_sync_jobs (
 	process_after,
 	repository_id,
 	user_id,
-	high_priority,
-	invalidate_caches
+	priority,
+	invalidate_caches,
+	no_perms
 )
 VALUES (
+	%s,
 	%s,
 	%s,
 	%s,
@@ -139,8 +190,9 @@ func (s *permissionSyncJobStore) create(ctx context.Context, job *PermissionSync
 		dbutil.NullTimeColumn(job.ProcessAfter),
 		dbutil.NewNullInt(job.RepositoryID),
 		dbutil.NewNullInt(job.UserID),
-		job.HighPriority,
+		job.Priority,
 		job.InvalidateCaches,
+		job.NoPerms,
 		sqlf.Join(PermissionSyncJobColumns, ", "),
 	)
 
@@ -180,9 +232,9 @@ func (s *permissionSyncJobStore) checkDuplicateAndCreateSyncJob(ctx context.Cont
 	// `process_after` value.
 	existingJob := syncJobs[0]
 
-	// Existing job with high priority should not be overridden. Existing low
-	// priority job shouldn't be overridden by another low priority job.
-	if existingJob.HighPriority || !job.HighPriority {
+	// Existing job with higher priority should not be overridden. Existing
+	// priority job shouldn't be overridden by another same priority job.
+	if existingJob.Priority >= job.Priority {
 		logField := "repositoryID"
 		id := strconv.Itoa(job.RepositoryID)
 		if job.RepositoryID == 0 {
@@ -196,7 +248,7 @@ func (s *permissionSyncJobStore) checkDuplicateAndCreateSyncJob(ctx context.Cont
 		return nil
 	}
 
-	err = tx.CancelQueuedJob(ctx, existingJob.ID)
+	err = tx.CancelQueuedJob(ctx, CancellationReasonHigherPriority, existingJob.ID)
 	if err != nil && !errcode.IsNotFound(err) {
 		return err
 	}
@@ -207,13 +259,13 @@ type notFoundError struct{ error }
 
 func (e notFoundError) NotFound() bool { return true }
 
-func (s *permissionSyncJobStore) CancelQueuedJob(ctx context.Context, id int) error {
+func (s *permissionSyncJobStore) CancelQueuedJob(ctx context.Context, reason string, id int) error {
 	now := timeutil.Now()
 	q := sqlf.Sprintf(`
 UPDATE permission_sync_jobs
-SET cancel = TRUE, state = 'canceled', finished_at = %s
+SET cancel = TRUE, state = 'canceled', finished_at = %s, cancellation_reason = %s
 WHERE id = %s AND state = 'queued' AND cancel IS FALSE
-`, now, id)
+`, now, reason, id)
 
 	res, err := s.ExecResult(ctx, q)
 	if err != nil {
@@ -233,7 +285,7 @@ type ListPermissionSyncJobOpts struct {
 	ID                  int
 	UserID              int
 	RepoID              int
-	Reason              string
+	Reason              PermissionSyncJobReason
 	State               string
 	NullProcessAfter    bool
 	NotNullProcessAfter bool
@@ -312,26 +364,28 @@ ORDER BY id ASC
 `
 
 type PermissionSyncJob struct {
-	ID                int
-	State             string
-	FailureMessage    *string
-	Reason            string
-	TriggeredByUserID int32
-	QueuedAt          time.Time
-	StartedAt         time.Time
-	FinishedAt        time.Time
-	ProcessAfter      time.Time
-	NumResets         int
-	NumFailures       int
-	LastHeartbeatAt   time.Time
-	ExecutionLogs     []workerutil.ExecutionLogEntry
-	WorkerHostname    string
-	Cancel            bool
+	ID                 int
+	State              string
+	FailureMessage     *string
+	Reason             PermissionSyncJobReason
+	CancellationReason string
+	TriggeredByUserID  int32
+	QueuedAt           time.Time
+	StartedAt          time.Time
+	FinishedAt         time.Time
+	ProcessAfter       time.Time
+	NumResets          int
+	NumFailures        int
+	LastHeartbeatAt    time.Time
+	ExecutionLogs      []executor.ExecutionLogEntry
+	WorkerHostname     string
+	Cancel             bool
 
 	RepositoryID int
 	UserID       int
 
-	HighPriority     bool
+	Priority         PermissionSyncJobPriority
+	NoPerms          bool
 	InvalidateCaches bool
 }
 
@@ -341,6 +395,7 @@ var PermissionSyncJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("permission_sync_jobs.id"),
 	sqlf.Sprintf("permission_sync_jobs.state"),
 	sqlf.Sprintf("permission_sync_jobs.reason"),
+	sqlf.Sprintf("permission_sync_jobs.cancellation_reason"),
 	sqlf.Sprintf("permission_sync_jobs.triggered_by_user_id"),
 	sqlf.Sprintf("permission_sync_jobs.failure_message"),
 	sqlf.Sprintf("permission_sync_jobs.queued_at"),
@@ -357,7 +412,8 @@ var PermissionSyncJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("permission_sync_jobs.repository_id"),
 	sqlf.Sprintf("permission_sync_jobs.user_id"),
 
-	sqlf.Sprintf("permission_sync_jobs.high_priority"),
+	sqlf.Sprintf("permission_sync_jobs.priority"),
+	sqlf.Sprintf("permission_sync_jobs.no_perms"),
 	sqlf.Sprintf("permission_sync_jobs.invalidate_caches"),
 }
 
@@ -370,12 +426,13 @@ func ScanPermissionSyncJob(s dbutil.Scanner) (*PermissionSyncJob, error) {
 }
 
 func scanPermissionSyncJob(job *PermissionSyncJob, s dbutil.Scanner) error {
-	var executionLogs []dbworkerstore.ExecutionLogEntry
+	var executionLogs []executor.ExecutionLogEntry
 
 	if err := s.Scan(
 		&job.ID,
 		&job.State,
 		&job.Reason,
+		&dbutil.NullString{S: &job.CancellationReason},
 		&dbutil.NullInt32{N: &job.TriggeredByUserID},
 		&job.FailureMessage,
 		&job.QueuedAt,
@@ -392,14 +449,14 @@ func scanPermissionSyncJob(job *PermissionSyncJob, s dbutil.Scanner) error {
 		&dbutil.NullInt{N: &job.RepositoryID},
 		&dbutil.NullInt{N: &job.UserID},
 
-		&job.HighPriority,
+		&job.Priority,
+		&job.NoPerms,
 		&job.InvalidateCaches,
 	); err != nil {
 		return err
 	}
 
-	for _, entry := range executionLogs {
-		job.ExecutionLogs = append(job.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
-	}
+	job.ExecutionLogs = append(job.ExecutionLogs, executionLogs...)
+
 	return nil
 }

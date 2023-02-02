@@ -106,7 +106,7 @@ func NewPermsSyncer(
 		clock:               clock,
 		rateLimiterRegistry: rateLimiterRegistry,
 		scheduleInterval:    scheduleInterval(),
-		recordsStore:        syncjobs.NewRecordsStore(logger.Scoped("records", "sync jobs records store")),
+		recordsStore:        syncjobs.NewRecordsStore(logger.Scoped("records", "sync jobs records store"), conf.DefaultClient()),
 	}
 }
 
@@ -128,7 +128,7 @@ func (s *PermsSyncer) ScheduleUsers(ctx context.Context, opts authz.FetchPermsOp
 			priority: priorityHigh,
 			userID:   userIDs[i],
 			options:  opts,
-			// NOTE: Have nextSyncAt with zero value (i.e. not set) gives it higher priority,
+			// NOTE: Have processAfter with zero value (i.e. not set) gives it higher priority,
 			// as the request is most likely triggered by a user action from OSS namespace.
 		}
 	}
@@ -153,7 +153,7 @@ func (s *PermsSyncer) scheduleUsers(ctx context.Context, users ...scheduledUser)
 			Type:       requestTypeUser,
 			ID:         u.userID,
 			Options:    u.options,
-			NextSyncAt: u.nextSyncAt,
+			NextSyncAt: u.processAfter,
 			NoPerms:    u.noPerms,
 		})
 		logger.Debug("queue.enqueued", log.Int32("userID", u.userID), log.Bool("updated", updated))
@@ -178,7 +178,7 @@ func (s *PermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) 
 		repositories[i] = scheduledRepo{
 			priority: priorityHigh,
 			repoID:   repoIDs[i],
-			// NOTE: Have nextSyncAt with zero value (i.e. not set) gives it higher priority,
+			// NOTE: Have processAfter with zero value (i.e. not set) gives it higher priority,
 			// as the request is most likely triggered by a user action from OSS namespace.
 		}
 	}
@@ -203,7 +203,7 @@ func (s *PermsSyncer) scheduleRepos(ctx context.Context, repos ...scheduledRepo)
 			Priority:   r.priority,
 			Type:       requestTypeRepo,
 			ID:         int32(r.repoID),
-			NextSyncAt: r.nextSyncAt,
+			NextSyncAt: r.processAfter,
 			NoPerms:    r.noPerms,
 		})
 		logger.Debug("queue.enqueued", log.Int32("repoID", int32(r.repoID)), log.Bool("updated", updated))
@@ -595,7 +595,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		Type:   authz.PermRepos,
 		IDs:    map[int32]struct{}{},
 	}
-	s.permsStore.LoadUserPermissions(ctx, oldPerms)
+	_ = s.permsStore.LoadUserPermissions(ctx, oldPerms)
 
 	// Save new permissions to database
 	p := &authz.UserPermissions{
@@ -774,7 +774,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		Perm:    authz.Read,
 		UserIDs: map[int32]struct{}{},
 	}
-	s.permsStore.LoadRepoPermissions(ctx, oldPerms)
+	_ = s.permsStore.LoadRepoPermissions(ctx, oldPerms)
 
 	// Save permissions to database
 	p := &authz.RepoPermissions{
@@ -1003,7 +1003,7 @@ func (s *PermsSyncer) scheduleUsersWithNoPerms(ctx context.Context) ([]scheduled
 		users[i] = scheduledUser{
 			priority: priorityLow,
 			userID:   id,
-			// NOTE: Have nextSyncAt with zero value (i.e. not set) gives it higher priority.
+			// NOTE: Have processAfter with zero value (i.e. not set) gives it higher priority.
 			noPerms: true,
 		}
 	}
@@ -1019,20 +1019,20 @@ func (s *PermsSyncer) scheduleReposWithNoPerms(ctx context.Context) ([]scheduled
 	}
 	metricsNoPerms.WithLabelValues("repo").Set(float64(len(ids)))
 
-	repos := make([]scheduledRepo, len(ids))
+	repositories := make([]scheduledRepo, len(ids))
 	for i, id := range ids {
-		repos[i] = scheduledRepo{
+		repositories[i] = scheduledRepo{
 			priority: priorityLow,
 			repoID:   id,
-			// NOTE: Have nextSyncAt with zero value (i.e. not set) gives it higher priority.
+			// NOTE: Have processAfter with zero value (i.e. not set) gives it higher priority.
 			noPerms: true,
 		}
 	}
-	return repos, nil
+	return repositories, nil
 }
 
-// scheduleUsersWithOldestPerms returns computed schedules for users who have oldest
-// permissions in database and capped results by the limit.
+// scheduleUsersWithOldestPerms returns computed schedules for users who have the
+// oldest permissions in database and capped results by the limit.
 func (s *PermsSyncer) scheduleUsersWithOldestPerms(ctx context.Context, limit int, age time.Duration) ([]scheduledUser, error) {
 	results, err := s.permsStore.UserIDsWithOldestPerms(ctx, limit, age)
 	if err != nil {
@@ -1042,9 +1042,9 @@ func (s *PermsSyncer) scheduleUsersWithOldestPerms(ctx context.Context, limit in
 	users := make([]scheduledUser, 0, len(results))
 	for id, t := range results {
 		users = append(users, scheduledUser{
-			priority:   priorityLow,
-			userID:     id,
-			nextSyncAt: t,
+			priority:     priorityLow,
+			userID:       id,
+			processAfter: t,
 		})
 	}
 	return users, nil
@@ -1058,15 +1058,15 @@ func (s *PermsSyncer) scheduleReposWithOldestPerms(ctx context.Context, limit in
 		return nil, err
 	}
 
-	repos := make([]scheduledRepo, 0, len(results))
+	repositories := make([]scheduledRepo, 0, len(results))
 	for id, t := range results {
-		repos = append(repos, scheduledRepo{
-			priority:   priorityLow,
-			repoID:     id,
-			nextSyncAt: t,
+		repositories = append(repositories, scheduledRepo{
+			priority:     priorityLow,
+			repoID:       id,
+			processAfter: t,
 		})
 	}
-	return repos, nil
+	return repositories, nil
 }
 
 // schedule contains information for scheduling users and repositories.
@@ -1077,10 +1077,10 @@ type schedule struct {
 
 // scheduledUser contains information for scheduling a user.
 type scheduledUser struct {
-	priority   priority
-	userID     int32
-	options    authz.FetchPermsOptions
-	nextSyncAt time.Time
+	priority     priority
+	userID       int32
+	options      authz.FetchPermsOptions
+	processAfter time.Time
 
 	// Whether the user has no permissions when scheduled. Currently used to
 	// accept partial results from authz provider in case of error.
@@ -1089,9 +1089,9 @@ type scheduledUser struct {
 
 // scheduledRepo contains for scheduling a repository.
 type scheduledRepo struct {
-	priority   priority
-	repoID     api.RepoID
-	nextSyncAt time.Time
+	priority     priority
+	repoID       api.RepoID
+	processAfter time.Time
 
 	// Whether the repository has no permissions when scheduled. Currently used
 	// to accept partial results from authz provider in case of error.
@@ -1129,9 +1129,6 @@ func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
 	// Hard coded both to 10 for now.
 	userLimit, repoLimit := oldestUserPermissionsBatchSize(), oldestRepoPermissionsBatchSize()
 
-	// TODO(jchen): Use better heuristics for setting NextSyncAt, the initial version
-	// just uses the value of LastUpdatedAt get from the perms tables.
-
 	usersWithOldestPerms, err := s.scheduleUsersWithOldestPerms(ctx, userLimit, syncUserBackoff())
 	if err != nil {
 		return nil, errors.Wrap(err, "load users with oldest permissions")
@@ -1162,8 +1159,6 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 	logger.Info("started")
 	defer logger.Info("stopped")
 
-	store := s.db.PermissionSyncJobs()
-
 	ticker := time.NewTicker(s.scheduleInterval)
 	defer ticker.Stop()
 
@@ -1174,7 +1169,7 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 			return
 		}
 
-		if s.isDisabled() {
+		if s.isDisabled() || permssync.PermissionSyncWorkerEnabled(ctx, s.db, logger) {
 			logger.Info("disabled")
 			continue
 		}
@@ -1185,43 +1180,10 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 			continue
 		}
 
-		// TODO(sashaostrikov): Yes, you're right. This is obviously spaghetti code:
-		// `PermsSyncer` creates jobs that a worker picks up and then hands to
-		// PermSyncer.
-		// The idea is that once the worker becomes the default then this whole
-		// method, `runSchedule`, will disappear and become a background
-		// routine being run in `cmd/worker`.
-		workerEnabled := permssync.PermissionSyncWorkerEnabled(ctx, s.db, logger)
-		logger.Info("scheduling permission syncs", log.Int("users", len(schedule.Users)), log.Int("repos", len(schedule.Repos)), log.Bool("database-backed perm syncer", workerEnabled))
+		logger.Info("scheduling permission syncs", log.Int("users", len(schedule.Users)), log.Int("repos", len(schedule.Repos)))
 
-		if workerEnabled {
-			for _, u := range schedule.Users {
-				reason := permssync.ReasonUserOutdatedPermissions
-				if u.noPerms {
-					reason = permssync.ReasonUserNoPermissions
-				}
-				opts := database.PermissionSyncJobOpts{NextSyncAt: u.nextSyncAt, Reason: reason}
-				if err := store.CreateUserSyncJob(ctx, u.userID, opts); err != nil {
-					logger.Error("failed to create user sync job", log.Error(err))
-					continue
-				}
-			}
-
-			for _, r := range schedule.Repos {
-				reason := permssync.ReasonRepoOutdatedPermissions
-				if r.noPerms {
-					reason = permssync.ReasonRepoNoPermissions
-				}
-				opts := database.PermissionSyncJobOpts{NextSyncAt: r.nextSyncAt, Reason: reason}
-				if err := store.CreateRepoSyncJob(ctx, r.repoID, opts); err != nil {
-					logger.Error("failed to create repo sync job", log.Error(err))
-					continue
-				}
-			}
-		} else {
-			s.scheduleUsers(ctx, schedule.Users...)
-			s.scheduleRepos(ctx, schedule.Repos...)
-		}
+		s.scheduleUsers(ctx, schedule.Users...)
+		s.scheduleRepos(ctx, schedule.Repos...)
 
 		s.collectMetrics(ctx)
 	}
@@ -1354,7 +1316,6 @@ func (s *PermsSyncer) collectMetrics(ctx context.Context) {
 func (s *PermsSyncer) Run(ctx context.Context) {
 	go s.runSync(ctx)
 	go s.runSchedule(ctx)
-	go s.recordsStore.Watch(conf.DefaultClient())
 
 	<-ctx.Done()
 }

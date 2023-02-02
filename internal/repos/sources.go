@@ -49,6 +49,8 @@ func NewSource(ctx context.Context, logger log.Logger, db database.DB, svc *type
 		return NewGithubSource(ctx, logger.Scoped("GithubSource", "GitHub repo source"), externalServicesStore, svc, cf)
 	case extsvc.KindGitLab:
 		return NewGitLabSource(ctx, logger.Scoped("GitLabSource", "GitLab repo source"), svc, cf)
+	case extsvc.KindAzureDevOps:
+		return NewAzureDevOpsSource(ctx, logger.Scoped("AzureDevOpsSource", "GitLab repo source"), svc, cf)
 	case extsvc.KindGerrit:
 		return NewGerritSource(ctx, svc, cf)
 	case extsvc.KindBitbucketServer:

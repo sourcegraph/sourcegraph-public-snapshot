@@ -51,6 +51,9 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
         if (provider.serviceType === 'sourcegraph-operator') {
             return new URLSearchParams(location.search).has('sourcegraph-operator')
         }
+        if (provider.serviceType === 'gerrit') {
+            return false
+        }
         return true
     }
 

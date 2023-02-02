@@ -2,6 +2,7 @@ package redispool
 
 import (
 	"context"
+	"time"
 
 	"github.com/gomodule/redigo/redis"
 )
@@ -22,17 +23,21 @@ type KeyValue interface {
 	Get(key string) Value
 	GetSet(key string, value any) Value
 	Set(key string, value any) error
+	SetEx(key string, ttlSeconds int, value any) error
+	Incr(key string) error
 	Del(key string) error
 
+	TTL(key string) (int, error)
+	Expire(key string, ttlSeconds int) error
+
 	HGet(key, field string) Value
+	HGetAll(key string) Values
 	HSet(key, field string, value any) error
 
 	LPush(key string, value any) error
 	LTrim(key string, start, stop int) error
 	LLen(key string) (int, error)
-	LRange(key string, start, stop int) Value
-
-	Expire(key string, seconds int) error
+	LRange(key string, start, stop int) Values
 
 	// WithContext will return a KeyValue that should respect ctx for all
 	// blocking operations.
@@ -63,18 +68,63 @@ func (v Value) Bytes() ([]byte, error) {
 	return redis.Bytes(v.reply, v.err)
 }
 
-func (v Value) ByteSlices() ([][]byte, error) {
-	return redis.ByteSlices(redis.Values(v.reply, v.err))
+func (v Value) Int() (int, error) {
+	return redis.Int(v.reply, v.err)
 }
 
 func (v Value) String() (string, error) {
 	return redis.String(v.reply, v.err)
 }
 
+// Values is a response from an operation on KeyValue which returns multiple
+// items. It provides convenient methods to get at the underlying value of the
+// reply.
+//
+// Note: the available methods are based on current need. If you need to add
+// another helper go for it.
+type Values struct {
+	reply interface{}
+	err   error
+}
+
+func (v Values) ByteSlices() ([][]byte, error) {
+	return redis.ByteSlices(redis.Values(v.reply, v.err))
+}
+
+func (v Values) Strings() ([]string, error) {
+	return redis.Strings(v.reply, v.err)
+}
+
+func (v Values) StringMap() (map[string]string, error) {
+	return redis.StringMap(v.reply, v.err)
+}
+
 type redisKeyValue struct {
 	pool   *redis.Pool
 	ctx    context.Context
 	prefix string
+}
+
+// NewKeyValue returns a KeyValue for addr. addr is treated as follows:
+//
+//  1. if addr == MemoryKeyValueURI we use a KeyValue that lives
+//     in memory of the current process.
+//  2. otherwise treat as a redis address.
+//
+// poolOpts is a required argument which sets defaults in the case we connect
+// to redis. If used we only override TestOnBorrow and Dial.
+func NewKeyValue(addr string, poolOpts *redis.Pool) KeyValue {
+	if addr == MemoryKeyValueURI {
+		return MemoryKeyValue()
+	}
+	poolOpts.TestOnBorrow = func(c redis.Conn, t time.Time) error {
+		_, err := c.Do("PING")
+		return err
+	}
+	poolOpts.Dial = func() (redis.Conn, error) {
+		return dialRedis(addr)
+	}
+	return RedisKeyValue(poolOpts)
 }
 
 // RedisKeyValue returns a KeyValue backed by pool.
@@ -102,12 +152,32 @@ func (r *redisKeyValue) Set(key string, val any) error {
 	return r.do("SET", r.prefix+key, val).err
 }
 
+func (r *redisKeyValue) SetEx(key string, ttlSeconds int, val any) error {
+	return r.do("SETEX", r.prefix+key, ttlSeconds, val).err
+}
+
+func (r *redisKeyValue) Incr(key string) error {
+	return r.do("INCR", r.prefix+key).err
+}
+
 func (r *redisKeyValue) Del(key string) error {
 	return r.do("DEL", r.prefix+key).err
 }
 
+func (r *redisKeyValue) TTL(key string) (int, error) {
+	return r.do("TTL", r.prefix+key).Int()
+}
+
+func (r *redisKeyValue) Expire(key string, ttlSeconds int) error {
+	return r.do("EXPIRE", r.prefix+key, ttlSeconds).err
+}
+
 func (r *redisKeyValue) HGet(key, field string) Value {
 	return r.do("HGET", r.prefix+key, field)
+}
+
+func (r *redisKeyValue) HGetAll(key string) Values {
+	return Values(r.do("HGETALL", r.prefix+key))
 }
 
 func (r *redisKeyValue) HSet(key, field string, val any) error {
@@ -124,12 +194,8 @@ func (r *redisKeyValue) LLen(key string) (int, error) {
 	raw := r.do("LLEN", r.prefix+key)
 	return redis.Int(raw.reply, raw.err)
 }
-func (r *redisKeyValue) LRange(key string, start, stop int) Value {
-	return r.do("LRANGE", r.prefix+key, start, stop)
-}
-
-func (r *redisKeyValue) Expire(key string, seconds int) error {
-	return r.do("EXPIRE", r.prefix+key, seconds).err
+func (r *redisKeyValue) LRange(key string, start, stop int) Values {
+	return Values(r.do("LRANGE", r.prefix+key, start, stop))
 }
 
 func (r *redisKeyValue) WithContext(ctx context.Context) KeyValue {

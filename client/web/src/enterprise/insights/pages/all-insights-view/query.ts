@@ -32,25 +32,29 @@ export const GET_ALL_INSIGHT_CONFIGURATIONS = gql`
         }
         defaultSeriesDisplayOptions {
             limit
-            sortOptions {
-                mode
-                direction
-            }
-        }
-        appliedSeriesDisplayOptions {
-            limit
+            numSamples
             sortOptions {
                 mode
                 direction
             }
         }
         isFrozen
-        appliedFilters {
+        defaultFilters {
             includeRepoRegex
             excludeRepoRegex
             searchContexts
         }
         dashboardReferenceCount
+        repositoryDefinition {
+            __typename
+            ... on RepositorySearchScope {
+                search
+            }
+
+            ... on InsightRepositoryScope {
+                repositories
+            }
+        }
         dashboards {
             nodes {
                 id

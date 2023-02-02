@@ -99,8 +99,8 @@ env:
 
   # Required for frontend and executor to communicate
   EXECUTOR_FRONTEND_URL: http://localhost:3080
-  EXECUTOR_FRONTEND_PASSWORD: none
-  EXECUTOR_QUEUE_DISABLE_ACCESS_TOKEN_INSECURE: true
+  # Must match the secret defined in the site config.
+  EXECUTOR_FRONTEND_PASSWORD: hunter2hunter2hunter2
 
   # Disable firecracker inside executor in dev
   EXECUTOR_USE_FIRECRACKER: false
@@ -425,11 +425,19 @@ commands:
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   web-integration-build:
-    description: Build web application for integration tests
+    description: Build development web application for integration tests
     cmd: pnpm --filter @sourcegraph/web run build
     env:
       ENTERPRISE: 1
       INTEGRATION_TESTS: true
+
+  web-integration-build-prod:
+    description: Build production web application for integration tests
+    cmd: pnpm --filter @sourcegraph/web run build
+    env:
+      ENTERPRISE: 1
+      INTEGRATION_TESTS: true
+      NODE_ENV: production
 
   docsite:
     description: Docsite instance serving the docs
@@ -1120,10 +1128,11 @@ commandsets:
       - otel-collector
       - jaeger
 
-  enterprise-single-program:
+  app:
     requiresDevPrivate: true
     checks:
       - docker
+      # TODO: App's dependency on Redis will be removed.
       - redis
       - postgres
       - git
@@ -1131,20 +1140,7 @@ commandsets:
       - sourcegraph
       - docsite
       - web
-      - syntax-highlighter
-      - blobstore
-      - caddy
-
-  oss-single-program:
-    checks:
-      - docker
-      - redis
-      - postgres
-      - git
-    commands:
-      - sourcegraph-oss
-      - docsite
-      - oss-web
+      # TODO: App's dependency on syntax-highlighter will be removed.
       - syntax-highlighter
       - caddy
 
@@ -1219,7 +1215,7 @@ tests:
   web-integration:
     preamble: |
       A web application should be built for these tests to work, most
-      commonly with: `sg run web-integration-build`
+      commonly with: `sg run web-integration-build` or `sg run web-integration-build-prod` for production build.
 
       See more details: https://docs.sourcegraph.com/dev/how-to/testing#running-integration-tests
 

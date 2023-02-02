@@ -81,3 +81,11 @@ export const DELETE_USERS_FOREVER = gql`
         }
     }
 `
+
+export const RECOVER_USERS = gql`
+    mutation RecoverUsers($userIDs: [ID!]!) {
+        recoverUsers(userIDs: $userIDs) {
+            alwaysNil
+        }
+    }
+`

@@ -92,9 +92,9 @@ func run(token, org string, dry bool) (err error) {
 
 	var updatedTrackingIssues []*Issue
 	for _, trackingIssue := range openTrackingIssues {
-		context := NewIssueContext(trackingIssue, trackingIssues, issues, pullRequests)
+		issueContext := NewIssueContext(trackingIssue, trackingIssues, issues, pullRequests)
 
-		updated, ok := trackingIssue.UpdateBody(RenderTrackingIssue(context))
+		updated, ok := trackingIssue.UpdateBody(RenderTrackingIssue(issueContext))
 		if !ok {
 			log.Printf("failed to patch work section in %q %s", trackingIssue.SafeTitle(), trackingIssue.URL)
 			continue

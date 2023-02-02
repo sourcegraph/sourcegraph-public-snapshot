@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react'
 
-import * as H from 'history'
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'
 
@@ -52,8 +52,6 @@ interface Props
         SearchContextInputProps,
         Pick<SearchContextProps, 'searchContextsEnabled'> {
     authenticatedUser: AuthenticatedUser | null
-    location: H.Location
-    history: H.History
     isSourcegraphDotCom: boolean
     /** Whether globbing is enabled for filters. */
     globbing: boolean
@@ -71,6 +69,9 @@ const queryStateSelector = (
 })
 
 export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
+    const location = useLocation()
+    const navigate = useNavigate()
+
     const { caseSensitive, patternType, searchMode } = useNavbarQueryState(queryStateSelector, shallow)
     const experimentalQueryInput = useExperimentalFeatures(features => features.searchQueryInput === 'experimental')
     const applySuggestionsOnEnter =
@@ -86,7 +87,8 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                 submitSearch({
                     source: 'home',
                     query,
-                    history: props.history,
+                    historyOrNavigate: navigate,
+                    location,
                     patternType,
                     caseSensitive,
                     searchMode,
@@ -100,7 +102,8 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
         [
             props.queryState.query,
             props.selectedSearchContextSpec,
-            props.history,
+            navigate,
+            location,
             patternType,
             caseSensitive,
             searchMode,
@@ -130,12 +133,14 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                 authenticatedUser: props.authenticatedUser,
                 fetchSearchContexts: props.fetchSearchContexts,
                 getUserSearchContextNamespaces: props.getUserSearchContextNamespaces,
+                isSourcegraphDotCom: props.isSourcegraphDotCom,
             }),
         [
             props.platformContext,
             props.authenticatedUser,
             props.fetchSearchContexts,
             props.getUserSearchContextNamespaces,
+            props.isSourcegraphDotCom,
         ]
     )
 
@@ -149,7 +154,6 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
             isLightTheme={props.isLightTheme}
             placeholder="Search for code or files..."
             suggestionSource={suggestionSource}
-            history={props.history}
         />
     ) : (
         <SearchBox
@@ -178,7 +182,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
             <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
                 <div data-search-page-input-container={true} className={styles.inputContainer}>
                     <TraceSpanProvider name="SearchBox">
-                        <div className="d-flex flex-grow-1">{input}</div>
+                        <div className="d-flex flex-grow-1 w-100">{input}</div>
                     </TraceSpanProvider>
                 </div>
                 <Notices className="my-3 text-center" location="home" settingsCascade={props.settingsCascade} />

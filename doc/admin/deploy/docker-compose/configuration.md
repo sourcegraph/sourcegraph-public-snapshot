@@ -35,6 +35,56 @@ services:
     mem_limit: '26g'
 ```
 
+### Add replica endpoints
+
+When adding a new replica for `gitserver`, `searcher`, `symbols`, and `indexed-search`, you must list the endpoints for each replica individually in order for frontend to communicate with them.
+
+To do that, add or modify the environment variables to all of the sourcegraph-frontend-* services and the sourcegraph-frontend-internal service in the [Docker Compose YAML file](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml).
+
+#### version older than 4.5.0
+
+The following configuration in a docker-compose.override.yaml file shows how to list the endpoints for each replica service individually when the replica count for gitserver, searcher, symbols, and indexed-search has been increased to 2. This is done by using the environment variables specified for each service:
+
+```yaml
+# docker-compose.override.yaml
+version: '2.4'
+services:
+  sourcegraph-frontend-0:
+    environment:
+      #  List all replica endpoints for gitserver
+      - 'SRC_GIT_SERVERS=gitserver-0:3178 gitserver-1:3178'
+      #  List all replica endpoints for indexed-search/zoekt-webserver
+      - 'INDEXED_SEARCH_SERVERS=zoekt-webserver-0:6070 zoekt-webserver-1:6070'
+      #  List all replica endpoints for searcher
+      - 'SEARCHER_URL=http://searcher-0:3181 http://searcher-1:3181'
+      #  List all replica endpoints for symbols
+      - 'SYMBOLS_URL=http://symbols-0:3184 http://symbols-1:3184'
+```
+
+The above configuration uses the environment variables SRC_GIT_SERVERS, INDEXED_SEARCH_SERVERS, SEARCHER_URL, and SYMBOLS_URL to specify the individual endpoints for each replica service. This is done by listing the hostname and port number for each replica, separated by a space.
+
+#### version 4.5.0 or above
+
+In version 4.5.0 or above of Sourcegraph, it is possible to update the environment variables in the docker-compose.override.yaml file to automatically generate the endpoints based on the number of replicas provided. This eliminates the need to list each replica endpoint individually as in the previous example.
+
+```yaml
+# docker-compose.override.yaml
+version: '2.4'
+services:
+  sourcegraph-frontend-0:
+    environment:
+      #  To generate replica endpoints for gitserver
+      - 'SRC_GIT_SERVERS=2'
+      #  To generate replica endpoints for indexed-search/zoekt-webserver
+      - 'INDEXED_SEARCH_SERVERS=2'
+      #  To generate replica endpoints for searcher
+      - 'SEARCHER_URL=1'
+      #  To generate replica endpoints for symbols
+      - 'SYMBOLS_URL=1'
+```
+
+In the above example, the value of the environment variables `SRC_GIT_SERVERS`, `INDEXED_SEARCH_SERVERS`, `SEARCHER_URL`, and `SYMBOLS_URL` are set to the number of replicas for each respective service. This allows Sourcegraph to automatically generate the endpoints for each replica, eliminating the need to list them individually. This can be a useful feature when working with large numbers of replicas.
+
 ### Create multiple gitserver shards
 
 Split gitserver across multiple shards:
@@ -69,8 +119,11 @@ services:
   sourcegraph-frontend-0: &frontend
     cpus: 6
     mem_limit: '6g'
-    environment:
-      - &env_gitserver 'SRC_GIT_SERVERS=gitserver-0:3178 gitserver-1:3178'
+    # Set the following environment variables to generate the replica endpoints
+    environment: &env_gitserver
+      - 'SRC_GIT_SERVERS=2'
+    # IMPORTANT: For version below 4.3.1, you must list the endpoints individually
+      # - &env_gitserver 'SRC_GIT_SERVERS=gitserver-0:3178 gitserver-1:3178'
 # Use the same override values as sourcegraph-frontend-0 above
   sourcegraph-frontend-internal:
     <<: *frontend

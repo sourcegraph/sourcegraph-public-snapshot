@@ -24,9 +24,11 @@ import {
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { AuthenticatedUser } from '../auth'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
 import { Tree } from '../tree/Tree'
 
+import { RepoRevisionSidebarFileTree } from './RepoRevisionSidebarFileTree'
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
 
 import styles from './RepoRevisionSidebar.module.scss'
@@ -55,9 +57,18 @@ export const RepoRevisionSidebar: React.FunctionComponent<
         SIDEBAR_KEY,
         settingsSchemaJSON.properties.fileSidebarVisibleByDefault.default
     )
+    const [enableAccessibleFileTree] = useFeatureFlag('accessible-file-tree')
+    const [enableAccessibleFileTreeAlwaysLoadAncestors] = useFeatureFlag('accessible-file-tree-always-load-ancestors')
 
     const isWideScreen = useMatchMedia('(min-width: 768px)', false)
     const [isVisible, setIsVisible] = useState(persistedIsVisible && isWideScreen)
+
+    const [initialFilePath, setInitialFilePath] = useState<string>(props.filePath)
+    const [initialFilePathIsDir, setInitialFilePathIsDir] = useState<boolean>(props.isDir)
+    const onExpandParent = useCallback((parent: string) => {
+        setInitialFilePath(parent)
+        setInitialFilePathIsDir(true)
+    }, [])
 
     const handleSidebarToggle = useCallback(
         (value: boolean) => {
@@ -137,19 +148,35 @@ export const RepoRevisionSidebar: React.FunctionComponent<
                         {props.repoID && props.commitID && (
                             <TabPanels>
                                 <TabPanel>
-                                    <Tree
-                                        key="files"
-                                        repoName={props.repoName}
-                                        repoID={props.repoID}
-                                        revision={props.revision}
-                                        commitID={props.commitID}
-                                        history={props.history}
-                                        scrollRootSelector=".explorer"
-                                        activePath={props.filePath}
-                                        activePathIsDir={props.isDir}
-                                        sizeKey={`Resizable:${SIZE_STORAGE_KEY}`}
-                                        telemetryService={props.telemetryService}
-                                    />
+                                    {enableAccessibleFileTree ? (
+                                        <RepoRevisionSidebarFileTree
+                                            key={initialFilePath}
+                                            onExpandParent={onExpandParent}
+                                            repoName={props.repoName}
+                                            revision={props.revision}
+                                            commitID={props.commitID}
+                                            initialFilePath={initialFilePath}
+                                            initialFilePathIsDirectory={initialFilePathIsDir}
+                                            filePath={props.filePath}
+                                            filePathIsDirectory={props.isDir}
+                                            telemetryService={props.telemetryService}
+                                            alwaysLoadAncestors={enableAccessibleFileTreeAlwaysLoadAncestors}
+                                        />
+                                    ) : (
+                                        <Tree
+                                            key="files"
+                                            repoName={props.repoName}
+                                            repoID={props.repoID}
+                                            revision={props.revision}
+                                            commitID={props.commitID}
+                                            history={props.history}
+                                            scrollRootSelector=".explorer"
+                                            activePath={props.filePath}
+                                            activePathIsDir={props.isDir}
+                                            sizeKey={`Resizable:${SIZE_STORAGE_KEY}`}
+                                            telemetryService={props.telemetryService}
+                                        />
+                                    )}
                                 </TabPanel>
                                 <TabPanel>
                                     <RepoRevisionSidebarSymbols

@@ -129,6 +129,8 @@ type symbolMetadata struct {
 	implementationRelationships []string
 }
 
+const maxDefinitionsPerDefinitionResult = 16
+
 // convertRange converts an LSIF range into an equivalent set of SCIP occurrences. The output of this function
 // is a slice of occurrences, as multiple moniker names/relationships translate to distinct occurrence objects,
 // as well as a slice of additional symbol metadata that should be aggregated and persisted into the enclosing
@@ -224,7 +226,13 @@ func convertRange(
 	} else {
 		role := scip.SymbolRole_UnspecifiedSymbolRole
 
-		for _, targetRangeID := range targetRangeFetcher(r.DefinitionResultID) {
+		targetRanges := targetRangeFetcher(r.DefinitionResultID)
+		sort.Slice(targetRanges, func(i, j int) bool { return targetRanges[i] < targetRanges[j] })
+		if len(targetRanges) > maxDefinitionsPerDefinitionResult {
+			targetRanges = targetRanges[:maxDefinitionsPerDefinitionResult]
+		}
+
+		for _, targetRangeID := range targetRanges {
 			// Add reference to the defining range identifier
 			addOccurrence(constructSymbolName(uploadID, targetRangeID), role)
 		}
@@ -296,17 +304,4 @@ func extractLanguageFromIndexerName(indexerName string) string {
 	}
 
 	return ""
-}
-
-// flattenNonEmptyMap returns an ordered slice of the keys from the given map, excluding the empty string.
-func flattenNonEmptyMap(m map[string]struct{}) []string {
-	s := make([]string, 0, len(m))
-	for k := range m {
-		if k != "" {
-			s = append(s, k)
-		}
-	}
-	sort.Strings(s)
-
-	return s
 }

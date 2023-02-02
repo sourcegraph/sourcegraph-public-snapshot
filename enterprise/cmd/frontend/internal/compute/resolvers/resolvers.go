@@ -64,11 +64,11 @@ func (r *computeMatchResolver) Range() gql.RangeResolver {
 }
 
 func (r *computeMatchResolver) Environment() []gql.ComputeEnvironmentEntryResolver {
-	var result []gql.ComputeEnvironmentEntryResolver
+	var resolvers []gql.ComputeEnvironmentEntryResolver
 	for variable, value := range r.m.Environment {
-		result = append(result, newEnvironmentEntryResolver(variable, value))
+		resolvers = append(resolvers, newEnvironmentEntryResolver(variable, value))
 	}
-	return result
+	return resolvers
 }
 
 func newEnvironmentEntryResolver(variable string, value compute.Data) *computeEnvironmentEntryResolver {
@@ -194,7 +194,7 @@ func toResultResolverList(ctx context.Context, cmd compute.Command, matches []re
 		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
 			return existing
 		}
-		resolver := gql.NewRepositoryResolver(db, gitserver.NewClient(db), repoName.ToRepo())
+		resolver := gql.NewRepositoryResolver(db, gitserver.NewClient(), repoName.ToRepo())
 		resolver.RepoMatch.Rev = rev
 		repoResolvers[repoKey{repoName, rev}] = resolver
 		return resolver
@@ -202,7 +202,7 @@ func toResultResolverList(ctx context.Context, cmd compute.Command, matches []re
 
 	results := make([]gql.ComputeResultResolver, 0, len(matches))
 	for _, m := range matches {
-		computeResult, err := cmd.Run(ctx, db, m)
+		computeResult, err := cmd.Run(ctx, m)
 		if err != nil {
 			return nil, err
 		}
@@ -214,8 +214,8 @@ func toResultResolverList(ctx context.Context, cmd compute.Command, matches []re
 
 		repoResolver := getRepoResolver(m.RepoName(), "")
 		path, commit := pathAndCommitFromResult(m)
-		result := toComputeResultResolver(computeResult, repoResolver, path, commit)
-		results = append(results, result)
+		resolver := toComputeResultResolver(computeResult, repoResolver, path, commit)
+		results = append(results, resolver)
 	}
 	return results, nil
 }

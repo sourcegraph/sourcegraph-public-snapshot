@@ -369,6 +369,62 @@ func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
 	}
 }
 
+func TestSessionIssuerHelper_SignupFailsWithLastError(t *testing.T) {
+	githubsvc.MockGetAuthenticatedUserEmails = func(ctx context.Context) ([]*githubsvc.UserEmail, error) {
+		return []*githubsvc.UserEmail{
+			{
+				Email:    "primary@example.com",
+				Primary:  true,
+				Verified: true,
+			},
+			{
+				Email:    "secondary@example.com",
+				Primary:  false,
+				Verified: true,
+			},
+		}, nil
+	}
+	errorMessage := "could not create new user account, license limit has been reached"
+
+	// We just want to make sure that we end up getting to the signup part
+	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+		if op.CreateIfNotExist {
+			// We should not get here as we should hit the second email address
+			// before trying again with creation enabled.
+			return 0, errorMessage, errors.New(errorMessage)
+		}
+		return 0, "no match", errors.New("no match")
+	}
+	defer func() {
+		githubsvc.MockGetAuthenticatedUserEmails = nil
+		auth.MockGetAndSaveUser = nil
+	}()
+
+	ghURL, _ := url.Parse("https://github.com")
+	codeHost := extsvc.NewCodeHost(ghURL, extsvc.TypeGitHub)
+	clientID := "client-id"
+	ghUser := &github.User{
+		ID:    github.Int64(101),
+		Login: github.String("alice"),
+	}
+
+	ctx := githublogin.WithUser(context.Background(), ghUser)
+	s := &sessionIssuerHelper{
+		CodeHost:    codeHost,
+		clientID:    clientID,
+		allowSignup: true,
+		allowOrgs:   nil,
+	}
+	tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
+	_, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	if err.Error() != errorMessage {
+		t.Fatalf("expected error message to be %s, got %s", errorMessage, err.Error())
+	}
+}
+
 func TestVerifyUserOrgs_UserHasMoreThan100Orgs(t *testing.T) {
 	// mock calls to get user orgs
 	githubsvc.MockGetAuthenticatedUserOrgs.PagesMock = make(map[int][]*githubsvc.Org, 2)

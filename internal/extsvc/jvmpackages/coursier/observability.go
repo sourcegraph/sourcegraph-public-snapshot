@@ -21,7 +21,7 @@ type operations struct {
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
-	metrics := metrics.NewREDMetrics(
+	redMetrics := metrics.NewREDMetrics(
 		observationCtx.Registerer,
 		"codeintel_coursier",
 		metrics.WithLabels("op"),
@@ -32,7 +32,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.coursier.%s", name),
 			MetricLabelValues: []string{name},
-			Metrics:           metrics,
+			Metrics:           redMetrics,
 			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
 				if err != nil && strings.Contains(err.Error(), "not found") {
 					return observation.EmitForMetrics | observation.EmitForTraces

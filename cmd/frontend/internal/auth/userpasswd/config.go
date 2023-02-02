@@ -10,8 +10,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+var MockResetPasswordEnabled func() bool
+
 // ResetPasswordEnabled reports whether the reset-password flow is enabled (per site config).
 func ResetPasswordEnabled() bool {
+	if MockResetPasswordEnabled != nil {
+		return MockResetPasswordEnabled()
+	}
+
 	builtin, multiple := getProviderConfig()
 	return builtin != nil && !multiple
 }

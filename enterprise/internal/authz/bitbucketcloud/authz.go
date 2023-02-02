@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 
+	atypes "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/types"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -23,7 +24,8 @@ import (
 // This constructor does not and should not directly check connectivity to external services - if
 // desired, callers should use `(*Provider).ValidateConnection` directly to get warnings related
 // to connection issues.
-func NewAuthzProviders(db database.DB, conns []*types.BitbucketCloudConnection, authProviders []schema.AuthProviders) (ps []authz.Provider, problems []string, warnings []string, invalidConnections []string) {
+func NewAuthzProviders(db database.DB, conns []*types.BitbucketCloudConnection, authProviders []schema.AuthProviders) *atypes.ProviderInitResult {
+	initResults := &atypes.ProviderInitResult{}
 	bbcloudAuthProviders := make(map[string]*schema.BitbucketCloudAuthProvider)
 	for _, p := range authProviders {
 		if p.Bitbucketcloud != nil {
@@ -44,15 +46,15 @@ func NewAuthzProviders(db database.DB, conns []*types.BitbucketCloudConnection, 
 	for _, c := range conns {
 		p, err := newAuthzProvider(db, c)
 		if err != nil {
-			invalidConnections = append(invalidConnections, extsvc.TypeBitbucketCloud)
-			problems = append(problems, err.Error())
+			initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeBitbucketCloud)
+			initResults.Problems = append(initResults.Problems, err.Error())
 		}
 		if p == nil {
 			continue
 		}
 
 		if _, exists := bbcloudAuthProviders[p.ServiceID()]; !exists {
-			warnings = append(warnings,
+			initResults.Warnings = append(initResults.Warnings,
 				fmt.Sprintf("Bitbucket Cloud config for %[1]s has `authorization` enabled, "+
 					"but no authentication provider matching %[1]q was found. "+
 					"Check the [**site configuration**](/site-admin/configuration) to "+
@@ -60,10 +62,10 @@ func NewAuthzProviders(db database.DB, conns []*types.BitbucketCloudConnection, 
 					p.ServiceID()))
 		}
 
-		ps = append(ps, p)
+		initResults.Providers = append(initResults.Providers, p)
 	}
 
-	return ps, problems, warnings, invalidConnections
+	return initResults
 }
 
 func newAuthzProvider(

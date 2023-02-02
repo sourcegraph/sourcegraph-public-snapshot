@@ -1,16 +1,13 @@
 package retention
 
 import (
-	"database/sql"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 )
 
 type DataRetentionJob struct {
@@ -24,7 +21,7 @@ type DataRetentionJob struct {
 	NumResets       int
 	NumFailures     int
 	LastHeartbeatAt time.Time
-	ExecutionLogs   []workerutil.ExecutionLogEntry
+	ExecutionLogs   []executor.ExecutionLogEntry
 	WorkerHostname  string
 	Cancel          bool
 
@@ -51,31 +48,9 @@ func (j *DataRetentionJob) RecordID() int {
 	return j.ID
 }
 
-func scanDataRetentionJobs(rows *sql.Rows, err error) ([]*DataRetentionJob, error) {
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-	var jobs []*DataRetentionJob
-	for rows.Next() {
-		job, err := scanDataRetentionJob(rows)
-		if err != nil {
-			return nil, err
-		}
-		jobs = append(jobs, job)
-	}
-	if err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return jobs, nil
-}
-
 func scanDataRetentionJob(s dbutil.Scanner) (*DataRetentionJob, error) {
 	var job DataRetentionJob
-	var executionLogs []dbworkerstore.ExecutionLogEntry
+	var executionLogs []executor.ExecutionLogEntry
 
 	if err := s.Scan(
 		&job.InsightSeriesID,
@@ -94,9 +69,7 @@ func scanDataRetentionJob(s dbutil.Scanner) (*DataRetentionJob, error) {
 		return nil, err
 	}
 
-	for _, entry := range executionLogs {
-		job.ExecutionLogs = append(job.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
-	}
+	job.ExecutionLogs = append(job.ExecutionLogs, executionLogs...)
 
 	return &job, nil
 }

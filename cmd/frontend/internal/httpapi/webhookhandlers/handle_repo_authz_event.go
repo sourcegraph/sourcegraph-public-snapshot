@@ -67,7 +67,7 @@ func scheduleRepoUpdate(ctx context.Context, logger log.Logger, db database.DB, 
 	permssync.SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{
 		RepoIDs: []api.RepoID{r.ID},
 		Options: opts,
-		Reason:  permssync.ReasonGitHubRepoEvent,
+		Reason:  database.ReasonGitHubRepoEvent,
 	})
 
 	return nil

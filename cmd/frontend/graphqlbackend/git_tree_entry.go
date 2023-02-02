@@ -41,7 +41,6 @@ type GitTreeEntryResolver struct {
 	contentOnce      sync.Once
 	fullContentBytes []byte
 	contentErr       error
-	cacheHighlighted bool
 	// stat is this tree entry's file info. Its Name method must return the full path relative to
 	// the root, not the basename.
 	stat          fs.FileInfo
@@ -216,8 +215,8 @@ func (r *GitTreeEntryResolver) url(ctx context.Context) *url.URL {
 }
 
 func (r *GitTreeEntryResolver) CanonicalURL() string {
-	url := r.commit.canonicalRepoRevURL()
-	return r.urlPath(url).String()
+	canonicalUrl := r.commit.canonicalRepoRevURL()
+	return r.urlPath(canonicalUrl).String()
 }
 
 func (r *GitTreeEntryResolver) urlPath(prefix *url.URL) *url.URL {
@@ -401,6 +400,20 @@ func (r *GitTreeEntryResolver) LFS(ctx context.Context) (*lfsResolver, error) {
 		return nil, err
 	}
 	return parseLFSPointer(content), nil
+}
+
+func (r *GitTreeEntryResolver) parent(ctx context.Context) (*GitTreeEntryResolver, error) {
+	if r.IsRoot() {
+		return nil, nil
+	}
+
+	parentPath := path.Dir(r.Path())
+	return r.commit.path(ctx, parentPath, func(stat fs.FileInfo) error {
+		if !stat.Mode().IsDir() {
+			return errors.Errorf("not a directory: %q", parentPath)
+		}
+		return nil
+	})
 }
 
 type symbolInfoArgs struct {
