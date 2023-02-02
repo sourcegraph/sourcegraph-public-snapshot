@@ -72,6 +72,7 @@ type PermissionSyncJobOpts struct {
 	ProcessAfter      time.Time
 	Reason            PermissionSyncJobReason
 	TriggeredByUserID int32
+	NoPerms           bool
 }
 
 type PermissionSyncJobStore interface {
@@ -123,6 +124,7 @@ func (s *permissionSyncJobStore) CreateUserSyncJob(ctx context.Context, user int
 		InvalidateCaches:  opts.InvalidateCaches,
 		Reason:            opts.Reason,
 		TriggeredByUserID: opts.TriggeredByUserID,
+		NoPerms:           opts.NoPerms,
 	}
 	if !opts.ProcessAfter.IsZero() {
 		job.ProcessAfter = opts.ProcessAfter
@@ -137,6 +139,7 @@ func (s *permissionSyncJobStore) CreateRepoSyncJob(ctx context.Context, repo api
 		InvalidateCaches:  opts.InvalidateCaches,
 		Reason:            opts.Reason,
 		TriggeredByUserID: opts.TriggeredByUserID,
+		NoPerms:           opts.NoPerms,
 	}
 	if !opts.ProcessAfter.IsZero() {
 		job.ProcessAfter = opts.ProcessAfter
@@ -152,9 +155,11 @@ INSERT INTO permission_sync_jobs (
 	repository_id,
 	user_id,
 	priority,
-	invalidate_caches
+	invalidate_caches,
+	no_perms
 )
 VALUES (
+	%s,
 	%s,
 	%s,
 	%s,
@@ -187,6 +192,7 @@ func (s *permissionSyncJobStore) create(ctx context.Context, job *PermissionSync
 		dbutil.NewNullInt(job.UserID),
 		job.Priority,
 		job.InvalidateCaches,
+		job.NoPerms,
 		sqlf.Join(PermissionSyncJobColumns, ", "),
 	)
 
@@ -379,6 +385,7 @@ type PermissionSyncJob struct {
 	UserID       int
 
 	Priority         PermissionSyncJobPriority
+	NoPerms          bool
 	InvalidateCaches bool
 }
 
@@ -406,6 +413,7 @@ var PermissionSyncJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("permission_sync_jobs.user_id"),
 
 	sqlf.Sprintf("permission_sync_jobs.priority"),
+	sqlf.Sprintf("permission_sync_jobs.no_perms"),
 	sqlf.Sprintf("permission_sync_jobs.invalidate_caches"),
 }
 
@@ -442,6 +450,7 @@ func scanPermissionSyncJob(job *PermissionSyncJob, s dbutil.Scanner) error {
 		&dbutil.NullInt{N: &job.UserID},
 
 		&job.Priority,
+		&job.NoPerms,
 		&job.InvalidateCaches,
 	); err != nil {
 		return err

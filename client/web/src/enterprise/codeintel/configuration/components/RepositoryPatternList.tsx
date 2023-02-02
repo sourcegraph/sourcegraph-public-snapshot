@@ -20,7 +20,7 @@ interface RepositoryPatternListProps {
     disabled: boolean
 }
 
-export const RepositoryPatternList: FunctionComponent<React.PropsWithChildren<RepositoryPatternListProps>> = ({
+export const RepositoryPatternList: FunctionComponent<RepositoryPatternListProps> = ({
     repositoryPatterns,
     setRepositoryPatterns,
     disabled,
@@ -182,7 +182,7 @@ interface RepositoryPatternProps {
     autoFocus?: boolean
 }
 
-const RepositoryPattern: FunctionComponent<React.PropsWithChildren<RepositoryPatternProps>> = ({
+const RepositoryPattern: FunctionComponent<RepositoryPatternProps> = ({
     index,
     pattern,
     setPattern,

@@ -10,7 +10,7 @@ import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 
 import type { RepositoryCommitsPageProps } from './commits/RepositoryCommitsPage'
 import { RepoRevisionWrapper } from './components/RepoRevision'
-import { RepoContainerRoute } from './RepoContainer'
+import { RepoContainerRoute, RepoSettingsContainerRoute } from './RepoContainer'
 import { RepoRevisionContainerContext, RepoRevisionContainerRoute } from './RepoRevisionContainer'
 import { RepositoryFileTreePageProps } from './RepositoryFileTreePage'
 import { RepositoryTagTab } from './tree/TagTab'
@@ -89,6 +89,9 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
         path: '/-/stats',
         render: context => <RepositoryStatsArea {...context} />,
     },
+]
+
+export const repoSettingsContainerRoutes: readonly RepoSettingsContainerRoute[] = [
     {
         path: '/-/settings',
         render: context => <RepoSettingsArea {...context} />,
