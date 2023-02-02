@@ -293,6 +293,17 @@ BEGIN
 END;
 $$;
 
+CREATE FUNCTION func_lsif_dependency_repos_backfill() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+        INSERT INTO package_repo_versions (package_id, version)
+        VALUES (NEW.id, NEW.version);
+
+        RETURN NULL;
+    END;
+$$;
+
 CREATE FUNCTION func_lsif_uploads_delete() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -2459,7 +2470,7 @@ ALTER SEQUENCE lsif_dependency_indexing_jobs_id_seq1 OWNED BY lsif_dependency_in
 CREATE TABLE lsif_dependency_repos (
     id bigint NOT NULL,
     name text NOT NULL,
-    version text,
+    version text NOT NULL,
     scheme text NOT NULL
 );
 
@@ -3287,7 +3298,7 @@ CREATE VIEW outbound_webhooks_with_event_types AS
 CREATE TABLE package_repo_versions (
     id bigint NOT NULL,
     package_id bigint NOT NULL,
-    version text
+    version text NOT NULL
 );
 
 CREATE SEQUENCE package_repo_versions_id_seq
@@ -4846,6 +4857,8 @@ CREATE INDEX lsif_dependency_indexing_jobs_state ON lsif_dependency_indexing_job
 
 CREATE INDEX lsif_dependency_indexing_jobs_upload_id ON lsif_dependency_syncing_jobs USING btree (upload_id);
 
+CREATE INDEX lsif_dependency_repos_name_idx ON lsif_dependency_repos USING btree (name);
+
 CREATE INDEX lsif_dependency_syncing_jobs_state ON lsif_dependency_syncing_jobs USING btree (state);
 
 CREATE INDEX lsif_indexes_commit_last_checked_at ON lsif_indexes USING btree (commit_last_checked_at) WHERE (state <> 'deleted'::text);
@@ -5035,6 +5048,8 @@ CREATE TRIGGER batch_spec_workspace_execution_last_dequeues_insert AFTER INSERT 
 CREATE TRIGGER batch_spec_workspace_execution_last_dequeues_update AFTER UPDATE ON batch_spec_workspace_execution_jobs REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert();
 
 CREATE TRIGGER changesets_update_computed_state BEFORE INSERT OR UPDATE ON changesets FOR EACH ROW EXECUTE FUNCTION changesets_computed_state_ensure();
+
+CREATE TRIGGER lsif_dependency_repos_backfill AFTER INSERT ON lsif_dependency_repos FOR EACH ROW WHEN ((new.version <> '👁️temporary_sentinel_value👁️'::text)) EXECUTE FUNCTION func_lsif_dependency_repos_backfill();
 
 CREATE TRIGGER trig_create_zoekt_repo_on_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_zoekt_repo();
 
