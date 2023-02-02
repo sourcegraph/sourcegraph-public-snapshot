@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -21,62 +22,92 @@ type ListTeamsArgs struct {
 	Search *string
 }
 
-func (args *ListTeamsArgs) unmarshal(opts *database.ListTeamsOpts) error {
-	cursor, err := args.unmarshalCursor()
-	if err != nil {
-		return err
+type teamConnectionResolver struct {
+	db       database.DB
+	parentID int32
+	search   string
+	cursor   int32
+	limit    int
+	once     sync.Once
+	teams    []*types.Team
+	pageInfo *graphqlutil.PageInfo
+	err      error
+}
+
+func (r *teamConnectionResolver) applyArgs(args *ListTeamsArgs) error {
+	if args.After != nil {
+		cursor, err := graphqlutil.DecodeIntCursor(args.After)
+		if err != nil {
+			return err
+		}
+		r.cursor = int32(cursor)
+		if int(r.cursor) != cursor {
+			return errors.Newf("cursor int32 overflow: %d", cursor)
+		}
 	}
-	opts.Cursor = cursor
 	if args.Search != nil {
-		opts.Search = *args.Search
+		r.search = *args.Search
 	}
 	if args.First != nil {
-		opts.LimitOffset = &database.LimitOffset{
-			Limit: int(*args.First),
-		}
+		r.limit = int(*args.First)
 	}
 	return nil
 }
 
-func (args *ListTeamsArgs) unmarshalCursor() (int32, error) {
-	if args == nil || args.After == nil {
-		return 0, nil
-	}
-	id := graphql.ID(*args.After)
-	if got, want := relay.UnmarshalKind(id), "TeamsCursor"; got != want {
-		return 0, errors.Newf("After cursor kind, got %q, want %q", got, want)
-	}
-	var cursor int32
-	if err := relay.UnmarshalSpec(id, &cursor); err != nil {
-		return 0, errors.Wrap(err, "After cursor value malformed")
-	}
-	return cursor, nil
-}
-
-type teamConnectionResolver struct {
-	db         database.DB
-	opts       database.ListTeamsOpts
-	teamsChunk []*types.Team
-	nextCursor int32
+func (r *teamConnectionResolver) compute(ctx context.Context) {
+	r.once.Do(func() {
+		opts := database.ListTeamsOpts{
+			Cursor:       r.cursor,
+			WithParentID: r.parentID,
+			Search:       r.search,
+		}
+		if r.limit != 0 {
+			opts.LimitOffset = &database.LimitOffset{Limit: r.limit}
+		}
+		teams, next, err := r.db.Teams().ListTeams(ctx, opts)
+		if err != nil {
+			r.err = err
+			return
+		}
+		r.teams = teams
+		if next > 0 {
+			r.pageInfo = graphqlutil.EncodeIntCursor(&next)
+		} else {
+			r.pageInfo = graphqlutil.HasNextPage(false)
+		}
+	})
 }
 
 func (r *teamConnectionResolver) TotalCount(ctx context.Context, args *struct{ CountDeeplyNestedTeams bool }) (int32, error) {
 	if args != nil && args.CountDeeplyNestedTeams {
 		return 0, errors.New("Not supported: counting deeply nested teams.")
 	}
-	return r.db.Teams().CountTeams(ctx, r.opts)
-}
-
-func (r *teamConnectionResolver) PageInfo() *graphqlutil.PageInfo {
-	return graphqlutil.HasNextPage(r.nextCursor > 0)
-}
-
-func (r *teamConnectionResolver) Nodes() []*teamResolver {
-	var resolvers []*teamResolver
-	for _, t := range r.teamsChunk {
-		resolvers = append(resolvers, &teamResolver{db: r.db, team: t})
+	// Not taking into account limit or cursor for count.
+	opts := database.ListTeamsOpts{
+		WithParentID: r.parentID,
+		Search:       r.search,
 	}
-	return resolvers
+	return r.db.Teams().CountTeams(ctx, opts)
+}
+
+func (r *teamConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	r.compute(ctx)
+	return r.pageInfo, r.err
+}
+
+func (r *teamConnectionResolver) Nodes(ctx context.Context) ([]*teamResolver, error) {
+	r.compute(ctx)
+	if r.err != nil {
+		return nil, r.err
+	}
+	var rs []*teamResolver
+	for _, t := range r.teams {
+		rs = append(rs, &teamResolver{
+			db:   r.db,
+			team: t,
+		})
+	}
+	return rs, nil
 }
 
 type teamResolver struct {
@@ -115,22 +146,14 @@ func (r *teamResolver) Members(args *ListTeamsArgs) *teamMemberConnection {
 	return &teamMemberConnection{}
 }
 func (r *teamResolver) ChildTeams(ctx context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {
-	opts := database.ListTeamsOpts{
-		WithParentID: r.team.ID,
+	c := &teamConnectionResolver{
+		db:       r.db,
+		parentID: r.team.ID,
 	}
-	if err := args.unmarshal(&opts); err != nil {
+	if err := c.applyArgs(args); err != nil {
 		return nil, err
 	}
-	teamsChunk, next, err := r.db.Teams().ListTeams(ctx, opts)
-	if err != nil {
-		return nil, err
-	}
-	return &teamConnectionResolver{
-		db:         r.db,
-		opts:       opts,
-		teamsChunk: teamsChunk,
-		nextCursor: next,
-	}, nil
+	return c, nil
 }
 
 type teamMemberConnection struct{}
@@ -316,20 +339,11 @@ func (r *schemaResolver) Teams(ctx context.Context, args *ListTeamsArgs) (*teamC
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, errors.New("only site admins can view teams")
 	}
-	var opts database.ListTeamsOpts
-	if err := args.unmarshal(&opts); err != nil {
+	c := &teamConnectionResolver{db: r.db}
+	if err := c.applyArgs(args); err != nil {
 		return nil, err
 	}
-	teamsChunk, next, err := r.db.Teams().ListTeams(ctx, opts)
-	if err != nil {
-		return nil, err
-	}
-	return &teamConnectionResolver{
-		db:         r.db,
-		opts:       opts,
-		teamsChunk: teamsChunk,
-		nextCursor: next,
-	}, nil
+	return c, nil
 }
 
 type TeamArgs struct {

@@ -2,7 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -79,6 +81,44 @@ func (teams *fakeTeamsDb) DeleteTeam(_ context.Context, id int32) error {
 	return database.TeamNotFoundError{}
 }
 
+func (teams *fakeTeamsDb) ListTeams(_ context.Context, opts database.ListTeamsOpts) (selected []*types.Team, next int32, err error) {
+	for _, t := range teams.list {
+		if matches(t, opts) {
+			selected = append(selected, t)
+		}
+	}
+	if opts.LimitOffset != nil {
+		selected = selected[opts.LimitOffset.Offset:]
+		if limit := opts.LimitOffset.Limit; limit != 0 && len(selected) > limit {
+			next = selected[opts.LimitOffset.Limit].ID
+			selected = selected[:opts.LimitOffset.Limit]
+		}
+	}
+	return selected, next, nil
+}
+
+func matches(team *types.Team, opts database.ListTeamsOpts) bool {
+	if opts.Cursor != 0 && team.ID < opts.Cursor {
+		return false
+	}
+	if opts.WithParentID != 0 && team.ParentTeamID != opts.WithParentID {
+		return false
+	}
+	if opts.RootOnly && team.ParentTeamID != 0 {
+		return false
+	}
+	if opts.Search != "" {
+		search := strings.ToLower(opts.Search)
+		name := strings.ToLower(team.Name)
+		displayName := strings.ToLower(team.DisplayName)
+		if !strings.Contains(name, search) && !strings.Contains(displayName, search) {
+			return false
+		}
+	}
+	// opts.ForUserMember is not supported yet as there is no membership fake.
+	return true
+}
+
 func setupDB() (*database.MockDB, *fakeTeamsDb) {
 	ts := &fakeTeamsDb{}
 	db := database.NewMockDB()
@@ -89,7 +129,7 @@ func setupDB() (*database.MockDB, *fakeTeamsDb) {
 	return db, ts
 }
 
-func TestQuery(t *testing.T) {
+func TestTeamNode(t *testing.T) {
 	db, ts := setupDB()
 	ctx, _, _ := fakeUser(t, context.Background(), db, true)
 	if err := ts.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
@@ -122,7 +162,7 @@ func TestQuery(t *testing.T) {
 	})
 }
 
-func TestQuerySiteAdminCanAdminister(t *testing.T) {
+func TestTeamNodeSiteAdminCanAdminister(t *testing.T) {
 	for _, isAdmin := range []bool{true, false} {
 		t.Run(fmt.Sprintf("viewer is admin = %v", isAdmin), func(t *testing.T) {
 			db, ts := setupDB()
@@ -797,4 +837,66 @@ func TestTeamByNameUnauthorized(t *testing.T) {
 			"name": "team",
 		},
 	})
+}
+
+func TestTeamsPaginated(t *testing.T) {
+	db, ts := setupDB()
+	ctx, _, _ := fakeUser(t, context.Background(), db, true)
+	for i := 1; i <= 25; i++ {
+		name := fmt.Sprintf("team-%d", i)
+		if err := ts.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
+			t.Fatalf("failed to create a team: %s", err)
+		}
+	}
+	var (
+		hasNextPage bool = true
+		cursor      string
+	)
+	query := `query Teams($cursor: String!) {
+		teams(after: $cursor, first: 10) {
+			pageInfo {
+				endCursor
+				hasNextPage
+			}
+			nodes {
+				name
+			}
+		}
+	}`
+	operationName := ""
+	var gotNames []string
+	for hasNextPage {
+		variables := map[string]any{
+			"cursor": cursor,
+		}
+		r := mustParseGraphQLSchema(t, db).Exec(ctx, query, operationName, variables)
+		var wantErrors []*gqlerrors.QueryError
+		checkErrors(t, wantErrors, r.Errors)
+		var result struct {
+			Teams *struct {
+				PageInfo *struct {
+					EndCursor   string
+					HasNextPage bool
+				}
+				Nodes []struct {
+					Name string
+				}
+			}
+		}
+		if err := json.Unmarshal(r.Data, &result); err != nil {
+			t.Fatalf("cannot interpret graphQL query result: %s", err)
+		}
+		hasNextPage = result.Teams.PageInfo.HasNextPage
+		cursor = result.Teams.PageInfo.EndCursor
+		for _, node := range result.Teams.Nodes {
+			gotNames = append(gotNames, node.Name)
+		}
+	}
+	var wantNames []string
+	for _, team := range ts.list {
+		wantNames = append(wantNames, team.Name)
+	}
+	if diff := cmp.Diff(wantNames, gotNames); diff != "" {
+		t.Errorf("unexpected team names (-want,+got):\n%s", diff)
+	}
 }
