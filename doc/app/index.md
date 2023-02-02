@@ -22,7 +22,11 @@ Learn more about [how this fits into our product strategy](https://handbook.sour
 brew install sourcegraph/sourcegraph-app/sourcegraph
 ```
 
-**Linux:** via [deb pkg](https://storage.googleapis.com/sourcegraph-app-releases/0.0.196391-snapshot+20230131-f10a97/sourcegraph_0.0.196391-snapshot+20230131-f10a97_linux_amd64.deb) installer:
+**Linux:** via deb package installer:
+
+Download the [deb pkg](https://storage.googleapis.com/sourcegraph-app-releases/0.0.196391-snapshot+20230131-f10a97/sourcegraph_0.0.196391-snapshot+20230131-f10a97_linux_amd64.deb).
+
+Then install it wih `dpkg -i`: 
 
 ```sh
 dpkg -i sourcegraph_0.0.196391-snapshot+20230131-f10a97_linux_amd64.deb
