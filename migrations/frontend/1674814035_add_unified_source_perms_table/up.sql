@@ -13,3 +13,4 @@ CREATE INDEX IF NOT EXISTS user_repo_permissions_repo_id_idx ON user_repo_permis
 CREATE INDEX IF NOT EXISTS user_repo_permissions_user_external_account_id_idx ON user_repo_permissions(user_external_account_id);
 CREATE INDEX IF NOT EXISTS user_repo_permissions_updated_at_idx ON user_repo_permissions(updated_at);
 CREATE INDEX IF NOT EXISTS user_repo_permissions_source_idx ON user_repo_permissions(source);
+CREATE UNIQUE INDEX IF NOT EXISTS user_repo_permissions_perms_unique_idx ON user_repo_permissions(user_id, user_external_account_id, repo_id);
