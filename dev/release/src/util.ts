@@ -129,10 +129,6 @@ export function ensureReleaseBranchUpToDate(branch: string): void {
     }
 }
 
-export function fetchTags(repoLocation: string): void {
-    execa.sync('git', ['fetch', '--tags']).stdout.split('\t')
-}
-
 export async function ensureSrcCliUpToDate(): Promise<void> {
     const latestTag = await fetch('https://api.github.com/repos/sourcegraph/src-cli/releases/latest', {
         method: 'GET',

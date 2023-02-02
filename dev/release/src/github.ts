@@ -9,7 +9,14 @@ import execa from 'execa'
 import fetch from 'node-fetch'
 import * as semver from 'semver'
 
-import { readLine, formatDate, timezoneLink, cacheFolder, changelogURL, getContainerRegistryCredential } from './util'
+import {
+    readLine,
+    formatDate,
+    timezoneLink,
+    cacheFolder,
+    changelogURL,
+    getContainerRegistryCredential,
+} from './util'
 const mkdtemp = promisify(original_mkdtemp)
 let githubPAT: string
 
@@ -518,7 +525,7 @@ Body: ${change.body || 'none'}`)
     return results
 }
 
-async function cloneRepo(
+export async function cloneRepo(
     octokit: Octokit,
     owner: string,
     repo: string,
@@ -643,10 +650,10 @@ export interface TagOptions {
  */
 export async function createTag(
     octokit: Octokit,
+    workdir: string,
     { owner, repo, branch: rawBranch, tag: rawTag }: TagOptions,
-    dryRun: boolean
+    dryRun: boolean,
 ): Promise<void> {
-    const { workdir } = await cloneRepo(octokit, owner, repo, { revision: rawBranch, revisionMustExist: true })
     const branch = JSON.stringify(rawBranch)
     const tag = JSON.stringify(rawTag)
     const finalizeTag = dryRun ? `git --no-pager show ${tag} --no-patch` : `git push origin ${tag}`
