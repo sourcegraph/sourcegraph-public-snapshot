@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/elimity-com/scim"
+	scimerrors "github.com/elimity-com/scim/errors"
 	"github.com/elimity-com/scim/optional"
 	"github.com/elimity-com/scim/schema"
 	"github.com/sourcegraph/log"
@@ -55,10 +56,10 @@ func (h *UserResourceHandler) Get(r *http.Request, idStr string) (scim.Resource,
 		UserIDs: []int32{int32(id)},
 	})
 	if err != nil {
-		return scim.Resource{}, errors.Wrap(err, "Error loading user")
+		return scim.Resource{}, scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
 	}
 	if len(users) == 0 {
-		return scim.Resource{}, errors.New("User not found")
+		return scim.Resource{}, scimerrors.ScimErrorResourceNotFound(idStr)
 	}
 
 	resource := h.convertUserToSCIMResource(users[0])
