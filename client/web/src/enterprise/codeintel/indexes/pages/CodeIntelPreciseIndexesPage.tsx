@@ -392,7 +392,7 @@ const IndexNode: FunctionComponent<IndexNodeProps> = ({ node, repo, selection, o
         <>
             <div
                 className={classNames(styles.grid, 'px-4')}
-                onClick={() => navigate(`./indexes/${node.id}`)}
+                onClick={() => navigate(`./${node.id}`)}
                 aria-hidden={true}
             >
                 <div className="px-3 py-4" onClick={event => event.stopPropagation()} aria-hidden={true}>

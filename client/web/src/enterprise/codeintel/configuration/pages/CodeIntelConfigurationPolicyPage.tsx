@@ -101,10 +101,11 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
             .then(() =>
                 navigate(
                     {
-                        pathname: './',
+                        pathname: '..',
                     },
                     {
                         state: { modal: 'SUCCESS', message: `Configuration for policy ${policy.name} has been saved.` },
+                        relative: 'path',
                     }
                 )
             )
@@ -133,10 +134,11 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
             }).then(() =>
                 navigate(
                     {
-                        pathname: './',
+                        pathname: '..',
                     },
                     {
                         state: { modal: 'SUCCESS', message: `Configuration policy ${name} has been deleted.` },
+                        relative: 'path',
                     }
                 )
             )
@@ -283,7 +285,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                         type="button"
                         className="ml-2"
                         variant="secondary"
-                        onClick={() => navigate('./')}
+                        onClick={() => navigate('..', { relative: 'path' })}
                         disabled={isSaving}
                     >
                         Cancel
