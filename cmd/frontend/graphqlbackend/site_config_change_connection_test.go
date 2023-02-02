@@ -465,12 +465,12 @@ func TestSiteConfigConnection(t *testing.T) {
 							"totalCount": 5,
 							"nodes": [
 								 {
-									 "id": %[1]q,
-									 "author": {
-										 "id": "VXNlcjoy",
-										 "username": "bar",
-										 "displayName": "bar user"
-									 },
+									"id": %[1]q,
+									"author": {
+										"id": "VXNlcjoy",
+										"username": "bar",
+										"displayName": "bar user"
+									},
 									"reproducedDiff": true,
 									"diff": %[3]q
 								 },
