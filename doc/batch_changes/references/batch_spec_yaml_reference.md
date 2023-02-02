@@ -903,7 +903,7 @@ changesetTemplate:
   branch: my-batch-change-${{ outputs.projectName }}
 ```
 
-Create changesets only on workspaces defined within subdirectories `if:`:
+Create changesets only on workspaces defined within subdirectories using `if:`:
 
 ```yaml
 name: test-in
