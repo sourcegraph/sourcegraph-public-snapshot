@@ -9,8 +9,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/symbols/proto"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
+	proto "github.com/sourcegraph/sourcegraph/protos/symbols/v1"
 )
 
 // addHandlers adds handlers that do not require cgo, which speeds up compile times but omits local

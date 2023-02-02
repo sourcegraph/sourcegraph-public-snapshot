@@ -10,14 +10,13 @@ import (
 	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/symbols/proto"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	proto "github.com/sourcegraph/sourcegraph/protos/symbols/v1"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"

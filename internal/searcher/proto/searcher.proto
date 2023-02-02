@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package searcher;
+package searcher.v1;
 
 import "google/protobuf/duration.proto";
 

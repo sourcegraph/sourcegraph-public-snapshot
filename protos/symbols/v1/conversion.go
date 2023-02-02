@@ -1,4 +1,4 @@
-package proto
+package v1
 
 import (
 	"google.golang.org/protobuf/types/known/durationpb"

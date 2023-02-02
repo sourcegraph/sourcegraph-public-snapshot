@@ -4,7 +4,7 @@
 // - protoc             (unknown)
 // source: symbols.proto
 
-package proto
+package v1
 
 import (
 	context "context"
@@ -39,7 +39,7 @@ func NewSymbolsServiceClient(cc grpc.ClientConnInterface) SymbolsServiceClient {
 
 func (c *symbolsServiceClient) Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*SearchResponse, error) {
 	out := new(SearchResponse)
-	err := c.cc.Invoke(ctx, "/symbols.v1.SymbolsService/Search", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/symbol.v1.SymbolsService/Search", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func (c *symbolsServiceClient) Search(ctx context.Context, in *SearchRequest, op
 
 func (c *symbolsServiceClient) LocalCodeIntel(ctx context.Context, in *LocalCodeIntelRequest, opts ...grpc.CallOption) (*LocalCodeIntelResponse, error) {
 	out := new(LocalCodeIntelResponse)
-	err := c.cc.Invoke(ctx, "/symbols.v1.SymbolsService/LocalCodeIntel", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/symbol.v1.SymbolsService/LocalCodeIntel", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func (c *symbolsServiceClient) LocalCodeIntel(ctx context.Context, in *LocalCode
 
 func (c *symbolsServiceClient) ListLanguages(ctx context.Context, in *ListLanguagesRequest, opts ...grpc.CallOption) (*ListLanguagesResponse, error) {
 	out := new(ListLanguagesResponse)
-	err := c.cc.Invoke(ctx, "/symbols.v1.SymbolsService/ListLanguages", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/symbol.v1.SymbolsService/ListLanguages", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (c *symbolsServiceClient) ListLanguages(ctx context.Context, in *ListLangua
 
 func (c *symbolsServiceClient) SymbolInfo(ctx context.Context, in *SymbolInfoRequest, opts ...grpc.CallOption) (*SymbolInfoResponse, error) {
 	out := new(SymbolInfoResponse)
-	err := c.cc.Invoke(ctx, "/symbols.v1.SymbolsService/SymbolInfo", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/symbol.v1.SymbolsService/SymbolInfo", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func (c *symbolsServiceClient) SymbolInfo(ctx context.Context, in *SymbolInfoReq
 
 func (c *symbolsServiceClient) Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error) {
 	out := new(HealthzResponse)
-	err := c.cc.Invoke(ctx, "/symbols.v1.SymbolsService/Healthz", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/symbol.v1.SymbolsService/Healthz", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +136,7 @@ func _SymbolsService_Search_Handler(srv interface{}, ctx context.Context, dec fu
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/symbols.v1.SymbolsService/Search",
+		FullMethod: "/symbol.v1.SymbolsService/Search",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SymbolsServiceServer).Search(ctx, req.(*SearchRequest))
@@ -154,7 +154,7 @@ func _SymbolsService_LocalCodeIntel_Handler(srv interface{}, ctx context.Context
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/symbols.v1.SymbolsService/LocalCodeIntel",
+		FullMethod: "/symbol.v1.SymbolsService/LocalCodeIntel",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SymbolsServiceServer).LocalCodeIntel(ctx, req.(*LocalCodeIntelRequest))
@@ -172,7 +172,7 @@ func _SymbolsService_ListLanguages_Handler(srv interface{}, ctx context.Context,
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/symbols.v1.SymbolsService/ListLanguages",
+		FullMethod: "/symbol.v1.SymbolsService/ListLanguages",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SymbolsServiceServer).ListLanguages(ctx, req.(*ListLanguagesRequest))
@@ -190,7 +190,7 @@ func _SymbolsService_SymbolInfo_Handler(srv interface{}, ctx context.Context, de
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/symbols.v1.SymbolsService/SymbolInfo",
+		FullMethod: "/symbol.v1.SymbolsService/SymbolInfo",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SymbolsServiceServer).SymbolInfo(ctx, req.(*SymbolInfoRequest))
@@ -208,7 +208,7 @@ func _SymbolsService_Healthz_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/symbols.v1.SymbolsService/Healthz",
+		FullMethod: "/symbol.v1.SymbolsService/Healthz",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SymbolsServiceServer).Healthz(ctx, req.(*HealthzRequest))
@@ -220,7 +220,7 @@ func _SymbolsService_Healthz_Handler(srv interface{}, ctx context.Context, dec f
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var SymbolsService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "symbols.v1.SymbolsService",
+	ServiceName: "symbol.v1.SymbolsService",
 	HandlerType: (*SymbolsServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

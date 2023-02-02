@@ -35,7 +35,7 @@ func NewSearcherServiceClient(cc grpc.ClientConnInterface) SearcherServiceClient
 }
 
 func (c *searcherServiceClient) Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (SearcherService_SearchClient, error) {
-	stream, err := c.cc.NewStream(ctx, &SearcherService_ServiceDesc.Streams[0], "/searcher.SearcherService/Search", opts...)
+	stream, err := c.cc.NewStream(ctx, &SearcherService_ServiceDesc.Streams[0], "/searcher.v1.SearcherService/Search", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func (x *searcherServiceSearchServer) Send(m *SearchResponse) error {
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var SearcherService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "searcher.SearcherService",
+	ServiceName: "searcher.v1.SearcherService",
 	HandlerType: (*SearcherServiceServer)(nil),
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
