@@ -5,7 +5,7 @@ Operations guides specific to managing [Sourcegraph on Kubernetes](./index.md) i
 <div class="getting-started">
   <a class="btn text-center" href="index">Installation</a>
   <a class="btn text-center" href="kustomize">Introduction</a>
-  <a class="btn text-center" href="kustomize/configure">Configuration</a>
+  <a class="btn text-center" href="configure">Configuration</a>
   <a class="btn text-center btn-primary" href="#">★ Maintenance</a>
 </div>
 

@@ -5,7 +5,7 @@ Deploying on Kubernetes is for organizations that need highly scalable and avail
 <div class="getting-started">
   <a class="btn btn-primary text-center" href="#prerequisites">★ Installation</a>
   <a class="btn text-center" href="kustomize">Introduction</a>
-  <a class="btn text-center" href="./configure">Configuration</a>
+  <a class="btn text-center" href="configure">Configuration</a>
   <a class="btn text-center" href="operations">Maintenance</a>
 </div>
 

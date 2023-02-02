@@ -3,7 +3,7 @@
 An introduction to Kustomize created for Sourcegraph.
 
 <div class="getting-started">
-  <a class="btn text-center" href="../">Installation</a>
+  <a class="btn text-center" href="../index">Installation</a>
   <a class="btn btn-primary text-center" href="#">★ Introduction</a>
   <a class="btn text-center" href="../configure">Configuration</a>
   <a class="btn text-center" href="../operations">Maintenance</a>
