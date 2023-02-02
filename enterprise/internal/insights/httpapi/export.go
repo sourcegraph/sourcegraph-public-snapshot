@@ -15,6 +15,7 @@ import (
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -55,6 +56,8 @@ func (h *ExportHandler) ExportFunc() http.HandlerFunc {
 				http.Error(w, err.Error(), http.StatusNotFound)
 			} else if errors.Is(err, authenticationError) {
 				http.Error(w, err.Error(), http.StatusUnauthorized)
+			} else if errors.Is(err, invalidLicenseError) {
+				http.Error(w, err.Error(), http.StatusForbidden)
 			} else {
 				http.Error(w, fmt.Sprintf("failed to export data: %v", err), http.StatusInternalServerError)
 			}
@@ -77,6 +80,7 @@ type codeInsightsDataArchive struct {
 
 var notFoundError = errors.New("insight not found")
 var authenticationError = errors.New("authentication error")
+var invalidLicenseError = errors.New("invalid license for code insights")
 
 func (h *ExportHandler) exportCodeInsightData(ctx context.Context, id string) (*codeInsightsDataArchive, error) {
 	currentActor := actor.FromContext(ctx)
@@ -86,6 +90,11 @@ func (h *ExportHandler) exportCodeInsightData(ctx context.Context, id string) (*
 	userID, orgIDs, err := h.permStore.GetUserPermissions(ctx)
 	if err != nil {
 		return nil, authenticationError
+	}
+
+	licenseError := licensing.Check(licensing.FeatureCodeInsights)
+	if licenseError != nil {
+		return nil, invalidLicenseError
 	}
 
 	var insightViewId string
