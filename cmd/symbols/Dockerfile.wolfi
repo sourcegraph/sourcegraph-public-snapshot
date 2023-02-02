@@ -2,7 +2,8 @@
 # This is currently being tested in parallel to Alpine - you don't need to update this
 #   file if you change the regular Dockerfile.
 
-FROM golang:1.19.3 AS symbols-build
+# TODO: See if we can switch back to cgr.dev/chainguard/go:latest
+FROM golang:1.19.3-alpine AS symbols-build
 # hadolint ignore=DL3002
 USER root
 
