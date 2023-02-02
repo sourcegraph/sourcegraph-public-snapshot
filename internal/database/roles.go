@@ -59,6 +59,8 @@ type (
 )
 
 type RolesListOptions struct {
+	PaginationArgs *PaginationArgs
+
 	System bool
 	UserID int32
 }
@@ -147,7 +149,7 @@ func (r *roleStore) List(ctx context.Context, opts RolesListOptions) ([]*types.R
 		return nil
 	}
 
-	err := r.list(ctx, opts, sqlf.Join(roleColumns, ", "), sqlf.Sprintf("ORDER BY roles.created_at ASC"), scanFunc)
+	err := r.list(ctx, opts, sqlf.Join(roleColumns, ", "), scanFunc)
 	return roles, err
 }
 
@@ -155,10 +157,9 @@ const roleListQueryFmtstr = `
 SELECT %s FROM roles
 %s
 WHERE %s
-%s
 `
 
-func (r *roleStore) list(ctx context.Context, opts RolesListOptions, selects, orderByQuery *sqlf.Query, scanRole func(rows *sql.Rows) error) error {
+func (r *roleStore) list(ctx context.Context, opts RolesListOptions, selects *sqlf.Query, scanRole func(rows *sql.Rows) error) error {
 	var conds = []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
 	var joins = sqlf.Sprintf("")
 
@@ -171,15 +172,32 @@ func (r *roleStore) list(ctx context.Context, opts RolesListOptions, selects, or
 		joins = sqlf.Sprintf("INNER JOIN user_roles ON user_roles.role_id = roles.id")
 	}
 
-	q := sqlf.Sprintf(
+	queryArgs := &QueryArgs{}
+	if opts.PaginationArgs != nil {
+		q, err := opts.PaginationArgs.SQL()
+		if err != nil {
+			return err
+		}
+		queryArgs = q
+	}
+
+	if queryArgs.Where != nil {
+		conds = append(conds, queryArgs.Where)
+	}
+
+	query := sqlf.Sprintf(
 		roleListQueryFmtstr,
 		selects,
 		joins,
 		sqlf.Join(conds, " AND "),
-		orderByQuery,
 	)
 
-	rows, err := r.Query(ctx, q)
+	fmt.Println(query.Query(sqlf.PostgresBindVar), " ===== ", query.Args())
+
+	query = queryArgs.AppendOrderToQuery(query)
+	query = queryArgs.AppendLimitToQuery(query)
+
+	rows, err := r.Query(ctx, query)
 	if err != nil {
 		return errors.Wrap(err, "error running query")
 	}
@@ -223,7 +241,8 @@ func (r *roleStore) Create(ctx context.Context, name string, isSystemRole bool) 
 }
 
 func (r *roleStore) Count(ctx context.Context, opts RolesListOptions) (c int, err error) {
-	err = r.list(ctx, opts, sqlf.Sprintf("COUNT(1)"), sqlf.Sprintf(""), func(rows *sql.Rows) error {
+	opts.PaginationArgs = nil
+	err = r.list(ctx, opts, sqlf.Sprintf("COUNT(1)"), func(rows *sql.Rows) error {
 		return rows.Scan(&c)
 	})
 	return c, err

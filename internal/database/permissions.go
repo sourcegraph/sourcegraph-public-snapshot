@@ -62,6 +62,8 @@ type (
 )
 
 type PermissionListOpts struct {
+	PaginationArgs *PaginationArgs
+
 	RoleID int32
 	UserID int32
 }
@@ -248,7 +250,7 @@ func (p *permissionStore) GetByID(ctx context.Context, opts GetPermissionOpts) (
 	return permission, nil
 }
 
-// The ORDER BY clause should not be changed because it ensures permissions retrieved
+// The GROUP BY clause should not be changed because it ensures permissions retrieved
 // from the database are already sorted therefore making the rbac schema migration easy.
 // We compare permissions in the database to those generated from the schema and both
 // need to be sorted.
@@ -275,35 +277,54 @@ func (p *permissionStore) List(ctx context.Context, opts PermissionListOpts) ([]
 }
 
 func (p *permissionStore) list(ctx context.Context, opts PermissionListOpts, selects *sqlf.Query, scanFunc func(rows *sql.Rows) error) error {
-	preds := sqlf.Sprintf("TRUE")
+	conds := []*sqlf.Query{}
 	joins := sqlf.Sprintf("")
 
 	if opts.RoleID != 0 {
-		preds = sqlf.Sprintf("role_permissions.role_id = %s", opts.RoleID)
+		conds = append(conds, sqlf.Sprintf("role_permissions.role_id = %s", opts.RoleID))
 		joins = sqlf.Sprintf("INNER JOIN role_permissions ON role_permissions.permission_id = permissions.id")
 	}
 
 	if opts.UserID != 0 {
-		fmt.Println("+++++ inside userID")
-		preds = sqlf.Sprintf("user_roles.user_id = %s", opts.UserID)
+		conds = append(conds, sqlf.Sprintf("user_roles.user_id = %s", opts.UserID))
 		joins = sqlf.Sprintf(`
 INNER JOIN role_permissions ON role_permissions.permission_id = permissions.id
 INNER JOIN user_roles ON user_roles.role_id = role_permissions.role_id
 `)
 	}
 
-	q := sqlf.Sprintf(
+	queryArgs := &QueryArgs{}
+	if opts.PaginationArgs != nil {
+		q, err := opts.PaginationArgs.SQL()
+		if err != nil {
+			return err
+		}
+		queryArgs = q
+	}
+
+	if queryArgs.Where != nil {
+		conds = append(conds, queryArgs.Where)
+	}
+
+	if len(conds) == 0 {
+		conds = append(conds, sqlf.Sprintf("TRUE"))
+	}
+
+	query := sqlf.Sprintf(
 		permissionListQueryFmtStr,
 		selects,
 		joins,
-		preds,
+		sqlf.Join(conds, "AND "),
 	)
 
-	if opts.UserID != 0 {
-		q = sqlf.Sprintf("%s\n%s", q, sqlf.Sprintf("GROUP BY permissions.id"))
+	if opts.UserID != 0 && opts.PaginationArgs != nil {
+		query = sqlf.Sprintf("%s\n%s", query, sqlf.Sprintf("GROUP BY permissions.id"))
 	}
 
-	rows, err := p.Query(ctx, q)
+	query = queryArgs.AppendOrderToQuery(query)
+	query = queryArgs.AppendLimitToQuery(query)
+
+	rows, err := p.Query(ctx, query)
 	if err != nil {
 		return errors.Wrap(err, "error running query")
 	}
@@ -319,7 +340,8 @@ INNER JOIN user_roles ON user_roles.role_id = role_permissions.role_id
 }
 
 func (p *permissionStore) Count(ctx context.Context, opts PermissionListOpts) (c int, err error) {
-	err = p.list(ctx, opts, sqlf.Sprintf("COUNT(1)"), func(rows *sql.Rows) error {
+	opts.PaginationArgs = nil
+	err = p.list(ctx, opts, sqlf.Sprintf("COUNT(DISTINCT id)"), func(rows *sql.Rows) error {
 		return rows.Scan(&c)
 	})
 	return c, err

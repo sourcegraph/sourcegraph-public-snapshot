@@ -37,7 +37,7 @@ func (r *Resolver) Permissions(ctx context.Context, args *gql.ListPermissionArgs
 	}
 
 	if args.Role != nil {
-		// 🚨 SECURITY: Only site admins can query user permissions.
+		// 🚨 SECURITY: Only site admins can query role permissions.
 		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 			return nil, err
 		}

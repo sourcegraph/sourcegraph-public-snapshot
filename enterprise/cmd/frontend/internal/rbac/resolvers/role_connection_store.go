@@ -47,8 +47,9 @@ func (rcs *roleConnectionStore) ComputeTotal(ctx context.Context) (*int32, error
 
 func (rcs *roleConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]gql.RoleResolver, error) {
 	roles, err := rcs.db.Roles().List(ctx, database.RolesListOptions{
-		System: rcs.system,
-		UserID: rcs.userID,
+		PaginationArgs: args,
+		System:         rcs.system,
+		UserID:         rcs.userID,
 	})
 	if err != nil {
 		return nil, err
