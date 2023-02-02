@@ -52,11 +52,13 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 
 	conf := db.Conf()
 	siteConfigsToCreate := []*database.SiteConfig{
+		// ID: 2 (because first time we create a config an initial config will be created first)
 		{
 			Contents: `{
   "auth.Providers": []
 }`,
 		},
+		// ID: 3
 		{
 			AuthorUserID: 2,
 			// A new line is added.
@@ -65,6 +67,7 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
   "auth.Providers": []
 }`,
 		},
+		// ID: 4
 		{
 			AuthorUserID: 1,
 			// Existing line is changed.
@@ -73,6 +76,7 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
   "auth.Providers": []
 }`,
 		},
+		// ID: 5
 		{
 			AuthorUserID: 1,
 			// Existing line is removed.

@@ -13,7 +13,6 @@ import (
 
 	"github.com/hexops/gotextdiff"
 	"github.com/hexops/gotextdiff/myers"
-	"github.com/hexops/gotextdiff/span"
 )
 
 const siteConfigurationChangeKind = "SiteConfigurationChange"
@@ -51,24 +50,25 @@ func (r SiteConfigurationChangeResolver) ReproducedDiff() bool {
 	return false
 }
 
-// TODO: Implement this.
 func (r SiteConfigurationChangeResolver) Diff() *string {
 	if !r.ReproducedDiff() {
 		return nil
 	}
 
-	// return cmp.Diff(r.siteConfig.Contents, r.previousSiteConfig.Contents)
-
 	// 🚨 SECURITY: This should always use "siteConfig.RedactedContents" and never
 	// "siteConfig.Contents" to generate the diff because we do not want to leak secrets in the
 	// diff.
-	diff := cmp.Diff(r.siteConfig.RedactedContents, r.previousSiteConfig.RedactedContents)
-	if diff == "" {
-		return nil
-	}
+	prettyID := func(id int32) string { return fmt.Sprintf("ID: %d", id) }
+	prev := r.previousSiteConfig
 
-	edits := myers.ComputeEdits(span.URIFromPath("a.txt"), aString, bString)
-	diff := fmt.Sprint(gotextdiff.ToUnified("a.txt", "b.txt", aString, edits))
+	// We're not diffing a file, so set an empty string for the URI argument.
+	edits := myers.ComputeEdits("", r.previousSiteConfig.RedactedContents, r.siteConfig.RedactedContents)
+	diff := fmt.Sprint(gotextdiff.ToUnified(
+		prettyID(prev.ID),
+		prettyID(r.siteConfig.ID),
+		prev.RedactedContents,
+		edits,
+	))
 
 	return &diff
 }
