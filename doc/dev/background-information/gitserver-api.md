@@ -1,6 +1,6 @@
 # gitserver API
 
-_As of February 1, 2023_
+*As of February 1, 2023*
 
 `gitserver` is Sourcegraph's interface to Git repositories.
 It clones repositories and exposes an API for interacting with that clone.
