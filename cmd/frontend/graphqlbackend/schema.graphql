@@ -9163,6 +9163,11 @@ extend type User implements TeamMember {
 
 extend type Query {
     """
+    Get a single team by name. Returns null if not found.
+    """
+    team(name: String!): Team
+
+    """
     Get the global list of all root teams. (Those without a parent team).
     """
     teams(

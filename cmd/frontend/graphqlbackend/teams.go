@@ -243,3 +243,28 @@ func (r *schemaResolver) SetTeamMembers(args *TeamMembersArgs) *teamResolver {
 func (r *schemaResolver) RemoveTeamMembers(args *TeamMembersArgs) *teamResolver {
 	return &teamResolver{}
 }
+
+func (r *schemaResolver) Teams(ctx context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {
+	return &teamConnectionResolver{}, nil
+}
+
+type TeamArgs struct {
+	Name string
+}
+
+func (r *schemaResolver) Team(ctx context.Context, args *TeamArgs) (*teamResolver, error) {
+	// 🚨 SECURITY: For now we only allow site admins to use teams.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, errors.New("only site admins can view teams")
+	}
+
+	t, err := r.db.Teams().GetTeamByName(ctx, args.Name)
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &teamResolver{teamsDb: r.db.Teams(), team: t}, nil
+}
