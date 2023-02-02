@@ -517,7 +517,7 @@ func TestZoektSearchOptions(t *testing.T) {
 				ShardMaxMatchCount: 500000,
 				TotalMaxMatchCount: 500000,
 				MaxWallTime:        20000000000,
-				MaxDocDisplayCount: 2500,
+				MaxDocDisplayCount: 500,
 				ChunkMatches:       true,
 			},
 		},
