@@ -111,6 +111,7 @@ func TestGetUploads(t *testing.T) {
 	type testCase struct {
 		repositoryID        int
 		state               string
+		states              []string
 		term                string
 		visibleAtTip        bool
 		dependencyOf        int
@@ -149,13 +150,15 @@ func TestGetUploads(t *testing.T) {
 		{dependentOf: 11, expectedIDs: []int{}},
 		{allowDeletedRepo: true, state: "deleted", expectedIDs: []int{12, 13, 14, 15}},
 		{allowDeletedRepo: true, state: "deleted", alllowDeletedUpload: true, expectedIDs: []int{12, 13, 14, 15, 16, 17}},
+		{states: []string{"completed", "failed"}, expectedIDs: []int{2, 7, 8, 10, 11}},
 	}
 
 	runTest := func(testCase testCase, lo, hi int) (errors int) {
 		name := fmt.Sprintf(
-			"repositoryID=%d|state='%s'|term='%s'|visibleAtTip=%v|dependencyOf=%d|dependentOf=%d|offset=%d",
+			"repositoryID=%d|state='%s'|states='%s',term='%s'|visibleAtTip=%v|dependencyOf=%d|dependentOf=%d|offset=%d",
 			testCase.repositoryID,
 			testCase.state,
+			strings.Join(testCase.states, ","),
 			testCase.term,
 			testCase.visibleAtTip,
 			testCase.dependencyOf,
@@ -167,6 +170,7 @@ func TestGetUploads(t *testing.T) {
 			uploads, totalCount, err := store.GetUploads(ctx, shared.GetUploadsOptions{
 				RepositoryID:       testCase.repositoryID,
 				State:              testCase.state,
+				States:             testCase.states,
 				Term:               testCase.term,
 				VisibleAtTip:       testCase.visibleAtTip,
 				DependencyOf:       testCase.dependencyOf,

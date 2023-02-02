@@ -342,7 +342,7 @@ func TestCleanupExpired(t *testing.T) {
 	repoPerforceGCOld := path.Join(root, "repo-perforce-gc-old", ".git")
 	repoRemoteURLScrub := path.Join(root, "repo-remote-url-scrub", ".git")
 	remote := path.Join(root, "remote", ".git")
-	for _, path := range []string{
+	for _, gitDirPath := range []string{
 		repoNew, repoOld,
 		repoGCNew, repoGCOld,
 		repoBoom, repoCorrupt,
@@ -350,7 +350,7 @@ func TestCleanupExpired(t *testing.T) {
 		repoRemoteURLScrub,
 		remote,
 	} {
-		cmd := exec.Command("git", "--bare", "init", path)
+		cmd := exec.Command("git", "--bare", "init", gitDirPath)
 		if err := cmd.Run(); err != nil {
 			t.Fatal(err)
 		}
@@ -387,7 +387,7 @@ func TestCleanupExpired(t *testing.T) {
 	writeFile(t, filepath.Join(repoGCNew, "gc.log"), []byte("warning: There are too many unreachable loose objects; run 'git prune' to remove them."))
 	writeFile(t, filepath.Join(repoGCOld, "gc.log"), []byte("warning: There are too many unreachable loose objects; run 'git prune' to remove them."))
 
-	for path, delta := range map[string]time.Duration{
+	for gitDirPath, delta := range map[string]time.Duration{
 		repoOld:           2 * repoTTL,
 		repoGCOld:         2 * repoTTLGC,
 		repoBoom:          2 * repoTTL,
@@ -396,10 +396,10 @@ func TestCleanupExpired(t *testing.T) {
 		repoPerforceGCOld: 2 * repoTTLGC,
 	} {
 		ts := time.Now().Add(-delta)
-		if err := setRecloneTime(GitDir(path), ts); err != nil {
+		if err := setRecloneTime(GitDir(gitDirPath), ts); err != nil {
 			t.Fatal(err)
 		}
-		if err := os.Chtimes(filepath.Join(path, "HEAD"), ts, ts); err != nil {
+		if err := os.Chtimes(filepath.Join(gitDirPath, "HEAD"), ts, ts); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -496,10 +496,10 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 	initRepos := func(root string) (repoExists string, repoNotExists string) {
 		repoExists = path.Join(root, "repo-exists", ".git")
 		repoNotExists = path.Join(root, "repo-not-exists", ".git")
-		for _, path := range []string{
+		for _, gitDirPath := range []string{
 			repoExists, repoNotExists,
 		} {
-			cmd := exec.Command("git", "--bare", "init", path)
+			cmd := exec.Command("git", "--bare", "init", gitDirPath)
 			if err := cmd.Run(); err != nil {
 				t.Fatal(err)
 			}

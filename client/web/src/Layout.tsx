@@ -1,8 +1,8 @@
 import React, { Suspense, useCallback, useRef, useState } from 'react'
 
 import classNames from 'classnames'
-import { matchPath, Redirect, Route, Switch } from 'react-router'
-import { useLocation } from 'react-router-dom-v5-compat'
+import { matchPath } from 'react-router'
+import { useLocation, Route, Routes, Navigate } from 'react-router-dom-v5-compat'
 import { Observable } from 'rxjs'
 
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
@@ -91,7 +91,7 @@ export interface LayoutProps
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
-    routes: readonly LayoutRouteProps<any>[]
+    routes: readonly LayoutRouteProps[]
 
     authenticatedUser: AuthenticatedUser | null
 
@@ -118,14 +118,19 @@ const CONTRAST_COMPLIANT_CLASSNAME = 'theme-contrast-compliant-syntax-highlighti
 export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps>> = props => {
     const location = useLocation()
 
-    const routeMatch = props.routes.find(({ path, exact }) => matchPath(location.pathname, { path, exact }))?.path
+    // TODO: Replace with useMatches once top-level <Router/> is V6
+    const routeMatch = props.routes.find(
+        route =>
+            matchPath(location.pathname, { path: route.path, exact: true }) ||
+            matchPath(location.pathname, { path: route.path.replace(/\/\*$/, ''), exact: true })
+    )?.path
 
-    const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
+    const isSearchRelatedPage = (routeMatch === PageRoutes.RepoContainer || routeMatch?.startsWith('/search')) ?? false
     const isSearchHomepage = location.pathname === '/search' && !parseSearchURLQuery(location.search)
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
     const isSearchNotebooksPage = routeMatch?.startsWith(EnterprisePageRoutes.Notebooks)
     const isSearchNotebookListPage = location.pathname === EnterprisePageRoutes.Notebooks
-    const isRepositoryRelatedPage = routeMatch === '/:repoRevAndRest+' ?? false
+    const isRepositoryRelatedPage = routeMatch === PageRoutes.RepoContainer ?? false
 
     // enable fuzzy finder by default unless it's explicitly disabled in settings
     const fuzzyFinder = getExperimentalFeatures(props.settingsCascade.final).fuzzyFinder ?? true
@@ -178,7 +183,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
 
     // Remove trailing slash (which is never valid in any of our URLs).
     if (location.pathname !== '/' && location.pathname.endsWith('/')) {
-        return <Redirect to={{ ...location, pathname: location.pathname.slice(0, -1) }} />
+        return <Navigate replace={true} to={{ ...location, pathname: location.pathname.slice(0, -1) }} />
     }
 
     const context = {
@@ -186,7 +191,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         ...themeProps,
         ...breadcrumbProps,
         isMacPlatform: isMacPlatform(),
-    } satisfies Omit<LayoutRouteComponentProps<{}>, 'location' | 'history' | 'match' | 'staticContext'>
+    } satisfies Omit<LayoutRouteComponentProps, 'location' | 'history' | 'match' | 'staticContext'>
 
     return (
         <div
@@ -243,7 +248,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                     enableLegacyExtensions={window.context.enableLegacyExtensions}
                 />
             )}
-            {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
+            {needsSiteInit && !isSiteInit && <Navigate replace={true} to="/site-admin/init" />}
             <ErrorBoundary location={location}>
                 <Suspense
                     fallback={
@@ -252,23 +257,20 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                         </div>
                     }
                 >
-                    <Switch>
-                        {props.routes.map(
-                            ({ render, condition = () => true, ...route }) =>
-                                condition(context) && (
-                                    <Route
-                                        {...route}
-                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        component={undefined}
-                                        render={routeComponentProps => (
-                                            <AppRouterContainer>
-                                                {render({ ...context, ...routeComponentProps })}
-                                            </AppRouterContainer>
-                                        )}
-                                    />
-                                )
-                        )}
-                    </Switch>
+                    <AppRouterContainer>
+                        <Routes>
+                            {props.routes.map(
+                                ({ condition = () => true, ...route }) =>
+                                    condition(context) && (
+                                        <Route
+                                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                            path={route.path}
+                                            element={route.render(context)}
+                                        />
+                                    )
+                            )}
+                        </Routes>
+                    </AppRouterContainer>
                 </Suspense>
             </ErrorBoundary>
             {parseQueryAndHash(location.search, location.hash).viewState && location.pathname !== PageRoutes.SignIn && (

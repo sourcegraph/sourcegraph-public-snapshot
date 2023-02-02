@@ -44,7 +44,7 @@ const BatchChangeClosePage = lazyComponent<BatchChangeClosePageProps, 'BatchChan
     'BatchChangeClosePage'
 )
 
-interface Props extends RouteComponentProps, ThemeProps, TelemetryProps, SettingsCascadeProps {
+interface Props extends ThemeProps, TelemetryProps, SettingsCascadeProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
 }
@@ -53,26 +53,23 @@ interface Props extends RouteComponentProps, ThemeProps, TelemetryProps, Setting
  * The global batch changes area.
  */
 export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    match,
-    location,
     authenticatedUser,
     isSourcegraphDotCom,
     ...props
 }) => (
     <div className="w-100">
         <Switch>
-            <Route path={match.url} exact={true}>
+            <Route path="/batch-changes" exact={true}>
                 <BatchChangeListPage
                     headingElement="h1"
                     canCreate={Boolean(authenticatedUser) && !isSourcegraphDotCom}
                     authenticatedUser={authenticatedUser}
                     isSourcegraphDotCom={isSourcegraphDotCom}
                     {...props}
-                    location={location}
                 />
             </Route>
             {!isSourcegraphDotCom && (
-                <Route path={`${match.url}/create`} exact={true}>
+                <Route path="/batch-changes/create" exact={true}>
                     <AuthenticatedCreateBatchChangePage
                         {...props}
                         headingElement="h1"
@@ -93,7 +90,7 @@ const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = 
     <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 )
 
-export interface NamespaceBatchChangesAreaProps extends Props {
+export interface NamespaceBatchChangesAreaProps extends RouteComponentProps, Props {
     namespaceID: Scalars['ID']
 }
 

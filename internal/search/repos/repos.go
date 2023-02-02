@@ -911,7 +911,7 @@ func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []
 		clashing = append(clashing, rev)
 	}
 	// ensure that lists are always returned in sorted order.
-	slices.SortFunc(matched, query.RevisionSpecifier.Less)
+	slices.SortFunc(clashing, query.RevisionSpecifier.Less)
 	return
 }
 

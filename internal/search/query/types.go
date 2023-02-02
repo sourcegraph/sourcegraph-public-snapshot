@@ -203,7 +203,7 @@ func (p Plan) ToQ() Q {
 		operands := basic.ToParseTree()
 		nodes = append(nodes, NewOperator(operands, And)...)
 	}
-	return Q(NewOperator(nodes, Or))
+	return NewOperator(nodes, Or)
 }
 
 // Basic represents a leaf expression to evaluate in our search engine. A basic
@@ -349,6 +349,7 @@ func (p Parameters) IncludeExcludeValues(field string) (include, exclude []strin
 // - repo:contains.file(path:foo content:bar) || repo:has.file(path:foo content:bar)
 // - repo:contains.path(foo) || repo:has.path(foo)
 // - repo:contains.content(c) || repo:has.content(c)
+// - repo:contains(file:foo content:bar)
 // - repohasfile:f
 type RepoHasFileContentArgs struct {
 	// At least one of these strings should be non-empty
@@ -383,6 +384,14 @@ func (p Parameters) RepoHasFileContent() (res []RepoHasFileContentArgs) {
 	VisitTypedPredicate(nodes, func(pred *RepoContainsFilePredicate) {
 		res = append(res, RepoHasFileContentArgs{
 			Path:    pred.Path,
+			Content: pred.Content,
+			Negated: pred.Negated,
+		})
+	})
+
+	VisitTypedPredicate(nodes, func(pred *RepoContainsPredicate) {
+		res = append(res, RepoHasFileContentArgs{
+			Path:    pred.File,
 			Content: pred.Content,
 			Negated: pred.Negated,
 		})

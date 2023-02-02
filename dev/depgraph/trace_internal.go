@@ -8,7 +8,7 @@ import (
 
 	"github.com/peterbourgon/ff/v3/ffcli"
 
-	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
+	depgraph "github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
 	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/visualization"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -34,7 +34,7 @@ func traceInternal(ctx context.Context, args []string) error {
 		return err
 	}
 
-	graph, err := graph.Load(root)
+	graph, err := depgraph.Load(root)
 	if err != nil {
 		return err
 	}
@@ -47,7 +47,7 @@ func traceInternal(ctx context.Context, args []string) error {
 	return nil
 }
 
-func filterExternalReferences(graph *graph.DependencyGraph, prefix string) ([]string, map[string][]string) {
+func filterExternalReferences(graph *depgraph.DependencyGraph, prefix string) ([]string, map[string][]string) {
 	packages := make([]string, 0, len(graph.Packages))
 	for _, pkg := range graph.Packages {
 		if strings.HasPrefix(pkg, prefix) {

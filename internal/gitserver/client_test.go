@@ -372,10 +372,10 @@ func TestClient_P4Exec(t *testing.T) {
 	ctx := context.Background()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server := httptest.NewServer(test.handler)
-			defer server.Close()
+			testServer := httptest.NewServer(test.handler)
+			defer testServer.Close()
 
-			u, _ := url.Parse(server.URL)
+			u, _ := url.Parse(testServer.URL)
 			addrs := []string{u.Host}
 			cli := gitserver.NewTestClient(&http.Client{}, addrs)
 

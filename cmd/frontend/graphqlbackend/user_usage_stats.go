@@ -217,7 +217,7 @@ func exportPrometheusSearchLatencies(event string, payload json.RawMessage) erro
 	var v struct {
 		DurationMS float64 `json:"durationMs"`
 	}
-	if err := json.Unmarshal([]byte(payload), &v); err != nil {
+	if err := json.Unmarshal(payload, &v); err != nil {
 		return err
 	}
 	if event == "search.latencies.frontend.code-load" {
@@ -241,7 +241,7 @@ func exportPrometheusSearchRanking(payload json.RawMessage) error {
 		Index float64 `json:"index"`
 		Type  string  `json:"type"`
 	}
-	if err := json.Unmarshal([]byte(payload), &v); err != nil {
+	if err := json.Unmarshal(payload, &v); err != nil {
 		return err
 	}
 	searchRankingResultClicked.WithLabelValues(v.Type).Observe(v.Index)

@@ -1,4 +1,4 @@
-import { createMemoryHistory, createLocation } from 'history'
+import { createMemoryHistory } from 'history'
 import { noop } from 'lodash'
 import { NEVER } from 'rxjs'
 
@@ -15,8 +15,6 @@ const history = createMemoryHistory()
 const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     extensionsController,
     platformContext: { settings: NEVER, sourcegraphURL: 'https://sourcegraph.com' },
-    history,
-    location: createLocation('/search'),
     authenticatedUser: {
         id: 'userID',
         displayName: 'Chuck Cheese',

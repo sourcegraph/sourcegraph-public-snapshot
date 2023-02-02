@@ -38,6 +38,9 @@ var DefaultPredicateRegistry = PredicateRegistry{
 		"has.tag":               func() Predicate { return &RepoHasTagPredicate{} },
 		"has":                   func() Predicate { return &RepoHasKVPPredicate{} },
 		"has.key":               func() Predicate { return &RepoHasKeyPredicate{} },
+
+		// Deprecated predicates
+		"contains": func() Predicate { return &RepoContainsPredicate{} },
 	},
 	FieldFile: {
 		"contains.content": func() Predicate { return &FileContainsContentPredicate{} },
@@ -106,8 +109,9 @@ func (EmptyPredicate) Unmarshal(_ string, negated bool) error {
 	return nil
 }
 
-// RepoContainsFilePredicate represents the `repo:contains.file()` predicate,
-// which filters to repos that contain a path and/or content
+// RepoContainsFilePredicate represents the `repo:contains.file()` predicate, which filters to
+// repos that contain a path and/or content. NOTE: this predicate still supports the deprecated
+// syntax `repo:contains.file(name.go)` on a best-effort basis.
 type RepoContainsFilePredicate struct {
 	Path    string
 	Content string
@@ -120,16 +124,38 @@ func (f *RepoContainsFilePredicate) Unmarshal(params string, negated bool) error
 		return err
 	}
 
-	for _, node := range nodes {
-		if err := f.parseNode(node); err != nil {
+	if err := f.parseNodes(nodes); err != nil {
+		// If there's a parsing error, try falling back to the deprecated syntax `repo:contains.file(name.go)`.
+		// Only attempt to fall back if there is a single pattern node, to avoid being too lenient.
+		if len(nodes) != 1 {
 			return err
 		}
+
+		pattern, ok := nodes[0].(Pattern)
+		if !ok {
+			return err
+		}
+
+		if _, err := syntax.Parse(pattern.Value, syntax.Perl); err != nil {
+			return err
+		}
+		f.Path = pattern.Value
 	}
 
 	if f.Path == "" && f.Content == "" {
 		return errors.New("one of path or content must be set")
 	}
+
 	f.Negated = negated
+	return nil
+}
+
+func (f *RepoContainsFilePredicate) parseNodes(nodes []Node) error {
+	for _, node := range nodes {
+		if err := f.parseNode(node); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -160,7 +186,7 @@ func (f *RepoContainsFilePredicate) parseNode(n Node) error {
 			return errors.Errorf("unsupported option %q", v.Field)
 		}
 	case Pattern:
-		return errors.Errorf(`prepend 'path:' or 'content:' to "%s" to search repositories containing path or content respectively.`, v.Value)
+		return errors.Errorf(`prepend 'file:' or 'content:' to "%s" to search repositories containing files or content respectively.`, v.Value)
 	case Operator:
 		if v.Kind == Or {
 			return errors.New("predicates do not currently support 'or' queries")
@@ -318,6 +344,78 @@ func (p *RepoHasKeyPredicate) Unmarshal(params string, negated bool) (err error)
 
 func (p *RepoHasKeyPredicate) Field() string { return FieldRepo }
 func (p *RepoHasKeyPredicate) Name() string  { return "has.key" }
+
+// RepoContainsPredicate represents the `repo:contains(file:a content:b)` predicate.
+// DEPRECATED: this syntax is deprecated in favor of `repo:contains.file`.
+type RepoContainsPredicate struct {
+	File    string
+	Content string
+	Negated bool
+}
+
+func (f *RepoContainsPredicate) Unmarshal(params string, negated bool) error {
+	nodes, err := Parse(params, SearchTypeRegex)
+	if err != nil {
+		return err
+	}
+	for _, node := range nodes {
+		if err := f.parseNode(node); err != nil {
+			return err
+		}
+	}
+
+	if f.File == "" && f.Content == "" {
+		return errors.New("one of file or content must be set")
+	}
+	f.Negated = negated
+	return nil
+}
+
+func (f *RepoContainsPredicate) parseNode(n Node) error {
+	switch v := n.(type) {
+	case Parameter:
+		if v.Negated {
+			return errors.New("the repo:contains() predicate does not currently support negated values")
+		}
+		switch strings.ToLower(v.Field) {
+		case "file":
+			if f.File != "" {
+				return errors.New("cannot specify file multiple times")
+			}
+			if _, err := regexp.Compile(v.Value); err != nil {
+				return errors.Errorf("the repo:contains() predicate has invalid `file` argument: %w", err)
+			}
+			f.File = v.Value
+		case "content":
+			if f.Content != "" {
+				return errors.New("cannot specify content multiple times")
+			}
+			if _, err := regexp.Compile(v.Value); err != nil {
+				return errors.Errorf("the repo:contains() predicate has invalid `content` argument: %w", err)
+			}
+			f.Content = v.Value
+		default:
+			return errors.Errorf("unsupported option %q", v.Field)
+		}
+	case Pattern:
+		return errors.Errorf(`prepend 'file:' or 'content:' to "%s" to search repositories containing files or content respectively.`, v.Value)
+	case Operator:
+		if v.Kind == Or {
+			return errors.New("predicates do not currently support 'or' queries")
+		}
+		for _, operand := range v.Operands {
+			if err := f.parseNode(operand); err != nil {
+				return err
+			}
+		}
+	default:
+		return errors.Errorf("unsupported node type %T", n)
+	}
+	return nil
+}
+
+func (f *RepoContainsPredicate) Field() string { return FieldRepo }
+func (f *RepoContainsPredicate) Name() string  { return "contains" }
 
 /* file:contains.content(pattern) */
 

@@ -85,9 +85,9 @@ func TestResolver_InsightSeries(t *testing.T) {
 
 	t.Run("Points", func(t *testing.T) {
 		ctx, insights := testSetup(t)
-		autogold.Want("insights length", int(1)).Equal(t, len(insights))
+		autogold.Want("insights length", 1).Equal(t, len(insights))
 
-		autogold.Want("insights[0].length", int(1)).Equal(t, len(insights[0]))
+		autogold.Want("insights[0].length", 1).Equal(t, len(insights[0]))
 
 		// Issue a query against the actual DB.
 		points, err := insights[0][0].Points(ctx, nil)

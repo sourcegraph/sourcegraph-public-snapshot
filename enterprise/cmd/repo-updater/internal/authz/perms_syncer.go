@@ -1159,8 +1159,6 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 	logger.Info("started")
 	defer logger.Info("stopped")
 
-	store := s.db.PermissionSyncJobs()
-
 	ticker := time.NewTicker(s.scheduleInterval)
 	defer ticker.Stop()
 
@@ -1171,7 +1169,7 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 			return
 		}
 
-		if s.isDisabled() {
+		if s.isDisabled() || permssync.PermissionSyncWorkerEnabled(ctx, s.db, logger) {
 			logger.Info("disabled")
 			continue
 		}
@@ -1182,49 +1180,10 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 			continue
 		}
 
-		// TODO(sashaostrikov): Yes, you're right. This is obviously spaghetti code:
-		// `PermsSyncer` creates jobs that a worker picks up and then hands to
-		// PermSyncer.
-		// The idea is that once the worker becomes the default then this whole
-		// method, `runSchedule`, will disappear and become a background
-		// routine being run in `cmd/worker`.
-		workerEnabled := permssync.PermissionSyncWorkerEnabled(ctx, s.db, logger)
-		logger.Info("scheduling permission syncs", log.Int("users", len(schedule.Users)), log.Int("repos", len(schedule.Repos)), log.Bool("database-backed perm syncer", workerEnabled))
+		logger.Info("scheduling permission syncs", log.Int("users", len(schedule.Users)), log.Int("repos", len(schedule.Repos)))
 
-		// TODO(naman): when `runSchedule` is removed `s.schedule` should return reason
-		// and priority along with each user id separately, rather than having to figure it our here.`
-		if workerEnabled {
-			for _, u := range schedule.Users {
-				priority := database.LowPriorityPermissionSync
-				reason := permssync.ReasonUserOutdatedPermissions
-				if u.noPerms {
-					priority = database.MediumPriorityPermissionSync
-					reason = permssync.ReasonUserNoPermissions
-				}
-				opts := database.PermissionSyncJobOpts{Reason: reason, Priority: priority}
-				if err := store.CreateUserSyncJob(ctx, u.userID, opts); err != nil {
-					logger.Error("failed to create user sync job", log.Error(err))
-					continue
-				}
-			}
-
-			for _, r := range schedule.Repos {
-				priority := database.LowPriorityPermissionSync
-				reason := permssync.ReasonRepoOutdatedPermissions
-				if r.noPerms {
-					priority = database.MediumPriorityPermissionSync
-					reason = permssync.ReasonRepoNoPermissions
-				}
-				opts := database.PermissionSyncJobOpts{Reason: reason, Priority: priority}
-				if err := store.CreateRepoSyncJob(ctx, r.repoID, opts); err != nil {
-					logger.Error("failed to create repo sync job", log.Error(err))
-					continue
-				}
-			}
-		} else {
-			s.scheduleUsers(ctx, schedule.Users...)
-			s.scheduleRepos(ctx, schedule.Repos...)
-		}
+		s.scheduleUsers(ctx, schedule.Users...)
+		s.scheduleRepos(ctx, schedule.Repos...)
 
 		s.collectMetrics(ctx)
 	}

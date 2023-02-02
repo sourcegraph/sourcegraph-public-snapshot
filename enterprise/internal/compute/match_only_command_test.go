@@ -52,8 +52,8 @@ func Test_matchOnly(t *testing.T) {
 
 	test := func(input string, serialize serializer) string {
 		r, _ := regexp.Compile(input)
-		result := matchOnly(data, r)
-		w := want{Input: input, Result: serialize(result)}
+		matchContext := matchOnly(data, r)
+		w := want{Input: input, Result: serialize(matchContext)}
 		v, _ := json.MarshalIndent(w, "", "  ")
 		return string(v)
 	}

@@ -15,7 +15,7 @@ import (
 
 type OutboundWebhookLogStore interface {
 	basestore.ShareableStore
-	Transact(context.Context) (OutboundWebhookLogStore, error)
+	WithTransact(context.Context, func(OutboundWebhookLogStore) error) error
 	With(basestore.ShareableStore) OutboundWebhookLogStore
 	Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error)
 	Done(error) error
@@ -65,12 +65,13 @@ func (s *outboundWebhookLogStore) With(other basestore.ShareableStore) OutboundW
 	}
 }
 
-func (s *outboundWebhookLogStore) Transact(ctx context.Context) (OutboundWebhookLogStore, error) {
-	tx, err := s.Store.Transact(ctx)
-	return &outboundWebhookLogStore{
-		Store: tx,
-		key:   s.key,
-	}, err
+func (s *outboundWebhookLogStore) WithTransact(ctx context.Context, f func(OutboundWebhookLogStore) error) error {
+	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&outboundWebhookLogStore{
+			Store: tx,
+			key:   s.key,
+		})
+	})
 }
 
 func (s *outboundWebhookLogStore) CountsForOutboundWebhook(ctx context.Context, outboundWebhookID int64) (total, errored int64, err error) {

@@ -126,7 +126,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 
 	git := gitserver.NewClient()
 
-	service := &search.Service{
+	sService := &search.Service{
 		Store: &search.Store{
 			FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 				// We pass in a nil sub-repo permissions checker and an internal actor here since
@@ -169,10 +169,10 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 
 		Log: logger,
 	}
-	service.Store.Start()
+	sService.Store.Start()
 
 	// Set up handler middleware
-	handler := actor.HTTPMiddleware(logger, service)
+	handler := actor.HTTPMiddleware(logger, sService)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
 
@@ -182,7 +182,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	grpcServer := grpc.NewServer(grpcdefaults.ServerOptions(logger)...)
 	reflection.Register(grpcServer)
 	grpcServer.RegisterService(&proto.Searcher_ServiceDesc, &search.Server{
-		Service: service,
+		Service: sService,
 	})
 
 	host := ""
