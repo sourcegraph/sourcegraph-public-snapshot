@@ -18,28 +18,28 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// SearcherClient is the client API for Searcher service.
+// SearcherServiceClient is the client API for SearcherService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type SearcherClient interface {
+type SearcherServiceClient interface {
 	// Search executes a search, streaming back its results
-	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (Searcher_SearchClient, error)
+	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (SearcherService_SearchClient, error)
 }
 
-type searcherClient struct {
+type searcherServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewSearcherClient(cc grpc.ClientConnInterface) SearcherClient {
-	return &searcherClient{cc}
+func NewSearcherServiceClient(cc grpc.ClientConnInterface) SearcherServiceClient {
+	return &searcherServiceClient{cc}
 }
 
-func (c *searcherClient) Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (Searcher_SearchClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Searcher_ServiceDesc.Streams[0], "/searcher.Searcher/Search", opts...)
+func (c *searcherServiceClient) Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (SearcherService_SearchClient, error) {
+	stream, err := c.cc.NewStream(ctx, &SearcherService_ServiceDesc.Streams[0], "/searcher.SearcherService/Search", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &searcherSearchClient{stream}
+	x := &searcherServiceSearchClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -49,16 +49,16 @@ func (c *searcherClient) Search(ctx context.Context, in *SearchRequest, opts ...
 	return x, nil
 }
 
-type Searcher_SearchClient interface {
+type SearcherService_SearchClient interface {
 	Recv() (*SearchResponse, error)
 	grpc.ClientStream
 }
 
-type searcherSearchClient struct {
+type searcherServiceSearchClient struct {
 	grpc.ClientStream
 }
 
-func (x *searcherSearchClient) Recv() (*SearchResponse, error) {
+func (x *searcherServiceSearchClient) Recv() (*SearchResponse, error) {
 	m := new(SearchResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -66,67 +66,67 @@ func (x *searcherSearchClient) Recv() (*SearchResponse, error) {
 	return m, nil
 }
 
-// SearcherServer is the server API for Searcher service.
-// All implementations must embed UnimplementedSearcherServer
+// SearcherServiceServer is the server API for SearcherService service.
+// All implementations must embed UnimplementedSearcherServiceServer
 // for forward compatibility
-type SearcherServer interface {
+type SearcherServiceServer interface {
 	// Search executes a search, streaming back its results
-	Search(*SearchRequest, Searcher_SearchServer) error
-	mustEmbedUnimplementedSearcherServer()
+	Search(*SearchRequest, SearcherService_SearchServer) error
+	mustEmbedUnimplementedSearcherServiceServer()
 }
 
-// UnimplementedSearcherServer must be embedded to have forward compatible implementations.
-type UnimplementedSearcherServer struct {
+// UnimplementedSearcherServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedSearcherServiceServer struct {
 }
 
-func (UnimplementedSearcherServer) Search(*SearchRequest, Searcher_SearchServer) error {
+func (UnimplementedSearcherServiceServer) Search(*SearchRequest, SearcherService_SearchServer) error {
 	return status.Errorf(codes.Unimplemented, "method Search not implemented")
 }
-func (UnimplementedSearcherServer) mustEmbedUnimplementedSearcherServer() {}
+func (UnimplementedSearcherServiceServer) mustEmbedUnimplementedSearcherServiceServer() {}
 
-// UnsafeSearcherServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to SearcherServer will
+// UnsafeSearcherServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to SearcherServiceServer will
 // result in compilation errors.
-type UnsafeSearcherServer interface {
-	mustEmbedUnimplementedSearcherServer()
+type UnsafeSearcherServiceServer interface {
+	mustEmbedUnimplementedSearcherServiceServer()
 }
 
-func RegisterSearcherServer(s grpc.ServiceRegistrar, srv SearcherServer) {
-	s.RegisterService(&Searcher_ServiceDesc, srv)
+func RegisterSearcherServiceServer(s grpc.ServiceRegistrar, srv SearcherServiceServer) {
+	s.RegisterService(&SearcherService_ServiceDesc, srv)
 }
 
-func _Searcher_Search_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _SearcherService_Search_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(SearchRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(SearcherServer).Search(m, &searcherSearchServer{stream})
+	return srv.(SearcherServiceServer).Search(m, &searcherServiceSearchServer{stream})
 }
 
-type Searcher_SearchServer interface {
+type SearcherService_SearchServer interface {
 	Send(*SearchResponse) error
 	grpc.ServerStream
 }
 
-type searcherSearchServer struct {
+type searcherServiceSearchServer struct {
 	grpc.ServerStream
 }
 
-func (x *searcherSearchServer) Send(m *SearchResponse) error {
+func (x *searcherServiceSearchServer) Send(m *SearchResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-// Searcher_ServiceDesc is the grpc.ServiceDesc for Searcher service.
+// SearcherService_ServiceDesc is the grpc.ServiceDesc for SearcherService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var Searcher_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "searcher.Searcher",
-	HandlerType: (*SearcherServer)(nil),
+var SearcherService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "searcher.SearcherService",
+	HandlerType: (*SearcherServiceServer)(nil),
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "Search",
-			Handler:       _Searcher_Search_Handler,
+			Handler:       _SearcherService_Search_Handler,
 			ServerStreams: true,
 		},
 	},

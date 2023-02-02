@@ -181,7 +181,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 
 	grpcServer := grpc.NewServer(grpcdefaults.ServerOptions(logger)...)
 	reflection.Register(grpcServer)
-	grpcServer.RegisterService(&proto.Searcher_ServiceDesc, &search.Server{
+	grpcServer.RegisterService(&proto.SearcherService_ServiceDesc, &search.Server{
 		Service: sService,
 	})
 

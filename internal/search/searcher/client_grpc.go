@@ -8,6 +8,9 @@ import (
 	"net/url"
 	"time"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -16,8 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/searcher/proto"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 // Search searches repo@commit with p.
@@ -92,7 +93,7 @@ func SearchGRPC(
 		}
 		defer clientConn.Close()
 
-		client := proto.NewSearcherClient(clientConn)
+		client := proto.NewSearcherServiceClient(clientConn)
 		resp, err := client.Search(ctx, r)
 		if err != nil {
 			return false, err
