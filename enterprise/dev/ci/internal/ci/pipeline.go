@@ -121,7 +121,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Always rebuild Wolfi images
 		ops.Merge(
 			// TODO: Just hardcode specific images initially
-			BuildWolfiOperations([]string{"gitserver", "frontend", "github-proxy", "loadtest", "migrator", "repo-updater", "searcher", "symbols"}, c.Version, c.candidateImageTag()),
+			BuildWolfiOperations([]string{"gitserver", "frontend", "github-proxy", "loadtest", "migrator", "repo-updater", "searcher", "symbols", "batcheshelper"}, c.Version, c.candidateImageTag()),
 		)
 
 	case runtype.PullRequest:
