@@ -131,7 +131,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                 }
             )
         }
-    }, [id, indexOrError, handleDeletePreciseIndex])
+    }, [indexOrError, handleDeletePreciseIndex, id, navigate])
 
     const reindexUpload = useCallback(async (): Promise<void> => {
         if (!indexOrError || isErrorLike(indexOrError)) {
