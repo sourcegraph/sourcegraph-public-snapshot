@@ -5,8 +5,9 @@ import { mdiMenuDown, mdiMenuRight } from '@mdi/js'
 import { createRoot } from 'react-dom/client'
 
 import { Icon } from '@sourcegraph/wildcard/src'
-import { getCodeIntelTooltipState } from './token-selection/code-intel-tooltips'
+
 import { rangeToCmSelection } from './occurrence-utils'
+import { getCodeIntelTooltipState } from './token-selection/code-intel-tooltips'
 
 enum CharCode {
     /**
@@ -24,11 +25,11 @@ enum CharCode {
  */
 function computeIndentLevel(line: string, tabSize: number): number {
     let indent = 0
-    let i = 0
+    let index = 0
     const len = line.length
 
-    while (i < len) {
-        const charCode = line.charCodeAt(i)
+    while (index < len) {
+        const charCode = line.charCodeAt(index)
 
         if (charCode === CharCode.Space) {
             indent++
@@ -37,10 +38,10 @@ function computeIndentLevel(line: string, tabSize: number): number {
         } else {
             break
         }
-        i++
+        index++
     }
 
-    if (i === len) {
+    if (index === len) {
         return -1 // line only consists of whitespace
     }
 
@@ -105,9 +106,7 @@ const foldingRanges = StateField.define<[Line, Line][]>({
 function getFoldRange(state: EditorState, lineStart: number): { from: number; to: number } | null {
     const ranges = state.field(foldingRanges)
 
-    const range = ranges.find(([start]) => {
-        return start.number === state.doc.lineAt(lineStart).number
-    })
+    const range = ranges.find(([start]) => start.number === state.doc.lineAt(lineStart).number)
 
     if (!range) {
         return null
