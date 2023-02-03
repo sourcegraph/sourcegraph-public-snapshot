@@ -40,6 +40,8 @@ const getNormalizedAccount = (
         return null
     }
 
+    console.log(authProvider.serviceType)
+
     const account = accounts[authProvider.serviceID]
     const { icon, title: name } = defaultExternalAccounts[authProvider.serviceType]
 

@@ -54,6 +54,7 @@ func parseProvider(logger log.Logger, db database.DB, callbackURL string, p *sch
 			return LoginHandler(&oauth2Cfg, nil)
 		},
 		Callback: func(oauth2Cfg oauth2.Config) http.Handler {
+			// TODO: Can this be private?
 			return CallbackHandler(
 				&oauth2Cfg,
 				oauth.SessionIssuer(logger, db, &sessionIssuerHelper{

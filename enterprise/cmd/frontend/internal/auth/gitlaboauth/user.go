@@ -17,6 +17,7 @@ func WithUser(ctx context.Context, user *gitlab.User) context.Context {
 	return context.WithValue(ctx, userKey, user)
 }
 
+// TODO: Make this private. Not used outside this package.
 // UserFromContext returns the GitLab User from the ctx.
 func UserFromContext(ctx context.Context) (*gitlab.User, error) {
 	user, ok := ctx.Value(userKey).(*gitlab.User)

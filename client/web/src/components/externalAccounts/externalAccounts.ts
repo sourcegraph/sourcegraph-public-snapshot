@@ -4,6 +4,7 @@ import AccountCircleIcon from 'mdi-react/AccountCircleIcon'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitLabIcon from 'mdi-react/GitlabIcon'
+import MicrosoftAzureDevopsIcon from 'mdi-react/MicrosoftAzureDevOpsIcon'
 
 import { AuthProvider } from '../../jscontext'
 import { GerritIcon } from '../externalServices/GerritIcon'
@@ -26,6 +27,10 @@ export interface ExternalAccount {
 }
 
 export const defaultExternalAccounts: Record<ExternalAccountKind, ExternalAccount> = {
+    azuredevops: {
+        title: 'Azure Dev Ops',
+        icon: MicrosoftAzureDevopsIcon,
+    },
     github: {
         title: 'GitHub',
         icon: GithubIcon,

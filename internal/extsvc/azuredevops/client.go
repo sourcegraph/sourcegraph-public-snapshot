@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -43,26 +44,123 @@ type Client struct {
 // NewClient returns an authenticated AzureDevOps API client with
 // the provided configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(urn string, config *schema.AzureDevOpsConnection, httpClient httpcli.Doer) (*Client, error) {
-	u, err := url.Parse(config.Url)
-	if err != nil {
-		return nil, err
-	}
-
+func NewClient(urn string, url *url.URL, auth auth.Authenticator, httpClient httpcli.Doer) (*Client, error) {
 	if httpClient == nil {
 		httpClient = httpcli.ExternalDoer
 	}
 
 	return &Client{
 		httpClient: httpClient,
-		Config:     config,
-		URL:        u,
-		rateLimit:  ratelimit.DefaultRegistry.Get(urn),
-		auth: &auth.BasicAuth{
-			Username: config.Username,
-			Password: config.Token,
-		},
+		// Config:     config,
+		URL:       url,
+		rateLimit: ratelimit.DefaultRegistry.Get(urn),
+		auth:      auth,
 	}, nil
+}
+
+// TODO: Code organisation
+
+type ClientProvider struct {
+	// The URN of the external service that the client is derived from.
+	// TODO: Where is this used?
+	urn string
+
+	// baseURL is the base URL of GitLab; e.g., https://gitlab.com or https://gitlab.example.com
+	// TODO: Do I need this?
+	baseURL *url.URL
+
+	// httpClient is the underlying the HTTP client to use.
+	httpClient httpcli.Doer
+
+	clients   map[string]*Client
+	clientsMu sync.Mutex
+}
+
+// GetOAuthClient returns a client authenticated by the OAuth token.
+func (p *ClientProvider) GetOAuthClient(oauthToken string) *Client {
+	if oauthToken == "" {
+		return p.getClient(nil)
+	}
+	return p.getClient(&auth.OAuthBearerToken{Token: oauthToken})
+}
+
+// GetClient returns an unauthenticated client.
+func (p *ClientProvider) GetClient() *Client {
+	// TODO: Maybe inline.
+	// return p.getClient(nil)
+
+	// FIXME
+	return nil
+}
+
+// TODO: Move inline if only place used is above.
+func (p *ClientProvider) getClient(a auth.Authenticator) *Client {
+	// FIXME
+	return nil
+	// p.clientsMu.Lock()
+	// defer p.clientsMu.Unlock()
+
+	// key := "<nil>"
+	// if a != nil {
+	// 	key = a.Hash()
+	// }
+	// if c, ok := p.clients[key]; ok {
+	// 	return c
+	// }
+
+	// c, err := NewClient("AzureDevOpsOAuth", a)
+	// if err != nil {
+	// 	// TODO: Do not panic.
+	// 	panic(err)
+	// }
+
+	// p.clients[key] = c
+	// return c
+}
+
+// func (p *ClientProvider) NewClient(a auth.Authenticator) *Client {
+// 	// Cache for GitLab project metadata.
+// 	// var cacheTTL time.Duration
+// 	// if isGitLabDotComURL(p.baseURL) && a == nil {
+// 	// 	cacheTTL = 10 * time.Minute // cache for longer when unauthenticated
+// 	// } else {
+// 	// 	cacheTTL = 30 * time.Second
+// 	// }
+// 	// key := "gl_proj:"
+// 	// var tokenHash string
+// 	// if a != nil {
+// 	// 	tokenHash = a.Hash()
+// 	// 	key += tokenHash
+// 	// }e
+// 	// projCache := rcache.NewWithTTL(key, int(cacheTTL/time.Second))
+
+// 	// rl := ratelimit.DefaultRegistry.Get(p.urn)
+// 	// rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(p.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
+
+// 	return &Client{
+// 		httpClient: httpcli.ExternalDoer,
+// 		// Config:     config,
+// 		URL:       u,
+// 		rateLimit: ratelimit.DefaultRegistry.Get(urn),
+// 		auth:      a,
+// 		// 	Username: config.Username,
+// 		// 	Password: config.Token,
+// 		// },
+// 	}
+// }
+
+func NewClientProvider(urn string, baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
+	if cli == nil {
+		cli = httpcli.ExternalDoer
+	}
+
+	return &ClientProvider{
+		urn: urn,
+		// TODO: What do we do here?
+		// baseURL:    baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, "api/v4") + "/"}),
+		httpClient: cli,
+		clients:    make(map[string]*Client),
+	}
 }
 
 // do performs the specified request, returning any errors and a continuationToken used for pagination (if the API supports it).

@@ -186,6 +186,7 @@ type Client struct {
 // http[s]://[gitlab-hostname] for self-hosted GitLab instances.
 //
 // See the docstring of Client for the meaning of the parameters.
+// TODO: This is only used one. Inline it.
 func (p *ClientProvider) newClient(a auth.Authenticator) *Client {
 	return p.NewClient(a)
 }

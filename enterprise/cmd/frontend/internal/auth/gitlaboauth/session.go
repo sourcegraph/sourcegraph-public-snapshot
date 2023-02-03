@@ -66,6 +66,8 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	signupAllowed := s.allowSignup == nil || *s.allowSignup
 
 	var data extsvc.AccountData
+
+	// TODO: wrap this error
 	if err := gitlab.SetExternalAccountData(&data, gUser, token); err != nil {
 		return nil, "", err
 	}

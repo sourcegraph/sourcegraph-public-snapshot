@@ -100,6 +100,7 @@ func externalServiceTokenRefresher(db DB, externalServiceID int64, refreshToken 
 	}
 }
 
+// TODO: Unused code?
 func GetServiceRefreshAndStoreOAuthTokenFunc(db DB, externalServiceID int64, oauthContext *oauthutil.OAuthContext) func(context.Context, httpcli.Doer, *auth.OAuthBearerToken) (string, string, time.Time, error) {
 	return func(ctx context.Context, cli httpcli.Doer, a *auth.OAuthBearerToken) (string, string, time.Time, error) {
 		tokenRefresher := externalServiceTokenRefresher(db, externalServiceID, a.RefreshToken)

@@ -56,8 +56,8 @@ func parseProvider(logger log.Logger, p *schema.BitbucketCloudAuthProvider, db d
 				},
 			}
 		},
-		SourceConfig: sourceCfg,
 		StateConfig:  getStateConfig(),
+		SourceConfig: sourceCfg,
 		ServiceID:    parsedURL.String(),
 		ServiceType:  extsvc.TypeBitbucketCloud,
 		Login: func(oauth2Cfg oauth2.Config) http.Handler {
@@ -67,9 +67,10 @@ func parseProvider(logger log.Logger, p *schema.BitbucketCloudAuthProvider, db d
 			return bitbucket.CallbackHandler(
 				&oauth2Cfg,
 				oauth.SessionIssuer(logger, db, &sessionIssuerHelper{
-					baseURL:     parsedURL,
-					db:          db,
-					clientKey:   p.ClientKey,
+					baseURL:   parsedURL,
+					db:        db,
+					clientKey: p.ClientKey,
+					// TODO: AllowSignup is default true in the schema but here this will not be the case if it is not set in the schema? Verify.
 					allowSignup: p.AllowSignup,
 				}, sessionKey),
 				http.HandlerFunc(failureHandler),

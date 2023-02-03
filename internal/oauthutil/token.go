@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -149,6 +150,9 @@ func RetrieveToken(doer httpcli.Doer, oauthCtx OAuthContext, refreshToken string
 }
 
 func doTokenRoundTrip(doer httpcli.Doer, req *http.Request) (*Token, error) {
+	l := log.Scoped("doTokenRoundTrip", "tokenRoundTrip")
+	l.Warn("here")
+
 	r, err := doer.Do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "do request")
@@ -236,5 +240,5 @@ type TokenError struct {
 }
 
 func (t *TokenError) Error() string {
-	return fmt.Sprintf("oauth2: error in token fetch repsonse: %s\nerror_description: %s\nerror_uri: %s", t.Err, t.ErrorDescription, t.ErrorURI)
+	return fmt.Sprintf("oauth2: error in token fetch response: %s\nerror_description: %s\nerror_uri: %s", t.Err, t.ErrorDescription, t.ErrorURI)
 }

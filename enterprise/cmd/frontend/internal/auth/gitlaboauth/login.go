@@ -19,6 +19,7 @@ func LoginHandler(config *oauth2.Config, failure http.Handler) http.Handler {
 	return oauth2Login.LoginHandler(config, failure)
 }
 
+// TODO: Drop failure from the args list and simplify the check in gitLabHandler.
 func CallbackHandler(config *oauth2.Config, success, failure http.Handler) http.Handler {
 	success = gitlabHandler(config, success, failure)
 	return oauth2Login.CallbackHandler(config, success, failure)
@@ -27,6 +28,7 @@ func CallbackHandler(config *oauth2.Config, success, failure http.Handler) http.
 func gitlabHandler(config *oauth2.Config, success, failure http.Handler) http.Handler {
 	logger := log.Scoped("GitlabOAuthHandler", "Gitlab OAuth Handler")
 
+	// TODO: Possibly simplify this from above.
 	if failure == nil {
 		failure = gologin.DefaultFailureHandler
 	}
@@ -41,6 +43,7 @@ func gitlabHandler(config *oauth2.Config, success, failure http.Handler) http.Ha
 
 		gitlabClient, err := gitlabClientFromAuthURL(config.Endpoint.AuthURL, token.AccessToken)
 		if err != nil {
+			// TODO: Don't swallow the actual error here.
 			ctx = gologin.WithError(ctx, errors.Errorf("could not parse AuthURL %s", config.Endpoint.AuthURL))
 			failure.ServeHTTP(w, req.WithContext(ctx))
 			return
@@ -52,11 +55,13 @@ func gitlabHandler(config *oauth2.Config, success, failure http.Handler) http.Ha
 			// https://github.com/sourcegraph/sourcegraph/pull/20000
 			logger.Warn("invalid response", log.Error(err))
 		}
+		// TODO: Merge these two checks of err != nil?
 		if err != nil {
 			ctx = gologin.WithError(ctx, err)
 			failure.ServeHTTP(w, req.WithContext(ctx))
 			return
 		}
+		// TODO: Make this private?
 		ctx = WithUser(ctx, user)
 		success.ServeHTTP(w, req.WithContext(ctx))
 	}
