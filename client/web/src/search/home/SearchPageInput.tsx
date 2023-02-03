@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'
 
-import { SearchBox } from '@sourcegraph/branded'
+import { SearchBox, Toggles } from '@sourcegraph/branded'
 // The experimental search input should be shown on the search home page
 // eslint-disable-next-line no-restricted-imports
 import { LazyCodeMirrorQueryInput } from '@sourcegraph/branded/src/search-ui/experimental'
@@ -154,7 +154,18 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
             isLightTheme={props.isLightTheme}
             placeholder="Search for code or files..."
             suggestionSource={suggestionSource}
-        />
+        >
+            <Toggles
+                patternType={patternType}
+                caseSensitive={caseSensitive}
+                setPatternType={setSearchPatternType}
+                setCaseSensitivity={setSearchCaseSensitivity}
+                searchMode={searchMode}
+                setSearchMode={setSearchMode}
+                settingsCascade={props.settingsCascade}
+                navbarSearchQuery={props.queryState.query}
+            />
+        </LazyCodeMirrorQueryInput>
     ) : (
         <SearchBox
             {...props}
