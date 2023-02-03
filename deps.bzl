@@ -8153,6 +8153,9 @@ def go_dependencies():
         importpath = "cloud.google.com/go/secretmanager",
         sum = "h1:xE6uXljAC1kCR8iadt9+/blg1fvSbmenlsDN4fT9gqw=",
         version = "v1.9.0",
+        build_directives = [
+            "gazelle:resolve go google.golang.org/genproto/googleapis/api/annotations @go_googleapis//google/api:annotations_go_proto",  # keep
+        ],
     )
     go_repository(
         name = "com_google_cloud_go_security",
