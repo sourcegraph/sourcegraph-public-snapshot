@@ -19,7 +19,7 @@ import (
 // JobTokenStore is the store for interacting with the executor_job_tokens table.
 type JobTokenStore interface {
 	// Create creates a new JobToken.
-	Create(ctx context.Context, jobId int, queue string) (string, error)
+	Create(ctx context.Context, jobId int, queue string, repo string) (string, error)
 	// Regenerate creates a new value for the matching JobToken.
 	Regenerate(ctx context.Context, jobId int, queue string) (string, error)
 	// Exists checks if the JobToken exists.
@@ -36,8 +36,9 @@ type JobTokenStore interface {
 type JobToken struct {
 	Id    int64
 	Value []byte
-	JobId int64
+	JobID int64
 	Queue string
+	Repo  string
 }
 
 type jobTokenStore struct {
@@ -57,12 +58,15 @@ func NewJobTokenStore(observationCtx *observation.Context, db database.DB) JobTo
 	}
 }
 
-func (s *jobTokenStore) Create(ctx context.Context, jobId int, queue string) (string, error) {
+func (s *jobTokenStore) Create(ctx context.Context, jobId int, queue string, repo string) (string, error) {
 	if jobId == 0 {
 		return "", errors.New("missing jobId")
 	}
 	if len(queue) == 0 {
 		return "", errors.New("missing queue")
+	}
+	if len(repo) == 0 {
+		return "", errors.New("missing repo")
 	}
 
 	var b [20]byte
@@ -74,7 +78,7 @@ func (s *jobTokenStore) Create(ctx context.Context, jobId int, queue string) (st
 		ctx,
 		sqlf.Sprintf(
 			createExecutorJobTokenFmtstr,
-			hashutil.ToSHA256Bytes(b[:]), jobId, queue,
+			hashutil.ToSHA256Bytes(b[:]), jobId, queue, repo,
 		),
 	)
 	if err != nil {
@@ -85,8 +89,8 @@ func (s *jobTokenStore) Create(ctx context.Context, jobId int, queue string) (st
 }
 
 const createExecutorJobTokenFmtstr = `
-INSERT INTO executor_job_tokens (value_sha256, job_id, queue)
-VALUES (%s, %s, %s)
+INSERT INTO executor_job_tokens (value_sha256, job_id, queue, repo)
+VALUES (%s, %s, %s, %s)
 `
 
 func (s *jobTokenStore) Regenerate(ctx context.Context, jobId int, queue string) (string, error) {
@@ -106,7 +110,7 @@ func (s *jobTokenStore) Regenerate(ctx context.Context, jobId int, queue string)
 	err = s.Exec(
 		ctx,
 		sqlf.Sprintf(
-			updateExecutorJobTokenFmtstr,
+			regenerateExecutorJobTokenFmtstr,
 			hashutil.ToSHA256Bytes(b[:]), jobId, queue,
 		),
 	)
@@ -117,8 +121,8 @@ func (s *jobTokenStore) Regenerate(ctx context.Context, jobId int, queue string)
 	return hex.EncodeToString(b[:]), nil
 }
 
-const updateExecutorJobTokenFmtstr = `
-UPDATE executor_job_tokens SET value_sha256 = %s
+const regenerateExecutorJobTokenFmtstr = `
+UPDATE executor_job_tokens SET value_sha256 = %s, updated_at = NOW()
 WHERE job_id = %s AND queue = %s
 `
 
@@ -143,7 +147,7 @@ func (s *jobTokenStore) Get(ctx context.Context, jobId int, queue string) (JobTo
 }
 
 const getExecutorJobTokenFmtstr = `
-SELECT id, value_sha256, job_id, queue
+SELECT id, value_sha256, job_id, queue, repo
 FROM executor_job_tokens
 WHERE job_id = %s AND queue = %s
 `
@@ -164,7 +168,7 @@ func (s *jobTokenStore) GetByToken(ctx context.Context, tokenHexEncoded string) 
 }
 
 const getByTokenExecutorJobTokenFmtstr = `
-SELECT id, value_sha256, job_id, queue
+SELECT id, value_sha256, job_id, queue, repo
 FROM executor_job_tokens
 WHERE value_sha256 = %s
 `
@@ -174,8 +178,9 @@ func scanJobToken(row *sql.Row) (JobToken, error) {
 	err := row.Scan(
 		&jobToken.Id,
 		&jobToken.Value,
-		&jobToken.JobId,
+		&jobToken.JobID,
 		&jobToken.Queue,
+		&jobToken.Repo,
 	)
 	if err != nil {
 		return jobToken, err

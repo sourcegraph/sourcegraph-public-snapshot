@@ -86,7 +86,7 @@ func (c *Client) MarkComplete(ctx context.Context, job executor.Job) (_ bool, er
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.client.NewJSONJobRequest(http.MethodPost, fmt.Sprintf("%s/markComplete", c.options.QueueName), job.Token, executor.MarkCompleteRequest{
+	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/markComplete", c.options.QueueName), job.Token, executor.MarkCompleteRequest{
 		JobOperationRequest: executor.JobOperationRequest{
 			ExecutorName: c.options.ExecutorName,
 			JobID:        job.ID,
@@ -109,7 +109,7 @@ func (c *Client) MarkErrored(ctx context.Context, job executor.Job, failureMessa
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.client.NewJSONJobRequest(http.MethodPost, fmt.Sprintf("%s/markErrored", c.options.QueueName), job.Token, executor.MarkErroredRequest{
+	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/markErrored", c.options.QueueName), job.Token, executor.MarkErroredRequest{
 		JobOperationRequest: executor.JobOperationRequest{
 			ExecutorName: c.options.ExecutorName,
 			JobID:        job.ID,
@@ -133,7 +133,7 @@ func (c *Client) MarkFailed(ctx context.Context, job executor.Job, failureMessag
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.client.NewJSONJobRequest(http.MethodPost, fmt.Sprintf("%s/markFailed", c.options.QueueName), job.Token, executor.MarkErroredRequest{
+	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/markFailed", c.options.QueueName), job.Token, executor.MarkErroredRequest{
 		JobOperationRequest: executor.JobOperationRequest{
 			ExecutorName: c.options.ExecutorName,
 			JobID:        job.ID,
@@ -215,7 +215,7 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []int) (knownIDs, cancelI
 	// are talking to a pre-4.3 Sourcegraph API and that doesn't return canceled
 	// jobs as part of heartbeats.
 
-	cancelIDs, err = c.CanceledJobs(ctx, c.options.QueueName, jobIDs)
+	cancelIDs, err = c.CanceledJobs(ctx, jobIDs)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -257,7 +257,7 @@ func gatherMetrics(logger log.Logger, gatherer prometheus.Gatherer) (string, err
 }
 
 // TODO: Remove this in Sourcegraph 4.4.
-func (c *Client) CanceledJobs(ctx context.Context, queueName string, knownIDs []int) (canceledIDs []int, err error) {
+func (c *Client) CanceledJobs(ctx context.Context, knownIDs []int) (canceledIDs []int, err error) {
 	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/canceledJobs", c.options.QueueName), executor.CanceledJobsRequest{
 		KnownJobIDs:  knownIDs,
 		ExecutorName: c.options.ExecutorName,
@@ -273,7 +273,7 @@ func (c *Client) CanceledJobs(ctx context.Context, queueName string, knownIDs []
 	return canceledIDs, nil
 }
 
-func (c *Client) Ping(ctx context.Context, queueName string, jobIDs []int) (err error) {
+func (c *Client) Ping(ctx context.Context) (err error) {
 	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", c.options.QueueName), executor.HeartbeatRequest{
 		ExecutorName: c.options.ExecutorName,
 	})
@@ -291,7 +291,7 @@ func (c *Client) AddExecutionLogEntry(ctx context.Context, job executor.Job, ent
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.client.NewJSONJobRequest(http.MethodPost, fmt.Sprintf("%s/addExecutionLogEntry", c.options.QueueName), job.Token, executor.AddExecutionLogEntryRequest{
+	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/addExecutionLogEntry", c.options.QueueName), job.Token, executor.AddExecutionLogEntryRequest{
 		JobOperationRequest: executor.JobOperationRequest{
 			ExecutorName: c.options.ExecutorName,
 			JobID:        job.ID,
@@ -314,7 +314,7 @@ func (c *Client) UpdateExecutionLogEntry(ctx context.Context, job executor.Job, 
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.client.NewJSONJobRequest(http.MethodPost, fmt.Sprintf("%s/updateExecutionLogEntry", c.options.QueueName), job.Token, executor.UpdateExecutionLogEntryRequest{
+	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/updateExecutionLogEntry", c.options.QueueName), job.Token, executor.UpdateExecutionLogEntryRequest{
 		JobOperationRequest: executor.JobOperationRequest{
 			ExecutorName: c.options.ExecutorName,
 			JobID:        job.ID,

@@ -127,7 +127,7 @@ func connectToFrontend(logger log.Logger, queueClient *queue.Client, options Opt
 	defer signal.Stop(signals)
 
 	for {
-		err := queueClient.Ping(context.Background(), options.QueueName, nil)
+		err := queueClient.Ping(context.Background())
 		if err == nil {
 			logger.Debug("Connected to Sourcegraph instance")
 			return true

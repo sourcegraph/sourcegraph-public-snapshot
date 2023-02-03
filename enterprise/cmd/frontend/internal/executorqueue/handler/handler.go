@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
@@ -31,8 +30,6 @@ import (
 type ExecutorHandler interface {
 	// Name is the name of the queue the handler processes.
 	Name() string
-	// AuthMiddleware is the specific auth middleware for the queue.
-	AuthMiddleware(next http.Handler) http.Handler
 	// HandleDequeue retrieves the next executor.Job to be processed in the queue.
 	HandleDequeue(w http.ResponseWriter, r *http.Request)
 	// HandleAddExecutionLogEntry adds the log entry for the executor.Job.
@@ -96,107 +93,6 @@ func NewHandler[T workerutil.Record](
 
 func (h *handler[T]) Name() string {
 	return h.queueHandler.Name
-}
-
-func (h *handler[T]) AuthMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if h.validateJobRequest(w, r) {
-			next.ServeHTTP(w, r)
-		}
-	})
-}
-
-func (h *handler[T]) validateJobRequest(w http.ResponseWriter, r *http.Request) bool {
-	// Read the body and re-set the body, so we can parse the request payload.
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		log15.Error("failed to read request body", "err", err)
-		http.Error(w, "Failed to read request body", http.StatusInternalServerError)
-		return false
-	}
-	r.Body = io.NopCloser(bytes.NewBuffer(body))
-
-	if len(body) == 0 {
-		log15.Error("no request body provided")
-		http.Error(w, "No request body provided", http.StatusBadRequest)
-		return false
-	}
-
-	// Every job requests has the basics. Parse out the info we need to see whether the request is valid/authenticated.
-	var payload executor.JobOperationRequest
-	if err = json.Unmarshal(body, &payload); err != nil {
-		log15.Error("failed to parse request body", "err", err)
-		http.Error(w, "Failed to parse request body", http.StatusBadRequest)
-		return false
-	}
-
-	// Since the payload partially deserialize, ensure the worker hostname is valid.
-	if err = validateWorkerHostname(payload.ExecutorName); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return false
-	}
-
-	// Get the auth token from the Authorization header.
-	var tokenType string
-	var authToken string
-	if headerValue := r.Header.Get("Authorization"); headerValue != "" {
-		parts := strings.Split(headerValue, " ")
-		if len(parts) != 2 {
-			http.Error(w, fmt.Sprintf(`HTTP Authorization request header value must be of the following form: '%s "TOKEN"' or '%s TOKEN'`, "Bearer", "token-executor"), http.StatusUnauthorized)
-			return false
-		}
-		// Check what the token type is. For backwards compatibility sake, we should also accept the general executor
-		// access token.
-		tokenType = parts[0]
-		if tokenType != "Bearer" && tokenType != "token-executor" {
-			http.Error(w, fmt.Sprintf("unrecognized HTTP Authorization request header scheme (supported values: %q, %q)", "Bearer", "token-executor"), http.StatusUnauthorized)
-			return false
-		}
-
-		authToken = parts[1]
-	}
-	if authToken == "" {
-		http.Error(w, "no token value in the HTTP Authorization request header", http.StatusUnauthorized)
-		return false
-	}
-
-	// If the general executor access token was provided, simply check the value.
-	if tokenType == "token-executor" {
-		if authToken == conf.SiteConfig().ExecutorsAccessToken {
-			return true
-		} else {
-			w.WriteHeader(http.StatusForbidden)
-			return false
-		}
-	}
-
-	jobToken, err := h.jobTokenStore.GetByToken(r.Context(), authToken)
-	if err != nil {
-		log15.Error("failed to retrieve token", "err", err)
-		http.Error(w, "invalid token", http.StatusUnauthorized)
-		return false
-	}
-
-	// Ensure the token was generated for the correct job.
-	if jobToken.JobId != int64(payload.JobID) {
-		log15.Error("job ID does not match")
-		http.Error(w, "invalid token", http.StatusForbidden)
-		return false
-	}
-	// Ensure the token was generated for the correct queue.
-	if jobToken.Queue != mux.Vars(r)["queueName"] {
-		log15.Error("queue name does not match")
-		http.Error(w, "invalid token", http.StatusForbidden)
-		return false
-	}
-	// Ensure the token came from a legit executor instance.
-	if _, _, err = h.executorStore.GetByHostname(r.Context(), payload.ExecutorName); err != nil {
-		log15.Error("failed to lookup executor by hostname", "err", err)
-		http.Error(w, "invalid token", http.StatusUnauthorized)
-		return false
-	}
-
-	return true
 }
 
 func (h *handler[T]) HandleDequeue(w http.ResponseWriter, r *http.Request) {
@@ -264,7 +160,7 @@ func (h *handler[T]) dequeue(ctx context.Context, queueName string, metadata exe
 		job.Version = 2
 	}
 
-	token, err := h.jobTokenStore.Create(ctx, job.ID, queueName)
+	token, err := h.jobTokenStore.Create(ctx, job.ID, queueName, job.RepositoryName)
 	if err != nil {
 		// Maybe the token already exists (executor may have dies midway though processing the Job)?
 		tokenExists, existsErr := h.jobTokenStore.Exists(ctx, job.ID, queueName)

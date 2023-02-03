@@ -97,7 +97,6 @@ func TestSetupJobRoutes(t *testing.T) {
 			path:               "/test/addExecutionLogEntry",
 			expectedStatusCode: http.StatusOK,
 			expectationsFunc: func(h *testExecutorHandler) {
-				h.On("AuthMiddleware").Once()
 				h.On("HandleAddExecutionLogEntry").Once()
 			},
 		},
@@ -107,7 +106,6 @@ func TestSetupJobRoutes(t *testing.T) {
 			path:               "/test/updateExecutionLogEntry",
 			expectedStatusCode: http.StatusOK,
 			expectationsFunc: func(h *testExecutorHandler) {
-				h.On("AuthMiddleware").Once()
 				h.On("HandleUpdateExecutionLogEntry").Once()
 			},
 		},
@@ -117,7 +115,6 @@ func TestSetupJobRoutes(t *testing.T) {
 			path:               "/test/markComplete",
 			expectedStatusCode: http.StatusOK,
 			expectationsFunc: func(h *testExecutorHandler) {
-				h.On("AuthMiddleware").Once()
 				h.On("HandleMarkComplete").Once()
 			},
 		},
@@ -127,7 +124,6 @@ func TestSetupJobRoutes(t *testing.T) {
 			path:               "/test/markErrored",
 			expectedStatusCode: http.StatusOK,
 			expectationsFunc: func(h *testExecutorHandler) {
-				h.On("AuthMiddleware").Once()
 				h.On("HandleMarkErrored").Once()
 			},
 		},
@@ -137,7 +133,6 @@ func TestSetupJobRoutes(t *testing.T) {
 			path:               "/test/markFailed",
 			expectedStatusCode: http.StatusOK,
 			expectationsFunc: func(h *testExecutorHandler) {
-				h.On("AuthMiddleware").Once()
 				h.On("HandleMarkFailed").Once()
 			},
 		},
@@ -182,13 +177,6 @@ type testExecutorHandler struct {
 
 func (t *testExecutorHandler) Name() string {
 	return "test"
-}
-
-func (t *testExecutorHandler) AuthMiddleware(next http.Handler) http.Handler {
-	t.Called()
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		next.ServeHTTP(w, r)
-	})
 }
 
 func (t *testExecutorHandler) HandleDequeue(w http.ResponseWriter, r *http.Request) {

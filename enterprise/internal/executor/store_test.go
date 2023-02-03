@@ -22,27 +22,37 @@ func TestJobTokenStore_Create(t *testing.T) {
 		name        string
 		jobId       int
 		queue       string
+		repo        string
 		expectedErr error
 	}{
 		{
 			name:  "Token created",
 			jobId: 10,
 			queue: "test",
+			repo:  "test-repo",
 		},
 		{
 			name:        "No jobId",
 			queue:       "test",
+			repo:        "test-repo",
 			expectedErr: errors.New("missing jobId"),
 		},
 		{
 			name:        "No queue",
 			jobId:       10,
+			repo:        "test-repo",
 			expectedErr: errors.New("missing queue"),
+		},
+		{
+			name:        "No repo",
+			jobId:       10,
+			queue:       "test",
+			expectedErr: errors.New("missing repo"),
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			token, err := tokenStore.Create(context.Background(), test.jobId, test.queue)
+			token, err := tokenStore.Create(context.Background(), test.jobId, test.queue, test.repo)
 			if test.expectedErr != nil {
 				require.Error(t, err)
 				assert.Equal(t, test.expectedErr.Error(), err.Error())
@@ -59,9 +69,9 @@ func TestJobTokenStore_Create_Duplicate(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	tokenStore := executor.NewJobTokenStore(&observation.TestContext, db)
 
-	_, err := tokenStore.Create(context.Background(), 10, "test")
+	_, err := tokenStore.Create(context.Background(), 10, "test", "repo")
 	require.NoError(t, err)
-	_, err = tokenStore.Create(context.Background(), 10, "test")
+	_, err = tokenStore.Create(context.Background(), 10, "test", "repo")
 	require.Error(t, err)
 }
 
@@ -69,7 +79,7 @@ func TestJobTokenStore_Regenerate(t *testing.T) {
 	tokenStore := newTokenStore(t)
 
 	// Create an existing token to test against
-	_, err := tokenStore.Create(context.Background(), 10, "test")
+	_, err := tokenStore.Create(context.Background(), 10, "test", "repo")
 	require.NoError(t, err)
 
 	tests := []struct {
@@ -108,7 +118,7 @@ func TestJobTokenStore_Exists(t *testing.T) {
 	tokenStore := newTokenStore(t)
 
 	// Create an existing token to test against
-	_, err := tokenStore.Create(context.Background(), 10, "test")
+	_, err := tokenStore.Create(context.Background(), 10, "test", "repo")
 	require.NoError(t, err)
 
 	tests := []struct {
@@ -149,7 +159,7 @@ func TestJobTokenStore_Get(t *testing.T) {
 	tokenStore := newTokenStore(t)
 
 	// Create an existing token to test against
-	_, err := tokenStore.Create(context.Background(), 10, "test")
+	_, err := tokenStore.Create(context.Background(), 10, "test", "repo")
 	require.NoError(t, err)
 
 	tests := []struct {
@@ -165,8 +175,9 @@ func TestJobTokenStore_Get(t *testing.T) {
 			queue: "test",
 			expectedJobToken: executor.JobToken{
 				Id:    1,
-				JobId: 10,
+				JobID: 10,
 				Queue: "test",
+				Repo:  "repo",
 			},
 		},
 		{
@@ -184,13 +195,15 @@ func TestJobTokenStore_Get(t *testing.T) {
 				assert.Equal(t, test.expectedErr.Error(), err.Error())
 				assert.Zero(t, jobToken.Id)
 				assert.Empty(t, jobToken.Value)
-				assert.Zero(t, jobToken.JobId)
+				assert.Zero(t, jobToken.JobID)
 				assert.Empty(t, jobToken.Queue)
+				assert.Empty(t, jobToken.Repo)
 			} else {
 				require.NoError(t, err)
 				assert.Equal(t, test.expectedJobToken.Id, jobToken.Id)
-				assert.Equal(t, test.expectedJobToken.JobId, jobToken.JobId)
+				assert.Equal(t, test.expectedJobToken.JobID, jobToken.JobID)
 				assert.Equal(t, test.expectedJobToken.Queue, jobToken.Queue)
+				assert.Equal(t, test.expectedJobToken.Repo, jobToken.Repo)
 				assert.NotEmpty(t, jobToken.Value)
 			}
 		})
@@ -201,7 +214,7 @@ func TestJobTokenStore_GetByToken(t *testing.T) {
 	tokenStore := newTokenStore(t)
 
 	// Create an existing token to test against
-	token, err := tokenStore.Create(context.Background(), 10, "test")
+	token, err := tokenStore.Create(context.Background(), 10, "test", "repo")
 	require.NoError(t, err)
 	require.NotEmpty(t, token)
 
@@ -216,8 +229,9 @@ func TestJobTokenStore_GetByToken(t *testing.T) {
 			token: token,
 			expectedJobToken: executor.JobToken{
 				Id:    1,
-				JobId: 10,
+				JobID: 10,
 				Queue: "test",
+				Repo:  "repo",
 			},
 		},
 		{
@@ -234,13 +248,15 @@ func TestJobTokenStore_GetByToken(t *testing.T) {
 				assert.Equal(t, test.expectedErr.Error(), err.Error())
 				assert.Zero(t, jobToken.Id)
 				assert.Empty(t, jobToken.Value)
-				assert.Zero(t, jobToken.JobId)
+				assert.Zero(t, jobToken.JobID)
 				assert.Empty(t, jobToken.Queue)
+				assert.Empty(t, jobToken.Repo)
 			} else {
 				require.NoError(t, err)
 				assert.Equal(t, test.expectedJobToken.Id, jobToken.Id)
-				assert.Equal(t, test.expectedJobToken.JobId, jobToken.JobId)
+				assert.Equal(t, test.expectedJobToken.JobID, jobToken.JobID)
 				assert.Equal(t, test.expectedJobToken.Queue, jobToken.Queue)
+				assert.Equal(t, test.expectedJobToken.Repo, jobToken.Repo)
 				assert.NotEmpty(t, jobToken.Value)
 			}
 		})
@@ -251,7 +267,7 @@ func TestJobTokenStore_Delete(t *testing.T) {
 	tokenStore := newTokenStore(t)
 
 	// Create an existing token to test against
-	_, err := tokenStore.Create(context.Background(), 10, "test")
+	_, err := tokenStore.Create(context.Background(), 10, "test", "repo")
 	require.NoError(t, err)
 
 	tests := []struct {

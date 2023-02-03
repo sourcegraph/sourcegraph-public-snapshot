@@ -28,6 +28,7 @@ func (h *handler) prepareWorkspace(
 			commandRunner,
 			commandLogger,
 			workspace.CloneOptions{
+				ExecutorName:   h.options.WorkerOptions.WorkerHostname,
 				EndpointURL:    h.options.QueueOptions.BaseClientOptions.EndpointOptions.URL,
 				GitServicePath: h.options.GitServicePath,
 				ExecutorToken:  h.options.QueueOptions.BaseClientOptions.EndpointOptions.Token,
@@ -43,6 +44,7 @@ func (h *handler) prepareWorkspace(
 		commandRunner,
 		commandLogger,
 		workspace.CloneOptions{
+			ExecutorName:   h.options.WorkerOptions.WorkerHostname,
 			EndpointURL:    h.options.QueueOptions.BaseClientOptions.EndpointOptions.URL,
 			GitServicePath: h.options.GitServicePath,
 			ExecutorToken:  h.options.QueueOptions.BaseClientOptions.EndpointOptions.Token,

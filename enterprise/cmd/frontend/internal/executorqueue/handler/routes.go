@@ -26,5 +26,4 @@ func SetupJobRoutes(handler ExecutorHandler, router *mux.Router) {
 	subRouter.Path("/markComplete").Methods(http.MethodPost).HandlerFunc(handler.HandleMarkComplete)
 	subRouter.Path("/markErrored").Methods(http.MethodPost).HandlerFunc(handler.HandleMarkErrored)
 	subRouter.Path("/markFailed").Methods(http.MethodPost).HandlerFunc(handler.HandleMarkFailed)
-	subRouter.Use(handler.AuthMiddleware)
 }

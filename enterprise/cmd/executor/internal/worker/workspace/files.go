@@ -18,9 +18,9 @@ import (
 // FilesStore handles interactions with the file store.
 type FilesStore interface {
 	// Exists determines if the file exists.
-	Exists(ctx context.Context, bucket string, key string) (bool, error)
+	Exists(ctx context.Context, job executor.Job, bucket string, key string) (bool, error)
 	// Get retrieves the file.
-	Get(ctx context.Context, bucket string, key string) (io.ReadCloser, error)
+	Get(ctx context.Context, job executor.Job, bucket string, key string) (io.ReadCloser, error)
 }
 
 func prepareScripts(
@@ -66,7 +66,7 @@ func prepareScripts(
 		workspaceFilesByPath[path] = buildScript(dockerStep)
 	}
 
-	if err := writeFiles(ctx, filesStore, workspaceFilesByPath, commandLogger); err != nil {
+	if err := writeFiles(ctx, filesStore, job, workspaceFilesByPath, commandLogger); err != nil {
 		return nil, errors.Wrap(err, "failed to write virtual machine files")
 	}
 
@@ -120,7 +120,7 @@ func scriptNameFromJobStep(job executor.Job, i int) string {
 }
 
 // writeFiles writes to the filesystem the content in the given map.
-func writeFiles(ctx context.Context, store FilesStore, workspaceFileContentsByPath map[string]workspaceFile, logger command.Logger) (err error) {
+func writeFiles(ctx context.Context, store FilesStore, job executor.Job, workspaceFileContentsByPath map[string]workspaceFile, logger command.Logger) (err error) {
 	// Bail out early if nothing to do, we don't need to spawn an empty log group.
 	if len(workspaceFileContentsByPath) == 0 {
 		return nil
@@ -148,7 +148,7 @@ func writeFiles(ctx context.Context, store FilesStore, workspaceFileContentsByPa
 		// Log how long it takes to write the files
 		start := time.Now()
 		if store != nil && wf.bucket != "" && wf.key != "" {
-			src, err = store.Get(ctx, wf.bucket, wf.key)
+			src, err = store.Get(ctx, job, wf.bucket, wf.key)
 			if err != nil {
 				return err
 			}

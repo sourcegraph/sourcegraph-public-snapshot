@@ -41,7 +41,7 @@ type MockJobTokenStore struct {
 func NewMockJobTokenStore() *MockJobTokenStore {
 	return &MockJobTokenStore{
 		CreateFunc: &JobTokenStoreCreateFunc{
-			defaultHook: func(context.Context, int, string) (r0 string, r1 error) {
+			defaultHook: func(context.Context, int, string, string) (r0 string, r1 error) {
 				return
 			},
 		},
@@ -78,7 +78,7 @@ func NewMockJobTokenStore() *MockJobTokenStore {
 func NewStrictMockJobTokenStore() *MockJobTokenStore {
 	return &MockJobTokenStore{
 		CreateFunc: &JobTokenStoreCreateFunc{
-			defaultHook: func(context.Context, int, string) (string, error) {
+			defaultHook: func(context.Context, int, string, string) (string, error) {
 				panic("unexpected invocation of MockJobTokenStore.Create")
 			},
 		},
@@ -139,23 +139,23 @@ func NewMockJobTokenStoreFrom(i JobTokenStore) *MockJobTokenStore {
 // JobTokenStoreCreateFunc describes the behavior when the Create method of
 // the parent MockJobTokenStore instance is invoked.
 type JobTokenStoreCreateFunc struct {
-	defaultHook func(context.Context, int, string) (string, error)
-	hooks       []func(context.Context, int, string) (string, error)
+	defaultHook func(context.Context, int, string, string) (string, error)
+	hooks       []func(context.Context, int, string, string) (string, error)
 	history     []JobTokenStoreCreateFuncCall
 	mutex       sync.Mutex
 }
 
 // Create delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockJobTokenStore) Create(v0 context.Context, v1 int, v2 string) (string, error) {
-	r0, r1 := m.CreateFunc.nextHook()(v0, v1, v2)
-	m.CreateFunc.appendCall(JobTokenStoreCreateFuncCall{v0, v1, v2, r0, r1})
+func (m *MockJobTokenStore) Create(v0 context.Context, v1 int, v2 string, v3 string) (string, error) {
+	r0, r1 := m.CreateFunc.nextHook()(v0, v1, v2, v3)
+	m.CreateFunc.appendCall(JobTokenStoreCreateFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Create method of the
 // parent MockJobTokenStore instance is invoked and the hook queue is empty.
-func (f *JobTokenStoreCreateFunc) SetDefaultHook(hook func(context.Context, int, string) (string, error)) {
+func (f *JobTokenStoreCreateFunc) SetDefaultHook(hook func(context.Context, int, string, string) (string, error)) {
 	f.defaultHook = hook
 }
 
@@ -163,7 +163,7 @@ func (f *JobTokenStoreCreateFunc) SetDefaultHook(hook func(context.Context, int,
 // Create method of the parent MockJobTokenStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *JobTokenStoreCreateFunc) PushHook(hook func(context.Context, int, string) (string, error)) {
+func (f *JobTokenStoreCreateFunc) PushHook(hook func(context.Context, int, string, string) (string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -172,19 +172,19 @@ func (f *JobTokenStoreCreateFunc) PushHook(hook func(context.Context, int, strin
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *JobTokenStoreCreateFunc) SetDefaultReturn(r0 string, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string) (string, error) {
+	f.SetDefaultHook(func(context.Context, int, string, string) (string, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *JobTokenStoreCreateFunc) PushReturn(r0 string, r1 error) {
-	f.PushHook(func(context.Context, int, string) (string, error) {
+	f.PushHook(func(context.Context, int, string, string) (string, error) {
 		return r0, r1
 	})
 }
 
-func (f *JobTokenStoreCreateFunc) nextHook() func(context.Context, int, string) (string, error) {
+func (f *JobTokenStoreCreateFunc) nextHook() func(context.Context, int, string, string) (string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -226,6 +226,9 @@ type JobTokenStoreCreateFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 string
@@ -237,7 +240,7 @@ type JobTokenStoreCreateFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c JobTokenStoreCreateFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
