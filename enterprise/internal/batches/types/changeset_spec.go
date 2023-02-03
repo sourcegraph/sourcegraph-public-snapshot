@@ -25,7 +25,7 @@ func NewChangesetSpecFromRaw(rawSpec string) (*ChangesetSpec, error) {
 
 func NewChangesetSpecFromSpec(spec *batcheslib.ChangesetSpec) (*ChangesetSpec, error) {
 	var baseRepoID api.RepoID
-	err := relay.UnmarshalSpec(graphql.ID(spec.BaseRepository), baseRepoID)
+	err := relay.UnmarshalSpec(graphql.ID(spec.BaseRepository), &baseRepoID)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func NewChangesetSpecFromSpec(spec *batcheslib.ChangesetSpec) (*ChangesetSpec, e
 		c.Type = ChangesetSpecTypeExisting
 	} else {
 		var headRepoID api.RepoID
-		err := relay.UnmarshalSpec(graphql.ID(spec.HeadRepository), headRepoID)
+		err := relay.UnmarshalSpec(graphql.ID(spec.HeadRepository), &headRepoID)
 		if err != nil {
 			return nil, err
 		}
