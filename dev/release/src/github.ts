@@ -9,14 +9,7 @@ import execa from 'execa'
 import fetch from 'node-fetch'
 import * as semver from 'semver'
 
-import {
-    readLine,
-    formatDate,
-    timezoneLink,
-    cacheFolder,
-    changelogURL,
-    getContainerRegistryCredential,
-} from './util'
+import { readLine, formatDate, timezoneLink, cacheFolder, changelogURL, getContainerRegistryCredential } from './util'
 const mkdtemp = promisify(original_mkdtemp)
 let githubPAT: string
 
@@ -652,7 +645,7 @@ export async function createTag(
     octokit: Octokit,
     workdir: string,
     { owner, repo, branch: rawBranch, tag: rawTag }: TagOptions,
-    dryRun: boolean,
+    dryRun: boolean
 ): Promise<void> {
     const branch = JSON.stringify(rawBranch)
     const tag = JSON.stringify(rawTag)

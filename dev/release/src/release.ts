@@ -21,7 +21,8 @@ import {
     commentOnIssue,
     queryIssues,
     IssueLabel,
-    createLatestRelease, cloneRepo,
+    createLatestRelease,
+    cloneRepo,
 } from './github'
 import { ensureEvent, getClient, EventOptions, calendarTime } from './google-calendar'
 import { postMessage, slackURL } from './slack'
@@ -393,8 +394,10 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 const client = await getAuthenticatedGitHubClient()
                 const { workdir } = await cloneRepo(client, owner, repo, { revision: branch, revisionMustExist: true })
 
-                execa.sync('git', ['fetch', '--tags'], {cwd: workdir})
-                const tags = execa.sync('git', ['--no-pager', 'tag', '-l', `v${release.version}-rc*`], {cwd: workdir}).stdout.split('\t')
+                execa.sync('git', ['fetch', '--tags'], { cwd: workdir })
+                const tags = execa
+                    .sync('git', ['--no-pager', 'tag', '-l', `v${release.version}-rc*`], { cwd: workdir })
+                    .stdout.split('\t')
                 console.log(tags)
 
                 let nextCandidate = 1
@@ -402,7 +405,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                     const num = parseInt(tag.slice(-1), 10)
                     console.log(num)
                     if (num >= nextCandidate) {
-                        nextCandidate = num+1
+                        nextCandidate = num + 1
                     }
                 }
                 const tag = `v${release.version}${arg === 'final' ? '' : `-rc.${nextCandidate}`}`
@@ -417,7 +420,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                         branch,
                         tag,
                     },
-                    config.dryRun.tags || false,
+                    config.dryRun.tags || false
                 )
                 console.log(`To check the status of the build, run:\nsg ci status -branch ${tag} --wait\n`)
             } catch (error) {
@@ -432,7 +435,11 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         run: (config, candidate) => {
             // fetchTags()
             const octokit = getAuthenticatedGitHubClient()
-            octokit.then(kit => kit.repos.listTags({owner: 'sourcegraph', repo:'sourcegraph'}).then(tags => console.log(tags))).catch(error => console.log(error))
+            octokit
+                .then(kit =>
+                    kit.repos.listTags({ owner: 'sourcegraph', repo: 'sourcegraph' }).then(tags => console.log(tags))
+                )
+                .catch(error => console.log(error))
         },
     },
     {
@@ -732,7 +739,10 @@ Batch change: ${batchChangeURL}`,
             ]) {
                 try {
                     const client = await getAuthenticatedGitHubClient()
-                    const { workdir } = await cloneRepo(client, owner, repo, { revision: branch, revisionMustExist: true })
+                    const { workdir } = await cloneRepo(client, owner, repo, {
+                        revision: branch,
+                        revisionMustExist: true,
+                    })
                     await createTag(
                         client,
                         workdir,
