@@ -68,13 +68,12 @@ import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
 import { fetchBlob, fetchStencil } from './backend'
+import { LegacyBlob } from './LegacyBlob'
 import { BlobLoadingSpinner } from './BlobLoadingSpinner'
 import { Blob as CodeMirrorBlob, type BlobInfo } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
 import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
-
-const LegacyBlob = lazyComponent(() => import('./LegacyBlob'), 'LegacyBlob')
 
 import styles from './BlobPage.module.scss'
 

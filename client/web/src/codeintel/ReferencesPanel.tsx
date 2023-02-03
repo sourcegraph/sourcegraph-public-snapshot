@@ -32,7 +32,6 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import {
     RepoSpec,
     RevisionSpec,
@@ -61,6 +60,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
+import { LegacyBlob } from '../repo/blob/LegacyBlob'
 import { Blob as CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
 import * as BlobAPI from '../repo/blob/use-blob-store'
 import { HoverThresholdProps } from '../repo/RepoContainer'
@@ -77,8 +77,6 @@ import { isDefined } from './util/helpers'
 import { CodeIntelligenceProps } from '.'
 
 import styles from './ReferencesPanel.module.scss'
-
-const LegacyBlob = lazyComponent(() => import('../repo/blob/LegacyBlob'), 'LegacyBlob')
 
 type Token = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
 
