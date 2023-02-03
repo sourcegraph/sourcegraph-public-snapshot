@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { mdiCloudDownload, mdiCog, mdiFileDocumentOutline } from '@mdi/js'
+import { mdiCog, mdiFileDocumentOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
