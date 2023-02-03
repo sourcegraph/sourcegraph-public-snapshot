@@ -315,7 +315,7 @@ func (s BitbucketServerSource) callAndRetryIfOutdated(ctx context.Context, c *Ch
 // exists and creating it if it doesn't. If namespace is not provided, the fork will be in
 // the currently authenticated user's namespace. If name is not provided, the fork will be
 // named with the default Sourcegraph convention: "${original-namespace}-${original-name}"
-func (s BitbucketServerSource) GetFork(ctx context.Context, targetRepo *types.Repo, ns *string, n *string) (*types.Repo, error) {
+func (s BitbucketServerSource) GetFork(ctx context.Context, targetRepo *types.Repo, ns, n *string) (*types.Repo, error) {
 	var namespace string
 	if ns != nil {
 		namespace = *ns

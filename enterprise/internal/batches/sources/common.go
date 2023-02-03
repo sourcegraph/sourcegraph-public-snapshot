@@ -56,7 +56,7 @@ type ForkableChangesetSource interface {
 	// will be in the currently authenticated user's namespace. If name is not provided,
 	// the fork will be named with the default Sourcegraph convention:
 	// "${original-namespace}-${original-name}"
-	GetFork(ctx context.Context, targetRepo *types.Repo, namespace *string, name *string) (*types.Repo, error)
+	GetFork(ctx context.Context, targetRepo *types.Repo, namespace, name *string) (*types.Repo, error)
 }
 
 // A ChangesetSource can load the latest state of a list of Changesets.

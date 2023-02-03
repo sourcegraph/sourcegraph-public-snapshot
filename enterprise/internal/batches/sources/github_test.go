@@ -615,7 +615,7 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 	})
 }
 
-func TestGithubSource_GetUserFork(t *testing.T) {
+func TestGithubSource_GetFork(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("failures", func(t *testing.T) {
@@ -623,18 +623,6 @@ func TestGithubSource_GetUserFork(t *testing.T) {
 			targetRepo *types.Repo
 			client     githubClientFork
 		}{
-			"nil metadata": {
-				targetRepo: &types.Repo{
-					Metadata: nil,
-				},
-				client: nil,
-			},
-			"invalid metadata": {
-				targetRepo: &types.Repo{
-					Metadata: []string{},
-				},
-				client: nil,
-			},
 			"invalid NameWithOwner": {
 				targetRepo: &types.Repo{
 					Metadata: &github.Repository{
@@ -653,7 +641,7 @@ func TestGithubSource_GetUserFork(t *testing.T) {
 			},
 		} {
 			t.Run(name, func(t *testing.T) {
-				fork, err := githubGetUserFork(ctx, tc.targetRepo, tc.client, nil)
+				fork, err := getGitHubForkInternal(ctx, tc.targetRepo, tc.client, nil, nil)
 				assert.Nil(t, fork)
 				assert.NotNil(t, err)
 			})
@@ -670,6 +658,8 @@ func TestGithubSource_GetUserFork(t *testing.T) {
 			forkRepo      *github.Repository
 			namespace     *string
 			wantNamespace string
+			name          *string
+			wantName      string
 			client        githubClientFork
 		}{
 			"no namespace": {
@@ -684,10 +674,11 @@ func TestGithubSource_GetUserFork(t *testing.T) {
 						},
 					},
 				},
-				forkRepo:      &github.Repository{NameWithOwner: user + "/bar"},
+				forkRepo:      &github.Repository{NameWithOwner: user + "/user-bar", IsFork: true},
 				namespace:     nil,
 				wantNamespace: user,
-				client:        &mockGithubClientFork{fork: &github.Repository{NameWithOwner: user + "/bar"}},
+				wantName:      user + "-bar",
+				client:        &mockGithubClientFork{fork: &github.Repository{NameWithOwner: user + "/user-bar", IsFork: true}},
 			},
 			"with namespace": {
 				targetRepo: &types.Repo{
@@ -701,22 +692,45 @@ func TestGithubSource_GetUserFork(t *testing.T) {
 						},
 					},
 				},
-				forkRepo:      &github.Repository{NameWithOwner: org + "/bar"},
+				forkRepo:      &github.Repository{NameWithOwner: org + "/" + org + "-bar", IsFork: true},
 				namespace:     &org,
 				wantNamespace: org,
+				wantName:      org + "-bar",
 				client: &mockGithubClientFork{
-					fork:    &github.Repository{NameWithOwner: org + "/bar"},
+					fork:    &github.Repository{NameWithOwner: org + "/" + org + "-bar", IsFork: true},
+					wantOrg: &org,
+				},
+			},
+			"with namespace and name": {
+				targetRepo: &types.Repo{
+					Metadata: &github.Repository{
+						NameWithOwner: "foo/bar",
+					},
+					Sources: map[string]*types.SourceInfo{
+						urn: {
+							ID:       urn,
+							CloneURL: "https://github.com/foo/bar",
+						},
+					},
+				},
+				forkRepo:      &github.Repository{NameWithOwner: org + "/custom-bar", IsFork: true},
+				namespace:     &org,
+				wantNamespace: org,
+				name:          strPtr("custom-bar"),
+				wantName:      "custom-bar",
+				client: &mockGithubClientFork{
+					fork:    &github.Repository{NameWithOwner: org + "/custom-bar", IsFork: true},
 					wantOrg: &org,
 				},
 			},
 		} {
 			t.Run(name, func(t *testing.T) {
-				fork, err := githubGetUserFork(ctx, tc.targetRepo, tc.client, tc.namespace)
+				fork, err := getGitHubForkInternal(ctx, tc.targetRepo, tc.client, tc.namespace, tc.name)
 				assert.Nil(t, err)
 				assert.NotNil(t, fork)
 				assert.NotEqual(t, fork, tc.targetRepo)
 				assert.Equal(t, tc.forkRepo, fork.Metadata)
-				assert.Equal(t, fork.Sources[urn].CloneURL, "https://github.com/"+tc.wantNamespace+"/bar")
+				assert.Equal(t, fork.Sources[urn].CloneURL, "https://github.com/"+tc.wantNamespace+"/"+tc.wantName)
 			})
 		}
 	})
