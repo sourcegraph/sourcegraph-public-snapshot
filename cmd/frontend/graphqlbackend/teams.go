@@ -214,7 +214,6 @@ type teamMemberListCursor struct {
 
 // applyArgs unmarshals query conditions and limites set in `ListTeamMembersArgs`
 // into `teamMemberConnection` fields for convenient use in database query.
-// TODO: Consider a way merging this with the other `applyArgs` method.
 func (r *teamMemberConnection) applyArgs(args *ListTeamMembersArgs) error {
 	if args.After != nil && *args.After != "" {
 		cursorText, err := graphqlutil.DecodeCursor(args.After)
