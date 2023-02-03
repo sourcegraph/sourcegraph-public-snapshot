@@ -1,4 +1,5 @@
 import { Facet } from '@codemirror/state'
+
 import { BlobProps } from '../CodeMirrorBlob'
 
 /**
