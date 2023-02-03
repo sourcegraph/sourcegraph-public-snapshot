@@ -353,6 +353,47 @@ func TestPermissionSyncJobs_CancelQueuedJob(t *testing.T) {
 	require.True(t, errcode.IsNotFound(err))
 }
 
+func TestPermissionSyncJobs_SaveSyncResult(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	store := PermissionSyncJobsWith(logger, db)
+	reposStore := ReposWith(logger, db)
+
+	// Create repo.
+	repo1 := types.Repo{Name: "test-repo-1", ID: 101}
+	err := reposStore.Create(ctx, &repo1)
+	require.NoError(t, err)
+
+	// Creating result.
+	result := SetPermissionsResult{
+		Added:   1,
+		Removed: 2,
+		Found:   5,
+	}
+
+	// Adding a job.
+	err = store.CreateRepoSyncJob(ctx, repo1.ID, PermissionSyncJobOpts{Reason: ReasonManualUserSync})
+	require.NoError(t, err)
+
+	// Saving result should be successful.
+	err = store.SaveSyncResult(ctx, 1, &result)
+	require.NoError(t, err)
+
+	// Checking that all the results are set.
+	jobs, err := store.List(ctx, ListPermissionSyncJobOpts{RepoID: int(repo1.ID)})
+	require.NoError(t, err)
+	require.Len(t, jobs, 1)
+	require.Equal(t, 1, jobs[0].PermissionsAdded)
+	require.Equal(t, 2, jobs[0].PermissionsRemoved)
+	require.Equal(t, 5, jobs[0].PermissionsFound)
+}
+
 func TestPermissionSyncJobs_CascadeOnRepoDelete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

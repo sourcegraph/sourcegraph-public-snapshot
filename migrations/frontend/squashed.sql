@@ -3333,6 +3333,9 @@ CREATE TABLE permission_sync_jobs (
     invalidate_caches boolean DEFAULT false NOT NULL,
     cancellation_reason text,
     no_perms boolean DEFAULT false NOT NULL,
+    permissions_added integer DEFAULT 0 NOT NULL,
+    permissions_removed integer DEFAULT 0 NOT NULL,
+    permissions_found integer DEFAULT 0 NOT NULL,
     CONSTRAINT permission_sync_jobs_for_repo_or_user CHECK (((user_id IS NULL) <> (repository_id IS NULL)))
 );
 
