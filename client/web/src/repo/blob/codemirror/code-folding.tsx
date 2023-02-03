@@ -1,5 +1,5 @@
 import { foldEffect, foldGutter, foldKeymap, foldService } from '@codemirror/language'
-import { EditorState, Extension, Line, StateField } from '@codemirror/state'
+import { EditorState, Extension, StateField } from '@codemirror/state'
 import { EditorView, keymap, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { mdiMenuDown, mdiMenuRight } from '@mdi/js'
 import { createRoot } from 'react-dom/client'
@@ -19,9 +19,7 @@ enum CharCode {
 }
 
 /**
- * Returns:
- *  - -1 => the line consists of whitespace
- *  - otherwise => the indent level is returned value
+ * Returns the indent level or -1 if the line consists only of whitespace.
  */
 function computeIndentLevel(line: string, tabSize: number): number {
     let indent = 0
@@ -53,8 +51,8 @@ function computeIndentLevel(line: string, tabSize: number): number {
  *
  * Implements similar to [VSCode indent-based folding](https://sourcegraph.com/github.com/microsoft/vscode@e3d73a5a2fd03412d83887a073c9c71bad38e964/-/blob/src/vs/editor/contrib/folding/browser/indentRangeProvider.ts?L126-200) logic.
  */
-function computeFoldableRanges(state: EditorState): [Line, Line][] {
-    const ranges: [Line, Line][] = []
+function computeFoldableRanges(state: EditorState): Map<number, number> {
+    const ranges = new Map<number, number>()
     const previousRanges = [{ indent: -1, endAbove: state.doc.lines + 1 }]
 
     for (let lineNumber = state.doc.lines; lineNumber > 0; lineNumber--) {
@@ -76,7 +74,7 @@ function computeFoldableRanges(state: EditorState): [Line, Line][] {
             const endLineNumber = previous.endAbove - 1
             if (endLineNumber - lineNumber >= 1) {
                 // should be at least 2 lines
-                ranges.push([line, state.doc.line(endLineNumber)])
+                ranges.set(lineNumber, endLineNumber)
             }
         }
         if (previous.indent === indent) {
@@ -88,15 +86,16 @@ function computeFoldableRanges(state: EditorState): [Line, Line][] {
         }
     }
 
+    console.log(ranges)
     return ranges
 }
 
 /**
- * Stores foldable lines ranges.
+ * Stores foldable lines ranges as start line number to end line number map.
  *
  * Value is computed when field is initialized and never updated.
  */
-const foldingRanges = StateField.define<[Line, Line][]>({
+const foldingRanges = StateField.define<Map<number, number>>({
     create: computeFoldableRanges,
     update(value) {
         return value
@@ -105,16 +104,15 @@ const foldingRanges = StateField.define<[Line, Line][]>({
 
 function getFoldRange(state: EditorState, lineStart: number): { from: number; to: number } | null {
     const ranges = state.field(foldingRanges)
+    const startLine = state.doc.lineAt(lineStart)
+    const endLineNumber = ranges.get(startLine.number)
 
-    const range = ranges.find(([start]) => start.number === state.doc.lineAt(lineStart).number)
-
-    if (!range) {
+    if (endLineNumber === undefined) {
         return null
     }
 
-    const [start, end] = range
-
-    return { from: start.to, to: end.to }
+    const endLine = state.doc.line(endLineNumber)
+    return { from: startLine.to, to: endLine.to }
 }
 
 /**
