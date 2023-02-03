@@ -2,7 +2,7 @@
   "extends": "@sourcegraph/tsconfig",
   "compilerOptions": {
     "target": "es2020",
-    "module": "commonjs",
+    "module": "esnext",
     "allowJs": false,
     "moduleResolution": "node",
     "esModuleInterop": true,
