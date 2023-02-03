@@ -14,18 +14,12 @@ contents:
     - postgresql-12-contrib
     - libpq-12
 
+# TODO: Currently missing shadow package which would let us modify users and groups in the Dockerfile
+#       In the future, we can use accounts: and paths: directives to do that in this image
+
 accounts:
-  users:
-    - username: postgres
-      uid: 999
-  groups:
-    - groupname: postgres
-      gid: 999
-    - groupname: ping
-      gid: 99
   run-as: root
 
-# TODO: Test
 entrypoint:
   command: /var/lib/postgres/initdb/postgresql-entrypoint.sh postgres
 
@@ -36,14 +30,6 @@ environment:
   POSTGRES_DB: sg
 
 work-dir: /home/postgres
-
-# TODO: Do we need to chown /var/lib/postgresql and /var/run/postgresql as well?
-paths:
-  - path: /data/pgdata-12
-    type: directory
-    uid: 999
-    gid: 999
-    permissions: 777
 
 archs:
   - x86_64
