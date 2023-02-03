@@ -22,6 +22,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    // 30rem for the readme height + 1.5rem for the link that will be rendered
+    // below it and additional margin.
     height: 31.5rem;
 }
 
