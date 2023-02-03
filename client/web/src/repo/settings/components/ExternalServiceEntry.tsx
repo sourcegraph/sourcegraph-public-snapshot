@@ -2,7 +2,6 @@ import { FC } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
-import { RouteComponentProps } from 'react-router'
 
 import { useMutation } from '@sourcegraph/http-client'
 import { Alert, Button, ErrorAlert, Link, LoadingSpinner, renderError, Tooltip } from '@sourcegraph/wildcard'
@@ -21,7 +20,7 @@ import { RedirectionAlert } from './RedirectionAlert'
 
 import styles from './ExternalServiceEntry.module.scss'
 
-interface ExternalServiceEntryProps extends Pick<RouteComponentProps, 'history'> {
+interface ExternalServiceEntryProps {
     repo: SettingsAreaRepositoryFields
     service: SettingsAreaExternalServiceFields
     excludingDisabled: boolean

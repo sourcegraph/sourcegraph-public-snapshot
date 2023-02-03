@@ -433,9 +433,9 @@ func TestGetAndSaveUser(t *testing.T) {
 		usersStore.GetByVerifiedEmailFunc.SetDefaultReturn(nil, errNotFound)
 		externalAccountsStore := database.NewMockUserExternalAccountsStore()
 		externalAccountsStore.LookupUserAndSaveFunc.SetDefaultReturn(0, errNotFound)
-		externalAccountsStore.CreateUserAndSaveFunc.SetDefaultHook(func(ctx context.Context, _ database.NewUser, _ extsvc.AccountSpec, _ extsvc.AccountData) (int32, error) {
+		externalAccountsStore.CreateUserAndSaveFunc.SetDefaultHook(func(ctx context.Context, _ database.NewUser, _ extsvc.AccountSpec, _ extsvc.AccountData) (*types.User, error) {
 			require.True(t, actor.FromContext(ctx).SourcegraphOperator, "the actor should be a Sourcegraph operator")
-			return 1, nil
+			return &types.User{ID: 1}, nil
 		})
 		eventLogsStore := database.NewMockEventLogStore()
 		eventLogsStore.BulkInsertFunc.SetDefaultHook(func(ctx context.Context, _ []*database.Event) error {
@@ -655,22 +655,22 @@ func (m *mocks) LookupUserAndSave(_ context.Context, spec extsvc.AccountSpec, da
 }
 
 // CreateUserAndSave mocks database.ExternalAccounts.CreateUserAndSave
-func (m *mocks) CreateUserAndSave(_ context.Context, newUser database.NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUserID int32, err error) {
+func (m *mocks) CreateUserAndSave(_ context.Context, newUser database.NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUser *types.User, err error) {
 	if m.createUserAndSaveErr != nil {
-		return 0, m.createUserAndSaveErr
+		return &types.User{}, m.createUserAndSaveErr
 	}
 
 	// Check if username already exists
 	for _, u := range m.userInfos {
 		if u.user.Username == newUser.Username {
-			return 0, database.MockCannotCreateUserUsernameExistsErr
+			return &types.User{}, database.MockCannotCreateUserUsernameExistsErr
 		}
 	}
 	// Check if email already exists
 	for _, u := range m.userInfos {
 		for _, email := range u.emails {
 			if email == newUser.Email {
-				return 0, database.MockCannotCreateUserEmailExistsErr
+				return &types.User{}, database.MockCannotCreateUserEmailExistsErr
 			}
 		}
 	}
@@ -686,7 +686,7 @@ func (m *mocks) CreateUserAndSave(_ context.Context, newUser database.NewUser, s
 	// Save ext acct
 	m.savedExtAccts[userID] = append(m.savedExtAccts[userID], spec)
 
-	return userID, nil
+	return &types.User{ID: userID}, nil
 }
 
 // AssociateUserAndSave mocks database.ExternalAccounts.AssociateUserAndSave

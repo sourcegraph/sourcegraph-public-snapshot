@@ -36,6 +36,7 @@ import { getFilterFromURL, getUrlQuery, hasID, parseQueryInt } from './utils'
  */
 interface FilteredConnectionDisplayProps extends ConnectionNodesDisplayProps, ConnectionFormProps {
     navigate: NavigateFunction
+
     location: H.Location
 
     /** CSS class name for the root element. */
@@ -365,23 +366,24 @@ class InnerFilteredConnection<N, NP = {}, HP = {}, C extends Connection<N> = Con
                 .subscribe(
                     ({ connectionOrError, previousPage, ...rest }) => {
                         if (this.props.useURLQuery) {
+                            const { location, navigate } = this.props
                             const searchFragment = this.urlQuery({ visibleResultCount: previousPage.length })
                             const searchFragmentParams = new URLSearchParams(searchFragment)
                             searchFragmentParams.sort()
 
-                            const oldParams = new URLSearchParams(this.props.location.search)
+                            const oldParams = new URLSearchParams(location.search)
                             oldParams.sort()
 
                             if (!isEqual(Array.from(searchFragmentParams), Array.from(oldParams))) {
-                                this.props.navigate(
+                                navigate(
                                     {
                                         search: searchFragment,
-                                        hash: this.props.location.hash,
+                                        hash: location.hash,
                                     },
                                     {
                                         replace: true,
                                         // Do not throw away flash messages
-                                        state: this.props.location.state,
+                                        state: location.state,
                                     }
                                 )
                             }
