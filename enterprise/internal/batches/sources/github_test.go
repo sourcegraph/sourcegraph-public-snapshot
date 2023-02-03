@@ -467,6 +467,173 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 
 func TestGithubSource_GetFork(t *testing.T) {
 	ctx := context.Background()
+	urn := extsvc.URN(extsvc.KindGitHub, 1)
+
+	t.Run("vcr tests", func(t *testing.T) {
+		newGitHubRepo := func(urn, nameWithOwner, id string) *types.Repo {
+			return &types.Repo{
+				Metadata: &github.Repository{
+					ID:            id,
+					NameWithOwner: nameWithOwner,
+				},
+				Sources: map[string]*types.SourceInfo{
+					urn: {
+						ID:       urn,
+						CloneURL: "https://github.com/" + nameWithOwner,
+					},
+				},
+			}
+		}
+
+		type TCRepo struct{ name, namespace string }
+
+		failTestCases := []struct {
+			name   string
+			target TCRepo
+			fork   TCRepo
+			err    string
+		}{
+			// This test expects that:
+			// - The repo sourcegraph-testing/vcr-fork-test-repo exists and is not a fork.
+			// - The repo sourcegraph-vcr/vcr-fork-test-repo exists and is not a fork.
+			// Use credentials in 1password for "sourcegraph-vcr" to access or update this test.
+			{
+				name:   "not a fork",
+				target: TCRepo{name: "vcr-fork-test-repo", namespace: "sourcegraph-testing"},
+				fork:   TCRepo{name: "vcr-fork-test-repo", namespace: "sourcegraph-vcr"},
+				err:    "repo is not a fork",
+			},
+		}
+
+		for _, tc := range failTestCases {
+			tc := tc
+			tc.name = "GithubSource_GetFork_" + strings.ReplaceAll(tc.name, " ", "_")
+			t.Run(tc.name, func(t *testing.T) {
+				src, save := setup(t, ctx, tc.name)
+				defer save(t)
+				target := newGitHubRepo(urn, tc.target.namespace+"/"+tc.target.name, "123")
+
+				fork, err := src.GetFork(ctx, target, strPtr(tc.fork.namespace), strPtr(tc.fork.name))
+
+				assert.Nil(t, fork)
+				assert.ErrorContains(t, err, tc.err)
+			})
+		}
+
+		successTestCases := []struct {
+			name string
+			// True if changeset is already created on code host.
+			externalNameAndNamespace bool
+			target                   TCRepo
+			fork                     TCRepo
+		}{
+			// This test validates the behavior when `GetFork` is called without a
+			// namespace or name set, but a fork of the repo already exists in the user's
+			// namespace with the default fork name. `GetFork` should return the existing
+			// fork.
+			//
+			// This test expects that:
+			// - The repo sourcegraph-testing/vcr-fork-test-repo exists and is not a fork.
+			// - The repo sourcegraph-vcr/sourcegraph-testing-vcr-fork-test-repo-already-forked
+			//   exists and is a fork of it.
+			// - The current user is sourcegraph-vcr and the default fork naming convention
+			//   would produce the fork name "sourcegraph-testing-vcr-fork-test-repo-already-forked".
+			// Use credentials in 1password for "sourcegraph-vcr" to access or update this test.
+			{
+				name:                     "success with new changeset and existing fork",
+				externalNameAndNamespace: false,
+				target:                   TCRepo{name: "vcr-fork-test-repo-already-forked", namespace: "sourcegraph-testing"},
+				fork:                     TCRepo{name: "sourcegraph-testing-vcr-fork-test-repo-already-forked", namespace: "sourcegraph-vcr"},
+			},
+
+			// This test validates the behavior when `GetFork` is called without a
+			// namespace or name set and no fork of the repo exists in the user's
+			// namespace with the default fork name. `GetFork` should return the
+			// newly-created fork.
+			//
+			// This test expects that:
+			// - The repo sourcegraph-testing/vcr-fork-test-repo-not-forked exists and
+			//   is not a fork.
+			// - The repo sourcegraph-vcr/sourcegraph-testing-vcr-fork-test-repo-not-forked
+			//   does not exist.
+			// - The current user is sourcegraph-vcr and the default fork naming convention
+			//   would produce the fork name "sourcegraph-testing-vcr-fork-test-repo-not-forked".
+			// Use credentials in 1password for "sourcegraph-vcr" to access or update this test.
+			//
+			// NOTE: It is not possible to update this test and "success with existing
+			// changeset and new fork" at the same time.
+			{
+				name:                     "success with new changeset and new fork",
+				externalNameAndNamespace: false,
+				target:                   TCRepo{name: "vcr-fork-test-repo-not-forked", namespace: "sourcegraph-testing"},
+				fork:                     TCRepo{name: "sourcegraph-testing-vcr-fork-test-repo-not-forked", namespace: "sourcegraph-vcr"},
+			},
+
+			// This test validates the behavior when `GetFork` is called with a namespace
+			// and name both already set, and a fork of the repo already exists at that
+			// destination. `GetFork` should return the existing fork.
+			//
+			// This test expects that:
+			// - The repo sourcegraph-testing/vcr-fork-test-repo exists and is not a fork.
+			// - The repo sourcegraph-vcr/sourcegraph-testing-vcr-fork-test-repo-already-forked
+			//   exists and is a fork of it.
+			// Use credentials in 1password for "sourcegraph-vcr" to access or update this test.
+			{
+				name:                     "success with existing changeset and existing fork",
+				externalNameAndNamespace: true,
+				target:                   TCRepo{name: "vcr-fork-test-repo-already-forked", namespace: "sourcegraph-testing"},
+				fork:                     TCRepo{name: "sourcegraph-testing-vcr-fork-test-repo-already-forked", namespace: "sourcegraph-vcr"},
+			},
+
+			// This test validates the behavior when `GetFork` is called with a namespace
+			// and name both already set, but no fork of the repo already exists at that
+			// destination. This situation is only possible if the changeset and fork repo
+			// have been deleted on the code host since the changeset was created.
+			// `GetFork` should return the newly-created fork.
+			//
+			// This test expects that:
+			// - The repo sourcegraph-testing/vcr-fork-test-repo-not-forked exists and
+			//   is not a fork.
+			// - The repo sgtest/sourcegraph-testing-vcr-fork-test-repo-not-forked
+			//   does not exist.
+			// Use credentials in 1password for "sourcegraph-vcr" to access or update this test.
+			//
+			// NOTE: It is not possible to update this test and "success with existing
+			// changeset and new fork" at the same time.
+			{
+				name:                     "success with existing changeset and new fork",
+				externalNameAndNamespace: true,
+				target:                   TCRepo{name: "vcr-fork-test-repo-not-forked", namespace: "sourcegraph-testing"},
+				fork:                     TCRepo{name: "sourcegraph-testing-vcr-fork-test-repo-not-forked", namespace: "sgtest"},
+			},
+		}
+
+		for _, tc := range successTestCases {
+			tc := tc
+			tc.name = "GithubSource_GetFork_" + strings.ReplaceAll(tc.name, " ", "_")
+			t.Run(tc.name, func(t *testing.T) {
+				src, save := setup(t, ctx, tc.name)
+				defer save(t)
+				target := newGitHubRepo(urn, tc.target.namespace+"/"+tc.target.name, "123")
+
+				var fork *types.Repo
+				var err error
+				if tc.externalNameAndNamespace {
+					fork, err = src.GetFork(ctx, target, strPtr(tc.fork.namespace), strPtr(tc.fork.name))
+				} else {
+					fork, err = src.GetFork(ctx, target, nil, nil)
+				}
+
+				assert.Nil(t, err)
+				assert.NotNil(t, fork)
+				assert.NotEqual(t, fork, target)
+				assert.Equal(t, tc.fork.namespace+"/"+tc.fork.name, fork.Metadata.(*github.Repository).NameWithOwner)
+				assert.Equal(t, fork.Sources[urn].CloneURL, "https://github.com/"+tc.fork.namespace+"/"+tc.fork.name)
+
+				testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), fork)
+			})
+		}
+	})
 
 	t.Run("failures", func(t *testing.T) {
 		for name, tc := range map[string]struct {
