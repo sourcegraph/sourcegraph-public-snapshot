@@ -527,6 +527,36 @@ func TestPermissionSyncJobs_Pagination(t *testing.T) {
 	}
 }
 
+func TestPermissionSyncJobs_Count(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	user, err := db.Users().Create(ctx, NewUser{Username: "horse"})
+	require.NoError(t, err)
+
+	store := PermissionSyncJobsWith(logger, db)
+
+	// Create 10 sync jobs.
+	createSyncJobs(t, ctx, user.ID, store)
+
+	_, err = store.List(ctx, ListPermissionSyncJobOpts{})
+	require.NoError(t, err)
+
+	count, err := store.Count(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 10, count)
+
+	// Create 10 more sync jobs.
+	createSyncJobs(t, ctx, user.ID, store)
+	count, err = store.Count(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 20, count)
+}
+
 func createSyncJobs(t *testing.T, ctx context.Context, userID int32, store PermissionSyncJobStore) {
 	t.Helper()
 	clock := timeutil.NewFakeClock(time.Now(), 0)

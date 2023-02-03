@@ -86,6 +86,7 @@ type PermissionSyncJobStore interface {
 	CreateRepoSyncJob(ctx context.Context, repo api.RepoID, opts PermissionSyncJobOpts) error
 
 	List(ctx context.Context, opts ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error)
+	Count(ctx context.Context) (int, error)
 	CancelQueuedJob(ctx context.Context, reason string, id int) error
 	SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult) error
 }
@@ -396,6 +397,20 @@ func (s *permissionSyncJobStore) List(ctx context.Context, opts ListPermissionSy
 	}
 
 	return syncJobs, nil
+}
+
+const countPermissionSyncJobsQuery = `
+SELECT COUNT(*)
+FROM permission_sync_jobs
+`
+
+func (s *permissionSyncJobStore) Count(ctx context.Context) (int, error) {
+	q := sqlf.Sprintf(countPermissionSyncJobsQuery)
+	var count int
+	if err := s.QueryRow(ctx, q).Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 type PermissionSyncJob struct {
