@@ -137,6 +137,7 @@ func buildCandidateWolfiDockerImage(app, version, tag string, uploadSourcemaps b
 			bk.Env("DOCKER_BUILDKIT", "1"),
 			bk.Env("IMAGE", localImage),
 			bk.Env("VERSION", version),
+			bk.Agent("queue", "bazel"),
 		}
 
 		// Add Sentry environment variables if we are building off main branch
