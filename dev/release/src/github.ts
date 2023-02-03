@@ -114,22 +114,22 @@ interface IssueTemplateArguments {
 const getTemplates = () => {
     const releaseIssue: IssueTemplate = {
         owner: 'sourcegraph',
-        repo: 'handbook',
-        path: 'content/departments/engineering/dev/process/releases/release_issue_template.md',
+        repo: 'sourcegraph',
+        path: 'dev/release/templates/release_issue_template.md',
         titleSuffix: IssueTitleSuffix.RELEASE_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.RELEASE],
     }
     const patchReleaseIssue: IssueTemplate = {
         owner: 'sourcegraph',
-        repo: 'handbook',
-        path: 'content/departments/engineering/dev/process/releases/patch_release_issue_template.md',
+        repo: 'sourcegraph',
+        path: 'dev/release/templates/patch_release_issue_template.md',
         titleSuffix: IssueTitleSuffix.PATCH_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.PATCH],
     }
     const securityAssessmentIssue: IssueTemplate = {
         owner: 'sourcegraph',
-        repo: 'handbook',
-        path: 'content/departments/engineering/dev/process/releases/security_assessment.md',
+        repo: 'sourcegraph',
+        path: 'dev/release/templates/security_assessment.md',
         titleSuffix: IssueTitleSuffix.SECURITY_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.SECURITY_TEAM, IssueLabel.RELEASE_BLOCKER],
     }
