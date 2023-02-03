@@ -1,5 +1,6 @@
 import React, { useLayoutEffect } from 'react'
 
+import { History } from 'history'
 import ReactDOM from 'react-dom'
 import { ReplaySubject } from 'rxjs'
 
@@ -14,6 +15,7 @@ interface BlameColumnProps {
     blameHunks?: { current: BlameHunk[] | undefined; firstCommitDate: Date | undefined }
     isLightTheme: boolean
     codeViewElements: ReplaySubject<HTMLElement | null>
+    history: History
 }
 
 const getRowByLine = (line: number): HTMLTableRowElement | null | undefined =>
@@ -25,7 +27,7 @@ const selectRow = (line: number): void => getRowByLine(line)?.classList.add('hig
 const deselectRow = (line: number): void => getRowByLine(line)?.classList.remove('highlighted')
 
 export const BlameColumn = React.memo<BlameColumnProps>(
-    ({ isBlameVisible, codeViewElements, blameHunks, isLightTheme }) => {
+    ({ isBlameVisible, codeViewElements, blameHunks, history, isLightTheme }) => {
         /**
          * Array to store the DOM element and the blame hunk to render in it.
          * As blame decorations are displayed in the column view, we need to add a corresponding
@@ -124,6 +126,7 @@ export const BlameColumn = React.memo<BlameColumnProps>(
                         <BlameDecoration
                             line={index + 1}
                             blameHunk={blameHunk}
+                            history={history}
                             onSelect={selectRow}
                             onDeselect={deselectRow}
                             firstCommitDate={blameHunks?.firstCommitDate}

@@ -16,6 +16,7 @@ import {
     ViewUpdate,
     WidgetType,
 } from '@codemirror/view'
+import { History } from 'history'
 import { isEqual } from 'lodash'
 import { createRoot, Root } from 'react-dom/client'
 
@@ -23,6 +24,8 @@ import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMi
 
 import { BlameHunk, BlameHunkData } from '../../blame/useBlameHunks'
 import { BlameDecoration } from '../BlameDecoration'
+
+import { blobPropsFacet } from '.'
 
 const highlightedLineDecoration = Decoration.line({ class: 'highlighted-line' })
 const startOfHunkDecoration = Decoration.line({ class: 'border-top' })
@@ -49,6 +52,7 @@ const [hoveredLine, setHoveredLine] = createUpdateableField<number | null>(null,
 class BlameDecorationWidget extends WidgetType {
     private container: HTMLElement | null = null
     private reactRoot: Root | null = null
+    private state: { history: History }
 
     constructor(
         public view: EditorView,
@@ -60,6 +64,8 @@ class BlameDecorationWidget extends WidgetType {
         public readonly blameHunkMetadata: Omit<BlameHunkData, 'current'>
     ) {
         super()
+        const blobProps = this.view.state.facet(blobPropsFacet)
+        this.state = { history: blobProps.history }
     }
 
     /* eslint-disable-next-line id-length*/
@@ -77,6 +83,7 @@ class BlameDecorationWidget extends WidgetType {
                 <BlameDecoration
                     line={this.line ?? 0}
                     blameHunk={this.hunk}
+                    history={this.state.history}
                     onSelect={this.selectRow}
                     onDeselect={this.deselectRow}
                     firstCommitDate={this.blameHunkMetadata.firstCommitDate}
