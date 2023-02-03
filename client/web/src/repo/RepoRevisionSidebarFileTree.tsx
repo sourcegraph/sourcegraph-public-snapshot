@@ -8,7 +8,7 @@ import {
     mdiFolderArrowUp,
 } from '@mdi/js'
 import classNames from 'classnames'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -112,6 +112,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
     const [selectedIds, setSelectedIds] = useState<number[]>(defaultSelectedIds)
 
     const navigate = useNavigate()
+    const location = useLocation()
 
     const [defaultVariables] = useState({
         repoName: props.repoName,
@@ -127,11 +128,8 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
             ancestors: alwaysLoadAncestors,
         },
         onCompleted(data) {
-            const rootTreeUrl = data?.repository?.commit?.tree?.url
-            const entries = data?.repository?.commit?.tree?.entries
-            if (!entries || !rootTreeUrl) {
-                throw new Error('No entries or root data')
-            }
+            const rootTreeUrl = data?.repository?.commit?.tree?.url ?? location.pathname
+            const entries = data?.repository?.commit?.tree?.entries ?? []
             if (treeData === null) {
                 setTreeData(
                     appendTreeData(
@@ -174,6 +172,11 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
                 return
             }
 
+            // Bail out if we controlled the selection update.
+            if (selectedIds.length > 0 && selectedIds[0] === element.id) {
+                return
+            }
+
             // On the initial rendering, an onSelect event is fired for the
             // default node. We don't want to navigate to that node though.
             if (defaultSelectFiredRef.current === false && element.id === defaultNodeId) {
@@ -201,7 +204,15 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
             }
             setSelectedIds([element.id])
         },
-        [defaultNodeId, telemetryService, navigate, props.initialFilePathIsDirectory, initialFilePath, onExpandParent]
+        [
+            selectedIds,
+            defaultNodeId,
+            telemetryService,
+            navigate,
+            props.initialFilePathIsDirectory,
+            initialFilePath,
+            onExpandParent,
+        ]
     )
 
     // We need a mutable reference to the tree data since we don't want the
