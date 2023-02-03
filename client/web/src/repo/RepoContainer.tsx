@@ -3,7 +3,6 @@ import React, { FC, Suspense, useEffect, useMemo, useState } from 'react'
 import { mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { matchPath } from 'react-router'
 import { Location, useLocation, Route, Routes } from 'react-router-dom-v5-compat'
 import { NEVER, of } from 'rxjs'
@@ -303,7 +302,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
     // while returning empty repository for all other routes
     const isEmptyRepo = isRevisionNotFoundErrorLike(repoOrError)
 
-    // for repo errors beyond revision not found (aka empty repository)
+    // For repo errors beyond revision not found (aka empty repository)
     // we defer to RepoContainerError for every repo container request
     if (isError && !isEmptyRepo) {
         const viewerCanAdminister = !!authenticatedUser && authenticatedUser.siteAdmin
@@ -343,42 +342,11 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
             props.settingsCascade.final?.['perforce.codeHostToSwarmMap']) ||
         {}
 
-    /**
-     * `RepoContainerContextRoutes` depend on `repoOrError`. We render these routes only when
-     * the `repoOrError` value is resolved. If repoOrError resolves to error due to empty repository
-     * then we return Empty Repository
-     */
-    const getRepoContainerContextRoutes = (): React.ReactNode => {
-        if (repo) {
-            const repoContainerContext: RepoContainerContext = {
-                ...repoRevisionContainerContext,
-                repo,
-                resolvedRevisionOrError,
-                onDidUpdateExternalLinks: setExternalLinks,
-                repoName,
-            }
-
-            return [
-                ...repoContainerRoutes.map(
-                    ({ path, render, condition = () => true }) =>
-                        condition(repoContainerContext) && (
-                            <Route
-                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                path={repoSplat + path}
-                                element={render(repoContainerContext)}
-                            />
-                        )
-                ),
-                <Route key="hardcoded-key" element={<RepoPageNotFound />} />,
-            ]
-        }
-
-        if (repoOrError) {
-            // We cannot render these routes for an empty repository
-            return [<Route key="hardcoded-key" element={<EmptyRepo />} />]
-        }
-
-        return null
+    const repoContainerContext: Omit<RepoContainerContext, 'repo'> = {
+        ...repoRevisionContainerContext,
+        resolvedRevisionOrError,
+        onDidUpdateExternalLinks: setExternalLinks,
+        repoName,
     }
 
     return (
@@ -448,20 +416,42 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
             <ErrorBoundary location={location}>
                 <Suspense fallback={null}>
                     <Routes>
-                        {getRepoContainerContextRoutes()}
+                        {repoContainerRoutes.map(({ path, render, condition = () => true }) => (
+                            <Route
+                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                path={repoSplat + path}
+                                element={
+                                    /**
+                                     * `repoContainerRoutes` depend on `repo`. We render these routes only when
+                                     * the `repo` value is resolved. If repo resolves to error due to empty repository
+                                     * then we return Empty Repository.
+                                     */
+                                    repo && condition({ ...repoContainerContext, repo }) ? (
+                                        render({ ...repoContainerContext, repo })
+                                    ) : isEmptyRepo ? (
+                                        <EmptyRepo />
+                                    ) : null
+                                }
+                            />
+                        ))}
                         <Route
                             path={repoSplat + repoSettingsAreaPath}
+                            // Always render the `RepoSettingsArea` even for empty repo to allow side-admins access it.
                             element={<RepoSettingsArea {...repoRevisionContainerContext} repoName={repoName} />}
                         />
                         <Route
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                             path="*"
                             element={
-                                <RepoRevisionContainer
-                                    {...repoRevisionContainerContext}
-                                    {...childBreadcrumbSetters}
-                                    routes={props.repoRevisionContainerRoutes}
-                                />
+                                isEmptyRepo ? (
+                                    <EmptyRepo />
+                                ) : (
+                                    <RepoRevisionContainer
+                                        {...repoRevisionContainerContext}
+                                        {...childBreadcrumbSetters}
+                                        routes={props.repoRevisionContainerRoutes}
+                                    />
+                                )
                             }
                         />
                     </Routes>
@@ -510,10 +500,6 @@ function redirectToExternalHost(externalRedirectURL: string): void {
     redirectURL.protocol = externalHostURL.protocol
     window.location.replace(redirectURL.href)
 }
-
-const RepoPageNotFound: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="The repository page was not found." />
-)
 
 const EmptyRepo: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage icon={RepoQuestionIcon} title="Empty repository" />
