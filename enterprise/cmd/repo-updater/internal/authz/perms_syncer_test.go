@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -864,47 +863,6 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestPermsSyncer_waitForRateLimit(t *testing.T) {
-	ctx := context.Background()
-	t.Run("no rate limit registry", func(t *testing.T) {
-		s := NewPermsSyncer(logtest.Scoped(t), nil, nil, nil, nil, nil)
-
-		ctx, cancel := context.WithTimeout(ctx, time.Second)
-		defer cancel()
-		err := s.waitForRateLimit(ctx, "https://github.com/", 100000, "user")
-		if err != nil {
-			t.Fatal(err)
-		}
-	})
-
-	t.Run("enough quota available", func(t *testing.T) {
-		rateLimiterRegistry := ratelimit.NewRegistry()
-		s := NewPermsSyncer(logtest.Scoped(t), nil, nil, nil, nil, rateLimiterRegistry)
-
-		ctx, cancel := context.WithTimeout(ctx, time.Second)
-		defer cancel()
-		err := s.waitForRateLimit(ctx, "https://github.com/", 1, "user")
-		if err != nil {
-			t.Fatal(err)
-		}
-	})
-
-	t.Run("not enough quota available", func(t *testing.T) {
-		rateLimiterRegistry := ratelimit.NewRegistry()
-		l := rateLimiterRegistry.Get("extsvc:github:1")
-		l.SetLimit(1)
-		l.SetBurst(1)
-		s := NewPermsSyncer(logtest.Scoped(t), nil, nil, nil, nil, rateLimiterRegistry)
-
-		ctx, cancel := context.WithTimeout(ctx, time.Second)
-		defer cancel()
-		err := s.waitForRateLimit(ctx, "extsvc:github:1", 10, "user")
-		if err == nil {
-			t.Fatalf("err: want %v but got nil", context.Canceled)
-		}
-	})
 }
 
 func TestPermsSyncer_syncPerms(t *testing.T) {

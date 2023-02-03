@@ -384,10 +384,6 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 			continue
 		}
 
-		if err := s.waitForRateLimit(ctx, provider.URN(), 1, "user"); err != nil {
-			return results, errors.Wrap(err, "wait for rate limiter")
-		}
-
 		acctLogger.Debug("update GitHub App installation access", log.Int32("accountID", acct.ID))
 
 		// FetchUserPerms makes API requests using a client that will deal with the token
@@ -700,10 +696,6 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	pendingAccountIDsSet := make(map[string]struct{})
 	accountIDsToUserIDs := make(map[string]int32) // Account ID -> User ID
 
-	if err := s.waitForRateLimit(ctx, provider.URN(), 1, "repo"); err != nil {
-		return result, providerStates, errors.Wrap(err, "wait for rate limiter")
-	}
-
 	extAccountIDs, err := provider.FetchRepoPerms(ctx, &extsvc.Repository{
 		URI:              repo.URI,
 		ExternalRepoSpec: repo.ExternalRepo,
@@ -844,25 +836,6 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	)
 
 	return result, providerStates, nil
-}
-
-// waitForRateLimit blocks until rate limit permits n events to happen. It returns
-// an error if n exceeds the limiter's burst size, the context is canceled, or the
-// expected wait time exceeds the context's deadline. The burst limit is ignored if
-// the rate limit is Inf.
-func (s *PermsSyncer) waitForRateLimit(ctx context.Context, urn string, n int, syncType string) error {
-	if s.rateLimiterRegistry == nil {
-		return nil
-	}
-
-	rl := s.rateLimiterRegistry.Get(urn)
-	began := time.Now()
-	if err := rl.WaitN(ctx, n); err != nil {
-		metricsRateLimiterWaitDuration.WithLabelValues(syncType, strconv.FormatBool(false)).Observe(time.Since(began).Seconds())
-		return err
-	}
-	metricsRateLimiterWaitDuration.WithLabelValues(syncType, strconv.FormatBool(true)).Observe(time.Since(began).Seconds())
-	return nil
 }
 
 // syncPerms processes the permissions syncing request and removes the request
