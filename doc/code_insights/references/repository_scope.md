@@ -1,17 +1,55 @@
 # Code Insights repository scope
 
-Prior to Sourcegraph 4.5, on insight creation you have the option to:
-* Specify a list of repositories to run your code insight over
-* Run your insight over all repositories
+A Code Insight runs on a list of repositories as specified on insight creation. The scope options are:
 
-From 4.5 the "Run your insight over all repositories" checkbox has been replaced with a search query box.
+* Manually specify a list of repositories
+* Run the insight over all repositories (Sourcegraph 3.31.1+).
+  * In Sourcegraph 4.5 this is achieved through a `repo:.*` search query (see below).
+* Run the insight over repositories as returned from a repository search query (Sourcegraph 4.5+)
+  * This replaces the "Run your insight over all repositories" checkbox in prior versions
+  * You can still achieve that functionality using a `repo:.*` search query
 
-You can use repository filters as you would in a normal Sourcegraph query to specify which repositories you want to run your code insight over.
-The creation form will display how many repositories your search query matches and you can preview the matches. 
+## Using the repository search query box
 
-If your query matches less than 20 repos a live preview will also be displayed.
+<!-- insert image here -->
+
+The repository search query box allows you to search for repositories on your Sourcegraph instance using standard Sourcegraph `repo` filters, as well as boolean operators.
+
+Some example use cases might be:
+* I want my insight to run over all the repositories in the `sourcegraph` organisation, but not the `handbook repository`
+
+```sgquery
+repo:sourcegraph/* -repo:sourcegraph/handbook$
+```
+
+* I want my insight to run over all my repositories that contain `CODEOWNERS` files
+```sgquery
+repo:has.file(github-actions)
+```
+
+The repository search box functions as the Sourcegraph search box so it will suggest repository names as you type.
+
+<!-- insert image here -->
+
+### Refining and previewing your repositories
+
+After writing your repository search query, the Code Insights creation UI will display how many repositories the query has resolved.
+
+If this number is unexpected, you can preview the repositories using the `Preview results` link.
+
+> NOTE: Repositories will include archived repositories and forks by default. 
+
+<!-- insert image here -->
 
 ## How is the list of repositories resolved?
 
+If you are using a search query to define the list of repositories to run your insight over, then:
+
+1. On insight creation the list of repositories that matches your search query is fetched. All the historical searches that are used to backfill your insight are ran against this unchanged list of repositories.
+2. Every newer point added to your insight will then fetch results using (your_repo_search_query) (your_insight_search_query), so the repositories will be resolved against the global state of your instance.
+    * For example, if you have a repo query for `repo:docs or repo:handbook` and a query for `lang:Markdown TODO`, every point will fetch results for the following query:
+```sgquery
+(repo:docs or repo:handbook) (lang:Markdown TODO)
+```
 
 
