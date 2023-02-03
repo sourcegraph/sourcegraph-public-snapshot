@@ -371,6 +371,7 @@ func testPermsStore_SetUserPermissions(db database.DB) func(*testing.T) {
 		updates         []*authz.UserPermissions
 		expectUserPerms map[int32][]uint32 // user_id -> object_ids
 		expectRepoPerms map[int32][]uint32 // repo_id -> user_ids
+		expectedResult  []*database.SetPermissionsResult
 
 		upsertRepoPermissionsPageSize int
 	}{
@@ -385,6 +386,11 @@ func testPermsStore_SetUserPermissions(db database.DB) func(*testing.T) {
 			expectUserPerms: map[int32][]uint32{
 				1: {},
 			},
+			expectedResult: []*database.SetPermissionsResult{{
+				Added:   0,
+				Removed: 0,
+				Found:   0,
+			}},
 		},
 		{
 			name: "add",
@@ -413,6 +419,23 @@ func testPermsStore_SetUserPermissions(db database.DB) func(*testing.T) {
 				2: {2},
 				3: {3},
 				4: {3},
+			},
+			expectedResult: []*database.SetPermissionsResult{
+				{
+					Added:   1,
+					Removed: 0,
+					Found:   1,
+				},
+				{
+					Added:   2,
+					Removed: 0,
+					Found:   2,
+				},
+				{
+					Added:   2,
+					Removed: 0,
+					Found:   2,
+				},
 			},
 		},
 		{
@@ -445,6 +468,28 @@ func testPermsStore_SetUserPermissions(db database.DB) func(*testing.T) {
 				2: {1},
 				3: {1, 2},
 			},
+			expectedResult: []*database.SetPermissionsResult{
+				{
+					Added:   1,
+					Removed: 0,
+					Found:   1,
+				},
+				{
+					Added:   2,
+					Removed: 1,
+					Found:   2,
+				},
+				{
+					Added:   2,
+					Removed: 0,
+					Found:   2,
+				},
+				{
+					Added:   1,
+					Removed: 1,
+					Found:   2,
+				},
+			},
 		},
 		{
 			name: "add and clear",
@@ -467,6 +512,18 @@ func testPermsStore_SetUserPermissions(db database.DB) func(*testing.T) {
 				2: {},
 				3: {},
 			},
+			expectedResult: []*database.SetPermissionsResult{
+				{
+					Added:   3,
+					Removed: 0,
+					Found:   3,
+				},
+				{
+					Added:   0,
+					Removed: 3,
+					Found:   0,
+				},
+			},
 		},
 		{
 			name:                          "add and page",
@@ -485,6 +542,13 @@ func testPermsStore_SetUserPermissions(db database.DB) func(*testing.T) {
 				1: {1},
 				2: {1},
 				3: {1},
+			},
+			expectedResult: []*database.SetPermissionsResult{
+				{
+					Added:   3,
+					Removed: 0,
+					Found:   3,
+				},
 			},
 		},
 		{
@@ -570,24 +634,22 @@ func testPermsStore_SetUserPermissions(db database.DB) func(*testing.T) {
 					}
 				})
 
-				for _, p := range test.updates {
-					const numOps = 30
-					g, ctx := errgroup.WithContext(context.Background())
-					for i := 0; i < numOps; i++ {
-						g.Go(func() error {
-							tmp := &authz.UserPermissions{
-								UserID:    p.UserID,
-								Perm:      p.Perm,
-								UpdatedAt: p.UpdatedAt,
-							}
-							if p.IDs != nil {
-								tmp.IDs = p.IDs
-							}
-							_, err := s.SetUserPermissions(ctx, tmp)
-							return err
-						})
+				for index, p := range test.updates {
+					tmp := &authz.UserPermissions{
+						UserID:    p.UserID,
+						Perm:      p.Perm,
+						UpdatedAt: p.UpdatedAt,
 					}
-					if err := g.Wait(); err != nil {
+					if p.IDs != nil {
+						tmp.IDs = p.IDs
+					}
+					result, err := s.SetUserPermissions(context.Background(), tmp)
+
+					if diff := cmp.Diff(test.expectedResult[index], result); diff != "" {
+						t.Fatal(diff)
+					}
+
+					if err != nil {
 						t.Fatal(err)
 					}
 				}
@@ -686,6 +748,7 @@ func testPermsStore_SetRepoPermissions(db database.DB) func(*testing.T) {
 		updates         []*authz.RepoPermissions
 		expectUserPerms map[int32][]uint32 // user_id -> object_ids
 		expectRepoPerms map[int32][]uint32 // repo_id -> user_ids
+		expectedResult  []*database.SetPermissionsResult
 	}{
 		{
 			name: "empty",
@@ -697,6 +760,13 @@ func testPermsStore_SetRepoPermissions(db database.DB) func(*testing.T) {
 			},
 			expectRepoPerms: map[int32][]uint32{
 				1: {},
+			},
+			expectedResult: []*database.SetPermissionsResult{
+				{
+					Added:   0,
+					Removed: 0,
+					Found:   0,
+				},
 			},
 		},
 		{
@@ -726,6 +796,23 @@ func testPermsStore_SetRepoPermissions(db database.DB) func(*testing.T) {
 				1: {1},
 				2: {1, 2},
 				3: {3, 4},
+			},
+			expectedResult: []*database.SetPermissionsResult{
+				{
+					Added:   1,
+					Removed: 0,
+					Found:   1,
+				},
+				{
+					Added:   2,
+					Removed: 0,
+					Found:   2,
+				},
+				{
+					Added:   2,
+					Removed: 0,
+					Found:   2,
+				},
 			},
 		},
 		{
@@ -759,6 +846,28 @@ func testPermsStore_SetRepoPermissions(db database.DB) func(*testing.T) {
 				1: {2, 3},
 				2: {3, 4},
 			},
+			expectedResult: []*database.SetPermissionsResult{
+				{
+					Added:   1,
+					Removed: 0,
+					Found:   1,
+				},
+				{
+					Added:   2,
+					Removed: 1,
+					Found:   2,
+				},
+				{
+					Added:   2,
+					Removed: 0,
+					Found:   2,
+				},
+				{
+					Added:   2,
+					Removed: 2,
+					Found:   2,
+				},
+			},
 		},
 		{
 			name: "add and clear",
@@ -780,6 +889,18 @@ func testPermsStore_SetRepoPermissions(db database.DB) func(*testing.T) {
 			},
 			expectRepoPerms: map[int32][]uint32{
 				1: {},
+			},
+			expectedResult: []*database.SetPermissionsResult{
+				{
+					Added:   3,
+					Removed: 0,
+					Found:   3,
+				},
+				{
+					Added:   0,
+					Removed: 3,
+					Found:   0,
+				},
 			},
 		},
 	}
@@ -848,25 +969,22 @@ func testPermsStore_SetRepoPermissions(db database.DB) func(*testing.T) {
 					cleanupPermsTables(t, s)
 				})
 
-				for _, p := range test.updates {
-					const numOps = 30
-					g, ctx := errgroup.WithContext(context.Background())
-					for i := 0; i < numOps; i++ {
-						g.Go(func() error {
-							tmp := &authz.RepoPermissions{
-								RepoID:    p.RepoID,
-								Perm:      p.Perm,
-								UpdatedAt: p.UpdatedAt,
-							}
-							if p.UserIDs != nil {
-								tmp.UserIDs = p.UserIDs
-							}
-							_, err := s.SetRepoPermissions(ctx, tmp)
-							return err
-						})
+				for index, p := range test.updates {
+					tmp := &authz.RepoPermissions{
+						RepoID:    p.RepoID,
+						Perm:      p.Perm,
+						UpdatedAt: p.UpdatedAt,
 					}
-					if err := g.Wait(); err != nil {
+					if p.UserIDs != nil {
+						tmp.UserIDs = p.UserIDs
+					}
+					result, err := s.SetRepoPermissions(context.Background(), tmp)
+					if err != nil {
 						t.Fatal(err)
+					}
+
+					if diff := cmp.Diff(test.expectedResult[index], result); diff != "" {
+						t.Fatal(diff)
 					}
 				}
 

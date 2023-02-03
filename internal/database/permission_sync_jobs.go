@@ -87,7 +87,7 @@ type PermissionSyncJobStore interface {
 
 	List(ctx context.Context, opts ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error)
 	CancelQueuedJob(ctx context.Context, reason string, id int) error
-	SaveResult(ctx context.Context, id int, result *SetPermissionsResult) error
+	SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult) error
 }
 
 type permissionSyncJobStore struct {
@@ -288,7 +288,7 @@ type SetPermissionsResult struct {
 	Found   int
 }
 
-func (s *permissionSyncJobStore) SaveResult(ctx context.Context, id int, result *SetPermissionsResult) error {
+func (s *permissionSyncJobStore) SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult) error {
 	q := sqlf.Sprintf(`
 		UPDATE permission_sync_jobs
 		SET 
@@ -409,9 +409,9 @@ type PermissionSyncJob struct {
 	NoPerms          bool
 	InvalidateCaches bool
 
-	PermissionsAdded   *int
-	PermissionsRemoved *int
-	PermissionsFound   *int
+	PermissionsAdded   int
+	PermissionsRemoved int
+	PermissionsFound   int
 }
 
 func (j *PermissionSyncJob) RecordID() int { return j.ID }

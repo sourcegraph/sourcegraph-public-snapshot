@@ -35240,9 +35240,9 @@ type MockPermissionSyncJobStore struct {
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
 	ListFunc *PermissionSyncJobStoreListFunc
-	// SaveResultFunc is an instance of a mock function object controlling
-	// the behavior of the method SaveResult.
-	SaveResultFunc *PermissionSyncJobStoreSaveResultFunc
+	// SaveSyncResultFunc is an instance of a mock function object
+	// controlling the behavior of the method SaveSyncResult.
+	SaveSyncResultFunc *PermissionSyncJobStoreSaveSyncResultFunc
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *PermissionSyncJobStoreTransactFunc
@@ -35286,7 +35286,7 @@ func NewMockPermissionSyncJobStore() *MockPermissionSyncJobStore {
 				return
 			},
 		},
-		SaveResultFunc: &PermissionSyncJobStoreSaveResultFunc{
+		SaveSyncResultFunc: &PermissionSyncJobStoreSaveSyncResultFunc{
 			defaultHook: func(context.Context, int, *SetPermissionsResult) (r0 error) {
 				return
 			},
@@ -35339,9 +35339,9 @@ func NewStrictMockPermissionSyncJobStore() *MockPermissionSyncJobStore {
 				panic("unexpected invocation of MockPermissionSyncJobStore.List")
 			},
 		},
-		SaveResultFunc: &PermissionSyncJobStoreSaveResultFunc{
+		SaveSyncResultFunc: &PermissionSyncJobStoreSaveSyncResultFunc{
 			defaultHook: func(context.Context, int, *SetPermissionsResult) error {
-				panic("unexpected invocation of MockPermissionSyncJobStore.SaveResult")
+				panic("unexpected invocation of MockPermissionSyncJobStore.SaveSyncResult")
 			},
 		},
 		TransactFunc: &PermissionSyncJobStoreTransactFunc{
@@ -35380,8 +35380,8 @@ func NewMockPermissionSyncJobStoreFrom(i PermissionSyncJobStore) *MockPermission
 		ListFunc: &PermissionSyncJobStoreListFunc{
 			defaultHook: i.List,
 		},
-		SaveResultFunc: &PermissionSyncJobStoreSaveResultFunc{
-			defaultHook: i.SaveResult,
+		SaveSyncResultFunc: &PermissionSyncJobStoreSaveSyncResultFunc{
+			defaultHook: i.SaveSyncResult,
 		},
 		TransactFunc: &PermissionSyncJobStoreTransactFunc{
 			defaultHook: i.Transact,
@@ -36037,37 +36037,37 @@ func (c PermissionSyncJobStoreListFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// PermissionSyncJobStoreSaveResultFunc describes the behavior when the
-// SaveResult method of the parent MockPermissionSyncJobStore instance is
-// invoked.
-type PermissionSyncJobStoreSaveResultFunc struct {
+// PermissionSyncJobStoreSaveSyncResultFunc describes the behavior when the
+// SaveSyncResult method of the parent MockPermissionSyncJobStore instance
+// is invoked.
+type PermissionSyncJobStoreSaveSyncResultFunc struct {
 	defaultHook func(context.Context, int, *SetPermissionsResult) error
 	hooks       []func(context.Context, int, *SetPermissionsResult) error
-	history     []PermissionSyncJobStoreSaveResultFuncCall
+	history     []PermissionSyncJobStoreSaveSyncResultFuncCall
 	mutex       sync.Mutex
 }
 
-// SaveResult delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockPermissionSyncJobStore) SaveResult(v0 context.Context, v1 int, v2 *SetPermissionsResult) error {
-	r0 := m.SaveResultFunc.nextHook()(v0, v1, v2)
-	m.SaveResultFunc.appendCall(PermissionSyncJobStoreSaveResultFuncCall{v0, v1, v2, r0})
+// SaveSyncResult delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockPermissionSyncJobStore) SaveSyncResult(v0 context.Context, v1 int, v2 *SetPermissionsResult) error {
+	r0 := m.SaveSyncResultFunc.nextHook()(v0, v1, v2)
+	m.SaveSyncResultFunc.appendCall(PermissionSyncJobStoreSaveSyncResultFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
-// SetDefaultHook sets function that is called when the SaveResult method of
-// the parent MockPermissionSyncJobStore instance is invoked and the hook
-// queue is empty.
-func (f *PermissionSyncJobStoreSaveResultFunc) SetDefaultHook(hook func(context.Context, int, *SetPermissionsResult) error) {
+// SetDefaultHook sets function that is called when the SaveSyncResult
+// method of the parent MockPermissionSyncJobStore instance is invoked and
+// the hook queue is empty.
+func (f *PermissionSyncJobStoreSaveSyncResultFunc) SetDefaultHook(hook func(context.Context, int, *SetPermissionsResult) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// SaveResult method of the parent MockPermissionSyncJobStore instance
+// SaveSyncResult method of the parent MockPermissionSyncJobStore instance
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *PermissionSyncJobStoreSaveResultFunc) PushHook(hook func(context.Context, int, *SetPermissionsResult) error) {
+func (f *PermissionSyncJobStoreSaveSyncResultFunc) PushHook(hook func(context.Context, int, *SetPermissionsResult) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -36075,20 +36075,20 @@ func (f *PermissionSyncJobStoreSaveResultFunc) PushHook(hook func(context.Contex
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *PermissionSyncJobStoreSaveResultFunc) SetDefaultReturn(r0 error) {
+func (f *PermissionSyncJobStoreSaveSyncResultFunc) SetDefaultReturn(r0 error) {
 	f.SetDefaultHook(func(context.Context, int, *SetPermissionsResult) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *PermissionSyncJobStoreSaveResultFunc) PushReturn(r0 error) {
+func (f *PermissionSyncJobStoreSaveSyncResultFunc) PushReturn(r0 error) {
 	f.PushHook(func(context.Context, int, *SetPermissionsResult) error {
 		return r0
 	})
 }
 
-func (f *PermissionSyncJobStoreSaveResultFunc) nextHook() func(context.Context, int, *SetPermissionsResult) error {
+func (f *PermissionSyncJobStoreSaveSyncResultFunc) nextHook() func(context.Context, int, *SetPermissionsResult) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -36101,27 +36101,28 @@ func (f *PermissionSyncJobStoreSaveResultFunc) nextHook() func(context.Context, 
 	return hook
 }
 
-func (f *PermissionSyncJobStoreSaveResultFunc) appendCall(r0 PermissionSyncJobStoreSaveResultFuncCall) {
+func (f *PermissionSyncJobStoreSaveSyncResultFunc) appendCall(r0 PermissionSyncJobStoreSaveSyncResultFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of PermissionSyncJobStoreSaveResultFuncCall
-// objects describing the invocations of this function.
-func (f *PermissionSyncJobStoreSaveResultFunc) History() []PermissionSyncJobStoreSaveResultFuncCall {
+// History returns a sequence of
+// PermissionSyncJobStoreSaveSyncResultFuncCall objects describing the
+// invocations of this function.
+func (f *PermissionSyncJobStoreSaveSyncResultFunc) History() []PermissionSyncJobStoreSaveSyncResultFuncCall {
 	f.mutex.Lock()
-	history := make([]PermissionSyncJobStoreSaveResultFuncCall, len(f.history))
+	history := make([]PermissionSyncJobStoreSaveSyncResultFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// PermissionSyncJobStoreSaveResultFuncCall is an object that describes an
-// invocation of method SaveResult on an instance of
+// PermissionSyncJobStoreSaveSyncResultFuncCall is an object that describes
+// an invocation of method SaveSyncResult on an instance of
 // MockPermissionSyncJobStore.
-type PermissionSyncJobStoreSaveResultFuncCall struct {
+type PermissionSyncJobStoreSaveSyncResultFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -36138,13 +36139,13 @@ type PermissionSyncJobStoreSaveResultFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c PermissionSyncJobStoreSaveResultFuncCall) Args() []interface{} {
+func (c PermissionSyncJobStoreSaveSyncResultFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c PermissionSyncJobStoreSaveResultFuncCall) Results() []interface{} {
+func (c PermissionSyncJobStoreSaveSyncResultFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

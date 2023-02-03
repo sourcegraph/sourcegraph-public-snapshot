@@ -122,7 +122,7 @@ func TestPermsSyncerWorker_RepoSyncJobs(t *testing.T) {
 
 	// Wait for all jobs to be processed.
 	timeout := time.After(60 * time.Second)
-	remainingRounds := 4
+	remainingRounds := 3
 loop:
 	for {
 		jobs, err := syncJobsStore.List(ctx, database.ListPermissionSyncJobOpts{})
@@ -130,9 +130,9 @@ loop:
 			t.Fatal(err)
 		}
 		for _, job := range jobs {
-			// We don't check job with ID=3 because it is a user sync job which is not
+			// We don't check job with ID=4 because it is a user sync job which is not
 			// processed by current worker.
-			if job.ID == 3 && (job.State == "queued" || job.State == "processing") {
+			if job.ID != 4 && (job.State == "queued" || job.State == "processing") {
 				// wait and retry
 				time.Sleep(500 * time.Millisecond)
 				continue loop
@@ -171,13 +171,13 @@ loop:
 			require.Equal(t, jobID, job.RepositoryID)
 		}
 
-		// Check that user sync job wasn't picked up by repo sync worker.
+		// Check that repo sync job was completed and results were saved.
 		if jobID == 2 {
 			require.Equal(t, "completed", job.State)
 			require.Nil(t, job.FailureMessage)
-			require.Equal(t, 1, *job.PermissionsAdded)
-			require.Equal(t, 2, *job.PermissionsRemoved)
-			require.Equal(t, 5, *job.PermissionsFound)
+			require.Equal(t, 1, job.PermissionsAdded)
+			require.Equal(t, 2, job.PermissionsRemoved)
+			require.Equal(t, 5, job.PermissionsFound)
 		}
 
 		// Check that failed job has the failure message.
@@ -253,7 +253,7 @@ func TestPermsSyncerWorker_UserSyncJobs(t *testing.T) {
 
 	// Wait for all jobs to be processed.
 	timeout := time.After(60 * time.Second)
-	remainingRounds := 4
+	remainingRounds := 3
 loop:
 	for {
 		jobs, err := syncJobsStore.List(ctx, database.ListPermissionSyncJobOpts{})
@@ -263,7 +263,7 @@ loop:
 		for _, job := range jobs {
 			// We don't check job with ID=3 because it is a repo sync job which is not
 			// processed by current worker.
-			if job.ID == 3 && (job.State == "queued" || job.State == "processing") {
+			if job.ID != 4 && (job.State == "queued" || job.State == "processing") {
 				// wait and retry
 				time.Sleep(500 * time.Millisecond)
 				continue loop
@@ -305,9 +305,9 @@ loop:
 		if jobID == 2 {
 			require.Equal(t, "completed", job.State)
 			require.Nil(t, job.FailureMessage)
-			require.Equal(t, 1, *job.PermissionsAdded)
-			require.Equal(t, 2, *job.PermissionsRemoved)
-			require.Equal(t, 5, *job.PermissionsFound)
+			require.Equal(t, 1, job.PermissionsAdded)
+			require.Equal(t, 2, job.PermissionsRemoved)
+			require.Equal(t, 5, job.PermissionsFound)
 		}
 
 		// Check that failed job has the failure message.
