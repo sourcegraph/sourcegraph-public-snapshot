@@ -12,7 +12,7 @@ import (
 // KeyValue. See database.RedisKeyValueStore for the implementation of this
 // interface.
 //
-// We do not directly implement import that interface since that introduces
+// We do not directly import that interface since that introduces
 // complications around dependency graphs.
 type DBStore interface {
 	// Get returns the value for (namespace, key). ok is false if the
@@ -34,7 +34,7 @@ type DBStoreTransact func(ctx context.Context, f func(DBStore) error) error
 var dbStoreTransact atomic.Value
 
 // DBRegisterStore registers our database with the redispool package. Until
-// this is called all KeyValue operations fagainst a DB backed KeyValue will
+// this is called all KeyValue operations against a DB backed KeyValue will
 // fail with an error. As such this function should be called early on (as
 // soon as we have a useable DB connection).
 //
