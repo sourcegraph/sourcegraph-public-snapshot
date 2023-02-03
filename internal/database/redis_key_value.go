@@ -36,9 +36,12 @@ func (f *redisKeyValueStore) WithTransact(ctx context.Context, fn func(RedisKeyV
 }
 
 func (s *redisKeyValueStore) Get(ctx context.Context, namespace, key string) ([]byte, bool, error) {
+	// redispool will often follow up a Get with a Set (eg for implementing
+	// redis INCR). As such we need to lock the row with FOR UPDATE.
 	q := sqlf.Sprintf(`
 	SELECT value FROM redis_key_value
 	WHERE namespace = %s AND key = %s
+	FOR UPDATE
 	`, namespace, key)
 	row := s.QueryRow(ctx, q)
 

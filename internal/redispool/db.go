@@ -14,9 +14,18 @@ import (
 //
 // We do not directly import that interface since that introduces
 // complications around dependency graphs.
+//
+// Note: DBKeyValue uses a coarse global mutex for all transactions on-top of
+// whatever transaction DBStoreTransact provides. The intention of these
+// interfaces is to be used in a single process application (like Sourcegraph
+// App). We would need to change the design of NaiveKeyValueStore to allow for
+// retries to smoothly avoid global mutexes.
 type DBStore interface {
 	// Get returns the value for (namespace, key). ok is false if the
 	// (namespace, key) has not been set.
+	//
+	// Note: We recommend using "SELECT ... FOR UPDATE" since this call is
+	// often followed by Set in the same transaction.
 	Get(ctx context.Context, namespace, key string) (value []byte, ok bool, err error)
 	// Set will upsert value for (namespace, key). If value is nil it should
 	// be persisted as an empty byte slice.
@@ -47,14 +56,22 @@ func DBRegisterStore(transact DBStoreTransact) error {
 	return nil
 }
 
+// dbMu protects _all_ possible interactions with the database in DBKeyValue.
+// This is to avoid concurrent get/sets on the same key resulting in one of
+// the sets failing due to serializability.
+var dbMu sync.Mutex
+
 // DBKeyValue returns a KeyValue with namespace. Namespaces allow us to have
 // distinct KeyValue stores, but still use the same underlying DBStore
 // storage.
+//
+// Note: This is designed for use in a single process application like
+// Sourcegraph App. All transactions are additionally protected by a global
+// mutex to avoid the need to handle database serializability errors.
 func DBKeyValue(namespace string) KeyValue {
-	var mu sync.Mutex
 	store := func(ctx context.Context, key string, f NaiveUpdater) error {
-		mu.Lock()
-		defer mu.Unlock()
+		dbMu.Lock()
+		defer dbMu.Unlock()
 
 		transact := dbStoreTransact.Load()
 		if transact == nil {
