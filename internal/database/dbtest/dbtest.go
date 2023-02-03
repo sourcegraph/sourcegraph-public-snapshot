@@ -136,6 +136,7 @@ func newFromDSN(logger log.Logger, t testing.TB, templateNamespace string) *sql.
 
 	rngLock.Lock()
 	dbname := "sourcegraph-test-" + strconv.FormatUint(rng.Uint64(), 10)
+	fmt.Printf("TEST DB NAME %s", dbname)
 	rngLock.Unlock()
 
 	db := dbConn(logger, t, config)

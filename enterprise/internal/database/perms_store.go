@@ -409,6 +409,10 @@ func (s *permsStore) SetUserRepoPermissions(ctx context.Context, p []authz.Permi
 		save(&err, f...)
 	}()
 
+	if p == nil || len(p) == 0 {
+		return nil
+	}
+
 	// Open a transaction for update consistency.
 	txs, err := s.transact(ctx)
 	if err != nil {
@@ -539,7 +543,7 @@ WHERE
 	AND
 	source != 'api'
 `
-	where := sqlf.Sprintf("TRUE")
+	where := sqlf.Sprintf("FALSE")
 	if entity.UserID > 0 {
 		where = sqlf.Sprintf("user_id = %d", entity.UserID)
 		if entity.ExternalAccountID > 0 {
