@@ -327,6 +327,13 @@ func (r *changesetResolver) ForkNamespace() *string {
 	return nil
 }
 
+func (r *changesetResolver) ForkName() *string {
+	if name := r.changeset.ExternalForkName; name != "" {
+		return &name
+	}
+	return nil
+}
+
 func (r *changesetResolver) ReviewState(ctx context.Context) *string {
 	if !r.changeset.Published() {
 		return nil
