@@ -122,12 +122,8 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
             ancestors: alwaysLoadAncestors,
         },
         onCompleted(data) {
-            let rootTreeUrl = data?.repository?.commit?.tree?.url
-            let entries = data?.repository?.commit?.tree?.entries
-            if (!entries || !rootTreeUrl) {
-                rootTreeUrl = location.pathname
-                entries = []
-            }
+            const rootTreeUrl = data?.repository?.commit?.tree?.url ?? location.pathname
+            const entries = data?.repository?.commit?.tree?.entries ?? []
             if (treeData === null) {
                 setTreeData(
                     appendTreeData(
@@ -138,7 +134,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
                     )
                 )
             } else {
-                setTreeData(treeData => appendTreeData(treeData!, entries!, rootTreeUrl!, alwaysLoadAncestors))
+                setTreeData(treeData => appendTreeData(treeData!, entries, rootTreeUrl, alwaysLoadAncestors))
             }
         },
     })
