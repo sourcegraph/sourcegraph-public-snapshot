@@ -9,7 +9,7 @@ import { Compartment, EditorState, Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import * as H from 'history'
 import { isEqual } from 'lodash'
-import { createPath, NavigateFunction, useLocation, useNavigate, type Location } from 'react-router-dom-v5-compat'
+import { createPath, NavigateFunction, type Location } from 'react-router-dom-v5-compat'
 
 import {
     addLineRangeQueryParameter,
@@ -196,10 +196,11 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
         overrideBrowserSearchKeybinding,
         'data-testid': dataTestId,
+
+        location,
+        navigate,
     } = props
 
-    const location = useLocation()
-    const navigate = useNavigate()
     const [useFileSearch, setUseFileSearch] = useLocalStorage('blob.overrideBrowserFindOnPage', true)
 
     const [container, setContainer] = useState<HTMLDivElement | null>(null)

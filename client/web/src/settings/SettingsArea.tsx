@@ -2,7 +2,7 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { Route, Switch } from 'react-router'
 import { combineLatest, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
@@ -50,9 +50,10 @@ export interface SettingsAreaPageProps extends SettingsAreaPageCommonProps {
     onUpdate: () => void
 }
 
-interface Props extends SettingsAreaPageCommonProps, RouteComponentProps<{}> {
+interface Props extends SettingsAreaPageCommonProps {
     className?: string
     extraHeader?: JSX.Element
+    url: string
 }
 
 const LOADING = 'loading' as const
@@ -173,7 +174,7 @@ export class SettingsArea extends React.Component<Props, State> {
                 {this.props.extraHeader}
                 <Switch>
                     <Route
-                        path={this.props.match.url}
+                        path={this.props.url}
                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                         exact={true}
                         render={routeComponentProps => <SettingsPage {...routeComponentProps} {...transferProps} />}

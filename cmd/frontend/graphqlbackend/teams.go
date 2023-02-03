@@ -2,6 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
+	"net/url"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -125,15 +127,28 @@ type teamResolver struct {
 func (r *teamResolver) ID() graphql.ID {
 	return relay.MarshalID("Team", r.team.ID)
 }
-func (r *teamResolver) Name() string { return r.team.Name }
-func (r *teamResolver) URL() string  { return "" }
+
+func (r *teamResolver) Name() string {
+	return r.team.Name
+}
+
+func (r *teamResolver) URL() string {
+	absolutePath := fmt.Sprintf("/teams/%s", r.team.Name)
+	u := &url.URL{Path: absolutePath}
+	return u.String()
+}
+
 func (r *teamResolver) DisplayName() *string {
 	if r.team.DisplayName == "" {
 		return nil
 	}
 	return &r.team.DisplayName
 }
-func (r *teamResolver) Readonly() bool { return r.team.ReadOnly }
+
+func (r *teamResolver) Readonly() bool {
+	return r.team.ReadOnly
+}
+
 func (r *teamResolver) ParentTeam(ctx context.Context) (*teamResolver, error) {
 	if r.team.ParentTeamID == 0 {
 		return nil, nil
@@ -144,14 +159,17 @@ func (r *teamResolver) ParentTeam(ctx context.Context) (*teamResolver, error) {
 	}
 	return &teamResolver{team: parentTeam, db: r.db}, nil
 }
+
 func (r *teamResolver) ViewerCanAdminister(ctx context.Context) bool {
 	// 🚨 SECURITY: For now administration is only allowed for site admins.
 	err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db)
 	return err == nil
 }
+
 func (r *teamResolver) Members(args *ListTeamsArgs) *teamMemberConnection {
 	return &teamMemberConnection{}
 }
+
 func (r *teamResolver) ChildTeams(ctx context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {
 	c := &teamConnectionResolver{
 		db:       r.db,

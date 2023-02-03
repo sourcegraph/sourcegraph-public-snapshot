@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback, useMemo, useRef } from 'react'
 
 import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
@@ -7,7 +7,7 @@ import shallow from 'zustand/shallow'
 import { SearchBox, Toggles } from '@sourcegraph/branded'
 // The experimental search input should be shown on the search home page
 // eslint-disable-next-line no-restricted-imports
-import { LazyCodeMirrorQueryInput } from '@sourcegraph/branded/src/search-ui/experimental'
+import { LazyCodeMirrorQueryInput, searchHistoryExtension } from '@sourcegraph/branded/src/search-ui/experimental'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
@@ -78,6 +78,8 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
     const { recentSearches } = useRecentSearches()
+    const recentSearchesRef = useRef(recentSearches)
+    recentSearchesRef.current = recentSearches
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
@@ -110,13 +112,15 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
             experimentalQueryInput,
         ]
     )
+    const submitSearchOnChangeRef = useRef(submitSearchOnChange)
+    submitSearchOnChangeRef.current = submitSearchOnChange
 
     const onSubmit = useCallback(
         (event?: React.FormEvent): void => {
             event?.preventDefault()
-            submitSearchOnChange()
+            submitSearchOnChangeRef.current()
         },
-        [submitSearchOnChange]
+        [submitSearchOnChangeRef]
     )
 
     // We want to prevent autofocus by default on devices with touch as their only input method.
@@ -144,6 +148,23 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
         ]
     )
 
+    const experimentalExtensions = useMemo(
+        () =>
+            experimentalQueryInput
+                ? [
+                      searchHistoryExtension({
+                          mode: {
+                              name: 'History',
+                              placeholder: 'Filter history',
+                          },
+                          source: () => recentSearchesRef.current ?? [],
+                          submitQuery: query => submitSearchOnChangeRef.current({ query }),
+                      }),
+                  ]
+                : [],
+        [experimentalQueryInput, recentSearchesRef, submitSearchOnChangeRef]
+    )
+
     const input = experimentalQueryInput ? (
         <LazyCodeMirrorQueryInput
             patternType={patternType}
@@ -154,6 +175,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
             isLightTheme={props.isLightTheme}
             placeholder="Search for code or files..."
             suggestionSource={suggestionSource}
+            extensions={experimentalExtensions}
         >
             <Toggles
                 patternType={patternType}
