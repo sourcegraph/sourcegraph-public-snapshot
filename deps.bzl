@@ -1451,6 +1451,7 @@ def go_dependencies():
         importpath = "github.com/coreos/go-iptables",
         sum = "h1:is9qnZMPYjLd8LYqmm/qlE+wwEgJIkTYdhV3rfZo4jk=",
         version = "v0.6.0",
+        build_file_generation = "on",
     )
     go_repository(
         name = "com_github_coreos_go_oidc",
