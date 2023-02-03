@@ -103,7 +103,6 @@ class ScheduleUserPermissionsSyncActionContainer extends React.PureComponent<Sch
                 buttonLabel="Schedule now"
                 flashText="Added to queue"
                 run={this.scheduleUserPermissions}
-                history={this.props.history}
                 className={styles.userSettingsPermissionsPageSyncContainer}
             />
         )

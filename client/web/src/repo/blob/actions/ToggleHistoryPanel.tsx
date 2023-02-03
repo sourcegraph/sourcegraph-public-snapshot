@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 import { mdiHistory } from '@mdi/js'
-import * as H from 'history'
+import { Location, NavigateFunction, To } from 'react-router-dom-v5-compat'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
@@ -25,8 +25,8 @@ import { BlobPanelTabID } from '../panel/BlobPanel'
  */
 export class ToggleHistoryPanel extends React.PureComponent<
     {
-        location: H.Location
-        history: H.History
+        location: Location
+        navigate: NavigateFunction
     } & RepoHeaderContext
 > {
     private toggles = new Subject<boolean>()
@@ -35,7 +35,7 @@ export class ToggleHistoryPanel extends React.PureComponent<
     /**
      * Reports the current visibility (derived from the location).
      */
-    public static isVisible(location: H.Location): boolean {
+    public static isVisible(location: Location): boolean {
         return parseQueryAndHash<BlobPanelTabID>(location.search, location.hash).viewState === 'history'
     }
 
@@ -43,7 +43,7 @@ export class ToggleHistoryPanel extends React.PureComponent<
      * Returns the location object (that can be passed to H.History's push/replace methods) that sets visibility to
      * the given value.
      */
-    private static locationWithVisibility(location: H.Location, visible: boolean): H.LocationDescriptorObject {
+    private static locationWithVisibility(location: Location, visible: boolean): To {
         const parsedQuery = parseQueryAndHash<BlobPanelTabID>(location.search, location.hash)
         if (visible) {
             parsedQuery.viewState = 'history' // defaults to last-viewed tab, or first tab
@@ -51,6 +51,7 @@ export class ToggleHistoryPanel extends React.PureComponent<
             delete parsedQuery.viewState
         }
         const lineRangeQueryParameter = toPositionOrRangeQueryParameter({ range: lprToRange(parsedQuery) })
+
         return {
             search: formatSearchParameters(
                 addLineRangeQueryParameter(new URLSearchParams(location.search), lineRangeQueryParameter)
@@ -64,7 +65,7 @@ export class ToggleHistoryPanel extends React.PureComponent<
             this.toggles.subscribe(() => {
                 const visible = ToggleHistoryPanel.isVisible(this.props.location)
                 eventLogger.log(visible ? 'HideHistoryPanel' : 'ShowHistoryPanel')
-                this.props.history.push(ToggleHistoryPanel.locationWithVisibility(this.props.location, !visible))
+                this.props.navigate(ToggleHistoryPanel.locationWithVisibility(this.props.location, !visible))
             })
         )
 

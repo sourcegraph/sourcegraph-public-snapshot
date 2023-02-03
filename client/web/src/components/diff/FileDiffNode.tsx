@@ -3,6 +3,7 @@ import React, { useState, useCallback } from 'react'
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 import prettyBytes from 'pretty-bytes'
+import { useLocation } from 'react-router-dom-v5-compat'
 
 import { Button, Badge, Link, Icon, Text, createLinkUrl, Tooltip } from '@sourcegraph/wildcard'
 
@@ -33,6 +34,7 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
     persistLines,
     diffMode = 'unified',
 }) => {
+    const location = useLocation()
     const [expanded, setExpanded] = useState<boolean>(true)
     const [renderDeleted, setRenderDeleted] = useState<boolean>(false)
 

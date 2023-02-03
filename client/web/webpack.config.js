@@ -166,17 +166,16 @@ const config = {
           : 'styles/[name].bundle.css',
     }),
     getMonacoWebpackPlugin(),
-    !WEBPACK_SERVE_INDEX &&
-      new WebpackManifestPlugin({
-        writeToFileEmit: true,
-        fileName: 'webpack.manifest.json',
-        seed: {
-          environment: NODE_ENV,
-        },
-        // Only output files that are required to run the application.
-        filter: ({ isInitial, name }) =>
-          isInitial || Object.values(initialChunkNames).some(initialChunkName => name?.includes(initialChunkName)),
-      }),
+    new WebpackManifestPlugin({
+      writeToFileEmit: true,
+      fileName: 'webpack.manifest.json',
+      seed: {
+        environment: NODE_ENV,
+      },
+      // Only output files that are required to run the application.
+      filter: ({ isInitial, name }) =>
+        isInitial || Object.values(initialChunkNames).some(initialChunkName => name?.includes(initialChunkName)),
+    }),
     ...(WEBPACK_SERVE_INDEX ? getHTMLWebpackPlugins() : []),
     WEBPACK_BUNDLE_ANALYZER && getStatoscopePlugin(WEBPACK_STATS_NAME),
     isHotReloadEnabled && new ReactRefreshWebpackPlugin({ overlay: false }),
