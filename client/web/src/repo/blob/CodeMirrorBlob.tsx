@@ -113,10 +113,11 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
         overrideBrowserSearchKeybinding,
         'data-testid': dataTestId,
+
+        location,
+        navigate,
     } = props
 
-    const location = useLocation()
-    const navigate = useNavigate()
     const [useFileSearch, setUseFileSearch] = useLocalStorage('blob.overrideBrowserFindOnPage', true)
 
     const [container, setContainer] = useState<HTMLDivElement | null>(null)

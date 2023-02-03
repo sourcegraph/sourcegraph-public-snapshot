@@ -220,10 +220,11 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         ariaLabel,
         history,
         'data-testid': dataTestId,
+
+        location,
+        navigate,
     } = props
 
-    const location = useLocation()
-    const navigate = useNavigate()
     const settingsChanges = useMemo(() => new BehaviorSubject<Settings | null>(null), [])
     useEffect(() => {
         if (
