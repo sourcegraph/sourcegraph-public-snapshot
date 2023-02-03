@@ -85,7 +85,8 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
-			src := setup(t, ctx, tc.name)
+			src, save := setup(t, ctx, tc.name)
+			defer save(t)
 
 			exists, err := src.CreateChangeset(ctx, tc.cs)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
@@ -213,7 +214,8 @@ func TestGithubSource_CloseChangeset(t *testing.T) {
 
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
-			src := setup(t, ctx, tc.name)
+			src, save := setup(t, ctx, tc.name)
+			defer save(t)
 
 			err := src.CloseChangeset(ctx, tc.cs)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
@@ -260,7 +262,8 @@ func TestGithubSource_ReopenChangeset(t *testing.T) {
 
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
-			src := setup(t, ctx, tc.name)
+			src, save := setup(t, ctx, tc.name)
+			defer save(t)
 
 			err := src.ReopenChangeset(ctx, tc.cs)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
@@ -302,7 +305,8 @@ func TestGithubSource_CreateComment(t *testing.T) {
 
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
-			src := setup(t, ctx, tc.name)
+			src, save := setup(t, ctx, tc.name)
+			defer save(t)
 
 			err := src.CreateComment(ctx, tc.cs, "test-comment")
 			if have, want := fmt.Sprint(err), tc.err; have != want {
@@ -344,7 +348,8 @@ func TestGithubSource_UpdateChangeset(t *testing.T) {
 
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
-			src := setup(t, ctx, tc.name)
+			src, save := setup(t, ctx, tc.name)
+			defer save(t)
 
 			err := src.UpdateChangeset(ctx, tc.cs)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
@@ -393,7 +398,8 @@ func TestGithubSource_LoadChangeset(t *testing.T) {
 
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
-			src := setup(t, ctx, tc.name)
+			src, save := setup(t, ctx, tc.name)
+			defer save(t)
 
 			err := src.LoadChangeset(ctx, tc.cs)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
@@ -600,13 +606,12 @@ func (mock *mockGithubClientFork) GetRepo(ctx context.Context, owner, repo strin
 	return nil, nil
 }
 
-func setup(t *testing.T, ctx context.Context, tName string) (src *GithubSource) {
+func setup(t *testing.T, ctx context.Context, tName string) (src *GithubSource, save func(testing.TB)) {
 	// The GithubSource uses the github.Client under the hood, which uses rcache, a
 	// caching layer that uses Redis. We need to clear the cache before we run the tests
 	rcache.SetupForTest(t)
 
 	cf, save := newClientFactory(t, tName)
-	defer save(t)
 
 	lg := log15.New()
 	lg.SetHandler(log15.DiscardHandler())
@@ -623,5 +628,5 @@ func setup(t *testing.T, ctx context.Context, tName string) (src *GithubSource) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	return src
+	return src, save
 }
