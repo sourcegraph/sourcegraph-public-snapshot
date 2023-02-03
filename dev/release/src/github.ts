@@ -557,7 +557,6 @@ export async function cloneRepo(
     // PERF: if we have a local clone using reference avoids needing to fetch
     // all the objects from the remote. We assume the local clone will exist
     // in the same directory as the current sourcegraph/sourcegraph clone.
-    const localSourcegraphRepo = `${process.cwd()}/../..`
     const cloneFlags = `${fetchFlags} --reference-if-able ${localSourcegraphRepo}/../${repo}`
 
     // Set up repository
@@ -571,6 +570,8 @@ ${checkoutCommand};`
         workdir: path.join(tmpdir, repo),
     }
 }
+
+export const localSourcegraphRepo = `${process.cwd()}/../..`
 
 async function createBranchWithChanges(
     octokit: Octokit,
@@ -733,4 +734,13 @@ export async function closeTrackingIssue(version: semver.SemVer): Promise<void> 
         console.log(`Closing #${previousIssue.number} '${previousIssue.title} with ${comment}`)
         await closeIssue(octokit, previousIssue)
     }
+}
+
+export function getTags(workdir: string, prefix: string): string[] {
+    execa.sync('git', ['fetch', '--tags'], { cwd: workdir })
+    return execa.sync('git', ['--no-pager', 'tag', '-l', `${prefix}`], { cwd: workdir }).stdout.split('\t')
+}
+
+export function getCandidateTags(workdir: string, version: string): string[] {
+    return getTags(workdir, `v${version}-rc*`)
 }

@@ -8,6 +8,7 @@ import fetch from 'node-fetch'
 
 import { EditFunc } from './github'
 import * as update from './update'
+import chalk from 'chalk'
 
 const SOURCEGRAPH_RELEASE_INSTANCE_URL = 'https://k8s.sgdev.org'
 
@@ -58,6 +59,14 @@ async function readLineNoCache(prompt: string): Promise<string> {
     const userInput = await new Promise<string>(resolve => readlineInterface.question(prompt, resolve))
     readlineInterface.close()
     return userInput
+}
+
+export async function verifyWithInput(prompt: string): Promise<void> {
+    await readLineNoCache(chalk.yellow(`${prompt}\nInput yes to confirm: `)).then(val => {
+        if (val !== 'yes') {
+            throw new Error()
+        }
+    })
 }
 
 export function getWeekNumber(date: Date): number {
