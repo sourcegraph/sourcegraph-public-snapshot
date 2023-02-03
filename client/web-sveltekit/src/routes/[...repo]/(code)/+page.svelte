@@ -6,6 +6,7 @@
     import Icon from '$lib/Icon.svelte'
 
     import type { PageData } from './$types'
+    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
 
     export let data: PageData
 
@@ -41,7 +42,7 @@
     <h3 class="mt-3">Changes</h3>
     <ul class="commits">
         {#if $commits.loading}
-            Loading...
+            <LoadingSpinner />
         {:else if $commits.data}
             {#each $commits.data as commit (commit.url)}
                 <li><Commit {commit} /></li>

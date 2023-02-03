@@ -19,7 +19,11 @@
     const settings = writable(data.settings)
     const platformContext = writable(data.platformContext)
     const isLightTheme = browser ? readableObservable(observeSystemIsLightTheme(window).observable) : readable(true)
-    const temporarySettingsStorage = createTemporarySettingsStorage()
+    // It's OK to set the temporary storage during initialization time because
+    // sign-in/out currently performs a full page refresh
+    const temporarySettingsStorage = createTemporarySettingsStorage(
+        data.user ? new TemporarySettingsStorage(data.graphqlClient, true) : undefined
+    )
 
     setContext<SourcegraphContext>(KEY, {
         user,
@@ -41,9 +45,6 @@
     $: $user = data.user ?? null
     $: $settings = data.settings
     $: $platformContext = data.platformContext
-    $: if ($user) {
-        $temporarySettingsStorage = new TemporarySettingsStorage(data.graphqlClient, true)
-    }
 
     $: if (browser) {
         document.documentElement.classList.toggle('theme-light', $isLightTheme)
