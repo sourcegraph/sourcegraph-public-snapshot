@@ -744,7 +744,7 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
 		assert.Nil(t, err)
 
-		fork, err := bbsSrc.GetUserFork(ctx, newBitbucketServerRepo(urn, "SOUR", "read-only", 10103))
+		fork, err := bbsSrc.GetFork(ctx, newBitbucketServerRepo(urn, "SOUR", "read-only", 10103), nil, nil)
 		assert.Nil(t, fork)
 		assert.NotNil(t, err)
 		assert.Contains(t, err.Error(), "getting username")
@@ -766,7 +766,7 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
 		assert.Nil(t, err)
 
-		fork, err := bbsSrc.GetUserFork(ctx, target)
+		fork, err := bbsSrc.GetFork(ctx, target, nil, nil)
 		assert.Nil(t, fork)
 		assert.ErrorContains(t, err, "This repository URL is already taken")
 	})
@@ -788,9 +788,9 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
 		assert.Nil(t, err)
 
-		fork, err := bbsSrc.GetUserFork(ctx, target)
+		fork, err := bbsSrc.GetFork(ctx, target, nil, nil)
 		assert.Nil(t, fork)
-		assert.ErrorIs(t, err, errNotForkedFromParent)
+		assert.ErrorContains(t, err, "repo was not forked from the given parent")
 	})
 
 	t.Run("already forked", func(t *testing.T) {
@@ -812,7 +812,7 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 		user, err := bbsSrc.client.AuthenticatedUsername(ctx)
 		assert.Nil(t, err)
 
-		fork, err := bbsSrc.GetUserFork(ctx, target)
+		fork, err := bbsSrc.GetFork(ctx, target, nil, nil)
 		assert.Nil(t, err)
 		assert.NotNil(t, fork)
 		assert.NotEqual(t, fork, target)
@@ -842,7 +842,7 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 		user, err := bbsSrc.client.AuthenticatedUsername(ctx)
 		assert.Nil(t, err)
 
-		fork, err := bbsSrc.GetUserFork(ctx, target)
+		fork, err := bbsSrc.GetFork(ctx, target, nil, nil)
 		assert.Nil(t, err)
 		assert.NotNil(t, fork)
 		assert.NotEqual(t, fork, target)
