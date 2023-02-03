@@ -34,11 +34,12 @@ func TestPermsSyncerWorker_Handle(t *testing.T) {
 			UserID:           1234,
 			InvalidateCaches: true,
 			Priority:         database.HighPriorityPermissionSync,
+			NoPerms:          true,
 		})
 
 		wantRequest := combinedRequest{
 			UserID:  1234,
-			NoPerms: false,
+			NoPerms: true,
 			Options: authz.FetchPermsOptions{
 				InvalidateCaches: true,
 			},
@@ -216,7 +217,7 @@ func TestPermsSyncerWorker_UserSyncJobs(t *testing.T) {
 	require.NoError(t, err)
 
 	err = syncJobsStore.CreateUserSyncJob(ctx, user2.ID,
-		database.PermissionSyncJobOpts{Reason: database.ReasonRepoNoPermissions, Priority: database.HighPriorityPermissionSync, TriggeredByUserID: user1.ID})
+		database.PermissionSyncJobOpts{Reason: database.ReasonRepoNoPermissions, NoPerms: true, Priority: database.HighPriorityPermissionSync, TriggeredByUserID: user1.ID})
 	require.NoError(t, err)
 
 	// Adding repo perms sync job, which should not be processed by current worker!
@@ -279,6 +280,7 @@ loop:
 			require.NotNil(t, job.FailureMessage)
 			require.Equal(t, errorMsg, *job.FailureMessage)
 			require.Equal(t, 1, job.NumFailures)
+			require.True(t, job.NoPerms)
 		}
 
 		// Check that repo sync job wasn't picked up by user sync worker.

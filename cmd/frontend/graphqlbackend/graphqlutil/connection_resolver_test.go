@@ -125,7 +125,7 @@ func withBeforePA(before string, a *database.PaginationArgs) *database.Paginatio
 func TestConnectionTotalCount(t *testing.T) {
 	ctx := context.Background()
 	store := &testConnectionStore{t: t}
-	resolver, err := NewConnectionResolver[testConnectionNode](store, withFirstCA(1, &ConnectionResolverArgs{}), nil)
+	resolver, err := NewConnectionResolver[*testConnectionNode](store, withFirstCA(1, &ConnectionResolverArgs{}), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -144,7 +144,7 @@ func TestConnectionTotalCount(t *testing.T) {
 	}
 }
 
-func testResolverNodesResponse(t *testing.T, resolver *ConnectionResolver[testConnectionNode], store *testConnectionStore, count int) {
+func testResolverNodesResponse(t *testing.T, resolver *ConnectionResolver[*testConnectionNode], store *testConnectionStore, count int) {
 	ctx := context.Background()
 	nodes, err := resolver.Nodes(ctx)
 	if err != nil {
@@ -209,7 +209,7 @@ func TestConnectionNodes(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			store := &testConnectionStore{t: t, expectedPaginationArgs: test.wantPaginationArgs}
-			resolver, err := NewConnectionResolver[testConnectionNode](store, test.connectionArgs, nil)
+			resolver, err := NewConnectionResolver[*testConnectionNode](store, test.connectionArgs, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -226,7 +226,7 @@ type pageInfoResponse struct {
 	hasPreviousPage bool
 }
 
-func testResolverPageInfoResponse(t *testing.T, resolver *ConnectionResolver[testConnectionNode], store *testConnectionStore, expectedResponse *pageInfoResponse) {
+func testResolverPageInfoResponse(t *testing.T, resolver *ConnectionResolver[*testConnectionNode], store *testConnectionStore, expectedResponse *pageInfoResponse) {
 	ctx := context.Background()
 	pageInfo, err := resolver.PageInfo(ctx)
 	if err != nil {
@@ -301,7 +301,7 @@ func TestConnectionPageInfo(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			store := &testConnectionStore{t: t}
-			resolver, err := NewConnectionResolver[testConnectionNode](store, test.args, nil)
+			resolver, err := NewConnectionResolver[*testConnectionNode](store, test.args, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
