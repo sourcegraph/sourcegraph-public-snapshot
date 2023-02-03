@@ -86,7 +86,6 @@ function computeFoldableRanges(state: EditorState): Map<number, number> {
         }
     }
 
-    console.log(ranges)
     return ranges
 }
 
