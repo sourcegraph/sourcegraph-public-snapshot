@@ -30,7 +30,9 @@ if (!window.context) {
 }
 
 const decorator: DecoratorFn = story => (
-    <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
+    <BrandedStory initialEntries={['/github.com/sourcegraph/sourcegraph/-/tree/']} styles={webStyles}>
+        {() => <div className="container mt-3">{story()}</div>}
+    </BrandedStory>
 )
 
 const config: Meta = {

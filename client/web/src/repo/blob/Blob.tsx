@@ -218,6 +218,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         settingsCascade,
         role,
         ariaLabel,
+        history,
         'data-testid': dataTestId,
     } = props
 
@@ -743,6 +744,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                 )}
 
                 <BlameColumn
+                    history={history}
                     isBlameVisible={props.isBlameVisible}
                     blameHunks={props.blameHunks}
                     codeViewElements={codeViewElements}

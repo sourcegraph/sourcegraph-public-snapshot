@@ -61,16 +61,17 @@ const mockExtensionsController = {
 }
 
 const decorator: DecoratorFn = story => (
-    <>
-        <style>{webStyles}</style>
-        <WebStory>
-            {() => (
-                <AppRouterContainer>
-                    <div className="container mt-3">{story()}</div>
-                </AppRouterContainer>
-            )}
-        </WebStory>
-    </>
+    <WebStory
+        initialEntries={[
+            '/github.com/sourcegraph/sourcegraph/-/blob/client/browser/src/browser-extension/ThemeWrapper.tsx',
+        ]}
+    >
+        {() => (
+            <AppRouterContainer>
+                <div className="container mt-3">{story()}</div>
+            </AppRouterContainer>
+        )}
+    </WebStory>
 )
 
 const config: Meta = {
