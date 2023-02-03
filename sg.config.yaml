@@ -323,7 +323,6 @@ commands:
       go build -gcflags="$GCFLAGS" -o .bin/repo-updater github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
     checkBinary: .bin/repo-updater
     env:
-      HOSTNAME: $SRC_GIT_SERVER_1
       ENTERPRISE: 1
     watch:
       - lib
