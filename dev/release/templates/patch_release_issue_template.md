@@ -55,7 +55,7 @@ Create and test the first release candidate:
 
 - [ ] Push a release candidate tag:
   ```sh
-  N=1; pnpm run release release:create-candidate $N
+  pnpm run release release:create-candidate
   ```
 
 **Note**: Ensure that you've pulled both main and release branches before running this command.

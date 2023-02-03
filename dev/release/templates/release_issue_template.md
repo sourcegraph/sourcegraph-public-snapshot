@@ -60,7 +60,7 @@ Upon branch cut, create and test release candidates:
 - [ ] Tag the first release candidate:
 
   ```sh
-  N=1; pnpm run release release:create-candidate $N
+  pnpm run release release:create-candidate
   ```
 
 - [ ] Ensure that the following Buildkite pipelines all pass for the `v$MAJOR.$MINOR.$PATCH-rc.N` tag:
