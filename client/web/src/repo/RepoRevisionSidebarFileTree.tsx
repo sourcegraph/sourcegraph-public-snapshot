@@ -250,12 +250,14 @@ function renderNode({
     isBranch,
     isExpanded,
     handleSelect,
+    handleExpand,
     props,
 }: {
     element: TreeNode
     isBranch: boolean
     isExpanded: boolean
     handleSelect: (event: React.MouseEvent) => {}
+    handleExpand: (event: React.MouseEvent) => {}
     props: { className: string }
 }): React.ReactNode {
     const { entry, error, dotdot, name } = element
@@ -333,6 +335,11 @@ function renderNode({
             onClick={event => {
                 event.preventDefault()
                 handleSelect(event)
+                // When clicking on a non-expanded folder, we want to navigate
+                // to it _and_ expand it.
+                if (isBranch && !isExpanded) {
+                    handleExpand(event)
+                }
             }}
         >
             <Icon

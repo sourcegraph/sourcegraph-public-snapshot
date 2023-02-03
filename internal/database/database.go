@@ -41,6 +41,7 @@ type DB interface {
 	Permissions() PermissionStore
 	PermissionSyncJobs() PermissionSyncJobStore
 	Phabricator() PhabricatorStore
+	RedisKeyValue() RedisKeyValueStore
 	Repos() RepoStore
 	RepoKVPs() RepoKVPStore
 	RolePermissions() RolePermissionStore
@@ -198,6 +199,10 @@ func (d *db) PermissionSyncJobs() PermissionSyncJobStore {
 
 func (d *db) Phabricator() PhabricatorStore {
 	return PhabricatorWith(d.Store)
+}
+
+func (d *db) RedisKeyValue() RedisKeyValueStore {
+	return &redisKeyValueStore{d.Store}
 }
 
 func (d *db) Repos() RepoStore {

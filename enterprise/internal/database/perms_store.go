@@ -70,7 +70,7 @@ type PermsStore interface {
 	//  ---------+------------+---------------+------------+-------------
 	//         1 |       read |           {1} |      NOW() | <Unchanged>
 	//         2 |       read |           {1} |      NOW() | <Unchanged>
-	SetUserPermissions(ctx context.Context, p *authz.UserPermissions) error
+	SetUserPermissions(ctx context.Context, p *authz.UserPermissions) (*database.SetPermissionsResult, error)
 	// SetRepoPermissions performs a full update for p, new user IDs found in p will
 	// be upserted and user IDs no longer in p will be removed. This method updates
 	// both `user_permissions` and `repo_permissions` tables.
@@ -95,7 +95,7 @@ type PermsStore interface {
 	//   repo_id | permission | user_ids_ints | updated_at | synced_at
 	//  ---------+------------+---------------+------------+-----------
 	//         1 |       read |        {1, 2} |      NOW() |     NOW()
-	SetRepoPermissions(ctx context.Context, p *authz.RepoPermissions) error
+	SetRepoPermissions(ctx context.Context, p *authz.RepoPermissions) (*database.SetPermissionsResult, error)
 	// SetRepoPermissionsUnrestricted sets the unrestricted on the
 	// repo_permissions table for all the provided repos. Either all or non
 	// are updated. If the repository ID is not in repo_permissions yet, a row
@@ -338,14 +338,14 @@ func (s *permsStore) LoadRepoPermissions(ctx context.Context, p *authz.RepoPermi
 	return nil
 }
 
-func (s *permsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermissions) (err error) {
+func (s *permsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermissions) (_ *database.SetPermissionsResult, err error) {
 	ctx, save := s.observe(ctx, "SetUserPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
 	// Open a transaction for update consistency.
 	txs, err := s.transact(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer func() { err = txs.Done(err) }()
 
@@ -354,7 +354,7 @@ func (s *permsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 	ids, _, _, err := txs.loadUserPermissions(ctx, p, "FOR UPDATE")
 	if err != nil {
 		if err != authz.ErrPermsNotFound {
-			return errors.Wrap(err, "load user permissions")
+			return nil, errors.Wrap(err, "load user permissions")
 		}
 	} else {
 		oldIDs = sliceToSet(ids)
@@ -385,9 +385,9 @@ func (s *permsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 			page, addQueue, removeQueue, hasNextPage = newUpsertRepoPermissionsPage(addQueue, removeQueue)
 
 			if q, err := upsertRepoPermissionsBatchQuery(page, allAdded, []int32{p.UserID}, p.Perm, updatedAt); err != nil {
-				return err
+				return nil, err
 			} else if err = txs.execute(ctx, q); err != nil {
-				return errors.Wrap(err, "execute upsert repo permissions batch query")
+				return nil, errors.Wrap(err, "execute upsert repo permissions batch query")
 			}
 		}
 	}
@@ -398,12 +398,16 @@ func (s *permsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 	p.UpdatedAt = updatedAt
 	p.SyncedAt = updatedAt
 	if q, err := upsertUserPermissionsQuery(p); err != nil {
-		return err
+		return nil, err
 	} else if err = txs.execute(ctx, q); err != nil {
-		return errors.Wrap(err, "execute upsert user permissions query")
+		return nil, errors.Wrap(err, "execute upsert user permissions query")
 	}
 
-	return nil
+	return &database.SetPermissionsResult{
+		Added:   len(added),
+		Removed: len(removed),
+		Found:   len(p.IDs),
+	}, nil
 }
 
 // upsertUserPermissionsQuery upserts single row of user permissions, it does the
@@ -445,7 +449,7 @@ DO UPDATE SET
 	), nil
 }
 
-func (s *permsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermissions) (err error) {
+func (s *permsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermissions) (_ *database.SetPermissionsResult, err error) {
 	ctx, save := s.observe(ctx, "SetRepoPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
@@ -455,7 +459,7 @@ func (s *permsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermis
 	} else {
 		txs, err = s.transact(ctx)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		defer func() { err = txs.Done(err) }()
 	}
@@ -465,7 +469,7 @@ func (s *permsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermis
 	ids, _, _, _, err := txs.loadRepoPermissions(ctx, p, "FOR UPDATE")
 	if err != nil {
 		if err != authz.ErrPermsNotFound {
-			return errors.Wrap(err, "load repo permissions")
+			return nil, errors.Wrap(err, "load repo permissions")
 		}
 	} else {
 		oldIDs = sliceToSet(ids)
@@ -484,9 +488,9 @@ func (s *permsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermis
 	updatedAt := txs.clock()
 	if len(added) != 0 || len(removed) != 0 {
 		if q, err := upsertUserPermissionsBatchQuery(added, removed, []int32{p.RepoID}, p.Perm, authz.PermRepos, updatedAt); err != nil {
-			return err
+			return nil, err
 		} else if err = txs.execute(ctx, q); err != nil {
-			return errors.Wrap(err, "execute upsert user permissions batch query")
+			return nil, errors.Wrap(err, "execute upsert user permissions batch query")
 		}
 	}
 
@@ -496,12 +500,16 @@ func (s *permsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermis
 	p.UpdatedAt = updatedAt
 	p.SyncedAt = updatedAt
 	if q, err := upsertRepoPermissionsQuery(p); err != nil {
-		return err
+		return nil, err
 	} else if err = txs.execute(ctx, q); err != nil {
-		return errors.Wrap(err, "execute upsert repo permissions query")
+		return nil, errors.Wrap(err, "execute upsert repo permissions query")
 	}
 
-	return nil
+	return &database.SetPermissionsResult{
+		Added:   len(added),
+		Removed: len(removed),
+		Found:   len(p.UserIDs),
+	}, nil
 }
 
 // upsertUserPermissionsBatchQuery composes a SQL query that does both addition (for `addedUserIDs`) and deletion (

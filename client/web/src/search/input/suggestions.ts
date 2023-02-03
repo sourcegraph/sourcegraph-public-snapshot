@@ -16,6 +16,7 @@ import {
     filterRenderer,
     filterValueRenderer,
     shortenPath,
+    combineResults,
 } from '@sourcegraph/branded/src/search-ui/experimental'
 import { getParsedQuery } from '@sourcegraph/branded/src/search-ui/input/codemirror/parsedQuery'
 import { isDefined } from '@sourcegraph/common'
@@ -330,7 +331,7 @@ const currentQuery: InternalSource = ({ token, input }) => {
                         action: {
                             type: 'command',
                             name: actionName,
-                            apply: view => {
+                            apply: (_option, view) => {
                                 getEditorConfig(view.state).onSubmit()
                             },
                         },
@@ -834,22 +835,24 @@ export const createSuggestionsSource = ({
         symbolSuggestions(caches.symbol, isSourcegraphDotCom),
     ]
 
-    return (state, position) => {
-        const parsedQuery = getParsedQuery(state)
-        const tokens = collapseOpenFilterValues(queryTokens(state), state.sliceDoc())
-        const token = tokenAt(tokens, position)
-        const input = state.sliceDoc()
-
-        function valid(state: EditorState, position: number): boolean {
+    return {
+        query: (state, position) => {
+            const parsedQuery = getParsedQuery(state)
             const tokens = collapseOpenFilterValues(queryTokens(state), state.sliceDoc())
-            return token === tokenAt(tokens, position)
-        }
+            const token = tokenAt(tokens, position)
+            const input = state.sliceDoc()
 
-        const params = { token, tokens, input, position, parsedQuery }
-        const results = sources.map(source => source(params))
-        const dummyResult = { result: [], valid }
+            function valid(state: EditorState, position: number): boolean {
+                const tokens = collapseOpenFilterValues(queryTokens(state), state.sliceDoc())
+                return token === tokenAt(tokens, position)
+            }
 
-        return combineResults([dummyResult, ...results])
+            const params = { token, tokens, input, position, parsedQuery }
+            const results = sources.map(source => source(params))
+            const dummyResult = { result: [], valid }
+
+            return combineResults([dummyResult, ...results])
+        },
     }
 }
 
@@ -1123,45 +1126,4 @@ function collapseOpenFilterValues(tokens: Token[], input: string): Token[] {
     }
 
     return result
-}
-
-/**
- * Takes multiple suggestion results and combines the groups of each of them.
- * The order of items within a group is determined by the order of results.
- */
-function combineResults(results: (SuggestionResult | null)[]): SuggestionResult {
-    const options: Record<Group['title'], Group['options'][]> = {}
-    let hasValid = false
-    let hasNext = false
-
-    for (const result of results) {
-        if (!result) {
-            continue
-        }
-        for (const group of result.result) {
-            if (!options[group.title]) {
-                options[group.title] = []
-            }
-            options[group.title].push(group.options)
-        }
-        if (result.next) {
-            hasNext = true
-        }
-        if (result.valid) {
-            hasValid = true
-        }
-    }
-
-    const staticResult: SuggestionResult = {
-        result: Object.entries(options).map(([title, options]) => ({ title, options: options.flat() })),
-    }
-
-    if (hasValid) {
-        staticResult.valid = (...args) => results.every(result => result?.valid?.(...args) ?? false)
-    }
-    if (hasNext) {
-        staticResult.next = () => Promise.all(results.map(result => result?.next?.() ?? result)).then(combineResults)
-    }
-
-    return staticResult
 }

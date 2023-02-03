@@ -8,6 +8,7 @@ import { openSearchPanel } from '@codemirror/search'
 import { Compartment, EditorState, Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { isEqual } from 'lodash'
+import { createPath, useLocation, useNavigate } from 'react-router-dom-v5-compat'
 
 import {
     addLineRangeQueryParameter,
@@ -24,6 +25,7 @@ import { useExperimentalFeatures } from '../../stores'
 import { BlobInfo, BlobProps, updateBrowserHistoryIfChanged } from './Blob'
 import { blobPropsFacet } from './codemirror'
 import { createBlameDecorationsExtension } from './codemirror/blame-decorations'
+import { codeFoldingExtension } from './codemirror/code-folding'
 import { syntaxHighlight } from './codemirror/highlight'
 import { pin, updatePin } from './codemirror/hovercard'
 import { selectableLineNumbers, SelectedLineRange, selectLines } from './codemirror/linenumbers'
@@ -101,8 +103,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         ariaLabel,
         role,
         extensionsController,
-        location,
-        history,
         isBlameVisible,
         blameHunks,
         enableLinkDrivenCodeNavigation,
@@ -115,6 +115,8 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         'data-testid': dataTestId,
     } = props
 
+    const location = useLocation()
+    const navigate = useNavigate()
     const [useFileSearch, setUseFileSearch] = useLocalStorage('blob.overrideBrowserFindOnPage', true)
 
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
@@ -139,8 +141,8 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     // Keep history and location in a ref so that we can use the latest value in
     // the onSelection callback without having to recreate it and having to
     // reconfigure the editor extensions
-    const historyRef = useRef(history)
-    historyRef.current = history
+    const navigateRef = useRef(navigate)
+    navigateRef.current = navigate
     const locationRef = useRef(location)
     locationRef.current = location
 
@@ -166,13 +168,13 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             const newSearchParameters = addLineRangeQueryParameter(parameters, query)
             if (customHistoryAction) {
                 customHistoryAction(
-                    historyRef.current.createHref({
+                    createPath({
                         ...locationRef.current,
                         search: formatSearchParameters(newSearchParameters),
                     })
                 )
             } else {
-                updateBrowserHistoryIfChanged(historyRef.current, locationRef.current, newSearchParameters)
+                updateBrowserHistoryIfChanged(navigateRef.current, locationRef.current, newSearchParameters)
             }
         },
         [customHistoryAction]
@@ -193,7 +195,9 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 enableSelectionDrivenCodeNavigation,
             }),
             enableSelectionDrivenCodeNavigation ? tokenSelectionExtension() : [],
-            enableLinkDrivenCodeNavigation ? tokensAsLinks({ history, blobInfo, preloadGoToDefinition }) : [],
+            enableLinkDrivenCodeNavigation
+                ? tokensAsLinks({ navigate: navigateRef.current, blobInfo, preloadGoToDefinition })
+                : [],
             syntaxHighlight.of(blobInfo),
             pin.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick
@@ -216,6 +220,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 overrideBrowserFindInPageShortcut: useFileSearch,
                 onOverrideBrowserFindInPageToggle: setUseFileSearch,
             }),
+            codeFoldingExtension(),
         ],
         // A couple of values are not dependencies (blameDecorations, blobProps,
         // hasPin, position and settings) because those are updated in effects
@@ -251,7 +256,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             // Sync editor selection/focus with the URL so that triggering
             // `history.goBack/goForward()` works similar to the "Go back"
             // command in VS Code.
-            const { selection } = selectionFromLocation(editor, historyRef.current.location)
+            const { selection } = selectionFromLocation(editor, locationRef.current)
             if (selection) {
                 const position = positionAtCmPosition(editor, selection.from)
                 const occurrence = occurrenceAtPosition(editor.state, position)

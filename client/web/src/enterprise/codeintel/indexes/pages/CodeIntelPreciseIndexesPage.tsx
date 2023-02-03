@@ -3,8 +3,7 @@ import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 're
 import { useApolloClient } from '@apollo/client'
 import { mdiDelete, mdiMapSearch, mdiRedo } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
-import { RouteComponentProps, useLocation } from 'react-router'
+import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
 import { of, Subject } from 'rxjs'
 import { tap } from 'rxjs/operators'
 
@@ -50,7 +49,7 @@ import { useReindexPreciseIndexes as defaultUseReindexPreciseIndexes } from '../
 
 import styles from './CodeIntelPreciseIndexesPage.module.scss'
 
-export interface CodeIntelPreciseIndexesPageProps extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
+export interface CodeIntelPreciseIndexesPageProps extends ThemeProps, TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     repo?: { id: string }
     now?: () => Date
@@ -120,10 +119,9 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
     useReindexPreciseIndex = defaultUseReindexPreciseIndex,
     useReindexPreciseIndexes = defaultUseReindexPreciseIndexes,
     telemetryService,
-    history,
 }) => {
+    const location = useLocation()
     useEffect(() => telemetryService.logViewEvent('CodeIntelPreciseIndexesPage'), [telemetryService])
-    const location = useLocation<{ message: string; modal: string }>()
 
     const apolloClient = useApolloClient()
     const { handleDeletePreciseIndex, deleteError } = useDeletePreciseIndex()
@@ -308,7 +306,7 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                         pluralNoun="precise indexes"
                         querySubject={querySubject}
                         nodeComponent={IndexNode}
-                        nodeComponentProps={{ repo, selection, onCheckboxToggle, history }}
+                        nodeComponentProps={{ repo, selection, onCheckboxToggle }}
                         headComponent={() => (
                             <div className={classNames(styles.header, 'px-4 py-3')}>
                                 <div className="px-3">
@@ -385,74 +383,80 @@ interface IndexNodeProps {
     repo?: { id: string }
     selection: Set<string> | 'all'
     onCheckboxToggle: (id: string, checked: boolean) => void
-    history: H.History
 }
 
-const IndexNode: FunctionComponent<IndexNodeProps> = ({ node, repo, selection, onCheckboxToggle, history }) => (
-    <>
-        <div
-            className={classNames(styles.grid, 'px-4')}
-            onClick={() => history.push(`./indexes/${node.id}`)}
-            aria-hidden={true}
-        >
-            <div className="px-3 py-4" onClick={event => event.stopPropagation()} aria-hidden={true}>
-                <Checkbox
-                    label=""
-                    id="disabledFieldsetCheck"
-                    disabled={selection === 'all'}
-                    checked={selection === 'all' ? true : selection.has(node.id)}
-                    onClick={event => event.stopPropagation()}
-                    onChange={input => onCheckboxToggle(node.id, input.target.checked)}
-                />
-            </div>
+const IndexNode: FunctionComponent<IndexNodeProps> = ({ node, repo, selection, onCheckboxToggle }) => {
+    const navigate = useNavigate()
 
-            <div className={classNames(styles.information, 'd-flex flex-column')}>
-                {!repo && (
-                    <div>
-                        <H3 className="m-0 mb-1">
-                            {node.projectRoot ? (
-                                <Link to={node.projectRoot.repository.url} onClick={event => event.stopPropagation()}>
-                                    {node.projectRoot.repository.name}
-                                </Link>
-                            ) : (
-                                <span>Unknown repository</span>
-                            )}
-                        </H3>
-                    </div>
-                )}
-
-                <div>
-                    <span className="mr-2 d-block d-mdinline-block">
-                        <ProjectDescription index={node} onLinkClick={event => event.stopPropagation()} />
-                    </span>
-
-                    <small className="text-mute">
-                        <PreciseIndexLastUpdated index={node} />{' '}
-                        {node.shouldReindex && (
-                            <Tooltip content="This index has been marked as replaceable by auto-indexing.">
-                                <span className={classNames(styles.tag, 'ml-1 rounded')}>
-                                    (replaceable by auto-indexing)
-                                </span>
-                            </Tooltip>
-                        )}
-                    </small>
-                </div>
-            </div>
-
-            <span className={classNames(styles.state, 'd-none d-md-inline')}>
-                <div className="d-flex flex-column align-items-center">
-                    <CodeIntelStateIcon state={node.state} autoIndexed={!!node.indexingFinishedAt} />
-                    <CodeIntelStateLabel
-                        state={node.state}
-                        autoIndexed={!!node.indexingFinishedAt}
-                        placeInQueue={node.placeInQueue}
-                        className="mt-2"
+    return (
+        <>
+            <div
+                className={classNames(styles.grid, 'px-4')}
+                onClick={() => navigate(`./${node.id}`)}
+                aria-hidden={true}
+            >
+                <div className="px-3 py-4" onClick={event => event.stopPropagation()} aria-hidden={true}>
+                    <Checkbox
+                        label=""
+                        id="disabledFieldsetCheck"
+                        disabled={selection === 'all'}
+                        checked={selection === 'all' ? true : selection.has(node.id)}
+                        onClick={event => event.stopPropagation()}
+                        onChange={input => onCheckboxToggle(node.id, input.target.checked)}
                     />
                 </div>
-            </span>
-        </div>
-    </>
-)
+
+                <div className={classNames(styles.information, 'd-flex flex-column')}>
+                    {!repo && (
+                        <div>
+                            <H3 className="m-0 mb-1">
+                                {node.projectRoot ? (
+                                    <Link
+                                        to={node.projectRoot.repository.url}
+                                        onClick={event => event.stopPropagation()}
+                                    >
+                                        {node.projectRoot.repository.name}
+                                    </Link>
+                                ) : (
+                                    <span>Unknown repository</span>
+                                )}
+                            </H3>
+                        </div>
+                    )}
+
+                    <div>
+                        <span className="mr-2 d-block d-mdinline-block">
+                            <ProjectDescription index={node} onLinkClick={event => event.stopPropagation()} />
+                        </span>
+
+                        <small className="text-mute">
+                            <PreciseIndexLastUpdated index={node} />{' '}
+                            {node.shouldReindex && (
+                                <Tooltip content="This index has been marked as replaceable by auto-indexing.">
+                                    <span className={classNames(styles.tag, 'ml-1 rounded')}>
+                                        (replaceable by auto-indexing)
+                                    </span>
+                                </Tooltip>
+                            )}
+                        </small>
+                    </div>
+                </div>
+
+                <span className={classNames(styles.state, 'd-none d-md-inline')}>
+                    <div className="d-flex flex-column align-items-center">
+                        <CodeIntelStateIcon state={node.state} autoIndexed={!!node.indexingFinishedAt} />
+                        <CodeIntelStateLabel
+                            state={node.state}
+                            autoIndexed={!!node.indexingFinishedAt}
+                            placeInQueue={node.placeInQueue}
+                            className="mt-2"
+                        />
+                    </div>
+                </span>
+            </div>
+        </>
+    )
+}
 
 const EmptyIndex: React.FunctionComponent<{}> = () => (
     <Text alignment="center" className="text-muted w-100 mb-0 mt-1">

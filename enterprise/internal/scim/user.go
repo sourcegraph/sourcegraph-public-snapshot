@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // UserResourceHandler implements the scim.ResourceHandler interface for users.
@@ -43,13 +44,26 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 }
 
 // Get returns the resource corresponding with the given identifier.
-func (h *UserResourceHandler) Get(r *http.Request, id string) (scim.Resource, error) {
-	// TODO: Add real logic
-	h.observationCtx.Logger.Error("XXXXX Get", log.String("method", r.Method), log.String("id", id))
+func (h *UserResourceHandler) Get(r *http.Request, idStr string) (scim.Resource, error) {
+	id, err := strconv.ParseInt(idStr, 10, 32)
+	if err != nil {
+		return scim.Resource{}, errors.New("invalid id")
+	}
 
-	return scim.Resource{
-		ID: "123",
-	}, nil
+	// Get users
+	users, err := h.db.Users().ListForSCIM(r.Context(), &database.UsersListOptions{
+		UserIDs: []int32{int32(id)},
+	})
+	if err != nil {
+		return scim.Resource{}, errors.Wrap(err, "Error loading user")
+	}
+	if len(users) == 0 {
+		return scim.Resource{}, errors.New("User not found")
+	}
+
+	resource := h.convertUserToSCIMResource(users[0])
+
+	return resource, nil
 }
 
 // GetAll returns a paginated list of resources.
@@ -81,7 +95,7 @@ func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestPar
 
 	resources := make([]scim.Resource, 0, len(users))
 	for _, user := range users {
-		resources = append(resources, *h.convertUserToSCIMResource(user))
+		resources = append(resources, h.convertUserToSCIMResource(user))
 	}
 
 	return scim.Page{
@@ -91,7 +105,7 @@ func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestPar
 }
 
 // convertUserToSCIMResource converts a Sourcegraph user to a SCIM resource.
-func (h *UserResourceHandler) convertUserToSCIMResource(user *types.UserForSCIM) *scim.Resource {
+func (h *UserResourceHandler) convertUserToSCIMResource(user *types.UserForSCIM) scim.Resource {
 	// Convert names
 	firstName, middleName, lastName := displayNameToPieces(user.DisplayName)
 
@@ -107,7 +121,7 @@ func (h *UserResourceHandler) convertUserToSCIMResource(user *types.UserForSCIM)
 		emailMap = append(emailMap, map[string]interface{}{"value": email})
 	}
 
-	return &scim.Resource{
+	return scim.Resource{
 		ID:         strconv.FormatInt(int64(user.ID), 10),
 		ExternalID: externalIDOptional,
 		Attributes: scim.ResourceAttributes{

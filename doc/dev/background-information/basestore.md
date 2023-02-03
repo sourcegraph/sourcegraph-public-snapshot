@@ -192,5 +192,31 @@ func (s *MyStore) ItsHorsegraphTime(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+	// Scan []horse
+	horses, err := scanHorses(s.Query(ctx, sqlf.Sprintf("SELECT id, age, name, nicknames, passportName FROM horses")))
+	if err != nil {
+		return err
+	}
+}
+
+// scanHorses can scan a row of `horse`s into `[]*horse`
+var scanHorses = basestore.NewSliceScanner(scanHorse)
+
+// scanHorse scans a database row into a `*horse`
+func scanHorse(s dbutil.Scanner) (*horse, error) {
+	var h horse
+	if err := s.Scan(&h.id, &h.age, &h.name, &h.nicknames, &h.passportName); err != nil {
+		return nil, errors.Wrap(err, "Scanning horse failed")
+	}
+	return &h, nil
+}
+
+type horse struct {
+	id           int32
+	age          int32
+	name         string
+	nicknames    []string
+	passportName string
 }
 ```

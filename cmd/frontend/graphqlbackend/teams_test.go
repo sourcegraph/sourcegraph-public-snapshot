@@ -2,6 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -78,6 +81,49 @@ func (teams *fakeTeamsDb) DeleteTeam(_ context.Context, id int32) error {
 	return database.TeamNotFoundError{}
 }
 
+func (teams *fakeTeamsDb) ListTeams(_ context.Context, opts database.ListTeamsOpts) (selected []*types.Team, next int32, err error) {
+	for _, t := range teams.list {
+		if matches(t, opts) {
+			selected = append(selected, t)
+		}
+	}
+	if opts.LimitOffset != nil {
+		selected = selected[opts.LimitOffset.Offset:]
+		if limit := opts.LimitOffset.Limit; limit != 0 && len(selected) > limit {
+			next = selected[opts.LimitOffset.Limit].ID
+			selected = selected[:opts.LimitOffset.Limit]
+		}
+	}
+	return selected, next, nil
+}
+
+func (teams *fakeTeamsDb) CountTeams(ctx context.Context, opts database.ListTeamsOpts) (int32, error) {
+	selected, _, err := teams.ListTeams(ctx, opts)
+	return int32(len(selected)), err
+}
+
+func matches(team *types.Team, opts database.ListTeamsOpts) bool {
+	if opts.Cursor != 0 && team.ID < opts.Cursor {
+		return false
+	}
+	if opts.WithParentID != 0 && team.ParentTeamID != opts.WithParentID {
+		return false
+	}
+	if opts.RootOnly && team.ParentTeamID != 0 {
+		return false
+	}
+	if opts.Search != "" {
+		search := strings.ToLower(opts.Search)
+		name := strings.ToLower(team.Name)
+		displayName := strings.ToLower(team.DisplayName)
+		if !strings.Contains(name, search) && !strings.Contains(displayName, search) {
+			return false
+		}
+	}
+	// opts.ForUserMember is not supported yet as there is no membership fake.
+	return true
+}
+
 func setupDB() (*database.MockDB, *fakeTeamsDb) {
 	ts := &fakeTeamsDb{}
 	db := database.NewMockDB()
@@ -86,6 +132,76 @@ func setupDB() (*database.MockDB, *fakeTeamsDb) {
 		return callback(db)
 	})
 	return db, ts
+}
+
+func TestTeamNode(t *testing.T) {
+	db, ts := setupDB()
+	ctx, _, _ := fakeUser(t, context.Background(), db, true)
+	if err := ts.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+		t.Fatalf("failed to create fake team: %s", err)
+	}
+	team, err := ts.GetTeamByName(ctx, "team")
+	if err != nil {
+		t.Fatalf("failed to get fake team: %s", err)
+	}
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `query TeamByID($id: ID!){
+			node(id: $id) {
+				__typename
+				... on Team {
+				  name
+				}
+			}
+		}`,
+		ExpectedResult: `{
+			"node": {
+				"__typename": "Team",
+				"name": "team"
+			}
+		}`,
+		Variables: map[string]any{
+			"id": string(relay.MarshalID("Team", team.ID)),
+		},
+	})
+}
+
+func TestTeamNodeSiteAdminCanAdminister(t *testing.T) {
+	for _, isAdmin := range []bool{true, false} {
+		t.Run(fmt.Sprintf("viewer is admin = %v", isAdmin), func(t *testing.T) {
+			db, ts := setupDB()
+			ctx, _, _ := fakeUser(t, context.Background(), db, isAdmin)
+			if err := ts.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+				t.Fatalf("failed to create fake team: %s", err)
+			}
+			team, err := ts.GetTeamByName(ctx, "team")
+			if err != nil {
+				t.Fatalf("failed to get fake team: %s", err)
+			}
+			RunTest(t, &Test{
+				Schema:  mustParseGraphQLSchema(t, db),
+				Context: ctx,
+				Query: `query TeamByID($id: ID!){
+					node(id: $id) {
+						__typename
+						... on Team {
+							viewerCanAdminister
+						}
+					}
+				}`,
+				ExpectedResult: fmt.Sprintf(`{
+					"node": {
+						"__typename": "Team",
+						"viewerCanAdminister": %v
+					}
+				}`, isAdmin),
+				Variables: map[string]any{
+					"id": string(relay.MarshalID("Team", team.ID)),
+				},
+			})
+		})
+	}
 }
 
 func TestCreateTeamBare(t *testing.T) {
@@ -650,5 +766,258 @@ func TestDeleteTeamUnauthorized(t *testing.T) {
 		Variables: map[string]any{
 			"name": "team",
 		},
+	})
+}
+
+func TestTeamByName(t *testing.T) {
+	db, ts := setupDB()
+	ctx, _, _ := fakeUser(t, context.Background(), db, true)
+	if err := ts.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+		t.Fatalf("failed to create a team: %s", err)
+	}
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `query Team($name: String!) {
+			team(name: $name) {
+				name
+			}
+		}`,
+		ExpectedResult: `{
+			"team": {
+				"name": "team"
+			}
+		}`,
+		Variables: map[string]any{
+			"name": "team",
+		},
+	})
+}
+
+func TestTeamByNameNotFound(t *testing.T) {
+	db, _ := setupDB()
+	ctx, _, _ := fakeUser(t, context.Background(), db, true)
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `query Team($name: String!) {
+			team(name: $name) {
+				name
+			}
+		}`,
+		ExpectedResult: `{
+			"team": null
+		}`,
+		Variables: map[string]any{
+			"name": "does-not-exist",
+		},
+	})
+}
+
+func TestTeamByNameUnauthorized(t *testing.T) {
+	db, ts := setupDB()
+	// false in the next line indicates not-site-admin
+	ctx, _, _ := fakeUser(t, context.Background(), db, false)
+	if err := ts.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+		t.Fatalf("failed to create a team: %s", err)
+	}
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `query Team($name: String!) {
+			team(name: $name) {
+				id
+			}
+		}`,
+		ExpectedResult: `{
+			"team": null
+		}`,
+		ExpectedErrors: []*gqlerrors.QueryError{
+			{
+				Message: "only site admins can view teams",
+				Path:    []any{"team"},
+			},
+		},
+		Variables: map[string]any{
+			"name": "team",
+		},
+	})
+}
+
+func TestTeamsPaginated(t *testing.T) {
+	db, ts := setupDB()
+	ctx, _, _ := fakeUser(t, context.Background(), db, true)
+	for i := 1; i <= 25; i++ {
+		name := fmt.Sprintf("team-%d", i)
+		if err := ts.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
+			t.Fatalf("failed to create a team: %s", err)
+		}
+	}
+	var (
+		hasNextPage bool = true
+		cursor      string
+	)
+	query := `query Teams($cursor: String!) {
+		teams(after: $cursor, first: 10) {
+			pageInfo {
+				endCursor
+				hasNextPage
+			}
+			nodes {
+				name
+			}
+		}
+	}`
+	operationName := ""
+	var gotNames []string
+	for hasNextPage {
+		variables := map[string]any{
+			"cursor": cursor,
+		}
+		r := mustParseGraphQLSchema(t, db).Exec(ctx, query, operationName, variables)
+		var wantErrors []*gqlerrors.QueryError
+		checkErrors(t, wantErrors, r.Errors)
+		var result struct {
+			Teams *struct {
+				PageInfo *struct {
+					EndCursor   string
+					HasNextPage bool
+				}
+				Nodes []struct {
+					Name string
+				}
+			}
+		}
+		if err := json.Unmarshal(r.Data, &result); err != nil {
+			t.Fatalf("cannot interpret graphQL query result: %s", err)
+		}
+		hasNextPage = result.Teams.PageInfo.HasNextPage
+		cursor = result.Teams.PageInfo.EndCursor
+		for _, node := range result.Teams.Nodes {
+			gotNames = append(gotNames, node.Name)
+		}
+	}
+	var wantNames []string
+	for _, team := range ts.list {
+		wantNames = append(wantNames, team.Name)
+	}
+	if diff := cmp.Diff(wantNames, gotNames); diff != "" {
+		t.Errorf("unexpected team names (-want,+got):\n%s", diff)
+	}
+}
+
+// Skip testing DisplayName search as this is the same except the fake behavior.
+func TestTeamsNameSearch(t *testing.T) {
+	db, ts := setupDB()
+	ctx, _, _ := fakeUser(t, context.Background(), db, true)
+	for _, name := range []string{"hit-1", "Hit-2", "HIT-3", "miss-4", "mIss-5", "MISS-6"} {
+		if err := ts.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
+			t.Fatalf("failed to create a team: %s", err)
+		}
+	}
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `{
+			teams(search: "hit") {
+				nodes {
+					name
+				}
+			}
+		}`,
+		ExpectedResult: `{
+			"teams": {
+				"nodes": [
+					{"name": "hit-1"},
+					{"name": "Hit-2"},
+					{"name": "HIT-3"}
+				]
+			}
+		}`,
+	})
+}
+
+func TestTeamsCount(t *testing.T) {
+	db, ts := setupDB()
+	ctx, _, _ := fakeUser(t, context.Background(), db, true)
+	for i := 1; i <= 25; i++ {
+		name := fmt.Sprintf("team-%d", i)
+		if err := ts.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
+			t.Fatalf("failed to create a team: %s", err)
+		}
+	}
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `{
+			teams(first: 5) {
+				totalCount
+				nodes {
+					name
+				}
+			}
+		}`,
+		ExpectedResult: `{
+			"teams": {
+				"totalCount": 25,
+				"nodes": [
+					{"name": "team-1"},
+					{"name": "team-2"},
+					{"name": "team-3"},
+					{"name": "team-4"},
+					{"name": "team-5"}
+				]
+			}
+		}`,
+	})
+}
+
+func TestChildTeams(t *testing.T) {
+	db, ts := setupDB()
+	ctx, _, _ := fakeUser(t, context.Background(), db, true)
+	if err := ts.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
+		t.Fatalf("failed to create parent team: %s", err)
+	}
+	parent, err := ts.GetTeamByName(ctx, "parent")
+	if err != nil {
+		t.Fatalf("cannot fetch parent team: %s", err)
+	}
+	for i := 1; i <= 5; i++ {
+		name := fmt.Sprintf("child-%d", i)
+		if err := ts.CreateTeam(ctx, &types.Team{Name: name, ParentTeamID: parent.ID}); err != nil {
+			t.Fatalf("cannot create child team: %s", err)
+		}
+	}
+	for i := 6; i <= 10; i++ {
+		name := fmt.Sprintf("not-child-%d", i)
+		if err := ts.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
+			t.Fatalf("cannot create a team: %s", err)
+		}
+	}
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `{
+			team(name: "parent") {
+				childTeams {
+					nodes {
+						name
+					}
+				}
+			}
+		}`,
+		ExpectedResult: `{
+			"team": {
+				"childTeams": {
+					"nodes": [
+						{"name": "child-1"},
+						{"name": "child-2"},
+						{"name": "child-3"},
+						{"name": "child-4"},
+						{"name": "child-5"}
+					]
+				}
+			}
+		}`,
 	})
 }

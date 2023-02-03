@@ -32,6 +32,17 @@ export interface RouteDescriptor<C extends object = {}, P extends object = any> 
     readonly render: (props: C & RouteComponentProps<P>) => React.ReactNode
 }
 
+/**
+ * Configuration for a route.
+ *
+ * @template C Context information that is passed to `render` and `condition`
+ */
+export interface RouteV6Descriptor<C extends object = {}> extends Conditional<C> {
+    /** Path of this route (appended to the current match) */
+    readonly path: string
+    readonly render: (props: C) => React.ReactNode
+}
+
 export interface NavGroupDescriptor<C extends object = {}> extends Conditional<C> {
     readonly header?: {
         readonly label: string
