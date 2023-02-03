@@ -86,7 +86,7 @@ TEST DATA
 			}
 			if validationErrors != nil {
 				out.WriteLine(output.Linef(output.EmojiFailure, output.StyleFailure,
-					"Critical issues found: %s", err.Error()))
+					"Critical issues found: %s", validationErrors.Error()))
 				return errors.New("validation failed")
 			}
 			out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess,
