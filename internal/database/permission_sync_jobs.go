@@ -290,6 +290,9 @@ type ListPermissionSyncJobOpts struct {
 	NullProcessAfter    bool
 	NotNullProcessAfter bool
 	NotCanceled         bool
+
+	// Cursor-based pagination arguments.
+	PaginationArgs *PaginationArgs
 }
 
 func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
@@ -322,8 +325,24 @@ func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
 	return conds
 }
 
+const listPermissionSyncJobQueryFmtstr = `
+SELECT %s
+FROM permission_sync_jobs
+%s -- whereClause
+`
+
 func (s *permissionSyncJobStore) List(ctx context.Context, opts ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error) {
 	conds := opts.sqlConds()
+
+	paginationArgs := PaginationArgs{OrderBy: []OrderByOption{{Field: "id"}}, Ascending: true}
+	if opts.PaginationArgs != nil {
+		paginationArgs = *opts.PaginationArgs
+	}
+	pagination := paginationArgs.SQL()
+
+	if pagination.Where != nil {
+		conds = append(conds, pagination.Where)
+	}
 
 	var whereClause *sqlf.Query
 	if len(conds) != 0 {
@@ -337,6 +356,8 @@ func (s *permissionSyncJobStore) List(ctx context.Context, opts ListPermissionSy
 		sqlf.Join(PermissionSyncJobColumns, ", "),
 		whereClause,
 	)
+	q = pagination.AppendOrderToQuery(q)
+	q = pagination.AppendLimitToQuery(q)
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
@@ -355,13 +376,6 @@ func (s *permissionSyncJobStore) List(ctx context.Context, opts ListPermissionSy
 
 	return syncJobs, nil
 }
-
-const listPermissionSyncJobQueryFmtstr = `
-SELECT %s
-FROM permission_sync_jobs
-%s -- whereClause
-ORDER BY id ASC
-`
 
 type PermissionSyncJob struct {
 	ID                 int

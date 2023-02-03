@@ -986,10 +986,7 @@ func (u *userStore) ListByOrg(ctx context.Context, orgID int32, paginationArgs *
 		where = append(where, cond)
 	}
 
-	p, err := paginationArgs.SQL()
-	if err != nil {
-		return nil, err
-	}
+	p := paginationArgs.SQL()
 
 	if p.Where != nil {
 		where = append(where, p.Where)
