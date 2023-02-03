@@ -170,6 +170,11 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
                 return
             }
 
+            // Bail out if we controlled the selection update.
+            if (selectedIds.length > 0 && selectedIds[0] === element.id) {
+                return
+            }
+
             // On the initial rendering, an onSelect event is fired for the
             // default node. We don't want to navigate to that node though.
             if (defaultSelectFiredRef.current === false && element.id === defaultNodeId) {
@@ -197,7 +202,15 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
             }
             setSelectedIds([element.id])
         },
-        [defaultNodeId, telemetryService, navigate, props.initialFilePathIsDirectory, initialFilePath, onExpandParent]
+        [
+            selectedIds,
+            defaultNodeId,
+            telemetryService,
+            navigate,
+            props.initialFilePathIsDirectory,
+            initialFilePath,
+            onExpandParent,
+        ]
     )
 
     // We need a mutable reference to the tree data since we don't want the
