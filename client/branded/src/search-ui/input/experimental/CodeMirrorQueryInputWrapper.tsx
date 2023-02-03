@@ -326,20 +326,25 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
                     <div ref={setContainer} className="d-contents" />
                     <button
                         type="button"
-                        className={classNames(styles.inputButton, { [styles.showWhenFocused]: hasValue })}
+                        className={classNames(styles.inputButton, hasValue && styles.showWhenFocused)}
                         onClick={clear}
                     >
                         <Icon svgPath={mdiClose} aria-label="Clear" />
                     </button>
-                    {children && hasValue && <span className={classNames(styles.showWhenFocused, styles.separator)} />}
-                    <span className={styles.showWhenFocused}>{children}</span>
                     <button
                         type="button"
-                        className={classNames(styles.inputButton, styles.globalShortcut, styles.hideWhenFocused)}
+                        className={classNames(
+                            styles.inputButton,
+                            styles.globalShortcut,
+                            styles.hideWhenFocused,
+                            'mr-2'
+                        )}
                         onClick={focus}
                     >
                         /
                     </button>
+                    {children && <span className={classNames(styles.separator, !hasValue && styles.hideWhenFocused)} />}
+                    {children}
                 </div>
                 <div ref={setSuggestionsContainer} className={styles.suggestions} />
             </div>
