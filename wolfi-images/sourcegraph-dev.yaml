@@ -1,6 +1,7 @@
 contents:
   keyring:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    - https://storage.googleapis.com/package-repository/packages/melange.rsa.pub
   repositories:
     - https://packages.wolfi.dev/os
     - '@sourcegraph https://storage.googleapis.com/package-repository/packages/main/'
