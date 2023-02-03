@@ -22,7 +22,11 @@ func Init(logger log.Logger) {
 	// INDEXED_SEARCH_SERVERS is empty (but defined) so that indexed search is disabled.
 	setDefaultEnv(logger, "INDEXED_SEARCH_SERVERS", "")
 
+	// GITSERVER_ADDR is used by gitserver to identify itself in the list in
+	// SRC_GIT_SERVERS.
+	setDefaultEnv(logger, "GITSERVER_ADDR", "127.0.0.1:3178")
 	setDefaultEnv(logger, "SRC_GIT_SERVERS", "127.0.0.1:3178")
+
 	setDefaultEnv(logger, "SYMBOLS_URL", "http://127.0.0.1:3184")
 	setDefaultEnv(logger, "SEARCHER_URL", "http://127.0.0.1:3181")
 	setDefaultEnv(logger, "REPO_UPDATER_URL", "http://127.0.0.1:3182")
