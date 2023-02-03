@@ -130,7 +130,7 @@ const EnableSmartSearch: React.FunctionComponent<React.PropsWithChildren<EnableS
             <Icon
                 aria-hidden={true}
                 svgPath={smartSearchIconSvgPath}
-                className={classNames(iconStyles.smartIcon, 'text-white my-auto')}
+                className={classNames(iconStyles.smartIcon, 'my-auto')}
             />
             <Button variant="link" className="px-0 mr-1" onClick={enableSmartSearch}>
                 Enable Smart Search
