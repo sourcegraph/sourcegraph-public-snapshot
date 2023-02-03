@@ -457,6 +457,12 @@ func GetRemoteRepo(
 	return repo, nil
 }
 
+// DefaultForkName returns the default name assigned when creating a new fork of a
+// repository originally from the given namespace and with the given name.
+func DefaultForkName(namespace string, name string) string {
+	return fmt.Sprintf("%s-%s", namespace, name)
+}
+
 // CopyRepoAsFork takes a *types.Repo and returns a copy of it where each
 // *types.SourceInfo.CloneURL on its Sources has been updated from nameAndOwner to
 // forkNameAndOwner and its Metadata is updated to the provided metadata. This is useful
