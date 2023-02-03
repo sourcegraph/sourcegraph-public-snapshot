@@ -257,7 +257,6 @@ export const ExternalServicePage: FC<React.PropsWithChildren<Props>> = props => 
                             height={350}
                             readOnly={true}
                             isLightTheme={isLightTheme}
-                            history={history}
                             className="test-external-service-editor"
                             telemetryService={telemetryService}
                         />

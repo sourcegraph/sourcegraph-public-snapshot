@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { mdiFileDocumentOutline, mdiSourceRepository, mdiFolderOutline, mdiFolderOpenOutline } from '@mdi/js'
+import {
+    mdiFileDocumentOutline,
+    mdiSourceRepository,
+    mdiFolderOutline,
+    mdiFolderOpenOutline,
+    mdiFolderArrowUp,
+} from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom-v5-compat'
 
@@ -250,12 +256,14 @@ function renderNode({
     isBranch,
     isExpanded,
     handleSelect,
+    handleExpand,
     props,
 }: {
     element: TreeNode
     isBranch: boolean
     isExpanded: boolean
     handleSelect: (event: React.MouseEvent) => {}
+    handleExpand: (event: React.MouseEvent) => {}
     props: { className: string }
 }): React.ReactNode {
     const { entry, error, dotdot, name } = element
@@ -277,11 +285,11 @@ function renderNode({
                 }}
             >
                 <Icon
-                    svgPath={mdiFolderOutline}
+                    svgPath={mdiFolderArrowUp}
                     className={classNames('mr-1', styles.icon)}
                     aria-label="Load parent directory"
                 />
-                ..
+                {name}
             </Link>
         )
     }
@@ -333,6 +341,11 @@ function renderNode({
             onClick={event => {
                 event.preventDefault()
                 handleSelect(event)
+                // When clicking on a non-expanded folder, we want to navigate
+                // to it _and_ expand it.
+                if (isBranch && !isExpanded) {
+                    handleExpand(event)
+                }
             }}
         >
             <Icon
@@ -530,9 +543,11 @@ function insertRootNode(tree: TreeData, rootTreeUrl: string, alwaysLoadAncestors
 
     if (!alwaysLoadAncestors && tree.rootPath !== '') {
         const id = tree.nodes.length
+        const parentPathName = getParentPath(tree.rootPath)
+        const parentDirName = parentPathName === '' ? 'Repository root' : parentPathName.split('/').pop()!
         const path = tree.rootPath + '/..'
         const node: TreeNode = {
-            name: '..',
+            name: parentDirName,
             id,
             isBranch: false,
             parent: 0,

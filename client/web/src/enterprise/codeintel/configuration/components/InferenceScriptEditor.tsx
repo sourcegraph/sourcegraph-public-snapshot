@@ -1,7 +1,5 @@
 import { FunctionComponent, useCallback, useMemo, useState } from 'react'
 
-import { useHistory } from 'react-router'
-
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, PageHeader, screenReaderAnnounce, ErrorAlert } from '@sourcegraph/wildcard'
 
@@ -39,7 +37,6 @@ export const InferenceScriptEditor: FunctionComponent<InferenceScriptEditorProps
     )
 
     const [dirty, setDirty] = useState<boolean>()
-    const history = useHistory()
     const isLightTheme = useTheme().enhancedThemePreference === ThemePreference.Light
 
     const customToolbar = useMemo<{
@@ -107,7 +104,6 @@ export const InferenceScriptEditor: FunctionComponent<InferenceScriptEditorProps
                     saving={isUpdating}
                     height={600}
                     isLightTheme={isLightTheme}
-                    history={history}
                     telemetryService={telemetryService}
                     customSaveToolbar={authenticatedUser?.siteAdmin ? customToolbar : undefined}
                     onDirtyChange={setDirty}

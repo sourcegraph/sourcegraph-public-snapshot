@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { RouteComponentProps } from 'react-router'
+import { NavigateFunction, Location } from 'react-router-dom-v5-compat'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
 
@@ -60,9 +60,12 @@ function queryRepositoryComparisonCommits(args: {
     )
 }
 
-interface Props extends RepositoryCompareAreaPageProps, RouteComponentProps<{}> {
+interface Props extends RepositoryCompareAreaPageProps {
     /** An optional path of a specific file being compared */
     path: string | null
+
+    location: Location
+    navigate: NavigateFunction
 }
 
 /** A page with a list of commits in the comparison. */

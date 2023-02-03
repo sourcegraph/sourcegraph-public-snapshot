@@ -22,6 +22,7 @@ import {
     queryIssues,
     IssueLabel,
     createLatestRelease,
+    cloneRepo,
 } from './github'
 import { ensureEvent, getClient, EventOptions, calendarTime } from './google-calendar'
 import { postMessage, slackURL } from './slack'
@@ -379,21 +380,40 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
     {
         id: 'release:create-candidate',
         description: 'Generate the Nth release candidate. Set <candidate> to "final" to generate a final release',
-        argNames: ['candidate'],
-        run: async (config, candidate) => {
-            if (!candidate) {
-                throw new Error('Candidate information is required (either "final" or a number)')
-            }
+        argNames: ['arg'],
+        run: async (config, arg) => {
             const { upcoming: release } = await releaseVersions(config)
             const branch = `${release.major}.${release.minor}`
-            const tag = `v${release.version}${candidate === 'final' ? '' : `-rc.${candidate}`}`
             ensureReleaseBranchUpToDate(branch)
+
+            const owner = 'sourcegraph'
+            const repo = 'sourcegraph'
+
             try {
+                const client = await getAuthenticatedGitHubClient()
+                const { workdir } = await cloneRepo(client, owner, repo, { revision: branch, revisionMustExist: true })
+
+                execa.sync('git', ['fetch', '--tags'], { cwd: workdir })
+                const tags = execa
+                    .sync('git', ['--no-pager', 'tag', '-l', `v${release.version}-rc*`], { cwd: workdir })
+                    .stdout.split('\t')
+
+                let nextCandidate = 1
+                for (const tag of tags) {
+                    const num = parseInt(tag.slice(-1), 10)
+                    if (num >= nextCandidate) {
+                        nextCandidate = num + 1
+                    }
+                }
+                const tag = `v${release.version}${arg === 'final' ? '' : `-rc.${nextCandidate}`}`
+
+                console.log(`Detected next candidate: ${nextCandidate}, attempting to create tag: ${tag}`)
                 await createTag(
-                    await getAuthenticatedGitHubClient(),
+                    client,
+                    workdir,
                     {
-                        owner: 'sourcegraph',
-                        repo: 'sourcegraph',
+                        owner,
+                        repo,
                         branch,
                         tag,
                     },
@@ -401,7 +421,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 )
                 console.log(`To check the status of the build, run:\nsg ci status -branch ${tag} --wait\n`)
             } catch (error) {
-                console.error(`Failed to create tag: ${tag}`, error)
+                console.error('Failed to create tag', error)
             }
         },
     },
@@ -691,6 +711,7 @@ Batch change: ${batchChangeURL}`,
             const { upcoming: release } = await releaseVersions(config)
             let failed = false
 
+            const owner = 'sourcegraph'
             // Push final tags
             const branch = `${release.major}.${release.minor}`
             const tag = `v${release.version}`
@@ -700,10 +721,16 @@ Batch change: ${batchChangeURL}`,
                 'deploy-sourcegraph-docker-customer-replica-1',
             ]) {
                 try {
+                    const client = await getAuthenticatedGitHubClient()
+                    const { workdir } = await cloneRepo(client, owner, repo, {
+                        revision: branch,
+                        revisionMustExist: true,
+                    })
                     await createTag(
-                        await getAuthenticatedGitHubClient(),
+                        client,
+                        workdir,
                         {
-                            owner: 'sourcegraph',
+                            owner,
                             repo,
                             branch,
                             tag,

@@ -41,13 +41,21 @@ gazelle_binary(
     languages = [
         # Loads the native proto extension
         "@bazel_gazelle//language/proto:go_default_library",
+        # Gazelle-buf does not include the Go plugin by default, so we have to add it
+        # ourselves.
+        "@bazel_gazelle//language/go:go_default_library",
         # Loads the Buf extension
         "@rules_buf//gazelle/buf:buf",
         # NOTE: This needs to be loaded after the proto language
     ],
 )
 
+# Tell gazelle what is our main module
 # gazelle:prefix github.com/sourcegraph/sourcegraph
+
+# Specify which protoc compilers we want when we detect GRPC service definitions.
+# gazelle:go_grpc_compilers //:gen-go-grpc,@io_bazel_rules_go//proto:go_proto
+
 gazelle(
     name = "gazelle",
     gazelle = ":gazelle-buf",
@@ -88,5 +96,16 @@ go_proto_compiler(
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//codes:go_default_library",
         "@org_golang_google_grpc//status:go_default_library",
+    ],
+)
+
+js_library(
+    name = "postcss_config_js",
+    srcs = ["postcss.config.js"],
+    deps = [
+        "//:node_modules/autoprefixer",
+        "//:node_modules/postcss-custom-media",
+        "//:node_modules/postcss-focus-visible",
+        "//:node_modules/postcss-inset",
     ],
 )

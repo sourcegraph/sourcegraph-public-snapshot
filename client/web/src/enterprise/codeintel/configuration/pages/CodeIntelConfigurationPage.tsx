@@ -13,8 +13,7 @@ import {
     mdiSourceRepository,
 } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
-import { RouteComponentProps, useHistory, useLocation } from 'react-router'
+import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
 import { Subject } from 'rxjs'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
@@ -64,7 +63,7 @@ const filters: FilteredConnectionFilter[] = [
     },
 ]
 
-export interface CodeIntelConfigurationPageProps extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
+export interface CodeIntelConfigurationPageProps extends ThemeProps, TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     queryPolicies?: typeof defaultQueryPolicies
     repo?: { id: string; name: string }
@@ -79,12 +78,11 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
     repo,
     indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
     telemetryService,
-    ...props
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelConfiguration'), [telemetryService])
 
-    const history = useHistory()
-    const location = useLocation<{ message: string; modal: string }>()
+    const navigate = useNavigate()
+    const location = useLocation()
     const updates = useMemo(() => new Subject<void>(), [])
 
     const apolloClient = useApolloClient()
@@ -107,13 +105,17 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
                 // Force update of filtered connection
                 updates.next()
 
-                history.push({
-                    pathname: './configuration',
-                    state: { modal: 'SUCCESS', message: `Configuration policy ${name} has been deleted.` },
-                })
+                navigate(
+                    {
+                        pathname: './configuration',
+                    },
+                    {
+                        state: { modal: 'SUCCESS', message: `Configuration policy ${name} has been deleted.` },
+                    }
+                )
             })
         },
-        [handleDeleteConfig, updates, history]
+        [handleDeleteConfig, updates, navigate]
     )
 
     return (
@@ -144,7 +146,7 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
                         graph data.
                     </>
                 }
-                actions={authenticatedUser?.siteAdmin && <CreatePolicyButtons repo={repo} history={history} />}
+                actions={authenticatedUser?.siteAdmin && <CreatePolicyButtons repo={repo} />}
                 className="mb-3"
             />
 
@@ -181,24 +183,27 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
 
 interface CreatePolicyButtonsProps {
     repo?: { id: string; name: string }
-    history: H.History
 }
 
-const CreatePolicyButtons: FunctionComponent<CreatePolicyButtonsProps> = ({ repo, history }) => (
-    <>
-        <Button variant="primary" className="" onClick={() => history.push('./configuration/new?type=head')}>
-            <>Create new {!repo && 'global'} policy for HEAD (tip of default branch)</>
-        </Button>
+const CreatePolicyButtons: FunctionComponent<CreatePolicyButtonsProps> = ({ repo }) => {
+    const navigate = useNavigate()
 
-        <Button variant="primary" className="ml-2" onClick={() => history.push('./configuration/new?type=branch')}>
-            <>Create new {!repo && 'global'} branch policy</>
-        </Button>
+    return (
+        <>
+            <Button variant="primary" className="" onClick={() => navigate('./new?type=head')}>
+                <>Create new {!repo && 'global'} policy for HEAD (tip of default branch)</>
+            </Button>
 
-        <Button variant="primary" className="ml-2" onClick={() => history.push('./configuration/new?type=tag')}>
-            <>Create new {!repo && 'global'} tag policy</>
-        </Button>
-    </>
-)
+            <Button variant="primary" className="ml-2" onClick={() => navigate('./new?type=branch')}>
+                <>Create new {!repo && 'global'} branch policy</>
+            </Button>
+
+            <Button variant="primary" className="ml-2" onClick={() => navigate('./new?type=tag')}>
+                <>Create new {!repo && 'global'} tag policy</>
+            </Button>
+        </>
+    )
+}
 
 interface PoliciesNodeProps {
     isDeleting: boolean

@@ -1,9 +1,7 @@
-import React, { useEffect, useState } from 'react'
+import React, { FC, useEffect, useState } from 'react'
 
 import { mdiChevronDown, mdiChevronUp, mdiLock } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
-import { RouteComponentProps } from 'react-router'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
@@ -55,12 +53,9 @@ interface UpdateMirrorRepositoryActionContainerProps {
     onDidUpdateRepository: () => Promise<void>
     disabled: boolean
     disabledReason: string | undefined
-    history: H.History
 }
 
-const UpdateMirrorRepositoryActionContainer: React.FunctionComponent<
-    UpdateMirrorRepositoryActionContainerProps
-> = props => {
+const UpdateMirrorRepositoryActionContainer: FC<UpdateMirrorRepositoryActionContainerProps> = props => {
     const [updateRepo] = useMutation<UpdateMirrorRepositoryResult, UpdateMirrorRepositoryVariables>(
         UPDATE_MIRROR_REPOSITORY,
         { variables: { repository: props.repo.id } }
@@ -133,7 +128,6 @@ const UpdateMirrorRepositoryActionContainer: React.FunctionComponent<
             flashText="Added to queue"
             info={info}
             run={run}
-            history={props.history}
         />
     )
 }
@@ -141,10 +135,9 @@ const UpdateMirrorRepositoryActionContainer: React.FunctionComponent<
 interface CheckMirrorRepositoryConnectionActionContainerProps {
     repo: SettingsAreaRepositoryFields
     onDidUpdateReachability: (reachable: boolean) => void
-    history: H.History
 }
 
-const CheckMirrorRepositoryConnectionActionContainer: React.FunctionComponent<
+const CheckMirrorRepositoryConnectionActionContainer: FC<
     CheckMirrorRepositoryConnectionActionContainerProps
 > = props => {
     const [checkConnection, { data, loading, error }] = useMutation<
@@ -213,10 +206,9 @@ const CheckMirrorRepositoryConnectionActionContainer: React.FunctionComponent<
 // Add interface for props then create component
 interface CorruptionLogProps {
     repo: SettingsAreaRepositoryFields
-    history: H.History
 }
 
-const CorruptionLogsContainer: React.FunctionComponent<CorruptionLogProps> = props => {
+const CorruptionLogsContainer: FC<CorruptionLogProps> = props => {
     const health = props.repo.mirrorInfo.isCorrupted ? (
         <>
             <Alert className={classNames('mb-0', styles.alert)} variant="danger">
@@ -225,6 +217,7 @@ const CorruptionLogsContainer: React.FunctionComponent<CorruptionLogProps> = pro
             <br />
         </>
     ) : null
+
     const logEvents: JSX.Element[] = props.repo.mirrorInfo.corruptionLogs.map(log => (
         <li key={`${props.repo.name}#${log.timestamp}`} className="list-group-item px-2 py-1">
             <div className="d-flex flex-column align-items-center justify-content-between">
@@ -278,17 +271,14 @@ const CorruptionLogsContainer: React.FunctionComponent<CorruptionLogProps> = pro
     )
 }
 
-interface RepoSettingsMirrorPageProps extends RouteComponentProps<{}> {
+interface RepoSettingsMirrorPageProps {
     repo: SettingsAreaRepositoryFields
-    history: H.History
 }
 
 /**
  * The repository settings mirror page.
  */
-export const RepoSettingsMirrorPage: React.FunctionComponent<
-    React.PropsWithChildren<RepoSettingsMirrorPageProps>
-> = props => {
+export const RepoSettingsMirrorPage: FC<RepoSettingsMirrorPageProps> = props => {
     eventLogger.logPageView('RepoSettingsMirror')
     const [reachable, setReachable] = useState<boolean>()
     const [recloneRepository] = useMutation<RecloneRepositoryResult, RecloneRepositoryVariables>(
@@ -353,7 +343,6 @@ export const RepoSettingsMirrorPage: React.FunctionComponent<
                     }}
                     disabled={typeof reachable === 'boolean' && !reachable}
                     disabledReason={typeof reachable === 'boolean' && !reachable ? 'Not reachable' : undefined}
-                    history={props.history}
                 />
                 <ActionContainer
                     title="Reclone repository"
@@ -382,12 +371,10 @@ export const RepoSettingsMirrorPage: React.FunctionComponent<
                     run={async () => {
                         await recloneRepository()
                     }}
-                    history={props.history}
                 />
                 <CheckMirrorRepositoryConnectionActionContainer
                     repo={repo}
                     onDidUpdateReachability={onDidUpdateReachability}
-                    history={props.history}
                 />
                 {reachable === false && (
                     <Alert variant="info">
@@ -416,7 +403,7 @@ export const RepoSettingsMirrorPage: React.FunctionComponent<
                         </ul>
                     </Alert>
                 )}
-                <CorruptionLogsContainer repo={repo} history={props.history} />
+                <CorruptionLogsContainer repo={repo} />
             </Container>
         </>
     )
