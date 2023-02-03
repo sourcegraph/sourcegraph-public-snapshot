@@ -21,7 +21,7 @@ echo "--- go build"
 pkg=${1:-"github.com/sourcegraph/sourcegraph/cmd/migrator"}
 output="$OUTPUT/$(basename "$pkg")"
 # shellcheck disable=SC2153
-go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$output" "$pkg"
+bazel run @go_sdk//:bin/go -- build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$output" "$pkg"
 
 echo "--- compile schema descriptions"
 mkdir -p "${OUTPUT}/schema-descriptions"
