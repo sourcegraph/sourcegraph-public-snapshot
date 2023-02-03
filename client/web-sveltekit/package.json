@@ -34,15 +34,16 @@
 		"vite": "^4.0.4"
 	},
 	"type": "module",
-  "dependencies": {
-    "@popperjs/core": "^2.11.6",
-    "@sveltejs/svelte-virtual-list": "^3.0.1",
-    "prismjs": "^1.29.0",
-    "@sourcegraph/branded": "workspace:*",
-    "@sourcegraph/common": "workspace:*",
-    "@sourcegraph/http-client": "workspace:*",
-    "@sourcegraph/shared": "workspace:*",
-    "@sourcegraph/wildcard": "workspace:*",
-    "@sourcegraph/web": "workspace:*"
-  }
+	"dependencies": {
+		"@popperjs/core": "^2.11.6",
+		"@sourcegraph/branded": "workspace:*",
+		"@sourcegraph/common": "workspace:*",
+		"@sourcegraph/http-client": "workspace:*",
+		"@sourcegraph/shared": "workspace:*",
+		"@sourcegraph/web": "workspace:*",
+		"@sourcegraph/wildcard": "workspace:*",
+		"@sveltejs/svelte-virtual-list": "^3.0.1",
+		"path-browserify": "^1.0.1",
+		"prismjs": "^1.29.0"
+	}
 }

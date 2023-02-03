@@ -1103,6 +1103,7 @@ importers:
       eslint: ^8.32.0
       eslint-config-prettier: ^8.6.0
       eslint-plugin-svelte3: ^4.0.0
+      path-browserify: ^1.0.1
       prettier: ^2.8.3
       prettier-plugin-svelte: ^2.9.0
       prismjs: ^1.29.0
@@ -1120,6 +1121,7 @@ importers:
       '@sourcegraph/web': link:../web
       '@sourcegraph/wildcard': link:../wildcard
       '@sveltejs/svelte-virtual-list': 3.0.1
+      path-browserify: 1.0.1
       prismjs: 1.29.0
     devDependencies:
       '@playwright/test': 1.25.0

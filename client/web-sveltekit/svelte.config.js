@@ -24,6 +24,8 @@ const config = {
       // production build
       'rxjs/operators': '../../node_modules/rxjs/operators/index',
       'rxjs/fetch': '../../node_modules/rxjs/fetch/index',
+      // Map node-module to browser version
+      path: 'node_modules/path-browserify',
     },
   },
 }
