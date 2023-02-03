@@ -1,6 +1,5 @@
-load("//client/shared/dev:tools.bzl", "module_style_typings")
-load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("//dev:defs.bzl", "sass")
+load("//client/shared/dev:tools.bzl", "module_style_typings")
 
 module_style_typings(
     name = "module_style_typings",
@@ -25,17 +24,6 @@ sass(
         "//:node_modules/open-color",
         "//client/wildcard:global-styles",
         "//client/wildcard:sass-breakpoints",
+        "//client/wildcard:sass-utils",
     ],
-)
-
-js_library(
-    name = "graphql_operations_files",
-    # Keep in sync with glob in client/shared/dev/generateGraphQlOperations.js
-    srcs = glob(
-        [
-            "src/**/*.ts",
-            "src/**/*.tsx",
-        ],
-    ),
-    visibility = ["//client/jetbrains:__pkg__"],
 )
