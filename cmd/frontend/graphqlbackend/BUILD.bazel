@@ -5,6 +5,7 @@ package(default_visibility = [
     "//client/shared:__subpackages__",
     "//cmd/frontend:__subpackages__",
     "//enterprise:__subpackages__",
+    "//dev/gqltest:__subpackages__",
 ])
 
 js_library(
