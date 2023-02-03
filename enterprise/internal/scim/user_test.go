@@ -7,17 +7,13 @@ import (
 
 	"github.com/elimity-com/scim"
 	"github.com/scim2/filter-parser/v2"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/stretchr/testify/require"
 )
 
 func TestUserResourceHandler_GetAll(t *testing.T) {
-	db := getMockDB(t)
+	db := getMockDB()
 
 	// Create handler, request, and params, then call GetAll()
 	request := &http.Request{}
@@ -43,21 +39,24 @@ func TestUserResourceHandler_GetAll(t *testing.T) {
 
 	// Assert that IDs are correct
 	if page.Resources[0].ID != "1" {
-		t.Errorf("expected 1, got %s", page.Resources[0].ID)
+		t.Errorf("expected ID = 1, got %s", page.Resources[0].ID)
 	}
 	if page.Resources[1].ID != "2" {
-		t.Errorf("expected 2, got %s", page.Resources[1].ID)
+		t.Errorf("expected ID = 2, got %s", page.Resources[1].ID)
 	}
-	if page.Resources[0].ExternalID.Value() != "user" {
-		t.Errorf("expected user, got %s", page.Resources[0].ExternalID.Value())
+	if page.Resources[0].ExternalID.Value() != "external1" {
+		t.Errorf("expected ExternalID = 'external1', got %s", page.Resources[0].ExternalID.Value())
+	}
+	if page.Resources[1].ExternalID.Value() != "" {
+		t.Errorf("expected no ExternalID, got %s", page.Resources[0].ExternalID.Value())
 	}
 
 	// Assert that usernames are correct
 	if page.Resources[0].Attributes["userName"] != "user1" {
-		t.Errorf("expected user1, got %s", page.Resources[0].Attributes["UserName"])
+		t.Errorf("expected username = 'user1', got %s", page.Resources[0].Attributes["UserName"])
 	}
 	if page.Resources[1].Attributes["userName"] != "user2" {
-		t.Errorf("expected user2, got %s", page.Resources[1].Attributes["UserName"])
+		t.Errorf("expected username = 'user2', got %s", page.Resources[1].Attributes["UserName"])
 	}
 
 	// Assert that names are correct
@@ -92,45 +91,24 @@ func TestUserResourceHandler_GetAll(t *testing.T) {
 	}
 }
 
-func getMockDB(t *testing.T) *database.MockDB {
-	// Mock users
+func getMockDB() *database.MockDB {
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
-	users.ListFunc.SetDefaultHook(func(ctx context.Context, opt *database.UsersListOptions) ([]*types.User, error) {
+	users.ListForSCIMFunc.SetDefaultHook(func(ctx context.Context, opt *database.UsersListOptions) ([]*types.UserForSCIM, error) {
 		if opt.LimitOffset.Offset == 2 {
-			return []*types.User{
-				{ID: 3, Username: "user3"},
-				{ID: 4, Username: "user4"},
+			return []*types.UserForSCIM{
+				{User: types.User{ID: 3, Username: "user3"}},
+				{User: types.User{ID: 4, Username: "user4"}},
 			}, nil
 		}
-		return []*types.User{
-			{ID: 1, Username: "user1", DisplayName: "First Last"},
-			{ID: 2, Username: "user2", DisplayName: "First Middle Last"}}, nil
+		return []*types.UserForSCIM{
+			{User: types.User{ID: 1, Username: "user1", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "external1"},
+			{User: types.User{ID: 2, Username: "user2", DisplayName: "First Middle Last"}, Emails: []string{"b@example.com"}, SCIMExternalID: ""}}, nil
 	})
 	users.CountFunc.SetDefaultReturn(4, nil)
-
-	// Mock external accounts
-	errNotFound := &errcode.Mock{
-		IsNotFound: true,
-	}
-	externalAccountsStore := database.NewMockUserExternalAccountsStore()
-	externalAccountsStore.ListFunc.SetDefaultReturn([]*extsvc.Account{
-		{ID: 1, AccountSpec: extsvc.AccountSpec{ServiceType: "scim", ServiceID: "", AccountID: "user"}},
-	}, nil)
-	externalAccountsStore.LookupUserAndSaveFunc.SetDefaultReturn(0, errNotFound)
-	externalAccountsStore.CreateUserAndSaveFunc.SetDefaultHook(func(ctx context.Context, _ database.NewUser, _ extsvc.AccountSpec, _ extsvc.AccountData) (int32, error) {
-		require.True(t, actor.FromContext(ctx).SourcegraphOperator, "the actor should be a Sourcegraph operator")
-		return 1, nil
-	})
-
-	// Mock user emails
-	userEmails := database.NewMockUserEmailsStore()
-	userEmails.ListByUserFunc.SetDefaultReturn([]*database.UserEmail{{Email: "a@example.com", VerifiedAt: nil}}, nil)
 
 	// Create DB
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
-	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccountsStore)
-	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	return db
 }

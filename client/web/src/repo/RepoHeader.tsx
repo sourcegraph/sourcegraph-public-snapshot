@@ -85,7 +85,7 @@ export interface RepoHeaderContribution {
      * Render function called with RepoHeaderContext.
      * Use `actionType` to determine how to render the component.
      */
-    children: (context: RepoHeaderContext) => React.ReactElement
+    children: (context: RepoHeaderContext) => JSX.Element | null
 }
 
 /**

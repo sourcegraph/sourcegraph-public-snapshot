@@ -100,9 +100,27 @@ var states = []string{"queued", "processing", "errored", "failed", "completed"}
 func addSyncJobs(t *testing.T, ctx context.Context, db database.DB, repoOrUser string, id int) {
 	t.Helper()
 	for _, state := range states {
-		insertQuery := "INSERT INTO permission_sync_jobs(reason, state, %s) VALUES('', '%s', %d)"
-		_, err := db.ExecContext(ctx, fmt.Sprintf(insertQuery, repoOrUser, state, id))
+		insertQuery := "INSERT INTO permission_sync_jobs(reason, state, finished_at, %s) VALUES('', '%s', %s, %d)"
+		_, err := db.ExecContext(ctx, fmt.Sprintf(insertQuery, repoOrUser, state, getFinishedAt(state), id))
 		require.NoError(t, err)
+	}
+}
+
+// getFinishedAt returns `finished_at` column for inserting test jobs.
+//
+// Time is mapped to status, from oldest to newest: errored->failed->completed.
+//
+// Queued and processing jobs doesn't have a `finished_at` value, hence NULL.
+func getFinishedAt(state string) string {
+	switch state {
+	case "errored":
+		return "NOW() - INTERVAL '5 HOURS'"
+	case "failed":
+		return "NOW() - INTERVAL '2 HOURS'"
+	case "completed":
+		return "NOW() - INTERVAL '1 HOUR'"
+	default:
+		return "NULL"
 	}
 }
 

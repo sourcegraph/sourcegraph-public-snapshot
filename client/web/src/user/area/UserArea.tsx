@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react'
 
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, Switch } from 'react-router'
 import { useParams, useLocation } from 'react-router-dom-v5-compat'
 
@@ -15,7 +14,7 @@ import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
-import { HeroPage } from '../../components/HeroPage'
+import { NotFoundPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
 import { UserAreaUserFields, UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../../graphql-operations'
 import { NamespaceProps } from '../../namespaces'
@@ -166,7 +165,7 @@ export const UserArea: React.FunctionComponent<React.PropsWithChildren<UserAreaP
     }
 
     if (!user) {
-        return <NotFoundPage />
+        return <NotFoundPage pageType="user" />
     }
 
     const context: UserAreaRouteContext = {
@@ -214,15 +213,9 @@ export const UserArea: React.FunctionComponent<React.PropsWithChildren<UserAreaP
                                 />
                             )
                     )}
-                    <Route key="hardcoded-key">
-                        <NotFoundPage />
-                    </Route>
+                    <Route key="hardcoded-key" render={() => <NotFoundPage pageType="user" />} />
                 </Switch>
             </React.Suspense>
         </ErrorBoundary>
     )
 }
-
-const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested user page was not found." />
-)

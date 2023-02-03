@@ -53,11 +53,11 @@ func (s *pythonPackagesSource) Get(ctx context.Context, name reposource.PackageN
 }
 
 func (pythonPackagesSource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
-	return reposource.ParseVersionedPackage(dep)
+	return reposource.ParseVersionedPackage(dep), nil
 }
 
 func (pythonPackagesSource) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
-	return reposource.ParsePythonPackageFromName(name)
+	return reposource.ParsePythonPackageFromName(name), nil
 }
 
 func (pythonPackagesSource) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {

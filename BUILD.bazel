@@ -34,10 +34,32 @@ ts_config(
     ],
 )
 
-load("@bazel_gazelle//:def.bzl", "gazelle")
+load("@bazel_gazelle//:def.bzl", "gazelle", "gazelle_binary")
 
+gazelle_binary(
+    name = "gazelle-buf",
+    languages = [
+        # Loads the native proto extension
+        "@bazel_gazelle//language/proto:go_default_library",
+        # Gazelle-buf does not include the Go plugin by default, so we have to add it
+        # ourselves.
+        "@bazel_gazelle//language/go:go_default_library",
+        # Loads the Buf extension
+        "@rules_buf//gazelle/buf:buf",
+        # NOTE: This needs to be loaded after the proto language
+    ],
+)
+
+# Tell gazelle what is our main module
 # gazelle:prefix github.com/sourcegraph/sourcegraph
-gazelle(name = "gazelle")
+
+# Specify which protoc compilers we want when we detect GRPC service definitions.
+# gazelle:go_grpc_compilers //:gen-go-grpc,@io_bazel_rules_go//proto:go_proto
+
+gazelle(
+    name = "gazelle",
+    gazelle = ":gazelle-buf",
+)
 
 go_library(
     name = "sourcegraph",
@@ -57,4 +79,33 @@ gazelle(
         "-build_file_proto_mode=disable_global",
     ],
     command = "update-repos",
+)
+
+load("@io_bazel_rules_go//proto/wkt:well_known_types.bzl", "WELL_KNOWN_TYPES_APIV2")
+load("@io_bazel_rules_go//proto:compiler.bzl", "go_proto_compiler")
+
+# Because the current implementation of rules_go uses the old protoc grpc compiler, we have to declare our own, and declare it manually in the build files.
+# See https://github.com/bazelbuild/rules_go/issues/3022
+go_proto_compiler(
+    name = "gen-go-grpc",
+    plugin = "@org_golang_google_grpc_cmd_protoc_gen_go_grpc//:protoc-gen-go-grpc",
+    suffix = "_grpc.pb.go",
+    valid_archive = False,
+    visibility = ["//visibility:public"],
+    deps = WELL_KNOWN_TYPES_APIV2 + [
+        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//codes:go_default_library",
+        "@org_golang_google_grpc//status:go_default_library",
+    ],
+)
+
+js_library(
+    name = "postcss_config_js",
+    srcs = ["postcss.config.js"],
+    deps = [
+        "//:node_modules/autoprefixer",
+        "//:node_modules/postcss-custom-media",
+        "//:node_modules/postcss-focus-visible",
+        "//:node_modules/postcss-inset",
+    ],
 )

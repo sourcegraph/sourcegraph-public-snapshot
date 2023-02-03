@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -180,7 +181,7 @@ WHERE repo.deleted_at IS NULL AND %s ORDER BY queued_at DESC, u.id LIMIT %d OFFS
 func (s *store) DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) (err error) {
 	ctx, _, endObservation := s.operations.deleteIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", opts.RepositoryID),
-		log.String("state", opts.State),
+		log.String("states", strings.Join(opts.States, ",")),
 		log.String("term", opts.Term),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -193,8 +194,11 @@ func (s *store) DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOpti
 	if opts.Term != "" {
 		conds = append(conds, makeIndexSearchCondition(opts.Term))
 	}
-	if opts.State != "" {
-		conds = append(conds, makeStateCondition([]string{opts.State}))
+	if len(opts.States) > 0 {
+		conds = append(conds, makeStateCondition(opts.States))
+	}
+	if opts.WithoutUpload {
+		conds = append(conds, sqlf.Sprintf("NOT EXISTS (SELECT 1 FROM lsif_uploads u2 WHERE u2.associated_index_id = u.id)"))
 	}
 
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
@@ -230,7 +234,7 @@ WHERE u.repository_id = repo.id AND %s
 func (s *store) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOptions) (err error) {
 	ctx, _, endObservation := s.operations.reindexIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", opts.RepositoryID),
-		log.String("state", opts.State),
+		log.String("states", strings.Join(opts.States, ",")),
 		log.String("term", opts.Term),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -243,8 +247,11 @@ func (s *store) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOp
 	if opts.Term != "" {
 		conds = append(conds, makeIndexSearchCondition(opts.Term))
 	}
-	if opts.State != "" {
-		conds = append(conds, makeStateCondition([]string{opts.State}))
+	if len(opts.States) > 0 {
+		conds = append(conds, makeStateCondition(opts.States))
+	}
+	if opts.WithoutUpload {
+		conds = append(conds, sqlf.Sprintf("NOT EXISTS (SELECT 1 FROM lsif_uploads u2 WHERE u2.associated_index_id = u.id)"))
 	}
 
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))

@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react'
 
 import { mdiPlus } from '@mdi/js'
-import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -25,20 +24,12 @@ import {
     SiteAdminProductSubscriptionNodeProps,
 } from './SiteAdminProductSubscriptionNode'
 
-interface Props extends RouteComponentProps<{}> {}
-
-class FilteredSiteAdminProductSubscriptionConnection extends FilteredConnection<
-    SiteAdminProductSubscriptionFields,
-    SiteAdminProductSubscriptionNodeProps
-> {}
+interface Props {}
 
 /**
  * Displays the product subscriptions that have been created on Sourcegraph.com.
  */
-export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    history,
-    location,
-}) => {
+export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
     useEffect(() => eventLogger.logViewEvent('SiteAdminProductSubscriptions'), [])
     return (
         <div className="site-admin-product-subscriptions-page">
@@ -50,7 +41,7 @@ export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<React.Pr
                     Create product subscription
                 </Button>
             </div>
-            <FilteredSiteAdminProductSubscriptionConnection
+            <FilteredConnection<SiteAdminProductSubscriptionFields, SiteAdminProductSubscriptionNodeProps>
                 className="mt-3"
                 listComponent="table"
                 listClassName="table"
@@ -59,8 +50,6 @@ export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<React.Pr
                 queryConnection={queryProductSubscriptions}
                 headComponent={SiteAdminProductSubscriptionNodeHeader}
                 nodeComponent={SiteAdminProductSubscriptionNode}
-                history={history}
-                location={location}
             />
         </div>
     )

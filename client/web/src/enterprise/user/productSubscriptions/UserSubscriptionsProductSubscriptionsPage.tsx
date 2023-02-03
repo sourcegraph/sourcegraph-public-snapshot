@@ -29,11 +29,6 @@ interface Props extends RouteComponentProps<{}> {
     user: UserAreaUserFields
 }
 
-class FilteredProductSubscriptionConnection extends FilteredConnection<
-    ProductSubscriptionFields,
-    ProductSubscriptionNodeProps
-> {}
-
 /**
  * Displays the product subscriptions associated with this account.
  */
@@ -104,7 +99,7 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                 className="mb-3"
             />
             <Container className="mb-3">
-                <FilteredProductSubscriptionConnection
+                <FilteredConnection<ProductSubscriptionFields, ProductSubscriptionNodeProps>
                     listComponent="table"
                     listClassName="table mb-0"
                     noun="subscription"
@@ -114,8 +109,6 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                     nodeComponent={ProductSubscriptionNode}
                     hideSearch={true}
                     noSummaryIfAllNodesVisible={true}
-                    history={props.history}
-                    location={props.location}
                     emptyElement={
                         <Text alignment="center" className="w-100 mb-0 text-muted">
                             You have no subscriptions.

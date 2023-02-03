@@ -150,6 +150,66 @@ extend type Mutation {
     ): EmptyResponse
 
     """
+    Deletes a precise index.
+    """
+    deletePreciseIndex(id: ID!): EmptyResponse
+
+    """
+    Deletes precise indexes by filter criteria.
+    """
+    deletePreciseIndexes(
+        """
+        An (optional) search query that filters the state, repository name, commit, root, and indexer properties.
+        """
+        query: String
+
+        """
+        The index state.
+        """
+        states: [PreciseIndexState!]
+
+        """
+        When specified, only deletes indexes that are latest for the given repository.
+        """
+        isLatestForRepo: Boolean
+
+        """
+        The repository.
+        """
+        repository: ID
+    ): EmptyResponse
+
+    """
+    Marks a precise index as replaceable by auto-indexing.
+    """
+    reindexPreciseIndex(id: ID!): EmptyResponse
+
+    """
+    Marks precise indexes by filter criteria as replaceable by auto-indexing.
+    """
+    reindexPreciseIndexes(
+        """
+        An (optional) search query that filters the state, repository name, commit, root, and indexer properties.
+        """
+        query: String
+
+        """
+        The index state.
+        """
+        states: [PreciseIndexState!]
+
+        """
+        When specified, only modifies indexes that are latest for the given repository.
+        """
+        isLatestForRepo: Boolean
+
+        """
+        The repository.
+        """
+        repository: ID
+    ): EmptyResponse
+
+    """
     Request support for a particular language.
     """
     requestLanguageSupport(language: String!): EmptyResponse
