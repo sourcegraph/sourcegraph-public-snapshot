@@ -256,7 +256,8 @@ type Changeset struct {
 	ExternalServiceType string
 	// ExternalBranch should always be prefixed with refs/heads/. Call git.EnsureRefPrefix before setting this value.
 	ExternalBranch string
-	// ExternalForkNamespace is only set if the changeset is opened on a fork.
+	// ExternalForkName[space] is only set if the changeset is opened on a fork.
+	ExternalForkName      string
 	ExternalForkNamespace string
 	ExternalDeletedAt     time.Time
 	ExternalUpdatedAt     time.Time

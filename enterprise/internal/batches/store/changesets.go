@@ -41,6 +41,7 @@ var changesetStringColumns = SQLColumns{
 	"external_id",
 	"external_service_type",
 	"external_branch",
+	"external_fork_name",
 	"external_fork_namespace",
 	"external_deleted_at",
 	"external_updated_at",
@@ -83,6 +84,7 @@ var changesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.external_id"),
 	sqlf.Sprintf("changesets.external_service_type"),
 	sqlf.Sprintf("changesets.external_branch"),
+	sqlf.Sprintf("changesets.external_fork_name"),
 	sqlf.Sprintf("changesets.external_fork_namespace"),
 	sqlf.Sprintf("changesets.external_deleted_at"),
 	sqlf.Sprintf("changesets.external_updated_at"),
@@ -124,6 +126,7 @@ var changesetInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("external_id"),
 	sqlf.Sprintf("external_service_type"),
 	sqlf.Sprintf("external_branch"),
+	sqlf.Sprintf("external_fork_name"),
 	sqlf.Sprintf("external_fork_namespace"),
 	sqlf.Sprintf("external_deleted_at"),
 	sqlf.Sprintf("external_updated_at"),
@@ -159,6 +162,7 @@ var changesetCodeHostStateInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("updated_at"),
 	sqlf.Sprintf("metadata"),
 	sqlf.Sprintf("external_branch"),
+	sqlf.Sprintf("external_fork_name"),
 	sqlf.Sprintf("external_fork_namespace"),
 	sqlf.Sprintf("external_deleted_at"),
 	sqlf.Sprintf("external_updated_at"),
@@ -186,6 +190,7 @@ var changesetInsertStringColumns = []string{
 	"external_id",
 	"external_service_type",
 	"external_branch",
+	"external_fork_name",
 	"external_fork_namespace",
 	"external_deleted_at",
 	"external_updated_at",
@@ -279,6 +284,7 @@ func (s *Store) CreateChangeset(ctx context.Context, cs ...*btypes.Changeset) (e
 				dbutil.NullStringColumn(c.ExternalID),
 				c.ExternalServiceType,
 				dbutil.NullStringColumn(c.ExternalBranch),
+				dbutil.NullStringColumn(c.ExternalForkName),
 				dbutil.NullStringColumn(c.ExternalForkNamespace),
 				dbutil.NullTimeColumn(c.ExternalDeletedAt),
 				dbutil.NullTimeColumn(c.ExternalUpdatedAt),
@@ -321,7 +327,7 @@ func (s *Store) CreateChangeset(ctx context.Context, cs ...*btypes.Changeset) (e
 		changesetStringColumns,
 		func(rows dbutil.Scanner) error {
 			i++
-			return scanChangeset(cs[i], rows)
+			return ScanChangeset(cs[i], rows)
 		},
 		inserter,
 	)
@@ -472,7 +478,7 @@ func (s *Store) GetChangeset(ctx context.Context, opts GetChangesetOpts) (ch *bt
 	q := getChangesetQuery(&opts)
 
 	var c btypes.Changeset
-	err = s.query(ctx, q, func(sc dbutil.Scanner) error { return scanChangeset(&c, sc) })
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error { return ScanChangeset(&c, sc) })
 	if err != nil {
 		return nil, err
 	}
@@ -521,7 +527,7 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		getChangesetsQueryFmtstr,
-		sqlf.Join(changesetColumns, ", "),
+		sqlf.Join(ChangesetColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -543,7 +549,7 @@ func (s *Store) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyn
 	results := make([]*btypes.ChangesetSyncData, 0)
 	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		var h btypes.ChangesetSyncData
-		if err := scanChangesetSyncData(&h, sc); err != nil {
+		if err := ScanChangesetSyncData(&h, sc); err != nil {
 			return err
 		}
 		results = append(results, &h)
@@ -857,6 +863,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *btypes.Changese
 		dbutil.NullStringColumn(c.ExternalID),
 		c.ExternalServiceType,
 		dbutil.NullStringColumn(c.ExternalBranch),
+		dbutil.NullStringColumn(c.ExternalForkName),
 		dbutil.NullStringColumn(c.ExternalForkNamespace),
 		dbutil.NullTimeColumn(c.ExternalDeletedAt),
 		dbutil.NullTimeColumn(c.ExternalUpdatedAt),
@@ -894,7 +901,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *btypes.Changese
 
 var updateChangesetQueryFmtstr = `
 UPDATE changesets
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   %s
@@ -1101,6 +1108,7 @@ func updateChangesetCodeHostStateQuery(c *btypes.Changeset) (*sqlf.Query, error)
 		c.UpdatedAt,
 		metadata,
 		dbutil.NullStringColumn(c.ExternalBranch),
+		dbutil.NullStringColumn(c.ExternalForkName),
 		dbutil.NullStringColumn(c.ExternalForkNamespace),
 		dbutil.NullTimeColumn(c.ExternalDeletedAt),
 		dbutil.NullTimeColumn(c.ExternalUpdatedAt),
@@ -1121,7 +1129,7 @@ func updateChangesetCodeHostStateQuery(c *btypes.Changeset) (*sqlf.Query, error)
 
 var updateChangesetCodeHostStateQueryFmtstr = `
 UPDATE changesets
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   %s
@@ -1383,6 +1391,7 @@ func scanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 		&dbutil.NullString{S: &t.ExternalID},
 		&t.ExternalServiceType,
 		&dbutil.NullString{S: &t.ExternalBranch},
+		&dbutil.NullString{S: &t.ExternalForkName},
 		&dbutil.NullString{S: &t.ExternalForkNamespace},
 		&dbutil.NullTime{Time: &t.ExternalDeletedAt},
 		&dbutil.NullTime{Time: &t.ExternalUpdatedAt},
