@@ -121,7 +121,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Always rebuild Wolfi images
 		ops.Merge(
 			// TODO: Just hardcode specific images initially
-			BuildWolfiOperations([]string{"postgres-12-alpine", "codeinsights-db", "codeintel-db"}, c.Version, c.candidateImageTag()),
+			BuildWolfiOperations([]string{"postgres-12-alpine", "codeinsights-db", "codeintel-db", "redis-cache", "redis-store"}, c.Version, c.candidateImageTag()),
 		)
 
 	case runtype.PullRequest:
