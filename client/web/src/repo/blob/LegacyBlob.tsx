@@ -66,7 +66,7 @@ import { WebHoverOverlay } from '../../components/shared'
 import { BlameColumn } from './BlameColumn'
 import { BlobInfo, BlobProps, updateBrowserHistoryIfChanged } from './CodeMirrorBlob'
 
-import styles from './Blob.module.scss'
+import styles from './LegacyBlob.module.scss'
 
 const domFunctions = {
     getCodeElementFromTarget: (target: HTMLElement): HTMLTableCellElement | null => {
@@ -129,7 +129,7 @@ const domFunctions = {
  * previous viewer (e.g. hoverifier subscription). If we don't remove extension features
  * in this state, hovers can lead to errors like `DocumentNotFoundError`.
  */
-export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> = props => {
+export const LegacyBlob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> = props => {
     const {
         isLightTheme,
         extensionsController,

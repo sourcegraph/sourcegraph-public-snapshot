@@ -68,7 +68,7 @@ import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
 import { fetchBlob, fetchStencil } from './backend'
-import { Blob } from './Blob'
+import { LegacyBlob } from './LegacyBlob'
 import { BlobLoadingSpinner } from './BlobLoadingSpinner'
 import { Blob as CodeMirrorBlob, type BlobInfo } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
@@ -509,7 +509,7 @@ export const BlobPage: FC<BlobPageProps> = ({ className, ...props }) => {
         )
     }
 
-    const BlobComponent = enableCodeMirror ? CodeMirrorBlob : Blob
+    const BlobComponent = enableCodeMirror ? CodeMirrorBlob : LegacyBlob
 
     return (
         <div className={className}>
