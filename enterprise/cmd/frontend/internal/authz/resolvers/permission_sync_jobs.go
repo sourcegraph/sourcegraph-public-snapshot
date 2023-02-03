@@ -168,6 +168,18 @@ func (p *permissionSyncJobResolver) InvalidateCaches() bool {
 	return p.job.InvalidateCaches
 }
 
+func (p *permissionSyncJobResolver) PermissionsAdded() int {
+	return p.job.PermissionsAdded
+}
+
+func (p *permissionSyncJobResolver) PermissionsRemoved() int {
+	return p.job.PermissionsRemoved
+}
+
+func (p *permissionSyncJobResolver) PermissionsFound() int {
+	return p.job.PermissionsFound
+}
+
 func marshalPermissionSyncJobID(id int) graphql.ID {
 	return relay.MarshalID("PermissionSyncJob", id)
 }

@@ -38,6 +38,9 @@ type PermissionSyncJobResolver interface {
 	Priority() database.PermissionSyncJobPriority
 	NoPerms() bool
 	InvalidateCaches() bool
+	PermissionsAdded() int
+	PermissionsRemoved() int
+	PermissionsFound() int
 }
 
 type ListPermissionSyncJobsArgs struct {
