@@ -152,12 +152,16 @@ func (teams *fakeTeamsDb) ListTeamMembers(_ context.Context, opts database.ListT
 		return nil, nil, errors.New("fakeTeamsDb does not suppor Search parameter in ListTeamMembers yet")
 	}
 	for _, m := range teams.members {
-		if opts.Cursor.TeamID <= m.TeamID && opts.Cursor.UserID <= m.UserID {
-			if opts.TeamID != 0 && opts.TeamID != m.TeamID {
-				continue
-			}
-			selected = append(selected, m)
+		if opts.Cursor.TeamID > m.TeamID {
+			continue
 		}
+		if opts.Cursor.TeamID == m.TeamID && opts.Cursor.UserID > m.UserID {
+			continue
+		}
+		if opts.TeamID != 0 && opts.TeamID != m.TeamID {
+			continue
+		}
+		selected = append(selected, m)
 	}
 	if opts.LimitOffset != nil {
 		selected = selected[opts.LimitOffset.Offset:]
@@ -1144,46 +1148,96 @@ func TestChildTeams(t *testing.T) {
 	})
 }
 
-// func TestMembers(t *testing.T) {
-// 	setupDB()
-// 	ctx, _, _ := fakeUser(t, context.Background(), db, true)
-
-// 	if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
-// 		t.Fatalf("failed to create team: %s", err)
-// 	}
-// 	team, err := fakeTeams.GetTeamByName(ctx, "team")
-// 	if err != nil {
-
-// 	}
-
-// 	if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
-// 		t.Fatalf("failed to create team: %s", err)
-// 	}
-
-// 	RunTest(t, &Test{
-// 		Schema:  mustParseGraphQLSchema(t, db),
-// 		Context: ctx,
-// 		Query: `{
-// 			team(name: "parent") {
-// 				childTeams {
-// 					nodes {
-// 						name
-// 					}
-// 				}
-// 			}
-// 		}`,
-// 		ExpectedResult: `{
-// 			"team": {
-// 				"childTeams": {
-// 					"nodes": [
-// 						{"name": "child-1"},
-// 						{"name": "child-2"},
-// 						{"name": "child-3"},
-// 						{"name": "child-4"},
-// 						{"name": "child-5"}
-// 					]
-// 				}
-// 			}
-// 		}`,
-// 	})
-// }
+func TestMembersPaginated(t *testing.T) {
+	setupDB()
+	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: true}))
+	if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: "team-with-members"}); err != nil {
+		t.Fatalf("failed to create team: %s", err)
+	}
+	teamWithMembers, err := fakeTeams.GetTeamByName(ctx, "team-with-members")
+	if err != nil {
+		t.Fatalf("failed to featch fake team: %s", err)
+	}
+	if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: "different-team"}); err != nil {
+		t.Fatalf("failed to create team: %s", err)
+	}
+	differentTeam, err := fakeTeams.GetTeamByName(ctx, "different-team")
+	if err != nil {
+		t.Fatalf("failed to featch fake team: %s", err)
+	}
+	for _, team := range []*types.Team{teamWithMembers, differentTeam} {
+		for i := 1; i <= 25; i++ {
+			id := fakeUsers.newUser(types.User{Username: fmt.Sprintf("user-%d-%d", team.ID, i)})
+			m := &types.TeamMember{
+				TeamID: team.ID,
+				UserID: id,
+			}
+			fakeTeams.members = append(fakeTeams.members, m)
+		}
+	}
+	var (
+		hasNextPage bool = true
+		cursor      string
+	)
+	query := `query Members($cursor: String!) {
+		team(name: "team-with-members") {
+			members(after: $cursor, first: 10) {
+				totalCount
+				pageInfo {
+					endCursor
+					hasNextPage
+				}
+				nodes {
+					... on User {
+						username
+					}
+				}
+			}
+		}
+	}`
+	operationName := ""
+	var gotUsernames []string
+	for hasNextPage {
+		variables := map[string]any{
+			"cursor": cursor,
+		}
+		r := mustParseGraphQLSchema(t, db).Exec(ctx, query, operationName, variables)
+		var wantErrors []*gqlerrors.QueryError
+		checkErrors(t, wantErrors, r.Errors)
+		var result struct {
+			Team *struct {
+				Members *struct {
+					TotalCount int
+					PageInfo   *struct {
+						EndCursor   string
+						HasNextPage bool
+					}
+					Nodes []struct {
+						Username string
+					}
+				}
+			}
+		}
+		if err := json.Unmarshal(r.Data, &result); err != nil {
+			t.Fatalf("cannot interpret graphQL query result: %s", err)
+		}
+		if got, want := result.Team.Members.TotalCount, 25; got != want {
+			t.Errorf("totalCount, got %d, want %d", got, want)
+		}
+		if got, want := len(result.Team.Members.Nodes), 10; got > want {
+			t.Errorf("#nodes, got %d, want at most %d", got, want)
+		}
+		hasNextPage = result.Team.Members.PageInfo.HasNextPage
+		cursor = result.Team.Members.PageInfo.EndCursor
+		for _, node := range result.Team.Members.Nodes {
+			gotUsernames = append(gotUsernames, node.Username)
+		}
+	}
+	var wantUsernames []string
+	for i := 1; i <= 25; i++ {
+		wantUsernames = append(wantUsernames, fmt.Sprintf("user-%d-%d", teamWithMembers.ID, i))
+	}
+	if diff := cmp.Diff(wantUsernames, gotUsernames); diff != "" {
+		t.Errorf("unexpected member usernames (-want,+got):\n%s", diff)
+	}
+}

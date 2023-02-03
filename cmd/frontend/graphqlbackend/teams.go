@@ -168,10 +168,14 @@ func (r *teamResolver) ViewerCanAdminister(ctx context.Context) bool {
 }
 
 func (r *teamResolver) Members(ctx context.Context, args *ListTeamMembersArgs) (*teamMemberConnection, error) {
-	return &teamMemberConnection{
+	c := &teamMemberConnection{
 		db:     r.db,
 		teamID: r.team.ID,
-	}, nil
+	}
+	if err := c.applyArgs(args); err != nil {
+		return nil, err
+	}
+	return c, nil
 }
 
 func (r *teamResolver) ChildTeams(ctx context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {
@@ -212,7 +216,7 @@ type teamMemberListCursor struct {
 // into `teamMemberConnection` fields for convenient use in database query.
 // TODO: Consider a way merging this with the other `applyArgs` method.
 func (r *teamMemberConnection) applyArgs(args *ListTeamMembersArgs) error {
-	if args.After != nil {
+	if args.After != nil && *args.After != "" {
 		cursorText, err := graphqlutil.DecodeCursor(args.After)
 		if err != nil {
 			return err
@@ -242,6 +246,7 @@ func (r *teamMemberConnection) compute(ctx context.Context) {
 				TeamID: r.cursor.TeamID,
 				UserID: r.cursor.UserID,
 			},
+			TeamID: r.teamID,
 			Search: r.search,
 		}
 		if r.limit != 0 {
