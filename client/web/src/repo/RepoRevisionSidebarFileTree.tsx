@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { mdiFileDocumentOutline, mdiSourceRepository, mdiFolderOutline, mdiFolderOpenOutline } from '@mdi/js'
 import classNames from 'classnames'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -106,6 +106,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
     const [selectedIds, setSelectedIds] = useState<number[]>(defaultSelectedIds)
 
     const navigate = useNavigate()
+    const location = useLocation()
 
     const [defaultVariables] = useState({
         repoName: props.repoName,
@@ -121,10 +122,11 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
             ancestors: alwaysLoadAncestors,
         },
         onCompleted(data) {
-            const rootTreeUrl = data?.repository?.commit?.tree?.url
-            const entries = data?.repository?.commit?.tree?.entries
+            let rootTreeUrl = data?.repository?.commit?.tree?.url
+            let entries = data?.repository?.commit?.tree?.entries
             if (!entries || !rootTreeUrl) {
-                throw new Error('No entries or root data')
+                rootTreeUrl = location.pathname
+                entries = []
             }
             if (treeData === null) {
                 setTreeData(
@@ -136,7 +138,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
                     )
                 )
             } else {
-                setTreeData(treeData => appendTreeData(treeData!, entries, rootTreeUrl, alwaysLoadAncestors))
+                setTreeData(treeData => appendTreeData(treeData!, entries!, rootTreeUrl!, alwaysLoadAncestors))
             }
         },
     })
