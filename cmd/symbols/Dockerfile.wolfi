@@ -3,7 +3,7 @@
 #   file if you change the regular Dockerfile.
 
 # TODO: See if we can switch back to cgr.dev/chainguard/go:latest
-FROM golang:1.19.3-alpine AS symbols-build
+FROM cgr.dev/chainguard/go:latest AS symbols-build
 # hadolint ignore=DL3002
 USER root
 
@@ -12,10 +12,10 @@ ENV GOARCH amd64
 ENV GOOS linux
 ENV CGO_ENABLED 1
 
-RUN apt-get update && \
-    apt-get install -y \
-    gcc \
-    g++
+# RUN apt-get update && \
+#     apt-get install -y \
+#     gcc \
+#     g++
 
 COPY . /repo
 
