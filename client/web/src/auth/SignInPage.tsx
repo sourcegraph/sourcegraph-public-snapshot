@@ -107,8 +107,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                     {builtInAuthProvider && !showBuiltInAuthForm && (
                         <div className="mb-2">
                             <Button to={builtInAuthProviderURL} display="block" variant="secondary" as={Link}>
-                                <Icon aria-hidden={true} svgPath={mdiEmail} />
-                                Continue with Email
+                                <Icon aria-hidden={true} svgPath={mdiEmail} /> Continue with Email
                             </Button>
                         </div>
                     )}
