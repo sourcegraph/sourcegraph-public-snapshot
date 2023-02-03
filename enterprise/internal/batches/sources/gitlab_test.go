@@ -1482,12 +1482,14 @@ func TestDecorateMergeRequestData(t *testing.T) {
 		err := createSource(t).decorateMergeRequestData(ctx, newGitLabProject(int(forked.ProjectID)), forked)
 		assert.Nil(t, err)
 		assert.Equal(t, "LawnGnome", forked.SourceProjectNamespace)
+		assert.Equal(t, "sourcegraph-src-cli", forked.SourceProjectNamespace)
 	})
 
 	t.Run("not a fork", func(t *testing.T) {
 		err := createSource(t).decorateMergeRequestData(ctx, newGitLabProject(int(unforked.ProjectID)), unforked)
 		assert.Nil(t, err)
 		assert.Equal(t, "", unforked.SourceProjectNamespace)
+		assert.Equal(t, "", forked.SourceProjectNamespace)
 	})
 }
 

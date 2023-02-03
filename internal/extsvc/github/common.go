@@ -158,6 +158,7 @@ type Label struct {
 
 type PullRequestRepo struct {
 	ID    string
+	Name  string
 	Owner struct {
 		Login string
 	}
@@ -1380,6 +1381,7 @@ fragment prCommit on PullRequestCommit {
 
 fragment repo on Repository {
   id
+  name
   owner {
     login
   }

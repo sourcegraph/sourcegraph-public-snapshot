@@ -383,8 +383,10 @@ func (c *Changeset) SetMetadata(meta any) error {
 
 		if pr.BaseRepository.ID != pr.HeadRepository.ID {
 			c.ExternalForkNamespace = pr.HeadRepository.Owner.Login
+			c.ExternalForkName = pr.HeadRepository.Name
 		} else {
 			c.ExternalForkNamespace = ""
+			c.ExternalForkName = ""
 		}
 	case *bitbucketserver.PullRequest:
 		c.Metadata = pr
@@ -395,8 +397,10 @@ func (c *Changeset) SetMetadata(meta any) error {
 
 		if pr.FromRef.Repository.ID != pr.ToRef.Repository.ID {
 			c.ExternalForkNamespace = pr.FromRef.Repository.Project.Key
+			c.ExternalForkName = pr.FromRef.Repository.Slug
 		} else {
 			c.ExternalForkNamespace = ""
+			c.ExternalForkName = ""
 		}
 	case *gitlab.MergeRequest:
 		c.Metadata = pr
@@ -405,6 +409,7 @@ func (c *Changeset) SetMetadata(meta any) error {
 		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.SourceBranch)
 		c.ExternalUpdatedAt = pr.UpdatedAt.Time
 		c.ExternalForkNamespace = pr.SourceProjectNamespace
+		c.ExternalForkName = pr.SourceProjectName
 	case *bbcs.AnnotatedPullRequest:
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(pr.ID, 10)
@@ -418,8 +423,10 @@ func (c *Changeset) SetMetadata(meta any) error {
 				return errors.Wrap(err, "determining fork namespace")
 			}
 			c.ExternalForkNamespace = namespace
+			c.ExternalForkName = pr.Source.Repo.Name
 		} else {
 			c.ExternalForkNamespace = ""
+			c.ExternalForkName = ""
 		}
 	default:
 		return errors.New("unknown changeset type")
