@@ -185,18 +185,18 @@ loop:
 			require.NotNil(t, job.FailureMessage)
 			require.Equal(t, errorMsg, *job.FailureMessage)
 			require.Equal(t, 1, job.NumFailures)
-			require.Nil(t, job.PermissionsAdded)
-			require.Nil(t, job.PermissionsRemoved)
-			require.Nil(t, job.PermissionsFound)
+			require.Equal(t, 0, job.PermissionsAdded)
+			require.Equal(t, 0, job.PermissionsRemoved)
+			require.Equal(t, 0, job.PermissionsFound)
 		}
 
 		// Check that user sync job wasn't picked up by repo sync worker.
 		if jobID == 4 {
 			require.Equal(t, "queued", job.State)
 			require.Nil(t, job.FailureMessage)
-			require.Nil(t, job.PermissionsAdded)
-			require.Nil(t, job.PermissionsRemoved)
-			require.Nil(t, job.PermissionsFound)
+			require.Equal(t, 0, job.PermissionsAdded)
+			require.Equal(t, 0, job.PermissionsRemoved)
+			require.Equal(t, 0, job.PermissionsFound)
 		}
 	}
 }
@@ -316,18 +316,18 @@ loop:
 			require.Equal(t, errorMsg, *job.FailureMessage)
 			require.Equal(t, 1, job.NumFailures)
 			require.True(t, job.NoPerms)
-			require.Nil(t, job.PermissionsAdded)
-			require.Nil(t, job.PermissionsRemoved)
-			require.Nil(t, job.PermissionsFound)
+			require.Equal(t, 0, job.PermissionsAdded)
+			require.Equal(t, 0, job.PermissionsRemoved)
+			require.Equal(t, 0, job.PermissionsFound)
 		}
 
 		// Check that repo sync job wasn't picked up by user sync worker.
 		if jobID == 4 {
 			require.Equal(t, "queued", job.State)
 			require.Nil(t, job.FailureMessage)
-			require.Nil(t, job.PermissionsAdded)
-			require.Nil(t, job.PermissionsRemoved)
-			require.Nil(t, job.PermissionsFound)
+			require.Equal(t, 0, job.PermissionsAdded)
+			require.Equal(t, 0, job.PermissionsRemoved)
+			require.Equal(t, 0, job.PermissionsFound)
 		}
 	}
 }
