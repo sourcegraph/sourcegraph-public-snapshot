@@ -215,7 +215,6 @@ require (
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	github.com/zenazn/goji v1.0.1 // indirect
-	go.bobheadxi.dev/streamline v1.2.2 // indirect
 	go.opentelemetry.io/otel/metric v0.34.0 // indirect
 	go.uber.org/goleak v1.2.0 // indirect
 )
@@ -246,6 +245,7 @@ require (
 	github.com/wk8/go-ordered-map/v2 v2.1.5
 	github.com/xanzy/go-gitlab v0.76.0
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20220924101305-151362477c87
+	go.bobheadxi.dev/streamline v1.2.2
 	go.opentelemetry.io/otel/exporters/jaeger v1.11.2
 	golang.org/x/exp v0.0.0-20221208152030-732eee02a75a
 )
