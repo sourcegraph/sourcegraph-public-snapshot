@@ -7,8 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/proto"
+	codeownerspb "github.com/sourcegraph/sourcegraph/protos/codeowners/v1"
 )
 
 // Parse parses CODEOWNERS file given as a Reader and returns the proto
