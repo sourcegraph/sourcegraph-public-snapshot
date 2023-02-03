@@ -17,12 +17,6 @@ type OwnerMatch struct {
 	Path     string
 
 	LimitHit int
-
-	// Debug is optionally set with a debug message explaining the result.
-	//
-	// Note: this is a pointer since usually this is unset. Pointer is 8 bytes
-	// vs an empty string which is 16 bytes.
-	Debug *string `json:"-"`
 }
 
 func (om *OwnerMatch) RepoName() types.MinimalRepo {
@@ -40,8 +34,8 @@ func (om *OwnerMatch) ResultCount() int {
 	return 1
 }
 
-func (om *OwnerMatch) Select(selectPath filter.SelectPath) Match {
-	// todo can this be safely ignored?
+func (om *OwnerMatch) Select(filter.SelectPath) Match {
+	// There is nothing to "select" from an owner as implemented currently so we return nil.
 	return nil
 }
 

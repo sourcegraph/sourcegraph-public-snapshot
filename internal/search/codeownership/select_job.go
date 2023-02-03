@@ -22,8 +22,6 @@ func NewSelectOwnersSearch(child job.Job) job.Job {
 
 type selectOwnersJob struct {
 	child job.Job
-
-	owning string
 }
 
 func (s *selectOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
