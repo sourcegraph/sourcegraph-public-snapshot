@@ -6,6 +6,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -67,15 +68,15 @@ func (s *SiteConfigurationChangeConnectionStore) MarshalCursor(node *SiteConfigu
 	return &cursor, nil
 }
 
-func (s *SiteConfigurationChangeConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (s *SiteConfigurationChangeConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, []any, error) {
 	var id int
 	err := relay.UnmarshalSpec(graphql.ID(cursor), &id)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	idStr := strconv.Itoa(id)
-	return &idStr, err
+	return &idStr, nil, err
 }
 
 // modifyArgs will fetch one more than the originally requested number of items because we need one

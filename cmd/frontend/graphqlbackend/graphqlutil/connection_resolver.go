@@ -26,7 +26,7 @@ type ConnectionResolverStore[N any] interface {
 	// MarshalCursor returns cursor for a node and is called for generating start and end cursors.
 	MarshalCursor(*N, database.OrderBy) (*string, error)
 	// UnmarshalCursor returns node id from after/before cursor string.
-	UnmarshalCursor(string, database.OrderBy) (*string, error)
+	UnmarshalCursor(string, database.OrderBy) (*string, []any, error)
 }
 
 type ConnectionResolverArgs struct {
@@ -123,21 +123,23 @@ func (r *ConnectionResolver[N]) paginationArgs() (*database.PaginationArgs, erro
 	}
 
 	if r.args.After != nil {
-		after, err := r.store.UnmarshalCursor(*r.args.After, r.options.OrderBy)
+		after, afterCols, err := r.store.UnmarshalCursor(*r.args.After, r.options.OrderBy)
 		if err != nil {
 			return nil, err
 		}
 
 		paginationArgs.After = after
+		paginationArgs.AfterColumns = afterCols
 	}
 
 	if r.args.Before != nil {
-		before, err := r.store.UnmarshalCursor(*r.args.Before, r.options.OrderBy)
+		before, beforeCols, err := r.store.UnmarshalCursor(*r.args.Before, r.options.OrderBy)
 		if err != nil {
 			return nil, err
 		}
 
 		paginationArgs.Before = before
+		paginationArgs.BeforeColumns = beforeCols
 	}
 
 	return &paginationArgs, nil

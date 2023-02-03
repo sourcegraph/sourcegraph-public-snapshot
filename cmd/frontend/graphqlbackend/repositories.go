@@ -161,39 +161,27 @@ func (s *repositoriesConnectionStore) MarshalCursor(node *RepositoryResolver, or
 	return &cursor, nil
 }
 
-func (s *repositoriesConnectionStore) UnmarshalCursor(cursor string, orderBy database.OrderBy) (*string, error) {
+func (s *repositoriesConnectionStore) UnmarshalCursor(cursor string, orderBy database.OrderBy) (*string, []any, error) {
 	repoCursor, err := UnmarshalRepositoryCursor(&cursor)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if len(orderBy) == 0 {
-		return nil, errors.New("no orderBy provided")
+		return nil, nil, errors.New("no orderBy provided")
 	}
 
 	column := orderBy[0].Field
 	if repoCursor.Column != column {
-		return nil, errors.New(fmt.Sprintf("Invalid cursor. Expected: %s Actual: %s", column, repoCursor.Column))
+		return nil, nil, errors.New(fmt.Sprintf("Invalid cursor. Expected: %s Actual: %s", column, repoCursor.Column))
 	}
 
-	csv := ""
 	values := strings.Split(repoCursor.Value, "@")
 	if len(values) != 2 {
-		return nil, errors.New(fmt.Sprintf("Invalid cursor. Expected Value: <%s>@<id> Actual Value: %s", column, repoCursor.Value))
+		return nil, nil, errors.New(fmt.Sprintf("Invalid cursor. Expected Value: <%s>@<id> Actual Value: %s", column, repoCursor.Value))
 	}
 
-	switch database.RepoListColumn(column) {
-	case database.RepoListName:
-		csv = fmt.Sprintf("'%v', %v", values[0], values[1])
-	case database.RepoListCreatedAt:
-		csv = fmt.Sprintf("%v, %v", values[0], values[1])
-	case database.RepoListSize:
-		csv = fmt.Sprintf("%v, %v", values[0], values[1])
-	default:
-		return nil, errors.New("Invalid OrderBy Field.")
-	}
-
-	return &csv, err
+	return nil, []any{values[0], values[1]}, nil
 }
 
 func i32ptr(v int32) *int32 { return &v }

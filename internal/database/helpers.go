@@ -125,10 +125,15 @@ func (o OrderByOption) SQL(ascending bool) *sqlf.Query {
 }
 
 type PaginationArgs struct {
-	First  *int
-	Last   *int
-	After  *string
+	First *int
+	Last  *int
+	// TODO: this should be int
+	After *string
+	// TODO: this should be int
 	Before *string
+
+	AfterColumns  []any
+	BeforeColumns []any
 
 	// TODDO(naman): explain default
 	OrderBy   OrderBy
@@ -156,6 +161,25 @@ func (p *PaginationArgs) SQL() (*QueryArgs, error) {
 
 		conditions = append(conditions, sqlf.Sprintf(condition+" (%s)", *p.After))
 	}
+	// TODO: Hacky!!
+	if len(p.AfterColumns) != 0 {
+		columnsStr := strings.Join(orderByColumns, ", ")
+		condition := fmt.Sprintf("(%s) >", columnsStr)
+		if !p.Ascending {
+			condition = fmt.Sprintf("(%s) <", columnsStr)
+		}
+
+		formatters := []string{}
+		for range p.AfterColumns {
+			formatters = append(formatters, "%s")
+		}
+
+		valuesFormatter := fmt.Sprintf("(%s)", strings.Join(formatters, ", "))
+		tmplStr := condition + " " + valuesFormatter
+
+		conditions = append(conditions, sqlf.Sprintf(tmplStr, p.AfterColumns...))
+	}
+
 	if p.Before != nil {
 		columnsStr := strings.Join(orderByColumns, ", ")
 		condition := fmt.Sprintf("(%s) <", columnsStr)
@@ -164,6 +188,24 @@ func (p *PaginationArgs) SQL() (*QueryArgs, error) {
 		}
 
 		conditions = append(conditions, sqlf.Sprintf(condition+" (%s)", *p.Before))
+	}
+
+	if len(p.BeforeColumns) != 0 {
+		columnsStr := strings.Join(orderByColumns, ", ")
+		condition := fmt.Sprintf("(%s) >", columnsStr)
+		if !p.Ascending {
+			condition = fmt.Sprintf("(%s) <", columnsStr)
+		}
+
+		formatters := []string{}
+		for range p.BeforeColumns {
+			formatters = append(formatters, "%s")
+		}
+
+		valuesFormatter := fmt.Sprintf("(%s)", strings.Join(formatters, ", "))
+		tmplStr := condition + " " + valuesFormatter
+
+		conditions = append(conditions, sqlf.Sprintf(tmplStr, p.BeforeColumns...))
 	}
 
 	if len(conditions) > 0 {

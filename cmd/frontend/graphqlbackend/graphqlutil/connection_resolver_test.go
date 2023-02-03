@@ -60,8 +60,8 @@ func (*testConnectionStore) MarshalCursor(n *testConnectionNode, _ database.Orde
 	return &cursor, nil
 }
 
-func (*testConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
-	return &cursor, nil
+func (*testConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, []any, error) {
+	return &cursor, []any{}, nil
 }
 
 func newInt(n int) *int {

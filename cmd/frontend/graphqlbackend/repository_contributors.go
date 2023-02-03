@@ -54,8 +54,8 @@ func (s *repositoryContributorConnectionStore) MarshalCursor(node *repositoryCon
 	return &position, nil
 }
 
-func (s *repositoryContributorConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
-	return &cursor, nil
+func (s *repositoryContributorConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, []any, error) {
+	return &cursor, nil, nil
 }
 
 func (s *repositoryContributorConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {

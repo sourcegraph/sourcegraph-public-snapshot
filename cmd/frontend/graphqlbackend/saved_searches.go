@@ -157,15 +157,15 @@ func (s *savedSearchesConnectionStore) MarshalCursor(node *savedSearchResolver, 
 	return &cursor, nil
 }
 
-func (s *savedSearchesConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (s *savedSearchesConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, []any, error) {
 	nodeID, err := unmarshalSavedSearchID(graphql.ID(cursor))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	id := strconv.Itoa(int(nodeID))
 
-	return &id, nil
+	return &id, nil, nil
 }
 
 func (s *savedSearchesConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {

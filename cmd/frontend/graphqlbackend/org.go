@@ -205,15 +205,15 @@ func (s *membersConnectionStore) MarshalCursor(node *UserResolver, _ database.Or
 	return &cursor, nil
 }
 
-func (s *membersConnectionStore) UnmarshalCursor(cusror string, _ database.OrderBy) (*string, error) {
+func (s *membersConnectionStore) UnmarshalCursor(cusror string, _ database.OrderBy) (*string, []any, error) {
 	nodeID, err := UnmarshalUserID(graphql.ID(cusror))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	id := string(nodeID)
 
-	return &id, nil
+	return &id, []any{}, nil
 }
 
 func (o *OrgResolver) settingsSubject() api.SettingsSubject {

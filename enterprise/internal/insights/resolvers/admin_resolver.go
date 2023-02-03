@@ -372,33 +372,23 @@ func (a *adminBackfillQueueConnectionStore) MarshalCursor(node *graphqlbackend.B
 }
 
 // UnmarshalCursor returns node id from after/before cursor string.
-func (a *adminBackfillQueueConnectionStore) UnmarshalCursor(cursor string, orderBy database.OrderBy) (*string, error) {
+func (a *adminBackfillQueueConnectionStore) UnmarshalCursor(cursor string, orderBy database.OrderBy) (*string, []any, error) {
 	backfillCursor, err := unmarshalBackfillItemCursor(&cursor)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	orderByColumn := scheduler.BackfillQueueColumn(orderBy[0].Field)
 	cursorColumn := orderByToDBBackfillColumn(backfillCursor.Column)
 	if cursorColumn != orderByColumn {
-		return nil, errors.New("Invalid cursor. Expected one of (STATE, QUEUE_POSITION)")
+		return nil, nil, errors.New("Invalid cursor. Expected one of (STATE, QUEUE_POSITION)")
 	}
 
-	csv := ""
 	values := strings.Split(backfillCursor.Value, "@")
 	if len(values) != 2 {
-		return nil, errors.New("Invalid cursor. Expected Value: <orderbyvalue>@<id>")
+		return nil, nil, errors.New("Invalid cursor. Expected Value: <orderbyvalue>@<id>")
 	}
-	switch orderByColumn {
-	case scheduler.State:
-		csv = fmt.Sprintf("'%v', %v", values[0], values[1])
-	case scheduler.BackfillID, scheduler.QueuePosition:
-		csv = fmt.Sprintf("%v, %v", values[0], values[1])
-	default:
-		return nil, errors.New("Invalid OrderBy Field.")
-	}
-
-	return &csv, err
+	return nil, []any{values[0], values[1]}, nil
 }
 
 const backfillCursorKind = "InsightsAdminBackfillItem"
