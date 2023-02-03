@@ -17,8 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	grpcdefaults "github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/searcher/proto"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	proto "github.com/sourcegraph/sourcegraph/protos/searcher/v1"
 )
 
 // Search searches repo@commit with p.

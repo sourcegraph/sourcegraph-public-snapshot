@@ -4,7 +4,7 @@
 // - protoc             (unknown)
 // source: searcher.proto
 
-package proto
+package v1
 
 import (
 	context "context"

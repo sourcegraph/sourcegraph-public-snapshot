@@ -4,7 +4,7 @@ package searcher.v1;
 
 import "google/protobuf/duration.proto";
 
-option go_package = "github.com/sourcegraph/sourcegraph/internal/searcher/proto";
+option go_package = "github.com/sourcegraph/sourcegraph/protos/searcher/v1";
 
 // SearcherService is an internal interface for the searcher service.
 service SearcherService {

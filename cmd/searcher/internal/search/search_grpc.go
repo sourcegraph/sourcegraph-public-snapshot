@@ -2,7 +2,7 @@ package search
 
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/searcher/proto"
+	proto "github.com/sourcegraph/sourcegraph/protos/searcher/v1"
 )
 
 type Server struct {
