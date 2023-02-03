@@ -59,6 +59,7 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 				TargetRepo: repo,
 				Changeset:  &btypes.Changeset{},
 			},
+			err: "<nil>",
 		},
 		{
 			name: "already exists",
@@ -72,7 +73,7 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 				Changeset:  &btypes.Changeset{},
 			},
 			// If PR already exists we'll just return it, no error
-			err:    "",
+			err:    "<nil>",
 			exists: true,
 		},
 	}
@@ -83,36 +84,10 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 		tc.name = "GithubSource_CreateChangeset_" + strings.ReplaceAll(tc.name, " ", "_")
 
 		t.Run(tc.name, func(t *testing.T) {
-			// The GithubSource uses the github.Client under the hood, which
-			// uses rcache, a caching layer that uses Redis.
-			// We need to clear the cache before we run the tests
-			rcache.SetupForTest(t)
-
-			cf, save := newClientFactory(t, tc.name)
-			defer save(t)
-
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
-			svc := &types.ExternalService{
-				Kind: extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
-					Url:   "https://github.com",
-					Token: os.Getenv("GITHUB_TOKEN"),
-				})),
-			}
-
 			ctx := context.Background()
-			githubSrc, err := NewGithubSource(ctx, svc, cf)
-			if err != nil {
-				t.Fatal(err)
-			}
+			src := setup(t, ctx, tc.name)
 
-			if tc.err == "" {
-				tc.err = "<nil>"
-			}
-
-			exists, err := githubSrc.CreateChangeset(ctx, tc.cs)
+			exists, err := src.CreateChangeset(ctx, tc.cs)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
@@ -228,6 +203,7 @@ func TestGithubSource_CloseChangeset(t *testing.T) {
 					},
 				},
 			},
+			err: "<nil>",
 		},
 	}
 
@@ -236,36 +212,10 @@ func TestGithubSource_CloseChangeset(t *testing.T) {
 		tc.name = "GithubSource_CloseChangeset_" + strings.ReplaceAll(tc.name, " ", "_")
 
 		t.Run(tc.name, func(t *testing.T) {
-			// The GithubSource uses the github.Client under the hood, which
-			// uses rcache, a caching layer that uses Redis.
-			// We need to clear the cache before we run the tests
-			rcache.SetupForTest(t)
-
-			cf, save := newClientFactory(t, tc.name)
-			defer save(t)
-
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
-			svc := &types.ExternalService{
-				Kind: extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
-					Url:   "https://github.com",
-					Token: os.Getenv("GITHUB_TOKEN"),
-				})),
-			}
-
 			ctx := context.Background()
-			githubSrc, err := NewGithubSource(ctx, svc, cf)
-			if err != nil {
-				t.Fatal(err)
-			}
+			src := setup(t, ctx, tc.name)
 
-			if tc.err == "" {
-				tc.err = "<nil>"
-			}
-
-			err = githubSrc.CloseChangeset(ctx, tc.cs)
+			err := src.CloseChangeset(ctx, tc.cs)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
@@ -300,6 +250,7 @@ func TestGithubSource_ReopenChangeset(t *testing.T) {
 					},
 				},
 			},
+			err: "<nil>",
 		},
 	}
 
@@ -308,36 +259,10 @@ func TestGithubSource_ReopenChangeset(t *testing.T) {
 		tc.name = "GithubSource_ReopenChangeset_" + strings.ReplaceAll(tc.name, " ", "_")
 
 		t.Run(tc.name, func(t *testing.T) {
-			// The GithubSource uses the github.Client under the hood, which
-			// uses rcache, a caching layer that uses Redis.
-			// We need to clear the cache before we run the tests
-			rcache.SetupForTest(t)
-
-			cf, save := newClientFactory(t, tc.name)
-			defer save(t)
-
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
-			svc := &types.ExternalService{
-				Kind: extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
-					Url:   "https://github.com",
-					Token: os.Getenv("GITHUB_TOKEN"),
-				})),
-			}
-
 			ctx := context.Background()
-			githubSrc, err := NewGithubSource(ctx, svc, cf)
-			if err != nil {
-				t.Fatal(err)
-			}
+			src := setup(t, ctx, tc.name)
 
-			if tc.err == "" {
-				tc.err = "<nil>"
-			}
-
-			err = githubSrc.ReopenChangeset(ctx, tc.cs)
+			err := src.ReopenChangeset(ctx, tc.cs)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
@@ -367,6 +292,7 @@ func TestGithubSource_CreateComment(t *testing.T) {
 					},
 				},
 			},
+			err: "<nil>",
 		},
 	}
 
@@ -375,31 +301,10 @@ func TestGithubSource_CreateComment(t *testing.T) {
 		tc.name = "GithubSource_CreateComment_" + strings.ReplaceAll(tc.name, " ", "_")
 
 		t.Run(tc.name, func(t *testing.T) {
-			cf, save := newClientFactory(t, tc.name)
-			defer save(t)
-
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
-			svc := &types.ExternalService{
-				Kind: extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
-					Url:   "https://github.com",
-					Token: os.Getenv("GITHUB_TOKEN"),
-				})),
-			}
-
 			ctx := context.Background()
-			githubSrc, err := NewGithubSource(ctx, svc, cf)
-			if err != nil {
-				t.Fatal(err)
-			}
+			src := setup(t, ctx, tc.name)
 
-			if tc.err == "" {
-				tc.err = "<nil>"
-			}
-
-			err = githubSrc.CreateComment(ctx, tc.cs, "test-comment")
+			err := src.CreateComment(ctx, tc.cs, "test-comment")
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
@@ -429,6 +334,7 @@ func TestGithubSource_UpdateChangeset(t *testing.T) {
 					},
 				},
 			},
+			err: "<nil>",
 		},
 	}
 
@@ -437,36 +343,10 @@ func TestGithubSource_UpdateChangeset(t *testing.T) {
 		tc.name = "GithubSource_UpdateChangeset_" + strings.ReplaceAll(tc.name, " ", "_")
 
 		t.Run(tc.name, func(t *testing.T) {
-			// The GithubSource uses the github.Client under the hood, which
-			// uses rcache, a caching layer that uses Redis.
-			// We need to clear the cache before we run the tests
-			rcache.SetupForTest(t)
-
-			cf, save := newClientFactory(t, tc.name)
-			defer save(t)
-
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
-			svc := &types.ExternalService{
-				Kind: extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
-					Url:   "https://github.com",
-					Token: os.Getenv("GITHUB_TOKEN"),
-				})),
-			}
-
 			ctx := context.Background()
-			githubSrc, err := NewGithubSource(ctx, svc, cf)
-			if err != nil {
-				t.Fatal(err)
-			}
+			src := setup(t, ctx, tc.name)
 
-			if tc.err == "" {
-				tc.err = "<nil>"
-			}
-
-			err = githubSrc.UpdateChangeset(ctx, tc.cs)
+			err := src.UpdateChangeset(ctx, tc.cs)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
@@ -494,6 +374,7 @@ func TestGithubSource_LoadChangeset(t *testing.T) {
 				TargetRepo: &types.Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
 				Changeset:  &btypes.Changeset{ExternalID: "5550"},
 			},
+			err: "<nil>",
 		},
 		{
 			name: "not-found",
@@ -511,36 +392,10 @@ func TestGithubSource_LoadChangeset(t *testing.T) {
 		tc.name = "GithubSource_LoadChangeset_" + tc.name
 
 		t.Run(tc.name, func(t *testing.T) {
-			// The GithubSource uses the github.Client under the hood, which
-			// uses rcache, a caching layer that uses Redis.
-			// We need to clear the cache before we run the tests
-			rcache.SetupForTest(t)
-
-			cf, save := newClientFactory(t, tc.name)
-			defer save(t)
-
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
-			svc := &types.ExternalService{
-				Kind: extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
-					Url:   "https://github.com",
-					Token: os.Getenv("GITHUB_TOKEN"),
-				})),
-			}
-
 			ctx := context.Background()
-			githubSrc, err := NewGithubSource(ctx, svc, cf)
-			if err != nil {
-				t.Fatal(err)
-			}
+			src := setup(t, ctx, tc.name)
 
-			if tc.err == "" {
-				tc.err = "<nil>"
-			}
-
-			err = githubSrc.LoadChangeset(ctx, tc.cs)
+			err := src.LoadChangeset(ctx, tc.cs)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
@@ -743,4 +598,30 @@ func (mock *mockGithubClientFork) Fork(ctx context.Context, owner, repo string, 
 
 func (mock *mockGithubClientFork) GetRepo(ctx context.Context, owner, repo string) (*github.Repository, error) {
 	return nil, nil
+}
+
+func setup(t *testing.T, ctx context.Context, tName string) (src *GithubSource) {
+	// The GithubSource uses the github.Client under the hood, which uses rcache, a
+	// caching layer that uses Redis. We need to clear the cache before we run the tests
+	rcache.SetupForTest(t)
+
+	cf, save := newClientFactory(t, tName)
+	defer save(t)
+
+	lg := log15.New()
+	lg.SetHandler(log15.DiscardHandler())
+
+	svc := &types.ExternalService{
+		Kind: extsvc.KindGitHub,
+		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
+			Url:   "https://github.com",
+			Token: os.Getenv("GITHUB_TOKEN"),
+		})),
+	}
+
+	src, err := NewGithubSource(ctx, svc, cf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return src
 }
