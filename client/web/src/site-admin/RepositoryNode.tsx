@@ -57,12 +57,12 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                 </div>
 
                 <div className="col-auto pr-0">
-                    {/* TODO: What does this truly do? */}
+                    {/* TODO: Enable 'CLONE NOW' to enqueue the repo
                     {!node.mirrorInfo.cloned && !node.mirrorInfo.cloneInProgress && !node.mirrorInfo.lastError && (
                         <Button to={node.url} variant="secondary" size="sm" as={Link}>
                             <Icon aria-hidden={true} svgPath={mdiCloudDownload} /> Clone now
                         </Button>
-                    )}{' '}
+                    )}{' '} */}
                     {node.mirrorInfo.cloned && !node.mirrorInfo.lastError && !node.mirrorInfo.cloneInProgress && (
                         <Tooltip content="Repository settings">
                             <Button to={`/${node.name}/-/settings`} variant="secondary" size="sm" as={Link}>
