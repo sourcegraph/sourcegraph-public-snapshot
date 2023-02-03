@@ -3333,6 +3333,9 @@ CREATE TABLE permission_sync_jobs (
     invalidate_caches boolean DEFAULT false NOT NULL,
     cancellation_reason text,
     no_perms boolean DEFAULT false NOT NULL,
+    permissions_added integer DEFAULT 0 NOT NULL,
+    permissions_removed integer DEFAULT 0 NOT NULL,
+    permissions_found integer DEFAULT 0 NOT NULL,
     CONSTRAINT permission_sync_jobs_for_repo_or_user CHECK (((user_id IS NULL) <> (repository_id IS NULL)))
 );
 
@@ -3493,6 +3496,12 @@ CREATE VIEW reconciler_changesets AS
              LEFT JOIN users namespace_user ON ((batch_changes.namespace_user_id = namespace_user.id)))
              LEFT JOIN orgs namespace_org ON ((batch_changes.namespace_org_id = namespace_org.id)))
           WHERE ((c.batch_change_ids ? (batch_changes.id)::text) AND (namespace_user.deleted_at IS NULL) AND (namespace_org.deleted_at IS NULL)))));
+
+CREATE TABLE redis_key_value (
+    namespace text NOT NULL,
+    key text NOT NULL,
+    value bytea NOT NULL
+);
 
 CREATE TABLE registry_extension_releases (
     id bigint NOT NULL,
@@ -4547,6 +4556,9 @@ ALTER TABLE ONLY product_licenses
 
 ALTER TABLE ONLY product_subscriptions
     ADD CONSTRAINT product_subscriptions_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY redis_key_value
+    ADD CONSTRAINT redis_key_value_pkey PRIMARY KEY (namespace, key) INCLUDE (value);
 
 ALTER TABLE ONLY registry_extension_releases
     ADD CONSTRAINT registry_extension_releases_pkey PRIMARY KEY (id);

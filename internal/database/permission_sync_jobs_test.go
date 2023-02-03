@@ -353,6 +353,47 @@ func TestPermissionSyncJobs_CancelQueuedJob(t *testing.T) {
 	require.True(t, errcode.IsNotFound(err))
 }
 
+func TestPermissionSyncJobs_SaveSyncResult(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	store := PermissionSyncJobsWith(logger, db)
+	reposStore := ReposWith(logger, db)
+
+	// Create repo.
+	repo1 := types.Repo{Name: "test-repo-1", ID: 101}
+	err := reposStore.Create(ctx, &repo1)
+	require.NoError(t, err)
+
+	// Creating result.
+	result := SetPermissionsResult{
+		Added:   1,
+		Removed: 2,
+		Found:   5,
+	}
+
+	// Adding a job.
+	err = store.CreateRepoSyncJob(ctx, repo1.ID, PermissionSyncJobOpts{Reason: ReasonManualUserSync})
+	require.NoError(t, err)
+
+	// Saving result should be successful.
+	err = store.SaveSyncResult(ctx, 1, &result)
+	require.NoError(t, err)
+
+	// Checking that all the results are set.
+	jobs, err := store.List(ctx, ListPermissionSyncJobOpts{RepoID: int(repo1.ID)})
+	require.NoError(t, err)
+	require.Len(t, jobs, 1)
+	require.Equal(t, 1, jobs[0].PermissionsAdded)
+	require.Equal(t, 2, jobs[0].PermissionsRemoved)
+	require.Equal(t, 5, jobs[0].PermissionsFound)
+}
+
 func TestPermissionSyncJobs_CascadeOnRepoDelete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -484,6 +525,36 @@ func TestPermissionSyncJobs_Pagination(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestPermissionSyncJobs_Count(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	user, err := db.Users().Create(ctx, NewUser{Username: "horse"})
+	require.NoError(t, err)
+
+	store := PermissionSyncJobsWith(logger, db)
+
+	// Create 10 sync jobs.
+	createSyncJobs(t, ctx, user.ID, store)
+
+	_, err = store.List(ctx, ListPermissionSyncJobOpts{})
+	require.NoError(t, err)
+
+	count, err := store.Count(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 10, count)
+
+	// Create 10 more sync jobs.
+	createSyncJobs(t, ctx, user.ID, store)
+	count, err = store.Count(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 20, count)
 }
 
 func createSyncJobs(t *testing.T, ctx context.Context, userID int32, store PermissionSyncJobStore) {
