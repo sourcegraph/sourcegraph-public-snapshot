@@ -32,7 +32,7 @@ func (m *externalForkNameMigrator) ID() int                 { return 21 }
 func (m *externalForkNameMigrator) Interval() time.Duration { return time.Second * 5 }
 
 // Progress returns the percentage (ranged [0, 1]) of changesets published to a fork on
-// BitBucket Server or BitBucket Cloud that have not had `external_fork_name` set on their
+// Bitbucket Server or Bitbucket Cloud that have not had `external_fork_name` set on their
 // DB record.
 func (m *externalForkNameMigrator) Progress(ctx context.Context, _ bool) (float64, error) {
 	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(externalForkNameMigratorProgressQuery)))
@@ -40,7 +40,7 @@ func (m *externalForkNameMigrator) Progress(ctx context.Context, _ bool) (float6
 }
 
 // This query compares the count of migrated changesets, which should have
-// external_fork_name set, vs. the total count of changesets on a fork on BitBucket Server
+// external_fork_name set, vs. the total count of changesets on a fork on Bitbucket Server
 // or Cloud.
 const externalForkNameMigratorProgressQuery = `
 SELECT
@@ -84,8 +84,8 @@ func (m *externalForkNameMigrator) Up(ctx context.Context) (err error) {
 	getforkName := func(cs *btypes.Changeset) string {
 		meta := cs.Metadata
 		switch m := meta.(type) {
-		// We only have the fork name available on the changeset metadata for BitBucket
-		// Server and BitBucket Cloud. We live-backfill the fork name for changesets on
+		// We only have the fork name available on the changeset metadata for Bitbucket
+		// Server and Bitbucket Cloud. We live-backfill the fork name for changesets on
 		// GitHub and GitLab the next time they are processed by the reconciler.
 		case *bitbucketserver.PullRequest:
 			return m.FromRef.Repository.Slug
