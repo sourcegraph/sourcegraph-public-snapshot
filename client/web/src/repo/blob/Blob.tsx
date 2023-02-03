@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
 import { isEqual } from 'lodash'
-import { Location, createPath, NavigateFunction, useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { Location, createPath, NavigateFunction } from 'react-router-dom-v5-compat'
 import {
     BehaviorSubject,
     combineLatest,
@@ -220,10 +220,11 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         ariaLabel,
         history,
         'data-testid': dataTestId,
+
+        location,
+        navigate,
     } = props
 
-    const location = useLocation()
-    const navigate = useNavigate()
     const settingsChanges = useMemo(() => new BehaviorSubject<Settings | null>(null), [])
     useEffect(() => {
         if (

@@ -190,15 +190,19 @@ const CreatePolicyButtons: FunctionComponent<CreatePolicyButtonsProps> = ({ repo
 
     return (
         <>
-            <Button variant="primary" className="" onClick={() => navigate('./new?type=head')}>
+            <Button variant="primary" className="" onClick={() => navigate('./new?type=head', { relative: 'path' })}>
                 <>Create new {!repo && 'global'} policy for HEAD (tip of default branch)</>
             </Button>
 
-            <Button variant="primary" className="ml-2" onClick={() => navigate('./new?type=branch')}>
+            <Button
+                variant="primary"
+                className="ml-2"
+                onClick={() => navigate('./new?type=branch', { relative: 'path' })}
+            >
                 <>Create new {!repo && 'global'} branch policy</>
             </Button>
 
-            <Button variant="primary" className="ml-2" onClick={() => navigate('./new?type=tag')}>
+            <Button variant="primary" className="ml-2" onClick={() => navigate('./new?type=tag', { relative: 'path' })}>
                 <>Create new {!repo && 'global'} tag policy</>
             </Button>
         </>

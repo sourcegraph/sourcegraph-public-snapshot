@@ -143,10 +143,8 @@ function createStateFromLocation(location: H.Location): null | State {
 }
 
 export const ReferencesPanel: React.FunctionComponent<React.PropsWithChildren<ReferencesPanelProps>> = props => {
-    // We store the state in a React state so that we do not update it when the
-    // URL changes.
     const location = useLocation()
-    const [state] = useState(createStateFromLocation(location))
+    const state = useMemo(() => createStateFromLocation(location), [location])
 
     if (state === null) {
         return null
