@@ -229,7 +229,6 @@ require (
 	go.opentelemetry.io/collector/confmap v0.70.0 // indirect
 	go.opentelemetry.io/collector/consumer v0.70.0 // indirect
 	go.opentelemetry.io/collector/featuregate v0.70.0 // indirect
-	go.opentelemetry.io/otel/sdk/metric v0.35.0 // indirect
 	go.uber.org/goleak v1.2.0 // indirect
 )
 
@@ -259,6 +258,7 @@ require (
 	github.com/wk8/go-ordered-map/v2 v2.1.5
 	github.com/xanzy/go-gitlab v0.76.0
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20220924101305-151362477c87
+	go.opentelemetry.io/otel/sdk/metric v0.35.0
 	golang.org/x/exp v0.0.0-20221208152030-732eee02a75a
 )
 
