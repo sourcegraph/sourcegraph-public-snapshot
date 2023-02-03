@@ -456,14 +456,14 @@ func TestUsers_ListForSCIM_Query(t *testing.T) {
 		{NewUser: NewUser{Email: "charlie@example.com", Username: "charlie", EmailIsVerified: true}, SCIMExternalID: "CHARLIE", AdditionalVerifiedEmails: []string{"charlie2@example.com"}},
 	}
 	for _, newUser := range newUsers {
-		id, err := db.UserExternalAccounts().CreateUserAndSave(ctx, newUser.NewUser, extsvc.AccountSpec{ServiceType: "scim", AccountID: newUser.SCIMExternalID}, extsvc.AccountData{})
+		user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, newUser.NewUser, extsvc.AccountSpec{ServiceType: "scim", AccountID: newUser.SCIMExternalID}, extsvc.AccountData{})
 		for _, email := range newUser.AdditionalVerifiedEmails {
 			verificationCode := "x"
-			err := db.UserEmails().Add(ctx, id, email, &verificationCode)
+			err := db.UserEmails().Add(ctx, user.ID, email, &verificationCode)
 			if err != nil {
 				t.Fatal(err)
 			}
-			_, err = db.UserEmails().Verify(ctx, id, email, verificationCode)
+			_, err = db.UserEmails().Verify(ctx, user.ID, email, verificationCode)
 			if err != nil {
 				t.Fatal(err)
 			}
