@@ -152,60 +152,47 @@ func (p *PaginationArgs) SQL() (*QueryArgs, error) {
 
 	orderByColumns := orderBy.Columns()
 
-	if p.After != nil {
+	if p.After != nil || len(p.AfterColumns) != 0 {
 		columnsStr := strings.Join(orderByColumns, ", ")
 		condition := fmt.Sprintf("(%s) >", columnsStr)
 		if !p.Ascending {
 			condition = fmt.Sprintf("(%s) <", columnsStr)
 		}
+		if len(p.AfterColumns) != 0 {
+			formatters := []string{}
+			for range p.AfterColumns {
+				formatters = append(formatters, "%s")
+			}
 
-		conditions = append(conditions, sqlf.Sprintf(condition+" (%s)", *p.After))
-	}
-	// TODO: Hacky!!
-	if len(p.AfterColumns) != 0 {
-		columnsStr := strings.Join(orderByColumns, ", ")
-		condition := fmt.Sprintf("(%s) >", columnsStr)
-		if !p.Ascending {
-			condition = fmt.Sprintf("(%s) <", columnsStr)
+			valuesFormatter := fmt.Sprintf("(%s)", strings.Join(formatters, ", "))
+			tmplStr := condition + " " + valuesFormatter
+
+			conditions = append(conditions, sqlf.Sprintf(tmplStr, p.AfterColumns...))
+		} else {
+			conditions = append(conditions, sqlf.Sprintf(condition+" (%s)", *p.After))
 		}
-
-		formatters := []string{}
-		for range p.AfterColumns {
-			formatters = append(formatters, "%s")
-		}
-
-		valuesFormatter := fmt.Sprintf("(%s)", strings.Join(formatters, ", "))
-		tmplStr := condition + " " + valuesFormatter
-
-		conditions = append(conditions, sqlf.Sprintf(tmplStr, p.AfterColumns...))
 	}
 
-	if p.Before != nil {
+	if p.Before != nil || len(p.BeforeColumns) != 0 {
 		columnsStr := strings.Join(orderByColumns, ", ")
 		condition := fmt.Sprintf("(%s) <", columnsStr)
 		if !p.Ascending {
 			condition = fmt.Sprintf("(%s) >", columnsStr)
 		}
 
-		conditions = append(conditions, sqlf.Sprintf(condition+" (%s)", *p.Before))
-	}
+		if len(p.BeforeColumns) != 0 {
+			formatters := []string{}
+			for range p.BeforeColumns {
+				formatters = append(formatters, "%s")
+			}
 
-	if len(p.BeforeColumns) != 0 {
-		columnsStr := strings.Join(orderByColumns, ", ")
-		condition := fmt.Sprintf("(%s) >", columnsStr)
-		if !p.Ascending {
-			condition = fmt.Sprintf("(%s) <", columnsStr)
+			valuesFormatter := fmt.Sprintf("(%s)", strings.Join(formatters, ", "))
+			tmplStr := condition + " " + valuesFormatter
+
+			conditions = append(conditions, sqlf.Sprintf(tmplStr, p.BeforeColumns...))
+		} else {
+			conditions = append(conditions, sqlf.Sprintf(condition+" (%s)", *p.Before))
 		}
-
-		formatters := []string{}
-		for range p.BeforeColumns {
-			formatters = append(formatters, "%s")
-		}
-
-		valuesFormatter := fmt.Sprintf("(%s)", strings.Join(formatters, ", "))
-		tmplStr := condition + " " + valuesFormatter
-
-		conditions = append(conditions, sqlf.Sprintf(tmplStr, p.BeforeColumns...))
 	}
 
 	if len(conditions) > 0 {
