@@ -28,12 +28,11 @@ import (
 )
 
 func TestGithubSource_CreateChangeset(t *testing.T) {
-	// Repository used: sourcegraph/automation-testing
+	// Repository used: https://github.com/sourcegraph/automation-testing
 	//
-	// The requests here cannot be easily rerun with `-update` since you can only
-	// open a pull request once. To update, push a new branch to
-	// automation-testing, and put the branch names into the `success` case
-	// below.
+	// The requests here cannot be easily rerun with `-update` since you can only open a
+	// pull request once. To update, push a new branch with at least one commit to
+	// automation-testing, and put the branch names into the `success` case below.
 	//
 	// You can update just this test with `-update GithubSource_CreateChangeset`.
 	repo := &types.Repo{
@@ -54,7 +53,7 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 			cs: &Changeset{
 				Title:      "This is a test PR",
 				Body:       "This is the description of the test PR",
-				HeadRef:    "refs/heads/test-pr-10",
+				HeadRef:    "refs/heads/test-pr-11",
 				BaseRef:    "refs/heads/master",
 				RemoteRepo: repo,
 				TargetRepo: repo,
@@ -211,13 +210,10 @@ func (d *mockDoer) Do(req *http.Request) (*http.Response, error) {
 }
 
 func TestGithubSource_CloseChangeset(t *testing.T) {
-	// Repository used: sourcegraph/automation-testing
+	// Repository used: https://github.com/sourcegraph/automation-testing
 	//
-	// This test can be run with `-update` provided:
-	//
-	// 1. https://github.com/sourcegraph/automation-testing/pull/468 is open.
-	//
-	// You can update just this test with `-update GithubSource_CloseChangeset`.
+	// This test can be updated with `-update GithubSource_CloseChangeset`, provided this
+	// PR is open: https://github.com/sourcegraph/automation-testing/pull/468
 	testCases := []struct {
 		name string
 		cs   *Changeset
@@ -285,14 +281,10 @@ func TestGithubSource_CloseChangeset(t *testing.T) {
 }
 
 func TestGithubSource_ReopenChangeset(t *testing.T) {
-	// Repository used: sourcegraph/automation-testing
+	// Repository used: https://github.com/sourcegraph/automation-testing
 	//
-	// This test can be run with `-update` provided:
-	//
-	// 1. https://github.com/sourcegraph/automation-testing/pull/353 is closed,
-	//    but _not_ merged.
-	//
-	// You can update just this test with `-update GithubSource_ReopenChangeset`.
+	// This test can be updated with `-update GithubSource_ReopenChangeset`, provided this
+	// PR is closed but _not_ merged: https://github.com/sourcegraph/automation-testing/pull/468
 	testCases := []struct {
 		name string
 		cs   *Changeset
@@ -416,13 +408,10 @@ func TestGithubSource_CreateComment(t *testing.T) {
 }
 
 func TestGithubSource_UpdateChangeset(t *testing.T) {
-	// Repository used: sourcegraph/automation-testing
+	// Repository used: https://github.com/sourcegraph/automation-testing
 	//
-	// This test can be run with `-update` provided:
-	//
-	// 1. https://github.com/sourcegraph/automation-testing/pull/358 is open.
-	//
-	// You can update just this test with `-update GithubSource_UpdateChangeset`.
+	// This test can be updated with `-update GithubSource_UpdateChangeset`, provided this
+	// PR is open: https://github.com/sourcegraph/automation-testing/pull/1
 	testCases := []struct {
 		name string
 		cs   *Changeset
@@ -431,12 +420,12 @@ func TestGithubSource_UpdateChangeset(t *testing.T) {
 		{
 			name: "success",
 			cs: &Changeset{
-				Title:   "This is a new title",
-				Body:    "This is a new body",
+				Title:   "This is a test PR that is always open (keep it open!)",
+				Body:    "Feel free to ignore this. This is a test PR that is always open and is sometimes updated.",
 				BaseRef: "refs/heads/master",
 				Changeset: &btypes.Changeset{
 					Metadata: &github.PullRequest{
-						ID: "MDExOlB1bGxSZXF1ZXN0NTA0NDU4Njg1",
+						ID: "MDExOlB1bGxSZXF1ZXN0MzM5NzUyNDQy",
 					},
 				},
 			},

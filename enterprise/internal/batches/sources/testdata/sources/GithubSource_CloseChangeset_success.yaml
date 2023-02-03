@@ -37,8 +37,8 @@ interactions:
       20) {\n    nodes {\n      id\n      status\n      conclusion\n      checkRuns(last:
       20) {\n        nodes {\n          id\n          status\n          conclusion\n        }\n      }\n    }\n  }\n  committedDate\n}\n\nfragment
       prCommit on PullRequestCommit {\n  commit {\n    ...commitWithChecks\n  }\n}\n\nfragment
-      repo on Repository {\n  id\n  owner {\n    login\n  }\n}\n\nfragment pr on PullRequest
-      {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  isDraft\n  author
+      repo on Repository {\n  id\n  name\n  owner {\n    login\n  }\n}\n\nfragment
+      pr on PullRequest {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  isDraft\n  author
       {\n    ...actor\n  }\n  baseRepository {\n    ...repo\n  }\n  headRepository
       {\n    ...repo\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
       100) {\n    nodes {\n      ...label\n    }\n  }\n  commits(last: 1) {\n    nodes
@@ -53,15 +53,17 @@ interactions:
     headers:
       Accept:
       - application/vnd.github.antiope-preview+json
+      Cache-Control:
+      - max-age=0
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/graphql
     method: POST
   response:
     body: '{"data":{"closePullRequest":{"pullRequest":{"id":"PR_kwDODS5xec4waMkR","title":"This
-      is a test PR","body":"This is the description of the test PR","state":"CLOSED","url":"https://github.com/sourcegraph/automation-testing/pull/468","number":468,"createdAt":"2021-12-30T22:57:42Z","updatedAt":"2021-12-30T23:02:46Z","headRefOid":"a5955a89096304d07531f7467b269b1bcf2727c7","baseRefOid":"36f6827a9ac62710ca5fb3df18000b9e7eb9b6ea","headRefName":"test-pr-10","baseRefName":"master","isDraft":false,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"},"baseRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","owner":{"login":"sourcegraph"}},"headRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","owner":{"login":"sourcegraph"}},"participants":{"nodes":[{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"a5955a89096304d07531f7467b269b1bcf2727c7","status":null,"checkSuites":{"nodes":[{"id":"CS_kwDODS5xec8AAAABHeqoTA","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAABHeqoUA","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAABHeqoVA","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}}]},"committedDate":"2021-12-30T22:56:31Z"}}]},"timelineItems":{"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOnYyOpPPAAABfg2U2fABqjU4MjkyOTI0MDc="},"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"a5955a89096304d07531f7467b269b1bcf2727c7","message":"Test
+      is a test PR","body":"This is the description of the test PR","state":"CLOSED","url":"https://github.com/sourcegraph/automation-testing/pull/468","number":468,"createdAt":"2021-12-30T22:57:42Z","updatedAt":"2023-02-03T20:15:12Z","headRefOid":"a5955a89096304d07531f7467b269b1bcf2727c7","baseRefOid":"1c94aaf85d51e9d016b8ce4639b9f022d94c52e6","headRefName":"test-pr-10","baseRefName":"master","isDraft":false,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"},"baseRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","name":"automation-testing","owner":{"login":"sourcegraph"}},"headRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","name":"automation-testing","owner":{"login":"sourcegraph"}},"participants":{"nodes":[{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"},{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"a5955a89096304d07531f7467b269b1bcf2727c7","status":null,"checkSuites":{"nodes":[{"id":"CS_kwDODS5xec8AAAABHeqoTA","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAABHeqoUA","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAABHeqoVA","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}}]},"committedDate":"2021-12-30T22:56:31Z"}}]},"timelineItems":{"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOnYyOpPPAAABhhjrMIABqjg0MzU5MzgwNjk="},"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"a5955a89096304d07531f7467b269b1bcf2727c7","message":"Test
       branch.","messageHeadline":"Test branch.","committedDate":"2021-12-30T22:56:31Z","pushedDate":"2021-12-30T22:56:38Z","url":"https://github.com/sourcegraph/automation-testing/commit/a5955a89096304d07531f7467b269b1bcf2727c7","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","email":"adam@adamharvey.name","name":"Adam
-      Harvey","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"}}}},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"},"createdAt":"2021-12-30T23:02:46Z","url":"https://github.com/sourcegraph/automation-testing/pull/468#event-5829292407"}]}}}}}'
+      Harvey","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"}}}},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"},"createdAt":"2021-12-30T23:02:46Z","url":"https://github.com/sourcegraph/automation-testing/pull/468#event-5829292407"},{"__typename":"ReopenedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"},"createdAt":"2023-02-03T20:14:42Z"},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"},"createdAt":"2023-02-03T20:15:12Z","url":"https://github.com/sourcegraph/automation-testing/pull/468#event-8435938069"}]}}}}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -75,7 +77,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 30 Dec 2021 23:02:46 GMT
+      - Fri, 03 Feb 2023 20:15:13 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -84,8 +86,6 @@ interactions:
       - max-age=31536000; includeSubdomains; preload
       Vary:
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - repo
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
@@ -93,14 +93,11 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - 9BA4:25F6:613960:13DAAFE:61CE3A96
-      X-Oauth-Scopes:
-      - read:discussion, read:org, read:packages, read:public_key, read:repo_hook,
-        read:user, repo, workflow
+      - DD10:6337:E9EC51:F26F1B:63DD6B4F
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "167"
+      - "110"
       X-Xss-Protection:
       - "0"
     status: 200 OK
