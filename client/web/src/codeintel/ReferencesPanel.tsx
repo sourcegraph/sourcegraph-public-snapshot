@@ -60,8 +60,8 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
-import { LegacyBlob } from '../repo/blob/LegacyBlob'
 import { Blob as CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
+import { LegacyBlob } from '../repo/blob/LegacyBlob'
 import * as BlobAPI from '../repo/blob/use-blob-store'
 import { HoverThresholdProps } from '../repo/RepoContainer'
 import { useExperimentalFeatures } from '../stores'
