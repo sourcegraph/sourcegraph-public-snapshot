@@ -23,8 +23,7 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
         status = 'cloned'
     } else if (node.mirrorInfo.cloneInProgress) {
         status = 'cloning'
-    } else if (node.mirrorInfo.lastError || node.mirrorInfo.corruptionLogs.length) {
-        // TODO: BE error, failed repos shouldn't be marked as 'cloned'
+    } else if (node.mirrorInfo.lastError) {
         status = 'failed'
     }
 
@@ -71,9 +70,7 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                             </Button>
                         </Tooltip>
                     )}
-                    {/* TODO: New error view design pending */}
-                    {/* TODO: Corruption log action ? */}
-                    {(node.mirrorInfo.lastError || !!node.mirrorInfo.corruptionLogs.length) && (
+                    {node.mirrorInfo.lastError && (
                         <Button to={`/${node.name}/-/settings/mirror`} variant="secondary" size="sm" as={Link}>
                             <Icon aria-hidden={true} svgPath={mdiFileDocumentOutline} /> See errors
                         </Button>
