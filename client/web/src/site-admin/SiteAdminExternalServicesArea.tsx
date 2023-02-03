@@ -34,19 +34,14 @@ const AddExternalServicesPage = lazyComponent(
     'AddExternalServicesPage'
 )
 
-interface Props
-    extends RouteComponentProps<{}>,
-        ThemeProps,
-        TelemetryProps,
-        PlatformContextProps,
-        SettingsCascadeProps {
+interface Props extends ThemeProps, TelemetryProps, PlatformContextProps, SettingsCascadeProps {
     authenticatedUser: AuthenticatedUser
 }
 
 export const SiteAdminExternalServicesArea: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    match,
     ...outerProps
 }) => {
+    const url = '/external-services'
     const { data, error, loading } = useQuery<SiteExternalServiceConfigResult, SiteExternalServiceConfigVariables>(
         SITE_EXTERNAL_SERVICE_CONFIG,
         {}
@@ -67,7 +62,7 @@ export const SiteAdminExternalServicesArea: React.FunctionComponent<React.PropsW
     return (
         <Switch>
             <Route
-                path={match.url}
+                path={url}
                 render={props => (
                     <ExternalServicesPage
                         {...outerProps}
@@ -79,9 +74,9 @@ export const SiteAdminExternalServicesArea: React.FunctionComponent<React.PropsW
                 )}
                 exact={true}
             />
-            <Route path={match.url + '/add'} render={() => <Redirect to="new" />} exact={true} />
+            <Route path={url + '/add'} render={() => <Redirect to="new" />} exact={true} />
             <Route
-                path={`${match.url}/new`}
+                path={`${url}/new`}
                 render={props => (
                     <AddExternalServicesPage
                         {...outerProps}
@@ -96,7 +91,7 @@ export const SiteAdminExternalServicesArea: React.FunctionComponent<React.PropsW
                 exact={true}
             />
             <Route
-                path={`${match.url}/:id`}
+                path={`${url}/:id`}
                 render={({ match, ...props }: RouteComponentProps<{ id: Scalars['ID'] }>) => (
                     <ExternalServicePage
                         {...outerProps}
@@ -111,7 +106,7 @@ export const SiteAdminExternalServicesArea: React.FunctionComponent<React.PropsW
                 exact={true}
             />
             <Route
-                path={`${match.url}/:id/edit`}
+                path={`${url}/:id/edit`}
                 render={({ match, ...props }: RouteComponentProps<{ id: Scalars['ID'] }>) => (
                     <ExternalServiceEditPage
                         {...outerProps}
