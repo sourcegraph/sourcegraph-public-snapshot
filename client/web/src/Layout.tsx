@@ -51,6 +51,7 @@ import type { LayoutRouteComponentProps, LayoutRouteProps } from './routes'
 import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
 import { parseSearchURLQuery, SearchAggregationProps, SearchStreamingProps } from './search'
 import { NotepadContainer } from './search/Notepad'
+import { SetupWizard } from './setup-wizard'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { useTheme, useThemeProps } from './theme'
@@ -131,6 +132,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     const isSearchNotebooksPage = routeMatch?.startsWith(EnterprisePageRoutes.Notebooks)
     const isSearchNotebookListPage = location.pathname === EnterprisePageRoutes.Notebooks
     const isRepositoryRelatedPage = routeMatch === PageRoutes.RepoContainer ?? false
+    const isSetupWizardPage = location.pathname.startsWith(PageRoutes.SetupWizard)
 
     // enable fuzzy finder by default unless it's explicitly disabled in settings
     const fuzzyFinder = getExperimentalFeatures(props.settingsCascade.final).fuzzyFinder ?? true
@@ -192,6 +194,10 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         ...breadcrumbProps,
         isMacPlatform: isMacPlatform(),
     } satisfies Omit<LayoutRouteComponentProps, 'location' | 'history' | 'match' | 'staticContext'>
+
+    if (isSetupWizardPage) {
+        return <SetupWizard />
+    }
 
     return (
         <div

@@ -19,6 +19,7 @@ export enum PageRoutes {
     Help = '/help/*',
     Debug = '/-/debug/*',
     RepoContainer = '/*',
+    SetupWizard = '/setup',
     InstallGitHubAppSuccess = '/install-github-app-success',
 }
 

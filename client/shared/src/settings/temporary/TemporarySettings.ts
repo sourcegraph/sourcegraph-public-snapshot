@@ -58,6 +58,7 @@ export interface TemporarySettingsSchema {
     'batches.minSavedPerChangeset': number
     'search.notebooks.minSavedPerView': number
     'repo.commitPage.diffMode': DiffMode
+    'setup.activeStepId': string
 }
 
 /**

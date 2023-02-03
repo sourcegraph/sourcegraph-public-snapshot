@@ -39,7 +39,7 @@ import {
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
-import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
@@ -73,7 +73,6 @@ import type { LayoutRouteProps } from './routes'
 import { EnterprisePageRoutes } from './routes.constants'
 import { parseSearchURL, getQueryStateFromLocation, SearchAggregationProps } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
-import { SetupWizard } from './setup-wizard'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import {
@@ -122,7 +121,7 @@ export interface SourcegraphWebAppProps
     routes: readonly LayoutRouteProps[]
 }
 
-interface SourcegraphWebAppState extends SettingsCascadeProps {
+interface SourcegraphWebAppState {
     error?: Error
 
     /**
@@ -147,8 +146,7 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      */
     globbing: boolean
 
-    /** Experimental feature flag */
-    isSetupWizardEnabled: boolean
+    settingsCascade: SettingsCascadeOrError | null
 }
 
 const notificationStyles: BrandedNotificationItemStyleProps = {
@@ -188,10 +186,9 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         }
 
         this.state = {
-            settingsCascade: EMPTY_SETTINGS_CASCADE,
+            settingsCascade: null,
             viewerSubject: siteSubjectNoAdmin(),
             globbing: false,
-            isSetupWizardEnabled: false,
         }
     }
 
@@ -229,7 +226,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                         authenticatedUser,
                         globbing: globbingEnabledFromSettings(settingsCascade),
                         viewerSubject: viewerSubjectFromSettings(settingsCascade, authenticatedUser),
-                        isSetupWizardEnabled: !!getExperimentalFeatures().setupWizard,
                     })
                 },
                 () => this.setState({ authenticatedUser: null })
@@ -337,9 +333,14 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             return <HeroPage icon={ServerIcon} title={`${statusCode}: ${statusText}`} subtitle={subtitle} />
         }
 
-        const { authenticatedUser, graphqlClient, temporarySettingsStorage, isSetupWizardEnabled } = this.state
+        const { settingsCascade, authenticatedUser, graphqlClient, temporarySettingsStorage } = this.state
 
-        if (authenticatedUser === undefined || graphqlClient === undefined || temporarySettingsStorage === undefined) {
+        if (
+            authenticatedUser === undefined ||
+            graphqlClient === undefined ||
+            temporarySettingsStorage === undefined ||
+            !settingsCascade
+        ) {
             return null
         }
 
@@ -363,7 +364,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                 <Router history={globalHistory}>
                     <CompatRouter>
                         <Routes>
-                            {isSetupWizardEnabled ? <Route path="/setup" element={<SetupWizard />} /> : null}
                             <Route
                                 path="*"
                                 element={
