@@ -6,6 +6,7 @@ import { search, searchKeymap } from '@codemirror/search'
 import { EditorState } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 import { isEmpty } from 'lodash'
+import { RouteComponentProps } from 'react-router-dom'
 import { fromFetch } from 'rxjs/fetch'
 
 import { checkOk } from '@sourcegraph/http-client'
@@ -21,7 +22,7 @@ import { LoadingSpinner, H2, H3, Text, useObservable } from '@sourcegraph/wildca
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 
-interface Props extends ThemeProps {}
+interface Props extends RouteComponentProps, ThemeProps {}
 
 /**
  * A page displaying information about telemetry pings for the site.

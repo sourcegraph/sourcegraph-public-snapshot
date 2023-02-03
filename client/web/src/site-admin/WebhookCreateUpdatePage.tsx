@@ -3,7 +3,7 @@ import React, { FC, useCallback, useMemo, useState } from 'react'
 import classNames from 'classnames'
 import { parse as parseJSONC } from 'jsonc-parser'
 import { noop } from 'lodash'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { RouteComponentProps } from 'react-router'
 
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { Alert, Button, ButtonLink, H2, Input, Select, ErrorAlert, Form } from '@sourcegraph/wildcard'
@@ -27,7 +27,7 @@ import { CREATE_WEBHOOK_QUERY, UPDATE_WEBHOOK_QUERY } from './backend'
 
 import styles from './WebhookCreateUpdatePage.module.scss'
 
-interface WebhookCreateUpdatePageProps {
+interface WebhookCreateUpdatePageProps extends Pick<RouteComponentProps, 'history'> {
     // existingWebhook is present when this page is used as an update page.
     existingWebhook?: WebhookFields
 }
@@ -39,8 +39,7 @@ export interface Webhook {
     secret: string | null
 }
 
-export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ existingWebhook }) => {
-    const navigate = useNavigate()
+export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ history, existingWebhook }) => {
     const update = existingWebhook !== undefined
     const initialWebhook = update
         ? {
@@ -134,14 +133,14 @@ export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ exis
     const [createWebhook, { error: createWebhookError, loading: creationLoading }] = useMutation<
         CreateWebhookResult,
         CreateWebhookVariables
-    >(CREATE_WEBHOOK_QUERY, { onCompleted: data => navigate(`/site-admin/webhooks/${data.createWebhook.id}`) })
+    >(CREATE_WEBHOOK_QUERY, { onCompleted: data => history.push(`/site-admin/webhooks/${data.createWebhook.id}`) })
 
     const [updateWebhook, { error: updateWebhookError, loading: updateLoading }] = useMutation<
         UpdateWebhookResult,
         UpdateWebhookVariables
     >(UPDATE_WEBHOOK_QUERY, {
         variables: buildUpdateWebhookVariables(webhook, existingWebhook?.id),
-        onCompleted: data => navigate(`/site-admin/webhooks/${data.updateWebhook.id}`),
+        onCompleted: data => history.push(`/site-admin/webhooks/${data.updateWebhook.id}`),
     })
 
     return (

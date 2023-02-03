@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo } from 'react'
 
 import { mdiAccount, mdiPlus, mdiDownload } from '@mdi/js'
+import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { H1, Card, Text, Icon, Button, Link, Alert, LoadingSpinner, AnchorLink } from '@sourcegraph/wildcard'
@@ -14,7 +15,7 @@ import { USERS_MANAGEMENT_SUMMARY } from './queries'
 
 import styles from './index.module.scss'
 
-export const UsersManagement: React.FunctionComponent = () => {
+export const UsersManagement: React.FunctionComponent<RouteComponentProps<{}>> = () => {
     useEffect(() => {
         eventLogger.logPageView('UsersManagement')
     }, [])

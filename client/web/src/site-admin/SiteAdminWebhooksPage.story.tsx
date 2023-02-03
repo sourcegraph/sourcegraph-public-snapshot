@@ -1,4 +1,5 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
+import * as H from 'history'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -65,7 +66,12 @@ export const NoWebhooksFound: Story = () => (
                     ])
                 }
             >
-                <SiteAdminWebhooksPage telemetryService={NOOP_TELEMETRY_SERVICE} />
+                <SiteAdminWebhooksPage
+                    match={{} as any}
+                    history={H.createMemoryHistory()}
+                    location={{} as any}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -169,7 +175,12 @@ export const FiveWebhooksFound: Story = () => (
                     ])
                 }
             >
-                <SiteAdminWebhooksPage telemetryService={NOOP_TELEMETRY_SERVICE} />
+                <SiteAdminWebhooksPage
+                    match={{} as any}
+                    history={H.createMemoryHistory()}
+                    location={{} as any}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                />
             </MockedTestProvider>
         )}
     </WebStory>

@@ -1,5 +1,5 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import { Route, Routes } from 'react-router-dom-v5-compat'
+import * as H from 'history'
 import { WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -23,8 +23,8 @@ const config: Meta = {
 
 export default config
 
-export const WebhookUpdatePage: Story = () => (
-    <WebStory initialEntries={['/site-admin/webhooks/1']}>
+export const WebhookUpdatePage: Story = args => (
+    <WebStory>
         {() => (
             <MockedTestProvider
                 link={
@@ -85,15 +85,22 @@ export const WebhookUpdatePage: Story = () => (
                     ])
                 }
             >
-                <Routes>
-                    <Route
-                        path="/site-admin/webhooks/:id"
-                        element={<SiteAdminWebhookUpdatePage telemetryService={NOOP_TELEMETRY_SERVICE} />}
-                    />
-                </Routes>
+                <SiteAdminWebhookUpdatePage
+                    match={args.match}
+                    history={H.createMemoryHistory()}
+                    location={{} as any}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                />
             </MockedTestProvider>
         )}
     </WebStory>
 )
 
 WebhookUpdatePage.storyName = 'Update webhook'
+WebhookUpdatePage.args = {
+    match: {
+        params: {
+            id: '1',
+        },
+    },
+}

@@ -2,6 +2,7 @@ import React, { useMemo, useEffect } from 'react'
 
 import classNames from 'classnames'
 import { startCase } from 'lodash'
+import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Card, LoadingSpinner, H2, Text, H4, AnchorLink, LineChart, Series } from '@sourcegraph/wildcard'
@@ -21,7 +22,7 @@ import { NOTEBOOKS_STATISTICS } from './queries'
 
 import styles from './index.module.scss'
 
-export const AnalyticsNotebooksPage: React.FunctionComponent = () => {
+export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
     const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Notebooks' })
     const { data, error, loading } = useQuery<NotebooksStatisticsResult, NotebooksStatisticsVariables>(
         NOTEBOOKS_STATISTICS,
