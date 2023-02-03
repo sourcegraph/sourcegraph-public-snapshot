@@ -25,7 +25,7 @@ import styles from './RepositoryPatternList.module.scss'
 const DEBOUNCED_WAIT = 250
 
 interface RepositoryPatternListProps {
-    repositoryPatterns: string[] | null
+    repositoryPatterns: string[]
     setRepositoryPatterns: (updater: (patterns: string[] | null) => string[] | null) => void
     disabled: boolean
 }
@@ -57,128 +57,105 @@ export const RepositoryPatternList: FunctionComponent<RepositoryPatternListProps
         previewError,
     } = usePreviewRepositoryFilter(repositoryPatterns || [])
 
+    if (!repositoryPatterns) {
+        // todo remove this
+        return null
+    }
+
     return (
         <div className={styles.container}>
-            {repositoryPatterns === null || repositoryPatterns.length === 0 ? (
-                <div>
-                    <Text>
-                        This policy applies to <strong>all repositories on this Sourcegraph instance</strong>.{' '}
-                        {!disabled && (
-                            <>
-                                <Button
-                                    variant="link"
-                                    className={classNames('p-0 m-0', styles.addRepositoryPattern)}
-                                    onClick={addRepositoryPattern}
-                                >
-                                    Add a repository pattern
-                                </Button>{' '}
-                                to narrow the set of repositories.
-                            </>
-                        )}
-                    </Text>
-                </div>
-            ) : (
-                <>
-                    <div>
-                        {repositoryPatterns.map((repositoryPattern, index) => (
-                            <RepositoryPattern
-                                key={index}
-                                index={index}
-                                autoFocus={index === autoFocusIndex}
-                                pattern={repositoryPattern}
-                                setPattern={value =>
-                                    setRepositoryPatterns(repositoryPatterns =>
-                                        (repositoryPatterns || []).map((value_, index_) =>
-                                            index === index_ ? value : value_
-                                        )
+            <div>
+                {repositoryPatterns.map((repositoryPattern, index) => (
+                    <div key={index} className="d-flex align-items-center justify-content-between mb-3">
+                        <RepositoryPattern
+                            index={index}
+                            autoFocus={index === autoFocusIndex}
+                            pattern={repositoryPattern}
+                            setPattern={value =>
+                                setRepositoryPatterns(repositoryPatterns =>
+                                    (repositoryPatterns || []).map((value_, index_) =>
+                                        index === index_ ? value : value_
                                     )
-                                }
-                                onDelete={() => handleDelete(index)}
-                                disabled={disabled}
-                            />
-                        ))}
-
-                        <div className="text-right mb-2">
-                            <Tooltip content="Add an additional repository pattern">
-                                <Button
-                                    variant="icon"
-                                    onClick={addRepositoryPattern}
-                                    aria-label="Add an additional repository pattern"
-                                    disabled={disabled}
-                                    className="d-inline"
-                                >
-                                    <Icon className="text-primary" aria-hidden={true} svgPath={mdiPlus} />
-                                </Button>
-                            </Tooltip>
-                        </div>
-                    </div>
-
-                    <div className="form-group d-flex flex-column">
-                        <div>
-                            {previewError ? (
-                                <ErrorAlert prefix="Error fetching matching repositories" error={previewError} />
-                            ) : previewLoading ? (
-                                <LoadingSpinner inline={false} className={classNames('d-inline', styles.loading)} />
-                            ) : preview ? (
-                                preview.repositories.length === 0 ? (
-                                    !(repositoryPatterns.length === 1 && repositoryPatterns[0] === '') && (
-                                        <Alert variant="warning">
-                                            This set of repository patterns does not match any repository.
-                                        </Alert>
-                                    )
-                                ) : (
-                                    <>
-                                        {preview.totalMatches > preview.totalCount && (
-                                            <Alert variant="danger">
-                                                Each policy pattern can match a maximum of {preview.limit} repositories.
-                                                There are {preview.totalMatches - preview.totalCount} additional
-                                                repositories that match the filter not covered by this policy. Narrow
-                                                the policy to a smaller set of repositories or increase the system
-                                                limit.
-                                            </Alert>
-                                        )}
-
-                                        <span>
-                                            {preview.totalCount === 1 ? (
-                                                <>{preview.totalCount} repository matches</>
-                                            ) : (
-                                                <>{preview.totalCount} repositories match</>
-                                            )}{' '}
-                                            {repositoryPatterns.filter(pattern => pattern !== '').length === 1 ? (
-                                                <>this pattern</>
-                                            ) : (
-                                                <>
-                                                    these {repositoryPatterns.filter(pattern => pattern !== '').length}{' '}
-                                                    patterns
-                                                </>
-                                            )}
-                                            {preview.repositories.length < preview.totalCount && (
-                                                <> (showing only {preview.repositories.length})</>
-                                            )}
-                                            :
-                                        </span>
-
-                                        <ul className="list-group p2">
-                                            {preview.repositories.map(repo => (
-                                                <li key={repo.name} className="list-group-item">
-                                                    {repo.externalRepository && (
-                                                        <ExternalRepositoryIcon
-                                                            externalRepo={repo.externalRepository}
-                                                        />
-                                                    )}
-                                                    <RepoLink repoName={repo.name} to={repo.url} />
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </>
                                 )
-                            ) : (
-                                <></>
-                            )}
-                        </div>
+                            }
+                            onDelete={() => handleDelete(index)}
+                            disabled={disabled}
+                        />
+                        <Tooltip content="Add an additional repository pattern">
+                            <Button
+                                variant="icon"
+                                onClick={addRepositoryPattern}
+                                aria-label="Add an additional repository pattern"
+                                disabled={disabled}
+                                className="d-inline"
+                            >
+                                <Icon className="text-primary" aria-hidden={true} svgPath={mdiPlus} />
+                            </Button>
+                        </Tooltip>
                     </div>
-                </>
-            )}
+                ))}
+            </div>
+
+            <div className="form-group d-flex flex-column">
+                <div>
+                    {previewError ? (
+                        <ErrorAlert prefix="Error fetching matching repositories" error={previewError} />
+                    ) : previewLoading ? (
+                        <LoadingSpinner inline={false} className={classNames('d-inline', styles.loading)} />
+                    ) : preview ? (
+                        preview.repositories.length === 0 ? (
+                            !(repositoryPatterns.length === 1 && repositoryPatterns[0] === '') && (
+                                <Alert variant="warning">
+                                    This set of repository patterns does not match any repository.
+                                </Alert>
+                            )
+                        ) : (
+                            <>
+                                {preview.totalMatches > preview.totalCount && (
+                                    <Alert variant="danger">
+                                        Each policy pattern can match a maximum of {preview.limit} repositories. There
+                                        are {preview.totalMatches - preview.totalCount} additional repositories that
+                                        match the filter not covered by this policy. Narrow the policy to a smaller set
+                                        of repositories or increase the system limit.
+                                    </Alert>
+                                )}
+
+                                <span>
+                                    {preview.totalCount === 1 ? (
+                                        <>{preview.totalCount} repository matches</>
+                                    ) : (
+                                        <>{preview.totalCount} repositories match</>
+                                    )}{' '}
+                                    {repositoryPatterns.filter(pattern => pattern !== '').length === 1 ? (
+                                        <>this pattern</>
+                                    ) : (
+                                        <>
+                                            these {repositoryPatterns.filter(pattern => pattern !== '').length} patterns
+                                        </>
+                                    )}
+                                    {preview.repositories.length < preview.totalCount && (
+                                        <> (showing only {preview.repositories.length})</>
+                                    )}
+                                    :
+                                </span>
+
+                                <ul className="list-group p2">
+                                    {preview.repositories.map(repo => (
+                                        <li key={repo.name} className="list-group-item">
+                                            {repo.externalRepository && (
+                                                <ExternalRepositoryIcon externalRepo={repo.externalRepository} />
+                                            )}
+                                            <RepoLink repoName={repo.name} to={repo.url} />
+                                        </li>
+                                    ))}
+                                </ul>
+                            </>
+                        )
+                    ) : (
+                        <></>
+                    )}
+                </div>
+            </div>
         </div>
     )
 }
@@ -204,14 +181,10 @@ const RepositoryPattern: FunctionComponent<RepositoryPatternProps> = ({
     useEffect(() => setLocalPattern(pattern), [pattern])
     const debouncedSetPattern = useMemo(() => debounce(value => setPattern(value), DEBOUNCED_WAIT), [setPattern])
 
-    const {
-        previewResult: preview,
-        isLoadingPreview: previewLoading,
-        previewError,
-    } = usePreviewRepositoryFilter([localPattern])
+    const { isLoadingPreview: previewLoading, previewError } = usePreviewRepositoryFilter([localPattern])
 
     return (
-        <div className="pb-2">
+        <div className="mr-3 flex-1">
             <div className="input-group">
                 <div className="input-group-prepend">
                     <span className="input-group-text">{index === 0 ? 'Filter' : 'or'}</span>
@@ -229,10 +202,11 @@ const RepositoryPattern: FunctionComponent<RepositoryPatternProps> = ({
                     disabled={disabled}
                     required={true}
                     status={previewLoading ? InputStatus.loading : undefined}
-                    error={localPattern === '' ? 'Please supply a value.' : undefined}
+                    // error={localPattern === '' ? 'Please supply a value.' : undefined} TODO fix alignment of error
                 />
 
-                <Tooltip content="Delete this repository pattern">
+                {/* TODO Only show this on multiple repo patterns */}
+                {/* <Tooltip content="Delete this repository pattern">
                     <Button
                         aria-label="Delete the repository pattern"
                         className="ml-2"
@@ -242,32 +216,12 @@ const RepositoryPattern: FunctionComponent<RepositoryPatternProps> = ({
                     >
                         <Icon className="text-danger" aria-hidden={true} svgPath={mdiDelete} />
                     </Button>
-                </Tooltip>
+                </Tooltip> */}
             </div>
 
             {previewError && (
                 <ErrorAlert prefix="Error fetching matching repositories" error={previewError} className="mt-2" />
             )}
-            <div className="text-right pr-4">
-                {previewLoading && (
-                    <div className="text-right pr-4">
-                        <LoadingSpinner inline={true} />
-                    </div>
-                )}
-                {localPattern === '' ? (
-                    <small className="text-danger">Please supply a value.</small>
-                ) : previewLoading ? (
-                    <LoadingSpinner inline={true} />
-                ) : preview && preview.totalMatches > 0 ? (
-                    <small className="text/muted">
-                        This pattern matches{' '}
-                        {localPattern === '*' && preview.totalMatches !== 1 && <strong>all</strong>}{' '}
-                        {preview.totalMatches} {preview.totalMatches === 1 ? 'repository' : 'repositories'}.
-                    </small>
-                ) : (
-                    <small className="text-warning">This pattern does not match any repositories.</small>
-                )}
-            </div>
         </div>
     )
 }

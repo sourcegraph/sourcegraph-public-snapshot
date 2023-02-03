@@ -151,7 +151,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                 ? { type: GitObjectType.GIT_TAG, pattern: '*' }
                 : { type: GitObjectType.GIT_COMMIT }
 
-        const repoDefaults = repo ? { repository: repo } : {}
+        const repoDefaults = repo ? { repository: repo } : { repositoryPatterns: ['*'] }
         const typeDefaults = policyConfig?.type === GitObjectType.GIT_UNKNOWN ? defaultTypes : {}
         const configWithDefaults = policyConfig && { ...policyConfig, ...repoDefaults, ...typeDefaults }
 
@@ -412,7 +412,7 @@ const GitObjectSettingsSection: FunctionComponent<GitObjectSettingsSectionProps>
                     aria-labelledby="git-type-label"
                     labelVariant="inline"
                     labelClassName="d-inline"
-                    className="mb-0"
+                    className="mb-0 w-50" // TODO: Go with width 35 or 40
                     value={policy.type}
                     onChange={({ target: { value } }) => {
                         const type = value as GitObjectType
@@ -452,7 +452,7 @@ const GitObjectSettingsSection: FunctionComponent<GitObjectSettingsSectionProps>
                                 setLocalGitPattern(value)
                                 debouncedSetGitPattern(value)
                             }}
-                            message="beans"
+                            // message="beans" TODO? What message here
                             placeholder={policy.type === GitObjectType.GIT_TAG ? 'v*' : 'feat/*'}
                             disabled={policy.protected}
                             required={true}
@@ -580,9 +580,9 @@ interface RepositorySettingsSectionProps {
 
 const RepositorySettingsSection: FunctionComponent<RepositorySettingsSectionProps> = ({ policy, updatePolicy }) => (
     <div className="form-group">
-        <Label id="beans">Define the repositories matched by this policy</Label>
+        <Label>Define the repositories matched by this policy</Label>
 
-        <Text size="small" className="text-muted">
+        <Text size="small" className="text-muted mb-2">
             If you wish to limit the number of repositories with auto indexing, enter a filter such as a code host or
             organization.
         </Text>
