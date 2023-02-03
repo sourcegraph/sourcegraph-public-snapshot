@@ -149,8 +149,11 @@ func (r *teamResolver) ViewerCanAdminister(ctx context.Context) bool {
 	err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db)
 	return err == nil
 }
-func (r *teamResolver) Members(args *ListTeamsArgs) *teamMemberConnection {
-	return &teamMemberConnection{}
+func (r *teamResolver) Members(ctx context.Context, args *ListTeamMembersArgs) (*teamMemberConnection, error) {
+	return &teamMemberConnection{
+		db:     r.db,
+		teamID: r.team.ID,
+	}, nil
 }
 func (r *teamResolver) ChildTeams(ctx context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {
 	c := &teamConnectionResolver{
@@ -163,7 +166,16 @@ func (r *teamResolver) ChildTeams(ctx context.Context, args *ListTeamsArgs) (*te
 	return c, nil
 }
 
-type teamMemberConnection struct{}
+type ListTeamMembersArgs struct {
+	First  *int32
+	After  *string
+	Search *string
+}
+
+type teamMemberConnection struct {
+	db     database.DB
+	teamID int32
+}
 
 func (r *teamMemberConnection) TotalCount(args *struct{ CountDeeplyNestedTeamMembers bool }) int32 {
 	return 0
