@@ -1470,26 +1470,26 @@ func TestDecorateMergeRequestData(t *testing.T) {
 
 	src := createSource(t)
 
-	// https://gitlab.com/sourcegraph/src-cli/-/merge_requests/1
-	forked, err := src.client.GetMergeRequest(ctx, newGitLabProject(16606399), 1)
+	// https://gitlab.com/sourcegraph/src-cli/-/merge_requests/6
+	forked, err := src.client.GetMergeRequest(ctx, newGitLabProject(16606399), 6)
 	assert.Nil(t, err)
 
-	// https://gitlab.com/sourcegraph/sourcegraph/-/merge_requests/2
-	unforked, err := src.client.GetMergeRequest(ctx, newGitLabProject(16606088), 2)
+	// https://gitlab.com/sourcegraph/sourcegraph/-/merge_requests/1
+	unforked, err := src.client.GetMergeRequest(ctx, newGitLabProject(16606088), 1)
 	assert.Nil(t, err)
 
 	t.Run("fork", func(t *testing.T) {
 		err := createSource(t).decorateMergeRequestData(ctx, newGitLabProject(int(forked.ProjectID)), forked)
 		assert.Nil(t, err)
-		assert.Equal(t, "LawnGnome", forked.SourceProjectNamespace)
-		assert.Equal(t, "sourcegraph-src-cli", forked.SourceProjectNamespace)
+		assert.Equal(t, "courier-new", forked.SourceProjectNamespace)
+		assert.Equal(t, "src-cli-forked", forked.SourceProjectName)
 	})
 
 	t.Run("not a fork", func(t *testing.T) {
 		err := createSource(t).decorateMergeRequestData(ctx, newGitLabProject(int(unforked.ProjectID)), unforked)
 		assert.Nil(t, err)
 		assert.Equal(t, "", unforked.SourceProjectNamespace)
-		assert.Equal(t, "", forked.SourceProjectNamespace)
+		assert.Equal(t, "", unforked.SourceProjectName)
 	})
 }
 
