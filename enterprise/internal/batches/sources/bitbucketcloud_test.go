@@ -581,6 +581,9 @@ func TestBitbucketCloudSource_Fork(t *testing.T) {
 		UUID:     "fork-uuid",
 		FullName: "fork/repo",
 		Slug:     "repo",
+		Parent: &bitbucketcloud.Repo{
+			UUID: "repo-uuid",
+		},
 	}
 
 	t.Run("GetFork", func(t *testing.T) {
@@ -638,6 +641,43 @@ func TestBitbucketCloudSource_Fork(t *testing.T) {
 			assert.Nil(t, repo)
 			assert.NotNil(t, err)
 			assert.ErrorIs(t, err, want)
+		})
+
+		t.Run("not forked from parent", func(t *testing.T) {
+			s, client := mockBitbucketCloudSource()
+
+			user := &bitbucketcloud.User{
+				Account: bitbucketcloud.Account{
+					Username: "user",
+				},
+			}
+			client.CurrentUserFunc.SetDefaultReturn(user, nil)
+
+			client.RepoFunc.SetDefaultHook(func(ctx context.Context, namespace, slug string) (*bitbucketcloud.Repo, error) {
+				assert.Equal(t, "user", namespace)
+				assert.Equal(t, "upstream-repo", slug)
+				return nil, &notFoundError{}
+			})
+
+			client.ForkRepositoryFunc.SetDefaultHook(func(ctx context.Context, r *bitbucketcloud.Repo, fi bitbucketcloud.ForkInput) (*bitbucketcloud.Repo, error) {
+				assert.Same(t, upstream, r)
+				assert.EqualValues(t, "user", fi.Workspace)
+				assert.EqualValues(t, "upstream-repo", *fi.Name)
+				// Returned repo that has a different parent
+				return &bitbucketcloud.Repo{
+					UUID:     "fork-uuid",
+					FullName: "user/repo",
+					Slug:     "repo",
+					Parent: &bitbucketcloud.Repo{
+						UUID: "some-other-repo-uuid",
+					},
+				}, nil
+			})
+
+			forkRepo, err := s.GetFork(ctx, upstreamRepo, nil, nil)
+			assert.Nil(t, forkRepo)
+			assert.NotNil(t, err)
+			assert.ErrorContains(t, err, "repo was not forked from the given parent")
 		})
 
 		t.Run("error getting current user", func(t *testing.T) {

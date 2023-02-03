@@ -242,7 +242,7 @@ func (s BitbucketCloudSource) GetFork(ctx context.Context, targetRepo *types.Rep
 
 	// Figure out if we already have a fork of the repo in the given namespace.
 	if fork, err := s.client.Repo(ctx, namespace, name); err == nil {
-		return s.copyRepoAsFork(targetRepo, fork)
+		return s.checkAndCopy(targetRepo, fork)
 	} else if !errcode.IsNotFound(err) {
 		return nil, errors.Wrap(err, "checking for fork existence")
 	}
@@ -255,15 +255,21 @@ func (s BitbucketCloudSource) GetFork(ctx context.Context, targetRepo *types.Rep
 		return nil, errors.Wrap(err, "forking repository")
 	}
 
-	return s.copyRepoAsFork(targetRepo, fork)
+	return s.checkAndCopy(targetRepo, fork)
 }
 
-func (s BitbucketCloudSource) copyRepoAsFork(targetRepo *types.Repo, fork *bitbucketcloud.Repo) (*types.Repo, error) {
-	target := targetRepo.Metadata.(*bitbucketcloud.Repo)
+func (s BitbucketCloudSource) checkAndCopy(targetRepo *types.Repo, fork *bitbucketcloud.Repo) (*types.Repo, error) {
+	tr := targetRepo.Metadata.(*bitbucketcloud.Repo)
+
+	if fork.Parent == nil {
+		return nil, errors.New("repo is not a fork")
+	} else if fork.Parent.UUID != tr.UUID {
+		return nil, errors.New("repo was not forked from the given parent")
+	}
 
 	// Now we make a copy of targetRepo, but with its sources and metadata updated to
 	// point to the fork
-	forkRepo, err := CopyRepoAsFork(targetRepo, fork, target.FullName, fork.FullName)
+	forkRepo, err := CopyRepoAsFork(targetRepo, fork, tr.FullName, fork.FullName)
 	if err != nil {
 		return nil, errors.Wrap(err, "updating target repo sources and metadata")
 	}
