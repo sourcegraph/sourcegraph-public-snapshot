@@ -9,11 +9,11 @@ go_library(
         "search_reduce.go",
         "util.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol",
+    importpath = "github.com/sourcegraph/sourcegraph/internal/p4server/protocol",
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
-        "//internal/gitserver/gitdomain",
+        "//internal/p4server/p4domain",
         "//internal/search/result",
         "//lib/errors",
         "@com_github_opentracing_opentracing_go//log",

@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/p4server/p4domain"
 )
 
 func TestGetObject(t *testing.T) {
@@ -23,13 +23,13 @@ func TestGetObject(t *testing.T) {
 		repo           api.RepoName
 		objectName     string
 		wantOID        string
-		wantObjectType gitdomain.ObjectType
+		wantObjectType p4domain.ObjectType
 	}{
 		"basic": {
 			repo:           MakeGitRepository(t, gitCommands...),
 			objectName:     "e86b31b62399cfc86199e8b6e21a35e76d0e8b5e^{tree}",
 			wantOID:        "a1dffc7a64c0b2d395484bf452e9aeb1da3a18f2",
-			wantObjectType: gitdomain.ObjectTypeTree,
+			wantObjectType: p4domain.ObjectTypeTree,
 		},
 	}
 

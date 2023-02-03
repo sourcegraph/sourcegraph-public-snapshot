@@ -717,6 +717,8 @@ type ExperimentalFeatures struct {
 	PasswordPolicy *PasswordPolicy `json:"passwordPolicy,omitempty"`
 	// Perforce description: Allow adding Perforce code host connections
 	Perforce string `json:"perforce,omitempty"`
+	// P4ServerPinnedDepos description: List of depots pinned to specific p4server instances. The specified depots will remain at their pinned servers on scaling the cluster. If the specified pinned server differs from the current server that stores the depot, then it must be re-cloned to the specified server.
+	P4ServerPinnedDepos map[string]string `json:"p4ServerPinnedDepos,omitempty"`
 	// PythonPackages description: Allow adding Python package code host connections
 	PythonPackages string `json:"pythonPackages,omitempty"`
 	// Ranking description: Experimental search result ranking options.

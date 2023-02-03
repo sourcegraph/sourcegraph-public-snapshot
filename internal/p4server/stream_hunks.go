@@ -1,4 +1,4 @@
-package gitserver
+package p4server
 
 import (
 	"bufio"

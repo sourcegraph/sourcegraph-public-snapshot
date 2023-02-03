@@ -1,4 +1,4 @@
-package gitserver
+package p4server
 
 import (
 	"bytes"
@@ -16,12 +16,12 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/p4server/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// GitCommand is an interface describing a git commands to be executed.
-type GitCommand interface {
+// P4Command is an interface describing a git commands to be executed.
+type P4Command interface {
 	// DividedOutput runs the command and returns its standard output and standard error.
 	DividedOutput(ctx context.Context) ([]byte, []byte, error)
 
@@ -61,15 +61,15 @@ type GitCommand interface {
 	StdoutReader(ctx context.Context) (io.ReadCloser, error)
 }
 
-// LocalGitCommand is a GitCommand interface implementation which runs git commands against local file system.
+// LocalP4Command is a P4Command interface implementation which runs git commands against local file system.
 //
-// This struct uses composition with exec.RemoteGitCommand which already provides all necessary means to run commands against
+// This struct uses composition with exec.RemoteP4Command which already provides all necessary means to run commands against
 // local system.
-type LocalGitCommand struct {
+type LocalP4Command struct {
 	Logger log.Logger
 
-	// ReposDir is needed in order to LocalGitCommand be used like RemoteGitCommand (providing only repo name without its full path)
-	// Unlike RemoteGitCommand, which is run against server who knows the directory where repos are located, LocalGitCommand is
+	// ReposDir is needed in order to LocalP4Command be used like RemoteP4Command (providing only repo name without its full path)
+	// Unlike RemoteP4Command, which is run against server who knows the directory where repos are located, LocalP4Command is
 	// run locally, therefore the knowledge about repos location should be provided explicitly by setting this field
 	ReposDir       string
 	repo           api.RepoName
@@ -79,9 +79,9 @@ type LocalGitCommand struct {
 	exitStatus     int
 }
 
-func NewLocalGitCommand(repo api.RepoName, arg ...string) *LocalGitCommand {
+func NewLocalP4Command(repo api.RepoName, arg ...string) *LocalP4Command {
 	args := append([]string{git}, arg...)
-	return &LocalGitCommand{
+	return &LocalP4Command{
 		repo:   repo,
 		args:   args,
 		Logger: log.Scoped("local", "local git command logger"),
@@ -90,7 +90,7 @@ func NewLocalGitCommand(repo api.RepoName, arg ...string) *LocalGitCommand {
 
 const NoReposDirErrorMsg = "No ReposDir provided, command cannot be run without it"
 
-func (l *LocalGitCommand) DividedOutput(ctx context.Context) ([]byte, []byte, error) {
+func (l *LocalP4Command) DividedOutput(ctx context.Context) ([]byte, []byte, error) {
 	if l.ReposDir == "" {
 		l.Logger.Error(NoReposDirErrorMsg)
 		return nil, nil, errors.New(NoReposDirErrorMsg)
@@ -127,41 +127,41 @@ func (l *LocalGitCommand) DividedOutput(ctx context.Context) ([]byte, []byte, er
 	return stdoutBuf.Bytes(), bytes.TrimSpace(stderrBuf.Bytes()), err
 }
 
-func (l *LocalGitCommand) Output(ctx context.Context) ([]byte, error) {
+func (l *LocalP4Command) Output(ctx context.Context) ([]byte, error) {
 	stdout, _, err := l.DividedOutput(ctx)
 	return stdout, err
 }
 
-func (l *LocalGitCommand) CombinedOutput(ctx context.Context) ([]byte, error) {
+func (l *LocalP4Command) CombinedOutput(ctx context.Context) ([]byte, error) {
 	stdout, stderr, err := l.DividedOutput(ctx)
 	return append(stdout, stderr...), err
 }
 
-func (l *LocalGitCommand) DisableTimeout() {
+func (l *LocalP4Command) DisableTimeout() {
 	// No-op because there is no network request
 }
 
-func (l *LocalGitCommand) Repo() api.RepoName { return l.repo }
+func (l *LocalP4Command) Repo() api.RepoName { return l.repo }
 
-func (l *LocalGitCommand) Args() []string { return l.args }
+func (l *LocalP4Command) Args() []string { return l.args }
 
-func (l *LocalGitCommand) ExitStatus() int { return l.exitStatus }
+func (l *LocalP4Command) ExitStatus() int { return l.exitStatus }
 
-func (l *LocalGitCommand) SetEnsureRevision(r string) { l.ensureRevision = r }
+func (l *LocalP4Command) SetEnsureRevision(r string) { l.ensureRevision = r }
 
-func (l *LocalGitCommand) EnsureRevision() string { return l.ensureRevision }
+func (l *LocalP4Command) EnsureRevision() string { return l.ensureRevision }
 
-func (l *LocalGitCommand) SetStdin(b []byte) { l.stdin = b }
+func (l *LocalP4Command) SetStdin(b []byte) { l.stdin = b }
 
-func (l *LocalGitCommand) StdoutReader(ctx context.Context) (io.ReadCloser, error) {
+func (l *LocalP4Command) StdoutReader(ctx context.Context) (io.ReadCloser, error) {
 	output, err := l.Output(ctx)
 	return io.NopCloser(bytes.NewReader(output)), err
 }
 
-func (l *LocalGitCommand) String() string { return fmt.Sprintf("%q", l.Args()) }
+func (l *LocalP4Command) String() string { return fmt.Sprintf("%q", l.Args()) }
 
-// RemoteGitCommand represents a command to be executed remotely.
-type RemoteGitCommand struct {
+// RemoteP4Command represents a command to be executed remotely.
+type RemoteP4Command struct {
 	repo           api.RepoName // the repository to execute the command in
 	ensureRevision string
 	args           []string
@@ -172,7 +172,7 @@ type RemoteGitCommand struct {
 }
 
 // DividedOutput runs the command and returns its standard output and standard error.
-func (c *RemoteGitCommand) DividedOutput(ctx context.Context) ([]byte, []byte, error) {
+func (c *RemoteP4Command) DividedOutput(ctx context.Context) ([]byte, []byte, error) {
 	rc, trailer, err := c.sendExec(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -200,39 +200,39 @@ func (c *RemoteGitCommand) DividedOutput(ctx context.Context) ([]byte, []byte, e
 }
 
 // Output runs the command and returns its standard output.
-func (c *RemoteGitCommand) Output(ctx context.Context) ([]byte, error) {
+func (c *RemoteP4Command) Output(ctx context.Context) ([]byte, error) {
 	stdout, _, err := c.DividedOutput(ctx)
 	return stdout, err
 }
 
 // CombinedOutput runs the command and returns its combined standard output and standard error.
-func (c *RemoteGitCommand) CombinedOutput(ctx context.Context) ([]byte, error) {
+func (c *RemoteP4Command) CombinedOutput(ctx context.Context) ([]byte, error) {
 	stdout, stderr, err := c.DividedOutput(ctx)
 	return append(stdout, stderr...), err
 }
 
-func (c *RemoteGitCommand) DisableTimeout() {
+func (c *RemoteP4Command) DisableTimeout() {
 	c.noTimeout = true
 }
 
-func (c *RemoteGitCommand) Repo() api.RepoName { return c.repo }
+func (c *RemoteP4Command) Repo() api.RepoName { return c.repo }
 
-func (c *RemoteGitCommand) Args() []string { return c.args }
+func (c *RemoteP4Command) Args() []string { return c.args }
 
-func (c *RemoteGitCommand) ExitStatus() int { return c.exitStatus }
+func (c *RemoteP4Command) ExitStatus() int { return c.exitStatus }
 
-func (c *RemoteGitCommand) SetEnsureRevision(r string) { c.ensureRevision = r }
+func (c *RemoteP4Command) SetEnsureRevision(r string) { c.ensureRevision = r }
 
-func (c *RemoteGitCommand) EnsureRevision() string { return c.ensureRevision }
+func (c *RemoteP4Command) EnsureRevision() string { return c.ensureRevision }
 
-func (c *RemoteGitCommand) SetStdin(b []byte) { c.stdin = b }
+func (c *RemoteP4Command) SetStdin(b []byte) { c.stdin = b }
 
-func (c *RemoteGitCommand) String() string { return fmt.Sprintf("%q", c.args) }
+func (c *RemoteP4Command) String() string { return fmt.Sprintf("%q", c.args) }
 
 // StdoutReader returns an io.ReadCloser of stdout of c. If the command has a
 // non-zero return value, Read returns a non io.EOF error. Do not pass in a
 // started command.
-func (c *RemoteGitCommand) StdoutReader(ctx context.Context) (io.ReadCloser, error) {
+func (c *RemoteP4Command) StdoutReader(ctx context.Context) (io.ReadCloser, error) {
 	rc, trailer, err := c.sendExec(ctx)
 	if err != nil {
 		return nil, err

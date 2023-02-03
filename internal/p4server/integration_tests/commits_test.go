@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/p4server/p4domain"
 )
 
 func TestGetCommits(t *testing.T) {
@@ -40,37 +40,37 @@ func TestGetCommits(t *testing.T) {
 	}
 
 	t.Run("basic", func(t *testing.T) {
-		expectedCommits := []*gitdomain.Commit{
+		expectedCommits := []*p4domain.Commit{
 			{
 				ID:        "2ba4dd2b9a27ec125fea7d72e12b9824ead18631",
-				Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: *mustParseDate("2006-01-02T15:04:05Z", t)},
-				Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: *mustParseDate("2006-01-02T15:04:05Z", t)},
+				Author:    p4domain.Signature{Name: "a", Email: "a@a.com", Date: *mustParseDate("2006-01-02T15:04:05Z", t)},
+				Committer: &p4domain.Signature{Name: "a", Email: "a@a.com", Date: *mustParseDate("2006-01-02T15:04:05Z", t)},
 				Message:   "commit2",
 				Parents:   []api.CommitID{"d38233a79e037d2ab8170b0d0bc0aa438473e6da"},
 			},
 			{
 				ID:        "d38233a79e037d2ab8170b0d0bc0aa438473e6da",
-				Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: *mustParseDate("2006-01-02T15:04:05Z", t)},
-				Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: *mustParseDate("2006-01-02T15:04:05Z", t)},
+				Author:    p4domain.Signature{Name: "a", Email: "a@a.com", Date: *mustParseDate("2006-01-02T15:04:05Z", t)},
+				Committer: &p4domain.Signature{Name: "a", Email: "a@a.com", Date: *mustParseDate("2006-01-02T15:04:05Z", t)},
 				Message:   "commit1",
 			},
 			{
 				ID:        "67762ad757dd26cac4145f2b744fd93ad10a48e0",
-				Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: *mustParseDate("2006-01-02T15:04:05Z", t)},
-				Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: *mustParseDate("2006-01-02T15:04:05Z", t)},
+				Author:    p4domain.Signature{Name: "a", Email: "a@a.com", Date: *mustParseDate("2006-01-02T15:04:05Z", t)},
+				Committer: &p4domain.Signature{Name: "a", Email: "a@a.com", Date: *mustParseDate("2006-01-02T15:04:05Z", t)},
 				Message:   "commit2",
 				Parents:   []api.CommitID{"2b988222e844b570959a493f5b07ec020b89e122"},
 			},
 			{
 				ID:        "2b988222e844b570959a493f5b07ec020b89e122",
-				Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: *mustParseDate("2006-01-02T15:04:05Z", t)},
-				Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: *mustParseDate("2006-01-02T15:04:05Z", t)},
+				Author:    p4domain.Signature{Name: "a", Email: "a@a.com", Date: *mustParseDate("2006-01-02T15:04:05Z", t)},
+				Committer: &p4domain.Signature{Name: "a", Email: "a@a.com", Date: *mustParseDate("2006-01-02T15:04:05Z", t)},
 				Message:   "commit1",
 			},
 			{
 				ID:        "01bed0ae660668c57539cecaacb4c33d77609f43",
-				Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: *mustParseDate("2006-01-02T15:04:05Z", t)},
-				Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: *mustParseDate("2006-01-02T15:04:05Z", t)},
+				Author:    p4domain.Signature{Name: "a", Email: "a@a.com", Date: *mustParseDate("2006-01-02T15:04:05Z", t)},
+				Committer: &p4domain.Signature{Name: "a", Email: "a@a.com", Date: *mustParseDate("2006-01-02T15:04:05Z", t)},
 				Message:   "commit2",
 				Parents:   []api.CommitID{"d6ce2e76d171569d81c0afdc4573f461cec17d45"},
 			},

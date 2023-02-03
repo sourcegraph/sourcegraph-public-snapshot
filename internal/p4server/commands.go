@@ -1,4 +1,4 @@
-package gitserver
+package p4server
 
 import (
 	"bytes"
@@ -33,10 +33,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/p4server/p4domain"
+	"github.com/sourcegraph/sourcegraph/internal/p4server/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -156,7 +156,7 @@ type ContributorOptions struct {
 	Path  string // compute stats for commits that touch this path
 }
 
-func (c *clientImplementor) ContributorCount(ctx context.Context, repo api.RepoName, opt ContributorOptions) ([]*gitdomain.ContributorCount, error) {
+func (c *clientImplementor) ContributorCount(ctx context.Context, repo api.RepoName, opt ContributorOptions) ([]*p4domain.ContributorCount, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: ShortLog") //nolint:staticcheck // OT is deprecated
 	span.SetTag("Opt", opt)
 	defer span.Finish()
@@ -177,7 +177,7 @@ func (c *clientImplementor) ContributorCount(ctx context.Context, repo api.RepoN
 	if opt.Path != "" {
 		args = append(args, opt.Path)
 	}
-	cmd := c.gitCommand(repo, args...)
+	cmd := c.p4Command(repo, args...)
 	out, err := cmd.Output(ctx)
 	if err != nil {
 		return nil, errors.Errorf("exec `git shortlog -s -n -e` failed: %v", err)
@@ -195,7 +195,7 @@ func (c *clientImplementor) execReader(ctx context.Context, repo api.RepoName, a
 	span.SetTag("args", args)
 	defer span.Finish()
 
-	cmd := c.gitCommand(repo, args...)
+	cmd := c.p4Command(repo, args...)
 	return cmd.StdoutReader(ctx)
 }
 
@@ -203,13 +203,13 @@ func (c *clientImplementor) execReader(ctx context.Context, repo api.RepoName, a
 // -sne` command.
 var logEntryPattern = lazyregexp.New(`^\s*([0-9]+)\s+(.*)$`)
 
-func parseShortLog(out []byte) ([]*gitdomain.ContributorCount, error) {
+func parseShortLog(out []byte) ([]*p4domain.ContributorCount, error) {
 	out = bytes.TrimSpace(out)
 	if len(out) == 0 {
 		return nil, nil
 	}
 	lines := bytes.Split(out, []byte{'\n'})
-	results := make([]*gitdomain.ContributorCount, len(lines))
+	results := make([]*p4domain.ContributorCount, len(lines))
 	for i, line := range lines {
 		// example line: "1125\tJane Doe <jane@sourcegraph.com>"
 		match := logEntryPattern.FindSubmatch(line)
@@ -225,7 +225,7 @@ func parseShortLog(out []byte) ([]*gitdomain.ContributorCount, error) {
 		if err != nil || addr == nil {
 			addr = &mail.Address{Name: string(match[2])}
 		}
-		results[i] = &gitdomain.ContributorCount{
+		results[i] = &p4domain.ContributorCount{
 			Count: int32(count),
 			Name:  addr.Name,
 			Email: addr.Address,
@@ -299,7 +299,7 @@ func (opts *CommitGraphOptions) LogFields() []log.Field {
 // from a commit to its parents. If a commit is supplied, the returned graph will
 // be rooted at the given commit. If a non-zero limit is supplied, at most that
 // many commits will be returned.
-func (c *clientImplementor) CommitGraph(ctx context.Context, repo api.RepoName, opts CommitGraphOptions) (_ *gitdomain.CommitGraph, err error) {
+func (c *clientImplementor) CommitGraph(ctx context.Context, repo api.RepoName, opts CommitGraphOptions) (_ *p4domain.CommitGraph, err error) {
 	args := []string{"log", "--pretty=%H %P", "--topo-order"}
 	if opts.AllRefs {
 		args = append(args, "--all")
@@ -314,14 +314,14 @@ func (c *clientImplementor) CommitGraph(ctx context.Context, repo api.RepoName, 
 		args = append(args, fmt.Sprintf("-%d", opts.Limit))
 	}
 
-	cmd := c.gitCommand(repo, args...)
+	cmd := c.p4Command(repo, args...)
 
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return gitdomain.ParseCommitGraph(strings.Split(string(out), "\n")), nil
+	return p4domain.ParseCommitGraph(strings.Split(string(out), "\n")), nil
 }
 
 // DevNullSHA 4b825dc642cb6eb9a060e54bf8d69288fbee4904 is `git hash-object -t
@@ -359,7 +359,7 @@ func (c *clientImplementor) DiffPath(ctx context.Context, checker authz.SubRepoP
 
 // DiffSymbols performs a diff command which is expected to be parsed by our symbols package
 func (c *clientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error) {
-	command := c.gitCommand(repo, "diff", "-z", "--name-status", "--no-renames", string(commitA), string(commitB))
+	command := c.p4Command(repo, "diff", "-z", "--name-status", "--no-renames", string(commitA), string(commitB))
 	return command.Output(ctx)
 }
 
@@ -446,9 +446,9 @@ func (c *clientImplementor) lsTree(
 	return entries, nil
 }
 
-type objectInfo gitdomain.OID
+type objectInfo p4domain.OID
 
-func (oid objectInfo) OID() gitdomain.OID { return gitdomain.OID(oid) }
+func (oid objectInfo) OID() p4domain.OID { return p4domain.OID(oid) }
 
 // lStat returns a FileInfo describing the named file at commit. If the file is a
 // symbolic link, the returned FileInfo describes the symbolic link. lStat makes
@@ -501,7 +501,7 @@ func (c *clientImplementor) lStat(ctx context.Context, checker authz.SubRepoPerm
 }
 
 func (c *clientImplementor) lsTreeUncached(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
-	if err := gitdomain.EnsureAbsoluteCommit(commit); err != nil {
+	if err := p4domain.EnsureAbsoluteCommit(commit); err != nil {
 		return nil, err
 	}
 
@@ -525,7 +525,7 @@ func (c *clientImplementor) lsTreeUncached(ctx context.Context, repo api.RepoNam
 	if path != "" {
 		args = append(args, "--", filepath.ToSlash(path))
 	}
-	cmd := c.gitCommand(repo, args...)
+	cmd := c.p4Command(repo, args...)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		if bytes.Contains(out, []byte("exists on disk, but not in")) {
@@ -568,7 +568,7 @@ func (c *clientImplementor) lsTreeUncached(ctx context.Context, repo api.RepoNam
 		}
 		typ := info[1]
 		sha := info[2]
-		if !gitdomain.IsAbsoluteRevision(sha) {
+		if !p4domain.IsAbsoluteRevision(sha) {
 			return nil, errors.Errorf("invalid `git ls-tree` SHA output: %q", sha)
 		}
 		oid, err := decodeOID(sha)
@@ -602,9 +602,9 @@ func (c *clientImplementor) lsTreeUncached(ctx context.Context, repo api.RepoNam
 				mode = mode | 0o644
 			}
 		case "commit":
-			mode = mode | gitdomain.ModeSubmodule
-			cmd := c.gitCommand(repo, "show", fmt.Sprintf("%s:.gitmodules", commit))
-			var submodule gitdomain.Submodule
+			mode = mode | p4domain.ModeSubmodule
+			cmd := c.p4Command(repo, "show", fmt.Sprintf("%s:.gitmodules", commit))
+			var submodule p4domain.Submodule
 			if out, err := cmd.Output(ctx); err == nil {
 
 				var cfg config.Config
@@ -639,21 +639,21 @@ func (c *clientImplementor) lsTreeUncached(ctx context.Context, repo api.RepoNam
 	return fis, nil
 }
 
-func decodeOID(sha string) (gitdomain.OID, error) {
+func decodeOID(sha string) (p4domain.OID, error) {
 	oidBytes, err := hex.DecodeString(sha)
 	if err != nil {
-		return gitdomain.OID{}, err
+		return p4domain.OID{}, err
 	}
-	var oid gitdomain.OID
+	var oid p4domain.OID
 	copy(oid[:], oidBytes)
 	return oid, nil
 }
 
-func (c *clientImplementor) LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error {
+func (c *clientImplementor) LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry p4domain.LogEntry) error) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	command := c.gitCommand(api.RepoName(repo), gitdomain.LogReverseArgs(n, commit)...)
+	command := c.p4Command(api.RepoName(repo), p4domain.LogReverseArgs(n, commit)...)
 
 	// We run a single `git log` command and stream the output while the repo is being processed, which
 	// can take much longer than 1 minute (the default timeout).
@@ -664,7 +664,7 @@ func (c *clientImplementor) LogReverseEach(ctx context.Context, repo string, com
 	}
 	defer stdout.Close()
 
-	return errors.Wrap(gitdomain.ParseLogReverseEach(stdout, onLogEntry), "ParseLogReverseEach")
+	return errors.Wrap(p4domain.ParseLogReverseEach(stdout, onLogEntry), "ParseLogReverseEach")
 }
 
 // BlameOptions configures a blame.
@@ -682,7 +682,7 @@ type Hunk struct {
 	StartByte int // 0-indexed start byte position (inclusive)
 	EndByte   int // 0-indexed end byte position (exclusive)
 	api.CommitID
-	Author   gitdomain.Signature
+	Author   p4domain.Signature
 	Message  string
 	Filename string
 }
@@ -781,7 +781,7 @@ func blameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChecker, c
 
 // parseGitBlameOutput parses the output of `git blame -w --porcelain`
 func parseGitBlameOutput(out string) ([]*Hunk, error) {
-	commits := make(map[string]gitdomain.Commit)
+	commits := make(map[string]p4domain.Commit)
 	filenames := make(map[string]string)
 	hunks := make([]*Hunk, 0)
 	remainingLines := strings.Split(out[:len(out)-1], "\n")
@@ -818,10 +818,10 @@ func parseGitBlameOutput(out string) ([]*Hunk, error) {
 				return nil, errors.Errorf("Failed to parse author-time %q", remainingLines[3])
 			}
 			summary := strings.Join(strings.Split(remainingLines[9], " ")[1:], " ")
-			commit := gitdomain.Commit{
+			commit := p4domain.Commit{
 				ID:      api.CommitID(commitID),
-				Message: gitdomain.Message(summary),
-				Author: gitdomain.Signature{
+				Message: p4domain.Message(summary),
+				Author: p4domain.Signature{
 					Name:  author,
 					Email: email,
 					Date:  time.Unix(authorTime, 0).UTC(),
@@ -881,13 +881,13 @@ func parseGitBlameOutput(out string) ([]*Hunk, error) {
 }
 
 func (c *clientImplementor) gitserverGitCommandFunc(repo api.RepoName) gitCommandFunc {
-	return func(args []string) GitCommand {
-		return c.gitCommand(repo, args...)
+	return func(args []string) P4Command {
+		return c.p4Command(repo, args...)
 	}
 }
 
 // gitCommandFunc is a func that creates a new executable Git command.
-type gitCommandFunc func(args []string) GitCommand
+type gitCommandFunc func(args []string) P4Command
 
 // IsAbsoluteRevision checks if the revision is a git OID SHA string.
 //
@@ -922,9 +922,9 @@ var resolveRevisionCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 // used.
 //
 // Error cases:
-// * Repo does not exist: gitdomain.RepoNotExistError
-// * Commit does not exist: gitdomain.RevisionNotFoundError
-// * Empty repository: gitdomain.RevisionNotFoundError
+// * Repo does not exist: p4domain.RepoNotExistError
+// * Commit does not exist: p4domain.RevisionNotFoundError
+// * Empty repository: p4domain.RevisionNotFoundError
 // * Other unexpected errors.
 func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt ResolveRevisionOptions) (api.CommitID, error) {
 	labelEnsureRevisionValue := "true"
@@ -952,7 +952,7 @@ func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoNa
 		spec = spec + "^0"
 	}
 
-	cmd := c.gitCommand(repo, "rev-parse", spec)
+	cmd := c.p4Command(repo, "rev-parse", spec)
 	cmd.SetEnsureRevision(spec)
 
 	// We don't ever need to ensure that HEAD is in git-server.
@@ -967,14 +967,14 @@ func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoNa
 
 // runRevParse sends the git rev-parse command to gitserver. It interprets
 // missing revision responses and converts them into RevisionNotFoundError.
-func runRevParse(ctx context.Context, cmd GitCommand, spec string) (api.CommitID, error) {
+func runRevParse(ctx context.Context, cmd P4Command, spec string) (api.CommitID, error) {
 	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
-		if gitdomain.IsRepoNotExist(err) {
+		if p4domain.IsRepoNotExist(err) {
 			return "", err
 		}
 		if bytes.Contains(stderr, []byte("unknown revision")) {
-			return "", &gitdomain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: spec}
+			return "", &p4domain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: spec}
 		}
 		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.Args(), stderr))
 	}
@@ -985,15 +985,15 @@ func runRevParse(ctx context.Context, cmd GitCommand, spec string) (api.CommitID
 			// if HEAD doesn't point to anything git just returns `HEAD` as the
 			// output of rev-parse. An example where this occurs is an empty
 			// repository.
-			return "", &gitdomain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: spec}
+			return "", &p4domain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: spec}
 		}
-		return "", &gitdomain.BadCommitError{Spec: spec, Commit: commit, Repo: cmd.Repo()}
+		return "", &p4domain.BadCommitError{Spec: spec, Commit: commit, Repo: cmd.Repo()}
 	}
 	return commit, nil
 }
 
 // LsFiles returns the output of `git ls-files`.
-func (c *clientImplementor) LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error) {
+func (c *clientImplementor) LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...p4domain.Pathspec) ([]string, error) {
 	args := []string{
 		"ls-files",
 		"-z",
@@ -1008,7 +1008,7 @@ func (c *clientImplementor) LsFiles(ctx context.Context, checker authz.SubRepoPe
 		}
 	}
 
-	cmd := c.gitCommand(repo, args...)
+	cmd := c.p4Command(repo, args...)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
@@ -1025,7 +1025,7 @@ func (c *clientImplementor) LsFiles(ctx context.Context, checker authz.SubRepoPe
 // ListFiles returns a list of root-relative file paths matching the given
 // pattern in a particular commit of a repository.
 func (c *clientImplementor) ListFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pattern *regexp.Regexp) (_ []string, err error) {
-	cmd := c.gitCommand(repo, "ls-tree", "--name-only", "-r", string(commit), "--")
+	cmd := c.p4Command(repo, "ls-tree", "--name-only", "-r", string(commit), "--")
 
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
@@ -1068,7 +1068,7 @@ func (c *clientImplementor) ListDirectoryChildren(
 ) (map[string][]string, error) {
 	args := []string{"ls-tree", "--name-only", string(commit), "--"}
 	args = append(args, cleanDirectoriesForLsTree(dirnames)...)
-	cmd := c.gitCommand(repo, args...)
+	cmd := c.p4Command(repo, args...)
 
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
@@ -1178,7 +1178,7 @@ func (c *clientImplementor) LFSSmudge(ctx context.Context, checker authz.SubRepo
 		return nil, errors.Wrapf(err, "failed to read LFS pointer %q in %s@%s", path, repo, commit)
 	}
 
-	cmd := c.gitCommand(repo, "lfs", "smudge", path)
+	cmd := c.p4Command(repo, "lfs", "smudge", path)
 	cmd.SetStdin(pointer)
 
 	return cmd.StdoutReader(ctx)
@@ -1190,7 +1190,7 @@ type withCloser struct {
 }
 
 // ListTags returns a list of all tags in the repository. If commitObjs is non-empty, only all tags pointing at those commits are returned.
-func (c *clientImplementor) ListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) ([]*gitdomain.Tag, error) {
+func (c *clientImplementor) ListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) ([]*p4domain.Tag, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Tags") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 
@@ -1203,10 +1203,10 @@ func (c *clientImplementor) ListTags(ctx context.Context, repo api.RepoName, com
 		args = append(args, "--points-at", commit)
 	}
 
-	cmd := c.gitCommand(repo, args...)
+	cmd := c.p4Command(repo, args...)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
-		if gitdomain.IsRepoNotExist(err) {
+		if p4domain.IsRepoNotExist(err) {
 			return nil, err
 		}
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
@@ -1215,20 +1215,20 @@ func (c *clientImplementor) ListTags(ctx context.Context, repo api.RepoName, com
 	return parseTags(out)
 }
 
-func parseTags(in []byte) ([]*gitdomain.Tag, error) {
+func parseTags(in []byte) ([]*p4domain.Tag, error) {
 	in = bytes.TrimSuffix(in, []byte("\n")) // remove trailing newline
 	if len(in) == 0 {
 		return nil, nil // no tags
 	}
 	lines := bytes.Split(in, []byte("\n"))
-	tags := make([]*gitdomain.Tag, len(lines))
+	tags := make([]*p4domain.Tag, len(lines))
 	for i, line := range lines {
 		parts := bytes.SplitN(line, []byte("\x00"), 3)
 		if len(parts) != 3 {
 			return nil, errors.Errorf("invalid git tag list output line: %q", line)
 		}
 
-		tag := &gitdomain.Tag{
+		tag := &p4domain.Tag{
 			Name:     string(parts[1]),
 			CommitID: api.CommitID(parts[0]),
 		}
@@ -1254,7 +1254,7 @@ func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoN
 	if short {
 		args = append(args, "--short")
 	}
-	cmd := c.gitCommand(repo, args...)
+	cmd := c.p4Command(repo, args...)
 	refBytes, _, err := cmd.DividedOutput(ctx)
 	exitCode := cmd.ExitStatus()
 	if exitCode != 0 && err != nil {
@@ -1269,7 +1269,7 @@ func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoN
 
 	// If we fail to get the default branch due to cloning or being empty, we return nothing.
 	if err != nil {
-		if gitdomain.IsCloneInProgress(err) || errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		if p4domain.IsCloneInProgress(err) || errors.HasType(err, &p4domain.RevisionNotFoundError{}) {
 			return "", "", nil
 		}
 		return "", "", err
@@ -1285,7 +1285,7 @@ func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, a,
 	span.SetTag("B", b)
 	defer span.Finish()
 
-	cmd := c.gitCommand(repo, "merge-base", "--", string(a), string(b))
+	cmd := c.p4Command(repo, "merge-base", "--", string(a), string(b))
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
@@ -1298,7 +1298,7 @@ func (c *clientImplementor) RevList(ctx context.Context, repo string, commit str
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	command := c.gitCommand(api.RepoName(repo), RevListArgs(commit)...)
+	command := c.p4Command(api.RepoName(repo), RevListArgs(commit)...)
 	command.DisableTimeout()
 	stdout, err := command.StdoutReader(ctx)
 	if err != nil {
@@ -1306,7 +1306,7 @@ func (c *clientImplementor) RevList(ctx context.Context, repo string, commit str
 	}
 	defer stdout.Close()
 
-	return gitdomain.RevListEach(stdout, onCommit)
+	return p4domain.RevListEach(stdout, onCommit)
 }
 
 func RevListArgs(givenCommit string) []string {
@@ -1315,7 +1315,7 @@ func RevListArgs(givenCommit string) []string {
 
 // GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
 // revspecs).
-func (c *clientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) (*gitdomain.BehindAhead, error) {
+func (c *clientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) (*p4domain.BehindAhead, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: BehindAhead") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 
@@ -1326,7 +1326,7 @@ func (c *clientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoNam
 		return nil, err
 	}
 
-	cmd := c.gitCommand(repo, "rev-list", "--count", "--left-right", fmt.Sprintf("%s...%s", left, right))
+	cmd := c.p4Command(repo, "rev-list", "--count", "--left-right", fmt.Sprintf("%s...%s", left, right))
 	out, err := cmd.Output(ctx)
 	if err != nil {
 		return nil, err
@@ -1340,7 +1340,7 @@ func (c *clientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoNam
 	if err != nil {
 		return nil, err
 	}
-	return &gitdomain.BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
+	return &p4domain.BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
 }
 
 // ReadFile returns the first maxBytes of the named file at commit. If maxBytes <= 0, the entire
@@ -1394,16 +1394,16 @@ type blobReader struct {
 	repo   api.RepoName
 	commit api.CommitID
 	name   string
-	cmd    GitCommand
+	cmd    P4Command
 	rc     io.ReadCloser
 }
 
 func (c *clientImplementor) newBlobReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (*blobReader, error) {
-	if err := gitdomain.EnsureAbsoluteCommit(commit); err != nil {
+	if err := p4domain.EnsureAbsoluteCommit(commit); err != nil {
 		return nil, err
 	}
 
-	cmd := c.gitCommand(repo, "show", string(commit)+":"+name)
+	cmd := c.p4Command(repo, "show", string(commit)+":"+name)
 	stdout, err := cmd.StdoutReader(ctx)
 	if err != nil {
 		return nil, err
@@ -1450,7 +1450,7 @@ func (br *blobReader) convertError(err error) error {
 			return err
 		}
 		// Return EOF for a submodule for now which indicates zero content
-		if fi.Mode()&gitdomain.ModeSubmodule != 0 {
+		if fi.Mode()&p4domain.ModeSubmodule != 0 {
 			return io.EOF
 		}
 	}
@@ -1508,7 +1508,7 @@ type CommitsOptions struct {
 var recordGetCommitQueries = os.Getenv("RECORD_GET_COMMIT_QUERIES") == "1"
 
 // getCommit returns the commit with the given id.
-func (c *clientImplementor) getCommit(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (_ *gitdomain.Commit, err error) {
+func (c *clientImplementor) getCommit(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (_ *p4domain.Commit, err error) {
 	if honey.Enabled() && recordGetCommitQueries {
 		defer func() {
 			ev := honey.NewEvent("getCommit")
@@ -1546,7 +1546,7 @@ func (c *clientImplementor) getCommit(ctx context.Context, checker authz.SubRepo
 	}
 
 	if len(commits) == 0 {
-		return nil, &gitdomain.RevisionNotFoundError{Repo: repo, Spec: string(id)}
+		return nil, &p4domain.RevisionNotFoundError{Repo: repo, Spec: string(id)}
 	}
 	if len(commits) != 1 {
 		return nil, errors.Errorf("git log: expected 1 commit, got %d", len(commits))
@@ -1561,7 +1561,7 @@ func (c *clientImplementor) getCommit(ctx context.Context, checker authz.SubRepo
 // The remoteURLFunc is called to get the Git remote URL if it's not set in repo and if it is
 // needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
 // the repository or if the commit must be fetched from the remote.
-func (c *clientImplementor) GetCommit(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (*gitdomain.Commit, error) {
+func (c *clientImplementor) GetCommit(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (*p4domain.Commit, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: GetCommit") //nolint:staticcheck // OT is deprecated
 	span.SetTag("Commit", id)
 	defer span.Finish()
@@ -1570,7 +1570,7 @@ func (c *clientImplementor) GetCommit(ctx context.Context, checker authz.SubRepo
 }
 
 // Commits returns all commits matching the options.
-func (c *clientImplementor) Commits(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, opt CommitsOptions) ([]*gitdomain.Commit, error) {
+func (c *clientImplementor) Commits(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, opt CommitsOptions) ([]*p4domain.Commit, error) {
 	opt = addNameOnly(opt, checker)
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Commits") //nolint:staticcheck // OT is deprecated
 	span.SetTag("Opt", opt)
@@ -1582,11 +1582,11 @@ func (c *clientImplementor) Commits(ctx context.Context, checker authz.SubRepoPe
 	return c.commitLog(ctx, repo, opt, checker)
 }
 
-func filterCommits(ctx context.Context, checker authz.SubRepoPermissionChecker, commits []*wrappedCommit, repoName api.RepoName) ([]*gitdomain.Commit, error) {
+func filterCommits(ctx context.Context, checker authz.SubRepoPermissionChecker, commits []*wrappedCommit, repoName api.RepoName) ([]*p4domain.Commit, error) {
 	if !authz.SubRepoEnabled(checker) {
 		return unWrapCommits(commits), nil
 	}
-	filtered := make([]*gitdomain.Commit, 0, len(commits))
+	filtered := make([]*p4domain.Commit, 0, len(commits))
 	for _, commit := range commits {
 		if hasAccess, err := hasAccessToCommit(ctx, commit, repoName, checker); hasAccess {
 			filtered = append(filtered, commit.Commit)
@@ -1597,8 +1597,8 @@ func filterCommits(ctx context.Context, checker authz.SubRepoPermissionChecker, 
 	return filtered, nil
 }
 
-func unWrapCommits(wrappedCommits []*wrappedCommit) []*gitdomain.Commit {
-	commits := make([]*gitdomain.Commit, 0, len(wrappedCommits))
+func unWrapCommits(wrappedCommits []*wrappedCommit) []*p4domain.Commit {
+	commits := make([]*p4domain.Commit, 0, len(wrappedCommits))
 	for _, wc := range wrappedCommits {
 		commits = append(commits, wc.Commit)
 	}
@@ -1638,7 +1638,7 @@ func (c *clientImplementor) CommitsUniqueToBranch(ctx context.Context, checker a
 		args = append(args, branchName, "^HEAD")
 	}
 
-	cmd := c.gitCommand(repo, args...)
+	cmd := c.p4Command(repo, args...)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		return nil, err
@@ -1654,7 +1654,7 @@ func (c *clientImplementor) CommitsUniqueToBranch(ctx context.Context, checker a
 func (c *clientImplementor) filterCommitsUniqueToBranch(ctx context.Context, repo api.RepoName, commitsMap map[string]time.Time, checker authz.SubRepoPermissionChecker) map[string]time.Time {
 	filtered := make(map[string]time.Time, len(commitsMap))
 	for commitID, timeStamp := range commitsMap {
-		if _, err := c.GetCommit(ctx, checker, repo, api.CommitID(commitID), ResolveRevisionOptions{}); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		if _, err := c.GetCommit(ctx, checker, repo, api.CommitID(commitID), ResolveRevisionOptions{}); !errors.HasType(err, &p4domain.RevisionNotFoundError{}) {
 			filtered[commitID] = timeStamp
 		}
 	}
@@ -1714,7 +1714,7 @@ func (c *clientImplementor) HasCommitAfter(ctx context.Context, checker authz.Su
 		return false, err
 	}
 
-	cmd := c.gitCommand(repo, args...)
+	cmd := c.p4Command(repo, args...)
 	out, err := cmd.Output(ctx)
 	if err != nil {
 		return false, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
@@ -1741,7 +1741,7 @@ func isBadObjectErr(output, obj string) bool {
 // commitLog returns a list of commits.
 //
 // The caller is responsible for doing checkSpecArgSafety on opt.Head and opt.Base.
-func (c *clientImplementor) commitLog(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
+func (c *clientImplementor) commitLog(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker) ([]*p4domain.Commit, error) {
 	wrappedCommits, err := c.getWrappedCommits(ctx, repo, opt)
 	if err != nil {
 		return nil, err
@@ -1764,7 +1764,7 @@ func (c *clientImplementor) getWrappedCommits(ctx context.Context, repo api.Repo
 		return nil, err
 	}
 
-	cmd := c.gitCommand(repo, args...)
+	cmd := c.p4Command(repo, args...)
 	if !opt.NoEnsureRevision {
 		cmd.SetEnsureRevision(opt.Range)
 	}
@@ -1775,7 +1775,7 @@ func (c *clientImplementor) getWrappedCommits(ctx context.Context, repo api.Repo
 	return wrappedCommits, nil
 }
 
-func needMoreCommits(filtered []*gitdomain.Commit, commits []*wrappedCommit, opt CommitsOptions, checker authz.SubRepoPermissionChecker) bool {
+func needMoreCommits(filtered []*p4domain.Commit, commits []*wrappedCommit, opt CommitsOptions, checker authz.SubRepoPermissionChecker) bool {
 	if !authz.SubRepoEnabled(checker) {
 		return false
 	}
@@ -1796,12 +1796,12 @@ func isRequestForSingleCommit(opt CommitsOptions) bool {
 // filtering, fewer than that requested number was left. This function requests the next N commits (where N was the number
 // originally requested), filters the commits, and determines if this is at least N commits total after filtering. If not,
 // the loop continues until N total filtered commits are collected _or_ there are no commits left to request.
-func (c *clientImplementor) getMoreCommits(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, baselineCommits []*gitdomain.Commit) ([]*gitdomain.Commit, error) {
+func (c *clientImplementor) getMoreCommits(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, baselineCommits []*p4domain.Commit) ([]*p4domain.Commit, error) {
 	// We want to place an upper bound on the number of times we loop here so that we
 	// don't hit pathological conditions where a lot of filtering has been applied.
 	const maxIterations = 5
 
-	totalCommits := make([]*gitdomain.Commit, 0, opt.N)
+	totalCommits := make([]*p4domain.Commit, 0, opt.N)
 	for i := 0; i < maxIterations; i++ {
 		if uint(len(totalCommits)) == opt.N {
 			break
@@ -1827,7 +1827,7 @@ func (c *clientImplementor) getMoreCommits(ctx context.Context, repo api.RepoNam
 	return totalCommits, nil
 }
 
-func joinCommits(previous, next []*gitdomain.Commit, desiredTotal uint) []*gitdomain.Commit {
+func joinCommits(previous, next []*p4domain.Commit, desiredTotal uint) []*p4domain.Commit {
 	allCommits := append(previous, next...)
 	// ensure that we don't return more than what was requested
 	if uint(len(allCommits)) > desiredTotal {
@@ -1839,12 +1839,12 @@ func joinCommits(previous, next []*gitdomain.Commit, desiredTotal uint) []*gitdo
 // runCommitLog sends the git command to gitserver. It interprets missing
 // revision responses and converts them into RevisionNotFoundError.
 // It is declared as a variable so that we can swap it out in tests
-var runCommitLog = func(ctx context.Context, cmd GitCommand, opt CommitsOptions) ([]*wrappedCommit, error) {
+var runCommitLog = func(ctx context.Context, cmd P4Command, opt CommitsOptions) ([]*wrappedCommit, error) {
 	data, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		data = bytes.TrimSpace(data)
 		if isBadObjectErr(string(stderr), opt.Range) {
-			return nil, &gitdomain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: opt.Range}
+			return nil, &p4domain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: opt.Range}
 		}
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), data))
 	}
@@ -1873,7 +1873,7 @@ func parseCommitLogOutput(data []byte, nameOnly bool) ([]*wrappedCommit, error) 
 }
 
 type wrappedCommit struct {
-	*gitdomain.Commit
+	*p4domain.Commit
 	files []string
 }
 
@@ -1927,12 +1927,12 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 }
 
 // FirstEverCommit returns the first commit ever made to the repository.
-func (c *clientImplementor) FirstEverCommit(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) (*gitdomain.Commit, error) {
+func (c *clientImplementor) FirstEverCommit(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) (*p4domain.Commit, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: FirstEverCommit") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 
 	args := []string{"rev-list", "--reverse", "--date-order", "--max-parents=0", "HEAD"}
-	cmd := c.gitCommand(repo, args...)
+	cmd := c.p4Command(repo, args...)
 	out, err := cmd.Output(ctx)
 	if err != nil {
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", args, out))
@@ -1950,7 +1950,7 @@ func (c *clientImplementor) FirstEverCommit(ctx context.Context, checker authz.S
 // CommitExists determines if the given commit exists in the given repository.
 func (c *clientImplementor) CommitExists(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, id api.CommitID) (bool, error) {
 	commit, err := c.getCommit(ctx, checker, repo, id, ResolveRevisionOptions{NoEnsureRevision: true})
-	if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+	if errors.HasType(err, &p4domain.RevisionNotFoundError{}) {
 		return false, nil
 	}
 	if err != nil {
@@ -1982,7 +1982,7 @@ func (c *clientImplementor) CommitsExist(ctx context.Context, checker authz.SubR
 //
 // If ignoreErrors is true, then errors arising from any single failed git log operation will cause the
 // resulting commit to be nil, but not fail the entire operation.
-func (c *clientImplementor) GetCommits(ctx context.Context, checker authz.SubRepoPermissionChecker, repoCommits []api.RepoCommit, ignoreErrors bool) ([]*gitdomain.Commit, error) {
+func (c *clientImplementor) GetCommits(ctx context.Context, checker authz.SubRepoPermissionChecker, repoCommits []api.RepoCommit, ignoreErrors bool) ([]*p4domain.Commit, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: getCommits") //nolint:staticcheck // OT is deprecated
 	span.SetTag("numRepoCommits", len(repoCommits))
 	defer span.Finish()
@@ -2007,7 +2007,7 @@ func (c *clientImplementor) GetCommits(ctx context.Context, checker authz.SubRep
 	// Create a slice with values populated in the callback defined below. Since the callback
 	// may be invoked concurrently inside BatchLog, we need to synchronize writes to this slice
 	// with this local mutex.
-	commits := make([]*gitdomain.Commit, len(repoCommits))
+	commits := make([]*p4domain.Commit, len(repoCommits))
 	var mu sync.Mutex
 
 	callback := func(repoCommit api.RepoCommit, rawResult RawBatchLogResult) error {
@@ -2075,7 +2075,7 @@ func (c *clientImplementor) GetCommits(ctx context.Context, checker authz.SubRep
 // repositories), a false-valued flag is returned along with a nil error and
 // empty revision.
 func (c *clientImplementor) Head(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) (_ string, revisionExists bool, err error) {
-	cmd := c.gitCommand(repo, "rev-parse", "HEAD")
+	cmd := c.p4Command(repo, "rev-parse", "HEAD")
 
 	out, err := cmd.Output(ctx)
 	if err != nil {
@@ -2092,7 +2092,7 @@ func (c *clientImplementor) Head(ctx context.Context, checker authz.SubRepoPermi
 }
 
 func checkError(err error) (string, bool, error) {
-	if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+	if errors.HasType(err, &p4domain.RevisionNotFoundError{}) {
 		err = nil
 	}
 	return "", false, err
@@ -2141,11 +2141,11 @@ func parseCommitFromLog(data []byte, partsPerCommit int) (commit *wrappedCommit,
 	fileNames, nextCommit := parseCommitFileNames(partsPerCommit, parts)
 
 	commit = &wrappedCommit{
-		Commit: &gitdomain.Commit{
+		Commit: &p4domain.Commit{
 			ID:        commitID,
-			Author:    gitdomain.Signature{Name: string(parts[1]), Email: string(parts[2]), Date: time.Unix(authorTime, 0).UTC()},
-			Committer: &gitdomain.Signature{Name: string(parts[4]), Email: string(parts[5]), Date: time.Unix(committerTime, 0).UTC()},
-			Message:   gitdomain.Message(strings.TrimSuffix(string(parts[7]), "\n")),
+			Author:    p4domain.Signature{Name: string(parts[1]), Email: string(parts[2]), Date: time.Unix(authorTime, 0).UTC()},
+			Committer: &p4domain.Signature{Name: string(parts[4]), Email: string(parts[5]), Date: time.Unix(committerTime, 0).UTC()},
+			Message:   p4domain.Message(strings.TrimSuffix(string(parts[7]), "\n")),
 			Parents:   parents,
 		}, files: fileNames,
 	}
@@ -2192,7 +2192,7 @@ func (c *clientImplementor) BranchesContaining(ctx context.Context, checker auth
 			return nil, err
 		}
 	}
-	cmd := c.gitCommand(repo, "branch", "--contains", string(commit), "--format", "%(refname)")
+	cmd := c.p4Command(repo, "branch", "--contains", string(commit), "--format", "%(refname)")
 
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
@@ -2221,8 +2221,8 @@ func parseBranchesContaining(lines []string) []string {
 
 // RefDescriptions returns a map from commits to descriptions of the tip of each
 // branch and tag of the given repository.
-func (c *clientImplementor) RefDescriptions(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, gitObjs ...string) (map[string][]gitdomain.RefDescription, error) {
-	f := func(refPrefix string) (map[string][]gitdomain.RefDescription, error) {
+func (c *clientImplementor) RefDescriptions(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, gitObjs ...string) (map[string][]p4domain.RefDescription, error) {
+	f := func(refPrefix string) (map[string][]p4domain.RefDescription, error) {
 		format := strings.Join([]string{
 			derefField("objectname"),
 			"%(refname)",
@@ -2237,7 +2237,7 @@ func (c *clientImplementor) RefDescriptions(ctx context.Context, checker authz.S
 			args = append(args, "--points-at="+obj)
 		}
 
-		cmd := c.gitCommand(repo, args...)
+		cmd := c.p4Command(repo, args...)
 
 		out, err := cmd.CombinedOutput(ctx)
 		if err != nil {
@@ -2247,7 +2247,7 @@ func (c *clientImplementor) RefDescriptions(ctx context.Context, checker authz.S
 		return parseRefDescriptions(out)
 	}
 
-	aggregate := make(map[string][]gitdomain.RefDescription)
+	aggregate := make(map[string][]p4domain.RefDescription)
 	for prefix := range refPrefixes {
 		descriptions, err := f(prefix)
 		if err != nil {
@@ -2270,21 +2270,21 @@ func derefField(field string) string {
 
 func (c *clientImplementor) filterRefDescriptions(ctx context.Context,
 	repo api.RepoName,
-	refDescriptions map[string][]gitdomain.RefDescription,
+	refDescriptions map[string][]p4domain.RefDescription,
 	checker authz.SubRepoPermissionChecker,
-) map[string][]gitdomain.RefDescription {
-	filtered := make(map[string][]gitdomain.RefDescription, len(refDescriptions))
+) map[string][]p4domain.RefDescription {
+	filtered := make(map[string][]p4domain.RefDescription, len(refDescriptions))
 	for commitID, descriptions := range refDescriptions {
-		if _, err := c.GetCommit(ctx, checker, repo, api.CommitID(commitID), ResolveRevisionOptions{}); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		if _, err := c.GetCommit(ctx, checker, repo, api.CommitID(commitID), ResolveRevisionOptions{}); !errors.HasType(err, &p4domain.RevisionNotFoundError{}) {
 			filtered[commitID] = descriptions
 		}
 	}
 	return filtered
 }
 
-var refPrefixes = map[string]gitdomain.RefType{
-	"refs/heads/": gitdomain.RefTypeBranch,
-	"refs/tags/":  gitdomain.RefTypeTag,
+var refPrefixes = map[string]p4domain.RefType{
+	"refs/heads/": p4domain.RefTypeBranch,
+	"refs/tags/":  p4domain.RefTypeTag,
 }
 
 // parseRefDescriptions converts the output of the for-each-ref command in the RefDescriptions
@@ -2295,9 +2295,9 @@ var refPrefixes = map[string]gitdomain.RefType{
 // - %(refname) is the name of the tag or branch (prefixed with refs/heads/ or ref/tags/)
 // - %(HEAD) is `*` if the branch is the default branch (and whitesace otherwise)
 // - %(creatordate) is the ISO-formatted date the object was created
-func parseRefDescriptions(out []byte) (map[string][]gitdomain.RefDescription, error) {
+func parseRefDescriptions(out []byte) (map[string][]p4domain.RefDescription, error) {
 	lines := bytes.Split(out, []byte("\n"))
-	refDescriptions := make(map[string][]gitdomain.RefDescription, len(lines))
+	refDescriptions := make(map[string][]p4domain.RefDescription, len(lines))
 
 lineLoop:
 	for _, line := range lines {
@@ -2315,7 +2315,7 @@ lineLoop:
 		isDefaultBranch := string(parts[2]) == "*"
 
 		var name string
-		var refType gitdomain.RefType
+		var refType p4domain.RefType
 		for prefix, typ := range refPrefixes {
 			if strings.HasPrefix(string(parts[1]), prefix) {
 				name = string(parts[1])[len(prefix):]
@@ -2323,7 +2323,7 @@ lineLoop:
 				break
 			}
 		}
-		if refType == gitdomain.RefTypeUnknown {
+		if refType == p4domain.RefTypeUnknown {
 			return nil, errors.Errorf(`unexpected output from git for-each-ref "%s"`, line)
 		}
 
@@ -2348,7 +2348,7 @@ lineLoop:
 			}
 		}
 
-		refDescriptions[commit] = append(refDescriptions[commit], gitdomain.RefDescription{
+		refDescriptions[commit] = append(refDescriptions[commit], p4domain.RefDescription{
 			Name:            name,
 			Type:            refType,
 			IsDefaultBranch: isDefaultBranch,
@@ -2370,11 +2370,11 @@ func (c *clientImplementor) CommitDate(ctx context.Context, checker authz.SubRep
 		}
 	}
 
-	cmd := c.gitCommand(repo, "show", "-s", "--format=%H:%cI", string(commit))
+	cmd := c.p4Command(repo, "show", "-s", "--format=%H:%cI", string(commit))
 
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
-		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		if errors.HasType(err, &p4domain.RevisionNotFoundError{}) {
 			err = nil
 		}
 		return "", time.Time{}, false, err
@@ -2472,7 +2472,7 @@ func (c *clientImplementor) ArchiveReader(
 		}
 		resp.Body.Close()
 		return nil, &badRequestError{
-			error: &gitdomain.RepoNotExistError{
+			error: &p4domain.RepoNotExistError{
 				Repo:            repo,
 				CloneInProgress: payload.CloneInProgress,
 				CloneProgress:   payload.CloneProgress,
@@ -2533,7 +2533,7 @@ func (f branchFilter) add(list []string) {
 }
 
 // ListBranches returns a list of all branches in the repository.
-func (c *clientImplementor) ListBranches(ctx context.Context, repo api.RepoName, opt BranchesOptions) ([]*gitdomain.Branch, error) {
+func (c *clientImplementor) ListBranches(ctx context.Context, repo api.RepoName, opt BranchesOptions) ([]*p4domain.Branch, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Branches") //nolint:staticcheck // OT is deprecated
 	span.SetTag("Opt", opt)
 	defer span.Finish()
@@ -2559,14 +2559,14 @@ func (c *clientImplementor) ListBranches(ctx context.Context, repo api.RepoName,
 		return nil, err
 	}
 
-	var branches []*gitdomain.Branch
+	var branches []*p4domain.Branch
 	for _, ref := range refs {
 		name := strings.TrimPrefix(ref.Name, "refs/heads/")
 		if !f.allows(name) {
 			continue
 		}
 
-		branch := &gitdomain.Branch{Name: name, Head: ref.CommitID}
+		branch := &p4domain.Branch{Name: name, Head: ref.CommitID}
 		if opt.IncludeCommit {
 			branch.Commit, err = c.GetCommit(ctx, authz.DefaultSubRepoPermsChecker, repo, ref.CommitID, ResolveRevisionOptions{})
 			if err != nil {
@@ -2587,7 +2587,7 @@ func (c *clientImplementor) ListBranches(ctx context.Context, repo api.RepoName,
 // branches runs the `git branch` command followed by the given arguments and
 // returns the list of branches if successful.
 func (c *clientImplementor) branches(ctx context.Context, repo api.RepoName, args ...string) ([]string, error) {
-	cmd := c.gitCommand(repo, append([]string{"branch"}, args...)...)
+	cmd := c.p4Command(repo, append([]string{"branch"}, args...)...)
 	out, err := cmd.Output(ctx)
 	if err != nil {
 		return nil, errors.Errorf("exec %v in %s failed: %v (output follows)\n\n%s", cmd.Args(), cmd.Repo(), err, out)
@@ -2608,18 +2608,18 @@ func (p byteSlices) Less(i, j int) bool { return bytes.Compare(p[i], p[j]) < 0 }
 func (p byteSlices) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 // ListRefs returns a list of all refs in the repository.
-func (c *clientImplementor) ListRefs(ctx context.Context, repo api.RepoName) ([]gitdomain.Ref, error) {
+func (c *clientImplementor) ListRefs(ctx context.Context, repo api.RepoName) ([]p4domain.Ref, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: ListRefs") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 	return c.showRef(ctx, repo)
 }
 
-func (c *clientImplementor) showRef(ctx context.Context, repo api.RepoName, args ...string) ([]gitdomain.Ref, error) {
+func (c *clientImplementor) showRef(ctx context.Context, repo api.RepoName, args ...string) ([]p4domain.Ref, error) {
 	cmdArgs := append([]string{"show-ref"}, args...)
-	cmd := c.gitCommand(repo, cmdArgs...)
+	cmd := c.p4Command(repo, cmdArgs...)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
-		if gitdomain.IsRepoNotExist(err) {
+		if p4domain.IsRepoNotExist(err) {
 			return nil, err
 		}
 		// Exit status of 1 and no output means there were no
@@ -2633,14 +2633,14 @@ func (c *clientImplementor) showRef(ctx context.Context, repo api.RepoName, args
 	out = bytes.TrimSuffix(out, []byte("\n")) // remove trailing newline
 	lines := bytes.Split(out, []byte("\n"))
 	sort.Sort(byteSlices(lines)) // sort for consistency
-	refs := make([]gitdomain.Ref, len(lines))
+	refs := make([]p4domain.Ref, len(lines))
 	for i, line := range lines {
 		if len(line) <= 41 {
 			return nil, errors.New("unexpectedly short (<=41 bytes) line in `git show-ref ...` output")
 		}
 		id := line[:40]
 		name := line[41:]
-		refs[i] = gitdomain.Ref{Name: string(name), CommitID: api.CommitID(id)}
+		refs[i] = p4domain.Ref{Name: string(name), CommitID: api.CommitID(id)}
 	}
 	return refs, nil
 }

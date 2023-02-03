@@ -37,16 +37,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/p4server/p4domain"
 	"github.com/sourcegraph/sourcegraph/internal/p4server/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const git = "git"
+const p4 = "p4"
 
 var (
 	clientFactory  = httpcli.NewInternalClientFactory("p4server")
@@ -55,7 +55,7 @@ var (
 )
 
 var ClientMocks, emptyClientMocks struct {
-	GetObject              func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
+	GetObject              func(repo api.RepoName, objectName string) (*p4domain.P4Object, error)
 	Archive                func(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error)
 	LocalP4server          bool
 	LocalP4CommandReposDir string
@@ -216,7 +216,7 @@ type RawBatchLogResult struct {
 	Stdout string
 	Error  error
 }
-type BatchLogCallback func(repoCommit api.RepoCommit, gitLogResult RawBatchLogResult) error
+type BatchLogCallback func(repoCommit api.RepoCommit, p4LogResult RawBatchLogResult) error
 
 type HunkReader interface {
 	Read() (hunks []*Hunk, done bool, err error)
@@ -252,7 +252,7 @@ type Client interface {
 	GetDefaultBranch(ctx context.Context, repo api.RepoName, short bool) (refName string, commit api.CommitID, err error)
 
 	// GetObject fetches git object data in the supplied repo
-	GetObject(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
+	GetObject(ctx context.Context, repo api.RepoName, objectName string) (*p4domain.P4Object, error)
 
 	// HasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
 	// contains a commit past a specified date.
@@ -262,10 +262,10 @@ type Client interface {
 	IsRepoCloneable(context.Context, api.RepoName) error
 
 	// ListRefs returns a list of all refs in the repository.
-	ListRefs(ctx context.Context, repo api.RepoName) ([]gitdomain.Ref, error)
+	ListRefs(ctx context.Context, repo api.RepoName) ([]p4domain.Ref, error)
 
 	// ListBranches returns a list of all branches in the repository.
-	ListBranches(ctx context.Context, repo api.RepoName, opt BranchesOptions) ([]*gitdomain.Branch, error)
+	ListBranches(ctx context.Context, repo api.RepoName, opt BranchesOptions) ([]*p4domain.Branch, error)
 
 	// MergeBase returns the merge base commit for the specified commits.
 	MergeBase(ctx context.Context, repo api.RepoName, a, b api.CommitID) (api.CommitID, error)
@@ -285,9 +285,9 @@ type Client interface {
 	// used.
 	//
 	// Error cases:
-	// * Repo does not exist: gitdomain.RepoNotExistError
-	// * Commit does not exist: gitdomain.RevisionNotFoundError
-	// * Empty repository: gitdomain.RevisionNotFoundError
+	// * Repo does not exist: p4domain.RepoNotExistError
+	// * Commit does not exist: p4domain.RevisionNotFoundError
+	// * Empty repository: p4domain.RevisionNotFoundError
 	// * Other unexpected errors.
 	ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt ResolveRevisionOptions) (api.CommitID, error)
 
@@ -342,13 +342,13 @@ type Client interface {
 	ListFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pattern *regexp.Regexp) ([]string, error)
 
 	// Commits returns all commits matching the options.
-	Commits(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, opt CommitsOptions) ([]*gitdomain.Commit, error)
+	Commits(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, opt CommitsOptions) ([]*p4domain.Commit, error)
 
 	// FirstEverCommit returns the first commit ever made to the repository.
-	FirstEverCommit(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) (*gitdomain.Commit, error)
+	FirstEverCommit(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) (*p4domain.Commit, error)
 
 	// ListTags returns a list of all tags in the repository. If commitObjs is non-empty, only all tags pointing at those commits are returned.
-	ListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) ([]*gitdomain.Tag, error)
+	ListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) ([]*p4domain.Tag, error)
 
 	// ListDirectoryChildren fetches the list of children under the given directory
 	// names. The result is a map keyed by the directory names with the list of files
@@ -370,7 +370,7 @@ type Client interface {
 
 	// RefDescriptions returns a map from commits to descriptions of the tip of each
 	// branch and tag of the given repository.
-	RefDescriptions(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, gitObjs ...string) (map[string][]gitdomain.RefDescription, error)
+	RefDescriptions(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, gitObjs ...string) (map[string][]p4domain.RefDescription, error)
 
 	// CommitExists determines if the given commit exists in the given repository.
 	CommitExists(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, id api.CommitID) (bool, error)
@@ -395,7 +395,7 @@ type Client interface {
 	// from a commit to its parents. If a commit is supplied, the returned graph will
 	// be rooted at the given commit. If a non-zero limit is supplied, at most that
 	// many commits will be returned.
-	CommitGraph(ctx context.Context, repo api.RepoName, opts CommitGraphOptions) (_ *gitdomain.CommitGraph, err error)
+	CommitGraph(ctx context.Context, repo api.RepoName, opts CommitGraphOptions) (_ *p4domain.CommitGraph, err error)
 
 	// CommitsUniqueToBranch returns a map from commits that exist on a particular
 	// branch in the given repository to their committer date. This set of commits is
@@ -406,7 +406,7 @@ type Client interface {
 	CommitsUniqueToBranch(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time) (map[string]time.Time, error)
 
 	// LsFiles returns the output of `git ls-files`
-	LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error)
+	LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...p4domain.Pathspec) ([]string, error)
 
 	// LFSSmudge returns a reader of the contents from LFS of the LFS pointer
 	// at path. If the path is not an LFS pointer, the file contents from git
@@ -419,7 +419,7 @@ type Client interface {
 	//
 	// If ignoreErrors is true, then errors arising from any single failed git log operation will cause the
 	// resulting commit to be nil, but not fail the entire operation.
-	GetCommits(ctx context.Context, checker authz.SubRepoPermissionChecker, repoCommits []api.RepoCommit, ignoreErrors bool) ([]*gitdomain.Commit, error)
+	GetCommits(ctx context.Context, checker authz.SubRepoPermissionChecker, repoCommits []api.RepoCommit, ignoreErrors bool) ([]*p4domain.Commit, error)
 
 	// GetCommit returns the commit with the given commit ID, or ErrCommitNotFound if no such commit
 	// exists.
@@ -427,17 +427,17 @@ type Client interface {
 	// The remoteURLFunc is called to get the Git remote URL if it's not set in repo and if it is
 	// needed. The Git remote URL is only required if the p4server doesn't already contain a clone of
 	// the repository or if the commit must be fetched from the remote.
-	GetCommit(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (*gitdomain.Commit, error)
+	GetCommit(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (*p4domain.Commit, error)
 
 	// GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
 	// revspecs).
-	GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) (*gitdomain.BehindAhead, error)
+	GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) (*p4domain.BehindAhead, error)
 
 	// ContributorCount returns the number of commits grouped by contributor
-	ContributorCount(ctx context.Context, repo api.RepoName, opt ContributorOptions) ([]*gitdomain.ContributorCount, error)
+	ContributorCount(ctx context.Context, repo api.RepoName, opt ContributorOptions) ([]*p4domain.ContributorCount, error)
 
 	// LogReverseEach runs git log in reverse order and calls the given callback for each entry.
-	LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error
+	LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry p4domain.LogEntry) error) error
 
 	// RevList makes a git rev-list call and iterates through the resulting commits, calling the provided
 	// onCommit function for each.
@@ -495,9 +495,9 @@ func addrForKey(key string, addrs []string) string {
 
 // ArchiveOptions contains options for the Archive func.
 type ArchiveOptions struct {
-	Treeish   string               // the tree or commit to produce an archive for
-	Format    ArchiveFormat        // format of the resulting archive (usually "tar" or "zip")
-	Pathspecs []gitdomain.Pathspec // if nonempty, only include these pathspecs.
+	Treeish   string              // the tree or commit to produce an archive for
+	Format    ArchiveFormat       // format of the resulting archive (usually "tar" or "zip")
+	Pathspecs []p4domain.Pathspec // if nonempty, only include these pathspecs.
 }
 
 type BatchLogOptions protocol.BatchLogRequest
@@ -524,7 +524,7 @@ func (a *archiveReader) Read(p []byte) (int, error) {
 	if err != nil {
 		// handle the special case where git archive failed because of an invalid spec
 		if strings.Contains(err.Error(), "Not a valid object") {
-			return 0, &gitdomain.RevisionNotFoundError{Repo: a.repo, Spec: a.spec}
+			return 0, &p4domain.RevisionNotFoundError{Repo: a.repo, Spec: a.spec}
 		}
 	}
 	return n, err
@@ -607,7 +607,7 @@ func (c *RemoteP4Command) sendExec(ctx context.Context) (_ io.ReadCloser, _ http
 			return nil, nil, err
 		}
 		resp.Body.Close()
-		return nil, nil, &gitdomain.RepoNotExistError{Repo: repoName, CloneInProgress: payload.CloneInProgress, CloneProgress: payload.CloneProgress}
+		return nil, nil, &p4domain.RepoNotExistError{Repo: repoName, CloneInProgress: payload.CloneInProgress, CloneProgress: payload.CloneProgress}
 
 	default:
 		resp.Body.Close()
@@ -885,7 +885,7 @@ func (c *clientImplementor) p4Command(repo api.RepoName, arg ...string) P4Comman
 	return &RemoteP4Command{
 		repo:   repo,
 		execFn: c.httpPost,
-		args:   append([]string{git}, arg...),
+		args:   append([]string{p4}, arg...),
 	}
 }
 
@@ -1251,7 +1251,7 @@ func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 	return res.Rev, nil
 }
 
-func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
+func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, objectName string) (*p4domain.P4Object, error) {
 	if ClientMocks.GetObject != nil {
 		return ClientMocks.GetObject(repo, objectName)
 	}
@@ -1296,13 +1296,13 @@ func (c *clientImplementor) ResolveRevisions(ctx context.Context, repo api.RepoN
 	cmd := c.p4Command(repo, args...)
 	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
-		if gitdomain.IsRepoNotExist(err) {
+		if p4domain.IsRepoNotExist(err) {
 			return nil, err
 		}
 		if match := ambiguousArgPattern.FindSubmatch(stderr); match != nil {
-			return nil, &gitdomain.RevisionNotFoundError{Repo: repo, Spec: string(match[1])}
+			return nil, &p4domain.RevisionNotFoundError{Repo: repo, Spec: string(match[1])}
 		}
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.Args(), stderr))
+		return nil, errors.WithMessage(err, fmt.Sprintf("p4 command %v failed (stderr: %q)", cmd.Args(), stderr))
 	}
 
 	return strings.Fields(string(stdout)), nil
@@ -1364,8 +1364,8 @@ func readResponseBody(body io.Reader) string {
 
 func pinnedReposFromConfig() map[string]string {
 	cfg := conf.Get()
-	if cfg.ExperimentalFeatures != nil && cfg.ExperimentalFeatures.P4ServerPinnedRepos != nil {
-		return cfg.ExperimentalFeatures.P4ServerPinnedRepos
+	if cfg.ExperimentalFeatures != nil && cfg.ExperimentalFeatures.P4ServerPinnedDepos != nil {
+		return cfg.ExperimentalFeatures.P4ServerPinnedDepos
 	}
 	return map[string]string{}
 }

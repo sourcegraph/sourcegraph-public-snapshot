@@ -57,8 +57,8 @@ type ObjectInfo interface {
 	OID() OID
 }
 
-// GitObject represents a GitObject
-type GitObject struct {
+// P4Object represents a P4 Object
+type P4Object struct {
 	ID   OID
 	Type ObjectType
 }

@@ -1,11 +1,11 @@
-package gitserver
+package p4server
 
 import (
 	"bytes"
 	"encoding/json"
 	"io"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/p4server/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )

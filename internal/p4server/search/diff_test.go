@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/p4server/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 

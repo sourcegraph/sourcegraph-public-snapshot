@@ -1,7 +1,7 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
-    name = "gitdomain",
+    name = "p4domain",
     srcs = [
         "commit_graph.go",
         "common.go",
@@ -10,7 +10,7 @@ go_library(
         "log.go",
         "services.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain",
+    importpath = "github.com/sourcegraph/sourcegraph/internal/p4server/p4domain",
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
@@ -31,7 +31,7 @@ go_test(
         "exec_test.go",
         "services_test.go",
     ],
-    embed = [":gitdomain"],
+    embed = [":p4domain"],
     deps = [
         "//internal/api",
         "//lib/errors",

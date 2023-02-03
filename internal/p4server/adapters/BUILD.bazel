@@ -7,7 +7,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
-        "//internal/p4server/gitdomain",
+        "//internal/p4server/p4domain",
         "//internal/p4server/protocol",
         "//lib/errors",
     ],

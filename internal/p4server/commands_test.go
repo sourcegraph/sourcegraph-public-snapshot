@@ -1,4 +1,4 @@
-package gitserver
+package p4server
 
 import (
 	"bytes"
@@ -26,7 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/p4server/p4domain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -35,7 +35,7 @@ func TestParseShortLog(t *testing.T) {
 	tests := []struct {
 		name    string
 		input   string // in the format of `git shortlog -sne`
-		want    []*gitdomain.ContributorCount
+		want    []*p4domain.ContributorCount
 		wantErr error
 	}{
 		{
@@ -44,7 +44,7 @@ func TestParseShortLog(t *testing.T) {
   1125	Jane Doe <jane@sourcegraph.com>
    390	Bot Of Doom <bot@doombot.com>
 `,
-			want: []*gitdomain.ContributorCount{
+			want: []*p4domain.ContributorCount{
 				{
 					Name:  "Jane Doe",
 					Email: "jane@sourcegraph.com",
@@ -62,7 +62,7 @@ func TestParseShortLog(t *testing.T) {
 			input: `  1125	jane@sourcegraph.com <jane@sourcegraph.com>
    390	Bot Of Doom <bot@doombot.com>
 `,
-			want: []*gitdomain.ContributorCount{
+			want: []*p4domain.ContributorCount{
 				{
 					Name:  "jane@sourcegraph.com",
 					Email: "jane@sourcegraph.com",
@@ -426,17 +426,17 @@ func TestRepository_BlameFile(t *testing.T) {
 	gitWantHunks := []*Hunk{
 		{
 			StartLine: 1, EndLine: 2, StartByte: 0, EndByte: 6, CommitID: "e6093374dcf5725d8517db0dccbbf69df65dbde0",
-			Message: "foo", Author: gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Message: "foo", Author: p4domain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 			Filename: "f",
 		},
 		{
 			StartLine: 2, EndLine: 3, StartByte: 6, EndByte: 12, CommitID: "fad406f4fe02c358a09df0d03ec7a36c2c8a20f1",
-			Message: "foo", Author: gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Message: "foo", Author: p4domain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 			Filename: "f",
 		},
 		{
 			StartLine: 3, EndLine: 4, StartByte: 12, EndByte: 18, CommitID: "311d75a2b414a77f5158a0ed73ec476f5469b286",
-			Message: "foo", Author: gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Message: "foo", Author: p4domain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 			Filename: "f2",
 		},
 	}
@@ -571,7 +571,7 @@ func TestRepository_ResolveBranch_error(t *testing.T) {
 		"git cmd": {
 			repo:    MakeGitRepository(t, gitCommands...),
 			branch:  "doesntexist",
-			wantErr: func(err error) bool { return errors.HasType(err, &gitdomain.RevisionNotFoundError{}) },
+			wantErr: func(err error) bool { return errors.HasType(err, &p4domain.RevisionNotFoundError{}) },
 		},
 	}
 
@@ -636,7 +636,7 @@ func TestRepository_ResolveTag_error(t *testing.T) {
 		"git cmd": {
 			repo:    MakeGitRepository(t, gitCommands...),
 			tag:     "doesntexist",
-			wantErr: func(err error) bool { return errors.HasType(err, &gitdomain.RevisionNotFoundError{}) },
+			wantErr: func(err error) bool { return errors.HasType(err, &p4domain.RevisionNotFoundError{}) },
 		},
 	}
 
@@ -878,7 +878,7 @@ func TestListTags(t *testing.T) {
 	}
 
 	repo := MakeGitRepository(t, gitCommands...)
-	wantTags := []*gitdomain.Tag{
+	wantTags := []*p4domain.Tag{
 		{Name: "t0", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 		{Name: "t1", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 		{Name: "t2", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
@@ -889,8 +889,8 @@ func TestListTags(t *testing.T) {
 	tags, err := client.ListTags(context.Background(), repo)
 	require.Nil(t, err)
 
-	sort.Sort(gitdomain.Tags(tags))
-	sort.Sort(gitdomain.Tags(wantTags))
+	sort.Sort(p4domain.Tags(tags))
+	sort.Sort(p4domain.Tags(wantTags))
 
 	if diff := cmp.Diff(wantTags, tags); diff != "" {
 		t.Fatalf("tag mismatch (-want +got):\n%s", diff)
@@ -904,7 +904,7 @@ func TestListTags(t *testing.T) {
 
 	tags, err = client.ListTags(context.Background(), repo, "afeafc4a918c144329807df307e68899e6b65018")
 	require.Nil(t, err)
-	if diff := cmp.Diff([]*gitdomain.Tag{wantTags[3]}, tags); diff != "" {
+	if diff := cmp.Diff([]*p4domain.Tag{wantTags[3]}, tags); diff != "" {
 		t.Fatalf("tag mismatch (-want +got):\n%s", diff)
 	}
 }
@@ -920,7 +920,7 @@ func TestParseTags_WithoutCreatorDate(t *testing.T) {
 		t.Fatalf("parseTags: have err %v, want nil", err)
 	}
 
-	want := []*gitdomain.Tag{
+	want := []*p4domain.Tag{
 		{
 			Name:        "v2.6.12",
 			CommitID:    "9ee1c939d1cb936b1f98e8d81aeffab57bae46ab",
@@ -1198,7 +1198,7 @@ func TestRepository_GetCommit(t *testing.T) {
 	type testCase struct {
 		gitCmds               []string
 		id                    api.CommitID
-		wantCommit            *gitdomain.Commit
+		wantCommit            *p4domain.Commit
 		noEnsureRevision      bool
 		revisionNotFoundError bool
 	}
@@ -1212,8 +1212,8 @@ func TestRepository_GetCommit(t *testing.T) {
 				t.Cleanup(func() {
 					runCommitLog = oldRunCommitLog
 				})
-				runCommitLog = func(ctx context.Context, cmd GitCommand, opt CommitsOptions) ([]*wrappedCommit, error) {
-					// Track the value of NoEnsureRevision we pass to gitserver
+				runCommitLog = func(ctx context.Context, cmd P4Command, opt CommitsOptions) ([]*wrappedCommit, error) {
+					// Track the value of NoEnsureRevision we pass to p4domain
 					noEnsureRevision = opt.NoEnsureRevision
 					return oldRunCommitLog(ctx, cmd, opt)
 				}
@@ -1224,7 +1224,7 @@ func TestRepository_GetCommit(t *testing.T) {
 				commit, err := client.GetCommit(ctx, checker, testRepo, test.id, resolveRevisionOptions)
 				if err != nil {
 					if test.revisionNotFoundError {
-						if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+						if !errors.HasType(err, &p4domain.RevisionNotFoundError{}) {
 							t.Errorf("%s: GetCommit: expected a RevisionNotFoundError, got %s", label, err)
 						}
 						return
@@ -1238,7 +1238,7 @@ func TestRepository_GetCommit(t *testing.T) {
 				}
 
 				// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-				if _, err := client.GetCommit(ctx, checker, testRepo, NonExistentCommitID, resolveRevisionOptions); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+				if _, err := client.GetCommit(ctx, checker, testRepo, NonExistentCommitID, resolveRevisionOptions); !errors.HasType(err, &p4domain.RevisionNotFoundError{}) {
 					t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
 				}
 
@@ -1249,10 +1249,10 @@ func TestRepository_GetCommit(t *testing.T) {
 		}
 	}
 
-	wantGitCommit := &gitdomain.Commit{
+	wantGitCommit := &p4domain.Commit{
 		ID:        "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-		Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-		Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+		Author:    p4domain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+		Committer: &p4domain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
 		Message:   "bar",
 		Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
 	}
@@ -1277,10 +1277,10 @@ func TestRepository_GetCommit(t *testing.T) {
 	tests["with sub-repo permissions and access to file"] = testCase{
 		gitCmds: gitCommandsWithFiles,
 		id:      "da50eed82c8ff3c17bb642000d8aad9d434283c1",
-		wantCommit: &gitdomain.Commit{
+		wantCommit: &p4domain.Commit{
 			ID:        "da50eed82c8ff3c17bb642000d8aad9d434283c1",
-			Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Author:    p4domain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Committer: &p4domain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 			Message:   "commit1",
 		},
 		noEnsureRevision: true,
@@ -1288,7 +1288,7 @@ func TestRepository_GetCommit(t *testing.T) {
 	tests["with sub-repo permissions and NO access to file"] = testCase{
 		gitCmds:               gitCommandsWithFiles,
 		id:                    "ee7773505e98390e809cbf518b2a92e4748b0187",
-		wantCommit:            &gitdomain.Commit{},
+		wantCommit:            &p4domain.Commit{},
 		noEnsureRevision:      true,
 		revisionNotFoundError: true,
 	}
@@ -1500,7 +1500,7 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 			repo := MakeGitRepository(t, gitCommands...)
 			// Try to get first commit when user doesn't have permission to view
 			_, err := client.FirstEverCommit(ctx, checkerWithoutAccessFirstCommit, repo)
-			if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			if !errors.HasType(err, &p4domain.RevisionNotFoundError{}) {
 				t.Errorf("expected a RevisionNotFoundError since the user does not have access to view this commit, got :%s", err)
 			}
 			// Try to get first commit when user does have permission to view, should succeed
@@ -1584,18 +1584,18 @@ func TestRepository_Commits(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m bar --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
 	}
-	wantGitCommits := []*gitdomain.Commit{
+	wantGitCommits := []*p4domain.Commit{
 		{
 			ID:        "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-			Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-			Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+			Author:    p4domain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+			Committer: &p4domain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
 			Message:   "bar",
 			Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
 		},
 		{
 			ID:        "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8",
-			Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Author:    p4domain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Committer: &p4domain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 			Message:   "foo",
 			Parents:   nil,
 		},
@@ -1603,7 +1603,7 @@ func TestRepository_Commits(t *testing.T) {
 	tests := map[string]struct {
 		repo        api.RepoName
 		id          api.CommitID
-		wantCommits []*gitdomain.Commit
+		wantCommits []*p4domain.Commit
 		wantTotal   uint
 	}{
 		"git cmd": {
@@ -1620,7 +1620,7 @@ func TestRepository_Commits(t *testing.T) {
 				testCommits(ctx, label, test.repo, CommitsOptions{Range: string(test.id)}, checker, test.wantCommits, t)
 
 				// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-				if _, err := client.Commits(ctx, nil, test.repo, CommitsOptions{Range: string(NonExistentCommitID)}); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+				if _, err := client.Commits(ctx, nil, test.repo, CommitsOptions{Range: string(NonExistentCommitID)}); !errors.HasType(err, &p4domain.RevisionNotFoundError{}) {
 					t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
 				}
 			})
@@ -1653,25 +1653,25 @@ func TestCommits_SubRepoPerms(t *testing.T) {
 	repo := MakeGitRepository(t, gitCommands...)
 
 	tests := map[string]struct {
-		wantCommits   []*gitdomain.Commit
+		wantCommits   []*p4domain.Commit
 		opt           CommitsOptions
 		wantTotal     uint
 		noAccessPaths []string
 	}{
 		"if no read perms on at least one file in the commit should filter out commit": {
 			wantTotal: 2,
-			wantCommits: []*gitdomain.Commit{
+			wantCommits: []*p4domain.Commit{
 				{
 					ID:        "b96d097108fa49e339ca88bc97ab07f833e62131",
-					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-					Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+					Author:    p4domain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+					Committer: &p4domain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
 					Message:   "commit2",
 					Parents:   []api.CommitID{"d38233a79e037d2ab8170b0d0bc0aa438473e6da"},
 				},
 				{
 					ID:        "d38233a79e037d2ab8170b0d0bc0aa438473e6da",
-					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-					Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+					Author:    p4domain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+					Committer: &p4domain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 					Message:   "commit1",
 				},
 			},
@@ -1682,7 +1682,7 @@ func TestCommits_SubRepoPerms(t *testing.T) {
 			opt: CommitsOptions{
 				Path: "file2",
 			},
-			wantCommits:   []*gitdomain.Commit{},
+			wantCommits:   []*p4domain.Commit{},
 			noAccessPaths: []string{"file2", "file3"},
 		},
 		"sub-repo perms with path (w/ access) specified should return that commit": {
@@ -1690,11 +1690,11 @@ func TestCommits_SubRepoPerms(t *testing.T) {
 			opt: CommitsOptions{
 				Path: "file1",
 			},
-			wantCommits: []*gitdomain.Commit{
+			wantCommits: []*p4domain.Commit{
 				{
 					ID:        "d38233a79e037d2ab8170b0d0bc0aa438473e6da",
-					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-					Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+					Author:    p4domain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+					Committer: &p4domain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 					Message:   "commit1",
 				},
 			},
@@ -1755,7 +1755,7 @@ func TestCommits_SubRepoPerms_ReturnNCommits(t *testing.T) {
 
 	tests := map[string]struct {
 		repo          api.RepoName
-		wantCommits   []*gitdomain.Commit
+		wantCommits   []*p4domain.Commit
 		opt           CommitsOptions
 		wantTotal     uint
 		noAccessPaths []string
@@ -1766,18 +1766,18 @@ func TestCommits_SubRepoPerms_ReturnNCommits(t *testing.T) {
 			opt: CommitsOptions{
 				N: 3,
 			},
-			wantCommits: []*gitdomain.Commit{
+			wantCommits: []*p4domain.Commit{
 				{
 					ID:        "61dbc35f719c53810904a2d359309d4e1e98a6be",
-					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
-					Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+					Author:    p4domain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+					Committer: &p4domain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
 					Message:   "commit7",
 					Parents:   []api.CommitID{"66566c8aa223f3e1b94ebe09e6cdb14c3a5bfb36"},
 				},
 				{
 					ID:        "2e6b2c94293e9e339f781b2a2f7172e15460f88c",
-					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-					Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+					Author:    p4domain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+					Committer: &p4domain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 					Parents: []api.CommitID{
 						"9a7ec70986d657c4c86d6ac476f0c5181ece509a",
 					},
@@ -1785,8 +1785,8 @@ func TestCommits_SubRepoPerms_ReturnNCommits(t *testing.T) {
 				},
 				{
 					ID:        "9a7ec70986d657c4c86d6ac476f0c5181ece509a",
-					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:04Z")},
-					Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:04Z")},
+					Author:    p4domain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:04Z")},
+					Committer: &p4domain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:04Z")},
 					Message:   "commit4",
 					Parents: []api.CommitID{
 						"f3fa8cf6ec56d0469402523385d6ca4b7cb222d8",
@@ -1824,27 +1824,27 @@ func TestRepository_Commits_options(t *testing.T) {
 		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m bar --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
 		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:08Z git commit --allow-empty -m qux --author='a <a@a.com>' --date 2006-01-02T15:04:08Z",
 	}
-	wantGitCommits := []*gitdomain.Commit{
+	wantGitCommits := []*p4domain.Commit{
 		{
 			ID:        "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-			Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-			Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+			Author:    p4domain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+			Committer: &p4domain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
 			Message:   "bar",
 			Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
 		},
 	}
-	wantGitCommits2 := []*gitdomain.Commit{
+	wantGitCommits2 := []*p4domain.Commit{
 		{
 			ID:        "ade564eba4cf904492fb56dcd287ac633e6e082c",
-			Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:08Z")},
-			Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:08Z")},
+			Author:    p4domain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:08Z")},
+			Committer: &p4domain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:08Z")},
 			Message:   "qux",
 			Parents:   []api.CommitID{"b266c7e3ca00b1a17ad0b1449825d0854225c007"},
 		},
 	}
 	tests := map[string]struct {
 		opt         CommitsOptions
-		wantCommits []*gitdomain.Commit
+		wantCommits []*p4domain.Commit
 		wantTotal   uint
 	}{
 		"git cmd": {
@@ -1865,11 +1865,11 @@ func TestRepository_Commits_options(t *testing.T) {
 				Range:  "HEAD",
 				N:      1,
 			},
-			wantCommits: []*gitdomain.Commit{
+			wantCommits: []*p4domain.Commit{
 				{
 					ID:        "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-					Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+					Author:    p4domain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+					Committer: &p4domain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
 					Message:   "bar",
 					Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
 				},
@@ -1928,18 +1928,18 @@ func TestRepository_Commits_options_path(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m commit3 --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
 	}
-	wantGitCommits := []*gitdomain.Commit{
+	wantGitCommits := []*p4domain.Commit{
 		{
 			ID:        "546a3ef26e581624ef997cb8c0ba01ee475fc1dc",
-			Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Author:    p4domain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Committer: &p4domain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 			Message:   "commit2",
 			Parents:   []api.CommitID{"a04652fa1998a0a7d2f2f77ecb7021de943d3aab"},
 		},
 	}
 	tests := map[string]struct {
 		opt         CommitsOptions
-		wantCommits []*gitdomain.Commit
+		wantCommits []*p4domain.Commit
 	}{
 		"git cmd Path 0": {
 			opt: CommitsOptions{
@@ -1972,7 +1972,7 @@ func TestRepository_Commits_options_path(t *testing.T) {
 
 func TestMessage(t *testing.T) { // KEEP
 	t.Run("Body", func(t *testing.T) {
-		tests := map[gitdomain.Message]string{
+		tests := map[p4domain.Message]string{
 			"hello":                 "",
 			"hello\n":               "",
 			"hello\n\n":             "",
@@ -2126,15 +2126,15 @@ func TestParseRefDescriptions(t *testing.T) { // KEEP
 		t.Fatalf("unexpected error parsing ref descriptions: %s", err)
 	}
 
-	makeBranch := func(name, createdDate string, isDefaultBranch bool) gitdomain.RefDescription {
-		return gitdomain.RefDescription{Name: name, Type: gitdomain.RefTypeBranch, IsDefaultBranch: isDefaultBranch, CreatedDate: mustParseDate(createdDate, t)}
+	makeBranch := func(name, createdDate string, isDefaultBranch bool) p4domain.RefDescription {
+		return p4domain.RefDescription{Name: name, Type: p4domain.RefTypeBranch, IsDefaultBranch: isDefaultBranch, CreatedDate: mustParseDate(createdDate, t)}
 	}
 
-	makeTag := func(name, createdDate string) gitdomain.RefDescription {
-		return gitdomain.RefDescription{Name: name, Type: gitdomain.RefTypeTag, IsDefaultBranch: false, CreatedDate: mustParseDate(createdDate, t)}
+	makeTag := func(name, createdDate string) p4domain.RefDescription {
+		return p4domain.RefDescription{Name: name, Type: p4domain.RefTypeTag, IsDefaultBranch: false, CreatedDate: mustParseDate(createdDate, t)}
 	}
 
-	expectedRefDescriptions := map[string][]gitdomain.RefDescription{
+	expectedRefDescriptions := map[string][]p4domain.RefDescription{
 		"66a7ac584740245fc523da443a3f540a52f8af72": {makeBranch("bl/symbols", "2021-01-18T16:46:51-08:00", false)},
 		"58537c06cf7ba8a562a3f5208fb7a8efbc971d0e": {makeBranch("bl/symbols-2", "2021-02-24T06:21:20-08:00", false)},
 		"a40716031ae97ee7c5cdf1dec913567a4a7c50c8": {makeBranch("ef/wtf", "2021-02-10T10:50:08-06:00", false)},
@@ -2146,7 +2146,7 @@ func TestParseRefDescriptions(t *testing.T) { // KEEP
 		"9df3358a18792fa9dbd40d506f2e0ad23fc11ee8": {makeBranch("nsc/random", "2021-02-10T16:29:06+00:00", false)},
 		"a02b85b63345a1406d7a19727f7a5472c976e053": {makeBranch("sg/document-symbols", "2021-04-08T15:33:03-07:00", false)},
 		"234b0a484519129b251164ecb0674ec27d154d2f": {makeBranch("symbols", "2021-01-01T22:51:55-08:00", false)},
-		"6b5ae2e0ce568a7641174072271d109d7d0977c7": {gitdomain.RefDescription{Name: "v0.0.0", Type: gitdomain.RefTypeTag, IsDefaultBranch: false}},
+		"6b5ae2e0ce568a7641174072271d109d7d0977c7": {p4domain.RefDescription{Name: "v0.0.0", Type: p4domain.RefTypeTag, IsDefaultBranch: false}},
 		"c165bfff52e9d4f87891bba497e3b70fea144d89": {makeTag("v0.10.0", "2020-08-04T08:23:30-05:00")},
 		"f73ee8ed601efea74f3b734eeb073307e1615606": {makeTag("v0.5.1", "2020-04-16T16:06:21-04:00")},
 		"6057f7ed8d331c82030c713b650fc8fd2c0c2347": {makeTag("v0.5.2", "2020-04-16T16:20:26-04:00")},
@@ -2181,7 +2181,7 @@ func TestFilterRefDescriptions(t *testing.T) { // KEEP
 	gitCommands := append(getGitCommandsWithFiles("file1", "file2"), getGitCommandsWithFiles("file3", "file4")...)
 	repo := MakeGitRepository(t, gitCommands...)
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
+	refDescriptions := map[string][]p4domain.RefDescription{
 		"d38233a79e037d2ab8170b0d0bc0aa438473e6da": {},
 		"2775e60f523d3151a2a34ffdc659f500d0e73022": {},
 		"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": {},
@@ -2191,7 +2191,7 @@ func TestFilterRefDescriptions(t *testing.T) { // KEEP
 	checker := getTestSubRepoPermsChecker("file3")
 	client := NewClient(database.NewMockDB()).(*clientImplementor)
 	filtered := client.filterRefDescriptions(ctx, repo, refDescriptions, checker)
-	expectedRefDescriptions := map[string][]gitdomain.RefDescription{
+	expectedRefDescriptions := map[string][]p4domain.RefDescription{
 		"d38233a79e037d2ab8170b0d0bc0aa438473e6da": {},
 		"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": {},
 		"9019942b8b92d5a70a7f546d97c451621c5059a6": {},
@@ -2215,8 +2215,8 @@ func TestRefDescriptions(t *testing.T) { // KEEP
 	gitCommands = append(gitCommands, getGitCommandsWithFiles("file", "file-with-no-access")...)
 	repo := MakeGitRepository(t, gitCommands...)
 
-	makeBranch := func(name, createdDate string, isDefaultBranch bool) gitdomain.RefDescription {
-		return gitdomain.RefDescription{Name: name, Type: gitdomain.RefTypeBranch, IsDefaultBranch: isDefaultBranch, CreatedDate: mustParseDate(createdDate, t)}
+	makeBranch := func(name, createdDate string, isDefaultBranch bool) p4domain.RefDescription {
+		return p4domain.RefDescription{Name: name, Type: p4domain.RefTypeBranch, IsDefaultBranch: isDefaultBranch, CreatedDate: mustParseDate(createdDate, t)}
 	}
 
 	t.Run("basic", func(t *testing.T) {
@@ -2224,7 +2224,7 @@ func TestRefDescriptions(t *testing.T) { // KEEP
 		if err != nil {
 			t.Errorf("err calling RefDescriptions: %s", err)
 		}
-		expectedRefDescriptions := map[string][]gitdomain.RefDescription{
+		expectedRefDescriptions := map[string][]p4domain.RefDescription{
 			"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": {makeBranch("master", "2006-01-02T15:04:05Z", false)},
 			"9d7a382983098eed6cf911bd933dfacb13116e42": {makeBranch("my-other-branch", "2006-01-02T15:04:05Z", false)},
 			"7cf006d0599531db799c08d3b00d7fd06da33015": {makeBranch("my-branch-no-access", "2006-01-02T15:04:05Z", true)},
@@ -2240,7 +2240,7 @@ func TestRefDescriptions(t *testing.T) { // KEEP
 		if err != nil {
 			t.Errorf("err calling RefDescriptions: %s", err)
 		}
-		expectedRefDescriptions := map[string][]gitdomain.RefDescription{
+		expectedRefDescriptions := map[string][]p4domain.RefDescription{
 			"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": {makeBranch("master", "2006-01-02T15:04:05Z", false)},
 			"9d7a382983098eed6cf911bd933dfacb13116e42": {makeBranch("my-other-branch", "2006-01-02T15:04:05Z", false)},
 		}
@@ -2334,7 +2334,7 @@ func TestCommitDate(t *testing.T) {
 	})
 }
 
-func testCommits(ctx context.Context, label string, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, wantCommits []*gitdomain.Commit, t *testing.T) {
+func testCommits(ctx context.Context, label string, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, wantCommits []*p4domain.Commit, t *testing.T) {
 	t.Helper()
 	db := database.NewMockDB()
 	client := NewClient(db).(*clientImplementor)
@@ -2350,10 +2350,10 @@ func testCommits(ctx context.Context, label string, repo api.RepoName, opt Commi
 	checkCommits(t, commits, wantCommits)
 }
 
-func checkCommits(t *testing.T, commits, wantCommits []*gitdomain.Commit) {
+func checkCommits(t *testing.T, commits, wantCommits []*p4domain.Commit) {
 	t.Helper()
 	for i := 0; i < len(commits) || i < len(wantCommits); i++ {
-		var gotC, wantC *gitdomain.Commit
+		var gotC, wantC *p4domain.Commit
 		if i < len(commits) {
 			gotC = commits[i]
 		}
@@ -2423,7 +2423,7 @@ func mustParseDate(s string, t *testing.T) *time.Time {
 	return &date
 }
 
-func CommitsEqual(a, b *gitdomain.Commit) bool {
+func CommitsEqual(a, b *p4domain.Commit) bool {
 	if (a == nil) != (b == nil) {
 		return false
 	}
@@ -2469,7 +2469,7 @@ func TestArchiveReaderForRepoWithSubRepoPermissions(t *testing.T) {
 	opts := ArchiveOptions{
 		Format:    ArchiveFormatZip,
 		Treeish:   commitID,
-		Pathspecs: []gitdomain.Pathspec{"."},
+		Pathspecs: []p4domain.Pathspec{"."},
 	}
 	client := NewClient(database.NewMockDB())
 	if _, err := client.ArchiveReader(context.Background(), checker, repo.Name, opts); err == nil {
@@ -2504,7 +2504,7 @@ func TestArchiveReaderForRepoWithoutSubRepoPermissions(t *testing.T) {
 	opts := ArchiveOptions{
 		Format:    ArchiveFormatZip,
 		Treeish:   commitID,
-		Pathspecs: []gitdomain.Pathspec{"."},
+		Pathspecs: []p4domain.Pathspec{"."},
 	}
 	client := NewClient(database.NewMockDB())
 	readCloser, err := client.ArchiveReader(context.Background(), checker, repo.Name, opts)
@@ -2664,7 +2664,7 @@ func TestRepository_ListBranches(t *testing.T) {
 		"git checkout -b b1",
 	}
 
-	wantBranches := []*gitdomain.Branch{{Name: "b0", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}, {Name: "b1", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}, {Name: "master", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}}
+	wantBranches := []*p4domain.Branch{{Name: "b0", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}, {Name: "b1", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}, {Name: "master", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}}
 
 	testBranches(t, gitCommands, wantBranches, BranchesOptions{})
 }
@@ -2691,7 +2691,7 @@ func TestRepository_Branches_MergedInto(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -am foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 
-	gitBranches := map[string][]*gitdomain.Branch{
+	gitBranches := map[string][]*p4domain.Branch{
 		"6520a4539a4cb664537c712216a53d80dd79bbdc": { // b1
 			{Name: "b0", Head: "6520a4539a4cb664537c712216a53d80dd79bbdc"},
 			{Name: "b1", Head: "6520a4539a4cb664537c712216a53d80dd79bbdc"},
@@ -2726,7 +2726,7 @@ func TestRepository_Branches_ContainsCommit(t *testing.T) {
 	}
 
 	// Pre-sorted branches
-	gitWantBranches := map[string][]*gitdomain.Branch{
+	gitWantBranches := map[string][]*p4domain.Branch{
 		"920c0e9d7b287b030ac9770fd7ba3ee9dc1760d9": {{Name: "branch2", Head: "920c0e9d7b287b030ac9770fd7ba3ee9dc1760d9"}},
 		"1224d334dfe08f4693968ea618ad63ae86ec16ca": {{Name: "master", Head: "1224d334dfe08f4693968ea618ad63ae86ec16ca"}},
 		"2816a72df28f699722156e545d038a5203b959de": {{Name: "branch2", Head: "920c0e9d7b287b030ac9770fd7ba3ee9dc1760d9"}, {Name: "master", Head: "1224d334dfe08f4693968ea618ad63ae86ec16ca"}},
@@ -2738,7 +2738,7 @@ func TestRepository_Branches_ContainsCommit(t *testing.T) {
 		branches, err := NewClient(database.NewMockDB()).ListBranches(context.Background(), repo, BranchesOptions{ContainsCommit: commit})
 		require.Nil(t, err)
 
-		sort.Sort(gitdomain.Branches(branches))
+		sort.Sort(p4domain.Branches(branches))
 
 		if diff := cmp.Diff(wantBranches, branches); diff != "" {
 			t.Fatalf("Branch mismatch (-want +got):\n%s", diff)
@@ -2767,10 +2767,10 @@ func TestRepository_Branches_BehindAheadCounts(t *testing.T) {
 		"git checkout old_work",
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo9 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
-	wantBranches := []*gitdomain.Branch{
-		{Counts: &gitdomain.BehindAhead{Behind: 5, Ahead: 1}, Name: "old_work", Head: "26692c614c59ddaef4b57926810aac7d5f0e94f0"},
-		{Counts: &gitdomain.BehindAhead{Behind: 0, Ahead: 3}, Name: "dev", Head: "6724953367f0cd9a7755bac46ee57f4ab0c1aad8"},
-		{Counts: &gitdomain.BehindAhead{Behind: 0, Ahead: 0}, Name: "master", Head: "8ea26e077a8fb9aa502c3fe2cfa3ce4e052d1a76"},
+	wantBranches := []*p4domain.Branch{
+		{Counts: &p4domain.BehindAhead{Behind: 5, Ahead: 1}, Name: "old_work", Head: "26692c614c59ddaef4b57926810aac7d5f0e94f0"},
+		{Counts: &p4domain.BehindAhead{Behind: 0, Ahead: 3}, Name: "dev", Head: "6724953367f0cd9a7755bac46ee57f4ab0c1aad8"},
+		{Counts: &p4domain.BehindAhead{Behind: 0, Ahead: 0}, Name: "master", Head: "8ea26e077a8fb9aa502c3fe2cfa3ce4e052d1a76"},
 	}
 
 	testBranches(t, gitCommands, wantBranches, BranchesOptions{BehindAheadBranch: "master"})
@@ -2787,23 +2787,23 @@ func TestRepository_Branches_IncludeCommit(t *testing.T) {
 		"git checkout -b b0",
 		"GIT_COMMITTER_NAME=b GIT_COMMITTER_EMAIL=b@b.com GIT_COMMITTER_DATE=2006-01-02T15:04:06Z git commit --allow-empty -m foo1 --author='b <b@b.com>' --date 2006-01-02T15:04:06Z",
 	}
-	wantBranches := []*gitdomain.Branch{
+	wantBranches := []*p4domain.Branch{
 		{
 			Name: "b0", Head: "c4a53701494d1d788b1ceeb8bf32e90224962473",
-			Commit: &gitdomain.Commit{
+			Commit: &p4domain.Commit{
 				ID:        "c4a53701494d1d788b1ceeb8bf32e90224962473",
-				Author:    gitdomain.Signature{Name: "b", Email: "b@b.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-				Committer: &gitdomain.Signature{Name: "b", Email: "b@b.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+				Author:    p4domain.Signature{Name: "b", Email: "b@b.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+				Committer: &p4domain.Signature{Name: "b", Email: "b@b.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
 				Message:   "foo1",
 				Parents:   []api.CommitID{"a3c1537db9797215208eec56f8e7c9c37f8358ca"},
 			},
 		},
 		{
 			Name: "master", Head: "a3c1537db9797215208eec56f8e7c9c37f8358ca",
-			Commit: &gitdomain.Commit{
+			Commit: &p4domain.Commit{
 				ID:        "a3c1537db9797215208eec56f8e7c9c37f8358ca",
-				Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-				Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				Author:    p4domain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				Committer: &p4domain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 				Message:   "foo0",
 				Parents:   nil,
 			},
@@ -2813,15 +2813,15 @@ func TestRepository_Branches_IncludeCommit(t *testing.T) {
 	testBranches(t, gitCommands, wantBranches, BranchesOptions{IncludeCommit: true})
 }
 
-func testBranches(t *testing.T, gitCommands []string, wantBranches []*gitdomain.Branch, options BranchesOptions) {
+func testBranches(t *testing.T, gitCommands []string, wantBranches []*p4domain.Branch, options BranchesOptions) {
 	t.Helper()
 
 	repo := MakeGitRepository(t, gitCommands...)
 	gotBranches, err := NewClient(database.NewMockDB()).ListBranches(context.Background(), repo, options)
 	require.Nil(t, err)
 
-	sort.Sort(gitdomain.Branches(wantBranches))
-	sort.Sort(gitdomain.Branches(gotBranches))
+	sort.Sort(p4domain.Branches(wantBranches))
+	sort.Sort(p4domain.Branches(gotBranches))
 
 	if diff := cmp.Diff(wantBranches, gotBranches); diff != "" {
 		t.Fatalf("Branch mismatch (-want +got):\n%s", diff)
@@ -3132,7 +3132,7 @@ var testGitBlameOutputHunks = []*Hunk{
 	{
 		StartLine: 1, EndLine: 5, StartByte: 0, EndByte: 41,
 		CommitID: "3f61310114082d6179c23f75950b88d1842fe2de",
-		Author: gitdomain.Signature{
+		Author: p4domain.Signature{
 			Name:  "Thorsten Ball",
 			Email: "mrnugget@gmail.com",
 			Date:  MustParseTime(time.RFC3339, "2020-06-22T12:07:15Z"),
@@ -3143,7 +3143,7 @@ var testGitBlameOutputHunks = []*Hunk{
 	{
 		StartLine: 5, EndLine: 15, StartByte: 41, EndByte: 249,
 		CommitID: "fbb98e0b7ff0752798463d9f49d922858a4188f6",
-		Author: gitdomain.Signature{
+		Author: p4domain.Signature{
 			Name:  "Adam Harvey",
 			Email: "aharvey@sourcegraph.com",
 			Date:  MustParseTime(time.RFC3339, "2020-10-13T23:11:34Z"),
@@ -3154,7 +3154,7 @@ var testGitBlameOutputHunks = []*Hunk{
 	{
 		StartLine: 15, EndLine: 16, StartByte: 249, EndByte: 328,
 		CommitID: "8a75c6f8b4cbe2a2f3c8be0f2c50bc766499f498",
-		Author: gitdomain.Signature{
+		Author: p4domain.Signature{
 			Name:  "Adam Harvey",
 			Email: "adam@adamharvey.name",
 			Date:  MustParseTime(time.RFC3339, "2022-08-18T22:09:43Z"),
@@ -3165,7 +3165,7 @@ var testGitBlameOutputHunks = []*Hunk{
 	{
 		StartLine: 16, EndLine: 20, StartByte: 328, EndByte: 394,
 		CommitID: "3f61310114082d6179c23f75950b88d1842fe2de",
-		Author: gitdomain.Signature{
+		Author: p4domain.Signature{
 			Name:  "Thorsten Ball",
 			Email: "mrnugget@gmail.com",
 			Date:  MustParseTime(time.RFC3339, "2020-06-22T12:07:15Z"),
@@ -3176,7 +3176,7 @@ var testGitBlameOutputHunks = []*Hunk{
 	{
 		StartLine: 20, EndLine: 21, StartByte: 394, EndByte: 504,
 		CommitID: "67b7b725a7ff913da520b997d71c840230351e30",
-		Author: gitdomain.Signature{
+		Author: p4domain.Signature{
 			Name:  "Thorsten Ball",
 			Email: "mrnugget@gmail.com",
 			Date:  MustParseTime(time.RFC3339, "2020-09-17T09:21:00Z"),
@@ -3187,7 +3187,7 @@ var testGitBlameOutputHunks = []*Hunk{
 	{
 		StartLine: 21, EndLine: 22, StartByte: 504, EndByte: 553,
 		CommitID: "3f61310114082d6179c23f75950b88d1842fe2de",
-		Author: gitdomain.Signature{
+		Author: p4domain.Signature{
 			Name:  "Thorsten Ball",
 			Email: "mrnugget@gmail.com",
 			Date:  MustParseTime(time.RFC3339, "2020-06-22T12:07:15Z"),
@@ -3198,7 +3198,7 @@ var testGitBlameOutputHunks = []*Hunk{
 	{
 		StartLine: 22, EndLine: 24, StartByte: 553, EndByte: 695,
 		CommitID: "67b7b725a7ff913da520b997d71c840230351e30",
-		Author: gitdomain.Signature{
+		Author: p4domain.Signature{
 			Name:  "Thorsten Ball",
 			Email: "mrnugget@gmail.com",
 			Date:  MustParseTime(time.RFC3339, "2020-09-17T09:21:00Z"),

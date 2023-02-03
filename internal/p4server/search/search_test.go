@@ -18,7 +18,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/p4server/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -481,7 +481,7 @@ index 0000000000..7e54670557
 
 	formatted, ranges := FormatDiff(parsedDiff, highlights.Diff)
 	expectedFormatted := `/dev/null internal/compute/match.go
-@@ -0,0 +6,6 @@ 
+@@ -0,0 +6,6 @@
 +
 +       "github.com/sourcegraph/sourcegraph/internal/search/result"
 +)
@@ -527,7 +527,7 @@ index 0000000000..7e54670557
 	filteredDiff := filterRawDiff(parsedDiff, setupSubRepoFilterFunc())
 	formattedWithFiltering, ranges := FormatDiff(filteredDiff, highlights.Diff)
 	expectedFormatted = `/dev/null internal/compute/match.go
-@@ -0,0 +6,6 @@ 
+@@ -0,0 +6,6 @@
 +
 +       "github.com/sourcegraph/sourcegraph/internal/search/result"
 +)

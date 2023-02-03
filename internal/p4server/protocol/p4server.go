@@ -8,7 +8,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/p4server/p4domain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -45,7 +45,7 @@ type SearchEventDone struct {
 
 func (s SearchEventDone) Err() error {
 	if s.Error != "" {
-		var e gitdomain.RepoNotExistError
+		var e p4domain.RepoNotExistError
 		if err := json.Unmarshal([]byte(s.Error), &e); err != nil {
 			return &e
 		}
@@ -58,7 +58,7 @@ func NewSearchEventDone(limitHit bool, err error) SearchEventDone {
 	event := SearchEventDone{
 		LimitHit: limitHit,
 	}
-	var notExistError *gitdomain.RepoNotExistError
+	var notExistError *p4domain.RepoNotExistError
 	if errors.As(err, &notExistError) {
 		b, _ := json.Marshal(notExistError)
 		event.Error = string(b)
@@ -140,7 +140,7 @@ type BatchLogResult struct {
 
 // P4ExecRequest is a request to execute a p4 command with given arguments.
 //
-// Note that this request is deserialized by both gitserver and the frontend's
+// Note that this request is deserialized by both p4server and the frontend's
 // internal proxy route and any major change to this structure will need to be
 // reconciled in both places.
 type P4ExecRequest struct {
@@ -174,9 +174,9 @@ type RepoUpdateRequest struct {
 	Repo  api.RepoName  `json:"repo"`  // identifying URL for repo
 	Since time.Duration `json:"since"` // debounce interval for queries, used only with request-repo-update
 
-	// CloneFromShard is the hostname of the gitserver instance that is the current owner of the
+	// CloneFromShard is the hostname of the p4server instance that is the current owner of the
 	// repository. If this is set, then the RepoUpdateRequest is to migrate the repo from
-	// that gitserver instance to the new home of the repo.
+	// that p4server instance to the new home of the repo.
 	CloneFromShard string `json:"cloneFromShard"`
 }
 
@@ -219,25 +219,26 @@ type IsRepoCloneableResponse struct {
 	Reason    string // if not cloneable, the reason why not
 }
 
-// RepoDeleteRequest is a request to delete a repository clone on gitserver
+// RepoDeleteRequest is a request to delete a repository clone on p4server
 type RepoDeleteRequest struct {
 	// Repo is the repository to delete.
 	Repo api.RepoName
 }
 
-// ReposStats is an aggregation of statistics from a gitserver.
+// ReposStats is an aggregation of statistics from a p4server.
 type ReposStats struct {
 	// UpdatedAt is the time these statistics were computed. If UpdateAt is
 	// zero, the statistics have not yet been computed. This can happen on a
-	// new gitserver.
+	// new p4server.
 	UpdatedAt time.Time
 
-	// GitDirBytes is the amount of bytes stored in .git directories.
-	GitDirBytes int64
+	// P4DirBytes is the amount of bytes stored in the workspace metadata.
+	// TODO where does a Perforce workspace store its metadata?
+	P4DirBytes int64
 }
 
 // RepoCloneProgressRequest is a request for information about the clone progress of multiple
-// repositories on gitserver.
+// repositories on p4server.
 type RepoCloneProgressRequest struct {
 	Repos []api.RepoName
 }
@@ -256,9 +257,11 @@ type RepoCloneProgressResponse struct {
 }
 
 // CreateCommitFromPatchRequest is the request information needed for creating
-// the simulated staging area git object for a repo.
+// the simulated staging area perforce object for a depot.
+// TODO how to do batch changes with Perforce? Same way?
 type CreateCommitFromPatchRequest struct {
 	// Repo is the repository to get information about.
+	// TODO change language from "repo" to "depot"
 	Repo api.RepoName
 	// BaseCommit is the revision that the staging area object is based on
 	BaseCommit api.CommitID
@@ -376,5 +379,5 @@ type GetObjectRequest struct {
 }
 
 type GetObjectResponse struct {
-	Object gitdomain.GitObject
+	Object p4domain.P4Object
 }
