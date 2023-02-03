@@ -28,6 +28,7 @@ type changeset struct {
 	State               string       `json:"state"`
 	Labels              []string     `json:"labels"`
 	ExternalURL         *string      `json:"external_url"`
+	ForkName            *string      `json:"fork_name"`
 	ForkNamespace       *string      `json:"fork_namespace"`
 	ReviewState         *string      `json:"review_state"`
 	CheckState          *string      `json:"check_state"`
@@ -87,6 +88,7 @@ func MarshalChangeset(ctx context.Context, db basestore.ShareableStore, cs *type
 		Labels:              labelNames,
 		ExternalURL:         externalURL,
 		ForkNamespace:       nullable(cs.ExternalForkNamespace),
+		ForkName:            nullable(cs.ExternalForkName),
 		ReviewState:         nullable(string(cs.ExternalReviewState)),
 		CheckState:          nullable(string(cs.ExternalCheckState)),
 		Error:               cs.FailureMessage,
