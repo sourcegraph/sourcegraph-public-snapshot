@@ -14,23 +14,24 @@ import { Source, suggestionSources, Option } from '../suggestionsExtension'
 
 const theme = EditorView.theme({
     '.sg-history-button': {
-        boxSizing: 'content-box',
+        marginRight: '0.25rem',
+        paddingRight: '0.25rem',
+        borderRight: '1px solid var(--border-color-2)',
+        color: 'var(--icon-color)',
+    },
+    '.sg-history-button button': {
+        width: '1rem',
         border: '0',
         backgroundColor: 'transparent',
         padding: 0,
-        marginRight: '0.25rem',
-        paddingRight: '0.25rem',
+        color: 'inherit',
+    },
+    '.sg-history-button svg': {
+        display: 'inline-block',
         width: 'var(--icon-inline-size)',
         height: 'var(--icon-inline-size)',
-        color: 'var(--icon-color)',
-        verticalAlign: 'text-top',
-        borderRight: '1px solid var(--border-color-2)',
-    },
-    '.sg-history-button > svg': {
         // Setting this simplifies event handling for the history button widget
         pointerEvents: 'none',
-        // This is overwritten to 'middle' which doesn't look right
-        verticalAlign: 'initial',
     },
     '.sg-mode-History .sg-history-button': {
         color: 'var(--logo-purple)',
@@ -40,16 +41,14 @@ const theme = EditorView.theme({
 })
 
 function toggleHistoryMode(event: MouseEvent | KeyboardEvent, view: EditorView): void {
-    if ((event.target as HTMLElement).classList.contains('sg-history-button')) {
-        event.preventDefault()
-        const selectedMode = getSelectedMode(view.state)
-        if (selectedMode?.name === 'History') {
-            clearMode(view)
-        } else {
-            setMode(view, 'History')
-        }
-        view.focus()
+    event.preventDefault()
+    const selectedMode = getSelectedMode(view.state)
+    if (selectedMode?.name === 'History') {
+        clearMode(view)
+    } else {
+        setMode(view, 'History')
     }
+    view.focus()
 }
 
 /**
@@ -62,16 +61,17 @@ const historyButton = ViewPlugin.define(
             Decoration.widget({
                 side: -1,
                 widget: new (class extends WidgetType {
-                    public toDOM(_view: EditorView): HTMLElement {
+                    public toDOM(view: EditorView): HTMLElement {
+                        const container = document.createElement('span')
+                        container.className = 'sg-history-button'
                         const button = document.createElement('button')
-                        button.className = 'sg-history-button'
                         button.type = 'button'
                         const icon = createSVGIcon(mdiClockOutline)
+
+                        container.append(button)
                         button.append(icon)
-                        return button
-                    }
-                    public ignoreEvent(): boolean {
-                        return false
+                        button.addEventListener('click', event => toggleHistoryMode(event, view))
+                        return container
                     }
                 })(),
             }).range(0)
@@ -79,16 +79,6 @@ const historyButton = ViewPlugin.define(
     }),
     {
         decorations: plugin => plugin.decorations,
-        eventHandlers: {
-            // Click doesn't work because it moves the cursor to the beginning
-            // of the input.
-            mousedown: toggleHistoryMode,
-            keydown: (event, view) => {
-                if (event.key === ' ') {
-                    toggleHistoryMode(event, view)
-                }
-            },
-        },
     }
 )
 
@@ -122,20 +112,14 @@ function createHistorySuggestionSource(
                         label: item.query,
                         icon: mdiClockOutline,
                         matches: positions,
-                        description: `• ${item.resultCount}${item.limitHit ? '+' : ''} ${pluralize(
-                            'result',
-                            item.resultCount
-                        )} • ${formatDistanceToNow(parseISO(item.timestamp), formatTimeOptions)}`,
                         action: {
                             type: 'command',
-                            name: 'Run',
+                            name: `${item.resultCount}${item.limitHit ? '+' : ''} ${pluralize(
+                                'result',
+                                item.resultCount
+                            )} • ${formatDistanceToNow(parseISO(item.timestamp), formatTimeOptions)}`,
                             apply: applySuggestion,
-                        },
-                        alternativeAction: {
-                            type: 'completion',
-                            name: 'Edit query',
-                            insertValue: item.query + ' ',
-                            from: 0,
+                            info: 'run the query',
                         },
                         render: queryRenderer,
                     })),

@@ -54,7 +54,7 @@ export interface SuggestionResult {
     valid?: (state: EditorState, position: number) => boolean
 }
 
-export type CustomRenderer = (option: Option) => React.ReactElement
+export type CustomRenderer<T> = ((value: T) => React.ReactElement) | string
 
 export interface Option {
     /**
@@ -82,11 +82,11 @@ export interface Option {
      * If present the provided component will be used to render the label of the
      * option.
      */
-    render?: CustomRenderer
+    render?: CustomRenderer<Option>
     /**
      * If present this component is rendered as footer.
      */
-    info?: CustomRenderer
+    info?: CustomRenderer<Option>
     /**
      * A set of character indexes. If provided the characters of at these
      * positions in the label will be highlighted as matches.
@@ -98,11 +98,19 @@ export interface CommandAction {
     type: 'command'
     apply: (option: Option, view: EditorView) => void
     name?: string
+    /**
+     * If present this component is rendered as part of the footer.
+     */
+    info?: CustomRenderer<Action>
 }
 export interface GoToAction {
     type: 'goto'
     url: string
     name?: string
+    /**
+     * If present this component is rendered as part of the footer.
+     */
+    info?: CustomRenderer<Action>
 }
 export interface CompletionAction {
     type: 'completion'
@@ -110,6 +118,10 @@ export interface CompletionAction {
     name?: string
     to?: number
     insertValue?: string
+    /**
+     * If present this component is rendered as part of the footer.
+     */
+    info?: CustomRenderer<Action>
 }
 export type Action = CommandAction | GoToAction | CompletionAction
 

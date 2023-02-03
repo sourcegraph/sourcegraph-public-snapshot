@@ -7,9 +7,11 @@ import { isSafari } from '@sourcegraph/common'
 import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { Icon, useWindowSize } from '@sourcegraph/wildcard'
 
-import { Action, Group, Option } from './suggestionsExtension'
+import { Action, CustomRenderer, Group, Option } from './suggestionsExtension'
 
 import styles from './Suggestions.module.scss'
+
+type Renderable = React.ReactElement | string | null
 
 function getActionName(action: Action): string {
     switch (action.type) {
@@ -100,14 +102,14 @@ export const Suggestions: React.FunctionComponent<SuggesionsProps> = ({
                                     aria-selected={focusedItem === option}
                                 >
                                     {option.icon && (
-                                        <div className="pr-1">
+                                        <div className="pr-1 align-self-start">
                                             <Icon className={styles.icon} svgPath={option.icon} aria-hidden="true" />
                                         </div>
                                     )}
                                     <div className="d-flex flex-wrap">
                                         <div role="gridcell" className={styles.label}>
                                             {option.render ? (
-                                                option.render(option)
+                                                renderStringOrRenderer(option.render, option)
                                             ) : option.matches ? (
                                                 <HighlightedLabel label={option.label} matches={option.matches} />
                                             ) : (
@@ -140,7 +142,7 @@ export const Suggestions: React.FunctionComponent<SuggesionsProps> = ({
 const Footer: React.FunctionComponent<{ option: Option }> = ({ option }) => (
     <div className={classnames(styles.footer, 'd-flex align-items-center justify-content-between')}>
         <span>
-            {option.info?.(option)}
+            {option.info && renderStringOrRenderer(option.info, option)}
             {!option.info && (
                 <>
                     <ActionInfo action={option.action} shortcut="Return" />{' '}
@@ -155,27 +157,45 @@ const Footer: React.FunctionComponent<{ option: Option }> = ({ option }) => (
 )
 
 const ActionInfo: React.FunctionComponent<{ action: Action; shortcut: string }> = ({ action, shortcut }) => {
-    const displayName = shortcutDisplayName(shortcut)
-    switch (action.type) {
-        case 'completion':
-            return (
-                <>
-                    Press <kbd>{displayName}</kbd> to <strong>add</strong> to your query.
-                </>
-            )
-        case 'goto':
-            return (
-                <>
-                    Press <kbd>{displayName}</kbd> to <strong>go to</strong> the suggestion.
-                </>
-            )
-        case 'command':
-            return (
-                <>
-                    Press <kbd>{displayName}</kbd> to <strong>execute</strong> the command.
-                </>
-            )
+    let info: Renderable = action.info ? renderStringOrRenderer(action.info, action) : null
+    if (!info) {
+        switch (action.type) {
+            case 'completion':
+                info = (
+                    <>
+                        <strong>add</strong> to your query
+                    </>
+                )
+                break
+            case 'goto':
+                info = (
+                    <>
+                        <strong>go to</strong> the suggestion
+                    </>
+                )
+                break
+            case 'command':
+                info = (
+                    <>
+                        <strong>execute</strong> the command
+                    </>
+                )
+                break
+        }
     }
+
+    return (
+        <>
+            Press <kbd>{shortcutDisplayName(shortcut)}</kbd> to {info}.
+        </>
+    )
+}
+
+function renderStringOrRenderer<T>(renderer: CustomRenderer<T>, obj: T): Renderable {
+    if (typeof renderer === 'string') {
+        return renderer
+    }
+    return renderer(obj)
 }
 
 export const HighlightedLabel: React.FunctionComponent<{ label: string; matches: Set<number>; offset?: number }> = ({
