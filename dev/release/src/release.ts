@@ -69,7 +69,6 @@ export type StepID =
     | '_test:srccliensure'
     | '_test:release-guide-content'
     | '_test:release-guide-update'
-    | '_test:tags'
 
 /**
  * Runs given release step with the provided configuration and arguments.
@@ -398,12 +397,10 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 const tags = execa
                     .sync('git', ['--no-pager', 'tag', '-l', `v${release.version}-rc*`], { cwd: workdir })
                     .stdout.split('\t')
-                console.log(tags)
 
                 let nextCandidate = 1
                 for (const tag of tags) {
                     const num = parseInt(tag.slice(-1), 10)
-                    console.log(num)
                     if (num >= nextCandidate) {
                         nextCandidate = num + 1
                     }
@@ -426,20 +423,6 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             } catch (error) {
                 console.error('Failed to create tag', error)
             }
-        },
-    },
-    {
-        id: '_test:tags',
-        description: 'Generate the Nth release candidate. Set <candidate> to "final" to generate a final release',
-        argNames: ['candidate'],
-        run: (config, candidate) => {
-            // fetchTags()
-            const octokit = getAuthenticatedGitHubClient()
-            octokit
-                .then(kit =>
-                    kit.repos.listTags({ owner: 'sourcegraph', repo: 'sourcegraph' }).then(tags => console.log(tags))
-                )
-                .catch(error => console.log(error))
         },
     },
     {
