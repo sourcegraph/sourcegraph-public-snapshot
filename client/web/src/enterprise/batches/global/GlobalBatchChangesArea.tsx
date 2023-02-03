@@ -77,7 +77,7 @@ export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChil
                     />
                 </Route>
             )}
-            <Route component={NotFoundPage} key="hardcoded-key" />
+            <Route render={() => <NotFoundPage pageType="batch changes" />} key="hardcoded-key" />
         </Switch>
     </div>
 )

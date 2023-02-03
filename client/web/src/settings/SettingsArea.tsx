@@ -178,7 +178,7 @@ export class SettingsArea extends React.Component<Props, State> {
                         exact={true}
                         render={routeComponentProps => <SettingsPage {...routeComponentProps} {...transferProps} />}
                     />
-                    <Route key="hardcoded-key" component={NotFoundPage} />
+                    <Route key="hardcoded-key" render={() => <NotFoundPage pageType="settings" />} />
                 </Switch>
             </div>
         )

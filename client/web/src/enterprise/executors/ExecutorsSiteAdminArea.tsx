@@ -34,7 +34,7 @@ export const ExecutorsSiteAdminArea: React.FunctionComponent<React.PropsWithChil
                 render={props => <GlobalExecutorSecretsListPage {...outerProps} {...props} />}
                 exact={true}
             />
-            <Route component={NotFoundPage} key="hardcoded-key" />
+            <Route render={() => <NotFoundPage pageType="settings" />} key="hardcoded-key" />
         </Switch>
     </>
 )

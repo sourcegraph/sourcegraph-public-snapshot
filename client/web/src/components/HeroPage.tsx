@@ -53,10 +53,14 @@ export const HeroPage: FC<HeroPageProps> = props => (
     </div>
 )
 
-export const NotFoundPage: FC = () => (
+interface NotFoundPageProps {
+    pageType: string
+}
+
+export const NotFoundPage: FC<NotFoundPageProps> = ({ pageType }) => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"
-        subtitle="Sorry, the requested repository tags page was not found."
+        subtitle={`Sorry, the requested ${pageType} page was not found.`}
     />
 )

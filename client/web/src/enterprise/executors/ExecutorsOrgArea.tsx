@@ -32,7 +32,7 @@ export const ExecutorsOrgArea: React.FunctionComponent<React.PropsWithChildren<E
                 )}
                 exact={true}
             />
-            <Route component={NotFoundPage} key="hardcoded-key" />
+            <Route render={() => <NotFoundPage pageType="executors" />} key="hardcoded-key" />
         </Switch>
     </>
 )

@@ -102,7 +102,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
 
         // Code intelligence redirect
         {
-            path: '/code-intelligence/*',
+            path: '/code-intelligence',
             exact: false,
             render: props => <Redirect to={props.location.pathname.replace('/code-intelligence/', '/code-graph/')} />,
         },

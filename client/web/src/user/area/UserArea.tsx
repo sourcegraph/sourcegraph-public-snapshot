@@ -165,7 +165,7 @@ export const UserArea: React.FunctionComponent<React.PropsWithChildren<UserAreaP
     }
 
     if (!user) {
-        return <NotFoundPage />
+        return <NotFoundPage pageType="user" />
     }
 
     const context: UserAreaRouteContext = {
@@ -213,7 +213,7 @@ export const UserArea: React.FunctionComponent<React.PropsWithChildren<UserAreaP
                                 />
                             )
                     )}
-                    <Route key="hardcoded-key" component={NotFoundPage} />
+                    <Route key="hardcoded-key" render={() => <NotFoundPage pageType="user" />} />
                 </Switch>
             </React.Suspense>
         </ErrorBoundary>

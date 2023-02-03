@@ -158,7 +158,7 @@ export const RepositoryCodeIntelArea: FC<RepositoryCodeIntelAreaPageProps> = pro
                             )
                     )}
 
-                    <Route element={<NotFoundPage />} />
+                    <Route element={<NotFoundPage pageType="repository" />} />
                 </Routes>
             </div>
         </div>

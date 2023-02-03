@@ -117,7 +117,7 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<
     }
 
     if (!user) {
-        return <NotFoundPage />
+        return <NotFoundPage pageType="user" />
     }
 
     if (authenticatedUser.id !== user.id && !user.viewerCanAdminister) {
@@ -168,7 +168,7 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<
                                             />
                                         )
                                 )}
-                                <Route component={NotFoundPage} key="hardcoded-key" />
+                                <Route render={() => <NotFoundPage pageType="settings" />} key="hardcoded-key" />
                             </Switch>
                         </React.Suspense>
                     </ErrorBoundary>

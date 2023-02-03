@@ -58,7 +58,7 @@ export const UserSettingsTokensArea: React.FunctionComponent<React.PropsWithChil
                     />
                 )}
             />
-            <Route component={NotFoundPage} key="hardcoded-key" />
+            <Route render={() => <NotFoundPage pageType="settings" />} key="hardcoded-key" />
         </Switch>
     )
 }

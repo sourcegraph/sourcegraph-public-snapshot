@@ -63,7 +63,7 @@ export const RepoSettingsArea: React.FunctionComponent<React.PropsWithChildren<P
     }
 
     if (repoOrError === null) {
-        return <NotFoundPage />
+        return <NotFoundPage pageType="repository" />
     }
 
     if (!repoOrError.viewerCanAdminister) {
@@ -95,7 +95,7 @@ export const RepoSettingsArea: React.FunctionComponent<React.PropsWithChildren<P
                         ({ render, path, condition = () => true }) =>
                             condition(context) && <Route key="hardcoded-key" path={path} element={render(context)} />
                     )}
-                    <Route element={<NotFoundPage />} />
+                    <Route element={<NotFoundPage pageType="repository" />} />
                 </Routes>
             </div>
         </div>

@@ -32,7 +32,7 @@ export const ExecutorsUserArea: React.FunctionComponent<React.PropsWithChildren<
                 )}
                 exact={true}
             />
-            <Route component={NotFoundPage} key="hardcoded-key" />
+            <Route render={() => <NotFoundPage pageType="settings" />} key="hardcoded-key" />
         </Switch>
     </>
 )
