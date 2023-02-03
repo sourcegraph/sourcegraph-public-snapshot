@@ -215,7 +215,8 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 			}
 
 			pr := tc.cs.Changeset.Metadata.(*bitbucketserver.PullRequest)
-			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
+			rn := strings.ReplaceAll(tc.name, " ", "-")
+			testutil.AssertGolden(t, "testdata/golden/"+rn, update(rn), pr)
 		})
 	}
 }
