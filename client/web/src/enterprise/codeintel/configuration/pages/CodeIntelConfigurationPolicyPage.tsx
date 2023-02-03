@@ -3,8 +3,7 @@ import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 're
 import { ApolloError } from '@apollo/client'
 import { mdiDelete, mdiGraveStone } from '@mdi/js'
 import { debounce } from 'lodash'
-import { useLocation } from 'react-router'
-import { useNavigate, useParams } from 'react-router-dom-v5-compat'
+import { useNavigate, useParams, useLocation } from 'react-router-dom-v5-compat'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { useLazyQuery } from '@sourcegraph/http-client'
@@ -67,27 +66,25 @@ type PolicyUpdater = <K extends keyof CodeIntelligenceConfigurationPolicyFields>
     [P in K]: CodeIntelligenceConfigurationPolicyFields[P]
 }) => void
 
-export const CodeIntelConfigurationPolicyPage: FunctionComponent<
-    React.PropsWithChildren<CodeIntelConfigurationPolicyPageProps>
-> = ({
+export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfigurationPolicyPageProps> = ({
     repo,
     authenticatedUser,
     indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
     allowGlobalPolicies = window.context?.codeIntelAutoIndexingAllowGlobalPolicies,
     telemetryService,
 }) => {
-    const { id = '' } = useParams<{ id: string }>()
-    useEffect(() => telemetryService.logViewEvent('CodeIntelConfigurationPolicy'), [telemetryService])
-
     const navigate = useNavigate()
-    const location = useLocation<{ message: string; modal: string }>()
+    const location = useLocation()
+    const { id } = useParams<{ id: string }>()
+
+    useEffect(() => telemetryService.logViewEvent('CodeIntelConfigurationPolicy'), [telemetryService])
 
     // Handle local policy state
     const [policy, setPolicy] = useState<CodeIntelligenceConfigurationPolicyFields | undefined>()
     const updatePolicy: PolicyUpdater = updates => setPolicy(policy => ({ ...(policy || nullPolicy), ...updates }))
 
     // Handle remote policy state
-    const { policyConfig, loadingPolicyConfig, policyConfigError } = usePolicyConfigurationByID(id)
+    const { policyConfig, loadingPolicyConfig, policyConfigError } = usePolicyConfigurationByID(id!)
     const [saved, setSaved] = useState<CodeIntelligenceConfigurationPolicyFields>()
     const { savePolicyConfiguration, isSaving, savingError } = useSavePolicyConfiguration(policy?.id === '')
     const { handleDeleteConfig, isDeleting, deleteError } = useDeletePolicies()
@@ -104,10 +101,11 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<
             .then(() =>
                 navigate(
                     {
-                        pathname: './',
+                        pathname: '..',
                     },
                     {
                         state: { modal: 'SUCCESS', message: `Configuration for policy ${policy.name} has been saved.` },
+                        relative: 'path',
                     }
                 )
             )
@@ -136,10 +134,11 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<
             }).then(() =>
                 navigate(
                     {
-                        pathname: './',
+                        pathname: '..',
                     },
                     {
                         state: { modal: 'SUCCESS', message: `Configuration policy ${name} has been deleted.` },
+                        relative: 'path',
                     }
                 )
             )
@@ -286,7 +285,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<
                         type="button"
                         className="ml-2"
                         variant="secondary"
-                        onClick={() => navigate('./')}
+                        onClick={() => navigate('..', { relative: 'path' })}
                         disabled={isSaving}
                     >
                         Cancel

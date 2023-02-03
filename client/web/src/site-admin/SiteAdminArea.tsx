@@ -16,7 +16,7 @@ import { BatchChangesProps } from '../batches'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import { Page } from '../components/Page'
-import { RouteDescriptorV6 } from '../util/contributions'
+import { RouteV6Descriptor } from '../util/contributions'
 
 import { SiteAdminSidebar, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
@@ -48,7 +48,7 @@ export interface SiteAdminAreaRouteContext
     overviewComponents: readonly React.ComponentType<React.PropsWithChildren<{}>>[]
 }
 
-export interface SiteAdminAreaRoute extends RouteDescriptorV6<SiteAdminAreaRouteContext> {}
+export interface SiteAdminAreaRoute extends RouteV6Descriptor<SiteAdminAreaRouteContext> {}
 
 interface SiteAdminAreaProps extends PlatformContextProps, SettingsCascadeProps, BatchChangesProps, TelemetryProps {
     routes: readonly SiteAdminAreaRoute[]

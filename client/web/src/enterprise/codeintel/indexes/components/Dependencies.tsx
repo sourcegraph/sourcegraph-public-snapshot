@@ -78,7 +78,6 @@ const DependencyOrDependentsPanel: FunctionComponent<DependencyOrDependentsPanel
         noun={noun}
         pluralNoun={pluralNoun}
         nodeComponent={DependencyOrDependentNode}
-        nodeComponentProps={{}}
         queryConnection={queryConnection}
         cursorPaging={true}
         useURLQuery={false}
@@ -92,6 +91,7 @@ interface DependencyOrDependentNodeProps {
 
 const DependencyOrDependentNode: FunctionComponent<DependencyOrDependentNodeProps> = ({ node }) => {
     const navigate = useNavigate()
+
     return (
         <div
             className={classNames(styles.grid, 'px-4')}

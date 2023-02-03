@@ -421,7 +421,6 @@ class InnerSiteAdminConfigurationPage extends React.Component<Props, State> {
                                 isLightTheme={this.props.isLightTheme}
                                 onSave={this.onSave}
                                 actions={quickConfigureActions}
-                                history={this.props.history}
                                 telemetryService={this.props.telemetryService}
                                 explanation={
                                     <Text className="form-text text-muted">

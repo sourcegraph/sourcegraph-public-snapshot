@@ -3,8 +3,7 @@ import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 're
 import { useApolloClient } from '@apollo/client'
 import { mdiDelete, mdiGraph, mdiHistory, mdiRecycle, mdiRedo, mdiTimerSand } from '@mdi/js'
 import classNames from 'classnames'
-import { Redirect, useLocation } from 'react-router'
-import { useNavigate, useParams } from 'react-router-dom-v5-compat'
+import { Navigate, useLocation, useParams, useNavigate } from 'react-router-dom-v5-compat'
 import { takeWhile } from 'rxjs/operators'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
@@ -72,10 +71,11 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
     useReindexPreciseIndex = defaultUseReindexPreciseIndex,
     telemetryService,
 }) => {
-    const { id = '' } = useParams<{ id: string }>()
+    const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
+    const location = useLocation()
+
     useEffect(() => telemetryService.logViewEvent('CodeIntelPreciseIndexPage'), [telemetryService])
-    const location = useLocation<{ message: string; modal: string }>()
 
     const apolloClient = useApolloClient()
     const { handleReindexPreciseIndex, reindexError } = useReindexPreciseIndex()
@@ -92,7 +92,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
     const indexOrError = useObservable(
         useMemo(
             // Continuously re-fetch state while it's in a non-terminal state
-            () => queryPreciseIndex(id, apolloClient).pipe(takeWhile(shouldReload, true)),
+            () => queryPreciseIndex(id!, apolloClient).pipe(takeWhile(shouldReload, true)),
             [id, queryPreciseIndex, apolloClient]
         )
     )
@@ -106,7 +106,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
 
         try {
             await handleDeletePreciseIndex({
-                variables: { id },
+                variables: { id: id! },
                 update: cache => cache.modify({ fields: { node: () => {} } }),
             })
             setDeletionOrError('deleted')
@@ -131,7 +131,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                 }
             )
         }
-    }, [indexOrError, handleDeletePreciseIndex, id, navigate])
+    }, [id, indexOrError, handleDeletePreciseIndex, navigate])
 
     const reindexUpload = useCallback(async (): Promise<void> => {
         if (!indexOrError || isErrorLike(indexOrError)) {
@@ -142,7 +142,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
 
         try {
             await handleReindexPreciseIndex({
-                variables: { id },
+                variables: { id: id! },
                 update: cache => cache.modify({ fields: { node: () => {} } }),
             })
             setReindexOrError('reindexed')
@@ -170,7 +170,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
     }, [id, indexOrError, handleReindexPreciseIndex, navigate])
 
     return deletionOrError === 'deleted' ? (
-        <Redirect to="." />
+        <Navigate to="." replace={true} />
     ) : isErrorLike(deletionOrError) ? (
         <ErrorAlert prefix="Error deleting precise index" error={deletionOrError} />
     ) : isErrorLike(reindexOrError) ? (

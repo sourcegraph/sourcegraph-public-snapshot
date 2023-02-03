@@ -1,6 +1,5 @@
 import React from 'react'
 
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Switch, Route, RouteComponentProps, useParams } from 'react-router-dom'
 import { Params } from 'react-router-dom-v5-compat'
 
@@ -12,7 +11,7 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
-import { HeroPage } from '../../../components/HeroPage'
+import { NotFoundPage } from '../../../components/HeroPage'
 import type { BatchChangeClosePageProps } from '../close/BatchChangeClosePage'
 import type { CreateBatchChangePageProps } from '../create/CreateBatchChangePage'
 import type { BatchChangeDetailsPageProps } from '../detail/BatchChangeDetailsPage'
@@ -78,7 +77,7 @@ export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChil
                     />
                 </Route>
             )}
-            <Route component={NotFoundPage} key="hardcoded-key" />
+            <Route render={() => <NotFoundPage pageType="batch changes" />} key="hardcoded-key" />
         </Switch>
     </div>
 )
@@ -86,10 +85,6 @@ export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChil
 const AuthenticatedCreateBatchChangePage = withAuthenticatedUser<
     CreateBatchChangePageProps & { authenticatedUser: AuthenticatedUser }
 >(props => <CreateBatchChangePage {...props} authenticatedUser={props.authenticatedUser} />)
-
-const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
-)
 
 export interface NamespaceBatchChangesAreaProps extends RouteComponentProps, Props {
     namespaceID: Scalars['ID']

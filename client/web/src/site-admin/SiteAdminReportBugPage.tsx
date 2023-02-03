@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react'
 
 import { mapValues, values } from 'lodash'
-import { useHistory } from 'react-router'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -116,11 +115,6 @@ export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChil
     isLightTheme,
     telemetryService,
 }) => {
-    // TODO: Fix this to unblock RR6 migration but we first need to migrate
-    // DynamicallyImportedMonacoSettingsEditor to a function component to
-    // use the alternative API to History#block.
-    const history = useHistory()
-
     const allConfig = useObservable(useMemo(fetchAllConfigAndSettings, []))
     return (
         <div>
@@ -156,7 +150,6 @@ export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChil
                     canEdit={false}
                     height={800}
                     isLightTheme={isLightTheme}
-                    history={history}
                     readOnly={true}
                     telemetryService={telemetryService}
                 />

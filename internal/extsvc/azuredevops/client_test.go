@@ -1,7 +1,6 @@
 package azuredevops
 
 import (
-	"context"
 	"flag"
 	"net/http"
 	"net/url"
@@ -12,39 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var update = flag.Bool("update", false, "update testdata")
-
-func TestClient_ListRepositoriesByProjectOrOrg(t *testing.T) {
-	cli, save := NewTestClient(t, "ListRepositoriesByProjectOrOrg", *update)
-	t.Cleanup(save)
-
-	opts := ListRepositoriesByProjectOrOrgArgs{
-		ProjectOrOrgName: "sgtestazure",
-	}
-
-	resp, err := cli.ListRepositoriesByProjectOrOrg(context.Background(), opts)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	testutil.AssertGolden(t, "testdata/golden/ListProjects.json", *update, resp)
-}
-
-func TestClient_AzureServicesProfile(t *testing.T) {
-	cli, save := NewTestClient(t, "AzureServicesProfile", *update)
-	t.Cleanup(save)
-
-	resp, err := cli.AzureServicesProfile(context.Background())
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	testutil.AssertGolden(t, "testdata/golden/AzureServicesConnectionData.json", *update, resp)
-}
 
 // NewTestClient returns an azuredevops.Client that records its interactions
 // to testdata/vcr/.

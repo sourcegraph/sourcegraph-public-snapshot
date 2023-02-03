@@ -256,7 +256,7 @@ func (r *insightViewDebugResolver) Raw(ctx context.Context) ([]string, error) {
 	return viewDebug, nil
 }
 
-func (r *Resolver) InsightAdminBackfillQueue(ctx context.Context, args *graphqlbackend.AdminBackfillQueueArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.BackfillQueueItemResolver], error) {
+func (r *Resolver) InsightAdminBackfillQueue(ctx context.Context, args *graphqlbackend.AdminBackfillQueueArgs) (*graphqlutil.ConnectionResolver[*graphqlbackend.BackfillQueueItemResolver], error) {
 	// 🚨 SECURITY
 	// only admin users can access this resolver
 	actr := actor.FromContext(ctx)
@@ -275,7 +275,7 @@ func (r *Resolver) InsightAdminBackfillQueue(ctx context.Context, args *graphqlb
 		orderBy = args.OrderBy
 	}
 
-	resolver, err := graphqlutil.NewConnectionResolver[graphqlbackend.BackfillQueueItemResolver](
+	resolver, err := graphqlutil.NewConnectionResolver[*graphqlbackend.BackfillQueueItemResolver](
 		store,
 		&args.ConnectionResolverArgs,
 		&graphqlutil.ConnectionResolverOptions{

@@ -3,8 +3,7 @@ import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 're
 import { useApolloClient } from '@apollo/client'
 import { mdiDelete, mdiMapSearch, mdiRedo } from '@mdi/js'
 import classNames from 'classnames'
-import { useLocation } from 'react-router'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
 import { of, Subject } from 'rxjs'
 import { tap } from 'rxjs/operators'
 
@@ -121,8 +120,8 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
     useReindexPreciseIndexes = defaultUseReindexPreciseIndexes,
     telemetryService,
 }) => {
+    const location = useLocation()
     useEffect(() => telemetryService.logViewEvent('CodeIntelPreciseIndexesPage'), [telemetryService])
-    const location = useLocation<{ message: string; modal: string }>()
 
     const apolloClient = useApolloClient()
     const { handleDeletePreciseIndex, deleteError } = useDeletePreciseIndex()
@@ -392,7 +391,7 @@ const IndexNode: FunctionComponent<IndexNodeProps> = ({ node, repo, selection, o
         <>
             <div
                 className={classNames(styles.grid, 'px-4')}
-                onClick={() => navigate(`./indexes/${node.id}`)}
+                onClick={() => navigate(`./${node.id}`)}
                 aria-hidden={true}
             >
                 <div className="px-3 py-4" onClick={event => event.stopPropagation()} aria-hidden={true}>

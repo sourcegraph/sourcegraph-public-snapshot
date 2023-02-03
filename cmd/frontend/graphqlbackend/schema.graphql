@@ -1367,6 +1367,31 @@ type Query {
     ): NewRepositoryConnection!
 
     """
+    Query package repo references.
+    """
+    packageRepoReferences(
+        """
+        The exact scheme value to filter by.
+        TODO: should this be an enum?
+        """
+        scheme: String
+        """
+        If supplied, only package repo references that match the given
+        terms by their name will be returned.
+        TODO: fuzzy vs exact?
+        """
+        name: String
+        """
+        Returns the first n external services from the list.
+        """
+        first: Int
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): PackageRepoReferenceConnection!
+
+    """
     Looks up a Phabricator repository by name.
     """
     phabricatorRepo(
@@ -3419,6 +3444,80 @@ type KeyValuePair {
     The nullable value. A null value indicates this key-value pair should be treated as a tag.
     """
     value: String
+}
+
+"""
+List of package repo references.
+"""
+type PackageRepoReferenceConnection {
+    """
+    A list of package repo references.
+    """
+    nodes: [PackageRepoReference!]!
+
+    """
+    The total number of package repo references in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A reference to a package repo, such as a maven artifact, rust crate etc.
+"""
+type PackageRepoReference {
+    """
+    A unique ID for the package repo reference.
+    """
+    id: ID!
+
+    """
+    The ecosystem/package-manager/indexer scheme under which this package repo
+    reference is uniquely identified e.g. npm/python/rust-analyzer
+    """
+    scheme: String!
+
+    """
+    The name of the package, in a format relevant to the specific ecosystem e.g.
+    maven artifact coordinates (com.sample:text), npm scoped packages (@monkeys/banana).
+    """
+    name: String!
+
+    """
+    The versions of this package known to the sourcegraph instance.
+    """
+    versions: [PackageRepoReferenceVersion!]!
+
+    """
+    The synthetic repository (aka the package repo) created to store the contents of the
+    synced versions of the package repo reference. This type is subject to change once
+    package repos and other non-git code hosts become first-class.
+    """
+    repository: Repository
+}
+
+"""
+A version of a package repo reference.
+"""
+type PackageRepoReferenceVersion {
+    """
+    A unique ID for the package repo reference version.
+    """
+    id: ID!
+
+    """
+    The package repo reference that this ID is for.
+    """
+    packageRepoReferenceID: ID!
+
+    """
+    The version string. Not guaranteed to be semver or any other format.
+    """
+    version: String!
 }
 
 """
@@ -6833,10 +6932,19 @@ type SiteConfigurationChange implements Node {
     via an internal process (example: site startup or SITE_CONFIG_FILE being reloaded).
     """
     author: User
+
     """
-    The diff string when diffed against the site config at previousID.
+    A flag to indicate if the diff of changes to the previous site configuration
+    was reproduced or not. Sometimes it may not be possible to generate a diff
+    (for example the redacted contents are not available) in which case the
+    value of the flag will be false.
     """
-    diff: String!
+    reproducedDiff: Boolean!
+
+    """
+    The diff string when diffed against the previous site config. When this is null there was no diff to the previous change.
+    """
+    diff: String
     """
     The timestamp when this change in the site config was applied.
     """
@@ -9153,6 +9261,11 @@ extend type User implements TeamMember {
 }
 
 extend type Query {
+    """
+    Get a single team by name. Returns null if not found.
+    """
+    team(name: String!): Team
+
     """
     Get the global list of all root teams. (Those without a parent team).
     """

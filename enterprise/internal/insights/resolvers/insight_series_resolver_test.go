@@ -7,9 +7,11 @@ import (
 	"time"
 
 	"github.com/hexops/autogold"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -269,4 +271,123 @@ func TestInsightStatusResolver_IncompleteDatapoints(t *testing.T) {
 		require.NoError(t, err)
 		autogold.Want("as timeout", []string{"2020-01-01 00:00:00 +0000 UTC", "2020-01-02 00:00:00 +0000 UTC"}).Equal(t, stringify(got))
 	})
+}
+
+func Test_NumSamplesFiltering(t *testing.T) {
+	// Setup the GraphQL resolver.
+	ctx := actor.WithInternalActor(context.Background())
+	// now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond)
+	logger := logtest.Scoped(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
+	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
+	insightStore := store.NewInsightStore(insightsDB)
+	tss := store.New(insightsDB, store.NewInsightPermissionStore(postgres))
+
+	series, err := insightStore.CreateSeries(ctx, types.InsightSeries{
+		ID:                  0,
+		SeriesID:            "asdf",
+		Query:               "asdf",
+		SampleIntervalUnit:  string(types.Month),
+		SampleIntervalValue: 1,
+	})
+	require.NoError(t, err)
+
+	repo := "repo1"
+	repoId := api.RepoID(1)
+
+	times := []types.RecordingTime{
+		{Timestamp: time.Date(2023, 2, 2, 16, 25, 40, 0, time.UTC), Snapshot: true},
+		{Timestamp: time.Date(2023, 2, 2, 16, 25, 36, 0, time.UTC), Snapshot: false},
+		{Timestamp: time.Date(2023, 1, 30, 18, 12, 39, 0, time.UTC), Snapshot: false},
+		{Timestamp: time.Date(2023, 1, 25, 15, 34, 23, 0, time.UTC), Snapshot: false},
+	}
+
+	err = tss.RecordSeriesPointsAndRecordingTimes(ctx, []store.RecordSeriesPointArgs{
+		{
+			SeriesID: series.SeriesID,
+			Point: store.SeriesPoint{
+				SeriesID: series.SeriesID,
+				Time:     times[0].Timestamp,
+				Value:    10,
+			},
+			RepoName:    &repo,
+			RepoID:      &repoId,
+			PersistMode: store.SnapshotMode,
+		},
+		{
+			SeriesID: series.SeriesID,
+			Point: store.SeriesPoint{
+				SeriesID: series.SeriesID,
+				Time:     times[1].Timestamp,
+				Value:    10,
+			},
+			RepoName:    &repo,
+			RepoID:      &repoId,
+			PersistMode: store.RecordMode,
+		},
+		{
+			SeriesID: series.SeriesID,
+			Point: store.SeriesPoint{
+				SeriesID: series.SeriesID,
+				Time:     times[2].Timestamp,
+				Value:    10,
+			},
+			RepoName:    &repo,
+			RepoID:      &repoId,
+			PersistMode: store.RecordMode,
+		},
+		{
+			SeriesID: series.SeriesID,
+			Point: store.SeriesPoint{
+				SeriesID: series.SeriesID,
+				Time:     times[3].Timestamp,
+				Value:    10,
+			},
+			RepoName:    &repo,
+			RepoID:      &repoId,
+			PersistMode: store.RecordMode,
+		},
+	}, types.InsightSeriesRecordingTimes{InsightSeriesID: series.ID, RecordingTimes: times})
+	require.NoError(t, err)
+
+	base := baseInsightResolver{
+		insightStore:    insightStore,
+		timeSeriesStore: tss,
+		insightsDB:      insightsDB,
+		postgresDB:      postgres,
+	}
+
+	tests := []struct {
+		name       string
+		numSamples int
+	}{
+		{
+			name:       "one",
+			numSamples: 1,
+		},
+		{
+			name:       "two",
+			numSamples: 2,
+		},
+		{
+			name:       "three",
+			numSamples: 3,
+		},
+		{
+			name:       "four",
+			numSamples: 4,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			points, err := fetchSeries(ctx, types.InsightViewSeries{SeriesID: series.SeriesID, InsightSeriesID: series.ID}, types.InsightViewFilters{}, types.SeriesDisplayOptions{NumSamples: test.numSamples}, &base)
+			require.NoError(t, err)
+
+			assert.Equal(t, test.numSamples, len(points))
+			t.Log(points)
+			for i := range points {
+				assert.Equal(t, times[len(points)-i-1].Timestamp, points[i].Time)
+			}
+		})
+	}
 }
