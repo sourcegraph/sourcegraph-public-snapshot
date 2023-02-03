@@ -685,7 +685,7 @@ func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
 	})
 }
 
-func TestBitbucketServerSource_GetUserFork(t *testing.T) {
+func TestBitbucketServerSource_GetFork(t *testing.T) {
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
 		// The test fixtures and golden files were generated with

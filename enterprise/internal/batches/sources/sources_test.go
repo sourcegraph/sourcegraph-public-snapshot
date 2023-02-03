@@ -507,7 +507,7 @@ func TestGetRemoteRepo(t *testing.T) {
 			forkNamespace := "fork"
 			want := &types.Repo{}
 			css := NewMockForkableChangesetSource()
-			css.GetNamespaceForkFunc.SetDefaultReturn(want, nil)
+			css.GetForkFunc.SetDefaultReturn(want, nil)
 
 			// This should succeed, since loadRemoteRepo() should early return with
 			// forks disabled.
@@ -516,7 +516,7 @@ func TestGetRemoteRepo(t *testing.T) {
 			})
 			assert.Nil(t, err)
 			assert.Same(t, want, remoteRepo)
-			mockassert.CalledOnce(t, css.GetNamespaceForkFunc)
+			mockassert.CalledOnce(t, css.GetForkFunc)
 		})
 	})
 
@@ -537,27 +537,27 @@ func TestGetRemoteRepo(t *testing.T) {
 			t.Run("success", func(t *testing.T) {
 				want := &types.Repo{}
 				css := NewMockForkableChangesetSource()
-				css.GetUserForkFunc.SetDefaultReturn(want, nil)
+				css.GetForkFunc.SetDefaultReturn(want, nil)
 
 				have, err := GetRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
 					ForkNamespace: &forkNamespace,
 				})
 				assert.Nil(t, err)
 				assert.Same(t, want, have)
-				mockassert.CalledOnce(t, css.GetUserForkFunc)
+				mockassert.CalledOnce(t, css.GetForkFunc)
 			})
 
 			t.Run("error from the source", func(t *testing.T) {
 				want := errors.New("source error")
 				css := NewMockForkableChangesetSource()
-				css.GetUserForkFunc.SetDefaultReturn(nil, want)
+				css.GetForkFunc.SetDefaultReturn(nil, want)
 
 				repo, err := GetRemoteRepo(ctx, css, targetRepo, &btypes.Changeset{}, &btypes.ChangesetSpec{
 					ForkNamespace: &forkNamespace,
 				})
 				assert.Nil(t, repo)
 				assert.Contains(t, err.Error(), want.Error())
-				mockassert.CalledOnce(t, css.GetUserForkFunc)
+				mockassert.CalledOnce(t, css.GetForkFunc)
 			})
 		})
 	})
