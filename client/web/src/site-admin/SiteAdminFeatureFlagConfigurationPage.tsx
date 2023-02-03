@@ -128,7 +128,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
                             ...flagValue,
                         },
                     }).then(() => {
-                        navigate(`./${flagName || 'new'}`)
+                        navigate(`/site-admin/feature-flags/configuration/${flagName || 'new'}`)
                     })
                 }
             >
@@ -168,7 +168,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
                                 ...flagValue,
                             },
                         }).then(() => {
-                            navigate(`./${flagName}`)
+                            navigate(`/site-admin/feature-flags/configuration/${flagName}`)
                         })
                     }
                 >
@@ -191,7 +191,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
                                 name: flagName,
                             },
                         }).then(() => {
-                            navigate('../')
+                            navigate('/site-admin/feature-flags')
                         })
                     }
                 >
@@ -237,7 +237,12 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
 
             <div className="mt-3">
                 {actions}
-                <Button type="button" className="ml-2" variant="secondary" onClick={() => navigate('../')}>
+                <Button
+                    type="button"
+                    className="ml-2"
+                    variant="secondary"
+                    onClick={() => navigate('/site-admin/feature-flags')}
+                >
                     Cancel
                 </Button>
             </div>

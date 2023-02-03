@@ -1,4 +1,4 @@
-import { FunctionComponent, useEffect, useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 
 import { Navigate, useParams } from 'react-router-dom-v5-compat'
 import { catchError } from 'rxjs/operators'
@@ -11,12 +11,10 @@ import { eventLogger } from '../../tracking/eventLogger'
 
 import { fetchLsifUpload } from './backend'
 
-interface Props {}
-
 /**
  * A page displaying metadata about an LSIF upload.
  */
-export const SiteAdminLsifUploadPage: FunctionComponent<React.PropsWithChildren<Props>> = () => {
+export const SiteAdminLsifUploadPage: React.FC<{}> = () => {
     const { id = '' } = useParams<{ id: string }>()
     useEffect(() => eventLogger.logViewEvent('SiteAdminLsifUpload'))
 

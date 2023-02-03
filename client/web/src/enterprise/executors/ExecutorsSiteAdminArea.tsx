@@ -19,22 +19,19 @@ const GlobalExecutorSecretsListPage = lazyComponent<
     'GlobalExecutorSecretsListPage'
 >(() => import('./secrets/ExecutorSecretsListPage'), 'GlobalExecutorSecretsListPage')
 
-interface Props {}
+const URL = '/site-admin/executors'
 
 /** The page area for all executors settings in site-admin. */
-export const ExecutorsSiteAdminArea: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ ...outerProps }) => {
-    const url = '/site-admin/executors'
-    return (
-        <>
-            <Switch>
-                <Route render={props => <ExecutorsListPage {...outerProps} {...props} />} path={url} exact={true} />
-                <Route
-                    path={`${url}/secrets`}
-                    render={props => <GlobalExecutorSecretsListPage {...outerProps} {...props} />}
-                    exact={true}
-                />
-                <Route render={() => <NotFoundPage pageType="settings" />} key="hardcoded-key" />
-            </Switch>
-        </>
-    )
-}
+export const ExecutorsSiteAdminArea: React.FC<{}> = () => (
+    <>
+        <Switch>
+            <Route render={() => <ExecutorsListPage />} path={URL} exact={true} />
+            <Route
+                path={`${URL}/secrets`}
+                render={props => <GlobalExecutorSecretsListPage {...props} />}
+                exact={true}
+            />
+            <Route render={() => <NotFoundPage pageType="settings" />} key="hardcoded-key" />
+        </Switch>
+    </>
+)

@@ -1,5 +1,6 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { addMinutes, formatRFC3339 } from 'date-fns'
+import { Route, Routes } from 'react-router-dom-v5-compat'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -34,7 +35,7 @@ export const SiteAdminWebhookPageStory: Story = args => {
             request: {
                 query: getDocumentNode(WEBHOOK_BY_ID),
                 variables: {
-                    id: '',
+                    id: '1',
                 },
             },
             result: {
@@ -107,10 +108,15 @@ export const SiteAdminWebhookPageStory: Story = args => {
     ])
 
     return (
-        <WebStory>
+        <WebStory initialEntries={['/site-admin/webhooks/1']}>
             {() => (
                 <MockedTestProvider link={buildWebhookLogsMock}>
-                    <SiteAdminWebhookPage telemetryService={NOOP_TELEMETRY_SERVICE} />
+                    <Routes>
+                        <Route
+                            path="/site-admin/webhooks/:id"
+                            element={<SiteAdminWebhookPage telemetryService={NOOP_TELEMETRY_SERVICE} />}
+                        />
+                    </Routes>
                 </MockedTestProvider>
             )}
         </WebStory>

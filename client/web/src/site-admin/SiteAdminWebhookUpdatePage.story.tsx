@@ -12,6 +12,7 @@ import { WebStory } from '../components/WebStory'
 import { WEBHOOK_BY_ID } from './backend'
 import { createExternalService, createWebhookMock } from './fixtures'
 import { SiteAdminWebhookUpdatePage } from './SiteAdminWebhookUpdatePage'
+import { Route, Routes } from 'react-router-dom-v5-compat'
 
 const decorator: DecoratorFn = Story => <Story />
 
@@ -22,8 +23,8 @@ const config: Meta = {
 
 export default config
 
-export const WebhookUpdatePage: Story = args => (
-    <WebStory>
+export const WebhookUpdatePage: Story = () => (
+    <WebStory initialEntries={['/site-admin/webhooks/1']}>
         {() => (
             <MockedTestProvider
                 link={
@@ -68,7 +69,7 @@ export const WebhookUpdatePage: Story = args => (
                             request: {
                                 query: getDocumentNode(WEBHOOK_BY_ID),
                                 variables: {
-                                    id: '',
+                                    id: '1',
                                 },
                             },
                             result: {
@@ -84,7 +85,12 @@ export const WebhookUpdatePage: Story = args => (
                     ])
                 }
             >
-                <SiteAdminWebhookUpdatePage telemetryService={NOOP_TELEMETRY_SERVICE} />
+                <Routes>
+                    <Route
+                        path="/site-admin/webhooks/:id"
+                        element={<SiteAdminWebhookUpdatePage telemetryService={NOOP_TELEMETRY_SERVICE} />}
+                    />
+                </Routes>
             </MockedTestProvider>
         )}
     </WebStory>
