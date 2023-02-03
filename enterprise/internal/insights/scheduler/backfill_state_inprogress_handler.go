@@ -3,7 +3,6 @@ package scheduler
 import (
 	"context"
 	"fmt"
-	"math"
 	"sync"
 	"time"
 
@@ -191,56 +190,61 @@ func (h *inProgressHandler) doExecution(ctx context.Context, execution *backfill
 		// Unrelated to the page size this will limit to backfilling at most 3 repos concurrently
 		g := group.New().WithContext(ctx).WithMaxConcurrency(3)
 		mu := sync.Mutex{}
-		for {
-			repoIds, more, finish := nextFunc(pageSize, itrConfig)
-			if !more {
-				break
-			}
+		repoIds, more, finish := nextFunc(pageSize, itrConfig)
+		if !more {
+			return false, nil
+		}
+		repoErrors := map[int32]error{}
+		i := 0
+		backfilling := []int32{}
+		interrupted = false
+	BackfillLoop:
+		for i < len(repoIds) {
 			select {
 			case <-timeExpired:
-				return true, nil
+				interrupted = true
+				break BackfillLoop
 			default:
-				repoErrors := map[int32]error{}
-				startPage := time.Now()
-				for i := 0; i < len(repoIds); i++ {
-					repoId := repoIds[i]
-					g.Go(func(ctx context.Context) error {
-						repo, repoErr := h.repoStore.Get(ctx, repoId)
-						if repoErr != nil {
-							mu.Lock()
-							repoErrors[int32(repoId)] = errors.Wrap(repoErr, "InProgressHandler.repoStore.Get")
-							mu.Unlock()
-							return nil
-						}
-						execution.logger.Debug("doing iteration work", log.Int("repo_id", int(repoId)))
-						runErr := h.backfillRunner.Run(ctx, pipeline.BackfillRequest{Series: execution.series, Repo: &types.MinimalRepo{ID: repo.ID, Name: repo.Name}, SampleTimes: execution.sampleTimes})
-						if runErr != nil {
-							execution.logger.Error("error during backfill execution", execution.logFields(log.Error(runErr))...)
-							mu.Lock()
-							repoErrors[int32(repoId)] = runErr
-							mu.Unlock()
-							return nil
-						}
+				repoId := repoIds[i]
+				g.Go(func(ctx context.Context) error {
+					repo, repoErr := h.repoStore.Get(ctx, repoId)
+					if repoErr != nil {
+						mu.Lock()
+						repoErrors[int32(repoId)] = errors.Wrap(repoErr, "InProgressHandler.repoStore.Get")
+						mu.Unlock()
 						return nil
-					})
-
-				}
-				// The groups functions don't return errors so not checking for them
-				g.Wait()
-				execution.logger.Info("page complete", log.Duration("page duration", time.Since(startPage)), log.Int("page size", pageSize), log.Int("number repos", len(repoIds)))
-				err = finish(ctx, h.backfillStore.Store, repoErrors)
-				if err != nil {
-					return false, err
-				}
-				if execution.exceedsErrorThreshold() {
-					err = h.disableBackfill(ctx, execution)
-					if err != nil {
-						return false, errors.Wrap(err, "disableBackfill")
 					}
-				}
+					execution.logger.Debug("doing iteration work", log.Int("repo_id", int(repoId)))
+					runErr := h.backfillRunner.Run(ctx, pipeline.BackfillRequest{Series: execution.series, Repo: &types.MinimalRepo{ID: repo.ID, Name: repo.Name}, SampleTimes: execution.sampleTimes})
+					if runErr != nil {
+						execution.logger.Error("error during backfill execution", execution.logFields(log.Error(runErr))...)
+						mu.Lock()
+						repoErrors[int32(repoId)] = runErr
+						mu.Unlock()
+						return nil
+					}
+					return nil
+				})
+				backfilling = append(backfilling, int32(repoId))
+				i++
 			}
 		}
-		return false, nil
+		// Wait for any inflight backfills to finish
+		// The groups functions don't return errors so not checking for them
+		g.Wait()
+		execution.logger.Info("iteration complete", log.Int("page size", pageSize), log.Int("repos completed", len(backfilling)))
+		err = finish(ctx, h.backfillStore.Store, backfilling, repoErrors)
+		if err != nil {
+			return interrupted, err
+		}
+		if execution.exceedsErrorThreshold() {
+			err = h.disableBackfill(ctx, execution)
+			if err != nil {
+				return interrupted, errors.Wrap(err, "disableBackfill")
+			}
+		}
+
+		return interrupted, nil
 	}
 
 	execution.logger.Debug("starting primary loop", log.Int("seriesId", execution.series.ID), log.Int("backfillId", execution.backfill.Id))
@@ -270,7 +274,7 @@ func (h *inProgressHandler) doExecution(ctx context.Context, execution *backfill
 func retryAdapter(next func(config iterator.IterationConfig) (api.RepoID, bool, iterator.FinishFunc)) nextNFunc {
 	return func(pageSize int, config iterator.IterationConfig) ([]api.RepoID, bool, iterator.FinishNFunc) {
 		repoId, more, finish := next(config)
-		return []api.RepoID{repoId}, more, func(ctx context.Context, store *basestore.Store, maybeErr map[int32]error) error {
+		return []api.RepoID{repoId}, more, func(ctx context.Context, store *basestore.Store, finished []int32, maybeErr map[int32]error) error {
 			repoErr := maybeErr[int32(repoId)]
 			return finish(ctx, store, repoErr)
 		}
@@ -397,11 +401,12 @@ func getInterruptAfter() time.Duration {
 }
 
 func getPageSize() int {
-	val := conf.Get().InsightsBackfillRepositoryGroupSize
-	if val > 0 {
-		return int(math.Min(float64(val), 100))
-	}
-	return 10
+	return 1000
+	// val := conf.Get().InsightsBackfillRepositoryGroupSize
+	// if val > 0 {
+	// 	return int(math.Min(float64(val), 100))
+	// }
+	// return 10
 }
 
 func getErrorThresholdFloor() int {

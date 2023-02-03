@@ -16,7 +16,7 @@ import (
 )
 
 type FinishFunc func(ctx context.Context, store *basestore.Store, maybeErr error) error
-type FinishNFunc func(ctx context.Context, store *basestore.Store, maybeErr map[int32]error) error
+type FinishNFunc func(ctx context.Context, store *basestore.Store, completed []int32, maybeErr map[int32]error) error
 
 // PersistentRepoIterator represents a durable (persisted) iterator over a set of repositories. This iteration is not
 // concurrency safe and only one consumer should have access to this resource at a time.
@@ -182,7 +182,7 @@ func (p *PersistentRepoIterator) NextWithFinish(config IterationConfig) (api.Rep
 func (p *PersistentRepoIterator) NextPageWithFinish(pageSize int, config IterationConfig) ([]api.RepoID, bool, FinishNFunc) {
 	currentRepos, got := peekN(p.Cursor, pageSize, p.repos)
 	if !p.CompletedAt.IsZero() || !got {
-		return []api.RepoID{}, false, func(ctx context.Context, store *basestore.Store, maybeErrors map[int32]error) error {
+		return []api.RepoID{}, false, func(ctx context.Context, store *basestore.Store, completed []int32, maybeErrors map[int32]error) error {
 			return nil
 		}
 	}
@@ -191,9 +191,9 @@ func (p *PersistentRepoIterator) NextPageWithFinish(pageSize int, config Iterati
 	for i := 0; i < len(currentRepos); i++ {
 		repoIds = append(repoIds, api.RepoID(currentRepos[i]))
 	}
-	return repoIds, true, func(ctx context.Context, store *basestore.Store, maybeErrs map[int32]error) error {
+	return repoIds, true, func(ctx context.Context, store *basestore.Store, completed []int32, maybeErrs map[int32]error) error {
 		itrEnd := p.glock.Now()
-		if err := p.doFinishN(ctx, store, maybeErrs, currentRepos, false, config, itrStart, itrEnd); err != nil {
+		if err := p.doFinishN(ctx, store, maybeErrs, completed, false, config, itrStart, itrEnd); err != nil {
 			return err
 		}
 		return nil
@@ -339,15 +339,15 @@ func (p *PersistentRepoIterator) insertIterationError(ctx context.Context, store
 	return nil
 }
 
-func (p *PersistentRepoIterator) doFinishN(ctx context.Context, store *basestore.Store, maybeErrs map[int32]error, repos []int32, isRetry bool, config IterationConfig, start, end time.Time) (err error) {
-	cursorOffset := len(repos)
+func (p *PersistentRepoIterator) doFinishN(ctx context.Context, store *basestore.Store, maybeErrs map[int32]error, completedRepos []int32, isRetry bool, config IterationConfig, start, end time.Time) (err error) {
+	cursorOffset := len(completedRepos)
 	errorsCount := 0
 	for _, repoErr := range maybeErrs {
 		if repoErr != nil {
 			errorsCount++
 		}
 	}
-	successfulRepoCount := int(math.Max(float64(len(repos)-errorsCount), 0))
+	successfulRepoCount := int(math.Max(float64(len(completedRepos)-errorsCount), 0))
 	if isRetry {
 		cursorOffset = 0
 	}
@@ -371,7 +371,7 @@ func (p *PersistentRepoIterator) doFinishN(ctx context.Context, store *basestore
 	// For each repo that is being finished check if it errored
 	//    If errored - record the error
 	//    No error - clear any previous errors since it it now successful
-	for _, repoID := range repos {
+	for _, repoID := range completedRepos {
 		if maybeErr, ok := maybeErrs[repoID]; ok && maybeErr != nil {
 			if err = p.insertIterationError(ctx, tx, repoID, maybeErr.Error()); err != nil {
 				return errors.Wrapf(err, "unable to upsert error for repo iterator id: %d", p.Id)
