@@ -1,9 +1,7 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
 import * as jsonc from 'jsonc-parser'
-import { useHistory } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
 
@@ -211,9 +209,7 @@ const quickConfigureActions: {
     },
 ]
 
-interface Props extends ThemeProps, TelemetryProps {
-    history: H.History
-}
+interface Props extends ThemeProps, TelemetryProps {}
 
 interface State {
     site?: SiteResult['site']
@@ -227,19 +223,10 @@ interface State {
 
 const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
 
-export const SiteAdminConfigurationPage: React.FC<Omit<Props, 'history'>> = props => {
-    // TODO: Fix this to unblock RR6 migration but we first need to migrate
-    // DynamicallyImportedMonacoSettingsEditor to a function component to
-    // use the alternative API to History#block.
-    const history = useHistory()
-
-    return <InnerSiteAdminConfigurationPage {...props} history={history} />
-}
-
 /**
  * A page displaying the site configuration.
  */
-class InnerSiteAdminConfigurationPage extends React.Component<Props, State> {
+export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     public state: State = {
         loading: true,
         restartToApply: window.context.needServerRestart,
