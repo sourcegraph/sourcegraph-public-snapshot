@@ -167,6 +167,33 @@ func TestTeamNode(t *testing.T) {
 	})
 }
 
+func TestTeamNodeURL(t *testing.T) {
+	db, ts := setupDB()
+	ctx, _, _ := fakeUser(t, context.Background(), db, true)
+	team := &types.Team{
+		Name: "team-刺身", // team-sashimi
+	}
+	if err := ts.CreateTeam(ctx, team); err != nil {
+		t.Fatalf("failed to create fake team: %s", err)
+	}
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `{
+			team(name: "team-刺身") {
+				... on Team {
+					url
+				}
+			}
+		}`,
+		ExpectedResult: `{
+			"team": {
+				"url": "/teams/team-%E5%88%BA%E8%BA%AB"
+			}
+		}`,
+	})
+}
+
 func TestTeamNodeSiteAdminCanAdminister(t *testing.T) {
 	for _, isAdmin := range []bool{true, false} {
 		t.Run(fmt.Sprintf("viewer is admin = %v", isAdmin), func(t *testing.T) {
