@@ -1,0 +1,34 @@
+contents:
+  keyring:
+    - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+  repositories:
+    - https://packages.wolfi.dev/os
+  packages:
+    - redis
+    - busybox
+    - wolfi-baselayout
+
+accounts:
+  groups:
+    - groupname: redis
+      gid: 65532
+  users:
+    - username: redis
+      uid: 65532
+  run-as: redis
+
+paths:
+  - path: /redis-data
+    type: directory
+    uid: 65532
+    gid: 65532
+    permissions: 0o755
+
+work-dir:
+  /redis-data
+
+entrypoint:
+  command: redis-server
+
+archs:
+- x86_64
