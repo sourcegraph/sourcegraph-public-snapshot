@@ -1,6 +1,6 @@
-import { useEffect, useMemo } from 'react'
+import { FunctionComponent, useEffect, useMemo } from 'react'
 
-import { Navigate, useParams } from 'react-router-dom-v5-compat'
+import { RouteComponentProps, Redirect } from 'react-router'
 import { catchError } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
@@ -11,11 +11,16 @@ import { eventLogger } from '../../tracking/eventLogger'
 
 import { fetchLsifUpload } from './backend'
 
+interface Props extends RouteComponentProps<{ id: string }> {}
+
 /**
  * A page displaying metadata about an LSIF upload.
  */
-export const SiteAdminLsifUploadPage: React.FC<{}> = () => {
-    const { id = '' } = useParams<{ id: string }>()
+export const SiteAdminLsifUploadPage: FunctionComponent<React.PropsWithChildren<Props>> = ({
+    match: {
+        params: { id },
+    },
+}) => {
     useEffect(() => eventLogger.logViewEvent('SiteAdminLsifUpload'))
 
     const uploadOrError = useObservable(
@@ -32,10 +37,7 @@ export const SiteAdminLsifUploadPage: React.FC<{}> = () => {
             ) : !uploadOrError.projectRoot ? (
                 <ErrorAlert prefix="Error loading LSIF upload" error={{ message: 'Cannot resolve project root' }} />
             ) : (
-                <Navigate
-                    replace={true}
-                    to={`${uploadOrError.projectRoot.commit.repository.url}/-/code-graph/uploads/${id}`}
-                />
+                <Redirect to={`${uploadOrError.projectRoot.commit.repository.url}/-/code-graph/uploads/${id}`} />
             )}
         </div>
     )

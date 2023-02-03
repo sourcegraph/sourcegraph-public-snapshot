@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, FC } from 'react'
 
 import classNames from 'classnames'
 import { startCase } from 'lodash'
+import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Card, LoadingSpinner, useMatchMedia, Text, LineChart, BarChart, Series } from '@sourcegraph/wildcard'
@@ -20,7 +21,7 @@ import { USERS_STATISTICS } from './queries'
 
 import styles from './AnalyticsUsersPage.module.scss'
 
-export const AnalyticsUsersPage: FC = () => {
+export const AnalyticsUsersPage: FC<RouteComponentProps> = () => {
     const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Users', aggregation: 'uniqueUsers' })
     const { data, error, loading } = useQuery<UsersStatisticsResult, UsersStatisticsVariables>(USERS_STATISTICS, {
         variables: {

@@ -387,6 +387,7 @@ interface IndexNodeProps {
 
 const IndexNode: FunctionComponent<IndexNodeProps> = ({ node, repo, selection, onCheckboxToggle }) => {
     const navigate = useNavigate()
+
     return (
         <>
             <div
@@ -440,6 +441,7 @@ const IndexNode: FunctionComponent<IndexNodeProps> = ({ node, repo, selection, o
                         </small>
                     </div>
                 </div>
+
                 <span className={classNames(styles.state, 'd-none d-md-inline')}>
                     <div className="d-flex flex-column align-items-center">
                         <CodeIntelStateIcon state={node.state} autoIndexed={!!node.indexingFinishedAt} />

@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect } from 'react'
 
 import { mdiPlus } from '@mdi/js'
-import { Navigate } from 'react-router-dom-v5-compat'
+import * as H from 'history'
+import { Redirect, RouteComponentProps } from 'react-router'
 import { merge, of, Observable } from 'rxjs'
 import { catchError, concatMapTo, map, tap } from 'rxjs/operators'
 
@@ -27,6 +28,11 @@ interface UserCreateSubscriptionNodeProps {
      * The user to display in this list item.
      */
     node: ProductSubscriptionAccountFields
+
+    /**
+     * Browser history, used to redirect the user to the new subscription after one is successfully created.
+     */
+    history: H.History
 }
 
 const createProductSubscription = (
@@ -79,9 +85,7 @@ const UserCreateSubscriptionNode: React.FunctionComponent<React.PropsWithChildre
             {createdSubscription &&
                 createdSubscription !== 'saving' &&
                 !isErrorLike(createdSubscription) &&
-                createdSubscription.urlForSiteAdmin && (
-                    <Navigate replace={true} to={createdSubscription.urlForSiteAdmin} />
-                )}
+                createdSubscription.urlForSiteAdmin && <Redirect to={createdSubscription.urlForSiteAdmin} />}
             <li className="list-group-item py-2">
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
@@ -115,7 +119,7 @@ const UserCreateSubscriptionNode: React.FunctionComponent<React.PropsWithChildre
     )
 }
 
-interface Props {
+interface Props extends RouteComponentProps<{}> {
     authenticatedUser: AuthenticatedUser
 }
 
@@ -134,7 +138,7 @@ export const SiteAdminCreateProductSubscriptionPage: React.FunctionComponent<
         <div className="site-admin-create-product-subscription-page">
             <PageTitle title="Create product subscription" />
             <H2>Create product subscription</H2>
-            <FilteredConnection<ProductSubscriptionAccountFields, {}>
+            <FilteredConnection<ProductSubscriptionAccountFields, Pick<UserCreateSubscriptionNodeProps, 'history'>>
                 {...props}
                 className="list-group list-group-flush mt-3"
                 noun="user"

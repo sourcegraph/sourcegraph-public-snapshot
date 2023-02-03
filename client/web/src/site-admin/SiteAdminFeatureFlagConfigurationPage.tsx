@@ -3,7 +3,7 @@ import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } f
 import { gql, useMutation } from '@apollo/client'
 import { mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
-import { useNavigate, useParams } from 'react-router-dom-v5-compat'
+import { RouteComponentProps, useHistory } from 'react-router'
 import { of } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
@@ -39,18 +39,17 @@ import { getFeatureFlagReferences, parseProductReference } from './SiteAdminFeat
 
 import styles from './SiteAdminFeatureFlagConfigurationPage.module.scss'
 
-export interface SiteAdminFeatureFlagConfigurationProps extends TelemetryProps {
+export interface SiteAdminFeatureFlagConfigurationProps extends RouteComponentProps<{ name: string }>, TelemetryProps {
     fetchFeatureFlags?: typeof defaultFetchFeatureFlags
     productVersion?: string
 }
 
 export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
     React.PropsWithChildren<SiteAdminFeatureFlagConfigurationProps>
-> = ({ fetchFeatureFlags = defaultFetchFeatureFlags, productVersion = window.context.version }) => {
-    const { name = '' } = useParams<{ name: string }>()
-    const navigate = useNavigate()
+> = ({ match: { params }, fetchFeatureFlags = defaultFetchFeatureFlags, productVersion = window.context.version }) => {
+    const history = useHistory()
     const productGitVersion = parseProductReference(productVersion)
-    const isCreateFeatureFlag = name === 'new'
+    const isCreateFeatureFlag = params.name === 'new'
 
     // Load the initial feature flag, unless we are creating a new feature flag.
     const featureFlagOrError = useObservable(
@@ -59,16 +58,16 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
                 isCreateFeatureFlag
                     ? of(undefined)
                     : fetchFeatureFlags().pipe(
-                          map(flags => flags.find(flag => flag.name === name)),
+                          map(flags => flags.find(flag => flag.name === params.name)),
                           map(flag => {
                               if (flag === undefined) {
-                                  throw new Error(`Could not find feature flag with name '${name}'.`)
+                                  throw new Error(`Could not find feature flag with name '${params.name}'.`)
                               }
                               return flag
                           }),
                           catchError((error): [ErrorLike] => [asError(error)])
                       ),
-            [isCreateFeatureFlag, name, fetchFeatureFlags]
+            [isCreateFeatureFlag, params.name, fetchFeatureFlags]
         )
     )
 
@@ -128,7 +127,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
                             ...flagValue,
                         },
                     }).then(() => {
-                        navigate(`/site-admin/feature-flags/configuration/${flagName || 'new'}`)
+                        history.push(`./${flagName || 'new'}`)
                     })
                 }
             >
@@ -168,7 +167,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
                                 ...flagValue,
                             },
                         }).then(() => {
-                            navigate(`/site-admin/feature-flags/configuration/${flagName}`)
+                            history.push(`./${flagName}`)
                         })
                     }
                 >
@@ -191,7 +190,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
                                 name: flagName,
                             },
                         }).then(() => {
-                            navigate('/site-admin/feature-flags')
+                            history.push('../')
                         })
                     }
                 >
@@ -237,12 +236,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
 
             <div className="mt-3">
                 {actions}
-                <Button
-                    type="button"
-                    className="ml-2"
-                    variant="secondary"
-                    onClick={() => navigate('/site-admin/feature-flags')}
-                >
+                <Button type="button" className="ml-2" variant="secondary" onClick={() => history.push('../')}>
                     Cancel
                 </Button>
             </div>

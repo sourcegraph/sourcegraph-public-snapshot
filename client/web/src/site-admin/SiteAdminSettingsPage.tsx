@@ -1,5 +1,7 @@
 import * as React from 'react'
 
+import { RouteComponentProps } from 'react-router'
+
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -11,7 +13,12 @@ import { PageTitle } from '../components/PageTitle'
 import { SiteResult } from '../graphql-operations'
 import { SettingsArea } from '../settings/SettingsArea'
 
-interface Props extends PlatformContextProps, SettingsCascadeProps, ThemeProps, TelemetryProps {
+interface Props
+    extends RouteComponentProps<{}>,
+        PlatformContextProps,
+        SettingsCascadeProps,
+        ThemeProps,
+        TelemetryProps {
     authenticatedUser: AuthenticatedUser
     site: Pick<SiteResult['site'], '__typename' | 'id'>
 }
@@ -21,7 +28,6 @@ export const SiteAdminSettingsPage: React.FunctionComponent<React.PropsWithChild
         <PageTitle title="Global settings" />
         <SettingsArea
             {...props}
-            url="/global-settings"
             subject={props.site}
             authenticatedUser={props.authenticatedUser}
             extraHeader={

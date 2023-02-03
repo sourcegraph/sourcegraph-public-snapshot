@@ -2,6 +2,7 @@ import React, { useMemo, useEffect } from 'react'
 
 import classNames from 'classnames'
 import { startCase } from 'lodash'
+import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Card, H2, Text, LoadingSpinner, AnchorLink, H4, LineChart, Series } from '@sourcegraph/wildcard'
@@ -21,7 +22,7 @@ import { SEARCH_STATISTICS } from './queries'
 
 import styles from './index.module.scss'
 
-export const AnalyticsSearchPage: React.FC = () => {
+export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
     const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Search' })
     const { data, error, loading } = useQuery<SearchStatisticsResult, SearchStatisticsVariables>(SEARCH_STATISTICS, {
         variables: {
