@@ -29,7 +29,5 @@ environment:
   POSTGRES_PASSWORD: ''
   POSTGRES_DB: sg
 
-work-dir: /home/postgres
-
 archs:
   - x86_64

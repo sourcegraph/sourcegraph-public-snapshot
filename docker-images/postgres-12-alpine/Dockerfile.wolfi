@@ -22,3 +22,6 @@ RUN addgroup -g $PING_UID ping &&\
     mkdir -p /data/pgdata-12 && chown -R postgres:postgres /data
 
 COPY rootfs /
+
+USER postgres
+ENTRYPOINT ["/postgres-wolfi.sh"]
