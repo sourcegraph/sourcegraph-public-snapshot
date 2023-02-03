@@ -371,7 +371,7 @@ func Test_BackfillWithInterrupt(t *testing.T) {
 		SeriesID:            "series1",
 		Query:               "asdf",
 		SampleIntervalUnit:  string(types.Month),
-		Repositories:        []string{"repo1", "repo2"},
+		Repositories:        []string{"repo1", "repo2", "repo3", "repo4"},
 		SampleIntervalValue: 1,
 		GenerationMethod:    types.Search,
 	})
@@ -379,7 +379,7 @@ func Test_BackfillWithInterrupt(t *testing.T) {
 
 	backfill, err := bfs.NewBackfill(ctx, series)
 	require.NoError(t, err)
-	backfill, err = backfill.SetScope(ctx, bfs, []int32{1, 2}, 0)
+	backfill, err = backfill.SetScope(ctx, bfs, []int32{1, 2, 3, 4}, 0)
 	require.NoError(t, err)
 	err = backfill.setState(ctx, bfs, BackfillStateProcessing)
 	require.NoError(t, err)
