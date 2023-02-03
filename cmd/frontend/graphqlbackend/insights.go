@@ -45,7 +45,7 @@ type InsightsResolver interface {
 	// Admin Management
 	InsightSeriesQueryStatus(ctx context.Context) ([]InsightSeriesQueryStatusResolver, error)
 	InsightViewDebug(ctx context.Context, args InsightViewDebugArgs) (InsightViewDebugResolver, error)
-	InsightAdminBackfillQueue(ctx context.Context, args *AdminBackfillQueueArgs) (*graphqlutil.ConnectionResolver[BackfillQueueItemResolver], error)
+	InsightAdminBackfillQueue(ctx context.Context, args *AdminBackfillQueueArgs) (*graphqlutil.ConnectionResolver[*BackfillQueueItemResolver], error)
 	// Admin Mutations
 	UpdateInsightSeries(ctx context.Context, args *UpdateInsightSeriesArgs) (InsightSeriesMetadataPayloadResolver, error)
 	// RetryInsightSeriesBackfill(ctx context.Context, args *BackfillArgs) (InsightBackfillQueueItemResolver, error)

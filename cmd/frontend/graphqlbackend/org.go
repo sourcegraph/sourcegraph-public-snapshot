@@ -144,7 +144,7 @@ func (o *OrgResolver) CreatedAt() gqlutil.DateTime { return gqlutil.DateTime{Tim
 func (o *OrgResolver) Members(ctx context.Context, args struct {
 	graphqlutil.ConnectionResolverArgs
 	Query *string
-}) (*graphqlutil.ConnectionResolver[UserResolver], error) {
+}) (*graphqlutil.ConnectionResolver[*UserResolver], error) {
 	// 🚨 SECURITY: Only org members can list other org members.
 	if err := checkMembersAccess(ctx, o.db, o.org.ID); err != nil {
 		return nil, err
@@ -156,7 +156,7 @@ func (o *OrgResolver) Members(ctx context.Context, args struct {
 		query: args.Query,
 	}
 
-	return graphqlutil.NewConnectionResolver[UserResolver](connectionStore, &args.ConnectionResolverArgs, nil)
+	return graphqlutil.NewConnectionResolver[*UserResolver](connectionStore, &args.ConnectionResolverArgs, nil)
 }
 
 type membersConnectionStore struct {

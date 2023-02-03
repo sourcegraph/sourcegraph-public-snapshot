@@ -3,7 +3,7 @@ import { FunctionComponent, useCallback } from 'react'
 import { useApolloClient } from '@apollo/client'
 import { mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
+import { useNavigate } from 'react-router-dom-v5-compat'
 import { Observable } from 'rxjs'
 
 import { H3, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
@@ -23,13 +23,11 @@ import styles from './Dependencies.module.scss'
 
 export interface DependencyListProps {
     index: PreciseIndexFields
-    history: H.History
     queryDependencyGraph?: typeof defaultQueryDependencyGraph
 }
 
 export const DependenciesList: FunctionComponent<DependencyListProps> = ({
     index,
-    history,
     queryDependencyGraph = defaultQueryDependencyGraph,
 }) => {
     const apolloClient = useApolloClient()
@@ -40,24 +38,17 @@ export const DependenciesList: FunctionComponent<DependencyListProps> = ({
     )
 
     return (
-        <DependencyOrDependentsPanel
-            noun="dependency"
-            pluralNoun="dependencies"
-            queryConnection={queryDependencies}
-            history={history}
-        />
+        <DependencyOrDependentsPanel noun="dependency" pluralNoun="dependencies" queryConnection={queryDependencies} />
     )
 }
 
 export interface DependentListProps {
     index: PreciseIndexFields
-    history: H.History
     queryDependencyGraph?: typeof defaultQueryDependencyGraph
 }
 
 export const DependentsList: FunctionComponent<DependentListProps> = ({
     index,
-    history,
     queryDependencyGraph = defaultQueryDependencyGraph,
 }) => {
     const apolloClient = useApolloClient()
@@ -67,28 +58,19 @@ export const DependentsList: FunctionComponent<DependentListProps> = ({
         [index, queryDependencyGraph, apolloClient]
     )
 
-    return (
-        <DependencyOrDependentsPanel
-            noun="dependent"
-            pluralNoun="dependents"
-            queryConnection={queryDependents}
-            history={history}
-        />
-    )
+    return <DependencyOrDependentsPanel noun="dependent" pluralNoun="dependents" queryConnection={queryDependents} />
 }
 
 interface DependencyOrDependentsPanelProps {
     noun: string
     pluralNoun: string
     queryConnection: (args: FilteredConnectionQueryArguments) => Observable<Connection<PreciseIndexFields>>
-    history: H.History
 }
 
 const DependencyOrDependentsPanel: FunctionComponent<DependencyOrDependentsPanelProps> = ({
     noun,
     pluralNoun,
     queryConnection,
-    history,
 }) => (
     <FilteredConnection
         listComponent="div"
@@ -96,7 +78,6 @@ const DependencyOrDependentsPanel: FunctionComponent<DependencyOrDependentsPanel
         noun={noun}
         pluralNoun={pluralNoun}
         nodeComponent={DependencyOrDependentNode}
-        nodeComponentProps={{ history }}
         queryConnection={queryConnection}
         cursorPaging={true}
         useURLQuery={false}
@@ -106,47 +87,52 @@ const DependencyOrDependentsPanel: FunctionComponent<DependencyOrDependentsPanel
 
 interface DependencyOrDependentNodeProps {
     node: PreciseIndexFields
-    history: H.History
 }
 
-const DependencyOrDependentNode: FunctionComponent<DependencyOrDependentNodeProps> = ({ node, history }) => (
-    <div
-        className={classNames(styles.grid, 'px-4')}
-        onClick={() => {
-            if (node.projectRoot) {
-                history.push(`/${node.projectRoot.repository.name}/-/code-graph/indexes/${node.id}`)
-            }
-        }}
-        aria-hidden={true}
-    >
-        <div>
-            <H3 className="m-0 mb-1">
-                {node.projectRoot ? (
-                    <Link to={node.projectRoot.repository.url} onClick={event => event.stopPropagation()}>
-                        {node.projectRoot.repository.name}
-                    </Link>
-                ) : (
-                    <span>Unknown repository</span>
-                )}
-            </H3>
-        </div>
+const DependencyOrDependentNode: FunctionComponent<DependencyOrDependentNodeProps> = ({ node }) => {
+    const navigate = useNavigate()
 
-        <div>
-            <span className="mr-2 d-block d-mdinline-block">
-                <ProjectDescription index={node} onLinkClick={event => event.stopPropagation()} />
-            </span>
+    return (
+        <div
+            className={classNames(styles.grid, 'px-4')}
+            onClick={() => {
+                if (node.projectRoot) {
+                    navigate(`/${node.projectRoot.repository.name}/-/code-graph/indexes/${node.id}`)
+                }
+            }}
+            aria-hidden={true}
+        >
+            <div>
+                <H3 className="m-0 mb-1">
+                    {node.projectRoot ? (
+                        <Link to={node.projectRoot.repository.url} onClick={event => event.stopPropagation()}>
+                            {node.projectRoot.repository.name}
+                        </Link>
+                    ) : (
+                        <span>Unknown repository</span>
+                    )}
+                </H3>
+            </div>
 
-            <small className="text-mute">
-                <PreciseIndexLastUpdated index={node} />{' '}
-                {node.shouldReindex && (
-                    <Tooltip content="This index has been marked as replaceable by auto-indexing.">
-                        <span className={classNames(styles.tag, 'ml-1 rounded')}>(replaceable by auto-indexing)</span>
-                    </Tooltip>
-                )}
-            </small>
+            <div>
+                <span className="mr-2 d-block d-mdinline-block">
+                    <ProjectDescription index={node} onLinkClick={event => event.stopPropagation()} />
+                </span>
+
+                <small className="text-mute">
+                    <PreciseIndexLastUpdated index={node} />{' '}
+                    {node.shouldReindex && (
+                        <Tooltip content="This index has been marked as replaceable by auto-indexing.">
+                            <span className={classNames(styles.tag, 'ml-1 rounded')}>
+                                (replaceable by auto-indexing)
+                            </span>
+                        </Tooltip>
+                    )}
+                </small>
+            </div>
         </div>
-    </div>
-)
+    )
+}
 
 interface EmptyDependencyOrDependentsProps {
     pluralNoun: string

@@ -221,7 +221,7 @@ commands:
     <<: *oss_gitserver_template
     env:
       <<: *gitserverenv
-      HOSTNAME: 127.0.0.1:3501
+      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3501
       GITSERVER_ADDR: 127.0.0.1:3501
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
       SRC_PROF_HTTP: 127.0.0.1:3551
@@ -230,7 +230,7 @@ commands:
     <<: *oss_gitserver_template
     env:
       <<: *oss_gitserverenv
-      HOSTNAME: 127.0.0.1:3502
+      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3502
       GITSERVER_ADDR: 127.0.0.1:3502
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_2
       SRC_PROF_HTTP: 127.0.0.1:3552
@@ -244,7 +244,7 @@ commands:
     <<: *gitserver_template
     env:
       <<: *gitserverenv
-      HOSTNAME: 127.0.0.1:3501
+      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3501
       GITSERVER_ADDR: 127.0.0.1:3501
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
       SRC_PROF_HTTP: 127.0.0.1:3551
@@ -253,7 +253,7 @@ commands:
     <<: *gitserver_template
     env:
       <<: *gitserverenv
-      HOSTNAME: 127.0.0.1:3502
+      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3502
       GITSERVER_ADDR: 127.0.0.1:3502
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_2
       SRC_PROF_HTTP: 127.0.0.1:3552
