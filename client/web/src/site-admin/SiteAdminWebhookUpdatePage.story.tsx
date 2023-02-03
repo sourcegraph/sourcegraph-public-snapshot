@@ -1,4 +1,5 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
+import { Route, Routes } from 'react-router-dom-v5-compat'
 import { WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -12,7 +13,6 @@ import { WebStory } from '../components/WebStory'
 import { WEBHOOK_BY_ID } from './backend'
 import { createExternalService, createWebhookMock } from './fixtures'
 import { SiteAdminWebhookUpdatePage } from './SiteAdminWebhookUpdatePage'
-import { Route, Routes } from 'react-router-dom-v5-compat'
 
 const decorator: DecoratorFn = Story => <Story />
 
