@@ -25,7 +25,6 @@ import {
     ConnectionList,
     ConnectionLoading,
     ConnectionSummary,
-    ShowMoreButton,
     SummaryContainer,
     ConnectionError,
 } from '../../components/FilteredConnection/ui'
@@ -361,13 +360,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                 </Card>
 
                 <Card className={styles.contributors}>
-                    <CardHeader className={panelStyles.cardColHeaderWrapper}>
-                        {tree.isRoot ? (
-                            <Link to={`${tree.url}/-/stats/contributors`}>Contributors</Link>
-                        ) : (
-                            'Contributors'
-                        )}
-                    </CardHeader>
+                    <CardHeader className={panelStyles.cardColHeaderWrapper}>Contributors</CardHeader>
                     <Contributors
                         filePath={filePath}
                         tree={tree}
@@ -446,14 +439,14 @@ const Contributors: React.FunctionComponent<ContributorsProps> = ({ repo, filePa
         path: filePath,
     }
 
-    const { connection, error, loading, hasNextPage, fetchMore } = useShowMorePagination<
+    const { connection, error, loading, hasNextPage } = useShowMorePagination<
         TreePageRepositoryContributorsResult,
         TreePageRepositoryContributorsVariables,
         RepositoryContributorNodeFields
     >({
         query: CONTRIBUTORS_QUERY,
         variables: {
-            first: BATCH_COUNT,
+            first: 20,
             repo: repo.id,
             revisionRange: spec.revisionRange,
             afterDate: spec.after,
@@ -478,17 +471,19 @@ const Contributors: React.FunctionComponent<ContributorsProps> = ({ repo, filePa
         <ConnectionContainer>
             {error && <ConnectionError errors={[error.message]} />}
             {connection && connection.nodes.length > 0 && (
-                <ConnectionList className="list-group list-group-flush test-filtered-contributors-connection">
-                    {connection.nodes.map(node => (
-                        <RepositoryContributorNode
-                            key={`${node.person.displayName}:${node.count}`}
-                            node={node}
-                            repoName={repo.name}
-                            // TODO: what does `globbing` do?
-                            globbing={true}
-                            {...spec}
-                        />
-                    ))}
+                <ConnectionList className="test-filtered-contributors-connection" as="table">
+                    <tbody>
+                        {connection.nodes.map(node => (
+                            <RepositoryContributorNode
+                                key={`${node.person.displayName}:${node.count}`}
+                                node={node}
+                                repoName={repo.name}
+                                // TODO: what does `globbing` do?
+                                globbing={true}
+                                {...spec}
+                            />
+                        ))}
+                    </tbody>
                 </ConnectionList>
             )}
             {loading && (
@@ -507,7 +502,17 @@ const Contributors: React.FunctionComponent<ContributorsProps> = ({ repo, filePa
                         hasNextPage={hasNextPage}
                     />
                 )}
-                {hasNextPage && <ShowMoreButton className="m-0 p-1 border-0" onClick={fetchMore} />}
+                {hasNextPage && (
+                    <small>
+                        <Link
+                            to={`${repo.url}/-/stats/contributors?${
+                                filePath ? 'path=' + encodeURIComponent(filePath) : ''
+                            }`}
+                        >
+                            Show more
+                        </Link>
+                    </small>
+                )}
             </SummaryContainer>
         </ConnectionContainer>
     )
@@ -544,12 +549,12 @@ const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren
         .replace(/\s+/, ' ')
 
     return (
-        <li className={classNames('list-group-item py-2', contributorsStyles.repositoryContributorNode)}>
-            <div className={contributorsStyles.person}>
+        <tr className={classNames('list-group-item py-2', contributorsStyles.repositoryContributorNode)}>
+            <td className={contributorsStyles.person}>
                 <UserAvatar inline={true} className="mr-2" user={node.person.user ? node.person.user : node.person} />
                 <PersonLink userClassName="font-weight-bold" person={node.person} />
-            </div>
-            <div className={contributorsStyles.commits}>
+            </td>
+            <td className={contributorsStyles.commits}>
                 <Tooltip
                     content={
                         revisionRange?.includes('..')
@@ -565,7 +570,7 @@ const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren
                         {numberWithCommas(node.count)} {pluralize('commit', node.count)}
                     </Link>
                 </Tooltip>
-            </div>
-        </li>
+            </td>
+        </tr>
     )
 }
