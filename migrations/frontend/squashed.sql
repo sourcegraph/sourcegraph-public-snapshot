@@ -1925,7 +1925,10 @@ CREATE TABLE executor_job_tokens (
     id integer NOT NULL,
     value_sha256 bytea NOT NULL,
     job_id bigint NOT NULL,
-    queue text NOT NULL
+    queue text NOT NULL,
+    repo text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 CREATE SEQUENCE executor_job_tokens_id_seq
@@ -4314,7 +4317,7 @@ ALTER TABLE ONLY executor_heartbeats
     ADD CONSTRAINT executor_heartbeats_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY executor_job_tokens
-    ADD CONSTRAINT executor_job_tokens_job_id_queue_key UNIQUE (job_id, queue);
+    ADD CONSTRAINT executor_job_tokens_job_id_queue_repo_key UNIQUE (job_id, queue, repo);
 
 ALTER TABLE ONLY executor_job_tokens
     ADD CONSTRAINT executor_job_tokens_pkey PRIMARY KEY (id);

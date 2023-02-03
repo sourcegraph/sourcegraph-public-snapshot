@@ -1193,15 +1193,18 @@ Tracks the most recent activity of executors attached to this Sourcegraph instan
 
 # Table "public.executor_job_tokens"
 ```
-    Column    |  Type   | Collation | Nullable |                     Default                     
---------------+---------+-----------+----------+-------------------------------------------------
- id           | integer |           | not null | nextval('executor_job_tokens_id_seq'::regclass)
- value_sha256 | bytea   |           | not null | 
- job_id       | bigint  |           | not null | 
- queue        | text    |           | not null | 
+    Column    |           Type           | Collation | Nullable |                     Default                     
+--------------+--------------------------+-----------+----------+-------------------------------------------------
+ id           | integer                  |           | not null | nextval('executor_job_tokens_id_seq'::regclass)
+ value_sha256 | bytea                    |           | not null | 
+ job_id       | bigint                   |           | not null | 
+ queue        | text                     |           | not null | 
+ repo         | text                     |           | not null | 
+ created_at   | timestamp with time zone |           | not null | now()
+ updated_at   | timestamp with time zone |           | not null | now()
 Indexes:
     "executor_job_tokens_pkey" PRIMARY KEY, btree (id)
-    "executor_job_tokens_job_id_queue_key" UNIQUE CONSTRAINT, btree (job_id, queue)
+    "executor_job_tokens_job_id_queue_repo_key" UNIQUE CONSTRAINT, btree (job_id, queue, repo)
     "executor_job_tokens_value_sha256_key" UNIQUE CONSTRAINT, btree (value_sha256)
 
 ```

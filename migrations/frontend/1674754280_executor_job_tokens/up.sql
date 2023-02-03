@@ -13,13 +13,16 @@
 CREATE TABLE IF NOT EXISTS executor_job_tokens
 (
     id           SERIAL PRIMARY KEY,
-    value_sha256 bytea  NOT NULL,
-    job_id       BIGINT NOT NULL,
-    queue        TEXT   NOT NULL
+    value_sha256 bytea                                  NOT NULL,
+    job_id       BIGINT                                 NOT NULL,
+    queue        TEXT                                   NOT NULL,
+    repo         TEXT                                   NOT NULL,
+    created_at   TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+    updated_at   TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
 );
 
 ALTER TABLE ONLY executor_job_tokens
     ADD CONSTRAINT executor_job_tokens_value_sha256_key UNIQUE (value_sha256);
 
 ALTER TABLE ONLY executor_job_tokens
-    ADD CONSTRAINT executor_job_tokens_job_id_queue_key UNIQUE (job_id, queue);
+    ADD CONSTRAINT executor_job_tokens_job_id_queue_repo_key UNIQUE (job_id, queue, repo);

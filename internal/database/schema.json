@@ -8805,6 +8805,19 @@
       "Comment": "",
       "Columns": [
         {
+          "Name": "created_at",
+          "Index": 6,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "id",
           "Index": 1,
           "TypeName": "integer",
@@ -8844,6 +8857,32 @@
           "Comment": ""
         },
         {
+          "Name": "repo",
+          "Index": 5,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "updated_at",
+          "Index": 7,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "value_sha256",
           "Index": 2,
           "TypeName": "bytea",
@@ -8859,14 +8898,14 @@
       ],
       "Indexes": [
         {
-          "Name": "executor_job_tokens_job_id_queue_key",
+          "Name": "executor_job_tokens_job_id_queue_repo_key",
           "IsPrimaryKey": false,
           "IsUnique": true,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX executor_job_tokens_job_id_queue_key ON executor_job_tokens USING btree (job_id, queue)",
+          "IndexDefinition": "CREATE UNIQUE INDEX executor_job_tokens_job_id_queue_repo_key ON executor_job_tokens USING btree (job_id, queue, repo)",
           "ConstraintType": "u",
-          "ConstraintDefinition": "UNIQUE (job_id, queue)"
+          "ConstraintDefinition": "UNIQUE (job_id, queue, repo)"
         },
         {
           "Name": "executor_job_tokens_pkey",
