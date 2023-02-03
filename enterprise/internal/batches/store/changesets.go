@@ -71,10 +71,10 @@ var changesetStringColumns = SQLColumns{
 	"detached_at",
 }
 
-// changesetColumns are used by the changeset related Store methods and by
+// ChangesetColumns are used by the changeset related Store methods and by
 // workerutil.Worker to load changesets from the database for processing by
 // the reconciler.
-var changesetColumns = []*sqlf.Query{
+var ChangesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.id"),
 	sqlf.Sprintf("changesets.repo_id"),
 	sqlf.Sprintf("changesets.created_at"),
@@ -561,7 +561,7 @@ func (s *Store) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyn
 	return results, nil
 }
 
-func scanChangesetSyncData(h *btypes.ChangesetSyncData, s dbutil.Scanner) error {
+func ScanChangesetSyncData(h *btypes.ChangesetSyncData, s dbutil.Scanner) error {
 	return s.Scan(
 		&h.ChangesetID,
 		&h.UpdatedAt,
@@ -642,7 +642,7 @@ func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs
 	cs = make([]*btypes.Changeset, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		var c btypes.Changeset
-		if err = scanChangeset(&c, sc); err != nil {
+		if err = ScanChangeset(&c, sc); err != nil {
 			return err
 		}
 		cs = append(cs, &c)
@@ -750,7 +750,7 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 
 	return sqlf.Sprintf(
 		listChangesetsQueryFmtstr+opts.LimitOpts.ToDB(),
-		sqlf.Join(changesetColumns, ", "),
+		sqlf.Join(ChangesetColumns, ", "),
 		join,
 		sqlf.Join(preds, "\n AND "),
 	)
@@ -827,7 +827,7 @@ func (s *Store) UpdateChangeset(ctx context.Context, cs *btypes.Changeset) (err 
 	}
 
 	return s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
-		return scanChangeset(cs, sc)
+		return ScanChangeset(cs, sc)
 	})
 }
 
@@ -894,7 +894,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *btypes.Changese
 		vars = append(vars, c.ID)
 	}
 
-	vars = append(vars, sqlf.Join(changesetColumns, ", "))
+	vars = append(vars, sqlf.Join(ChangesetColumns, ", "))
 
 	return sqlf.Sprintf(q, vars...), nil
 }
@@ -1050,13 +1050,13 @@ func (s *Store) updateChangesetColumn(ctx context.Context, cs *btypes.Changeset,
 		cs.UpdatedAt,
 		val,
 		cs.ID,
-		sqlf.Join(changesetColumns, ", "),
+		sqlf.Join(ChangesetColumns, ", "),
 	}
 
 	q := sqlf.Sprintf(updateChangesetColumnQueryFmtstr, vars...)
 
 	return s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
-		return scanChangeset(cs, sc)
+		return ScanChangeset(cs, sc)
 	})
 }
 
@@ -1085,7 +1085,7 @@ func (s *Store) UpdateChangesetCodeHostState(ctx context.Context, cs *btypes.Cha
 	}
 
 	return s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
-		return scanChangeset(cs, sc)
+		return ScanChangeset(cs, sc)
 	})
 }
 
@@ -1121,7 +1121,7 @@ func updateChangesetCodeHostStateQuery(c *btypes.Changeset) (*sqlf.Query, error)
 		c.SyncErrorMessage,
 		dbutil.NullStringColumn(title),
 		c.ID,
-		sqlf.Join(changesetColumns, ", "),
+		sqlf.Join(ChangesetColumns, ", "),
 	}
 
 	return sqlf.Sprintf(updateChangesetCodeHostStateQueryFmtstr, vars...), nil
@@ -1370,7 +1370,7 @@ func (n jsonBatchChangeChangesetSet) Value() (driver.Value, error) {
 	return *n.Assocs, nil
 }
 
-func scanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
+func ScanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 	var metadata, syncState json.RawMessage
 
 	var (
@@ -1578,12 +1578,12 @@ func (s *Store) EnqueueNextScheduledChangeset(ctx context.Context) (ch *btypes.C
 		enqueueNextScheduledChangesetFmtstr,
 		btypes.ReconcilerStateScheduled.ToDB(),
 		btypes.ReconcilerStateQueued.ToDB(),
-		sqlf.Join(changesetColumns, ","),
+		sqlf.Join(ChangesetColumns, ","),
 	)
 
 	var c btypes.Changeset
 	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
-		return scanChangeset(&c, sc)
+		return ScanChangeset(&c, sc)
 	})
 	if err != nil {
 		return nil, err
