@@ -751,3 +751,7 @@ func (mock *mockGithubClientFork) Fork(ctx context.Context, owner, repo string, 
 
 	return mock.fork, mock.err
 }
+
+func (mock *mockGithubClientFork) GetRepo(ctx context.Context, owner, repo string) (*github.Repository, error) {
+	return nil, nil
+}

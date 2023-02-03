@@ -303,9 +303,22 @@ func (s GithubSource) GetFork(ctx context.Context, targetRepo *types.Repo, names
 
 type githubClientFork interface {
 	Fork(context.Context, string, string, *string, string) (*github.Repository, error)
+	GetRepo(context.Context, string, string) (*github.Repository, error)
 }
 
 func getGitHubForkInternal(ctx context.Context, targetRepo *types.Repo, client githubClientFork, namespace, n *string) (*types.Repo, error) {
+	if namespace != nil && n != nil {
+		// Even though we can technically use a single call to `client.Fork` to get or
+		// create the fork, it only succeeds if the fork belongs in the currently
+		// authenticated user's namespace or if the fork belongs to an organization
+		// namespace. So in case the PAT we're using has changed since the last time we
+		// tried to get a fork for this repo and it was previously created under a
+		// different user's namespace, we'll first separately check if the fork exists.
+		if fork, err := client.GetRepo(ctx, *namespace, *n); err == nil && fork != nil {
+			return checkAndCopyGitHubRepo(targetRepo, fork)
+		}
+	}
+
 	tr := targetRepo.Metadata.(*github.Repository)
 
 	targetNamespace, targetName, err := github.SplitRepositoryNameWithOwner(tr.NameWithOwner)
@@ -320,13 +333,18 @@ func getGitHubForkInternal(ctx context.Context, targetRepo *types.Repo, client g
 		name = DefaultForkName(targetNamespace, targetName)
 	}
 
-	// `client.Fork` returns an existing fork if it has already been created. It also
-	// automatically uses the currently authenticated user's namespace if none is
-	// provided.
-	fork, err := client.Fork(ctx, targetNamespace, name, namespace, name)
+	// `client.Fork` automatically uses the currently authenticated user's namespace if
+	// none is provided.
+	fork, err := client.Fork(ctx, targetNamespace, targetName, namespace, name)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching fork or forking repository")
 	}
+
+	return checkAndCopyGitHubRepo(targetRepo, fork)
+}
+
+func checkAndCopyGitHubRepo(targetRepo *types.Repo, fork *github.Repository) (*types.Repo, error) {
+	tr := targetRepo.Metadata.(*github.Repository)
 
 	if !fork.IsFork {
 		return nil, errors.New("repo is not a fork")

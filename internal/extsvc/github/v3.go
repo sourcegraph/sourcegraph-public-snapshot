@@ -707,6 +707,15 @@ func (c *V3Client) listRepositories(ctx context.Context, requestURI string) ([]*
 	return repos, respState.hasNextPage(), nil
 }
 
+func (c *V3Client) GetRepo(ctx context.Context, owner, repo string) (*Repository, error) {
+	var restRepo restRepository
+	if _, err := c.get(ctx, "repos/"+owner+"/"+repo, &restRepo); err != nil {
+		return nil, err
+	}
+
+	return convertRestRepo(restRepo), nil
+}
+
 // Fork forks the given repository. If org is given, then the repository will
 // be forked into that organisation, otherwise the repository is forked into
 // the authenticated user's account.
