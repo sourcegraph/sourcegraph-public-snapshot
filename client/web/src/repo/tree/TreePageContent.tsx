@@ -8,7 +8,7 @@ import { Observable } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
 import { memoizeObservable, numberWithCommas, pluralize } from '@sourcegraph/common'
-import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType, TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -439,12 +439,10 @@ const Contributors: React.FunctionComponent<ContributorsProps> = ({ repo, filePa
         path: filePath,
     }
 
-    const { connection, error, loading, hasNextPage } = useShowMorePagination<
+    const { data, error, loading } = useQuery<
         TreePageRepositoryContributorsResult,
-        TreePageRepositoryContributorsVariables,
-        RepositoryContributorNodeFields
-    >({
-        query: CONTRIBUTORS_QUERY,
+        TreePageRepositoryContributorsVariables
+    >(CONTRIBUTORS_QUERY, {
         variables: {
             first: 20,
             repo: repo.id,
@@ -452,20 +450,10 @@ const Contributors: React.FunctionComponent<ContributorsProps> = ({ repo, filePa
             afterDate: spec.after,
             path: filePath,
         },
-        getConnection: result => {
-            const { node } = dataOrThrowErrors(result)
-            if (!node) {
-                throw new Error(`Node ${repo.id} not found`)
-            }
-            if (!('contributors' in node)) {
-                throw new Error('Failed to fetch contributors for this repo')
-            }
-            return node.contributors
-        },
-        options: {
-            fetchPolicy: 'cache-first',
-        },
     })
+
+    const node = data?.node && data?.node.__typename === 'Repository' ? data.node : null
+    const connection = node?.contributors
 
     return (
         <ConnectionContainer>
@@ -493,25 +481,27 @@ const Contributors: React.FunctionComponent<ContributorsProps> = ({ repo, filePa
             )}
             <SummaryContainer className={styles.contributorsSummary}>
                 {connection && (
-                    <ConnectionSummary
-                        compact={true}
-                        connection={connection}
-                        first={BATCH_COUNT}
-                        noun="contributor"
-                        pluralNoun="contributors"
-                        hasNextPage={hasNextPage}
-                    />
-                )}
-                {hasNextPage && (
-                    <small>
-                        <Link
-                            to={`${repo.url}/-/stats/contributors?${
-                                filePath ? 'path=' + encodeURIComponent(filePath) : ''
-                            }`}
-                        >
-                            Show more
-                        </Link>
-                    </small>
+                    <>
+                        <ConnectionSummary
+                            compact={true}
+                            connection={connection}
+                            first={BATCH_COUNT}
+                            noun="contributor"
+                            pluralNoun="contributors"
+                            hasNextPage={connection.pageInfo.hasNextPage}
+                        />
+                        {connection.pageInfo.hasNextPage && (
+                            <small>
+                                <Link
+                                    to={`${repo.url}/-/stats/contributors?${
+                                        filePath ? 'path=' + encodeURIComponent(filePath) : ''
+                                    }`}
+                                >
+                                    Show more
+                                </Link>
+                            </small>
+                        )}
+                    </>
                 )}
             </SummaryContainer>
         </ConnectionContainer>
