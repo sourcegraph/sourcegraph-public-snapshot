@@ -3828,6 +3828,9 @@ type MockDB struct {
 	// QueryRowContextFunc is an instance of a mock function object
 	// controlling the behavior of the method QueryRowContext.
 	QueryRowContextFunc *DBQueryRowContextFunc
+	// RedisKeyValueFunc is an instance of a mock function object
+	// controlling the behavior of the method RedisKeyValue.
+	RedisKeyValueFunc *DBRedisKeyValueFunc
 	// RepoKVPsFunc is an instance of a mock function object controlling the
 	// behavior of the method RepoKVPs.
 	RepoKVPsFunc *DBRepoKVPsFunc
@@ -4026,6 +4029,11 @@ func NewMockDB() *MockDB {
 		},
 		QueryRowContextFunc: &DBQueryRowContextFunc{
 			defaultHook: func(context.Context, string, ...interface{}) (r0 *sql.Row) {
+				return
+			},
+		},
+		RedisKeyValueFunc: &DBRedisKeyValueFunc{
+			defaultHook: func() (r0 RedisKeyValueStore) {
 				return
 			},
 		},
@@ -4271,6 +4279,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.QueryRowContext")
 			},
 		},
+		RedisKeyValueFunc: &DBRedisKeyValueFunc{
+			defaultHook: func() RedisKeyValueStore {
+				panic("unexpected invocation of MockDB.RedisKeyValue")
+			},
+		},
 		RepoKVPsFunc: &DBRepoKVPsFunc{
 			defaultHook: func() RepoKVPStore {
 				panic("unexpected invocation of MockDB.RepoKVPs")
@@ -4458,6 +4471,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		QueryRowContextFunc: &DBQueryRowContextFunc{
 			defaultHook: i.QueryRowContext,
+		},
+		RedisKeyValueFunc: &DBRedisKeyValueFunc{
+			defaultHook: i.RedisKeyValue,
 		},
 		RepoKVPsFunc: &DBRepoKVPsFunc{
 			defaultHook: i.RepoKVPs,
@@ -7245,6 +7261,104 @@ func (c DBQueryRowContextFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBQueryRowContextFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBRedisKeyValueFunc describes the behavior when the RedisKeyValue method
+// of the parent MockDB instance is invoked.
+type DBRedisKeyValueFunc struct {
+	defaultHook func() RedisKeyValueStore
+	hooks       []func() RedisKeyValueStore
+	history     []DBRedisKeyValueFuncCall
+	mutex       sync.Mutex
+}
+
+// RedisKeyValue delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDB) RedisKeyValue() RedisKeyValueStore {
+	r0 := m.RedisKeyValueFunc.nextHook()()
+	m.RedisKeyValueFunc.appendCall(DBRedisKeyValueFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RedisKeyValue method
+// of the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBRedisKeyValueFunc) SetDefaultHook(hook func() RedisKeyValueStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RedisKeyValue method of the parent MockDB instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBRedisKeyValueFunc) PushHook(hook func() RedisKeyValueStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBRedisKeyValueFunc) SetDefaultReturn(r0 RedisKeyValueStore) {
+	f.SetDefaultHook(func() RedisKeyValueStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBRedisKeyValueFunc) PushReturn(r0 RedisKeyValueStore) {
+	f.PushHook(func() RedisKeyValueStore {
+		return r0
+	})
+}
+
+func (f *DBRedisKeyValueFunc) nextHook() func() RedisKeyValueStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBRedisKeyValueFunc) appendCall(r0 DBRedisKeyValueFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBRedisKeyValueFuncCall objects describing
+// the invocations of this function.
+func (f *DBRedisKeyValueFunc) History() []DBRedisKeyValueFuncCall {
+	f.mutex.Lock()
+	history := make([]DBRedisKeyValueFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBRedisKeyValueFuncCall is an object that describes an invocation of
+// method RedisKeyValue on an instance of MockDB.
+type DBRedisKeyValueFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 RedisKeyValueStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBRedisKeyValueFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBRedisKeyValueFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

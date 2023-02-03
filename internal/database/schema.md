@@ -2793,6 +2793,18 @@ Referenced by:
 
 ```
 
+# Table "public.redis_key_value"
+```
+  Column   | Type  | Collation | Nullable | Default 
+-----------+-------+-----------+----------+---------
+ namespace | text  |           | not null | 
+ key       | text  |           | not null | 
+ value     | bytea |           | not null | 
+Indexes:
+    "redis_key_value_pkey" PRIMARY KEY, btree (namespace, key) INCLUDE (value)
+
+```
+
 # Table "public.registry_extension_releases"
 ```
         Column         |           Type           | Collation | Nullable |                         Default                         

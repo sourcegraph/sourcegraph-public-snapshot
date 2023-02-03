@@ -827,7 +827,7 @@ commands:
   sourcegraph:
     description: Single program (Go static binary) distribution
     cmd: |
-      unset SRC_GIT_SERVERS INDEXED_SEARCH_SERVERS
+      unset SRC_GIT_SERVERS INDEXED_SEARCH_SERVERS REDIS_ENDPOINT
 
       # TODO: This should be fixed
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
@@ -1131,8 +1131,6 @@ commandsets:
     requiresDevPrivate: true
     checks:
       - docker
-      # TODO: App's dependency on Redis will be removed.
-      - redis
       - postgres
       - git
     commands:
