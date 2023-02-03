@@ -19,7 +19,6 @@ import { Button, Card, CardHeader, Link, Tooltip, Text } from '@sourcegraph/wild
 
 import { requestGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
-import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionList,
