@@ -544,7 +544,7 @@ function insertRootNode(tree: TreeData, rootTreeUrl: string, alwaysLoadAncestors
     if (!alwaysLoadAncestors && tree.rootPath !== '') {
         const id = tree.nodes.length
         const parentPathName = getParentPath(tree.rootPath)
-        const parentDirName = parentPathName === '' ? 'Repository root' : parentPathName.split('/').pop()
+        const parentDirName = parentPathName === '' ? 'Repository root' : parentPathName.split('/').pop()!
         const path = tree.rootPath + '/..'
         const node: TreeNode = {
             name: parentDirName,
