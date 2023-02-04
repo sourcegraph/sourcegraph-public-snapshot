@@ -6,9 +6,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
-	"github.com/stretchr/testify/assert"
-
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -16,13 +15,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestUserRoleAssignmentMigrator(t *testing.T) {
+func TestRolePermissionAssignmentMigrator(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := basestore.NewWithHandle(db.Handle())
 
-	migrator := NewUserRoleAssignmentMigrator(store, 5)
+	migrator := NewRolePermissionAssignmentMigrator(store)
 	progress, err := migrator.Progress(ctx, false)
 	assert.NoError(t, err)
 
@@ -30,21 +29,7 @@ func TestUserRoleAssignmentMigrator(t *testing.T) {
 		t.Fatalf("got invalid progress with no DB entries, want=%f have=%f", want, have)
 	}
 
-	if err = store.Exec(ctx, sqlf.Sprintf(`
-		INSERT INTO users (username, display_name, created_at, site_admin)
-		VALUES
-			(%s, %s, NOW(), %s),
-			(%s, %s, NOW(), %s)
-	`,
-		"testuser-0",
-		"testuser",
-		true,
-		"testuser-1",
-		"testuser1",
-		false,
-	)); err != nil {
-		t.Fatal(err)
-	}
+	seedPermissions(ctx, t, store)
 
 	progress, err = migrator.Progress(ctx, false)
 	assert.NoError(t, err)
@@ -64,31 +49,54 @@ func TestUserRoleAssignmentMigrator(t *testing.T) {
 		t.Fatalf("got invalid progress after up migration, want=%f have=%f", want, have)
 	}
 
-	// Three records should be inserted into the user_roles table:
-	// 1. For testuser-0 with DEFAULT role
-	// 2. For testuser-0 WITH SITE_ADMINISTRATOR role
-	// 3. For testuser-1 WITH DEFAULT role
-	q := `SELECT role_id, user_id FROM user_roles ORDER BY user_id, role_id`
-	rows, err := db.QueryContext(ctx, q)
+	// Six records should be inserted into the role_permissions table.
+	// Two default roles multiplied by 3 seeded permissions in the `seedPermissions`
+	// method
+
+	query := `SELECT role_id, permission_id FROM role_permissions ORDER BY role_id, permission_id`
+	rows, err := db.QueryContext(ctx, query)
 	assert.NoError(t, err)
 	defer rows.Close()
-	var have []*types.UserRole
+
+	var have []*types.RolePermission
 	for rows.Next() {
-		var ur = types.UserRole{}
-		if err := rows.Scan(&ur.RoleID, &ur.UserID); err != nil {
-			t.Fatal(err, "error scanning user role")
+		var rp = types.RolePermission{}
+		if err := rows.Scan(&rp.RoleID, &rp.PermissionID); err != nil {
+			t.Fatal(err, "error scanning role permission")
 		}
-		have = append(have, &ur)
+		have = append(have, &rp)
 	}
 
-	want := []*types.UserRole{
-		{UserID: 1, RoleID: 1},
-		{UserID: 1, RoleID: 2},
-		{UserID: 2, RoleID: 1},
+	want := []*types.RolePermission{
+		{RoleID: 1, PermissionID: 1},
+		{RoleID: 1, PermissionID: 2},
+		{RoleID: 1, PermissionID: 3},
+		{RoleID: 2, PermissionID: 1},
+		{RoleID: 2, PermissionID: 2},
+		{RoleID: 2, PermissionID: 3},
 	}
 
-	assert.Len(t, have, 3)
+	assert.Len(t, have, 6)
 	if diff := cmp.Diff(have, want); diff != "" {
 		t.Error(diff)
+	}
+}
+
+func seedPermissions(ctx context.Context, t *testing.T, store *basestore.Store) {
+	if err := store.Exec(ctx, sqlf.Sprintf(`
+		INSERT INTO permissions (namespace, action)
+		VALUES
+			(%s, %s),
+			(%s, %s),
+			(%s, %s)
+	`,
+		"TEST-NAMSPACE-1",
+		"READ",
+		"TEST-NAMESPACE-1",
+		"WRITE",
+		"TEST-NAMESPACE-2",
+		"READ",
+	)); err != nil {
+		t.Fatal(err)
 	}
 }

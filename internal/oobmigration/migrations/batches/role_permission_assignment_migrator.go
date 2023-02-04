@@ -27,7 +27,7 @@ func (m *rolePermissionAssignmentMigrator) ID() int                 { return 21 
 func (m *rolePermissionAssignmentMigrator) Interval() time.Duration { return time.Second * 10 }
 
 const rolePermissionAssignmentMigratorProgressQuery = `
-WITH system_roles (
+WITH system_roles AS (
 	SELECT id FROM roles WHERE system
 )
 SELECT
