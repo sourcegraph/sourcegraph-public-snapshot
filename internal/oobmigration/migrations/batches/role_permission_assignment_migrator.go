@@ -27,11 +27,13 @@ func (m *rolePermissionAssignmentMigrator) ID() int                 { return 21 
 func (m *rolePermissionAssignmentMigrator) Interval() time.Duration { return time.Second * 10 }
 
 const rolePermissionAssignmentMigratorProgressQuery = `
-WITH system_roles AS MATERIALIZED (
+WITH system_roles (
 	SELECT id FROM roles WHERE system
 )
 SELECT
 	CASE p.count WHEN 0 THEN 1 ELSE
+		-- we multiply the amount of permissions by the amount of system roles
+		-- because we expect all permissions to be assigned to all system roles
 		CAST(rp.count AS FLOAT) / CAST((p.count * r.count) AS FLOAT)
 	END
 FROM
