@@ -83,7 +83,7 @@ func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestPar
 	if params.Filter == nil {
 		totalCount, resources, err = h.getAllFromDB(r, params.StartIndex, &params.Count)
 	} else {
-		// Fetch all resources from the GB and then filter them here.
+		// Fetch all resources from the DB and then filter them here.
 		// This doesn't feel efficient, but it wasn't reasonable to implement this in SQL in the time available.
 		var allResources []scim.Resource
 		_, allResources, err = h.getAllFromDB(r, 0, nil)
