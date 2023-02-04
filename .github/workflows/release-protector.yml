@@ -17,7 +17,7 @@ jobs:
         id: checkout
         uses: actions/checkout@v2
         with:
-          ref: 4.4 # update this before releasing or something - find a way to automate
+          ref: 4.5 # update this before releasing or something - find a way to automate
 
   protect-pr:
     runs-on: ubuntu-latest
