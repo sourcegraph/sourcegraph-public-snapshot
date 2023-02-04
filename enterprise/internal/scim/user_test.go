@@ -92,14 +92,15 @@ func TestUserResourceHandler_GetAll(t *testing.T) {
 		wantResults      int
 		wantFirstID      int
 	}{
-		{name: "count=0", count: 0, startIndex: 1, filter: "", wantTotalResults: 4, wantResults: 0, wantFirstID: 0},
-		{name: "count=2", count: 2, startIndex: 1, filter: "", wantTotalResults: 4, wantResults: 2, wantFirstID: 1},
-		{name: "count=2, offset=1", count: 2, startIndex: 2, filter: "", wantTotalResults: 4, wantResults: 2, wantFirstID: 2},
-		{name: "count=999", count: 999, startIndex: 1, filter: "", wantTotalResults: 4, wantResults: 4, wantFirstID: 1},
-		{name: "count=0 with filter", count: 0, startIndex: 1, filter: "userName eq \"user3\"", wantTotalResults: 1, wantResults: 0, wantFirstID: 0},
-		{name: "userName filter", count: 999, startIndex: 1, filter: "userName eq \"user3\"", wantTotalResults: 1, wantResults: 1, wantFirstID: 3},
-		{name: "OR filter", count: 999, startIndex: 1, filter: "(userName eq \"user3\") OR (displayName eq \"First Middle Last\")", wantTotalResults: 2, wantResults: 2, wantFirstID: 2},
-		{name: "OR filter", count: 999, startIndex: 1, filter: "(userName eq \"user3\") AND (displayName eq \"First Last\")", wantTotalResults: 1, wantResults: 1, wantFirstID: 3},
+		{name: "no filter, count=0", count: 0, startIndex: 1, filter: "", wantTotalResults: 4, wantResults: 0, wantFirstID: 0},
+		{name: "no filter, count=2", count: 2, startIndex: 1, filter: "", wantTotalResults: 4, wantResults: 2, wantFirstID: 1},
+		{name: "no filter, offset=3", count: 999, startIndex: 4, filter: "", wantTotalResults: 4, wantResults: 1, wantFirstID: 4},
+		{name: "no filter, count=2, offset=1", count: 2, startIndex: 2, filter: "", wantTotalResults: 4, wantResults: 2, wantFirstID: 2},
+		{name: "no filter, count=999", count: 999, startIndex: 1, filter: "", wantTotalResults: 4, wantResults: 4, wantFirstID: 1},
+		{name: "filter, count=0", count: 0, startIndex: 1, filter: "userName eq \"user3\"", wantTotalResults: 1, wantResults: 0, wantFirstID: 0},
+		{name: "filter: userName", count: 999, startIndex: 1, filter: "userName eq \"user3\"", wantTotalResults: 1, wantResults: 1, wantFirstID: 3},
+		{name: "filter: OR", count: 999, startIndex: 1, filter: "(userName eq \"user3\") OR (displayName eq \"First Middle Last\")", wantTotalResults: 2, wantResults: 2, wantFirstID: 2},
+		{name: "filter: AND", count: 999, startIndex: 1, filter: "(userName eq \"user3\") AND (displayName eq \"First Last\")", wantTotalResults: 1, wantResults: 1, wantFirstID: 3},
 	}
 
 	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
