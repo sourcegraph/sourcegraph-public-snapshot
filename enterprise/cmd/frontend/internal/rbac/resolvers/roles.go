@@ -34,6 +34,8 @@ func (r *Resolver) Roles(ctx context.Context, args *gql.ListRoleArgs) (*graphqlu
 		}
 
 		connectionStore.userID = userID
+	} else if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil { // 🚨 SECURITY: Only site admins can query all roles.
+		return nil, err
 	}
 
 	return graphqlutil.NewConnectionResolver[gql.RoleResolver](
@@ -48,6 +50,11 @@ func (r *Resolver) Roles(ctx context.Context, args *gql.ListRoleArgs) (*graphqlu
 }
 
 func (r *Resolver) roleByID(ctx context.Context, id graphql.ID) (gql.RoleResolver, error) {
+	// 🚨 SECURITY: Only site admins can query role permissions or all permissions.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
 	roleID, err := unmarshalRoleID(id)
 	if err != nil {
 		return nil, err

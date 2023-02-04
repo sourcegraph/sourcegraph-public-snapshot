@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/rbac/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -22,8 +23,14 @@ func TestRoleResolver(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	ctx := actor.WithInternalActor(context.Background())
+	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	userID := createTestUser(t, db, false).ID
+	userCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	adminUserID := createTestUser(t, db, true).ID
+	adminCtx := actor.WithActor(ctx, actor.FromUser(adminUserID))
 
 	perm, err := db.Permissions().Create(ctx, database.CreatePermissionOpts{
 		Namespace: "BATCHCHANGES",
@@ -57,38 +64,48 @@ func TestRoleResolver(t *testing.T) {
 	mrid := string(marshalRoleID(role.ID))
 	mpid := string(marshalPermissionID(perm.ID))
 
-	want := apitest.Role{
-		Typename:  "Role",
-		ID:        mrid,
-		Name:      role.Name,
-		System:    role.System,
-		CreatedAt: gqlutil.DateTime{Time: role.CreatedAt.Truncate(time.Second)},
-		DeletedAt: nil,
-		Permissions: apitest.PermissionConnection{
-			TotalCount: 1,
-			PageInfo: apitest.PageInfo{
-				HasNextPage: false,
-				EndCursor:   nil,
-			},
-			Nodes: []apitest.Permission{
-				{
-					ID:        mpid,
-					Namespace: perm.Namespace,
-					Action:    perm.Action,
-					CreatedAt: gqlutil.DateTime{Time: perm.CreatedAt.Truncate(time.Second)},
+	t.Run("as site-administrator", func(t *testing.T) {
+		want := apitest.Role{
+			Typename:  "Role",
+			ID:        mrid,
+			Name:      role.Name,
+			System:    role.System,
+			CreatedAt: gqlutil.DateTime{Time: role.CreatedAt.Truncate(time.Second)},
+			DeletedAt: nil,
+			Permissions: apitest.PermissionConnection{
+				TotalCount: 1,
+				PageInfo: apitest.PageInfo{
+					HasNextPage:     false,
+					HasPreviousPage: false,
+				},
+				Nodes: []apitest.Permission{
+					{
+						ID:        mpid,
+						Namespace: perm.Namespace,
+						Action:    perm.Action,
+						CreatedAt: gqlutil.DateTime{Time: perm.CreatedAt.Truncate(time.Second)},
+					},
 				},
 			},
-		},
-	}
+		}
 
-	input := map[string]any{"role": mrid}
-	{
+		input := map[string]any{"role": mrid}
 		var response struct{ Node apitest.Role }
-		apitest.MustExec(ctx, t, s, input, &response, queryRoleNode)
+		apitest.MustExec(adminCtx, t, s, input, &response, queryRoleNode)
 		if diff := cmp.Diff(want, response.Node); diff != "" {
 			t.Fatalf("unexpected response (-want +got):\n%s", diff)
 		}
-	}
+	})
+
+	t.Run("non site-administrator", func(t *testing.T) {
+		input := map[string]any{"role": mrid}
+		var response struct{ Node apitest.Role }
+		errs := apitest.Exec(userCtx, t, s, input, &response, queryRoleNode)
+
+		assert.Len(t, errs, 1)
+		assert.Equal(t, errs[0].Message, "must be site admin")
+	})
+
 }
 
 const queryRoleNode = `
@@ -101,7 +118,7 @@ query ($role: ID!) {
 			name
 			system
 			createdAt
-			permissions {
+			permissions(first: 50) {
 				nodes {
 					id
 					namespace
@@ -110,7 +127,7 @@ query ($role: ID!) {
 				}
 				totalCount
 				pageInfo {
-					endCursor
+					hasPreviousPage
 					hasNextPage
 				}
 			}

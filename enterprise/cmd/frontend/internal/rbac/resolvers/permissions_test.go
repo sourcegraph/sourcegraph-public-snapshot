@@ -16,21 +16,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
-func TestPermissionConnectionResolver(t *testing.T) {
+func TestPermissionsResolver(t *testing.T) {
 	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
 	}
 
 	ctx := context.Background()
+
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	admin := createTestUser(t, db, true)
+	user := createTestUser(t, db, false)
+
+	adminCtx := actor.WithActor(ctx, actor.FromUser(admin.ID))
+	userCtx := actor.WithActor(ctx, actor.FromUser(user.ID))
 
 	s, err := newSchema(db, &Resolver{logger: logger, db: db})
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	userID := createTestUser(t, db, false).ID
 
 	ps, err := db.Permissions().BulkCreate(ctx, []database.CreatePermissionOpts{
 		{
@@ -48,55 +53,68 @@ func TestPermissionConnectionResolver(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	want := []apitest.Permission{
-		{
-			ID: string(marshalPermissionID(ps[0].ID)),
-		},
-		{
-			ID: string(marshalPermissionID(ps[1].ID)),
-		},
-		{
-			ID: string(marshalPermissionID(ps[2].ID)),
-		},
-	}
+	t.Run("as non site-administrator", func(t *testing.T) {
+		input := map[string]any{"first": 1}
+		var response struct{ Permissions apitest.PermissionConnection }
+		errs := apitest.Exec(actor.WithActor(userCtx, actor.FromUser(user.ID)), t, s, input, &response, queryPermissionConnection)
 
-	tests := []struct {
-		firstParam      int
-		wantHasNextPage bool
-		wantTotalCount  int
-		wantNodes       []apitest.Permission
-	}{
-		{firstParam: 1, wantHasNextPage: true, wantTotalCount: 3, wantNodes: want[:1]},
-		{firstParam: 2, wantHasNextPage: true, wantTotalCount: 3, wantNodes: want[:2]},
-		{firstParam: 3, wantHasNextPage: false, wantTotalCount: 3, wantNodes: want},
-		{firstParam: 4, wantHasNextPage: false, wantTotalCount: 3, wantNodes: want},
-	}
+		assert.Len(t, errs, 1)
+		assert.Equal(t, errs[0].Message, "must be site admin")
+	})
 
-	for _, tc := range tests {
-		t.Run(fmt.Sprintf("first=%d", tc.firstParam), func(t *testing.T) {
-			input := map[string]any{"first": int64(tc.firstParam)}
-			var response struct{ Permissions apitest.PermissionConnection }
-			apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryPermissionConnection)
+	t.Run("as site-administrator", func(t *testing.T) {
+		want := []apitest.Permission{
+			{
+				ID: string(marshalPermissionID(ps[2].ID)),
+			},
+			{
+				ID: string(marshalPermissionID(ps[1].ID)),
+			},
+			{
+				ID: string(marshalPermissionID(ps[0].ID)),
+			},
+		}
 
-			wantConnection := apitest.PermissionConnection{
-				TotalCount: tc.wantTotalCount,
-				PageInfo: apitest.PageInfo{
-					HasNextPage: tc.wantHasNextPage,
-					EndCursor:   response.Permissions.PageInfo.EndCursor,
-				},
-				Nodes: tc.wantNodes,
-			}
+		tests := []struct {
+			firstParam          int
+			wantHasPreviousPage bool
+			wantHasNextPage     bool
+			wantTotalCount      int
+			wantNodes           []apitest.Permission
+		}{
+			{firstParam: 1, wantHasNextPage: true, wantHasPreviousPage: false, wantTotalCount: 3, wantNodes: want[:1]},
+			{firstParam: 2, wantHasNextPage: true, wantHasPreviousPage: false, wantTotalCount: 3, wantNodes: want[:2]},
+			{firstParam: 3, wantHasNextPage: false, wantHasPreviousPage: false, wantTotalCount: 3, wantNodes: want},
+			{firstParam: 4, wantHasNextPage: false, wantHasPreviousPage: false, wantTotalCount: 3, wantNodes: want},
+		}
 
-			if diff := cmp.Diff(wantConnection, response.Permissions); diff != "" {
-				t.Fatalf("wrong permissions response (-want +got):\n%s", diff)
-			}
-		})
-	}
+		for _, tc := range tests {
+			t.Run(fmt.Sprintf("first=%d", tc.firstParam), func(t *testing.T) {
+				input := map[string]any{"first": int64(tc.firstParam)}
+				var response struct{ Permissions apitest.PermissionConnection }
+				apitest.MustExec(actor.WithActor(adminCtx, actor.FromUser(admin.ID)), t, s, input, &response, queryPermissionConnection)
+
+				wantConnection := apitest.PermissionConnection{
+					TotalCount: tc.wantTotalCount,
+					PageInfo: apitest.PageInfo{
+						HasNextPage:     tc.wantHasNextPage,
+						EndCursor:       response.Permissions.PageInfo.EndCursor,
+						HasPreviousPage: tc.wantHasPreviousPage,
+					},
+					Nodes: tc.wantNodes,
+				}
+
+				if diff := cmp.Diff(wantConnection, response.Permissions); diff != "" {
+					t.Fatalf("wrong permissions response (-want +got):\n%s", diff)
+				}
+			})
+		}
+	})
 }
 
 const queryPermissionConnection = `
-query($first: Int, $after: String) {
-	permissions(first: $first, after: $after) {
+query($first: Int!) {
+	permissions(first: $first) {
 		totalCount
 		pageInfo {
 			hasNextPage
@@ -109,6 +127,7 @@ query($first: Int, $after: String) {
 }
 `
 
+// Check if its a different user, site admin and same user
 func TestUserPermissionsListing(t *testing.T) {
 	logger := logtest.Scoped(t)
 	if testing.Short() {
@@ -197,6 +216,16 @@ func TestUserPermissionsListing(t *testing.T) {
 			t.Fatalf("wrong permissions response (-want +got):\n%s", diff)
 		}
 	})
+
+	t.Run("non site-admin listing another user's permission", func(t *testing.T) {
+		userAPIID := string(gql.MarshalUserID(adminUserID))
+		input := map[string]any{"node": userAPIID}
+
+		var response struct{}
+		errs := apitest.Exec(actorCtx, t, s, input, &response, listUserPermissions)
+		assert.Len(t, errs, 1)
+		assert.Equal(t, errs[0].Message, "must be authenticated as the authorized user or site admin")
+	})
 }
 
 const listUserPermissions = `
@@ -204,7 +233,7 @@ query ($node: ID!) {
 	node(id: $node) {
 		... on User {
 			id
-			permissions {
+			permissions(first: 10) {
 				totalCount
 				nodes {
 					id

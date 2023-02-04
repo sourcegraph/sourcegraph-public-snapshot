@@ -11,8 +11,11 @@ type Permission struct {
 }
 
 type PageInfo struct {
-	HasNextPage bool
+	HasNextPage     bool
+	HasPreviousPage bool
+
 	EndCursor   *string
+	StartCursor *string
 }
 
 type PermissionConnection struct {

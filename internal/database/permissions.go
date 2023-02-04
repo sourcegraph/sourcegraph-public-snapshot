@@ -31,20 +31,22 @@ type PermissionStore interface {
 	// WithTransact creates a transaction-enabled store for the permissionStore
 	WithTransact(context.Context, func(PermissionStore) error) error
 
-	// Create inserts the given permission into the database.
-	Create(ctx context.Context, opts CreatePermissionOpts) (*types.Permission, error)
 	// BulkCreate inserts multiple permissions into the database
 	BulkCreate(ctx context.Context, opts []CreatePermissionOpts) ([]*types.Permission, error)
-	// Delete deletes a permission with the provided ID
-	Delete(ctx context.Context, opts DeletePermissionOpts) error
 	// BulkDelete deletes a permission with the provided ID
 	BulkDelete(ctx context.Context, opts []DeletePermissionOpts) error
+	// Count returns the number of permissions in the database matching the options provided.
+	Count(ctx context.Context, opts PermissionListOpts) (int, error)
+	// Create inserts the given permission into the database.
+	Create(ctx context.Context, opts CreatePermissionOpts) (*types.Permission, error)
+	// Delete deletes a permission with the provided ID
+	Delete(ctx context.Context, opts DeletePermissionOpts) error
+	// FetchAll returns all permissions in the database. This list is not paginated and is meant for internal use only.
+	FetchAll(ctx context.Context) ([]*types.Permission, error)
 	// GetByID returns the permission matching the given ID, or PermissionNotFoundErr if no such record exists.
 	GetByID(ctx context.Context, opts GetPermissionOpts) (*types.Permission, error)
 	// List returns all the permissions in the database that matches the options.
 	List(ctx context.Context, opts PermissionListOpts) ([]*types.Permission, error)
-	// Count returns the number of permissions in the database matching the options provided.
-	Count(ctx context.Context, opts PermissionListOpts) (int, error)
 }
 
 type CreatePermissionOpts struct {
@@ -113,7 +115,7 @@ func (p *permissionStore) Create(ctx context.Context, opts CreatePermissionOpts)
 
 	permission, err := scanPermission(p.QueryRow(ctx, q))
 	if err != nil {
-		return nil, errors.Wrap(err, "scanning role")
+		return nil, errors.Wrap(err, "scanning permission")
 	}
 
 	return permission, nil
@@ -185,7 +187,7 @@ func (p *permissionStore) Delete(ctx context.Context, opts DeletePermissionOpts)
 	}
 
 	if rowsAffected == 0 {
-		return errors.Wrap(&RoleNotFoundErr{opts.ID}, "failed to delete permission")
+		return errors.Wrap(&PermissionNotFoundErr{opts.ID}, "failed to delete permission")
 	}
 	return nil
 }
@@ -250,10 +252,32 @@ func (p *permissionStore) GetByID(ctx context.Context, opts GetPermissionOpts) (
 	return permission, nil
 }
 
-// The GROUP BY clause should not be changed because it ensures permissions retrieved
-// from the database are already sorted therefore making the rbac schema migration easy.
-// We compare permissions in the database to those generated from the schema and both
-// need to be sorted.
+func (p *permissionStore) FetchAll(ctx context.Context) ([]*types.Permission, error) {
+	query := sqlf.Sprintf(
+		"SELECT %s FROM permissions",
+		sqlf.Join(permissionColumns, ", "),
+	)
+
+	rows, err := p.Query(ctx, query)
+	if err != nil {
+		return nil, errors.Wrap(err, "error running query")
+	}
+
+	defer rows.Close()
+
+	var permissions []*types.Permission
+	for rows.Next() {
+		permission, err := scanPermission(rows)
+		if err != nil {
+			return nil, errors.Wrap(err, "scanning permission")
+		}
+
+		permissions = append(permissions, permission)
+	}
+
+	return permissions, rows.Err()
+}
+
 const permissionListQueryFmtStr = `
 SELECT %s FROM permissions
 %s
@@ -272,34 +296,16 @@ func (p *permissionStore) List(ctx context.Context, opts PermissionListOpts) ([]
 		return nil
 	}
 
-	err := p.list(ctx, opts, sqlf.Join(permissionColumns, ", "), scanFunc)
+	err := p.list(ctx, opts, scanFunc)
 	return permissions, err
 }
 
-func (p *permissionStore) list(ctx context.Context, opts PermissionListOpts, selects *sqlf.Query, scanFunc func(rows *sql.Rows) error) error {
-	conds := []*sqlf.Query{}
-	joins := sqlf.Sprintf("")
+func (p *permissionStore) list(ctx context.Context, opts PermissionListOpts, scanFunc func(rows *sql.Rows) error) error {
+	conds, joins := p.computeConditionsAndJoins(opts)
 
-	if opts.RoleID != 0 {
-		conds = append(conds, sqlf.Sprintf("role_permissions.role_id = %s", opts.RoleID))
-		joins = sqlf.Sprintf("INNER JOIN role_permissions ON role_permissions.permission_id = permissions.id")
-	}
-
-	if opts.UserID != 0 {
-		conds = append(conds, sqlf.Sprintf("user_roles.user_id = %s", opts.UserID))
-		joins = sqlf.Sprintf(`
-INNER JOIN role_permissions ON role_permissions.permission_id = permissions.id
-INNER JOIN user_roles ON user_roles.role_id = role_permissions.role_id
-`)
-	}
-
-	queryArgs := &QueryArgs{}
-	if opts.PaginationArgs != nil {
-		q, err := opts.PaginationArgs.SQL()
-		if err != nil {
-			return err
-		}
-		queryArgs = q
+	queryArgs, err := opts.PaginationArgs.SQL()
+	if err != nil {
+		return err
 	}
 
 	if queryArgs.Where != nil {
@@ -312,12 +318,14 @@ INNER JOIN user_roles ON user_roles.role_id = role_permissions.role_id
 
 	query := sqlf.Sprintf(
 		permissionListQueryFmtStr,
-		selects,
+		sqlf.Join(permissionColumns, ", "),
 		joins,
 		sqlf.Join(conds, "AND "),
 	)
 
-	if opts.UserID != 0 && opts.PaginationArgs != nil {
+	if opts.UserID != 0 {
+		// We group by `permissions.id` because it's possible for a user to have multiple occurrences of a particular
+		// permission. We only want the distinct permissions assigned to a user.
 		query = sqlf.Sprintf("%s\n%s", query, sqlf.Sprintf("GROUP BY permissions.id"))
 	}
 
@@ -339,10 +347,45 @@ INNER JOIN user_roles ON user_roles.role_id = role_permissions.role_id
 	return rows.Err()
 }
 
+func (p *permissionStore) computeConditionsAndJoins(opts PermissionListOpts) ([]*sqlf.Query, *sqlf.Query) {
+	conds := []*sqlf.Query{}
+	joins := sqlf.Sprintf("")
+
+	if opts.RoleID != 0 {
+		conds = append(conds, sqlf.Sprintf("role_permissions.role_id = %s", opts.RoleID))
+		joins = sqlf.Sprintf("INNER JOIN role_permissions ON role_permissions.permission_id = permissions.id")
+	}
+
+	if opts.UserID != 0 {
+		conds = append(conds, sqlf.Sprintf("user_roles.user_id = %s", opts.UserID))
+		joins = sqlf.Sprintf(`
+INNER JOIN role_permissions ON role_permissions.permission_id = permissions.id
+INNER JOIN user_roles ON user_roles.role_id = role_permissions.role_id
+`)
+	}
+
+	return conds, joins
+}
+
+const permissionCountQueryFmtstr = `
+SELECT COUNT(DISTINCT id) FROM permissions
+%s
+WHERE %s
+`
+
 func (p *permissionStore) Count(ctx context.Context, opts PermissionListOpts) (c int, err error) {
-	opts.PaginationArgs = nil
-	err = p.list(ctx, opts, sqlf.Sprintf("COUNT(DISTINCT id)"), func(rows *sql.Rows) error {
-		return rows.Scan(&c)
-	})
-	return c, err
+	conds, joins := p.computeConditionsAndJoins(opts)
+
+	if len(conds) == 0 {
+		conds = append(conds, sqlf.Sprintf("TRUE"))
+	}
+
+	query := sqlf.Sprintf(
+		permissionCountQueryFmtstr,
+		joins,
+		sqlf.Join(conds, " AND "),
+	)
+
+	count, _, err := basestore.ScanFirstInt(p.Query(ctx, query))
+	return count, err
 }

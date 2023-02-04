@@ -13,6 +13,11 @@ import (
 )
 
 func (r *Resolver) permissionByID(ctx context.Context, id graphql.ID) (gql.PermissionResolver, error) {
+	// 🚨 SECURITY: Only site admins can query role permissions or all permissions.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
 	permissionID, err := unmarshalPermissionID(id)
 	if err != nil {
 		return nil, err
@@ -36,24 +41,6 @@ func (r *Resolver) Permissions(ctx context.Context, args *gql.ListPermissionArgs
 		db: r.db,
 	}
 
-	if args.Role != nil {
-		// 🚨 SECURITY: Only site admins can query role permissions.
-		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-			return nil, err
-		}
-
-		roleID, err := unmarshalRoleID(*args.Role)
-		if err != nil {
-			return nil, err
-		}
-
-		if roleID == 0 {
-			return nil, errors.New("invalid role id provided")
-		}
-
-		connectionStore.roleID = roleID
-	}
-
 	if args.User != nil {
 		userID, err := gql.UnmarshalUserID(*args.User)
 		if err != nil {
@@ -70,6 +57,21 @@ func (r *Resolver) Permissions(ctx context.Context, args *gql.ListPermissionArgs
 		}
 
 		connectionStore.userID = userID
+	} else if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil { // 🚨 SECURITY: Only site admins can query role permissions or all permissions.
+		return nil, err
+	}
+
+	if args.Role != nil {
+		roleID, err := unmarshalRoleID(*args.Role)
+		if err != nil {
+			return nil, err
+		}
+
+		if roleID == 0 {
+			return nil, errors.New("invalid role id provided")
+		}
+
+		connectionStore.roleID = roleID
 	}
 
 	return graphqlutil.NewConnectionResolver[gql.PermissionResolver](

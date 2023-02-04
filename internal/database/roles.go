@@ -160,25 +160,11 @@ WHERE %s
 `
 
 func (r *roleStore) list(ctx context.Context, opts RolesListOptions, selects *sqlf.Query, scanRole func(rows *sql.Rows) error) error {
-	var conds = []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
-	var joins = sqlf.Sprintf("")
+	conds, joins := r.computeConditionsAndJoins(opts)
 
-	if opts.System {
-		conds = append(conds, sqlf.Sprintf("system IS TRUE"))
-	}
-
-	if opts.UserID != 0 {
-		conds = append(conds, sqlf.Sprintf("user_roles.user_id = %s", opts.UserID))
-		joins = sqlf.Sprintf("INNER JOIN user_roles ON user_roles.role_id = roles.id")
-	}
-
-	queryArgs := &QueryArgs{}
-	if opts.PaginationArgs != nil {
-		q, err := opts.PaginationArgs.SQL()
-		if err != nil {
-			return err
-		}
-		queryArgs = q
+	queryArgs, err := opts.PaginationArgs.SQL()
+	if err != nil {
+		return err
 	}
 
 	if queryArgs.Where != nil {
@@ -207,6 +193,22 @@ func (r *roleStore) list(ctx context.Context, opts RolesListOptions, selects *sq
 	}
 
 	return rows.Err()
+}
+
+func (r *roleStore) computeConditionsAndJoins(opts RolesListOptions) ([]*sqlf.Query, *sqlf.Query) {
+	var conds = []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
+	var joins = sqlf.Sprintf("")
+
+	if opts.System {
+		conds = append(conds, sqlf.Sprintf("system IS TRUE"))
+	}
+
+	if opts.UserID != 0 {
+		conds = append(conds, sqlf.Sprintf("user_roles.user_id = %s", opts.UserID))
+		joins = sqlf.Sprintf("INNER JOIN user_roles ON user_roles.role_id = roles.id")
+	}
+
+	return conds, joins
 }
 
 const roleCreateQueryFmtStr = `
@@ -238,12 +240,22 @@ func (r *roleStore) Create(ctx context.Context, name string, isSystemRole bool) 
 	return role, nil
 }
 
+const roleCountQueryFmtstr = `
+SELECT COUNT(1) FROM roles
+%s
+WHERE %s
+`
+
 func (r *roleStore) Count(ctx context.Context, opts RolesListOptions) (c int, err error) {
-	opts.PaginationArgs = nil
-	err = r.list(ctx, opts, sqlf.Sprintf("COUNT(1)"), func(rows *sql.Rows) error {
-		return rows.Scan(&c)
-	})
-	return c, err
+	conds, joins := r.computeConditionsAndJoins(opts)
+
+	query := sqlf.Sprintf(
+		roleCountQueryFmtstr,
+		joins,
+		sqlf.Join(conds, " AND "),
+	)
+	count, _, err := basestore.ScanFirstInt(r.Query(ctx, query))
+	return count, err
 }
 
 const roleUpdateQueryFmtstr = `

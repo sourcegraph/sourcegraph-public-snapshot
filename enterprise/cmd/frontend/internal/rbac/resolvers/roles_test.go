@@ -26,12 +26,16 @@ func TestRoleConnectionResolver(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
+	userID := createTestUser(t, db, false).ID
+	userCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	adminID := createTestUser(t, db, true).ID
+	adminCtx := actor.WithActor(ctx, actor.FromUser(adminID))
+
 	s, err := newSchema(db, &Resolver{logger: logger, db: db})
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	userID := createTestUser(t, db, false).ID
 
 	// All sourcegraph instances are seeded with two system roles at migration,
 	// so we take those into account when querying roles.
@@ -48,59 +52,71 @@ func TestRoleConnectionResolver(t *testing.T) {
 	r, err := db.Roles().Create(ctx, "TEST-ROLE", false)
 	assert.NoError(t, err)
 
-	want := []apitest.Role{
-		{
-			ID: string(marshalRoleID(userRole.ID)),
-		},
-		{
-			ID: string(marshalRoleID(siteAdminRole.ID)),
-		},
-		{
-			ID: string(marshalRoleID(r.ID)),
-		},
-	}
+	t.Run("as non site-administrator", func(t *testing.T) {
+		input := map[string]any{"first": 1}
+		var response struct{ Permissions apitest.PermissionConnection }
+		errs := apitest.Exec(userCtx, t, s, input, &response, queryPermissionConnection)
 
-	tests := []struct {
-		firstParam      int
-		wantHasNextPage bool
-		wantTotalCount  int
-		wantNodes       []apitest.Role
-	}{
-		{firstParam: 1, wantHasNextPage: true, wantTotalCount: 3, wantNodes: want[:1]},
-		{firstParam: 2, wantHasNextPage: true, wantTotalCount: 3, wantNodes: want[:2]},
-		{firstParam: 3, wantHasNextPage: false, wantTotalCount: 3, wantNodes: want},
-		{firstParam: 4, wantHasNextPage: false, wantTotalCount: 3, wantNodes: want},
-	}
+		assert.Len(t, errs, 1)
+		assert.Equal(t, errs[0].Message, "must be site admin")
+	})
 
-	for _, tc := range tests {
-		t.Run(fmt.Sprintf("first=%d", tc.firstParam), func(t *testing.T) {
-			input := map[string]any{"first": int64(tc.firstParam)}
-			var response struct{ Roles apitest.RoleConnection }
-			apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryRoleConnection)
+	t.Run("as site-administrator", func(t *testing.T) {
+		want := []apitest.Role{
+			{
+				ID: string(marshalRoleID(r.ID)),
+			},
+			{
+				ID: string(marshalRoleID(siteAdminRole.ID)),
+			},
+			{
+				ID: string(marshalRoleID(userRole.ID)),
+			},
+		}
 
-			wantConnection := apitest.RoleConnection{
-				TotalCount: tc.wantTotalCount,
-				PageInfo: apitest.PageInfo{
-					HasNextPage: tc.wantHasNextPage,
-					EndCursor:   response.Roles.PageInfo.EndCursor,
-				},
-				Nodes: tc.wantNodes,
-			}
+		tests := []struct {
+			firstParam          int
+			wantHasNextPage     bool
+			wantHasPreviousPage bool
+			wantTotalCount      int
+			wantNodes           []apitest.Role
+		}{
+			{firstParam: 1, wantHasNextPage: true, wantHasPreviousPage: false, wantTotalCount: 3, wantNodes: want[:1]},
+			{firstParam: 2, wantHasNextPage: true, wantHasPreviousPage: false, wantTotalCount: 3, wantNodes: want[:2]},
+			{firstParam: 3, wantHasNextPage: false, wantHasPreviousPage: false, wantTotalCount: 3, wantNodes: want},
+			{firstParam: 4, wantHasNextPage: false, wantHasPreviousPage: false, wantTotalCount: 3, wantNodes: want},
+		}
 
-			if diff := cmp.Diff(wantConnection, response.Roles); diff != "" {
-				t.Fatalf("wrong roles response (-want +got):\n%s", diff)
-			}
-		})
-	}
+		for _, tc := range tests {
+			t.Run(fmt.Sprintf("first=%d", tc.firstParam), func(t *testing.T) {
+				input := map[string]any{"first": int64(tc.firstParam)}
+				var response struct{ Roles apitest.RoleConnection }
+				apitest.MustExec(adminCtx, t, s, input, &response, queryRoleConnection)
+
+				wantConnection := apitest.RoleConnection{
+					TotalCount: tc.wantTotalCount,
+					PageInfo: apitest.PageInfo{
+						HasNextPage:     tc.wantHasNextPage,
+						HasPreviousPage: tc.wantHasPreviousPage,
+					},
+					Nodes: tc.wantNodes,
+				}
+
+				if diff := cmp.Diff(wantConnection, response.Roles); diff != "" {
+					t.Fatalf("wrong roles response (-want +got):\n%s", diff)
+				}
+			})
+		}
+	})
 }
 
 const queryRoleConnection = `
-query($first: Int, $after: String) {
-	roles(first: $first, after: $after) {
+query($first: Int!) {
+	roles(first: $first) {
 		totalCount
 		pageInfo {
 			hasNextPage
-			endCursor
+			hasPreviousPage
 		}
 		nodes {
 			id
@@ -163,7 +179,6 @@ func TestUserRoleListing(t *testing.T) {
 	})
 
 	t.Run("listing a user's roles (site admin)", func(t *testing.T) {
-		t.Skip()
 		userAPIID := string(gql.MarshalUserID(userID))
 		input := map[string]any{"node": userAPIID}
 
@@ -186,6 +201,16 @@ func TestUserRoleListing(t *testing.T) {
 			t.Fatalf("wrong roles response (-want +got):\n%s", diff)
 		}
 	})
+
+	t.Run("non site-admin listing another user's roles", func(t *testing.T) {
+		userAPIID := string(gql.MarshalUserID(adminUserID))
+		input := map[string]any{"node": userAPIID}
+
+		var response struct{}
+		errs := apitest.Exec(actorCtx, t, s, input, &response, listUserRoles)
+		assert.Len(t, errs, 1)
+		assert.Equal(t, errs[0].Message, "must be authenticated as the authorized user or site admin")
+	})
 }
 
 const listUserRoles = `
@@ -193,7 +218,7 @@ query ($node: ID!) {
 	node(id: $node) {
 		... on User {
 			id
-			roles {
+			roles(first: 50) {
 				totalCount
 				nodes {
 					id
