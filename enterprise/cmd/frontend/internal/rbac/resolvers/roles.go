@@ -2,9 +2,10 @@ package resolvers
 
 import (
 	"context"
-	"errors"
 
 	"github.com/graph-gophers/graphql-go"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
