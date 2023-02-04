@@ -162,11 +162,7 @@ WHERE %s
 func (r *roleStore) list(ctx context.Context, opts RolesListOptions, selects *sqlf.Query, scanRole func(rows *sql.Rows) error) error {
 	conds, joins := r.computeConditionsAndJoins(opts)
 
-	queryArgs, err := opts.PaginationArgs.SQL()
-	if err != nil {
-		return err
-	}
-
+	queryArgs := opts.PaginationArgs.SQL()
 	if queryArgs.Where != nil {
 		conds = append(conds, queryArgs.Where)
 	}

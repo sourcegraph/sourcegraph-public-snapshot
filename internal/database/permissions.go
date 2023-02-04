@@ -303,11 +303,7 @@ func (p *permissionStore) List(ctx context.Context, opts PermissionListOpts) ([]
 func (p *permissionStore) list(ctx context.Context, opts PermissionListOpts, scanFunc func(rows *sql.Rows) error) error {
 	conds, joins := p.computeConditionsAndJoins(opts)
 
-	queryArgs, err := opts.PaginationArgs.SQL()
-	if err != nil {
-		return err
-	}
-
+	queryArgs := opts.PaginationArgs.SQL()
 	if queryArgs.Where != nil {
 		conds = append(conds, queryArgs.Where)
 	}
