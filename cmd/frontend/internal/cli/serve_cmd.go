@@ -226,6 +226,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		enterpriseServices.ComputeResolver,
 		enterpriseServices.InsightsAggregationResolver,
 		enterpriseServices.WebhooksResolver,
+		enterpriseServices.RBACResolver,
 	)
 	if err != nil {
 		return err
