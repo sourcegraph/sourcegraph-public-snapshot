@@ -94,6 +94,10 @@ type Permission implements Node {
     """
     action: String!
     """
+    A unique human readable string used to represent a permission.
+    """
+    displayName: String!
+    """
     The date and time when the permission was created.
     """
     createdAt: DateTime!
