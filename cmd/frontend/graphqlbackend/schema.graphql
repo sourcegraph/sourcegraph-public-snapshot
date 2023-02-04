@@ -6848,6 +6848,21 @@ type Site implements SettingsSubject {
     Reflects the site configuration `enableLegacyExtensions` experimental feature value.
     """
     enableLegacyExtensions: Boolean!
+
+    """
+    FOR INTERNAL USE ONLY: todo
+    """
+    upgradeReadiness: UpgradeReadiness!
+}
+
+"""
+todo
+"""
+type UpgradeReadiness {
+    """
+    todo
+    """
+    schemaDrift: String!
 }
 
 """

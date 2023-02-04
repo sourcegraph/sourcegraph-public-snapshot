@@ -27,25 +27,30 @@ var out = output.NewOutput(os.Stdout, output.OutputOpts{
 	ForceTTY:   true,
 })
 
+// todo
+func NewRunnerWithSchemas(observationCtx *observation.Context, logger log.Logger, schemaNames []string, schemas []*schemas.Schema) (cliutil.Runner, error) {
+	dsns, err := postgresdsn.DSNsBySchema(schemaNames)
+	if err != nil {
+		return nil, err
+	}
+	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
+		return connections.NewStoreShim(store.NewWithDB(observationCtx, db, migrationsTable))
+	}
+	r, err := connections.RunnerFromDSNsWithSchemas(logger, dsns, appName, storeFactory, schemas)
+	if err != nil {
+		return nil, err
+	}
+
+	return cliutil.NewShim(r), nil
+}
+
 func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsingConfAndStoreFactoryFunc) error {
 	observationCtx := observation.NewContext(logger)
 
 	outputFactory := func() *output.Output { return out }
 
 	newRunnerWithSchemas := func(schemaNames []string, schemas []*schemas.Schema) (cliutil.Runner, error) {
-		dsns, err := postgresdsn.DSNsBySchema(schemaNames)
-		if err != nil {
-			return nil, err
-		}
-		storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
-			return connections.NewStoreShim(store.NewWithDB(observationCtx, db, migrationsTable))
-		}
-		r, err := connections.RunnerFromDSNsWithSchemas(logger, dsns, appName, storeFactory, schemas)
-		if err != nil {
-			return nil, err
-		}
-
-		return cliutil.NewShim(r), nil
+		return NewRunnerWithSchemas(observationCtx, logger, schemaNames, schemas)
 	}
 	newRunner := func(schemaNames []string) (cliutil.Runner, error) {
 		return newRunnerWithSchemas(schemaNames, schemas.Schemas)

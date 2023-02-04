@@ -1,6 +1,7 @@
 package graphqlbackend
 
 import (
+	"bytes"
 	"context"
 	"os"
 	"strconv"
@@ -8,17 +9,23 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
+	migratorshared "github.com/sourcegraph/sourcegraph/cmd/migrator/shared"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 )
@@ -33,7 +40,11 @@ func (r *schemaResolver) siteByGQLID(_ context.Context, id graphql.ID) (Node, er
 	if siteGQLID != singletonSiteGQLID {
 		return nil, errors.Errorf("site not found: %q", siteGQLID)
 	}
-	return &siteResolver{db: r.db, gqlID: siteGQLID}, nil
+	return &siteResolver{
+		logger: r.logger,
+		db:     r.db,
+		gqlID:  siteGQLID,
+	}, nil
 }
 
 func marshalSiteGQLID(siteID string) graphql.ID { return relay.MarshalID("Site", siteID) }
@@ -48,12 +59,17 @@ func unmarshalSiteGQLID(id graphql.ID) (siteID string, err error) {
 }
 
 func (r *schemaResolver) Site() *siteResolver {
-	return &siteResolver{db: r.db, gqlID: singletonSiteGQLID}
+	return &siteResolver{
+		logger: r.logger,
+		db:     r.db,
+		gqlID:  singletonSiteGQLID,
+	}
 }
 
 type siteResolver struct {
-	db    database.DB
-	gqlID string // == singletonSiteGQLID, not the site ID
+	logger log.Logger
+	db     database.DB
+	gqlID  string // == singletonSiteGQLID, not the site ID
 }
 
 func (r *siteResolver) ID() graphql.ID { return marshalSiteGQLID(r.gqlID) }
@@ -212,4 +228,42 @@ func canUpdateSiteConfiguration() bool {
 
 func (r *siteResolver) EnableLegacyExtensions() bool {
 	return conf.ExperimentalFeatures().EnableLegacyExtensions
+}
+
+func (r *siteResolver) UpgradeReadiness() (*upgradeReadinessResolver, error) {
+	return &upgradeReadinessResolver{logger: r.logger, db: r.db}, nil
+}
+
+type upgradeReadinessResolver struct {
+	logger log.Logger
+	db     database.DB
+}
+
+func (r *upgradeReadinessResolver) SchemaDrift(ctx context.Context) (string, error) {
+	observationCtx := observation.NewContext(r.logger)
+	runner, err := migratorshared.NewRunnerWithSchemas(observationCtx, r.logger, schemas.SchemaNames, schemas.Schemas)
+	if err != nil {
+		return "", errors.Wrap(err, "new runner")
+	}
+
+	var drift bytes.Buffer
+	out := output.NewOutput(&drift, output.OutputOpts{Verbose: true})
+	err = cliutil.CheckDrift(
+		ctx,
+		runner,
+		"2939fb1300d431075994ebb7d50ab2352b8983a9", // todo: get the current service version
+		out,
+		true, // verbose
+		[]cliutil.ExpectedSchemaFactory{
+			cliutil.GitHubExpectedSchemaFactory,
+			cliutil.GCSExpectedSchemaFactory,
+			cliutil.LocalExpectedSchemaFactory,
+		},
+	)
+	if err == cliutil.ErrDatabaseDriftDetected {
+		return drift.String(), nil
+	} else if err != nil {
+		return "", errors.Wrap(err, "check drift")
+	}
+	return "", nil
 }

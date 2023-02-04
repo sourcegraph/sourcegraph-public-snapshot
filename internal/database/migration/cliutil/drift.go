@@ -215,7 +215,7 @@ func fetchExpectedSchema(
 		))
 	}
 
-	return descriptions.SchemaDescription{}, errors.Newf("failed to locate target schema description")
+	return descriptions.SchemaDescription{}, errors.New("failed to locate target schema description")
 }
 
 func canonicalize(schemaDescription descriptions.SchemaDescription) descriptions.SchemaDescription {

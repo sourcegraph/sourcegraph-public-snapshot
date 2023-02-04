@@ -158,7 +158,7 @@ func runMigration(
 	}
 
 	if !skipDriftCheck {
-		if err := checkDrift(ctx, r, plan.from.GitTagWithPatch(patch), out, expectedSchemaFactories); err != nil {
+		if err := CheckDrift(ctx, r, plan.from.GitTagWithPatch(patch), out, false, expectedSchemaFactories); err != nil {
 			return err
 		}
 	}
@@ -305,12 +305,19 @@ func setServiceVersion(ctx context.Context, r Runner, version oobmigration.Versi
 	)
 }
 
-func checkDrift(ctx context.Context, r Runner, version string, out *output.Output, expectedSchemaFactories []ExpectedSchemaFactory) error {
-	schemasWithDrift := make([]string, 0, len(schemas.SchemaNames))
+var ErrDatabaseDriftDetected = errors.New("database drift detected")
+
+// todo
+func CheckDrift(ctx context.Context, r Runner, version string, out *output.Output, verbose bool, expectedSchemaFactories []ExpectedSchemaFactory) error {
+	type schemaWithDrift struct {
+		name  string
+		drift *bytes.Buffer
+	}
+	schemasWithDrift := make([]*schemaWithDrift, 0, len(schemas.SchemaNames))
 	for _, schemaName := range schemas.SchemaNames {
 		store, err := r.Store(ctx, schemaName)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "get migration store")
 		}
 		schemaDescriptions, err := store.Describe(ctx)
 		if err != nil {
@@ -318,21 +325,26 @@ func checkDrift(ctx context.Context, r Runner, version string, out *output.Outpu
 		}
 		schema := schemaDescriptions["public"]
 
-		var buf bytes.Buffer
-		noopOutput := output.NewOutput(&buf, output.OutputOpts{})
+		var drift bytes.Buffer
+		driftOut := output.NewOutput(&drift, output.OutputOpts{})
 
-		expectedSchema, err := fetchExpectedSchema(ctx, schemaName, version, noopOutput, expectedSchemaFactories)
+		expectedSchema, err := fetchExpectedSchema(ctx, schemaName, version, driftOut, expectedSchemaFactories)
 		if err != nil {
 			return err
 		}
-		if err := compareSchemaDescriptions(noopOutput, schemaName, version, canonicalize(schema), canonicalize(expectedSchema)); err != nil {
-			schemasWithDrift = append(schemasWithDrift, schemaName)
+		if err := compareSchemaDescriptions(driftOut, schemaName, version, canonicalize(schema), canonicalize(expectedSchema)); err != nil {
+			schemasWithDrift = append(schemasWithDrift,
+				&schemaWithDrift{
+					name:  schemaName,
+					drift: &drift,
+				},
+			)
 		}
 	}
 
 	drift := false
-	for _, schemaName := range schemasWithDrift {
-		empty, err := isEmptySchema(ctx, r, schemaName)
+	for _, schemaWithDrift := range schemasWithDrift {
+		empty, err := isEmptySchema(ctx, r, schemaWithDrift.name)
 		if err != nil {
 			return err
 		}
@@ -341,7 +353,10 @@ func checkDrift(ctx context.Context, r Runner, version string, out *output.Outpu
 		}
 
 		drift = true
-		out.WriteLine(output.Linef(output.EmojiFailure, output.StyleFailure, "Schema drift detected for %s", schemaName))
+		out.WriteLine(output.Linef(output.EmojiFailure, output.StyleFailure, "Schema drift detected for %s", schemaWithDrift.name))
+		if verbose {
+			out.Write(schemaWithDrift.drift.String())
+		}
 	}
 	if !drift {
 		return nil
@@ -357,7 +372,7 @@ func checkDrift(ctx context.Context, r Runner, version string, out *output.Outpu
 			"\n",
 	))
 
-	return errors.New("database drift detected")
+	return ErrDatabaseDriftDetected
 }
 
 func isEmptySchema(ctx context.Context, r Runner, schemaName string) (bool, error) {
