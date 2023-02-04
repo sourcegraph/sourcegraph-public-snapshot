@@ -83,18 +83,18 @@ func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestPar
 	if params.Filter == nil {
 		totalCount, resources, err = h.getAllFromDB(r, params.StartIndex, &params.Count)
 	} else {
+		extensionSchemas := make([]schema.Schema, 0, len(h.schemaExtensions))
+		for _, ext := range h.schemaExtensions {
+			extensionSchemas = append(extensionSchemas, ext.Schema)
+		}
+		validator := filter.NewFilterValidator(params.Filter, h.coreSchema, extensionSchemas...)
+
 		// Fetch all resources from the DB and then filter them here.
 		// This doesn't feel efficient, but it wasn't reasonable to implement this in SQL in the time available.
 		var allResources []scim.Resource
 		_, allResources, err = h.getAllFromDB(r, 0, nil)
 
 		for _, resource := range allResources {
-			extensionSchemas := make([]schema.Schema, 0, len(h.schemaExtensions))
-			for _, ext := range h.schemaExtensions {
-				extensionSchemas = append(extensionSchemas, ext.Schema)
-			}
-
-			validator := filter.NewFilterValidator(params.Filter, h.coreSchema, extensionSchemas...)
 			if err := validator.PassesFilter(resource.Attributes); err != nil {
 				continue
 			}
