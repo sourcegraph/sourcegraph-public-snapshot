@@ -116,19 +116,13 @@ func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestPar
 }
 
 func (h *UserResourceHandler) getAllFromDB(r *http.Request, startIndex int, count *int) (totalCount int, resources []scim.Resource, err error) {
-	// Get total count
-	totalCount, err = h.db.Users().Count(r.Context(), &database.UsersListOptions{})
-	if err != nil {
-		return
-	}
-
 	// Calculate offset
 	var offset int
 	if startIndex > 0 {
 		offset = startIndex - 1
 	}
 
-	// Get users
+	// Get users and convert them to SCIM resources
 	var opt = &database.UsersListOptions{}
 	if count != nil {
 		opt = &database.UsersListOptions{
@@ -139,11 +133,18 @@ func (h *UserResourceHandler) getAllFromDB(r *http.Request, startIndex int, coun
 	if err != nil {
 		return
 	}
-
 	resources = make([]scim.Resource, 0, len(users))
 	for _, user := range users {
 		resources = append(resources, h.convertUserToSCIMResource(user))
 	}
+
+	// Get total count
+	if count == nil {
+		totalCount = len(users)
+	} else {
+		totalCount, err = h.db.Users().Count(r.Context(), &database.UsersListOptions{})
+	}
+
 	return
 }
 
