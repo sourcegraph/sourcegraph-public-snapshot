@@ -78,13 +78,10 @@ func TestComparePermissions(t *testing.T) {
 
 		assert.Len(t, added, 4)
 		assert.Len(t, deleted, 0)
-		if diff := cmp.Diff(want, added, cmpopts.SortSlices(sortCreatePermissionOptSlice)); diff != "" {
+		if diff := cmp.Diff(want, added); diff != "" {
 			t.Error(diff)
 		}
 	})
 }
 
 func sortDeletePermissionOptSlice(a, b database.DeletePermissionOpts) bool { return a.ID < b.ID }
-func sortCreatePermissionOptSlice(a, b database.CreatePermissionOpts) bool {
-	return a.Action < a.Action
-}

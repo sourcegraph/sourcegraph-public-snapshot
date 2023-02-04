@@ -22,7 +22,7 @@ func TestRoleAssignmentMigrator(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := basestore.NewWithHandle(db.Handle())
 
-	migrator := NewRoleAssignmentMigrator(store, 5)
+	migrator := NewUserRoleAssignmentMigrator(store, 5)
 	progress, err := migrator.Progress(ctx, false)
 	assert.NoError(t, err)
 
