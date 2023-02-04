@@ -74,7 +74,7 @@ func (h *UserResourceHandler) Get(r *http.Request, idStr string) (scim.Resource,
 
 // GetAll returns a paginated list of resources.
 // An empty list of resources will be represented as `null` in the JSON response if `nil` is assigned to the
-// Page.Resources. Otherwise, is an empty slice is assigned, an empty list will be represented as `[]`.
+// Page.Resources. Otherwise, if an empty slice is assigned, an empty list will be represented as `[]`.
 func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestParams) (scim.Page, error) {
 	var totalCount int
 	var resources []scim.Resource
