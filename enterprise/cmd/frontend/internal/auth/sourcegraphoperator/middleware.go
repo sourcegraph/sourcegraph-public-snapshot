@@ -197,24 +197,33 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if !result.User.SiteAdmin {
-				err = db.Users().SetIsSiteAdmin(ctx, result.User.ID, true)
+				err := db.WithTransact(ctx, func(tx database.DB) error {
+					err = tx.Users().SetIsSiteAdmin(ctx, result.User.ID, true)
+					if err != nil {
+						return err
+					}
+
+					sr, err := tx.Roles().Get(ctx, database.GetRoleOpts{
+						Name: string(types.SiteAdministratorSystemRole),
+					})
+					if err != nil {
+						return err
+					}
+
+					if _, err = tx.UserRoles().Create(ctx, database.CreateUserRoleOpts{
+						UserID: result.User.ID,
+						RoleID: sr.ID,
+					}); err != nil {
+						return err
+					}
+
+					return nil
+				})
 				if err != nil {
 					logger.Error("failed to update Sourcegraph Operator as site admin", log.Error(err))
 					http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not set as site admin.", http.StatusInternalServerError)
 					return
 				}
-
-				if _, err = db.UserRoles().AssignSystemRoleToUser(ctx, result.User.ID, types.SiteAdministratorSystemRole); err != nil {
-					logger.Error("failed to assign SITE_ADMINISTRATOR role to Sourcegraph Operator")
-					http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not set as site admin.", http.StatusInternalServerError)
-					return
-				}
-			}
-
-			if _, err = db.UserRoles().AssignSystemRoleToUser(ctx, result.User.ID, types.UserSystemRole); err != nil {
-				logger.Error("failed to assign USER role to Sourcegraph Operator")
-				http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not set as site admin.", http.StatusInternalServerError)
-				return
 			}
 
 			// 🚨 SECURITY: Call auth.SafeRedirectURL to avoid the open-redirect vulnerability.

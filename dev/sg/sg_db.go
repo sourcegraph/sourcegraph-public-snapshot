@@ -169,49 +169,70 @@ func dbAddUserAction(cmd *cli.Context) error {
 	if err != nil {
 		return err
 	}
+
 	db := database.NewDB(logger, conn)
+	err = db.WithTransact(ctx, func(tx database.DB) error {
+		username := cmd.String("username")
+		password := cmd.String("password")
 
-	username := cmd.String("username")
-	password := cmd.String("password")
+		// Create the user, generating an email based on the username.
+		email := fmt.Sprintf("%s@sourcegraph.com", username)
+		user, err := tx.Users().Create(ctx, database.NewUser{
+			Username:        username,
+			Email:           email,
+			EmailIsVerified: true,
+			Password:        password,
+		})
+		if err != nil {
+			return err
+		}
 
-	// Create the user, generating an email based on the username.
-	email := fmt.Sprintf("%s@sourcegraph.com", username)
-	user, err := db.Users().Create(ctx, database.NewUser{
-		Username:        username,
-		Email:           email,
-		EmailIsVerified: true,
-		Password:        password,
+		// Make the user site admin.
+		err = tx.Users().SetIsSiteAdmin(ctx, user.ID, true)
+		if err != nil {
+			return err
+		}
+
+		systemRoles, err := tx.Roles().List(ctx, database.RolesListOptions{
+			System: true,
+		})
+		if err != nil {
+			return err
+		}
+
+		var roleIDs []int32
+		for _, role := range systemRoles {
+			roleIDs = append(roleIDs, role.ID)
+		}
+
+		opts := database.BulkCreateForUserOpts{
+			UserID:  user.ID,
+			RoleIDs: roleIDs,
+		}
+
+		if _, err = tx.UserRoles().BulkCreateForUser(ctx, opts); err != nil {
+			return err
+		}
+
+		// Report back the new user information.
+		std.Out.WriteSuccessf(
+			// the space after the last %s is so the user can select the password easily in the shell to copy it.
+			"User '%s%s%s' (%s%s%s) has been created and its password is '%s%s%s'.",
+			output.StyleOrange,
+			username,
+			output.StyleReset,
+			output.StyleOrange,
+			email,
+			output.StyleReset,
+			output.StyleOrange,
+			password,
+			output.StyleReset,
+		)
+
+		return nil
 	})
-	if err != nil {
-		return err
-	}
 
-	// Make the user site admin.
-	err = db.Users().SetIsSiteAdmin(ctx, user.ID, true)
-	if err != nil {
-		return err
-	}
-
-	if _, err = db.UserRoles().AssignSystemRoleToUser(ctx, user.ID, types.SiteAdministratorSystemRole); err != nil {
-		return err
-	}
-
-	// Report back the new user information.
-	std.Out.WriteSuccessf(
-		// the space after the last %s is so the user can select the password easily in the shell to copy it.
-		"User '%s%s%s' (%s%s%s) has been created and its password is '%s%s%s'.",
-		output.StyleOrange,
-		username,
-		output.StyleReset,
-		output.StyleOrange,
-		email,
-		output.StyleReset,
-		output.StyleOrange,
-		password,
-		output.StyleReset,
-	)
-
-	return nil
+	return err
 }
 
 func dbUpdateUserExternalAccount(cmd *cli.Context) error {

@@ -95,8 +95,19 @@ func NewAfterCreateUserHook() func(context.Context, database.DB, *types.User) er
 				return err
 			}
 
-			// Assign site administrator role to this user
-			if _, err := tx.UserRoles().AssignSystemRoleToUser(ctx, user.ID, types.SiteAdministratorSystemRole); err != nil {
+			// Fetch site admin role
+			siteAdminRole, err := tx.Roles().Get(ctx, database.GetRoleOpts{
+				Name: string(types.SiteAdministratorSystemRole),
+			})
+			if err != nil {
+				return err
+			}
+
+			opts := database.CreateUserRoleOpts{
+				UserID: user.ID,
+				RoleID: siteAdminRole.ID,
+			}
+			if _, err := tx.UserRoles().Create(ctx, opts); err != nil {
 				return err
 			}
 		}

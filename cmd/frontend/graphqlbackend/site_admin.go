@@ -62,6 +62,7 @@ func (r *schemaResolver) RecoverUsers(ctx context.Context, args *RecoverUsersReq
 
 	return &EmptyResponse{}, nil
 }
+
 func (r *schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	User graphql.ID
 	Hard *bool
@@ -323,16 +324,37 @@ func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 		return nil, errors.New("refusing to set current user site admin status")
 	}
 
-	if err = r.db.Users().SetIsSiteAdmin(ctx, affectedUserID, args.SiteAdmin); err != nil {
-		return nil, err
-	}
+	err = r.db.WithTransact(ctx, func(tx database.DB) error {
+		if err = tx.Users().SetIsSiteAdmin(ctx, affectedUserID, args.SiteAdmin); err != nil {
+			return err
+		}
 
-	if _, err = r.db.UserRoles().AssignSystemRoleToUser(ctx, affectedUserID, types.SiteAdministratorSystemRole); err != nil {
-		return nil, err
-	}
+		// Fetch site admin role
+		role, err := tx.Roles().Get(ctx, database.GetRoleOpts{
+			Name: string(types.SiteAdministratorSystemRole),
+		})
 
-	eventName = database.SecurityEventNameRoleChangeGranted
-	return &EmptyResponse{}, nil
+		if args.SiteAdmin {
+			if _, err = tx.UserRoles().Create(ctx, database.CreateUserRoleOpts{
+				UserID: affectedUserID,
+				RoleID: role.ID,
+			}); err != nil {
+				return err
+			}
+		} else {
+			if err = tx.UserRoles().Delete(ctx, database.DeleteUserRoleOpts{
+				UserID: affectedUserID,
+				RoleID: role.ID,
+			}); err != nil {
+				return err
+			}
+		}
+
+		eventName = database.SecurityEventNameRoleChangeGranted
+		return nil
+	})
+
+	return &EmptyResponse{}, err
 }
 
 func (r *schemaResolver) InvalidateSessionsByID(ctx context.Context, args *struct {
