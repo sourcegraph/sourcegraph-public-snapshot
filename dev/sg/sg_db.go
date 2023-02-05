@@ -193,7 +193,13 @@ func dbAddUserAction(cmd *cli.Context) error {
 			return err
 		}
 
+		firstParam := 2
 		systemRoles, err := tx.Roles().List(ctx, database.RolesListOptions{
+			// Since we only have two system roles on every Sourcegraph instance, it's okay
+			// to hard-code a pagination parameter here.
+			PaginationArgs: &database.PaginationArgs{
+				First: &firstParam,
+			},
 			System: true,
 		})
 		if err != nil {
