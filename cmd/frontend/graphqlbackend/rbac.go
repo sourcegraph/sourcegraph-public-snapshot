@@ -26,12 +26,17 @@ type PermissionResolver interface {
 
 type RBACResolver interface {
 	// MUTATIONS
+	DeleteRole(ctx context.Context, args *DeleteRoleArgs) (*EmptyResponse, error)
 
 	// QUERIES
 	Roles(ctx context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error)
 	Permissions(ctx context.Context, args *ListPermissionArgs) (*graphqlutil.ConnectionResolver[PermissionResolver], error)
 
 	NodeResolvers() map[string]NodeByIDFunc
+}
+
+type DeleteRoleArgs struct {
+	Role graphql.ID
 }
 
 type ListRoleArgs struct {
