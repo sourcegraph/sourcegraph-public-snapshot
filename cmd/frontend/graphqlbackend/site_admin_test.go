@@ -702,7 +702,6 @@ func TestSetIsSiteAdmin(t *testing.T) {
 	})
 
 	t.Run("authenticated as site-admin: demoting to site-admin", func(t *testing.T) {
-		t.Skip()
 		users := database.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 		users.SetIsSiteAdminFunc.SetDefaultReturn(nil)

@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func makeUsersCreateTestDB() (*database.MockDB, *database.MockAuthzStore) {
+func makeUsersCreateTestDB() (*database.MockDB, *database.MockAuthzStore, *database.MockRoleStore, *database.MockUserRoleStore) {
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 	users.CreateFunc.SetDefaultReturn(&types.User{ID: 1, Username: "alice"}, nil)
@@ -25,14 +25,23 @@ func makeUsersCreateTestDB() (*database.MockDB, *database.MockAuthzStore) {
 	authz := database.NewMockAuthzStore()
 	authz.GrantPendingPermissionsFunc.SetDefaultReturn(nil)
 
+	roles := database.NewMockRoleStore()
+	roles.GetFunc.SetDefaultReturn(&types.Role{ID: 1}, nil)
+
+	userRoles := database.NewMockUserRoleStore()
+	userRoles.CreateFunc.SetDefaultReturn(&types.UserRole{}, nil)
+
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.AuthzFunc.SetDefaultReturn(authz)
-	return db, authz
+	db.RolesFunc.SetDefaultReturn(roles)
+	db.UserRolesFunc.SetDefaultReturn(userRoles)
+
+	return db, authz, roles, userRoles
 }
 
 func TestCreateUser(t *testing.T) {
-	db, authz := makeUsersCreateTestDB()
+	db, authz, roles, userRoles := makeUsersCreateTestDB()
 
 	RunTests(t, []*Test{
 		{
@@ -58,7 +67,9 @@ func TestCreateUser(t *testing.T) {
 		},
 	})
 
-	mockrequire.Called(t, authz.GrantPendingPermissionsFunc)
+	mockrequire.CalledOnce(t, authz.GrantPendingPermissionsFunc)
+	mockrequire.CalledOnce(t, roles.GetFunc)
+	mockrequire.CalledOnce(t, userRoles.CreateFunc)
 }
 
 func TestCreateUserResetPasswordURL(t *testing.T) {
@@ -72,7 +83,7 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 	})
 
 	t.Run("with SMTP disabled", func(t *testing.T) {
-		db, authz := makeUsersCreateTestDB()
+		db, authz, _, _ := makeUsersCreateTestDB()
 
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
@@ -127,7 +138,7 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 			txemail.MockSend = nil
 		})
 
-		db, authz := makeUsersCreateTestDB()
+		db, authz, _, _ := makeUsersCreateTestDB()
 		userEmails := database.NewMockUserEmailsStore()
 		db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
@@ -183,7 +194,7 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 			txemail.MockSend = nil
 		})
 
-		db, authz := makeUsersCreateTestDB()
+		db, authz, _, _ := makeUsersCreateTestDB()
 		userEmails := database.NewMockUserEmailsStore()
 		db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
