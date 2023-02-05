@@ -50,3 +50,7 @@ type User struct {
 	// All roles assigned to this user.
 	Roles RoleConnection
 }
+
+type EmptyResponse struct {
+	AlwaysNil string
+}

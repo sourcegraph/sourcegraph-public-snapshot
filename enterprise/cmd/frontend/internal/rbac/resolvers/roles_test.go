@@ -228,3 +228,70 @@ query ($node: ID!) {
 	}
 }
 `
+
+func TestDeleteRole(t *testing.T) {
+	logger := logtest.Scoped(t)
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	userID := createTestUser(t, db, false).ID
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	adminUserID := createTestUser(t, db, true).ID
+	adminActorCtx := actor.WithActor(ctx, actor.FromUser(adminUserID))
+
+	r := &Resolver{logger: logger, db: db}
+	s, err := newSchema(db, r)
+	assert.NoError(t, err)
+
+	// create a new role
+	role, err := db.Roles().Create(ctx, "TEST-ROLE", false)
+	assert.NoError(t, err)
+
+	t.Run("as non site-admin", func(t *testing.T) {
+		roleID := string(marshalRoleID(role.ID))
+		input := map[string]any{"role": roleID}
+
+		var response struct{ DeleteRole apitest.EmptyResponse }
+		errs := apitest.Exec(actorCtx, t, s, input, &response, deleteRoleMutation)
+
+		if len(errs) != 1 {
+			t.Fatalf("expected single errors, but got %d", len(errs))
+		}
+		if have, want := errs[0].Message, "must be site admin"; have != want {
+			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		}
+	})
+
+	t.Run("as site-admin", func(t *testing.T) {
+		roleID := string(marshalRoleID(role.ID))
+		input := map[string]any{"role": roleID}
+
+		var response struct{ DeleteRole apitest.EmptyResponse }
+
+		// First time it should work, because the role exists
+		apitest.MustExec(adminActorCtx, t, s, input, &response, deleteRoleMutation)
+
+		// Second time it should fail
+		errs := apitest.Exec(adminActorCtx, t, s, input, &response, deleteRoleMutation)
+
+		if len(errs) != 1 {
+			t.Fatalf("expected a single error, but got %d", len(errs))
+		}
+		if have, want := errs[0].Message, fmt.Sprintf("failed to delete role: role with ID %d not found", role.ID); have != want {
+			t.Fatalf("wrong error code. want=%q, have=%q", want, have)
+		}
+	})
+}
+
+const deleteRoleMutation = `
+mutation DeleteRole($role: ID!) {
+	deleteRole(role: $role) {
+		alwaysNil
+	}
+}
+`
