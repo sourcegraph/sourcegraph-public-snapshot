@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
@@ -694,25 +695,10 @@ func TestSetIsSiteAdmin(t *testing.T) {
 			t.Errorf("error: want nil but got %v", err)
 		}
 
-		securityLogCalls := securityLogEvents.LogEventFunc.History()
-		if len(securityLogCalls) != 1 {
-			t.Errorf("db.SecurityEventLogs(): expected to be called once but got called %d times", len(securityLogCalls))
-		}
-
-		setSiteAdminCalls := users.SetIsSiteAdminFunc.History()
-		if len(setSiteAdminCalls) != 1 {
-			t.Errorf("db.Users(): expected to be called once but got called %d times", len(setSiteAdminCalls))
-		}
-
-		getRoleCalls := roles.GetFunc.History()
-		if len(getRoleCalls) != 1 {
-			t.Errorf("db.Roles(): expected to be called once but got called %d times", len(getRoleCalls))
-		}
-
-		createUserCalls := userRoles.CreateFunc.History()
-		if len(createUserCalls) != 1 {
-			t.Errorf("db.UserRoles(): expected to be called once but got called %d times", len(createUserCalls))
-		}
+		mockrequire.CalledOnce(t, securityLogEvents.LogEventFunc)
+		mockrequire.CalledOnce(t, users.SetIsSiteAdminFunc)
+		mockrequire.CalledOnce(t, roles.GetFunc)
+		mockrequire.CalledOnce(t, userRoles.CreateFunc)
 	})
 
 	t.Run("authenticated as site-admin: demoting to site-admin", func(t *testing.T) {
@@ -760,24 +746,9 @@ func TestSetIsSiteAdmin(t *testing.T) {
 			t.Errorf("error: want nil but got %v", result)
 		}
 
-		securityLogCalls := securityLogEvents.LogEventFunc.History()
-		if len(securityLogCalls) != 1 {
-			t.Errorf("db.SecurityEventLogs(): expected to be called once but got called %d times", len(securityLogCalls))
-		}
-
-		setSiteAdminCalls := users.SetIsSiteAdminFunc.History()
-		if len(setSiteAdminCalls) != 1 {
-			t.Errorf("db.Users(): expected to be called once but got called %d times", len(setSiteAdminCalls))
-		}
-
-		getRoleCalls := roles.GetFunc.History()
-		if len(getRoleCalls) != 1 {
-			t.Errorf("db.Roles(): expected to be called once but got called %d times", len(getRoleCalls))
-		}
-
-		deleteUserCalls := userRoles.DeleteFunc.History()
-		if len(deleteUserCalls) != 1 {
-			t.Errorf("db.UserRoles(): expected to be called once but got called %d times", len(deleteUserCalls))
-		}
+		mockrequire.CalledOnce(t, securityLogEvents.LogEventFunc)
+		mockrequire.CalledOnce(t, users.SetIsSiteAdminFunc)
+		mockrequire.CalledOnce(t, roles.GetFunc)
+		mockrequire.CalledOnce(t, userRoles.DeleteFunc)
 	})
 }
