@@ -28,6 +28,7 @@ import (
 )
 
 type crateSyncerJob struct {
+	autoindexingSvc AutoIndexingService
 	dependenciesSvc DependenciesService
 	gitClient       GitserverClient
 	extSvcStore     ExternalServiceStore
@@ -36,6 +37,7 @@ type crateSyncerJob struct {
 
 func NewCrateSyncer(
 	observationCtx *observation.Context,
+	autoindexingSvc AutoIndexingService,
 	dependenciesSvc DependenciesService,
 	gitClient GitserverClient,
 	extSvcStore ExternalServiceStore,
@@ -55,6 +57,7 @@ func NewCrateSyncer(
 	}
 
 	job := crateSyncerJob{
+		autoindexingSvc: autoindexingSvc,
 		dependenciesSvc: dependenciesSvc,
 		gitClient:       gitClient,
 		extSvcStore:     extSvcStore,
@@ -123,6 +126,7 @@ func (b *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 		return err
 	}
 
+	var allCratePkgs []shared.MinimalPackageRepoRef
 	didInsertNewCrates := false
 	for {
 		header, err := tr.Next()
@@ -174,21 +178,36 @@ func (b *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 		if err := b.extSvcStore.Upsert(ctx, externalService); err != nil {
 			return err
 		}
-	}
 
-	attemptsRemaining := 5
-	for {
-		externalService, err = b.extSvcStore.GetByID(ctx, externalService.ID)
-		if err != nil && attemptsRemaining == 0 {
-			return err
-		} else if err != nil || externalService.LastSyncAt.After(nextSync) {
-			attemptsRemaining--
-			// mirrors backoff in job_dependency_indexing_scheduler.go
-			time.Sleep(time.Second * 30)
-			continue
+		attemptsRemaining := 5
+		for {
+			externalService, err = b.extSvcStore.GetByID(ctx, externalService.ID)
+			if err != nil && attemptsRemaining == 0 {
+				return err
+			} else if err != nil || externalService.LastSyncAt.After(nextSync) {
+				attemptsRemaining--
+				// mirrors backoff in job_dependency_indexing_scheduler.go
+				time.Sleep(time.Second * 30)
+				continue
+			}
+
+			break
 		}
 
-		break
+		var queueErrs errors.MultiError
+		for _, pkg := range allCratePkgs {
+			for _, version := range pkg.Versions {
+				if err := b.autoindexingSvc.QueueIndexesForPackage(clientCtx, shared.MinimialVersionedPackageRepo{
+					Scheme:  pkg.Scheme,
+					Name:    pkg.Name,
+					Version: version,
+				}, true); err != nil {
+					queueErrs = errors.Append(queueErrs, err)
+				}
+			}
+		}
+
+		return queueErrs
 	}
 
 	return nil
@@ -243,7 +262,7 @@ func singleRustExternalService(ctx context.Context, store ExternalServiceStore) 
 // parseCrateInformation parses the newline-delimited JSON file for a crate,
 // assuming the pattern that's used in the github.com/rust-lang/crates.io-index
 func parseCrateInformation(contents string) ([]shared.MinimalPackageRepoRef, error) {
-	crates := make(map[reposource.PackageName]*shared.MinimalPackageRepoRef, strings.Count(contents, "\n"))
+	result := make([]shared.MinimalPackageRepoRef, 1)
 
 	for _, line := range strings.Split(contents, "\n") {
 		if line == "" {
@@ -261,21 +280,11 @@ func parseCrateInformation(contents string) ([]shared.MinimalPackageRepoRef, err
 		}
 
 		name := reposource.PackageName(info.Name)
-		if crate, ok := crates[name]; ok {
-			crate.Versions = append(crate.Versions, info.Version)
-		} else {
-			crates[name] = &shared.MinimalPackageRepoRef{
-				Scheme:   shared.RustPackagesScheme,
-				Name:     name,
-				Versions: []string{info.Version},
-			}
-		}
-	}
-
-	result := make([]shared.MinimalPackageRepoRef, 0, len(crates))
-
-	for _, crate := range crates {
-		result = append(result, *crate)
+		result = append(result, shared.MinimalPackageRepoRef{
+			Scheme:   shared.RustPackagesScheme,
+			Name:     name,
+			Versions: []string{info.Version},
+		})
 	}
 
 	return result, nil

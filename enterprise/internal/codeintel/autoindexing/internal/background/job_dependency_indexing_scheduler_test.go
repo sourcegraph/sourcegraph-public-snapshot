@@ -92,15 +92,14 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 	if len(indexEnqueuer.QueueIndexesForPackageFunc.History()) != 7 {
 		t.Errorf("unexpected number of calls to QueueIndexesForPackage. want=%d have=%d", 6, len(indexEnqueuer.QueueIndexesForPackageFunc.History()))
 	} else {
-		var packages []precise.Package
+		var packages []dependencies.MinimialVersionedPackageRepo
 		for _, call := range indexEnqueuer.QueueIndexesForPackageFunc.History() {
 			packages = append(packages, call.Arg1)
 		}
 		sort.Slice(packages, func(i, j int) bool {
 			for _, pair := range [][2]string{
 				{packages[i].Scheme, packages[j].Scheme},
-				{packages[i].Manager, packages[j].Manager},
-				{packages[i].Name, packages[j].Name},
+				{string(packages[i].Name), string(packages[j].Name)},
 				{packages[i].Version, packages[j].Version},
 			} {
 				if pair[0] < pair[1] {
@@ -198,15 +197,14 @@ func TestDependencyIndexingSchedulerHandlerCustomer(t *testing.T) {
 	if len(indexEnqueuer.QueueIndexesForPackageFunc.History()) != 6 {
 		t.Errorf("unexpected number of calls to QueueIndexesForPackage. want=%d have=%d", 6, len(indexEnqueuer.QueueIndexesForPackageFunc.History()))
 	} else {
-		var packages []precise.Package
+		var packages []dependencies.MinimialVersionedPackageRepo
 		for _, call := range indexEnqueuer.QueueIndexesForPackageFunc.History() {
 			packages = append(packages, call.Arg1)
 		}
 		sort.Slice(packages, func(i, j int) bool {
 			for _, pair := range [][2]string{
 				{packages[i].Scheme, packages[j].Scheme},
-				{packages[i].Manager, packages[j].Manager},
-				{packages[i].Name, packages[j].Name},
+				{string(packages[i].Name), string(packages[j].Name)},
 				{packages[i].Version, packages[j].Version},
 			} {
 				if pair[0] < pair[1] {

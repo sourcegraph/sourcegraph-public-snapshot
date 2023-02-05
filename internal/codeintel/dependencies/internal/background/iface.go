@@ -25,6 +25,10 @@ type ExternalServiceStore interface {
 	GetByID(ctx context.Context, id int64) (*types.ExternalService, error)
 }
 
+type AutoIndexingService interface {
+	QueueIndexesForPackage(ctx context.Context, pkg shared.MinimialVersionedPackageRepo, assumeSynced bool) (err error)
+}
+
 type DependenciesService interface {
 	InsertPackageRepoRefs(ctx context.Context, deps []shared.MinimalPackageRepoRef) (_ []shared.PackageRepoReference, _ []shared.PackageRepoRefVersion, err error)
 }
