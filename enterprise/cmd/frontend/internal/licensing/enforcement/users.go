@@ -82,7 +82,7 @@ func NewAfterCreateUserHook() func(context.Context, database.DB, *types.User) er
 		return nil
 	}
 
-	return func(ctx context.Context, tx database.DB, user *types.User) error {
+	return func(ctx context.Context, db database.DB, user *types.User) error {
 		info, err := licensing.GetConfiguredProductLicenseInfo()
 		if err != nil {
 			return err
@@ -91,25 +91,33 @@ func NewAfterCreateUserHook() func(context.Context, database.DB, *types.User) er
 		// We only want to force the site administrator role when the created user isn't an admin
 		// on a free plan. If the user is already an admin, then we don't need to do this.
 		if !user.SiteAdmin && info.Plan() == licensing.PlanFree0 {
-			store := tx.Users()
-			user.SiteAdmin = true
-			if err := store.SetIsSiteAdmin(ctx, user.ID, user.SiteAdmin); err != nil {
-				return err
-			}
+			err := db.WithTransact(ctx, func(tx database.DB) error {
+				store := tx.Users()
+				user.SiteAdmin = true
+				if err := store.SetIsSiteAdmin(ctx, user.ID, user.SiteAdmin); err != nil {
+					return err
+				}
 
-			// Fetch site admin role
-			siteAdminRole, err := tx.Roles().Get(ctx, database.GetRoleOpts{
-				Name: string(types.SiteAdministratorSystemRole),
+				// site admin role
+				sr, err := tx.Roles().Get(ctx, database.GetRoleOpts{
+					Name: string(types.SiteAdministratorSystemRole),
+				})
+				if err != nil {
+					return err
+				}
+
+				opts := database.CreateUserRoleOpts{
+					UserID: user.ID,
+					RoleID: sr.ID,
+				}
+				if _, err := tx.UserRoles().Create(ctx, opts); err != nil {
+					return err
+				}
+
+				return nil
 			})
-			if err != nil {
-				return err
-			}
 
-			opts := database.CreateUserRoleOpts{
-				UserID: user.ID,
-				RoleID: siteAdminRole.ID,
-			}
-			if _, err := tx.UserRoles().Create(ctx, opts); err != nil {
+			if err != nil {
 				return err
 			}
 		}
