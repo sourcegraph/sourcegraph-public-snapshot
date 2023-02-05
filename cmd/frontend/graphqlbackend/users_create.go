@@ -77,6 +77,15 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 	logger = logger.With(log.Int32("userID", user.ID))
 	logger.Debug("user created")
 
+	userRole, err := r.db.Roles().Get(ctx, database.GetRoleOpts{
+		Name: string(types.UserSystemRole),
+	})
+	opts := database.CreateUserRoleOpts{UserID: user.ID, RoleID: userRole.ID}
+	if _, err = r.db.UserRoles().Create(ctx, opts); err != nil {
+		r.logger.Error("failed to assign user role to user",
+			log.Error(err))
+	}
+
 	if err = r.db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
 		UserID: user.ID,
 		Perm:   authz.Read,

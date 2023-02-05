@@ -96,7 +96,7 @@ func checkEmailAbuse(ctx context.Context, db database.DB, addr string) (abused b
 	return false, "", nil
 }
 
-// doServeSignUp is called to create a new user account. It is called for the normal user signup process (where a
+// handleSignUp is called to create a new user account. It is called for the normal user signup process (where a
 // non-admin user is created) and for the site initialization process (where the initial site admin user account is
 // created).
 //
@@ -127,7 +127,7 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 	// Create the user.
 	//
 	// We don't need to check the builtin auth provider's allowSignup because we assume the caller
-	// of doServeSignUp checks it, or else that failIfNewUserIsNotInitialSiteAdmin == true (in which
+	// of handleSignUp checks it, or else that failIfNewUserIsNotInitialSiteAdmin == true (in which
 	// case the only signup allowed is that of the initial site admin).
 	newUserData := database.NewUser{
 		Email:                 creds.Email,
@@ -195,6 +195,36 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 		}
 
 		return
+	}
+
+	{
+		firstParam := 2
+		systemRoles, err := db.Roles().List(r.Context(), database.RolesListOptions{
+			System: true,
+			// Since we only have two system roles, we can hardcode the first Param to 2.
+			PaginationArgs: &database.PaginationArgs{
+				First: &firstParam,
+			},
+		})
+		if err != nil {
+			logger.Error("Failed to fetch system roles", log.Error(err))
+		}
+
+		var roleIDs []int32
+		for _, role := range systemRoles {
+			// We only want to assign the site administrator role if the user is a site administrator
+			if role.Name == string(types.SiteAdministratorSystemRole) && !usr.SiteAdmin {
+				continue
+			}
+			roleIDs = append(roleIDs, role.ID)
+		}
+
+		if _, err := db.UserRoles().BulkCreateForUser(r.Context(), database.BulkCreateForUserOpts{
+			UserID:  usr.ID,
+			RoleIDs: roleIDs,
+		}); err != nil {
+			logger.Error("Failed to assign roles to user", log.Int32("userID", usr.ID), log.Error(err))
+		}
 	}
 
 	if err = db.Authz().GrantPendingPermissions(r.Context(), &database.GrantPendingPermissionsArgs{
