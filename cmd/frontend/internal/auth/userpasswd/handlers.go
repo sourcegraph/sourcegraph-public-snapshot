@@ -250,7 +250,7 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 	}
 
 	// Track user data
-	if r.UserAgent() != "Sourcegraph e2etest-bot" {
+	if r.UserAgent() != "Sourcegraph e2etest-bot" || r.UserAgent() != "test" {
 		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceURL, LastSourceURL: creds.LastSourceURL, DatabaseID: usr.ID})
 	}
 
