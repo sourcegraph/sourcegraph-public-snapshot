@@ -1,7 +1,6 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "module": "commonjs",
     "target": "es2020",
     "lib": ["esnext", "DOM", "DOM.Iterable"],
     "sourceMap": true,

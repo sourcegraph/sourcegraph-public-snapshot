@@ -3,7 +3,6 @@
   "references": [],
   "compilerOptions": {
     "jsx": "react-jsx",
-    "module": "commonjs",
     "sourceRoot": "src",
     "rootDir": ".",
     "outDir": "./out",

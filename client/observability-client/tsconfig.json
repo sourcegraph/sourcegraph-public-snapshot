@@ -1,7 +1,6 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "module": "commonjs",
     "baseUrl": ".",
     "jsx": "react-jsx",
     "rootDir": ".",

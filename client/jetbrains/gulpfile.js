@@ -2,8 +2,8 @@ const path = require('path')
 
 require('ts-node').register({
   transpileOnly: true,
-  // Use config with "module": "commonjs" because not all modules involved in tasks are esnext modules.
-  project: path.resolve(__dirname, './tsconfig.json'),
+  // Use config within ./scripts/ to run scripts with ts-node
+  project: path.resolve(__dirname, './scripts/tsconfig.json'),
 })
 
 const buildScripts = require('./scripts/build')
