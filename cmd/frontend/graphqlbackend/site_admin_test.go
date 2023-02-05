@@ -575,3 +575,209 @@ func TestDeleteOrganization_OnCloud(t *testing.T) {
 		})
 	})
 }
+
+func TestSetIsSiteAdmin(t *testing.T) {
+	t.Run("authenticated as non-admin", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+
+		securityLogEvents := database.NewMockSecurityEventLogsStore()
+		securityLogEvents.LogEventFunc.SetDefaultReturn()
+
+		db := database.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.SecurityEventLogsFunc.SetDefaultReturn(securityLogEvents)
+
+		s := newSchemaResolver(db, gitserver.NewClient())
+
+		actorCtx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := s.SetUserIsSiteAdmin(actorCtx, &struct {
+			UserID    graphql.ID
+			SiteAdmin bool
+		}{
+			UserID:    MarshalUserID(1),
+			SiteAdmin: false,
+		})
+
+		if want := auth.ErrMustBeSiteAdmin; err != want {
+			t.Errorf("err: want %q but got %v", want, err)
+		}
+		if result != nil {
+			t.Errorf("result: want nil but got %v", result)
+		}
+
+		securityLogCalls := securityLogEvents.LogEventFunc.History()
+		if len(securityLogCalls) != 1 {
+			t.Errorf("db.SecurityEventLogs(): expected to be called once but got called %d times", len(securityLogCalls))
+		}
+	})
+
+	t.Run("set current user as site-admin", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+
+		securityLogEvents := database.NewMockSecurityEventLogsStore()
+		securityLogEvents.LogEventFunc.SetDefaultReturn()
+
+		db := database.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.SecurityEventLogsFunc.SetDefaultReturn(securityLogEvents)
+
+		s := newSchemaResolver(db, gitserver.NewClient())
+
+		actorCtx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := s.SetUserIsSiteAdmin(actorCtx, &struct {
+			UserID    graphql.ID
+			SiteAdmin bool
+		}{
+			UserID:    MarshalUserID(1),
+			SiteAdmin: true,
+		})
+
+		if want := "refusing to set current user site admin status"; err.Error() != want {
+			t.Errorf("err: want %q but got %v", want, err)
+		}
+		if result != nil {
+			t.Errorf("result: want nil but got %v", result)
+		}
+
+		securityLogCalls := securityLogEvents.LogEventFunc.History()
+		if len(securityLogCalls) != 1 {
+			t.Errorf("db.SecurityEventLogs(): expected to be called once but got called %d times", len(securityLogCalls))
+		}
+	})
+
+	t.Run("authenticated as site-admin: promoting to site-admin", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+		users.SetIsSiteAdminFunc.SetDefaultReturn(nil)
+
+		roles := database.NewMockRoleStore()
+		roles.GetFunc.SetDefaultReturn(&types.Role{
+			ID:   1,
+			Name: string(types.SiteAdministratorSystemRole),
+		}, nil)
+
+		userRoles := database.NewMockUserRoleStore()
+		userRoles.CreateFunc.SetDefaultReturn(&types.UserRole{
+			RoleID: 1,
+			UserID: 2,
+		}, nil)
+
+		securityLogEvents := database.NewMockSecurityEventLogsStore()
+		securityLogEvents.LogEventFunc.SetDefaultReturn()
+
+		db := database.NewMockDB()
+		db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+			return f(db)
+		})
+		db.UsersFunc.SetDefaultReturn(users)
+		db.SecurityEventLogsFunc.SetDefaultReturn(securityLogEvents)
+		db.RolesFunc.SetDefaultReturn(roles)
+		db.UserRolesFunc.SetDefaultReturn(userRoles)
+
+		s := newSchemaResolver(db, gitserver.NewClient())
+
+		actorCtx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := s.SetUserIsSiteAdmin(actorCtx, &struct {
+			UserID    graphql.ID
+			SiteAdmin bool
+		}{
+			UserID:    MarshalUserID(2),
+			SiteAdmin: true,
+		})
+
+		if result == nil {
+			t.Error("result: want empty struct pointer but got nil")
+		}
+		if err != nil {
+			t.Errorf("error: want nil but got %v", err)
+		}
+
+		securityLogCalls := securityLogEvents.LogEventFunc.History()
+		if len(securityLogCalls) != 1 {
+			t.Errorf("db.SecurityEventLogs(): expected to be called once but got called %d times", len(securityLogCalls))
+		}
+
+		setSiteAdminCalls := users.SetIsSiteAdminFunc.History()
+		if len(setSiteAdminCalls) != 1 {
+			t.Errorf("db.Users(): expected to be called once but got called %d times", len(setSiteAdminCalls))
+		}
+
+		getRoleCalls := roles.GetFunc.History()
+		if len(getRoleCalls) != 1 {
+			t.Errorf("db.Roles(): expected to be called once but got called %d times", len(getRoleCalls))
+		}
+
+		createUserCalls := userRoles.CreateFunc.History()
+		if len(createUserCalls) != 1 {
+			t.Errorf("db.UserRoles(): expected to be called once but got called %d times", len(createUserCalls))
+		}
+	})
+
+	t.Run("authenticated as site-admin: demoting to site-admin", func(t *testing.T) {
+		t.Skip()
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+		users.SetIsSiteAdminFunc.SetDefaultReturn(nil)
+
+		roles := database.NewMockRoleStore()
+		roles.GetFunc.SetDefaultReturn(&types.Role{
+			ID:   1,
+			Name: string(types.SiteAdministratorSystemRole),
+		}, nil)
+
+		userRoles := database.NewMockUserRoleStore()
+		userRoles.DeleteFunc.SetDefaultReturn(nil)
+
+		securityLogEvents := database.NewMockSecurityEventLogsStore()
+		securityLogEvents.LogEventFunc.SetDefaultReturn()
+
+		db := database.NewMockDB()
+		db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+			return f(db)
+		})
+		db.UsersFunc.SetDefaultReturn(users)
+		db.SecurityEventLogsFunc.SetDefaultReturn(securityLogEvents)
+		db.RolesFunc.SetDefaultReturn(roles)
+		db.UserRolesFunc.SetDefaultReturn(userRoles)
+
+		s := newSchemaResolver(db, gitserver.NewClient())
+
+		actorCtx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := s.SetUserIsSiteAdmin(actorCtx, &struct {
+			UserID    graphql.ID
+			SiteAdmin bool
+		}{
+			UserID:    MarshalUserID(2),
+			SiteAdmin: false,
+		})
+
+		if result == nil {
+			t.Error("result: want empty struct pointer but got nil")
+		}
+		if err != nil {
+			t.Errorf("error: want nil but got %v", result)
+		}
+
+		securityLogCalls := securityLogEvents.LogEventFunc.History()
+		if len(securityLogCalls) != 1 {
+			t.Errorf("db.SecurityEventLogs(): expected to be called once but got called %d times", len(securityLogCalls))
+		}
+
+		setSiteAdminCalls := users.SetIsSiteAdminFunc.History()
+		if len(setSiteAdminCalls) != 1 {
+			t.Errorf("db.Users(): expected to be called once but got called %d times", len(setSiteAdminCalls))
+		}
+
+		getRoleCalls := roles.GetFunc.History()
+		if len(getRoleCalls) != 1 {
+			t.Errorf("db.Roles(): expected to be called once but got called %d times", len(getRoleCalls))
+		}
+
+		deleteUserCalls := userRoles.DeleteFunc.History()
+		if len(deleteUserCalls) != 1 {
+			t.Errorf("db.UserRoles(): expected to be called once but got called %d times", len(deleteUserCalls))
+		}
+	})
+}

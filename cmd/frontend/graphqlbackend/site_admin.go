@@ -275,9 +275,6 @@ func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 	UserID    graphql.ID
 	SiteAdmin bool
 }) (response *EmptyResponse, err error) {
-	// 🚨 SECURITY: Only site admins can promote other users to site admin (or demote from site
-	// admin).
-
 	// Set default values for event args.
 	eventArgs := roleChangeEventArgs{
 		From: "role_user",
@@ -316,6 +313,8 @@ func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 	eventName := database.SecurityEventNameRoleChangeDenied
 	defer logRoleChangeAttempt(ctx, r.db, &eventName, &eventArgs, &err)
 
+	// 🚨 SECURITY: Only site admins can promote other users to site admin (or demote from site
+	// admin).
 	if err = auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
@@ -330,21 +329,21 @@ func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 		}
 
 		// Fetch site admin role
-		role, err := tx.Roles().Get(ctx, database.GetRoleOpts{
+		sr, err := tx.Roles().Get(ctx, database.GetRoleOpts{
 			Name: string(types.SiteAdministratorSystemRole),
 		})
 
 		if args.SiteAdmin {
 			if _, err = tx.UserRoles().Create(ctx, database.CreateUserRoleOpts{
 				UserID: affectedUserID,
-				RoleID: role.ID,
+				RoleID: sr.ID,
 			}); err != nil {
 				return err
 			}
 		} else {
 			if err = tx.UserRoles().Delete(ctx, database.DeleteUserRoleOpts{
 				UserID: affectedUserID,
-				RoleID: role.ID,
+				RoleID: sr.ID,
 			}); err != nil {
 				return err
 			}
