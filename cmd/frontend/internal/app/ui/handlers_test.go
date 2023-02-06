@@ -158,7 +158,7 @@ func TestNewCommon_repo_error(t *testing.T) {
 				if tt.err != nil {
 					return "", tt.err
 				}
-				return api.CommitID("deadbeef"), nil
+				return "deadbeef", nil
 			}
 
 			req, err := http.NewRequest("GET", "/", nil)

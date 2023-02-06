@@ -172,7 +172,7 @@ describe('CodeMirror blob view', () => {
             await driver.page.click(lineAt(1))
 
             // Line is selected
-            await driver.page.waitForSelector(lineAt(1) + '.selected-line')
+            await driver.page.waitForSelector(lineAt(1) + "[data-testid='selected-line']")
 
             // URL is updated
             await driver.assertWindowLocation(`${filePaths['test.ts']}?L1`)
@@ -186,7 +186,10 @@ describe('CodeMirror blob view', () => {
                 await waitForView()
 
                 await driver.page.click(lineAt(1), { button })
-                await driver.page.waitForSelector(lineAt(1) + '.selected-line', { hidden: true, timeout: 5000 })
+                await driver.page.waitForSelector(lineAt(1) + "[data-testid='selected-line']", {
+                    hidden: true,
+                    timeout: 5000,
+                })
             })
         }
 
@@ -196,7 +199,7 @@ describe('CodeMirror blob view', () => {
             await driver.page.click(wordSelector)
 
             // Line is not selected
-            await driver.page.waitForSelector(lineAt(1) + '.selected-line', { hidden: true })
+            await driver.page.waitForSelector(lineAt(1) + "[data-testid='selected-line']", { hidden: true })
 
             // URL is not updated
             await driver.assertWindowLocation(`${filePaths['test.ts']}`)
@@ -208,7 +211,7 @@ describe('CodeMirror blob view', () => {
             await (await getLineNumberElement(5)).click()
 
             // Line is selected
-            await driver.page.waitForSelector(lineAt(5) + '.selected-line')
+            await driver.page.waitForSelector(lineAt(5) + "[data-testid='selected-line']")
 
             // URL is updated
             await driver.assertWindowLocation(`${filePaths['test.ts']}?L5`)
@@ -226,7 +229,9 @@ describe('CodeMirror blob view', () => {
 
                 // Lines is selected
                 await Promise.all(
-                    [1, 2, 3].map(lineNumber => driver.page.waitForSelector(lineAt(lineNumber) + '.selected-line'))
+                    [1, 2, 3].map(lineNumber =>
+                        driver.page.waitForSelector(lineAt(lineNumber) + "[data-testid='selected-line']")
+                    )
                 )
 
                 // URL is updated
@@ -245,7 +250,7 @@ describe('CodeMirror blob view', () => {
                 // Line is selected
                 await Promise.all(
                     [1, 2, 3, 4, 5].map(lineNumber =>
-                        driver.page.waitForSelector(lineAt(lineNumber) + '.selected-line')
+                        driver.page.waitForSelector(lineAt(lineNumber) + "[data-testid='selected-line']")
                     )
                 )
 
@@ -269,7 +274,7 @@ describe('CodeMirror blob view', () => {
                 // Line is selected
                 await Promise.all(
                     [1, 2, 3, 4, 5].map(lineNumber =>
-                        driver.page.waitForSelector(lineAt(lineNumber) + '.selected-line')
+                        driver.page.waitForSelector(lineAt(lineNumber) + "[data-testid='selected-line']")
                     )
                 )
 

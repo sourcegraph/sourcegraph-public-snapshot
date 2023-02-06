@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -478,6 +479,18 @@ func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatc
 	return EnterpriseResolvers.batchChangesResolver.BatchChangesCodeHosts(ctx, args)
 }
 
+func (r *UserResolver) Roles(ctx context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error) {
+	id := r.ID()
+	args.User = &id
+	return EnterpriseResolvers.rbacResolver.Roles(ctx, args)
+}
+
+func (r *UserResolver) Permissions(ctx context.Context, args *ListPermissionArgs) (*graphqlutil.ConnectionResolver[PermissionResolver], error) {
+	id := r.ID()
+	args.User = &id
+	return EnterpriseResolvers.rbacResolver.Permissions(ctx, args)
+}
+
 func viewerCanChangeUsername(ctx context.Context, db database.DB, userID int32) bool {
 	if err := auth.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
 		return false
@@ -511,4 +524,12 @@ func (r *UserResolver) Monitors(ctx context.Context, args *ListMonitorsArgs) (Mo
 		return nil, err
 	}
 	return EnterpriseResolvers.codeMonitorsResolver.Monitors(ctx, r.user.ID, args)
+}
+
+func (r *UserResolver) Teams(ctx context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {
+	return &teamConnectionResolver{}, nil
+}
+
+func (r *UserResolver) ToUser() (*UserResolver, bool) {
+	return r, true
 }

@@ -136,7 +136,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
 			return getVCSSyncer(ctx, externalServiceStore, repoStore, dependenciesSvc, repo, config.ReposDir)
 		},
-		Hostname:                hostname.Get(),
+		Hostname:                externalAddress(),
 		DB:                      db,
 		CloneQueue:              server.NewCloneQueue(list.New()),
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(batchLogGlobalConcurrencyLimit)),
@@ -570,4 +570,20 @@ func syncRateLimiters(ctx context.Context, logger log.Logger, store database.Ext
 		case <-ticker.C:
 		}
 	}
+}
+
+// externalAddress calculates the name of this gitserver as it would appear in
+// SRC_GIT_SERVERS.
+//
+// Note: we can't just rely on the listen address since more than likely
+// gitserver is behind a k8s service.
+func externalAddress() string {
+	// First we check for it being explicitly set. This should only be
+	// happening in environments were we run gitserver on localhost.
+	if addr := os.Getenv("GITSERVER_EXTERNAL_ADDR"); addr != "" {
+		return addr
+	}
+	// Otherwise we assume we can reach gitserver via its hostname / its
+	// hostname is a prefix of the reachable address (see hostnameMatch).
+	return hostname.Get()
 }

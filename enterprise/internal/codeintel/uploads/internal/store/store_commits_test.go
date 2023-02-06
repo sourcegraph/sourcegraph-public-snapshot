@@ -329,8 +329,9 @@ func insertUploads(t testing.TB, db database.DB, uploads ...types.Upload) {
 				uploaded_parts,
 				upload_size,
 				associated_index_id,
-				content_type
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+				content_type,
+				should_reindex
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			upload.ID,
 			upload.Commit,
@@ -351,6 +352,7 @@ func insertUploads(t testing.TB, db database.DB, uploads ...types.Upload) {
 			upload.UploadSize,
 			upload.AssociatedIndexID,
 			upload.ContentType,
+			upload.ShouldReindex,
 		)
 
 		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
@@ -381,7 +383,8 @@ func updateUploads(t testing.TB, db database.DB, uploads ...types.Upload) {
 				uploaded_parts = COALESCE(NULLIF(%s, '{}'::integer[]), uploaded_parts),
 				upload_size = COALESCE(%s, upload_size),
 				associated_index_id = COALESCE(%s, associated_index_id),
-				content_type = COALESCE(NULLIF(%s, ''), content_type)
+				content_type = COALESCE(NULLIF(%s, ''), content_type),
+				should_reindex = COALESCE(NULLIF(%s, false), should_reindex)
 			WHERE id = %s
 		`,
 			upload.Commit,
@@ -402,6 +405,7 @@ func updateUploads(t testing.TB, db database.DB, uploads ...types.Upload) {
 			upload.UploadSize,
 			upload.AssociatedIndexID,
 			upload.ContentType,
+			upload.ShouldReindex,
 			upload.ID,
 		)
 

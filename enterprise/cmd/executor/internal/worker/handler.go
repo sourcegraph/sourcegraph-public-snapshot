@@ -93,11 +93,11 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job executor.Jo
 	logger.Info("Creating workspace")
 
 	hostRunner := h.runnerFactory("", commandLogger, command.Options{}, h.operations)
-	workspace, err := h.prepareWorkspace(ctx, hostRunner, job, commandLogger)
+	ws, err := h.prepareWorkspace(ctx, hostRunner, job, commandLogger)
 	if err != nil {
 		return errors.Wrap(err, "failed to prepare workspace")
 	}
-	defer workspace.Remove(ctx, h.options.KeepWorkspaces)
+	defer ws.Remove(ctx, h.options.KeepWorkspaces)
 
 	vmNameSuffix, err := uuid.NewRandom()
 	if err != nil {
@@ -126,7 +126,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job executor.Jo
 	if len(job.DockerAuthConfig.Auths) > 0 {
 		options.DockerOptions.DockerAuthConfig = job.DockerAuthConfig
 	}
-	runner := h.runnerFactory(workspace.Path(), commandLogger, options, h.operations)
+	runner := h.runnerFactory(ws.Path(), commandLogger, options, h.operations)
 
 	logger.Info("Setting up VM")
 
@@ -154,7 +154,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job executor.Jo
 		dockerStepCommand := command.CommandSpec{
 			Key:        key,
 			Image:      dockerStep.Image,
-			ScriptPath: workspace.ScriptFilenames()[i],
+			ScriptPath: ws.ScriptFilenames()[i],
 			Dir:        dockerStep.Dir,
 			Env:        dockerStep.Env,
 			Operation:  h.operations.Exec,

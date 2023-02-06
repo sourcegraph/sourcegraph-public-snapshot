@@ -66,8 +66,6 @@ export const NotebooksList: React.FunctionComponent<React.PropsWithChildren<Note
         <div>
             <H2 className="mb-3">{title}</H2>
             <FilteredConnection<NotebookFields, Omit<NotebookNodeProps, 'node'>, ListNotebooksResult['notebooks']>
-                history={history}
-                location={location}
                 defaultFirst={10}
                 compact={false}
                 queryConnection={queryConnection}

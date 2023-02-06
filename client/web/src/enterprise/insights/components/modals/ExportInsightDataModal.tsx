@@ -1,6 +1,10 @@
 import { FC } from 'react'
 
-import { Button, Modal, Text, H2 } from '@sourcegraph/wildcard'
+import { escapeRegExp } from 'lodash'
+
+import { Modal, Text, H2 } from '@sourcegraph/wildcard'
+
+import { DownloadFileButton } from '../DownloadFileButton'
 
 interface ExportInsightDataModalProps {
     insightId: string
@@ -22,16 +26,14 @@ export const ExportInsightDataModal: FC<ExportInsightDataModalProps> = props => 
             </Text>
             <Text>This will only include data that you are permitted to see.</Text>
             <div className="d-flex justify-content-end mt-5">
-                <Button
-                    as="a"
-                    href={`/.api/insights/export/${insightId}`}
-                    autoFocus={true}
-                    download={true}
+                <DownloadFileButton
+                    fileName={escapeRegExp(insightTitle)}
+                    fileUrl={`/.api/insights/export/${insightId}`}
                     variant="primary"
                     onClick={onConfirm}
                 >
                     Export data as CSV
-                </Button>
+                </DownloadFileButton>
             </div>
         </Modal>
     )

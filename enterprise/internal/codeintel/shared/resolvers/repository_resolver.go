@@ -130,3 +130,22 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 
 	return r.err
 }
+
+func (r *RepositoryResolver) ExternalRepository() resolverstubs.ExternalRepositoryResolver {
+	return NewExternalRepositoryResolver(r.innerRepo.ExternalRepo.ServiceID, r.innerRepo.ExternalRepo.ServiceType)
+}
+
+type ExternalRepositoryResolver struct {
+	serviceID   string
+	serviceType string
+}
+
+func NewExternalRepositoryResolver(serviceID, serviceType string) *ExternalRepositoryResolver {
+	return &ExternalRepositoryResolver{
+		serviceID:   serviceID,
+		serviceType: serviceType,
+	}
+}
+
+func (r *ExternalRepositoryResolver) ServiceID() string   { return r.serviceID }
+func (r *ExternalRepositoryResolver) ServiceType() string { return r.serviceType }

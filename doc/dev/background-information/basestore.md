@@ -75,7 +75,7 @@ func DoSomethingAtomicOverTwoStores(ctx context.Context, store *MyStore, otherSt
 
 The [`Store`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.25.0/-/blob/internal/database/basestore/store.go#L37:6) struct defined in [github.com/sourcegraph/sourcegraph/internal/database/basestore](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.25.0/-/tree/internal/database/basestore) can be used to quickly bootstrap the base functionalities described above.
 
-First, _embed_ a basestore pointer into your own store instance, as follows. Your store may need access to additional data for configuration or state - additional fields can be freely defined on this struct.
+First, _embed_ a basestore pointer into your own store instance, as follows. Your store may need access to additional data for configuration or state—additional fields can be freely defined on this struct.
 
 ```go
 import "github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -192,5 +192,31 @@ func (s *MyStore) ItsHorsegraphTime(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+	// Scan []horse
+	horses, err := scanHorses(s.Query(ctx, sqlf.Sprintf("SELECT id, age, name, nicknames, passportName FROM horses")))
+	if err != nil {
+		return err
+	}
+}
+
+// scanHorses can scan a row of `horse`s into `[]*horse`
+var scanHorses = basestore.NewSliceScanner(scanHorse)
+
+// scanHorse scans a database row into a `*horse`
+func scanHorse(s dbutil.Scanner) (*horse, error) {
+	var h horse
+	if err := s.Scan(&h.id, &h.age, &h.name, &h.nicknames, &h.passportName); err != nil {
+		return nil, errors.Wrap(err, "Scanning horse failed")
+	}
+	return &h, nil
+}
+
+type horse struct {
+	id           int32
+	age          int32
+	name         string
+	nicknames    []string
+	passportName string
 }
 ```

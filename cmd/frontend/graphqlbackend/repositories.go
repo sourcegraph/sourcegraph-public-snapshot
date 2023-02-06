@@ -91,7 +91,7 @@ func (args *repositoryArgs) toReposListOptions() (database.ReposListOptions, err
 	return opt, nil
 }
 
-func (r *schemaResolver) Repositories(ctx context.Context, args *repositoryArgs) (*graphqlutil.ConnectionResolver[RepositoryResolver], error) {
+func (r *schemaResolver) Repositories(ctx context.Context, args *repositoryArgs) (*graphqlutil.ConnectionResolver[*RepositoryResolver], error) {
 	opt, err := args.toReposListOptions()
 	if err != nil {
 		return nil, err
@@ -120,7 +120,7 @@ func (r *schemaResolver) Repositories(ctx context.Context, args *repositoryArgs)
 		Ascending:   !args.Descending,
 	}
 
-	return graphqlutil.NewConnectionResolver[RepositoryResolver](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
+	return graphqlutil.NewConnectionResolver[*RepositoryResolver](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
 }
 
 type repositoriesConnectionStore struct {
@@ -251,11 +251,9 @@ type RepositoryConnectionResolver interface {
 var _ RepositoryConnectionResolver = &repositoryConnectionResolver{}
 
 type repositoryConnectionResolver struct {
-	logger     log.Logger
-	db         database.DB
-	opt        database.ReposListOptions
-	indexed    bool
-	notIndexed bool
+	logger log.Logger
+	db     database.DB
+	opt    database.ReposListOptions
 
 	// cache results because they are used by multiple fields
 	once  sync.Once

@@ -52,9 +52,43 @@ describe('SignInPage', () => {
         ).toMatchSnapshot()
     })
 
+    const render = (route: string, authProviders: SourcegraphContext['authProviders']) =>
+        renderWithBrandedContext(
+            <Routes>
+                <Route
+                    path="/sign-in"
+                    element={
+                        <SignInPage
+                            authenticatedUser={null}
+                            context={{
+                                allowSignup: true,
+                                sourcegraphDotComMode: false,
+                                authProviders,
+                                resetPasswordEnabled: true,
+                                xhrHeaders: {},
+                            }}
+                            isSourcegraphDotCom={false}
+                        />
+                    }
+                />
+            </Routes>,
+            { route }
+        )
+
     describe('with Sourcegraph operator auth provider', () => {
+        const withSourcegraphOperator: SourcegraphContext['authProviders'] = [
+            ...authProviders,
+            {
+                displayName: 'Sourcegraph Operators',
+                isBuiltin: false,
+                serviceType: 'sourcegraph-operator',
+                authenticationURL: '',
+                serviceID: '',
+            },
+        ]
+
         it('renders page with 2 providers', () => {
-            const rendered = render('/sign-in')
+            const rendered = render('/sign-in', withSourcegraphOperator)
             expect(
                 within(rendered.baseElement).queryByText(txt => txt.includes('Sourcegraph Operators'))
             ).not.toBeInTheDocument()
@@ -62,47 +96,30 @@ describe('SignInPage', () => {
         })
 
         it('renders page with 3 providers (url-param present)', () => {
-            const rendered = render('/sign-in?sourcegraph-operator')
+            const rendered = render('/sign-in?sourcegraph-operator', withSourcegraphOperator)
             expect(
                 within(rendered.baseElement).queryByText(txt => txt.includes('Sourcegraph Operators'))
             ).toBeInTheDocument()
             expect(rendered.asFragment()).toMatchSnapshot()
         })
+    })
 
-        function render(route: string) {
-            const withSourcegraphOperator: SourcegraphContext['authProviders'] = [
-                ...authProviders,
-                {
-                    displayName: 'Sourcegraph Operators',
-                    isBuiltin: false,
-                    serviceType: 'sourcegraph-operator',
-                    authenticationURL: '',
-                    serviceID: '',
-                },
-            ]
-
-            return renderWithBrandedContext(
-                <Routes>
-                    <Route
-                        path="/sign-in"
-                        element={
-                            <SignInPage
-                                authenticatedUser={null}
-                                context={{
-                                    allowSignup: true,
-                                    sourcegraphDotComMode: false,
-                                    authProviders: withSourcegraphOperator,
-                                    resetPasswordEnabled: true,
-                                    xhrHeaders: {},
-                                }}
-                                isSourcegraphDotCom={false}
-                            />
-                        }
-                    />
-                </Routes>,
-                { route }
-            )
-        }
+    describe('with Gerrit auth provider', () => {
+        const withGerritProvider: SourcegraphContext['authProviders'] = [
+            ...authProviders,
+            {
+                displayName: 'Gerrit',
+                isBuiltin: false,
+                serviceType: 'gerrit',
+                authenticationURL: '',
+                serviceID: '',
+            },
+        ]
+        it('does not render the Gerrit provider', () => {
+            const rendered = render('/sign-in', withGerritProvider)
+            expect(within(rendered.baseElement).queryByText(txt => txt.includes('Gerrit'))).not.toBeInTheDocument()
+            expect(rendered.asFragment()).toMatchSnapshot()
+        })
     })
 
     it('renders sign in page (cloud)', () => {

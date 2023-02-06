@@ -137,7 +137,7 @@ type gitObjectInfo string
 
 func (oid gitObjectInfo) OID() gitdomain.OID {
 	var v gitdomain.OID
-	copy(v[:], []byte(oid))
+	copy(v[:], oid)
 	return v
 }
 

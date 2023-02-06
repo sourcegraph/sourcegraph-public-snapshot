@@ -26,7 +26,7 @@ func (e *OrgNotFoundError) NotFound() bool {
 	return true
 }
 
-var errOrgNameAlreadyExists = errors.New("organization name is already taken (by a user or another organization)")
+var errOrgNameAlreadyExists = errors.New("organization name is already taken (by a user, team, or another organization)")
 
 type OrgStore interface {
 	AddOrgsOpenBetaStats(ctx context.Context, userID int32, data string) (string, error)
@@ -229,7 +229,7 @@ func (o *orgStore) Create(ctx context.Context, name string, displayName *string)
 		return nil, err
 	}
 
-	// Reserve organization name in shared users+orgs namespace.
+	// Reserve organization name in shared users+orgs+teams namespace.
 	if _, err := tx.Handle().ExecContext(ctx, "INSERT INTO names(name, org_id) VALUES($1, $2)", newOrg.Name, newOrg.ID); err != nil {
 		return nil, errOrgNameAlreadyExists
 	}

@@ -3,7 +3,7 @@ package shared
 import (
 	"context"
 
-	shared "github.com/sourcegraph/sourcegraph/cmd/gitserver/shared"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/shared"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"

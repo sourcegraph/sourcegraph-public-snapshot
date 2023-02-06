@@ -45,12 +45,13 @@ type rustPackagesSource struct {
 var _ packagesSource = &rustPackagesSource{}
 
 func (rustPackagesSource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
-	return reposource.ParseRustVersionedPackage(dep)
+	return reposource.ParseRustVersionedPackage(dep), nil
 }
 
 func (rustPackagesSource) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
-	return reposource.ParseRustPackageFromName(name)
+	return reposource.ParseRustPackageFromName(name), nil
 }
+
 func (rustPackagesSource) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
 	return reposource.ParseRustPackageFromRepoName(repoName)
 }

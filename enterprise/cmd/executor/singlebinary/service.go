@@ -20,20 +20,20 @@ type svc struct{}
 func (svc) Name() string { return "executor" }
 
 func (svc) Configure() (env.Config, []debugserver.Endpoint) {
-	var config config.Config
-	config.Load()
-	return &config, nil
+	var conf config.Config
+	conf.Load()
+	return &conf, nil
 }
 
 func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, cfg env.Config) error {
-	config := cfg.(*config.Config)
+	conf := cfg.(*config.Config)
 	// Always use the in-memory secret.
-	config.FrontendAuthorizationToken = confdefaults.SingleProgramInMemoryExecutorPassword
+	conf.FrontendAuthorizationToken = confdefaults.SingleProgramInMemoryExecutorPassword
 
 	// TODO(sqs) HACK(sqs): run executors for both queues
 	if deploy.IsDeployTypeSingleProgram(deploy.Type()) {
-		otherConfig := *config
-		if config.QueueName == "batches" {
+		otherConfig := *conf
+		if conf.QueueName == "batches" {
 			otherConfig.QueueName = "codeintel"
 		} else {
 			otherConfig.QueueName = "batches"
@@ -45,7 +45,7 @@ func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready
 		}()
 	}
 
-	return run.StandaloneRunRun(ctx, observationCtx.Logger, config, false)
+	return run.StandaloneRunRun(ctx, observationCtx.Logger, conf, false)
 }
 
 var Service service.Service = svc{}

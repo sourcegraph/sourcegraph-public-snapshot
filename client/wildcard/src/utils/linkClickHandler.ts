@@ -1,15 +1,13 @@
-import * as React from 'react'
+import { MouseEventHandler } from 'react'
 
-import * as H from 'history'
-
-import { anyOf, isInstanceOf, isExternalLink } from '@sourcegraph/common'
+import { anyOf, isInstanceOf, isExternalLink, HistoryOrNavigate, compatNavigate } from '@sourcegraph/common'
 
 /**
  * Returns a click handler for link element that will make sure clicks on in-app links are handled on the client
  * and don't cause a full page reload.
  */
 export const createLinkClickHandler =
-    (history: H.History): React.MouseEventHandler<unknown> =>
+    (history: HistoryOrNavigate): MouseEventHandler<unknown> =>
     event => {
         // Do nothing if the link was requested to open in a new tab
         if (event.ctrlKey || event.metaKey) {
@@ -34,5 +32,5 @@ export const createLinkClickHandler =
         // Handle navigation programmatically
         event.preventDefault()
         const url = new URL(href)
-        history.push(url.pathname + url.search + url.hash)
+        compatNavigate(history, url.pathname + url.search + url.hash)
     }

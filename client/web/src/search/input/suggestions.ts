@@ -1,8 +1,6 @@
-import React from 'react'
-
 import { EditorState } from '@codemirror/state'
 import { mdiFilterOutline, mdiTextSearchVariant, mdiSourceRepository, mdiStar, mdiFileOutline } from '@mdi/js'
-import { extendedMatch, Fzf, FzfOptions, FzfResultItem } from 'fzf'
+import { byLengthAsc, extendedMatch, Fzf, FzfOptions, FzfResultItem } from 'fzf'
 
 import { tokenAt, tokens as queryTokens } from '@sourcegraph/branded'
 // This module implements suggestions for the experimental search input
@@ -10,13 +8,15 @@ import { tokenAt, tokens as queryTokens } from '@sourcegraph/branded'
 import {
     Group,
     Option,
-    Target,
-    Completion,
     Source,
-    FilterOption,
-    QueryOption,
     getEditorConfig,
     SuggestionResult,
+    submitQueryInfo,
+    queryRenderer,
+    filterRenderer,
+    filterValueRenderer,
+    shortenPath,
+    combineResults,
 } from '@sourcegraph/branded/src/search-ui/experimental'
 import { getParsedQuery } from '@sourcegraph/branded/src/search-ui/input/codemirror/parsedQuery'
 import { isDefined } from '@sourcegraph/common'
@@ -29,6 +29,7 @@ import { Node, OperatorKind } from '@sourcegraph/shared/src/search/query/parser'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { CharacterRange, Filter, PatternKind, Token } from '@sourcegraph/shared/src/search/query/token'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { getSymbolIconSVGPath } from '@sourcegraph/shared/src/symbols/symbolIcons'
 
 import { AuthenticatedUser } from '../../auth'
 import {
@@ -36,6 +37,9 @@ import {
     SuggestionsRepoVariables,
     SuggestionsFileResult,
     SuggestionsFileVariables,
+    SuggestionsSymbolResult,
+    SuggestionsSymbolVariables,
+    SymbolKind,
 } from '../../graphql-operations'
 
 /**
@@ -51,11 +55,6 @@ type InternalSource<T extends Token | undefined = Token | undefined> = (params: 
 }) => SuggestionResult | null
 
 const none: any[] = []
-
-// Custom renderer for filter suggestions
-const filterRenderer = (option: Option): React.ReactElement => React.createElement(FilterOption, { option })
-// Custom renderer for (the current) query suggestions
-const queryRenderer = (option: Option): React.ReactElement => React.createElement(QueryOption, { option })
 
 function starTiebraker(a: { item: { stars: number } }, b: { item: { stars: number } }): number {
     return b.item.stars - a.item.stars
@@ -103,6 +102,28 @@ const FILE_QUERY = gql`
     }
 `
 
+const SYMBOL_QUERY = gql`
+    query SuggestionsSymbol($query: String!) {
+        search(patternType: regexp, query: $query) {
+            results {
+                results {
+                    ... on FileMatch {
+                        __typename
+                        file {
+                            path
+                        }
+                        symbols {
+                            kind
+                            url
+                            name
+                        }
+                    }
+                }
+            }
+        }
+    }
+`
+
 interface Repo {
     name: string
     stars: number
@@ -124,38 +145,53 @@ interface File {
     url: string
 }
 
+interface CodeSymbol {
+    kind: SymbolKind
+    name: string
+    url: string
+    path: string
+}
+
 /**
- * Converts a Repo value to a (jump) target suggestion.
+ * Converts a Repo value to a suggestion.
  */
-function toRepoTarget({ item, positions }: FzfResultItem<Repo>): Target {
-    return {
-        type: 'target',
-        icon: mdiSourceRepository,
-        value: item.name,
-        url: `/${item.name}`,
-        matches: positions,
+function toRepoSuggestion(result: FzfResultItem<Repo>, from: number, to?: number): Option {
+    const option = toRepoCompletion(result, from, to, 'repo:')
+    option.action.name = 'Add'
+    option.alternativeAction = {
+        type: 'goto',
+        url: `/${result.item.name}`,
     }
+    option.render = filterValueRenderer
+    return option
 }
 
 /**
  * Converts a Repo value to a completion suggestion.
  */
-function toRepoCompletion({ item, positions }: FzfResultItem<Repo>, from: number, to?: number): Completion {
+function toRepoCompletion(
+    { item, positions }: FzfResultItem<Repo>,
+    from: number,
+    to?: number,
+    valuePrefix = ''
+): Option {
     return {
-        type: 'completion',
-        icon: mdiSourceRepository,
-        value: item.name,
-        insertValue: regexInsertText(item.name, { globbing: false }) + ' ',
+        label: valuePrefix + item.name,
         matches: positions,
-        from,
-        to,
+        icon: mdiSourceRepository,
+        action: {
+            type: 'completion',
+            insertValue: valuePrefix + regexInsertText(item.name, { globbing: false }) + ' ',
+            from,
+            to,
+        },
     }
 }
 
 /**
  * Converts a Context value to a completion suggestion.
  */
-function toContextCompletion({ item, positions }: FzfResultItem<Context>, from: number, to?: number): Completion {
+function toContextCompletion({ item, positions }: FzfResultItem<Context>, from: number, to?: number): Option {
     let description = item.default ? 'Default' : ''
     if (item.description) {
         if (item.default) {
@@ -165,64 +201,97 @@ function toContextCompletion({ item, positions }: FzfResultItem<Context>, from: 
     }
 
     return {
-        type: 'completion',
+        label: item.spec,
         // Passing an empty string is a hack to draw an "empty" icon
         icon: item.starred ? mdiStar : ' ',
-        value: item.spec,
-        insertValue: item.spec + ' ',
         description,
         matches: positions,
-        from,
-        to,
+        action: {
+            type: 'completion',
+            insertValue: item.spec + ' ',
+            from,
+            to,
+        },
     }
 }
 
 /**
  * Converts a filter to a completion suggestion.
  */
-function toFilterCompletion(filter: FilterType, from: number, to?: number): Completion {
+function toFilterCompletion(filter: FilterType, from: number, to?: number): Option {
     const definition = FILTERS[filter]
     const description =
         typeof definition.description === 'function' ? definition.description(false) : definition.description
     return {
-        type: 'completion',
+        label: filter,
         icon: mdiFilterOutline,
         render: filterRenderer,
-        value: filter,
-        insertValue: filter + ':',
         description,
-        from,
-        to,
+        action: {
+            type: 'completion',
+            insertValue: filter + ':',
+            from,
+            to,
+        },
     }
 }
 
 /**
  * Converts a File value to a completion suggestion.
  */
-function toFileCompletion({ item, positions }: FzfResultItem<File>, from: number, to?: number): Completion {
+function toFileCompletion(
+    { item, positions }: FzfResultItem<File>,
+    from: number,
+    to?: number,
+    valuePrefix = ''
+): Option {
     return {
-        type: 'completion',
+        label: valuePrefix + item.path,
         icon: mdiFileOutline,
-        value: item.path,
-        insertValue: regexInsertText(item.path, { globbing: false }) + ' ',
         description: item.repository,
         matches: positions,
-        from,
-        to,
+        action: {
+            type: 'completion',
+            insertValue: valuePrefix + regexInsertText(item.path, { globbing: false }) + ' ',
+            from,
+            to,
+        },
     }
 }
 
 /**
  * Converts a File value to a (jump) target suggestion.
  */
-function toFileTarget({ item, positions }: FzfResultItem<File>): Target {
+function toFileSuggestion(result: FzfResultItem<File>, from: number, to?: number): Option {
+    const option = toFileCompletion(result, from, to, 'file:')
+    option.action.name = 'Add'
+    option.alternativeAction = {
+        type: 'goto',
+        url: result.item.url,
+    }
+    option.render = filterValueRenderer
+    return option
+}
+
+/**
+ * Converts a File value to a (jump) target suggestion.
+ */
+function toSymbolSuggestion({ item, positions }: FzfResultItem<CodeSymbol>, from: number, to?: number): Option {
     return {
-        type: 'target',
-        icon: mdiFileOutline,
-        value: item.path,
-        description: item.repository,
-        url: item.url,
+        label: item.name,
         matches: positions,
+        description: shortenPath(item.path, 20),
+        icon: getSymbolIconSVGPath(item.kind),
+        action: {
+            type: 'completion',
+            insertValue: item.name + ' type:symbol ',
+            from,
+            to,
+        },
+        alternativeAction: {
+            type: 'goto',
+            url: item.url,
+        },
     }
 }
 
@@ -235,19 +304,19 @@ const currentQuery: InternalSource = ({ token, input }) => {
         return null
     }
 
-    let value = input
-    let note = 'Search everywhere'
+    let label = input
+    let actionName = 'Search everywhere'
 
     const contextFilter = findFilter(input, FilterType.context, FilterKind.Global)
 
     if (contextFilter) {
-        value = omitFilter(input, contextFilter)
+        label = omitFilter(input, contextFilter)
         if (contextFilter.value?.value !== 'global') {
-            note = `Search '${contextFilter.value?.value ?? ''}'`
+            actionName = `Search '${contextFilter.value?.value ?? ''}'`
         }
     }
 
-    if (value.trim() === '') {
+    if (label.trim() === '') {
         return null
     }
 
@@ -257,14 +326,17 @@ const currentQuery: InternalSource = ({ token, input }) => {
                 title: '',
                 options: [
                     {
-                        type: 'command',
                         icon: mdiTextSearchVariant,
-                        value,
-                        note,
-                        apply: view => {
-                            getEditorConfig(view.state).onSubmit()
+                        label,
+                        action: {
+                            type: 'command',
+                            name: actionName,
+                            apply: (_option, view) => {
+                                getEditorConfig(view.state).onSubmit()
+                            },
                         },
                         render: queryRenderer,
+                        info: submitQueryInfo,
                     },
                 ],
             },
@@ -318,6 +390,21 @@ const filterSuggestions: InternalSource = ({ tokens, token, position }) => {
     }
 
     return options.length > 0 ? { result: [{ title: 'Narrow your search', options }] } : null
+}
+
+const contextActions: Group = {
+    title: 'Actions',
+    options: [
+        {
+            label: 'Manage contexts',
+            description: 'Add, edit, remove search contexts',
+            action: {
+                type: 'goto',
+                name: 'Go to /contexts',
+                url: '/contexts',
+            },
+        },
+    ],
 }
 
 /**
@@ -377,18 +464,7 @@ function filterValueSuggestions(caches: Caches): InternalSource {
                                     title: 'Search contexts',
                                     options: entries.map(entry => toContextCompletion(entry, from, to)),
                                 },
-                                {
-                                    title: 'Actions',
-                                    options: [
-                                        {
-                                            type: 'target',
-                                            value: 'Manage contexts',
-                                            description: 'Add, edit, remove search contexts',
-                                            note: 'Got to /contexts',
-                                            url: '/contexts',
-                                        },
-                                    ],
-                                },
+                                contextActions,
                             ]
                         })
                     default: {
@@ -412,16 +488,18 @@ function staticFilterValueSuggestions(token?: Token): Group | null {
     }
 
     const value = token.value
-    let options: Completion[] = resolvedFilter.definition.discreteValues(token.value, false).map(value => ({
-        type: 'completion',
-        from: token.value?.range.start ?? token.range.end,
-        to: token.value?.range.end,
-        value: value.label,
-        insertValue: (value.insertText ?? value.label) + ' ',
+    let options: Option[] = resolvedFilter.definition.discreteValues(token.value, false).map(value => ({
+        label: value.label,
+        action: {
+            type: 'completion',
+            from: token.value?.range.start ?? token.range.end,
+            to: token.value?.range.end,
+            insertValue: (value.insertText ?? value.label) + ' ',
+        },
     }))
 
     if (value && value.value !== '') {
-        const fzf = new Fzf(options, { selector: option => option.value })
+        const fzf = new Fzf(options, { selector: option => option.label })
         options = fzf.find(value.value).map(match => ({ ...match.item, matches: match.positions }))
     }
 
@@ -446,7 +524,7 @@ function repoSuggestions(cache: Caches['repo']): InternalSource {
             results => [
                 {
                     title: 'Repositories',
-                    options: results.slice(0, 5).map(toRepoTarget),
+                    options: results.slice(0, 3).map(result => toRepoSuggestion(result, token.range.start)),
                 },
             ],
             parsedQuery,
@@ -462,9 +540,8 @@ function repoSuggestions(cache: Caches['repo']): InternalSource {
  */
 function fileSuggestions(cache: Caches['file'], isSourcegraphDotCom?: boolean): InternalSource {
     return ({ token, tokens, parsedQuery, position }) => {
-        // Only show file suggestions when
-        // - the query contains at least one repo: filter
-        // - if this is dotcom, contains at least one context: filter that is not 'global'
+        // Only show file suggestions on dotcom if the query contains at least
+        // one context: filter that is not 'global', or a repo: filter.
         const showFileSuggestions =
             token?.type === 'pattern' &&
             (!isSourcegraphDotCom ||
@@ -484,7 +561,48 @@ function fileSuggestions(cache: Caches['file'], isSourcegraphDotCom?: boolean): 
             results => [
                 {
                     title: 'Files',
-                    options: results.slice(0, 5).map(toFileTarget),
+                    options: results.slice(0, 5).map(result => toFileSuggestion(result, token.range.start)),
+                },
+            ],
+            parsedQuery,
+            position
+        )
+    }
+}
+
+/**
+ * Returns file (jump) target suggestions matching the term at the cursor,
+ * but only if the query contains suitable filters. On dotcom we only show file
+ * suggestions if the query contains at least one context: or repo: filter.
+ */
+function symbolSuggestions(cache: Caches['symbol'], isSourcegraphDotCom?: boolean): InternalSource {
+    return ({ token, tokens, parsedQuery, position }) => {
+        if (token?.type !== 'pattern') {
+            return null
+        }
+
+        // Only show symbol suggestions if the query contains a context:, repo:
+        // or file: filter. On dotcom the context must by different from
+        // "global".
+
+        if (
+            !tokens.some(
+                token =>
+                    token.type === 'filter' &&
+                    ((token.field.value === 'context' && (!isSourcegraphDotCom || token.value?.value !== 'global')) ||
+                        token.field.value === 'repo' ||
+                        token.field.value === 'file')
+            )
+        ) {
+            return null
+        }
+
+        return cache.query(
+            token.value,
+            results => [
+                {
+                    title: 'Symbols',
+                    options: results.slice(0, 5).map(result => toSymbolSuggestion(result, token.range.start)),
                 },
             ],
             parsedQuery,
@@ -503,6 +621,7 @@ interface Caches {
     repo: ContextualCache<Repo, FzfResultItem<Repo>>
     context: Cache<Context, FzfResultItem<Context>>
     file: ContextualCache<File, FzfResultItem<File>>
+    symbol: ContextualCache<CodeSymbol, FzfResultItem<CodeSymbol>>
 }
 
 interface SuggestionsSourceConfig
@@ -542,8 +661,14 @@ export const createSuggestionsSource = ({
         tiebreakers: [starTiebraker],
     }
 
+    const symbolFzfOptions: FzfOptions<CodeSymbol> = {
+        selector: item => item.name,
+        tiebreakers: [byLengthAsc],
+    }
+
     // Relevant query filters for file suggestions
     const fileFilters: Set<FilterType> = new Set([FilterType.repo, FilterType.rev, FilterType.context, FilterType.lang])
+    const symbolFilters: Set<FilterType> = new Set([...fileFilters, FilterType.file])
 
     // TODO: Initialize outside to persist cache across page navigation
     const caches: Caches = {
@@ -654,6 +779,51 @@ export const createSuggestionsSource = ({
                 return fzf.find(cleanRegex(query))
             },
         }),
+        symbol: new Cache({
+            dataCacheKey: (parsedQuery, position) =>
+                parsedQuery
+                    ? buildSuggestionQuery(
+                          parsedQuery,
+                          { start: position, end: position },
+                          token =>
+                              token.type === 'parameter' &&
+                              !!token.value &&
+                              symbolFilters.has(token.field as FilterType)
+                      )
+                    : '',
+            queryKey: (value, dataCacheKey = '') => `${dataCacheKey} type:symbol count:50 ${value}`,
+            async query(query) {
+                const response = await platformContext
+                    .requestGraphQL<SuggestionsSymbolResult, SuggestionsSymbolVariables>({
+                        request: SYMBOL_QUERY,
+                        variables: { query },
+                        mightContainPrivateInfo: true,
+                    })
+                    .toPromise()
+                return (
+                    response.data?.search?.results?.results?.reduce((results, result) => {
+                        if (result.__typename === 'FileMatch') {
+                            for (const symbol of result.symbols) {
+                                results.push([
+                                    symbol.url,
+                                    {
+                                        name: symbol.name,
+                                        kind: symbol.kind,
+                                        path: result.file.path,
+                                        url: symbol.url,
+                                    },
+                                ])
+                            }
+                        }
+                        return results
+                    }, [] as [string, CodeSymbol][]) ?? []
+                )
+            },
+            filter(files, query) {
+                const fzf = new Fzf(files, symbolFzfOptions)
+                return fzf.find(query)
+            },
+        }),
     }
 
     const sources: InternalSource[] = [
@@ -662,24 +832,27 @@ export const createSuggestionsSource = ({
         filterSuggestions,
         repoSuggestions(caches.repo),
         fileSuggestions(caches.file, isSourcegraphDotCom),
+        symbolSuggestions(caches.symbol, isSourcegraphDotCom),
     ]
 
-    return (state, position) => {
-        const parsedQuery = getParsedQuery(state)
-        const tokens = collapseOpenFilterValues(queryTokens(state), state.sliceDoc())
-        const token = tokenAt(tokens, position)
-        const input = state.sliceDoc()
-
-        function valid(state: EditorState, position: number): boolean {
+    return {
+        query: (state, position) => {
+            const parsedQuery = getParsedQuery(state)
             const tokens = collapseOpenFilterValues(queryTokens(state), state.sliceDoc())
-            return token === tokenAt(tokens, position)
-        }
+            const token = tokenAt(tokens, position)
+            const input = state.sliceDoc()
 
-        const params = { token, tokens, input, position, parsedQuery }
-        const results = sources.map(source => source(params))
-        const dummyResult = { result: [], valid }
+            function valid(state: EditorState, position: number): boolean {
+                const tokens = collapseOpenFilterValues(queryTokens(state), state.sliceDoc())
+                return token === tokenAt(tokens, position)
+            }
 
-        return combineResults([dummyResult, ...results])
+            const params = { token, tokens, input, position, parsedQuery }
+            const results = sources.map(source => source(params))
+            const dummyResult = { result: [], valid }
+
+            return combineResults([dummyResult, ...results])
+        },
     }
 }
 
@@ -727,7 +900,7 @@ class Cache<T, U, E extends any[] = []> {
         const queryKey = this.config.queryKey(value, dataCacheKey)
         let dataCache = this.dataCache
         if (dataCacheKey) {
-            dataCache = this.dataCacheByQuery.get(dataCacheKey) ?? new Map()
+            dataCache = this.dataCacheByQuery.get(dataCacheKey) ?? new Map<string, T>()
             if (!this.dataCacheByQuery.has(dataCacheKey)) {
                 this.dataCacheByQuery.set(dataCacheKey, dataCache)
             }
@@ -953,45 +1126,4 @@ function collapseOpenFilterValues(tokens: Token[], input: string): Token[] {
     }
 
     return result
-}
-
-/**
- * Takes multiple suggestion results and combines the groups of each of them.
- * The order of items within a group is determined by the order of results.
- */
-function combineResults(results: (SuggestionResult | null)[]): SuggestionResult {
-    const options: Record<Group['title'], Group['options'][]> = {}
-    let hasValid = false
-    let hasNext = false
-
-    for (const result of results) {
-        if (!result) {
-            continue
-        }
-        for (const group of result.result) {
-            if (!options[group.title]) {
-                options[group.title] = []
-            }
-            options[group.title].push(group.options)
-        }
-        if (result.next) {
-            hasNext = true
-        }
-        if (result.valid) {
-            hasValid = true
-        }
-    }
-
-    const staticResult: SuggestionResult = {
-        result: Object.entries(options).map(([title, options]) => ({ title, options: options.flat() })),
-    }
-
-    if (hasValid) {
-        staticResult.valid = (...args) => results.every(result => result?.valid?.(...args) ?? false)
-    }
-    if (hasNext) {
-        staticResult.next = () => Promise.all(results.map(result => result?.next?.() ?? result)).then(combineResults)
-    }
-
-    return staticResult
 }

@@ -133,11 +133,11 @@ func (r *siteConfigurationResolver) ID(ctx context.Context) (int32, error) {
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return 0, err
 	}
-	conf, err := r.db.Conf().SiteGetLatest(ctx)
+	config, err := r.db.Conf().SiteGetLatest(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return conf.ID, nil
+	return config.ID, nil
 }
 
 func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (JSONCString, error) {
@@ -158,7 +158,7 @@ func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]s
 	return conf.ValidateSite(string(contents))
 }
 
-func (r *siteConfigurationResolver) History(ctx context.Context, args *graphqlutil.ConnectionResolverArgs) (*graphqlutil.ConnectionResolver[SiteConfigurationChangeResolver], error) {
+func (r *siteConfigurationResolver) History(ctx context.Context, args *graphqlutil.ConnectionResolverArgs) (*graphqlutil.ConnectionResolver[*SiteConfigurationChangeResolver], error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view the history.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
@@ -167,7 +167,7 @@ func (r *siteConfigurationResolver) History(ctx context.Context, args *graphqlut
 
 	connectionStore := SiteConfigurationChangeConnectionStore{db: r.db}
 
-	return graphqlutil.NewConnectionResolver[SiteConfigurationChangeResolver](
+	return graphqlutil.NewConnectionResolver[*SiteConfigurationChangeResolver](
 		&connectionStore,
 		args,
 		nil,
