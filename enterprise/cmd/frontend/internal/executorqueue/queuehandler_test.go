@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -19,6 +20,7 @@ import (
 )
 
 func TestAuthMiddleware(t *testing.T) {
+	logger := logtest.Scoped(t)
 	accessToken := "hunter2"
 
 	accessTokenFunc := func() string { return accessToken }
@@ -27,7 +29,7 @@ func TestAuthMiddleware(t *testing.T) {
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusTeapot)
 	})
-	router.Use(executorAuthMiddleware(accessTokenFunc))
+	router.Use(executorAuthMiddleware(logger, accessTokenFunc))
 
 	tests := []struct {
 		name                 string
@@ -77,6 +79,7 @@ func TestAuthMiddleware(t *testing.T) {
 }
 
 func TestJobAuthMiddleware(t *testing.T) {
+	logger := logtest.Scoped(t)
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExecutorsAccessToken: "hunter2"}})
 
 	tests := []struct {
@@ -399,7 +402,7 @@ func TestJobAuthMiddleware(t *testing.T) {
 					w.WriteHeader(http.StatusTeapot)
 				})
 			}
-			router.Use(jobAuthMiddleware(test.routeName, jobTokenStore, executorStore))
+			router.Use(jobAuthMiddleware(logger, test.routeName, jobTokenStore, executorStore))
 
 			req, err := http.NewRequest("GET", "/test", nil)
 			require.NoError(t, err)

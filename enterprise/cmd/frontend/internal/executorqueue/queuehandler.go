@@ -7,8 +7,6 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
@@ -49,7 +47,7 @@ func newExecutorQueuesHandler(
 	gitserverClient := gitserver.NewClient()
 
 	// Auth middleware
-	executorAuth := executorAuthMiddleware(accessToken)
+	executorAuth := executorAuthMiddleware(logger, accessToken)
 
 	factory := func() http.Handler {
 		// 🚨 SECURITY: These routes are secured by checking a token shared between services.
@@ -62,7 +60,7 @@ func newExecutorQueuesHandler(
 		gitRouter.Path("/{RepoName:.*}/git-upload-pack").Handler(gitserverProxy(logger, gitserverClient, "/git-upload-pack"))
 		// The git routes are treated as internal actor. Additionally, each job comes with a short-lived token that is
 		// checked by jobAuthMiddleware.
-		gitRouter.Use(withInternalActor, jobAuthMiddleware(routeGit, jobTokenStore, executorStore))
+		gitRouter.Use(withInternalActor, jobAuthMiddleware(logger, routeGit, jobTokenStore, executorStore))
 
 		// Serve the executor queue APIs.
 		queueRouter := base.PathPrefix("/queue").Name("executor-queue").Subrouter()
@@ -72,7 +70,7 @@ func newExecutorQueuesHandler(
 		jobRouter := base.PathPrefix("/queue").Name("executor-jobs-queue").Subrouter()
 		// The job routes are treated as internal actor. Additionally, each job comes with a short-lived token that is
 		// checked by jobAuthMiddleware.
-		jobRouter.Use(withInternalActor, jobAuthMiddleware(routeQueue, jobTokenStore, executorStore))
+		jobRouter.Use(withInternalActor, jobAuthMiddleware(logger, routeQueue, jobTokenStore, executorStore))
 
 		for _, h := range handlers {
 			handler.SetupRoutes(h, queueRouter)
@@ -90,7 +88,7 @@ func newExecutorQueuesHandler(
 		batchChangesRouter.Path("/{spec}/{file}").Methods("GET").Handler(batchesWorkspaceFileGetHandler)
 		batchChangesRouter.Path("/{spec}/{file}").Methods("HEAD").Handler(batchesWorkspaceFileExistsHandler)
 		// The files route are treated as an internal actor and require the executor access token to authenticate.
-		filesRouter.Use(withInternalActor, jobAuthMiddleware(routeFiles, jobTokenStore, executorStore))
+		filesRouter.Use(withInternalActor, jobAuthMiddleware(logger, routeFiles, jobTokenStore, executorStore))
 
 		return base
 	}
@@ -119,10 +117,10 @@ func withInternalActor(next http.Handler) http.Handler {
 // with the correct "token-executor <token>" value. This should only be used
 // for internal _services_, not users, in which a shared key exchange can be
 // done so safely.
-func executorAuthMiddleware(accessToken func() string) mux.MiddlewareFunc {
+func executorAuthMiddleware(logger log.Logger, accessToken func() string) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if validateExecutorToken(w, r, accessToken()) {
+			if validateExecutorToken(w, r, logger, accessToken()) {
 				next.ServeHTTP(w, r)
 			}
 		})
@@ -131,9 +129,9 @@ func executorAuthMiddleware(accessToken func() string) mux.MiddlewareFunc {
 
 const SchemeExecutorToken = "token-executor"
 
-func validateExecutorToken(w http.ResponseWriter, r *http.Request, expectedAccessToken string) bool {
+func validateExecutorToken(w http.ResponseWriter, r *http.Request, logger log.Logger, expectedAccessToken string) bool {
 	if expectedAccessToken == "" {
-		log15.Error("executors.accessToken not configured in site config")
+		logger.Error("executors.accessToken not configured in site config")
 		http.Error(w, "Executors are not configured on this instance", http.StatusInternalServerError)
 		return false
 	}
@@ -165,17 +163,29 @@ func validateExecutorToken(w http.ResponseWriter, r *http.Request, expectedAcces
 	return true
 }
 
-func jobAuthMiddleware(routeName routeName, tokenStore executor.JobTokenStore, executorStore database.ExecutorStore) mux.MiddlewareFunc {
+func jobAuthMiddleware(
+	logger log.Logger,
+	routeName routeName,
+	tokenStore executor.JobTokenStore,
+	executorStore database.ExecutorStore,
+) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if validateJobRequest(w, r, routeName, tokenStore, executorStore) {
+			if validateJobRequest(w, r, logger, routeName, tokenStore, executorStore) {
 				next.ServeHTTP(w, r)
 			}
 		})
 	}
 }
 
-func validateJobRequest(w http.ResponseWriter, r *http.Request, routeName routeName, tokenStore executor.JobTokenStore, executorStore database.ExecutorStore) bool {
+func validateJobRequest(
+	w http.ResponseWriter,
+	r *http.Request,
+	logger log.Logger,
+	routeName routeName,
+	tokenStore executor.JobTokenStore,
+	executorStore database.ExecutorStore,
+) bool {
 	// Get the auth token from the Authorization header.
 	var tokenType string
 	var authToken string
@@ -225,14 +235,14 @@ func validateJobRequest(w http.ResponseWriter, r *http.Request, routeName routeN
 	case routeQueue:
 		queue = mux.Vars(r)["queueName"]
 	default:
-		log15.Error("unsupported route", "route", routeName)
+		logger.Error("unsupported route", log.String("route", string(routeName)))
 		http.Error(w, "unsupported route", http.StatusBadRequest)
 		return false
 	}
 
 	jobId, err = parseJobIdHeader(r)
 	if err != nil {
-		log15.Error("failed to parse jobId", "err", err)
+		logger.Error("failed to parse jobId", log.Error(err))
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return false
 	}
@@ -250,14 +260,14 @@ func validateJobRequest(w http.ResponseWriter, r *http.Request, routeName routeN
 
 	jobToken, err := tokenStore.GetByToken(r.Context(), authToken)
 	if err != nil {
-		log15.Error("failed to retrieve token", "err", err)
+		logger.Error("failed to retrieve token", log.Error(err))
 		http.Error(w, "invalid token", http.StatusUnauthorized)
 		return false
 	}
 
 	// Ensure the token was generated for the correct job.
 	if jobToken.JobID != jobId {
-		log15.Error("job ID does not match")
+		logger.Error("job ID does not match")
 		http.Error(w, "invalid token", http.StatusForbidden)
 		return false
 	}
@@ -265,21 +275,21 @@ func validateJobRequest(w http.ResponseWriter, r *http.Request, routeName routeN
 	// Check if the token is associated with the correct queue or repo.
 	if len(repo) > 0 {
 		if jobToken.Repo != repo {
-			log15.Error("repo does not match")
+			logger.Error("repo does not match")
 			http.Error(w, "invalid token", http.StatusForbidden)
 			return false
 		}
 	} else {
 		// Ensure the token was generated for the correct queue.
 		if jobToken.Queue != queue {
-			log15.Error("queue name does not match")
+			logger.Error("queue name does not match")
 			http.Error(w, "invalid token", http.StatusForbidden)
 			return false
 		}
 	}
 	// Ensure the token came from a legit executor instance.
 	if _, _, err = executorStore.GetByHostname(r.Context(), executorName); err != nil {
-		log15.Error("failed to lookup executor by hostname", "err", err)
+		logger.Error("failed to lookup executor by hostname", log.Error(err))
 		http.Error(w, "invalid token", http.StatusUnauthorized)
 		return false
 	}
