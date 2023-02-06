@@ -51,7 +51,7 @@ func newExecutorQueuesHandler(
 
 	factory := func() http.Handler {
 		// 🚨 SECURITY: These routes are secured by checking a token shared between services.
-		base := mux.NewRouter().PathPrefix("/.executors").Subrouter()
+		base := mux.NewRouter().PathPrefix("/.executors/").Subrouter()
 		base.StrictSlash(true)
 
 		// Proxy /info/refs and /git-upload-pack to gitservice for git clone/fetch.
