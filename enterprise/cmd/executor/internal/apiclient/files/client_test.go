@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/files"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -61,6 +62,7 @@ func TestClient_Exists(t *testing.T) {
 		name string
 
 		handler func(t *testing.T) http.Handler
+		job     types.Job
 
 		expectedValue bool
 		expectedErr   error
@@ -72,9 +74,27 @@ func TestClient_Exists(t *testing.T) {
 					assert.Equal(t, http.MethodHead, r.Method)
 					assert.Contains(t, r.URL.Path, "some-bucket/foo/bar")
 					assert.Equal(t, r.Header.Get("Authorization"), "token-executor hunter2")
+					assert.Equal(t, "42", r.Header.Get("X-Sourcegraph-Job-ID"))
+					assert.Equal(t, "test-executor", r.Header.Get("X-Sourcegraph-Executor-Name"))
 					w.WriteHeader(http.StatusOK)
 				})
 			},
+			job:           types.Job{ID: 42},
+			expectedValue: true,
+		},
+		{
+			name: "File exists with job token",
+			handler: func(t *testing.T) http.Handler {
+				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					assert.Equal(t, http.MethodHead, r.Method)
+					assert.Contains(t, r.URL.Path, "some-bucket/foo/bar")
+					assert.Equal(t, r.Header.Get("Authorization"), "Bearer sometoken")
+					assert.Equal(t, "42", r.Header.Get("X-Sourcegraph-Job-ID"))
+					assert.Equal(t, "test-executor", r.Header.Get("X-Sourcegraph-Executor-Name"))
+					w.WriteHeader(http.StatusOK)
+				})
+			},
+			job:           types.Job{ID: 42, Token: "sometoken"},
 			expectedValue: true,
 		},
 		{
@@ -84,6 +104,7 @@ func TestClient_Exists(t *testing.T) {
 					w.WriteHeader(http.StatusNotFound)
 				})
 			},
+			job:           types.Job{ID: 42},
 			expectedValue: false,
 		},
 		{
@@ -93,6 +114,7 @@ func TestClient_Exists(t *testing.T) {
 					w.WriteHeader(http.StatusInternalServerError)
 				})
 			},
+			job:           types.Job{ID: 42},
 			expectedValue: false,
 			expectedErr:   errors.New("unexpected status code 500"),
 		},
@@ -102,6 +124,7 @@ func TestClient_Exists(t *testing.T) {
 			srv := httptest.NewServer(test.handler(t))
 			defer srv.Close()
 			options := apiclient.BaseClientOptions{
+				ExecutorName: "test-executor",
 				EndpointOptions: apiclient.EndpointOptions{
 					URL:        srv.URL,
 					PathPrefix: "/.executors/files",
@@ -112,7 +135,7 @@ func TestClient_Exists(t *testing.T) {
 			client, err := files.New(observationContext, options)
 			require.NoError(t, err)
 
-			exists, err := client.Exists(context.Background(), "some-bucket", "foo/bar")
+			exists, err := client.Exists(context.Background(), test.job, "some-bucket", "foo/bar")
 
 			if test.expectedErr != nil {
 				assert.Error(t, err)
@@ -134,6 +157,8 @@ func TestClient_Get(t *testing.T) {
 
 		handler func(t *testing.T) http.Handler
 
+		job types.Job
+
 		expectedValue string
 		expectedErr   error
 	}{
@@ -144,10 +169,29 @@ func TestClient_Get(t *testing.T) {
 					assert.Equal(t, http.MethodGet, r.Method)
 					assert.Contains(t, r.URL.Path, "some-bucket/foo/bar")
 					assert.Equal(t, r.Header.Get("Authorization"), "token-executor hunter2")
+					assert.Equal(t, "42", r.Header.Get("X-Sourcegraph-Job-ID"))
+					assert.Equal(t, "test-executor", r.Header.Get("X-Sourcegraph-Executor-Name"))
 					w.WriteHeader(http.StatusOK)
 					w.Write([]byte("hello world!"))
 				})
 			},
+			job:           types.Job{ID: 42},
+			expectedValue: "hello world!",
+		},
+		{
+			name: "Get content with job token",
+			handler: func(t *testing.T) http.Handler {
+				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					assert.Equal(t, http.MethodGet, r.Method)
+					assert.Contains(t, r.URL.Path, "some-bucket/foo/bar")
+					assert.Equal(t, r.Header.Get("Authorization"), "Bearer sometoken")
+					assert.Equal(t, "42", r.Header.Get("X-Sourcegraph-Job-ID"))
+					assert.Equal(t, "test-executor", r.Header.Get("X-Sourcegraph-Executor-Name"))
+					w.WriteHeader(http.StatusOK)
+					w.Write([]byte("hello world!"))
+				})
+			},
+			job:           types.Job{ID: 42, Token: "sometoken"},
 			expectedValue: "hello world!",
 		},
 		{
@@ -157,9 +201,12 @@ func TestClient_Get(t *testing.T) {
 					assert.Equal(t, http.MethodGet, r.Method)
 					assert.Contains(t, r.URL.Path, "some-bucket/foo/bar")
 					assert.Equal(t, r.Header.Get("Authorization"), "token-executor hunter2")
+					assert.Equal(t, "42", r.Header.Get("X-Sourcegraph-Job-ID"))
+					assert.Equal(t, "test-executor", r.Header.Get("X-Sourcegraph-Executor-Name"))
 					w.WriteHeader(http.StatusInternalServerError)
 				})
 			},
+			job:         types.Job{ID: 42},
 			expectedErr: errors.New("unexpected status code 500"),
 		},
 	}
@@ -168,6 +215,7 @@ func TestClient_Get(t *testing.T) {
 			srv := httptest.NewServer(test.handler(t))
 			defer srv.Close()
 			options := apiclient.BaseClientOptions{
+				ExecutorName: "test-executor",
 				EndpointOptions: apiclient.EndpointOptions{
 					URL:        srv.URL,
 					PathPrefix: "/.executors/files",
@@ -178,7 +226,7 @@ func TestClient_Get(t *testing.T) {
 			client, err := files.New(observationContext, options)
 			require.NoError(t, err)
 
-			content, err := client.Get(context.Background(), "some-bucket", "foo/bar")
+			content, err := client.Get(context.Background(), test.job, "some-bucket", "foo/bar")
 			if test.expectedErr != nil {
 				assert.Error(t, err)
 				assert.Equal(t, test.expectedErr.Error(), err.Error())
