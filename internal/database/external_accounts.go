@@ -10,6 +10,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -259,6 +260,35 @@ func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUs
 	createdUser, err = UsersWith(s.logger, tx).CreateInTransaction(ctx, newUser, &spec)
 	if err != nil {
 		return nil, err
+	}
+
+	firstParam := 2
+	systemRoles, err := RolesWith(tx).List(ctx, RolesListOptions{
+		// Since we only have two system roles on every Sourcegraph instance, it's okay
+		// to hard-code a pagination parameter here.
+		PaginationArgs: &PaginationArgs{
+			First: &firstParam,
+		},
+		System: true,
+	})
+	if err != nil {
+		s.logger.Error("failed to fetch system roles", log.Error(err))
+	} else {
+		var roleIDs []int32
+		for _, role := range systemRoles {
+			if role.Name == string(types.SiteAdministratorSystemRole) && !createdUser.SiteAdmin {
+				continue
+			}
+			roleIDs = append(roleIDs, role.ID)
+		}
+
+		opts := BulkCreateForUserOpts{
+			UserID:  createdUser.ID,
+			RoleIDs: roleIDs,
+		}
+		if _, err = UserRolesWith(tx).BulkCreateForUser(ctx, opts); err != nil {
+			s.logger.Error("failed to assign roles to user", log.Error(err))
+		}
 	}
 
 	err = tx.Insert(ctx, createdUser.ID, spec, data)
