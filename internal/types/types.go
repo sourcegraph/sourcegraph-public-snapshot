@@ -824,7 +824,6 @@ type Role struct {
 	Name      string
 	System    bool
 	CreatedAt time.Time
-	DeletedAt time.Time
 }
 
 type Permission struct {
