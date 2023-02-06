@@ -543,11 +543,7 @@ export const BlobPage: FC<BlobPageProps> = ({ className, ...props }) => {
                 </React.Suspense>
             )}
             {!isSearchNotebook && blobInfoOrError.richHTML && renderMode === 'rendered' && (
-                <RenderedFile
-                    dangerousInnerHTML={blobInfoOrError.richHTML}
-                    location={location}
-                    className={styles.border}
-                />
+                <RenderedFile dangerousInnerHTML={blobInfoOrError.richHTML} className={styles.border} />
             )}
             {!blobInfoOrError.richHTML && blobInfoOrError.aborted && (
                 <div>

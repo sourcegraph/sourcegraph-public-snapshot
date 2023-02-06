@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import { formatISO, subYears } from 'date-fns'
@@ -30,7 +30,6 @@ import {
     ConnectionError,
 } from '../../components/FilteredConnection/ui'
 import {
-    BlobFileFields,
     CommitAtTimeResult,
     CommitAtTimeVariables,
     DiffSinceResult,
@@ -47,7 +46,6 @@ import {
 import { PersonLink } from '../../person/PersonLink'
 import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
 import { UserAvatar } from '../../user/UserAvatar'
-import { fetchBlob } from '../blob/backend'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { BATCH_COUNT } from '../RepositoriesPopover'
@@ -244,46 +242,15 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
     ...props
 }) => {
     const [showOlderCommits, setShowOlderCommits] = useState(false)
-    const [readmeInfo, setReadmeInfo] = useState<
-        | undefined
-        | {
-              blob: BlobFileFields
-              entry: TreeFields['entries'][number]
-          }
-    >()
-    useEffect(() => {
-        const readmeEntry = (() => {
-            for (const readmeName of ['README.md', 'README']) {
-                for (const entry of tree.entries) {
-                    if (!entry.isDirectory && entry.name === readmeName) {
-                        return entry
-                    }
-                }
-            }
-            return null
-        })()
-        if (!readmeEntry) {
-            setReadmeInfo(undefined)
-            return
-        }
 
-        const subscription = fetchBlob({
-            repoName: repo.name,
-            revision,
-            filePath: readmeEntry?.path,
-            disableTimeout: true,
-        }).subscribe(blob => {
-            if (blob) {
-                setReadmeInfo({
-                    blob,
-                    entry: readmeEntry,
-                })
-            } else {
-                setReadmeInfo(undefined)
+    const readmeEntry = useMemo(() => {
+        for (const entry of tree.entries) {
+            if (!entry.isDirectory && (entry.name === 'README.md' || entry.name === 'README')) {
+                return entry
             }
-        })
-        return () => subscription.unsubscribe()
-    }, [repo.name, revision, filePath, tree.entries])
+        }
+        return null
+    }, [tree.entries])
 
     const [diffStats, setDiffStats] = useState<DiffStat[]>()
     useEffect(() => {
@@ -356,14 +323,8 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
 
     return (
         <>
-            {readmeInfo && (
-                <ReadmePreviewCard
-                    readmeHTML={readmeInfo.blob.richHTML}
-                    readmeURL={readmeInfo.entry.url}
-                    location={props.location}
-                    className="mb-4"
-                />
-            )}
+            {readmeEntry && <ReadmePreviewCard entry={readmeEntry} repoName={repo.name} revision={revision} />}
+
             <section className={classNames('test-tree-entries container mb-3 px-0', styles.section)}>
                 <FilesCard diffStats={diffStats} entries={tree.entries} className={styles.files} filePath={filePath} />
 
