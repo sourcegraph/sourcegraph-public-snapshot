@@ -52,10 +52,13 @@ import {
 import { useSavePolicyConfiguration } from '../hooks/useSavePolicyConfiguration'
 import styles from './CodeIntelConfigurationPolicyPage.module.scss'
 import classNames from 'classnames'
+import { hasGlobalAutoIndexingViolation } from '../shared'
 
 const DEBOUNCED_WAIT = 250
 
 const MS_IN_HOURS = 60 * 60 * 1000
+
+const DEFAULT_GIT_OBJECT_FETCH_LIMIT = 15
 
 export interface CodeIntelConfigurationPolicyPageProps
     extends RouteComponentProps<{ id: string }>,
@@ -64,7 +67,7 @@ export interface CodeIntelConfigurationPolicyPageProps
     repo?: { id: string; name: string }
     authenticatedUser: AuthenticatedUser | null
     indexingEnabled?: boolean
-    allowGlobalPolicies?: boolean
+    allowGlobalAutoIndexing?: boolean
 }
 
 type PolicyUpdater = <K extends keyof CodeIntelligenceConfigurationPolicyFields>(updates: {
@@ -78,11 +81,13 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
     repo,
     authenticatedUser,
     indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
-    allowGlobalPolicies = window.context?.codeIntelAutoIndexingAllowGlobalPolicies,
+    allowGlobalAutoIndexing = window.context?.codeIntelAutoIndexingAllowGlobalPolicies,
     telemetryService,
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelConfigurationPolicy'), [telemetryService])
 
+    // TODO REMOVE
+    const [gitObjectFetchLimit, setGitObjectFetchLimit] = useState(DEFAULT_GIT_OBJECT_FETCH_LIMIT)
     const history = useHistory()
     const location = useLocation<{ message: string; modal: string }>()
 
@@ -170,8 +175,17 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
             type: policy?.type || GitObjectType.GIT_UNKNOWN,
             pattern: policy?.pattern || '',
             countObjectsYoungerThanHours: policy?.indexCommitMaxAgeHours || null,
+            first: gitObjectFetchLimit,
         },
     })
+
+    const updateGitObjectFetchLimit = useCallback(
+        (limit: number) => {
+            setGitObjectFetchLimit(limit)
+        },
+        [setGitObjectFetchLimit]
+    )
+
     useEffect(() => {
         if (repo && policy?.type) {
             // Update git preview on policy detail changes
@@ -227,23 +241,6 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                     the retention duration and indexing options are editable.
                 </Alert>
             )}
-            {!allowGlobalPolicies &&
-                policy.indexingEnabled &&
-                !repo &&
-                !policy.repository &&
-                (policy.repositoryPatterns || []).length === 0 && (
-                    <Alert variant="warning" className="mt-2">
-                        This Sourcegraph instance has disabled global policies for auto-indexing. Create a more
-                        constrained policy targeting an explicit set of repositories to enable this policy.{' '}
-                        <Link
-                            to="/help/code_navigation/how-to/enable_auto_indexing#configure-auto-indexing-policies"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            See autoindexing docs.
-                        </Link>
-                    </Alert>
-                )}
 
             <Container className="container form">
                 <NameSettingsSection policy={policy} updatePolicy={updatePolicy} repo={repo} />
@@ -255,17 +252,26 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                     previewError={previewError}
                     preview={convertGitObjectFilterResult(preview)}
                 />
+                <GitObjectPreview
+                    policy={policy}
+                    preview={convertGitObjectFilterResult(preview)}
+                    showMore={updateGitObjectFetchLimit}
+                />
                 {!policy.repository && <RepositorySettingsSection policy={policy} updatePolicy={updatePolicy} />}
                 {indexingEnabled && <IndexSettingsSection policy={policy} updatePolicy={updatePolicy} repo={repo} />}
                 <RetentionSettingsSection policy={policy} updatePolicy={updatePolicy} />
-                <GitObjectPreview policy={policy} preview={convertGitObjectFilterResult(preview)} />
 
                 <div className="mt-4">
                     <Button
                         type="submit"
                         variant="primary"
                         onClick={savePolicyConfig}
-                        disabled={isSaving || isDeleting || !validatePolicy(policy) || comparePolicies(policy, saved)}
+                        disabled={
+                            isSaving ||
+                            isDeleting ||
+                            !validatePolicy(policy, allowGlobalAutoIndexing) ||
+                            comparePolicies(policy, saved)
+                        }
                     >
                         {!isSaving && <>{policy.id === '' ? 'Create' : 'Update'} policy</>}
                         {isSaving && (
@@ -312,6 +318,19 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                         </Tooltip>
                     )}
                 </div>
+                {!allowGlobalAutoIndexing && hasGlobalAutoIndexingViolation(policy) && (
+                    <Alert variant="warning" className="mt-2">
+                        This Sourcegraph instance has disabled global policies for auto-indexing. Create a more
+                        constrained policy targeting an explicit set of repositories to enable this policy.{' '}
+                        <Link
+                            to="/help/code_navigation/how-to/enable_auto_indexing#configure-auto-indexing-policies"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            See autoindexing docs.
+                        </Link>
+                    </Alert>
+                )}
             </Container>
         </>
     )
@@ -400,12 +419,10 @@ const GitObjectSettingsSection: FunctionComponent<GitObjectSettingsSectionProps>
                     : ''}{' '}
                 match this policy?
             </Label>
-
             <Text size="small" className="text-muted mb-2">
                 Configuration policies apply to code intelligence data for specific revisions of{' '}
                 {repo ? 'this repository' : 'matching repositories'}.
             </Text>
-
             <div className="input-group">
                 <Select
                     id="git-type"
@@ -454,11 +471,14 @@ const GitObjectSettingsSection: FunctionComponent<GitObjectSettingsSectionProps>
                             placeholder={policy.type === GitObjectType.GIT_TAG ? 'v*' : 'feat/*'}
                             disabled={policy.protected}
                             required={true}
+                            status={previewLoading ? 'loading' : undefined}
                         />
                     </>
                 )}
             </div>
-
+            {/* TODO COnvert all this into error/loading states in Input and remove duplicated text from table
+                Update" Maybe not loading in input, works better below for "Show more" too
+            */}
             {(policy.type === GitObjectType.GIT_TAG || policy.type === GitObjectType.GIT_TREE) && (
                 <>
                     <div className="text-right">
@@ -475,32 +495,12 @@ const GitObjectSettingsSection: FunctionComponent<GitObjectSettingsSectionProps>
                             />
                         ) : (
                             <div className="text-right">
-                                {previewLoading ? (
-                                    <LoadingSpinner inline={true} />
-                                ) : (
-                                    preview &&
-                                    (preview.preview.length === 0 ? (
-                                        <small className="text-warning">
-                                            This pattern does not match any{' '}
-                                            {policy.type === GitObjectType.GIT_TAG ? 'tags' : 'branches'}.
-                                        </small>
-                                    ) : (
-                                        <small>
-                                            This pattern matches{' '}
-                                            {localGitPattern === '*' && preview.totalCount !== 1 && (
-                                                <strong>all</strong>
-                                            )}{' '}
-                                            {preview.totalCount}{' '}
-                                            {policy.type === GitObjectType.GIT_TAG
-                                                ? preview.totalCount === 1
-                                                    ? 'tag'
-                                                    : 'tags'
-                                                : preview.totalCount === 1
-                                                ? 'branch'
-                                                : 'branches'}
-                                            .
-                                        </small>
-                                    ))
+                                {previewLoading && <LoadingSpinner inline={true} />}
+                                {preview && preview.preview.length === 0 && (
+                                    <small className="text-warning">
+                                        This pattern does not match any{' '}
+                                        {policy.type === GitObjectType.GIT_TAG ? 'tags' : 'branches'}.
+                                    </small>
                                 )}
                             </div>
                         ))}
@@ -513,33 +513,42 @@ const GitObjectSettingsSection: FunctionComponent<GitObjectSettingsSectionProps>
 interface GitObjectPreviewProps {
     policy: CodeIntelligenceConfigurationPolicyFields
     preview?: GitObjectPreviewResult
+    showMore: (count: number) => void
 }
 
-const GitObjectPreview: FunctionComponent<GitObjectPreviewProps> = ({ policy, preview }) =>
+const GitObjectPreview: FunctionComponent<GitObjectPreviewProps> = ({ policy, preview, showMore }) =>
     policy.repository && policy.pattern !== '' && preview && preview.preview.length > 0 ? (
-        <div className="mt-4">
-            <span>
-                {preview.totalCount === 1 ? (
-                    <>
-                        {preview.totalCount} {policy.type === GitObjectType.GIT_TAG ? 'tag' : 'branch'} matches
-                    </>
-                ) : (
-                    <>
-                        {preview.totalCount} {policy.type === GitObjectType.GIT_TAG ? 'tags' : 'branches'} match
-                    </>
-                )}{' '}
-                this policy
-                {preview.totalCountYoungerThanThreshold !== null && (
-                    <strong>
-                        {' '}
-                        but only {preview.totalCountYoungerThanThreshold} of them{' '}
-                        {preview.totalCountYoungerThanThreshold === 1 ? 'is' : 'are'} young enough to be auto-indexed
-                    </strong>
+        <div>
+            <div className="d-flex justify-content-between">
+                <span>
+                    {preview.totalCount === 1 ? (
+                        <>
+                            {preview.totalCount} {policy.type === GitObjectType.GIT_TAG ? 'tag' : 'branch'} matches
+                        </>
+                    ) : (
+                        <>
+                            {preview.totalCount} {policy.type === GitObjectType.GIT_TAG ? 'tags' : 'branches'} match
+                        </>
+                    )}{' '}
+                    this policy
+                    {preview.totalCountYoungerThanThreshold !== null && (
+                        <strong>
+                            {' '}
+                            but only {preview.totalCountYoungerThanThreshold} of them{' '}
+                            {preview.totalCountYoungerThanThreshold === 1 ? 'is' : 'are'} young enough to be
+                            auto-indexed
+                        </strong>
+                    )}
+                    {preview.preview.length < preview.totalCount && <> (showing only {preview.preview.length})</>}:
+                </span>
+                {preview.preview.length < preview.totalCount && (
+                    <Button variant="link" className="p-0" onClick={() => showMore(preview.totalCount)}>
+                        Show all {preview.totalCount} {policy.type === GitObjectType.GIT_TAG ? 'tags' : 'branches'}
+                    </Button>
                 )}
-                {preview.preview.length < preview.totalCount && <> (showing only {preview.preview.length})</>}:
-            </span>
+            </div>
 
-            <ul className="list-group p-2">
+            <ul className="list-group">
                 {preview.preview.map(tag => (
                     <li key={tag.name} className="list-group-item">
                         <span>
@@ -559,7 +568,10 @@ const GitObjectPreview: FunctionComponent<GitObjectPreviewProps> = ({ policy, pr
                                 policy.indexCommitMaxAgeHours && (
                                 <span className="float-right text-muted">
                                     <Tooltip content="This commit is too old to be auto-indexed by this policy.">
-                                        <Icon aria-hidden={true} svgPath={mdiGraveStone} />
+                                        <Icon
+                                            aria-label="This commit is too old to be auto-indexed by this policy."
+                                            svgPath={mdiGraveStone}
+                                        />
                                     </Tooltip>
                                 </span>
                             )}
@@ -784,7 +796,10 @@ const RetentionSettings: FunctionComponent<RetentionSettingsProps> = ({ policy, 
         <></>
     )
 
-function validatePolicy(policy: CodeIntelligenceConfigurationPolicyFields): boolean {
+function validatePolicy(
+    policy: CodeIntelligenceConfigurationPolicyFields,
+    globalAutoIndexingEnabled: boolean
+): boolean {
     const invalidConditions = [
         // Name is required
         policy.name === '',
@@ -803,6 +818,9 @@ function validatePolicy(policy: CodeIntelligenceConfigurationPolicyFields): bool
             (policy.retentionDurationHours < 0 || policy.retentionDurationHours > maxDuration),
         policy.indexCommitMaxAgeHours !== null &&
             (policy.indexCommitMaxAgeHours < 0 || policy.indexCommitMaxAgeHours > maxDuration),
+
+        // If global indexing is disabled, the policy must be scoped to a repository
+        !globalAutoIndexingEnabled && hasGlobalAutoIndexingViolation(policy),
     ]
 
     return invalidConditions.every(isInvalid => !isInvalid)

@@ -1,3 +1,5 @@
+import { CodeIntelligenceConfigurationPolicyFields } from '../../../graphql-operations'
+
 export const defaultDurationValues = [
     // These values match the output of date-fns#formatDuration
     { value: 168, displayText: '7 days' },
@@ -14,4 +16,18 @@ export const formatDurationValue = (value: number): string => {
     }
 
     return match.displayText
+}
+
+export const hasGlobalAutoIndexingViolation = (policy: CodeIntelligenceConfigurationPolicyFields): boolean => {
+    // If there are no repo patterns, it is assumed that the policy targets all repos.
+    const repoPatterns = policy.repositoryPatterns || []
+
+    return (
+        // User has enabled auto indexing for a policy
+        policy.indexingEnabled &&
+        // Policy isn't targeted at a specific repository
+        !policy.repository &&
+        // Policy does not have a targeted repository pattern.
+        (repoPatterns.length === 0 || repoPatterns.includes('*'))
+    )
 }

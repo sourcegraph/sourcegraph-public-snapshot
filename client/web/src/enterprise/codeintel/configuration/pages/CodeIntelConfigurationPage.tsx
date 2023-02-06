@@ -58,6 +58,7 @@ import { useDeletePolicies } from '../hooks/useDeletePolicies'
 
 import styles from './CodeIntelConfigurationPage.module.scss'
 import VisuallyHidden from '@reach/visually-hidden'
+import { hasGlobalAutoIndexingViolation } from '../shared'
 
 const filters: FilteredConnectionFilter[] = [
     {
@@ -347,20 +348,16 @@ const PolicyDescription: FunctionComponent<PolicyDescriptionProps> = ({
             </Tooltip>
         )}
 
-        {indexingEnabled &&
-            policy.indexingEnabled &&
-            !allowGlobalPolicies &&
-            !policy.repository &&
-            (policy.repositoryPatterns || []).length === 0 && (
-                <Tooltip content="This Sourcegraph instance has disabled global policies for auto-indexing.">
-                    <Icon
-                        svgPath={mdiAlert}
-                        inline={true}
-                        aria-label="This Sourcegraph instance has disabled global policies for auto-indexing."
-                        className="text-warning ml-2"
-                    />
-                </Tooltip>
-            )}
+        {indexingEnabled && !allowGlobalPolicies && hasGlobalAutoIndexingViolation(policy) && (
+            <Tooltip content="This Sourcegraph instance has disabled global policies for auto-indexing.">
+                <Icon
+                    svgPath={mdiAlert}
+                    inline={true}
+                    aria-label="This Sourcegraph instance has disabled global policies for auto-indexing."
+                    className="text-warning ml-2"
+                />
+            </Tooltip>
+        )}
     </div>
 )
 
