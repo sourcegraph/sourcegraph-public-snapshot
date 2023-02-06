@@ -27,14 +27,14 @@
     margin-right: 1rem;
 }
 
-.input-controls {
+.input-actions {
     width: 25%;
     display: flex;
     justify-content: end;
     align-self: stretch;
 }
 
-.input-control {
+.input-action {
     &:not(:last-of-type) {
         margin-right: 1rem;
     }

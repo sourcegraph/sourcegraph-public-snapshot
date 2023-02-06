@@ -52,16 +52,7 @@ export const RepositoryPatternList: FunctionComponent<RepositoryPatternListProps
         setAutoFocusIndex(-1)
     }
 
-    const {
-        previewResult: preview,
-        isLoadingPreview: previewLoading,
-        previewError,
-    } = usePreviewRepositoryFilter(repositoryPatterns || [])
-
-    if (!repositoryPatterns) {
-        // todo remove this
-        return null
-    }
+    const { previewResult: preview, previewError, isLoadingPreview } = usePreviewRepositoryFilter(repositoryPatterns)
 
     return (
         <div className={styles.container}>
@@ -73,6 +64,8 @@ export const RepositoryPatternList: FunctionComponent<RepositoryPatternListProps
                             index={index}
                             autoFocus={index === autoFocusIndex}
                             pattern={repositoryPattern}
+                            loading={isLoadingPreview}
+                            disabled={disabled}
                             setPattern={value =>
                                 setRepositoryPatterns(repositoryPatterns =>
                                     (repositoryPatterns || []).map((value_, index_) =>
@@ -80,15 +73,13 @@ export const RepositoryPatternList: FunctionComponent<RepositoryPatternListProps
                                     )
                                 )
                             }
-                            onDelete={() => handleDelete(index)}
-                            disabled={disabled}
                         />
-                        <div className={styles.inputControls}>
+                        <div className={styles.inputActions}>
                             {index > 0 && (
                                 <Tooltip content="Delete this repository pattern">
                                     <Button
                                         aria-label="Delete the repository pattern"
-                                        className={styles.inputControl}
+                                        className={styles.inputAction}
                                         variant="icon"
                                         onClick={() => handleDelete(index)}
                                         disabled={disabled}
@@ -102,7 +93,7 @@ export const RepositoryPatternList: FunctionComponent<RepositoryPatternListProps
                                 <Tooltip content="Add an additional repository pattern">
                                     <Button
                                         aria-label="Add an additional repository pattern"
-                                        className={styles.inputControl}
+                                        className={styles.inputAction}
                                         variant="icon"
                                         onClick={addRepositoryPattern}
                                         disabled={disabled}
@@ -162,7 +153,9 @@ export const RepositoryPatternList: FunctionComponent<RepositoryPatternListProps
                                             {repo.externalRepository && (
                                                 <ExternalRepositoryIcon externalRepo={repo.externalRepository} />
                                             )}
-                                            <Link to={repo.url}>{repo.name}</Link>
+                                            <Link to={repo.url} target="_blank" rel="noopener noreferrer">
+                                                {repo.name}
+                                            </Link>
                                         </li>
                                     ))}
                                 </ul>
@@ -178,8 +171,8 @@ interface RepositoryPatternProps {
     index: number
     pattern: string
     setPattern: (value: string) => void
-    onDelete: () => void
     disabled: boolean
+    loading?: boolean
     autoFocus?: boolean
 }
 
@@ -187,15 +180,13 @@ const RepositoryPattern: FunctionComponent<RepositoryPatternProps> = ({
     index,
     pattern,
     setPattern,
-    onDelete,
     disabled,
     autoFocus,
+    loading,
 }) => {
     const [localPattern, setLocalPattern] = useState('')
     useEffect(() => setLocalPattern(pattern), [pattern])
     const debouncedSetPattern = useMemo(() => debounce(value => setPattern(value), DEBOUNCED_WAIT), [setPattern])
-
-    const { isLoadingPreview: previewLoading, previewError } = usePreviewRepositoryFilter([localPattern])
 
     return (
         <div className={styles.input}>
@@ -214,7 +205,7 @@ const RepositoryPattern: FunctionComponent<RepositoryPatternProps> = ({
                     autoFocus={autoFocus}
                     disabled={disabled}
                     required={true}
-                    status={previewLoading ? InputStatus.loading : undefined}
+                    status={loading ? InputStatus.loading : undefined}
                 />
                 {/* {localPattern === '' && (
                     <InputErrorMessage
@@ -223,10 +214,6 @@ const RepositoryPattern: FunctionComponent<RepositoryPatternProps> = ({
                     />
                 )} */}
             </div>
-
-            {previewError && (
-                <ErrorAlert prefix="Error fetching matching repositories" error={previewError} className="mt-2" />
-            )}
         </div>
     )
 }
