@@ -44,6 +44,14 @@ func NewRunnerWithSchemas(observationCtx *observation.Context, logger log.Logger
 	return cliutil.NewShim(r), nil
 }
 
+// DefaultSchemaFactories is a list of schema factories to be used in
+// non-exceptional cases.
+var DefaultSchemaFactories = []cliutil.ExpectedSchemaFactory{
+	cliutil.GitHubExpectedSchemaFactory,
+	cliutil.GCSExpectedSchemaFactory,
+	cliutil.LocalExpectedSchemaFactory,
+}
+
 func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsingConfAndStoreFactoryFunc) error {
 	observationCtx := observation.NewContext(logger)
 
@@ -61,12 +69,6 @@ func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsing
 		registerEnterpriseMigrators,
 	)
 
-	schemaFactories := []cliutil.ExpectedSchemaFactory{
-		cliutil.GitHubExpectedSchemaFactory,
-		cliutil.GCSExpectedSchemaFactory,
-		cliutil.LocalExpectedSchemaFactory,
-	}
-
 	command := &cli.App{
 		Name:   appName,
 		Usage:  "Validates and runs schema migrations",
@@ -77,10 +79,10 @@ func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsing
 			cliutil.DownTo(appName, newRunner, outputFactory, false),
 			cliutil.Validate(appName, newRunner, outputFactory),
 			cliutil.Describe(appName, newRunner, outputFactory),
-			cliutil.Drift(appName, newRunner, outputFactory, schemaFactories...),
+			cliutil.Drift(appName, newRunner, outputFactory, DefaultSchemaFactories...),
 			cliutil.AddLog(appName, newRunner, outputFactory),
-			cliutil.Upgrade(appName, newRunnerWithSchemas, outputFactory, registerMigrators, schemaFactories...),
-			cliutil.Downgrade(appName, newRunnerWithSchemas, outputFactory, registerMigrators, schemaFactories...),
+			cliutil.Upgrade(appName, newRunnerWithSchemas, outputFactory, registerMigrators, DefaultSchemaFactories...),
+			cliutil.Downgrade(appName, newRunnerWithSchemas, outputFactory, registerMigrators, DefaultSchemaFactories...),
 			cliutil.RunOutOfBandMigrations(appName, newRunner, outputFactory, registerMigrators),
 		},
 	}

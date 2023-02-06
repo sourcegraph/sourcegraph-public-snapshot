@@ -254,11 +254,7 @@ func (r *upgradeReadinessResolver) SchemaDrift(ctx context.Context) (string, err
 		"2939fb1300d431075994ebb7d50ab2352b8983a9", // todo: get the current service version
 		out,
 		true, // verbose
-		[]cliutil.ExpectedSchemaFactory{
-			cliutil.GitHubExpectedSchemaFactory,
-			cliutil.GCSExpectedSchemaFactory,
-			cliutil.LocalExpectedSchemaFactory,
-		},
+		migratorshared.DefaultSchemaFactories,
 	)
 	if err == cliutil.ErrDatabaseDriftDetected {
 		return drift.String(), nil
