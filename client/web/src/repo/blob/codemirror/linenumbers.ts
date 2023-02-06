@@ -32,7 +32,11 @@ import { isValidLineRange, MOUSE_MAIN_BUTTON, preciseOffsetAtCoords } from './ut
 export type SelectedLineRange = { line: number; character?: number; endLine?: number } | null
 
 const selectedLineDecoration = Decoration.line({
-    attributes: { tabIndex: '-1', 'data-line-focusable': '' },
+    attributes: {
+        tabIndex: '-1',
+        'data-line-focusable': '',
+        'data-testid': 'selected-line',
+    },
 })
 const selectedLineGutterMarker = new (class extends GutterMarker {
     public elementClass = 'selected-line'
