@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -34,14 +34,14 @@ func TestHandle(t *testing.T) {
 
 	runner := NewMockRunner()
 
-	job := executor.Job{
+	job := types.Job{
 		ID:             42,
 		Commit:         "deadbeef",
 		RepositoryName: "linux",
-		VirtualMachineFiles: map[string]executor.VirtualMachineFile{
+		VirtualMachineFiles: map[string]types.VirtualMachineFile{
 			"test.txt": {Content: []byte("<file payload>")},
 		},
-		DockerSteps: []executor.DockerStep{
+		DockerSteps: []types.DockerStep{
 			{
 				Image:    "go",
 				Commands: []string{"go", "mod", "install"},
@@ -55,7 +55,7 @@ func TestHandle(t *testing.T) {
 				Env:      []string{},
 			},
 		},
-		CliSteps: []executor.CliStep{
+		CliSteps: []types.CliStep{
 			{
 				Commands: []string{"batch", "help"},
 				Dir:      "",
@@ -143,15 +143,15 @@ func TestHandle_WorkspaceFile(t *testing.T) {
 
 	virtualFileModifiedAt := time.Now()
 
-	job := executor.Job{
+	job := types.Job{
 		ID:             42,
 		Commit:         "deadbeef",
 		RepositoryName: "linux",
-		VirtualMachineFiles: map[string]executor.VirtualMachineFile{
+		VirtualMachineFiles: map[string]types.VirtualMachineFile{
 			"test.txt":  {Content: []byte("<file payload>")},
 			"script.sh": {Bucket: "batch-changes", Key: "123/abc", ModifiedAt: virtualFileModifiedAt},
 		},
-		DockerSteps: []executor.DockerStep{
+		DockerSteps: []types.DockerStep{
 			{
 				Image:    "go",
 				Commands: []string{"go", "mod", "install"},
@@ -165,7 +165,7 @@ func TestHandle_WorkspaceFile(t *testing.T) {
 				Env:      []string{},
 			},
 		},
-		CliSteps: []executor.CliStep{
+		CliSteps: []types.CliStep{
 			{
 				Commands: []string{"batch", "help"},
 				Dir:      "",

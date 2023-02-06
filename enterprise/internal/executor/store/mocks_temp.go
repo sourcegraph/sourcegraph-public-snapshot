@@ -4,7 +4,7 @@
 // this repository. To add additional mocks to this or another package, add a new entry
 // to the mockgen.yaml file in the root of this repository.
 
-package executor
+package store
 
 import (
 	"context"
@@ -13,8 +13,8 @@ import (
 
 // MockJobTokenStore is a mock implementation of the JobTokenStore interface
 // (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/internal/executor) used for
-// unit testing.
+// github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store)
+// used for unit testing.
 type MockJobTokenStore struct {
 	// CreateFunc is an instance of a mock function object controlling the
 	// behavior of the method Create.

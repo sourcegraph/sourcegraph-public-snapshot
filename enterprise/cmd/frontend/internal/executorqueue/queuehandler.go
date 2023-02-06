@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/batches"
 	codeintelqueue "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/codeintel"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -33,7 +33,7 @@ func newExecutorQueuesHandler(
 ) func() http.Handler {
 	metricsStore := metricsstore.NewDistributedStore("executors:")
 	executorStore := db.Executors()
-	jobTokenStore := executor.NewJobTokenStore(observationCtx, db)
+	jobTokenStore := store.NewJobTokenStore(observationCtx, db)
 
 	// Register queues. If this set changes, be sure to also update the list of valid
 	// queue names in ./metrics/queue_allocation.go, and register a metrics exporter
@@ -166,7 +166,7 @@ func validateExecutorToken(w http.ResponseWriter, r *http.Request, logger log.Lo
 func jobAuthMiddleware(
 	logger log.Logger,
 	routeName routeName,
-	tokenStore executor.JobTokenStore,
+	tokenStore store.JobTokenStore,
 	executorStore database.ExecutorStore,
 ) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
@@ -183,7 +183,7 @@ func validateJobRequest(
 	r *http.Request,
 	logger log.Logger,
 	routeName routeName,
-	tokenStore executor.JobTokenStore,
+	tokenStore store.JobTokenStore,
 	executorStore database.ExecutorStore,
 ) bool {
 	// Get the auth token from the Authorization header.

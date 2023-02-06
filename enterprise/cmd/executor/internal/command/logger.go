@@ -11,7 +11,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -92,7 +92,7 @@ type logger struct {
 	done    chan struct{}
 	handles chan *entryHandle
 
-	job executor.Job
+	job types.Job
 
 	replacer *strings.Replacer
 
@@ -102,8 +102,8 @@ type logger struct {
 
 // ExecutionLogEntryStore handle interactions with executor.Job logs.
 type ExecutionLogEntryStore interface {
-	AddExecutionLogEntry(ctx context.Context, job executor.Job, entry internalexecutor.ExecutionLogEntry) (int, error)
-	UpdateExecutionLogEntry(ctx context.Context, job executor.Job, entryID int, entry internalexecutor.ExecutionLogEntry) error
+	AddExecutionLogEntry(ctx context.Context, job types.Job, entry internalexecutor.ExecutionLogEntry) (int, error)
+	UpdateExecutionLogEntry(ctx context.Context, job types.Job, entryID int, entry internalexecutor.ExecutionLogEntry) error
 }
 
 // logEntryBufSize is the maximum number of log entries that are logged by the
@@ -116,7 +116,7 @@ const logEntryBufsize = 50
 // replace with a non-sensitive value.
 // Each log message is written to the store in a goroutine. The Flush method
 // must be called to ensure all entries are written.
-func NewLogger(store ExecutionLogEntryStore, job executor.Job, recordID int, replacements map[string]string) Logger {
+func NewLogger(store ExecutionLogEntryStore, job types.Job, recordID int, replacements map[string]string) Logger {
 	oldnew := make([]string, 0, len(replacements)*2)
 	for k, v := range replacements {
 		oldnew = append(oldnew, k, v)

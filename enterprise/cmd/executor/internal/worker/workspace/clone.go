@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -30,7 +30,7 @@ var gitStdEnv = []string{
 func cloneRepo(
 	ctx context.Context,
 	workspaceDir string,
-	job executor.Job,
+	job types.Job,
 	commandRunner command.Runner,
 	options CloneOptions,
 	operations *command.Operations,

@@ -14,7 +14,8 @@ import (
 	"github.com/prometheus/common/expfmt"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	store2 "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store"
+	types2 "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
@@ -52,7 +53,7 @@ var _ ExecutorHandler = &handler[workerutil.Record]{}
 type handler[T workerutil.Record] struct {
 	queueHandler  QueueHandler[T]
 	executorStore database.ExecutorStore
-	jobTokenStore executor.JobTokenStore
+	jobTokenStore store2.JobTokenStore
 	metricsStore  metricsstore.DistributedStore
 	logger        log.Logger
 }
@@ -69,12 +70,12 @@ type QueueHandler[T workerutil.Record] struct {
 }
 
 // TransformerFunc is the function to transform a workerutil.Record into an executor.Job.
-type TransformerFunc[T workerutil.Record] func(ctx context.Context, version string, record T, resourceMetadata ResourceMetadata) (executor.Job, error)
+type TransformerFunc[T workerutil.Record] func(ctx context.Context, version string, record T, resourceMetadata ResourceMetadata) (types2.Job, error)
 
 // NewHandler creates a new ExecutorHandler.
 func NewHandler[T workerutil.Record](
 	executorStore database.ExecutorStore,
-	jobTokenStore executor.JobTokenStore,
+	jobTokenStore store2.JobTokenStore,
 	metricsStore metricsstore.DistributedStore,
 	queueHandler QueueHandler[T],
 ) ExecutorHandler {
@@ -95,7 +96,7 @@ func (h *handler[T]) Name() string {
 }
 
 func (h *handler[T]) HandleDequeue(w http.ResponseWriter, r *http.Request) {
-	var payload executor.DequeueRequest
+	var payload types2.DequeueRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
 		job, dequeued, err := h.dequeue(r.Context(), mux.Vars(r)["queueName"], executorMetadata{
@@ -118,9 +119,9 @@ func (h *handler[T]) HandleDequeue(w http.ResponseWriter, r *http.Request) {
 // dequeue selects a job record from the database and stashes metadata including
 // the job record and the locking transaction. If no job is available for processing,
 // a false-valued flag is returned.
-func (h *handler[T]) dequeue(ctx context.Context, queueName string, metadata executorMetadata) (executor.Job, bool, error) {
+func (h *handler[T]) dequeue(ctx context.Context, queueName string, metadata executorMetadata) (types2.Job, bool, error) {
 	if err := validateWorkerHostname(metadata.name); err != nil {
-		return executor.Job{}, false, err
+		return types2.Job{}, false, err
 	}
 
 	version2Supported := false
@@ -128,17 +129,17 @@ func (h *handler[T]) dequeue(ctx context.Context, queueName string, metadata exe
 		var err error
 		version2Supported, err = api.CheckSourcegraphVersion(metadata.version, "4.3.0-0", "2022-11-24")
 		if err != nil {
-			return executor.Job{}, false, err
+			return types2.Job{}, false, err
 		}
 	}
 
 	// executorName is supposed to be unique.
 	record, dequeued, err := h.queueHandler.Store.Dequeue(ctx, metadata.name, nil)
 	if err != nil {
-		return executor.Job{}, false, errors.Wrap(err, "dbworkerstore.Dequeue")
+		return types2.Job{}, false, errors.Wrap(err, "dbworkerstore.Dequeue")
 	}
 	if !dequeued {
-		return executor.Job{}, false, nil
+		return types2.Job{}, false, nil
 	}
 
 	logger := log.Scoped("dequeue", "Select a job record from the database.")
@@ -150,7 +151,7 @@ func (h *handler[T]) dequeue(ctx context.Context, queueName string, metadata exe
 				log.Error(err))
 		}
 
-		return executor.Job{}, false, errors.Wrap(err, "RecordTransformer")
+		return types2.Job{}, false, errors.Wrap(err, "RecordTransformer")
 	}
 
 	// If this executor supports v2, return a v2 payload. Based on this field,
@@ -164,16 +165,16 @@ func (h *handler[T]) dequeue(ctx context.Context, queueName string, metadata exe
 		// Maybe the token already exists (executor may have dies midway though processing the Job)?
 		tokenExists, existsErr := h.jobTokenStore.Exists(ctx, job.ID, queueName)
 		if existsErr != nil {
-			return executor.Job{}, false, errors.CombineErrors(errors.Wrap(err, "CreateToken"), errors.Wrap(existsErr, "Exists"))
+			return types2.Job{}, false, errors.CombineErrors(errors.Wrap(err, "CreateToken"), errors.Wrap(existsErr, "Exists"))
 		}
 		// The token does not exist AND we failed to created it. So bail out with the first error.
 		if !tokenExists {
-			return executor.Job{}, false, errors.Wrap(err, "CreateToken")
+			return types2.Job{}, false, errors.Wrap(err, "CreateToken")
 		}
 		// The token does exist. Regenerate the token
 		token, err = h.jobTokenStore.Regenerate(ctx, job.ID, queueName)
 		if err != nil {
-			return executor.Job{}, false, errors.Wrap(err, "Regenerate")
+			return types2.Job{}, false, errors.Wrap(err, "Regenerate")
 		}
 	}
 	job.Token = token
@@ -195,7 +196,7 @@ type ResourceMetadata struct {
 }
 
 func (h *handler[T]) HandleAddExecutionLogEntry(w http.ResponseWriter, r *http.Request) {
-	var payload executor.AddExecutionLogEntryRequest
+	var payload types2.AddExecutionLogEntryRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
 		id, err := h.addExecutionLogEntry(r.Context(), payload.ExecutorName, payload.JobID, payload.ExecutionLogEntry)
@@ -219,7 +220,7 @@ func (h *handler[T]) addExecutionLogEntry(ctx context.Context, executorName stri
 }
 
 func (h *handler[T]) HandleUpdateExecutionLogEntry(w http.ResponseWriter, r *http.Request) {
-	var payload executor.UpdateExecutionLogEntryRequest
+	var payload types2.UpdateExecutionLogEntryRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
 		err := h.updateExecutionLogEntry(r.Context(), payload.ExecutorName, payload.JobID, payload.EntryID, payload.ExecutionLogEntry)
@@ -243,7 +244,7 @@ func (h *handler[T]) updateExecutionLogEntry(ctx context.Context, executorName s
 }
 
 func (h *handler[T]) HandleMarkComplete(w http.ResponseWriter, r *http.Request) {
-	var payload executor.MarkCompleteRequest
+	var payload types2.MarkCompleteRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
 		err := h.markComplete(r.Context(), mux.Vars(r)["queueName"], payload.ExecutorName, payload.JobID)
@@ -277,7 +278,7 @@ func (h *handler[T]) markComplete(ctx context.Context, queueName string, executo
 }
 
 func (h *handler[T]) HandleMarkErrored(w http.ResponseWriter, r *http.Request) {
-	var payload executor.MarkErroredRequest
+	var payload types2.MarkErroredRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
 		err := h.markErrored(r.Context(), mux.Vars(r)["queueName"], payload.ExecutorName, payload.JobID, payload.ErrorMessage)
@@ -311,7 +312,7 @@ func (h *handler[T]) markErrored(ctx context.Context, queueName string, executor
 }
 
 func (h *handler[T]) HandleMarkFailed(w http.ResponseWriter, r *http.Request) {
-	var payload executor.MarkErroredRequest
+	var payload types2.MarkErroredRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
 		err := h.markFailed(r.Context(), mux.Vars(r)["queueName"], payload.ExecutorName, payload.JobID, payload.ErrorMessage)
@@ -348,7 +349,7 @@ func (h *handler[T]) markFailed(ctx context.Context, queueName string, executorN
 }
 
 func (h *handler[T]) HandleHeartbeat(w http.ResponseWriter, r *http.Request) {
-	var payload executor.HeartbeatRequest
+	var payload types2.HeartbeatRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
 		e := types.Executor{
@@ -381,8 +382,8 @@ func (h *handler[T]) HandleHeartbeat(w http.ResponseWriter, r *http.Request) {
 
 		knownIDs, cancelIDs, err := h.heartbeat(r.Context(), e, payload.JobIDs)
 
-		if payload.Version == executor.ExecutorAPIVersion2 {
-			return http.StatusOK, executor.HeartbeatResponse{KnownIDs: knownIDs, CancelIDs: cancelIDs}, err
+		if payload.Version == types2.ExecutorAPIVersion2 {
+			return http.StatusOK, types2.HeartbeatResponse{KnownIDs: knownIDs, CancelIDs: cancelIDs}, err
 		}
 
 		// TODO: Remove in Sourcegraph 4.4.
@@ -413,7 +414,7 @@ func (h *handler[T]) heartbeat(ctx context.Context, executor types.Executor, ids
 
 // TODO: This handler can be removed in Sourcegraph 4.4.
 func (h *handler[T]) HandleCanceledJobs(w http.ResponseWriter, r *http.Request) {
-	var payload executor.CanceledJobsRequest
+	var payload types2.CanceledJobsRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
 		canceledIDs, err := h.cancelJobs(r.Context(), payload.ExecutorName, payload.KnownJobIDs)

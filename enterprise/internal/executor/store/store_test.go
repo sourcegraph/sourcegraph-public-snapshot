@@ -1,4 +1,4 @@
-package executor_test
+package store_test
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -67,7 +67,7 @@ func TestJobTokenStore_Create(t *testing.T) {
 func TestJobTokenStore_Create_Duplicate(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	tokenStore := executor.NewJobTokenStore(&observation.TestContext, db)
+	tokenStore := store.NewJobTokenStore(&observation.TestContext, db)
 
 	_, err := tokenStore.Create(context.Background(), 10, "test", "repo")
 	require.NoError(t, err)
@@ -166,14 +166,14 @@ func TestJobTokenStore_Get(t *testing.T) {
 		name             string
 		jobId            int
 		queue            string
-		expectedJobToken executor.JobToken
+		expectedJobToken store.JobToken
 		expectedErr      error
 	}{
 		{
 			name:  "Retrieve token",
 			jobId: 10,
 			queue: "test",
-			expectedJobToken: executor.JobToken{
+			expectedJobToken: store.JobToken{
 				Id:    1,
 				JobID: 10,
 				Queue: "test",
@@ -221,13 +221,13 @@ func TestJobTokenStore_GetByToken(t *testing.T) {
 	tests := []struct {
 		name             string
 		token            string
-		expectedJobToken executor.JobToken
+		expectedJobToken store.JobToken
 		expectedErr      error
 	}{
 		{
 			name:  "Retrieve token",
 			token: token,
-			expectedJobToken: executor.JobToken{
+			expectedJobToken: store.JobToken{
 				Id:    1,
 				JobID: 10,
 				Queue: "test",
@@ -304,9 +304,9 @@ func TestJobTokenStore_Delete(t *testing.T) {
 	}
 }
 
-func newTokenStore(t *testing.T) executor.JobTokenStore {
+func newTokenStore(t *testing.T) store.JobTokenStore {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	tokenStore := executor.NewJobTokenStore(&observation.TestContext, db)
+	tokenStore := store.NewJobTokenStore(&observation.TestContext, db)
 	return tokenStore
 }

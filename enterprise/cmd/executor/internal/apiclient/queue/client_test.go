@@ -18,7 +18,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -28,7 +28,7 @@ func TestClient_Dequeue(t *testing.T) {
 	tests := []struct {
 		name        string
 		spec        routeSpec
-		expectedJob executor.Job
+		expectedJob types.Job
 		expectedErr error
 		isDequeued  bool
 	}{
@@ -43,7 +43,7 @@ func TestClient_Dequeue(t *testing.T) {
 				responseStatus:   http.StatusOK,
 				responsePayload:  `{"id": 42}`,
 			},
-			expectedJob: executor.Job{ID: 42, VirtualMachineFiles: map[string]executor.VirtualMachineFile{}},
+			expectedJob: types.Job{ID: 42, VirtualMachineFiles: map[string]types.VirtualMachineFile{}},
 			isDequeued:  true,
 		},
 		{
@@ -95,7 +95,7 @@ func TestClient_MarkComplete(t *testing.T) {
 	tests := []struct {
 		name        string
 		spec        routeSpec
-		job         executor.Job
+		job         types.Job
 		expectedErr error
 	}{
 		{
@@ -109,7 +109,7 @@ func TestClient_MarkComplete(t *testing.T) {
 				responseStatus:   http.StatusNoContent,
 				responsePayload:  ``,
 			},
-			job: executor.Job{ID: 42, Token: "job-token"},
+			job: types.Job{ID: 42, Token: "job-token"},
 		},
 		{
 			name: "Success general access token",
@@ -122,7 +122,7 @@ func TestClient_MarkComplete(t *testing.T) {
 				responseStatus:   http.StatusNoContent,
 				responsePayload:  ``,
 			},
-			job: executor.Job{ID: 42},
+			job: types.Job{ID: 42},
 		},
 		{
 			name: "Bad Response",
@@ -135,7 +135,7 @@ func TestClient_MarkComplete(t *testing.T) {
 				responseStatus:   http.StatusInternalServerError,
 				responsePayload:  ``,
 			},
-			job:         executor.Job{ID: 42, Token: "job-token"},
+			job:         types.Job{ID: 42, Token: "job-token"},
 			expectedErr: errors.New("unexpected status code 500"),
 		},
 	}
@@ -159,7 +159,7 @@ func TestClient_MarkErrored(t *testing.T) {
 	tests := []struct {
 		name        string
 		spec        routeSpec
-		job         executor.Job
+		job         types.Job
 		expectedErr error
 	}{
 		{
@@ -173,7 +173,7 @@ func TestClient_MarkErrored(t *testing.T) {
 				responseStatus:   http.StatusNoContent,
 				responsePayload:  ``,
 			},
-			job: executor.Job{ID: 42, Token: "job-token"},
+			job: types.Job{ID: 42, Token: "job-token"},
 		},
 		{
 			name: "Success general access token",
@@ -186,7 +186,7 @@ func TestClient_MarkErrored(t *testing.T) {
 				responseStatus:   http.StatusNoContent,
 				responsePayload:  ``,
 			},
-			job: executor.Job{ID: 42},
+			job: types.Job{ID: 42},
 		},
 		{
 			name: "Bad Response",
@@ -199,7 +199,7 @@ func TestClient_MarkErrored(t *testing.T) {
 				responseStatus:   http.StatusInternalServerError,
 				responsePayload:  ``,
 			},
-			job:         executor.Job{ID: 42, Token: "job-token"},
+			job:         types.Job{ID: 42, Token: "job-token"},
 			expectedErr: errors.New("unexpected status code 500"),
 		},
 	}
@@ -223,7 +223,7 @@ func TestClient_MarkFailed(t *testing.T) {
 	tests := []struct {
 		name        string
 		spec        routeSpec
-		job         executor.Job
+		job         types.Job
 		expectedErr error
 	}{
 		{
@@ -237,7 +237,7 @@ func TestClient_MarkFailed(t *testing.T) {
 				responseStatus:   http.StatusNoContent,
 				responsePayload:  ``,
 			},
-			job: executor.Job{ID: 42, Token: "job-token"},
+			job: types.Job{ID: 42, Token: "job-token"},
 		},
 		{
 			name: "Success general access token",
@@ -250,7 +250,7 @@ func TestClient_MarkFailed(t *testing.T) {
 				responseStatus:   http.StatusNoContent,
 				responsePayload:  ``,
 			},
-			job: executor.Job{ID: 42},
+			job: types.Job{ID: 42},
 		},
 		{
 			name: "Bad Response",
@@ -263,7 +263,7 @@ func TestClient_MarkFailed(t *testing.T) {
 				responseStatus:   http.StatusInternalServerError,
 				responsePayload:  ``,
 			},
-			job:         executor.Job{ID: 42, Token: "job-token"},
+			job:         types.Job{ID: 42, Token: "job-token"},
 			expectedErr: errors.New("unexpected status code 500"),
 		},
 	}
@@ -295,7 +295,7 @@ func TestCanceledJobs(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *queue.Client) {
-		if ids, err := client.CanceledJobs(context.Background(), "test_queue", []int{1}); err != nil {
+		if ids, err := client.CanceledJobs(context.Background(), []int{1}); err != nil {
 			t.Fatalf("unexpected error completing job: %s", err)
 		} else if diff := cmp.Diff(ids, []int{1}); diff != "" {
 			t.Fatalf("unexpected set of IDs returned: %s", diff)
@@ -406,7 +406,7 @@ func TestAddExecutionLogEntry(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *queue.Client) {
-		entryID, err := client.AddExecutionLogEntry(context.Background(), executor.Job{ID: 42, Token: "job-token"}, entry)
+		entryID, err := client.AddExecutionLogEntry(context.Background(), types.Job{ID: 42, Token: "job-token"}, entry)
 		if err != nil {
 			t.Fatalf("unexpected error updating log contents: %s", err)
 		}
@@ -446,7 +446,7 @@ func TestAddExecutionLogEntryBadResponse(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *queue.Client) {
-		if _, err := client.AddExecutionLogEntry(context.Background(), executor.Job{ID: 42, Token: "job-token"}, entry); err == nil {
+		if _, err := client.AddExecutionLogEntry(context.Background(), types.Job{ID: 42, Token: "job-token"}, entry); err == nil {
 			t.Fatalf("expected an error")
 		}
 	})
@@ -483,7 +483,7 @@ func TestUpdateExecutionLogEntry(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *queue.Client) {
-		if err := client.UpdateExecutionLogEntry(context.Background(), executor.Job{ID: 42, Token: "job-token"}, 99, entry); err != nil {
+		if err := client.UpdateExecutionLogEntry(context.Background(), types.Job{ID: 42, Token: "job-token"}, 99, entry); err != nil {
 			t.Fatalf("unexpected error updating log contents: %s", err)
 		}
 	})
@@ -520,7 +520,7 @@ func TestUpdateExecutionLogEntryBadResponse(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *queue.Client) {
-		if err := client.UpdateExecutionLogEntry(context.Background(), executor.Job{ID: 42, Token: "job-token"}, 99, entry); err == nil {
+		if err := client.UpdateExecutionLogEntry(context.Background(), types.Job{ID: 42, Token: "job-token"}, 99, entry); err == nil {
 			t.Fatalf("expected an error")
 		}
 	})

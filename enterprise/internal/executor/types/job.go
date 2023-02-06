@@ -1,4 +1,4 @@
-package executor
+package types
 
 import (
 	"encoding/json"
