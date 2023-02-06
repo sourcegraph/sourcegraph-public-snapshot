@@ -54,8 +54,22 @@ func newExecutorQueuesHandler(
 		base := mux.NewRouter().PathPrefix("/.executors/").Subrouter()
 		base.StrictSlash(true)
 
+		// TODO: this is to make some integration tests happy (dev/authtest/code_intel_test.go). Add a meaningful route here.
+		// Previously, this function (newExecutorQueuesHandler) wrapped the entire base router in a middleware.
+		// This allowed code_intel_test.go to call `/.executors/` and get 500s and 401s because it would interact with
+		// middleware first before interacting the actual handler (which did not exist).
+		// With changes to support different middleware (executor token vs job token), the base route is no longer
+		// wrapped in a middleware. This means the integration tests get a 404 because the route (/.executors/) does not
+		// exist (since is no handler for that route).
+		// So adding a handler to that specific route make those tests happy. In the future, add a meaningful route and
+		// update the integration tests to use that route.
+		testRouter := base.PathPrefix("/").Subrouter()
+		testRouter.Path("/").Methods(http.MethodGet).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		})
+		testRouter.Use(withInternalActor, executorAuth)
+
 		// Proxy /info/refs and /git-upload-pack to gitservice for git clone/fetch.
-		gitRouter := base.PathPrefix("/git").Name("executor-git").Subrouter()
+		gitRouter := base.PathPrefix("/git").Subrouter()
 		gitRouter.Path("/{RepoName:.*}/info/refs").Handler(gitserverProxy(logger, gitserverClient, "/info/refs"))
 		gitRouter.Path("/{RepoName:.*}/git-upload-pack").Handler(gitserverProxy(logger, gitserverClient, "/git-upload-pack"))
 		// The git routes are treated as internal actor. Additionally, each job comes with a short-lived token that is
@@ -63,11 +77,11 @@ func newExecutorQueuesHandler(
 		gitRouter.Use(withInternalActor, jobAuthMiddleware(logger, routeGit, jobTokenStore, executorStore))
 
 		// Serve the executor queue APIs.
-		queueRouter := base.PathPrefix("/queue").Name("executor-queue").Subrouter()
+		queueRouter := base.PathPrefix("/queue").Subrouter()
 		// The queue route are treated as an internal actor and require the executor access token to authenticate.
 		queueRouter.Use(withInternalActor, executorAuth)
 
-		jobRouter := base.PathPrefix("/queue").Name("executor-jobs-queue").Subrouter()
+		jobRouter := base.PathPrefix("/queue").Subrouter()
 		// The job routes are treated as internal actor. Additionally, each job comes with a short-lived token that is
 		// checked by jobAuthMiddleware.
 		jobRouter.Use(withInternalActor, jobAuthMiddleware(logger, routeQueue, jobTokenStore, executorStore))
@@ -85,8 +99,8 @@ func newExecutorQueuesHandler(
 
 		filesRouter := base.PathPrefix("/files").Name("executor-files").Subrouter()
 		batchChangesRouter := filesRouter.PathPrefix("/batch-changes").Subrouter()
-		batchChangesRouter.Path("/{spec}/{file}").Methods("GET").Handler(batchesWorkspaceFileGetHandler)
-		batchChangesRouter.Path("/{spec}/{file}").Methods("HEAD").Handler(batchesWorkspaceFileExistsHandler)
+		batchChangesRouter.Path("/{spec}/{file}").Methods(http.MethodGet).Handler(batchesWorkspaceFileGetHandler)
+		batchChangesRouter.Path("/{spec}/{file}").Methods(http.MethodHead).Handler(batchesWorkspaceFileExistsHandler)
 		// The files route are treated as an internal actor and require the executor access token to authenticate.
 		filesRouter.Use(withInternalActor, jobAuthMiddleware(logger, routeFiles, jobTokenStore, executorStore))
 
