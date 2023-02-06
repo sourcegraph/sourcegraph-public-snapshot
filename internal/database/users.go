@@ -1307,7 +1307,7 @@ func (u *userStore) UpdatePassword(ctx context.Context, id int32, oldPassword, n
 	return nil
 }
 
-// CreatePassword creates a user's password if don't have a password
+// CreatePassword creates a user's password if they don't have a password.
 func (u *userStore) CreatePassword(ctx context.Context, id int32, password string) error {
 	// 🚨 SECURITY: Check min and max password length
 	if err := CheckPassword(password); err != nil {
