@@ -3,6 +3,7 @@ import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react
 import { useApolloClient } from '@apollo/client'
 import {
     mdiAlert,
+    mdiChevronDown,
     mdiCircleOffOutline,
     mdiDatabaseClock,
     mdiDelete,
@@ -21,7 +22,25 @@ import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Badge, Button, Container, ErrorAlert, H3, Icon, Link, PageHeader, Tooltip } from '@sourcegraph/wildcard'
+import {
+    Badge,
+    Button,
+    ButtonGroup,
+    Container,
+    ErrorAlert,
+    H3,
+    Icon,
+    Link,
+    Menu,
+    MenuButton,
+    MenuItem,
+    MenuLink,
+    MenuList,
+    PageHeader,
+    Position,
+    Text,
+    Tooltip,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import {
@@ -38,6 +57,7 @@ import { queryPolicies as defaultQueryPolicies } from '../hooks/queryPolicies'
 import { useDeletePolicies } from '../hooks/useDeletePolicies'
 
 import styles from './CodeIntelConfigurationPage.module.scss'
+import VisuallyHidden from '@reach/visually-hidden'
 
 const filters: FilteredConnectionFilter[] = [
     {
@@ -186,17 +206,46 @@ interface CreatePolicyButtonsProps {
 
 const CreatePolicyButtons: FunctionComponent<CreatePolicyButtonsProps> = ({ repo, history }) => (
     <>
-        <Button variant="primary" className="" onClick={() => history.push('./configuration/new?type=head')}>
-            <>Create new {!repo && 'global'} policy for HEAD (tip of default branch)</>
-        </Button>
-
-        <Button variant="primary" className="ml-2" onClick={() => history.push('./configuration/new?type=branch')}>
-            <>Create new {!repo && 'global'} branch policy</>
-        </Button>
-
-        <Button variant="primary" className="ml-2" onClick={() => history.push('./configuration/new?type=tag')}>
-            <>Create new {!repo && 'global'} tag policy</>
-        </Button>
+        <Menu>
+            <ButtonGroup>
+                <Button to="./configuration/new?type=head" variant="primary" as={Link}>
+                    Create new {!repo && 'global'} policy
+                </Button>
+                <MenuButton variant="primary" className={styles.dropdownButton}>
+                    <Icon aria-hidden={true} svgPath={mdiChevronDown} />
+                    <VisuallyHidden>Actions</VisuallyHidden>
+                </MenuButton>
+            </ButtonGroup>
+            <MenuList position={Position.bottomEnd} className={styles.dropdownList}>
+                <MenuLink as={Link} className={styles.dropdownItem} to="./configuration/new?type=head">
+                    <>
+                        <Text weight="medium" className="mb-2">
+                            Create new {!repo && 'global'} policy for HEAD
+                        </Text>
+                        <Text className="mb-0 text-muted">
+                            Match the tip of the default branch{' '}
+                            {repo ? 'within this repository' : 'across multiple repositories'}
+                        </Text>
+                    </>
+                </MenuLink>
+                <MenuLink as={Link} className={styles.dropdownItem} to="./configuration/new?type=branch">
+                    <Text weight="medium" className="mb-2">
+                        Create new {!repo && 'global'} branch policy
+                    </Text>
+                    <Text className="mb-0 text-muted">
+                        Match multiple branches {repo ? 'within this repository' : 'across multiple repositories'}
+                    </Text>
+                </MenuLink>
+                <MenuLink as={Link} className={styles.dropdownItem} to="./configuration/new?type=tag">
+                    <Text weight="medium" className="mb-2">
+                        Create new {!repo && 'global'} tag policy
+                    </Text>
+                    <Text className="mb-0 text-muted">
+                        Match multiple tags {repo ? 'within this repository' : 'across multiple repositories'}
+                    </Text>
+                </MenuLink>
+            </MenuList>
+        </Menu>
     </>
 )
 
@@ -211,47 +260,60 @@ const PoliciesNode: FunctionComponent<PoliciesNodeProps & { node: CodeIntelligen
     isDeleting,
     onDelete,
     indexingEnabled = false,
-}) => (
-    <>
-        <span className={styles.separator} />
+}) => {
+    const policyLink =
+        policy.repository === null
+            ? `/site-admin/code-graph/configuration/${policy.id}`
+            : `/${policy.repository.name}/-/code-graph/configuration/${policy.id}`
 
-        <div className={classNames(styles.name, 'd-flex flex-column')}>
-            <PolicyDescription policy={policy} indexingEnabled={indexingEnabled} />
-            <RepositoryAndGitObjectDescription policy={policy} />
-            {policy.indexingEnabled && indexingEnabled && <AutoIndexingDescription policy={policy} />}
-            {policy.retentionEnabled && <RetentionDescription policy={policy} />}
-        </div>
+    return (
+        <>
+            <span className={styles.separator} />
 
-        <div className="h-100">
-            <Link
-                to={
-                    policy.repository === null
-                        ? `/site-admin/code-graph/configuration/${policy.id}`
-                        : `/${policy.repository.name}/-/code-graph/configuration/${policy.id}`
-                }
-            >
-                <Tooltip content="Edit this policy">
-                    <Icon svgPath={mdiPencil} inline={true} aria-label="Edit" />
-                </Tooltip>
-            </Link>
-        </div>
+            <div className={classNames(styles.name, 'd-flex flex-column')}>
+                <Link to={policyLink}>
+                    <PolicyDescription policy={policy} indexingEnabled={indexingEnabled} />
+                </Link>
+                <RepositoryAndGitObjectDescription policy={policy} />
+                {policy.indexingEnabled && indexingEnabled && <AutoIndexingDescription policy={policy} />}
+                {policy.retentionEnabled && <RetentionDescription policy={policy} />}
+            </div>
 
-        <div className="h-100">
-            {!policy.protected && (
-                <Button
-                    aria-label="Delete the configuration policy"
-                    variant="icon"
-                    onClick={() => onDelete(policy.id, policy.name)}
-                    disabled={isDeleting}
-                >
-                    <Tooltip content="Delete this policy">
-                        <Icon className="text-danger" aria-hidden={true} svgPath={mdiDelete} />
+            <div className="h-100">
+                <Link to={policyLink}>
+                    <Tooltip content="Edit this policy">
+                        <Icon svgPath={mdiPencil} inline={true} aria-label="Edit" />
                     </Tooltip>
-                </Button>
-            )}
-        </div>
-    </>
-)
+                </Link>
+            </div>
+
+            <div className="h-100">
+                {!policy.protected && (
+                    <Button
+                        aria-label="Delete the configuration policy"
+                        variant="icon"
+                        onClick={() => onDelete(policy.id, policy.name)}
+                        disabled={isDeleting}
+                    >
+                        <Tooltip content="Delete this policy">
+                            <Icon className="text-danger" aria-label="Delete this policy" svgPath={mdiDelete} />
+                        </Tooltip>
+                    </Button>
+                )}
+                {policy.protected && (
+                    <Tooltip content="This configuration policy is protected. Protected configuration policies may not be deleted and only the retention duration and indexing options are editable.">
+                        <Icon
+                            svgPath={mdiLock}
+                            inline={true}
+                            aria-label="This configuration policy is protected. Protected configuration policies may not be deleted and only the retention duration and indexing options are editable."
+                            className="mr-2"
+                        />
+                    </Tooltip>
+                )}
+            </div>
+        </>
+    )
+}
 
 interface PolicyDescriptionProps {
     policy: CodeIntelligenceConfigurationPolicyFields
@@ -264,32 +326,36 @@ const PolicyDescription: FunctionComponent<PolicyDescriptionProps> = ({
     indexingEnabled = false,
     allowGlobalPolicies = window.context?.codeIntelAutoIndexingAllowGlobalPolicies,
 }) => (
-    <div>
-        <H3 className="d-inline">
-            {policy.protected && (
-                <Tooltip content="This configuration policy is protected. Protected configuration policies may not be deleted and only the retention duration and indexing options are editable.">
-                    <Icon svgPath={mdiLock} inline={true} aria-hidden={true} className="mr-2" />
+    <div className={styles.policyDescription}>
+        <Text weight="bold" className="mb-0">
+            {policy.name}
+        </Text>
+
+        {!policy.retentionEnabled && !(indexingEnabled && policy.indexingEnabled) && (
+            <Tooltip content="This policy has no enabled behaviors.">
+                <Icon
+                    svgPath={mdiCircleOffOutline}
+                    inline={true}
+                    aria-label="This policy has no enabled behaviors."
+                    className="ml-2"
+                />
+            </Tooltip>
+        )}
+
+        {indexingEnabled &&
+            policy.indexingEnabled &&
+            !allowGlobalPolicies &&
+            !policy.repository &&
+            (policy.repositoryPatterns || []).length === 0 && (
+                <Tooltip content="This Sourcegraph instance has disabled global policies for auto-indexing.">
+                    <Icon
+                        svgPath={mdiAlert}
+                        inline={true}
+                        aria-label="This Sourcegraph instance has disabled global policies for auto-indexing."
+                        className="text-warning ml-2"
+                    />
                 </Tooltip>
             )}
-
-            <span>{policy.name}</span>
-
-            {!policy.retentionEnabled && !(indexingEnabled && policy.indexingEnabled) && (
-                <Tooltip content="This policy has no enabled behaviors.">
-                    <Icon svgPath={mdiCircleOffOutline} inline={true} aria-hidden={true} className="ml-2" />
-                </Tooltip>
-            )}
-
-            {indexingEnabled &&
-                policy.indexingEnabled &&
-                !allowGlobalPolicies &&
-                !policy.repository &&
-                (policy.repositoryPatterns || []).length === 0 && (
-                    <Tooltip content="This Sourcegraph instance has disabled global policies for auto-indexing.">
-                        <Icon svgPath={mdiAlert} inline={true} aria-hidden={true} className="text-warning ml-2" />
-                    </Tooltip>
-                )}
-        </H3>
     </div>
 )
 
