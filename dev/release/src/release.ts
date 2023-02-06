@@ -696,7 +696,7 @@ Batch change: ${batchChangeURL}`,
                 'deploy-sourcegraph',
                 'deploy-sourcegraph-docker',
                 'deploy-sourcegraph-docker-customer-replica-1',
-                'deploy-sourcegraph-k8s'
+                'deploy-sourcegraph-k8s',
             ]) {
                 try {
                     await createTag(
