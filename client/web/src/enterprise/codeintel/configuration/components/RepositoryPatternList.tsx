@@ -4,14 +4,15 @@ import { mdiDelete, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
 
-import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import {
     Alert,
     Button,
     ErrorAlert,
     Icon,
     Input,
+    InputErrorMessage,
     InputStatus,
+    Link,
     LoadingSpinner,
     Text,
     Tooltip,
@@ -66,7 +67,8 @@ export const RepositoryPatternList: FunctionComponent<RepositoryPatternListProps
         <div className={styles.container}>
             <div>
                 {repositoryPatterns.map((repositoryPattern, index) => (
-                    <div key={index} className="d-flex align-items-center justify-content-between mb-3">
+                    <div key={index} className={styles.inputContainer}>
+                        {/* TODO Maybe debounce this input */}
                         <RepositoryPattern
                             index={index}
                             autoFocus={index === autoFocusIndex}
@@ -81,29 +83,44 @@ export const RepositoryPatternList: FunctionComponent<RepositoryPatternListProps
                             onDelete={() => handleDelete(index)}
                             disabled={disabled}
                         />
-                        <Tooltip content="Add an additional repository pattern">
-                            <Button
-                                variant="icon"
-                                onClick={addRepositoryPattern}
-                                aria-label="Add an additional repository pattern"
-                                disabled={disabled}
-                                className="d-inline"
-                            >
-                                <Icon className="text-primary" aria-hidden={true} svgPath={mdiPlus} />
-                            </Button>
-                        </Tooltip>
+                        <div className={styles.inputControls}>
+                            {index > 0 && (
+                                <Tooltip content="Delete this repository pattern">
+                                    <Button
+                                        aria-label="Delete the repository pattern"
+                                        className={styles.inputControl}
+                                        variant="icon"
+                                        onClick={() => handleDelete(index)}
+                                        disabled={disabled}
+                                    >
+                                        <Icon className="text-danger" aria-hidden={true} svgPath={mdiDelete} />
+                                    </Button>
+                                </Tooltip>
+                            )}
+
+                            {index === repositoryPatterns.length - 1 && (
+                                <Tooltip content="Add an additional repository pattern">
+                                    <Button
+                                        aria-label="Add an additional repository pattern"
+                                        className={styles.inputControl}
+                                        variant="icon"
+                                        onClick={addRepositoryPattern}
+                                        disabled={disabled}
+                                    >
+                                        <Icon className="text-primary" aria-hidden={true} svgPath={mdiPlus} />
+                                    </Button>
+                                </Tooltip>
+                            )}
+                        </div>
                     </div>
                 ))}
             </div>
 
             <div className="form-group d-flex flex-column">
                 <div>
-                    {previewError ? (
-                        <ErrorAlert prefix="Error fetching matching repositories" error={previewError} />
-                    ) : previewLoading ? (
-                        <LoadingSpinner inline={false} className={classNames('d-inline', styles.loading)} />
-                    ) : preview ? (
-                        preview.repositories.length === 0 ? (
+                    {previewError && <ErrorAlert prefix="Error fetching matching repositories" error={previewError} />}
+                    {preview &&
+                        (preview.repositories.length === 0 ? (
                             !(repositoryPatterns.length === 1 && repositoryPatterns[0] === '') && (
                                 <Alert variant="warning">
                                     This set of repository patterns does not match any repository.
@@ -145,15 +162,12 @@ export const RepositoryPatternList: FunctionComponent<RepositoryPatternListProps
                                             {repo.externalRepository && (
                                                 <ExternalRepositoryIcon externalRepo={repo.externalRepository} />
                                             )}
-                                            <RepoLink repoName={repo.name} to={repo.url} />
+                                            <Link to={repo.url}>{repo.name}</Link>
                                         </li>
                                     ))}
                                 </ul>
                             </>
-                        )
-                    ) : (
-                        <></>
-                    )}
+                        ))}
                 </div>
             </div>
         </div>
@@ -184,12 +198,11 @@ const RepositoryPattern: FunctionComponent<RepositoryPatternProps> = ({
     const { isLoadingPreview: previewLoading, previewError } = usePreviewRepositoryFilter([localPattern])
 
     return (
-        <div className="mr-3 flex-1">
+        <div className={styles.input}>
             <div className="input-group">
                 <div className="input-group-prepend">
                     <span className="input-group-text">{index === 0 ? 'Filter' : 'or'}</span>
                 </div>
-
                 <Input
                     type="text"
                     inputClassName="text-monospace"
@@ -202,21 +215,13 @@ const RepositoryPattern: FunctionComponent<RepositoryPatternProps> = ({
                     disabled={disabled}
                     required={true}
                     status={previewLoading ? InputStatus.loading : undefined}
-                    // error={localPattern === '' ? 'Please supply a value.' : undefined} TODO fix alignment of error
                 />
-
-                {/* TODO Only show this on multiple repo patterns */}
-                {/* <Tooltip content="Delete this repository pattern">
-                    <Button
-                        aria-label="Delete the repository pattern"
-                        className="ml-2"
-                        variant="icon"
-                        onClick={() => onDelete()}
-                        disabled={disabled}
-                    >
-                        <Icon className="text-danger" aria-hidden={true} svgPath={mdiDelete} />
-                    </Button>
-                </Tooltip> */}
+                {/* {localPattern === '' && (
+                    <InputErrorMessage
+                        message="Please supply a value."
+                        className="d-flex align-items-center mt-0 ml-3"
+                    />
+                )} */}
             </div>
 
             {previewError && (

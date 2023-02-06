@@ -14,3 +14,32 @@
     border: 1px solid var(--border-color);
     padding: 1rem;
 }
+
+.input-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.input {
+    width: 75%;
+    margin-right: 1rem;
+}
+
+.input-controls {
+    width: 25%;
+    display: flex;
+    justify-content: end;
+    align-self: stretch;
+}
+
+.input-control {
+    &:not(:last-of-type) {
+        margin-right: 1rem;
+    }
+
+    width: 2rem;
+    display: flex;
+    justify-content: center;
+}
