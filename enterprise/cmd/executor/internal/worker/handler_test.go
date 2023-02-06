@@ -145,6 +145,7 @@ func TestHandle_WorkspaceFile(t *testing.T) {
 
 	job := types.Job{
 		ID:             42,
+		Token:          "sometoken",
 		Commit:         "deadbeef",
 		RepositoryName: "linux",
 		VirtualMachineFiles: map[string]types.VirtualMachineFile{
@@ -234,8 +235,10 @@ func TestHandle_WorkspaceFile(t *testing.T) {
 	// Ensure the files store was called properly
 	getHistory := filesStore.GetFunc.History()
 	assert.Len(t, getHistory, 1)
-	assert.Equal(t, "batch-changes", getHistory[0].Arg1)
-	assert.Equal(t, "123/abc", getHistory[0].Arg2)
+	assert.Equal(t, 42, getHistory[0].Arg1.ID)
+	assert.Equal(t, "sometoken", getHistory[0].Arg1.Token)
+	assert.Equal(t, "batch-changes", getHistory[0].Arg2)
+	assert.Equal(t, "123/abc", getHistory[0].Arg3)
 
 	expectedCommands := [][]string{
 		{"/bin/sh", "42.0_linux@deadbeef.sh"},
