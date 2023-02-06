@@ -2,13 +2,13 @@ import { readdirSync, readFileSync, writeFileSync } from 'fs'
 import * as path from 'path'
 import * as readline from 'readline'
 
+import chalk from 'chalk'
 import execa from 'execa'
 import { readFile, writeFile, mkdir } from 'mz/fs'
 import fetch from 'node-fetch'
 
 import { EditFunc } from './github'
 import * as update from './update'
-import chalk from 'chalk'
 
 const SOURCEGRAPH_RELEASE_INSTANCE_URL = 'https://k8s.sgdev.org'
 
