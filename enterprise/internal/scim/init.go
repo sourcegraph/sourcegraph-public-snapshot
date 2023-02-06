@@ -26,7 +26,9 @@ func Init(ctx context.Context, observationCtx *observation.Context, db database.
 // NewHandler creates and returns a new SCIM 2.0 handler.
 func NewHandler(ctx context.Context, db database.DB, observationCtx *observation.Context) http.Handler {
 	config := scim.ServiceProviderConfig{
-		DocumentationURI: optional.NewString("www.example.com/scim"),
+		DocumentationURI: optional.NewString("docs.sourcegraph.com/admin/scim"),
+		MaxResults:       100,
+		SupportFiltering: true,
 	}
 
 	var userResourceHandler = NewUserResourceHandler(ctx, observationCtx, db)
