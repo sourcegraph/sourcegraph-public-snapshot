@@ -1,16 +1,20 @@
+import { readFileSync, writeFileSync } from 'fs'
 import path from 'path'
 
-import HtmlWebpackHarddiskPlugin from 'html-webpack-harddisk-plugin'
-import HtmlWebpackPlugin, { TemplateParameter, Options } from 'html-webpack-plugin'
-import signale from 'signale'
-import { WebpackPluginInstance } from 'webpack'
+import { WebpackPluginFunction } from 'webpack'
 
-import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
+import { STATIC_ASSETS_PATH, STATIC_INDEX_PATH } from '@sourcegraph/build-config'
 
 import { SourcegraphContext } from '../../src/jscontext'
-import { createJsContext, ENVIRONMENT_CONFIG } from '../utils'
 
-const { SOURCEGRAPH_HTTPS_PORT, NODE_ENV } = ENVIRONMENT_CONFIG
+import { createJsContext, ENVIRONMENT_CONFIG, HTTPS_WEB_SERVER_URL } from '.'
+
+const { NODE_ENV } = ENVIRONMENT_CONFIG
+
+export const WEBPACK_MANIFEST_PATH = path.resolve(STATIC_ASSETS_PATH, 'webpack.manifest.json')
+
+export const getWebpackManifest = (): WebpackManifest =>
+    JSON.parse(readFileSync(WEBPACK_MANIFEST_PATH, 'utf-8')) as WebpackManifest
 
 export interface WebpackManifest {
     /** Main app entry JS bundle */
@@ -25,8 +29,20 @@ export interface WebpackManifest {
     'opentelemetry.js'?: string
     /** If script files should be treated as JS modules. Required for esbuild bundle. */
     isModule?: boolean
-    /** The node env value production | development*/
+    /** The node env value `production | development` */
     environment?: 'development' | 'production'
+}
+
+interface GetHTMLPageOptions {
+    manifestFile: WebpackManifest
+    /**
+     * Used to inject dummy `window.context` in integration tests.
+     */
+    jsContext?: SourcegraphContext
+    /**
+     * Used to inject `window.context` received from the API proxy.
+     */
+    jsContextScript?: string
 }
 
 /**
@@ -36,17 +52,19 @@ export interface WebpackManifest {
  * Note: This page should be kept as close as possible to `app.html` to avoid any inconsistencies
  * between our development server and the actual production server.
  */
-export const getHTMLPage = (
-    {
+export function getIndexHTML(options: GetHTMLPageOptions): string {
+    const { manifestFile, jsContext, jsContextScript } = options
+
+    const {
         'app.js': appBundle,
         'app.css': cssBundle,
         'runtime.js': runtimeBundle,
         'react.js': reactBundle,
         'opentelemetry.js': oTelBundle,
         isModule,
-    }: WebpackManifest,
-    jsContext?: SourcegraphContext
-): string => `
+    } = manifestFile
+
+    return `
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -68,10 +86,15 @@ export const getHTMLPage = (
             // Optional value useful for checking if index.html is created by HtmlWebpackPlugin with the right NODE_ENV.
             window.webpackBuildEnvironment = '${NODE_ENV}'
 
-            // Required mock of the JS context object.
-            window.context = ${JSON.stringify(
-                jsContext ?? createJsContext({ sourcegraphBaseUrl: `http://localhost:${SOURCEGRAPH_HTTPS_PORT}` })
-            )}
+            ${
+                jsContextScript ||
+                `
+                // Required mock of the JS context object.
+                window.context = ${JSON.stringify(
+                    jsContext ?? createJsContext({ sourcegraphBaseUrl: `${HTTPS_WEB_SERVER_URL}` })
+                )}
+            `
+            }
         </script>
 
         ${runtimeBundle ? `<script src="${runtimeBundle}"></script>` : ''}
@@ -81,41 +104,10 @@ export const getHTMLPage = (
     </body>
 </html>
 `
+}
 
-/**
- * Search a list of file strings for a specific file.
- * Only uses the file prefix to allow matching against content-hashed filenames.
- */
-const getBundleFromPath = (files: string[], filePrefix: string): string | undefined =>
-    files.find(file => file.startsWith(`/.assets/${filePrefix}`))
-
-export const getHTMLWebpackPlugins = (): WebpackPluginInstance[] => {
-    signale.info('Serving `index.html` with `HTMLWebpackPlugin`.')
-
-    const htmlWebpackPlugin = new HtmlWebpackPlugin({
-        // `TemplateParameter` can be mutated. We need to tell TS that we didn't touch it.
-        templateContent: (({ htmlWebpackPlugin }: TemplateParameter): string => {
-            const { files } = htmlWebpackPlugin
-
-            const appBundle = getBundleFromPath(files.js, 'scripts/app')
-
-            if (!appBundle) {
-                throw new Error('Could not find any entry bundle')
-            }
-
-            return getHTMLPage({
-                'app.js': appBundle,
-                'app.css': getBundleFromPath(files.css, 'styles/app'),
-                'runtime.js': getBundleFromPath(files.js, 'scripts/runtime'),
-                'react.js': getBundleFromPath(files.js, 'scripts/react'),
-                'opentelemetry.js': getBundleFromPath(files.js, 'scripts/opentelemetry'),
-            })
-        }) as Options['templateContent'],
-        filename: path.resolve(STATIC_ASSETS_PATH, 'index.html'),
-        alwaysWriteToDisk: true,
-        inject: false,
+export const writeIndexHTMLPlugin: WebpackPluginFunction = compiler => {
+    compiler.hooks.done.tap('WriteIndexHTMLPlugin', () => {
+        writeFileSync(STATIC_INDEX_PATH, getIndexHTML({ manifestFile: getWebpackManifest() }), 'utf-8')
     })
-
-    // Write index.html to the disk so it can be served by dev/prod servers.
-    return [htmlWebpackPlugin, new HtmlWebpackHarddiskPlugin()]
 }
