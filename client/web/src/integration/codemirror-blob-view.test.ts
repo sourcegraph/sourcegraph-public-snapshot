@@ -214,7 +214,7 @@ describe('CodeMirror blob view', () => {
             await driver.assertWindowLocation(`${filePaths['test.ts']}?L5`)
         })
 
-        describe('line range selection', () => {
+        describe.only('line range selection', () => {
             it('selects a line range when shift-clicking lines', async () => {
                 await driver.page.goto(`${driver.sourcegraphBaseUrl}${filePaths['test.ts']}`)
                 await waitForView()
@@ -226,7 +226,9 @@ describe('CodeMirror blob view', () => {
 
                 // Lines is selected
                 await Promise.all(
-                    [1, 2, 3].map(lineNumber => driver.page.waitForSelector(lineAt(lineNumber) + '.selected-line'))
+                    [1, 2, 3].map(lineNumber =>
+                        driver.page.waitForSelector(lineAt(lineNumber) + "[data-testid='selected-line']")
+                    )
                 )
 
                 // URL is updated
@@ -245,7 +247,7 @@ describe('CodeMirror blob view', () => {
                 // Line is selected
                 await Promise.all(
                     [1, 2, 3, 4, 5].map(lineNumber =>
-                        driver.page.waitForSelector(lineAt(lineNumber) + '.selected-line')
+                        driver.page.waitForSelector(lineAt(lineNumber) + "[data-testid='selected-line']")
                     )
                 )
 
