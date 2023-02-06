@@ -23,8 +23,8 @@ import (
 	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	workerstoremocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	dbworkerstoremocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -44,10 +44,10 @@ func TestHandler_HandleDequeue(t *testing.T) {
 		name                 string
 		body                 string
 		transformerFunc      handler.TransformerFunc[testRecord]
-		mockFunc             func(mockStore *workerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore)
+		mockFunc             func(mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore)
 		expectedStatusCode   int
 		expectedResponseBody string
-		assertionFunc        func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore)
+		assertionFunc        func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore)
 	}{
 		{
 			name: "Dequeue record",
@@ -55,13 +55,13 @@ func TestHandler_HandleDequeue(t *testing.T) {
 			transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (executor.Job, error) {
 				return executor.Job{ID: record.RecordID()}, nil
 			},
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
 				mockStore.DequeueFunc.PushReturn(testRecord{id: 1}, true, nil)
 				jobTokenStore.CreateFunc.PushReturn("sometoken", nil)
 			},
 			expectedStatusCode:   http.StatusOK,
 			expectedResponseBody: `{"id":1,"token":"sometoken","repositoryName":"","repositoryDirectory":"","commit":"","fetchTags":false,"shallowClone":false,"sparseCheckout":null,"files":{},"dockerSteps":null,"cliSteps":null,"redactedValues":null}`,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
 				require.Len(t, mockStore.DequeueFunc.History(), 1)
 				assert.Equal(t, "test-executor", mockStore.DequeueFunc.History()[0].Arg1)
 				assert.Nil(t, mockStore.DequeueFunc.History()[0].Arg2)
@@ -75,7 +75,7 @@ func TestHandler_HandleDequeue(t *testing.T) {
 			body:                 `{"executorName": "test-executor", "version":"\n1.2", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"}`,
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"error":"Invalid Semantic Version"}`,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
 				require.Len(t, mockStore.DequeueFunc.History(), 0)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
 			},
@@ -83,12 +83,12 @@ func TestHandler_HandleDequeue(t *testing.T) {
 		{
 			name: "Dequeue error",
 			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"}`,
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
 				mockStore.DequeueFunc.PushReturn(testRecord{}, false, errors.New("failed to dequeue"))
 			},
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"error":"dbworkerstore.Dequeue: failed to dequeue"}`,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
 				require.Len(t, mockStore.DequeueFunc.History(), 1)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
 			},
@@ -96,11 +96,11 @@ func TestHandler_HandleDequeue(t *testing.T) {
 		{
 			name: "Nothing to dequeue",
 			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"}`,
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
 				mockStore.DequeueFunc.PushReturn(testRecord{}, false, nil)
 			},
 			expectedStatusCode: http.StatusNoContent,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
 				require.Len(t, mockStore.DequeueFunc.History(), 1)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
 			},
@@ -111,18 +111,18 @@ func TestHandler_HandleDequeue(t *testing.T) {
 			transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (executor.Job, error) {
 				return executor.Job{}, errors.New("failed")
 			},
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
 				mockStore.DequeueFunc.PushReturn(testRecord{id: 1}, true, nil)
 				mockStore.MarkFailedFunc.PushReturn(true, nil)
 			},
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"error":"RecordTransformer: failed"}`,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
 				require.Len(t, mockStore.DequeueFunc.History(), 1)
 				require.Len(t, mockStore.MarkFailedFunc.History(), 1)
 				assert.Equal(t, 1, mockStore.MarkFailedFunc.History()[0].Arg1)
 				assert.Equal(t, "failed to transform record: failed", mockStore.MarkFailedFunc.History()[0].Arg2)
-				assert.Equal(t, store.MarkFinalOptions{}, mockStore.MarkFailedFunc.History()[0].Arg3)
+				assert.Equal(t, dbworkerstore.MarkFinalOptions{}, mockStore.MarkFailedFunc.History()[0].Arg3)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
 			},
 		},
@@ -132,18 +132,18 @@ func TestHandler_HandleDequeue(t *testing.T) {
 			transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (executor.Job, error) {
 				return executor.Job{}, errors.New("failed")
 			},
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
 				mockStore.DequeueFunc.PushReturn(testRecord{id: 1}, true, nil)
 				mockStore.MarkFailedFunc.PushReturn(false, errors.New("failed to mark"))
 			},
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"error":"RecordTransformer: failed"}`,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
 				require.Len(t, mockStore.DequeueFunc.History(), 1)
 				require.Len(t, mockStore.MarkFailedFunc.History(), 1)
 				assert.Equal(t, 1, mockStore.MarkFailedFunc.History()[0].Arg1)
 				assert.Equal(t, "failed to transform record: failed", mockStore.MarkFailedFunc.History()[0].Arg2)
-				assert.Equal(t, store.MarkFinalOptions{}, mockStore.MarkFailedFunc.History()[0].Arg3)
+				assert.Equal(t, dbworkerstore.MarkFinalOptions{}, mockStore.MarkFailedFunc.History()[0].Arg3)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
 			},
 		},
@@ -153,13 +153,13 @@ func TestHandler_HandleDequeue(t *testing.T) {
 			transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (executor.Job, error) {
 				return executor.Job{ID: record.RecordID()}, nil
 			},
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
 				mockStore.DequeueFunc.PushReturn(testRecord{id: 1}, true, nil)
 				jobTokenStore.CreateFunc.PushReturn("sometoken", nil)
 			},
 			expectedStatusCode:   http.StatusOK,
 			expectedResponseBody: `{"version":2,"id":1,"token":"sometoken","repositoryName":"","repositoryDirectory":"","commit":"","fetchTags":false,"shallowClone":false,"sparseCheckout":null,"files":{},"dockerSteps":null,"cliSteps":null,"redactedValues":null,"dockerAuthConfig":{}}`,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
 				require.Len(t, mockStore.DequeueFunc.History(), 1)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 1)
 			},
@@ -170,14 +170,14 @@ func TestHandler_HandleDequeue(t *testing.T) {
 			transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (executor.Job, error) {
 				return executor.Job{ID: record.RecordID()}, nil
 			},
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
 				mockStore.DequeueFunc.PushReturn(testRecord{id: 1}, true, nil)
 				jobTokenStore.CreateFunc.PushReturn("", errors.New("failed to create token"))
 				jobTokenStore.ExistsFunc.PushReturn(false, nil)
 			},
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"error":"CreateToken: failed to create token"}`,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
 				require.Len(t, mockStore.DequeueFunc.History(), 1)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 1)
 				require.Len(t, jobTokenStore.ExistsFunc.History(), 1)
@@ -191,14 +191,14 @@ func TestHandler_HandleDequeue(t *testing.T) {
 			transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (executor.Job, error) {
 				return executor.Job{ID: record.RecordID()}, nil
 			},
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
 				mockStore.DequeueFunc.PushReturn(testRecord{id: 1}, true, nil)
 				jobTokenStore.CreateFunc.PushReturn("", errors.New("failed to create token"))
 				jobTokenStore.ExistsFunc.PushReturn(false, errors.New("failed to check if token exists"))
 			},
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"error":"2 errors occurred:\n\t* CreateToken: failed to create token\n\t* Exists: failed to check if token exists"}`,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
 				require.Len(t, mockStore.DequeueFunc.History(), 1)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 1)
 				require.Len(t, jobTokenStore.ExistsFunc.History(), 1)
@@ -210,7 +210,7 @@ func TestHandler_HandleDequeue(t *testing.T) {
 			transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (executor.Job, error) {
 				return executor.Job{ID: record.RecordID()}, nil
 			},
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
 				mockStore.DequeueFunc.PushReturn(testRecord{id: 1}, true, nil)
 				jobTokenStore.CreateFunc.PushReturn("", errors.New("failed to create token"))
 				jobTokenStore.ExistsFunc.PushReturn(true, nil)
@@ -218,7 +218,7 @@ func TestHandler_HandleDequeue(t *testing.T) {
 			},
 			expectedStatusCode:   http.StatusOK,
 			expectedResponseBody: `{"id":1,"token":"somenewtoken","repositoryName":"","repositoryDirectory":"","commit":"","fetchTags":false,"shallowClone":false,"sparseCheckout":null,"files":{},"dockerSteps":null,"cliSteps":null,"redactedValues":null}`,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
 				require.Len(t, mockStore.DequeueFunc.History(), 1)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 1)
 				require.Len(t, jobTokenStore.ExistsFunc.History(), 1)
@@ -233,7 +233,7 @@ func TestHandler_HandleDequeue(t *testing.T) {
 			transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (executor.Job, error) {
 				return executor.Job{ID: record.RecordID()}, nil
 			},
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
 				mockStore.DequeueFunc.PushReturn(testRecord{id: 1}, true, nil)
 				jobTokenStore.CreateFunc.PushReturn("", errors.New("failed to create token"))
 				jobTokenStore.ExistsFunc.PushReturn(true, nil)
@@ -241,7 +241,7 @@ func TestHandler_HandleDequeue(t *testing.T) {
 			},
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"error":"Regenerate: failed to regen token"}`,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executor.MockJobTokenStore) {
 				require.Len(t, mockStore.DequeueFunc.History(), 1)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 1)
 				require.Len(t, jobTokenStore.ExistsFunc.History(), 1)
@@ -251,7 +251,7 @@ func TestHandler_HandleDequeue(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			mockStore := workerstoremocks.NewMockStore[testRecord]()
+			mockStore := dbworkerstoremocks.NewMockStore[testRecord]()
 			jobTokenStore := executor.NewMockJobTokenStore()
 
 			h := handler.NewHandler(
@@ -299,20 +299,20 @@ func TestHandler_HandleAddExecutionLogEntry(t *testing.T) {
 	tests := []struct {
 		name                 string
 		body                 string
-		mockFunc             func(mockStore *workerstoremocks.MockStore[testRecord])
+		mockFunc             func(mockStore *dbworkerstoremocks.MockStore[testRecord])
 		expectedStatusCode   int
 		expectedResponseBody string
-		assertionFunc        func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord])
+		assertionFunc        func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord])
 	}{
 		{
 			name: "Add execution log entry",
 			body: fmt.Sprintf(`{"executorName": "test-executor", "jobId": 42, "key": "foo", "command": ["faz", "baz"], "startTime": "%s", "exitCode": 0, "out": "done", "durationMs":100}`, startTime.Format(time.RFC3339)),
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord]) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				mockStore.AddExecutionLogEntryFunc.PushReturn(10, nil)
 			},
 			expectedStatusCode:   http.StatusOK,
 			expectedResponseBody: `10`,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord]) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				require.Len(t, mockStore.AddExecutionLogEntryFunc.History(), 1)
 				assert.Equal(t, 42, mockStore.AddExecutionLogEntryFunc.History()[0].Arg1)
 				assert.Equal(
@@ -329,7 +329,7 @@ func TestHandler_HandleAddExecutionLogEntry(t *testing.T) {
 				)
 				assert.Equal(
 					t,
-					store.ExecutionLogEntryOptions{WorkerHostname: "test-executor", State: "processing"},
+					dbworkerstore.ExecutionLogEntryOptions{WorkerHostname: "test-executor", State: "processing"},
 					mockStore.AddExecutionLogEntryFunc.History()[0].Arg3,
 				)
 			},
@@ -337,31 +337,31 @@ func TestHandler_HandleAddExecutionLogEntry(t *testing.T) {
 		{
 			name: "Log entry not added",
 			body: fmt.Sprintf(`{"executorName": "test-executor", "jobId": 42, "key": "foo", "command": ["faz", "baz"], "startTime": "%s", "exitCode": 0, "out": "done", "durationMs":100}`, startTime.Format(time.RFC3339)),
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord]) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				mockStore.AddExecutionLogEntryFunc.PushReturn(0, errors.New("failed to add"))
 			},
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"error":"dbworkerstore.AddExecutionLogEntry: failed to add"}`,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord]) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				require.Len(t, mockStore.AddExecutionLogEntryFunc.History(), 1)
 			},
 		},
 		{
 			name: "Unknown job",
 			body: fmt.Sprintf(`{"executorName": "test-executor", "jobId": 42, "key": "foo", "command": ["faz", "baz"], "startTime": "%s", "exitCode": 0, "out": "done", "durationMs":100}`, startTime.Format(time.RFC3339)),
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord]) {
-				mockStore.AddExecutionLogEntryFunc.PushReturn(0, store.ErrExecutionLogEntryNotUpdated)
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord]) {
+				mockStore.AddExecutionLogEntryFunc.PushReturn(0, dbworkerstore.ErrExecutionLogEntryNotUpdated)
 			},
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"error":"unknown job"}`,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord]) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				require.Len(t, mockStore.AddExecutionLogEntryFunc.History(), 1)
 			},
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			mockStore := workerstoremocks.NewMockStore[testRecord]()
+			mockStore := dbworkerstoremocks.NewMockStore[testRecord]()
 
 			h := handler.NewHandler(
 				database.NewMockExecutorStore(),
@@ -408,19 +408,19 @@ func TestHandler_HandleUpdateExecutionLogEntry(t *testing.T) {
 	tests := []struct {
 		name                 string
 		body                 string
-		mockFunc             func(mockStore *workerstoremocks.MockStore[testRecord])
+		mockFunc             func(mockStore *dbworkerstoremocks.MockStore[testRecord])
 		expectedStatusCode   int
 		expectedResponseBody string
-		assertionFunc        func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord])
+		assertionFunc        func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord])
 	}{
 		{
 			name: "Update execution log entry",
 			body: fmt.Sprintf(`{"entryId": 10, "executorName": "test-executor", "jobId": 42, "key": "foo", "command": ["faz", "baz"], "startTime": "%s", "exitCode": 0, "out": "done", "durationMs":100}`, startTime.Format(time.RFC3339)),
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord]) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				mockStore.UpdateExecutionLogEntryFunc.PushReturn(nil)
 			},
 			expectedStatusCode: http.StatusNoContent,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord]) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				require.Len(t, mockStore.UpdateExecutionLogEntryFunc.History(), 1)
 				assert.Equal(t, 42, mockStore.UpdateExecutionLogEntryFunc.History()[0].Arg1)
 				assert.Equal(t, 10, mockStore.UpdateExecutionLogEntryFunc.History()[0].Arg2)
@@ -438,7 +438,7 @@ func TestHandler_HandleUpdateExecutionLogEntry(t *testing.T) {
 				)
 				assert.Equal(
 					t,
-					store.ExecutionLogEntryOptions{WorkerHostname: "test-executor", State: "processing"},
+					dbworkerstore.ExecutionLogEntryOptions{WorkerHostname: "test-executor", State: "processing"},
 					mockStore.UpdateExecutionLogEntryFunc.History()[0].Arg4,
 				)
 			},
@@ -446,31 +446,31 @@ func TestHandler_HandleUpdateExecutionLogEntry(t *testing.T) {
 		{
 			name: "Log entry not updated",
 			body: fmt.Sprintf(`{"entryId": 10, "executorName": "test-executor", "jobId": 42, "key": "foo", "command": ["faz", "baz"], "startTime": "%s", "exitCode": 0, "out": "done", "durationMs":100}`, startTime.Format(time.RFC3339)),
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord]) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				mockStore.UpdateExecutionLogEntryFunc.PushReturn(errors.New("failed to update"))
 			},
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"error":"dbworkerstore.UpdateExecutionLogEntry: failed to update"}`,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord]) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				require.Len(t, mockStore.UpdateExecutionLogEntryFunc.History(), 1)
 			},
 		},
 		{
 			name: "Unknown job",
 			body: fmt.Sprintf(`{"entryId": 10, "executorName": "test-executor", "jobId": 42, "key": "foo", "command": ["faz", "baz"], "startTime": "%s", "exitCode": 0, "out": "done", "durationMs":100}`, startTime.Format(time.RFC3339)),
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord]) {
-				mockStore.UpdateExecutionLogEntryFunc.PushReturn(store.ErrExecutionLogEntryNotUpdated)
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord]) {
+				mockStore.UpdateExecutionLogEntryFunc.PushReturn(dbworkerstore.ErrExecutionLogEntryNotUpdated)
 			},
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"error":"unknown job"}`,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord]) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				require.Len(t, mockStore.UpdateExecutionLogEntryFunc.History(), 1)
 			},
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			mockStore := workerstoremocks.NewMockStore[testRecord]()
+			mockStore := dbworkerstoremocks.NewMockStore[testRecord]()
 
 			h := handler.NewHandler(
 				database.NewMockExecutorStore(),
@@ -515,23 +515,23 @@ func TestHandler_HandleMarkComplete(t *testing.T) {
 	tests := []struct {
 		name                 string
 		body                 string
-		mockFunc             func(mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore)
+		mockFunc             func(mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore)
 		expectedStatusCode   int
 		expectedResponseBody string
-		assertionFunc        func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore)
+		assertionFunc        func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore)
 	}{
 		{
 			name: "Mark complete",
 			body: `{"executorName": "test-executor", "jobId": 42}`,
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
 				mockStore.MarkCompleteFunc.PushReturn(true, nil)
 				tokenStore.DeleteFunc.PushReturn(nil)
 			},
 			expectedStatusCode: http.StatusNoContent,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
 				require.Len(t, mockStore.MarkCompleteFunc.History(), 1)
 				assert.Equal(t, 42, mockStore.MarkCompleteFunc.History()[0].Arg1)
-				assert.Equal(t, store.MarkFinalOptions{WorkerHostname: "test-executor"}, mockStore.MarkCompleteFunc.History()[0].Arg2)
+				assert.Equal(t, dbworkerstore.MarkFinalOptions{WorkerHostname: "test-executor"}, mockStore.MarkCompleteFunc.History()[0].Arg2)
 				require.Len(t, tokenStore.DeleteFunc.History(), 1)
 				assert.Equal(t, 42, tokenStore.DeleteFunc.History()[0].Arg1)
 				assert.Equal(t, "test", tokenStore.DeleteFunc.History()[0].Arg2)
@@ -540,12 +540,12 @@ func TestHandler_HandleMarkComplete(t *testing.T) {
 		{
 			name: "Failed to mark complete",
 			body: `{"executorName": "test-executor", "jobId": 42}`,
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
 				mockStore.MarkCompleteFunc.PushReturn(false, errors.New("failed"))
 			},
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"error":"dbworkerstore.MarkComplete: failed"}`,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
 				require.Len(t, mockStore.MarkCompleteFunc.History(), 1)
 				require.Len(t, tokenStore.DeleteFunc.History(), 0)
 			},
@@ -553,12 +553,12 @@ func TestHandler_HandleMarkComplete(t *testing.T) {
 		{
 			name: "Unknown job",
 			body: `{"executorName": "test-executor", "jobId": 42}`,
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
 				mockStore.MarkCompleteFunc.PushReturn(false, nil)
 			},
 			expectedStatusCode:   http.StatusNotFound,
 			expectedResponseBody: `null`,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
 				require.Len(t, mockStore.MarkCompleteFunc.History(), 1)
 				require.Len(t, tokenStore.DeleteFunc.History(), 0)
 			},
@@ -566,13 +566,13 @@ func TestHandler_HandleMarkComplete(t *testing.T) {
 		{
 			name: "Failed to delete job token",
 			body: `{"executorName": "test-executor", "jobId": 42}`,
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
 				mockStore.MarkCompleteFunc.PushReturn(true, nil)
 				tokenStore.DeleteFunc.PushReturn(errors.New("failed"))
 			},
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"error":"jobTokenStore.Delete: failed"}`,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
 				require.Len(t, mockStore.MarkCompleteFunc.History(), 1)
 				require.Len(t, tokenStore.DeleteFunc.History(), 1)
 			},
@@ -580,7 +580,7 @@ func TestHandler_HandleMarkComplete(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			mockStore := workerstoremocks.NewMockStore[testRecord]()
+			mockStore := dbworkerstoremocks.NewMockStore[testRecord]()
 			tokenStore := executor.NewMockJobTokenStore()
 
 			h := handler.NewHandler(
@@ -626,24 +626,24 @@ func TestHandler_HandleMarkErrored(t *testing.T) {
 	tests := []struct {
 		name                 string
 		body                 string
-		mockFunc             func(mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore)
+		mockFunc             func(mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore)
 		expectedStatusCode   int
 		expectedResponseBody string
-		assertionFunc        func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore)
+		assertionFunc        func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore)
 	}{
 		{
 			name: "Mark errored",
 			body: `{"executorName": "test-executor", "jobId": 42, "errorMessage": "it failed"}`,
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
 				mockStore.MarkErroredFunc.PushReturn(true, nil)
 				tokenStore.DeleteFunc.PushReturn(nil)
 			},
 			expectedStatusCode: http.StatusNoContent,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
 				require.Len(t, mockStore.MarkErroredFunc.History(), 1)
 				assert.Equal(t, 42, mockStore.MarkErroredFunc.History()[0].Arg1)
 				assert.Equal(t, "it failed", mockStore.MarkErroredFunc.History()[0].Arg2)
-				assert.Equal(t, store.MarkFinalOptions{WorkerHostname: "test-executor"}, mockStore.MarkErroredFunc.History()[0].Arg3)
+				assert.Equal(t, dbworkerstore.MarkFinalOptions{WorkerHostname: "test-executor"}, mockStore.MarkErroredFunc.History()[0].Arg3)
 				require.Len(t, tokenStore.DeleteFunc.History(), 1)
 				assert.Equal(t, 42, tokenStore.DeleteFunc.History()[0].Arg1)
 				assert.Equal(t, "test", tokenStore.DeleteFunc.History()[0].Arg2)
@@ -652,12 +652,12 @@ func TestHandler_HandleMarkErrored(t *testing.T) {
 		{
 			name: "Failed to mark errored",
 			body: `{"executorName": "test-executor", "jobId": 42}`,
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
 				mockStore.MarkErroredFunc.PushReturn(false, errors.New("failed"))
 			},
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"error":"dbworkerstore.MarkErrored: failed"}`,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
 				require.Len(t, mockStore.MarkErroredFunc.History(), 1)
 				require.Len(t, tokenStore.DeleteFunc.History(), 0)
 			},
@@ -665,12 +665,12 @@ func TestHandler_HandleMarkErrored(t *testing.T) {
 		{
 			name: "Unknown job",
 			body: `{"executorName": "test-executor", "jobId": 42}`,
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
 				mockStore.MarkErroredFunc.PushReturn(false, nil)
 			},
 			expectedStatusCode:   http.StatusNotFound,
 			expectedResponseBody: `null`,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
 				require.Len(t, mockStore.MarkErroredFunc.History(), 1)
 				require.Len(t, tokenStore.DeleteFunc.History(), 0)
 			},
@@ -678,13 +678,13 @@ func TestHandler_HandleMarkErrored(t *testing.T) {
 		{
 			name: "Failed to delete job token",
 			body: `{"executorName": "test-executor", "jobId": 42}`,
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
 				mockStore.MarkErroredFunc.PushReturn(true, nil)
 				tokenStore.DeleteFunc.PushReturn(errors.New("failed"))
 			},
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"error":"jobTokenStore.Delete: failed"}`,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
 				require.Len(t, mockStore.MarkErroredFunc.History(), 1)
 				require.Len(t, tokenStore.DeleteFunc.History(), 1)
 			},
@@ -692,7 +692,7 @@ func TestHandler_HandleMarkErrored(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			mockStore := workerstoremocks.NewMockStore[testRecord]()
+			mockStore := dbworkerstoremocks.NewMockStore[testRecord]()
 			tokenStore := executor.NewMockJobTokenStore()
 
 			h := handler.NewHandler(
@@ -738,24 +738,24 @@ func TestHandler_HandleMarkFailed(t *testing.T) {
 	tests := []struct {
 		name                 string
 		body                 string
-		mockFunc             func(mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore)
+		mockFunc             func(mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore)
 		expectedStatusCode   int
 		expectedResponseBody string
-		assertionFunc        func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore)
+		assertionFunc        func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore)
 	}{
 		{
 			name: "Mark failed",
 			body: `{"executorName": "test-executor", "jobId": 42, "errorMessage": "it failed"}`,
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
 				mockStore.MarkFailedFunc.PushReturn(true, nil)
 				tokenStore.DeleteFunc.PushReturn(nil)
 			},
 			expectedStatusCode: http.StatusNoContent,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
 				require.Len(t, mockStore.MarkFailedFunc.History(), 1)
 				assert.Equal(t, 42, mockStore.MarkFailedFunc.History()[0].Arg1)
 				assert.Equal(t, "it failed", mockStore.MarkFailedFunc.History()[0].Arg2)
-				assert.Equal(t, store.MarkFinalOptions{WorkerHostname: "test-executor"}, mockStore.MarkFailedFunc.History()[0].Arg3)
+				assert.Equal(t, dbworkerstore.MarkFinalOptions{WorkerHostname: "test-executor"}, mockStore.MarkFailedFunc.History()[0].Arg3)
 				require.Len(t, tokenStore.DeleteFunc.History(), 1)
 				assert.Equal(t, 42, tokenStore.DeleteFunc.History()[0].Arg1)
 				assert.Equal(t, "test", tokenStore.DeleteFunc.History()[0].Arg2)
@@ -764,12 +764,12 @@ func TestHandler_HandleMarkFailed(t *testing.T) {
 		{
 			name: "Failed to mark failed",
 			body: `{"executorName": "test-executor", "jobId": 42}`,
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
 				mockStore.MarkFailedFunc.PushReturn(false, errors.New("failed"))
 			},
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"error":"dbworkerstore.MarkFailed: failed"}`,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
 				require.Len(t, mockStore.MarkFailedFunc.History(), 1)
 				require.Len(t, tokenStore.DeleteFunc.History(), 0)
 			},
@@ -777,12 +777,12 @@ func TestHandler_HandleMarkFailed(t *testing.T) {
 		{
 			name: "Unknown job",
 			body: `{"executorName": "test-executor", "jobId": 42}`,
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
 				mockStore.MarkErroredFunc.PushReturn(false, nil)
 			},
 			expectedStatusCode:   http.StatusNotFound,
 			expectedResponseBody: `null`,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
 				require.Len(t, mockStore.MarkFailedFunc.History(), 1)
 				require.Len(t, tokenStore.DeleteFunc.History(), 0)
 			},
@@ -790,13 +790,13 @@ func TestHandler_HandleMarkFailed(t *testing.T) {
 		{
 			name: "Failed to delete job token",
 			body: `{"executorName": "test-executor", "jobId": 42}`,
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
 				mockStore.MarkFailedFunc.PushReturn(true, nil)
 				tokenStore.DeleteFunc.PushReturn(errors.New("failed"))
 			},
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"error":"jobTokenStore.Delete: failed"}`,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], tokenStore *executor.MockJobTokenStore) {
 				require.Len(t, mockStore.MarkFailedFunc.History(), 1)
 				require.Len(t, tokenStore.DeleteFunc.History(), 1)
 			},
@@ -804,7 +804,7 @@ func TestHandler_HandleMarkFailed(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			mockStore := workerstoremocks.NewMockStore[testRecord]()
+			mockStore := dbworkerstoremocks.NewMockStore[testRecord]()
 			tokenStore := executor.NewMockJobTokenStore()
 
 			h := handler.NewHandler(
@@ -850,21 +850,21 @@ func TestHandler_HandleHeartbeat(t *testing.T) {
 	tests := []struct {
 		name                 string
 		body                 string
-		mockFunc             func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord])
+		mockFunc             func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord])
 		expectedStatusCode   int
 		expectedResponseBody string
-		assertionFunc        func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord])
+		assertionFunc        func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord])
 	}{
 		{
 			name: "Heartbeat",
 			body: `{"executorName": "test-executor", "jobIds": [42, 7], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
-			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord]) {
+			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
 				mockStore.HeartbeatFunc.PushReturn([]int{42, 7}, nil, nil)
 			},
 			expectedStatusCode:   http.StatusOK,
 			expectedResponseBody: "[42,7]",
-			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord]) {
+			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
 				assert.Equal(
 					t,
@@ -883,19 +883,19 @@ func TestHandler_HandleHeartbeat(t *testing.T) {
 				)
 				require.Len(t, mockStore.HeartbeatFunc.History(), 1)
 				assert.Equal(t, []int{42, 7}, mockStore.HeartbeatFunc.History()[0].Arg1)
-				assert.Equal(t, store.HeartbeatOptions{WorkerHostname: "test-executor"}, mockStore.HeartbeatFunc.History()[0].Arg2)
+				assert.Equal(t, dbworkerstore.HeartbeatOptions{WorkerHostname: "test-executor"}, mockStore.HeartbeatFunc.History()[0].Arg2)
 			},
 		},
 		{
 			name: "V2 Heartbeat",
 			body: `{"version":"V2", "executorName": "test-executor", "jobIds": [42, 7], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
-			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord]) {
+			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
 				mockStore.HeartbeatFunc.PushReturn([]int{42, 7}, nil, nil)
 			},
 			expectedStatusCode:   http.StatusOK,
 			expectedResponseBody: `{"knownIds":[42,7],"cancelIds":null}`,
-			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord]) {
+			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
 				require.Len(t, mockStore.HeartbeatFunc.History(), 1)
 			},
@@ -905,7 +905,7 @@ func TestHandler_HandleHeartbeat(t *testing.T) {
 			body:                 `{"executorName": "", "jobIds": [42, 7], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"error":"worker hostname cannot be empty"}`,
-			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord]) {
+			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 0)
 				require.Len(t, mockStore.HeartbeatFunc.History(), 0)
 			},
@@ -913,13 +913,13 @@ func TestHandler_HandleHeartbeat(t *testing.T) {
 		{
 			name: "Failed to upsert heartbeat",
 			body: `{"executorName": "test-executor", "jobIds": [42, 7], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
-			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord]) {
+			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				executorStore.UpsertHeartbeatFunc.PushReturn(errors.New("failed"))
 				mockStore.HeartbeatFunc.PushReturn([]int{42, 7}, nil, nil)
 			},
 			expectedStatusCode:   http.StatusOK,
 			expectedResponseBody: `[42,7]`,
-			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord]) {
+			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
 				require.Len(t, mockStore.HeartbeatFunc.History(), 1)
 			},
@@ -927,13 +927,13 @@ func TestHandler_HandleHeartbeat(t *testing.T) {
 		{
 			name: "Failed to heartbeat",
 			body: `{"executorName": "test-executor", "jobIds": [42, 7], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
-			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord]) {
+			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
 				mockStore.HeartbeatFunc.PushReturn(nil, nil, errors.New("failed"))
 			},
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"error":"dbworkerstore.UpsertHeartbeat: failed"}`,
-			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord]) {
+			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
 				require.Len(t, mockStore.HeartbeatFunc.History(), 1)
 			},
@@ -941,13 +941,13 @@ func TestHandler_HandleHeartbeat(t *testing.T) {
 		{
 			name: "Has cancelled ids",
 			body: `{"executorName": "test-executor", "jobIds": [42, 7], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
-			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord]) {
+			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
 				mockStore.HeartbeatFunc.PushReturn(nil, []int{42, 7}, nil)
 			},
 			expectedStatusCode:   http.StatusOK,
 			expectedResponseBody: `null`,
-			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord]) {
+			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
 				require.Len(t, mockStore.HeartbeatFunc.History(), 1)
 			},
@@ -955,13 +955,13 @@ func TestHandler_HandleHeartbeat(t *testing.T) {
 		{
 			name: "V2 has cancelled ids",
 			body: `{"version": "V2", "executorName": "test-executor", "jobIds": [42, 7], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
-			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord]) {
+			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
 				mockStore.HeartbeatFunc.PushReturn(nil, []int{42, 7}, nil)
 			},
 			expectedStatusCode:   http.StatusOK,
 			expectedResponseBody: `{"knownIds":null,"cancelIds":[42,7]}`,
-			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *workerstoremocks.MockStore[testRecord]) {
+			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
 				require.Len(t, mockStore.HeartbeatFunc.History(), 1)
 			},
@@ -969,7 +969,7 @@ func TestHandler_HandleHeartbeat(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			mockStore := workerstoremocks.NewMockStore[testRecord]()
+			mockStore := dbworkerstoremocks.NewMockStore[testRecord]()
 			executorStore := database.NewMockExecutorStore()
 			metricsStore := metricsstore.NewMockDistributedStore()
 
@@ -1028,52 +1028,52 @@ func TestHandler_HandleCanceledJobs(t *testing.T) {
 	tests := []struct {
 		name                 string
 		body                 string
-		mockFunc             func(mockStore *workerstoremocks.MockStore[testRecord])
+		mockFunc             func(mockStore *dbworkerstoremocks.MockStore[testRecord])
 		expectedStatusCode   int
 		expectedResponseBody string
-		assertionFunc        func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord])
+		assertionFunc        func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord])
 	}{
 		{
 			name: "Cancel Jobs",
 			body: `{"knownJobIds": [42,7], "executorName": "test-executor"}`,
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord]) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				mockStore.HeartbeatFunc.PushReturn(nil, []int{42, 7}, nil)
 			},
 			expectedStatusCode:   http.StatusOK,
 			expectedResponseBody: "[42,7]",
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord]) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				require.Len(t, mockStore.HeartbeatFunc.History(), 1)
 				assert.Equal(t, []int{42, 7}, mockStore.HeartbeatFunc.History()[0].Arg1)
-				assert.Equal(t, store.HeartbeatOptions{WorkerHostname: "test-executor"}, mockStore.HeartbeatFunc.History()[0].Arg2)
+				assert.Equal(t, dbworkerstore.HeartbeatOptions{WorkerHostname: "test-executor"}, mockStore.HeartbeatFunc.History()[0].Arg2)
 			},
 		},
 		{
 			name: "Invalid worker hostname",
 			body: `{"knownJobIds": [42,7], "executorName": ""}`,
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord]) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 			},
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"error":"worker hostname cannot be empty"}`,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord]) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				require.Len(t, mockStore.HeartbeatFunc.History(), 0)
 			},
 		},
 		{
 			name: "Failed to cancel Jobs",
 			body: `{"knownJobIds": [42,7], "executorName": "test-executor"}`,
-			mockFunc: func(mockStore *workerstoremocks.MockStore[testRecord]) {
+			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				mockStore.HeartbeatFunc.PushReturn(nil, nil, errors.New("failed"))
 			},
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"error":"dbworkerstore.CanceledJobs: failed"}`,
-			assertionFunc: func(t *testing.T, mockStore *workerstoremocks.MockStore[testRecord]) {
+			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				require.Len(t, mockStore.HeartbeatFunc.History(), 1)
 			},
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			mockStore := workerstoremocks.NewMockStore[testRecord]()
+			mockStore := dbworkerstoremocks.NewMockStore[testRecord]()
 
 			h := handler.NewHandler(
 				database.NewMockExecutorStore(),
