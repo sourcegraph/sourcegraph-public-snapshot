@@ -38,10 +38,11 @@ interface Props extends ThemeProps, TelemetryProps, PlatformContextProps, Settin
     authenticatedUser: AuthenticatedUser
 }
 
+const URL = '/site-admin/external-services'
+
 export const SiteAdminExternalServicesArea: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     ...outerProps
 }) => {
-    const url = '/external-services'
     const { data, error, loading } = useQuery<SiteExternalServiceConfigResult, SiteExternalServiceConfigVariables>(
         SITE_EXTERNAL_SERVICE_CONFIG,
         {}
@@ -62,7 +63,7 @@ export const SiteAdminExternalServicesArea: React.FunctionComponent<React.PropsW
     return (
         <Switch>
             <Route
-                path={url}
+                path={URL}
                 render={props => (
                     <ExternalServicesPage
                         {...outerProps}
@@ -74,9 +75,9 @@ export const SiteAdminExternalServicesArea: React.FunctionComponent<React.PropsW
                 )}
                 exact={true}
             />
-            <Route path={url + '/add'} render={() => <Redirect to="new" />} exact={true} />
+            <Route path={URL + '/add'} render={() => <Redirect to="new" />} exact={true} />
             <Route
-                path={`${url}/new`}
+                path={`${URL}/new`}
                 render={props => (
                     <AddExternalServicesPage
                         {...outerProps}
@@ -91,7 +92,7 @@ export const SiteAdminExternalServicesArea: React.FunctionComponent<React.PropsW
                 exact={true}
             />
             <Route
-                path={`${url}/:id`}
+                path={`${URL}/:id`}
                 render={({ match, ...props }: RouteComponentProps<{ id: Scalars['ID'] }>) => (
                     <ExternalServicePage
                         {...outerProps}
@@ -106,7 +107,7 @@ export const SiteAdminExternalServicesArea: React.FunctionComponent<React.PropsW
                 exact={true}
             />
             <Route
-                path={`${url}/:id/edit`}
+                path={`${URL}/:id/edit`}
                 render={({ match, ...props }: RouteComponentProps<{ id: Scalars['ID'] }>) => (
                     <ExternalServiceEditPage
                         {...outerProps}

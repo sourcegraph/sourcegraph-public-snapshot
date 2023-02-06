@@ -129,10 +129,6 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         render: props => <SiteAdminSettingsPage {...props} />,
     },
     {
-        path: '/external-services',
-        render: props => <SiteAdminExternalServicesArea {...props} />,
-    },
-    {
         path: '/external-services/*',
         render: props => <SiteAdminExternalServicesArea {...props} />,
     },
