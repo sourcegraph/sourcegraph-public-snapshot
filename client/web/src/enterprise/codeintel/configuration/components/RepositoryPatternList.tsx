@@ -37,12 +37,14 @@ export const RepositoryPatternList: FunctionComponent<RepositoryPatternListProps
     disabled,
 }) => {
     const [autoFocusIndex, setAutoFocusIndex] = useState(-1)
+    const [repositoryFetchLimit, setRepositoryFetchLimit] = useState<number>()
 
     const addRepositoryPattern = (): void => {
         setRepositoryPatterns(repositoryPatterns =>
             repositoryPatterns && repositoryPatterns.length > 0 ? repositoryPatterns.concat(['']) : ['*']
         )
         setAutoFocusIndex(repositoryPatterns?.length ?? -1)
+        setRepositoryFetchLimit(undefined)
     }
 
     const handleDelete = (index: number): void => {
@@ -50,16 +52,20 @@ export const RepositoryPatternList: FunctionComponent<RepositoryPatternListProps
             (repositoryPatterns || []).filter((___, index_) => index !== index_)
         )
         setAutoFocusIndex(-1)
+        setRepositoryFetchLimit(undefined)
     }
 
-    const { previewResult: preview, previewError, isLoadingPreview } = usePreviewRepositoryFilter(repositoryPatterns)
+    const {
+        previewResult: preview,
+        previewError,
+        isLoadingPreview,
+    } = usePreviewRepositoryFilter(repositoryPatterns, repositoryFetchLimit)
 
     return (
         <div className={styles.container}>
             <div>
                 {repositoryPatterns.map((repositoryPattern, index) => (
                     <div key={index} className={styles.inputContainer}>
-                        {/* TODO Maybe debounce this input */}
                         <RepositoryPattern
                             index={index}
                             autoFocus={index === autoFocusIndex}
@@ -120,6 +126,7 @@ export const RepositoryPatternList: FunctionComponent<RepositoryPatternListProps
                         ) : (
                             <>
                                 {preview.totalMatches > preview.totalCount && (
+                                    // TODO Test
                                     <Alert variant="danger">
                                         Each policy pattern can match a maximum of {preview.limit} repositories. There
                                         are {preview.totalMatches - preview.totalCount} additional repositories that
@@ -128,26 +135,38 @@ export const RepositoryPatternList: FunctionComponent<RepositoryPatternListProps
                                     </Alert>
                                 )}
 
-                                <span>
-                                    {preview.totalCount === 1 ? (
-                                        <>{preview.totalCount} repository matches</>
-                                    ) : (
-                                        <>{preview.totalCount} repositories match</>
-                                    )}{' '}
-                                    {repositoryPatterns.filter(pattern => pattern !== '').length === 1 ? (
-                                        <>this pattern</>
-                                    ) : (
-                                        <>
-                                            these {repositoryPatterns.filter(pattern => pattern !== '').length} patterns
-                                        </>
-                                    )}
+                                <div className="d-flex justify-content-between">
+                                    <span>
+                                        {preview.totalCount === 1 ? (
+                                            <>{preview.totalCount} repository matches</>
+                                        ) : (
+                                            <>{preview.totalCount} repositories match</>
+                                        )}{' '}
+                                        {repositoryPatterns.filter(pattern => pattern !== '').length === 1 ? (
+                                            <>this pattern</>
+                                        ) : (
+                                            <>
+                                                these {repositoryPatterns.filter(pattern => pattern !== '').length}{' '}
+                                                patterns
+                                            </>
+                                        )}
+                                        {preview.repositories.length < preview.totalCount && (
+                                            <> (showing only {preview.repositories.length})</>
+                                        )}
+                                        :
+                                    </span>
                                     {preview.repositories.length < preview.totalCount && (
-                                        <> (showing only {preview.repositories.length})</>
+                                        <Button
+                                            variant="link"
+                                            className="p-0"
+                                            onClick={() => setRepositoryFetchLimit(preview.totalCount)}
+                                        >
+                                            Show all {preview.totalCount} repositories
+                                        </Button>
                                     )}
-                                    :
-                                </span>
+                                </div>
 
-                                <ul className="list-group p2">
+                                <ul className={classNames('list-group p2', styles.list)}>
                                     {preview.repositories.map(repo => (
                                         <li key={repo.name} className="list-group-item">
                                             {repo.externalRepository && (
@@ -206,13 +225,8 @@ const RepositoryPattern: FunctionComponent<RepositoryPatternProps> = ({
                     disabled={disabled}
                     required={true}
                     status={loading ? InputStatus.loading : undefined}
+                    placeholder={index === 0 ? 'Example: github.com/*' : undefined}
                 />
-                {/* {localPattern === '' && (
-                    <InputErrorMessage
-                        message="Please supply a value."
-                        className="d-flex align-items-center mt-0 ml-3"
-                    />
-                )} */}
             </div>
         </div>
     )
