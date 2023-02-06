@@ -101,39 +101,45 @@ func TestClient_MarkComplete(t *testing.T) {
 		{
 			name: "Success",
 			spec: routeSpec{
-				expectedMethod:   "POST",
-				expectedPath:     "/.executors/queue/test_queue/markComplete",
-				expectedUsername: "test",
-				expectedToken:    "job-token",
-				expectedPayload:  `{"executorName": "deadbeef", "jobId": 42}`,
-				responseStatus:   http.StatusNoContent,
-				responsePayload:  ``,
+				expectedMethod:       "POST",
+				expectedPath:         "/.executors/queue/test_queue/markComplete",
+				expectedUsername:     "test",
+				expectedToken:        "job-token",
+				expectedJobID:        "42",
+				expectedExecutorName: "deadbeef",
+				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42}`,
+				responseStatus:       http.StatusNoContent,
+				responsePayload:      ``,
 			},
 			job: types.Job{ID: 42, Token: "job-token"},
 		},
 		{
 			name: "Success general access token",
 			spec: routeSpec{
-				expectedMethod:   "POST",
-				expectedPath:     "/.executors/queue/test_queue/markComplete",
-				expectedUsername: "test",
-				expectedToken:    "hunter2",
-				expectedPayload:  `{"executorName": "deadbeef", "jobId": 42}`,
-				responseStatus:   http.StatusNoContent,
-				responsePayload:  ``,
+				expectedMethod:       "POST",
+				expectedPath:         "/.executors/queue/test_queue/markComplete",
+				expectedUsername:     "test",
+				expectedToken:        "hunter2",
+				expectedJobID:        "42",
+				expectedExecutorName: "deadbeef",
+				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42}`,
+				responseStatus:       http.StatusNoContent,
+				responsePayload:      ``,
 			},
 			job: types.Job{ID: 42},
 		},
 		{
 			name: "Bad Response",
 			spec: routeSpec{
-				expectedMethod:   "POST",
-				expectedPath:     "/.executors/queue/test_queue/markComplete",
-				expectedUsername: "test",
-				expectedToken:    "job-token",
-				expectedPayload:  `{"executorName": "deadbeef", "jobId": 42}`,
-				responseStatus:   http.StatusInternalServerError,
-				responsePayload:  ``,
+				expectedMethod:       "POST",
+				expectedPath:         "/.executors/queue/test_queue/markComplete",
+				expectedUsername:     "test",
+				expectedToken:        "job-token",
+				expectedJobID:        "42",
+				expectedExecutorName: "deadbeef",
+				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42}`,
+				responseStatus:       http.StatusInternalServerError,
+				responsePayload:      ``,
 			},
 			job:         types.Job{ID: 42, Token: "job-token"},
 			expectedErr: errors.New("unexpected status code 500"),
@@ -165,39 +171,45 @@ func TestClient_MarkErrored(t *testing.T) {
 		{
 			name: "Success",
 			spec: routeSpec{
-				expectedMethod:   "POST",
-				expectedPath:     "/.executors/queue/test_queue/markErrored",
-				expectedUsername: "test",
-				expectedToken:    "job-token",
-				expectedPayload:  `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
-				responseStatus:   http.StatusNoContent,
-				responsePayload:  ``,
+				expectedMethod:       "POST",
+				expectedPath:         "/.executors/queue/test_queue/markErrored",
+				expectedUsername:     "test",
+				expectedToken:        "job-token",
+				expectedJobID:        "42",
+				expectedExecutorName: "deadbeef",
+				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
+				responseStatus:       http.StatusNoContent,
+				responsePayload:      ``,
 			},
 			job: types.Job{ID: 42, Token: "job-token"},
 		},
 		{
 			name: "Success general access token",
 			spec: routeSpec{
-				expectedMethod:   "POST",
-				expectedPath:     "/.executors/queue/test_queue/markErrored",
-				expectedUsername: "test",
-				expectedToken:    "hunter2",
-				expectedPayload:  `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
-				responseStatus:   http.StatusNoContent,
-				responsePayload:  ``,
+				expectedMethod:       "POST",
+				expectedPath:         "/.executors/queue/test_queue/markErrored",
+				expectedUsername:     "test",
+				expectedToken:        "hunter2",
+				expectedJobID:        "42",
+				expectedExecutorName: "deadbeef",
+				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
+				responseStatus:       http.StatusNoContent,
+				responsePayload:      ``,
 			},
 			job: types.Job{ID: 42},
 		},
 		{
 			name: "Bad Response",
 			spec: routeSpec{
-				expectedMethod:   "POST",
-				expectedPath:     "/.executors/queue/test_queue/markErrored",
-				expectedUsername: "test",
-				expectedToken:    "job-token",
-				expectedPayload:  `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
-				responseStatus:   http.StatusInternalServerError,
-				responsePayload:  ``,
+				expectedMethod:       "POST",
+				expectedPath:         "/.executors/queue/test_queue/markErrored",
+				expectedUsername:     "test",
+				expectedToken:        "job-token",
+				expectedJobID:        "42",
+				expectedExecutorName: "deadbeef",
+				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
+				responseStatus:       http.StatusInternalServerError,
+				responsePayload:      ``,
 			},
 			job:         types.Job{ID: 42, Token: "job-token"},
 			expectedErr: errors.New("unexpected status code 500"),
@@ -229,39 +241,45 @@ func TestClient_MarkFailed(t *testing.T) {
 		{
 			name: "Success",
 			spec: routeSpec{
-				expectedMethod:   "POST",
-				expectedPath:     "/.executors/queue/test_queue/markFailed",
-				expectedUsername: "test",
-				expectedToken:    "job-token",
-				expectedPayload:  `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
-				responseStatus:   http.StatusNoContent,
-				responsePayload:  ``,
+				expectedMethod:       "POST",
+				expectedPath:         "/.executors/queue/test_queue/markFailed",
+				expectedUsername:     "test",
+				expectedToken:        "job-token",
+				expectedJobID:        "42",
+				expectedExecutorName: "deadbeef",
+				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
+				responseStatus:       http.StatusNoContent,
+				responsePayload:      ``,
 			},
 			job: types.Job{ID: 42, Token: "job-token"},
 		},
 		{
 			name: "Success general access token",
 			spec: routeSpec{
-				expectedMethod:   "POST",
-				expectedPath:     "/.executors/queue/test_queue/markFailed",
-				expectedUsername: "test",
-				expectedToken:    "hunter2",
-				expectedPayload:  `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
-				responseStatus:   http.StatusNoContent,
-				responsePayload:  ``,
+				expectedMethod:       "POST",
+				expectedPath:         "/.executors/queue/test_queue/markFailed",
+				expectedUsername:     "test",
+				expectedToken:        "hunter2",
+				expectedJobID:        "42",
+				expectedExecutorName: "deadbeef",
+				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
+				responseStatus:       http.StatusNoContent,
+				responsePayload:      ``,
 			},
 			job: types.Job{ID: 42},
 		},
 		{
 			name: "Bad Response",
 			spec: routeSpec{
-				expectedMethod:   "POST",
-				expectedPath:     "/.executors/queue/test_queue/markFailed",
-				expectedUsername: "test",
-				expectedToken:    "job-token",
-				expectedPayload:  `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
-				responseStatus:   http.StatusInternalServerError,
-				responsePayload:  ``,
+				expectedMethod:       "POST",
+				expectedPath:         "/.executors/queue/test_queue/markFailed",
+				expectedUsername:     "test",
+				expectedToken:        "job-token",
+				expectedJobID:        "42",
+				expectedExecutorName: "deadbeef",
+				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
+				responseStatus:       http.StatusInternalServerError,
+				responsePayload:      ``,
 			},
 			job:         types.Job{ID: 42, Token: "job-token"},
 			expectedErr: errors.New("unexpected status code 500"),
@@ -387,10 +405,12 @@ func TestAddExecutionLogEntry(t *testing.T) {
 	}
 
 	spec := routeSpec{
-		expectedMethod:   "POST",
-		expectedPath:     "/.executors/queue/test_queue/addExecutionLogEntry",
-		expectedUsername: "test",
-		expectedToken:    "job-token",
+		expectedMethod:       "POST",
+		expectedPath:         "/.executors/queue/test_queue/addExecutionLogEntry",
+		expectedUsername:     "test",
+		expectedToken:        "job-token",
+		expectedJobID:        "42",
+		expectedExecutorName: "deadbeef",
 		expectedPayload: `{
 			"executorName": "deadbeef",
 			"jobId": 42,
@@ -427,10 +447,12 @@ func TestAddExecutionLogEntryBadResponse(t *testing.T) {
 	}
 
 	spec := routeSpec{
-		expectedMethod:   "POST",
-		expectedPath:     "/.executors/queue/test_queue/addExecutionLogEntry",
-		expectedUsername: "test",
-		expectedToken:    "job-token",
+		expectedMethod:       "POST",
+		expectedPath:         "/.executors/queue/test_queue/addExecutionLogEntry",
+		expectedUsername:     "test",
+		expectedToken:        "job-token",
+		expectedJobID:        "42",
+		expectedExecutorName: "deadbeef",
 		expectedPayload: `{
 			"executorName": "deadbeef",
 			"jobId": 42,
@@ -463,10 +485,12 @@ func TestUpdateExecutionLogEntry(t *testing.T) {
 	}
 
 	spec := routeSpec{
-		expectedMethod:   "POST",
-		expectedPath:     "/.executors/queue/test_queue/updateExecutionLogEntry",
-		expectedUsername: "test",
-		expectedToken:    "job-token",
+		expectedMethod:       "POST",
+		expectedPath:         "/.executors/queue/test_queue/updateExecutionLogEntry",
+		expectedUsername:     "test",
+		expectedToken:        "job-token",
+		expectedJobID:        "42",
+		expectedExecutorName: "deadbeef",
 		expectedPayload: `{
 			"executorName": "deadbeef",
 			"jobId": 42,
@@ -500,10 +524,12 @@ func TestUpdateExecutionLogEntryBadResponse(t *testing.T) {
 	}
 
 	spec := routeSpec{
-		expectedMethod:   "POST",
-		expectedPath:     "/.executors/queue/test_queue/updateExecutionLogEntry",
-		expectedUsername: "test",
-		expectedToken:    "job-token",
+		expectedMethod:       "POST",
+		expectedPath:         "/.executors/queue/test_queue/updateExecutionLogEntry",
+		expectedUsername:     "test",
+		expectedToken:        "job-token",
+		expectedJobID:        "42",
+		expectedExecutorName: "deadbeef",
 		expectedPayload: `{
 			"executorName": "deadbeef",
 			"jobId": 42,
@@ -527,13 +553,15 @@ func TestUpdateExecutionLogEntryBadResponse(t *testing.T) {
 }
 
 type routeSpec struct {
-	expectedMethod   string
-	expectedPath     string
-	expectedUsername string
-	expectedToken    string
-	expectedPayload  string
-	responseStatus   int
-	responsePayload  string
+	expectedMethod       string
+	expectedPath         string
+	expectedUsername     string
+	expectedToken        string
+	expectedJobID        string
+	expectedExecutorName string
+	expectedPayload      string
+	responseStatus       int
+	responsePayload      string
 }
 
 func testRoute(t *testing.T, spec routeSpec, f func(client *queue.Client)) {
@@ -544,6 +572,7 @@ func testRoute(t *testing.T, spec routeSpec, f func(client *queue.Client)) {
 		ExecutorName: "deadbeef",
 		QueueName:    "test_queue",
 		BaseClientOptions: apiclient.BaseClientOptions{
+			ExecutorName: "deadbeef",
 			EndpointOptions: apiclient.EndpointOptions{
 				URL:        ts.URL,
 				PathPrefix: "/.executors/queue",
@@ -574,6 +603,9 @@ func testServer(t *testing.T, spec routeSpec) *httptest.Server {
 		parts := strings.Split(r.Header.Get("Authorization"), " ")
 		assert.Len(t, parts, 2)
 		assert.Equal(t, spec.expectedToken, parts[1])
+
+		assert.Equal(t, spec.expectedJobID, r.Header.Get("X-Sourcegraph-Job-ID"))
+		assert.Equal(t, spec.expectedExecutorName, r.Header.Get("X-Sourcegraph-Executor-Name"))
 
 		content, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
