@@ -58,7 +58,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
             class="mb-2"
           >
             <a
-              class="anchorLink btn btnSecondary btnBlock"
+              class="anchorLink btn btnPrimary btnBlock"
               href="/.auth/github/login?pc=f00bar"
             >
               <svg
@@ -97,7 +97,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
                   d="M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z"
                 />
               </svg>
-              Continue with Email
+               Continue with Email
             </a>
           </div>
         </div>
@@ -168,7 +168,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
             class="mb-2"
           >
             <a
-              class="anchorLink btn btnSecondary btnBlock"
+              class="anchorLink btn btnPrimary btnBlock"
               href="/.auth/github/login?pc=f00bar"
             >
               <svg
@@ -207,7 +207,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
                   d="M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z"
                 />
               </svg>
-              Continue with Email
+               Continue with Email
             </a>
           </div>
         </div>
@@ -594,7 +594,7 @@ exports[`SignInPage with Gerrit auth provider does not render the Gerrit provide
             class="mb-2"
           >
             <a
-              class="anchorLink btn btnSecondary btnBlock"
+              class="anchorLink btn btnPrimary btnBlock"
               href="/.auth/github/login?pc=f00bar"
             >
               <svg
@@ -633,7 +633,7 @@ exports[`SignInPage with Gerrit auth provider does not render the Gerrit provide
                   d="M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z"
                 />
               </svg>
-              Continue with Email
+               Continue with Email
             </a>
           </div>
         </div>
@@ -704,7 +704,7 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 2 
             class="mb-2"
           >
             <a
-              class="anchorLink btn btnSecondary btnBlock"
+              class="anchorLink btn btnPrimary btnBlock"
               href="/.auth/github/login?pc=f00bar"
             >
               <svg
@@ -743,7 +743,7 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 2 
                   d="M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z"
                 />
               </svg>
-              Continue with Email
+               Continue with Email
             </a>
           </div>
         </div>
@@ -814,7 +814,7 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 3 
             class="mb-2"
           >
             <a
-              class="anchorLink btn btnSecondary btnBlock"
+              class="anchorLink btn btnPrimary btnBlock"
               href="/.auth/github/login?pc=f00bar"
             >
               <svg
@@ -837,7 +837,7 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 3 
             class="mb-2"
           >
             <a
-              class="anchorLink btn btnSecondary btnBlock"
+              class="anchorLink btn btnPrimary btnBlock"
               href=""
             >
                Continue with Sourcegraph Operators
@@ -863,7 +863,7 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 3 
                   d="M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z"
                 />
               </svg>
-              Continue with Email
+               Continue with Email
             </a>
           </div>
         </div>
