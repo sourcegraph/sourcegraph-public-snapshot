@@ -8,7 +8,7 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "sourceMap": true,
-    "strict": true,
+    "strict": true
   },
   // Path aliases are handled by https://kit.svelte.dev/docs/configuration#alias
   //
@@ -16,22 +16,22 @@
   // from the referenced tsconfig.json - TypeScript does not merge them in
   "references": [
     {
-      "path": "../branded",
+      "path": "../branded"
     },
     {
-      "path": "../common",
+      "path": "../common"
     },
     {
-      "path": "../http-client",
+      "path": "../http-client"
     },
     {
-      "path": "../shared",
+      "path": "../shared"
     },
     {
-      "path": "../web",
+      "path": "../web"
     },
     {
-      "path": "../wildcard",
-    },
-  ],
+      "path": "../wildcard"
+    }
+  ]
 }
