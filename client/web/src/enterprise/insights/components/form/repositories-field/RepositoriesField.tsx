@@ -1,4 +1,4 @@
-import { forwardRef, ReactElement, useCallback, useState } from 'react'
+import { ClipboardEvent, forwardRef, ReactElement, useCallback, useState } from 'react'
 
 import { mdiSourceRepository } from '@mdi/js'
 import { ErrorLike } from '@storybook/client-api'
@@ -53,6 +53,28 @@ export const RepositoriesField = forwardRef(function RepositoriesField(props, re
         [onChange]
     )
 
+    const handleInputPaste = useCallback(
+        (event: ClipboardEvent) => {
+            const target = event.target as HTMLInputElement
+            const currentValue = target.value
+            const selectionStart = target.selectionStart
+            const selectionEnd = target.selectionEnd
+
+            if (!currentValue.trim() || selectionStart !== selectionEnd) {
+                return
+            }
+
+            const paste = event.clipboardData.getData('text')
+            const elements = paste.split(/[ ,]+/)
+
+            if (elements.length > 1) {
+                event.preventDefault()
+                onChange(elements)
+            }
+        },
+        [onChange]
+    )
+
     return (
         <MultiCombobox
             selectedItems={value}
@@ -68,6 +90,7 @@ export const RepositoriesField = forwardRef(function RepositoriesField(props, re
                 autoComplete="off"
                 status={loading ? 'loading' : status}
                 onChange={event => setSearch(event.target.value)}
+                onPaste={handleInputPaste}
             />
 
             {error && (
