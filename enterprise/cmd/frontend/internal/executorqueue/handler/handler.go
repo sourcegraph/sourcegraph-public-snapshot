@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	"github.com/inconshreveable/log15"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
 	"github.com/sourcegraph/log"
@@ -436,7 +435,7 @@ func (h *handler[T]) wrapHandler(w http.ResponseWriter, r *http.Request, payload
 
 	status, payload, err := handler()
 	if err != nil {
-		log15.Error("Handler returned an error", "err", err)
+		h.logger.Error("Handler returned an error", log.Error(err))
 
 		status = http.StatusInternalServerError
 		payload = errorResponse{Error: err.Error()}
@@ -444,7 +443,7 @@ func (h *handler[T]) wrapHandler(w http.ResponseWriter, r *http.Request, payload
 
 	data, err := json.Marshal(payload)
 	if err != nil {
-		log15.Error("Failed to serialize payload", "err", err)
+		h.logger.Error("Failed to serialize payload", log.Error(err))
 		http.Error(w, fmt.Sprintf("Failed to serialize payload: %s", err), http.StatusInternalServerError)
 		return
 	}
