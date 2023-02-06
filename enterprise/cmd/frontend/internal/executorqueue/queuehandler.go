@@ -176,44 +176,6 @@ func jobAuthMiddleware(routeName routeName, tokenStore executor.JobTokenStore, e
 }
 
 func validateJobRequest(w http.ResponseWriter, r *http.Request, routeName routeName, tokenStore executor.JobTokenStore, executorStore database.ExecutorStore) bool {
-	var executorName string
-	var jobId int64
-	var queue string
-	var repo string
-	var err error
-
-	jobId, err = parseJobIdHeader(r)
-	if err != nil {
-		log15.Error("failed to parse jobId", "err", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return false
-	}
-
-	// When the requester sets a User with a username, r.URL.User.Username() will return a blank value (always).
-	// To get the username is by using BasicAuth(). Even if the requester does not use a reverse proxy, this is the
-	// way to get the username.
-	executorName = r.Header.Get("X-Sourcegraph-Executor-Name")
-
-	// Each route is "special". Set additional information based on the route that is being worked with.
-	switch routeName {
-	case routeFiles:
-		queue = "batches"
-	case routeGit:
-		repo = mux.Vars(r)["RepoName"]
-	case routeQueue:
-		queue = mux.Vars(r)["queueName"]
-	default:
-		log15.Error("unsupported route", "route", routeName)
-		http.Error(w, "unsupported route", http.StatusBadRequest)
-		return false
-	}
-
-	// Since the payload partially deserialize, ensure the worker hostname is valid.
-	if len(executorName) == 0 {
-		http.Error(w, "worker hostname cannot be empty", http.StatusBadRequest)
-		return false
-	}
-
 	// Get the auth token from the Authorization header.
 	var tokenType string
 	var authToken string
@@ -246,6 +208,44 @@ func validateJobRequest(w http.ResponseWriter, r *http.Request, routeName routeN
 			w.WriteHeader(http.StatusForbidden)
 			return false
 		}
+	}
+
+	var executorName string
+	var jobId int64
+	var queue string
+	var repo string
+	var err error
+
+	// Each route is "special". Set additional information based on the route that is being worked with.
+	switch routeName {
+	case routeFiles:
+		queue = "batches"
+	case routeGit:
+		repo = mux.Vars(r)["RepoName"]
+	case routeQueue:
+		queue = mux.Vars(r)["queueName"]
+	default:
+		log15.Error("unsupported route", "route", routeName)
+		http.Error(w, "unsupported route", http.StatusBadRequest)
+		return false
+	}
+
+	jobId, err = parseJobIdHeader(r)
+	if err != nil {
+		log15.Error("failed to parse jobId", "err", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return false
+	}
+
+	// When the requester sets a User with a username, r.URL.User.Username() will return a blank value (always).
+	// To get the username is by using BasicAuth(). Even if the requester does not use a reverse proxy, this is the
+	// way to get the username.
+	executorName = r.Header.Get("X-Sourcegraph-Executor-Name")
+
+	// Since the payload partially deserialize, ensure the worker hostname is valid.
+	if len(executorName) == 0 {
+		http.Error(w, "worker hostname cannot be empty", http.StatusBadRequest)
+		return false
 	}
 
 	jobToken, err := tokenStore.GetByToken(r.Context(), authToken)
