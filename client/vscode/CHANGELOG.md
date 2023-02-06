@@ -12,6 +12,8 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 
 ### Fixes
 
+- Fixes content security policy configuration: [pull/47263](https://github.com/sourcegraph/sourcegraph/pull/47263)
+
 ## 2.2.14
 
 ### Changes
