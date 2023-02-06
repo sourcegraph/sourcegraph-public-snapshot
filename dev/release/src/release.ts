@@ -493,11 +493,6 @@ cc @${config.captainGitHubUsername}
                 }
             }
 
-            const [previousVersion, nextVersion] = [
-                `${previous.major}.${previous.minor}`,
-                `${release.major}.${release.minor}`,
-            ]
-
             // Render changes
             const createdChanges = await createChangesets({
                 requiredCommands: ['comby', sed, 'find', 'go', 'src', 'sg'],
@@ -535,7 +530,7 @@ cc @${config.captainGitHubUsername}
                             notPatchRelease
                                 ? `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version}"' enterprise/dev/ci/internal/ci/*.go`
                                 : 'echo "Skipping minimumUpgradeableVersion bump on patch release"',
-                            updateUpgradeGuides(previousVersion, nextVersion),
+                            updateUpgradeGuides(previous.version, release.version),
                         ],
                         ...prBodyAndDraftState(
                             ((): string[] => {
