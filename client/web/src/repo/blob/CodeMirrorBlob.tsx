@@ -7,8 +7,9 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { openSearchPanel } from '@codemirror/search'
 import { Compartment, EditorState, Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
+import * as H from 'history'
 import { isEqual } from 'lodash'
-import { createPath } from 'react-router-dom-v5-compat'
+import { createPath, NavigateFunction, type Location } from 'react-router-dom-v5-compat'
 
 import {
     addLineRangeQueryParameter,
@@ -16,13 +17,20 @@ import {
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
 import { editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
+import { BlobStencilFields, ExternalLinkFields, Scalars } from '../../graphql-operations'
 import { useExperimentalFeatures } from '../../stores'
+import { BlameHunkData } from '../blame/useBlameHunks'
+import { HoverThresholdProps } from '../RepoContainer'
 
-import { BlobInfo, BlobProps, updateBrowserHistoryIfChanged } from './Blob'
 import { blobPropsFacet } from './codemirror'
 import { createBlameDecorationsExtension } from './codemirror/blame-decorations'
 import { codeFoldingExtension } from './codemirror/code-folding'
@@ -40,6 +48,81 @@ import { selectionFromLocation } from './codemirror/token-selection/selections'
 import { tokensAsLinks } from './codemirror/tokens-as-links'
 import { isValidLineRange } from './codemirror/utils'
 import { setBlobEditView } from './use-blob-store'
+
+// Logical grouping of props that are only used by the CodeMirror blob view
+// implementation.
+interface CodeMirrorBlobProps {
+    overrideBrowserSearchKeybinding?: boolean
+}
+
+export interface BlobProps
+    extends SettingsCascadeProps,
+        PlatformContextProps,
+        TelemetryProps,
+        HoverThresholdProps,
+        ExtensionsControllerProps,
+        ThemeProps,
+        CodeMirrorBlobProps {
+    className: string
+    wrapCode: boolean
+    /** The current text document to be rendered and provided to extensions */
+    blobInfo: BlobInfo
+    'data-testid'?: string
+
+    // When navigateToLineOnAnyClick=true, the code intel popover is disabled
+    // and clicking on any line should navigate to that specific line.
+    navigateToLineOnAnyClick?: boolean
+
+    // Enables experimental navigation by rendering links for all interactive tokens.
+    enableLinkDrivenCodeNavigation?: boolean
+    // Enables experimental navigation by making interactive tokens selectable on click.
+    enableSelectionDrivenCodeNavigation?: boolean
+
+    // If set, nav is called when a user clicks on a token highlighted by
+    // WebHoverOverlay
+    nav?: (url: string) => void
+    role?: string
+    ariaLabel?: string
+
+    supportsFindImplementations?: boolean
+
+    isBlameVisible?: boolean
+    blameHunks?: BlameHunkData
+
+    navigate: NavigateFunction
+
+    /**
+     * TODO(valery): RR6
+     *
+     * @deprecated prefer using useNavigate()
+     */
+    history: H.History
+    /**
+     * TODO(valery): RR6
+     *
+     * @deprecated prefer using useLocation()
+     */
+    location: Location
+}
+
+export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
+    /** The raw content of the blob. */
+    content: string
+
+    /** The trusted syntax-highlighted code as HTML */
+    html: string
+
+    /** LSIF syntax-highlighting data */
+    lsif?: string
+
+    stencil?: BlobStencilFields[]
+
+    /** If present, the file is stored in Git LFS (large file storage). */
+    lfs?: { byteSize: Scalars['BigInt'] } | null
+
+    /** External URLs for the file */
+    externalURLs?: ExternalLinkFields[]
+}
 
 const staticExtensions: Extension = [
     EditorState.readOnly.of(true),
@@ -383,4 +466,37 @@ function useDistinctBlob(blobInfo: BlobInfo): BlobInfo {
         }
         return blobRef.current
     }, [blobInfo])
+}
+
+/**
+ * Adds an entry to the browser history only if new search parameters differ
+ * from the current ones. This prevents adding a new entry when e.g. the user
+ * clicks the same line multiple times.
+ */
+export function updateBrowserHistoryIfChanged(
+    navigate: NavigateFunction,
+    location: H.Location,
+    newSearchParameters: URLSearchParams,
+    /** If set to true replace the current history entry instead of adding a new one. */
+    replace: boolean = false
+): void {
+    const currentSearchParameters = [...new URLSearchParams(location.search).entries()]
+
+    // Update history if the number of search params changes or if any parameter
+    // value changes. This will also work for file position changes, which are
+    // encoded as parameter without a value. The old file position will be a
+    // non-existing key in the new search parameters and thus return `null`
+    // (whereas it returns an empty string in the current search parameters).
+    const needsUpdate =
+        currentSearchParameters.length !== [...newSearchParameters.keys()].length ||
+        currentSearchParameters.some(([key, value]) => newSearchParameters.get(key) !== value)
+
+    if (needsUpdate) {
+        const entry = {
+            ...location,
+            search: formatSearchParameters(newSearchParameters),
+        }
+
+        navigate(entry, { replace })
+    }
 }
