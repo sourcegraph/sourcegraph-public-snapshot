@@ -205,14 +205,14 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 
 	// Find the result for the last step. This is the one we'll be building the execution
 	// result from.
-	var latestStepResult *batcheslib.CacheAfterStepResultMetadata = stepResults[0]
+	latestStepResult := stepResults[0]
 	for _, r := range stepResults {
 		if r.Value.StepIndex > latestStepResult.Value.StepIndex {
 			latestStepResult = r
 		}
 	}
 
-	author, err := author.GetChangesetAuthorForUser(ctx, database.UsersWith(s.logger, s), batchSpec.UserID)
+	changesetAuthor, err := author.GetChangesetAuthorForUser(ctx, database.UsersWith(s.logger, s), batchSpec.UserID)
 	if err != nil {
 		return false, errors.Wrap(err, "creating changeset author")
 	}
@@ -229,7 +229,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		latestStepResult.Value,
 		workspace.Path,
 		true,
-		author,
+		changesetAuthor,
 	)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to build changeset specs from cache")

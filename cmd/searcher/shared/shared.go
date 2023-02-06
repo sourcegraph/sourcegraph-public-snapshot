@@ -14,13 +14,8 @@ import (
 	"syscall"
 	"time"
 
-	"golang.org/x/sync/errgroup"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
-
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -38,6 +33,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 var (
@@ -126,7 +124,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 
 	git := gitserver.NewClient()
 
-	service := &search.Service{
+	sService := &search.Service{
 		Store: &search.Store{
 			FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 				// We pass in a nil sub-repo permissions checker and an internal actor here since
@@ -169,10 +167,10 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 
 		Log: logger,
 	}
-	service.Store.Start()
+	sService.Store.Start()
 
 	// Set up handler middleware
-	handler := actor.HTTPMiddleware(logger, service)
+	handler := actor.HTTPMiddleware(logger, sService)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
 
@@ -182,14 +180,10 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	grpcServer := grpc.NewServer(grpcdefaults.ServerOptions(logger)...)
 	reflection.Register(grpcServer)
 	grpcServer.RegisterService(&proto.Searcher_ServiceDesc, &search.Server{
-		Service: service,
+		Service: sService,
 	})
 
-	host := ""
-	if env.InsecureDev {
-		host = "127.0.0.1"
-	}
-	addr := net.JoinHostPort(host, port)
+	addr := getAddr()
 	server := &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
@@ -225,4 +219,13 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	})
 
 	return g.Wait()
+}
+
+func getAddr() string {
+	host := ""
+	if env.InsecureDev {
+		host = "127.0.0.1"
+	}
+
+	return net.JoinHostPort(host, port)
 }

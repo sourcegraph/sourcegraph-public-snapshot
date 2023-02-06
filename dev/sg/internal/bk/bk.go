@@ -183,7 +183,7 @@ func (c *Client) GetJobAnnotationsByBuildNumber(ctx context.Context, pipeline st
 		return nil, err
 	}
 
-	var result JobAnnotations = make(JobAnnotations, 0)
+	result := make(JobAnnotations, 0)
 	for _, a := range artifacts {
 		if strings.Contains(*a.Dirname, "annotations") && strings.HasSuffix(*a.Filename, "-annotation.md") {
 			var buf bytes.Buffer

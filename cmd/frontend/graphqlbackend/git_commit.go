@@ -193,15 +193,15 @@ func (r *GitCommitResolver) Parents(ctx context.Context) ([]*GitCommitResolver, 
 }
 
 func (r *GitCommitResolver) URL() string {
-	url := r.repoResolver.url()
-	url.Path += "/-/commit/" + r.inputRevOrImmutableRev()
-	return url.String()
+	repoUrl := r.repoResolver.url()
+	repoUrl.Path += "/-/commit/" + r.inputRevOrImmutableRev()
+	return repoUrl.String()
 }
 
 func (r *GitCommitResolver) CanonicalURL() string {
-	url := r.repoResolver.url()
-	url.Path += "/-/commit/" + string(r.oid)
-	return url.String()
+	repoUrl := r.repoResolver.url()
+	repoUrl.Path += "/-/commit/" + string(r.oid)
+	return repoUrl.String()
 }
 
 func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
@@ -398,7 +398,7 @@ func (r *GitCommitResolver) inputRevOrImmutableRev() string {
 // "/REPO/-/commit/REVSPEC").
 func (r *GitCommitResolver) repoRevURL() *url.URL {
 	// Dereference to copy to avoid mutation
-	url := *r.repoResolver.RepoMatch.URL()
+	repoUrl := *r.repoResolver.RepoMatch.URL()
 	var rev string
 	if r.inputRev != nil {
 		rev = *r.inputRev // use the original input rev from the user
@@ -406,14 +406,14 @@ func (r *GitCommitResolver) repoRevURL() *url.URL {
 		rev = string(r.oid)
 	}
 	if rev != "" {
-		url.Path += "@" + rev
+		repoUrl.Path += "@" + rev
 	}
-	return &url
+	return &repoUrl
 }
 
 func (r *GitCommitResolver) canonicalRepoRevURL() *url.URL {
 	// Dereference to copy the URL to avoid mutation
-	url := *r.repoResolver.RepoMatch.URL()
-	url.Path += "@" + string(r.oid)
-	return &url
+	repoUrl := *r.repoResolver.RepoMatch.URL()
+	repoUrl.Path += "@" + string(r.oid)
+	return &repoUrl
 }

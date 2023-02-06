@@ -121,7 +121,7 @@ func (c *conn) readReply() (interface{}, error) {
 	case '+':
 		return string(line[1:]), nil
 	case '-':
-		return redis.Error(string(line[1:])), nil
+		return redis.Error(line[1:]), nil
 	case ':':
 		return parseInt(line[1:])
 	case '$':

@@ -2,7 +2,6 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
@@ -20,16 +19,12 @@ import { LoadingSpinner, PageHeader, ErrorMessage } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { queryGraphQL } from '../backend/graphql'
-import { HeroPage } from '../components/HeroPage'
+import { HeroPage, NotFoundPage } from '../components/HeroPage'
 import { SettingsCascadeResult } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { mergeSettingsSchemas } from './configuration'
 import { SettingsPage } from './SettingsPage'
-
-const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
-)
 
 /** Props shared by SettingsArea and its sub-pages. */
 interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCascadeProps, ThemeProps, TelemetryProps {
@@ -183,7 +178,7 @@ export class SettingsArea extends React.Component<Props, State> {
                         exact={true}
                         render={routeComponentProps => <SettingsPage {...routeComponentProps} {...transferProps} />}
                     />
-                    <Route key="hardcoded-key" component={NotFoundPage} />
+                    <Route key="hardcoded-key" render={() => <NotFoundPage pageType="settings" />} />
                 </Switch>
             </div>
         )

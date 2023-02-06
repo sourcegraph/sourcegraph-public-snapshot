@@ -26,7 +26,7 @@ Our Helm chart has a lot of sensible defaults baked into the values.yaml. Not on
 ## High-level overview of how to use Helm with Sourcegraph
 
 1. Prepare any required customizations
-   - Most environments are likely to need changes from the defaults - use the guidance in [Configuration](#configuration).
+   - Most environments are likely to need changes from the defaults—use the guidance in [Configuration](#configuration).
 1. Review the changes
    - There are [three mechanisms](#reviewing-changes) that can be used to review any customizations made, this is an optional step, but may be useful the first time you deploy Sourcegraph, for peace of mind.
 1. Select your deployment method and follow the guidance:
@@ -49,7 +49,7 @@ helm repo add sourcegraph https://helm.sourcegraph.com/release
 Install the Sourcegraph chart using default values:
 
 ```sh
-helm install --version 4.4.1 sourcegraph sourcegraph/sourcegraph
+helm install --version 4.4.2 sourcegraph sourcegraph/sourcegraph
 ```
 
 Sourcegraph should now be available via the address set. Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account.
@@ -76,9 +76,9 @@ Example overrides can be found in the [examples](https://github.com/sourcegraph/
 
 Providing the override file to Helm is done with the inclusion of the values flag and the name of the file:
 ```sh
-helm upgrade --install --values ./override.yaml --version 4.4.1 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 4.4.2 sourcegraph sourcegraph/sourcegraph
 ```
-When making configuration changes, it's recommended to review the changes that will be applied - see [Reviewing Changes](#reviewing-changes).
+When making configuration changes, it's recommended to review the changes that will be applied—see [Reviewing Changes](#reviewing-changes).
 
 ### Specific Configuration Scenarios
 
@@ -464,7 +464,7 @@ helm repo add sourcegraph https://helm.sourcegraph.com/release
 
 #### Steps {#gke-steps}
 
-**1** – Create your override file and add in any configuration override settings you need - see [configuration](#configuration) for more information on override files and the options for what can be configured.
+**1** – Create your override file and add in any configuration override settings you need—see [configuration](#configuration) for more information on override files and the options for what can be configured.
 
 Add into your override file the below values to configure both your ingress hostname and your storage class. We recommend configuring Ingress to use [Container-native load balancing] to expose Sourcegraph publicly on a domain of your choosing and setting the Storage Class to use [Compute Engine persistent disk]. (For an example file see [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/gcp/override.yaml))
 
@@ -513,7 +513,7 @@ The override file includes a [BackendConfig] CRD. This is necessary to instruct 
 **2** – Install the chart
 
 ```sh
-helm upgrade --install --values ./override.yaml --version 4.4.1 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 4.4.2 sourcegraph sourcegraph/sourcegraph
 ```
 
 It will take around 10 minutes for the load balancer to be fully ready, you may check on the status and obtain the load balancer IP using the following command:
@@ -598,7 +598,7 @@ helm repo add sourcegraph https://helm.sourcegraph.com/release
 
 #### Steps {#eks-steps}
 
-**1** – Create your override file and add in any configuration override settings you need - see [configuration](#configuration) for more information on override files and the options around what can be configured.
+**1** – Create your override file and add in any configuration override settings you need—see [configuration](#configuration) for more information on override files and the options around what can be configured.
 
 We recommend adding the following values into your override file to configure Ingress to use [AWS Load Balancer Controller] to expose Sourcegraph publicly on a domain of your choosing, and to configure the Storage Class to use [AWS EBS CSI driver]. For an example, see [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/aws/override.yaml).
 
@@ -629,7 +629,7 @@ storageClass:
 **2** – Install the chart
 
 ```sh
-helm upgrade --install --values ./override.yaml --version 4.4.1 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 4.4.2 sourcegraph sourcegraph/sourcegraph
 ```
 
 It will take some time for the load balancer to be fully ready, use the following to check on the status and obtain the load balancer address (once available):
@@ -683,7 +683,7 @@ helm repo add sourcegraph https://helm.sourcegraph.com/release
 
 #### Steps {#aks-steps}
 
-**1** – Create your override file and add in any configuration override settings you need - see [configuration](#configuration) for more information on override files and the options around what can be configured.
+**1** – Create your override file and add in any configuration override settings you need—see [configuration](#configuration) for more information on override files and the options around what can be configured.
 
 Add into your override file the below values to configure both your ingress hostname and your storage class. We recommend configuring Ingress to use [Application Gateway](https://azure.microsoft.com/en-us/services/application-gateway) to expose Sourcegraph publicly on a domain of your choosing and Storage Class to use [Azure Disk CSI driver](https://docs.microsoft.com/en-us/azure/aks/azure-disk-csi). For an example see [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/azure/override.yaml).
 
@@ -714,7 +714,7 @@ storageClass:
 **2** – Install the chart
 
 ```sh
-helm upgrade --install --values ./override.yaml --version 4.4.1 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 4.4.2 sourcegraph sourcegraph/sourcegraph
 ```
 
 It will take some time for the load balancer to be fully ready, you can check on the status and obtain the load balancer address (when ready) using:
@@ -769,7 +769,7 @@ helm repo add sourcegraph https://helm.sourcegraph.com/release
 
 #### Steps {#others-steps}
 
-**1** – Create your override file and add in any configuration override settings you need - see [configuration](#configuration) for more information on override files and the options around what can be configured.
+**1** – Create your override file and add in any configuration override settings you need—see [configuration](#configuration) for more information on override files and the options around what can be configured.
 
 Read <https://kubernetes.io/docs/concepts/storage/storage-classes/> to configure the `storageClass.provisioner` and `storageClass.parameters` fields for your cloud provider or consult documentation of the storage solution in your on-prem environment.
 
@@ -800,7 +800,7 @@ storageClass:
 **2** – Install the chart
 
 ```sh
-helm upgrade --install --values ./override.yaml --version 4.4.1 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 4.4.2 sourcegraph sourcegraph/sourcegraph
 ```
 
 It may take some time before your ingress is up and ready to proceed. Depending on how your Ingress Controller works, you may be able to check on its status and obtain the public address of your Ingress using:
@@ -898,12 +898,12 @@ A [standard upgrade](../../updates/index.md#standard-upgrades) occurs between tw
 helm repo update sourcegraph
 ```
 
-1. (Optional) Review the changes that will be applied - see [Reviewing Changes](#reviewing-changes) for options.
+1. (Optional) Review the changes that will be applied—see [Reviewing Changes](#reviewing-changes) for options.
 
 1.  Install the new version:
 
 ```bash
-helm upgrade --install -f override.yaml --version 4.4.1 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install -f override.yaml --version 4.4.2 sourcegraph sourcegraph/sourcegraph
 ```
 
 1.  Verify the installation has started:

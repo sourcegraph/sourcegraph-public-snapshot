@@ -2,6 +2,8 @@ package redispool
 
 import (
 	"context"
+	"strings"
+	"time"
 
 	"github.com/gomodule/redigo/redis"
 )
@@ -102,6 +104,47 @@ type redisKeyValue struct {
 	pool   *redis.Pool
 	ctx    context.Context
 	prefix string
+}
+
+// MemoryKeyValue is the special URI which is recognized by NewKeyValue to
+// create an in memory key value.
+const MemoryKeyValueURI = "redis+memory:memory"
+
+const dbKeyValueURIScheme = "redis+postgres"
+
+// DBKeyValueURI returns a URI to connect to the DB backed redis with the
+// specified namespace.
+func DBKeyValueURI(namespace string) string {
+	return dbKeyValueURIScheme + ":" + namespace
+}
+
+// NewKeyValue returns a KeyValue for addr. addr is treated as follows:
+//
+//  1. if addr == MemoryKeyValueURI we use a KeyValue that lives
+//     in memory of the current process.
+//  2. if addr was created by DBKeyValueURI we use a KeyValue that is backed
+//     by postgres.
+//  3. otherwise treat as a redis address.
+//
+// poolOpts is a required argument which sets defaults in the case we connect
+// to redis. If used we only override TestOnBorrow and Dial.
+func NewKeyValue(addr string, poolOpts *redis.Pool) KeyValue {
+	if addr == MemoryKeyValueURI {
+		return MemoryKeyValue()
+	}
+
+	if schema, namespace, ok := strings.Cut(addr, ":"); ok && schema == dbKeyValueURIScheme {
+		return DBKeyValue(namespace)
+	}
+
+	poolOpts.TestOnBorrow = func(c redis.Conn, t time.Time) error {
+		_, err := c.Do("PING")
+		return err
+	}
+	poolOpts.Dial = func() (redis.Conn, error) {
+		return dialRedis(addr)
+	}
+	return RedisKeyValue(poolOpts)
 }
 
 // RedisKeyValue returns a KeyValue backed by pool.

@@ -110,9 +110,13 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			}
 
 			var expiry time.Duration
-			// If the "sourcegraph-operator" is the only external account associated with the
-			// user, that means the user is a pure Sourcegraph Operator which should have
-			// designated and aggressive session expiry.
+			// If the "sourcegraph-operator" (SOAP) is the only external account associated
+			// with the user, that means the user is a pure Sourcegraph Operator which should
+			// have designated and aggressive session expiry - unless that account is designated
+			// as a service account. However, because service accounts are not "real" users and
+			// cannot log in through the user interface (instead, we provision access entirely
+			// via API tokens), we do not add special handling here to avoid deleting service
+			// accounts.
 			if len(extAccts) == 1 && extAccts[0].ServiceType == internalauth.SourcegraphOperatorProviderType {
 				// The user session will only live at most for the remaining duration from the
 				// "users.created_at" compared to the current time.

@@ -6,10 +6,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/utils/strings/slices"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 )
 
@@ -46,7 +46,7 @@ func TestCreateDashboard(t *testing.T) {
 		title := "Dashboard Title 1"
 		_, err := client.CreateDashboard(gqltestutil.DashboardInputArgs{
 			Title:     title,
-			UserGrant: string(graphqlbackend.MarshalUserID(9999)),
+			UserGrant: string(relay.MarshalID("User", 9999)),
 		})
 		if !strings.Contains(err.Error(), "user does not have permission") {
 			t.Fatal("Should have thrown an error")

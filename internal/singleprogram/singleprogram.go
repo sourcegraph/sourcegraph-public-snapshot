@@ -22,14 +22,11 @@ func Init(logger log.Logger) {
 	// INDEXED_SEARCH_SERVERS is empty (but defined) so that indexed search is disabled.
 	setDefaultEnv(logger, "INDEXED_SEARCH_SERVERS", "")
 
-	// Need to set this to avoid trying to look up gitservers via k8s service discovery.
-	// TODO(sqs) TODO(single-binary): Make this not require the hostname.
-	hostname, err := os.Hostname()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "unable to determine hostname:", err)
-		os.Exit(1)
-	}
-	setDefaultEnv(logger, "SRC_GIT_SERVERS", hostname+":3178")
+	// GITSERVER_EXTERNAL_ADDR is used by gitserver to identify itself in the
+	// list in SRC_GIT_SERVERS.
+	setDefaultEnv(logger, "GITSERVER_ADDR", "127.0.0.1:3178")
+	setDefaultEnv(logger, "GITSERVER_EXTERNAL_ADDR", "127.0.0.1:3178")
+	setDefaultEnv(logger, "SRC_GIT_SERVERS", "127.0.0.1:3178")
 
 	setDefaultEnv(logger, "SYMBOLS_URL", "http://127.0.0.1:3184")
 	setDefaultEnv(logger, "SEARCHER_URL", "http://127.0.0.1:3181")
@@ -68,7 +65,7 @@ func Init(logger log.Logger) {
 	}
 
 	setDefaultEnv(logger, "SRC_REPOS_DIR", filepath.Join(cacheDir, "repos"))
-	setDefaultEnv(logger, "BLOBSTORE_DATA_DIR", filepath.Join(cacheDir, "repos"))
+	setDefaultEnv(logger, "BLOBSTORE_DATA_DIR", filepath.Join(cacheDir, "blobstore"))
 	setDefaultEnv(logger, "CACHE_DIR", filepath.Join(cacheDir, "cache"))
 
 	configDir, err := os.UserConfigDir()
@@ -114,6 +111,14 @@ func Init(logger log.Logger) {
 	// We disable the use of executors passwords, because executors only listen on `localhost` this
 	// is safe to do.
 	setDefaultEnv(logger, "EXECUTOR_FRONTEND_URL", "http://localhost:3080")
+	setDefaultEnv(logger, "EXECUTOR_FRONTEND_PASSWORD", confdefaults.SingleProgramInMemoryExecutorPassword)
+
+	// TODO(single-binary): HACK: This is a hack to workaround the fact that the 2nd time you run `sourcegraph`
+	// OOB migration validation fails:
+	//
+	// {"SeverityText":"FATAL","Timestamp":1675128552556359000,"InstrumentationScope":"sourcegraph","Caller":"svcmain/svcmain.go:143","Function":"github.com/sourcegraph/sourcegraph/internal/service/svcmain.run.func1","Body":"failed to start service","Resource":{"service.name":"sourcegraph","service.version":"0.0.196384-snapshot+20230131-6902ad","service.instance.id":"Stephens-MacBook-Pro.local"},"Attributes":{"service":"frontend","error":"failed to validate out of band migrations: Unfinished migrations. Please revert Sourcegraph to the previous version and wait for the following migrations to complete.\n  - migration 1 expected to be at 0.00% (at 100.00%)\n  - migration 13 expected to be at 0.00% (at 100.00%)\n  - migration 14 expected to be at 0.00% (at 100.00%)\n  - migration 15 expected to be at 0.00% (at 100.00%)\n  - migration 16 expected to be at 0.00% (at 100.00%)\n  - migration 17 expected to be at 0.00% (at 100.00%)\n  - migration 18 expected to be at 0.00% (at 100.00%)\n  - migration 19 expected to be at 0.00% (at 100.00%)\n  - migration 2 expected to be at 0.00% (at 100.00%)\n  - migration 20 expected to be at 0.00% (at 100.00%)\n  - migration 4 expected to be at 0.00% (at 100.00%)\n  - migration 5 expected to be at 0.00% (at 100.00%)\n  - migration 7 expected to be at 0.00% (at 100.00%)"}}
+	//
+	setDefaultEnv(logger, "SRC_DISABLE_OOBMIGRATION_VALIDATION", "1")
 
 	setDefaultEnv(logger, "EXECUTOR_USE_FIRECRACKER", "false")
 	// TODO(sqs): TODO(single-binary): Make it so we can run multiple executors in single-program mode. Right now, you

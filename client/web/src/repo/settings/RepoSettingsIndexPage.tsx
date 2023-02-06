@@ -1,9 +1,8 @@
-import * as React from 'react'
+import React from 'react'
 
 import { mdiCheckCircle } from '@mdi/js'
 import classNames from 'classnames'
 import prettyBytes from 'pretty-bytes'
-import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { map, switchMap, tap } from 'rxjs/operators'
 
@@ -221,7 +220,7 @@ const TextSearchIndexedReference: React.FunctionComponent<
     )
 }
 
-interface Props extends RouteComponentProps<{}> {
+interface Props {
     repo: SettingsAreaRepositoryFields
 }
 

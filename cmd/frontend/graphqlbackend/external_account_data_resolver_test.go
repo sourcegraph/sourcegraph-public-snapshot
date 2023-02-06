@@ -118,10 +118,10 @@ func TestExternalAccountDataResolver_PublicAccountDataFromJSON(t *testing.T) {
 	`
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
-	t.Run("Errors out if no auth provider match", func(t *testing.T) {
+	t.Run("Account not returned if no matching auth provider found", func(t *testing.T) {
 		noMatchAccount := account
 		noMatchAccount.ServiceType = "no-match"
-		externalAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{&noMatchAccount}, nil)
+		externalAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{&noMatchAccount, &account}, nil)
 		defer externalAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{&account}, nil)
 
 		RunTests(t, []*Test{
@@ -129,14 +129,8 @@ func TestExternalAccountDataResolver_PublicAccountDataFromJSON(t *testing.T) {
 				Context:        ctx,
 				Schema:         mustParseGraphQLSchema(t, db),
 				Query:          query,
-				ExpectedResult: `{"user":{"externalAccounts":{"nodes":[{"publicAccountData":null}]}}}`,
-				ExpectedErrors: []*errors.QueryError{
-					{
-						Message: "cannot find authorization provider for the external account, service type: no-match",
-						Path:    []any{"user", "externalAccounts", "nodes", 0, "publicAccountData"},
-					},
-				},
-				Variables: map[string]any{"username": "alice"},
+				ExpectedResult: `{"user":{"externalAccounts":{"nodes":[{"publicAccountData":null},{"publicAccountData":{"displayName":"Alice Smith","login":"alice_2","url":null}}]}}}`,
+				Variables:      map[string]any{"username": "alice"},
 			},
 		})
 	})

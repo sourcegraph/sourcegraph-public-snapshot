@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { RouteComponentProps } from 'react-router'
+import { Location, NavigateFunction } from 'react-router-dom-v5-compat'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 
@@ -73,7 +73,7 @@ function queryRepositoryComparison(args: {
     )
 }
 
-interface Props extends RepositoryCompareAreaPageProps, RouteComponentProps<{}>, ThemeProps {
+interface Props extends RepositoryCompareAreaPageProps, ThemeProps {
     /** The base of the comparison. */
     base: { repoName: string; repoID: Scalars['ID']; revision?: string | null }
 
@@ -82,6 +82,10 @@ interface Props extends RepositoryCompareAreaPageProps, RouteComponentProps<{}>,
 
     /** An optional path of a specific file to compare */
     path: string | null
+
+    /** Required for `RepositoryCompareCommitsPage` */
+    location: Location
+    navigate: NavigateFunction
 }
 
 interface State {

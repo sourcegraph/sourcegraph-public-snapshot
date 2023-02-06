@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
 import { isEqual } from 'lodash'
+import { Location, createPath, NavigateFunction } from 'react-router-dom-v5-compat'
 import {
     BehaviorSubject,
     combineLatest,
@@ -88,8 +89,6 @@ export interface BlobProps
         ExtensionsControllerProps,
         ThemeProps,
         CodeMirrorBlobProps {
-    location: H.Location
-    history: H.History
     className: string
     wrapCode: boolean
     /** The current text document to be rendered and provided to extensions */
@@ -115,6 +114,19 @@ export interface BlobProps
 
     isBlameVisible?: boolean
     blameHunks?: BlameHunkData
+
+    navigate: NavigateFunction
+
+    /**
+     * TODO(valery): RR6
+     * @deprecated prefer using useNavigate()
+     */
+    history: H.History
+    /**
+     * TODO(valery): RR6
+     * @deprecated prefer using useLocation()
+     */
+    location: Location
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
@@ -199,7 +211,6 @@ const domFunctions = {
  */
 export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> = props => {
     const {
-        location,
         isLightTheme,
         extensionsController,
         blobInfo,
@@ -207,7 +218,11 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         settingsCascade,
         role,
         ariaLabel,
+        history,
         'data-testid': dataTestId,
+
+        location,
+        navigate,
     } = props
 
     const settingsChanges = useMemo(() => new BehaviorSubject<Settings | null>(null), [])
@@ -319,10 +334,10 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     withLatestFrom(urlSearchParameters),
                     tap(([, parameters]) => {
                         parameters.delete('popover')
-                        updateBrowserHistoryIfChanged(props.history, location, parameters)
+                        updateBrowserHistoryIfChanged(navigate, location, parameters)
                     })
                 ),
-            [location, popoverCloses, props.history, urlSearchParameters]
+            [location, popoverCloses, navigate, urlSearchParameters]
         )
     )
 
@@ -446,10 +461,10 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                                     ...location,
                                     search: formatSearchParameters(addLineRangeQueryParameter(parameters, query)),
                                 }
-                                customHistoryAction(props.history.createHref(entry))
+                                customHistoryAction(createPath(entry))
                             } else {
                                 updateBrowserHistoryIfChanged(
-                                    props.history,
+                                    navigate,
                                     location,
                                     addLineRangeQueryParameter(parameters, query),
                                     replace
@@ -463,7 +478,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                 codeViewElements,
                 hoverifier.hoverState.selectedPosition,
                 location,
-                props.history,
+                navigate,
                 props.navigateToLineOnAnyClick,
                 customHistoryAction,
             ]
@@ -621,7 +636,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                 const search = new URLSearchParams(location.search)
                 search.set('popover', 'pinned')
                 updateBrowserHistoryIfChanged(
-                    props.history,
+                    navigate,
                     location,
                     addLineRangeQueryParameter(search, toPositionOrRangeQueryParameter(context))
                 )
@@ -633,7 +648,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
             hoverifier.hoverState.hoveredToken?.character,
             location,
             nextPopoverClose,
-            props.history,
+            navigate,
         ]
     )
 
@@ -721,7 +736,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     <WebHoverOverlay
                         {...props}
                         {...hoverState.hoverOverlayProps}
-                        nav={url => (props.nav ? props.nav(url) : props.history.push(url))}
+                        nav={url => (props.nav ? props.nav(url) : navigate(url))}
                         hoveredTokenElement={hoverState.hoveredTokenElement}
                         hoverRef={nextOverlayElement}
                         pinOptions={pinOptions}
@@ -730,10 +745,10 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                 )}
 
                 <BlameColumn
+                    history={history}
                     isBlameVisible={props.isBlameVisible}
                     blameHunks={props.blameHunks}
                     codeViewElements={codeViewElements}
-                    history={props.history}
                     isLightTheme={isLightTheme}
                 />
             </div>
@@ -747,7 +762,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
  * clicks the same line multiple times.
  */
 export function updateBrowserHistoryIfChanged(
-    history: H.History,
+    navigate: NavigateFunction,
     location: H.Location,
     newSearchParameters: URLSearchParams,
     /** If set to true replace the current history entry instead of adding a new one. */
@@ -769,11 +784,8 @@ export function updateBrowserHistoryIfChanged(
             ...location,
             search: formatSearchParameters(newSearchParameters),
         }
-        if (replace) {
-            history.replace(entry)
-        } else {
-            history.push(entry)
-        }
+
+        navigate(entry, { replace })
     }
 }
 

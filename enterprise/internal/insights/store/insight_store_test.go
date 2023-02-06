@@ -1459,7 +1459,7 @@ func TestUpdateView(t *testing.T) {
 				ExcludeRepoRegex: valast.Addr("exclude repos").(*string),
 				SearchContexts:   []string{"@dev/mycontext"},
 			},
-			PresentationType: types.PresentationType("LINE"),
+			PresentationType: "LINE",
 		}).Equal(t, got)
 	})
 }

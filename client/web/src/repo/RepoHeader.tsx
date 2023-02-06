@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react'
 
 import { mdiDotsVertical } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
+import { useLocation } from 'react-router-dom-v5-compat'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
@@ -85,7 +85,7 @@ export interface RepoHeaderContribution {
      * Render function called with RepoHeaderContext.
      * Use `actionType` to determine how to render the component.
      */
-    children: (context: RepoHeaderContext) => React.ReactElement
+    children: (context: RepoHeaderContext) => JSX.Element | null
 }
 
 /**
@@ -144,9 +144,6 @@ interface Props extends PlatformContextProps, TelemetryProps, BreadcrumbsProps, 
 
     authenticatedUser: AuthenticatedUser | null
 
-    location: H.Location
-    history: H.History
-
     // This is used for testing purposes only because we're using CSS media
     // queries to determine the container height and in storybook we can't
     // control these.
@@ -162,6 +159,7 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
     onLifecyclePropsChange,
     ...props
 }) => {
+    const location = useLocation()
     const [repoHeaderContributions, setRepoHeaderContributions] = useState<RepoHeaderContribution[]>([])
     const repoHeaderContributionStore = useMemo(
         () => new RepoHeaderContributionStore(contributions => setRepoHeaderContributions(contributions)),
@@ -201,12 +199,12 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
     )
 
     return (
-        <nav data-testid="repo-header" className={classNames('navbar navbar-expand', styles.repoHeader)}>
+        <nav data-testid="repo-header" className={classNames('navbar navbar-expand', 'px-3', styles.repoHeader)}>
             <div className="d-flex align-items-center flex-shrink-past-contents">
                 {/* Breadcrumb for the nav elements */}
                 <Breadcrumbs
                     breadcrumbs={props.breadcrumbs}
-                    location={props.location}
+                    location={location}
                     className={classNames('justify-content-start', !props.forceWrap ? styles.breadcrumbWrap : '')}
                 />
             </div>
@@ -219,7 +217,7 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
             </ul>
             <div className={styles.spacer} />
             <ErrorBoundary
-                location={props.location}
+                location={location}
                 // To be clear to users that this isn't an error reported by extensions
                 // about e.g. the code they're viewing.
                 render={error => (
@@ -231,7 +229,7 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                 )}
             >
                 {isLarge ? (
-                    <ul className="navbar-nav">
+                    <ul className={classNames('navbar-nav', styles.actionList)}>
                         {rightActions.map((a, index) => (
                             <li className={classNames('nav-item', styles.actionListItem)} key={a.id || index}>
                                 {a.element}

@@ -312,11 +312,11 @@ func checkDrift(ctx context.Context, r Runner, version string, out *output.Outpu
 		if err != nil {
 			return err
 		}
-		schemas, err := store.Describe(ctx)
+		schemaDescriptions, err := store.Describe(ctx)
 		if err != nil {
 			return err
 		}
-		schema := schemas["public"]
+		schema := schemaDescriptions["public"]
 
 		var buf bytes.Buffer
 		noopOutput := output.NewOutput(&buf, output.OutputOpts{})

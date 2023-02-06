@@ -12,7 +12,7 @@ import (
 	"github.com/getsentry/raven-go"
 	"github.com/gorilla/mux"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -83,7 +83,7 @@ func reportError(r *http.Request, status int, err error, panicked bool) {
 	}
 
 	// Add request context tags.
-	if actor := actor.FromContext(r.Context()); actor.IsAuthenticated() {
+	if actor := sgactor.FromContext(r.Context()); actor.IsAuthenticated() {
 		addTag("Authed", "yes")
 		addTag("Authed UID", actor.UIDString())
 	} else {

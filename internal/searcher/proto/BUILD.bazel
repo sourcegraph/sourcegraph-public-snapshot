@@ -1,6 +1,9 @@
+load("@rules_buf//buf:defs.bzl", "buf_lint_test")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+
+exports_files(["buf.gen.yaml"])
 
 proto_library(
     name = "proto_proto",
@@ -11,8 +14,11 @@ proto_library(
 
 go_proto_library(
     name = "proto_go_proto",
-    compilers = ["@io_bazel_rules_go//proto:go_grpc"],
-    importpath = "github.com/sourcegraph/sourcegraph/cmd/searcher/proto/",
+    compilers = [
+        "@io_bazel_rules_go//proto:go_proto",
+        "//:gen-go-grpc",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/searcher/proto",
     proto = ":proto_proto",
     visibility = ["//visibility:public"],
 )
@@ -20,6 +26,11 @@ go_proto_library(
 go_library(
     name = "proto",
     embed = [":proto_go_proto"],
-    importpath = "github.com/sourcegraph/sourcegraph/cmd/searcher/proto/",
+    importpath = "github.com/sourcegraph/sourcegraph/internal/searcher/proto",
     visibility = ["//visibility:public"],
+)
+
+buf_lint_test(
+    name = "proto_proto_lint",
+    targets = [":proto_proto"],
 )

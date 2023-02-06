@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react'
 
-import { RouteComponentProps } from 'react-router'
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -24,20 +23,12 @@ import {
     SiteAdminProductLicenseNodeProps,
 } from './SiteAdminProductLicenseNode'
 
-interface Props extends RouteComponentProps<{}> {}
-
-class FilteredProductLicenseConnection extends FilteredConnection<
-    ProductLicenseFields,
-    Pick<SiteAdminProductLicenseNodeProps, 'showSubscription'>
-> {}
+interface Props {}
 
 /**
  * Displays the product licenses that have been created on Sourcegraph.com.
  */
-export const SiteAdminProductLicensesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    history,
-    location,
-}) => {
+export const SiteAdminProductLicensesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
     useEffect(() => eventLogger.logViewEvent('SiteAdminProductLicenses'), [])
 
     const nodeProps: Pick<SiteAdminProductLicenseNodeProps, 'showSubscription'> = {
@@ -49,7 +40,7 @@ export const SiteAdminProductLicensesPage: React.FunctionComponent<React.PropsWi
             <PageTitle title="Product subscriptions" />
             <H2>License key lookup</H2>
             <Text>Find matching licenses and their associated product subscriptions.</Text>
-            <FilteredProductLicenseConnection
+            <FilteredConnection<ProductLicenseFields, Pick<SiteAdminProductLicenseNodeProps, 'showSubscription'>>
                 className="list-group list-group-flush mt-3"
                 noun="product license"
                 pluralNoun="product licenses"
@@ -59,8 +50,6 @@ export const SiteAdminProductLicensesPage: React.FunctionComponent<React.PropsWi
                 emptyElement={<span className="text-muted mt-2">Enter a partial license key to find matches.</span>}
                 noSummaryIfAllNodesVisible={true}
                 autoFocus={true}
-                history={history}
-                location={location}
             />
         </div>
     )
