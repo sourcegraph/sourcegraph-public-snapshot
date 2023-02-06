@@ -140,7 +140,7 @@ export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> =
     )
 }
 
-function captureGroupPreviewSeries(query: string): any {
+function captureGroupPreviewSeries(query: string): any[] {
     return [
         {
             generatedFromCaptureGroup: true,

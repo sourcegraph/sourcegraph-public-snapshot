@@ -321,7 +321,12 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
                 // Hack to focus first invalid input on submit, since we are not using
                 // native behavior in order to avoid poor UX of native validation focus on error
                 // we have to find and focus invalid input by ourselves
-                formElement.querySelector<HTMLInputElement>(':invalid:not(fieldset) [aria-invalid="true"]')?.focus()
+                // RAF call is needed here because we should  wait when all invalid fields would be
+                // properly updated with aria invalid attributes (it happens when user touched fields
+                // or when user hits submit button)
+                requestAnimationFrame(() => {
+                    formElement.querySelector<HTMLInputElement>(':invalid:not(fieldset) [aria-invalid="true"]')?.focus()
+                })
             }
         },
     }

@@ -5,7 +5,9 @@ import { useFieldAPI } from './hooks'
 export function getDefaultInputStatus<T>({ meta }: useFieldAPI<T>, getValue?: (value: T) => unknown): InputStatus {
     const initialValue = getValue
         ? getValue(meta.initialValue)
-        : Array.isArray(meta.initialValue) ? meta.initialValue.length : meta.initialValue
+        : Array.isArray(meta.initialValue)
+        ? meta.initialValue.length
+        : meta.initialValue
     const isValidated = initialValue || meta.touched
 
     if (meta.validState === 'CHECKING') {

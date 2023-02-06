@@ -28,7 +28,7 @@ const createExampleDataSeries = (query: string): SeriesWithStroke[] => [
         query,
         label: 'TODOs',
         generatedFromCaptureGroups: false,
-        stroke: DATA_SERIES_COLORS.ORANGE,
+        stroke: DATA_SERIES_COLORS.INDIGO,
     },
 ]
 
@@ -47,7 +47,7 @@ export const DynamicInsightPreview: FC<DynamicInsightPreviewProps> = props => {
     const settings = useDebounce(
         useDeepMemo({
             disabled,
-            repositories,
+            repoScope: { repositories },
             series: createExampleDataSeries(query),
             step: { months: 2 },
         }),

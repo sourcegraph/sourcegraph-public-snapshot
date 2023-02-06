@@ -86,9 +86,8 @@ export interface MultiComboboxProps<T> extends Omit<ComboboxProps, 'onSelect'> {
     getItemName: (item: T) => string
     getItemKey: (item: T) => string | number
     className?: string
-    onSelectedItemsChange: (selectedItems: T[]) => void
     children: ReactNode | ReactNode[]
-    className?: string
+    onSelectedItemsChange: (selectedItems: T[]) => void
 }
 
 export function MultiCombobox<T>(props: MultiComboboxProps<T>): ReactElement {
