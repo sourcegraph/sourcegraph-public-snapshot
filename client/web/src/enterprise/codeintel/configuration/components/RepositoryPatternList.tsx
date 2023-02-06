@@ -116,7 +116,7 @@ export const RepositoryPatternList: FunctionComponent<RepositoryPatternListProps
                 ))}
             </div>
 
-            <div className="form-group d-flex flex-column">
+            <div className="d-flex flex-column">
                 <div>
                     {previewError && <ErrorAlert prefix="Error fetching matching repositories" error={previewError} />}
                     {preview &&

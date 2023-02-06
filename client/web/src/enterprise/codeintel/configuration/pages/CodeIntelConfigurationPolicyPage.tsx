@@ -287,7 +287,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
 
                     {!policy.protected && policy.id !== '' && (
                         <Tooltip
-                            content={`Deleting this policy may immediate affect data retention${
+                            content={`Deleting this policy may immediately affect data retention${
                                 indexingEnabled ? ' and auto-indexing' : ''
                             }.`}
                         >
@@ -349,7 +349,7 @@ const NameSettingsSection: FunctionComponent<NameSettingsSectionProps> = ({ repo
             <Input
                 id="name"
                 label="Policy name"
-                className="w-50 mb-0"
+                className={styles.input}
                 value={policy.name}
                 onChange={({ target: { value: name } }) => updatePolicy({ name })}
                 disabled={policy.protected}
@@ -410,10 +410,9 @@ const GitObjectSettingsSection: FunctionComponent<GitObjectSettingsSectionProps>
                 <Select
                     id="git-type"
                     aria-labelledby="git-type-label"
-                    labelVariant="inline"
-                    labelClassName="d-inline"
-                    className="mb-0 w-50" // TODO: Go with width 35 or 40
+                    className={styles.input}
                     value={policy.type}
+                    disabled={policy.protected}
                     onChange={({ target: { value } }) => {
                         const type = value as GitObjectType
 
@@ -431,7 +430,6 @@ const GitObjectSettingsSection: FunctionComponent<GitObjectSettingsSectionProps>
                             })
                         }
                     }}
-                    disabled={policy.protected}
                 >
                     <option value={GitObjectType.GIT_COMMIT}>HEAD (tip of default branch)</option>
                     <option value={GitObjectType.GIT_TREE}>Branches</option>
@@ -609,7 +607,7 @@ const IndexSettingsSection: FunctionComponent<IndexSettingsSectionProps> = ({ po
     <div className="form-group">
         <Label className="mb-0">
             Auto-indexing
-            <div className="d-flex align-items-center">
+            <div className={styles.toggleContainer}>
                 <Toggle
                     id="indexing-enabled"
                     value={policy.indexingEnabled}
@@ -627,7 +625,7 @@ const IndexSettingsSection: FunctionComponent<IndexSettingsSectionProps> = ({ po
                     }}
                 />
 
-                <Text size="small" className="text-muted mb-0 font-weight-normal">
+                <Text size="small" className="text-muted mb-0">
                     Sourcegraph will automatically generate precise code intelligence data for matching
                     {repo ? '' : ' repositories and'} revisions. Indexing configuration will be inferred from the
                     content at matching revisions if not explicitly configured for{' '}
@@ -652,7 +650,7 @@ interface IndexSettingsProps {
 
 const IndexSettings: FunctionComponent<IndexSettingsProps> = ({ policy, updatePolicy }) =>
     policy.indexingEnabled && policy.type !== GitObjectType.GIT_COMMIT ? (
-        <div className="mb-4">
+        <div className="ml-3 mb-3">
             <div className="mt-2 mb-2">
                 <Checkbox
                     id="indexing-max-age-enabled"
@@ -703,7 +701,7 @@ const RetentionSettingsSection: FunctionComponent<RetentionSettingsSectionProps>
     <div className="form-group">
         <Label className="mb-0">
             Precise code intelligence index retention
-            <div className="d-flex align-items-center">
+            <div className={styles.toggleContainer}>
                 <Toggle
                     id="retention-enabled"
                     value={policy.retentionEnabled}
@@ -722,9 +720,9 @@ const RetentionSettingsSection: FunctionComponent<RetentionSettingsSectionProps>
                     disabled={policy.protected || policy.type === GitObjectType.GIT_COMMIT}
                 />
 
-                <Text size="small" className="text-muted mb-0 font-weight-normal">
+                <Text size="small" className="text-muted mb-0">
                     Precise code intelligence indexes will expire once they no longer serve data for a revision matched
-                    by a configuration policy. Expired indexes are remove once they are no longer referenced by any
+                    by a configuration policy. Expired indexes are removed once they are no longer referenced by any
                     unexpired index. Enabling retention keeps data for matching revisions longer than the default.
                 </Text>
             </div>
@@ -745,7 +743,7 @@ const RetentionSettings: FunctionComponent<RetentionSettingsProps> = ({ policy, 
             Precise code intelligence indexes serving data for the tip of the default branch are retained implicitly.
         </Alert>
     ) : policy.retentionEnabled ? (
-        <>
+        <div className="ml-3 mb-3">
             <div className="mt-2 mb-2">
                 <Checkbox
                     id="retention-max-age-enabled"
@@ -781,7 +779,7 @@ const RetentionSettings: FunctionComponent<RetentionSettingsProps> = ({ policy, 
                     />
                 </div>
             )}
-        </>
+        </div>
     ) : (
         <></>
     )
