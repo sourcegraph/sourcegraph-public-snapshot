@@ -59,8 +59,10 @@ type (
 )
 
 type RolesListOptions struct {
-	*LimitOffset
+	PaginationArgs *PaginationArgs
+
 	System bool
+	UserID int32
 }
 
 type RoleNotFoundErr struct {
@@ -136,7 +138,7 @@ func scanRole(sc dbutil.Scanner) (*types.Role, error) {
 }
 
 func (r *roleStore) List(ctx context.Context, opts RolesListOptions) ([]*types.Role, error) {
-	roles := make([]*types.Role, 0, 20)
+	var roles []*types.Role
 
 	scanFunc := func(rows *sql.Rows) error {
 		role, err := scanRole(rows)
@@ -147,32 +149,35 @@ func (r *roleStore) List(ctx context.Context, opts RolesListOptions) ([]*types.R
 		return nil
 	}
 
-	err := r.list(ctx, opts, sqlf.Join(roleColumns, ", "), sqlf.Sprintf("ORDER BY roles.created_at ASC"), scanFunc)
+	err := r.list(ctx, opts, sqlf.Join(roleColumns, ", "), scanFunc)
 	return roles, err
 }
 
 const roleListQueryFmtstr = `
-SELECT
-	%s
-FROM roles
-WHERE %s
+SELECT %s FROM roles
 %s
+WHERE %s
 `
 
-func (r *roleStore) list(ctx context.Context, opts RolesListOptions, selects, orderByQuery *sqlf.Query, scanRole func(rows *sql.Rows) error) error {
-	var conds = []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
+func (r *roleStore) list(ctx context.Context, opts RolesListOptions, selects *sqlf.Query, scanRole func(rows *sql.Rows) error) error {
+	conds, joins := r.computeConditionsAndJoins(opts)
 
-	if opts.System {
-		conds = append(conds, sqlf.Sprintf("system IS TRUE"))
+	queryArgs := opts.PaginationArgs.SQL()
+	if queryArgs.Where != nil {
+		conds = append(conds, queryArgs.Where)
 	}
 
-	q := sqlf.Sprintf(roleListQueryFmtstr, selects, sqlf.Join(conds, " AND "), orderByQuery)
+	query := sqlf.Sprintf(
+		roleListQueryFmtstr,
+		selects,
+		joins,
+		sqlf.Join(conds, " AND "),
+	)
 
-	if opts.LimitOffset != nil {
-		q = sqlf.Sprintf("%s\n%s", q, opts.LimitOffset.SQL())
-	}
+	query = queryArgs.AppendOrderToQuery(query)
+	query = queryArgs.AppendLimitToQuery(query)
 
-	rows, err := r.Query(ctx, q)
+	rows, err := r.Query(ctx, query)
 	if err != nil {
 		return errors.Wrap(err, "error running query")
 	}
@@ -184,6 +189,22 @@ func (r *roleStore) list(ctx context.Context, opts RolesListOptions, selects, or
 	}
 
 	return rows.Err()
+}
+
+func (r *roleStore) computeConditionsAndJoins(opts RolesListOptions) ([]*sqlf.Query, *sqlf.Query) {
+	var conds = []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
+	var joins = sqlf.Sprintf("")
+
+	if opts.System {
+		conds = append(conds, sqlf.Sprintf("system IS TRUE"))
+	}
+
+	if opts.UserID != 0 {
+		conds = append(conds, sqlf.Sprintf("user_roles.user_id = %s", opts.UserID))
+		joins = sqlf.Sprintf("INNER JOIN user_roles ON user_roles.role_id = roles.id")
+	}
+
+	return conds, joins
 }
 
 const roleCreateQueryFmtStr = `
@@ -215,12 +236,22 @@ func (r *roleStore) Create(ctx context.Context, name string, isSystemRole bool) 
 	return role, nil
 }
 
+const roleCountQueryFmtstr = `
+SELECT COUNT(1) FROM roles
+%s
+WHERE %s
+`
+
 func (r *roleStore) Count(ctx context.Context, opts RolesListOptions) (c int, err error) {
-	opts.LimitOffset = nil
-	err = r.list(ctx, opts, sqlf.Sprintf("COUNT(1)"), sqlf.Sprintf(""), func(rows *sql.Rows) error {
-		return rows.Scan(&c)
-	})
-	return c, err
+	conds, joins := r.computeConditionsAndJoins(opts)
+
+	query := sqlf.Sprintf(
+		roleCountQueryFmtstr,
+		joins,
+		sqlf.Join(conds, " AND "),
+	)
+	count, _, err := basestore.ScanFirstInt(r.Query(ctx, query))
+	return count, err
 }
 
 const roleUpdateQueryFmtstr = `

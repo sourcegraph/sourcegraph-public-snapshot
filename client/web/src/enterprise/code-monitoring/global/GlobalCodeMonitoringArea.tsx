@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { Routes, Route } from 'react-router-dom-v5-compat'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -11,12 +11,7 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { AuthenticatedUser } from '../../../auth'
 import { Page } from '../../../components/Page'
 
-interface Props
-    extends RouteComponentProps<{}>,
-        ThemeProps,
-        TelemetryProps,
-        PlatformContextProps,
-        SettingsCascadeProps {
+interface Props extends ThemeProps, TelemetryProps, PlatformContextProps, SettingsCascadeProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
 }
@@ -29,28 +24,15 @@ const ManageCodeMonitorPage = lazyComponent(() => import('../ManageCodeMonitorPa
  * The global code monitoring area.
  */
 export const GlobalCodeMonitoringArea: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    match,
     ...outerProps
 }) => (
     <div className="w-100">
         <Page>
-            <Switch>
-                <Route
-                    path={match.url}
-                    render={props => <CodeMonitoringPage {...outerProps} {...props} />}
-                    exact={true}
-                />
-                <Route
-                    path={`${match.url}/new`}
-                    render={props => <CreateCodeMonitorPage {...outerProps} {...props} />}
-                    exact={true}
-                />
-                <Route
-                    path={`${match.path}/:id`}
-                    render={props => <ManageCodeMonitorPage {...outerProps} {...props} />}
-                    exact={true}
-                />
-            </Switch>
+            <Routes>
+                <Route path="" element={<CodeMonitoringPage {...outerProps} />} />
+                <Route path="new" element={<CreateCodeMonitorPage {...outerProps} />} />
+                <Route path=":id" element={<ManageCodeMonitorPage {...outerProps} />} />
+            </Routes>
         </Page>
     </div>
 )

@@ -6,6 +6,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/sourcegraph",
     visibility = ["//visibility:private"],
     deps = [
+        "//cmd/blobstore/shared",
         "//cmd/github-proxy/shared",
         "//cmd/searcher/shared",
         "//enterprise/cmd/executor/singlebinary",

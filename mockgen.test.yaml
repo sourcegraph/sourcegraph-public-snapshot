@@ -178,6 +178,10 @@
   path: github.com/sourcegraph/sourcegraph/internal/database/migration/runner
   interfaces:
     - Store
+- filename: internal/database/basestore/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/database/basestore
+  interfaces:
+    - Rows
 - filename: internal/featureflag/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/featureflag
   interfaces:

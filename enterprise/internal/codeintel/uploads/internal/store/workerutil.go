@@ -43,6 +43,7 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.upload_size"),
 	sqlf.Sprintf("u.associated_index_id"),
 	sqlf.Sprintf("u.content_type"),
+	sqlf.Sprintf("u.should_reindex"),
 	sqlf.Sprintf("NULL"),
 	sqlf.Sprintf("u.uncompressed_size"),
 }

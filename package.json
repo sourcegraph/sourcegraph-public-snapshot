@@ -57,7 +57,7 @@
     "optimize-svg-assets": "svgo --multipass --config=\"./svgo.config.js\"",
     "build-vsce": "pnpm --filter @sourcegraph/vscode run build",
     "watch-vsce": "pnpm --filter @sourcegraph/vscode run watch",
-    "postinstall":  "set-project-references --save && pnpm run format:tsconfig",
+    "postinstall": "set-project-references --save && pnpm run format:tsconfig",
     "postuninstall": "set-project-references --save && pnpm run format:tsconfig"
   },
   "nyc": {
@@ -296,6 +296,7 @@
     "p-timeout": "^4.1.0",
     "pnpm-deduplicate": "^0.4.1",
     "postcss": "^8.4.19",
+    "postcss-cli": "^10.1.0",
     "postcss-custom-media": "^8.0.0",
     "postcss-focus-visible": "^5.0.0",
     "postcss-loader": "^7.0.2",
@@ -504,5 +505,4 @@
     "tslib": "2.1.0",
     "jsprim": "1.4.2"
   }
-
 }

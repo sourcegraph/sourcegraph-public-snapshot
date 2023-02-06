@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from 'react'
 
 import { mdiMagnify } from '@mdi/js'
-import { RouteComponentProps } from 'react-router'
+import { useParams } from 'react-router-dom-v5-compat'
 import { Observable, of, throwError } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
 
@@ -26,8 +26,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { SearchContextForm } from './SearchContextForm'
 
 export interface EditSearchContextPageProps
-    extends RouteComponentProps<{ spec: Scalars['ID'] }>,
-        ThemeProps,
+    extends ThemeProps,
         TelemetryProps,
         Pick<SearchContextProps, 'updateSearchContext' | 'fetchSearchContextBySpec' | 'deleteSearchContext'>,
         PlatformContextProps<'requestGraphQL'> {
@@ -40,7 +39,10 @@ export const AuthenticatedEditSearchContextPage: React.FunctionComponent<
 > = props => {
     const LOADING = 'loading' as const
 
-    const { match, updateSearchContext, fetchSearchContextBySpec, platformContext } = props
+    const params = useParams()
+    const spec: string = params.spec ? `${params.specOrOrg}/${params.spec}` : params.specOrOrg!
+
+    const { updateSearchContext, fetchSearchContextBySpec, platformContext } = props
     const onSubmit = useCallback(
         (
             id: Scalars['ID'] | undefined,
@@ -58,7 +60,7 @@ export const AuthenticatedEditSearchContextPage: React.FunctionComponent<
     const searchContextOrError = useObservable(
         useMemo(
             () =>
-                fetchSearchContextBySpec(match.params.spec, platformContext).pipe(
+                fetchSearchContextBySpec(spec!, platformContext).pipe(
                     switchMap(searchContext => {
                         if (!searchContext.viewerCanManage) {
                             return throwError(new Error('You do not have sufficient permissions to edit this context.'))
@@ -68,7 +70,7 @@ export const AuthenticatedEditSearchContextPage: React.FunctionComponent<
                     startWith(LOADING),
                     catchError(error => [asError(error)])
                 ),
-            [match.params.spec, fetchSearchContextBySpec, platformContext]
+            [spec, fetchSearchContextBySpec, platformContext]
         )
     )
 

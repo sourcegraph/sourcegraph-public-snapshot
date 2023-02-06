@@ -1,9 +1,13 @@
+import { readdirSync, readFileSync, writeFileSync } from 'fs'
 import * as path from 'path'
 import * as readline from 'readline'
 
 import execa from 'execa'
 import { readFile, writeFile, mkdir } from 'mz/fs'
 import fetch from 'node-fetch'
+
+import { EditFunc } from './github'
+import * as update from './update'
 
 const SOURCEGRAPH_RELEASE_INSTANCE_URL = 'https://k8s.sgdev.org'
 
@@ -191,4 +195,74 @@ export async function getContainerRegistryCredential(registryHostname: string): 
         hostname: registryHostname,
     }
     return credential
+}
+
+export type ContentFunc = (previousVersion: string, nextVersion: string) => string
+
+const upgradeContentGenerators: { [s: string]: ContentFunc } = {
+    docker_compose: (previousVersion: string, nextVersion: string) => '',
+    kubernetes: (previousVersion: string, nextVersion: string) => '',
+    server: (previousVersion: string, nextVersion: string) => '',
+    pure_docker: (previousVersion: string, nextVersion: string) => {
+        const compare = `compare/v${previousVersion}...v${nextVersion}`
+        return `As a template, perform the same actions as the following diff in your own deployment: [\`Upgrade to v${nextVersion}\`](https://github.com/sourcegraph/deploy-sourcegraph-docker/${compare})
+\nFor non-standard replica builds: 
+- [\`Customer Replica 1: ➔ v${nextVersion}\`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/${compare})`
+    },
+}
+export const getUpgradeGuide = (mode: string): ContentFunc => upgradeContentGenerators[mode]
+
+export const getAllUpgradeGuides = (previous: string, next: string): string[] =>
+    Object.keys(upgradeContentGenerators).map(
+        key => `Guide for: ${key}\n\n${upgradeContentGenerators[key](previous, next)}`
+    )
+
+export const updateUpgradeGuides = (previous: string, next: string): EditFunc => {
+    let updateDirectory = '/doc/admin/updates'
+    const notPatchRelease = next.endsWith('.0')
+
+    return (directory: string): void => {
+        updateDirectory = directory + updateDirectory
+        for (const file of readdirSync(updateDirectory)) {
+            if (file === 'index.md') {
+                continue
+            }
+            const mode = file.replace('.md', '')
+            const updateFunc = getUpgradeGuide(mode)
+            if (updateFunc === undefined) {
+                console.log(`Skipping upgrade file: ${file} due to missing content generator`)
+            }
+            const guide = getUpgradeGuide(mode)(previous, next)
+
+            const fullPath = path.join(updateDirectory, file)
+            console.log(`Updating upgrade guide: ${fullPath}`)
+            let updateContents = readFileSync(fullPath).toString()
+            const releaseHeader = `## v${previous} ➔ v${next}`
+            const notesHeader = '\n\n#### Notes:'
+
+            if (notPatchRelease) {
+                let content = `${update.releaseTemplate}\n\n${releaseHeader}`
+                if (guide) {
+                    content = `${content}\n\n${guide}`
+                }
+                content = content + notesHeader
+                updateContents = updateContents.replace(update.releaseTemplate, content)
+            } else {
+                const prevReleaseHeaderPattern = `##\\s+v\\d\\.\\d(?:\\.\\d)? ➔ v${previous}\\s*`
+                const matches = updateContents.match(new RegExp(prevReleaseHeaderPattern))
+                if (!matches || matches.length === 0) {
+                    console.log(`Unable to find header using pattern: ${prevReleaseHeaderPattern}. Skipping.`)
+                    continue
+                }
+                const prevReleaseHeader = matches[0]
+                let content = `${releaseHeader}`
+                if (guide) {
+                    content = `${content}\n\n${guide}`
+                }
+                content = content + notesHeader + `\n\n${prevReleaseHeader}`
+                updateContents = updateContents.replace(prevReleaseHeader, content)
+            }
+            writeFileSync(fullPath, updateContents)
+        }
+    }
 }

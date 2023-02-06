@@ -3,30 +3,12 @@ import React from 'react'
 import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Icon, Link, H3, Text, Tooltip, Badge } from '@sourcegraph/wildcard'
+import { Icon, Link, H3, Text, Tooltip, Badge, ProductStatusBadge } from '@sourcegraph/wildcard'
 
-import { ExternalServiceKind } from '../../graphql-operations'
+import { AddExternalServiceOptions } from './externalServices'
 
 import styles from './ExternalServiceCard.module.scss'
-
-interface ExternalServiceCardProps {
-    /**
-     * Title to show in the external service "button".
-     */
-    title: string
-
-    /**
-     * Icon to show in the external service "button".
-     */
-    icon: React.ComponentType<React.PropsWithChildren<{ className?: string }>>
-
-    /**
-     * A short description that will appear in the external service "button" under the title.
-     */
-    shortDescription?: string
-
-    kind: ExternalServiceKind
-
+interface ExternalServiceCardProps extends AddExternalServiceOptions {
     to?: string
 
     /**
@@ -52,8 +34,14 @@ export const ExternalServiceCard: React.FunctionComponent<React.PropsWithChildre
     badge = '',
     tooltip = '',
     bordered = true,
+    status,
 }) => {
-    let cardTitle = <H3 className={shortDescription ? 'mb-0' : 'mt-1 mb-0'}>{title}</H3>
+    let cardTitle = (
+        <H3 className={shortDescription ? 'mb-0' : 'mt-1 mb-0'}>
+            {title}
+            {status && <ProductStatusBadge status={status} className="ml-2" />}
+        </H3>
+    )
     cardTitle = tooltip ? <Tooltip content={tooltip}>{cardTitle}</Tooltip> : cardTitle
     const children = (
         <div

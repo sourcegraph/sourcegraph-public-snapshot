@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -33,8 +32,7 @@ type WebhookStore interface {
 type webhookStore struct {
 	*basestore.Store
 
-	logger log.Logger
-	key    encryption.Key
+	key encryption.Key
 }
 
 var _ WebhookStore = &webhookStore{}

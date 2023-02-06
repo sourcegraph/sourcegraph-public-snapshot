@@ -325,6 +325,7 @@ function mockCommonGraphQLResponses(
                 viewerCanAdminister: true,
                 builtinAuth: true,
                 tags: [],
+                createdAt: '2020-04-10T21:11:42Z',
             },
         }),
         UserSettingsAreaUserProfile: () => ({

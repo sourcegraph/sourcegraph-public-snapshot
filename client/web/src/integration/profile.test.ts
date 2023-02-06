@@ -149,6 +149,7 @@ describe('User Different Settings Page', () => {
                     viewerCanAdminister: true,
                     builtinAuth: true,
                     tags: [],
+                    createdAt: '2020-03-02T11:52:15Z',
                 },
             }),
             UserSettingsAreaUserProfile: () => ({

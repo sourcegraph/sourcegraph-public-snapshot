@@ -327,6 +327,19 @@ func StructuralSearchEnabled() bool {
 	return val == "enabled"
 }
 
+// SearchDocumentRanksWeight controls the impact of document ranks on the final ranking when
+// SearchOptions.UseDocumentRanks is enabled. The default is 0.5 * 9000 (half the zoekt default),
+// to match existing behavior where ranks are given half the priority as existing scoring signals.
+// We plan to eventually remove this, once we experiment on real data to find a good default.
+func SearchDocumentRanksWeight() float64 {
+	ranking := ExperimentalFeatures().Ranking
+	if ranking != nil && ranking.DocumentRanksWeight != nil {
+		return *ranking.DocumentRanksWeight
+	} else {
+		return 4500
+	}
+}
+
 func ExperimentalFeatures() schema.ExperimentalFeatures {
 	val := Get().ExperimentalFeatures
 	if val == nil {

@@ -1,6 +1,6 @@
 import { Extension, RangeSetBuilder, StateEffect, StateField } from '@codemirror/state'
 import { Decoration, DecorationSet, EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
-import { History } from 'history'
+import { NavigateFunction } from 'react-router-dom-v5-compat'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { concatMap, debounceTime, map } from 'rxjs/operators'
 import { DeepNonNullable } from 'utility-types'
@@ -240,12 +240,12 @@ const tokenLinks = StateField.define<TokenLink[]>({
 })
 
 interface TokensAsLinksConfiguration {
-    history: History
+    navigate: NavigateFunction
     blobInfo: BlobInfo
     preloadGoToDefinition: boolean
 }
 
-export const tokensAsLinks = ({ history, blobInfo, preloadGoToDefinition }: TokensAsLinksConfiguration): Extension => {
+export const tokensAsLinks = ({ navigate, blobInfo, preloadGoToDefinition }: TokensAsLinksConfiguration): Extension => {
     /**
      * Prefer precise code intelligence ranges, fall back to making certain Occurrences interactive.
      */
@@ -276,7 +276,7 @@ export const tokensAsLinks = ({ history, blobInfo, preloadGoToDefinition }: Toke
                 // If it is, push the link to the history stack.
                 if (target.matches('[data-token-link]')) {
                     event.preventDefault()
-                    history.push(target.getAttribute('href')!)
+                    navigate(target.getAttribute('href')!)
                 }
             },
         }),

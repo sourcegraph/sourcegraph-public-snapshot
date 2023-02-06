@@ -55,11 +55,6 @@ interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {
     history: H.History
 }
 
-class FilteredSiteAdminProductLicenseConnection extends FilteredConnection<
-    ProductLicenseFields,
-    Pick<SiteAdminProductLicenseNodeProps, 'showSubscription'>
-> {}
-
 const LOADING = 'loading' as const
 
 /**
@@ -219,7 +214,10 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                                 />
                             </CardBody>
                         )}
-                        <FilteredSiteAdminProductLicenseConnection
+                        <FilteredConnection<
+                            ProductLicenseFields,
+                            Pick<SiteAdminProductLicenseNodeProps, 'showSubscription'>
+                        >
                             className="list-group list-group-flush"
                             noun="product license"
                             pluralNoun="product licenses"
@@ -230,8 +228,6 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                             hideSearch={true}
                             noSummaryIfAllNodesVisible={true}
                             updates={licenseUpdates}
-                            history={history}
-                            location={location}
                         />
                     </Card>
                 </>

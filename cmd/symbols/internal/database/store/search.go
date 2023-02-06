@@ -178,17 +178,17 @@ func negate(query *sqlf.Query) *sqlf.Query {
 }
 
 func globEscape(str string) string {
-	var result strings.Builder
+	var out strings.Builder
 
 	specials := `[]*?`
 
 	for _, c := range str {
 		if strings.ContainsRune(specials, c) {
-			fmt.Fprintf(&result, "[%c]", c)
+			fmt.Fprintf(&out, "[%c]", c)
 		} else {
-			fmt.Fprintf(&result, "%c", c)
+			fmt.Fprintf(&out, "%c", c)
 		}
 	}
 
-	return result.String()
+	return out.String()
 }

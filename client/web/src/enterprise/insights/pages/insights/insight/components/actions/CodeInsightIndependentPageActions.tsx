@@ -1,11 +1,13 @@
 import { FunctionComponent, useRef, useState } from 'react'
 
 import { mdiLinkVariant } from '@mdi/js'
+import { escapeRegExp } from 'lodash'
 import { useHistory } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
+import { DownloadFileButton } from '../../../../../components/DownloadFileButton'
 import { ConfirmDeleteModal } from '../../../../../components/modals/ConfirmDeleteModal'
 import { Insight, isLangStatsInsight } from '../../../../../core'
 import { useCopyURLHandler } from '../../../../../hooks/use-copy-url-handler'
@@ -48,9 +50,13 @@ export const CodeInsightIndependentPageActions: FunctionComponent<Props> = props
         <div className={styles.container}>
             {!isLangStatsInsight(insight) && (
                 <Tooltip content="This will create a CVS archive of all data for this Code Insight, including data that has been archived. This will only include data that you are permitted to see.">
-                    <Button as="a" href={`/.api/insights/export/${insight.id}`} download={true} variant="secondary">
+                    <DownloadFileButton
+                        fileName={escapeRegExp(insight.title)}
+                        fileUrl={`/.api/insights/export/${insight.id}`}
+                        variant="secondary"
+                    >
                         Export data as CSV
-                    </Button>
+                    </DownloadFileButton>
                 </Tooltip>
             )}
 

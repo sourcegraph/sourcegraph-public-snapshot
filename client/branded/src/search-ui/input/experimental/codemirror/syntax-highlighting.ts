@@ -16,9 +16,9 @@ import { createSVGIcon } from '@sourcegraph/shared/src/util/dom'
 
 import { decoratedTokens, queryTokens } from '../../codemirror/parsedQuery'
 
-const validFilter = Decoration.mark({ class: 'sg-filter', inclusive: false })
-const invalidFilter = Decoration.mark({ class: 'sg-filter sg-invalid-filter', inclusive: false })
-const contextFilter = Decoration.mark({ class: 'sg-context-filter', inclusive: true })
+const validFilter = Decoration.mark({ class: 'sg-filter' })
+const invalidFilter = Decoration.mark({ class: 'sg-filter sg-invalid-filter' })
+const contextFilter = Decoration.mark({ class: 'sg-context-filter', inclusiveEnd: true })
 const replaceContext = Decoration.replace({})
 class ClearTokenWidget extends WidgetType {
     constructor(private token: Token) {
@@ -121,15 +121,17 @@ export const filterHighlight = [
                             token.range.start,
                             token.range.end + 1
                         ) // or cursor is within field
-                        builder.add(token.range.start, token.range.end, contextFilter)
                         if (token.value?.value && (!withinRange || !view.hasFocus)) {
                             // hide context: field name and show remove button
                             builder.add(token.range.start, token.field.range.end + 1, replaceContext)
+                            builder.add(token.range.start, token.range.end, contextFilter)
                             builder.add(
                                 token.range.end,
                                 token.range.end,
-                                Decoration.widget({ widget: new ClearTokenWidget(token) })
+                                Decoration.widget({ widget: new ClearTokenWidget(token), side: -1 })
                             )
+                        } else {
+                            builder.add(token.range.start, token.range.end, contextFilter)
                         }
                     }
                 }

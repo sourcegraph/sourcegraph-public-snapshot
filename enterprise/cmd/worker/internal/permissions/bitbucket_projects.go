@@ -325,7 +325,7 @@ func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Cont
 	}
 
 	// set repo permissions (and user permissions)
-	err = txs.SetRepoPermissions(ctx, &p)
+	_, err = txs.SetRepoPermissions(ctx, &p)
 	if err != nil {
 		return errors.Wrapf(err, "failed to set repo permissions for repo %d", repoID)
 	}
@@ -429,16 +429,16 @@ func newMetricsForBitbucketProjectPermissionsQueries(logger log.Logger) bitbucke
 	})
 	observationCtx.Registerer.MustRegister(resets)
 
-	errors := prometheus.NewCounter(prometheus.CounterOpts{
+	errorCounter := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "src_explicit_permissions_bitbucket_project_query_errors_total",
 		Help: "The number of errors that occur during job.",
 	})
-	observationCtx.Registerer.MustRegister(errors)
+	observationCtx.Registerer.MustRegister(errorCounter)
 
 	return bitbucketProjectPermissionsMetrics{
 		workerMetrics: workerutil.NewMetrics(observationCtx, "explicit_permissions_bitbucket_project_queries"),
 		resets:        resets,
 		resetFailures: resetFailures,
-		errors:        errors,
+		errors:        errorCounter,
 	}
 }

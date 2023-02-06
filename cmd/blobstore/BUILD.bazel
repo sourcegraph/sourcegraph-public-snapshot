@@ -7,7 +7,7 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//cmd/blobstore/shared",
-        "//internal/env",
+        "//cmd/sourcegraph-oss/osscmd",
     ],
 )
 

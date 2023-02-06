@@ -4,6 +4,7 @@ go_library(
     name = "actor",
     srcs = [
         "actor.go",
+        "grpc.go",
         "http.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/actor",
@@ -16,12 +17,16 @@ go_library(
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_log//:log",
+        "@org_golang_google_grpc//metadata",
     ],
 )
 
 go_test(
     name = "actor_test",
-    srcs = ["http_test.go"],
+    srcs = [
+        "grpc_test.go",
+        "http_test.go",
+    ],
     embed = [":actor"],
     deps = [
         "@com_github_google_go_cmp//cmp",

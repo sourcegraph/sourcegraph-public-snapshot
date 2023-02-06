@@ -75,8 +75,8 @@ func TestConvertLSIFDocument(t *testing.T) {
 	}
 
 	targetRangeFetcher := func(resultID precise.ID) []precise.ID {
-		if resultID == precise.ID("d0") {
-			return []precise.ID{precise.ID("r0")}
+		if resultID == "d0" {
+			return []precise.ID{"r0"}
 		}
 
 		return nil

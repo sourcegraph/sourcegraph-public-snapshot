@@ -1,8 +1,8 @@
 package search
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/proto"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/searcher/proto"
 )
 
 type Server struct {

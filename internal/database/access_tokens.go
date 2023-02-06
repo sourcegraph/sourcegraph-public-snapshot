@@ -121,7 +121,7 @@ type AccessTokenStore interface {
 	// non-deleted access token.
 	Lookup(ctx context.Context, tokenHexEncoded, requiredScope string) (subjectUserID int32, err error)
 
-	Transact(context.Context) (AccessTokenStore, error)
+	WithTransact(context.Context, func(AccessTokenStore) error) error
 	With(basestore.ShareableStore) AccessTokenStore
 	basestore.ShareableStore
 }
@@ -142,9 +142,10 @@ func (s *accessTokenStore) With(other basestore.ShareableStore) AccessTokenStore
 	return &accessTokenStore{Store: s.Store.With(other), logger: s.logger}
 }
 
-func (s *accessTokenStore) Transact(ctx context.Context) (AccessTokenStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	return &accessTokenStore{Store: txBase, logger: s.logger}, err
+func (s *accessTokenStore) WithTransact(ctx context.Context, f func(AccessTokenStore) error) error {
+	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&accessTokenStore{Store: tx, logger: s.logger})
+	})
 }
 
 func (s *accessTokenStore) Create(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error) {

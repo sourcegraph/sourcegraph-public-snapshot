@@ -788,7 +788,7 @@ type Config struct {
 // Cloud API docs: https://docs.github.com/en/enterprise-cloud@latest/rest/webhooks/repos#create-a-repository-webhook
 // Server API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#create-a-repository-webhook
 func (c *V3Client) CreateSyncWebhook(ctx context.Context, repoName, targetHost, secret string) (int, error) {
-	url, err := webhookURLBuilder(repoName)
+	hooksUrl, err := webhookURLBuilder(repoName)
 	if err != nil {
 		return 0, err
 	}
@@ -808,7 +808,7 @@ func (c *V3Client) CreateSyncWebhook(ctx context.Context, repoName, targetHost, 
 	}
 
 	var result WebhookPayload
-	resp, err := c.post(ctx, url, payload, &result)
+	resp, err := c.post(ctx, hooksUrl, payload, &result)
 	if err != nil {
 		return 0, err
 	}
@@ -825,13 +825,13 @@ func (c *V3Client) CreateSyncWebhook(ctx context.Context, repoName, targetHost, 
 // Cloud API docs: https://docs.github.com/en/enterprise-cloud@latest/rest/webhooks/repos#list-repository-webhooks
 // Server API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#list-repository-webhooks
 func (c *V3Client) ListSyncWebhooks(ctx context.Context, repoName string) ([]WebhookPayload, error) {
-	url, err := webhookURLBuilder(repoName)
+	hooksUrl, err := webhookURLBuilder(repoName)
 	if err != nil {
 		return nil, err
 	}
 
 	var results []WebhookPayload
-	resp, err := c.get(ctx, url, &results)
+	resp, err := c.get(ctx, hooksUrl, &results)
 	if err != nil {
 		return nil, err
 	}
@@ -866,12 +866,12 @@ func (c *V3Client) FindSyncWebhook(ctx context.Context, repoName string) (*Webho
 // Cloud API docs: https://docs.github.com/en/enterprise-cloud@latest/rest/webhooks/repos#delete-a-repository-webhook
 // Server API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#delete-a-repository-webhook
 func (c *V3Client) DeleteSyncWebhook(ctx context.Context, repoName string, hookID int) (bool, error) {
-	url, err := webhookURLBuilderWithID(repoName, hookID)
+	hookUrl, err := webhookURLBuilderWithID(repoName, hookID)
 	if err != nil {
 		return false, err
 	}
 
-	resp, err := c.delete(ctx, url)
+	resp, err := c.delete(ctx, hookUrl)
 	if err != nil && err != io.EOF {
 		return false, err
 	}

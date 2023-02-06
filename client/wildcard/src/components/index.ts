@@ -107,6 +107,7 @@ export type { HeadingProps, HeadingElement } from './Typography'
 export type { BadgeProps, BadgeVariantType, ProductStatusType, BaseProductStatusBadgeProps } from './Badge'
 export type { ModalProps } from './Modal'
 export type { MultiComboboxProps } from './Combobox'
+export type { RadioButtonProps } from './Form/RadioButton'
 
 /**
  * Class name helpers to be used with plain DOM nodes.

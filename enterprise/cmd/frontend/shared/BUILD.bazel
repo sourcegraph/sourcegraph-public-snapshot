@@ -29,6 +29,7 @@ go_library(
         "//enterprise/internal/codeintel",
         "//enterprise/internal/codeintel/shared",
         "//enterprise/internal/insights",
+        "//enterprise/internal/scim",
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/database",
