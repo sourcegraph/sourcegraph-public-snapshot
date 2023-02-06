@@ -1,21 +1,16 @@
 import React, { useCallback, useState } from 'react'
 
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { HeroPage } from '../../../components/HeroPage'
+import { NotFoundPage } from '../../../components/HeroPage'
 import { CreateAccessTokenResult } from '../../../graphql-operations'
 import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
 import { UserSettingsCreateAccessTokenCallbackPage } from './UserSettingsCreateAccessTokenCallbackPage'
 import { UserSettingsCreateAccessTokenPage } from './UserSettingsCreateAccessTokenPage'
 import { UserSettingsTokensPage } from './UserSettingsTokensPage'
-
-const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
-)
 
 interface Props
     extends Pick<UserSettingsAreaRouteContext, 'user' | 'authenticatedUser'>,
@@ -63,7 +58,7 @@ export const UserSettingsTokensArea: React.FunctionComponent<React.PropsWithChil
                     />
                 )}
             />
-            <Route component={NotFoundPage} key="hardcoded-key" />
+            <Route render={() => <NotFoundPage pageType="settings" />} key="hardcoded-key" />
         </Switch>
     )
 }

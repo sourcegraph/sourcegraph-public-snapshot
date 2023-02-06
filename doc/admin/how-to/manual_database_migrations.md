@@ -189,7 +189,7 @@ upto \
 
 ### downto
 
-The `downto` command revert any applied migrations that are children of the given targets - this effectively "resets" the schema to the target version.
+The `downto` command revert any applied migrations that are children of the given targets—this effectively "resets" the schema to the target version.
 
 ```
 downto \

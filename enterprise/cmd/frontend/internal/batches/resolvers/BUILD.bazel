@@ -91,6 +91,7 @@ go_test(
         "batch_spec_workspace_file_connection_test.go",
         "batch_spec_workspace_file_test.go",
         "batch_spec_workspace_resolution_test.go",
+        "batch_spec_workspace_step_test.go",
         "batch_spec_workspace_test.go",
         "bulk_operation_connection_test.go",
         "bulk_operation_test.go",

@@ -2,19 +2,19 @@ package dependencies
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/background"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
+	dependenciesstore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func NewService(observationCtx *observation.Context, db database.DB) *Service {
-	return newService(scopedContext("service", observationCtx), store.New(scopedContext("store", observationCtx), db))
+	return newService(scopedContext("service", observationCtx), dependenciesstore.New(scopedContext("store", observationCtx), db))
 }
 
 // TestService creates a new dependencies service with noop observation contexts.
 func TestService(db database.DB, _ GitserverClient) *Service {
-	store := store.New(&observation.TestContext, db)
+	store := dependenciesstore.New(&observation.TestContext, db)
 
 	return newService(&observation.TestContext, store)
 }

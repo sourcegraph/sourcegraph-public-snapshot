@@ -5,7 +5,7 @@ Sourcegraph can be configured to enforce repository permissions from code hosts.
 - [GitHub / GitHub Enterprise](#github)
 - [GitLab](#gitlab)
 - [Bitbucket Server / Bitbucket Data Center](#bitbucket-server-bitbucket-data-center)
-- [Gerrit](#gerrit)
+- [Gerrit](#gerrit) <span class="badge badge-beta">Beta</span>
 - [Unified SSO](https://unknwon.io/posts/200915_setup-sourcegraph-gitlab-keycloak/)
 - [Explicit permissions API](#explicit-permissions-api)
 
@@ -264,6 +264,7 @@ By installing the [Bitbucket Server plugin](../../../integration/bitbucket_serve
 <br />
 
 ## Gerrit
+<span class="badge badge-beta">Beta</span>
 
 Prerequisite: [Add Gerrit as an authentication provider](../auth/index.md#gerrit).
 
@@ -294,7 +295,7 @@ Sourcegraph's background permissions syncing is a 2-way sync that combines data 
 
 Both types of sync happen [repeatedly and continuously based on a variety of events and criteria](#permissions-sync-scheduling).
 
-> NOTE: Failure cases for each type of sync is generally gracefully handled - unless the code host returns a non-error response, the result is not used to update permissions. This means that permissions may become outdated, but will usually not be deleted, if syncs fail.
+> NOTE: Failure cases for each type of sync is generally gracefully handled—unless the code host returns a non-error response, the result is not used to update permissions. This means that permissions may become outdated, but will usually not be deleted, if syncs fail.
 
 Background permissions syncing enables:
 
@@ -311,7 +312,7 @@ The two types of sync, [user-centric and repository-centric](#background-permiss
 - **Complete sync** means a user has completed user-centric permissions sync (or a repository has completed a repository-centric sync), which indicates the most accurate permissions from the code host has been persisted to Sourcegraph for the user (or vice versa for repositories).
 - **Incremental sync** means a user has *not* yet completed a recent user-centric permissions sync, but has been recently granted some permissions from a repository-centric sync (or vice versa for repositories).
   - For example, if a user has *not* had a user-centric permissions sync, but has been granted permissions from one or more repository-centric syncs, the user will have only completed an incremental sync. In this state, a user might not have access to all repositories they should have access to, but will incrementally receive more access as repository-centric syncs complete.
-  - It is possible to be in an incremental sync state where a user or repository has effectively completed a complete sync, and all access rules are aligned with what is in the code host - for example, if a user completed a complete sync and a single repository is added, the user will be granted access to that repository through incremental sync, so the user will have full access to everything the user should have access to despite being in an incremental sync state.
+  - It is possible to be in an incremental sync state where a user or repository has effectively completed a complete sync, and all access rules are aligned with what is in the code host—for example, if a user completed a complete sync and a single repository is added, the user will be granted access to that repository through incremental sync, so the user will have full access to everything the user should have access to despite being in an incremental sync state.
 
 The state of permissions is [repeatedly and continuously updated in the background](#permissions-sync-scheduling).
 
@@ -355,7 +356,7 @@ For example, permissions syncs may be scheduled:
 - When a relevant [webhook is configured and received](#triggering-syncs-with-webhooks)
 - When a [manual sync is scheduled](#manually-scheduling-a-sync)
 
-When a sync is scheduled, it is added to a queue that is steadily processed to avoid overloading the code host - a sync [might not happen immediately](#permissions-sync-duration). Prioritization of permissions sync also happens to, for example, ensure users or repositories with no permissions get processed first.
+When a sync is scheduled, it is added to a queue that is steadily processed to avoid overloading the code host—a sync [might not happen immediately](#permissions-sync-duration). Prioritization of permissions sync also happens to, for example, ensure users or repositories with no permissions get processed first.
 
 There are variety of options in the site configuration to tune how the permissions sync requests are scheduled and processed:
 
@@ -408,7 +409,7 @@ To further mitigate long sync times and API request load, Sourcegraph can also l
 
 ### Provider-specific optimizations
 
-Each provider can implement optimizations to improve [sync performance](#permissions-sync-duration) and [up-to-dateness of permissions](#triggering-syncs-with-webhooks) - please refer to the relevant provider documentation on this page for more details.
+Each provider can implement optimizations to improve [sync performance](#permissions-sync-duration) and [up-to-dateness of permissions](#triggering-syncs-with-webhooks)—please refer to the relevant provider documentation on this page for more details.
 
 #### Triggering syncs with webhooks
 
@@ -663,4 +664,4 @@ To attach a user's Sourcegraph account to all relevant code host accounts, a spe
 3. On the sign in page, sign in again using the next code host's [authentication provider](../auth/index.md)
 4. Once repeated across all relevant code hosts, users should now have access to repositories on all code hosts and have all repository permissions enforced.
 
-> NOTE: These steps are not required at every sign in - only during the initial account creation.
+> NOTE: These steps are not required at every sign in—only during the initial account creation.

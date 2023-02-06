@@ -2,7 +2,8 @@ import React, { useRef } from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { Route, Switch } from 'react-router'
+import { useLocation } from 'react-router-dom-v5-compat'
 
 import { SiteSettingFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -50,12 +51,7 @@ export interface SiteAdminAreaRouteContext
 
 export interface SiteAdminAreaRoute extends RouteDescriptor<SiteAdminAreaRouteContext> {}
 
-interface SiteAdminAreaProps
-    extends RouteComponentProps<{}>,
-        PlatformContextProps,
-        SettingsCascadeProps,
-        BatchChangesProps,
-        TelemetryProps {
+interface SiteAdminAreaProps extends PlatformContextProps, SettingsCascadeProps, BatchChangesProps, TelemetryProps {
     routes: readonly SiteAdminAreaRoute[]
     sideBarGroups: SiteAdminSideBarGroups
     overviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
@@ -66,6 +62,7 @@ interface SiteAdminAreaProps
 
 const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildren<SiteAdminAreaProps>> = props => {
     const reference = useRef<HTMLDivElement>(null)
+    const location = useLocation()
 
     // If not site admin, redirect to sign in.
     if (!props.authenticatedUser.siteAdmin) {
@@ -103,7 +100,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
                     batchChangesWebhookLogsEnabled={props.batchChangesWebhookLogsEnabled}
                 />
                 <div className="flex-bounded">
-                    <ErrorBoundary location={props.location}>
+                    <ErrorBoundary location={location}>
                         <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
                             <Switch>
                                 {props.routes.map(
@@ -112,7 +109,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
                                             <Route
                                                 // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                                 key="hardcoded-key"
-                                                path={props.match.url + path}
+                                                path={'/site-admin' + path}
                                                 exact={exact}
                                                 render={routeComponentProps =>
                                                     render({ ...context, ...routeComponentProps })

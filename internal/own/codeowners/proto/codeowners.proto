@@ -6,7 +6,7 @@ syntax = "proto3";
 
 package codeowners;
 
-option go_package = "github.com/sourcegraph/sourcegraph/internal/own/codeowners/proto/";
+option go_package = "github.com/sourcegraph/sourcegraph/internal/own/codeowners/proto";
 
 // File represents the contents of a single CODEOWNERS file.
 // As specified by various CODEOWNERS implementations the following apply:

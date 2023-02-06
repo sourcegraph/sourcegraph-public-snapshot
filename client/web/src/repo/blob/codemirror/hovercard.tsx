@@ -75,7 +75,7 @@ import {
 } from '../../../components/WebHoverOverlay'
 import { BlobProps, updateBrowserHistoryIfChanged } from '../Blob'
 
-import { Container } from './react-interop'
+import { CodeMirrorContainer } from './react-interop'
 import {
     preciseWordAtCoords,
     offsetToUIPosition,
@@ -620,7 +620,7 @@ export class HovercardView implements TooltipView {
         }
 
         root.render(
-            <Container onRender={() => repositionTooltips(this.view)} history={props.history}>
+            <CodeMirrorContainer onRender={() => repositionTooltips(this.view)} history={props.history}>
                 <div
                     className={classNames({
                         'cm-code-intel-hovercard': true,
@@ -651,7 +651,7 @@ export class HovercardView implements TooltipView {
                                 const parameters = new URLSearchParams(props.location.search)
                                 parameters.delete('popover')
 
-                                updateBrowserHistoryIfChanged(props.history, props.location, parameters)
+                                updateBrowserHistoryIfChanged(props.navigate, props.location, parameters)
                                 this.nextPinned.next(false)
                             },
                             onCopyLinkButtonClick: async () => {
@@ -668,7 +668,7 @@ export class HovercardView implements TooltipView {
                                 search.set('popover', 'pinned')
 
                                 updateBrowserHistoryIfChanged(
-                                    props.history,
+                                    props.navigate,
                                     props.location,
                                     // It may seem strange to set start and end to the same value, but that what's the old blob view is doing as well
                                     addLineRangeQueryParameter(
@@ -687,7 +687,7 @@ export class HovercardView implements TooltipView {
                         hoverOverlayContainerClassName="position-relative"
                     />
                 </div>
-            </Container>
+            </CodeMirrorContainer>
         )
     }
 }

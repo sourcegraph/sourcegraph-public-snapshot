@@ -732,9 +732,9 @@ func replicaAddrs(deployType, countStr, serviceName, port string) (string, error
 
 func getEnv(environ []string, key string) (string, bool) {
 	key = key + "="
-	for _, env := range environ {
-		if strings.HasPrefix(env, key) {
-			return env[len(key):], true
+	for _, envVar := range environ {
+		if strings.HasPrefix(envVar, key) {
+			return envVar[len(key):], true
 		}
 	}
 	return "", false

@@ -19,18 +19,18 @@ import (
 func toComputeResult(ctx context.Context, cmd compute.Command, match result.Match) (out []compute.Result, _ error) {
 	if v, ok := match.(*result.CommitMatch); ok && v.DiffPreview != nil {
 		for _, diffMatch := range v.CommitToDiffMatches() {
-			result, err := cmd.Run(ctx, diffMatch)
+			runResult, err := cmd.Run(ctx, diffMatch)
 			if err != nil {
 				return nil, err
 			}
-			out = append(out, result)
+			out = append(out, runResult)
 		}
 	} else {
-		result, err := cmd.Run(ctx, match)
+		runResult, err := cmd.Run(ctx, match)
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, result)
+		out = append(out, runResult)
 	}
 	return out, nil
 }

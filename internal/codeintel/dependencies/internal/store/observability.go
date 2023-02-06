@@ -25,7 +25,7 @@ type operations struct {
 var m = new(metrics.SingletonREDMetrics)
 
 func newOperations(observationCtx *observation.Context) *operations {
-	metrics := m.Get(func() *metrics.REDMetrics {
+	redMetrics := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
 			observationCtx.Registerer,
 			"codeintel_dependencies_store",
@@ -38,7 +38,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.dependencies.store.%s", name),
 			MetricLabelValues: []string{name},
-			Metrics:           metrics,
+			Metrics:           redMetrics,
 		})
 	}
 
@@ -51,7 +51,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		preciseDependents:            op("PreciseDependents"),
 		selectRepoRevisionsToResolve: op("SelectRepoRevisionsToResolve"),
 		updateResolvedRevisions:      op("UpdateResolvedRevisions"),
-		upsertDependencyRepos:        op("UpsertDependencyRepos"),
+		upsertDependencyRepos:        op("InsertDependencyRepos"),
 		upsertLockfileGraph:          op("UpsertLockfileGraph"),
 		listLockfileIndexes:          op("ListLockfileIndexes"),
 		getLockfileIndex:             op("GetLockfileIndex"),

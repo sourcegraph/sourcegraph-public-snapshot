@@ -1,5 +1,6 @@
 import React, { useCallback } from 'react'
 
+import { useNavigate } from 'react-router-dom-v5-compat'
 import { Observable, throwError } from 'rxjs'
 import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
 
@@ -8,20 +9,20 @@ import { Button, LoadingSpinner, useEventObservable, Modal, Alert, H3, Text } fr
 
 import { CodeMonitorFormProps } from './CodeMonitorForm'
 
-interface DeleteModalProps extends Pick<CodeMonitorFormProps, 'history' | 'codeMonitor'> {
+interface DeleteModalProps extends Pick<CodeMonitorFormProps, 'codeMonitor'> {
     isOpen: boolean
     toggleDeleteModal: () => void
     deleteCodeMonitor: (id: string) => Observable<void>
 }
 
 export const DeleteMonitorModal: React.FunctionComponent<React.PropsWithChildren<DeleteModalProps>> = ({
-    history,
     isOpen,
     deleteCodeMonitor,
     toggleDeleteModal,
     codeMonitor,
 }) => {
     const LOADING = 'loading' as const
+    const navigate = useNavigate()
 
     const deleteLabelId = 'deleteCodeMonitor'
 
@@ -33,7 +34,7 @@ export const DeleteMonitorModal: React.FunctionComponent<React.PropsWithChildren
                         if (codeMonitor) {
                             return deleteCodeMonitor(codeMonitor.id).pipe(
                                 tap(() => {
-                                    history.push('/code-monitoring')
+                                    navigate('/code-monitoring')
                                 }),
                                 startWith(LOADING),
                                 catchError(error => [asError(error)])
@@ -43,7 +44,7 @@ export const DeleteMonitorModal: React.FunctionComponent<React.PropsWithChildren
                         return throwError(new Error('Failed to delete: Code monitor ID not provided'))
                     })
                 ),
-            [deleteCodeMonitor, history, codeMonitor]
+            [deleteCodeMonitor, navigate, codeMonitor]
         )
     )
 

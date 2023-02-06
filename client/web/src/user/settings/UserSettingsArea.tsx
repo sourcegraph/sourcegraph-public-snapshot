@@ -12,7 +12,7 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
-import { HeroPage } from '../../components/HeroPage'
+import { HeroPage, NotFoundPage } from '../../components/HeroPage'
 import {
     UserAreaUserFields,
     UserSettingsAreaUserFields,
@@ -27,10 +27,6 @@ import { EditUserProfilePageGQLFragment } from './profile/UserSettingsProfilePag
 import { UserSettingsSidebar, UserSettingsSidebarItems } from './UserSettingsSidebar'
 
 import styles from './UserSettingsArea.module.scss'
-
-const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
-)
 
 export interface UserSettingsAreaRoute extends RouteDescriptor<UserSettingsAreaRouteContext> {}
 
@@ -59,13 +55,12 @@ const UserSettingsAreaGQLFragment = gql`
         settingsURL
         avatarURL
         viewerCanAdminister
-        siteAdmin
+        siteAdmin @include(if: $siteAdmin)
         builtinAuth
         createdAt
-        emails {
+        emails @include(if: $siteAdmin) {
             email
             verified
-            isPrimary
         }
         organizations {
             nodes {
@@ -122,7 +117,7 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<
     }
 
     if (!user) {
-        return <NotFoundPage />
+        return <NotFoundPage pageType="user" />
     }
 
     if (authenticatedUser.id !== user.id && !user.viewerCanAdminister) {
@@ -173,7 +168,7 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<
                                             />
                                         )
                                 )}
-                                <Route component={NotFoundPage} key="hardcoded-key" />
+                                <Route render={() => <NotFoundPage pageType="settings" />} key="hardcoded-key" />
                             </Switch>
                         </React.Suspense>
                     </ErrorBoundary>

@@ -86,15 +86,13 @@ func StandaloneRunRun(ctx context.Context, logger log.Logger, cfg *config.Config
 
 	nameSet := janitor.NewNameSet()
 	ctx, cancel := context.WithCancel(ctx)
-	worker, err := worker.NewWorker(observationCtx, nameSet, opts)
+	wrk, err := worker.NewWorker(observationCtx, nameSet, opts)
 	if err != nil {
 		cancel()
 		return err
 	}
 
-	routines := []goroutine.BackgroundRoutine{
-		worker,
-	}
+	routines := []goroutine.BackgroundRoutine{wrk}
 
 	if cfg.UseFirecracker {
 		routines = append(routines, janitor.NewOrphanedVMJanitor(
@@ -112,7 +110,7 @@ func StandaloneRunRun(ctx context.Context, logger log.Logger, cfg *config.Config
 		// in that we want a maximum runtime and/or number of jobs to be
 		// executed by a single instance, after which the service should shut
 		// down without error.
-		worker.Wait()
+		wrk.Wait()
 
 		// Once the worker has finished its current set of jobs and stops
 		// the dequeue loop, we want to finish off the rest of the sibling

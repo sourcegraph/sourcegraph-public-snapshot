@@ -1,4 +1,5 @@
 # Gerrit
+<span class="badge badge-beta">Beta</span>
 
 Site admins can sync Git repositories hosted on their private Gerrit instance with Sourcegraph so that users can search and navigate the repositories.
 

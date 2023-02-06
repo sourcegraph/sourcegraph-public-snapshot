@@ -17,27 +17,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func assertRustParsesPlaceholder() *reposource.RustVersionedPackage {
-	placeholder, err := reposource.ParseRustVersionedPackage("sourcegraph.com/placeholder@0.0.0")
-	if err != nil {
-		panic(fmt.Sprintf("expected placeholder dependency to parse but got %v", err))
-	}
-
-	return placeholder
-}
-
 func NewRustPackagesSyncer(
 	connection *schema.RustPackagesConnection,
 	svc *dependencies.Service,
 	client *crates.Client,
 ) VCSSyncer {
-	placeholder := assertRustParsesPlaceholder()
-
 	return &vcsPackagesSyncer{
 		logger:      log.Scoped("RustPackagesSyncer", "sync Rust packages"),
 		typ:         "rust_packages",
 		scheme:      dependencies.RustPackagesScheme,
-		placeholder: placeholder,
+		placeholder: reposource.ParseRustVersionedPackage("sourcegraph.com/placeholder@0.0.0"),
 		svc:         svc,
 		configDeps:  connection.Dependencies,
 		source:      &rustDependencySource{client: client},
@@ -49,15 +38,15 @@ type rustDependencySource struct {
 }
 
 func (rustDependencySource) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
-	return reposource.ParseRustVersionedPackage(string(name) + "@" + version)
+	return reposource.ParseRustVersionedPackage(string(name) + "@" + version), nil
 }
 
 func (rustDependencySource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
-	return reposource.ParseRustVersionedPackage(dep)
+	return reposource.ParseRustVersionedPackage(dep), nil
 }
 
 func (rustDependencySource) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
-	return reposource.ParseRustPackageFromName(name)
+	return reposource.ParseRustPackageFromName(name), nil
 }
 
 func (rustDependencySource) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
