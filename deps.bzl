@@ -1447,6 +1447,9 @@ def go_dependencies():
     )
     go_repository(
         name = "com_github_coreos_go_iptables",
+        # We need to explictly turn this on, because the repository
+        # has a script named "build"  at the root which makes tricks
+        # gazelle into thinking it already has a Buildfile
         build_file_generation = "on",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/coreos/go-iptables",
