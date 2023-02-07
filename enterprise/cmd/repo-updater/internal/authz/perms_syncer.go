@@ -652,9 +652,11 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	}
 
 	for acctID, repoIDs := range results.repoPerms {
-		err = s.saveUserPermsForAccount(ctx, userID, acctID, repoIDs)
-		if err != nil {
-			return providerStates, errors.Wrapf(err, "set user repo permissions for user %q (id: %d, external_account_id: %d)", user.Username, user.ID, acctID)
+		if UserRepoPermsEnabled(ctx, s.db) {
+			err = s.saveUserPermsForAccount(ctx, userID, acctID, repoIDs)
+			if err != nil {
+				return providerStates, errors.Wrapf(err, "set user repo permissions for user %q (id: %d, external_account_id: %d)", user.Username, user.ID, acctID)
+			}
 		}
 
 		for _, repoID := range repoIDs {
@@ -700,6 +702,16 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	}
 
 	return result, providerStates, nil
+}
+
+const userRepoPermsFlagName = "unified-user-repo-perms"
+
+func UserRepoPermsEnabled(ctx context.Context, db database.DB) bool {
+	featureFlag, err := db.FeatureFlags().GetFeatureFlag(ctx, userRepoPermsFlagName)
+	if featureFlag == nil || err != nil {
+		return false
+	}
+	return featureFlag.Bool.Value
 }
 
 // syncRepoPerms processes permissions syncing request in repository-centric way.
@@ -861,8 +873,10 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	}
 	defer func() { err = txs.Done(err) }()
 
-	if err = txs.SetUserRepoPermissions(ctx, perms, authz.PermissionEntity{RepoID: int32(repoID)}, "repo_sync"); err != nil {
-		return result, providerStates, errors.Wrapf(err, "set user repo permissions for repository %q (id: %d)", repo.Name, repo.ID)
+	if UserRepoPermsEnabled(ctx, s.db) {
+		if err = txs.SetUserRepoPermissions(ctx, perms, authz.PermissionEntity{RepoID: int32(repoID)}, "repo_sync"); err != nil {
+			return result, providerStates, errors.Wrapf(err, "set user repo permissions for repository %q (id: %d)", repo.Name, repo.ID)
+		}
 	}
 	result, err = txs.SetRepoPermissions(ctx, p)
 	if err != nil {
