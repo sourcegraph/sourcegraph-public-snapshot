@@ -118,13 +118,17 @@ func TestListPackageRepoRefs(t *testing.T) {
 		{{Scheme: "npm", Name: "banana"}, {Scheme: "npm", Name: "bar"}, {Scheme: "npm", Name: "foo"}},
 		{{Scheme: "npm", Name: "turtle"}},
 	} {
-		depRepos, _, err := store.ListPackageRepoRefs(ctx, ListDependencyReposOpts{
+		depRepos, total, err := store.ListPackageRepoRefs(ctx, ListDependencyReposOpts{
 			Scheme: "npm",
 			After:  lastID,
 			Limit:  3,
 		})
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if total != 4 {
+			t.Errorf("unexpected total count of package repos: want=%d got=%d", 4, total)
 		}
 
 		lastID = depRepos[len(depRepos)-1].ID

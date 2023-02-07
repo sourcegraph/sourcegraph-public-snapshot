@@ -90,6 +90,7 @@ func (s *store) ListPackageRepoRefs(ctx context.Context, opts ListDependencyRepo
 		sqlf.Join(makeListDependencyReposConds(opts), "AND"),
 		offsetCond,
 		makeLimit(opts.Limit),
+		sqlf.Sprintf("JOIN package_repo_versions prv ON lr.id = prv.package_id"),
 		sqlf.Sprintf(sortExpr),
 	)
 	err = scanner(s.db.Query(ctx, query))
@@ -101,8 +102,7 @@ func (s *store) ListPackageRepoRefs(ctx context.Context, opts ListDependencyRepo
 		listDependencyReposQuery,
 		sqlf.Sprintf("COUNT(lr.id)"),
 		sqlf.Join(makeListDependencyReposConds(opts), "AND"),
-		sqlf.Sprintf(""),
-		sqlf.Sprintf(""), sqlf.Sprintf(""),
+		sqlf.Sprintf(""), sqlf.Sprintf(""), sqlf.Sprintf(""), sqlf.Sprintf(""),
 	)
 	totalCount, _, err := basestore.ScanFirstInt(s.db.Query(ctx, query))
 	if err != nil {
@@ -138,11 +138,14 @@ FROM (
 		WHERE %s
 	) AS single_entry
 	WHERE row_num = 1
+	-- ID based offset
 	%s
+	-- limit results
 	%s
 ) lr
-JOIN package_repo_versions prv
-ON lr.id = prv.package_id
+-- optional join
+%s
+-- final sort
 %s
 `
 
