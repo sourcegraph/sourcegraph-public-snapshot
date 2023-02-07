@@ -30,14 +30,12 @@ const DEFAULT_FETCH_LIMIT = 15
 
 interface RepositoryPatternListProps {
     repositoryPatterns: string[]
-    setRepositoryPatterns: (updater: (patterns: string[]) => string[]) => void
-    disabled: boolean
+    setRepositoryPatterns: (updater: (patterns: string[] | null) => string[] | null) => void
 }
 
 export const RepositoryPatternList: FunctionComponent<RepositoryPatternListProps> = ({
     repositoryPatterns,
     setRepositoryPatterns,
-    disabled,
 }) => {
     const [autoFocusIndex, setAutoFocusIndex] = useState(-1)
     const [repositoryFetchLimit, setRepositoryFetchLimit] = useState(DEFAULT_FETCH_LIMIT)
@@ -69,7 +67,6 @@ export const RepositoryPatternList: FunctionComponent<RepositoryPatternListProps
                         autoFocus={index === autoFocusIndex}
                         pattern={repositoryPattern}
                         loading={isLoadingPreview}
-                        disabled={disabled}
                         setPattern={value =>
                             setRepositoryPatterns(repositoryPatterns =>
                                 (repositoryPatterns || []).map((value_, index_) => (index === index_ ? value : value_))
@@ -77,19 +74,16 @@ export const RepositoryPatternList: FunctionComponent<RepositoryPatternListProps
                         }
                     />
                     <div className={styles.inputActions}>
-                        {index > 0 && (
-                            <Tooltip content="Delete this repository pattern">
-                                <Button
-                                    aria-label="Delete the repository pattern"
-                                    className={styles.inputAction}
-                                    variant="icon"
-                                    onClick={() => handleDelete(index)}
-                                    disabled={disabled}
-                                >
-                                    <Icon className="text-danger" aria-hidden={true} svgPath={mdiDelete} />
-                                </Button>
-                            </Tooltip>
-                        )}
+                        <Tooltip content="Delete this repository pattern">
+                            <Button
+                                aria-label="Delete the repository pattern"
+                                className={styles.inputAction}
+                                variant="icon"
+                                onClick={() => handleDelete(index)}
+                            >
+                                <Icon className="text-danger" aria-hidden={true} svgPath={mdiDelete} />
+                            </Button>
+                        </Tooltip>
 
                         {index === repositoryPatterns.length - 1 && (
                             <Tooltip content="Add an additional repository pattern">
@@ -98,7 +92,6 @@ export const RepositoryPatternList: FunctionComponent<RepositoryPatternListProps
                                     className={styles.inputAction}
                                     variant="icon"
                                     onClick={addRepositoryPattern}
-                                    disabled={disabled}
                                 >
                                     <Icon className="text-primary" aria-hidden={true} svgPath={mdiPlus} />
                                 </Button>
@@ -183,7 +176,6 @@ interface RepositoryPatternProps {
     index: number
     pattern: string
     setPattern: (value: string) => void
-    disabled: boolean
     loading?: boolean
     autoFocus?: boolean
 }
@@ -192,7 +184,6 @@ const RepositoryPattern: FunctionComponent<RepositoryPatternProps> = ({
     index,
     pattern,
     setPattern,
-    disabled,
     autoFocus,
     loading,
 }) => {
@@ -215,7 +206,6 @@ const RepositoryPattern: FunctionComponent<RepositoryPatternProps> = ({
                         debouncedSetPattern(value)
                     }}
                     autoFocus={autoFocus}
-                    disabled={disabled}
                     required={true}
                     status={loading ? InputStatus.loading : undefined}
                     placeholder={index === 0 ? 'Example: github.com/*' : undefined}

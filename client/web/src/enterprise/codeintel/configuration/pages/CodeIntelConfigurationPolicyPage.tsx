@@ -156,7 +156,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                 ? { type: GitObjectType.GIT_TAG, pattern: '*' }
                 : { type: GitObjectType.GIT_COMMIT }
 
-        const repoDefaults = repo ? { repository: repo } : { repositoryPatterns: ['*'] }
+        const repoDefaults = repo ? { repository: repo } : {}
         const typeDefaults = policyConfig?.type === GitObjectType.GIT_UNKNOWN ? defaultTypes : {}
         const configWithDefaults = policyConfig && { ...policyConfig, ...repoDefaults, ...typeDefaults }
 
@@ -467,18 +467,13 @@ const GitObjectSettingsSection: FunctionComponent<GitObjectSettingsSectionProps>
                                 setLocalGitPattern(value)
                                 debouncedSetGitPattern(value)
                             }}
-                            // message="beans" TODO? What message here
                             placeholder={policy.type === GitObjectType.GIT_TAG ? 'v*' : 'feat/*'}
                             disabled={policy.protected}
                             required={true}
-                            status={previewLoading ? 'loading' : undefined}
                         />
                     </>
                 )}
             </div>
-            {/* TODO COnvert all this into error/loading states in Input and remove duplicated text from table
-                Update" Maybe not loading in input, works better below for "Show more" too
-            */}
             {(policy.type === GitObjectType.GIT_TAG || policy.type === GitObjectType.GIT_TREE) && (
                 <>
                     <div className="text-right">
@@ -548,7 +543,7 @@ const GitObjectPreview: FunctionComponent<GitObjectPreviewProps> = ({ policy, pr
                 )}
             </div>
 
-            <ul className="list-group">
+            <ul className={classNames('list-group', styles.list)}>
                 {preview.preview.map(tag => (
                     <li key={tag.name} className="list-group-item">
                         <span>
@@ -590,22 +585,42 @@ interface RepositorySettingsSectionProps {
 
 const RepositorySettingsSection: FunctionComponent<RepositorySettingsSectionProps> = ({ policy, updatePolicy }) => (
     <div className="form-group">
-        <Label>Define the repositories matched by this policy</Label>
-
+        <Label className="mb-0">Which repositories match this policy?</Label>
         <Text size="small" className="text-muted mb-2">
-            If you wish to limit the number of repositories with auto indexing, enter a filter such as a code host or
-            organization.
+            Configuration policies can apply to one, a set, or to all repositories on a Sourcegraph instance.
         </Text>
-
-        <RepositoryPatternList
-            repositoryPatterns={policy.repositoryPatterns}
-            setRepositoryPatterns={updater =>
-                updatePolicy({
-                    repositoryPatterns: updater((policy || nullPolicy).repositoryPatterns),
-                })
-            }
-            disabled={policy.protected}
-        />
+        {!policy.repositoryPatterns || policy.repositoryPatterns.length === 0 ? (
+            <Alert variant="info" className="d-flex justify-content-between align-items-center">
+                <div>
+                    <Text weight="medium" className="mb-0">
+                        This policy applies to{' '}
+                        <Text weight="bold" className="d-inline">
+                            all repositories
+                        </Text>{' '}
+                        on this Sourcegraph instance
+                    </Text>
+                    {!policy.protected && (
+                        <Text size="small" className="text-muted mb-0">
+                            Add a repository pattern if you wish to limit the number of repositories with auto indexing.
+                        </Text>
+                    )}
+                </div>
+                {!policy.protected && (
+                    <Button variant="primary" onClick={() => updatePolicy({ repositoryPatterns: ['*'] })}>
+                        Add repository pattern
+                    </Button>
+                )}
+            </Alert>
+        ) : (
+            <RepositoryPatternList
+                repositoryPatterns={policy.repositoryPatterns}
+                setRepositoryPatterns={updater =>
+                    updatePolicy({
+                        repositoryPatterns: updater(policy.repositoryPatterns),
+                    })
+                }
+            />
+        )}
     </div>
 )
 

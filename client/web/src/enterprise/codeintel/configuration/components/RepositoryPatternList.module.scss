@@ -23,14 +23,14 @@
 }
 
 .input {
-    width: 75%;
+    width: 90%;
     margin-right: 1rem;
 }
 
 .input-actions {
-    width: 25%;
+    width: 10%;
     display: flex;
-    justify-content: end;
+    justify-content: start;
     align-self: stretch;
 }
 
@@ -39,7 +39,7 @@
         margin-right: 1rem;
     }
 
-    width: 2rem;
+    width: 1.5rem;
     display: flex;
     justify-content: center;
 }

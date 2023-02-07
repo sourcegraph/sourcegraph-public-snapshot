@@ -14,3 +14,8 @@
     flex-shrink: 0;
     margin-right: 1rem;
 }
+
+.list {
+    max-height: 30rem;
+    overflow-y: auto;
+}
