@@ -18,7 +18,7 @@ export const formatDurationValue = (value: number): string => {
     return match.displayText
 }
 
-export const hasGlobalAutoIndexingViolation = (policy: CodeIntelligenceConfigurationPolicyFields): boolean => {
+export const hasGlobalPolicyViolation = (policy: CodeIntelligenceConfigurationPolicyFields): boolean => {
     // If there are no repo patterns, it is assumed that the policy targets all repos.
     const repoPatterns = policy.repositoryPatterns || []
 
@@ -28,6 +28,7 @@ export const hasGlobalAutoIndexingViolation = (policy: CodeIntelligenceConfigura
         // Policy isn't targeted at a specific repository
         !policy.repository &&
         // Policy does not have a targeted repository pattern.
-        (repoPatterns.length === 0 || repoPatterns.includes('*'))
+        // TODO(#47432): This is flaky as repoPatterns can match all repositories (e.g. '*'). We should return a flag that indicates if this has happened.
+        repoPatterns.length === 0
     )
 }

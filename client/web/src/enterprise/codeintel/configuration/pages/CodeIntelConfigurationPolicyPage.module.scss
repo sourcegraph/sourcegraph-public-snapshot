@@ -1,5 +1,5 @@
 .input {
-    width: 40%;
+    width: 50%;
     margin-bottom: 0;
 }
 
@@ -10,12 +10,17 @@
 }
 
 .toggle {
-    flex-basis: auto;
     flex-shrink: 0;
     margin-right: 1rem;
 }
 
 .list {
-    max-height: 30rem;
+    max-height: 15rem;
     overflow-y: auto;
+}
+
+.loading {
+    align-self: center;
+    justify-self: start;
+    margin: 0 0 0 0.5rem;
 }

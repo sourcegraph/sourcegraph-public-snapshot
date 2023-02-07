@@ -38,25 +38,20 @@ export const RepositoryPatternList: FunctionComponent<RepositoryPatternListProps
     setRepositoryPatterns,
 }) => {
     const [autoFocusIndex, setAutoFocusIndex] = useState(-1)
-    const [repositoryFetchLimit, setRepositoryFetchLimit] = useState(DEFAULT_FETCH_LIMIT)
 
     const addRepositoryPattern = (): void => {
-        setRepositoryPatterns(repositoryPatterns => repositoryPatterns.concat(['']))
+        setRepositoryPatterns(repositoryPatterns =>
+            repositoryPatterns && repositoryPatterns.length > 0 ? repositoryPatterns.concat(['']) : ['*']
+        )
         setAutoFocusIndex(repositoryPatterns.length)
-        setRepositoryFetchLimit(DEFAULT_FETCH_LIMIT)
     }
 
     const handleDelete = (index: number): void => {
-        setRepositoryPatterns(repositoryPatterns => repositoryPatterns.filter((___, index_) => index !== index_))
+        setRepositoryPatterns(repositoryPatterns =>
+            (repositoryPatterns || []).filter((___, index_) => index !== index_)
+        )
         setAutoFocusIndex(index - 1)
-        setRepositoryFetchLimit(DEFAULT_FETCH_LIMIT)
     }
-
-    const {
-        previewResult: preview,
-        previewError,
-        isLoadingPreview,
-    } = usePreviewRepositoryFilter(repositoryPatterns, repositoryFetchLimit)
 
     return (
         <div className={styles.container}>
@@ -66,7 +61,6 @@ export const RepositoryPatternList: FunctionComponent<RepositoryPatternListProps
                         index={index}
                         autoFocus={index === autoFocusIndex}
                         pattern={repositoryPattern}
-                        loading={isLoadingPreview}
                         setPattern={value =>
                             setRepositoryPatterns(repositoryPatterns =>
                                 (repositoryPatterns || []).map((value_, index_) => (index === index_ ? value : value_))
@@ -102,73 +96,94 @@ export const RepositoryPatternList: FunctionComponent<RepositoryPatternListProps
             ))}
 
             <div className="d-flex flex-column">
-                {previewError && <ErrorAlert prefix="Error fetching matching repositories" error={previewError} />}
-                {preview &&
-                    (preview.repositories.length === 0 ? (
-                        !(repositoryPatterns.length === 1 && repositoryPatterns[0] === '') && (
-                            <Alert variant="warning">
-                                This set of repository patterns does not match any repository.
-                            </Alert>
-                        )
-                    ) : (
-                        <>
-                            {preview.totalMatches > preview.totalCount && (
-                                <Alert variant="warning">
-                                    <Text weight="medium" className="mb-1">
-                                        Too many matching repositories
-                                    </Text>
-                                    {preview.totalMatches} repositories are matched by this filter. The maximum{' '}
-                                    <Code as={Link} to="/site-admin/configuration">
-                                        codeIntelAutoIndexing.policyRepositoryMatchLimit
-                                    </Code>{' '}
-                                    setting is {preview.limit} repositories.
-                                </Alert>
-                            )}
-                            <div className="d-flex justify-content-between">
-                                <span>
-                                    {preview.totalCount === 1 ? (
-                                        <>{preview.totalCount} repository matches</>
-                                    ) : (
-                                        <>{preview.totalCount} repositories match</>
-                                    )}{' '}
-                                    {repositoryPatterns.filter(pattern => pattern !== '').length === 1 ? (
-                                        <>this pattern</>
-                                    ) : (
-                                        <>
-                                            these {repositoryPatterns.filter(pattern => pattern !== '').length} patterns
-                                        </>
-                                    )}
-                                    {preview.repositories.length < preview.totalCount && (
-                                        <> (showing only {preview.repositories.length})</>
-                                    )}
-                                    :
-                                </span>
-                                {preview.repositories.length < preview.totalCount && (
-                                    <Button
-                                        variant="link"
-                                        className="p-0"
-                                        onClick={() => setRepositoryFetchLimit(preview.totalCount)}
-                                    >
-                                        Show all {preview.totalCount} repositories
-                                    </Button>
-                                )}
-                            </div>
-                            <ul className={classNames('list-group', styles.list)}>
-                                {preview.repositories.map(repo => (
-                                    <li key={repo.name} className="list-group-item">
-                                        {repo.externalRepository && (
-                                            <ExternalRepositoryIcon externalRepo={repo.externalRepository} />
-                                        )}
-                                        <Link to={repo.url} target="_blank" rel="noopener noreferrer">
-                                            {repo.name}
-                                        </Link>
-                                    </li>
-                                ))}
-                            </ul>
-                        </>
-                    ))}
+                <RepositoryList repositoryPatterns={repositoryPatterns} />
             </div>
         </div>
+    )
+}
+
+interface RepositoryListProps {
+    repositoryPatterns: string[]
+}
+
+const RepositoryList: FunctionComponent<RepositoryListProps> = ({ repositoryPatterns }) => {
+    const [repositoryFetchLimit, setRepositoryFetchLimit] = useState(DEFAULT_FETCH_LIMIT)
+    const {
+        previewResult: preview,
+        isLoadingPreview: previewLoading,
+        previewError,
+    } = usePreviewRepositoryFilter(repositoryPatterns, repositoryFetchLimit)
+
+    useEffect(() => {
+        setRepositoryFetchLimit(DEFAULT_FETCH_LIMIT)
+    }, [repositoryPatterns])
+
+    if (previewError) {
+        return <ErrorAlert prefix="Error fetching matching repositories" error={previewError} />
+    }
+
+    if (previewLoading) {
+        return <LoadingSpinner inline={false} className={classNames('d-inline', styles.loading)} />
+    }
+
+    if (!preview) {
+        return null
+    }
+
+    return preview.repositories.length === 0 ? (
+        <>
+            {!(repositoryPatterns.length === 1 && repositoryPatterns[0] === '') && (
+                <Alert variant="warning">This set of repository patterns does not match any repository.</Alert>
+            )}
+        </>
+    ) : (
+        <>
+            {preview.totalMatches > preview.totalCount && (
+                <Alert variant="warning">
+                    <Text weight="medium" className="mb-1">
+                        Too many matching repositories
+                    </Text>
+                    {preview.totalMatches} repositories are matched by this filter. The maximum{' '}
+                    <Code as={Link} to="/site-admin/configuration">
+                        codeIntelAutoIndexing.policyRepositoryMatchLimit
+                    </Code>{' '}
+                    setting is {preview.limit} repositories.
+                </Alert>
+            )}
+            <div className="d-flex justify-content-between">
+                <span>
+                    {preview.totalCount === 1 ? (
+                        <>{preview.totalCount} repository matches</>
+                    ) : (
+                        <>{preview.totalCount} repositories match</>
+                    )}{' '}
+                    {repositoryPatterns.filter(pattern => pattern !== '').length === 1 ? (
+                        <>this pattern</>
+                    ) : (
+                        <>these {repositoryPatterns.filter(pattern => pattern !== '').length} patterns</>
+                    )}
+                    {preview.repositories.length < preview.totalCount && (
+                        <> (showing only {preview.repositories.length})</>
+                    )}
+                    :
+                </span>
+                {preview.repositories.length < preview.totalCount && (
+                    <Button variant="link" className="p-0" onClick={() => setRepositoryFetchLimit(preview.totalCount)}>
+                        Show all {preview.totalCount} repositories
+                    </Button>
+                )}
+            </div>
+            <ul className={classNames('list-group', styles.list)}>
+                {preview.repositories.map(repo => (
+                    <li key={repo.name} className="list-group-item">
+                        {repo.externalRepository && <ExternalRepositoryIcon externalRepo={repo.externalRepository} />}
+                        <Link to={repo.url} target="_blank" rel="noopener noreferrer">
+                            {repo.name}
+                        </Link>
+                    </li>
+                ))}
+            </ul>
+        </>
     )
 }
 
@@ -176,17 +191,10 @@ interface RepositoryPatternProps {
     index: number
     pattern: string
     setPattern: (value: string) => void
-    loading?: boolean
     autoFocus?: boolean
 }
 
-const RepositoryPattern: FunctionComponent<RepositoryPatternProps> = ({
-    index,
-    pattern,
-    setPattern,
-    autoFocus,
-    loading,
-}) => {
+const RepositoryPattern: FunctionComponent<RepositoryPatternProps> = ({ index, pattern, setPattern, autoFocus }) => {
     const [localPattern, setLocalPattern] = useState('')
     useEffect(() => setLocalPattern(pattern), [pattern])
     const debouncedSetPattern = useMemo(() => debounce(value => setPattern(value), DEBOUNCED_WAIT), [setPattern])
@@ -197,6 +205,7 @@ const RepositoryPattern: FunctionComponent<RepositoryPatternProps> = ({
                 <div className="input-group-prepend">
                     <span className="input-group-text">{index === 0 ? 'Filter' : 'or'}</span>
                 </div>
+
                 <Input
                     type="text"
                     inputClassName="text-monospace"
@@ -207,7 +216,6 @@ const RepositoryPattern: FunctionComponent<RepositoryPatternProps> = ({
                     }}
                     autoFocus={autoFocus}
                     required={true}
-                    status={loading ? InputStatus.loading : undefined}
                     placeholder={index === 0 ? 'Example: github.com/*' : undefined}
                 />
             </div>

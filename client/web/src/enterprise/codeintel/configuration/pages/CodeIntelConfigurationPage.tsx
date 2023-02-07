@@ -13,6 +13,7 @@ import {
     mdiPencil,
     mdiSourceRepository,
 } from '@mdi/js'
+import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import * as H from 'history'
 import { RouteComponentProps, useHistory, useLocation } from 'react-router'
@@ -28,12 +29,10 @@ import {
     ButtonGroup,
     Container,
     ErrorAlert,
-    H3,
     Icon,
     Link,
     Menu,
     MenuButton,
-    MenuItem,
     MenuLink,
     MenuList,
     PageHeader,
@@ -55,10 +54,9 @@ import { EmptyPoliciesList } from '../components/EmptyPoliciesList'
 import { FlashMessage } from '../components/FlashMessage'
 import { queryPolicies as defaultQueryPolicies } from '../hooks/queryPolicies'
 import { useDeletePolicies } from '../hooks/useDeletePolicies'
+import { hasGlobalPolicyViolation } from '../shared'
 
 import styles from './CodeIntelConfigurationPage.module.scss'
-import VisuallyHidden from '@reach/visually-hidden'
-import { hasGlobalAutoIndexingViolation } from '../shared'
 
 const filters: FilteredConnectionFilter[] = [
     {
@@ -348,7 +346,7 @@ const PolicyDescription: FunctionComponent<PolicyDescriptionProps> = ({
             </Tooltip>
         )}
 
-        {indexingEnabled && !allowGlobalPolicies && hasGlobalAutoIndexingViolation(policy) && (
+        {indexingEnabled && !allowGlobalPolicies && hasGlobalPolicyViolation(policy) && (
             <Tooltip content="This Sourcegraph instance has disabled global policies for auto-indexing.">
                 <Icon
                     svgPath={mdiAlert}
@@ -454,23 +452,23 @@ const GitObjectDescription: FunctionComponent<GitObjectDescriptionProps> = ({ po
         )
     }
 
-    if (!policy.repositoryPatterns || policy.repositoryPatterns.includes('*')) {
-        return <Badge variant="outlineSecondary">all repositories</Badge>
+    if (policy.repositoryPatterns) {
+        return (
+            <Badge variant="outlineSecondary">
+                repositories{' '}
+                {policy.repositoryPatterns.map((pattern, index) => (
+                    <React.Fragment key={pattern}>
+                        {index !== 0 && (index === (policy.repositoryPatterns || []).length - 1 ? <>, or </> : <>, </>)}
+                        <span key={pattern} className="text-monospace">
+                            {pattern}
+                        </span>
+                    </React.Fragment>
+                ))}
+            </Badge>
+        )
     }
 
-    return (
-        <Badge variant="outlineSecondary">
-            repositories{' '}
-            {policy.repositoryPatterns.map((pattern, index) => (
-                <React.Fragment key={pattern}>
-                    {index !== 0 && (index === (policy.repositoryPatterns || []).length - 1 ? <>, or </> : <>, </>)}
-                    <span key={pattern} className="text-monospace">
-                        {pattern}
-                    </span>
-                </React.Fragment>
-            ))}
-        </Badge>
-    )
+    return <Badge variant="outlineSecondary">all repositories</Badge>
 }
 
 interface AutoIndexingDescriptionProps {
