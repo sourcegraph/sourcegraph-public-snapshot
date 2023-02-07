@@ -1759,6 +1759,11 @@ Foreign-key constraints:
 Indexes:
     "lsif_dependency_repos_pkey" PRIMARY KEY, btree (id)
     "lsif_dependency_repos_unique_triplet" UNIQUE CONSTRAINT, btree (scheme, name, version)
+    "lsif_dependency_repos_name_idx" btree (name)
+Referenced by:
+    TABLE "package_repo_versions" CONSTRAINT "package_id_fk" FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos(id) ON DELETE CASCADE
+Triggers:
+    lsif_dependency_repos_backfill AFTER INSERT ON lsif_dependency_repos FOR EACH ROW WHEN (new.version <> '👁️temporary_sentinel_value👁️'::text) EXECUTE FUNCTION func_lsif_dependency_repos_backfill()
 
 ```
 
@@ -2634,6 +2639,22 @@ Referenced by:
 
 ```
 
+# Table "public.package_repo_versions"
+```
+   Column   |  Type  | Collation | Nullable |                      Default                      
+------------+--------+-----------+----------+---------------------------------------------------
+ id         | bigint |           | not null | nextval('package_repo_versions_id_seq'::regclass)
+ package_id | bigint |           | not null | 
+ version    | text   |           | not null | 
+Indexes:
+    "package_repo_versions_pkey" PRIMARY KEY, btree (id)
+    "package_repo_versions_unique_version_per_package" UNIQUE, btree (package_id, version)
+    "package_repo_versions_fk_idx" btree (package_id)
+Foreign-key constraints:
+    "package_id_fk" FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos(id) ON DELETE CASCADE
+
+```
+
 # Table "public.permission_sync_jobs"
 ```
         Column        |           Type           | Collation | Nullable |                     Default                      
@@ -2659,6 +2680,9 @@ Referenced by:
  invalidate_caches    | boolean                  |           | not null | false
  cancellation_reason  | text                     |           |          | 
  no_perms             | boolean                  |           | not null | false
+ permissions_added    | integer                  |           | not null | 0
+ permissions_removed  | integer                  |           | not null | 0
+ permissions_found    | integer                  |           | not null | 0
 Indexes:
     "permission_sync_jobs_pkey" PRIMARY KEY, btree (id)
     "permission_sync_jobs_unique" UNIQUE, btree (priority, user_id, repository_id, cancel, process_after) WHERE state = 'queued'::text
@@ -2766,6 +2790,18 @@ Referenced by:
  last_executed    | timestamp with time zone |           |          | 
  latest_result    | timestamp with time zone |           |          | 
  exec_duration_ns | bigint                   |           |          | 
+
+```
+
+# Table "public.redis_key_value"
+```
+  Column   | Type  | Collation | Nullable | Default 
+-----------+-------+-----------+----------+---------
+ namespace | text  |           | not null | 
+ key       | text  |           | not null | 
+ value     | bytea |           | not null | 
+Indexes:
+    "redis_key_value_pkey" PRIMARY KEY, btree (namespace, key) INCLUDE (value)
 
 ```
 

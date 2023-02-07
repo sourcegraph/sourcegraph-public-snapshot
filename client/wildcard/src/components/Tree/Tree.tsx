@@ -133,15 +133,8 @@ export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
 }
 
 function getMarginLeft(level: number, isBranch: boolean): string {
-    // The level starts with 1 so the least margin by this logic is 0.75 * 1.
-    //
-    // Since folders render a chevron icon that is 1.25rem wide and we want to
-    // render it to the left of the item, we need to add 0.5rem so we don't have
-    // a negative margin
-    level += 0.5
-
     if (isBranch) {
-        return `${0.75 * level - 1.25}rem`
+        return `${0.75 * level - 0.75}rem`
     }
     return `${0.75 * level}rem`
 }

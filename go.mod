@@ -198,7 +198,6 @@ require (
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/dghubble/sling v1.4.1 // indirect
 	github.com/di-wu/parser v0.2.2 // indirect
-	github.com/di-wu/xsd-datetime v1.0.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.8.0 // indirect
 	github.com/fullstorydev/grpcurl v1.8.6 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
@@ -228,6 +227,7 @@ require (
 	github.com/coreos/go-iptables v0.6.0
 	github.com/crewjam/saml/samlidp v0.0.0-20221211125903-d951aa2d145a
 	github.com/dcadenas/pagerank v0.0.0-20171013173705-af922e3ceea8
+	github.com/di-wu/xsd-datetime v1.0.0
 	github.com/elimity-com/scim v0.0.0-20220121082953-15165b1a61c8
 	github.com/fergusstrange/embedded-postgres v1.19.0
 	github.com/frankban/quicktest v1.14.3
@@ -252,7 +252,7 @@ require (
 replace github.com/fergusstrange/embedded-postgres => github.com/sourcegraph/embedded-postgres v1.19.1-0.20230113234230-bb62ad58a1e1
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20230201120440-2845327550c5
+	github.com/sourcegraph/zoekt v0.0.0-20230206083110-50c5066fa29c
 	github.com/stretchr/objx v0.5.0 // indirect
 )
 
@@ -349,7 +349,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.14.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.1 // indirect
-	github.com/hexops/gotextdiff v1.0.3 // indirect
+	github.com/hexops/gotextdiff v1.0.3
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect

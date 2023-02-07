@@ -22,9 +22,9 @@ type ConnectionResolverStore[N any] interface {
 	// ComputeTotal returns the total count of all the items in the connection, independent of pagination arguments.
 	ComputeTotal(context.Context) (*int32, error)
 	// ComputeNodes returns the list of nodes based on the pagination args.
-	ComputeNodes(context.Context, *database.PaginationArgs) ([]*N, error)
+	ComputeNodes(context.Context, *database.PaginationArgs) ([]N, error)
 	// MarshalCursor returns cursor for a node and is called for generating start and end cursors.
-	MarshalCursor(*N, database.OrderBy) (*string, error)
+	MarshalCursor(N, database.OrderBy) (*string, error)
 	// UnmarshalCursor returns node id from after/before cursor string.
 	UnmarshalCursor(string, database.OrderBy) (*string, error)
 }
@@ -94,7 +94,7 @@ type connectionData[N any] struct {
 	total      *int32
 	totalError error
 
-	nodes      []*N
+	nodes      []N
 	nodesError error
 }
 
@@ -161,7 +161,7 @@ func (r *ConnectionResolver[N]) TotalCount(ctx context.Context) (int32, error) {
 }
 
 // Nodes returns value for connection.Nodes and is called by the graphql api.
-func (r *ConnectionResolver[N]) Nodes(ctx context.Context) ([]*N, error) {
+func (r *ConnectionResolver[N]) Nodes(ctx context.Context) ([]N, error) {
 	r.once.nodes.Do(func() {
 		paginationArgs, err := r.paginationArgs()
 		if err != nil {
@@ -222,7 +222,7 @@ func (r *ConnectionResolver[N]) PageInfo(ctx context.Context) (*ConnectionPageIn
 type ConnectionPageInfo[N any] struct {
 	pageSize          int
 	fetchedNodesCount int
-	nodes             []*N
+	nodes             []N
 	store             ConnectionResolverStore[N]
 	args              *ConnectionResolverArgs
 	orderBy           database.OrderBy

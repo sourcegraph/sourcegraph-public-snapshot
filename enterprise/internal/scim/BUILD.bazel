@@ -14,7 +14,6 @@ go_library(
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/database",
-        "//internal/extsvc",
         "//internal/observation",
         "//internal/types",
         "//lib/errors",
@@ -30,14 +29,10 @@ go_test(
     srcs = ["user_test.go"],
     embed = [":scim"],
     deps = [
-        "//internal/actor",
         "//internal/database",
-        "//internal/errcode",
-        "//internal/extsvc",
         "//internal/observation",
         "//internal/types",
         "@com_github_elimity_com_scim//:scim",
         "@com_github_scim2_filter_parser_v2//:filter-parser",
-        "@com_github_stretchr_testify//require",
     ],
 )
