@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
-	codeownerspb "github.com/sourcegraph/sourcegraph/protos/codeowners/v1"
+	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 )
 
 // OwnService gives access to code ownership data.

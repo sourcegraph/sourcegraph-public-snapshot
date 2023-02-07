@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	codeownerspb "github.com/sourcegraph/sourcegraph/protos/codeowners/v1"
+	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 )
 
 type testCase struct {
