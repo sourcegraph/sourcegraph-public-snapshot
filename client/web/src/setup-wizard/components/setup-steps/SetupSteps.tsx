@@ -4,7 +4,6 @@ import {
     createContext,
     useState,
     FC,
-    ReactElement,
     ReactNode,
     HTMLAttributes,
     useMemo,
@@ -15,8 +14,7 @@ import {
 import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import { createPortal } from 'react-dom'
-import { Switch, Redirect, Route } from 'react-router'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate, Routes, Route, Navigate } from 'react-router-dom-v5-compat'
 
 import { Button, Icon } from '@sourcegraph/wildcard'
 
@@ -26,7 +24,7 @@ export interface StepConfiguration {
     id: string
     path: string
     name: string
-    render: ReactElement | (() => ReactNode)
+    render: () => ReactNode
 }
 
 interface SetupStepsContextData {
@@ -68,9 +66,9 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
             navigate(nextStep.path)
             onStepChange(nextStep)
         }
-    }, [activeStepIndex, navigate, onStepChange, steps])
+    }, [activeStepIndex, steps, navigate, onStepChange])
 
-    const handleGoToPrevStep = (): void => {
+    const handleGoToPrevStep = useCallback(() => {
         const prevStepIndex = activeStepIndex - 1
 
         if (prevStepIndex >= 0) {
@@ -80,7 +78,7 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
             navigate(prevStep.path)
             onStepChange(prevStep)
         }
-    }
+    }, [activeStepIndex, steps, navigate, onStepChange])
 
     const cachedContext = useMemo(
         () => ({
@@ -96,15 +94,12 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
             <div className={styles.root}>
                 <SetupStepsHeader steps={steps} activeStepIndex={activeStepIndex} />
                 <div className={styles.content}>
-                    <Switch>
+                    <Routes>
                         {availableSteps.map(step => (
-                            <Route key={step.id} path={step.path} exact={true}>
-                                {step.render}
-                            </Route>
+                            <Route key="hardcoded-key" path={step.path} element={step.render()} />
                         ))}
-
-                        <Redirect to={steps[activeStepIndex].path} />
-                    </Switch>
+                        <Route path="*" element={<Navigate to={steps[activeStepIndex].path} />} />
+                    </Routes>
                 </div>
                 <SetupStepsFooter
                     steps={steps}
