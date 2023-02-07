@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/proto"
@@ -50,7 +51,7 @@ func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			git := gitserver.NewMockClient()
 			git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
-			got, err := backend.NewOwnService(git).OwnersFile(context.Background(), "repo", "SHA")
+			got, err := backend.NewOwnService(git, database.NewMockDB()).OwnersFile(context.Background(), "repo", "SHA")
 			require.NoError(t, err)
 			assert.Equal(t, codeownersText, got.Repr())
 		})
@@ -71,7 +72,7 @@ func TestOwnersCannotFindFile(t *testing.T) {
 	}
 	git := gitserver.NewMockClient()
 	git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
-	got, err := backend.NewOwnService(git).OwnersFile(context.Background(), "repo", "SHA")
+	got, err := backend.NewOwnService(git, database.NewMockDB()).OwnersFile(context.Background(), "repo", "SHA")
 	require.NoError(t, err)
 	assert.Nil(t, got)
 }
