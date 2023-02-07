@@ -31,6 +31,20 @@ type Build struct {
 	sync.Mutex
 }
 
+// JobFilterFunc decides whether a given job should be filtered. A Filtered Job is part of a group whose name is returned
+// as well as whether this job should be filtered or not
+type JobFilterFunc = func(j *Job) (string, bool)
+
+// FailedJobFilter checks if the job has failed or not. The group that is returned for this filter is "failed"
+func FailedJobFilter(j *Job) (string, bool) {
+	return "failed", j.failed()
+}
+
+// FixedJobFilter checks if the job is considered fix or not. The group that is returned for this filter is "fixed"
+func FixedJobFilter(j *Job) (string, bool) {
+	return "fixed", j.failed()
+}
+
 // updateFromEvent updates the current build with the build and pipeline from the event.
 func (b *Build) updateFromEvent(e *Event) {
 	b.Build = e.Build
@@ -39,6 +53,12 @@ func (b *Build) updateFromEvent(e *Event) {
 
 func (b *Build) hasFailed() bool {
 	return b.state() == "failed"
+}
+
+func (b *Build) isFixed() bool {
+	// if we have sent a notification previously for this build ie. the build failed previously
+	// and the build is not failed currently = the build must be fixed
+	return !b.hasFailed() && b.hasNotification()
 }
 
 func (b *Build) isFinished() bool {
@@ -86,12 +106,20 @@ func (b *Build) message() string {
 	return strp(b.Message)
 }
 
-func (b *Build) failedJobs() []*Job {
-	result := make([]*Job, 0)
+func (b *Build) Filter(filters ...JobFilterFunc) map[string][]*Job {
+	result := map[string][]*Job{}
 	for _, j := range b.Jobs {
 		j := j
-		if j.failed() {
-			result = append(result, &j)
+		for _, f := range filters {
+			key, add := f(&j)
+			if add {
+				jobs, ok := result[key]
+				if !ok {
+					jobs = []*Job{}
+				}
+				jobs = append(jobs, &j)
+				result[key] = jobs
+			}
 		}
 	}
 
@@ -104,6 +132,7 @@ func (b *Build) hasNotification() bool {
 
 type Job struct {
 	buildkite.Job
+	fixed bool
 }
 
 func (j *Job) id() string {
@@ -249,18 +278,25 @@ func (s *BuildStore) Add(event *Event) {
 	}
 
 	// Keep track of the job, if there is one
-	wrappedJob := event.job()
-	if wrappedJob.name() != "" {
-		build.Jobs[wrappedJob.name()] = *wrappedJob
+	newJob := event.job()
+	if newJob.name() != "" {
+		// we get the oldJob so that we can check if the new job fixed the failure
+		oldJob, ok := build.Jobs[newJob.name()]
+		if ok {
+			// if the old job failed and the new job (with the same name) has succeeded, it means
+			// this is an updated job and the job was retried and got fixed, so we marked the job as fixed
+			newJob.fixed = oldJob.failed() && newJob.Retried && !newJob.failed()
+		}
+		build.Jobs[newJob.name()] = *newJob
 		s.logger.Debug("job added",
 			log.Int("buildNumber", event.buildNumber()),
-			log.Object("job", log.String("name", wrappedJob.name()), log.String("id", wrappedJob.id())),
+			log.Object("job", log.String("name", newJob.name()), log.String("id", newJob.id())),
 			log.Int("totalJobs", len(build.Jobs)),
 		)
 	} else {
 		s.logger.Warn("job has no name - not added",
 			log.Int("buildNumber", event.buildNumber()),
-			log.Object("job", log.String("name", wrappedJob.name()), log.String("id", wrappedJob.id())),
+			log.Object("job", log.String("name", newJob.name()), log.String("id", newJob.id())),
 			log.Int("totalJobs", len(build.Jobs)),
 		)
 	}

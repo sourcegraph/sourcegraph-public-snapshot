@@ -15,13 +15,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/team"
 )
 
-const JobShowLimit = 10
+const JobShowLimit = 5
 
 type NotificationClient struct {
-	slack   slack.Client
-	team    team.TeammateResolver
-	logger  log.Logger
-	channel string
+	slack               slack.Client
+	team                team.TeammateResolver
+	commitTeammateCache map[string]*team.Teammate
+	logger              log.Logger
+	channel             string
 }
 type SlackNotification struct {
 	// SentAt is the time the notification got sent.
@@ -62,15 +63,32 @@ func NewNotificationClient(logger log.Logger, slackToken, githubToken, channel s
 	teamResolver := team.NewTeammateResolver(githubClient, slackClient)
 
 	return &NotificationClient{
-		logger:  logger.Scoped("notificationClient", "client which interacts with Slack and Github to send notifications"),
-		slack:   *slackClient,
-		team:    teamResolver,
-		channel: channel,
+		logger:              logger.Scoped("notificationClient", "client which interacts with Slack and Github to send notifications"),
+		slack:               *slackClient,
+		team:                teamResolver,
+		commitTeammateCache: map[string]*team.Teammate{},
+		channel:             channel,
 	}
 }
 
 func (c *NotificationClient) getTeammateForBuild(build *Build) (*team.Teammate, error) {
-	return c.team.ResolveByCommitAuthor(context.Background(), "sourcegraph", "sourcegraph", build.commit())
+	// first check if we already have the details for this teammate
+	member, ok := c.commitTeammateCache[build.commit()]
+
+	// we have the details for this member already!
+	if ok {
+		return member, nil
+	}
+
+	result, err := c.team.ResolveByCommitAuthor(context.Background(), "sourcegraph", "sourcegraph", build.commit())
+	if err != nil {
+		return nil, err
+	}
+	// remember this teammate! for this commit
+	// we're not using the author email from the build since might not map 1:1 to the commit author
+	c.commitTeammateCache[build.commit()] = result
+	return result, nil
+
 }
 
 func (c *NotificationClient) sendUpdatedMessage(build *Build, previous *SlackNotification) (*SlackNotification, error) {
@@ -143,24 +161,28 @@ func (c *NotificationClient) createMessageBlocks(logger log.Logger, build *Build
 
 	// create a bulleted list of all the failed jobs
 	//
-	// if there are more than JobShowLimit of failed jobs, we cannot print all of it
-	// since the message will to big and slack will reject the message with "invalid_blocks"
-	failedJobs := build.failedJobs()
-	jobSection := "*Failed jobs:*\n\n"
-	if len(failedJobs) > JobShowLimit {
-		jobSection = fmt.Sprintf("* %d Failed jobs (showing %d):*\n\n", len(failedJobs), JobShowLimit)
-	}
-	logger.Info("failed job count on build", log.Int("failedJobs", len(failedJobs)))
-	for i := 0; i < JobShowLimit && i < len(failedJobs); i++ {
-		j := failedJobs[i]
-		jobSection += fmt.Sprintf("• %s", *j.Name)
-		if j.hasTimedOut() {
-			jobSection += "(Timed out)"
+	filteredJobs := build.Filter(FailedJobFilter, FixedJobFilter)
+
+	jobSection := ""
+	for group, groupJobs := range filteredJobs {
+		jobSection := fmt.Sprintf("*%s jobs:*\n\n", group)
+		// if there are more than JobShowLimit of failed jobs, we cannot print all of it
+		// since the message will to big and slack will reject the message with "invalid_blocks"
+		if len(groupJobs) > JobShowLimit {
+			jobSection = fmt.Sprintf("* %d %s jobs (showing %d):*\n\n", len(groupJobs), group, JobShowLimit)
 		}
-		if j.WebURL != "" {
-			jobSection += fmt.Sprintf(" - <%s|logs>", j.WebURL)
+		logger.Info("group job count on build", log.String("group", group), log.Int("jobs", len(groupJobs)))
+		for i := 0; i < JobShowLimit && i < len(groupJobs); i++ {
+			j := groupJobs[i]
+			jobSection += fmt.Sprintf("• %s", *j.Name)
+			if j.hasTimedOut() {
+				jobSection += " (Timed out)"
+			}
+			if j.WebURL != "" {
+				jobSection += fmt.Sprintf(" - <%s|logs>", j.WebURL)
+			}
+			jobSection += "\n"
 		}
-		jobSection += "\n"
 	}
 
 	failedSection += jobSection
@@ -236,6 +258,9 @@ _Disable flakes on sight and save your fellow teammate some time!_`,
 }
 
 func generateSlackHeader(build *Build) string {
+	if !build.isFixed() {
+		return fmt.Sprintf(":green_circle: Build %d fixed", build.number())
+	}
 	header := fmt.Sprintf(":red_circle: Build %d failed", build.number())
 	switch build.ConsecutiveFailure {
 	case 0, 1: // no suffix
