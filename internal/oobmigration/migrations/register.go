@@ -55,7 +55,6 @@ func registerOSSMigrators(runner *oobmigration.Runner, noDelay bool, deps migrat
 	return RegisterAll(runner, noDelay, []TaggedMigrator{
 		batches.NewExternalServiceWebhookMigratorWithDB(deps.store, deps.keyring.ExternalServiceKey, 50),
 		batches.NewUserRoleAssignmentMigrator(deps.store, 500),
-		batches.NewRolePermissionAssignmentMigrator(deps.store),
 	})
 }
 
