@@ -30,7 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/resetonce"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	v12 "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
+	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -137,8 +137,8 @@ func (c *Client) listLanguageMappingsGRPC(ctx context.Context, repository api.Re
 
 	defer conn.Close()
 
-	client := v12.NewSymbolsServiceClient(conn)
-	resp, err := client.ListLanguages(ctx, &v12.ListLanguagesRequest{})
+	client := proto.NewSymbolsServiceClient(conn)
+	resp, err := client.ListLanguages(ctx, &proto.ListLanguagesRequest{})
 	if err != nil {
 		return nil, err
 	}
@@ -244,9 +244,9 @@ func (c *Client) searchGRPC(ctx context.Context, args search.SymbolsParameters) 
 
 	defer conn.Close()
 
-	grpcClient := v12.NewSymbolsServiceClient(conn)
+	grpcClient := proto.NewSymbolsServiceClient(conn)
 
-	var protoArgs v12.SearchRequest
+	var protoArgs proto.SearchRequest
 	protoArgs.FromInternal(&args)
 
 	protoResponse, err := grpcClient.Search(ctx, &protoArgs)
@@ -314,12 +314,12 @@ func (c *Client) localCodeIntelGRPC(ctx context.Context, path types.RepoCommitPa
 
 	defer conn.Close()
 
-	grpcClient := v12.NewSymbolsServiceClient(conn)
+	grpcClient := proto.NewSymbolsServiceClient(conn)
 
-	var rcp v12.RepoCommitPath
+	var rcp proto.RepoCommitPath
 	rcp.FromInternal(&path)
 
-	protoArgs := v12.LocalCodeIntelRequest{RepoCommitPath: &rcp}
+	protoArgs := proto.LocalCodeIntelRequest{RepoCommitPath: &rcp}
 	protoResponse, err := grpcClient.LocalCodeIntel(ctx, &protoArgs)
 	if err != nil {
 		return nil, err
@@ -411,15 +411,15 @@ func (c *Client) symbolInfoGRPC(ctx context.Context, args types.RepoCommitPathPo
 
 	defer conn.Close()
 
-	client := v12.NewSymbolsServiceClient(conn)
+	client := proto.NewSymbolsServiceClient(conn)
 
-	var rcp v12.RepoCommitPath
+	var rcp proto.RepoCommitPath
 	rcp.FromInternal(&args.RepoCommitPath)
 
-	var point v12.Point
+	var point proto.Point
 	point.FromInternal(&args.Point)
 
-	protoArgs := v12.SymbolInfoRequest{
+	protoArgs := proto.SymbolInfoRequest{
 		RepoCommitPath: &rcp,
 		Point:          &point,
 	}

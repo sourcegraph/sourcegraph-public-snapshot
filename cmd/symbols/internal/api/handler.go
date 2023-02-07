@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	v12 "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
+	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -28,12 +28,12 @@ type grpcService struct {
 	searchFunc   types.SearchFunc
 	readFileFunc func(context.Context, internaltypes.RepoCommitPath) ([]byte, error)
 	ctagsBinary  string
-	v12.UnimplementedSymbolsServiceServer
+	proto.UnimplementedSymbolsServiceServer
 	logger logger.Logger
 }
 
-func (s *grpcService) Search(ctx context.Context, r *v12.SearchRequest) (*v12.SearchResponse, error) {
-	var response v12.SearchResponse
+func (s *grpcService) Search(ctx context.Context, r *proto.SearchRequest) (*proto.SearchResponse, error) {
+	var response proto.SearchResponse
 
 	params := r.ToInternal()
 	symbols, err := s.searchFunc(ctx, params)
@@ -51,29 +51,29 @@ func (s *grpcService) Search(ctx context.Context, r *v12.SearchRequest) (*v12.Se
 	return &response, nil
 }
 
-func (s *grpcService) ListLanguages(ctx context.Context, _ *v12.ListLanguagesRequest) (*v12.ListLanguagesResponse, error) {
+func (s *grpcService) ListLanguages(ctx context.Context, _ *proto.ListLanguagesRequest) (*proto.ListLanguagesResponse, error) {
 	rawMapping, err := ctags.ListLanguageMappings(ctx, s.ctagsBinary)
 	if err != nil {
 		return nil, errors.Wrap(err, "listing ctags language mappings")
 	}
 
-	protoMapping := make(map[string]*v12.ListLanguagesResponse_GlobFilePatterns, len(rawMapping))
+	protoMapping := make(map[string]*proto.ListLanguagesResponse_GlobFilePatterns, len(rawMapping))
 	for language, filePatterns := range rawMapping {
-		protoMapping[language] = &v12.ListLanguagesResponse_GlobFilePatterns{Patterns: filePatterns}
+		protoMapping[language] = &proto.ListLanguagesResponse_GlobFilePatterns{Patterns: filePatterns}
 	}
 
-	return &v12.ListLanguagesResponse{
+	return &proto.ListLanguagesResponse{
 		LanguageFileNameMap: protoMapping,
 	}, nil
 }
 
-func (s *grpcService) Healthz(ctx context.Context, _ *v12.HealthzRequest) (*v12.HealthzResponse, error) {
+func (s *grpcService) Healthz(ctx context.Context, _ *proto.HealthzRequest) (*proto.HealthzResponse, error) {
 	// Note: Kubernetes only has beta support for GRPC Healthchecks since version >= 1.23. This means
 	// that we probably need the old non-GRPC healthcheck endpoint for a while.
 	//
 	// See https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#define-a-grpc-liveness-probe
 	// for more information.
-	return &v12.HealthzResponse{}, nil
+	return &proto.HealthzResponse{}, nil
 }
 
 func NewHandler(
@@ -98,7 +98,7 @@ func NewHandler(
 	grpcServer := grpc.NewServer(
 		defaults.ServerOptions(rootLogger)...,
 	)
-	grpcServer.RegisterService(&v12.SymbolsService_ServiceDesc, &grpcService{
+	grpcServer.RegisterService(&proto.SymbolsService_ServiceDesc, &grpcService{
 		searchFunc:   searchFuncWrapper,
 		readFileFunc: readFileFunc,
 		ctagsBinary:  ctagsBinary,
