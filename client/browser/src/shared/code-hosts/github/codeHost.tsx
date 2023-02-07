@@ -691,7 +691,7 @@ export const githubCodeHost: GithubCodeHost = {
                 // repository file tree navigation
                 const pageType = pathname.slice(1).split('/')[2]
                 if (pageType === 'blob' || pageType === 'tree') {
-                    return pathname.endsWith(getFilePath()) ? pathname : undefined
+                    return pathname.endsWith(resolveFileInfo().blob.filePath) ? pathname : undefined
                 }
 
                 // search results page filters being applied

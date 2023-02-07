@@ -280,14 +280,16 @@ const oldUISelectors: UISelectors = {
 }
 
 const newUISelectors: UISelectors = {
-    codeCell: 'td.react-code-cell',
-    blobContainer: 'react-app table',
-
-    // the former selector is for the tree view and the latter is for the blob view
-    permalink: 'a.ActionList-item--navActive, .ActionList-item--navActive a',
+    codeCell: '.react-code-line-contents',
+    blobContainer: '.react-code-lines',
+    permalink: '',
 }
 
 /**
  * Returns the common selector for old and new GitHub UIs.
  */
-export const getSelectorFor = (key: keyof UISelectors): string => `${oldUISelectors[key]}, ${newUISelectors[key]}`
+export const getSelectorFor = (key: keyof UISelectors): string =>
+    [oldUISelectors, newUISelectors]
+        .map(selectors => selectors[key])
+        .filter(Boolean)
+        .join(', ')
