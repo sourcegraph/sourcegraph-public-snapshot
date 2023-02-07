@@ -82,6 +82,45 @@ func TestComparePermissions(t *testing.T) {
 			t.Error(diff)
 		}
 	})
+
+	t.Run("permissions deleted and added", func(t *testing.T) {
+		schemaPerms := Schema{
+			Namespaces: []Namespace{
+				{Name: "TEST-NAMESPACE", Actions: []string{"READ"}},
+				{Name: "TEST-NAMESPACE-2", Actions: []string{"READ", "WRITE", "EXECUTE"}},
+				{Name: "TEST-NAMESPACE-3", Actions: []string{"WRITE"}},
+				{Name: "TEST-NAMESPACE-4", Actions: []string{"READ", "WRITE"}},
+			},
+		}
+
+		wantAdded := []database.CreatePermissionOpts{
+			{Namespace: "TEST-NAMESPACE-2", Action: "EXECUTE"},
+			{Namespace: "TEST-NAMESPACE-3", Action: "WRITE"},
+			{Namespace: "TEST-NAMESPACE-4", Action: "READ"},
+			{Namespace: "TEST-NAMESPACE-4", Action: "WRITE"},
+		}
+
+		wantDeleted := []database.DeletePermissionOpts{
+			// Represents TEST-NAMESPACE-3#READ
+			{ID: 5},
+			// Represents TEST-NAMESPACE#WRITE
+			{ID: 2},
+		}
+
+		// do stuff
+		added, deleted := ComparePermissions(dbPerms, schemaPerms)
+
+		assert.Len(t, added, 4)
+		if diff := cmp.Diff(wantAdded, added); diff != "" {
+			t.Error(diff)
+		}
+
+		assert.Len(t, deleted, 2)
+		less := func(a, b database.DeletePermissionOpts) bool { return a.ID < b.ID }
+		if diff := cmp.Diff(wantDeleted, deleted, cmpopts.SortSlices(less)); diff != "" {
+			t.Error(diff)
+		}
+	})
 }
 
 func sortDeletePermissionOptSlice(a, b database.DeletePermissionOpts) bool { return a.ID < b.ID }
