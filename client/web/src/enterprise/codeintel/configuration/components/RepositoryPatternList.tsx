@@ -123,7 +123,7 @@ const RepositoryList: FunctionComponent<RepositoryListProps> = ({ repositoryPatt
     }
 
     if (previewLoading) {
-        return <LoadingSpinner inline={false} className={classNames('d-inline', styles.loading)} />
+        return <LoadingSpinner className={styles.loading} />
     }
 
     if (!preview) {
