@@ -39,7 +39,7 @@ ts_project(
         "src/util/url.ts",
     ],
     deps = [
-        "//:node_modules/@sourcegraph/extension-api-types",  #keep
+        ":node_modules/@sourcegraph/extension-api-types",  #keep
         "//:node_modules/@types/highlight.js",
         "//:node_modules/@types/history",  #keep
         "//:node_modules/@types/lodash",

@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo, ReactNode } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 
 import { isEqual } from 'lodash'
-import { useHistory, useLocation } from 'react-router'
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Container, Input, LoadingSpinner, ErrorAlert, PageSwitcher } from '@sourcegraph/wildcard'
@@ -142,8 +142,8 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
         startPolling,
         stopPolling,
     } = useQuery<RepositoryStatsResult, RepositoryStatsVariables>(REPOSITORY_STATS, {})
-    const history = useHistory()
     const location = useLocation()
+    const navigate = useNavigate()
 
     useEffect(() => {
         if (data?.repositoryStats?.total === 0 || data?.repositoryStats?.cloning !== 0) {
@@ -219,14 +219,19 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
         oldParams.sort()
 
         if (!isEqual(Array.from(searchFragmentParams), Array.from(oldParams))) {
-            history.replace({
-                search: searchFragment,
-                hash: location.hash,
-                // Do not throw away flash messages
-                state: location.state,
-            })
+            navigate(
+                {
+                    search: searchFragment,
+                    hash: location.hash,
+                },
+                {
+                    replace: true,
+                    // Do not throw away flash messages
+                    state: location.state,
+                }
+            )
         }
-    }, [filters, filterValues, searchQuery, location, history])
+    }, [filters, filterValues, searchQuery, location, navigate])
 
     const variables = useMemo<RepositoriesVariables>(() => {
         const args = buildFilterArgs(filterValues)

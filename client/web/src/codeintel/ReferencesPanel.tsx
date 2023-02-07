@@ -60,8 +60,8 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
-import { Blob } from '../repo/blob/Blob'
 import { Blob as CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
+import { LegacyBlob } from '../repo/blob/LegacyBlob'
 import * as BlobAPI from '../repo/blob/use-blob-store'
 import { HoverThresholdProps } from '../repo/RepoContainer'
 import { useExperimentalFeatures } from '../stores'
@@ -695,7 +695,7 @@ function parseSideBlobProps(
 const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> = props => {
     const navigate = useNavigate()
     const useCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
-    const BlobComponent = useCodeMirror ? CodeMirrorBlob : Blob
+    const BlobComponent = useCodeMirror ? CodeMirrorBlob : LegacyBlob
 
     const highlightFormat = useCodeMirror ? HighlightResponseFormat.JSON_SCIP : HighlightResponseFormat.HTML_HIGHLIGHT
     const { data, error, loading } = useQuery<

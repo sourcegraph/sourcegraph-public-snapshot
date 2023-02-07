@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/insights"
 	licensing "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/init"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/notebooks"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/rbac"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/repos/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/searchcontexts"
@@ -54,6 +55,7 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"scim":           scim.Init,
 	"searchcontexts": searchcontexts.Init,
 	"repos.webhooks": webhooks.Init,
+	"rbac":           rbac.Init,
 }
 
 func EnterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterprise.Services {

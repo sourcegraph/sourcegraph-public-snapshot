@@ -13,12 +13,9 @@ import { SearchPatternTypeProps, CaseSensitivityProps } from '@sourcegraph/share
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
-import { Button, Icon, Link } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { CloudCtaBanner } from '../../components/CloudCtaBanner'
-import { eventLogger } from '../../tracking/eventLogger'
 
 import {
     getCodeMonitoringCreateAction,
@@ -156,21 +153,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         >
             <div className={styles.row}>
                 {props.stats}
-
-                {props.isSourcegraphDotCom && (
-                    <CloudCtaBanner className="mb-0" variant="outlined">
-                        To search across your private repositories,{' '}
-                        <Link
-                            to={buildCloudTrialURL(props.authenticatedUser)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'SearchResults' })}
-                        >
-                            try Sourcegraph Cloud
-                        </Link>
-                        .
-                    </CloudCtaBanner>
-                )}
 
                 <div className={styles.expander} />
 

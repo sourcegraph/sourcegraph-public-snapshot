@@ -19,7 +19,6 @@ const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
 const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage')
 const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
-const SetupWizard = lazyComponent(() => import('./setup-wizard'), 'SetupWizard')
 const UnlockAccountPage = lazyComponent(() => import('./auth/UnlockAccount'), 'UnlockAccountPage')
 const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage')
 const InstallGitHubAppSuccessPage = lazyComponent(

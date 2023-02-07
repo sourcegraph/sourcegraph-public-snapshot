@@ -493,11 +493,6 @@ cc @${config.captainGitHubUsername}
                 }
             }
 
-            const [previousVersion, nextVersion] = [
-                `${previous.major}.${previous.minor}`,
-                `${release.major}.${release.minor}`,
-            ]
-
             // Render changes
             const createdChanges = await createChangesets({
                 requiredCommands: ['comby', sed, 'find', 'go', 'src', 'sg'],
@@ -535,7 +530,7 @@ cc @${config.captainGitHubUsername}
                             notPatchRelease
                                 ? `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version}"' enterprise/dev/ci/internal/ci/*.go`
                                 : 'echo "Skipping minimumUpgradeableVersion bump on patch release"',
-                            updateUpgradeGuides(previousVersion, nextVersion),
+                            updateUpgradeGuides(previous.version, release.version),
                         ],
                         ...prBodyAndDraftState(
                             ((): string[] => {
@@ -543,7 +538,7 @@ cc @${config.captainGitHubUsername}
                                 items.push(
                                     'Ensure all other pull requests in the batch change have been merged',
                                     'Run `pnpm run release release:finalize` to generate the tags required. CI will not pass until this command is run.',
-                                    'Re-run the build on this branch (using either `sg ci build --wait` or the Buildkite UI) and merge when the build passes.'
+                                    'Re-run the build on this branch (using either the command `sg ci build` or the Buildkite UI) and merge when the build passes.'
                                 )
                                 return items
                             })()
@@ -593,9 +588,7 @@ cc @${config.captainGitHubUsername}
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
                         edits: [`tools/update-docker-tags.sh ${release.version}`],
-                        ...prBodyAndDraftState([
-                            'Follow the [release guide](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/RELEASING.md#releasing-pure-docker) to complete this PR',
-                        ]),
+                        ...prBodyAndDraftState([]),
                     },
                     {
                         owner: 'sourcegraph',
@@ -719,6 +712,7 @@ Batch change: ${batchChangeURL}`,
                 'deploy-sourcegraph',
                 'deploy-sourcegraph-docker',
                 'deploy-sourcegraph-docker-customer-replica-1',
+                'deploy-sourcegraph-k8s',
             ]) {
                 try {
                     const client = await getAuthenticatedGitHubClient()

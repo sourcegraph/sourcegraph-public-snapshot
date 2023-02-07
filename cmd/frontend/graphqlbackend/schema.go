@@ -68,3 +68,8 @@ var insightsAggregationsSchema string
 //
 //go:embed outbound_webhooks.graphql
 var outboundWebhooksSchema string
+
+// rbacSchema is the RBAC raw graphql schema.
+//
+//go:embed rbac.graphql
+var rbacSchema string

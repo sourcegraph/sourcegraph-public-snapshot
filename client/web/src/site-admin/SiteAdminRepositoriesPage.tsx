@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 
-import { RouteComponentProps } from 'react-router'
+import { useLocation } from 'react-router-dom-v5-compat'
 
 import { logger } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -11,13 +11,14 @@ import { refreshSiteFlags } from '../site/backend'
 
 import { SiteAdminRepositoriesContainer } from './SiteAdminRepositoriesContainer'
 
-interface Props extends RouteComponentProps<{}>, TelemetryProps {}
+interface Props extends TelemetryProps {}
 
 /** A page displaying the repositories on this site */
 export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    location,
     telemetryService,
 }) => {
+    const location = useLocation()
+
     useEffect(() => {
         telemetryService.logPageView('SiteAdminRepos')
     }, [telemetryService])
