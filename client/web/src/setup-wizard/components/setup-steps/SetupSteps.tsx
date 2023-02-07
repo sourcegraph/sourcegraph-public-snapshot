@@ -133,7 +133,7 @@ export const SetupStepsHeader: FC<SetupStepsHeaderProps> = props => {
                     >
                         {index + 1}
                     </span>
-                    <span className={styles.headerStepLabel}>{step.name}</span>
+                    <small className={styles.headerStepLabel}>{step.name}</small>
                 </div>
             ))}
         </header>

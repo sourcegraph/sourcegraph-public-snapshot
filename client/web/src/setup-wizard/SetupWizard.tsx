@@ -52,7 +52,7 @@ export const SetupWizard: FC = props => {
                 <BrandLogo variant="logo" isLightTheme={false} className={styles.logo} />
 
                 <H2 as={H1} className="font-weight-normal text-white mt-3 mb-4">
-                    Welcome to Sourcegraph! Let's get your instance ready.
+                    Welcome to Sourcegraph! Let's get started.
                 </H2>
             </header>
 
