@@ -359,7 +359,6 @@ importers:
       sinon: ^9.0.2
       socket.io: ^4.5.2
       socket.io-client: ^4.5.2
-      sourcegraph: ''
       speed-measure-webpack-plugin: ^1.5.0
       storybook-addon-designs: ^6.3.1
       storybook-dark-mode: ^2.0.4
