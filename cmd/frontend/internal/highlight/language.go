@@ -57,6 +57,13 @@ var highlightConfig = syntaxHighlightConfig{
 	Extensions: map[string]string{},
 	Patterns:   []languagePattern{},
 }
+var baseHighlightConfig = syntaxHighlightConfig{
+	Extensions: map[string]string{
+		"sbt": "scala",
+		"sc":  "scala",
+	},
+	Patterns: []languagePattern{},
+}
 
 type syntaxEngineConfig struct {
 	Default   EngineType
@@ -83,6 +90,7 @@ var engineConfig = syntaxEngineConfig{
 var baseEngineConfig = syntaxEngineConfig{
 	Default: EngineSyntect,
 	Overrides: map[string]EngineType{
+		"scala":   EngineTreeSitter,
 		"c#":      EngineTreeSitter,
 		"jsonnet": EngineTreeSitter,
 	},
@@ -155,7 +163,13 @@ func init() {
 				}
 			}
 
-			highlightConfig.Extensions = config.SyntaxHighlighting.Languages.Extensions
+			highlightConfig.Extensions = map[string]string{}
+			for extension, language := range baseHighlightConfig.Extensions {
+				highlightConfig.Extensions[extension] = language
+			}
+			for extension, language := range config.SyntaxHighlighting.Languages.Extensions {
+				highlightConfig.Extensions[extension] = language
+			}
 			highlightConfig.Patterns = []languagePattern{}
 			for _, pattern := range config.SyntaxHighlighting.Languages.Patterns {
 				if re, err := regexp.Compile(pattern.Pattern); err == nil {
