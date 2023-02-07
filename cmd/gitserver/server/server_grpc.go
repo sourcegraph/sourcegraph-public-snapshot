@@ -3,8 +3,8 @@ package server
 import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/proto"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"google.golang.org/grpc/codes"

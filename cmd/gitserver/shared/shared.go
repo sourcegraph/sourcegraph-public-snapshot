@@ -40,7 +40,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/rubygems"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/proto"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"

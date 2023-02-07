@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package gitserver.v1;
+
+option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
+
+// GitserverService implements the endpoints exposed by gitserver
+service GitserverService {
+  // Exec runs a git command, streaming its output as a series of
+  // ExecResponses. Can return errors with NotFoundPayload and
+  // ExecStatusPayload as details.
+  rpc Exec(ExecRequest) returns (stream ExecResponse) {}
+}
+
+message ExecRequest {
+  // The name of the repo to run the git command on.
+  string repo = 1;
+  // A revision to fetch from the code host before executing.
+  string ensure_revision = 2;
+  // Arguments to the git command.
+  repeated string args = 3;
+  // Input that will be passed to the git command via stdin.
+  bytes stdin = 4;
+  // Do not use the default timeout for the command.
+  bool no_timeout = 5;
+}
+
+message ExecResponse {
+  // A chunk of data from the git commands stdout.
+  bytes data = 1;
+}
+
+// NotFoundPayload decorates an error message when
+// a request is made for a repo that is not cloned.
+message NotFoundPayload {
+  // The name of the repo that has not yet been cloned.
+  string repo = 1;
+  // Whether the repo is currently being cloned.
+  bool clone_in_progress = 2;
+  // If the repo is being cloned, a string that describes the clone progress.
+  string clone_progress = 3;
+}
+
+// ExecStatusPahload decorates an error message when
+// the git subcommand fails with a non-zero exit status.
+message ExecStatusPayload {
+  // The exit code from the git subcommand.
+  int32 status_code = 1;
+  // The output from stderr of the git subcommand.
+  string stderr = 2;
+}

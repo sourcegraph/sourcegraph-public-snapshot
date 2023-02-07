@@ -4,7 +4,7 @@
 // - protoc             (unknown)
 // source: gitserver.proto
 
-package proto
+package v1
 
 import (
 	context "context"
@@ -22,6 +22,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GitserverServiceClient interface {
+	// Exec runs a git command, streaming its output as a series of
+	// ExecResponses.
 	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error)
 }
 
@@ -34,7 +36,7 @@ func NewGitserverServiceClient(cc grpc.ClientConnInterface) GitserverServiceClie
 }
 
 func (c *gitserverServiceClient) Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error) {
-	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[0], "/gitserver.GitserverService/Exec", opts...)
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[0], "/gitserver.v1.GitserverService/Exec", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -69,6 +71,8 @@ func (x *gitserverServiceExecClient) Recv() (*ExecResponse, error) {
 // All implementations must embed UnimplementedGitserverServiceServer
 // for forward compatibility
 type GitserverServiceServer interface {
+	// Exec runs a git command, streaming its output as a series of
+	// ExecResponses.
 	Exec(*ExecRequest, GitserverService_ExecServer) error
 	mustEmbedUnimplementedGitserverServiceServer()
 }
@@ -118,7 +122,7 @@ func (x *gitserverServiceExecServer) Send(m *ExecResponse) error {
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var GitserverService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "gitserver.GitserverService",
+	ServiceName: "gitserver.v1.GitserverService",
 	HandlerType: (*GitserverServiceServer)(nil),
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
