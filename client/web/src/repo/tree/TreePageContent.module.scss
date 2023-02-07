@@ -6,7 +6,7 @@
     grid-template-rows: auto;
     grid-template-columns: 1fr 1fr 1fr;
     grid-template-areas:
-        'files files contributors'
+        'files files files'
         'commits commits contributors';
     column-gap: 1rem;
     row-gap: 1rem;
@@ -29,7 +29,7 @@
 
 .contributors {
     grid-area: contributors;
-    align-self: start;
+    // align-self: start;
 }
 
 .contributors-summary {

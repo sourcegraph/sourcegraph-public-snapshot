@@ -23,6 +23,8 @@ import { fetchBlob } from '../blob/backend'
 import { RenderedFile } from '../blob/RenderedFile'
 
 import styles from './TreePagePanels.module.scss'
+import { gql } from '@apollo/client'
+import { requestGraphQL } from '../../backend/graphql'
 
 interface ReadmePreviewCardProps {
     entry: TreeFields['entries'][number]
@@ -94,10 +96,12 @@ export interface FilePanelProps {
     diffStats?: DiffStat[]
     className?: string
     filePath: string
+    repoName: string
+    revision: string
 }
 
 export const FilesCard: FC<FilePanelProps> = props => {
-    const { entries, diffStats, className, filePath } = props
+    const { entries, diffStats, className, filePath, revision, repoName } = props
 
     const entriesWithSingleChildExpanded = useMemo(
         () =>
@@ -133,6 +137,41 @@ export const FilesCard: FC<FilePanelProps> = props => {
             }),
         [entries, filePath]
     )
+
+    const [changes, setChanges] = useState(null)
+    useEffect(() => {
+        const subscription = requestGraphQL<any, any>(
+            `
+                query TreeEntriesHistory($repoName: String!, $revision: String!) {
+                    repository(name: $repoName) {
+                        commit(rev: $revision) {
+                            ${entriesWithSingleChildExpanded.map(
+                                (entry, index) => `
+                                    file${index}: ancestors(path: "${entry.path}", first: 1) {
+                                        nodes {
+                                            message
+                                        }
+                                    }
+                                `
+                            )}
+                        }
+                    }
+                }
+            `,
+            {
+                repoName,
+                revision,
+            }
+        )
+        subscription
+            .toPromise()
+            .then(response => {
+                const files = response.data.repository.commit
+                setChanges(Object.values(files).map(entry => entry.nodes[0]))
+            })
+            .catch(r => console.error(r))
+        return () => subscription.unsubscribe()
+    }, [entriesWithSingleChildExpanded, repoName, revision])
 
     const [sortColumn, setSortColumn] = useState<{
         column: 'Files' | 'Activity'
@@ -216,7 +255,7 @@ export const FilesCard: FC<FilePanelProps> = props => {
                             tabIndex={0}
                             onClick={clickFiles}
                             onKeyDown={keydownFiles}
-                            className={classNames('d-flex flex-row align-items-start col-9 px-2', styles.cardColHeader)}
+                            className={classNames('d-flex flex-row align-items-start col-5 px-2', styles.cardColHeader)}
                         >
                             Files
                             <div className="flex-shrink-1 d-flex flex-column">
@@ -242,6 +281,7 @@ export const FilesCard: FC<FilePanelProps> = props => {
                                 />
                             </div>
                         </div>
+                        <div className={classNames('col-5 px-2 text-left', styles.cardColHeader)}>Latest change</div>
                         <div
                             title="1 month activity"
                             role="button"
@@ -249,7 +289,7 @@ export const FilesCard: FC<FilePanelProps> = props => {
                             onClick={clickActivity}
                             onKeyDown={keydownActivity}
                             className={classNames(
-                                'd-flex flex-row-reverse align-items-start col-3 px-2 text-right',
+                                'd-flex flex-row-reverse align-items-start col-2 px-2 text-right',
                                 styles.cardColHeader
                             )}
                         >
@@ -281,9 +321,9 @@ export const FilesCard: FC<FilePanelProps> = props => {
                 </div>
             </CardHeader>
             <div className="container-fluid">
-                {sortedEntries.map(entry => (
+                {sortedEntries.map((entry, index) => (
                     <div key={entry.name} className={classNames('row', styles.fileItem)}>
-                        <div className="list-group list-group-flush px-2 py-1 col-9">
+                        <div className="list-group list-group-flush px-2 py-1 col-5">
                             <LinkOrSpan
                                 to={entry.url}
                                 className={classNames(
@@ -318,7 +358,10 @@ export const FilesCard: FC<FilePanelProps> = props => {
                                 </div>
                             </LinkOrSpan>
                         </div>
-                        <div className="list-group list-group-flush px-2 py-1 col-3">
+                        <div className="list-group list-group-flush px-2 py-1 col-5">
+                            {changes && changes[index] ? changes[index].message.slice(0, 60) : null}
+                        </div>
+                        <div className="list-group list-group-flush px-2 py-1 col-2">
                             {diffStatsByPath[entry.name] && (
                                 <Tooltip
                                     placement="topEnd"

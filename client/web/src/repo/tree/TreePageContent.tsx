@@ -325,9 +325,16 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
         <>
             {readmeEntry && <ReadmePreviewCard entry={readmeEntry} repoName={repo.name} revision={revision} />}
 
-            <section className={classNames('test-tree-entries container mb-3 px-0', styles.section)}>
-                <FilesCard diffStats={diffStats} entries={tree.entries} className={styles.files} filePath={filePath} />
+            <FilesCard
+                repoName={repo.name}
+                revision={revision}
+                diffStats={diffStats}
+                entries={tree.entries}
+                className={styles.files}
+                filePath={filePath}
+            />
 
+            <section className={classNames('test-tree-entries container mb-3 px-0', styles.section)}>
                 <Card className={styles.commits}>
                     <CardHeader className={panelStyles.cardColHeaderWrapper}>
                         {tree.isRoot ? <Link to={`${tree.url}/-/commits`}>Commits</Link> : 'Commits'}
