@@ -31,10 +31,12 @@ func NewHandler(ctx context.Context, db database.DB, observationCtx *observation
 		SupportFiltering: true,
 		AuthenticationSchemes: []scim.AuthenticationScheme{
 			{
-				Name:    "OAuth Bearer Token",
-				SpecURI: optional.NewString("https://tools.ietf.org/html/rfc6750"),
-				Type:    scim.AuthenticationTypeOauthBearerToken,
-				Primary: true,
+				Type:             scim.AuthenticationTypeOauthBearerToken,
+				Name:             "OAuth Bearer Token",
+				Description:      "Authentication scheme using the Bearer Token standard – use the key 'scim.authToken' in the site config to set the token.",
+				SpecURI:          optional.NewString("https://tools.ietf.org/html/rfc6750"),
+				DocumentationURI: optional.NewString("docs.sourcegraph.com/admin/scim"),
+				Primary:          true,
 			},
 		},
 	}
