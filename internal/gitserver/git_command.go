@@ -191,7 +191,7 @@ func (c *RemoteGitCommand) DividedOutput(ctx context.Context) ([]byte, []byte, e
 			if v.Message != "" {
 				return stdout, []byte(v.Stderr), errors.New(v.Message)
 			} else {
-				return stdout, []byte(v.Stderr), nil
+				return stdout, []byte(v.Stderr), v
 			}
 		}
 		return nil, nil, errors.Wrap(err, "reading exec output")
