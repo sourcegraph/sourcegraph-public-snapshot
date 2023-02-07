@@ -79,11 +79,11 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
             }
         }
 
-        // Fallback on the last available step if URL doesn't match any step and we
+        // Fallback on the first available step if URL doesn't match any step, and we
         // don't have any pre-saved step
         return {
-            activeStepIndex: availableSteps.length - 1,
-            currentStep: availableSteps[availableSteps.length - 1],
+            activeStepIndex: 0,
+            currentStep: steps[0],
         }
     }, [location, initialStepId, steps])
 
