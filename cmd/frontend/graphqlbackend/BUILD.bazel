@@ -15,7 +15,7 @@ js_library(
 )
 
 go_library(
-    name- [x] awscli we can remove = "graphqlbackend",
+    name = "graphqlbackend",
     srcs = [
         "access_token.go",
         "access_tokens.go",
