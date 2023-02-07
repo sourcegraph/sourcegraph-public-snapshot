@@ -128,7 +128,7 @@
   deprecated_version_minor: 6
 - id: 21
   team: batch-changes
-  component: db.changesets
+  component: frontend-db.changesets
   description: Populate external_fork_name column for existing changesets published on Bitbucket Server and Cloud.
   non_destructive: true
   is_enterprise: false
