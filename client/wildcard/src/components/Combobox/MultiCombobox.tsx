@@ -101,6 +101,9 @@ export function MultiCombobox<T>(props: MultiComboboxProps<T>): ReactElement {
     const setSuggestOptions = useCallback(
         (items: T[]) => {
             suggestItemsRef.current = items
+            // We have to trigger re-positioning every time when suggestions are changed
+            // With different number of suggestions suggestion panel can be in different
+            // positions on the page.
             tether?.forceUpdate()
         },
         [tether]
@@ -109,6 +112,10 @@ export function MultiCombobox<T>(props: MultiComboboxProps<T>): ReactElement {
     const handleSelectedItemsChange = useCallback(
         (items: T[]): void => {
             onSelectedItemsChange(items)
+            // We have to trigger re-positioning every time when selected items are changed
+            // With different number of picked items input element can be in different
+            // positions on the page and this mean suggestions panel should follow the new
+            // input position.
             tether?.forceUpdate()
         },
         [tether, onSelectedItemsChange]

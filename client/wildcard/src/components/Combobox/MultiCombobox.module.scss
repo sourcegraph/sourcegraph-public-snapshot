@@ -46,7 +46,7 @@
 
 .input-container {
     flex-grow: 1;
-    min-width: 10rem !important;
+    min-width: 10rem;
 
     // override standard spinner position in order to fit it
     // in non standard input size
