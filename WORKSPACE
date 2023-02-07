@@ -76,6 +76,20 @@ http_archive(
     ],
 )
 
+http_archive(
+    name = "rules_foreign_cc",
+    # TODO: Get the latest sha256 value from a bazel debug message or the latest
+    #       release on the releases page: https://github.com/bazelbuild/rules_foreign_cc/releases
+    #
+    # sha256 = "...",
+    strip_prefix = "rules_foreign_cc-0.9.0",
+    url = "https://github.com/bazelbuild/rules_foreign_cc/archive/0.9.0.tar.gz",
+)
+
+load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_dependencies")
+
+rules_foreign_cc_dependencies()
+
 # Node toolchain setup ==========================
 load("@rules_nodejs//nodejs:repositories.bzl", "DEFAULT_NODE_VERSION", "nodejs_register_toolchains")
 
@@ -158,3 +172,36 @@ protobuf_deps()
 
 load("//:tools.bzl", "tools_dependencies")
 tools_dependencies()
+
+#### ctags fun
+
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
+git_repository(
+    name = "universal_ctags",
+    remote = "https://github.com/universal-ctags/ctags.git",
+    commit = "3af413544a0ed0a4c52200894cfd6391f06d2e94",
+)
+
+all_content = """filegroup(name = "all", srcs = glob(["e@bazel_tools//tools/build_defs/repo:git.bzl.*"]), visibility = ["//visibility:public"])"""
+
+http_archive(
+    name = "jansson",
+    build_file_content = all_content,
+    strip_prefix = "jansson-2.14",
+    urls = ["https://github.com/akheron/jansson/releases/download/v2.14/jansson-2.14.tar.gz"],
+)
+
+http_archive(
+    name = "libyaml",
+    build_file_content = all_content,
+    strip_prefix = "libyaml-0.2.5",
+    urls = ["https://github.com/yaml/libyaml/archive/0.2.5.tar.gz"],
+)
+
+http_archive(
+    name = "libxml2",
+    build_file_content = all_content,
+    strip_prefix = "libxml2-2.10.3",
+    urls = ["https://download.gnome.org/sources/libxml2/2.10/libxml2-2.10.3.tar.xz"],
+)
