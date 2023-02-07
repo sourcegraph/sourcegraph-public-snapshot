@@ -12,8 +12,6 @@ import {
     useForm,
     insightTitleValidator,
     createRequiredValidator,
-    insightRepositoriesValidator,
-    insightRepositoriesAsyncValidator,
 } from '../../../../../components'
 import { LangStatsCreationFormFields } from '../types'
 
@@ -22,6 +20,7 @@ import {
     RenderPropertyInputs,
 } from './lang-stats-insight-creation-form/LangStatsInsightCreationForm'
 import { LangStatsInsightLivePreview } from './live-preview-chart/LangStatsInsightLivePreview'
+import { repositoryValidator, useRepositoryExistsValidator } from './validators'
 
 export const THRESHOLD_VALIDATOR = createRequiredValidator('Threshold is a required field for code insight.')
 
@@ -61,8 +60,8 @@ export const LangStatsInsightCreationContent: FC<LangStatsInsightCreationContent
         name: 'repository',
         formApi: formAPI,
         validators: {
-            sync: insightRepositoriesValidator,
-            async: insightRepositoriesAsyncValidator,
+            sync: repositoryValidator,
+            async: useRepositoryExistsValidator(),
         },
     })
 

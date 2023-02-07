@@ -26,7 +26,7 @@ interface FormSeriesInputProps {
      * Code Insight repositories field string value - repo1, repo2, ...
      * This prop is used in order to generate a proper link for the query preview button.
      */
-    repositories: string
+    repositories: string[]
 
     /**
      * This field is only needed for specifying a special compute-specific

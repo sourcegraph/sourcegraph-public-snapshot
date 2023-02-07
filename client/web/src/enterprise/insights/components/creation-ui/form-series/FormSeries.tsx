@@ -16,7 +16,7 @@ import styles from './FormSeries.module.scss'
 
 export interface FormSeriesProps {
     seriesField: useFieldAPI<EditableDataSeries[]>
-    repositories: string
+    repositories: string[]
     showValidationErrorsOnMount: boolean
 
     /**
