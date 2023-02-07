@@ -40,50 +40,45 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
 
     return (
         <div className="site-admin-repositories-page">
-            <SiteAdminRepositoriesContainer>
-                <PageTitle title="Repositories - Admin" />
-                {showRepositoriesAddedBanner && (
-                    <Alert variant="success" as="p">
-                        Syncing repositories. It may take a few moments to clone and index each repository. Repository
-                        statuses are displayed below.
-                    </Alert>
-                )}
-                <PageHeader
-                    path={[{ text: 'Repositories' }]}
-                    headingElement="h2"
-                    description={
-                        <>
-                            Repositories are synced from connected{' '}
-                            <Link
-                                to="/site-admin/external-services"
-                                data-testid="test-repositories-code-host-connections-link"
-                            >
-                                code hosts
-                            </Link>
-                            .
-                        </>
-                    }
-                    className="mb-3"
-                />
-                {licenseInfo && (licenseInfo.codeScaleCloseToLimit || licenseInfo.codeScaleExceededLimit) && (
-                    <Alert variant={licenseInfo.codeScaleExceededLimit ? 'danger' : 'warning'}>
-                        <H4>
-                            {licenseInfo.codeScaleExceededLimit ? (
-                                <>You've used all 100GiB of storage</>
-                            ) : (
-                                <>Your Sourcegraph is almost full</>
-                            )}
-                        </H4>
+            <PageTitle title="Repositories - Admin" />
+            {showRepositoriesAddedBanner && (
+                <Alert variant="success" as="p">
+                    Syncing repositories. It may take a few moments to clone and index each repository. Repository
+                    statuses are displayed below.
+                </Alert>
+            )}
+            <PageHeader
+                path={[{ text: 'Repositories' }]}
+                headingElement="h2"
+                description={
+                    <>
+                        Repositories are synced from connected{' '}
+                        <Link
+                            to="/site-admin/external-services"
+                            data-testid="test-repositories-code-host-connections-link"
+                        >
+                            code hosts
+                        </Link>
+                        .
+                    </>
+                }
+                className="mb-3"
+            />
+            {licenseInfo && (licenseInfo.codeScaleCloseToLimit || licenseInfo.codeScaleExceededLimit) && (
+                <Alert variant={licenseInfo.codeScaleExceededLimit ? 'danger' : 'warning'}>
+                    <H4>
                         {licenseInfo.codeScaleExceededLimit ? (
-                            <>You're about to reach the 100GiB storage limit. </>
+                            <>You've used all 100GiB of storage</>
                         ) : (
-                            <></>
+                            <>Your Sourcegraph is almost full</>
                         )}
-                        Upgrade to <Link to="https://about.sourcegraph.com/pricing">Sourcegraph Enterprise</Link> for
-                        unlimited storage for your code.
-                    </Alert>
-                )}
-            </SiteAdminRepositoriesContainer>
+                    </H4>
+                    {licenseInfo.codeScaleExceededLimit ? <>You're about to reach the 100GiB storage limit. </> : <></>}
+                    Upgrade to <Link to="https://about.sourcegraph.com/pricing">Sourcegraph Enterprise</Link> for
+                    unlimited storage for your code.
+                </Alert>
+            )}
+            <SiteAdminRepositoriesContainer />
         </div>
     )
 }

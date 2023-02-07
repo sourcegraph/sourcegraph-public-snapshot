@@ -31,12 +31,11 @@ export const SetupWizard: FC = props => {
                 </SetupList>
             </SetupTabs>
             <SetupSteps>
-                <SiteAdminRepositoriesContainer>
-                    <Text>
-                        It may take a few moments to clone and index each repository. Repository statuses are displayed
-                        below.
-                    </Text>
-                </SiteAdminRepositoriesContainer>
+                <Text>
+                    It may take a few moments to clone and index each repository. Repository statuses are displayed
+                    below.
+                </Text>
+                <SiteAdminRepositoriesContainer />
             </SetupSteps>
         </div>
     )

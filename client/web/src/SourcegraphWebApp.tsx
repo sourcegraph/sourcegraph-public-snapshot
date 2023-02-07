@@ -331,7 +331,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             return <HeroPage icon={ServerIcon} title={`${statusCode}: ${statusText}`} subtitle={subtitle} />
         }
 
-        const { authenticatedUser, graphqlClient, temporarySettingsStorage, isSetupWizardEnabled } = this.state
+        const { authenticatedUser, graphqlClient, temporarySettingsStorage } = this.state
 
         if (authenticatedUser === undefined || graphqlClient === undefined || temporarySettingsStorage === undefined) {
             return null
@@ -357,7 +357,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                 <Router history={globalHistory}>
                     <CompatRouter>
                         <Routes>
-                            {isSetupWizardEnabled ? <Route path="/setup" element={<SetupWizard />} /> : null}
                             <Route
                                 path="*"
                                 element={

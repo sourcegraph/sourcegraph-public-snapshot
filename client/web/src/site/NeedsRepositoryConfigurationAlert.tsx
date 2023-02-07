@@ -30,7 +30,7 @@ export const NeedsRepositoryConfigurationAlert: React.FunctionComponent<
         >
             <Link
                 className="site-alert__link"
-                to={isSetupWizardEnabled ? PageRoutes.Setup : '/site-admin/external-services'}
+                to={isSetupWizardEnabled ? PageRoutes.SetupWizard : '/site-admin/external-services'}
                 onClick={onClickCTA}
             >
                 <span className="underline">Connect a code host</span>

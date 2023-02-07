@@ -116,14 +116,6 @@ export const routes: readonly LayoutRouteProps[] = (
             render: () => <Navigate replace={true} to={PageRoutes.Search} />,
         },
         {
-            path: PageRoutes.Setup,
-            render: () => <SetupWizard />,
-            condition: () => {
-                const { setupWizard } = getExperimentalFeatures()
-                return setupWizard
-            },
-        },
-        {
             path: PageRoutes.InstallGitHubAppSuccess,
             render: () => <InstallGitHubAppSuccessPage />,
         },

@@ -134,9 +134,7 @@ const FILTERS: FilteredConnectionFilter[] = [
     },
 ]
 
-export const SiteAdminRepositoriesContainer: React.FunctionComponent<
-    React.PropsWithChildren<{ children: ReactNode }>
-> = ({ children }) => {
+export const SiteAdminRepositoriesContainer: React.FunctionComponent = () => {
     const {
         data,
         loading: repoStatsLoading,
@@ -188,7 +186,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<
         }
 
         const filtersWithExternalServices = FILTERS.slice() // use slice to copy array
-        if (location.pathname !== PageRoutes.Setup) {
+        if (location.pathname !== PageRoutes.SetupWizard) {
             filtersWithExternalServices.push({
                 id: 'codeHost',
                 label: 'Code Host',
@@ -370,7 +368,6 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<
 
     return (
         <>
-            {children}
             <Container className="py-3 mb-3">
                 {error && !loading && <ErrorAlert error={error} />}
                 {legends && <ValueLegendList items={legends} />}

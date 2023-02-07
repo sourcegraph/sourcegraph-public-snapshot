@@ -6,7 +6,6 @@ export enum PageRoutes {
     SignUp = '/sign-up',
     UnlockAccount = '/unlock-account/:token',
     Welcome = '/welcome',
-    Setup = '/setup',
     Settings = '/settings',
     User = '/user/*',
     Organizations = '/organizations/*',
@@ -20,6 +19,7 @@ export enum PageRoutes {
     Help = '/help/*',
     Debug = '/-/debug/*',
     RepoContainer = '/*',
+    SetupWizard = '/setup',
     InstallGitHubAppSuccess = '/install-github-app-success',
 }
 
