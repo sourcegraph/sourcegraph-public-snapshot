@@ -130,7 +130,9 @@ func TestCreateBatchSpec(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	licensingInfo := func(tags ...string) *licensing.Info { return &licensing.Info{Info: license.Info{Tags: tags}} }
+	licensingInfo := func(tags ...string) *licensing.Info {
+		return &licensing.Info{Info: license.Info{Tags: tags, ExpiresAt: time.Now().Add(1 * time.Hour)}}
+	}
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()

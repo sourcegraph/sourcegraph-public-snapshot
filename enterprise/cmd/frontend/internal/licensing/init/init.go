@@ -40,9 +40,9 @@ func Init(
 
 	// Enforce non-site admin roles in Free tier.
 	database.AfterCreateUser = enforcement.NewAfterCreateUserHook()
-	// Uncomment this when the licensing for this feature should be enforced.
-	// See https://github.com/sourcegraph/sourcegraph/issues/42527 for more context.
-	// database.BeforeSetUserIsSiteAdmin = enforcement.NewBeforeSetUserIsSiteAdmin()
+
+	// Enforce site admin creation rules.
+	database.BeforeSetUserIsSiteAdmin = enforcement.NewBeforeSetUserIsSiteAdmin()
 
 	// Enforce the license's max external service count by preventing the creation of new external
 	// services when the max is reached.

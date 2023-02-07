@@ -6,7 +6,7 @@ import {
     selectLineDown,
     selectLineUp,
 } from '@codemirror/commands'
-import { Extension } from '@codemirror/state'
+import { Extension, Prec } from '@codemirror/state'
 import { EditorView, KeyBinding, keymap, layer, RectangleMarker } from '@codemirror/view'
 
 import { blobPropsFacet } from '..'
@@ -239,21 +239,25 @@ function occurrenceKeyboardNavigation(): Extension {
  * [browser selection](https://developer.mozilla.org/en-US/docs/Web/API/Selection). This function is a workaround to ensure
  * that the browser selection is updated when the editor selection is updated.
  *
+ * This layer has explicitly set high precedence to be always shown above other layers (e.g. selected lines layer).
+ *
  * @see https://codemirror.net/docs/ref/#view.drawSelection
  * @see https://sourcegraph.com/github.com/codemirror/view@84f483ae4097a71d04374cdb24c5edc09d211105/-/blob/src/draw-selection.ts?L92-102
  */
-const selectionLayer = layer({
-    above: false,
-    markers(view) {
-        return view.state.selection.ranges
-            .map(range => (range.empty ? [] : RectangleMarker.forRange(view, 'cm-selectionBackground', range)))
-            .reduce((a, b) => a.concat(b))
-    },
-    update(update) {
-        return update.docChanged || update.selectionSet || update.viewportChanged
-    },
-    class: 'cm-selectionLayer',
-})
+const selectionLayer = Prec.high(
+    layer({
+        above: false,
+        markers(view) {
+            return view.state.selection.ranges
+                .map(range => (range.empty ? [] : RectangleMarker.forRange(view, 'cm-selectionBackground', range)))
+                .reduce((a, b) => a.concat(b))
+        },
+        update(update) {
+            return update.docChanged || update.selectionSet || update.viewportChanged
+        },
+        class: 'cm-selectionLayer',
+    })
+)
 
 /**
  * Extension that adds support for the text selection with keyboard.
@@ -272,7 +276,14 @@ function textSelectionExtension(): Extension {
                 },
             },
             '.cm-selectionLayer .cm-selectionBackground': {
-                background: 'var(--code-selection-bg)',
+                background: 'var(--code-selection-bg-2)',
+
+                /**
+                 * [RectangleMarker.forRange](https://sourcegraph.com/github.com/codemirror/view@a0a0b9ef5a4deaf58842422ac080030042d83065/-/blob/src/layer.ts?L60-75)
+                 * returns absolutely positioned markers. Markers top position has extra 1px more in its `top` value breaking alignment wih the line.
+                 * We compensate this spacing by setting negative margin-top.
+                 */
+                marginTop: '-1px',
             },
         }),
     ]

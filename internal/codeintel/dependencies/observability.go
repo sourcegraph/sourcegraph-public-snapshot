@@ -8,9 +8,10 @@ import (
 )
 
 type operations struct {
-	listDependencyRepos       *observation.Operation
-	upsertDependencyRepos     *observation.Operation
-	deleteDependencyReposByID *observation.Operation
+	listPackageRepos                 *observation.Operation
+	deletePackageRepoRefVersionsByID *observation.Operation
+	upsertPackageRepoRefs            *observation.Operation
+	deletePackageRepoRefsByID        *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -34,8 +35,9 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		listDependencyRepos:       op("ListDependencyRepos"),
-		upsertDependencyRepos:     op("UpsertDependencyRepos"),
-		deleteDependencyReposByID: op("DeleteDependencyReposByID"),
+		listPackageRepos:                 op("ListPackageRepoRefs"),
+		deletePackageRepoRefVersionsByID: op("DeletePackageRepoRefVersionsByID"),
+		upsertPackageRepoRefs:            op("InsertPackageRepoRefs"),
+		deletePackageRepoRefsByID:        op("DeletePackageRepoRefsByID"),
 	}
 }

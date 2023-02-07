@@ -104,6 +104,7 @@ func NewHandler(
 		ctagsBinary:  ctagsBinary,
 		logger:       rootLogger.Scoped("grpc", "grpc server implementation"),
 	})
+
 	reflection.Register(grpcServer)
 
 	jsonLogger := rootLogger.Scoped("jsonrpc", "json server implementation")
@@ -113,6 +114,7 @@ func NewHandler(
 	mux.HandleFunc("/search", handleSearchWith(jsonLogger, searchFuncWrapper))
 	mux.HandleFunc("/healthz", handleHealthCheck(jsonLogger))
 	mux.HandleFunc("/list-languages", handleListLanguages(ctagsBinary))
+
 	addHandlers(mux, searchFunc, readFileFunc)
 	if handleStatus != nil {
 		mux.HandleFunc("/status", handleStatus)

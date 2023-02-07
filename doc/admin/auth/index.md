@@ -7,7 +7,7 @@ Sourcegraph supports the following ways for users to sign in:
 - [GitHub](#github)
 - [GitLab](#gitlab)
 - [Bitbucket Cloud](#bitbucket-cloud)
-- [Gerrit](#gerrit)
+- [Gerrit](#gerrit) <span class="badge badge-beta">Beta</span>
 - [SAML](saml/index.md)
 - [OpenID Connect](#openid-connect)
   - [Google Workspace (Google accounts)](#google-workspace-google-accounts)
@@ -352,6 +352,7 @@ Then add the following lines to your [site configuration](config/site_config.md)
 Replace the `clientKey` and `clientSecret` values with the values from your Bitbucket Cloud OAuth consumer.
 
 ## Gerrit
+<span class="badge badge-beta">Beta</span>
 
 To enable users to add Gerrit credentials and verify their access to repositories on Sourcegraph,
 add the following lines to your [site configuration](config/site_config.md):

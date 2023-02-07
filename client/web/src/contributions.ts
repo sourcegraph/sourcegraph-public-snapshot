@@ -44,12 +44,12 @@ export function GlobalContributions(props: Props): null {
                     historyOrNavigate: navigate,
                     getLocation: () => locationRef.current,
                     extensionsController,
-                    locationAssign: globalThis.location.assign.bind(location),
+                    locationAssign: globalThis.location.assign.bind(globalThis.location),
                 })
             )
         }
         return () => subscriptions.unsubscribe()
-    })
+    }, [extensionsController, navigate, platformContext])
 
     // Throw error to the <ErrorBoundary />
     if (error) {

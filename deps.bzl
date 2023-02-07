@@ -2239,11 +2239,19 @@ def go_dependencies():
         version = "v0.0.0-20190404230743-d7302db945fa",
     )
     go_repository(
+        name = "com_github_fullstorydev_grpcui",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/fullstorydev/grpcui",
+        sum = "h1:lVXozTNkJJouBL+wpmvxMnltiwYp8mgyd0TRs93i6Rw=",
+        version = "v1.3.1",
+    )
+
+    go_repository(
         name = "com_github_fullstorydev_grpcurl",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/fullstorydev/grpcurl",
-        sum = "h1:Pp648wlTTg3OKySeqxM5pzh8XF6vLqrm8wRq66+5Xo0=",
-        version = "v1.8.1",
+        sum = "h1:WylAwnPauJIofYSHqqMTC1eEfUIzqzevXyogBxnQquo=",
+        version = "v1.8.6",
     )
     go_repository(
         name = "com_github_fxamacker_cbor_v2",
@@ -3537,6 +3545,14 @@ def go_dependencies():
         version = "v1.1.0",
     )
     go_repository(
+        name = "com_github_gordonklaus_ineffassign",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/gordonklaus/ineffassign",
+        sum = "h1:vc7Dmrk4JwS0ZPS6WZvWlwDflgDTA26jItmbSj83nug=",
+        version = "v0.0.0-20200309095847-7953dde2c7bf",
+    )
+
+    go_repository(
         name = "com_github_goreleaser_goreleaser",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/goreleaser/goreleaser",
@@ -3720,6 +3736,8 @@ def go_dependencies():
         name = "com_github_grpc_ecosystem_grpc_gateway_v2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/grpc-ecosystem/grpc-gateway/v2",
+        patch_args = ["-p1"],
+        patches = ["//third_party/com_github_grpc_ecosystem_grpc_gateway_v2:grpc_gateway.patch"],
         sum = "h1:t7uX3JBHdVwAi3G7sSSdbsk8NfgA+LnUS88V/2EKaA0=",
         version = "v2.14.0",
     )
@@ -5496,6 +5514,14 @@ def go_dependencies():
         sum = "h1:5YAIqNTdl6lAOb7lD2AyQ1RuFGPVrAKvUexphk8PGbo=",
         version = "v1.6.5",
     )
+    go_repository(
+        name = "com_github_nishanths_predeclared",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/nishanths/predeclared",
+        sum = "h1:3f0nxAmdj/VoCGN/ijdMy7bj6SBagaqYg1B0hu8clMA=",
+        version = "v0.0.0-20200524104333-86fad755b4d3",
+    )
+
     go_repository(
         name = "com_github_npillmayer_nestext",
         build_file_proto_mode = "disable_global",
@@ -7731,6 +7757,7 @@ def go_dependencies():
         sum = "h1:hd6J2n5dBBRuAqnNUEsKWrp6XNPKsaxwwIyzOPZTokk=",
         version = "v0.2.0",
     )
+
     go_repository(
         name = "com_google_cloud_go_essentialcontacts",
         build_file_proto_mode = "disable_global",
@@ -7859,6 +7886,7 @@ def go_dependencies():
         sum = "h1:tIqhivE2LMVYkX0BLgG7xL64oNpDaFFI7teunglt1tI=",
         version = "v0.6.0",
     )
+
     go_repository(
         name = "com_google_cloud_go_longrunning",
         build_file_proto_mode = "disable_global",
@@ -7873,6 +7901,7 @@ def go_dependencies():
         sum = "h1:3Kdajn6X25yWQFhFCErmKSYTSvkEd3chJROny//F1A0=",
         version = "v1.4.0",
     )
+
     go_repository(
         name = "com_google_cloud_go_mediatranslation",
         build_file_proto_mode = "disable_global",
@@ -8120,6 +8149,7 @@ def go_dependencies():
         sum = "h1:b1LFhFBgKsG252inyhtmsUUZwchqSz3WTvAIf3JFo4g=",
         version = "v1.4.0",
     )
+
     go_repository(
         name = "com_google_cloud_go_speech",
         build_file_proto_mode = "disable_global",
@@ -8205,6 +8235,7 @@ def go_dependencies():
         sum = "h1:A2Tl2ZmwMRpvEmhV2ibISY85fmQR+Y5w9a0PlRz5P3s=",
         version = "v1.3.0",
     )
+
     go_repository(
         name = "com_google_cloud_go_vpcaccess",
         build_file_proto_mode = "disable_global",

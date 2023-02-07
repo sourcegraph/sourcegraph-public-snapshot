@@ -108,6 +108,7 @@ Clarification and discussion about key concepts, architecture, and development s
     - [Testing Go code](background-information/languages/testing_go_code.md)
     - [Testing web code](background-information/testing_web_code.md)
 - [Building p4-fusion](background-information/build_p4_fusion.md)
+- [The `gitserver` API](background-information/gitserver-api.md)
 
 ### [Languages](background-information/languages/index.md)
 
@@ -136,6 +137,10 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Renovate dependency updates](background-information/renovate.md)
 - [Honeycomb](background-information/honeycomb.md)
 - [GoLand](background-information/goland.md)
+
+### Components
+
+- [`gitserver` API](components/gitserver.md)
 
 ### Other
 

@@ -4,7 +4,7 @@ import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronUp, mdiFilterOutline, 
 import classNames from 'classnames'
 import * as H from 'history'
 import { capitalize, uniqBy } from 'lodash'
-import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
+import { Location as RRLocation, useNavigate, useLocation } from 'react-router-dom-v5-compat'
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -60,8 +60,8 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
-import { Blob } from '../repo/blob/Blob'
 import { Blob as CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
+import { LegacyBlob } from '../repo/blob/LegacyBlob'
 import * as BlobAPI from '../repo/blob/use-blob-store'
 import { HoverThresholdProps } from '../repo/RepoContainer'
 import { useExperimentalFeatures } from '../stores'
@@ -143,10 +143,8 @@ function createStateFromLocation(location: H.Location): null | State {
 }
 
 export const ReferencesPanel: React.FunctionComponent<React.PropsWithChildren<ReferencesPanelProps>> = props => {
-    // We store the state in a React state so that we do not update it when the
-    // URL changes.
     const location = useLocation()
-    const [state] = useState(createStateFromLocation(location))
+    const state = useMemo(() => createStateFromLocation(location), [location])
 
     if (state === null) {
         return null
@@ -695,8 +693,9 @@ function parseSideBlobProps(
 }
 
 const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> = props => {
+    const navigate = useNavigate()
     const useCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
-    const BlobComponent = useCodeMirror ? CodeMirrorBlob : Blob
+    const BlobComponent = useCodeMirror ? CodeMirrorBlob : LegacyBlob
 
     const highlightFormat = useCodeMirror ? HighlightResponseFormat.JSON_SCIP : HighlightResponseFormat.HTML_HIGHLIGHT
     const { data, error, loading } = useQuery<
@@ -719,7 +718,7 @@ const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> 
     const history = useMemo(() => H.createMemoryHistory(), [])
     const location = useMemo(() => {
         history.replace(props.activeURL)
-        return history.location
+        return history.location as RRLocation
     }, [history, props.activeURL])
 
     // If we're loading and haven't received any data yet
@@ -761,6 +760,7 @@ const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> 
         <BlobComponent
             {...props}
             nav={props.blobNav}
+            navigate={navigate}
             history={history}
             location={location}
             wrapCode={true}

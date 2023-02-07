@@ -1,0 +1,59 @@
+---
+version: 1
+interactions:
+- request:
+    body: '{"status":"completed","title":null,"description":null,"mergeOptions":null,"lastMergeSourceCommit":{"commitId":"7867eee4f671d69f9a9be0fcacb6a7af764ec962"},"targetRefName":null}'
+    form: {}
+    headers:
+      Content-Type:
+      - application/json
+    url: https://dev.azure.com/sgtestazure/sgtestazure/_apis/git/repositories/sgtestazure3/pullrequests/7?api-version=7.0
+    method: PATCH
+  response:
+    body: '{"repository":{"id":"601cf461-9338-4396-895d-a3e2780bd52f","name":"sgtestazure3","url":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/601cf461-9338-4396-895d-a3e2780bd52f","project":{"id":"dc493f7d-0b57-4de2-a59b-3f74ff3ea334","name":"sgtestazure","url":"https://dev.azure.com/sgtestazure/_apis/projects/dc493f7d-0b57-4de2-a59b-3f74ff3ea334","state":"wellFormed","revision":11,"visibility":"private","lastUpdateTime":"2023-01-20T19:22:47.403Z"},"size":1070371295,"remoteUrl":"https://sgtestazure@dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure3","sshUrl":"git@ssh.dev.azure.com:v3/sgtestazure/sgtestazure/sgtestazure3","webUrl":"https://dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure3","isDisabled":false,"isInMaintenance":false},"pullRequestId":7,"codeReviewId":7,"status":"active","createdBy":{"displayName":"idan.varsano@sourcegraph.com","url":"https://spsprodcca1.vssps.visualstudio.com/Ab768986f-7304-43dd-be74-f37e30f66c38/_apis/Identities/473dec3e-03d7-6147-b106-0b0a7f766a92","_links":{"avatar":{"href":"https://dev.azure.com/sgtestazure/_apis/GraphProfile/MemberAvatars/aad.NDczZGVjM2UtMDNkNy03MTQ3LWIxMDYtMGIwYTdmNzY2YTky"}},"id":"473dec3e-03d7-6147-b106-0b0a7f766a92","uniqueName":"idan.varsano@sourcegraph.com","imageUrl":"https://dev.azure.com/sgtestazure/_api/_common/identityImage?id=473dec3e-03d7-6147-b106-0b0a7f766a92","descriptor":"aad.NDczZGVjM2UtMDNkNy03MTQ3LWIxMDYtMGIwYTdmNzY2YTky"},"creationDate":"2023-02-01T01:14:59.8234796Z","title":"Updated
+      LICENSE","description":"Updated LICENSE","sourceRefName":"refs/heads/newestbranch","targetRefName":"refs/heads/master","mergeStatus":"queued","isDraft":false,"mergeId":"6df10815-819b-42e8-83f1-f4228447be0b","lastMergeSourceCommit":{"commitId":"7867eee4f671d69f9a9be0fcacb6a7af764ec962","url":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/601cf461-9338-4396-895d-a3e2780bd52f/commits/7867eee4f671d69f9a9be0fcacb6a7af764ec962"},"lastMergeTargetCommit":{"commitId":"2a0f2e423a12c5d80bb7b73d7fd12b25746e303e","url":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/601cf461-9338-4396-895d-a3e2780bd52f/commits/2a0f2e423a12c5d80bb7b73d7fd12b25746e303e"},"reviewers":[],"url":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/601cf461-9338-4396-895d-a3e2780bd52f/pullRequests/7","_links":{"self":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/601cf461-9338-4396-895d-a3e2780bd52f/pullRequests/7"},"repository":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/601cf461-9338-4396-895d-a3e2780bd52f"},"workItems":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/601cf461-9338-4396-895d-a3e2780bd52f/pullRequests/7/workitems"},"sourceBranch":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/601cf461-9338-4396-895d-a3e2780bd52f/refs/heads/newestbranch"},"targetBranch":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/601cf461-9338-4396-895d-a3e2780bd52f/refs/heads/master"},"statuses":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/601cf461-9338-4396-895d-a3e2780bd52f/pullRequests/7/statuses"},"sourceCommit":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/601cf461-9338-4396-895d-a3e2780bd52f/commits/7867eee4f671d69f9a9be0fcacb6a7af764ec962"},"targetCommit":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/601cf461-9338-4396-895d-a3e2780bd52f/commits/2a0f2e423a12c5d80bb7b73d7fd12b25746e303e"},"createdBy":{"href":"https://spsprodcca1.vssps.visualstudio.com/Ab768986f-7304-43dd-be74-f37e30f66c38/_apis/Identities/473dec3e-03d7-6147-b106-0b0a7f766a92"},"iterations":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/601cf461-9338-4396-895d-a3e2780bd52f/pullRequests/7/iterations"}},"completionOptions":{"mergeStrategy":"noFastForward"},"supportsIterations":true,"completionQueueTime":"2023-02-01T01:18:35.1073252Z","closedBy":{"displayName":"idan.varsano@sourcegraph.com","url":"https://spsprodcca1.vssps.visualstudio.com/Ab768986f-7304-43dd-be74-f37e30f66c38/_apis/Identities/473dec3e-03d7-6147-b106-0b0a7f766a92","_links":{"avatar":{"href":"https://dev.azure.com/sgtestazure/_apis/GraphProfile/MemberAvatars/aad.NDczZGVjM2UtMDNkNy03MTQ3LWIxMDYtMGIwYTdmNzY2YTky"}},"id":"473dec3e-03d7-6147-b106-0b0a7f766a92","uniqueName":"idan.varsano@sourcegraph.com","imageUrl":"https://dev.azure.com/sgtestazure/_api/_common/identityImage?id=473dec3e-03d7-6147-b106-0b0a7f766a92","descriptor":"aad.NDczZGVjM2UtMDNkNy03MTQ3LWIxMDYtMGIwYTdmNzY2YTky"},"artifactId":"vstfs:///Git/PullRequestId/dc493f7d-0b57-4de2-a59b-3f74ff3ea334%2f601cf461-9338-4396-895d-a3e2780bd52f%2f7"}'
+    headers:
+      Access-Control-Expose-Headers:
+      - Request-Context
+      Activityid:
+      - a3938ac3-5b82-46d8-8adf-2eb820113bd3
+      Cache-Control:
+      - no-cache, no-store, must-revalidate
+      Content-Type:
+      - application/json; charset=utf-8; api-version=7.0
+      Date:
+      - Wed, 01 Feb 2023 01:18:34 GMT
+      Expires:
+      - "-1"
+      P3p:
+      - CP="CAO DSP COR ADMa DEV CONo TELo CUR PSA PSD TAI IVDo OUR SAMi BUS DEM NAV
+        STA UNI COM INT PHY ONL FIN PUR LOC CNT"
+      Pragma:
+      - no-cache
+      Request-Context:
+      - appId=cid-v1:72d31d95-1757-44f5-b910-a46611808454
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+      Vary:
+      - Accept-Encoding
+      X-Cache:
+      - CONFIG_NOCACHE
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Msedge-Ref:
+      - 'Ref A: 4EABFE93A74E4249B1CF70648951B0EA Ref B: YTO01EDGE0712 Ref C: 2023-02-01T01:18:35Z'
+      X-Tfs-Processid:
+      - cb3e74d1-e242-4595-b183-ee6858cb96f9
+      X-Tfs-Session:
+      - a3938ac3-5b82-46d8-8adf-2eb820113bd3
+      X-Vss-E2eid:
+      - a3938ac3-5b82-46d8-8adf-2eb820113bd3
+      X-Vss-Senderdeploymentid:
+      - 4ff21e82-8865-0b2e-ffe8-9598818f8190
+      X-Vss-Userdata:
+      - 473dec3e-03d7-6147-b106-0b0a7f766a92:idan.varsano@sourcegraph.com
+    status: 200 OK
+    code: 200
+    duration: ""
