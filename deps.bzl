@@ -1447,11 +1447,11 @@ def go_dependencies():
     )
     go_repository(
         name = "com_github_coreos_go_iptables",
+        build_file_generation = "on",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/coreos/go-iptables",
         sum = "h1:is9qnZMPYjLd8LYqmm/qlE+wwEgJIkTYdhV3rfZo4jk=",
         version = "v0.6.0",
-        build_file_generation = "on",
     )
     go_repository(
         name = "com_github_coreos_go_oidc",
@@ -6647,8 +6647,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:4rjMUDipqCd15HbuFuB17tt42otd0WxH+rFs0pPb8mc=",
-        version = "v0.0.0-20230201120440-2845327550c5",
+        sum = "h1:QOQ701MTcFyG0oN5bxKvUSkwdNgYf4z/ihSC7jccLBE=",
+        version = "v0.0.0-20230206083110-50c5066fa29c",
     )
 
     go_repository(
@@ -7854,13 +7854,13 @@ def go_dependencies():
     )
     go_repository(
         name = "com_google_cloud_go_iam",
+        build_directives = [
+            "gazelle:resolve go google.golang.org/genproto/googleapis/api/annotations @go_googleapis//google/api:annotations_go_proto",  # keep
+        ],
         build_file_proto_mode = "disable_global",
         importpath = "cloud.google.com/go/iam",
         sum = "h1:E2osAkZzxI/+8pZcxVLcDtAQx/u+hZXVryUaYQ5O0Kk=",
         version = "v0.8.0",
-        build_directives = [
-            "gazelle:resolve go google.golang.org/genproto/googleapis/api/annotations @go_googleapis//google/api:annotations_go_proto",  # keep
-        ],
     )
     go_repository(
         name = "com_google_cloud_go_iap",
@@ -7885,13 +7885,13 @@ def go_dependencies():
     )
     go_repository(
         name = "com_google_cloud_go_kms",
+        build_directives = [
+            "gazelle:resolve go google.golang.org/genproto/googleapis/api/annotations @go_googleapis//google/api:annotations_go_proto",  # keep
+        ],
         build_file_proto_mode = "disable_global",
         importpath = "cloud.google.com/go/kms",
         sum = "h1:OWRZzrPmOZUzurjI2FBGtgY2mB1WaJkqhw6oIwSj0Yg=",
         version = "v1.6.0",
-        build_directives = [
-            "gazelle:resolve go google.golang.org/genproto/googleapis/api/annotations @go_googleapis//google/api:annotations_go_proto",  # keep
-        ],
     )
     go_repository(
         name = "com_google_cloud_go_language",
@@ -8068,13 +8068,13 @@ def go_dependencies():
 
     go_repository(
         name = "com_google_cloud_go_pubsub",
+        build_directives = [
+            "gazelle:resolve go google.golang.org/genproto/googleapis/api/annotations @go_googleapis//google/api:annotations_go_proto",  # keep
+        ],
         build_file_proto_mode = "disable_global",
         importpath = "cloud.google.com/go/pubsub",
         sum = "h1:q+J/Nfr6Qx4RQeu3rJcnN48SNC0qzlYzSeqkPq93VHs=",
         version = "v1.27.1",
-        build_directives = [
-            "gazelle:resolve go google.golang.org/genproto/googleapis/api/annotations @go_googleapis//google/api:annotations_go_proto",  # keep
-        ],
     )
     go_repository(
         name = "com_google_cloud_go_pubsublite",
@@ -8149,13 +8149,13 @@ def go_dependencies():
     )
     go_repository(
         name = "com_google_cloud_go_secretmanager",
+        build_directives = [
+            "gazelle:resolve go google.golang.org/genproto/googleapis/api/annotations @go_googleapis//google/api:annotations_go_proto",  # keep
+        ],
         build_file_proto_mode = "disable_global",
         importpath = "cloud.google.com/go/secretmanager",
         sum = "h1:xE6uXljAC1kCR8iadt9+/blg1fvSbmenlsDN4fT9gqw=",
         version = "v1.9.0",
-        build_directives = [
-            "gazelle:resolve go google.golang.org/genproto/googleapis/api/annotations @go_googleapis//google/api:annotations_go_proto",  # keep
-        ],
     )
     go_repository(
         name = "com_google_cloud_go_security",
@@ -8223,13 +8223,13 @@ def go_dependencies():
     )
     go_repository(
         name = "com_google_cloud_go_storage",
+        build_directives = [
+            "gazelle:resolve go google.golang.org/genproto/googleapis/api/annotations @go_googleapis//google/api:annotations_go_proto",  # keep
+        ],
         build_file_proto_mode = "disable_global",
         importpath = "cloud.google.com/go/storage",
         sum = "h1:YOO045NZI9RKfCj1c5A/ZtuuENUc8OAW+gHdGnDgyMQ=",
         version = "v1.27.0",
-        build_directives = [
-            "gazelle:resolve go google.golang.org/genproto/googleapis/api/annotations @go_googleapis//google/api:annotations_go_proto",  # keep
-        ],
     )
     go_repository(
         name = "com_google_cloud_go_storagetransfer",
@@ -9217,16 +9217,16 @@ def go_dependencies():
 
     go_repository(
         name = "org_golang_google_genproto",
-        build_file_proto_mode = "disable_global",
-        importpath = "google.golang.org/genproto",
-        sum = "h1:ru6tJGasqJpgjM4q3Qq2fS3FKQ6CPPSRqgolUVBc994=",
-        version = "v0.0.0-20230112194545-e10362b5ecf9",
         build_directives = [
             "gazelle:resolve go google.golang.org/genproto/googleapis/api @go_googleapis//google/api:api_go_proto",  # keep
             "gazelle:resolve go google.golang.org/genproto/googleapis/api/label @go_googleapis//google/api:label_go_proto",  # keep
             "gazelle:resolve go google.golang.org/genproto/googleapis/api/annotations @go_googleapis//google/api:annotations_go_proto",  # keep
             "gazelle:resolve go google.golang.org/genproto/googleapis/api/monitoredres @go_googleapis//google/api:monitoredres_go_proto",  # keep
         ],
+        build_file_proto_mode = "disable_global",
+        importpath = "google.golang.org/genproto",
+        sum = "h1:ru6tJGasqJpgjM4q3Qq2fS3FKQ6CPPSRqgolUVBc994=",
+        version = "v0.0.0-20230112194545-e10362b5ecf9",
     )
     go_repository(
         name = "org_golang_google_grpc",

@@ -15,7 +15,7 @@ go_library(
         "scoped_insight_resolvers.go",
         "validator.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/resolvers",
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/insights/resolvers",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//cmd/frontend/graphqlbackend",
@@ -74,6 +74,7 @@ go_test(
         "//enterprise/internal/insights/store",
         "//enterprise/internal/insights/types",
         "//internal/actor",
+        "//internal/api",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbtest",
@@ -83,6 +84,7 @@ go_test(
         "@com_github_graph_gophers_graphql_go//relay",
         "@com_github_hexops_autogold//:autogold",
         "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],
 )
