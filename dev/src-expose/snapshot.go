@@ -19,7 +19,9 @@ import (
  * Returns `error` if the file could not be created or written to.
  */
 func processIgnores(ignores []string, dst string) error {
-	if ignores != nil {
+	if len(ignores) == 0 {
+		return nil
+	}
 		gitignore_path := filepath.Join(dst, "info", "exclude")
 		gitignore_file, err := os.Create(gitignore_path)
 		if err != nil {
