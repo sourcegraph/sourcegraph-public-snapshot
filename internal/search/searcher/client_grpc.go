@@ -17,8 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	grpcdefaults "github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	proto "github.com/sourcegraph/sourcegraph/protos/searcher/v1"
 )
 
 // Search searches repo@commit with p.
@@ -33,7 +33,7 @@ func SearchGRPC(
 	p *search.TextPatternInfo,
 	fetchTimeout time.Duration,
 	features search.Features,
-	onMatch func(*proto.FileMatch),
+	onMatch func(*v1.FileMatch),
 ) (limitHit bool, err error) {
 	r := (&protocol.Request{
 		Repo:   repo,
@@ -93,7 +93,7 @@ func SearchGRPC(
 		}
 		defer clientConn.Close()
 
-		client := proto.NewSearcherServiceClient(clientConn)
+		client := v1.NewSearcherServiceClient(clientConn)
 		resp, err := client.Search(ctx, r)
 		if err != nil {
 			return false, err
@@ -108,9 +108,9 @@ func SearchGRPC(
 			}
 
 			switch v := msg.Message.(type) {
-			case *proto.SearchResponse_FileMatch:
+			case *v1.SearchResponse_FileMatch:
 				onMatch(v.FileMatch)
-			case *proto.SearchResponse_DoneMessage:
+			case *v1.SearchResponse_DoneMessage:
 				return v.DoneMessage.LimitHit, nil
 			default:
 				return false, errors.Newf("unknown SearchResponse message %T", v)

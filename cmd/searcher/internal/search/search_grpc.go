@@ -2,21 +2,21 @@ package search
 
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	proto "github.com/sourcegraph/sourcegraph/protos/searcher/v1"
+	"github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 )
 
 type Server struct {
 	Service *Service
-	proto.UnimplementedSearcherServiceServer
+	v1.UnimplementedSearcherServiceServer
 }
 
-func (s *Server) Search(req *proto.SearchRequest, stream proto.SearcherService_SearchServer) error {
+func (s *Server) Search(req *v1.SearchRequest, stream v1.SearcherService_SearchServer) error {
 	var unmarshaledReq protocol.Request
 	unmarshaledReq.FromProto(req)
 
 	onMatches := func(match protocol.FileMatch) {
-		stream.Send(&proto.SearchResponse{
-			Message: &proto.SearchResponse_FileMatch{
+		stream.Send(&v1.SearchResponse{
+			Message: &v1.SearchResponse_FileMatch{
 				FileMatch: match.ToProto(),
 			},
 		})
@@ -30,9 +30,9 @@ func (s *Server) Search(req *proto.SearchRequest, stream proto.SearcherService_S
 		return err
 	}
 
-	return stream.Send(&proto.SearchResponse{
-		Message: &proto.SearchResponse_DoneMessage{
-			DoneMessage: &proto.SearchResponse_Done{
+	return stream.Send(&v1.SearchResponse{
+		Message: &v1.SearchResponse_DoneMessage{
+			DoneMessage: &v1.SearchResponse_Done{
 				LimitHit: matchStream.LimitHit(),
 			},
 		},
