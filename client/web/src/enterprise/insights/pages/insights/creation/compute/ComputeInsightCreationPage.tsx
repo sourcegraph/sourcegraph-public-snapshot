@@ -81,7 +81,7 @@ export const ComputeInsightCreationPage: FunctionComponent<ComputeInsightCreatio
     }, [setInitialFormValues, telemetryService, onCancel])
 
     return (
-        <CodeInsightsPage className="col-11">
+        <CodeInsightsPage>
             <PageTitle title="Create group results insight - Code Insights" />
 
             <PageHeader
