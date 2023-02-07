@@ -151,8 +151,8 @@ var bufLint = &linter{
 
 			err = c.Run().StreamLines(out.Write)
 			if err != nil {
-				commandString := fmt.Sprintf("buf %s", bufArgs)
-				return errors.Wrapf(err, "running %s", commandString)
+				commandString := fmt.Sprintf("buf %s", strings.Join(bufArgs, " "))
+				return errors.Wrapf(err, "running %q in %q", commandString, moduleDir)
 			}
 
 		}

@@ -4,7 +4,7 @@
 
 syntax = "proto3";
 
-package codeowners.v1;
+package own.codeowners.v1;
 
 option go_package = "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1";
 
