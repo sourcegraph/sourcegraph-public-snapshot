@@ -518,7 +518,7 @@ interface GitObjectPreviewProps {
 
 const GitObjectPreview: FunctionComponent<GitObjectPreviewProps> = ({ policy, preview, showMore }) =>
     policy.repository && policy.pattern !== '' && preview && preview.preview.length > 0 ? (
-        <div>
+        <div className="form-group">
             <div className="d-flex justify-content-between">
                 <span>
                     {preview.totalCount === 1 ? (
