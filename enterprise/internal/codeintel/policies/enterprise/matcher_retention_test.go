@@ -22,6 +22,7 @@ func TestCommitsDescribedByPolicyForRetention(t *testing.T) {
 			t.Fatalf("unexpected error finding matches: %s", err)
 		}
 
+		hydrateCommittedAt(expectedPolicyMatches, now)
 		sortPolicyMatchesMap(policyMatches)
 		sortPolicyMatchesMap(expectedPolicyMatches)
 
@@ -106,7 +107,6 @@ func TestCommitsDescribedByPolicyForRetention(t *testing.T) {
 			"deadbeef04": {PolicyMatch{Name: "deadbeef04", PolicyID: &policyID, PolicyDuration: &testDuration}},
 		})
 	})
-
 	t.Run("matches implicit tip of default branch policy", func(t *testing.T) {
 		runTest(t, developGitserverClient, nil, map[string][]PolicyMatch{
 			"deadbeef01": {{Name: "develop", PolicyID: nil, PolicyDuration: nil}},

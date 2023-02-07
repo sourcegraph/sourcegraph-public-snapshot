@@ -4,12 +4,17 @@ go_library(
     name = "redispool",
     srcs = [
         "keyvalue.go",
+        "mem.go",
+        "naive.go",
+        "redis.go",
+        "redis_conn.go",
         "redispool.go",
         "sysreq.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/redispool",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/conf/deploy",
         "//internal/env",
         "//internal/lazyregexp",
         "//internal/sysreq",
@@ -22,6 +27,7 @@ go_test(
     name = "redispool_test",
     srcs = [
         "keyvalue_test.go",
+        "naive_test.go",
         "redispool_test.go",
     ],
     embed = [":redispool"],

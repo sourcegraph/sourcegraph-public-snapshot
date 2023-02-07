@@ -2,6 +2,7 @@ package policies
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -44,15 +45,15 @@ func testUploadExpirerMockGitserverClient(defaultBranchName string, now time.Tim
 	}
 
 	createdAt := map[string]time.Time{
-		"deadbeef01": now.Add(-time.Hour * 5),
-		"deadbeef02": now.Add(-time.Hour * 5),
-		"deadbeef03": now.Add(-time.Hour * 5),
-		"deadbeef04": now.Add(-time.Hour * 5),
-		"deadbeef07": now.Add(-time.Hour * 5),
-		"deadbeef08": now.Add(-time.Hour * 5),
-		"deadbeef05": now.Add(-time.Hour * 12),
-		"deadbeef06": now.Add(-time.Hour * 15),
-		"deadbeef09": now.Add(-time.Hour * 15),
+		"deadbeef01": testCommitDateFor("deadbeef01", now),
+		"deadbeef02": testCommitDateFor("deadbeef02", now),
+		"deadbeef03": testCommitDateFor("deadbeef03", now),
+		"deadbeef04": testCommitDateFor("deadbeef04", now),
+		"deadbeef07": testCommitDateFor("deadbeef07", now),
+		"deadbeef08": testCommitDateFor("deadbeef08", now),
+		"deadbeef05": testCommitDateFor("deadbeef05", now),
+		"deadbeef06": testCommitDateFor("deadbeef06", now),
+		"deadbeef09": testCommitDateFor("deadbeef09", now),
 	}
 
 	commitDate := func(ctx context.Context, repositoryID int, commit string) (string, time.Time, bool, error) {
@@ -100,4 +101,40 @@ func testUploadExpirerMockGitserverClient(defaultBranchName string, now time.Tim
 	gitserverClient.RefDescriptionsFunc.SetDefaultHook(refDescriptions)
 	gitserverClient.CommitsUniqueToBranchFunc.SetDefaultHook(commitsUniqueToBranch)
 	return gitserverClient
+}
+
+func hydrateCommittedAt(expectedPolicyMatches map[string][]PolicyMatch, now time.Time) {
+	for commit, matches := range expectedPolicyMatches {
+		for i, match := range matches {
+			committedAt := testCommitDateFor(commit, now)
+			match.CommittedAt = &committedAt
+			matches[i] = match
+		}
+	}
+}
+
+func testCommitDateFor(commit string, now time.Time) time.Time {
+	switch commit {
+	case "deadbeef01":
+		return now.Add(-time.Hour * 5)
+	case "deadbeef02":
+		return now.Add(-time.Hour * 5)
+	case "deadbeef03":
+		return now.Add(-time.Hour * 5)
+	case "deadbeef04":
+		return now.Add(-time.Hour * 5)
+	case "deadbeef07":
+		return now.Add(-time.Hour * 5)
+	case "deadbeef08":
+		return now.Add(-time.Hour * 5)
+	case "deadbeef05":
+		return now.Add(-time.Hour * 12)
+	case "deadbeef06":
+		return now.Add(-time.Hour * 15)
+	case "deadbeef09":
+		return now.Add(-time.Hour * 15)
+	default:
+	}
+
+	panic(fmt.Sprintf("unexpected commit date request for %q", commit))
 }

@@ -1,15 +1,12 @@
-import React, { useMemo } from 'react'
+import { FC } from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { useLocation, useNavigate, useParams } from 'react-router-dom-v5-compat'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Alert, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
-import { HeroPage } from '../../components/HeroPage'
 import { RepositoryFields, Scalars } from '../../graphql-operations'
 
 import { RepositoryCompareHeader } from './RepositoryCompareHeader'
@@ -17,17 +14,8 @@ import { RepositoryCompareOverviewPage } from './RepositoryCompareOverviewPage'
 
 import styles from './RepositoryCompareArea.module.scss'
 
-const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage
-        icon={MapSearchIcon}
-        title="404: Not Found"
-        subtitle="Sorry, the requested repository comparison page was not found."
-    />
-)
-
-interface RepositoryCompareAreaProps extends RouteComponentProps<{ spec: string }>, ThemeProps, BreadcrumbSetters {
+interface RepositoryCompareAreaProps extends ThemeProps, BreadcrumbSetters {
     repo?: RepositoryFields
-    history: H.History
 }
 
 /**
@@ -42,26 +30,25 @@ export interface RepositoryCompareAreaPageProps {
 
     /** The head of the comparison. */
     head: { repoName: string; repoID: Scalars['ID']; revision?: string | null }
-
-    /** The URL route prefix for the comparison. */
-    routePrefix: string
 }
+
+const BREADCRUMB = { key: 'compare', element: <>Compare</> }
 
 /**
  * Renders pages related to a repository comparison.
  */
-export const RepositoryCompareArea: React.FunctionComponent<RepositoryCompareAreaProps> = ({
-    repo,
-    useBreadcrumb,
-    match,
-    location,
-    isLightTheme,
-}) => {
-    useBreadcrumb(useMemo(() => ({ key: 'compare', element: <>Compare</> }), []))
+export const RepositoryCompareArea: FC<RepositoryCompareAreaProps> = props => {
+    const { repo, useBreadcrumb, isLightTheme } = props
+
+    const { '*': splat } = useParams<{ '*': string }>()
+    const location = useLocation()
+    const navigate = useNavigate()
+
+    useBreadcrumb(BREADCRUMB)
 
     let spec: { base: string | null; head: string | null } | null | undefined
-    if (match.params.spec) {
-        spec = parseComparisonSpec(decodeURIComponent(match.params.spec))
+    if (splat) {
+        spec = parseComparisonSpec(splat)
     }
 
     // Parse out the optional filePath search param, which is used to show only a single file in the compare view
@@ -76,30 +63,21 @@ export const RepositoryCompareArea: React.FunctionComponent<RepositoryCompareAre
         repo,
         base: { repoID: repo.id, repoName: repo.name, revision: spec?.base },
         head: { repoID: repo.id, repoName: repo.name, revision: spec?.head },
-        routePrefix: match.url,
     }
+
     return (
         <div className={classNames('container', styles.repositoryCompareArea)}>
             <RepositoryCompareHeader className="my-3" {...commonProps} />
             {spec === null ? (
                 <Alert variant="danger">Invalid comparison specifier</Alert>
             ) : (
-                <Switch>
-                    <Route
-                        path={`${match.url}`}
-                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                        exact={true}
-                        render={routeComponentProps => (
-                            <RepositoryCompareOverviewPage
-                                {...routeComponentProps}
-                                {...commonProps}
-                                path={path}
-                                isLightTheme={isLightTheme}
-                            />
-                        )}
-                    />
-                    <Route key="hardcoded-key" component={NotFoundPage} />
-                </Switch>
+                <RepositoryCompareOverviewPage
+                    {...commonProps}
+                    path={path}
+                    isLightTheme={isLightTheme}
+                    location={location}
+                    navigate={navigate}
+                />
             )}
         </div>
     )
@@ -109,9 +87,11 @@ function parseComparisonSpec(spec: string): { base: string | null; head: string 
     if (!spec.includes('...')) {
         return null
     }
-    const parts = spec.split('...', 2).map(decodeURIComponent)
+
+    const [base, head] = spec.split('...', 2)
+
     return {
-        base: parts[0] || null,
-        head: parts[1] || null,
+        base,
+        head,
     }
 }

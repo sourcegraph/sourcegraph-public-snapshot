@@ -171,6 +171,7 @@ body > div#page {
     flex-direction: column;
     min-height: 100vh;
     justify-content: space-between;
+    overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 /* Responsive */
 @media (max-width: 800px /* == var(--sidebar-breakpoint-width) */) {

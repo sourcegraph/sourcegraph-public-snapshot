@@ -29,6 +29,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
     React.PropsWithChildren<CodeInsightsDotComGetStartedProps>
 > = props => {
     const { telemetryService } = props
+    const isSourcegraphDotCom = window.context.sourcegraphDotComMode
 
     useEffect(() => {
         telemetryService.logViewEvent('CloudInsightsGetStartedPage')
@@ -41,16 +42,18 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                 <PageHeader
                     path={[{ icon: CodeInsightsIcon, text: 'Insights' }]}
                     actions={
-                        <Button
-                            as={Link}
-                            to={buildCloudTrialURL(props.authenticatedUser, 'insights')}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            variant="primary"
-                            onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'TryInsights' })}
-                        >
-                            Try insights
-                        </Button>
+                        isSourcegraphDotCom ? (
+                            <Button
+                                as={Link}
+                                to={buildCloudTrialURL(props.authenticatedUser, 'insights')}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="primary"
+                                onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'TryInsights' })}
+                            >
+                                Try insights
+                            </Button>
+                        ) : null
                     }
                     className="mb-4"
                 />

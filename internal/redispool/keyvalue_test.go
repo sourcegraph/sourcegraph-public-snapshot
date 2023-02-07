@@ -17,8 +17,14 @@ func TestRedisKeyValue(t *testing.T) {
 }
 
 func testKeyValue(t *testing.T, kv redispool.KeyValue) {
+	t.Parallel()
+
+	errWrongType := errors.New("WRONGTYPE")
+
 	// "strings" is the name of the classic group of commands in redis (get, set, ttl, etc). We call it classic since that is less confusing.
 	t.Run("classic", func(t *testing.T) {
+		t.Parallel()
+
 		require := require{TB: t}
 
 		// Redis returns nil on unset values
@@ -47,12 +53,6 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 		require.Works(kv.Set("funky", []byte{0, 10, 100, 255}))
 		require.Equal(kv.Get("funky"), []byte{0, 10, 100, 255})
 
-		// Ensure we fail hashes when used against non hashes.
-		require.Equal(kv.HGet("simple", "field"), errors.New("WRONGTYPE"))
-		if err := kv.HSet("simple", "field", "value"); !strings.Contains(err.Error(), "WRONGTYPE") {
-			t.Fatalf("expected wrongtype error, got %v", err)
-		}
-
 		// Incr
 		require.Works(kv.Set("incr-set", 5))
 		require.Works(kv.Incr("incr-set"))
@@ -62,6 +62,8 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 	})
 
 	t.Run("hash", func(t *testing.T) {
+		t.Parallel()
+
 		require := require{TB: t}
 
 		// Pretty much copy-pasta above tests but on a hash
@@ -92,6 +94,8 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 	})
 
 	t.Run("list", func(t *testing.T) {
+		t.Parallel()
+
 		require := require{TB: t}
 
 		// Redis behaviour on unset lists
@@ -111,6 +115,9 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 		require.AllEqual(kv.LRange("list", 0, -1), bytes("0", "1", "2", "3", "4"))
 		require.AllEqual(kv.LRange("list", -5, -1), bytes("0", "1", "2", "3", "4"))
 		require.AllEqual(kv.LRange("list", 0, 4), bytes("0", "1", "2", "3", "4"))
+
+		// If stop < start we return nothing
+		require.AllEqual(kv.LRange("list", -1, 0), bytes())
 
 		// Subsets
 		require.AllEqual(kv.LRange("list", 1, 3), bytes("1", "2", "3"))
@@ -132,17 +139,57 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 		require.AllEqual(kv.LRange("list", 0, 4), bytes("1", "2", "3"))
 		require.ListLen(kv, "list", 3)
 
+		// Trim all
+		require.Works(kv.LTrim("list", -1, -2))
+		require.AllEqual(kv.LRange("list", 0, 4), bytes())
+		require.ListLen(kv, "list", 0)
+
 		require.Works(kv.LPush("funky2D", []byte{100, 255}))
 		require.Works(kv.LPush("funky2D", []byte{0, 10}))
 		require.AllEqual(kv.LRange("funky2D", 0, -1), [][]byte{{0, 10}, {100, 255}})
 	})
 
-	t.Run("expire", func(t *testing.T) {
+	t.Run("empty", func(t *testing.T) {
+		t.Parallel()
+
 		require := require{TB: t}
 
+		// Strings group
+		require.Works(kv.Set("empty-number", 0))
+		require.Works(kv.Set("empty-string", ""))
+		require.Works(kv.Set("empty-bytes", []byte{}))
+		require.Equal(kv.Get("empty-number"), 0)
+		require.Equal(kv.Get("empty-string"), "")
+		require.Equal(kv.Get("empty-bytes"), "")
+
+		// List group. Once empty we should be able to do a Get without a
+		// wrongtype error.
+		require.Works(kv.LPush("empty-list", "here today gone tomorrow"))
+		require.Equal(kv.Get("empty-list"), errWrongType)
+		require.Works(kv.LTrim("empty-list", -1, -2))
+		require.Equal(kv.Get("empty-list"), nil)
+	})
+
+	t.Run("expire", func(t *testing.T) {
 		// Skips because of time.Sleep
 		if testing.Short() {
 			t.Skip()
+		}
+		t.Parallel()
+
+		require := require{TB: t}
+
+		// Set removes expire
+		{
+			k := "expires-set-reset"
+			require.Works(kv.SetEx(k, 60, "1"))
+			require.Equal(kv.Get(k), "1")
+			require.TTL(kv, k, 60)
+
+			require.Works(kv.Set(k, "2"))
+			require.Equal(kv.Get(k), "2")
+			require.TTL(kv, k, -1)
+
 		}
 
 		// SetEx, Expire and TTL
@@ -167,6 +214,116 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 		require.Equal(kv.Get("expires-set"), nil)
 		require.TTL(kv, "expires-setex", -2)
 		require.TTL(kv, "expires-set", -2)
+	})
+
+	t.Run("hash-expire", func(t *testing.T) {
+		// Skips because of time.Sleep
+		if testing.Short() {
+			t.Skip()
+		}
+		t.Parallel()
+
+		require := require{TB: t}
+
+		// Hash mutations keep expire
+		require.Works(kv.HSet("expires-unset-hash", "simple", "1"))
+		require.Works(kv.HSet("expires-set-hash", "simple", "1"))
+		require.Works(kv.Expire("expires-set-hash", 60))
+		require.TTL(kv, "expires-unset-hash", -1)
+		require.TTL(kv, "expires-set-hash", 60)
+		require.Equal(kv.HGet("expires-unset-hash", "simple"), "1")
+		require.Equal(kv.HGet("expires-set-hash", "simple"), "1")
+
+		require.Works(kv.HSet("expires-unset-hash", "simple", "2"))
+		require.Works(kv.HSet("expires-set-hash", "simple", "2"))
+		require.TTL(kv, "expires-unset-hash", -1)
+		require.TTL(kv, "expires-set-hash", 60)
+		require.Equal(kv.HGet("expires-unset-hash", "simple"), "2")
+		require.Equal(kv.HGet("expires-set-hash", "simple"), "2")
+
+		// Check expiration happens on hashes
+		require.Works(kv.Expire("expires-set-hash", 1))
+		time.Sleep(1100 * time.Millisecond)
+		require.Equal(kv.HGet("expires-set-hash", "simple"), nil)
+		require.TTL(kv, "expires-set-hash", -2)
+	})
+
+	t.Run("hash-expire", func(t *testing.T) {
+		// Skips because of time.Sleep
+		if testing.Short() {
+			t.Skip()
+		}
+		t.Parallel()
+
+		require := require{TB: t}
+
+		// Hash mutations keep expire
+		require.Works(kv.LPush("expires-unset-list", "1"))
+		require.Works(kv.LPush("expires-set-list", "1"))
+		require.Works(kv.Expire("expires-set-list", 60))
+		require.TTL(kv, "expires-unset-list", -1)
+		require.TTL(kv, "expires-set-list", 60)
+		require.AllEqual(kv.LRange("expires-unset-list", 0, -1), []string{"1"})
+		require.AllEqual(kv.LRange("expires-set-list", 0, -1), []string{"1"})
+
+		require.Works(kv.LPush("expires-unset-list", "2"))
+		require.Works(kv.LPush("expires-set-list", "2"))
+		require.TTL(kv, "expires-unset-list", -1)
+		require.TTL(kv, "expires-set-list", 60)
+		require.AllEqual(kv.LRange("expires-unset-list", 0, -1), []string{"2", "1"})
+		require.AllEqual(kv.LRange("expires-set-list", 0, -1), []string{"2", "1"})
+
+		// Check expiration happens on hashes
+		require.Works(kv.Expire("expires-set-list", 1))
+		time.Sleep(1100 * time.Millisecond)
+		require.Equal(kv.HGet("expires-set-list", "simple"), nil)
+		require.TTL(kv, "expires-set-list", -2)
+	})
+
+	t.Run("wrongtype", func(t *testing.T) {
+		t.Parallel()
+
+		require := require{TB: t}
+		requireWrongType := func(err error) {
+			t.Helper()
+			if err == nil || !strings.Contains(err.Error(), "WRONGTYPE") {
+				t.Fatalf("expected wrongtype error, got %v", err)
+			}
+		}
+
+		require.Works(kv.Set("wrongtype-string", "1"))
+		require.Works(kv.HSet("wrongtype-hash", "1", "1"))
+		require.Works(kv.LPush("wrongtype-list", "1"))
+
+		for _, k := range []string{"wrongtype-string", "wrongtype-hash", "wrongtype-list"} {
+			// Ensure we fail Get when used against non string group
+			if k != "wrongtype-string" {
+				require.Equal(kv.Get(k), errWrongType)
+				require.Equal(kv.GetSet(k, "2"), errWrongType)
+				require.Equal(kv.Get(k), errWrongType) // ensure GetSet didn't set
+				requireWrongType(kv.Incr(k))
+			}
+
+			// Ensure we fail hashes when used against non hashes.
+			if k != "wrongtype-hash" {
+				require.Equal(kv.HGet(k, "field"), errWrongType)
+				require.Equal(redispool.Value(kv.HGetAll(k)), errWrongType)
+				requireWrongType(kv.HSet(k, "field", "value"))
+			}
+
+			// Ensure we fail lists when used against non lists.
+			if k != "wrongtype-list" {
+				_, err := kv.LLen(k)
+				requireWrongType(err)
+				requireWrongType(kv.LPush(k, "1"))
+				requireWrongType(kv.LTrim(k, 1, 2))
+				require.Equal(redispool.Value(kv.LRange(k, 1, 2)), errWrongType)
+			}
+
+			// Ensure we can always override values with set
+			require.Works(kv.Set(k, "2"))
+			require.Equal(kv.Get(k), "2")
+		}
 	})
 }
 

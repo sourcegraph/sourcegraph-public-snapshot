@@ -14,7 +14,7 @@
     "captainSlackUsername": "keegan",
     "captainGitHubUsername": "keegancsmith",
     // Release versions
-    "previousRelease": "4.4.1",
+    "previousRelease": "4.4.2",
     "upcomingRelease": "4.5.0",
     "oneWorkingWeekBeforeRelease": "15 February 2023 10:00 PST",
     "threeWorkingDaysBeforeRelease": "17 February 2023 10:00 PST",
@@ -22,7 +22,7 @@
     "oneWorkingDayAfterRelease": "23 February 2023 10:00 PST",
     "oneWorkingWeekAfterRelease": "1 March 2023 10:00 PST",
     // Channel where messages from the tooling are posted
-    "slackAnnounceChannel": "eng-announce",
+    "slackAnnounceChannel": "announce-engineering",
     // Email for preparing calendar events
     "teamEmail": "team@sourcegraph.com",
     // Enable dry-running for certain features - useful for testing or sanity-checking.

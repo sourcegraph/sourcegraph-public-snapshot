@@ -77,13 +77,7 @@ func inferRustRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, 
 		return "", "", false
 	}
 
-	logger := log.Scoped("inferRustRepositoryAndRevision", "")
-	rustPkg, err := reposource.ParseRustVersionedPackage(pkg.Name)
-	if err != nil {
-		logger.Error("invalid rust package name in database", log.Error(err), log.String("pkg", pkg.Name))
-		return "", "", false
-	}
-
+	rustPkg := reposource.ParseRustVersionedPackage(pkg.Name)
 	return rustPkg.RepoName(), "v" + pkg.Version, true
 }
 
@@ -92,12 +86,7 @@ func inferPythonRepositoryAndRevision(pkg precise.Package) (api.RepoName, string
 		return "", "", false
 	}
 
-	logger := log.Scoped("inferPythonRepositoryAndRevision", "")
-	pythonPkg, err := reposource.ParsePythonPackageFromName(reposource.PackageName(pkg.Name))
-	if err != nil {
-		logger.Error("invalid python package name in database", log.Error(err), log.String("pkg", pkg.Name))
-		return "", "", false
-	}
+	pythonPkg := reposource.ParsePythonPackageFromName(reposource.PackageName(pkg.Name))
 
 	return pythonPkg.RepoName(), pkg.Version, true
 }
@@ -107,12 +96,7 @@ func inferRubyRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, 
 		return "", "", false
 	}
 
-	logger := log.Scoped("inferRubyRepositoryAndRevision", "")
-	rubyPkg, err := reposource.ParseRubyPackageFromName(reposource.PackageName(pkg.Name))
-	if err != nil {
-		logger.Error("invalid ruby package name in database", log.Error(err), log.String("pkg", pkg.Name))
-		return "", "", false
-	}
+	rubyPkg := reposource.ParseRubyPackageFromName(reposource.PackageName(pkg.Name))
 
 	return rubyPkg.RepoName(), pkg.Version, true
 }

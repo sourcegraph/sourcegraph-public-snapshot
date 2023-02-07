@@ -4,7 +4,7 @@ import { mdiMapSearch } from '@mdi/js'
 
 import { Link, Text, Icon } from '@sourcegraph/wildcard'
 
-export const EmptyPoliciesList: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
+export const EmptyPoliciesList: React.FunctionComponent<unknown> = () => (
     <Text alignment="center" className="text-muted w-100 mb-0 mt-1" data-testid="summary">
         <Icon className="mb-2" svgPath={mdiMapSearch} inline={false} aria-hidden={true} />
         <br />

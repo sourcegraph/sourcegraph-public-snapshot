@@ -9,8 +9,8 @@ The [developing observability page](../background-information/observability/inde
 ## Metrics
 
 Service-side, metrics should be made available over HTTP for Prometheus to scrape.
-By default, Prometheus expects metrics to be exported on `$SERVICEPORT/metrics` - for example, run your local Sourcegraph dev server and metrics should be available on `http://localhost:$SERVICEPORT/metrics`.
-How this is configured varies across the various [Sourcegraph deployment options](../../admin/deploy/index.md) - see [tracking a new service](#tracking-a-new-service).
+By default, Prometheus expects metrics to be exported on `$SERVICEPORT/metrics`—for example, run your local Sourcegraph dev server and metrics should be available on `http://localhost:$SERVICEPORT/metrics`.
+How this is configured varies across the various [Sourcegraph deployment options](../../admin/deploy/index.md)—see [tracking a new service](#tracking-a-new-service).
 
 ### Tracking a new service
 
@@ -23,7 +23,7 @@ metadata:
     sourcegraph.prometheus/scrape: "true"
 ```
 
-In [deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker), Prometheus relies on targets defined in the [`prometheus_targets`](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/prometheus/prometheus_targets.yml) configuration file - you will need to add your service here.
+In [deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker), Prometheus relies on targets defined in the [`prometheus_targets`](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/prometheus/prometheus_targets.yml) configuration file—you will need to add your service here.
 
 ## Alerts, dashboards, and documentation
 
@@ -38,7 +38,7 @@ To get started, you should read:
 
 ### Set up an observable
 
-Monitoring is build around "observables" - something you wish to observe.
+Monitoring is build around "observables"—something you wish to observe.
 The generator API exposes this concept through the [`Observable` type](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/docs/monitoring/monitoring#Observable).
 
 You can decide where to put your new observable by looking for an existing dashboard that your information should go in.
@@ -47,7 +47,7 @@ If you are just editing an existing observable,
 
 Existing dashboards can be viewed by either:
 
-- Visiting Grafana on an existing Sourcegraph instance that you have site admin permissions for, e.g. `example.sourcegraph.com/-/debug/grafana` - see the [metrics for site administrators documentation](../../admin/observability/metrics.md) for more details.
+- Visiting Grafana on an existing Sourcegraph instance that you have site admin permissions for, e.g. `example.sourcegraph.com/-/debug/grafana`—see the [metrics for site administrators documentation](../../admin/observability/metrics.md) for more details.
 - [Running the monitoring stack locally](../how-to/monitoring_local_dev.md)
 
 Once you have found a home for your observable, open that service's monitoring definition (e.g. `monitoring/frontend.go`, `monitoring/git_server.go`) in your editor.
@@ -110,7 +110,7 @@ This step is optional, but highly recommended.
 If you opt not to include an alert, you must explicitly set `NoAlert: true` and [provide relevant documentation for this observable](#add-documentation).
 
 To get started, refer to [understanding alerts](../../admin/observability/alerting.md#understanding-alerts) for what your alert should indicate.
-Then make a guess about what a good or bad value for your query is - it's OK if this isn't perfect, just do your best.
+Then make a guess about what a good or bad value for your query is—it's OK if this isn't perfect, just do your best.
 You can then use the [ObservableAlertDefinition](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/docs/monitoring/monitoring#ObservableAlertDefinition) to add an alert to your Observable, for example:
 
 ```diff
@@ -123,7 +123,7 @@ You can then use the [ObservableAlertDefinition](https://sourcegraph.com/github.
 }
 ```
 
-Options like only alerting after a certain duration (`.For(time.Duration)`) are also available - refer to the [monitoring library reference](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/docs/monitoring/monitoring#ObservableAlertDefinition).
+Options like only alerting after a certain duration (`.For(time.Duration)`) are also available—refer to the [monitoring library reference](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/docs/monitoring/monitoring#ObservableAlertDefinition).
 
 ### Add documentation
 

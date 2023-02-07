@@ -102,7 +102,11 @@ func (r *externalAccountResolver) PublicAccountData(ctx context.Context) (*exter
 	}
 
 	if r.account.Data != nil {
-		return NewExternalAccountDataResolver(ctx, r.account)
+		res, err := NewExternalAccountDataResolver(ctx, r.account)
+		if err != nil {
+			return nil, nil
+		}
+		return res, nil
 	}
 
 	return nil, nil

@@ -7,7 +7,7 @@ import (
 
 	sglog "github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -67,7 +67,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (u
 	logger := sglog.Scoped("authGetAndSaveUser", "get and save user authenticated by external providers")
 
 	userID, userSaved, extAcctSaved, safeErrMsg, err := func() (int32, bool, bool, string, error) {
-		if actor := actor.FromContext(ctx); actor.IsAuthenticated() {
+		if actor := sgactor.FromContext(ctx); actor.IsAuthenticated() {
 			return actor.UID, false, false, "", nil
 		}
 
@@ -106,7 +106,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (u
 			return 0, false, false, "It looks like this is your first time signing in with this external identity. Sourcegraph couldn't link it to an existing user, because no verified email was provided. Ask your site admin to configure the auth provider to include the user's verified email on sign-in.", lookupByExternalErr
 		}
 
-		act := &actor.Actor{
+		act := &sgactor.Actor{
 			SourcegraphOperator: op.ExternalAccount.ServiceType == auth.SourcegraphOperatorProviderType,
 		}
 
@@ -116,8 +116,8 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (u
 		// NOTE: It is important to propagate the correct context that carries the
 		// information of the actor, especially whether the actor is a Sourcegraph
 		// operator or not.
-		ctx = actor.WithActor(ctx, act)
-		userID, err := externalAccountsStore.CreateUserAndSave(ctx, op.UserProps, op.ExternalAccount, op.ExternalAccountData)
+		ctx = sgactor.WithActor(ctx, act)
+		user, err := externalAccountsStore.CreateUserAndSave(ctx, op.UserProps, op.ExternalAccount, op.ExternalAccountData)
 		switch {
 		case database.IsUsernameExists(err):
 			return 0, false, false, fmt.Sprintf("Username %q already exists, but no verified email matched %q", op.UserProps.Username, op.UserProps.Email), err
@@ -126,16 +126,16 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (u
 		case err != nil:
 			return 0, false, false, "Unable to create a new user account due to a unexpected error. Ask a site admin for help.", err
 		}
-		act.UID = userID
+		act.UID = user.ID
 
 		if err = db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
-			UserID: userID,
+			UserID: user.ID,
 			Perm:   authz.Read,
 			Type:   authz.PermRepos,
 		}); err != nil {
 			logger.Error(
 				"failed to grant user pending permissions",
-				sglog.Int32("userID", userID),
+				sglog.Int32("userID", user.ID),
 				sglog.Error(err),
 			)
 			// OK to continue, since this is a best-effort to improve the UX with some initial permissions available.
@@ -177,12 +177,12 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (u
 			)
 		}
 
-		return userID, true, true, "", nil
+		return user.ID, true, true, "", nil
 	}()
 	if err != nil {
 		const eventName = "ExternalAuthSignupFailed"
 		serviceTypeArg := json.RawMessage(fmt.Sprintf(`{"serviceType": %q}`, op.ExternalAccount.ServiceType))
-		if logErr := usagestats.LogBackendEvent(db, actor.FromContext(ctx).UID, deviceid.FromContext(ctx), eventName, serviceTypeArg, serviceTypeArg, featureflag.GetEvaluatedFlagSet(ctx), nil); logErr != nil {
+		if logErr := usagestats.LogBackendEvent(db, sgactor.FromContext(ctx).UID, deviceid.FromContext(ctx), eventName, serviceTypeArg, serviceTypeArg, featureflag.GetEvaluatedFlagSet(ctx), nil); logErr != nil {
 			logger.Error(
 				"failed to log event",
 				sglog.String("eventName", eventName),

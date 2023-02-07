@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/go-diff/diff"
+	godiff "github.com/sourcegraph/go-diff/diff"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -145,7 +145,7 @@ type ChangesetAssertions struct {
 	ExternalID            string
 	ExternalBranch        string
 	ExternalForkNamespace string
-	DiffStat              *diff.Stat
+	DiffStat              *godiff.Stat
 	Closing               bool
 
 	Title string

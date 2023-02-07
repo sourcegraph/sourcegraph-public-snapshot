@@ -1,0 +1,15 @@
+{
+  "id": 19,
+  "Comments": [
+   {
+    "id": 1,
+    "publishedDate": "2023-01-31T23:59:23.023Z",
+    "lastUpdatedOn": "0001-01-01T00:00:00Z",
+    "content": "new comment",
+    "commentType": "text"
+   }
+  ],
+  "publishedDate": "2023-01-31T23:59:23.023Z",
+  "lastUpdatedOn": "0001-01-01T00:00:00Z",
+  "isDeleted": false
+ }

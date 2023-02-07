@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
 
-import * as H from 'history'
+import { useLocation } from 'react-router-dom-v5-compat'
 import { EMPTY, from, Observable, ReplaySubject, Subscription } from 'rxjs'
 import { distinct, map, mapTo, switchMap, tap } from 'rxjs/operators'
 
@@ -40,8 +40,6 @@ interface Props
         PlatformContextProps,
         Pick<CodeIntelligenceProps, 'useCodeIntel'>,
         TelemetryProps {
-    location: H.Location
-    history: H.History
     repoID: Scalars['ID']
     repoName: string
     commitID: string
@@ -60,9 +58,6 @@ interface PanelSubject extends AbsoluteRepoFile, ModeSpec, Partial<UIPositionSpe
      * panels to be re-rendered when this state changes.
      */
     hash: string
-
-    history: H.History
-    location: H.Location
 }
 
 /**
@@ -76,8 +71,6 @@ function useBlobPanelViews({
     mode,
     filePath,
     repoID,
-    location,
-    history,
     settingsCascade,
     isLightTheme,
     platformContext,
@@ -150,6 +143,7 @@ function useBlobPanelViews({
         [activeCodeEditorPositions, maxPanelResults]
     )
 
+    const location = useLocation()
     // Source for history panel
     const panelSubject = useMemo(() => {
         const parsedHash = parseQueryAndHash(location.search, location.hash)
@@ -165,10 +159,8 @@ function useBlobPanelViews({
                     ? { line: parsedHash.line, character: parsedHash.character || 0 }
                     : undefined,
             hash: location.hash,
-            history,
-            location,
         }
-    }, [commitID, filePath, history, location, mode, repoID, repoName, revision])
+    }, [commitID, filePath, location, mode, repoID, repoName, revision])
 
     const panelSubjectChanges = useMemo(() => new ReplaySubject<PanelSubject>(1), [])
     useEffect(() => {
@@ -181,7 +173,7 @@ function useBlobPanelViews({
                 {
                     id: 'history',
                     provider: panelSubjectChanges.pipe(
-                        map(({ repoID, revision, filePath, history, location }) => ({
+                        map(({ repoID, revision, filePath }) => ({
                             title: 'History',
                             content: '',
                             priority: 150,
@@ -193,8 +185,6 @@ function useBlobPanelViews({
                                     repoID={repoID}
                                     revision={revision}
                                     filePath={filePath}
-                                    history={history}
-                                    location={location}
                                     preferAbsoluteTimestamps={preferAbsoluteTimestamps}
                                     defaultPageSize={defaultPageSize}
                                 />

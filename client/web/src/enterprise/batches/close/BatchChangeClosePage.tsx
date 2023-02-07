@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react'
 
 import { subDays } from 'date-fns'
-import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
@@ -31,8 +30,6 @@ export interface BatchChangeClosePageProps {
      * The batch change name.
      */
     batchChangeName: BatchChangeFields['name']
-    history: H.History
-    location: H.Location
 
     /** For testing only. */
     fetchBatchChangeByNamespace?: typeof _fetchBatchChangeByNamespace
@@ -47,8 +44,6 @@ export interface BatchChangeClosePageProps {
 export const BatchChangeClosePage: React.FunctionComponent<React.PropsWithChildren<BatchChangeClosePageProps>> = ({
     namespaceID,
     batchChangeName,
-    history,
-    location,
     fetchBatchChangeByNamespace = _fetchBatchChangeByNamespace,
     queryChangesets,
     queryExternalChangesetWithFileDiffs,
@@ -119,7 +114,6 @@ export const BatchChangeClosePage: React.FunctionComponent<React.PropsWithChildr
                     batchChangeURL={batchChange.url}
                     closeChangesets={closeChangesets}
                     setCloseChangesets={setCloseChangesets}
-                    history={history}
                     closeBatchChange={closeBatchChange}
                     viewerCanAdminister={batchChange.viewerCanAdminister}
                     totalCount={totalCount}
@@ -127,8 +121,6 @@ export const BatchChangeClosePage: React.FunctionComponent<React.PropsWithChildr
             )}
             <BatchChangeCloseChangesetsList
                 batchChangeID={batchChange.id}
-                history={history}
-                location={location}
                 viewerCanAdminister={batchChange.viewerCanAdminister}
                 queryChangesets={queryChangesets}
                 queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}

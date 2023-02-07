@@ -14,9 +14,9 @@ import (
 )
 
 func init() {
-	scipMigratorUploadBatchSize = 1
-	scipMigratorDocumentBatchSize = 4
-	scipMigratorResultChunkDefaultCacheSize = 16
+	scipMigratorUploadReaderBatchSize = 1
+	scipMigratorDocumentReaderBatchSize = 4
+	scipMigratorResultChunkReaderCacheSize = 16
 }
 
 func TestSCIPMigrator(t *testing.T) {

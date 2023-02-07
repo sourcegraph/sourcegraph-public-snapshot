@@ -29,6 +29,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
             return (
                 <SettingsArea
                     {...props}
+                    url={props.match.url}
                     subject={props.user}
                     isLightTheme={props.isLightTheme}
                     extraHeader={

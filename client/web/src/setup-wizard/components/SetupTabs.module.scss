@@ -1,0 +1,50 @@
+.tabs {
+    background-color: unset;
+}
+
+.header-list {
+    display: flex;
+    gap: 1rem !important;
+}
+
+.tab {
+    &[data-selected] {
+        color: var(--black) !important;
+        border-bottom: 2px solid var(--primary) !important;
+    }
+
+    &--completed {
+        color: var(--black) !important;
+        border-bottom: 2px solid var(--primary) !important;
+    }
+
+    &[data-reach-tab] {
+        color: var(--black) !important;
+
+        &:hover {
+            border-bottom: none !important;
+        }
+    }
+}
+
+.panels {
+    margin-top: 0;
+    padding: 1rem;
+    border-top-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    border-top: none !important;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    margin: 1rem -1rem -1rem -1rem;
+    border-top: 1px solid var(--border-color);
+
+    &-skip {
+        margin-right: auto;
+    }
+}

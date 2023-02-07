@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	insightsstore "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
@@ -22,7 +22,7 @@ func Test_NewBackfill(t *testing.T) {
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	ctx := context.Background()
-	insightStore := store.NewInsightStore(insightsDB)
+	insightStore := insightsstore.NewInsightStore(insightsDB)
 	now := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
 	clock := glock.NewMockClockAt(now)
 	store := newBackfillStoreWithClock(insightsDB, clock)
@@ -41,7 +41,7 @@ func Test_NewBackfill(t *testing.T) {
 	backfill, err := store.NewBackfill(ctx, series)
 	require.NoError(t, err)
 
-	autogold.Want("backfill loaded successfully", SeriesBackfill{Id: 1, SeriesId: 1, State: BackfillState("new")}).Equal(t, *backfill)
+	autogold.Want("backfill loaded successfully", SeriesBackfill{Id: 1, SeriesId: 1, State: "new"}).Equal(t, *backfill)
 
 	var updated *SeriesBackfill
 	t.Run("set scope on newly created backfill", func(t *testing.T) {
@@ -51,7 +51,7 @@ func Test_NewBackfill(t *testing.T) {
 		autogold.Want("set scope on newly created backfill", &SeriesBackfill{
 			Id: 1, SeriesId: 1, repoIteratorId: 1,
 			EstimatedCost: 100,
-			State:         BackfillState("processing"),
+			State:         "processing",
 		}).Equal(t, updated)
 	})
 
@@ -59,14 +59,14 @@ func Test_NewBackfill(t *testing.T) {
 		err := backfill.SetFailed(ctx, store)
 		require.NoError(t, err)
 
-		autogold.Want("set state to failed", &SeriesBackfill{Id: 1, SeriesId: 1, State: BackfillState("failed")}).Equal(t, backfill)
+		autogold.Want("set state to failed", &SeriesBackfill{Id: 1, SeriesId: 1, State: "failed"}).Equal(t, backfill)
 	})
 
 	t.Run("set state to completed", func(t *testing.T) {
 		err := backfill.SetCompleted(ctx, store)
 		require.NoError(t, err)
 
-		autogold.Want("set state to completed", &SeriesBackfill{Id: 1, SeriesId: 1, State: BackfillState("completed")}).Equal(t, backfill)
+		autogold.Want("set state to completed", &SeriesBackfill{Id: 1, SeriesId: 1, State: "completed"}).Equal(t, backfill)
 	})
 
 	t.Run("load repo iterator", func(t *testing.T) {

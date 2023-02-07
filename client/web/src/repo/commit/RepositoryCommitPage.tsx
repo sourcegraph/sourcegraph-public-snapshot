@@ -1,7 +1,7 @@
 import React, { useMemo, useCallback, useEffect } from 'react'
 
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router'
+import { useParams } from 'react-router-dom-v5-compat'
 import { Observable } from 'rxjs'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
@@ -44,12 +44,7 @@ const COMMIT_QUERY = gql`
     ${gitCommitFragment}
 `
 
-interface RepositoryCommitPageProps
-    extends RouteComponentProps<{ revspec: string }>,
-        TelemetryProps,
-        PlatformContextProps,
-        ThemeProps,
-        SettingsCascadeProps {
+interface RepositoryCommitPageProps extends TelemetryProps, PlatformContextProps, ThemeProps, SettingsCascadeProps {
     repo: RepositoryFields
     onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 }
@@ -58,10 +53,16 @@ export type { DiffMode } from '@sourcegraph/shared/src/settings/temporary/diffMo
 
 /** Displays a commit. */
 export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageProps> = props => {
+    const params = useParams<{ revspec: string }>()
+
+    if (!params.revspec) {
+        throw new Error('Missing `revspec` param!')
+    }
+
     const { data, error, loading } = useQuery<RepositoryCommitResult, RepositoryCommitVariables>(COMMIT_QUERY, {
         variables: {
             repo: props.repo.id,
-            revspec: props.match.params.revspec,
+            revspec: params.revspec,
         },
     })
 
@@ -102,7 +103,7 @@ export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageP
 
     return (
         <div data-testid="repository-commit-page" className={classNames('p-3', styles.repositoryCommitPage)}>
-            <PageTitle title={commit ? commit.subject : `Commit ${props.match.params.revspec}`} />
+            <PageTitle title={commit ? commit.subject : `Commit ${params.revspec}`} />
             {loading ? (
                 <LoadingSpinner className="mt-2" />
             ) : error || !commit ? (
@@ -137,8 +138,6 @@ export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageP
                         hideSearch={true}
                         noSummaryIfAllNodesVisible={true}
                         withCenteredSummary={true}
-                        history={props.history}
-                        location={props.location}
                         cursorPaging={true}
                     />
                 </>
