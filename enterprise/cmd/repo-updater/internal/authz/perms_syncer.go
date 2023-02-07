@@ -577,7 +577,7 @@ func (s *PermsSyncer) saveUserPermsForAccount(ctx context.Context, userID int32,
 
 	perms := []authz.Permission{}
 	for _, repoID := range repoIDs {
-		p.IDs[int32(repoID)] = struct{}{}
+		p.IDs[repoID] = struct{}{}
 		perms = append(perms, authz.Permission{
 			UserID:            userID,
 			ExternalAccountID: acctID,
@@ -660,7 +660,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		}
 
 		for _, repoID := range repoIDs {
-			p.IDs[int32(repoID)] = struct{}{}
+			p.IDs[repoID] = struct{}{}
 		}
 	}
 

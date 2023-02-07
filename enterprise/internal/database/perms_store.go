@@ -409,7 +409,7 @@ func (s *permsStore) SetUserRepoPermissions(ctx context.Context, p []authz.Permi
 		save(&err, f...)
 	}()
 
-	if p == nil || len(p) == 0 {
+	if len(p) == 0 {
 		return nil
 	}
 
