@@ -23,7 +23,7 @@ func processIgnores(ignores []string, dst string) error {
 		return nil
 	}
 		gitignorePath := filepath.Join(dst, "info", "exclude")
-		gitignore_file, err := os.Create(gitignore_path)
+		gitignoreFile, err := os.Create(gitignorePath)
 		if err != nil {
 			return err
 		}
