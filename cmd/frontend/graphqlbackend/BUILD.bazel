@@ -4,7 +4,6 @@ load("@aspect_rules_js//js:defs.bzl", "js_library")
 package(default_visibility = [
     "//client/shared:__subpackages__",
     "//cmd/frontend:__subpackages__",
-    "//dev/gqltest:__subpackages__",
     "//enterprise:__subpackages__",
 ])
 
@@ -16,7 +15,7 @@ js_library(
 )
 
 go_library(
-    name = "graphqlbackend",
+    name- [x] awscli we can remove = "graphqlbackend",
     srcs = [
         "access_token.go",
         "access_tokens.go",
