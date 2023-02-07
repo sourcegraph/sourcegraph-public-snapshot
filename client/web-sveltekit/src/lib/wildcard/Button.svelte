@@ -4,9 +4,9 @@
     // the default implementation is used.
     import type { HTMLButtonAttributes } from 'svelte/elements'
     interface $$Props extends HTMLButtonAttributes {
-        variant?: (typeof BUTTON_VARIANTS)[number]
-        size?: (typeof BUTTON_SIZES)[number]
-        display?: (typeof BUTTON_DISPLAY)[number]
+        variant?: typeof BUTTON_VARIANTS[number]
+        size?: typeof BUTTON_SIZES[number]
+        display?: typeof BUTTON_DISPLAY[number]
         outline?: boolean
     }
 
