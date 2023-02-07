@@ -2,19 +2,19 @@ import {
     useRef,
     Ref,
     createContext,
-    useState,
     FC,
     ReactNode,
     HTMLAttributes,
     useMemo,
     useContext,
     useCallback,
+    useEffect,
 } from 'react'
 
 import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import { createPortal } from 'react-dom'
-import { useNavigate, Routes, Route, Navigate } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate, Routes, Route, Navigate, matchPath } from 'react-router-dom-v5-compat'
 
 import { Button, Icon } from '@sourcegraph/wildcard'
 
@@ -45,16 +45,51 @@ interface SetupStepsProps {
     onStepChange: (nextStep: StepConfiguration) => void
 }
 
+interface SetupStepURLContext {
+    currentStep: StepConfiguration
+    activeStepIndex: number
+}
+
 export const SetupStepsRoot: FC<SetupStepsProps> = props => {
     const { initialStepId, steps, onStepChange } = props
 
     const navigate = useNavigate()
-    const [stepId, setStepId] = useState(initialStepId)
+    const location = useLocation()
     const nextButtonPortalRef = useRef<HTMLDivElement>(null)
 
-    const rawActiveStep = steps.findIndex(step => step.id === stepId)
-    const activeStepIndex = rawActiveStep !== -1 ? rawActiveStep : 0
-    const availableSteps = steps.filter((step, index) => index <= activeStepIndex)
+    // Resolve current setup step and its index by URL matches
+    const { currentStep, activeStepIndex } = useMemo<SetupStepURLContext>(() => {
+        // Try to find step by URL based on available steps
+        const urlStepIndex = steps.findIndex(step => matchPath(location.pathname, step.path) !== null)
+
+        if (urlStepIndex !== -1) {
+            return {
+                activeStepIndex: urlStepIndex,
+                currentStep: steps[urlStepIndex],
+            }
+        }
+
+        // Try to find step by pre-saved settings if URL doesn't resolve any step
+        const savedStepIndex = steps.findIndex(step => step.id === initialStepId)
+
+        if (savedStepIndex !== -1) {
+            return {
+                activeStepIndex: savedStepIndex,
+                currentStep: steps[savedStepIndex],
+            }
+        }
+
+        // Fallback on the last available step if URL doesn't match any step and we
+        // don't have any pre-saved step
+        return {
+            activeStepIndex: availableSteps.length - 1,
+            currentStep: availableSteps[availableSteps.length - 1],
+        }
+    }, [location, initialStepId, steps])
+
+    useEffect(() => {
+        onStepChange(currentStep)
+    }, [currentStep, onStepChange])
 
     const handleGoToNextStep = useCallback(() => {
         const nextStepIndex = activeStepIndex + 1
@@ -62,11 +97,9 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
         if (nextStepIndex < steps.length) {
             const nextStep = steps[nextStepIndex]
 
-            setStepId(nextStep.id)
             navigate(nextStep.path)
-            onStepChange(nextStep)
         }
-    }, [activeStepIndex, steps, navigate, onStepChange])
+    }, [activeStepIndex, steps, navigate])
 
     const handleGoToPrevStep = useCallback(() => {
         const prevStepIndex = activeStepIndex - 1
@@ -74,11 +107,9 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
         if (prevStepIndex >= 0) {
             const prevStep = steps[prevStepIndex]
 
-            setStepId(prevStep.id)
             navigate(prevStep.path)
-            onStepChange(prevStep)
         }
-    }, [activeStepIndex, steps, navigate, onStepChange])
+    }, [activeStepIndex, steps, navigate])
 
     const cachedContext = useMemo(
         () => ({
@@ -95,10 +126,10 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
                 <SetupStepsHeader steps={steps} activeStepIndex={activeStepIndex} />
                 <div className={styles.content}>
                     <Routes>
-                        {availableSteps.map(step => (
+                        {steps.map(step => (
                             <Route key="hardcoded-key" path={step.path} element={step.render()} />
                         ))}
-                        <Route path="*" element={<Navigate to={steps[activeStepIndex].path} />} />
+                        <Route path="*" element={<Navigate to={currentStep.path} />} />
                     </Routes>
                 </div>
                 <SetupStepsFooter
