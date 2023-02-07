@@ -207,6 +207,31 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
         message:
           "Spreading props can be unsafe. Prefer destructuring the props object, or continue only if you're sure.",
       },
+      {
+        selector: 'ImportDeclaration[source.value="react-router"]',
+        message:
+          'Use `react-router-dom-v5-compat` instead. We are in the process of migrating from react-router v5 to v6. More info https://github.com/sourcegraph/sourcegraph/issues/33834',
+      },
+      {
+        selector: 'CallExpression[callee.name="useHistory"]',
+        message:
+          'Use `useNavigate` from `react-router-dom-v5-compat` if possible. We are in the process of migrating from react-router v5 to v6. More info https://github.com/sourcegraph/sourcegraph/issues/33834',
+      },
+      {
+        selector: 'ImportSpecifier[imported.name="RouteDescriptor"]',
+        message:
+          'Use `RouteV6Descriptor` instead. We are in the process of migrating from react-router v5 to v6. More info https://github.com/sourcegraph/sourcegraph/issues/33834',
+      },
+      {
+        selector: 'ImportSpecifier[imported.name="RouteComponentProps"]',
+        message:
+          'Use `react-router-dom-v5-compat` hooks instead. We are in the process of migrating from react-router v5 to v6. More info https://github.com/sourcegraph/sourcegraph/issues/33834',
+      },
+      {
+        selector: 'TSInterfaceHeritage[expression.name="RouteComponentProps"]',
+        message:
+          'Use `react-router-dom-v5-compat` hooks instead. We are in the process of migrating from react-router v5 to v6. More info https://github.com/sourcegraph/sourcegraph/issues/33834',
+      },
     ],
     // https://reactjs.org/blog/2020/09/22/introducing-the-new-jsx-transform.html#eslint
     'react/jsx-uses-react': 'off',

@@ -1,6 +1,5 @@
 import * as React from 'react'
 
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Routes, Route, useParams, useLocation, useNavigate } from 'react-router-dom-v5-compat'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -12,7 +11,7 @@ import { AuthenticatedUser } from '../auth'
 import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
 import { BatchChangesProps } from '../batches'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../components/Breadcrumbs'
-import { HeroPage } from '../components/HeroPage'
+import { NotFoundPage } from '../components/HeroPage'
 
 import { OrgArea, type OrgAreaProps, OrgAreaRoute } from './area/OrgArea'
 import { OrgAreaHeaderNavItem } from './area/OrgHeader'
@@ -20,14 +19,6 @@ import { OrgInvitationPage } from './invitations/OrgInvitationPage'
 import { NewOrganizationPage } from './new/NewOrganizationPage'
 import { OrgSettingsAreaRoute } from './settings/OrgSettingsArea'
 import { OrgSettingsSidebarItems } from './settings/OrgSettingsSidebar'
-
-const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage
-        icon={MapSearchIcon}
-        title="404: Not Found"
-        subtitle="Sorry, the requested organization page was not found."
-    />
-)
 
 export interface Props
     extends PlatformContextProps,
@@ -56,7 +47,7 @@ const AuthenticatedOrgsArea: React.FunctionComponent<React.PropsWithChildren<Pro
         )}
         <Route path="invitation/:token" element={<OrgInvitationPage {...props} />} />
         <Route path=":name/*" element={<OrgAreaWithRouteProps {...props} />} />
-        <Route element={<NotFoundPage />} />
+        <Route element={<NotFoundPage pageType="organization" />} />
     </Routes>
 )
 

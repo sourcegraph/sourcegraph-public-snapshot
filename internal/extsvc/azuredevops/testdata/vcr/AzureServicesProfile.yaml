@@ -8,18 +8,18 @@ interactions:
     url: https://app.vssps.visualstudio.com/_apis/profile/profiles/me?api-version=7.0
     method: GET
   response:
-    body: '{"displayName":"testuser","publicAlias":"n/a","emailAddress":"testuser@sourcegraph.com","coreRevision":411938451,"timeStamp":"2023-01-20T19:20:51.6433333+00:00","id":"testuserID","revision":411938451}'
+    body: '{"displayName":"idan.varsano","publicAlias":"473dec3e-03d7-6147-b106-0b0a7f766a92","emailAddress":"idan.varsano@sourcegraph.com","coreRevision":411938451,"timeStamp":"2023-01-20T19:20:51.6433333+00:00","id":"473dec3e-03d7-6147-b106-0b0a7f766a92","revision":411938451}'
     headers:
       Access-Control-Expose-Headers:
       - Request-Context
       Activityid:
-      - f821b5ff-fbd9-40bc-840e-4ff946b7e4e4
+      - 88152494-f8a1-4314-b2eb-4a210fb00d73
       Cache-Control:
       - no-cache, no-store, must-revalidate
       Content-Type:
       - application/json; charset=utf-8; api-version=7.0
       Date:
-      - Wed, 25 Jan 2023 23:45:55 GMT
+      - Wed, 01 Feb 2023 16:48:43 GMT
       Etag:
       - '"0"'
       Expires:
@@ -44,13 +44,13 @@ interactions:
       X-Frame-Options:
       - SAMEORIGIN
       X-Msedge-Ref:
-      - 'Ref A: 06AA28D1910B40148D6C42F9BB43B4BE Ref B: YTO01EDGE0721 Ref C: 2023-01-25T23:45:56Z'
+      - 'Ref A: 06AC2BB714854391AB2463BD25CB0D68 Ref B: YTO01EDGE0515 Ref C: 2023-02-01T16:48:44Z'
       X-Tfs-Processid:
-      - c90b9da1-6ace-4793-9002-24d86f225712
+      - b4314765-47f6-4a4e-aa52-8525ff053667
       X-Tfs-Session:
-      - f821b5ff-fbd9-40bc-840e-4ff946b7e4e4
+      - 88152494-f8a1-4314-b2eb-4a210fb00d73
       X-Vss-E2eid:
-      - f821b5ff-fbd9-40bc-840e-4ff946b7e4e4
+      - 88152494-f8a1-4314-b2eb-4a210fb00d73
       X-Vss-Senderdeploymentid:
       - a5ca35eb-148e-4ccd-bbb3-d31576d75958
       X-Vss-Userdata:

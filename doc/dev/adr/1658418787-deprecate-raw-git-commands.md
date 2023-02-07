@@ -16,4 +16,5 @@ It should no longer be possible to send "raw" commands to gitserver. All communi
 
 When new functionality is required, it should be added to the gitserver client interface or existing methods should be updated. 
 
-Currently, the interface is pretty large but, we have plans to clean it up over time.
+Currently, [the interface](../../dev/background-api/gitserver.md) is pretty large but we have plans to clean it up over time.
+

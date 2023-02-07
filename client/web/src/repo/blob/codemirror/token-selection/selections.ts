@@ -22,6 +22,7 @@ export const syncOccurrenceWithURL: Extension = ViewPlugin.fromClass(
     class implements PluginValue {
         private onDestroy: H.UnregisterCallback
         constructor(public view: EditorView) {
+            // TODO(valery): RR6
             const history = view.state.facet(blobPropsFacet).history
             this.onDestroy = history.listen(location => this.onLocation(location))
         }

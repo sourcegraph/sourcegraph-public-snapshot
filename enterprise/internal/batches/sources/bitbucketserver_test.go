@@ -129,7 +129,7 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 		exists bool
 	}{
 		{
-			name: "abbreviated refs",
+			name: "abbreviated_refs",
 			cs: &Changeset{
 				Title:      "This is a test PR",
 				Body:       "This is the body of a test PR",
@@ -153,7 +153,7 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 			},
 		},
 		{
-			name: "already exists",
+			name: "already_exists",
 			cs: &Changeset{
 				Title:      "This is a test PR",
 				Body:       "This is the body of a test PR",

@@ -112,7 +112,7 @@ func scheduleJobs(ctx context.Context, db database.DB, logger log.Logger) (int, 
 	logger.Info("scheduling permission syncs", log.Int("users", len(schedule.Users)), log.Int("repos", len(schedule.Repos)))
 
 	for _, u := range schedule.Users {
-		opts := database.PermissionSyncJobOpts{Reason: u.reason, Priority: u.priority}
+		opts := database.PermissionSyncJobOpts{Reason: u.reason, Priority: u.priority, NoPerms: u.noPerms}
 		if err := store.CreateUserSyncJob(ctx, u.userID, opts); err != nil {
 			logger.Error(fmt.Sprintf("failed to create sync job for user (%d)", u.userID), log.Error(err))
 			continue
@@ -120,7 +120,7 @@ func scheduleJobs(ctx context.Context, db database.DB, logger log.Logger) (int, 
 	}
 
 	for _, r := range schedule.Repos {
-		opts := database.PermissionSyncJobOpts{Reason: r.reason, Priority: r.priority}
+		opts := database.PermissionSyncJobOpts{Reason: r.reason, Priority: r.priority, NoPerms: r.noPerms}
 		if err := store.CreateRepoSyncJob(ctx, r.repoID, opts); err != nil {
 			logger.Error(fmt.Sprintf("failed to create sync job for repo (%d)", r.repoID), log.Error(err))
 			continue

@@ -552,13 +552,13 @@ func (u *userStore) DeleteList(ctx context.Context, ids []int32) (err error) {
 	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM names WHERE user_id IN (%s)", idsCond)); err != nil {
 		return err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE access_tokens SET deleted_at=now() WHERE subject_user_id IN (%s) OR creator_user_id IN (%s)", idsCond, idsCond)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE access_tokens SET deleted_at=now() WHERE deleted_at IS NULL AND (subject_user_id IN (%s) OR creator_user_id IN (%s))", idsCond, idsCond)); err != nil {
 		return err
 	}
 	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM user_emails WHERE user_id IN (%s)", idsCond)); err != nil {
 		return err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE user_external_accounts SET deleted_at=now() WHERE user_id IN (%s) AND deleted_at IS NULL", idsCond)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE user_external_accounts SET deleted_at=now() WHERE deleted_at IS NULL AND user_id IN (%s) AND deleted_at IS NULL", idsCond)); err != nil {
 		return err
 	}
 	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE org_invitations SET deleted_at=now() WHERE deleted_at IS NULL AND (sender_user_id IN (%s) OR recipient_user_id IN (%s))", idsCond, idsCond)); err != nil {
@@ -704,13 +704,26 @@ func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) (_ []int3
 	if err := tx.Exec(ctx, sqlf.Sprintf("INSERT INTO names(name, user_id) SELECT username, id FROM users WHERE id IN(%s)", idsCond)); err != nil {
 		return nil, err
 	}
+
+	const updateAccessTokensQuery = `
+	UPDATE access_tokens as a
+	SET deleted_at = null
+	FROM users as u
+	WHERE a.creator_user_id = u.id
+	AND a.deleted_at >= u.deleted_at
+	AND a.deleted_at <= u.deleted_at + interval '10 second'
+	AND (a.creator_user_id IN (%s) OR a.subject_user_id IN (%s))
+	`
+	if err := tx.Exec(ctx, sqlf.Sprintf(updateAccessTokensQuery, idsCond, idsCond)); err != nil {
+		return nil, err
+	}
+
 	const updateUserExtAccQuery = `
-	UPDATE user_external_accounts
-	SET deleted_at = NULL
-	FROM user_external_accounts a
-	INNER JOIN users u
-	on a.user_id = u.id
-	WHERE a.deleted_at >= u.deleted_at
+	UPDATE user_external_accounts AS a
+	SET deleted_at = NULL, updated_at = now()
+	FROM users AS u
+	WHERE a.user_id = u.id
+	AND a.deleted_at >= u.deleted_at
 	AND a.deleted_at <= u.deleted_at + interval '10 second'
 	AND a.user_id IN (%s)
 	`
@@ -718,13 +731,11 @@ func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) (_ []int3
 		return nil, err
 	}
 	const updateOrgInvQuery = `
-	UPDATE org_invitations
+	UPDATE org_invitations AS o
 	SET deleted_at = NULL
-	FROM org_invitations o
-	INNER JOIN users u
-	on o.recipient_user_id = u.id
-	or o.sender_user_id = u.id
-	WHERE o.deleted_at >= u.deleted_at
+	FROM users  AS u
+	WHERE o.recipient_user_id = u.id
+	AND o.deleted_at >= u.deleted_at
 	AND o.deleted_at <= u.deleted_at + interval '10 second'
 	AND (o.sender_user_id IN (%s) OR o.recipient_user_id IN (%s))
 	`
@@ -733,13 +744,12 @@ func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) (_ []int3
 		return nil, err
 	}
 	const updateRegistryExtQuery = `
-	update registry_extensions
-	set deleted_at = NULL
-	from registry_extensions r
-	inner join users b
-	on r.publisher_user_id = b.id
-	WHERE r.deleted_at >= b.deleted_at
-	AND r.deleted_at <= b.deleted_at + interval '10 second'
+	UPDATE registry_extensions AS r
+	SET deleted_at = NULL, updated_at = now()
+	FROM users AS u
+	WHERE r.publisher_user_id = u.id
+	AND r.deleted_at >= u.deleted_at
+	AND r.deleted_at <= u.deleted_at + interval '10 second'
 	AND r.publisher_user_id IN (%s)
 	`
 
@@ -976,10 +986,7 @@ func (u *userStore) ListByOrg(ctx context.Context, orgID int32, paginationArgs *
 		where = append(where, cond)
 	}
 
-	p, err := paginationArgs.SQL()
-	if err != nil {
-		return nil, err
-	}
+	p := paginationArgs.SQL()
 
 	if p.Where != nil {
 		where = append(where, p.Where)
@@ -1174,26 +1181,8 @@ SELECT u.id,
 func (u *userStore) getBySQLForSCIM(ctx context.Context, query *sqlf.Query) ([]*types.UserForSCIM, error) {
 	// NOTE: We use a separate query here because we want to fetch the emails and SCIM ExternalID in a single query.
 	q := sqlf.Sprintf(userForSCIMQueryFmtStr, query)
-	rows, err := u.Query(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	// Convert results to users
-	users := []*types.UserForSCIM{}
-	for rows.Next() {
-		u, err := scanUserForSCIM(rows)
-		if err != nil {
-			return nil, err
-		}
-		users = append(users, u)
-	}
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return users, nil
+	scanUsersForSCIM := basestore.NewSliceScanner(scanUserForSCIM)
+	return scanUsersForSCIM(u.Query(ctx, q))
 }
 
 // scanUserForSCIM scans a UserForSCIM from the return of a *sql.Rows.

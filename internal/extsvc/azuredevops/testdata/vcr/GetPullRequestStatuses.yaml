@@ -1,0 +1,55 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://dev.azure.com/sgtestazure/sgtestazure/_apis/git/repositories/sgtestazure3/pullrequests/8/statuses?api-version=7.0
+    method: GET
+  response:
+    body: '{"value":[{"iterationId":1,"id":1,"state":"succeeded","description":"Sample
+      status succeeded","context":{"name":"sample-status-2","genre":"vsts-samples"},"creationDate":"2023-02-01T23:17:18.3963036Z","updatedDate":"2023-02-01T23:17:18.3963036Z","createdBy":{"displayName":"idan.varsano@sourcegraph.com","url":"https://spsprodcca1.vssps.visualstudio.com/Ab768986f-7304-43dd-be74-f37e30f66c38/_apis/Identities/473dec3e-03d7-6147-b106-0b0a7f766a92","_links":{"avatar":{"href":"https://dev.azure.com/sgtestazure/_apis/GraphProfile/MemberAvatars/aad.NDczZGVjM2UtMDNkNy03MTQ3LWIxMDYtMGIwYTdmNzY2YTky"}},"id":"473dec3e-03d7-6147-b106-0b0a7f766a92","uniqueName":"idan.varsano@sourcegraph.com","imageUrl":"https://dev.azure.com/sgtestazure/_apis/GraphProfile/MemberAvatars/aad.NDczZGVjM2UtMDNkNy03MTQ3LWIxMDYtMGIwYTdmNzY2YTky","descriptor":"aad.NDczZGVjM2UtMDNkNy03MTQ3LWIxMDYtMGIwYTdmNzY2YTky"},"targetUrl":"http://fabrikam-fiber-inc.com/CI/builds/1"}],"count":1}'
+    headers:
+      Access-Control-Expose-Headers:
+      - Request-Context
+      Activityid:
+      - ddd666f8-28e9-4424-a2ec-925de7c483b0
+      Cache-Control:
+      - no-cache, no-store, must-revalidate
+      Content-Type:
+      - application/json; charset=utf-8; api-version=7.0
+      Date:
+      - Wed, 01 Feb 2023 23:18:13 GMT
+      Expires:
+      - "-1"
+      P3p:
+      - CP="CAO DSP COR ADMa DEV CONo TELo CUR PSA PSD TAI IVDo OUR SAMi BUS DEM NAV
+        STA UNI COM INT PHY ONL FIN PUR LOC CNT"
+      Pragma:
+      - no-cache
+      Request-Context:
+      - appId=cid-v1:72d31d95-1757-44f5-b910-a46611808454
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+      X-Cache:
+      - CONFIG_NOCACHE
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Msedge-Ref:
+      - 'Ref A: 37D9A6A814BD4679B178C9B35E05749E Ref B: YTO01EDGE0708 Ref C: 2023-02-01T23:18:14Z'
+      X-Tfs-Processid:
+      - f2d0d867-6a44-400e-a9a2-59246386cc70
+      X-Tfs-Session:
+      - ddd666f8-28e9-4424-a2ec-925de7c483b0
+      X-Vss-E2eid:
+      - ddd666f8-28e9-4424-a2ec-925de7c483b0
+      X-Vss-Senderdeploymentid:
+      - 4ff21e82-8865-0b2e-ffe8-9598818f8190
+      X-Vss-Userdata:
+      - 473dec3e-03d7-6147-b106-0b0a7f766a92:idan.varsano@sourcegraph.com
+    status: 200 OK
+    code: 200
+    duration: ""
