@@ -3,12 +3,10 @@ package linters
 import (
 	"context"
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/sourcegraph/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/buf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
@@ -20,14 +18,100 @@ import (
 var bufFormat = &linter{
 	Name: "Buf Format",
 	Check: func(ctx context.Context, out *std.Output, args *repo.State) error {
-		cwd, err := os.Getwd()
+		rootDir, err := root.RepositoryRoot()
 		if err != nil {
-			return errors.Wrap(err, "getting current working directory")
+			return errors.Wrap(err, "getting repository root")
 		}
-		defer func() {
-			os.Chdir(cwd)
-		}()
 
+		err = buf.InstallDependencies(ctx, out)
+		if err != nil {
+			return errors.Wrap(err, "installing buf dependencies")
+		}
+
+		protoFiles, err := buf.ProtoFiles()
+		if err != nil {
+			return errors.Wrapf(err, "finding .proto files")
+		}
+
+		bufArgs := []string{
+			"format",
+			"--diff",
+			"--exit-code",
+		}
+
+		for _, file := range protoFiles {
+			f, err := filepath.Rel(rootDir, file)
+			if err != nil {
+				return errors.Wrapf(err, "getting relative path for file %q (base %q)", file, rootDir)
+			}
+
+			bufArgs = append(bufArgs, "--path", f)
+		}
+
+		c, err := buf.Cmd(ctx, bufArgs...)
+		if err != nil {
+			return errors.Wrap(err, "creating buf command")
+		}
+
+		err = c.Run().StreamLines(out.Write)
+		if err != nil {
+			commandString := fmt.Sprintf("buf %s", strings.Join(bufArgs, " "))
+			return errors.Wrapf(err, "running %q", commandString)
+		}
+
+		return nil
+
+	},
+
+	Fix: func(ctx context.Context, cio check.IO, args *repo.State) error {
+		rootDir, err := root.RepositoryRoot()
+		if err != nil {
+			return errors.Wrap(err, "getting repository root")
+		}
+
+		err = buf.InstallDependencies(ctx, cio.Output)
+		if err != nil {
+			return errors.Wrap(err, "installing buf dependencies")
+		}
+
+		protoFiles, err := buf.ProtoFiles()
+		if err != nil {
+			return errors.Wrapf(err, "finding .proto files")
+		}
+
+		bufArgs := []string{
+			"format",
+			"--write",
+		}
+
+		for _, file := range protoFiles {
+			f, err := filepath.Rel(rootDir, file)
+			if err != nil {
+				return errors.Wrapf(err, "getting relative path for file %q (base %q)", file, rootDir)
+			}
+
+			bufArgs = append(bufArgs, "--path", f)
+		}
+
+		c, err := buf.Cmd(ctx, bufArgs...)
+		if err != nil {
+			return errors.Wrap(err, "creating buf command")
+		}
+
+		err = c.Run().StreamLines(cio.Output.Write)
+		if err != nil {
+			commandString := fmt.Sprintf("buf %s", strings.Join(bufArgs, " "))
+			return errors.Wrapf(err, "running %q", commandString)
+		}
+
+		return nil
+
+	},
+}
+
+var bufLint = &linter{
+	Name: "Buf Lint",
+	Check: func(ctx context.Context, out *std.Output, args *repo.State) error {
 		rootDir, err := root.RepositoryRoot()
 		if err != nil {
 			return errors.Wrap(err, "getting repository root")
@@ -43,114 +127,36 @@ var bufFormat = &linter{
 			return errors.Wrap(err, "installing buf dependencies")
 		}
 
-		protoFiles, err := findProtoFiles(rootDir)
+		bufModules, err := buf.ModuleFiles()
 		if err != nil {
-			return errors.Wrapf(err, "finding .proto files")
+			return errors.Wrapf(err, "finding buf module files")
 		}
 
-		bufArgs := []string{
-			"format",
-			"--diff",
-			"--exit-code",
-		}
-
-		for _, file := range protoFiles {
-			bufArgs = append(bufArgs, "--path", file)
-		}
-
-		gobin := filepath.Join(rootDir, ".bin")
-		return runBuf(ctx, gobin, out, bufArgs...)
-	},
-
-	Fix: func(ctx context.Context, cio check.IO, args *repo.State) error {
-		cwd, err := os.Getwd()
-		if err != nil {
-			return errors.Wrap(err, "getting current working directory")
-		}
-		defer func() {
-			os.Chdir(cwd)
-		}()
-
-		rootDir, err := root.RepositoryRoot()
-		if err != nil {
-			return errors.Wrap(err, "getting repository root")
-		}
-
-		err = os.Chdir(rootDir)
-		if err != nil {
-			return errors.Wrap(err, "changing directory to repository root")
-		}
-
-		err = buf.InstallDependencies(ctx, cio.Output)
-		if err != nil {
-			return errors.Wrap(err, "installing buf dependencies")
-		}
-
-		protoFiles, err := findProtoFiles(rootDir)
-		if err != nil {
-			return errors.Wrapf(err, "finding .proto files")
-		}
-
-		bufArgs := []string{
-			"format",
-			"--write",
-		}
-
-		for _, file := range protoFiles {
-			bufArgs = append(bufArgs, "--path", file)
-		}
-
-		gobin := filepath.Join(rootDir, ".bin")
-		return runBuf(ctx, gobin, cio.Output, bufArgs...)
-	},
-}
-
-func findProtoFiles(dir string) ([]string, error) {
-	var files []string
-
-	err := filepath.WalkDir(dir, root.SkipGitIgnoreWalkFunc(func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if d.IsDir() {
-			return nil
-		}
-
-		if filepath.Ext(path) == ".proto" {
-			relPath, err := filepath.Rel(dir, path)
+		for _, file := range bufModules {
+			file, err := filepath.Rel(rootDir, file)
 			if err != nil {
-				return errors.Wrapf(err, "getting relative path for .proto file %q (base %q)", path, dir)
+				return errors.Wrapf(err, "getting relative path for module %q (base %q)", file, rootDir)
 			}
 
-			files = append(files, relPath)
+			moduleDir := filepath.Dir(file)
+
+			bufArgs := []string{"lint"}
+
+			c, err := buf.Cmd(ctx, bufArgs...)
+			if err != nil {
+				return errors.Wrap(err, "creating buf command")
+			}
+
+			c.Dir(moduleDir)
+
+			err = c.Run().StreamLines(out.Write)
+			if err != nil {
+				commandString := fmt.Sprintf("buf %s", strings.Join(bufArgs, " "))
+				return errors.Wrapf(err, "running %q in %q", commandString, moduleDir)
+			}
+
 		}
 
 		return nil
-	}))
-
-	if err != nil {
-		return nil, errors.Wrapf(err, "walking %q to find proto files", dir)
-	}
-
-	return files, nil
-}
-
-func runBuf(ctx context.Context, gobin string, out *std.Output, parameters ...string) error {
-	bufPath := filepath.Join(gobin, "buf")
-
-	arguments := []string{bufPath}
-	arguments = append(arguments, parameters...)
-
-	err := root.Run(run.Cmd(ctx, arguments...).
-		Environ(os.Environ()).
-		Env(map[string]string{
-			"GOBIN": gobin,
-		})).
-		StreamLines(out.Write)
-	if err != nil {
-		commandStr := fmt.Sprintf("buf %s", strings.Join(parameters, " "))
-		return errors.Wrapf(err, "%q returned an error", commandStr)
-	}
-	return nil
+	},
 }

@@ -2,15 +2,15 @@ package search
 
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/searcher/proto"
+	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 )
 
 type Server struct {
 	Service *Service
-	proto.UnimplementedSearcherServer
+	proto.UnimplementedSearcherServiceServer
 }
 
-func (s *Server) Search(req *proto.SearchRequest, stream proto.Searcher_SearchServer) error {
+func (s *Server) Search(req *proto.SearchRequest, stream proto.SearcherService_SearchServer) error {
 	var unmarshaledReq protocol.Request
 	unmarshaledReq.FromProto(req)
 

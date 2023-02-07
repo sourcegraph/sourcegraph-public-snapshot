@@ -1,13 +1,13 @@
 syntax = "proto3";
 
-package searcher;
+package searcher.v1;
 
 import "google/protobuf/duration.proto";
 
-option go_package = "github.com/sourcegraph/sourcegraph/internal/searcher/proto";
+option go_package = "github.com/sourcegraph/sourcegraph/internal/searcher/v1";
 
-// Searcher is internal interface for the searcher service.
-service Searcher {
+// SearcherService is an internal interface for the searcher service.
+service SearcherService {
   // Search executes a search, streaming back its results
   rpc Search(SearchRequest) returns (stream SearchResponse) {}
 }
