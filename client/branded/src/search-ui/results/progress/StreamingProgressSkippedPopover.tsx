@@ -22,8 +22,7 @@ import {
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 
 import { StreamingProgressProps } from './StreamingProgress'
-import { limitHit } from './StreamingProgressCount'
-import { sortBySeverity } from './utils'
+import { sortBySeverity, limitHit } from './utils'
 
 import styles from './StreamingProgressSkippedPopover.module.scss'
 

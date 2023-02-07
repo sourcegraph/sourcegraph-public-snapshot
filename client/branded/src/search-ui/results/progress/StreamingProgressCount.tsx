@@ -9,11 +9,9 @@ import { Progress } from '@sourcegraph/shared/src/search/stream'
 import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { StreamingProgressProps } from './StreamingProgress'
+import { limitHit } from './utils'
 
 import styles from './StreamingProgressCount.module.scss'
-
-import { limitHit } from './utils'
-export { limitHit }
 
 const abbreviateNumber = (number: number): string => {
     if (number < 1e3) {

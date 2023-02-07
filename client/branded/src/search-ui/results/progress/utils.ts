@@ -14,11 +14,11 @@ const severityToNumber = (severity: Skipped['severity']): number => {
     }
 }
 
-const _sortBySeverity = (a: Skipped, b: Skipped): number => {
+const severityComparer = (a: Skipped, b: Skipped): number => {
     const aSev = severityToNumber(a.severity)
     const bSev = severityToNumber(b.severity)
 
     return aSev - bSev
 }
 
-export const sortBySeverity = (skipped: Skipped[]): Skipped[] => skipped.slice().sort(_sortBySeverity)
+export const sortBySeverity = (skipped: Skipped[]): Skipped[] => skipped.slice().sort(severityComparer)
