@@ -3,14 +3,18 @@ import React, { useMemo } from 'react'
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import differenceInDays from 'date-fns/differenceInDays'
+import { without } from 'lodash'
+import { useLocation } from 'react-router-dom-v5-compat'
 
 import { renderMarkdown } from '@sourcegraph/common'
+import { gql, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Link, useObservable, Markdown } from '@sourcegraph/wildcard'
+import { Link, useObservable, Markdown, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
-import { DismissibleAlert } from '../components/DismissibleAlert'
+import { DismissibleAlert, isAlertDismissed } from '../components/DismissibleAlert'
+import { NotConnectedExternalAccountsResult, NotConnectedExternalAccountsVariables } from '../graphql-operations'
 import { siteFlags } from '../site/backend'
 import { DockerForMacAlert } from '../site/DockerForMacAlert'
 import { FreeUsersExceededAlert } from '../site/FreeUsersExceededAlert'
@@ -114,6 +118,72 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({
             {!!verifyEmailProps?.emails.length && (
                 <VerifyEmailNotices alertClassName={styles.alert} {...verifyEmailProps} />
             )}
+            {!isSourcegraphDotCom && authenticatedUser?.settingsURL && (
+                <ConnectExternalAccountsAlert settingsURL={authenticatedUser.settingsURL} />
+            )}
         </div>
+    )
+}
+
+// TODO: move to a separate file
+const QUERY = gql`
+    query NotConnectedExternalAccounts {
+        currentUser {
+            externalAccounts {
+                nodes {
+                    serviceID
+                }
+            }
+        }
+        site {
+            authProviders {
+                nodes {
+                    serviceID
+                    isBuiltin
+                }
+            }
+        }
+    }
+`
+interface ConnectExternalAccountsAlertProps {
+    settingsURL: string
+}
+const partialStorageKey = 'connect-external-accounts'
+const ConnectExternalAccountsAlert: React.FunctionComponent<ConnectExternalAccountsAlertProps> = ({ settingsURL }) => {
+    const connectExternalAccountsURL = settingsURL + '/security'
+    const location = useLocation()
+    const skipQuery = useMemo(
+        () => isAlertDismissed(partialStorageKey) || location.pathname === connectExternalAccountsURL,
+        [connectExternalAccountsURL, location.pathname]
+    )
+    const { data } = useQuery<NotConnectedExternalAccountsResult, NotConnectedExternalAccountsVariables>(QUERY, {
+        fetchPolicy: 'network-only',
+        skip: skipQuery,
+    })
+
+    const notConnectedAuthProviders = useMemo(() => {
+        const authProviderIDs = data?.site?.authProviders?.nodes
+            .filter(({ isBuiltin }) => !isBuiltin)
+            .map(({ serviceID }) => serviceID)
+        const connectedAuthProviderIDs =
+            data?.currentUser?.externalAccounts?.nodes.map(({ serviceID }) => serviceID) ?? []
+        return without(authProviderIDs, ...connectedAuthProviderIDs)
+    }, [data])
+
+    if (notConnectedAuthProviders.length === 0) {
+        return null
+    }
+
+    return (
+        <DismissibleAlert partialStorageKey={partialStorageKey} variant="info">
+            <Text className="mb-0">
+                <Link to={connectExternalAccountsURL}>Connect</Link> your account with a third-party login service
+                {notConnectedAuthProviders.length > 1 && 's'} to make signing in easier and enable{' '}
+                <Link to="/help/admin/repo/permissions#permissions-for-multiple-code-hosts" target="_blank">
+                    multiple code host permissions
+                </Link>{' '}
+                syncing.
+            </Text>
+        </DismissibleAlert>
     )
 }

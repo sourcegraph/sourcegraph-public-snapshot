@@ -41,6 +41,12 @@ export const currentAuthStateQuery = gql`
                 id
                 contents
             }
+            externalAccounts {
+                nodes {
+                    serviceID
+                    serviceType
+                }
+            }
         }
     }
 `
