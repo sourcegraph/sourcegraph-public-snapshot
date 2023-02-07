@@ -2942,10 +2942,10 @@ INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id
 			t.Fatalf("len(userIDs): want 2 but got %v", userIDs)
 		}
 
-		assert.Equal(t, 1, userIDs["alice_gitlab"].UserID)
-		assert.Equal(t, 1, userIDs["alice_gitlab"].ExternalAccountID)
-		assert.Equal(t, 2, userIDs["bob_gitlab"].UserID)
-		assert.Equal(t, 2, userIDs["bob_gitlab"].ExternalAccountID)
+		assert.Equal(t, int32(1), userIDs["alice_gitlab"].UserID)
+		assert.Equal(t, int32(1), userIDs["alice_gitlab"].ExternalAccountID)
+		assert.Equal(t, int32(2), userIDs["bob_gitlab"].UserID)
+		assert.Equal(t, int32(3), userIDs["bob_gitlab"].ExternalAccountID)
 
 		accounts = &extsvc.Accounts{
 			ServiceType: "github",
