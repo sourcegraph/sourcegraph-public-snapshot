@@ -300,29 +300,20 @@ func isDatabaseLikelyStartingUp(err error) bool {
 	return false
 }
 
-func namedToInterface(args []driver.NamedValue) []interface{} {
-	list := make([]interface{}, len(args))
-	for i, a := range args {
-		list[i] = a.Value
-	}
-	return list
-}
-
 // argsAsAttributes generates a set of OpenTelemetry trace attributes that represent the
 // argument values used in a query.
-func argsAsAttributes(ctx context.Context, method otelsql.Method, query string, args []driver.NamedValue) []attribute.KeyValue {
+func argsAsAttributes(ctx context.Context, _ otelsql.Method, _ string, args []driver.NamedValue) []attribute.KeyValue {
 	// Do not decorate span with args as attributes if that's a bulk insertion
 	// or if we have too many args (it's unreadable anyway).
 	if isBulkInsertion(ctx) || len(args) > 24 {
 		return []attribute.KeyValue{attribute.Bool("db.args.skipped", true)}
 	}
 
-	argsValues := namedToInterface(args)
-	attrs := make([]attribute.KeyValue, len(argsValues))
-	for i, arg := range argsValues {
+	attrs := make([]attribute.KeyValue, len(args))
+	for i, arg := range args {
 		attrs[i] = attribute.String(
-			fmt.Sprintf("db.args.$%d", i+1),
-			fmt.Sprintf("%v", arg))
+			fmt.Sprintf("db.args.$%d", arg.Ordinal),
+			fmt.Sprintf("%v", arg.Value))
 	}
 	return attrs
 }
