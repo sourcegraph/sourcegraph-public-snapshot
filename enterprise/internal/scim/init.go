@@ -29,6 +29,14 @@ func NewHandler(ctx context.Context, db database.DB, observationCtx *observation
 		DocumentationURI: optional.NewString("docs.sourcegraph.com/admin/scim"),
 		MaxResults:       100,
 		SupportFiltering: true,
+		AuthenticationSchemes: []scim.AuthenticationScheme{
+			{
+				Name:    "OAuth Bearer Token",
+				SpecURI: optional.NewString("https://tools.ietf.org/html/rfc6750"),
+				Type:    scim.AuthenticationTypeOauthBearerToken,
+				Primary: true,
+			},
+		},
 	}
 
 	var userResourceHandler = NewUserResourceHandler(ctx, observationCtx, db)
