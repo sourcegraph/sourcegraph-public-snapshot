@@ -23,6 +23,7 @@ func Generate(ctx context.Context, verboseOutput bool) *generate.Report {
 	output := std.NewOutput(&sb, verboseOutput)
 	err := buf.InstallDependencies(ctx, output)
 	if err != nil {
+		err = errors.Wrap(err, "installing buf dependencies")
 		return &generate.Report{Output: sb.String(), Err: err}
 	}
 
