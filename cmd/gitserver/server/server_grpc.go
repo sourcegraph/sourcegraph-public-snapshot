@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/proto"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -40,8 +41,8 @@ func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 				CloneProgress:   v.Payload.CloneProgress,
 			})
 			if err != nil {
-				// TODO should we really panic here?
-				panic(err)
+				gs.Server.Logger.Error("failed to marshal status", log.Error(err))
+				return err
 			}
 			return s.Err()
 
@@ -58,7 +59,8 @@ func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 			Stderr:     execStatus.Stderr,
 		})
 		if err != nil {
-			panic(err)
+			gs.Server.Logger.Error("failed to marshal status", log.Error(err))
+			return err
 		}
 		return s.Err()
 	}
