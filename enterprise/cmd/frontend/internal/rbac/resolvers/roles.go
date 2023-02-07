@@ -100,7 +100,7 @@ func (r *Resolver) DeleteRole(ctx context.Context, args *gql.DeleteRoleArgs) (_ 
 }
 
 func (r *Resolver) CreateRole(ctx context.Context, args *gql.CreateRoleArgs) (gql.RoleResolver, error) {
-	// 🚨 SECURITY: Only site administrators can delete roles.
+	// 🚨 SECURITY: Only site administrators can create roles.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
