@@ -655,7 +655,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		if UserRepoPermsEnabled(ctx, s.db) {
 			err = s.saveUserPermsForAccount(ctx, userID, acctID, repoIDs)
 			if err != nil {
-				return providerStates, errors.Wrapf(err, "set user repo permissions for user %q (id: %d, external_account_id: %d)", user.Username, user.ID, acctID)
+				return result, providerStates, errors.Wrapf(err, "set user repo permissions for user %q (id: %d, external_account_id: %d)", user.Username, user.ID, acctID)
 			}
 		}
 
