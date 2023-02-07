@@ -1,7 +1,5 @@
 import { FunctionComponent, useEffect } from 'react'
 
-import * as H from 'history'
-
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
@@ -14,12 +12,11 @@ import { ConfigurationEditor } from '../components/ConfigurationEditor'
 export interface CodeIntelRepositoryIndexConfigurationPageProps extends ThemeProps, TelemetryProps {
     repo: { id: string }
     authenticatedUser: AuthenticatedUser | null
-    history: H.History
 }
 
 export const CodeIntelRepositoryIndexConfigurationPage: FunctionComponent<
     CodeIntelRepositoryIndexConfigurationPageProps
-> = ({ repo, authenticatedUser, history, telemetryService, ...props }) => {
+> = ({ repo, authenticatedUser, telemetryService, ...props }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelRepositoryIndexConfiguration'), [telemetryService])
 
     return (
@@ -50,7 +47,6 @@ export const CodeIntelRepositoryIndexConfigurationPage: FunctionComponent<
             <ConfigurationEditor
                 repoId={repo.id}
                 authenticatedUser={authenticatedUser}
-                history={history}
                 telemetryService={telemetryService}
                 {...props}
             />

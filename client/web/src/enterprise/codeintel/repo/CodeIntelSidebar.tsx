@@ -1,7 +1,5 @@
 import * as React from 'react'
 
-import { RouteComponentProps } from 'react-router-dom'
-
 import { SidebarGroupHeader, SidebarGroup, SidebarNavItem } from '../../../components/Sidebar'
 import { NavGroupDescriptor } from '../../../util/contributions'
 
@@ -9,7 +7,7 @@ export interface CodeIntelSideBarGroup extends NavGroupDescriptor {}
 
 export type CodeIntelSideBarGroups = readonly CodeIntelSideBarGroup[]
 
-interface Props extends RouteComponentProps<{}> {
+interface Props {
     codeIntelSidebarGroups: CodeIntelSideBarGroups
     className?: string
     repo: { url: string }

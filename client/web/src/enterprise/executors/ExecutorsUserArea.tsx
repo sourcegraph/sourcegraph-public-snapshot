@@ -1,11 +1,10 @@
 import React from 'react'
 
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { HeroPage } from '../../components/HeroPage'
+import { NotFoundPage } from '../../components/HeroPage'
 import { Scalars } from '../../graphql-operations'
 
 import type { UserExecutorSecretsListPageProps } from './secrets/ExecutorSecretsListPage'
@@ -33,11 +32,7 @@ export const ExecutorsUserArea: React.FunctionComponent<React.PropsWithChildren<
                 )}
                 exact={true}
             />
-            <Route component={NotFoundPage} key="hardcoded-key" />
+            <Route render={() => <NotFoundPage pageType="settings" />} key="hardcoded-key" />
         </Switch>
     </>
-)
-
-const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 )

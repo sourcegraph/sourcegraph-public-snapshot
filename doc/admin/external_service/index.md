@@ -96,7 +96,7 @@ Tier 1 code hosts are our highest level of support for code hosts. When leveragi
         <td class="indexer-implemented-y">✓</td> <!-- Batch Changes -->
       </tr>
       <tr>
-        <td>Gerrit</td>
+        <td>Gerrit <span class="badge badge-beta">Beta</span></td>
         <td>Tier 2 (Working on Tier 1)</td>
         <td class="indexer-implemented-y">✓</td> <!-- Repository Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Permissions Syncing -->
@@ -153,7 +153,7 @@ We recognize there are other code hosts including CVS, Azure Dev Ops, SVN, and m
 - [GitLab](gitlab.md)
 - [Bitbucket Cloud](bitbucket_cloud.md)
 - [Bitbucket Server / Bitbucket Data Center](bitbucket_server.md)
-- [Gerrit](gerrit.md)
+- [Gerrit](gerrit.md) <span class="badge badge-beta">Beta</span>
 - [Other Git code hosts (using a Git URL)](other.md)
 - [Non-Git code hosts](non-git.md)
   - [Perforce](../repo/perforce.md)

@@ -38,6 +38,7 @@
 - [Developing an out-of-band migration](oobmigrations.md)
 - [Developing a background routine](backgroundroutine.md)
 - [Building p4-fusion](./build_p4_fusion.md)
+- [The `gitserver` API](./gitserver-api.md)
 
 ## [Languages](languages/index.md)
 

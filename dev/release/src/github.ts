@@ -114,22 +114,22 @@ interface IssueTemplateArguments {
 const getTemplates = () => {
     const releaseIssue: IssueTemplate = {
         owner: 'sourcegraph',
-        repo: 'handbook',
-        path: 'content/departments/engineering/dev/process/releases/release_issue_template.md',
+        repo: 'sourcegraph',
+        path: 'dev/release/templates/release_issue_template.md',
         titleSuffix: IssueTitleSuffix.RELEASE_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.RELEASE],
     }
     const patchReleaseIssue: IssueTemplate = {
         owner: 'sourcegraph',
-        repo: 'handbook',
-        path: 'content/departments/engineering/dev/process/releases/patch_release_issue_template.md',
+        repo: 'sourcegraph',
+        path: 'dev/release/templates/patch_release_issue_template.md',
         titleSuffix: IssueTitleSuffix.PATCH_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.PATCH],
     }
     const securityAssessmentIssue: IssueTemplate = {
         owner: 'sourcegraph',
-        repo: 'handbook',
-        path: 'content/departments/engineering/dev/process/releases/security_assessment.md',
+        repo: 'sourcegraph',
+        path: 'dev/release/templates/security_assessment.md',
         titleSuffix: IssueTitleSuffix.SECURITY_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.SECURITY_TEAM, IssueLabel.RELEASE_BLOCKER],
     }
@@ -518,7 +518,7 @@ Body: ${change.body || 'none'}`)
     return results
 }
 
-async function cloneRepo(
+export async function cloneRepo(
     octokit: Octokit,
     owner: string,
     repo: string,
@@ -643,10 +643,10 @@ export interface TagOptions {
  */
 export async function createTag(
     octokit: Octokit,
+    workdir: string,
     { owner, repo, branch: rawBranch, tag: rawTag }: TagOptions,
     dryRun: boolean
 ): Promise<void> {
-    const { workdir } = await cloneRepo(octokit, owner, repo, { revision: rawBranch, revisionMustExist: true })
     const branch = JSON.stringify(rawBranch)
     const tag = JSON.stringify(rawTag)
     const finalizeTag = dryRun ? `git --no-pager show ${tag} --no-patch` : `git push origin ${tag}`

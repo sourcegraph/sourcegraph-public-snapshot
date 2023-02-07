@@ -123,7 +123,6 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
                     readOnly={disabled}
                     isLightTheme={isLightTheme}
                     onChange={onConfigChange}
-                    history={history}
                     actions={editorActions}
                     className="test-external-service-editor"
                     telemetryService={telemetryService}

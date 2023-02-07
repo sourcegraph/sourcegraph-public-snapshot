@@ -1,7 +1,6 @@
 import * as React from 'react'
 
 import { mdiChevronRight } from '@mdi/js'
-import { RouteComponentProps } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
@@ -78,7 +77,7 @@ export const queryGitBranches = memoizeObservable(
     args => `${args.repo}:${args.first}`
 )
 
-interface Props extends RepositoryBranchesAreaPageProps, RouteComponentProps<{}> {}
+interface Props extends RepositoryBranchesAreaPageProps {}
 
 interface State {
     /** The page content, undefined while loading, or an error. */

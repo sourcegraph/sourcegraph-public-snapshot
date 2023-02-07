@@ -91,6 +91,8 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 		kinds                      = map[string]struct{}{}
 		oldDependencyReposInserted int
 		newDependencyReposInserted int
+		newVersionsInserted        int
+		oldVersionsInserted        int
 		errs                       []error
 	)
 
@@ -125,13 +127,26 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 			continue
 		}
 
-		new, err := h.insertDependencyRepo(ctx, pkg)
+		newRepo, newVersion, err := h.insertPackageRepoRef(ctx, pkg)
 		if err != nil {
 			errs = append(errs, err)
-		} else if new {
+			continue
+		}
+
+		if newRepo {
 			newDependencyReposInserted++
+			if newVersion {
+				newVersionsInserted++
+			} else {
+				oldVersionsInserted++
+			}
 		} else {
 			oldDependencyReposInserted++
+			if newVersion {
+				newVersionsInserted++
+			} else {
+				oldVersionsInserted++
+			}
 		}
 	}
 
@@ -156,7 +171,10 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 			log.Int("numExtSvc", len(externalServices)),
 			log.Strings("schemaKinds", kindsArray),
 			log.Int("newRepos", newDependencyReposInserted),
-			log.Int("existingInserts", oldDependencyReposInserted))
+			log.Int("existingRepos", oldDependencyReposInserted),
+			log.Int("newVersions", newVersionsInserted),
+			log.Int("existingVersions", oldVersionsInserted),
+		)
 
 		for _, externalService := range externalServices {
 			externalService.NextSyncAt = nextSync
@@ -222,18 +240,18 @@ func newPackage(pkg uploadsshared.Package) (*precise.Package, error) {
 	return &p, nil
 }
 
-func (h *dependencySyncSchedulerHandler) insertDependencyRepo(ctx context.Context, pkg precise.Package) (new bool, err error) {
-	inserted, err := h.depsSvc.UpsertDependencyRepos(ctx, []dependencies.Repo{
+func (h *dependencySyncSchedulerHandler) insertPackageRepoRef(ctx context.Context, pkg precise.Package) (newRepos, newVersions bool, err error) {
+	insertedRepos, insertedVersions, err := h.depsSvc.InsertPackageRepoRefs(ctx, []dependencies.MinimalPackageRepoRef{
 		{
-			Name:    reposource.PackageName(pkg.Name),
-			Scheme:  pkg.Scheme,
-			Version: pkg.Version,
+			Name:     reposource.PackageName(pkg.Name),
+			Scheme:   pkg.Scheme,
+			Versions: []string{pkg.Version},
 		},
 	})
 	if err != nil {
-		return false, errors.Wrap(err, "dbstore.InsertCloneableDependencyRepos")
+		return false, false, errors.Wrap(err, "dbstore.InsertCloneableDependencyRepos")
 	}
-	return len(inserted) != 0, nil
+	return len(insertedRepos) != 0, len(insertedVersions) != 0, nil
 }
 
 // shouldIndexDependencies returns true if the given upload should undergo dependency

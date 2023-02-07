@@ -271,7 +271,7 @@ func TestUsers_CreatePassword(t *testing.T) {
 	}
 
 	// A new user with an external account can't create a password
-	newID, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{
+	newUser, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{
 		Email:                 "usr3@bar.com",
 		Username:              "usr3",
 		Password:              "",
@@ -292,7 +292,7 @@ func TestUsers_CreatePassword(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := db.Users().CreatePassword(ctx, newID, "the-new-password"); err == nil {
+	if err := db.Users().CreatePassword(ctx, newUser.ID, "the-new-password"); err == nil {
 		t.Fatal("Should fail, user has external account")
 	}
 }

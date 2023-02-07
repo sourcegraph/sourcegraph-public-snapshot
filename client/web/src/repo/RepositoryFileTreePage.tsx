@@ -1,6 +1,6 @@
-import React from 'react'
+import { FC } from 'react'
 
-import { Redirect, RouteComponentProps } from 'react-router'
+import { Navigate, useLocation } from 'react-router-dom-v5-compat'
 
 import { appendLineRangeQueryParameter } from '@sourcegraph/common'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
@@ -11,7 +11,7 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { NotebookProps } from '../notebooks'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
-import { formatHash, formatLineOrPositionOrRange } from '../util/url'
+import { formatHash, formatLineOrPositionOrRange, parseBrowserRepoURL } from '../util/url'
 
 import { BlobPage } from './blob/BlobPage'
 import { RepoRevisionContainerContext } from './RepoRevisionContainer'
@@ -20,35 +20,27 @@ import { TreePage } from './tree/TreePage'
 
 import styles from './RepositoryFileTreePage.module.scss'
 
-export interface RepositoryFileTreePageProps
-    extends RepoRevisionContainerContext,
-        RouteComponentProps<{
-            objectType: 'blob' | 'tree' | undefined
-            filePath: string | undefined
-            spec: string
-        }>,
-        NotebookProps {}
+interface RepositoryFileTreePageProps extends RepoRevisionContainerContext, NotebookProps {
+    objectType: 'blob' | 'tree' | undefined
+}
 
 /** Dev feature flag to make benchmarking the file tree in isolation easier. */
 const hideRepoRevisionContent = localStorage.getItem('hideRepoRevContent')
 
 /** A page that shows a file or a directory (tree view) in a repository at the
  * current revision. */
-export const RepositoryFileTreePage: React.FunctionComponent<
-    React.PropsWithChildren<RepositoryFileTreePageProps>
-> = props => {
-    const { location, repo, resolvedRevision, repoName, match, globbing, ...context } = props
+export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => {
+    const { repo, resolvedRevision, repoName, globbing, objectType: maybeObjectType, ...context } = props
 
-    // The decoding depends on the pinned `history` version.
-    // See https://github.com/sourcegraph/sourcegraph/issues/4408
-    // and https://github.com/ReactTraining/history/issues/505
-    const filePath = decodeURIComponent(match.params.filePath || '') // empty string is root
+    const location = useLocation()
+    const { filePath = '' } = parseBrowserRepoURL(location.pathname) // empty string is root
+
     // Redirect tree and blob routes pointing to the root to the repo page
-    if (match.params.objectType && filePath.replace(/\/+$/g, '') === '') {
-        return <Redirect to={toRepoURL({ repoName, revision: context.revision })} />
+    if (maybeObjectType && filePath.replace(/\/+$/g, '') === '') {
+        return <Navigate to={toRepoURL({ repoName, revision: context.revision })} replace={true} />
     }
 
-    const objectType: 'blob' | 'tree' = match.params.objectType || 'tree'
+    const objectType = maybeObjectType || 'tree'
     const mode = getModeFromPath(filePath)
 
     // Redirect OpenGrok-style line number hashes (#123, #123-321) to query parameter (?L123, ?L123-321)
@@ -60,7 +52,7 @@ export const RepositoryFileTreePage: React.FunctionComponent<
             location.pathname + location.search,
             `L${startLineNumber}` + (endLineNumber ? `-${endLineNumber}` : '')
         )
-        return <Redirect to={url} />
+        return <Navigate to={url} replace={true} />
     }
 
     // For blob pages with legacy URL fragment hashes like "#L17:19-21:23$foo:bar"
@@ -73,14 +65,13 @@ export const RepositoryFileTreePage: React.FunctionComponent<
         }
         const range = formatLineOrPositionOrRange(parsedQuery)
         const url = appendLineRangeQueryParameter(location.pathname + location.search, range ? `L${range}` : undefined)
-        return <Redirect to={url + formatHash(hashParameters)} />
+        return <Navigate to={url + formatHash(hashParameters)} replace={true} />
     }
 
     return (
         <>
             <RepoRevisionSidebar
                 className="repo-revision-container__sidebar"
-                history={context.history}
                 revision={context.revision}
                 settingsCascade={context.settingsCascade}
                 telemetryService={context.telemetryService}
@@ -109,7 +100,6 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                                     repoUrl={repo?.url}
                                     repoServiceType={repo?.externalRepository?.serviceType}
                                     mode={mode}
-                                    location={location}
                                     repoHeaderContributionsLifecycleProps={
                                         context.repoHeaderContributionsLifecycleProps
                                     }
@@ -126,7 +116,6 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                                 globbing={globbing}
                                 repo={repo}
                                 repoName={repoName}
-                                match={match}
                                 useActionItemsBar={context.useActionItemsBar}
                                 isSourcegraphDotCom={context.isSourcegraphDotCom}
                                 className={styles.pageContent}

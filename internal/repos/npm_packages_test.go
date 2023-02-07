@@ -35,18 +35,30 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		deps, err := depsSvc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
-			Scheme: dependencies.NpmPackagesScheme,
-			Name:   reposource.PackageName(testCase.pkgName),
+		deps, _, err := depsSvc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
+			Scheme:        dependencies.NpmPackagesScheme,
+			Name:          reposource.PackageName(testCase.pkgName),
+			ExactNameOnly: true,
 		})
-		require.Nil(t, err)
+		if err != nil {
+			t.Fatalf("unexpected error listing package repos: %v", err)
+		}
+
 		depStrs := []string{}
 		for _, dep := range deps {
 			pkg, err := reposource.ParseNpmPackageFromPackageSyntax(dep.Name)
-			require.Nil(t, err)
-			depStrs = append(depStrs,
-				(&reposource.NpmVersionedPackage{NpmPackageName: pkg, Version: dep.Version}).VersionedPackageSyntax(),
-			)
+			if err != nil {
+				t.Fatalf("unexpected error parsing package from package name: %v", err)
+			}
+
+			for _, version := range dep.Versions {
+				depStrs = append(depStrs,
+					(&reposource.NpmVersionedPackage{
+						NpmPackageName: pkg,
+						Version:        version.Version,
+					}).VersionedPackageSyntax(),
+				)
+			}
 		}
 		sort.Strings(depStrs)
 		sort.Strings(testCase.matches)
@@ -54,21 +66,27 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		depStrs := []string{}
-		lastID := 0
-		for i := 0; i < len(testCase.matches); i++ {
-			deps, err := depsSvc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
-				Scheme: dependencies.NpmPackagesScheme,
-				Name:   reposource.PackageName(testCase.pkgName),
-				After:  lastID,
-				Limit:  1,
-			})
-			require.Nil(t, err)
-			require.Equal(t, len(deps), 1)
-			pkg, err := reposource.ParseNpmPackageFromPackageSyntax(deps[0].Name)
-			require.Nil(t, err)
-			depStrs = append(depStrs, (&reposource.NpmVersionedPackage{NpmPackageName: pkg, Version: deps[0].Version}).VersionedPackageSyntax())
-			lastID = deps[0].ID
+		var depStrs []string
+		deps, _, err := depsSvc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
+			Scheme:        dependencies.NpmPackagesScheme,
+			Name:          reposource.PackageName(testCase.pkgName),
+			ExactNameOnly: true,
+			Limit:         1,
+		})
+		require.Nil(t, err)
+		if len(testCase.matches) > 0 {
+			require.Equal(t, 1, len(deps))
+		} else {
+			require.Equal(t, 0, len(deps))
+			continue
+		}
+		pkg, err := reposource.ParseNpmPackageFromPackageSyntax(deps[0].Name)
+		require.Nil(t, err)
+		for _, version := range deps[0].Versions {
+			depStrs = append(depStrs, (&reposource.NpmVersionedPackage{
+				NpmPackageName: pkg,
+				Version:        version.Version,
+			}).VersionedPackageSyntax())
 		}
 		sort.Strings(depStrs)
 		sort.Strings(testCase.matches)
@@ -76,13 +94,13 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 	}
 }
 
-func testDependenciesService(ctx context.Context, t *testing.T, dependencyRepos []dependencies.Repo) *dependencies.Service {
+func testDependenciesService(ctx context.Context, t *testing.T, dependencyRepos []dependencies.MinimalPackageRepoRef) *dependencies.Service {
 	t.Helper()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	depsSvc := dependencies.TestService(db, nil)
 
-	_, err := depsSvc.UpsertDependencyRepos(ctx, dependencyRepos)
+	_, _, err := depsSvc.InsertPackageRepoRefs(ctx, dependencyRepos)
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -98,19 +116,19 @@ var testDependencies = []string{
 	"pkg2@0.1-abc",
 	"pkg2@1",
 }
-var testDependencyRepos = func() []dependencies.Repo {
-	dependencyRepos := []dependencies.Repo{}
-	for i, depStr := range testDependencies {
+
+var testDependencyRepos = func() []dependencies.MinimalPackageRepoRef {
+	dependencyRepos := []dependencies.MinimalPackageRepoRef{}
+	for _, depStr := range testDependencies {
 		dep, err := reposource.ParseNpmVersionedPackage(depStr)
 		if err != nil {
 			panic(err.Error())
 		}
 
-		dependencyRepos = append(dependencyRepos, dependencies.Repo{
-			ID:      i + 1,
-			Scheme:  dependencies.NpmPackagesScheme,
-			Name:    dep.PackageSyntax(),
-			Version: dep.Version,
+		dependencyRepos = append(dependencyRepos, dependencies.MinimalPackageRepoRef{
+			Scheme:   dependencies.NpmPackagesScheme,
+			Name:     dep.PackageSyntax(),
+			Versions: []string{dep.Version},
 		})
 	}
 
@@ -119,30 +137,24 @@ var testDependencyRepos = func() []dependencies.Repo {
 
 func TestNPMPackagesSource_ListRepos(t *testing.T) {
 	ctx := context.Background()
-	depsSvc := testDependenciesService(ctx, t, []dependencies.Repo{
+	depsSvc := testDependenciesService(ctx, t, []dependencies.MinimalPackageRepoRef{
 		{
-			ID:      1,
-			Scheme:  dependencies.NpmPackagesScheme,
-			Name:    "@sourcegraph/sourcegraph.proposed",
-			Version: "12.0.0", // test deduplication with version from config
+			Scheme: dependencies.NpmPackagesScheme,
+			Name:   "@sourcegraph/sourcegraph.proposed",
+			Versions: []string{
+				"12.0.0", // test deduplication with version from config
+				"12.0.1", // test deduplication with version from config
+			},
 		},
 		{
-			ID:      2,
-			Scheme:  dependencies.NpmPackagesScheme,
-			Name:    "@sourcegraph/sourcegraph.proposed",
-			Version: "12.0.1", // test deduplication with version from config
+			Scheme:   dependencies.NpmPackagesScheme,
+			Name:     "@sourcegraph/web-ext",
+			Versions: []string{"3.0.0-fork.1"},
 		},
 		{
-			ID:      3,
-			Scheme:  dependencies.NpmPackagesScheme,
-			Name:    "@sourcegraph/web-ext",
-			Version: "3.0.0-fork.1",
-		},
-		{
-			ID:      4,
-			Scheme:  dependencies.NpmPackagesScheme,
-			Name:    "fastq",
-			Version: "0.9.9", // test missing modules still create a repo.
+			Scheme:   dependencies.NpmPackagesScheme,
+			Name:     "fastq",
+			Versions: []string{"0.9.9"}, // test missing modules still create a repo.
 		},
 	})
 

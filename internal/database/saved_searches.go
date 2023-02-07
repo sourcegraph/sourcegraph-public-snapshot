@@ -247,14 +247,11 @@ func (s *savedSearchStore) ListSavedSearchesByOrgID(ctx context.Context, orgID i
 // organization for the user.
 //
 // 🚨 SECURITY: This method does NOT verify the user's identity or that the
-// user is an admin. It is the callers responsibility to ensure only admins or
+// user is an admin. It is the caller's responsibility to ensure only admins or
 // members of the specified organization can access the returned saved
 // searches.
 func (s *savedSearchStore) ListSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32, paginationArgs *PaginationArgs) ([]*types.SavedSearch, error) {
-	p, err := paginationArgs.SQL()
-	if err != nil {
-		return nil, err
-	}
+	p := paginationArgs.SQL()
 
 	var where []*sqlf.Query
 
