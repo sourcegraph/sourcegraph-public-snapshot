@@ -303,7 +303,7 @@ func (r *roleStore) Update(ctx context.Context, role *types.Role) (*types.Role, 
 }
 
 const roleDeleteQueryFmtStr = `
-DELETE roles
+DELETE FROM roles
 WHERE id = %s AND NOT system
 `
 
