@@ -1,6 +1,4 @@
-import React, { useEffect, useMemo } from 'react'
-
-import * as H from 'history'
+import React, { FC, useEffect, useMemo } from 'react'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { Container, PageHeader, LoadingSpinner, useObservable, Alert, Link } from '@sourcegraph/wildcard'
@@ -15,15 +13,12 @@ import { repoPermissionsInfo } from './backend'
 
 export interface RepoSettingsPermissionsPageProps {
     repo: SettingsAreaRepositoryFields
-    history: H.History
 }
 
 /**
  * The repository settings permissions page.
  */
-export const RepoSettingsPermissionsPage: React.FunctionComponent<
-    React.PropsWithChildren<RepoSettingsPermissionsPageProps>
-> = ({ repo, history }) => {
+export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> = ({ repo }) => {
     useEffect(() => eventLogger.logViewEvent('RepoSettingsPermissions'))
     const permissionsInfo = useObservable(useMemo(() => repoPermissionsInfo(repo.id), [repo.id]))
 
@@ -86,7 +81,7 @@ export const RepoSettingsPermissionsPage: React.FunctionComponent<
                                 </tr>
                             </tbody>
                         </table>
-                        <ScheduleRepositoryPermissionsSyncActionContainer repo={repo} history={history} />
+                        <ScheduleRepositoryPermissionsSyncActionContainer repo={repo} />
                     </div>
                 )}
             </Container>
@@ -96,7 +91,6 @@ export const RepoSettingsPermissionsPage: React.FunctionComponent<
 
 interface ScheduleRepositoryPermissionsSyncActionContainerProps {
     repo: SettingsAreaRepositoryFields
-    history: H.History
 }
 
 class ScheduleRepositoryPermissionsSyncActionContainer extends React.PureComponent<ScheduleRepositoryPermissionsSyncActionContainerProps> {
@@ -110,7 +104,6 @@ class ScheduleRepositoryPermissionsSyncActionContainer extends React.PureCompone
                 buttonLabel="Schedule now"
                 flashText="Added to queue"
                 run={this.scheduleRepositoryPermissions}
-                history={this.props.history}
             />
         )
     }

@@ -8,8 +8,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
-
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // LimitOffset specifies SQL LIMIT and OFFSET counts. A pointer to it is typically embedded in other options
@@ -130,12 +128,12 @@ type PaginationArgs struct {
 	After  *string
 	Before *string
 
-	// TODDO(naman): explain default
+	// TODO(naman): explain default
 	OrderBy   OrderBy
 	Ascending bool
 }
 
-func (p *PaginationArgs) SQL() (*QueryArgs, error) {
+func (p *PaginationArgs) SQL() *QueryArgs {
 	queryArgs := &QueryArgs{}
 
 	var conditions []*sqlf.Query
@@ -177,10 +175,10 @@ func (p *PaginationArgs) SQL() (*QueryArgs, error) {
 		queryArgs.Order = orderBy.SQL(!p.Ascending)
 		queryArgs.Limit = sqlf.Sprintf("LIMIT %d", *p.Last)
 	} else {
-		return nil, errors.New("First or Last must be set")
+		queryArgs.Order = orderBy.SQL(p.Ascending)
 	}
 
-	return queryArgs, nil
+	return queryArgs
 }
 
 func copyPtr[T any](n *T) *T {

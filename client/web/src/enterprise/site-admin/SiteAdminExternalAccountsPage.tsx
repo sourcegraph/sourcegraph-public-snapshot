@@ -1,6 +1,5 @@
 import * as React from 'react'
 
-import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -25,7 +24,7 @@ import {
     externalAccountsConnectionFragment,
 } from '../user/settings/ExternalAccountNode'
 
-interface Props extends RouteComponentProps<{}> {}
+interface Props {}
 
 interface FilterParameters {
     user?: Scalars['ID']
@@ -77,8 +76,6 @@ export class SiteAdminExternalAccountsPage extends React.Component<Props> {
                     nodeComponentProps={nodeProps}
                     updates={this.externalAccountUpdates}
                     hideSearch={true}
-                    history={this.props.history}
-                    location={this.props.location}
                 />
             </div>
         )

@@ -22,14 +22,11 @@ func Init(logger log.Logger) {
 	// INDEXED_SEARCH_SERVERS is empty (but defined) so that indexed search is disabled.
 	setDefaultEnv(logger, "INDEXED_SEARCH_SERVERS", "")
 
-	// Need to set this to avoid trying to look up gitservers via k8s service discovery.
-	// TODO(sqs) TODO(single-binary): Make this not require the hostname.
-	hostname, err := os.Hostname()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "unable to determine hostname:", err)
-		os.Exit(1)
-	}
-	setDefaultEnv(logger, "SRC_GIT_SERVERS", hostname+":3178")
+	// GITSERVER_EXTERNAL_ADDR is used by gitserver to identify itself in the
+	// list in SRC_GIT_SERVERS.
+	setDefaultEnv(logger, "GITSERVER_ADDR", "127.0.0.1:3178")
+	setDefaultEnv(logger, "GITSERVER_EXTERNAL_ADDR", "127.0.0.1:3178")
+	setDefaultEnv(logger, "SRC_GIT_SERVERS", "127.0.0.1:3178")
 
 	setDefaultEnv(logger, "SYMBOLS_URL", "http://127.0.0.1:3184")
 	setDefaultEnv(logger, "SEARCHER_URL", "http://127.0.0.1:3181")

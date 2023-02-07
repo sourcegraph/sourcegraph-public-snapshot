@@ -12,7 +12,12 @@ const bazelRemoteCacheURL = "https://storage.googleapis.com/sourcegraph_bazel_ca
 
 func BazelOperations() *operations.Set {
 	ops := operations.NewSet()
-	ops.Append(bazelBuild("//dev/sg", "//lib/..."))
+	ops.Append(bazelBuild(
+		"//dev/sg",
+		"//lib/...",
+		"//internal/...",
+		"//cmd/...",
+	))
 	ops.Append(bazelTest("//monitoring/..."))
 	return ops
 }
@@ -36,7 +41,7 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 	}
 
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(fmt.Sprintf(":bazel: Test %s", strings.Join(targets, " ")),
+		pipeline.AddStep(":bazel: Tests",
 			cmds...,
 		)
 	}
@@ -60,7 +65,7 @@ func bazelBuild(targets ...string) func(*bk.Pipeline) {
 	}
 
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(fmt.Sprintf(":bazel: Build %s", strings.Join(targets, " ")),
+		pipeline.AddStep(":bazel: Build ...",
 			cmds...,
 		)
 	}

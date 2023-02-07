@@ -118,7 +118,7 @@ type savedSearchesArgs struct {
 	Namespace graphql.ID
 }
 
-func (r *schemaResolver) SavedSearches(ctx context.Context, args savedSearchesArgs) (*graphqlutil.ConnectionResolver[savedSearchResolver], error) {
+func (r *schemaResolver) SavedSearches(ctx context.Context, args savedSearchesArgs) (*graphqlutil.ConnectionResolver[*savedSearchResolver], error) {
 	var userID, orgID int32
 	if err := UnmarshalNamespaceID(args.Namespace, &userID, &orgID); err != nil {
 		return nil, err
@@ -142,7 +142,7 @@ func (r *schemaResolver) SavedSearches(ctx context.Context, args savedSearchesAr
 		orgID:  &orgID,
 	}
 
-	return graphqlutil.NewConnectionResolver[savedSearchResolver](connectionStore, &args.ConnectionResolverArgs, nil)
+	return graphqlutil.NewConnectionResolver[*savedSearchResolver](connectionStore, &args.ConnectionResolverArgs, nil)
 }
 
 type savedSearchesConnectionStore struct {

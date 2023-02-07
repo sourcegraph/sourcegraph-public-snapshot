@@ -1,8 +1,8 @@
-import React, { useCallback, useState } from 'react'
+import { FC, useCallback, useState } from 'react'
 
 import { mdiChevronDoubleRight, mdiChevronDoubleLeft } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -38,7 +38,6 @@ interface RepoRevisionSidebarProps extends RepoFile, TelemetryProps, SettingsCas
     isDir: boolean
     defaultBranch: string
     className: string
-    history: H.History
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
 }
@@ -49,9 +48,10 @@ const SIDEBAR_KEY = 'repo-revision-sidebar-toggle'
 /**
  * The sidebar for a specific repo revision that shows the list of files and directories.
  */
-export const RepoRevisionSidebar: React.FunctionComponent<
-    React.PropsWithChildren<RepoRevisionSidebarProps>
-> = props => {
+export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
+    const location = useLocation()
+    const navigate = useNavigate()
+
     const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(TABS_KEY, 0)
     const [persistedIsVisible, setPersistedIsVisible] = useLocalStorage(
         SIDEBAR_KEY,
@@ -169,7 +169,8 @@ export const RepoRevisionSidebar: React.FunctionComponent<
                                             repoID={props.repoID}
                                             revision={props.revision}
                                             commitID={props.commitID}
-                                            history={props.history}
+                                            location={location}
+                                            navigate={navigate}
                                             scrollRootSelector=".explorer"
                                             activePath={props.filePath}
                                             activePathIsDir={props.isDir}

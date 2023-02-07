@@ -37,7 +37,7 @@ docker container run \
   \
   --volume ~/.sourcegraph/config:/etc/sourcegraph  \
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph  \
-  sourcegraph/server:4.4.1
+  sourcegraph/server:4.4.2
 ```
 
 ### Sourcegraph Cluster (Kubernetes)

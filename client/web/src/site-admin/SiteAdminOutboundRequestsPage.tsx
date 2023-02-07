@@ -4,7 +4,6 @@ import { mdiChevronDown } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
-import { RouteComponentProps } from 'react-router'
 import { of } from 'rxjs'
 import { delay, map } from 'rxjs/operators'
 
@@ -41,7 +40,7 @@ import { parseProductReference } from './SiteAdminFeatureFlagsPage'
 
 import styles from './SiteAdminOutboundRequestsPage.module.scss'
 
-export interface SiteAdminOutboundRequestsPageProps extends RouteComponentProps, TelemetryProps {}
+export interface SiteAdminOutboundRequestsPageProps extends TelemetryProps {}
 
 export type OutboundRequest = OutboundRequestsResult['outboundRequests']['nodes'][0]
 
@@ -75,7 +74,7 @@ const filters: FilteredConnectionFilter[] = [
 
 export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
     React.PropsWithChildren<SiteAdminOutboundRequestsPageProps>
-> = ({ history, telemetryService }) => {
+> = ({ telemetryService }) => {
     const [items, setItems] = useState<OutboundRequest[]>([])
 
     useEffect(() => {
@@ -164,8 +163,6 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
                         queryConnection={queryOutboundRequests}
                         nodeComponent={OutboundRequestNode}
                         filters={filters}
-                        history={history}
-                        location={history.location}
                     />
                 ) : (
                     <>

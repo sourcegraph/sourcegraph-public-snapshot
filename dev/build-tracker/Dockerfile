@@ -10,7 +10,7 @@ WORKDIR /repo/dev/build-tracker
 
 RUN go build -o /build-tracker .
 
-FROM sourcegraph/alpine-3.14:190630_2022-12-22_6988b6221a72@sha256:782f094e3a6397a5f57305efac7b3f0e8c992eece31c98f93c1a518cc6c876e5 AS build-tracker
+FROM sourcegraph/alpine-3.14:196830_2023-02-01_af83eee939ca@sha256:b4d7040d41fcf37fbf96fe5a14c39ae15580a3a6c76355cc7ea04a74b6c3b9fa AS build-tracker
 
 RUN apk --no-cache add tzdata
 COPY --from=build-tracker-build /build-tracker /usr/local/bin/build-tracker
