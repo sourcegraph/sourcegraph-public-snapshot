@@ -47,7 +47,7 @@ func UpdatePermissions(ctx context.Context, logger log.Logger, db database.DB) {
 				return errors.Wrap(err, "creating new permissions")
 			}
 
-			// Currently, we have oly two system roles so we can add a first argument of 2. In the future,
+			// Currently, we have only two system roles so we can just list the first two. In the future,
 			// it might be worth creating a new method called `FetchAll` or `ListWithoutPagination` to
 			// retrieve all system roles, but since we know currently there won't be more than two system
 			// roles at any given point in time, then this works.
