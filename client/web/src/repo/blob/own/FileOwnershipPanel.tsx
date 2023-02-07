@@ -5,13 +5,13 @@ import { Accordion } from '@reach/accordion'
 import { logger } from '@sourcegraph/common'
 import { gql, useQuery } from '@sourcegraph/http-client'
 
-import { FetchOwnershipResult, FetchOwnershipVariables } from '../../graphql-operations'
+import { FetchOwnershipResult, FetchOwnershipVariables } from '../../../graphql-operations'
 
 import { FileOwnershipReasons } from './FileOwnershipReasons'
 
-import styles from './FileOwnership.module.scss'
+import styles from './FileOwnershipPanel.module.scss'
 
-export const FileOwnership: React.FunctionComponent<
+export const FileOwnershipPanel: React.FunctionComponent<
     React.PropsWithChildren<{
         repoID: string
         revision?: string

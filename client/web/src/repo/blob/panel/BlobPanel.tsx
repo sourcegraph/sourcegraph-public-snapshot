@@ -29,7 +29,7 @@ import { CodeIntelligenceProps } from '../../../codeintel'
 import { ReferencesPanel } from '../../../codeintel/ReferencesPanel'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
-import { FileOwnership } from '../FileOwnership'
+import { FileOwnershipPanel } from '../own/FileOwnershipPanel'
 
 interface Props
     extends AbsoluteRepoFile,
@@ -207,7 +207,7 @@ function useBlobPanelViews({
                                     selector: null,
                                     locationProvider: undefined,
                                     reactElement: (
-                                        <FileOwnership
+                                        <FileOwnershipPanel
                                             key="ownership"
                                             repoID={repoID}
                                             revision={revision}

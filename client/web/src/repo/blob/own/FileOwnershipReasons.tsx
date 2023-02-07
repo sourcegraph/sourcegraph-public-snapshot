@@ -6,8 +6,8 @@ import { AccordionButton, AccordionItem, AccordionPanel } from '@reach/accordion
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { Badge, Button, Icon } from '@sourcegraph/wildcard'
 
-import { PersonLink } from '../../person/PersonLink'
-import { UserAvatar } from '../../user/UserAvatar'
+import { PersonLink } from '../../../person/PersonLink'
+import { UserAvatar } from '../../../user/UserAvatar'
 
 interface OwnerPerson {
     email: string

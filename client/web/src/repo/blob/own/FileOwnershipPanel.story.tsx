@@ -3,10 +3,10 @@ import { Meta, Story } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 
-import { WebStory } from '../../components/WebStory'
-import { FetchOwnershipResult, FetchOwnershipVariables } from '../../graphql-operations'
+import { WebStory } from '../../../components/WebStory'
+import { FetchOwnershipResult, FetchOwnershipVariables } from '../../../graphql-operations'
 
-import { FETCH_OWNERS, FileOwnership } from './FileOwnership'
+import { FETCH_OWNERS, FileOwnershipPanel } from './FileOwnershipPanel'
 
 const response: FetchOwnershipResult = {
     node: {
@@ -20,6 +20,9 @@ const response: FetchOwnershipResult = {
                         person: {
                             __typename: 'Person',
                             email: 'alice@example.com',
+                            avatarURL: null,
+                            displayName: 'Alice',
+                            user: null,
                         },
                         reasons: [
                             {
@@ -40,6 +43,9 @@ const response: FetchOwnershipResult = {
                         person: {
                             __typename: 'Person',
                             email: 'bob@example.com',
+                            avatarURL: null,
+                            displayName: 'Bob',
+                            user: null,
                         },
                         reasons: [
                             {
@@ -82,7 +88,7 @@ export const Default: Story = () => (
     <WebStory>
         {() => (
             <MockedProvider mocks={[mockResponse]}>
-                <FileOwnership repoID="github.com/sourcegraph/sourcegraph" filePath="README.md" />
+                <FileOwnershipPanel repoID="github.com/sourcegraph/sourcegraph" filePath="README.md" />
             </MockedProvider>
         )}
     </WebStory>
