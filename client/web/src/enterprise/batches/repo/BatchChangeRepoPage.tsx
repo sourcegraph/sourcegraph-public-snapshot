@@ -1,7 +1,6 @@
-import React, { useMemo } from 'react'
+import { FC, useMemo } from 'react'
 
 import VisuallyHidden from '@reach/visually-hidden'
-import * as H from 'history'
 
 import { pluralize } from '@sourcegraph/common'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
@@ -30,8 +29,6 @@ import {
 import { RepoBatchChanges } from './RepoBatchChanges'
 
 interface BatchChangeRepoPageProps extends ThemeProps {
-    history: H.History
-    location: H.Location
     repo: RepositoryFields
     /** For testing only. */
     queryRepoBatchChangeStats?: typeof _queryRepoBatchChangeStats
@@ -41,7 +38,7 @@ interface BatchChangeRepoPageProps extends ThemeProps {
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
 }
 
-export const BatchChangeRepoPage: React.FunctionComponent<React.PropsWithChildren<BatchChangeRepoPageProps>> = ({
+export const BatchChangeRepoPage: FC<BatchChangeRepoPageProps> = ({
     repo,
     queryRepoBatchChangeStats = _queryRepoBatchChangeStats,
     ...context

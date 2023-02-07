@@ -2,8 +2,7 @@ import React, { useMemo, useEffect, useState } from 'react'
 
 import { mdiBrain, mdiCog, mdiFolder, mdiHistory, mdiSourceBranch, mdiSourceRepository, mdiTag } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
-import { Redirect } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom-v5-compat'
 import { catchError } from 'rxjs/operators'
 
 import { asError, encodeURIPathComponent, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
@@ -41,7 +40,6 @@ import { ActionItemsBarProps } from '../../extensions/components/ActionItemsBar'
 import { RepositoryFields } from '../../graphql-operations'
 import { basename } from '../../util/path'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
-import { RepositoryFileTreePageProps } from '../RepositoryFileTreePage'
 
 import { TreePageContent } from './TreePageContent'
 
@@ -63,11 +61,8 @@ interface Props
     filePath: string
     commitID: string
     revision: string
-    location: H.Location
-    history: H.History
     globbing: boolean
     useActionItemsBar: ActionItemsBarProps['useActionItemsBar']
-    match: RepositoryFileTreePageProps['match']
     isSourcegraphDotCom: boolean
     className?: string
 }
@@ -83,7 +78,6 @@ export const treePageRepositoryFragment = gql`
 `
 
 export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    location,
     repo,
     repoName,
     commitID,
@@ -94,11 +88,12 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     codeIntelligenceEnabled,
     batchChangesEnabled,
     useActionItemsBar,
-    match,
     isSourcegraphDotCom,
     className,
     ...props
 }) => {
+    const location = useLocation()
+
     useEffect(() => {
         if (filePath === '') {
             props.telemetryService.logViewEvent('Repository')
@@ -305,7 +300,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     // If the tree is actually a blob, be helpful and redirect to the blob page.
                     // We don't have error names on GraphQL errors.
                     /not a directory/i.test(treeOrError.message) ? (
-                        <Redirect to={toPrettyBlobURL({ repoName, revision, commitID, filePath })} />
+                        <Navigate to={toPrettyBlobURL({ repoName, revision, commitID, filePath })} replace={true} />
                     ) : (
                         <ErrorAlert error={treeOrError} />
                     )

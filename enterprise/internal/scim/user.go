@@ -7,9 +7,11 @@ import (
 	"strings"
 
 	"github.com/elimity-com/scim"
+	scimerrors "github.com/elimity-com/scim/errors"
 	"github.com/elimity-com/scim/optional"
 	"github.com/elimity-com/scim/schema"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/scim/filter"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -18,17 +20,21 @@ import (
 
 // UserResourceHandler implements the scim.ResourceHandler interface for users.
 type UserResourceHandler struct {
-	ctx            context.Context
-	observationCtx *observation.Context
-	db             database.DB
+	ctx              context.Context
+	observationCtx   *observation.Context
+	db               database.DB
+	coreSchema       schema.Schema
+	schemaExtensions []scim.SchemaExtension
 }
 
 // NewUserResourceHandler returns a new UserResourceHandler.
 func NewUserResourceHandler(ctx context.Context, observationCtx *observation.Context, db database.DB) *UserResourceHandler {
 	return &UserResourceHandler{
-		ctx:            ctx,
-		observationCtx: observationCtx,
-		db:             db,
+		ctx:              ctx,
+		observationCtx:   observationCtx,
+		db:               db,
+		coreSchema:       createCoreSchema(),
+		schemaExtensions: createSchemaExtensions(),
 	}
 }
 
@@ -55,10 +61,10 @@ func (h *UserResourceHandler) Get(r *http.Request, idStr string) (scim.Resource,
 		UserIDs: []int32{int32(id)},
 	})
 	if err != nil {
-		return scim.Resource{}, errors.Wrap(err, "Error loading user")
+		return scim.Resource{}, scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
 	}
 	if len(users) == 0 {
-		return scim.Resource{}, errors.New("User not found")
+		return scim.Resource{}, scimerrors.ScimErrorResourceNotFound(idStr)
 	}
 
 	resource := h.convertUserToSCIMResource(users[0])
@@ -68,40 +74,78 @@ func (h *UserResourceHandler) Get(r *http.Request, idStr string) (scim.Resource,
 
 // GetAll returns a paginated list of resources.
 // An empty list of resources will be represented as `null` in the JSON response if `nil` is assigned to the
-// Page.Resources. Otherwise, is an empty slice is assigned, an empty list will be represented as `[]`.
+// Page.Resources. Otherwise, if an empty slice is assigned, an empty list will be represented as `[]`.
 func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestParams) (scim.Page, error) {
-	// Get total count
-	totalCount, err := h.db.Users().Count(r.Context(), &database.UsersListOptions{})
+	var totalCount int
+	var resources []scim.Resource
+	var err error
+
+	if params.Filter == nil {
+		totalCount, resources, err = h.getAllFromDB(r, params.StartIndex, &params.Count)
+	} else {
+		extensionSchemas := make([]schema.Schema, 0, len(h.schemaExtensions))
+		for _, ext := range h.schemaExtensions {
+			extensionSchemas = append(extensionSchemas, ext.Schema)
+		}
+		validator := filter.NewFilterValidator(params.Filter, h.coreSchema, extensionSchemas...)
+
+		// Fetch all resources from the DB and then filter them here.
+		// This doesn't feel efficient, but it wasn't reasonable to implement this in SQL in the time available.
+		var allResources []scim.Resource
+		_, allResources, err = h.getAllFromDB(r, 0, nil)
+
+		for _, resource := range allResources {
+			if err := validator.PassesFilter(resource.Attributes); err != nil {
+				continue
+			}
+
+			totalCount++
+			if totalCount >= params.StartIndex && len(resources) < params.Count {
+				resources = append(resources, resource)
+			}
+		}
+	}
 	if err != nil {
-		return scim.Page{}, err
-	}
-
-	// Calculate offset
-	var offset int
-	if params.StartIndex > 0 {
-		offset = params.StartIndex - 1
-	}
-
-	// Get users
-	users, err := h.db.Users().ListForSCIM(r.Context(), &database.UsersListOptions{
-		LimitOffset: &database.LimitOffset{
-			Limit:  params.Count,
-			Offset: offset,
-		},
-	})
-	if err != nil {
-		return scim.Page{}, err
-	}
-
-	resources := make([]scim.Resource, 0, len(users))
-	for _, user := range users {
-		resources = append(resources, h.convertUserToSCIMResource(user))
+		return scim.Page{}, scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
 	}
 
 	return scim.Page{
 		TotalResults: totalCount,
 		Resources:    resources,
 	}, nil
+}
+
+func (h *UserResourceHandler) getAllFromDB(r *http.Request, startIndex int, count *int) (totalCount int, resources []scim.Resource, err error) {
+	// Calculate offset
+	var offset int
+	if startIndex > 0 {
+		offset = startIndex - 1
+	}
+
+	// Get users and convert them to SCIM resources
+	var opt = &database.UsersListOptions{}
+	if count != nil {
+		opt = &database.UsersListOptions{
+			LimitOffset: &database.LimitOffset{Limit: *count, Offset: offset},
+		}
+	}
+	users, err := h.db.Users().ListForSCIM(r.Context(), opt)
+	if err != nil {
+		return
+	}
+	resources = make([]scim.Resource, 0, len(users))
+	for _, user := range users {
+		resources = append(resources, h.convertUserToSCIMResource(user))
+	}
+
+	// Get total count
+	if count == nil {
+		totalCount = len(users)
+	} else {
+		totalCount, err = h.db.Users().Count(r.Context(), &database.UsersListOptions{})
+	}
+
+	return
 }
 
 // convertUserToSCIMResource converts a Sourcegraph user to a SCIM resource.
@@ -197,7 +241,20 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 
 // createUserResourceType creates a SCIM resource type for users.
 func createUserResourceType(userResourceHandler *UserResourceHandler) scim.ResourceType {
-	coreUserSchema := schema.Schema{
+	return scim.ResourceType{
+		ID:               optional.NewString("User"),
+		Name:             "User",
+		Endpoint:         "/Users",
+		Description:      optional.NewString("User Account"),
+		Schema:           userResourceHandler.coreSchema,
+		SchemaExtensions: userResourceHandler.schemaExtensions,
+		Handler:          userResourceHandler,
+	}
+}
+
+// createCoreSchema creates a SCIM core schema for users.
+func createCoreSchema() schema.Schema {
+	return schema.Schema{
 		ID:          "urn:ietf:params:scim:schemas:core:2.0:User",
 		Name:        optional.NewString("User"),
 		Description: optional.NewString("User Account"),
@@ -207,9 +264,16 @@ func createUserResourceType(userResourceHandler *UserResourceHandler) scim.Resou
 				Required:   true,
 				Uniqueness: schema.AttributeUniquenessServer(),
 			})),
+			schema.SimpleCoreAttribute(schema.SimpleStringParams(schema.StringParams{
+				Name:       "displayName",
+				Uniqueness: schema.AttributeUniquenessNone(),
+			})),
 		},
 	}
+}
 
+// createSchemaExtensions creates a SCIM schema extension for users.
+func createSchemaExtensions() []scim.SchemaExtension {
 	extensionUserSchema := schema.Schema{
 		ID:          "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
 		Name:        optional.NewString("EnterpriseUser"),
@@ -224,17 +288,10 @@ func createUserResourceType(userResourceHandler *UserResourceHandler) scim.Resou
 		},
 	}
 
-	return scim.ResourceType{
-		ID:          optional.NewString("User"),
-		Name:        "User",
-		Endpoint:    "/Users",
-		Description: optional.NewString("User Account"),
-		Schema:      coreUserSchema,
-		SchemaExtensions: []scim.SchemaExtension{
-			{Schema: extensionUserSchema},
-		},
-		Handler: userResourceHandler,
+	schemaExtensions := []scim.SchemaExtension{
+		{Schema: extensionUserSchema},
 	}
+	return schemaExtensions
 }
 
 // TODO: Temporary function to log attributes
