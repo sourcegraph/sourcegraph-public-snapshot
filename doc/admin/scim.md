@@ -10,7 +10,7 @@ You can use any IdP that supports SCIM, but we’ve only tested the endpoint wit
 
 ## How to use
 
-To use SCIM, you must have an existing identity provider (IdP) configured with your Sourcegraph instance.
+To use SCIM, you must have an existing IdP configured with your Sourcegraph instance.
 To configure it, add the following line to your [site configuration](config/site_config.md):
 
 ```
