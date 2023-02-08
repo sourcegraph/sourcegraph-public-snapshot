@@ -20,6 +20,7 @@ type RoleResolver interface {
 type PermissionResolver interface {
 	ID() graphql.ID
 	Namespace() string
+	DisplayName() string
 	Action() string
 	CreatedAt() gqlutil.DateTime
 }

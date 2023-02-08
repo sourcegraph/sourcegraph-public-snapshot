@@ -62,11 +62,12 @@ func TestPermissionResolver(t *testing.T) {
 
 	t.Run(" as site-administrator", func(t *testing.T) {
 		want := apitest.Permission{
-			Typename:  "Permission",
-			ID:        mpid,
-			Namespace: perm.Namespace,
-			Action:    perm.Action,
-			CreatedAt: gqlutil.DateTime{Time: perm.CreatedAt.Truncate(time.Second)},
+			Typename:    "Permission",
+			ID:          mpid,
+			Namespace:   perm.Namespace,
+			DisplayName: perm.DisplayName(),
+			Action:      perm.Action,
+			CreatedAt:   gqlutil.DateTime{Time: perm.CreatedAt.Truncate(time.Second)},
 		}
 
 		input := map[string]any{"permission": mpid}
@@ -86,6 +87,7 @@ query ($permission: ID!) {
 		... on Permission {
 			id
 			namespace
+			displayName
 			action
 			createdAt
 		}

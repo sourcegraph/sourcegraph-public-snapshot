@@ -94,6 +94,10 @@ type Permission implements Node {
     """
     action: String!
     """
+    A unique, human-readable string used to represent a permission, taking the form: <namespace>:<object_id>#<relation>@<user_id | user_group>
+    """
+    displayName: String!
+    """
     The date and time when the permission was created.
     """
     createdAt: DateTime!

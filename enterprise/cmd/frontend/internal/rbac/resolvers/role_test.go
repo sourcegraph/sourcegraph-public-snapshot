@@ -80,10 +80,11 @@ func TestRoleResolver(t *testing.T) {
 				},
 				Nodes: []apitest.Permission{
 					{
-						ID:        mpid,
-						Namespace: perm.Namespace,
-						Action:    perm.Action,
-						CreatedAt: gqlutil.DateTime{Time: perm.CreatedAt.Truncate(time.Second)},
+						ID:          mpid,
+						Namespace:   perm.Namespace,
+						DisplayName: perm.DisplayName(),
+						Action:      perm.Action,
+						CreatedAt:   gqlutil.DateTime{Time: perm.CreatedAt.Truncate(time.Second)},
 					},
 				},
 			},
@@ -122,6 +123,7 @@ query ($role: ID!) {
 				nodes {
 					id
 					namespace
+					displayName
 					action
 					createdAt
 				}
