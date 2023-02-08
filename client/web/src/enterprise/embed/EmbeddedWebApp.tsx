@@ -12,11 +12,11 @@ import '../../SourcegraphWebApp.scss'
 import { GlobalContributions } from '../../contributions'
 import { createPlatformContext } from '../../platform/context'
 import { useTheme, ThemePreference } from '../../theme'
+import { globalHistory } from '../../util/globalHistory'
 
 import { OpenNewTabAnchorLink } from './OpenNewTabAnchorLink'
 
 import styles from './EmbeddedWebApp.module.scss'
-import { globalHistory } from '../../util/globalHistory'
 
 // Since we intend to embed the EmbeddedWebApp component within an iframe,
 // we want to open all links in a new tab instead of the current iframe window.

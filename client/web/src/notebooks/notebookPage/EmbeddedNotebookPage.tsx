@@ -1,9 +1,9 @@
 import { FC, useCallback, useEffect, useMemo } from 'react'
 
 import { noop } from 'lodash'
+import { useParams } from 'react-router-dom-v5-compat'
 import { NEVER } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
-import { useParams } from 'react-router-dom-v5-compat'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import {
