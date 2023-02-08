@@ -251,7 +251,6 @@ func (r *roleStore) Create(ctx context.Context, name string, isSystemRole bool) 
 		if errors.As(err, &e) && e.ConstraintName == "roles_name" {
 			return nil, errCannotCreateRole{errorCodeRoleNameExists}
 		}
-		fmt.Println("outside of the thing")
 		return nil, errors.Wrap(err, "scanning role")
 	}
 
