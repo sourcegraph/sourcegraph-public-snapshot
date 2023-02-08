@@ -544,6 +544,9 @@ const getGitObjectWording = (totalCountYounger: number, totalCount: number): str
 
 const GitObjectPreview: FunctionComponent<GitObjectPreviewProps> = ({ policy, preview, updateCount }) => {
     if (policy.repository && policy.pattern !== '' && preview && preview.preview.length > 0) {
+        // Limit fetching more than 1000 objects
+        const nextFetchLimit = Math.min(preview.totalCount, 1000)
+
         return (
             <div className="form-group">
                 <div className="d-flex justify-content-between">
@@ -567,7 +570,8 @@ const GitObjectPreview: FunctionComponent<GitObjectPreviewProps> = ({ policy, pr
                     </span>
                     {preview.preview.length < preview.totalCount && (
                         <Button variant="link" className="p-0" onClick={() => updateCount(preview.totalCount)}>
-                            Show all {preview.totalCount} {policy.type === GitObjectType.GIT_TAG ? 'tags' : 'branches'}
+                            Show {nextFetchLimit === preview.totalCount && 'all '}
+                            {nextFetchLimit} {policy.type === GitObjectType.GIT_TAG ? 'tags' : 'branches'}
                         </Button>
                     )}
                 </div>

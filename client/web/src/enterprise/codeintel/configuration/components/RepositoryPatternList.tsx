@@ -130,6 +130,9 @@ const RepositoryList: FunctionComponent<RepositoryListProps> = ({ repositoryPatt
         return null
     }
 
+    // Limit fetching more than 1000 repos
+    const nextFetchLimit = Math.min(preview.totalCount, 1000)
+
     return preview.repositories.length === 0 ? (
         <>
             {!(repositoryPatterns.length === 1 && repositoryPatterns[0] === '') && (
@@ -168,8 +171,9 @@ const RepositoryList: FunctionComponent<RepositoryListProps> = ({ repositoryPatt
                     :
                 </span>
                 {preview.repositories.length < preview.totalCount && (
-                    <Button variant="link" className="p-0" onClick={() => setRepositoryFetchLimit(preview.totalCount)}>
-                        Show all {preview.totalCount} repositories
+                    <Button variant="link" className="p-0" onClick={() => setRepositoryFetchLimit(nextFetchLimit)}>
+                        Show {nextFetchLimit === preview.totalCount && 'all '}
+                        {nextFetchLimit} repositories
                     </Button>
                 )}
             </div>
