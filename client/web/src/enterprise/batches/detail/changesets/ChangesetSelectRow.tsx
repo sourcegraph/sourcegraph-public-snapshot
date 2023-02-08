@@ -4,11 +4,10 @@ import { mdiInformationOutline } from '@mdi/js'
 import { of } from 'rxjs'
 
 import { pluralize } from '@sourcegraph/common'
-import { Button, useObservable, Icon } from '@sourcegraph/wildcard'
+import { Button, useObservable, Icon, DropdownButtonAction, DropdownButton } from '@sourcegraph/wildcard'
 
 import { AllChangesetIDsVariables, Scalars, BulkOperationType } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
-import { Action, DropdownButton } from '../../DropdownButton'
 import { MultiSelectContext } from '../../MultiSelectContext'
 import {
     queryAllChangesetIDs as _queryAllChangesetIDs,
@@ -25,7 +24,7 @@ import { ReenqueueChangesetsModal } from './ReenqueueChangesetsModal'
 /**
  * Describes a possible action on the changeset list.
  */
-interface ChangesetListAction extends Omit<Action, 'onTrigger'> {
+interface ChangesetListAction extends Omit<DropdownButtonAction, 'onTrigger'> {
     /**
      * Invoked when the action is triggered. Either onDone or onCancel need to be called
      * eventually. Can return a JSX.Element to be rendered adacent to the button (i.e. a modal).
@@ -204,7 +203,7 @@ export const ChangesetSelectRow: React.FunctionComponent<React.PropsWithChildren
             const bulkOperation = operation as BulkOperationType
             const action = AVAILABLE_ACTIONS[bulkOperation]
             const isDisabled = !availableBulkOperations.includes(bulkOperation)
-            const dropdownAction: Action = {
+            const dropdownAction: DropdownButtonAction = {
                 ...action,
                 disabled: isDisabled,
                 onTrigger: (onDone, onCancel) =>
