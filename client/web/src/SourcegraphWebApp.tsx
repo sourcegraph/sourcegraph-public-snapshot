@@ -39,7 +39,7 @@ import {
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
@@ -121,7 +121,7 @@ export interface SourcegraphWebAppProps
     routes: readonly LayoutRouteProps[]
 }
 
-interface SourcegraphWebAppState {
+interface SourcegraphWebAppState extends SettingsCascadeProps {
     error?: Error
 
     /**
@@ -145,8 +145,6 @@ interface SourcegraphWebAppState {
      * Whether globbing is enabled for filters.
      */
     globbing: boolean
-
-    settingsCascade: SettingsCascadeOrError | null
 }
 
 const notificationStyles: BrandedNotificationItemStyleProps = {
@@ -186,7 +184,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         }
 
         this.state = {
-            settingsCascade: null,
+            settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: siteSubjectNoAdmin(),
             globbing: false,
         }
@@ -333,14 +331,9 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             return <HeroPage icon={ServerIcon} title={`${statusCode}: ${statusText}`} subtitle={subtitle} />
         }
 
-        const { settingsCascade, authenticatedUser, graphqlClient, temporarySettingsStorage } = this.state
+        const { authenticatedUser, graphqlClient, temporarySettingsStorage } = this.state
 
-        if (
-            authenticatedUser === undefined ||
-            graphqlClient === undefined ||
-            temporarySettingsStorage === undefined ||
-            !settingsCascade
-        ) {
+        if (authenticatedUser === undefined || graphqlClient === undefined || temporarySettingsStorage === undefined) {
             return null
         }
 
@@ -371,9 +364,11 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                         {...this.props}
                                         authenticatedUser={authenticatedUser}
                                         viewerSubject={this.state.viewerSubject}
-                                        settingsCascade={settingsCascade}
+                                        settingsCascade={this.state.settingsCascade}
                                         batchChangesEnabled={this.props.batchChangesEnabled}
-                                        batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(settingsCascade)}
+                                        batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(
+                                            this.state.settingsCascade
+                                        )}
                                         batchChangesWebhookLogsEnabled={window.context.batchChangesWebhookLogsEnabled}
                                         // Search query
                                         fetchHighlightedFileLineRanges={this.fetchHighlightedFileLineRanges}
