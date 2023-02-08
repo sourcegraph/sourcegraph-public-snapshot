@@ -304,7 +304,7 @@ MissingCredentials.storyName = 'Missing credentials'
 export const SpecFile: Story = args => {
     const link = useMemo(() => fetchBatchSpecCreate(args), [args])
     return (
-        <WebStory path="/:batchSpecID" initialEntries={['/123123']}>
+        <WebStory path="/:batchSpecID" initialEntries={['/123123?tab=spec']}>
             {props => (
                 <MockedTestProvider link={link}>
                     <BatchChangePreviewPage
