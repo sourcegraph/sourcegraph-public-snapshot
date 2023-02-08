@@ -31,7 +31,7 @@ export const EditSearchBasedInsight: FC<EditSearchBasedInsightProps> = props => 
             title: insight.title,
             repoMode: repoQuery ? 'search-query' : 'urls-list',
             repoQuery: { query: repoQuery },
-            repositories: insight.repositories.join(', '),
+            repositories: insight.repositories,
             series: insight.series.map(line => createDefaultEditSeries({ ...line, valid: true })),
             stepValue: Object.values(insight.step)[0]?.toString() ?? '3',
             step: Object.keys(insight.step)[0] as InsightStep,

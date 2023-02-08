@@ -7,7 +7,8 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/searcher/proto"
+	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
+
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 

@@ -1,4 +1,4 @@
-package proto
+package v1
 
 import (
 	"math"
@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -20,7 +21,7 @@ func Test_Search_SymbolsResponse_ProtoRoundTrip(t *testing.T) {
 			return true // skip
 		}
 
-		var originalProto SymbolsResponse
+		var originalProto SearchResponse
 		originalProto.FromInternal(&original)
 
 		converted := originalProto.ToInternal()
@@ -70,7 +71,7 @@ func Test_Result_Symbol_ProtoRoundTrip(t *testing.T) {
 			return true // skip
 		}
 
-		var originalProto SymbolsResponse_Symbol
+		var originalProto SearchResponse_Symbol
 		originalProto.FromInternal(&original)
 
 		converted := originalProto.ToInternal()

@@ -1,7 +1,5 @@
 import { FC, useCallback, useEffect, useMemo } from 'react'
 
-import classNames from 'classnames'
-
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useLocalStorage, Link, PageHeader, useObservable } from '@sourcegraph/wildcard'
 
@@ -23,8 +21,6 @@ import {
 } from './components/LangStatsInsightCreationContent'
 import { LangStatsCreationFormFields } from './types'
 import { getSanitizedLangStatsInsight } from './utils/insight-sanitizer'
-
-import styles from './LangStatsInsightCreationPage.module.scss'
 
 export interface InsightCreateEvent {
     insight: MinimalLangStatsInsightData
@@ -100,7 +96,7 @@ export const LangStatsInsightCreationPage: FC<LangStatsInsightCreationPageProps>
     }, [setInitialFormValues, telemetryService, onCancel])
 
     return (
-        <CodeInsightsPage className={classNames(styles.creationPage, 'col-10')}>
+        <CodeInsightsPage>
             <PageTitle title="Create language usage insight - Code Insights" />
 
             <PageHeader

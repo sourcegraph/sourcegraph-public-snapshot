@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "redispool",
     srcs = [
+        "db.go",
         "keyvalue.go",
         "mem.go",
         "naive.go",
@@ -32,7 +33,10 @@ go_test(
     ],
     embed = [":redispool"],
     deps = [
+        "//internal/database",
+        "//internal/database/dbtest",
         "//lib/errors",
         "@com_github_gomodule_redigo//redis",
+        "@com_github_sourcegraph_log//logtest",
     ],
 )

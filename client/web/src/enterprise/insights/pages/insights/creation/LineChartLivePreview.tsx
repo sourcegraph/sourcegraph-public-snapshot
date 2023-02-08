@@ -30,7 +30,7 @@ export interface LivePreviewSeries {
 
 interface LineChartLivePreviewProps extends HTMLAttributes<HTMLElement> {
     disabled: boolean
-    repositories: string
+    repositories: string[]
     repoQuery: string | undefined
     repoMode: string
     stepValue: string

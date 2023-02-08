@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useMemo } from 'react'
+import { FC, useCallback, useEffect, useMemo } from 'react'
 
 import { noop } from 'lodash'
+import { useParams } from 'react-router-dom-v5-compat'
 import { NEVER } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
@@ -24,23 +25,19 @@ interface EmbeddedNotebookPageProps
             NotebookContentProps,
             'isLightTheme' | 'searchContextsEnabled' | 'isSourcegraphDotCom' | 'authenticatedUser' | 'settingsCascade'
         >,
-        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'> {
-    notebookId: string
-}
+        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'> {}
 
 const LOADING = 'loading' as const
 
-export const EmbeddedNotebookPage: React.FunctionComponent<React.PropsWithChildren<EmbeddedNotebookPageProps>> = ({
-    notebookId,
-    platformContext,
-    ...props
-}) => {
+export const EmbeddedNotebookPage: FC<EmbeddedNotebookPageProps> = ({ platformContext, ...props }) => {
+    const { notebookId } = useParams()
+
     useEffect(() => eventLogger.logPageView('EmbeddedNotebookPage'), [])
 
     const notebookOrError = useObservable(
         useMemo(
             () =>
-                fetchNotebook(notebookId).pipe(
+                fetchNotebook(notebookId!).pipe(
                     startWith(LOADING),
                     catchError(error => [asError(error)])
                 ),

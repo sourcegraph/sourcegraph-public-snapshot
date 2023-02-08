@@ -1,4 +1,4 @@
-package proto_test
+package v1_test
 
 import (
 	"reflect"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/proto"
+	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 )
 
 type testCase struct {
