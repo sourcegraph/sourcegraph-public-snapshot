@@ -25,17 +25,13 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     Badge,
     Button,
-    ButtonGroup,
     Container,
+    DropdownButton,
+    DropdownButtonAction,
     ErrorAlert,
     Icon,
     Link,
-    Menu,
-    MenuButton,
-    MenuLink,
-    MenuList,
     PageHeader,
-    Position,
     Text,
     Tooltip,
 } from '@sourcegraph/wildcard'
@@ -200,51 +196,45 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
     )
 }
 
+const getButtonActions = ({ repoSpecific }: { repoSpecific: boolean }): DropdownButtonAction[] => [
+    {
+        type: 'head',
+        elementType: 'link',
+        to: './configuration/new?type=head',
+        buttonLabel: `Create new ${!repoSpecific ? 'global' : ''} policy`,
+        dropdownTitle: `Create new ${!repoSpecific ? 'global' : ''} policy for HEAD`,
+        dropdownDescription: `Match the tip of the default branch ${
+            repoSpecific ? 'within this repository' : 'across multiple repositories'
+        }`,
+    },
+    {
+        type: 'branch',
+        elementType: 'link',
+        to: './configuration/new?type=branch',
+        buttonLabel: `Create new ${!repoSpecific ? 'global' : ''} branch policy`,
+        dropdownTitle: `Create new ${!repoSpecific ? 'global' : ''} branch policy`,
+        dropdownDescription: `Match multiple branches ${
+            repoSpecific ? 'within this repository' : 'across multiple repositories'
+        }`,
+    },
+    {
+        type: 'tag',
+        elementType: 'link',
+        to: './configuration/new?type=tag',
+        buttonLabel: `Create new ${!repoSpecific ? 'global' : ''} tag policy`,
+        dropdownTitle: `Create new ${!repoSpecific ? 'global' : ''} tag policy`,
+        dropdownDescription: `Match multiple tags ${
+            repoSpecific ? 'within this repository' : 'across multiple repositories'
+        }`,
+    },
+]
+
 interface CreatePolicyButtonsProps {
     repo?: { id: string; name: string }
 }
 
 const CreatePolicyButtons: FunctionComponent<CreatePolicyButtonsProps> = ({ repo }) => (
-    <Menu>
-        <ButtonGroup>
-            <Button to="./configuration/new?type=head" variant="primary" as={Link}>
-                Create new {!repo && 'global'} policy
-            </Button>
-            <MenuButton variant="primary" className={styles.dropdownButton}>
-                <Icon aria-hidden={true} svgPath={mdiChevronDown} />
-                <VisuallyHidden>Actions</VisuallyHidden>
-            </MenuButton>
-        </ButtonGroup>
-        <MenuList position={Position.bottomEnd} className={styles.dropdownList}>
-            <MenuLink as={Link} className={styles.dropdownItem} to="./configuration/new?type=head">
-                <>
-                    <Text weight="medium" className="mb-2">
-                        Create new {!repo && 'global'} policy for HEAD
-                    </Text>
-                    <Text className="mb-0 text-muted">
-                        Match the tip of the default branch{' '}
-                        {repo ? 'within this repository' : 'across multiple repositories'}
-                    </Text>
-                </>
-            </MenuLink>
-            <MenuLink as={Link} className={styles.dropdownItem} to="./configuration/new?type=branch">
-                <Text weight="medium" className="mb-2">
-                    Create new {!repo && 'global'} branch policy
-                </Text>
-                <Text className="mb-0 text-muted">
-                    Match multiple branches {repo ? 'within this repository' : 'across multiple repositories'}
-                </Text>
-            </MenuLink>
-            <MenuLink as={Link} className={styles.dropdownItem} to="./configuration/new?type=tag">
-                <Text weight="medium" className="mb-2">
-                    Create new {!repo && 'global'} tag policy
-                </Text>
-                <Text className="mb-0 text-muted">
-                    Match multiple tags {repo ? 'within this repository' : 'across multiple repositories'}
-                </Text>
-            </MenuLink>
-        </MenuList>
-    </Menu>
+    <DropdownButton actions={getButtonActions({ repoSpecific: Boolean(repo) })} defaultAction={0} />
 )
 
 interface PoliciesNodeProps {

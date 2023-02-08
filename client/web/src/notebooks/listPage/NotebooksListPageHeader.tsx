@@ -19,6 +19,8 @@ import {
     Input,
     Modal,
     Icon,
+    DropdownButton,
+    DropdownButtonAction,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -94,6 +96,25 @@ export const NotebooksListPageHeader: React.FunctionComponent<
         [setImportState, onFileLoad]
     )
 
+    const actions: DropdownButtonAction[] = [
+        {
+            type: 'create',
+            elementType: 'link',
+            to: EnterprisePageRoutes.NotebookCreate,
+            buttonLabel: 'Create notebook',
+            dropdownTitle: 'Create notebook',
+            dropdownDescription: '',
+        },
+        {
+            type: 'import',
+            elementType: 'button',
+            buttonLabel: 'Import Markdown notebook',
+            dropdownTitle: 'Import Markdown notebook',
+            dropdownDescription: '',
+            onTrigger: onImportMenuItemSelect,
+        },
+    ]
+
     return (
         <>
             <ToggleNotepadButton telemetryService={telemetryService} className="mr-2 d-none d-md-inline" />
@@ -107,22 +128,7 @@ export const NotebooksListPageHeader: React.FunctionComponent<
                 onChange={onFileInputChange}
                 data-testid="import-markdown-notebook-file-input"
             />
-            <Menu>
-                <ButtonGroup>
-                    <Button to={EnterprisePageRoutes.NotebookCreate} variant="primary" as={Link}>
-                        Create notebook
-                    </Button>
-                    <MenuButton variant="primary" className={styles.dropdownButton}>
-                        <Icon aria-hidden={true} svgPath={mdiChevronDown} />
-                        <VisuallyHidden>Actions</VisuallyHidden>
-                    </MenuButton>
-                </ButtonGroup>
-                <MenuList position={Position.bottomEnd}>
-                    <MenuItem className={styles.menuItem} onSelect={onImportMenuItemSelect}>
-                        Import Markdown notebook
-                    </MenuItem>
-                </MenuList>
-            </Menu>
+            <DropdownButton actions={actions} defaultAction={0} />
         </>
     )
 }
