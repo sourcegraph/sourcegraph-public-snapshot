@@ -8,7 +8,6 @@ import {
 } from '@codemirror/commands'
 import { Extension, Prec } from '@codemirror/state'
 import { EditorView, KeyBinding, keymap, layer, RectangleMarker } from '@codemirror/view'
-import classNames from 'classnames'
 
 import { blobPropsFacet } from '..'
 import { syntaxHighlight } from '../highlight'
@@ -250,17 +249,7 @@ const selectionLayer = Prec.high(
         above: false,
         markers(view) {
             return view.state.selection.ranges
-                .map(range =>
-                    range.empty
-                        ? []
-                        : RectangleMarker.forRange(
-                              view,
-                              classNames('cm-selectionBackground', {
-                                  ['blame-visible']: view.state.facet(blobPropsFacet).isBlameVisible,
-                              }),
-                              range
-                          )
-                )
+                .map(range => (range.empty ? [] : RectangleMarker.forRange(view, 'cm-selectionBackground', range)))
                 .reduce((a, b) => a.concat(b))
         },
         update(update) {
@@ -289,8 +278,7 @@ function textSelectionExtension(): Extension {
 
             /**
              * [RectangleMarker.forRange](https://sourcegraph.com/github.com/codemirror/view@a0a0b9ef5a4deaf58842422ac080030042d83065/-/blob/src/layer.ts?L60-75)
-             * returns absolutely positioned markers. Markers top position has extra 1px (6px in case blame decorations
-             * are visible) more in its `top` value breaking alignment wih the line.
+             * returns absolutely positioned markers. Markers top position has extra 1px more in its `top` value breaking alignment wih the line.
              * We compensate this spacing by setting negative margin-top.
              */
             '.cm-selectionLayer .cm-selectionBackground': {
@@ -299,12 +287,6 @@ function textSelectionExtension(): Extension {
 
                 // Ensure selection marker height matches line height.
                 minHeight: '1rem',
-            },
-            '.cm-selectionLayer .cm-selectionBackground.blame-visible': {
-                marginTop: '-6px',
-
-                // Ensure selection marker height matches the increased line height.
-                minHeight: 'calc(1.5rem + 1px)',
             },
         }),
     ]
