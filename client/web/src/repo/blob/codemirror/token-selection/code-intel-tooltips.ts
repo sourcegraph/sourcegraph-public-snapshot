@@ -67,7 +67,21 @@ export const codeIntelTooltipsState = StateField.define<Record<CodeIntelTooltipT
     },
     provide(field) {
         return [
-            showTooltip.computeN([field], state => Object.values(state.field(field)).map(val => val?.tooltip ?? null)),
+            showTooltip.computeN([field], state => {
+                const { hover, focus, pin } = state.field(field)
+
+                // Only show one tooltip for the occurrence at a time
+                const uniqueTooltips = [pin, focus, hover]
+                    .reduce((acc, current) => {
+                        if (current?.tooltip && acc.every(({ occurrence }) => occurrence !== current.occurrence)) {
+                            acc.push(current)
+                        }
+                        return acc
+                    }, [] as NonNullable<CodeIntelTooltipState>[])
+                    .map(({ tooltip }) => tooltip)
+
+                return uniqueTooltips
+            }),
 
             /**
              * If there is a focused occurrence set editor's tabindex to -1, so that pressing Shift+Tab moves the focus
