@@ -889,3 +889,32 @@ export const UPDATE_WEBHOOK_QUERY = gql`
         }
     }
 `
+
+const siteAdminPackageFieldsFragment = gql`
+    fragment SiteAdminPackageFields on PackageRepoReference {
+        id
+        name
+        scheme
+        repository {
+            name
+            url
+        }
+    }
+`
+
+export const PACKAGES_QUERY = gql`
+    query Packages($scheme: String, $name: String, $first: Int, $after: String) {
+        packageRepoReferences(scheme: $scheme, name: $name, first: $first, after: $after) {
+            nodes {
+                ...SiteAdminPackageFields
+            }
+            totalCount
+            pageInfo {
+                hasNextPage
+                endCursor
+            }
+        }
+    }
+
+    ${siteAdminPackageFieldsFragment}
+`

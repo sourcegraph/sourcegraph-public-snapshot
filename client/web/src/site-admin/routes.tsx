@@ -86,6 +86,7 @@ const SiteAdminWebhookUpdatePage = lazyComponent(
     () => import('./SiteAdminWebhookUpdatePage'),
     'SiteAdminWebhookUpdatePage'
 )
+const SiteAdminPackagesPage = lazyComponent(() => import('./SiteAdminPackagesPage'), 'SiteAdminPackagesPage')
 
 export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     {
@@ -219,5 +220,9 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/webhooks/:id/edit',
         render: props => <SiteAdminWebhookUpdatePage {...props} />,
+    },
+    {
+        path: '/packages',
+        render: props => <SiteAdminPackagesPage {...props} />,
     },
 ]
