@@ -151,7 +151,7 @@ The following is a list of Go packages in the [`sourcegraph/sourcegraph`](https:
 Batch changes create changesets (PRs) on code hosts. For testing Batch Changes locally we recommend to use the following repositories:
 
 - The [sourcegraph-testing GitHub organization](https://github.com/sourcegraph-testing) contains testing repositories in which you can open pull requests.
-- We have an `automation-testing` repository that exists on [Github](https://github.com/sourcegraph/automation-testing), [Bitbucket Server](https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/), and [GitLab](https://gitlab.sgdev.org/sourcegraph/automation-testing)
+- We have an `automation-testing` repository that exists on [GitHub](https://github.com/sourcegraph/automation-testing), [Bitbucket Server](https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/), and [GitLab](https://gitlab.sgdev.org/sourcegraph/automation-testing)
 - The GitHub user `sd9` was specifically created to be used for testing Batch Changes. See "[GitHub testing account](#github-testing-account)" for details.
 
 If you're lacking permissions to publish changesets in one of these repositories, feel free to reach out to a team member.

@@ -17,13 +17,13 @@ Search subexpressions combine groups of
 [operators](../reference/queries.md#boolean-operators) like `or`. Compared to [basic examples](examples.md), search subexpressions allow more sophisticated queries.
 Here are examples of how they can help you:
 
-→ [Noncompliant spelling where case-sensitivity differs depending on the word](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%28%28Github+case:yes%29+or+%28organisation+case:no%29%29&patternType=literal).
+→ [Noncompliant spelling where case-sensitivity differs depending on the word](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%28%28GitHub+case:yes%29+or+%28organisation+case:no%29%29&patternType=literal).
 
 ```sgquery
- repo:sourcegraph ((Github case:yes) or (organisation case:no))
+ repo:sourcegraph ((GitHub case:yes) or (organisation case:no))
 ```
 
-> Finds places to change the spelling of `Github` to `GitHub` (case-sensitivity matters) or
+> Finds places to change the spelling of `GitHub` to `GitHub` (case-sensitivity matters) or
   change the spelling of `organisation` to `organization` (case-sensitivity does not matter).
 
 <br/>
@@ -85,17 +85,17 @@ queries to avoid confusion. For example, there are multiple ways to group the
 query, which is not fully parenthesized:
 
 ```sgquery
-repo:sourcegraph (Github case:yes) or (organisation case:no)
+repo:sourcegraph (GitHub case:yes) or (organisation case:no)
 ```
 
 It could mean either of these:
 
 ```sgquery
-(repo:sourcegraph (Github case:yes)) or (organisation case:no)
+(repo:sourcegraph (GitHub case:yes)) or (organisation case:no)
 ```
 
 ```sgquery
-repo:sourcegraph ((Github case:yes) or (organisation case:no))
+repo:sourcegraph ((GitHub case:yes) or (organisation case:no))
 ```
 
 When parentheses are absent, we use the convention that operators divide
@@ -108,7 +108,7 @@ This convention means we would pick the following meaning of the original query,
 but it may not be what you intended:
 
 ```sgquery
-(repo:sourcegraph (Github case:yes)) or (organisation case:no)
+(repo:sourcegraph (GitHub case:yes)) or (organisation case:no)
 ```
 
 Fully parenthesizing subexpressions makes it clear what the intent is, so that
@@ -123,26 +123,26 @@ terms of how a subexpression expands to multiple independent queries. Expansion
 relies on a distributive property over `or`-expressions. For example:
 
 ```sgquery
-repo:sourcegraph ((Github case:yes) or (organisation case:no))
+repo:sourcegraph ((GitHub case:yes) or (organisation case:no))
 ```
 
 is equivalent to expanding the query by putting `repo:sourcegraph` inside each
 subexpression:
 
 ```sgquery
-(repo:sourcegraph Github case:yes) or (repo:sourcegraph organisation case:no)
+(repo:sourcegraph GitHub case:yes) or (repo:sourcegraph organisation case:no)
 ```
 
 This query is valid because each side of the `or` operator is a valid query. On the other hand, the following query is _invalid_:
 
 ```sgquery
-repo:sourcegraph case:yes (Github or (case:no organisation))
+repo:sourcegraph case:yes (GitHub or (case:no organisation))
 ```
 
 because after expanding it is equivalent to:
 
 ```sgquery
-(repo:sourcegraph case:yes Github) or (repo:sourcegraph case:yes case:no organisation)
+(repo:sourcegraph case:yes GitHub) or (repo:sourcegraph case:yes case:no organisation)
 ```
 
 After expanding, the right-hand side contains both `case:yes` and `case:no`.

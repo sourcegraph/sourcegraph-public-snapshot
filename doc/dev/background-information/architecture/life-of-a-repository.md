@@ -51,7 +51,7 @@ Before we can clone a repository, we first must discover that it exists. This is
 }
 ```
 
-This is a GitHub code host configuration for `github.com` using the private access token `deadbeef`. It will ask GitHub for all affiliated repositories. Follow [`GithubSource.listRepositoryQuery`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.36.3/-/blob/internal/repos/github.go#L806) to find the actual API call we do.
+This is a GitHub code host configuration for `github.com` using the private access token `deadbeef`. It will ask GitHub for all affiliated repositories. Follow [`GitHubSource.listRepositoryQuery`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.36.3/-/blob/internal/repos/github.go#L806) to find the actual API call we do.
 
 Discovering the repositories for each codehost/configuration is abstracted in the [`Source interface`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.36.3/-/blob/internal/repos/sources.go#L76:1).
 

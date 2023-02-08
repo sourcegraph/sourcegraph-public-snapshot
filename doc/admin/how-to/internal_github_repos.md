@@ -8,7 +8,7 @@ This document assumes that you have:
 
 * Site-admin level permissions on your Sourcegraph instance.
 * Access to your Sourcegraph deployment.
-* Internal Github repositories in your organization.
+* Internal GitHub repositories in your organization.
 
 ## Steps to import internal GitHub repositories
 1. Using the [repositoryQuery](https://docs.sourcegraph.com/admin/external_service/github#repositoryQuery) configuration option, pass the `org` flag to specify the name of the organization the internal repositories belong to and;

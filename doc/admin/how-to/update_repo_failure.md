@@ -17,7 +17,7 @@ You check logs from the  Repo-Updater container and you should find the followin
 ```status 401: Bad credentials```
 ## Resolution
 - Look through your PATs (Personal Access Token) and you would find out that the token for syncing github to Sourcegraph has expired.
-- Create a new  PAT (Personal Access Token) in Github and update the token value below with the new token generated. 
+- Create a new  PAT (Personal Access Token) in GitHub and update the token value below with the new token generated. 
 - You can also delete expired credentials.
 - Refresh your Sourcegraph instance and click the ```update repositories``` button, You would see that you are able to add your new repo without any errors.
 

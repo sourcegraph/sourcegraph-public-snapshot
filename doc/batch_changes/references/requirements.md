@@ -10,8 +10,8 @@ While the latest version of Sourcegraph server is always recommended, version 3.
 
 Batch Changes is compatible with the following code hosts:
 
-* Github.com
-* Github Enterprise 2.20 and later
+* GitHub.com
+* GitHub Enterprise 2.20 and later
 * GitLab 12.7 and later (burndown charts are only supported with 13.2 and later)
 * Bitbucket Server 5.7 and later, Bitbucket Data Center 7.6 and later
 * Bitbucket Cloud (bitbucket.org)

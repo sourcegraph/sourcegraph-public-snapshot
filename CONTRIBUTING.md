@@ -53,5 +53,5 @@ All open issues are not yet solved. If the task is interesting to you, take it a
 - [How to structure](https://docs.sourcegraph.com/dev/background-information/pull_request_reviews#what-makes-an-effective-pull-request-pr)
 - [PR guidelines](https://handbook.sourcegraph.com/departments/engineering/dev/onboarding/pr-checklist/)
 - Git branch name convention: `[developer-initials]/short-feature-description`
-- [Examples on Github](https://github.com/sourcegraph/sourcegraph/pulls?q=is%3Apr+label%3Ateam%2Ffrontend-platform)
+- [Examples on GitHub](https://github.com/sourcegraph/sourcegraph/pulls?q=is%3Apr+label%3Ateam%2Ffrontend-platform)
 - (For Sourcegraph team) [How to accept contributions](https://docs.sourcegraph.com/dev/contributing/accepting_contribution)

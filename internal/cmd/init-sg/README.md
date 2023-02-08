@@ -42,7 +42,7 @@ $ go build && init-sg initSG -baseurl=http://<sourcegraph> email=<useremail> -us
 
 ### addRepos
 
-The Github token required for the external service can be set via an environment variable or the cli
+The GitHub token required for the external service can be set via an environment variable or the cli
 
 with env vars
 
@@ -69,7 +69,7 @@ The format for the external service json file is as follows, multiple github ext
 [
   {
     "Kind": "GITHUB",
-    "DisplayName": "Github repos",
+    "DisplayName": "GitHub repos",
     "Config": {
       "url": "https://github.com",
       "repos": ["sourcegraph/sourcegraph", "sourcegraph/deploy-sourcegraph"]
