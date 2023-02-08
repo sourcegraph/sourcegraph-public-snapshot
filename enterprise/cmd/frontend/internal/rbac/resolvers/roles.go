@@ -73,3 +73,28 @@ func (r *Resolver) roleByID(ctx context.Context, id graphql.ID) (gql.RoleResolve
 	}
 	return &roleResolver{role: role, db: r.db}, nil
 }
+
+func (r *Resolver) DeleteRole(ctx context.Context, args *gql.DeleteRoleArgs) (_ *gql.EmptyResponse, err error) {
+	// 🚨 SECURITY: Only site administrators can delete roles.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	roleID, err := unmarshalRoleID(args.Role)
+	if err != nil {
+		return nil, err
+	}
+
+	if roleID == 0 {
+		return nil, ErrIDIsZero{}
+	}
+
+	err = r.db.Roles().Delete(ctx, database.DeleteRoleOpts{
+		ID: roleID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &gql.EmptyResponse{}, nil
+}
