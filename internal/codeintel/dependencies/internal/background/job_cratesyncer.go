@@ -126,13 +126,19 @@ func (b *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 		return err
 	}
 
-	var allCratePkgs []shared.MinimalPackageRepoRef
-	didInsertNewCrates := false
+	var (
+		allCratePkgs       []shared.MinimalPackageRepoRef
+		didInsertNewCrates bool
+		// we dont want to throw away all work if we only read
+		// the crates index partially
+		cratesReadErr error
+	)
 	for {
 		header, err := tr.Next()
 		if err != nil {
 			if err != io.EOF {
-				return err
+				cratesReadErr = errors.Append(cratesReadErr, err)
+				break
 			}
 			break
 		}
@@ -156,13 +162,17 @@ func (b *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 
 		var buf bytes.Buffer
 		if _, err := io.CopyN(&buf, tr, header.Size); err != nil {
-			return err
+			cratesReadErr = errors.Append(cratesReadErr, err)
+			break
 		}
 
-		pkgs, err := parseCrateInformation(buf.String())
+		pkgs, err := parseCrateInformation(buf.Bytes())
 		if err != nil {
-			return err
+			cratesReadErr = errors.Append(cratesReadErr, err)
+			break
 		}
+
+		allCratePkgs = append(allCratePkgs, pkgs...)
 
 		newCrates, newVersions, err := b.dependenciesSvc.InsertPackageRepoRefs(ctx, pkgs)
 		if err != nil {
@@ -176,14 +186,14 @@ func (b *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 		// We picked up new crates so we trigger a new sync for the RUSTPACKAGES code host.
 		externalService.NextSyncAt = nextSync
 		if err := b.extSvcStore.Upsert(ctx, externalService); err != nil {
-			return err
+			return errors.Append(cratesReadErr, err)
 		}
 
 		attemptsRemaining := 5
 		for {
 			externalService, err = b.extSvcStore.GetByID(ctx, externalService.ID)
 			if err != nil && attemptsRemaining == 0 {
-				return err
+				return errors.Append(cratesReadErr, err)
 			} else if err != nil || externalService.LastSyncAt.After(nextSync) {
 				attemptsRemaining--
 				// mirrors backoff in job_dependency_indexing_scheduler.go
@@ -207,10 +217,10 @@ func (b *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 			}
 		}
 
-		return queueErrs
+		return errors.Append(cratesReadErr, queueErrs)
 	}
 
-	return nil
+	return cratesReadErr
 }
 
 // rustPackagesConfig returns the configuration for the provided RUSTPACKAGES code host.
@@ -261,11 +271,11 @@ func singleRustExternalService(ctx context.Context, store ExternalServiceStore) 
 
 // parseCrateInformation parses the newline-delimited JSON file for a crate,
 // assuming the pattern that's used in the github.com/rust-lang/crates.io-index
-func parseCrateInformation(contents string) ([]shared.MinimalPackageRepoRef, error) {
-	result := make([]shared.MinimalPackageRepoRef, 1)
+func parseCrateInformation(contents []byte) ([]shared.MinimalPackageRepoRef, error) {
+	result := make([]shared.MinimalPackageRepoRef, 0, 1)
 
-	for _, line := range strings.Split(contents, "\n") {
-		if line == "" {
+	for _, line := range bytes.Split(contents, []byte("\n")) {
+		if len(line) == 0 {
 			continue
 		}
 
@@ -274,9 +284,9 @@ func parseCrateInformation(contents string) ([]shared.MinimalPackageRepoRef, err
 			Version string `json:"vers"`
 		}
 		var info crateInfo
-		err := json.Unmarshal([]byte(line), &info)
+		err := json.Unmarshal(line, &info)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "malformed create info (%q)", line)
 		}
 
 		name := reposource.PackageName(info.Name)

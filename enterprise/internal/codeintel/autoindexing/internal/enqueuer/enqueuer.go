@@ -90,7 +90,7 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg dependen
 		attribute.String("revision", revision))
 
 	var repoID int
-	if assumeSynced {
+	if !assumeSynced {
 		resp, err := s.repoUpdater.EnqueueRepoUpdate(ctx, repoName)
 		if err != nil {
 			if errcode.IsNotFound(err) {
@@ -108,7 +108,7 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg dependen
 		repoID = int(repo.ID)
 	}
 
-	commit, err := s.gitserverClient.ResolveRevision(ctx, int(repoID), revision)
+	commit, err := s.gitserverClient.ResolveRevision(ctx, repoID, revision)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return nil
@@ -117,7 +117,7 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg dependen
 		return errors.Wrap(err, "gitserverClient.ResolveRevision")
 	}
 
-	_, err = s.queueIndexForRepositoryAndCommit(ctx, int(repoID), string(commit), "", false, false)
+	_, err = s.queueIndexForRepositoryAndCommit(ctx, repoID, string(commit), "", false, false)
 	return err
 }
 
