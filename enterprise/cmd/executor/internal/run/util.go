@@ -95,16 +95,19 @@ func execOutput(ctx context.Context, name string, args ...string) (string, error
 
 func apiWorkerOptions(c *config.Config, queueTelemetryOptions queue.TelemetryOptions) apiworker.Options {
 	return apiworker.Options{
-		VMPrefix:           c.VMPrefix,
-		KeepWorkspaces:     c.KeepWorkspaces,
-		QueueName:          c.QueueName,
-		WorkerOptions:      workerOptions(c),
-		DockerOptions:      dockerOptions(c),
-		FirecrackerOptions: firecrackerOptions(c),
-		ResourceOptions:    resourceOptions(c),
-		GitServicePath:     "/.executors/git",
-		QueueOptions:       queueOptions(c, queueTelemetryOptions),
-		FilesOptions:       filesOptions(c),
+		VMPrefix:       c.VMPrefix,
+		KeepWorkspaces: c.KeepWorkspaces,
+		QueueName:      c.QueueName,
+		WorkerOptions:  workerOptions(c),
+		CommandOptions: command.Options{
+			ExecutorName:       c.WorkerHostname,
+			DockerOptions:      dockerOptions(c),
+			FirecrackerOptions: firecrackerOptions(c),
+			ResourceOptions:    resourceOptions(c),
+		},
+		GitServicePath: "/.executors/git",
+		QueueOptions:   queueOptions(c, queueTelemetryOptions),
+		FilesOptions:   filesOptions(c),
 		RedactedValues: map[string]string{
 			// 🚨 SECURITY: Catch uses of the shared frontend token used to clone
 			// git repositories that make it into commands or stdout/stderr streams.

@@ -19,11 +19,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
-	return StandaloneRunRun(cliCtx.Context, logger, cfg, cliCtx.Bool("verify"))
+func Run(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
+	return StandaloneRun(cliCtx.Context, logger, cfg, cliCtx.Bool("verify"))
 }
 
-func StandaloneRunRun(ctx context.Context, logger log.Logger, cfg *config.Config, runVerifyChecks bool) error {
+func StandaloneRun(ctx context.Context, logger log.Logger, cfg *config.Config, runVerifyChecks bool) error {
 	if err := cfg.Validate(); err != nil {
 		return err
 	}

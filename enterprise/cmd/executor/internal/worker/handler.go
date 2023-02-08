@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/ignite"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runtime"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -24,6 +25,7 @@ type handler struct {
 	logStore      command.ExecutionLogEntryStore
 	filesStore    workspace.FilesStore
 	options       Options
+	cloneOptions  workspace.CloneOptions
 	operations    *command.Operations
 	runnerFactory func(dir string, logger command.Logger, options command.Options, operations *command.Operations) command.Runner
 }
@@ -40,7 +42,7 @@ var (
 // with keeping our heartbeats due to machine load. We'll continue to check this condition on the
 // polling interval
 func (h *handler) PreDequeue(ctx context.Context, logger log.Logger) (dequeueable bool, extraDequeueArguments any, err error) {
-	if !h.options.FirecrackerOptions.Enabled {
+	if !h.options.CommandOptions.FirecrackerOptions.Enabled {
 		return true, nil, nil
 	}
 
@@ -59,8 +61,6 @@ func (h *handler) PreDequeue(ctx context.Context, logger log.Logger) (dequeueabl
 	return false, nil, nil
 }
 
-// Handle clones the target code into a temporary directory, invokes the target indexer in a
-// fresh docker container, and uploads the results to the external frontend API.
 func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) (err error) {
 	logger = logger.With(
 		log.Int("jobID", job.ID),
@@ -87,6 +87,64 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 		}
 	}()
 
+	// For backwards compatibility. If no runtime mode is provided, then use the old handler.
+	if len(job.RuntimeMode) == 0 {
+		return h.handle(ctx, logger, commandLogger, job)
+	}
+
+	jobRuntime, err := runtime.GetRuntime(job.RuntimeMode)
+	if err != nil {
+		return err
+	}
+
+	// Setup all the file, mounts, etc...
+	ws, err := jobRuntime.PrepareWorkspace(ctx, commandLogger, job)
+	if err != nil {
+		return err
+	}
+	defer ws.Remove(ctx, h.options.KeepWorkspaces)
+
+	// TODO: how does this play with K8s?
+	// Before we setup a VM (and after we teardown), mark the name as in-use so that
+	// the janitor process cleaning up orphaned VMs doesn't try to stop/remove the one
+	// we're using for the current job.
+	name := newVMName(h.options.VMPrefix)
+	h.nameSet.Add(name)
+	defer h.nameSet.Remove(name)
+
+	// Create the runner that will actually run the commands.
+	runner, err := jobRuntime.NewRunner(ctx, commandLogger, name, ws.Path(), job)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		// Perform this outside of the task execution context. If there is a timeout or
+		// cancellation error we don't want to skip cleaning up the resources that we've
+		// allocated for the current task.
+		if teardownErr := runner.Teardown(context.Background()); teardownErr != nil {
+			err = errors.Append(err, teardownErr)
+		}
+	}()
+
+	// Get the commands we will execute.
+	commands, err := jobRuntime.GetCommands(ws, job.DockerSteps)
+	if err != nil {
+		return err
+	}
+
+	// Run all the things.
+	for _, spec := range commands {
+		if err := runner.Run(ctx, spec); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Handle clones the target code into a temporary directory, invokes the target indexer in a
+// fresh docker container, and uploads the results to the external frontend API.
+func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger command.Logger, job types.Job) (err error) {
 	// Create a working directory for this job which will be removed once the job completes.
 	// If a repository is supplied as part of the job configuration, it will be cloned into
 	// the working directory.
@@ -99,28 +157,18 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 	}
 	defer ws.Remove(ctx, h.options.KeepWorkspaces)
 
-	vmNameSuffix, err := uuid.NewRandom()
-	if err != nil {
-		return err
-	}
-
-	// Construct a unique name for the VM prefixed by something that differentiates
-	// VMs created by this executor instance and another one that happens to run on
-	// the same host (as is the case in dev). This prefix is expected to match the
-	// prefix given to ignite.CurrentlyRunningVMs in other parts of this service.
-	name := fmt.Sprintf("%s-%s", h.options.VMPrefix, vmNameSuffix.String())
-
 	// Before we setup a VM (and after we teardown), mark the name as in-use so that
 	// the janitor process cleaning up orphaned VMs doesn't try to stop/remove the one
 	// we're using for the current job.
+	name := newVMName(h.options.VMPrefix)
 	h.nameSet.Add(name)
 	defer h.nameSet.Remove(name)
 
 	options := command.Options{
 		ExecutorName:       name,
-		DockerOptions:      h.options.DockerOptions,
-		FirecrackerOptions: h.options.FirecrackerOptions,
-		ResourceOptions:    h.options.ResourceOptions,
+		DockerOptions:      h.options.CommandOptions.DockerOptions,
+		FirecrackerOptions: h.options.CommandOptions.FirecrackerOptions,
+		ResourceOptions:    h.options.CommandOptions.ResourceOptions,
 	}
 	// If the job has docker auth config set, prioritize that over the env var.
 	if len(job.DockerAuthConfig.Auths) > 0 {
@@ -222,4 +270,15 @@ func createHoneyEvent(_ context.Context, job types.Job, err error, duration time
 	}
 
 	return honey.NewEventWithFields("executor", fields)
+}
+
+func newVMName(vmPrefix string) string {
+	vmNameSuffix := uuid.NewString()
+
+	// Construct a unique name for the VM prefixed by something that differentiates
+	// VMs created by this executor instance and another one that happens to run on
+	// the same host (as is the case in dev). This prefix is expected to match the
+	// prefix given to ignite.CurrentlyRunningVMs in other parts of this service.
+	name := fmt.Sprintf("%s-%s", vmPrefix, vmNameSuffix)
+	return name
 }

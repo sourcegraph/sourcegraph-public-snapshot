@@ -17,6 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runtime"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -59,15 +61,8 @@ type Options struct {
 	// FilesOptions configures the client that interacts with the files API.
 	FilesOptions apiclient.BaseClientOptions
 
-	// DockerOptions configures the behavior of docker container creation.
-	DockerOptions command.DockerOptions
-
-	// FirecrackerOptions configures the behavior of Firecracker virtual machine creation.
-	FirecrackerOptions command.FirecrackerOptions
-
-	// ResourceOptions configures the resource limits of docker container and Firecracker
-	// virtual machines running on the executor.
-	ResourceOptions command.ResourceOptions
+	// CommandOptions configures the behavior of runtime commands.
+	CommandOptions command.Options
 
 	// NodeExporterEndpoint is the URL of the local node_exporter endpoint, without
 	// the /metrics path.
@@ -97,18 +92,28 @@ func NewWorker(observationCtx *observation.Context, nameSet *janitor.NameSet, op
 		return nil, errors.Wrap(err, "building files store")
 	}
 
+	commandOps := command.NewOperations(observationCtx)
+	cloneOptions := workspace.CloneOptions{
+		ExecutorName:   options.WorkerOptions.WorkerHostname,
+		EndpointURL:    options.QueueOptions.BaseClientOptions.EndpointOptions.URL,
+		GitServicePath: options.GitServicePath,
+		ExecutorToken:  options.QueueOptions.BaseClientOptions.EndpointOptions.Token,
+	}
+
+	// Configure the supported runtimes
+	runtime.SetupRuntimes(observationCtx.Logger, commandOps, filesClient, options.CommandOptions, cloneOptions)
+
 	h := &handler{
 		nameSet:       nameSet,
 		logStore:      queueClient,
 		filesStore:    filesClient,
 		options:       options,
-		operations:    command.NewOperations(observationCtx),
+		operations:    commandOps,
 		runnerFactory: command.NewRunner,
+		cloneOptions:  cloneOptions,
 	}
 
-	ctx := context.Background()
-
-	return workerutil.NewWorker[types.Job](ctx, queueClient, h, options.WorkerOptions), nil
+	return workerutil.NewWorker[types.Job](context.Background(), queueClient, h, options.WorkerOptions), nil
 }
 
 // connectToFrontend will ping the configured Sourcegraph instance until it receives a 200 response.

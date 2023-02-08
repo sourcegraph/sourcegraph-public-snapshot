@@ -62,7 +62,7 @@ func main() {
 						Required: false,
 					},
 				},
-				Action: makeActionHandler(run.RunRun),
+				Action: makeActionHandler(run.Run),
 			},
 			{
 				Name:   "validate",

@@ -39,13 +39,13 @@ func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready
 			otherConfig.QueueName = "batches"
 		}
 		go func() {
-			if err := run.StandaloneRunRun(ctx, observationCtx.Logger, &otherConfig, false); err != nil {
+			if err := run.StandaloneRun(ctx, observationCtx.Logger, &otherConfig, false); err != nil {
 				observationCtx.Logger.Fatal("executor for other queue failed", log.Error(err))
 			}
 		}()
 	}
 
-	return run.StandaloneRunRun(ctx, observationCtx.Logger, conf, false)
+	return run.StandaloneRun(ctx, observationCtx.Logger, conf, false)
 }
 
 var Service service.Service = svc{}
