@@ -84,6 +84,7 @@ export {
     MultiComboboxOption,
     MultiComboboxOptionText,
 } from './Combobox'
+export { DropdownButton } from './DropdownButton'
 
 /**
  * Type Exports
@@ -108,10 +109,11 @@ export type { BadgeProps, BadgeVariantType, ProductStatusType, BaseProductStatus
 export type { ModalProps } from './Modal'
 export type { MultiComboboxProps } from './Combobox'
 export type { RadioButtonProps } from './Form/RadioButton'
+export type { DropdownButtonAction, DropdownButtonProps } from './DropdownButton'
 
 /**
  * Class name helpers to be used with plain DOM nodes.
- * NOTE: Prefer using the React components is possible.
+ * NOTE: Prefer using the React components if possible.
  */
 export { getButtonClassName } from './Button/utils'
 export { getLabelClassName } from './Typography/Label/utils'
