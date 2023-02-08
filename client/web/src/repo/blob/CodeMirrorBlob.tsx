@@ -151,6 +151,10 @@ const staticExtensions: Extension = [
             backgroundColor: 'var(--code-bg)',
             borderRight: 'initial',
         },
+        '.cm-content:focus-visible': {
+            outline: 'none',
+            boxShadow: 'none',
+        },
         '.cm-line': {
             paddingLeft: '0',
         },
