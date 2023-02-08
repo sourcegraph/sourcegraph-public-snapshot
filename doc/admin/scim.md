@@ -6,7 +6,7 @@ SCIM (System for Cross-domain Identity Management) is a standard for provisionin
 
 Sourcegraph supports SCIM for provisioning and de-provisioning _users_, but not groups at this time.
 
-You can use any identity provider that supports SCIM, but we’ve only tested the endpoint with Okta and Azure Active Directory.
+You can use any IdP that supports SCIM, but we’ve only tested the endpoint with Okta and Azure Active Directory.
 
 ## How to use
 
