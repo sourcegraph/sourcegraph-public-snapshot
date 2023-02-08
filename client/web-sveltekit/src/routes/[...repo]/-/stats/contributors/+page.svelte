@@ -38,7 +38,7 @@
 </script>
 
 <section>
-    <div class="container">
+    <div class="root">
         <form method="GET">
             Time period: <input name="after" bind:value={timePeriod} placeholder="All time" />
             <ButtonGroup>
@@ -98,7 +98,7 @@
         margin-top: 2rem;
     }
 
-    div.container {
+    div.root {
         max-width: 54rem;
         margin-left: auto;
         margin-right: auto;

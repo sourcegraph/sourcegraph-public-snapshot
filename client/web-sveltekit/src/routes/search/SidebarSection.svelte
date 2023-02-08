@@ -96,6 +96,7 @@
         font-size: 0.75rem;
         padding: 0.25rem 0.375rem;
         margin: 0;
+        font-weight: 400;
 
         .label {
             flex: 1;

@@ -21,11 +21,15 @@ const config = {
       wildcard: '../wildcard/',
       'open-color': '../../node_modules/open-color',
       // These are directories and cannot be imported from directly in
-      // production build
-      'rxjs/operators': '../../node_modules/rxjs/operators/index',
-      'rxjs/fetch': '../../node_modules/rxjs/fetch/index',
+      // production build. Need to import from _esm5, otherwise there will
+      // be runtime compatibility issues.
+      'rxjs/operators': '../../node_modules/rxjs/_esm5/operators/index',
+      'rxjs/fetch': '../../node_modules/rxjs/_esm5/fetch/index',
       // Map node-module to browser version
-      path: 'node_modules/path-browserify',
+      path: '../../node_modules/path-browserify',
+      // Without it prod build doesnt work
+      '@apollo/client': '../../node_modules/@apollo/client/index.js',
+      lodash: '../../node_modules/lodash-es',
     },
   },
 }

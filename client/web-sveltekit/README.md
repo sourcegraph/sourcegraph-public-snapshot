@@ -69,10 +69,3 @@ TypeScript, CSS, etc in Svelte components. This currently produces many errors
 because it also validates imported modules from other packages, and we are not
 explicitly marking type-only imports with `type` in other parts of the code
 base (which is required by this package).
-
-## Production build
-
-It's not possible yet to create a production build of the application. Some
-form of server side rendering is happening during the production build and
-that's incompatible with how many of our existing modules are structured or how
-certain dependencies are imported.

@@ -30,7 +30,7 @@
     }
 </script>
 
-<div class="container">
+<div class="root">
     {#each grouped as group}
         <div class="code">
             <CodeExcerpt
@@ -45,7 +45,7 @@
 </div>
 
 <style lang="scss">
-    .container {
+    .root {
         border-radius: var(--border-radius);
         border: 1px solid var(--border-color);
         background-color: var(--code-bg);
