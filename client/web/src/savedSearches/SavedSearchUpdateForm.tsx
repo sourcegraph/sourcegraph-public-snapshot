@@ -40,7 +40,6 @@ interface State {
 }
 
 export const SavedSearchUpdateForm: FC<Omit<Props, 'searchId'>> = props => {
-    console.log('hello')
     const { id } = useParams<{ id: string }>()
 
     return <InnerSavedSearchUpdateForm {...props} searchId={id!} />
