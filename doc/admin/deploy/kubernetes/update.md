@@ -123,8 +123,7 @@ If this happens, do the following:
 
 Note that the need to run the above steps can be prevented altogether with [node
 selectors](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector), which
-tell Kubernetes to assign certain pods to specific nodes. See the [docs on enabling node
-selectors](scale.md#node-selector) for Sourcegraph on Kubernetes.
+tell Kubernetes to assign certain pods to specific nodes.
 
 ## High-availability updates
 
