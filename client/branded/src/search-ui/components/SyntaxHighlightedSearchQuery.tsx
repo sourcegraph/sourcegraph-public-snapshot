@@ -20,10 +20,10 @@ export const SyntaxHighlightedSearchQuery: React.FunctionComponent<
 
         return decorations
             ? decorations.map(({ value, key, className }) => (
-                      <span className={className} key={key}>
-                          {value}
-                      </span>
-                  ))
+                  <span className={className} key={key}>
+                      {value}
+                  </span>
+              ))
             : [<Fragment key="0">{query}</Fragment>]
     }, [query, searchPatternType])
 

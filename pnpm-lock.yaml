@@ -290,7 +290,6 @@ importers:
       license-checker: ^25.0.1
       linguist-languages: ^7.14.0
       lodash: ^4.17.20
-      lodash-es: ^4.17.21
       lru-cache: ^7.8.0
       marked: 4.0.16
       mdi-react: ^8.1.0
@@ -325,7 +324,6 @@ importers:
       postcss-loader: ^7.0.2
       postcss-modules: ^6.0.0
       prettier: 2.8.1
-      prettier-plugin-svelte: ^2.9.0
       pretty-bytes: ^5.3.0
       process: ^0.11.10
       prop-types: ^15.7.2
@@ -496,7 +494,6 @@ importers:
       jsonc-parser: 3.2.0
       linguist-languages: 7.14.0
       lodash: 4.17.21
-      lodash-es: 4.17.21
       lru-cache: 7.14.0
       marked: 4.0.16
       mdi-react: 8.1.0_react@18.1.0
@@ -593,7 +590,7 @@ importers:
       '@storybook/addon-console': 1.2.3_473b6rbrlfbkiblbxydosemc4u
       '@storybook/addon-docs': 6.5.14_ljetz3726qf7xucp4u2fupswpy
       '@storybook/addon-links': 6.5.14_ef5jwxihqo6n7gxfmzogljlgcm
-      '@storybook/addon-storyshots': 6.5.14_4qol2pl45ymfmp64qbo2ex5bba
+      '@storybook/addon-storyshots': 6.5.14_lismubkolmefvcm6b5doxucyea
       '@storybook/addon-storyshots-puppeteer': 6.5.14_5bskxofbdzb2fai5lt3jrwan6e
       '@storybook/addon-storysource': 6.5.14_ef5jwxihqo6n7gxfmzogljlgcm
       '@storybook/addon-toolbars': 6.5.14_ef5jwxihqo6n7gxfmzogljlgcm
@@ -758,7 +755,6 @@ importers:
       postcss-loader: 7.0.2_upg3rk2kpasnbk27hkqapxaxfq
       postcss-modules: 6.0.0_postcss@8.4.19
       prettier: 2.8.1
-      prettier-plugin-svelte: 2.9.0_4h247imu46srxjbpsfob5j3nnq
       process: 0.11.10
       punycode: 2.1.1
       puppeteer: 13.7.0
@@ -1101,6 +1097,7 @@ importers:
       '@types/cookie': ^0.5.1
       '@types/prismjs': ^1.26.0
       eslint-plugin-svelte3: ^4.0.0
+      lodash-es: ^4.17.21
       prettier-plugin-svelte: ^2.9.0
       prismjs: ^1.29.0
       svelte: ^3.55.1
@@ -1116,6 +1113,7 @@ importers:
       '@sourcegraph/web': link:../web
       '@sourcegraph/wildcard': link:../wildcard
       '@sveltejs/svelte-virtual-list': 3.0.1
+      lodash-es: 4.17.21
       prismjs: 1.29.0
     devDependencies:
       '@playwright/test': 1.25.0
@@ -8205,7 +8203,7 @@ packages:
         optional: true
     dependencies:
       '@axe-core/puppeteer': 4.4.2_puppeteer@13.7.0
-      '@storybook/addon-storyshots': 6.5.14_4qol2pl45ymfmp64qbo2ex5bba
+      '@storybook/addon-storyshots': 6.5.14_lismubkolmefvcm6b5doxucyea
       '@storybook/csf': 0.0.2--canary.4566f4d.1
       '@storybook/node-logger': 6.5.14
       '@types/jest-image-snapshot': 4.3.0
@@ -8217,7 +8215,7 @@ packages:
       - jest
     dev: true
 
-  /@storybook/addon-storyshots/6.5.14_4qol2pl45ymfmp64qbo2ex5bba:
+  /@storybook/addon-storyshots/6.5.14_lismubkolmefvcm6b5doxucyea:
     resolution: {integrity: sha512-BSYt+GyMeTlxCwMNVwsmfetKjeIZVVRFdhvtyTuSf9MvikBq+SXw6IihkeWbX2g6pssCz9Wc+s6rRK/HJpqTlA==}
     peerDependencies:
       '@angular/core': '>=6.0.0'
@@ -8294,7 +8292,6 @@ packages:
       read-pkg-up: 7.0.1
       regenerator-runtime: 0.13.11
       rxjs: 6.6.7
-      svelte: 3.55.1
       ts-dedent: 2.0.0
     transitivePeerDependencies:
       - '@storybook/builder-webpack5'
@@ -26330,16 +26327,6 @@ packages:
   /prepend-http/2.0.0:
     resolution: {integrity: sha512-ravE6m9Atw9Z/jjttRUZ+clIXogdghyZAuWJ3qEzjT+jI/dL1ifAqhZeC5VHzQp1MSt1+jxKkFNemj/iO7tVUA==}
     engines: {node: '>=4'}
-    dev: true
-
-  /prettier-plugin-svelte/2.9.0_4h247imu46srxjbpsfob5j3nnq:
-    resolution: {integrity: sha512-3doBi5NO4IVgaNPtwewvrgPpqAcvNv0NwJNflr76PIGgi9nf1oguQV1Hpdm9TI2ALIQVn/9iIwLpBO5UcD2Jiw==}
-    peerDependencies:
-      prettier: ^1.16.4 || ^2.0.0
-      svelte: ^3.2.0
-    dependencies:
-      prettier: 2.8.1
-      svelte: 3.55.1
     dev: true
 
   /prettier-plugin-svelte/2.9.0_jrsxveqmsx2uadbqiuq74wlc4u:

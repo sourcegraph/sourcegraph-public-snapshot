@@ -29,7 +29,7 @@ const config = {
       path: '../../node_modules/path-browserify',
       // Without it prod build doesnt work
       '@apollo/client': '../../node_modules/@apollo/client/index.js',
-      lodash: '../../node_modules/lodash-es',
+      lodash: './node_modules/lodash-es',
     },
   },
 }
