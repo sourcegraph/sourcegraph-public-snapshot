@@ -204,49 +204,47 @@ interface CreatePolicyButtonsProps {
     repo?: { id: string; name: string }
 }
 
-const CreatePolicyButtons: FunctionComponent<CreatePolicyButtonsProps> = ({ repo, history }) => (
-    <>
-        <Menu>
-            <ButtonGroup>
-                <Button to="./configuration/new?type=head" variant="primary" as={Link}>
-                    Create new {!repo && 'global'} policy
-                </Button>
-                <MenuButton variant="primary" className={styles.dropdownButton}>
-                    <Icon aria-hidden={true} svgPath={mdiChevronDown} />
-                    <VisuallyHidden>Actions</VisuallyHidden>
-                </MenuButton>
-            </ButtonGroup>
-            <MenuList position={Position.bottomEnd} className={styles.dropdownList}>
-                <MenuLink as={Link} className={styles.dropdownItem} to="./configuration/new?type=head">
-                    <>
-                        <Text weight="medium" className="mb-2">
-                            Create new {!repo && 'global'} policy for HEAD
-                        </Text>
-                        <Text className="mb-0 text-muted">
-                            Match the tip of the default branch{' '}
-                            {repo ? 'within this repository' : 'across multiple repositories'}
-                        </Text>
-                    </>
-                </MenuLink>
-                <MenuLink as={Link} className={styles.dropdownItem} to="./configuration/new?type=branch">
+const CreatePolicyButtons: FunctionComponent<CreatePolicyButtonsProps> = ({ repo }) => (
+    <Menu>
+        <ButtonGroup>
+            <Button to="./configuration/new?type=head" variant="primary" as={Link}>
+                Create new {!repo && 'global'} policy
+            </Button>
+            <MenuButton variant="primary" className={styles.dropdownButton}>
+                <Icon aria-hidden={true} svgPath={mdiChevronDown} />
+                <VisuallyHidden>Actions</VisuallyHidden>
+            </MenuButton>
+        </ButtonGroup>
+        <MenuList position={Position.bottomEnd} className={styles.dropdownList}>
+            <MenuLink as={Link} className={styles.dropdownItem} to="./configuration/new?type=head">
+                <>
                     <Text weight="medium" className="mb-2">
-                        Create new {!repo && 'global'} branch policy
+                        Create new {!repo && 'global'} policy for HEAD
                     </Text>
                     <Text className="mb-0 text-muted">
-                        Match multiple branches {repo ? 'within this repository' : 'across multiple repositories'}
+                        Match the tip of the default branch{' '}
+                        {repo ? 'within this repository' : 'across multiple repositories'}
                     </Text>
-                </MenuLink>
-                <MenuLink as={Link} className={styles.dropdownItem} to="./configuration/new?type=tag">
-                    <Text weight="medium" className="mb-2">
-                        Create new {!repo && 'global'} tag policy
-                    </Text>
-                    <Text className="mb-0 text-muted">
-                        Match multiple tags {repo ? 'within this repository' : 'across multiple repositories'}
-                    </Text>
-                </MenuLink>
-            </MenuList>
-        </Menu>
-    </>
+                </>
+            </MenuLink>
+            <MenuLink as={Link} className={styles.dropdownItem} to="./configuration/new?type=branch">
+                <Text weight="medium" className="mb-2">
+                    Create new {!repo && 'global'} branch policy
+                </Text>
+                <Text className="mb-0 text-muted">
+                    Match multiple branches {repo ? 'within this repository' : 'across multiple repositories'}
+                </Text>
+            </MenuLink>
+            <MenuLink as={Link} className={styles.dropdownItem} to="./configuration/new?type=tag">
+                <Text weight="medium" className="mb-2">
+                    Create new {!repo && 'global'} tag policy
+                </Text>
+                <Text className="mb-0 text-muted">
+                    Match multiple tags {repo ? 'within this repository' : 'across multiple repositories'}
+                </Text>
+            </MenuLink>
+        </MenuList>
+    </Menu>
 )
 
 interface PoliciesNodeProps {

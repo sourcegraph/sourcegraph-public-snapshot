@@ -48,4 +48,8 @@
     &:not(:last-child) {
         border-bottom: 1px solid var(--border-color);
     }
+
+    &[data-reach-menu-item]:active {
+        --text-muted: var(--white);
+    }
 }
