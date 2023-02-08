@@ -336,7 +336,7 @@ func TestCreateRole(t *testing.T) {
 		// First time it should work, because the role exists
 		apitest.MustExec(adminActorCtx, t, s, input, &response, createRoleMutation)
 
-		// Second time it should fail because role names are unique
+		// Second time it should fail because role names must be unique
 		errs := apitest.Exec(adminActorCtx, t, s, input, &response, createRoleMutation)
 		if len(errs) != 1 {
 			t.Fatalf("expected a single error, but got %d", len(errs))
