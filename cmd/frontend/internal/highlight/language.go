@@ -21,6 +21,17 @@ const (
 	EngineSyntect
 )
 
+func (e EngineType) String() string {
+	switch e {
+	case EngineTreeSitter:
+		return "tree-sitter"
+	case EngineSyntect:
+		return "syntect"
+	default:
+		return "invalid"
+	}
+}
+
 // Converts an engine type to the corresponding parameter value for the syntax
 // highlighting request. Defaults to "syntec".
 func getEngineParameter(engine EngineType) string {
@@ -59,6 +70,8 @@ var highlightConfig = syntaxHighlightConfig{
 }
 var baseHighlightConfig = syntaxHighlightConfig{
 	Extensions: map[string]string{
+		"jsx":  "jsx", // default `getLanguage()` helper doesn't handle JSX
+		"tsx":  "tsx", // default `getLanguage()` helper doesn't handle TSX
 		"sbt":  "scala",
 		"sc":   "scala",
 		"xlsg": "xlsg",
@@ -91,10 +104,14 @@ var engineConfig = syntaxEngineConfig{
 var baseEngineConfig = syntaxEngineConfig{
 	Default: EngineSyntect,
 	Overrides: map[string]EngineType{
-		"scala":   EngineTreeSitter,
-		"c#":      EngineTreeSitter,
-		"jsonnet": EngineTreeSitter,
-		"xlsg":    EngineTreeSitter,
+		"javascript": EngineTreeSitter,
+		"jsx":        EngineTreeSitter,
+		"typescript": EngineTreeSitter,
+		"tsx":        EngineTreeSitter,
+		"scala":      EngineTreeSitter,
+		"c#":         EngineTreeSitter,
+		"jsonnet":    EngineTreeSitter,
+		"xlsg":       EngineTreeSitter,
 	},
 }
 
@@ -237,8 +254,10 @@ func DetectSyntaxHighlightingLanguage(path string, contents string) SyntaxEngine
 
 	engine := engineConfig.Default
 	if overrideEngine, ok := engineConfig.Overrides[lang]; ok {
+		fmt.Println("OVERRIDE", lang, overrideEngine, "")
 		engine = overrideEngine
 	}
+	fmt.Println("LANG", lang, "OVERRIDE", langOverride)
 
 	return SyntaxEngineQuery{
 		Language:         lang,

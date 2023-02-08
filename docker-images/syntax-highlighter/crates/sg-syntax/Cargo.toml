@@ -49,6 +49,9 @@ tree-sitter-scala = { git = "https://github.com/sourcegraph/tree-sitter-scala" }
 
 tree-sitter-xlsg = { git = "https://github.com/sourcegraph/tree-sitter-xlsg" }
 
+tree-sitter-javascript = "0.20.0"
+tree-sitter-typescript = "0.20.2"
+
 [dev-dependencies]
 insta = "1.11.0"
 pretty_assertions = "1.2.1"

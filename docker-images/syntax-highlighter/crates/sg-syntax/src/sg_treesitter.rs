@@ -28,7 +28,6 @@ use sg_macros::include_project_file_optional;
 //  unique match groups. For example `@rust-bracket`, or similar. That doesn't need any
 //  particularly new rust code to be written. You can just modify queries for that)
 const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
-    ("attribute",               SyntaxKind::UnspecifiedSyntaxKind),
     ("boolean",                 SyntaxKind::BooleanLiteral),
     ("character",               SyntaxKind::CharacterLiteral),
     ("comment",                 SyntaxKind::Comment),
@@ -37,10 +36,12 @@ const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
     ("constant.builtin",        SyntaxKind::IdentifierBuiltin),
     ("constant.null",           SyntaxKind::IdentifierNull),
     ("float",                   SyntaxKind::NumericLiteral),
-    ("function",                SyntaxKind::IdentifierFunctionDefinition),
+    ("function",                SyntaxKind::IdentifierFunction),
     ("function.builtin",        SyntaxKind::IdentifierBuiltin),
     ("identifier",              SyntaxKind::Identifier),
-    ("identifier.function",     SyntaxKind::IdentifierFunctionDefinition),
+    ("identifier.function",     SyntaxKind::IdentifierFunction),
+    ("identifier.attribute",    SyntaxKind::IdentifierAttribute),
+    ("tag.attribute",           SyntaxKind::TagAttribute),
     ("include",                 SyntaxKind::IdentifierKeyword),
     ("keyword",                 SyntaxKind::IdentifierKeyword),
     ("keyword.function",        SyntaxKind::IdentifierKeyword),
@@ -54,12 +55,17 @@ const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
     ("punctuation.delimiter",   SyntaxKind::PunctuationDelimiter),
     ("string",                  SyntaxKind::StringLiteral),
     ("string.special",          SyntaxKind::StringLiteral),
+    ("string.escape",           SyntaxKind::StringLiteralEscape),
     ("tag",                     SyntaxKind::UnspecifiedSyntaxKind),
     ("type",                    SyntaxKind::IdentifierType),
     ("type.builtin",            SyntaxKind::IdentifierType),
+    ("identifier",              SyntaxKind::Identifier),
     ("variable",                SyntaxKind::Identifier),
-    ("variable.builtin",        SyntaxKind::UnspecifiedSyntaxKind),
+    ("identifier.builtin",      SyntaxKind::IdentifierBuiltin),
+    ("variable.builtin",        SyntaxKind::IdentifierBuiltin),
+    ("identifier.parameter",    SyntaxKind::IdentifierParameter),
     ("variable.parameter",      SyntaxKind::IdentifierParameter),
+    ("identifier.module",       SyntaxKind::IdentifierModule),
     ("variable.module",         SyntaxKind::IdentifierModule),
 ];
 
@@ -96,13 +102,45 @@ macro_rules! create_configurations {
             }
         )*
 
+        // Manually insert the typescript and tsx languages because the
+        // tree-sitter-typescript crate doesn't have a language() function.
+        {
+            let highlights = vec![
+                include_project_file_optional!("queries/typescript/highlights.scm"),
+                include_project_file_optional!("queries/javascript/highlights.scm"),
+            ];
+            let mut lang = HighlightConfiguration::new(
+                paste! { tree_sitter_typescript::language_typescript() },
+                &highlights.join("\n"),
+                include_project_file_optional!("queries/", "typescript", "/injections.scm"),
+                include_project_file_optional!("queries/", "typescript", "/locals.scm"),
+            ).expect("parser for 'typescript' must be compiled");
+            lang.configure(&highlight_names);
+            m.insert("typescript", lang);
+        }
+        {
+            let highlights = vec![
+                include_project_file_optional!("queries/tsx/highlights.scm"),
+                include_project_file_optional!("queries/typescript/highlights.scm"),
+                include_project_file_optional!("queries/javascript/highlights.scm"),
+            ];
+            let mut lang = HighlightConfiguration::new(
+                paste! { tree_sitter_typescript::language_tsx() },
+                &highlights.join("\n"),
+                include_project_file_optional!("queries/tsx/injections.scm"),
+                include_project_file_optional!("queries/tsx/locals.scm"),
+            ).expect("parser for 'tsx' must be compiled");
+            lang.configure(&highlight_names);
+            m.insert("tsx", lang);
+        }
+
         m
     }}
 }
 
 lazy_static::lazy_static! {
     static ref CONFIGURATIONS: HashMap<&'static str, HighlightConfiguration> = {
-        create_configurations!( go, sql, c_sharp, jsonnet, scala, xlsg )
+        create_configurations!( go, sql, c_sharp, jsonnet, scala, xlsg, javascript )
     };
 }
 

@@ -137,11 +137,15 @@ var enryLanguageMappings = map[string]string{
 }
 
 var supportedFiletypes = map[string]struct{}{
-	"go":      {},
-	"c_sharp": {},
-	"jsonnet": {},
-	"scala":   {},
-	"xlsg":    {},
+	"go":         {},
+	"c_sharp":    {},
+	"jsonnet":    {},
+	"javascript": {},
+	"jsx":        {},
+	"typescript": {},
+	"tsx":        {},
+	"scala":      {},
+	"xlsg":       {},
 }
 
 // Client represents a client connection to a syntect_server.

@@ -1709,9 +1709,11 @@ dependencies = [
  "tree-sitter-c-sharp",
  "tree-sitter-go",
  "tree-sitter-highlight",
+ "tree-sitter-javascript",
  "tree-sitter-jsonnet",
  "tree-sitter-scala",
  "tree-sitter-sql",
+ "tree-sitter-typescript",
  "tree-sitter-xlsg",
 ]
 
@@ -2222,6 +2224,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "tree-sitter-javascript"
+version = "0.20.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2490fab08630b2c8943c320f7b63473cbf65511c8d83aec551beb9b4375906ed"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
 name = "tree-sitter-jsonnet"
 version = "0.0.1"
 source = "git+https://github.com/sourcegraph/tree-sitter-jsonnet#009e6f06266f46ae07077dd6c8026ded56ab7dd8"
@@ -2243,6 +2255,16 @@ dependencies = [
 name = "tree-sitter-sql"
 version = "0.0.2"
 source = "git+https://github.com/sourcegraph/tree-sitter-sql#6ea62b8d33c9e39f6de8a398a6885d1873ed7e91"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
+name = "tree-sitter-typescript"
+version = "0.20.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "079c695c32d39ad089101c66393aeaca30e967fba3486a91f573d2f0e12d290a"
 dependencies = [
  "cc",
  "tree-sitter",

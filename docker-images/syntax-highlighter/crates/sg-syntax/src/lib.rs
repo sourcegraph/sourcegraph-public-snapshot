@@ -109,6 +109,14 @@ pub fn determine_filetype(q: &SourcegraphQuery) -> String {
     // We normalize all the filenames here
     match filetype.as_str() {
         "C#" => "c_sharp",
+        "JS Custom - React" => "javascript",
+        "TypeScriptReact" => {
+            if q.filepath.ends_with(".tsx") {
+                "tsx"
+            } else {
+                "typescript"
+            }
+        }
         filetype => filetype,
     }
     .to_lowercase()
