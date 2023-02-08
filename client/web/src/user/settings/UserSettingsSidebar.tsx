@@ -1,8 +1,8 @@
-import React, { useState, useCallback } from 'react'
+import { FC, useState, useCallback } from 'react'
 
 import { mdiMenu, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router-dom'
+import { useParams } from 'react-router-dom-v5-compat'
 
 import { ProductStatusBadge, Button, Link, Icon, ProductStatusType } from '@sourcegraph/wildcard'
 
@@ -29,21 +29,17 @@ type UserSettingsSidebarItem = NavItemDescriptor<UserSettingsSidebarItemConditio
 
 export type UserSettingsSidebarItems = readonly UserSettingsSidebarItem[]
 
-export interface UserSettingsSidebarProps
-    extends UserSettingsAreaRouteContext,
-        BatchChangesProps,
-        RouteComponentProps<{}> {
+export interface UserSettingsSidebarProps extends UserSettingsAreaRouteContext, BatchChangesProps {
     items: UserSettingsSidebarItems
     isSourcegraphDotCom: boolean
     className?: string
 }
 
 /** Sidebar for user account pages. */
-export const UserSettingsSidebar: React.FunctionComponent<
-    React.PropsWithChildren<UserSettingsSidebarProps>
-> = props => {
+export const UserSettingsSidebar: FC<UserSettingsSidebarProps> = props => {
     const [isMobileExpanded, setIsMobileExpanded] = useState(false)
     const collapseMobileSidebar = useCallback((): void => setIsMobileExpanded(false), [])
+    const { username } = useParams()
 
     if (!props.authenticatedUser) {
         return null
@@ -74,7 +70,7 @@ export const UserSettingsSidebar: React.FunctionComponent<
                             condition(context) && (
                                 <SidebarNavItem
                                     key={label}
-                                    to={props.match.path + to}
+                                    to={`/users/${username}/settings` + to}
                                     exact={exact}
                                     onClick={collapseMobileSidebar}
                                 >
@@ -99,10 +95,7 @@ export const UserSettingsSidebar: React.FunctionComponent<
                         {!siteAdminViewingOtherUser &&
                             (window.context.sourcegraphDotComMode &&
                             !props.authenticatedUser?.tags?.includes('CreateOrg') ? (
-                                <SidebarNavItem
-                                    to={`${props.match.path}/about-organizations`}
-                                    onClick={collapseMobileSidebar}
-                                >
+                                <SidebarNavItem to="./about-organizations" onClick={collapseMobileSidebar}>
                                     About organizations
                                 </SidebarNavItem>
                             ) : (

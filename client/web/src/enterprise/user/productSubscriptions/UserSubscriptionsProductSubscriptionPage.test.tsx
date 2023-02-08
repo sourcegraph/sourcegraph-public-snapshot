@@ -14,20 +14,13 @@ describe('UserSubscriptionsProductSubscriptionPage', () => {
         const component = renderWithBrandedContext(
             <UserSubscriptionsProductSubscriptionPage
                 user={{ settingsURL: '/u' }}
-                match={{
-                    isExact: true,
-                    params: { subscriptionUUID: '43002662-f627-4550-9af6-d621d2a878de' },
-                    path: '/p',
-                    url: '/p',
-                }}
                 _queryProductSubscription={() =>
                     of<ProductSubscriptionFieldsOnSubscriptionPage>({
                         __typename: 'ProductSubscription',
                     } as ProductSubscriptionFieldsOnSubscriptionPage)
                 }
-                history={history}
             />,
-            { history }
+            { history, path: '/:subscriptionUUID', route: '/43002662-f627-4550-9af6-d621d2a878de' }
         )
         act(() => undefined)
         expect(component.asFragment()).toMatchSnapshot()

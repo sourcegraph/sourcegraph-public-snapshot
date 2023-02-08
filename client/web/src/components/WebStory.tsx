@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 
 import { MemoryRouter, MemoryRouterProps, RouteComponentProps, withRouter } from 'react-router'
-import { CompatRouter } from 'react-router-dom-v5-compat'
+import { Routes, Route, CompatRouter } from 'react-router-dom-v5-compat'
 
 import { MockedStoryProvider, MockedStoryProviderProps } from '@sourcegraph/shared/src/stories'
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -32,6 +32,7 @@ export interface WebStoryProps
     extends Omit<MemoryRouterProps, 'children'>,
         Pick<MockedStoryProviderProps, 'mocks' | 'useStrictMocking'> {
     children: React.FunctionComponent<WebStoryChildrenProps>
+    path?: string
 }
 
 /**
@@ -41,6 +42,7 @@ export interface WebStoryProps
 export const WebStory: React.FunctionComponent<WebStoryProps> = ({
     children,
     mocks,
+    path = '*',
     useStrictMocking,
     ...memoryRouterProps
 }) => {
@@ -56,11 +58,18 @@ export const WebStory: React.FunctionComponent<WebStoryProps> = ({
             <WildcardThemeContext.Provider value={{ isBranded: true }}>
                 <MemoryRouter {...memoryRouterProps}>
                     <CompatRouter>
-                        <Children
-                            {...breadcrumbSetters}
-                            isLightTheme={isLightTheme}
-                            telemetryService={NOOP_TELEMETRY_SERVICE}
-                        />
+                        <Routes>
+                            <Route
+                                path={path}
+                                element={
+                                    <Children
+                                        {...breadcrumbSetters}
+                                        isLightTheme={isLightTheme}
+                                        telemetryService={NOOP_TELEMETRY_SERVICE}
+                                    />
+                                }
+                            />
+                        </Routes>
                     </CompatRouter>
                 </MemoryRouter>
             </WildcardThemeContext.Provider>
