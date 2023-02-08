@@ -162,19 +162,14 @@ func (h *handler[T]) dequeue(ctx context.Context, queueName string, metadata exe
 
 	token, err := h.jobTokenStore.Create(ctx, job.ID, queueName, job.RepositoryName)
 	if err != nil {
-		// Maybe the token already exists (executor may have dies midway though processing the Job)?
-		tokenExists, existsErr := h.jobTokenStore.Exists(ctx, job.ID, queueName)
-		if existsErr != nil {
-			return executortypes.Job{}, false, errors.CombineErrors(errors.Wrap(err, "CreateToken"), errors.Wrap(existsErr, "Exists"))
-		}
-		// The token does not exist AND we failed to created it. So bail out with the first error.
-		if !tokenExists {
-			return executortypes.Job{}, false, errors.Wrap(err, "CreateToken")
-		}
-		// The token does exist. Regenerate the token
-		token, err = h.jobTokenStore.Regenerate(ctx, job.ID, queueName)
-		if err != nil {
-			return executortypes.Job{}, false, errors.Wrap(err, "Regenerate")
+		if errors.Is(err, executorstore.ErrJobTokenAlreadyCreated) {
+			// Token has already been created, regen it.
+			token, err = h.jobTokenStore.Regenerate(ctx, job.ID, queueName)
+			if err != nil {
+				return executortypes.Job{}, false, errors.Wrap(err, "Regenerate")
+			}
+		} else {
+			return executortypes.Job{}, false, errors.Wrap(err, "Create")
 		}
 	}
 	job.Token = token

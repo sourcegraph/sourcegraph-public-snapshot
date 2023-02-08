@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 
+	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
 
@@ -82,6 +83,9 @@ func (s *jobTokenStore) Create(ctx context.Context, jobId int, queue string, rep
 		),
 	)
 	if err != nil {
+		if isUniqueConstraintViolation(err, "executor_job_tokens_job_id_queue_repo_key") {
+			return "", ErrJobTokenAlreadyCreated
+		}
 		return "", err
 	}
 
@@ -93,21 +97,21 @@ INSERT INTO executor_job_tokens (value_sha256, job_id, queue, repo)
 VALUES (%s, %s, %s, %s)
 `
 
+func isUniqueConstraintViolation(err error, constraintName string) bool {
+	var e *pgconn.PgError
+	return errors.As(err, &e) && e.Code == "23505" && e.ConstraintName == constraintName
+}
+
+// ErrJobTokenAlreadyCreated is a specific error when a token has already been created for a Job.
+var ErrJobTokenAlreadyCreated = errors.New("job token already exists")
+
 func (s *jobTokenStore) Regenerate(ctx context.Context, jobId int, queue string) (string, error) {
-	exists, err := s.Exists(ctx, jobId, queue)
-	if err != nil {
-		return "", err
-	}
-	if !exists {
-		return "", errors.New("job token does not exist")
-	}
-
 	var b [20]byte
-	if _, err = rand.Read(b[:]); err != nil {
+	if _, err := rand.Read(b[:]); err != nil {
 		return "", err
 	}
 
-	err = s.Exec(
+	err := s.Exec(
 		ctx,
 		sqlf.Sprintf(
 			regenerateExecutorJobTokenFmtstr,

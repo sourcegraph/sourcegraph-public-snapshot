@@ -73,6 +73,7 @@ func TestJobTokenStore_Create_Duplicate(t *testing.T) {
 	require.NoError(t, err)
 	_, err = tokenStore.Create(context.Background(), 10, "test", "repo")
 	require.Error(t, err)
+	assert.True(t, errors.Is(err, store.ErrJobTokenAlreadyCreated))
 }
 
 func TestJobTokenStore_Regenerate(t *testing.T) {
@@ -92,12 +93,6 @@ func TestJobTokenStore_Regenerate(t *testing.T) {
 			name:  "Regenerate Token",
 			jobId: 10,
 			queue: "test",
-		},
-		{
-			name:        "Token does not exist",
-			jobId:       100,
-			queue:       "test1",
-			expectedErr: errors.New("job token does not exist"),
 		},
 	}
 	for _, test := range tests {
