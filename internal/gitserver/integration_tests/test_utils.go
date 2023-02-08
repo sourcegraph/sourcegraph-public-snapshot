@@ -2,6 +2,10 @@ package inttests
 
 import (
 	"context"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/proto"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	"google.golang.org/grpc"
 	"net"
 	"net/http"
 	"os"
@@ -51,20 +55,26 @@ func InitGitserver() {
 	gr := database.NewMockGitserverRepoStore()
 	db.GitserverReposFunc.SetDefaultReturn(gr)
 
+	s := server.Server{
+		Logger:         sglog.Scoped("server", "the gitserver service"),
+		ObservationCtx: &observation.TestContext,
+		ReposDir:       filepath.Join(root, "repos"),
+		GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
+			return filepath.Join(root, "remotes", string(name)), nil
+		},
+		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
+			return &server.GitRepoSyncer{}, nil
+		},
+		GlobalBatchLogSemaphore: semaphore.NewWeighted(32),
+		DB:                      db,
+	}
+
+	grpcServer := grpc.NewServer(defaults.ServerOptions(logger)...)
+	grpcServer.RegisterService(&proto.GitserverService_ServiceDesc, &server.GRPCServer{Server: &s})
+	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
+
 	srv := &http.Server{
-		Handler: (&server.Server{
-			Logger:         sglog.Scoped("server", "the gitserver service"),
-			ObservationCtx: &observation.TestContext,
-			ReposDir:       filepath.Join(root, "repos"),
-			GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
-				return filepath.Join(root, "remotes", string(name)), nil
-			},
-			GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
-				return &server.GitRepoSyncer{}, nil
-			},
-			GlobalBatchLogSemaphore: semaphore.NewWeighted(32),
-			DB:                      db,
-		}).Handler(),
+		Handler: handler,
 	}
 	go func() {
 		if err := srv.Serve(l); err != nil {

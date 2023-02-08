@@ -7,6 +7,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/log/logtest"
+
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/proto"
+	grpc2 "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	"google.golang.org/grpc"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -25,8 +31,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -437,7 +441,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 	}}
 
 	db := newMockDB()
-	srv := httptest.NewServer((&server.Server{
+	s := server.Server{
 		Logger:   logtest.Scoped(t),
 		ReposDir: filepath.Join(root, "repos"),
 		GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
@@ -447,7 +451,14 @@ func TestClient_ResolveRevisions(t *testing.T) {
 			return &server.GitRepoSyncer{}, nil
 		},
 		DB: db,
-	}).Handler())
+	}
+
+	grpcServer := grpc.NewServer(defaults.ServerOptions(logtest.Scoped(t))...)
+	grpcServer.RegisterService(&proto.GitserverService_ServiceDesc, &server.GRPCServer{Server: &s})
+
+	handler := grpc2.MultiplexHandlers(grpcServer, s.Handler())
+	srv := httptest.NewServer(handler)
+
 	defer srv.Close()
 
 	u, _ := url.Parse(srv.URL)
