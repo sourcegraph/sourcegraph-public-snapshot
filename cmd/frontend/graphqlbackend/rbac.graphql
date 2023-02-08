@@ -148,7 +148,7 @@ extend type Query {
 extend type Mutation {
     """
     Deletes a role. This mutation targets only non-system roles.
-    If the role is assigned to any user, the user <> role relationship is deleted also.
+    Any users who were assigned to the role will be unassigned and lose any permissions associated with it.
     """
     deleteRole(role: ID!): EmptyResponse!
 }
