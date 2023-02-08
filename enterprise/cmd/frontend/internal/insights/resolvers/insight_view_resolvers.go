@@ -1301,7 +1301,7 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, startSer
 
 	// Don't try to match on non-global series, since they are always replaced
 	// Also don't try to match on series that use repo criteria
-	// TODO: Reconsider matching åon criteria based series. If so the edit case would need work to ensure other insights remain the same.
+	// TODO: Reconsider matching on criteria based series. If so the edit case would need work to ensure other insights remain the same.
 	if len(series.RepositoryScope.Repositories) == 0 && series.RepositoryScope.RepositoryCriteria == nil {
 		matchingSeries, foundSeries, err = tx.FindMatchingSeries(ctx, store.MatchSeriesArgs{
 			Query:                     series.Query,
