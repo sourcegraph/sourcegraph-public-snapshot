@@ -188,6 +188,10 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
 
 Sourcegraph currently uses Cloudflare to provide web application security. You should allow access to all [Cloudflare IP ranges](https://www.cloudflare.com/ips/)
 
+## Using an HTTP proxy for telemetry requests
+
+The environment variable `TELEMETRY_HTTP_PROXY` can be set to use an HTTP proxy for telemetry requests.
+
 ## Connections to Sourcegraph.com
 
 Sourcegraph only connects to Sourcegraph.com for two purposes:
