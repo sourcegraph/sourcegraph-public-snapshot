@@ -207,7 +207,7 @@ const MemoizedExecuteBatchSpecContent: FC<MemoizedExecuteBatchSpecContentProps> 
                 {errors.actions && <ErrorMessage error={errors.actions} key={String(errors.actions)} />}
 
                 <Routes>
-                    <Route element={<Navigate to="execution" />} index={true} />
+                    <Route element={<Navigate to="execution" replace={true} />} index={true} />
                     <Route
                         path="configuration"
                         element={
@@ -274,7 +274,7 @@ const MemoizedExecuteBatchSpecContent: FC<MemoizedExecuteBatchSpecContentProps> 
                                 </>
                             ) : (
                                 // If the batch spec is not ready to be previewed, redirect to the spec instead.
-                                <Navigate to="spec" />
+                                <Navigate to="spec" replace={true} />
                             )
                         }
                     />

@@ -52,7 +52,6 @@ export interface SettingsAreaPageProps extends SettingsAreaPageCommonProps {
 interface Props extends SettingsAreaPageCommonProps {
     className?: string
     extraHeader?: JSX.Element
-    url: string
 }
 
 const LOADING = 'loading' as const

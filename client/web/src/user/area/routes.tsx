@@ -29,11 +29,11 @@ export const userAreaRoutes: readonly UserAreaRoute[] = [
     // Redirect from /users/:username -> /users/:username/profile.
     {
         path: '',
-        render: () => <Navigate to="profile" />,
+        render: () => <Navigate to="profile" replace={true} />,
     },
     // Redirect from previous /users/:username/account -> /users/:username/profile.
     {
         path: 'account',
-        render: () => <Navigate to="../profile" />,
+        render: () => <Navigate to="../profile" replace={true} />,
     },
 ]

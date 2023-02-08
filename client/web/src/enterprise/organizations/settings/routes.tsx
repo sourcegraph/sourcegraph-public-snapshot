@@ -2,18 +2,18 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { OrgSettingsAreaRoute } from '../../../org/settings/OrgSettingsArea'
 import { orgSettingsAreaRoutes } from '../../../org/settings/routes'
-import type { ExecutorsOrgAreaProps } from '../../executors/ExecutorsOrgArea'
+import type { OrgExecutorSecretsListPageProps } from '../../executors/secrets/ExecutorSecretsListPage'
 
-const ExecutorsOrgArea = lazyComponent<ExecutorsOrgAreaProps, 'ExecutorsOrgArea'>(
-    () => import('../../executors/ExecutorsOrgArea'),
-    'ExecutorsOrgArea'
+const OrgExecutorSecretsListPage = lazyComponent<OrgExecutorSecretsListPageProps, 'OrgExecutorSecretsListPage'>(
+    () => import('../../executors/secrets/ExecutorSecretsListPage'),
+    'OrgExecutorSecretsListPage'
 )
 
 export const enterpriseOrgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[] = [
     ...orgSettingsAreaRoutes,
     {
-        path: '/executors',
-        render: props => <ExecutorsOrgArea {...props} namespaceID={props.org.id} />,
+        path: '/executors/secrets',
+        render: props => <OrgExecutorSecretsListPage {...props} orgID={props.org.id} />,
         condition: ({ org: { viewerCanAdminister } }) => viewerCanAdminister,
     },
 ]

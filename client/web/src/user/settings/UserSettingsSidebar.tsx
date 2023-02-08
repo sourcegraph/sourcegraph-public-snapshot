@@ -2,7 +2,6 @@ import { FC, useState, useCallback } from 'react'
 
 import { mdiMenu, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
-import { useParams } from 'react-router-dom-v5-compat'
 
 import { ProductStatusBadge, Button, Link, Icon, ProductStatusType } from '@sourcegraph/wildcard'
 
@@ -37,9 +36,9 @@ export interface UserSettingsSidebarProps extends UserSettingsAreaRouteContext, 
 
 /** Sidebar for user account pages. */
 export const UserSettingsSidebar: FC<UserSettingsSidebarProps> = props => {
+    const { user } = props
     const [isMobileExpanded, setIsMobileExpanded] = useState(false)
     const collapseMobileSidebar = useCallback((): void => setIsMobileExpanded(false), [])
-    const { username } = useParams()
 
     if (!props.authenticatedUser) {
         return null
@@ -70,7 +69,7 @@ export const UserSettingsSidebar: FC<UserSettingsSidebarProps> = props => {
                             condition(context) && (
                                 <SidebarNavItem
                                     key={label}
-                                    to={`/users/${username}/settings` + to}
+                                    to={`/users/${user.username}/settings` + to}
                                     exact={exact}
                                     onClick={collapseMobileSidebar}
                                 >

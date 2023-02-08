@@ -95,7 +95,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                     <Tooltip content="Saved search settings">
                         <Button
                             className="test-edit-saved-search-button"
-                            to={`./${this.props.savedSearch.id}`}
+                            to={`searches/${this.props.savedSearch.id}`}
                             variant="secondary"
                             size="sm"
                             as={Link}
@@ -154,7 +154,7 @@ export const SavedSearchListPage: React.FunctionComponent<Props> = props => {
             <PageHeader
                 description="Manage notifications and alerts for specific search queries."
                 actions={
-                    <Button to="./add" className="test-add-saved-search-button" variant="primary" as={Link}>
+                    <Button to="searches/add" className="test-add-saved-search-button" variant="primary" as={Link}>
                         <Icon aria-hidden={true} svgPath={mdiPlus} /> Add saved search
                     </Button>
                 }
@@ -167,7 +167,7 @@ export const SavedSearchListPage: React.FunctionComponent<Props> = props => {
             </PageHeader>
             <SavedSearchListPageContent
                 {...props}
-                onDelete={() => refetch()}
+                onDelete={refetch}
                 savedSearches={connection?.nodes || []}
                 error={error}
                 loading={loading}
