@@ -295,3 +295,64 @@ mutation DeleteRole($role: ID!) {
 	}
 }
 `
+
+func TestCreateRole(t *testing.T) {
+	logger := logtest.Scoped(t)
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	userID := createTestUser(t, db, false).ID
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	adminUserID := createTestUser(t, db, true).ID
+	adminActorCtx := actor.WithActor(ctx, actor.FromUser(adminUserID))
+
+	r := &Resolver{logger: logger, db: db}
+	s, err := newSchema(db, r)
+	assert.NoError(t, err)
+
+	t.Run("as non site-admin", func(t *testing.T) {
+		input := map[string]any{"name": "TEST-ROLE"}
+
+		var response struct{ CreateRole apitest.Role }
+		errs := apitest.Exec(actorCtx, t, s, input, &response, createRoleMutation)
+
+		if len(errs) != 1 {
+			t.Fatalf("expected a single error, but got %d", len(errs))
+		}
+		if have, want := errs[0].Message, "must be site admin"; have != want {
+			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		}
+	})
+
+	t.Run("as site-admin", func(t *testing.T) {
+		input := map[string]any{"name": "TEST-ROLE"}
+
+		var response struct{ CreateRole apitest.Role }
+		// First time it should work, because the role exists
+		apitest.MustExec(adminActorCtx, t, s, input, &response, createRoleMutation)
+
+		// Second time it should fail because role names must be unique
+		errs := apitest.Exec(adminActorCtx, t, s, input, &response, createRoleMutation)
+		if len(errs) != 1 {
+			t.Fatalf("expected a single error, but got %d", len(errs))
+		}
+		if have, want := errs[0].Message, "cannot create role: err_name_exists"; have != want {
+			t.Fatalf("wrong error code. want=%q, have=%q", want, have)
+		}
+	})
+}
+
+const createRoleMutation = `
+mutation CreateRole($name: String!) {
+	createRole(name: $name) {
+		id
+		name
+		system
+	}
+}
+`

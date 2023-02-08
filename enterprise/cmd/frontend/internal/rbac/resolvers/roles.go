@@ -98,3 +98,20 @@ func (r *Resolver) DeleteRole(ctx context.Context, args *gql.DeleteRoleArgs) (_ 
 
 	return &gql.EmptyResponse{}, nil
 }
+
+func (r *Resolver) CreateRole(ctx context.Context, args *gql.CreateRoleArgs) (gql.RoleResolver, error) {
+	// 🚨 SECURITY: Only site administrators can create roles.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	newRole, err := r.db.Roles().Create(ctx, args.Name, false)
+	if err != nil {
+		return nil, err
+	}
+
+	return &roleResolver{
+		db:   r.db,
+		role: newRole,
+	}, nil
+}

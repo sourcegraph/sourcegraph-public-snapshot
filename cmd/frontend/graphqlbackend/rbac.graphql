@@ -155,6 +155,11 @@ extend type Mutation {
     Any users who were assigned to the role will be unassigned and lose any permissions associated with it.
     """
     deleteRole(role: ID!): EmptyResponse!
+
+    """
+    Creates a role.
+    """
+    createRole(name: String!): Role!
 }
 
 extend type User {

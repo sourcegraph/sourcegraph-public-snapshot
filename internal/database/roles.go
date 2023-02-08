@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -12,6 +13,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+// errCannotCreateRole is the error returned when a role cannot be inserted
+// into the database due to a constraint.
+type errCannotCreateRole struct {
+	code string
+}
+
+const errorCodeRoleNameExists = "err_name_exists"
+
+func (err errCannotCreateRole) Error() string {
+	return fmt.Sprintf("cannot create role: %v", err.code)
+}
+
+func (err errCannotCreateRole) Code() string {
+	return err.code
+}
 
 var roleColumns = []*sqlf.Query{
 	sqlf.Sprintf("roles.id"),
@@ -230,6 +247,10 @@ func (r *roleStore) Create(ctx context.Context, name string, isSystemRole bool) 
 
 	role, err := scanRole(r.QueryRow(ctx, q))
 	if err != nil {
+		var e *pgconn.PgError
+		if errors.As(err, &e) && e.ConstraintName == "roles_name" {
+			return nil, errCannotCreateRole{errorCodeRoleNameExists}
+		}
 		return nil, errors.Wrap(err, "scanning role")
 	}
 
