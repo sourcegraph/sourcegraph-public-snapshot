@@ -199,30 +199,33 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
 const getButtonActions = ({ repoSpecific }: { repoSpecific: boolean }): DropdownButtonAction[] => [
     {
         type: 'head',
-        buttonLabel: `Create new ${!repoSpecific && 'global'} policy`,
-        dropdownTitle: `Create new ${!repoSpecific && 'global'} policy for HEAD`,
+        elementType: 'link',
+        to: './configuration/new?type=head',
+        buttonLabel: `Create new ${!repoSpecific ? 'global' : ''} policy`,
+        dropdownTitle: `Create new ${!repoSpecific ? 'global' : ''} policy for HEAD`,
         dropdownDescription: `Match the tip of the default branch ${
             repoSpecific ? 'within this repository' : 'across multiple repositories'
         }`,
-        onTrigger: () => {}, // TODO, Make optional
     },
     {
         type: 'branch',
-        buttonLabel: `Create new ${!repoSpecific && 'global'} branch policy`,
-        dropdownTitle: `Create new ${!repoSpecific && 'global'} branch policy`,
+        elementType: 'link',
+        to: './configuration/new?type=branch',
+        buttonLabel: `Create new ${!repoSpecific ? 'global' : ''} branch policy`,
+        dropdownTitle: `Create new ${!repoSpecific ? 'global' : ''} branch policy`,
         dropdownDescription: `Match multiple branches ${
             repoSpecific ? 'within this repository' : 'across multiple repositories'
         }`,
-        onTrigger: () => {},
     },
     {
         type: 'tag',
-        buttonLabel: `Create new ${!repoSpecific && 'global'} tag policy`,
-        dropdownTitle: `Create new ${!repoSpecific && 'global'} tag policy`,
+        elementType: 'link',
+        to: './configuration/new?type=tag',
+        buttonLabel: `Create new ${!repoSpecific ? 'global' : ''} tag policy`,
+        dropdownTitle: `Create new ${!repoSpecific ? 'global' : ''} tag policy`,
         dropdownDescription: `Match multiple tags ${
             repoSpecific ? 'within this repository' : 'across multiple repositories'
         }`,
-        onTrigger: () => {},
     },
 ]
 
