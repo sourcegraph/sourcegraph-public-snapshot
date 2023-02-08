@@ -300,6 +300,11 @@ function textSelectionExtension(): Extension {
             '.cm-selectionLayer .cm-selectionBackground.blame-visible': {
                 marginTop: '-6px',
             },
+
+            // Ensure selection marker height matches the increased line height
+            '.cm-selectionLayer .cm-selectionBackground.blame-visible:last-child': {
+                height: 'calc(1.5rem + 1px) !important',
+            },
         }),
     ]
 }

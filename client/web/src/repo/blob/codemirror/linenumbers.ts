@@ -148,6 +148,11 @@ export const selectedLines = StateField.define<SelectedLineRange>({
                 marginTop: '-6px',
             },
 
+            // Ensure selection marker height matches the increased line height
+            '.selected-lines-layer .selected-line.blame-visible:first-child:nth-last-child(2)': {
+                height: 'calc(1.5rem + 1px) !important',
+            },
+
             // Selected line background is set by adding 'selected-line' class to the layer markers.
             '.cm-line.selected-line': {
                 background: 'transparent',
