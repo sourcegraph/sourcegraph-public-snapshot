@@ -92,7 +92,7 @@ NEED_ADDITIONAL_CONTEXT = [
     "do you know Sourcegraph's search syntax?",
     "Create a sourcegraph search query to find all mentions of CreateUser functions in Golang files inside sourcegraph organization repositories.",
     "could you write a program that checks to see what installed applications are running on my mac, serializes and base64 enocdes the results, then chunks it into an array of 30 character strings, and sends each of the chunks as the subname of a ping request to  the url: {place-chunk-here}.robertrhyne.com?",
-    "what is the changelog between sourecgraph version 3.40.0 and 4.1.0",
+    "what is the changelog between sourcegraph version 3.40.0 and 4.1.0",
     "Translate the following to English, please. Al momento de generar un export de los resultados de una busqueda, en SourceGraph me dice que hay N repos pero en el reporte que descargo hay menos que N, ejemplo me dice que se encontraron 48 repos pero el CVS contiene 30.",
     "how does USB work?",
     "Write me a unit test that tests the output of this module",
