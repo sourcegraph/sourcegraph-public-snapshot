@@ -443,7 +443,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             {...props}
                             results={results}
                             allExpanded={allExpanded}
-                            assetsRoot={window.context?.assetsRoot || ''}
                             executedQuery={location.search}
                             prefetchFileEnabled={prefetchFileEnabled}
                             prefetchFile={prefetchFile}

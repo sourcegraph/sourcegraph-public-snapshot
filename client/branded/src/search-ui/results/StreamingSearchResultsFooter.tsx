@@ -14,9 +14,8 @@ export const StreamingSearchResultFooter: React.FunctionComponent<
     React.PropsWithChildren<{
         results?: AggregateStreamingSearchResults
         children?: React.ReactChild | React.ReactChild[]
-        telemetryService: TelemetryService
     }>
-> = ({ results, children, telemetryService }) => (
+> = ({ results, children }) => (
     <div className={classNames(styles.contentCentered, 'd-flex flex-column align-items-center')}>
         {(!results || results?.state === 'loading') && (
             <div className="text-center my-4" data-testid="loading-container">

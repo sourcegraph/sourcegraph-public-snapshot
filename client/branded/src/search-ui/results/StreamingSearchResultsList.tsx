@@ -48,8 +48,6 @@ export interface StreamingSearchResultsListProps
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     /** Clicking on a match opens the link in a new tab. */
     openMatchesInNewTab?: boolean
-    /** Available to web app through JS Context */
-    assetsRoot?: string
 
     /**
      * Latest run query. Resets scroll visibility state when changed.
@@ -88,7 +86,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     isLightTheme,
     isSourcegraphDotCom,
     searchContextsEnabled,
-    assetsRoot,
     platformContext,
     openMatchesInNewTab,
     executedQuery,
@@ -281,7 +278,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             </div>
 
             {itemsToShow >= resultsNumber && (
-                <StreamingSearchResultFooter results={results} telemetryService={telemetryService}>
+                <StreamingSearchResultFooter results={results}>
                     <>
                         {results?.state === 'complete' && resultsNumber === 0 && (
                             <NoResultsPage
@@ -290,7 +287,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 isLightTheme={isLightTheme}
                                 telemetryService={telemetryService}
                                 showSearchContext={searchContextsEnabled}
-                                assetsRoot={assetsRoot}
                                 showQueryExamples={showQueryExamplesOnNoResultsPage}
                                 setQueryState={setQueryState}
                             />

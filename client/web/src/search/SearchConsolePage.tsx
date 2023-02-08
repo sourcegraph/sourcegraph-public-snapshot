@@ -140,7 +140,6 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
                                 {...props}
                                 allExpanded={false}
                                 results={results}
-                                assetsRoot={window.context?.assetsRoot || ''}
                                 executedQuery={location.search}
                             />
                         ))}

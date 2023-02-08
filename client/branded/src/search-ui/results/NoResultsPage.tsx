@@ -48,8 +48,6 @@ const Container: React.FunctionComponent<React.PropsWithChildren<ContainerProps>
 interface NoResultsPageProps extends ThemeProps, TelemetryProps, Pick<SearchContextProps, 'searchContextsEnabled'> {
     isSourcegraphDotCom: boolean
     showSearchContext: boolean
-    /** Available to web app through JS Context */
-    assetsRoot?: string
     showQueryExamples?: boolean
     setQueryState?: (query: QueryState) => void
     selectedSearchContextSpec?: string
@@ -57,11 +55,9 @@ interface NoResultsPageProps extends ThemeProps, TelemetryProps, Pick<SearchCont
 
 export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoResultsPageProps>> = ({
     searchContextsEnabled,
-    isLightTheme,
     telemetryService,
     isSourcegraphDotCom,
     showSearchContext,
-    assetsRoot,
     showQueryExamples,
     setQueryState,
     selectedSearchContextSpec,
