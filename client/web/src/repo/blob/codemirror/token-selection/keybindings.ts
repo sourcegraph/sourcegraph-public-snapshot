@@ -8,6 +8,7 @@ import {
 } from '@codemirror/commands'
 import { Extension, Prec } from '@codemirror/state'
 import { EditorView, KeyBinding, keymap, layer, RectangleMarker } from '@codemirror/view'
+import classNames from 'classnames'
 
 import { blobPropsFacet } from '..'
 import { syntaxHighlight } from '../highlight'
@@ -249,7 +250,17 @@ const selectionLayer = Prec.high(
         above: false,
         markers(view) {
             return view.state.selection.ranges
-                .map(range => (range.empty ? [] : RectangleMarker.forRange(view, 'cm-selectionBackground', range)))
+                .map(range =>
+                    range.empty
+                        ? []
+                        : RectangleMarker.forRange(
+                              view,
+                              classNames('cm-selectionBackground', {
+                                  ['blame-visible']: view.state.facet(blobPropsFacet).isBlameVisible,
+                              }),
+                              range
+                          )
+                )
                 .reduce((a, b) => a.concat(b))
         },
         update(update) {
@@ -275,15 +286,19 @@ function textSelectionExtension(): Extension {
                     backgroundColor: 'transparent !important',
                 },
             },
+
+            /**
+             * [RectangleMarker.forRange](https://sourcegraph.com/github.com/codemirror/view@a0a0b9ef5a4deaf58842422ac080030042d83065/-/blob/src/layer.ts?L60-75)
+             * returns absolutely positioned markers. Markers top position has extra 1px (6px in case blame decorations
+             * are visible) more in its `top` value breaking alignment wih the line.
+             * We compensate this spacing by setting negative margin-top.
+             */
             '.cm-selectionLayer .cm-selectionBackground': {
                 background: 'var(--code-selection-bg-2)',
-
-                /**
-                 * [RectangleMarker.forRange](https://sourcegraph.com/github.com/codemirror/view@a0a0b9ef5a4deaf58842422ac080030042d83065/-/blob/src/layer.ts?L60-75)
-                 * returns absolutely positioned markers. Markers top position has extra 1px more in its `top` value breaking alignment wih the line.
-                 * We compensate this spacing by setting negative margin-top.
-                 */
                 marginTop: '-1px',
+            },
+            '.cm-selectionLayer .cm-selectionBackground.blame-visible': {
+                marginTop: '-6px',
             },
         }),
     ]

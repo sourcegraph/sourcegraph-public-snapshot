@@ -152,7 +152,7 @@ const staticExtensions: Extension = [
             borderRight: 'initial',
         },
         '.cm-line': {
-            paddingLeft: '1rem',
+            paddingLeft: '0',
         },
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',
