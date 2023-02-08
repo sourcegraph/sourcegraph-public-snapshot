@@ -2,10 +2,6 @@ package inttests
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/proto"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"google.golang.org/grpc"
 	"net"
 	"net/http"
 	"os"
@@ -15,15 +11,20 @@ import (
 	"strings"
 	"testing"
 
+	"golang.org/x/sync/semaphore"
+	"google.golang.org/grpc"
+
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/proto"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"golang.org/x/sync/semaphore"
 )
 
 var root string

@@ -7,12 +7,9 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/proto"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"google.golang.org/grpc"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -24,6 +21,11 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/proto"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
