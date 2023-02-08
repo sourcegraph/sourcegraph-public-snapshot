@@ -322,7 +322,7 @@ func TestCreateRole(t *testing.T) {
 		errs := apitest.Exec(actorCtx, t, s, input, &response, createRoleMutation)
 
 		if len(errs) != 1 {
-			t.Fatalf("expected single errors, but got %d", len(errs))
+			t.Fatalf("expected a single error, but got %d", len(errs))
 		}
 		if have, want := errs[0].Message, "must be site admin"; have != want {
 			t.Fatalf("wrong error. want=%q, have=%q", want, have)
