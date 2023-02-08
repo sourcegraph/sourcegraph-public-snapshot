@@ -10,7 +10,6 @@ import { EditorHint, QueryChangeSource, QueryState } from '@sourcegraph/shared/s
 import {
     Button,
     Code,
-    Input,
     Label,
     InputElement,
     InputErrorMessage,
@@ -128,16 +127,16 @@ function RepositoriesURLsPicker(props: RepositoriesURLsPickerProps): ReactElemen
     const { repositories, 'aria-labelledby': ariaLabelledby } = props
 
     const { value, disabled, ...attributes } = getDefaultInputProps(repositories)
-    const fieldValue = disabled ? '' : value
+    const fieldValue = disabled ? [] : value
 
     return (
-        <Input
-            as={RepositoriesField}
-            message="Use a list of repository names separated with commas"
-            placeholder="Example: github.com/sourcegraph/sourcegraph"
+        <RepositoriesField
+            id="repositories-id"
+            description="Find and choose up to 1 repository to run insight"
+            placeholder="Search repositories..."
             aria-labelledby={ariaLabelledby}
+            aria-invalid={!!repositories.meta.error}
             value={fieldValue}
-            disabled={disabled}
             {...attributes}
         />
     )
@@ -253,6 +252,7 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
                     onChange={handleOnChange}
                     disabled={disabled}
                     aria-busy={fieldStatus === InputStatus.loading}
+                    aria-invalid={!!repoQuery.meta.error}
                     {...attributes}
                 />
 

@@ -10,14 +10,16 @@ import (
 	"github.com/keegancsmith/sqlf"
 )
 
-// LimitOffset specifies SQL LIMIT and OFFSET counts. A pointer to it is typically embedded in other options
-// structs that need to perform SQL queries with LIMIT and OFFSET.
+// LimitOffset specifies SQL LIMIT and OFFSET counts. A pointer to it is
+// typically embedded in other options structs that need to perform SQL queries
+// with LIMIT and OFFSET.
 type LimitOffset struct {
 	Limit  int // SQL LIMIT count
 	Offset int // SQL OFFSET count
 }
 
-// SQL returns the SQL query fragment ("LIMIT %d OFFSET %d") for use in SQL queries.
+// SQL returns the SQL query fragment ("LIMIT %d OFFSET %d") for use in SQL
+// queries.
 func (o *LimitOffset) SQL() *sqlf.Query {
 	if o == nil {
 		return &sqlf.Query{}
@@ -190,7 +192,8 @@ func copyPtr[T any](n *T) *T {
 	return &c
 }
 
-// Clone (aka deepcopy) returns a new PaginationArgs object with the same values as "p".
+// Clone (aka deepcopy) returns a new PaginationArgs object with the same values
+// as "p".
 func (p *PaginationArgs) Clone() *PaginationArgs {
 	return &PaginationArgs{
 		First:  copyPtr(p.First),

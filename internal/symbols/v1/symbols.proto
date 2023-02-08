@@ -3,16 +3,15 @@ syntax = "proto3";
 package symbols.v1;
 
 import "google/protobuf/duration.proto";
-import "google/protobuf/empty.proto";
 
-option go_package = "github.com/sourcegraph/sourcegraph/internal/symbols/proto";
+option go_package = "github.com/sourcegraph/sourcegraph/internal/symbols/v1";
 
-service Symbols {
-  rpc Search(SearchRequest) returns (SymbolsResponse) {}
+service SymbolsService {
+  rpc Search(SearchRequest) returns (SearchResponse) {}
   rpc LocalCodeIntel(LocalCodeIntelRequest) returns (LocalCodeIntelResponse) {}
-  rpc ListLanguages(google.protobuf.Empty) returns (ListLanguagesResponse) {}
+  rpc ListLanguages(ListLanguagesRequest) returns (ListLanguagesResponse) {}
   rpc SymbolInfo(SymbolInfoRequest) returns (SymbolInfoResponse) {}
-  rpc Healthz(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc Healthz(HealthzRequest) returns (HealthzResponse) {}
 }
 
 message SearchRequest {
@@ -54,7 +53,7 @@ message SearchRequest {
   google.protobuf.Duration timeout = 9;
 }
 
-message SymbolsResponse {
+message SearchResponse {
   // Symbol is a code symbol
   message Symbol {
     // name is the name of the symbol
@@ -114,6 +113,11 @@ message LocalCodeIntelResponse {
   }
 
   repeated Symbol symbols = 1;
+}
+
+// ListLanguagesRequest is the request to the ListLanguages method.
+message ListLanguagesRequest {
+  // All fields are empty.
 }
 
 // ListLanguagesResponse is the response from the ListLanguages method.
@@ -190,3 +194,11 @@ message Point {
   // col is the character offset of the point
   int32 column = 2;
 }
+
+// TODO@ggilmore: Note - GRPC has its own healthchecking protocol that we should use instead of this.
+// See https://github.com/grpc/grpc/blob/master/doc/health-checking.md for more information.
+message HealthzRequest {}
+
+// TODO@ggilmore: Note - GRPC has its own healthchecking protocol that we should use instead of this.
+// See https://github.com/grpc/grpc/blob/master/doc/health-checking.md for more information.
+message HealthzResponse {}

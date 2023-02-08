@@ -1,11 +1,12 @@
-package proto
+package v1
 
 import (
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 func (x *SearchRequest) FromInternal(p *search.SymbolsParameters) {
@@ -38,11 +39,11 @@ func (x *SearchRequest) ToInternal() search.SymbolsParameters {
 	}
 }
 
-func (x *SymbolsResponse) FromInternal(r *search.SymbolsResponse) {
-	symbols := make([]*SymbolsResponse_Symbol, 0, len(r.Symbols))
+func (x *SearchResponse) FromInternal(r *search.SymbolsResponse) {
+	symbols := make([]*SearchResponse_Symbol, 0, len(r.Symbols))
 
 	for _, s := range r.Symbols {
-		var ps SymbolsResponse_Symbol
+		var ps SearchResponse_Symbol
 		ps.FromInternal(&s)
 
 		symbols = append(symbols, &ps)
@@ -53,13 +54,13 @@ func (x *SymbolsResponse) FromInternal(r *search.SymbolsResponse) {
 		err = &r.Err
 	}
 
-	*x = SymbolsResponse{
+	*x = SearchResponse{
 		Symbols: symbols,
 		Error:   err,
 	}
 }
 
-func (x *SymbolsResponse) ToInternal() search.SymbolsResponse {
+func (x *SearchResponse) ToInternal() search.SymbolsResponse {
 	symbols := make([]result.Symbol, 0, len(x.GetSymbols()))
 
 	for _, s := range x.GetSymbols() {
@@ -72,8 +73,8 @@ func (x *SymbolsResponse) ToInternal() search.SymbolsResponse {
 	}
 }
 
-func (x *SymbolsResponse_Symbol) FromInternal(s *result.Symbol) {
-	*x = SymbolsResponse_Symbol{
+func (x *SearchResponse_Symbol) FromInternal(s *result.Symbol) {
+	*x = SearchResponse_Symbol{
 		Name: s.Name,
 		Path: s.Path,
 
@@ -91,7 +92,7 @@ func (x *SymbolsResponse_Symbol) FromInternal(s *result.Symbol) {
 	}
 }
 
-func (x *SymbolsResponse_Symbol) ToInternal() result.Symbol {
+func (x *SearchResponse_Symbol) ToInternal() result.Symbol {
 	return result.Symbol{
 		Name: x.GetName(),
 		Path: x.GetPath(),
