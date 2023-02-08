@@ -3,7 +3,6 @@ import React from 'react'
 import classNames from 'classnames'
 
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
-import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, LoadingSpinner, Code, Text, H2, H3, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { StreamingProgressCount } from './progress/StreamingProgressCount'
