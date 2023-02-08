@@ -24,6 +24,7 @@ import {
 import classNames from 'classnames'
 
 import { isValidLineRange, MOUSE_MAIN_BUTTON, preciseOffsetAtCoords } from './utils'
+
 import { blobPropsFacet } from './index'
 
 /**

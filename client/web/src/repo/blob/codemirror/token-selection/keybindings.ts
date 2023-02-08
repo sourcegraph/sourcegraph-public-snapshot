@@ -275,7 +275,6 @@ function textSelectionExtension(): Extension {
                     backgroundColor: 'transparent !important',
                 },
             },
-
             '.cm-selectionLayer .cm-selectionBackground': {
                 background: 'var(--code-selection-bg-2)',
 
