@@ -11,6 +11,7 @@ import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
+import { PageRoutes } from '../routes.constants'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { SourcegraphIcon } from './icons'
@@ -24,7 +25,12 @@ interface SignInPageProps {
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
-        'allowSignup' | 'authProviders' | 'sourcegraphDotComMode' | 'xhrHeaders' | 'resetPasswordEnabled'
+        | 'allowSignup'
+        | 'authProviders'
+        | 'sourcegraphDotComMode'
+        | 'xhrHeaders'
+        | 'resetPasswordEnabled'
+        | 'experimentalFeatures'
     >
     isSourcegraphDotCom: boolean
 }
@@ -59,6 +65,11 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     }
 
     const thirdPartyAuthProviders = nonBuiltinAuthProviders.filter(provider => shouldShowProvider(provider))
+    // TODO: check case when allowSignup=true and no seats
+    const showRequestAccess =
+        !props.isSourcegraphDotCom &&
+        !props.context.allowSignup &&
+        props.context.experimentalFeatures?.requestAccess?.enabled !== false
 
     const showBuiltInAuthForm = searchParams.has('email') || thirdPartyAuthProviders.length === 0
 
@@ -137,6 +148,11 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                         ) : (
                             <Link to="/sign-up">Sign up</Link>
                         )}
+                    </Text>
+                ) : showRequestAccess ? (
+                    <Text className="text-muted">
+                        Need an account? <Link to={PageRoutes.RequestAccess}>Request access to the admin</Link> or
+                        contact your site admin.
                     </Text>
                 ) : (
                     <Text className="text-muted">Need an account? Contact your site admin</Text>

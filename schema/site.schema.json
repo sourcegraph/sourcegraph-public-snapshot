@@ -488,6 +488,17 @@
           "!go": {
             "pointer": true
           }
+        },
+        "requestAccess": {
+          "description": "Allow users to request access to the instance if signup is disabled",
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Whether to enable this feature",
+              "type": "boolean",
+              "default": false
+            }
+          }
         }
       },
       "examples": [

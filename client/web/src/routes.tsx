@@ -18,6 +18,7 @@ import { ThemePreferenceProps } from './theme'
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
 const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage')
+const RequestAccessPage = lazyComponent(() => import('./auth/RequestAccessPage'), 'RequestAccessPage')
 const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
 const UnlockAccountPage = lazyComponent(() => import('./auth/UnlockAccount'), 'UnlockAccountPage')
 const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage')
@@ -100,6 +101,10 @@ export const routes: readonly LayoutRouteProps[] = (
         {
             path: PageRoutes.SignIn,
             render: props => <SignInPage {...props} context={window.context} />,
+        },
+        {
+            path: PageRoutes.RequestAccess,
+            render: props => <RequestAccessPage {...props} context={window.context} />,
         },
         {
             path: PageRoutes.SignUp,

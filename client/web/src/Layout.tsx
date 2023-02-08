@@ -117,7 +117,8 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
         location.pathname === PageRoutes.SignIn ||
         location.pathname === PageRoutes.SignUp ||
         location.pathname === PageRoutes.PasswordReset ||
-        location.pathname === PageRoutes.Welcome
+        location.pathname === PageRoutes.Welcome ||
+        location.pathname === PageRoutes.RequestAccess
 
     const themeState = useTheme()
     const themeStateRef = useRef(themeState)
