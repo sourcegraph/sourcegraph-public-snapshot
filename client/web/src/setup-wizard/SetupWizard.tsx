@@ -25,7 +25,7 @@ const SETUP_STEPS: StepConfiguration[] = [
         render: () => (
             <Container>
                 <H2>Hello remote repositories step</H2>
-                <CustomNextButton label="Custom next step label" disabled={true} />
+                <CustomNextButton label="Custom next step label" disabled={false} />
             </Container>
         ),
     },
@@ -45,7 +45,7 @@ const SETUP_STEPS: StepConfiguration[] = [
     },
 ]
 
-export const SetupWizard: FC = props => {
+export const SetupWizard: FC = () => {
     const [activeStepId, setStepId, status] = useTemporarySetting('setup.activeStepId')
 
     if (status !== 'loaded') {
