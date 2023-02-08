@@ -57,14 +57,14 @@ Do the [branch cut](./index.md#release-branches) for the release:
 
 Upon branch cut, create and test release candidates:
 
-- [ ] Tag the first release candidate:
+- [ ] Push a new release candidate tag. This command will automatically detect the appropriate release candidate number. This command can be executed as many times as required, and will increment the release candidate number for each subsequent build: :
 
   ```sh
   pnpm run release release:create-candidate
   ```
 
 - [ ] Ensure that the following Buildkite pipelines all pass for the `v$MAJOR.$MINOR.$PATCH-rc.N` tag:
-  - [ ] [Sourcegraph pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH-rc.1)
+- [ ] [Sourcegraph pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH-rc.1)
 - [ ] Cross check all reported CVEs are in the accepted list (`https://handbook.sourcegraph.com/departments/security/tooling/trivy/$MAJOR-$MINOR-$PATCH`). You can use the utility command `sg release cve-check` to help with this step. Otherwise, alert `@security-support` in the [#release-guild](https://sourcegraph.slack.com/archives/C032Z79NZQC) channel ASAP.
 - [ ] File any failures and regressions in the pipelines as `release-blocker` issues and assign the appropriate teams.
 
@@ -96,10 +96,16 @@ On the day of the release, confirm there are no more release-blocking issues (as
 
 - [ ] Make sure [CHANGELOG entries](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md) have been moved from **Unreleased** to **$MAJOR.$MINOR.$PATCH**, but exluding the ones that merged to `main` after the branch cut (whose changes are not in the `$MAJOR.$MINOR` branch).
 - [ ] Make sure [deploy-sourcegraph-helm CHANGELOG entries](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/CHANGELOG.md) have been moved from **Unreleased** to **$MAJOR.$MINOR.$PATCH**, but exluding the ones that merged to `main` after the branch cut (whose changes are not in the `$MAJOR.$MINOR` branch).
-- [ ] Tag the final release:
+- [ ] Promote a release candidate to the final release build. You will need to provide the tag of the release candidate which you would like to promote as an argument. To get a list of available release candidates, you can use:
+
+  ```shell
+  pnpm run release release:check-candidate
+  ```
+
+  To promote the candidate, use the command:
 
   ```sh
-  pnpm run release release:create-candidate final
+  pnpm run release release:promote-candidate tag
   ```
 
 - [ ] Ensure that the following pipelines all pass for the `v$MAJOR.$MINOR.$PATCH` tag:
