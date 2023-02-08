@@ -21,12 +21,18 @@
     display: flex;
     flex-direction: column;
 }
-
+    
 .header {
     background: var(--header-gradient);
+    background: radial-gradient(
+        130.33% 541.14% at 48.47% 231.96%,
+        var(--violet-06) 17.19%,
+        var(--violet-07) 43.23%,
+        var(--violet-07) 73.44%
+    );
+
     width: 100%;
     padding: 1.5rem;
-    margin-bottom: 1rem;
     display: flex;
     flex-direction: column;
     align-items: center;

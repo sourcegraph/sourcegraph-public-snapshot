@@ -324,7 +324,13 @@ func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, timeseriesS
 	opts.ID = &definition.InsightSeriesID
 	opts.SupportsAugmentation = definition.SupportsAugmentation
 
-	oldest, err := timeseriesStore.GetOffsetNRecordingTime(ctx, definition.InsightSeriesID, options.NumSamples, false)
+	// by this point the numSamples option should be set correctly but we're reusing the same struct across functions
+	// so set max again.
+	numSamples := 90
+	if options.NumSamples != nil && *options.NumSamples < 90 && *options.NumSamples > 0 {
+		numSamples = int(*options.NumSamples)
+	}
+	oldest, err := timeseriesStore.GetOffsetNRecordingTime(ctx, definition.InsightSeriesID, numSamples, false)
 	if err != nil {
 		return nil, errors.Wrap(err, "GetOffsetNRecordingTime")
 	}

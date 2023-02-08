@@ -1,0 +1,105 @@
+.root {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    flex-grow: 1;
+    justify-content: center;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem;
+    margin: -1.5rem auto 0;
+
+    &-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    &-step-number {
+        width: 3rem;
+        height: 3rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.5rem;
+        border-radius: 50%;
+
+        :global(.theme-light) & {
+            color: var(--white);
+            border: 2px solid var(--body-bg);
+            background-color: var(--purple);
+
+            &--completed {
+                color: #b99dcc;
+                background-color: #dccde7;
+            }
+
+            &--disabled {
+                color: var(--text-muted);
+                background-color: #d9d9d9;
+            }
+        }
+
+        :global(.theme-dark) & {
+            color: var(--gray-01);
+            border: 2px solid var(--gray-01);
+            background-color: var(--purple);
+
+            &--completed {
+                color: #b99dcc;
+                background-color: #dccde7;
+            }
+
+            &--disabled {
+                color: var(--text-muted);
+                background-color: var(--gray-03);
+            }
+        }
+    }
+
+    &-step-label {
+        font-weight: normal;
+    }
+}
+
+.content {
+    flex-grow: 1;
+    margin: auto;
+}
+
+.actions {
+    width: 100%;
+}
+
+.navigation {
+    display: flex;
+    padding: 0.5rem;
+    background-color: var(--gray-02);
+    border-top: 1px solid var(--border-color);
+
+    :global(.theme-dark) & {
+        background-color: var(--color-bg-2);
+    }
+
+    &-inner {
+        display: flex;
+        flex-grow: 1;
+        gap: 0.5rem;
+        max-width: 40rem;
+        margin: auto;
+    }
+
+    // Hide default next button if the custom button is rendered
+    &-next-portal:not(:empty) + &-next {
+        display: none;
+    }
+
+    &-next-portal,
+    &-next {
+        margin-left: auto;
+    }
+}

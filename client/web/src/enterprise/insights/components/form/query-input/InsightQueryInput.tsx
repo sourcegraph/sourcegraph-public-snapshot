@@ -19,7 +19,7 @@ type MonacoPublicProps = Omit<MonacoFieldProps, 'queryState' | 'onChange' | 'ari
 export interface InsightQueryInputProps extends MonacoPublicProps, NativeInputProps {
     value: string
     patternType: SearchPatternType
-    repositories?: string
+    repositories?: string[]
     onChange: (value: string) => void
 }
 
@@ -28,7 +28,7 @@ export const InsightQueryInput = forwardRef<HTMLInputElement, PropsWithChildren<
         const {
             value,
             patternType,
-            repositories = '',
+            repositories = [],
             'aria-invalid': ariaInvalid,
             onChange,
             children,

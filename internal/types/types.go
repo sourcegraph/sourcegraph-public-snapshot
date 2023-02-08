@@ -834,6 +834,13 @@ type Permission struct {
 	CreatedAt time.Time
 }
 
+// DisplayName returns an human-readable string for permissions.
+func (p *Permission) DisplayName() string {
+	// Based on the zanzibar representation for data relations:
+	// <namespace>:<object_id>#<relation>@<user_id | user_group>
+	return fmt.Sprintf("%s#%s", p.Namespace, p.Action)
+}
+
 type RolePermission struct {
 	RoleID       int32
 	PermissionID int32

@@ -287,9 +287,10 @@ func TestGetAll(t *testing.T) {
 	groupByRepo := "repo"
 	ctx := context.Background()
 
+	store := NewInsightStore(insightsDB)
+
 	// First test the method on an empty database.
 	t.Run("test empty database", func(t *testing.T) {
-		store := NewInsightStore(insightsDB)
 		got, err := store.GetAll(ctx, InsightQueryArgs{})
 		if err != nil {
 			t.Fatal(err)
@@ -348,8 +349,7 @@ func TestGetAll(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Run("test all results", func(t *testing.T) {
-		store := NewInsightStore(insightsDB)
+	t.Run("all results", func(t *testing.T) {
 		got, err := store.GetAll(ctx, InsightQueryArgs{})
 		if err != nil {
 			t.Fatal(err)
@@ -476,7 +476,7 @@ func TestGetAll(t *testing.T) {
 			t.Errorf("unexpected insight view series want/got: %s", diff)
 		}
 	})
-	t.Run("test first result", func(t *testing.T) {
+	t.Run("first result", func(t *testing.T) {
 		store := NewInsightStore(insightsDB)
 		got, err := store.GetAll(ctx, InsightQueryArgs{Limit: 1})
 		if err != nil {
@@ -535,8 +535,7 @@ func TestGetAll(t *testing.T) {
 			t.Errorf("unexpected insight view series want/got: %s", diff)
 		}
 	})
-	t.Run("test second result", func(t *testing.T) {
-		store := NewInsightStore(insightsDB)
+	t.Run("second result", func(t *testing.T) {
 		got, err := store.GetAll(ctx, InsightQueryArgs{Limit: 1, After: "b"})
 		if err != nil {
 			t.Fatal(err)
@@ -594,8 +593,7 @@ func TestGetAll(t *testing.T) {
 			t.Errorf("unexpected insight view series want/got: %s", diff)
 		}
 	})
-	t.Run("test last 2 results", func(t *testing.T) {
-		store := NewInsightStore(insightsDB)
+	t.Run("last 2 results", func(t *testing.T) {
 		got, err := store.GetAll(ctx, InsightQueryArgs{After: "b"})
 		if err != nil {
 			t.Fatal(err)
@@ -676,8 +674,7 @@ func TestGetAll(t *testing.T) {
 			t.Errorf("unexpected insight view series want/got: %s", diff)
 		}
 	})
-	t.Run("test find by title results ", func(*testing.T) {
-		store := NewInsightStore(insightsDB)
+	t.Run("find by title results", func(*testing.T) {
 		got, err := store.GetAll(ctx, InsightQueryArgs{Find: "view 3"})
 		if err != nil {
 			t.Fatal(err)
@@ -735,9 +732,7 @@ func TestGetAll(t *testing.T) {
 			t.Errorf("unexpected insight view series want/got: %s", diff)
 		}
 	})
-
-	t.Run("test find by series label results ", func(*testing.T) {
-		store := NewInsightStore(insightsDB)
+	t.Run("find by series label results", func(*testing.T) {
 		got, err := store.GetAll(ctx, InsightQueryArgs{Find: "label5-1"})
 		if err != nil {
 			t.Fatal(err)
@@ -796,7 +791,6 @@ func TestGetAll(t *testing.T) {
 		}
 	})
 	t.Run("exclude insight ids from results", func(t *testing.T) {
-		store := NewInsightStore(insightsDB)
 		got, err := store.GetAll(ctx, InsightQueryArgs{ExcludeIDs: []string{"b", "e"}})
 		if err != nil {
 			t.Fatal(err)
@@ -852,6 +846,32 @@ func TestGetAll(t *testing.T) {
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Errorf("unexpected insight view series want/got: %s", diff)
+		}
+	})
+	t.Run("returns expected number of samples", func(t *testing.T) {
+		// Set the series_num_samples value
+		numSamples := int32(50)
+		view, err := store.UpdateView(ctx, types.InsightView{
+			UniqueID:         "d",
+			PresentationType: types.Line, // setting for null constraint
+			SeriesNumSamples: &numSamples,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff(&numSamples, view.SeriesNumSamples); diff != "" {
+			t.Errorf("unexpected insight view series num samples want/got: %s", diff)
+		}
+
+		series, err := store.GetAll(ctx, InsightQueryArgs{UniqueIDs: []string{"d"}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		// we're only testing the number of samples in this test cases
+		for _, s := range series {
+			if diff := cmp.Diff(&numSamples, s.SeriesNumSamples); diff != "" {
+				t.Errorf("unexpected insight view series num samples want/got: %s", diff)
+			}
 		}
 	})
 }
@@ -1196,7 +1216,6 @@ func TestCreateSeries(t *testing.T) {
 		}
 	})
 	t.Run("test create and get capture groups series", func(t *testing.T) {
-		store := NewInsightStore(insightsDB)
 		sampleIntervalUnit := "MONTH"
 		repoCriteria := "repo:a"
 		_, err := store.CreateSeries(ctx, types.InsightSeries{

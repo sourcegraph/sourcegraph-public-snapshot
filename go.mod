@@ -45,7 +45,7 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/gen2brain/beeep v0.0.0-20210529141713-5586760f0cc1
 	github.com/getsentry/raven-go v0.2.0
-	github.com/getsentry/sentry-go v0.15.0
+	github.com/getsentry/sentry-go v0.17.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/gitchander/permutation v0.0.0-20210517125447-a5d73722e1b1
 	github.com/go-enry/go-enry/v2 v2.8.3
@@ -78,7 +78,7 @@ require (
 	github.com/graphql-go/graphql v0.8.0
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/hashicorp/golang-lru v0.5.4
-	github.com/hexops/autogold v1.3.0
+	github.com/hexops/autogold v1.3.1
 	github.com/hexops/valast v1.4.3
 	github.com/honeycombio/libhoney-go v1.15.8
 	github.com/inconshreveable/log15 v0.0.0-20201112154412-8562bdadbbac
@@ -132,8 +132,8 @@ require (
 	github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d
 	github.com/sourcegraph/go-rendezvous v0.0.0-20210910070954-ef39ade5591d
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
-	github.com/sourcegraph/log v0.0.0-20221206163500-7d93c6ad7037
-	github.com/sourcegraph/run v0.9.0
+	github.com/sourcegraph/log v0.0.0-20230203201409-49ac5ad3f2ce
+	github.com/sourcegraph/run v0.12.0
 	github.com/sourcegraph/scip v0.2.4-0.20221213205653-aa0e511dcfef
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-20220203145655-4d2a39d3038a
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20230124150142-7833ec00539f
@@ -154,12 +154,12 @@ require (
 	go.opentelemetry.io/collector v0.56.0
 	go.opentelemetry.io/contrib/propagators/jaeger v1.11.1
 	go.opentelemetry.io/contrib/propagators/ot v1.11.1
-	go.opentelemetry.io/otel v1.11.2
+	go.opentelemetry.io/otel v1.12.0
 	go.opentelemetry.io/otel/bridge/opentracing v1.11.2
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.11.2
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.11.2
 	go.opentelemetry.io/otel/sdk v1.11.2
-	go.opentelemetry.io/otel/trace v1.11.2
+	go.opentelemetry.io/otel/trace v1.12.0
 	go.uber.org/atomic v1.10.0
 	go.uber.org/automaxprocs v1.5.1
 	go.uber.org/ratelimit v0.2.0
@@ -245,6 +245,7 @@ require (
 	github.com/wk8/go-ordered-map/v2 v2.1.5
 	github.com/xanzy/go-gitlab v0.76.0
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20220924101305-151362477c87
+	go.bobheadxi.dev/streamline v1.2.2
 	go.opentelemetry.io/otel/exporters/jaeger v1.11.2
 	golang.org/x/exp v0.0.0-20221208152030-732eee02a75a
 )
@@ -295,8 +296,8 @@ require (
 	github.com/cenkalti/backoff/v4 v4.2.0 // indirect
 	github.com/certifi/gocertifi v0.0.0-20210507211836-431795d63e8d // indirect
 	github.com/charmbracelet/glamour v0.5.0 // indirect
-	github.com/cockroachdb/errors v1.9.0 // indirect
-	github.com/cockroachdb/logtags v0.0.0-20211118104740-dabe8e521a4f // indirect
+	github.com/cockroachdb/errors v1.9.1 // indirect
+	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/redact v1.1.3
 	github.com/containerd/typeurl v1.0.2 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
@@ -353,8 +354,8 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
-	github.com/itchyny/gojq v0.12.7 // indirect
-	github.com/itchyny/timefmt-go v0.1.3 // indirect
+	github.com/itchyny/gojq v0.12.11 // indirect
+	github.com/itchyny/timefmt-go v0.1.5 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
@@ -411,7 +412,7 @@ require (
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/pseudomuto/protoc-gen-doc v1.5.1 // indirect
 	github.com/pseudomuto/protokit v0.2.0 // indirect
-	github.com/rivo/uniseg v0.4.2 // indirect
+	github.com/rivo/uniseg v0.4.3 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/rs/cors v1.8.2 // indirect
 	github.com/rs/xid v1.4.0 // indirect
@@ -438,7 +439,7 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.11.2 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.11.2
 	go.opentelemetry.io/proto/otlp v0.19.0
-	go.uber.org/multierr v1.8.0 // indirect
+	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/mod v0.7.0
 	golang.org/x/term v0.4.0 // indirect
 	golang.org/x/text v0.6.0

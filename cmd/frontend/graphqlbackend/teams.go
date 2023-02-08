@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"sync"
@@ -166,8 +167,15 @@ func (r *teamResolver) ViewerCanAdminister(ctx context.Context) bool {
 	return err == nil
 }
 
-func (r *teamResolver) Members(args *ListTeamsArgs) *teamMemberConnection {
-	return &teamMemberConnection{}
+func (r *teamResolver) Members(ctx context.Context, args *ListTeamMembersArgs) (*teamMemberConnection, error) {
+	c := &teamMemberConnection{
+		db:     r.db,
+		teamID: r.team.ID,
+	}
+	if err := c.applyArgs(args); err != nil {
+		return nil, err
+	}
+	return c, nil
 }
 
 func (r *teamResolver) ChildTeams(ctx context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {
@@ -181,16 +189,133 @@ func (r *teamResolver) ChildTeams(ctx context.Context, args *ListTeamsArgs) (*te
 	return c, nil
 }
 
-type teamMemberConnection struct{}
+type ListTeamMembersArgs struct {
+	First  *int32
+	After  *string
+	Search *string
+}
 
-func (r *teamMemberConnection) TotalCount(args *struct{ CountDeeplyNestedTeamMembers bool }) int32 {
-	return 0
+type teamMemberConnection struct {
+	db       database.DB
+	teamID   int32
+	cursor   teamMemberListCursor
+	search   string
+	limit    int
+	once     sync.Once
+	nodes    []*types.TeamMember
+	pageInfo *graphqlutil.PageInfo
+	err      error
 }
-func (r *teamMemberConnection) PageInfo() *graphqlutil.PageInfo {
-	return graphqlutil.HasNextPage(false)
+
+type teamMemberListCursor struct {
+	TeamID int32 `json:"team,omitempty"`
+	UserID int32 `json:"user,omitempty"`
 }
-func (r *teamMemberConnection) Nodes() []*UserResolver {
+
+// applyArgs unmarshals query conditions and limites set in `ListTeamMembersArgs`
+// into `teamMemberConnection` fields for convenient use in database query.
+func (r *teamMemberConnection) applyArgs(args *ListTeamMembersArgs) error {
+	if args.After != nil && *args.After != "" {
+		cursorText, err := graphqlutil.DecodeCursor(args.After)
+		if err != nil {
+			return err
+		}
+		if err := json.Unmarshal([]byte(cursorText), &r.cursor); err != nil {
+			return err
+		}
+	}
+	if args.Search != nil {
+		r.search = *args.Search
+	}
+	if args.First != nil {
+		r.limit = int(*args.First)
+	}
 	return nil
+}
+
+// compute resolves team members queried for this resolver.
+// The result of running it is setting `nodes`, `pageInfo` and `err`
+// fields on the resolver. This ensures that resolving multiple
+// graphQL attributes that require listing (like `pageInfo` and `nodes`)
+// results in just one query.
+func (r *teamMemberConnection) compute(ctx context.Context) {
+	r.once.Do(func() {
+		opts := database.ListTeamMembersOpts{
+			Cursor: database.TeamMemberListCursor{
+				TeamID: r.cursor.TeamID,
+				UserID: r.cursor.UserID,
+			},
+			TeamID: r.teamID,
+			Search: r.search,
+		}
+		if r.limit != 0 {
+			opts.LimitOffset = &database.LimitOffset{Limit: r.limit}
+		}
+		nodes, next, err := r.db.Teams().ListTeamMembers(ctx, opts)
+		if err != nil {
+			r.err = err
+			return
+		}
+		r.nodes = nodes
+		if next != nil {
+			cursorStruct := teamMemberListCursor{
+				TeamID: next.TeamID,
+				UserID: next.UserID,
+			}
+			cursorBytes, err := json.Marshal(&cursorStruct)
+			if err != nil {
+				r.err = errors.Wrap(err, "error encoding pageInfo")
+			}
+			cursorString := string(cursorBytes)
+			r.pageInfo = graphqlutil.EncodeCursor(&cursorString)
+		} else {
+			r.pageInfo = graphqlutil.HasNextPage(false)
+		}
+	})
+}
+
+func (r *teamMemberConnection) TotalCount(ctx context.Context, args *struct{ CountDeeplyNestedTeamMembers bool }) (int32, error) {
+	if args != nil && args.CountDeeplyNestedTeamMembers {
+		return 0, errors.New("Not supported: counting deeply nested team members.")
+	}
+	// Not taking into account limit or cursor for count.
+	opts := database.ListTeamMembersOpts{
+		TeamID: r.teamID,
+		Search: r.search,
+	}
+	return r.db.Teams().CountTeamMembers(ctx, opts)
+}
+
+func (r *teamMemberConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	r.compute(ctx)
+	if r.err != nil {
+		return nil, r.err
+	}
+	return r.pageInfo, nil
+}
+
+func (r *teamMemberConnection) Nodes(ctx context.Context) ([]*UserResolver, error) {
+	r.compute(ctx)
+	if r.err != nil {
+		return nil, r.err
+	}
+	var rs []*UserResolver
+	// 🚨 Query in a loop is inefficient: Follow up with another pull request
+	// to where team members query joins with users and fetches them in one go.
+	for _, n := range r.nodes {
+		if n.UserID == 0 {
+			// 🚨 At this point only User can be a team member, so user ID should
+			// always be present. If not, return a `null` team member.
+			rs = append(rs, nil)
+			continue
+		}
+		user, err := r.db.Users().GetByID(ctx, n.UserID)
+		if err != nil {
+			return nil, err
+		}
+		rs = append(rs, NewUserResolver(r.db, user))
+	}
+	return rs, nil
 }
 
 type CreateTeamArgs struct {
