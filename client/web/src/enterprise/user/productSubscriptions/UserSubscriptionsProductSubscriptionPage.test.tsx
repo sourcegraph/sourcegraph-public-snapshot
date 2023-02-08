@@ -1,5 +1,4 @@
 import { act } from '@testing-library/react'
-import { createMemoryHistory } from 'history'
 import { of } from 'rxjs'
 
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
@@ -10,7 +9,6 @@ import { UserSubscriptionsProductSubscriptionPage } from './UserSubscriptionsPro
 
 describe('UserSubscriptionsProductSubscriptionPage', () => {
     test('renders', () => {
-        const history = createMemoryHistory()
         const component = renderWithBrandedContext(
             <UserSubscriptionsProductSubscriptionPage
                 user={{ settingsURL: '/u' }}
@@ -20,7 +18,7 @@ describe('UserSubscriptionsProductSubscriptionPage', () => {
                     } as ProductSubscriptionFieldsOnSubscriptionPage)
                 }
             />,
-            { history, path: '/:subscriptionUUID', route: '/43002662-f627-4550-9af6-d621d2a878de' }
+            { path: '/:subscriptionUUID', route: '/43002662-f627-4550-9af6-d621d2a878de' }
         )
         act(() => undefined)
         expect(component.asFragment()).toMatchSnapshot()
