@@ -19,7 +19,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
 	executorstore "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store"
-	types2 "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
@@ -53,8 +53,8 @@ func TestHandler_HandleDequeue(t *testing.T) {
 		{
 			name: "Dequeue record",
 			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"}`,
-			transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (types2.Job, error) {
-				return types2.Job{ID: record.RecordID()}, nil
+			transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
+				return executortypes.Job{ID: record.RecordID()}, nil
 			},
 			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
 				mockStore.DequeueFunc.PushReturn(testRecord{id: 1}, true, nil)
@@ -109,8 +109,8 @@ func TestHandler_HandleDequeue(t *testing.T) {
 		{
 			name: "Failed to transform record",
 			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"}`,
-			transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (types2.Job, error) {
-				return types2.Job{}, errors.New("failed")
+			transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
+				return executortypes.Job{}, errors.New("failed")
 			},
 			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
 				mockStore.DequeueFunc.PushReturn(testRecord{id: 1}, true, nil)
@@ -130,8 +130,8 @@ func TestHandler_HandleDequeue(t *testing.T) {
 		{
 			name: "Failed to mark record as failed",
 			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"}`,
-			transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (types2.Job, error) {
-				return types2.Job{}, errors.New("failed")
+			transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
+				return executortypes.Job{}, errors.New("failed")
 			},
 			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
 				mockStore.DequeueFunc.PushReturn(testRecord{id: 1}, true, nil)
@@ -151,8 +151,8 @@ func TestHandler_HandleDequeue(t *testing.T) {
 		{
 			name: "V2 job",
 			body: `{"executorName": "test-executor", "version": "dev", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"}`,
-			transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (types2.Job, error) {
-				return types2.Job{ID: record.RecordID()}, nil
+			transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
+				return executortypes.Job{ID: record.RecordID()}, nil
 			},
 			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
 				mockStore.DequeueFunc.PushReturn(testRecord{id: 1}, true, nil)
@@ -168,53 +168,30 @@ func TestHandler_HandleDequeue(t *testing.T) {
 		{
 			name: "Failed to create job token",
 			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"}`,
-			transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (types2.Job, error) {
-				return types2.Job{ID: record.RecordID()}, nil
+			transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
+				return executortypes.Job{ID: record.RecordID()}, nil
 			},
 			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
 				mockStore.DequeueFunc.PushReturn(testRecord{id: 1}, true, nil)
 				jobTokenStore.CreateFunc.PushReturn("", errors.New("failed to create token"))
-				jobTokenStore.ExistsFunc.PushReturn(false, nil)
 			},
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"error":"CreateToken: failed to create token"}`,
 			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, mockStore.DequeueFunc.History(), 1)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 1)
-				require.Len(t, jobTokenStore.ExistsFunc.History(), 1)
-				assert.Equal(t, 1, jobTokenStore.ExistsFunc.History()[0].Arg1)
-				assert.Equal(t, "test", jobTokenStore.ExistsFunc.History()[0].Arg2)
-			},
-		},
-		{
-			name: "Failed to check of job token exists",
-			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"}`,
-			transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (types2.Job, error) {
-				return types2.Job{ID: record.RecordID()}, nil
-			},
-			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
-				mockStore.DequeueFunc.PushReturn(testRecord{id: 1}, true, nil)
-				jobTokenStore.CreateFunc.PushReturn("", errors.New("failed to create token"))
-				jobTokenStore.ExistsFunc.PushReturn(false, errors.New("failed to check if token exists"))
-			},
-			expectedStatusCode:   http.StatusInternalServerError,
-			expectedResponseBody: `{"error":"2 errors occurred:\n\t* CreateToken: failed to create token\n\t* Exists: failed to check if token exists"}`,
-			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
-				require.Len(t, mockStore.DequeueFunc.History(), 1)
-				require.Len(t, jobTokenStore.CreateFunc.History(), 1)
-				require.Len(t, jobTokenStore.ExistsFunc.History(), 1)
+				require.Len(t, jobTokenStore.RegenerateFunc.History(), 0)
 			},
 		},
 		{
 			name: "Job token already exists",
 			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"}`,
-			transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (types2.Job, error) {
-				return types2.Job{ID: record.RecordID()}, nil
+			transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
+				return executortypes.Job{ID: record.RecordID()}, nil
 			},
 			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
 				mockStore.DequeueFunc.PushReturn(testRecord{id: 1}, true, nil)
-				jobTokenStore.CreateFunc.PushReturn("", errors.New("failed to create token"))
-				jobTokenStore.ExistsFunc.PushReturn(true, nil)
+				jobTokenStore.CreateFunc.PushReturn("", executorstore.ErrJobTokenAlreadyCreated)
 				jobTokenStore.RegenerateFunc.PushReturn("somenewtoken", nil)
 			},
 			expectedStatusCode:   http.StatusOK,
@@ -222,7 +199,6 @@ func TestHandler_HandleDequeue(t *testing.T) {
 			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, mockStore.DequeueFunc.History(), 1)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 1)
-				require.Len(t, jobTokenStore.ExistsFunc.History(), 1)
 				require.Len(t, jobTokenStore.RegenerateFunc.History(), 1)
 				assert.Equal(t, 1, jobTokenStore.RegenerateFunc.History()[0].Arg1)
 				assert.Equal(t, "test", jobTokenStore.RegenerateFunc.History()[0].Arg2)
@@ -231,21 +207,19 @@ func TestHandler_HandleDequeue(t *testing.T) {
 		{
 			name: "Failed to regenerate token",
 			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"}`,
-			transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (types2.Job, error) {
-				return types2.Job{ID: record.RecordID()}, nil
+			transformerFunc: func(ctx context.Context, version string, record testRecord, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
+				return executortypes.Job{ID: record.RecordID()}, nil
 			},
 			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
 				mockStore.DequeueFunc.PushReturn(testRecord{id: 1}, true, nil)
-				jobTokenStore.CreateFunc.PushReturn("", errors.New("failed to create token"))
-				jobTokenStore.ExistsFunc.PushReturn(true, nil)
+				jobTokenStore.CreateFunc.PushReturn("", executorstore.ErrJobTokenAlreadyCreated)
 				jobTokenStore.RegenerateFunc.PushReturn("", errors.New("failed to regen token"))
 			},
 			expectedStatusCode:   http.StatusInternalServerError,
-			expectedResponseBody: `{"error":"Regenerate: failed to regen token"}`,
+			expectedResponseBody: `{"error":"RegenerateToken: failed to regen token"}`,
 			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, mockStore.DequeueFunc.History(), 1)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 1)
-				require.Len(t, jobTokenStore.ExistsFunc.History(), 1)
 				require.Len(t, jobTokenStore.RegenerateFunc.History(), 1)
 			},
 		},

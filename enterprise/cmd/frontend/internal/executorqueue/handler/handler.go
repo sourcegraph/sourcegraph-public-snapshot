@@ -166,10 +166,10 @@ func (h *handler[T]) dequeue(ctx context.Context, queueName string, metadata exe
 			// Token has already been created, regen it.
 			token, err = h.jobTokenStore.Regenerate(ctx, job.ID, queueName)
 			if err != nil {
-				return executortypes.Job{}, false, errors.Wrap(err, "Regenerate")
+				return executortypes.Job{}, false, errors.Wrap(err, "RegenerateToken")
 			}
 		} else {
-			return executortypes.Job{}, false, errors.Wrap(err, "Create")
+			return executortypes.Job{}, false, errors.Wrap(err, "CreateToken")
 		}
 	}
 	job.Token = token
