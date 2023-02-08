@@ -278,6 +278,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
                 enableSelectionDrivenCodeNavigation,
             }),
+            codeFoldingExtension(),
             enableSelectionDrivenCodeNavigation ? tokenSelectionExtension() : [],
             enableLinkDrivenCodeNavigation
                 ? tokensAsLinks({ navigate: navigateRef.current, blobInfo, preloadGoToDefinition })
@@ -304,7 +305,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 overrideBrowserFindInPageShortcut: useFileSearch,
                 onOverrideBrowserFindInPageToggle: setUseFileSearch,
             }),
-            codeFoldingExtension(),
         ],
         // A couple of values are not dependencies (blameDecorations, blobProps,
         // hasPin, position and settings) because those are updated in effects
