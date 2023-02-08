@@ -2,7 +2,7 @@
 
 **⚠️ DISCLAIMER: SCIM SUPPORT IS UNDER DEVELOPMENT. THE ENDPOINT DOES NOT COMPLY WITH THE SCIM STANDARD YET AND IT ISN’T READY FOR PRODUCTION USE.**
 
-SCIM is a standard for provisioning users and groups in an organization. It is supported by many IdP (identity providers) such as Okta, OneLogin, and Azure Active Directory.
+SCIM (System for Cross-domain Identity Management) is a standard for provisioning users and groups in an organization. It is supported by many IdP (identity providers) such as Okta, OneLogin, and Azure Active Directory.
 
 Sourcegraph supports SCIM for provisioning and de-provisioning _users_, but not groups at this time.
 
