@@ -1,5 +1,6 @@
 import {
     Annotation,
+    EditorSelection,
     EditorState,
     Extension,
     Range,
@@ -13,8 +14,10 @@ import {
     EditorView,
     gutterLineClass,
     GutterMarker,
+    layer,
     lineNumbers,
     PluginValue,
+    RectangleMarker,
     ViewPlugin,
     ViewUpdate,
 } from '@codemirror/view'
@@ -29,8 +32,11 @@ import { isValidLineRange, MOUSE_MAIN_BUTTON, preciseOffsetAtCoords } from './ut
 export type SelectedLineRange = { line: number; character?: number; endLine?: number } | null
 
 const selectedLineDecoration = Decoration.line({
-    class: 'selected-line',
-    attributes: { tabIndex: '-1', 'data-line-focusable': '' },
+    attributes: {
+        tabIndex: '-1',
+        'data-line-focusable': '',
+        'data-testid': 'selected-line',
+    },
 })
 const selectedLineGutterMarker = new (class extends GutterMarker {
     public elementClass = 'selected-line'
@@ -83,6 +89,73 @@ export const selectedLines = StateField.define<SelectedLineRange>({
 
             return builder.finish()
         }),
+
+        /**
+         * We highlight selected lines using layer instead of line decorations.
+         * With this approach both selected lines and editor selection layers may be visible (with the latter taking precedence).
+         * It makes selected text highlighted even if it is on a selected line.
+         *
+         * We can't use line decorations for this because the editor selection layer is positioned behind the document content
+         * and thus the line background set by line decorations overrides the layer background making selected text
+         * not highlighted.
+         */
+        layer({
+            above: false,
+            markers(view) {
+                const range = view.state.field(field)
+                if (!range) {
+                    return []
+                }
+
+                const endLineNumber = range.endLine ?? range.line
+                const startLine = view.state.doc.line(Math.min(range.line, endLineNumber))
+                const endLine = view.state.doc.line(
+                    Math.min(view.state.doc.lines, startLine.number === endLineNumber ? range.line : endLineNumber)
+                )
+
+                return RectangleMarker.forRange(
+                    view,
+                    'selected-line',
+                    EditorSelection.range(startLine.from, Math.min(endLine.to + 1, view.state.doc.length))
+                )
+            },
+            update(update) {
+                return (
+                    update.docChanged ||
+                    update.selectionSet ||
+                    update.viewportChanged ||
+                    update.transactions.some(transaction =>
+                        transaction.effects.some(effect => effect.is(setSelectedLines) || effect.is(setEndLine))
+                    )
+                )
+            },
+            class: 'selected-lines-layer',
+        }),
+        EditorView.theme({
+            '.selected-lines-layer .selected-line': {
+                /**
+                 * [RectangleMarker.forRange](https://sourcegraph.com/github.com/codemirror/view@a0a0b9ef5a4deaf58842422ac080030042d83065/-/blob/src/layer.ts?L60-75)
+                 * returns absolutely positioned markers. Markers top position has extra 1px more in its `top` value breaking alignment wih the line.
+                 * We compensate this spacing by setting negative margin-top.
+                 */
+                marginTop: '-1px',
+            },
+
+            /**
+             * Rectangle markers `left` position matches the position of the character at the start of range
+             * (for selected lines it is first character of the first line in a range). When line content (`.cm-line`)
+             * has some padding to the left (e.g. to create extra space between gutters and code) there is a gap in
+             * highlight (background color) between the selected line gutters (decorated with {@link selectedLineGutterMarker}) and layer.
+             * To remove this gap we move padding from `.cm-line` to the last gutter.
+             */
+            '.cm-line': {
+                paddingLeft: '0 !important',
+            },
+            '.cm-gutter:last-child .cm-gutterElement': {
+                paddingRight: '1rem',
+            },
+        }),
+
         gutterLineClass.compute([field], state => {
             const range = state.field(field)
             const marks: Range<GutterMarker>[] = []

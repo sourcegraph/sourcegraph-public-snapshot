@@ -903,6 +903,35 @@ changesetTemplate:
   branch: my-batch-change-${{ outputs.projectName }}
 ```
 
+Create changesets only on workspaces defined within subdirectories using `if:`:
+
+```yaml
+name: test-in
+description: what happens in `in`?
+
+on:
+  - repository: github.com/sourcegraph/sourcegraph
+
+workspaces:
+  - rootAtLocationOf: package.json
+    in: github.com/sourcegraph/sourcegraph
+    onlyFetchWorkspace: true
+
+steps:
+  - run: |
+      echo Path is: ${{ steps.path }} | tee path.txt
+    container: alpine:3
+    # Only creates changesets in subdirectories of client containing package.json files
+    if: ${{ matches steps.path "client*" }}
+
+changesetTemplate:
+  title: Test `in` 
+  body: what happens in `in`?
+  branch: test-in-${{ replace "/" "-" steps.path }}
+  commit:
+    message: Test in
+```
+
 ## [`workspaces.rootAtLocationOf`](#workspaces-rootatlocationof)
 
 The full name of the file that sits at the root of one or more workspaces in a given repository.

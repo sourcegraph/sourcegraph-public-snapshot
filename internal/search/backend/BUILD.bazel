@@ -47,7 +47,6 @@ go_library(
 go_test(
     name = "backend_test",
     srcs = [
-        "aggregate_test.go",
         "cached_test.go",
         "config_test.go",
         "horizontal_test.go",

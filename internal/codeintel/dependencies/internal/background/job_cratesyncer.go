@@ -160,11 +160,11 @@ func (b *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 			return err
 		}
 
-		new, err := b.dependenciesSvc.UpsertDependencyRepos(ctx, pkgs)
+		newCrates, newVersions, err := b.dependenciesSvc.InsertPackageRepoRefs(ctx, pkgs)
 		if err != nil {
 			return errors.Wrapf(err, "failed to insert Rust crate")
 		}
-		didInsertNewCrates = didInsertNewCrates || len(new) != 0
+		didInsertNewCrates = didInsertNewCrates || len(newCrates) != 0 || len(newVersions) != 0
 	}
 
 	if didInsertNewCrates {
@@ -226,8 +226,9 @@ func singleRustExternalService(ctx context.Context, store ExternalServiceStore) 
 
 // parseCrateInformation parses the newline-delimited JSON file for a crate,
 // assuming the pattern that's used in the github.com/rust-lang/crates.io-index
-func parseCrateInformation(contents string) ([]shared.Repo, error) {
-	var result []shared.Repo
+func parseCrateInformation(contents string) ([]shared.MinimalPackageRepoRef, error) {
+	crates := make(map[reposource.PackageName]*shared.MinimalPackageRepoRef, strings.Count(contents, "\n"))
+
 	for _, line := range strings.Split(contents, "\n") {
 		if line == "" {
 			continue
@@ -243,13 +244,23 @@ func parseCrateInformation(contents string) ([]shared.Repo, error) {
 			return nil, err
 		}
 
-		pkg := shared.Repo{
-			Scheme:  shared.RustPackagesScheme,
-			Name:    reposource.PackageName(info.Name),
-			Version: info.Version,
+		name := reposource.PackageName(info.Name)
+		if crate, ok := crates[name]; ok {
+			crate.Versions = append(crate.Versions, info.Version)
+		} else {
+			crates[name] = &shared.MinimalPackageRepoRef{
+				Scheme:   shared.RustPackagesScheme,
+				Name:     name,
+				Versions: []string{info.Version},
+			}
 		}
-		result = append(result, pkg)
-
 	}
+
+	result := make([]shared.MinimalPackageRepoRef, 0, len(crates))
+
+	for _, crate := range crates {
+		result = append(result, *crate)
+	}
+
 	return result, nil
 }

@@ -25,7 +25,7 @@ import { HoverOverlayBaseProps } from '@sourcegraph/shared/src/hover/HoverOverla
 import { toURIWithPath, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { getHover } from '../../../backend/features'
-import { BlobInfo } from '../Blob'
+import type { BlobInfo } from '../CodeMirrorBlob'
 
 import { documentHighlightsSource } from './document-highlights'
 import { hovercardSource } from './hovercard'

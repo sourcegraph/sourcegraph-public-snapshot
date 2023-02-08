@@ -25,7 +25,7 @@ export const INITIAL_INSIGHT_VALUES: CreateInsightFormFields = {
     step: 'months',
     stepValue: '2',
     title: '',
-    repositories: '',
+    repositories: [],
     repoMode: 'search-query',
     repoQuery: { query: '' },
     dashboardReferenceCount: 0,
@@ -41,7 +41,7 @@ export interface UseInsightCreationFormProps {
 export interface InsightCreationForm {
     form: Form<CreateInsightFormFields>
     title: useFieldAPI<string>
-    repositories: useFieldAPI<string>
+    repositories: useFieldAPI<string[]>
     repoQuery: useFieldAPI<QueryState>
     repoMode: useFieldAPI<RepoMode>
     series: useFieldAPI<EditableDataSeries[]>

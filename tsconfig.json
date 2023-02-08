@@ -25,13 +25,5 @@
     "fallbackPolling": "dynamicPriority"
   },
   "include": [],
-  "exclude": ["out", "node_modules"],
-  "references": [
-    {
-      "path": "client/extension-api"
-    },
-    {
-      "path": "client/extension-api-types"
-    }
-  ]
+  "exclude": ["out", "node_modules"]
 }

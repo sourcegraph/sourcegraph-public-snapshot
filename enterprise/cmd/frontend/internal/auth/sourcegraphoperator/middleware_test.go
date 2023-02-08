@@ -242,9 +242,9 @@ func TestMiddleware(t *testing.T) {
 				CreatedAt: time.Now(),
 			}, nil
 		})
-		userExternalAccountsStore.CreateUserAndSaveFunc.SetDefaultHook(func(_ context.Context, user database.NewUser, _ extsvc.AccountSpec, _ extsvc.AccountData) (int32, error) {
+		userExternalAccountsStore.CreateUserAndSaveFunc.SetDefaultHook(func(_ context.Context, user database.NewUser, _ extsvc.AccountSpec, _ extsvc.AccountData) (*types.User, error) {
 			assert.True(t, strings.HasPrefix(user.Username, usernamePrefix), "%q does not have prefix %q", user.Username, usernamePrefix)
-			return 1, nil
+			return &types.User{ID: 1}, nil
 		})
 
 		urlStr := fmt.Sprintf("http://example.com/.auth/sourcegraph-operator/callback?code=%s&state=%s", testCode, state.Encode())

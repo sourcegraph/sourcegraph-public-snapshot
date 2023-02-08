@@ -16,6 +16,7 @@ export const orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[] = [
             <div>
                 <SettingsArea
                     {...props}
+                    url={props.match.url}
                     subject={props.org}
                     extraHeader={
                         <>
