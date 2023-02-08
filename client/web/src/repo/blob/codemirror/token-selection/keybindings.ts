@@ -296,14 +296,15 @@ function textSelectionExtension(): Extension {
             '.cm-selectionLayer .cm-selectionBackground': {
                 background: 'var(--code-selection-bg-2)',
                 marginTop: '-1px',
+
+                // Ensure selection marker height matches line height.
+                minHeight: '1rem',
             },
             '.cm-selectionLayer .cm-selectionBackground.blame-visible': {
                 marginTop: '-6px',
-            },
 
-            // Ensure selection marker height matches the increased line height
-            '.cm-selectionLayer .cm-selectionBackground.blame-visible:last-child': {
-                height: 'calc(1.5rem + 1px) !important',
+                // Ensure selection marker height matches the increased line height.
+                minHeight: 'calc(1.5rem + 1px)',
             },
         }),
     ]
