@@ -31,6 +31,7 @@ type DB interface {
 	GitserverRepos() GitserverRepoStore
 	GitserverLocalClone() GitserverLocalCloneStore
 	GlobalState() GlobalStateStore
+	NamespacePermissions() NamespacePermissionStore
 	Namespaces() NamespaceStore
 	OrgInvitations() OrgInvitationStore
 	OrgMembers() OrgMemberStore
@@ -159,6 +160,10 @@ func (d *db) GitserverLocalClone() GitserverLocalCloneStore {
 
 func (d *db) GlobalState() GlobalStateStore {
 	return GlobalStateWith(d.Store)
+}
+
+func (d *db) NamespacePermissions() NamespacePermissionStore {
+	return NamespacePermissionsWith(d.Store)
 }
 
 func (d *db) Namespaces() NamespaceStore {
