@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
-	ossauthz "github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/graph"
@@ -45,7 +45,7 @@ func (s *graphSearchCodeIntelStore) GetReferences(ctx context.Context, repo sgty
 		return nil, err
 	}
 
-	reqState := codenav.NewRequestState(uploads, ossauthz.DefaultSubRepoPermsChecker, s.gs, repo.ToRepo(), string(args.Commit), args.Path, s.maxIndexes, s.hunkCache)
+	reqState := codenav.NewRequestState(uploads, authz.DefaultSubRepoPermsChecker, s.gs, repo.ToRepo(), args.Commit, args.Path, s.maxIndexes, s.hunkCache)
 
 	locs, _, err := s.svc.CodenavService.GetReferences(ctx, shared.RequestArgs(args), reqState, shared.ReferencesCursor{
 		Phase: "local",
@@ -60,7 +60,7 @@ func (s *graphSearchCodeIntelStore) GetImplementations(ctx context.Context, repo
 		return nil, err
 	}
 
-	reqState := codenav.NewRequestState(uploads, ossauthz.DefaultSubRepoPermsChecker, s.gs, repo.ToRepo(), string(args.Commit), args.Path, s.maxIndexes, s.hunkCache)
+	reqState := codenav.NewRequestState(uploads, authz.DefaultSubRepoPermsChecker, s.gs, repo.ToRepo(), args.Commit, args.Path, s.maxIndexes, s.hunkCache)
 
 	locs, _, err := s.svc.CodenavService.GetImplementations(ctx, shared.RequestArgs(args), reqState, shared.ImplementationsCursor{
 		Phase: "local",
