@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Checkbox, Input } from '@sourcegraph/wildcard'
+import { Checkbox, H3, Input, Label, Text } from '@sourcegraph/wildcard'
 
 import { SettingsSchema } from './SettingsFile'
 
@@ -16,26 +16,48 @@ interface settingsNode {
     properties: Record<string, settingsNode>
 }
 
-export const GeneratedSettingsForm: React.FunctionComponent<GeneratedSettingsFormProps> = ({ jsonSchema }) => {
-    return <>{convertPropertiesToComponents(jsonSchema as unknown as settingsNode)}</>
-}
+export const GeneratedSettingsForm: React.FunctionComponent<GeneratedSettingsFormProps> = ({ jsonSchema }) => (
+    <>{convertPropertiesToComponents(jsonSchema as unknown as settingsNode)}</>
+)
 
-function convertPropertiesToComponents(jsonSchema: settingsNode): (JSX.Element | null)[] {
-    return Object.entries(jsonSchema.properties).map(([name, node]) => {
-        if (node.type === 'boolean') {
-            return <BooleanSettingItem title={node.title} key={name + '.' + node.title} />
-        } else if (node.type === 'string') {
-            return <StringSettingItem title={node.title} key={name + '.' + node.title} />
+function convertPropertiesToComponents(node: settingsNode): JSX.Element[] {
+    return Object.entries(node.properties).map(([name, subNode]) => {
+        const key = name + '.' + subNode.title
+        switch (subNode.type) {
+            case 'boolean':
+                return <BooleanSettingItem key={key} name={name} title={subNode.title} />
+            case 'string':
+                return <StringSettingItem key={key} name={name} title={subNode.title} />
+            case 'object':
+                if (subNode.properties) {
+                    return (
+                        <div key={key}>
+                            <H3>{subNode.title}</H3>
+                            <Text>{subNode.description}</Text>
+                            {convertPropertiesToComponents(subNode)}
+                        </div>
+                    )
+                }
+                return <div key={key}>Unsupported object setting type</div>
+            default:
+                return <div key={key}>Unsupported setting type</div>
         }
-        return null
     })
 }
 
-function BooleanSettingItem(props: { title: string }): JSX.Element {
-    // TODO: Use a more unique ID
-    return <Checkbox id={props.title} label={props.title} checked={false} />
+function BooleanSettingItem(props: { name: string; title: string }): JSX.Element {
+    // TODO: Include the parent group(s) in the id to make it unique
+    return <Checkbox id={props.name} label={props.title} checked={false} onChange={() => {}} />
 }
 
-function StringSettingItem(props: { title: string }): JSX.Element {
-    return <Input />
+function StringSettingItem(props: { name: string; title: string }): JSX.Element {
+    // TODO: Include the parent group(s) in the id to make it unique
+    return (
+        <>
+            <Label className="sr-only" htmlFor={props.name}>
+                {props.title}
+            </Label>
+            <Input id={props.name} name={props.name} type="text" />
+        </>
+    )
 }
