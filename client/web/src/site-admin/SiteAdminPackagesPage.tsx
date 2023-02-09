@@ -3,7 +3,18 @@ import { useEffect, useMemo, useState } from 'react'
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, ErrorAlert, Link, LoadingSpinner, PageHeader, Input, useDebounce } from '@sourcegraph/wildcard'
+import {
+    Container,
+    ErrorAlert,
+    Link,
+    LoadingSpinner,
+    PageHeader,
+    Input,
+    useDebounce,
+    Button,
+    Tooltip,
+    Icon,
+} from '@sourcegraph/wildcard'
 
 import {
     buildFilterArgs,
@@ -18,6 +29,8 @@ import { PackagesResult, PackagesVariables, SiteAdminPackageFields } from '../gr
 
 import { PACKAGES_QUERY } from './backend'
 import { PackageHost, PackageRepositoryIcon } from './components/PackageRepositoryIcon'
+import { RepoMirrorInfo } from './components/RepoMirrorInfo'
+import { mdiDelete } from '@mdi/js'
 
 interface SiteAdminPackagesPageProps extends TelemetryProps {}
 
@@ -25,13 +38,29 @@ interface PackageNodeProps {
     node: SiteAdminPackageFields
 }
 
+const noop = (): void => {}
+
 const PackageNode: React.FunctionComponent<React.PropsWithChildren<PackageNodeProps>> = ({ node }) => (
     <li className="list-group-item px-0 py-2">
         <div className="d-flex align-items-center justify-content-between">
             <div>
                 <PackageRepositoryIcon host={node.scheme as PackageHost} />
                 {node.repository ? <RepoLink repoName={node.name} to={node.repository.url} /> : node.name}
-                {/* <RepoMirrorInfo mirrorInfo={node.mirrorInfo} /> */}
+                {node.repository && <RepoMirrorInfo mirrorInfo={node.repository.mirrorInfo} />}
+            </div>
+            <div>
+                <Tooltip content="Block and manage package versions">
+                    <Button variant="secondary" size="sm" onClick={noop} className="mr-2">
+                        Manage versions
+                    </Button>
+                </Tooltip>
+
+                <Tooltip content="Remove this package from this instance">
+                    <Button variant="danger" size="sm" onClick={noop}>
+                        <Icon aria-hidden={true} svgPath={mdiDelete} className="mr-1" />
+                        Delete
+                    </Button>
+                </Tooltip>
             </div>
         </div>
     </li>
@@ -158,7 +187,21 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
             />
 
             <Container className="mb-3">
-                <div className="d-flex justify-content-center">
+                <Input
+                    type="search"
+                    className="flex-1"
+                    placeholder="Search packages..."
+                    name="query"
+                    value={searchValue}
+                    onChange={event => setSearchValue(event.currentTarget.value)}
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                    aria-label="Search packages..."
+                    variant="regular"
+                />
+                <div className="d-flex mt-3">
                     <FilterControl
                         filters={FILTERS}
                         values={filterValues}
@@ -169,20 +212,6 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
                                 return newValues
                             })
                         }
-                    />
-                    <Input
-                        type="search"
-                        className="flex-1"
-                        placeholder="Search packages..."
-                        name="query"
-                        value={searchValue}
-                        onChange={event => setSearchValue(event.currentTarget.value)}
-                        autoComplete="off"
-                        autoCorrect="off"
-                        autoCapitalize="off"
-                        spellCheck={false}
-                        aria-label="Search packages..."
-                        variant="regular"
                     />
                 </div>
                 {error && !loading && <ErrorAlert error={error} />}

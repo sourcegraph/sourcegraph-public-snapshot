@@ -891,6 +891,8 @@ export const UPDATE_WEBHOOK_QUERY = gql`
 `
 
 const siteAdminPackageFieldsFragment = gql`
+    ${mirrorRepositoryInfoFieldsFragment}
+
     fragment SiteAdminPackageFields on PackageRepoReference {
         id
         name
@@ -898,6 +900,9 @@ const siteAdminPackageFieldsFragment = gql`
         repository {
             name
             url
+            mirrorInfo {
+                ...MirrorRepositoryInfoFields
+            }
         }
     }
 `
