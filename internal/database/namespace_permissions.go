@@ -54,7 +54,6 @@ INSERT INTO
 	VALUES (
 		%s,
 		%s,
-		%s,
 		%s
 	)
 	RETURNING %s
