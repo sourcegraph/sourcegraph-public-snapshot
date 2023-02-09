@@ -403,7 +403,7 @@ func (s *store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		err = s.Exec(ctx, sqlf.Sprintf(`
 			INSERT INTO repo_kvps (repo_id, key)
 			SELECT %s, UNNEST(%s::text[])
-			ON CONFLICT IGNORE`,
+			ON CONFLICT DO NOTHING`,
 			r.ID,
 			githubMetadata.Topics,
 		))
@@ -594,7 +594,7 @@ func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		err = s.Exec(ctx, sqlf.Sprintf(`
 			INSERT INTO repo_kvps (repo_id, key)
 			SELECT %s, UNNEST(%s::text[])
-			ON CONFLICT IGNORE`,
+			ON CONFLICT DO NOTHING`,
 			r.ID,
 			add,
 		))
@@ -604,7 +604,7 @@ func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 
 		err = s.Exec(ctx, sqlf.Sprintf(`
 			DELETE FROM repo_kvps
-			WHERE repo_id = %s AND key IN (%s::text[])
+			WHERE repo_id = %s AND key IN (SELECT UNNEST(%s::text[]))
 			`,
 			r.ID,
 			remove,
