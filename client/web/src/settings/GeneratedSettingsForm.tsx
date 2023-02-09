@@ -80,6 +80,8 @@ function convertPropertiesToComponents(node: settingsNode, parentNames: string[]
                     )
                 }
                 return <div key={id}>Unsupported object setting type</div>
+            // TODO: Handle integers, numbers, and "null" type
+            // TODO: Handle array types
             default:
                 return <div key={id}>Unsupported setting type</div>
         }
