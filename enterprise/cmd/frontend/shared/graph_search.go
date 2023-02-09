@@ -16,8 +16,8 @@ import (
 )
 
 // graphSearchCodeIntelStore is a shim over codeintel services for powering search over
-// the code graph. It must not use any enterprise types, and should be registered in
-// package internal/search/graph
+// the code graph. It must not use any enterprise types in its interface, and should be
+// registered in package internal/search/graph on enterprise setup.
 type graphSearchCodeIntelStore struct {
 	svc        codeintel.Services
 	gs         *gitserver.Client
