@@ -26,6 +26,10 @@ async function createWindow() {
   tray.setToolTip('Sourcegraph App');
   tray.setContextMenu(buildMenu());
 
+  tray.on('click', function () {
+    restoreOrCreateWindow();
+  });
+
   /**
    * If the 'show' property of the BrowserWindow's constructor is omitted from the initialization options,
    * it then defaults to 'true'. This can cause flickering as the window loads the html content,
@@ -67,13 +71,11 @@ export async function restoreOrCreateWindow() {
     window = await createWindow();
   }
 
-  if (window.isMinimized()) {
+  if (window.isVisible()) {
+    window.hide();
+  } else {
     window.restore();
     window.show();
-  }
-
-  if (window.isVisible()) {
-    window.minimize();
   }
 
   window.isAlwaysOnTop();

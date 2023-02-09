@@ -19,6 +19,11 @@ app.on('second-instance', restoreOrCreateWindow);
 app.disableHardwareAcceleration();
 
 /**
+ * We're using the tray icon, so make sense to hide the dock icon.
+ */
+app.dock.hide();
+
+/**
  * Shout down background process if all windows was closed
  */
 app.on('window-all-closed', () => {
