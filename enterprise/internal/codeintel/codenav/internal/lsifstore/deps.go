@@ -21,15 +21,15 @@ type DependencyDescription struct {
 }
 
 // GetDependencies returns a list of dependencies for the given index.
-func (s *store) GetDependencies(ctx context.Context, bundleID int) (_ []DependencyDescription, err error) {
+func (s *store) GetDependencies(ctx context.Context, bundleIDs []int) (_ []DependencyDescription, err error) {
 	ctx, _, endObservation := s.operations.getExists.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("bundleID", bundleID),
+		log.String("bundleIDs", intsToString(bundleIDs)),
 	}})
 	defer endObservation(1, observation.Args{})
 
 	symbolNames, err := basestore.ScanStrings(s.db.Query(ctx, sqlf.Sprintf(
 		dependenciesQuery,
-		pq.Array([]int{bundleID}),
+		pq.Array(bundleIDs),
 	)))
 	if err != nil {
 		return nil, err

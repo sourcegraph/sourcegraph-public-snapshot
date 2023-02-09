@@ -10,7 +10,7 @@ import (
 func TestGetDependencies(t *testing.T) {
 	store := populateTestStore(t)
 
-	dependencies, err := store.GetDependencies(context.Background(), testSCIPUploadID)
+	dependencies, err := store.GetDependencies(context.Background(), []int{testSCIPUploadID})
 	if err != nil {
 		t.Fatalf("unexpected error %s", err)
 	}

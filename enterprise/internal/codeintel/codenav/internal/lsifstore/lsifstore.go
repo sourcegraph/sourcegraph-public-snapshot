@@ -44,7 +44,7 @@ type LsifStore interface {
 	GetPathExists(ctx context.Context, bundleID int, path string) (_ bool, err error)
 
 	// HACKATHON BABYYYY
-	GetDependencies(ctx context.Context, bundleID int) (_ []DependencyDescription, err error)
+	GetDependencies(ctx context.Context, bundleIDs []int) (_ []DependencyDescription, err error)
 }
 
 type store struct {

@@ -48,6 +48,16 @@ func newService(
 	}
 }
 
+// WARNING: DO NOT CALL ME LOL, I AM A HACKATHON ARTIFACT
+func (s *Service) GetDependencies(ctx context.Context, repositoryID int) (_ []lsifstore.DependencyDescription, err error) {
+	ids, err := s.store.GetUploadsForRepository(ctx, repositoryID)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.lsifstore.GetDependencies(ctx, ids)
+}
+
 // GetHover returns the set of locations defining the symbol at the given position.
 func (s *Service) GetHover(ctx context.Context, args shared.RequestArgs, requestState RequestState) (_ string, _ types.Range, _ bool, err error) {
 	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getHover, serviceObserverThreshold, observation.Args{
