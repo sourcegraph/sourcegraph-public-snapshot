@@ -6,21 +6,19 @@ import { ErrorLike } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { Checkbox, H3, Input, Label, Select, Text } from '@sourcegraph/wildcard'
 
-import { SettingsSchema } from './SettingsFile'
-
 import styles from './GeneratedSettingsForm.module.scss'
 
 interface GeneratedSettingsFormProps {
-    jsonSchema: SettingsSchema
+    jsonSchema: SettingsNode
     currentSettings?: Settings | ErrorLike | null
 }
 
-interface settingsNode {
+export interface SettingsNode {
     title: string
     description: string
     type: 'array' | 'boolean' | 'integer' | 'null' | 'number' | 'object' | 'string'
     enum?: string[]
-    properties: Record<string, settingsNode>
+    properties: Record<string, SettingsNode>
     minimum?: number
     maximum?: number
 }
@@ -39,12 +37,12 @@ export const GeneratedSettingsForm: React.FunctionComponent<GeneratedSettingsFor
     }
 
     return <section className={classNames(styles.wrapper, 'mt-3')}>
-        {convertPropertiesToComponents(jsonSchema as unknown as settingsNode, [], currentSettings as Settings)}
+        {convertPropertiesToComponents(jsonSchema as unknown as SettingsNode, [], currentSettings as Settings)}
     </section>
 }
 
 function convertPropertiesToComponents(
-    node: settingsNode,
+    node: SettingsNode,
     parentNames: string[],
     currentSettings: Settings
 ): JSX.Element[] {
@@ -107,7 +105,7 @@ function convertPropertiesToComponents(
                                 {convertPropertiesToComponents(
                                     subNode,
                                     [...parentNames, name],
-                                    currentSettings[name] as Settings
+                                    (currentSettings[name] as Settings) || {}
                                 )}
                             </div>
                         </div>

@@ -15,11 +15,9 @@ import { SaveToolbar } from '../components/SaveToolbar'
 import { SiteAdminSettingsCascadeFields } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
-import { GeneratedSettingsForm } from './GeneratedSettingsForm'
+import { GeneratedSettingsForm, SettingsNode } from './GeneratedSettingsForm'
 
 import styles from './SettingsFile.module.scss'
-
-export type SettingsSchema = typeof settingsSchemaJSON
 
 interface Props extends TelemetryProps {
     settings: SiteAdminSettingsCascadeFields['subjects'][number]['latestSettings'] | null
@@ -157,7 +155,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                     <TabPanels>
                         <TabPanel>
                             <GeneratedSettingsForm
-                                jsonSchema={settingsSchemaJSON}
+                                jsonSchema={settingsSchemaJSON as unknown as SettingsNode}
                                 currentSettings={this.props.settingsCascadeFinal}
                             />
                         </TabPanel>
