@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 func TestDependencyIndexingSchedulerHandler(t *testing.T) {
@@ -113,7 +112,7 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 			return false
 		})
 
-		expectedPackages := []precise.Package{
+		expectedPackages := []dependencies.MinimialVersionedPackageRepo{
 			{Scheme: "gomod", Name: "https://github.com/banana/world", Version: "v0.0.1"},
 			{Scheme: "gomod", Name: "https://github.com/cheese/burger", Version: "v2.2.1"},
 			{Scheme: "gomod", Name: "https://github.com/cheese/burger", Version: "v3.2.2"},
@@ -218,7 +217,7 @@ func TestDependencyIndexingSchedulerHandlerCustomer(t *testing.T) {
 			return false
 		})
 
-		expectedPackages := []precise.Package{
+		expectedPackages := []dependencies.MinimialVersionedPackageRepo{
 			{Scheme: "gomod", Name: "https://github.com/cheese/burger", Version: "v2.2.1"},
 			{Scheme: "gomod", Name: "https://github.com/cheese/burger", Version: "v3.2.2"},
 			{Scheme: "gomod", Name: "https://github.com/cheese/burger", Version: "v4.2.3"},

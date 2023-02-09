@@ -376,6 +376,7 @@ func TestQueueIndexesInRepository(t *testing.T) {
 
 func TestQueueIndexesInferred(t *testing.T) {
 	mockDBStore := NewMockStore()
+	mockDBStore.GetRepoNameFunc.SetDefaultHook(func(ctx context.Context, i int) (string, error) { return fmt.Sprintf("%d", i), nil })
 	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []types.Index) ([]types.Index, error) { return indexes, nil })
 
 	mockGitserverClient := NewMockGitserverClient()
