@@ -7,6 +7,7 @@ async function createWindow() {
   const browserWindow = new BrowserWindow({
     type: 'panel',
     transparent: true,
+    useContentSize: true, // The width and height would be used as web page's size.
     frame: false,
     show: false, // Use the 'ready-to-show' event to show the instantiated BrowserWindow.
     webPreferences: {
