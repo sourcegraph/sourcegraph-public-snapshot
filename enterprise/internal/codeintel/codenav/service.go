@@ -58,6 +58,48 @@ func (s *Service) GetDependencies(ctx context.Context, repositoryID int) (_ []ls
 	return s.lsifstore.GetDependencies(ctx, ids)
 }
 
+type Location struct {
+	RepositoryID int
+	Commit       string
+	Path         string
+	Range        types.Range
+}
+
+// WARNING: DO NOT CALL ME LOL, I AM A HACKATHON ARTIFACT
+func (s *Service) GetDependencyOccurrences(ctx context.Context, repositoryID int, manager, name, version string) (_ []Location, err error) {
+	ids, err := s.store.GetUploadsForRepository(ctx, repositoryID)
+	if err != nil {
+		return nil, err
+	}
+
+	dumps, err := s.uploadSvc.GetDumpsByIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	commits := map[int]string{}
+	for _, dump := range dumps {
+		commits[dump.ID] = dump.Commit
+	}
+
+	locations, err := s.lsifstore.GetDependencyOccurrences(ctx, ids, manager, name, version)
+	if err != nil {
+		return nil, err
+	}
+
+	var realLocationsActually []Location
+	for _, location := range locations {
+		realLocationsActually = append(realLocationsActually, Location{
+			RepositoryID: repositoryID,
+			Commit:       commits[location.UploadID],
+			Path:         location.Path,
+			Range:        location.Range,
+		})
+	}
+
+	return realLocationsActually, nil
+}
+
 // GetHover returns the set of locations defining the symbol at the given position.
 func (s *Service) GetHover(ctx context.Context, args shared.RequestArgs, requestState RequestState) (_ string, _ types.Range, _ bool, err error) {
 	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getHover, serviceObserverThreshold, observation.Args{

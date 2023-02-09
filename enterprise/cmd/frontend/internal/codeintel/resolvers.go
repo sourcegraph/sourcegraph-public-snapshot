@@ -51,6 +51,10 @@ func (r *Resolver) Dependencies(ctx context.Context, args *resolverstubs.Depende
 	return r.codenavResolver.Dependencies(ctx, args)
 }
 
+func (r *Resolver) DependencyOccurrences(ctx context.Context, args *resolverstubs.DependencyOccurrencesArgs) (_ []resolverstubs.LocationResolver, err error) {
+	return r.codenavResolver.DependencyOccurrences(ctx, args)
+}
+
 func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ resolverstubs.LSIFUploadResolver, err error) {
 	return r.uploadsRootResolver.LSIFUploadByID(ctx, id)
 }

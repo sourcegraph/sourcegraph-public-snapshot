@@ -222,7 +222,15 @@ extend type Mutation {
 }
 
 extend type Query {
+    """
+    HAX HAX
+    """
     dependencies(repository: ID!): [DependencyDescription!]!
+
+    """
+    HACKY McHACKFACE
+    """
+    dependencyOccurrences(repository: ID!, manager: String!, name: String!, version: String!): [Location!]!
 
     """
     Returns precise code intelligence configuration policies that control data retention

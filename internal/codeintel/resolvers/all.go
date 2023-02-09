@@ -24,6 +24,7 @@ type RootResolver interface {
 type CodeNavServiceResolver interface {
 	GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error)
 	Dependencies(ctx context.Context, args *DependenciesArgs) (_ []DependencyDescriptionResolver, err error)
+	DependencyOccurrences(ctx context.Context, args *DependencyOccurrencesArgs) (_ []LocationResolver, err error)
 }
 
 type AutoindexingServiceResolver interface {
@@ -748,6 +749,13 @@ func (r *inferredAvailableIndexersResolver) URL() string {
 
 type DependenciesArgs struct {
 	Repository graphql.ID
+}
+
+type DependencyOccurrencesArgs struct {
+	Repository graphql.ID
+	Manager    string
+	Name       string
+	Version    string
 }
 
 type DependencyDescriptionResolver interface {

@@ -45,6 +45,7 @@ type LsifStore interface {
 
 	// HACKATHON BABYYYY
 	GetDependencies(ctx context.Context, bundleIDs []int) (_ []DependencyDescription, err error)
+	GetDependencyOccurrences(ctx context.Context, bundleIDs []int, manager, name, version string) (_ []Location, err error)
 }
 
 type store struct {

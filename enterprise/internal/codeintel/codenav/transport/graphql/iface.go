@@ -36,6 +36,7 @@ type CodeNavService interface {
 
 	// HAX
 	GetDependencies(ctx context.Context, repositoryID int) (_ []lsifstore.DependencyDescription, err error)
+	GetDependencyOccurrences(ctx context.Context, repositoryID int, manager, name, version string) ([]codenav.Location, error)
 }
 
 type GitserverClient interface {
