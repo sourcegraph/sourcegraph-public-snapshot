@@ -50,7 +50,6 @@ var DefaultPredicateRegistry = PredicateRegistry{
 	FieldSymbol: {
 		"references": func() Predicate { return &SymbolReferencesPredicate{} },
 		"implements": func() Predicate { return &SymbolImplementsPredicate{} },
-		// "calls":      func() Predicate { return nil },
 	},
 }
 

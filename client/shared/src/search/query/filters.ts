@@ -31,7 +31,6 @@ export enum FilterType {
     timeout = 'timeout',
     type = 'type',
     visibility = 'visibility',
-    symbol = 'symbol',
 }
 
 /* eslint-disable unicorn/prevent-abbreviations */
@@ -308,10 +307,6 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     [FilterType.visibility]: {
         discreteValues: () => ['any', 'private', 'public'].map(value => ({ label: value })),
         description: 'Include results from repositories with the matching visibility (private, public, any).',
-        singular: true,
-    },
-    [FilterType.symbol]: {
-        description: 'Search symbols and their relationships.',
         singular: true,
     },
 }

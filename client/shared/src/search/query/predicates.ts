@@ -57,17 +57,6 @@ export const PREDICATES: Access[] = [
             },
         ],
     },
-    {
-        name: 'symbol',
-        fields: [
-            {
-                name: 'implements',
-            },
-            {
-                name: 'references',
-            },
-        ],
-    },
 ]
 
 /** Represents a predicate's components corresponding to the syntax path(parameters). */
