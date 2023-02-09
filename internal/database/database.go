@@ -56,6 +56,7 @@ type DB interface {
 	UserRoles() UserRoleStore
 	Users() UserStore
 	WebhookLogs(encryption.Key) WebhookLogStore
+	Ownerships() OwnershipStore
 	Webhooks(encryption.Key) WebhookStore
 	RepoStatistics() RepoStatisticsStore
 	Executors() ExecutorStore
@@ -94,6 +95,10 @@ func (d *db) ExecContext(ctx context.Context, q string, args ...any) (sql.Result
 
 func (d *db) QueryRowContext(ctx context.Context, q string, args ...any) *sql.Row {
 	return d.Handle().QueryRowContext(dbconn.SkipFrameForQuerySource(ctx), q, args...)
+}
+
+func (d *db) Ownerships() OwnershipStore {
+	return OwnershipsWith(d.Store)
 }
 
 func (d *db) Transact(ctx context.Context) (DB, error) {

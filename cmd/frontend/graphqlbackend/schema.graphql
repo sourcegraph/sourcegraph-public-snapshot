@@ -5668,6 +5668,33 @@ type GitBlob implements TreeEntry & File2 {
     LFS is set if the GitBlob is a pointer to a file stored in LFS.
     """
     lfs: LFS
+    """
+    Ownership summary for this file.
+    """
+    ownership: [Ownership!]!
+}
+
+type Ownership {
+    handle: String!
+    person: Person!
+    reasons: [OwnershipReason!]!
+}
+
+union OwnershipReason = CodeownersFileEntry | RecentContributor | DomainExpert
+
+type CodeownersFileEntry {
+    title: String!
+    description: String!
+}
+
+type RecentContributor {
+    title: String!
+    description: String!
+}
+
+type DomainExpert {
+    title: String!
+    description: String!
 }
 
 """

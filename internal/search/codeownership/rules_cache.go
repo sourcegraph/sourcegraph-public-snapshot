@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 )
@@ -25,7 +26,7 @@ func NewRulesCache() RulesCache {
 	return RulesCache{rules: make(map[RulesKey]*codeownerspb.File)}
 }
 
-func (c *RulesCache) GetFromCacheOrFetch(ctx context.Context, gitserver gitserver.Client, repoName api.RepoName, commitID api.CommitID) (*codeownerspb.File, error) {
+func (c *RulesCache) GetFromCacheOrFetch(ctx context.Context, db database.DB, gitserver gitserver.Client, repoName api.RepoName, commitID api.CommitID) (*codeownerspb.File, error) {
 	c.mu.RLock()
 	key := RulesKey{repoName, commitID}
 	if _, ok := c.rules[key]; ok {
@@ -37,7 +38,7 @@ func (c *RulesCache) GetFromCacheOrFetch(ctx context.Context, gitserver gitserve
 	defer c.mu.Unlock()
 	// Recheck condition.
 	if _, ok := c.rules[key]; !ok {
-		file, err := backend.NewOwnService(gitserver).OwnersFile(ctx, repoName, commitID)
+		file, err := backend.NewOwnService(gitserver, db).OwnersFile(ctx, repoName, commitID)
 		if err != nil {
 			emptyRuleset := &codeownerspb.File{}
 			c.rules[key] = emptyRuleset

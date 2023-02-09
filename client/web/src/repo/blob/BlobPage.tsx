@@ -10,12 +10,13 @@ import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { Optional } from 'utility-types'
 
 import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
-import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+
 import {
-    useCurrentSpan,
-    TraceSpanProvider,
     createActiveSpan,
     reactManualTracer,
+    TraceSpanProvider,
+    useCurrentSpan,
 } from '@sourcegraph/observability-client'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -26,17 +27,17 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { RepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
+import { ModeSpec, parseQueryAndHash, RepoFile } from '@sourcegraph/shared/src/util/url'
 import {
     Alert,
     Button,
     ButtonLink,
+    ErrorMessage,
     Icon,
     LoadingSpinner,
     Text,
     useEventObservable,
     useObservable,
-    ErrorMessage,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -44,6 +45,7 @@ import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { Scalars } from '../../graphql-operations'
 import { render as renderLsifHtml } from '../../lsif/html'
 import { NotebookProps } from '../../notebooks'
@@ -65,6 +67,7 @@ import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 
 import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
+import { ToggleOwnershipPanel } from './actions/ToggleOwnershipPanel'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
 import { fetchBlob, fetchStencil } from './backend'
@@ -129,6 +132,7 @@ export const BlobPage: FC<BlobPageProps> = ({ className, ...props }) => {
     const enableLazyBlobSyntaxHighlighting = useExperimentalFeatures(
         features => features.enableLazyBlobSyntaxHighlighting ?? false
     )
+    const [enableOwnershipPanel] = useFeatureFlag('ownership-panel')
 
     const enableSelectionDrivenCodeNavigation = experimentalCodeNavigation === 'selection-driven'
     const enableLinkDrivenCodeNavigation = experimentalCodeNavigation === 'link-driven'
@@ -433,6 +437,16 @@ export const BlobPage: FC<BlobPageProps> = ({ className, ...props }) => {
                     />
                 )}
             </RepoHeaderContributionPortal>
+            {enableOwnershipPanel && (
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={20}
+                    id="toggle-ownership-panel"
+                    repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+                >
+                    {context => <ToggleOwnershipPanel actionType={context.actionType} key="toggle-ownership-panel" />}
+                </RepoHeaderContributionPortal>
+            )}
         </>
     )
 

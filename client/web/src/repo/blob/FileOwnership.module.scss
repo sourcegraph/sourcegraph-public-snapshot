@@ -1,0 +1,9 @@
+.table {
+    width: 100%;
+    margin: 0.75rem 0;
+
+    td:nth-child(1),
+    td:nth-child(2) {
+        width: 0; // This shrinks the cells to fit the content
+    }
+}

@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/fs"
 	"net/url"
 	"os"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
@@ -400,6 +402,156 @@ func (r *GitTreeEntryResolver) LFS(ctx context.Context) (*lfsResolver, error) {
 		return nil, err
 	}
 	return parseLFSPointer(content), nil
+}
+
+func (r *GitTreeEntryResolver) Ownership(ctx context.Context) []Ownership {
+	s := backend.NewOwnService(r.gitserverClient, r.db)
+	if s == nil {
+		// just for testing
+		return []Ownership{{
+			gitTree: r,
+			handle:  "@no-own-service",
+			reasons: []OwnershipReason{&CodeownersFileEntry{}},
+		}}
+	}
+	repo := r.Repository()
+	if repo == nil {
+		// just for testing
+		return []Ownership{{
+			gitTree: r,
+			handle:  "@no-repo-information",
+			reasons: []OwnershipReason{&CodeownersFileEntry{}},
+		}}
+	}
+	commit := r.commit
+	if commit == nil {
+		// just for testing
+		return []Ownership{{
+			gitTree: r,
+			handle:  "@no-commit-information",
+			reasons: []OwnershipReason{&CodeownersFileEntry{}},
+		}}
+	}
+	f, err := s.OwnersFile(ctx, repo.RepoMatch.Name, api.CommitID(r.commit.oid))
+	if err != nil {
+		// just for testing
+		return []Ownership{{
+			gitTree: r,
+			handle:  err.Error(),
+			reasons: []OwnershipReason{&CodeownersFileEntry{}},
+		}}
+	}
+	var ship []Ownership
+	for _, o := range f.FindOwners(r.stat.Name()) {
+		owner := o.GetEmail()
+		if h := o.GetHandle(); h != "" {
+			owner = "@" + h
+		}
+		ship = append(ship, Ownership{
+			gitTree: r,
+			handle:  owner,
+			reasons: []OwnershipReason{&CodeownersFileEntry{}, &RecentContributor{}},
+		})
+	}
+	// TODO: This is faked, we have no GITLOG backend, but put this just so we can see how it works
+	ship = append(ship, Ownership{
+		gitTree: r,
+		handle:  "John Doe",
+		reasons: []OwnershipReason{&RecentContributor{}},
+	})
+	// experts
+	experts, err := s.LabelledExpertise(ctx, repo.RepoMatch.Name, api.CommitID(r.commit.oid), r.stat.Name())
+	if err != nil {
+		ship = append(ship, Ownership{
+			gitTree: r,
+			handle:  fmt.Sprintf("@err:%s", err),
+			reasons: []OwnershipReason{&RecentContributor{}},
+		})
+	}
+	if len(experts) == 0 {
+		ship = append(ship, Ownership{
+			gitTree: r,
+			handle:  "Suzy Smith",
+			reasons: []OwnershipReason{&RecentContributor{}},
+		})
+	}
+	for label, expert := range experts {
+		ship = append(ship, Ownership{
+			gitTree: r,
+			handle:  expert.Who,
+			reasons: []OwnershipReason{&DomainExpert{label: label, reasoning: expert.Why}},
+		})
+	}
+	return ship
+}
+
+type Ownership struct {
+	// TODO: This is here just to construct a PersonResolver. We probably need just something
+	// that can produce one - or we can inject one directly.
+	gitTree *GitTreeEntryResolver
+	handle  string
+	reasons []OwnershipReason
+}
+
+func (o Ownership) Handle() string {
+	return o.handle
+}
+
+func (o Ownership) Person() *PersonResolver {
+	// TODO this does not work at all. Just there to satisfy the API requirements.
+	return &PersonResolver{db: o.gitTree.db, name: o.handle, email: "johndoe@example.com"}
+}
+
+func (o Ownership) Reasons() []OwnershipReason {
+	return o.reasons
+}
+
+type OwnershipReason interface {
+	ToCodeownersFileEntry() (*CodeownersFileEntry, bool)
+	ToRecentContributor() (*RecentContributor, bool)
+	ToDomainExpert() (*DomainExpert, bool)
+}
+
+type CodeownersFileEntry struct{}
+
+func (r *CodeownersFileEntry) ToCodeownersFileEntry() (*CodeownersFileEntry, bool) { return r, true }
+func (r *CodeownersFileEntry) ToRecentContributor() (*RecentContributor, bool)     { return nil, false }
+func (r *CodeownersFileEntry) ToDomainExpert() (*DomainExpert, bool)               { return nil, false }
+func (r *CodeownersFileEntry) Title() string                                       { return "CODEOWNERS" }
+func (r *CodeownersFileEntry) Description() string                                 { return "Matches the foo/bar/baz/ rule." }
+
+type RecentContributor struct {
+	desc string
+}
+
+func (r *RecentContributor) ToCodeownersFileEntry() (*CodeownersFileEntry, bool) { return nil, false }
+func (r *RecentContributor) ToRecentContributor() (*RecentContributor, bool)     { return r, true }
+func (r *RecentContributor) ToDomainExpert() (*DomainExpert, bool)               { return nil, false }
+func (r *RecentContributor) Title() string                                       { return "CONTRIBUTOR" }
+func (r *RecentContributor) Description() string {
+	if r.desc != "" {
+		return r.desc
+	}
+	return "Made 6 changes to this file in the last 3 months"
+}
+
+type DomainExpert struct {
+	label     string
+	reasoning string
+}
+
+func (r *DomainExpert) ToCodeownersFileEntry() (*CodeownersFileEntry, bool) { return nil, false }
+func (r *DomainExpert) ToRecentContributor() (*RecentContributor, bool)     { return nil, false }
+func (r *DomainExpert) ToDomainExpert() (*DomainExpert, bool)               { return r, true }
+func (r *DomainExpert) Title() string {
+	label := strings.ToUpper(r.label)
+	return fmt.Sprintf("EXPERT:%s", label)
+}
+func (r *DomainExpert) Description() string {
+	if r.reasoning == "" {
+		return "TODO: reasoning"
+	}
+	return r.reasoning
 }
 
 func (r *GitTreeEntryResolver) parent(ctx context.Context) (*GitTreeEntryResolver, error) {

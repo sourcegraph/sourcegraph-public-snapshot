@@ -7,6 +7,7 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -45,7 +46,7 @@ func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, 
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		var err error
-		event.Results, err = applyCodeOwnershipFiltering(ctx, clients.Gitserver, &rules, s.includeOwners, s.excludeOwners, event.Results)
+		event.Results, err = applyCodeOwnershipFiltering(ctx, clients.DB, clients.Gitserver, &rules, s.includeOwners, s.excludeOwners, event.Results)
 		if err != nil {
 			mu.Lock()
 			errs = errors.Append(errs, err)
@@ -90,6 +91,7 @@ func (s *codeownershipJob) MapChildren(fn job.MapFunc) job.Job {
 
 func applyCodeOwnershipFiltering(
 	ctx context.Context,
+	db database.DB,
 	gitserver gitserver.Client,
 	rules *RulesCache,
 	includeOwners,
@@ -108,7 +110,7 @@ matchesLoop:
 			continue
 		}
 
-		file, err := rules.GetFromCacheOrFetch(ctx, gitserver, mm.Repo.Name, mm.CommitID)
+		file, err := rules.GetFromCacheOrFetch(ctx, db, gitserver, mm.Repo.Name, mm.CommitID)
 		if err != nil {
 			errs = errors.Append(errs, err)
 		}

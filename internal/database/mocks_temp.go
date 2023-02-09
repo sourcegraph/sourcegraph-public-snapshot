@@ -73,6 +73,11 @@ type MockAccessTokenStore struct {
 	WithTransactFunc *AccessTokenStoreWithTransactFunc
 }
 
+// TODO
+func (m *MockDB) Ownerships() OwnershipStore {
+	return nil
+}
+
 // NewMockAccessTokenStore creates a new mock of the AccessTokenStore
 // interface. All methods return zero values for all results, unless
 // overwritten.
