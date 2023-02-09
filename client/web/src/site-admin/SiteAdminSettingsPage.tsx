@@ -21,7 +21,6 @@ export const SiteAdminSettingsPage: React.FunctionComponent<React.PropsWithChild
         <PageTitle title="Global settings" />
         <SettingsArea
             {...props}
-            url="/global-settings"
             subject={props.site}
             authenticatedUser={props.authenticatedUser}
             extraHeader={

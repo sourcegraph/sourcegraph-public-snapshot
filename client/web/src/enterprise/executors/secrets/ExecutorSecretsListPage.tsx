@@ -100,7 +100,7 @@ export const OrgExecutorSecretsListPage: React.FunctionComponent<
     )
 }
 
-interface ExecutorSecretsListPageProps extends GlobalExecutorSecretsListPageProps {
+export interface ExecutorSecretsListPageProps extends GlobalExecutorSecretsListPageProps {
     namespaceID: Scalars['ID'] | null
     headerLine: JSX.Element
     connectionLoader: (scope: ExecutorSecretScope) => UseShowMorePaginationResult<ExecutorSecretFields>

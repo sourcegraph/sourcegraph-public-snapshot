@@ -4,6 +4,7 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { siteAdminAreaRoutes } from '../../site-admin/routes'
 import { SiteAdminAreaRoute } from '../../site-admin/SiteAdminArea'
+import { BatchSpecsPageProps } from '../batches/BatchSpecsPage'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
 
 const SiteAdminProductSubscriptionPage = lazyComponent(
@@ -42,7 +43,10 @@ const BatchChangesSiteConfigSettingsArea = lazyComponent(
     () => import('../batches/settings/BatchChangesSiteConfigSettingsArea'),
     'BatchChangesSiteConfigSettingsArea'
 )
-const BatchSpecsPage = lazyComponent(() => import('../batches/BatchSpecsPage'), 'BatchSpecsPage')
+const BatchSpecsPage = lazyComponent<BatchSpecsPageProps, 'BatchSpecsPage'>(
+    () => import('../batches/BatchSpecsPage'),
+    'BatchSpecsPage'
+)
 const WebhookLogPage = lazyComponent(() => import('../../site-admin/webhooks/WebhookLogPage'), 'WebhookLogPage')
 const CodeIntelPreciseIndexesPage = lazyComponent(
     () => import('../codeintel/indexes/pages/CodeIntelPreciseIndexesPage'),

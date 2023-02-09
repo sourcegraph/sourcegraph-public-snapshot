@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react'
+import React, { FC, useCallback, useMemo } from 'react'
 
 import { mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
@@ -20,7 +20,7 @@ import styles from './BatchSpecsPage.module.scss'
 
 export interface BatchSpecsPageProps extends Omit<BatchSpecListProps, 'currentSpecID'> {}
 
-export const BatchSpecsPage: React.FunctionComponent<React.PropsWithChildren<BatchSpecsPageProps>> = props => (
+export const BatchSpecsPage: FC<BatchSpecsPageProps> = props => (
     <>
         <PageTitle title="Batch specs" />
         <PageHeader
