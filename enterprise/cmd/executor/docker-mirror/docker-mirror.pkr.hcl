@@ -18,28 +18,28 @@ packer {
 # variable "name" {
 #     type = string
 # }
-# 
+#
 # variable "aws_access_key" {
 #     type = string
 #     sensitive = true
 # }
-# 
+#
 # variable "aws_secret_key" {
 #     type = string
 #     sensitive = true
 # }
-# 
+#
 # variable "aws_max_attempts" {
 #     type = number
 # }
-# 
+#
 # variable "aws_poll_delay_seconds" {
 #     type = number
 # }
-# 
+#
 # variable "aws_regions" {
 #     type = list(string)
-# 
+#
 #     validation {
 #         condition = length(var.aws_regions) > 0
 #         error_message = "Must set at least 1 AWS region."
@@ -98,20 +98,23 @@ source "amazon-ebs" "aws" {
 
 source "azure-arm" "azure" {
     # sourcegraph/infrastructure/org/azure
-    client_id = "5caef3ae-85d7-4ee1-bf98-ddc1c3dd7329"
+    client_id = "<insert id>"
+    client_secret = "<insert secret>"
+    subscription_id = "<insert sub id>"
+
     resource_group_name = "sourcegraph-ci"
-    storage_account = "virtualmachines"
+    storage_account = "sgpackervmimages" # needs to be globally unique
 
     capture_container_name = "images"
     capture_name_prefix = "packer"
 
-    os_type = "Linux"
+    os_type = "linux"
     image_publisher = "Canonical"
-    image_offer = "UbuntuServer"
-    image_sku = "20_04"
+    image_offer = "0001-com-ubuntu-server-focal"
+    image_sku = "20_04-lts"
 
     location = "East US"
-    vm_size = "Standard_A2"
+    vm_size = "Standard_A2_v2"
 }
 
 build {
