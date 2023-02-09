@@ -115,7 +115,7 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 
 	// If a search includes a timeout it reports as completing succesfully with the timeout is hit
 	// This includes a timeout in the search that is a second longer than the context we will cancel as a fail safe
-	modifiedQuery, err := querybuilder.AggregationQuery(querybuilder.BasicQuery(r.searchQuery), searchTimelimit+1, countValue)
+	modifiedQuery, err := querybuilder.AggregationQuery(querybuilder.BasicQuery(r.searchQuery), searchTimelimit+1, countValue, aggregationMode)
 	if err != nil {
 		r.getLogger().Debug("unable to build aggregation query", log.Error(err))
 		return &searchAggregationResultResolver{
@@ -366,8 +366,9 @@ func getAggregateBy(mode types.SearchAggregationMode) canAggregateBy {
 	checkByMode := map[types.SearchAggregationMode]canAggregateBy{
 		types.REPO_AGGREGATION_MODE:          canAggregateByRepo,
 		types.PATH_AGGREGATION_MODE:          canAggregateByPath,
-		types.AUTHOR_AGGREGATION_MODE:        canAggregateByAuthor,
 		types.CAPTURE_GROUP_AGGREGATION_MODE: canAggregateByCaptureGroup,
+		types.OWNER_AGGREGATION_MODE:         func(searchQuery, patternType string) (bool, *notAvailableReason, error) { return true, nil, nil },
+		types.AUTHOR_AGGREGATION_MODE:        canAggregateByAuthor,
 	}
 	canAggregateByFunc, ok := checkByMode[mode]
 	if !ok {
@@ -585,6 +586,8 @@ func buildDrilldownQuery(mode types.SearchAggregationMode, originalQuery string,
 		modifierFunc = querybuilder.AddFileFilter
 	case types.AUTHOR_AGGREGATION_MODE:
 		modifierFunc = querybuilder.AddAuthorFilter
+	case types.OWNER_AGGREGATION_MODE:
+		modifierFunc = querybuilder.HasOwner
 	case types.CAPTURE_GROUP_AGGREGATION_MODE:
 		searchType, err := client.SearchTypeFromString(patternType)
 		if err != nil {

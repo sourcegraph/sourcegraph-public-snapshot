@@ -7,6 +7,7 @@ import (
 
 	"github.com/grafana/regexp"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -41,7 +42,7 @@ func withDefaults(inputQuery BasicQuery, defaults searchquery.Parameters) (Basic
 
 // AggregationQuery takes an existing query and adds a count:all and timeout:[timeoutSeconds]s
 // If a count or timeout parameter already exist in the query they will be updated.
-func AggregationQuery(inputQuery BasicQuery, timeoutSeconds int, count string) (BasicQuery, error) {
+func AggregationQuery(inputQuery BasicQuery, timeoutSeconds int, count string, aggregationMode types.SearchAggregationMode) (BasicQuery, error) {
 	upsertParams := searchquery.Parameters{
 		{
 			Field:      searchquery.FieldCount,
@@ -76,8 +77,11 @@ func AggregationQuery(inputQuery BasicQuery, timeoutSeconds int, count string) (
 		p = append(p, upsertParams...)
 		modified = append(modified, basic.MapParameters(p))
 	}
-
-	return BasicQuery(searchquery.StringHuman(modified.ToQ())), nil
+	q := BasicQuery(searchquery.StringHuman(modified.ToQ()))
+	if aggregationMode == types.OWNER_AGGREGATION_MODE {
+		q += " select:file.owners"
+	}
+	return q, nil
 }
 
 // CodeInsightsQueryDefaults returns the default query parameters for a Code Insights generated Sourcegraph query.
@@ -389,6 +393,10 @@ func AddAuthorFilter(query BasicQuery, author string) (BasicQuery, error) {
 
 func AddRepoFilter(query BasicQuery, repo string) (BasicQuery, error) {
 	return addFilterSimple(query, searchquery.FieldRepo, repo)
+}
+
+func HasOwner(query BasicQuery, owner string) (BasicQuery, error) {
+	return BasicQuery(fmt.Sprintf("%s file:has.owner(%s)", query, owner)), nil
 }
 
 func AddFileFilter(query BasicQuery, file string) (BasicQuery, error) {

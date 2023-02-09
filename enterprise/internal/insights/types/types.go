@@ -211,9 +211,10 @@ const (
 	PATH_AGGREGATION_MODE          SearchAggregationMode = "PATH"
 	AUTHOR_AGGREGATION_MODE        SearchAggregationMode = "AUTHOR"
 	CAPTURE_GROUP_AGGREGATION_MODE SearchAggregationMode = "CAPTURE_GROUP"
+	OWNER_AGGREGATION_MODE         SearchAggregationMode = "OWNER"
 )
 
-var SearchAggregationModes = []SearchAggregationMode{REPO_AGGREGATION_MODE, PATH_AGGREGATION_MODE, AUTHOR_AGGREGATION_MODE, CAPTURE_GROUP_AGGREGATION_MODE}
+var SearchAggregationModes = []SearchAggregationMode{REPO_AGGREGATION_MODE, PATH_AGGREGATION_MODE, OWNER_AGGREGATION_MODE, CAPTURE_GROUP_AGGREGATION_MODE}
 
 type AggregationNotAvailableReasonType string
 

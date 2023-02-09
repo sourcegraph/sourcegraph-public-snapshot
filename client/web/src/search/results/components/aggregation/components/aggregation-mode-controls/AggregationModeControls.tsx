@@ -99,12 +99,12 @@ export const AggregationModeControls: FC<AggregationModeControlsProps> = props =
                     <Button
                         variant="secondary"
                         size={size}
-                        outline={mode !== SearchAggregationMode.AUTHOR}
-                        disabled={!isModeAvailable(SearchAggregationMode.AUTHOR)}
-                        data-testid="author-aggregation-mode"
-                        onClick={() => onModeChange(SearchAggregationMode.AUTHOR)}
+                        outline={mode !== SearchAggregationMode.OWNER}
+                        disabled={!isModeAvailable(SearchAggregationMode.OWNER)}
+                        data-testid="owner-aggregation-mode"
+                        onClick={() => onModeChange(SearchAggregationMode.OWNER)}
                     >
-                        Author
+                        Owner
                     </Button>
                 </Tooltip>
             </div>
