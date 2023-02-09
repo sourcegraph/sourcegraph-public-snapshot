@@ -49,7 +49,7 @@ func (i insightsDataPointResolver) DiffQuery() (*string, error) {
 	}
 	query, err := querybuilder.PointDiffQuery(*i.diffInfo)
 	if err != nil {
-		return nil, err
+		return nil, nil
 	}
 	q := query.String()
 	return &q, nil
