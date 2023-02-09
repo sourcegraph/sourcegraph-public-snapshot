@@ -7,9 +7,10 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { LayoutRouteComponentProps } from '../routes'
 
+import { SearchPage } from './home/SearchPage'
+
 import { parseSearchURLQuery } from '.'
 
-const SearchPage = lazyComponent(() => import('./home/SearchPage'), 'SearchPage')
 const StreamingSearchResults = lazyComponent(() => import('./results/StreamingSearchResults'), 'StreamingSearchResults')
 
 /**
