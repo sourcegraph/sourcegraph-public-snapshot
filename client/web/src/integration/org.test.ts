@@ -162,7 +162,7 @@ describe('Organizations', () => {
                         },
                     }),
                 })
-                await driver.page.goto(driver.sourcegraphBaseUrl + '/organizations/sourcegraph/settings')
+                await driver.page.goto(driver.sourcegraphBaseUrl + `/organizations/${testOrg.name}/settings`)
                 const updatedSettings = '// updated'
                 const editor = await createEditorAPI(driver, '.test-settings-file .test-editor')
                 await editor.replace(updatedSettings, 'paste')
