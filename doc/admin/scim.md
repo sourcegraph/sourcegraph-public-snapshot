@@ -1,6 +1,6 @@
 # SCIM
 
-**⚠️ DISCLAIMER: SCIM SUPPORT IS UNDER DEVELOPMENT. THE ENDPOINT DOES NOT COMPLY WITH THE SCIM STANDARD YET AND IT ISN’T READY FOR PRODUCTION USE.**
+**⚠️ DISCLAIMER: SCIM SUPPORT IS UNDER DEVELOPMENT. THE ENDPOINT DOES NOT COMPLY WITH THE SCIM STANDARD YET AND IT IS NOT READY FOR PRODUCTION USE.**
 
 SCIM (System for Cross-domain Identity Management) is a standard for provisioning users and groups in an organization. It is supported by many IdP (identity providers) such as Okta, OneLogin, and Azure Active Directory.
 
