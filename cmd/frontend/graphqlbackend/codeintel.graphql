@@ -494,7 +494,16 @@ type DependencyDescription {
 }
 
 type Vulnerability {
-    # TODO - CVE stuff
+    cve: String!
+    description: String!
+    dependency: String!
+    packageManager: String!
+    publishedDate: String!
+    lastUpdate: String!
+    affectedVersion: String!
+    currentVersion: String!
+    severityScore: String!
+    severityString: String!
     locations: [Location!]!
 }
 

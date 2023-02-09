@@ -70,8 +70,14 @@ func (r *rootResolver) Vulnerabilities(ctx context.Context, args *resolverstubs.
 
 	var resolvers []resolverstubs.VulnerabilityResolver
 	for _, dep := range deps {
-		// TODO - check for CVE
-		if false {
+		if dep.Manager != "npm" {
+			continue
+		}
+		vulnerabilities, err := jsDepToVuln(apiKey, dep.Name, dep.Version)
+		if err != nil {
+			return nil, err
+		}
+		if len(vulnerabilities) == 0 {
 			continue
 		}
 
@@ -93,10 +99,9 @@ func (r *rootResolver) Vulnerabilities(ctx context.Context, args *resolverstubs.
 			locations = append(locations, NewLocationResolver(treeResolver, &lspRange))
 		}
 
-		resolvers = append(resolvers, NewVulnerabilityResolver(
-			// TODO - cve stuff
-			locations,
-		))
+		for _, vulnerability := range vulnerabilities {
+			resolvers = append(resolvers, NewVulnerabilityResolver(vulnerability, locations))
+		}
 	}
 
 	return resolvers, err
@@ -121,14 +126,27 @@ func (r *dependencyDescriptionResolver) Name() string    { return r.name }
 func (r *dependencyDescriptionResolver) Version() string { return r.version }
 
 type vulnerabilityResolver struct {
-	locations []resolverstubs.LocationResolver
+	vulnerability Vulnerability
+	locations     []resolverstubs.LocationResolver
 }
 
-func NewVulnerabilityResolver(locations []resolverstubs.LocationResolver) resolverstubs.VulnerabilityResolver {
+func NewVulnerabilityResolver(vulnerability Vulnerability, locations []resolverstubs.LocationResolver) resolverstubs.VulnerabilityResolver {
 	return &vulnerabilityResolver{
-		locations: locations,
+		vulnerability: vulnerability,
+		locations:     locations,
 	}
 }
+
+func (r *vulnerabilityResolver) CVE() string             { return r.vulnerability.CVE }
+func (r *vulnerabilityResolver) Description() string     { return r.vulnerability.Description }
+func (r *vulnerabilityResolver) Dependency() string      { return r.vulnerability.Dependency }
+func (r *vulnerabilityResolver) PackageManager() string  { return r.vulnerability.PackageManager }
+func (r *vulnerabilityResolver) PublishedDate() string   { return r.vulnerability.PublishedDate }
+func (r *vulnerabilityResolver) LastUpdate() string      { return r.vulnerability.LastUpdate }
+func (r *vulnerabilityResolver) AffectedVersion() string { return r.vulnerability.AffectedVersion }
+func (r *vulnerabilityResolver) CurrentVersion() string  { return r.vulnerability.CurrentVersion }
+func (r *vulnerabilityResolver) SeverityScore() string   { return r.vulnerability.SeverityScore }
+func (r *vulnerabilityResolver) SeverityString() string  { return r.vulnerability.SeverityString }
 
 func (r *vulnerabilityResolver) Locations() []resolverstubs.LocationResolver {
 	return r.locations

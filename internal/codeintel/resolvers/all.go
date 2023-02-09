@@ -770,5 +770,15 @@ type DependencyDescriptionResolver interface {
 }
 
 type VulnerabilityResolver interface {
+	CVE() string
+	Description() string
+	Dependency() string
+	PackageManager() string
+	PublishedDate() string
+	LastUpdate() string
+	AffectedVersion() string
+	CurrentVersion() string
+	SeverityScore() string
+	SeverityString() string
 	Locations() []LocationResolver
 }
