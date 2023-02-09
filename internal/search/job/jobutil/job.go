@@ -161,6 +161,25 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 			})
 		}
 
+		// Create code-intel search jobs
+		if preds := b.Parameters.SymbolPredicateSearches(); len(preds) > 0 {
+			for _, ss := range preds {
+				// Hopefully the symbol search has symbol matches
+				nodes, err := query.Parse(ss.SymbolSearch, query.SearchTypeLiteral)
+				if err != nil {
+					return nil, err
+				}
+				job, err := NewPlanJob(inputs, query.BuildPlan(nodes))
+				if err != nil {
+					return nil, err
+				}
+				addJob(&CodeIntelSearchJob{
+					SymbolSearch: job,
+					Relationship: ss.Relationship,
+				})
+			}
+		}
+
 		addJob(&searchrepos.ComputeExcludedJob{
 			RepoOpts: repoOptions,
 		})

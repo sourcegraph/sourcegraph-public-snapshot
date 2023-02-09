@@ -47,6 +47,11 @@ var DefaultPredicateRegistry = PredicateRegistry{
 		"has.content":      func() Predicate { return &FileContainsContentPredicate{} },
 		"has.owner":        func() Predicate { return &FileHasOwnerPredicate{} },
 	},
+	FieldSymbol: {
+		"references": func() Predicate { return &SymbolReferencesPredicate{} },
+		"implements": func() Predicate { return &SymbolImplementsPredicate{} },
+		// "calls":      func() Predicate { return nil },
+	},
 }
 
 type NegatedPredicateError struct {
@@ -456,3 +461,31 @@ func (f *FileHasOwnerPredicate) Unmarshal(params string, negated bool) error {
 
 func (f FileHasOwnerPredicate) Field() string { return FieldFile }
 func (f FileHasOwnerPredicate) Name() string  { return "has.owner" }
+
+type SymbolReferencesPredicate struct {
+	SymbolSearch string
+	Negated      bool
+}
+
+func (s *SymbolReferencesPredicate) Unmarshal(params string, negated bool) error {
+	s.SymbolSearch = params
+	s.Negated = negated
+	return nil
+}
+
+func (s SymbolReferencesPredicate) Field() string { return FieldSymbol }
+func (s SymbolReferencesPredicate) Name() string  { return "references" }
+
+type SymbolImplementsPredicate struct {
+	SymbolSearch string
+	Negated      bool
+}
+
+func (s *SymbolImplementsPredicate) Unmarshal(params string, negated bool) error {
+	s.SymbolSearch = params
+	s.Negated = negated
+	return nil
+}
+
+func (s SymbolImplementsPredicate) Field() string { return FieldSymbol }
+func (s SymbolImplementsPredicate) Name() string  { return "implements" }
