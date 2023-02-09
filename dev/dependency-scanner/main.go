@@ -32,15 +32,15 @@ type Vulnerability struct {
 	CVE                  string `json:"cve"`
 	Description          string `json:"description"`
 	Dependency           string `json:"dependency"`
-	PackageManager       string `json:"package_manager"`
-	PublishedDate        string `json:"published_date"`
-	LastUpdate           string `json:"last_update"`
-	SourceFile           string `json:"source_file"`
-	SourceFileLineNumber int    `json:"source_file_line_number"`
-	AffectedVersion      string `json:"affected_version"`
-	CurrentVersion       string `json:"current_version"`
-	SeverityScore        string `json:"severity_score"`
-	SeverityString       string `json:"severity_string"`
+	PackageManager       string `json:"packageManager"`
+	PublishedDate        string `json:"publishedDate"`
+	LastUpdate           string `json:"lastUpdate"`
+	SourceFile           string `json:"sourceFile"`
+	SourceFileLineNumber int    `json:"sourceFileLineNumber"`
+	AffectedVersion      string `json:"affectedVersion"`
+	CurrentVersion       string `json:"currentVersion"`
+	SeverityScore        string `json:"severityScore"`
+	SeverityString       string `json:"severityString"`
 }
 
 func main() {
