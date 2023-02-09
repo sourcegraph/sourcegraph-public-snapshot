@@ -163,7 +163,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		}
 
 		// Create code-intel search jobs
-		if preds := b.Parameters.SymbolPredicateSearches(); len(preds) > 0 && inputs.Features.CodeGraphSearch {
+		if preds := b.Parameters.SymbolRelationshipSearches(); len(preds) > 0 && inputs.Features.CodeGraphSearch {
 			for _, ss := range preds {
 				// TODO: can we reduce the accepted complexity here, e.g. by requiring
 				// this be a single-node 'type:symbol' search? For now, we hope that
