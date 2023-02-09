@@ -1,5 +1,7 @@
 import React from 'react'
 
+import classNames from 'classnames'
+
 import { Checkbox, H3, Input, Label, Select, Text } from '@sourcegraph/wildcard'
 
 import { SettingsSchema } from './SettingsFile'
@@ -23,7 +25,9 @@ interface settingsNode {
 const groupLevelClasses = [styles.groupLevel1, styles.groupLevel2, styles.groupLevel3]
 
 export const GeneratedSettingsForm: React.FunctionComponent<GeneratedSettingsFormProps> = ({ jsonSchema }) => (
-    <>{convertPropertiesToComponents(jsonSchema as unknown as settingsNode, [])}</>
+    <section className={classNames(styles.wrapper, 'mt-3')}>
+        {convertPropertiesToComponents(jsonSchema as unknown as settingsNode, [])}
+    </section>
 )
 
 function convertPropertiesToComponents(node: settingsNode, parentNames: string[]): JSX.Element[] {
@@ -53,12 +57,12 @@ function convertPropertiesToComponents(node: settingsNode, parentNames: string[]
             case 'string':
                 return subNode.enum?.length ? (
                     <>
+                        <Text className="text-muted">{subNode.description}</Text>
                         <Select id={id} name={name} label={name} value={''} className="mb-0">
                             {subNode.enum.map(enumValue => (
                                 <option key={enumValue} value={enumValue} label={enumValue} />
                             ))}
                         </Select>
-                        <Text className="text-muted">{subNode.description}</Text>
                     </>
                 ) : (
                     <StringSettingItem
@@ -81,9 +85,11 @@ function convertPropertiesToComponents(node: settingsNode, parentNames: string[]
                         </div>
                     )
                 }
+                // TODO: Handle subNode.additionalProperties = true > allow obj properties to come in
                 return <div key={id}>Unsupported object setting type</div>
-            // TODO: Handle integers, numbers, and "null" type
-            // TODO: Handle array types
+            case 'array':
+                // TODO: Handle array types > Operate similar to subNode.additionalProperties
+                return <div key={id}>Unsupported array type</div>
             default:
                 return <div key={id}>Unsupported setting type</div>
         }
@@ -93,8 +99,8 @@ function convertPropertiesToComponents(node: settingsNode, parentNames: string[]
 function BooleanSettingItem(props: { id: string; name: string; title: string; description: string }): JSX.Element {
     return (
         <>
-            <Checkbox id={props.id} label={props.name} checked={false} onChange={() => {}} />
             <Text className="text-muted">{props.description}</Text>
+            <Checkbox id={props.id} label={props.name} checked={false} onChange={() => {}} />
         </>
     )
 }
@@ -103,8 +109,8 @@ function StringSettingItem(props: { id: string; name: string; title: string; des
     return (
         <>
             <Label htmlFor={props.id}>{props.name}</Label>
-            <Input id={props.id} type="text" />
             <Text className="text-muted">{props.description}</Text>
+            <Input id={props.id} type="text" />
         </>
     )
 }
