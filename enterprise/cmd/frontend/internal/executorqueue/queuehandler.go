@@ -295,14 +295,14 @@ func validateJobRequest(
 
 	// Check if the token is associated with the correct queue or repo.
 	if len(repo) > 0 {
-		if subtle.ConstantTimeCompare([]byte(jobToken.Repo), []byte(repo)) == 0 {
+		if jobToken.Repo != repo {
 			logger.Error("repo does not match")
 			http.Error(w, "invalid token", http.StatusForbidden)
 			return false
 		}
 	} else {
 		// Ensure the token was generated for the correct queue.
-		if subtle.ConstantTimeCompare([]byte(jobToken.Queue), []byte(queue)) == 0 {
+		if jobToken.Queue != queue {
 			logger.Error("queue name does not match")
 			http.Error(w, "invalid token", http.StatusForbidden)
 			return false
