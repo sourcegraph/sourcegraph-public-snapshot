@@ -877,6 +877,7 @@ importers:
       '@sourcegraph/observability-client': workspace:*
       '@sourcegraph/schema': workspace:*
       '@sourcegraph/shared': workspace:*
+      '@sourcegraph/web': workspace:*
       '@sourcegraph/wildcard': workspace:*
       '@types/node': 18.13.0
       '@types/react': ^18.0.27
@@ -909,6 +910,7 @@ importers:
       '@sourcegraph/observability-client': link:../observability-client
       '@sourcegraph/schema': link:../../schema
       '@sourcegraph/shared': link:../shared
+      '@sourcegraph/web': link:../web
       '@sourcegraph/wildcard': link:../wildcard
       electron-updater: 5.3.0
       open-color: 1.8.0

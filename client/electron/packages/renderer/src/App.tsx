@@ -1,9 +1,13 @@
 import {LazyCodeMirrorQueryInput} from '@sourcegraph/branded/src/search-ui/experimental';
 import {Toggles} from '@sourcegraph/branded';
 import {QueryState} from '@sourcegraph/shared/src/search';
-import {EMPTY_SETTINGS_CASCADE} from '@sourcegraph/shared/src/settings/settings';
+import {
+  EMPTY_SETTINGS_CASCADE,
+  SettingsCascadeOrError,
+} from '@sourcegraph/shared/src/settings/settings';
+import {createSuggestionsSource} from '@sourcegraph/web/src/search/input/suggestions';
 
-import {useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {Router} from 'react-router-dom';
 import {CompatRouter, Routes, Route} from 'react-router-dom-v5-compat';
 import {createMemoryHistory} from 'history';
@@ -12,6 +16,9 @@ import styles from './App.module.scss';
 import {Form} from '@sourcegraph/wildcard';
 import './globals.scss';
 import classNames from 'classnames';
+import {PlatformContext} from '@sourcegraph/shared/src/platform/context';
+import {requestGraphQLCommon} from '@sourcegraph/http-client';
+import {of} from 'rxjs';
 
 interface Search {
   query: QueryState;
@@ -37,6 +44,8 @@ export function Wrapper() {
 }
 
 function App() {
+  const instanceURL = 'https://sourcegraph.com';
+
   const [search, setSearch] = useState<Search>({
     query: {
       changeSource: 0,
@@ -46,6 +55,46 @@ function App() {
     caseSensitive: false,
     searchMode: 0,
   });
+
+  const requestGraphQL = useCallback<PlatformContext['requestGraphQL']>(
+    args =>
+      requestGraphQLCommon({
+        ...args,
+        baseUrl: instanceURL,
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+      }),
+    [instanceURL],
+  );
+
+  const settingsCascade: SettingsCascadeOrError = EMPTY_SETTINGS_CASCADE;
+
+  const platformContext = {
+    requestGraphQL,
+  };
+
+  const suggestionSource = useMemo(
+    () =>
+      createSuggestionsSource({
+        platformContext,
+        authenticatedUser: null,
+        fetchSearchContexts: () =>
+          of({
+            __typename: 'SearchContextConnection',
+            totalCount: 0,
+            nodes: [],
+          }),
+        getUserSearchContextNamespaces: () => [],
+        isSourcegraphDotCom: true,
+      }),
+    [platformContext],
+  );
+
+  const onSubmit = useCallback((...args) => {
+    console.log('onSubmit', ...args);
+  }, []);
 
   return (
     <div className="d-flex flex-row flex-shrink-past-contents">
@@ -66,10 +115,10 @@ function App() {
                 console.log('onChange', query);
                 setSearch(search => ({...search, query}));
               }}
-              onSubmit={(...args) => console.log(...args)}
+              onSubmit={onSubmit}
               isLightTheme={true}
               placeholder="Search for code or files..."
-              suggestionSource={null as any}
+              suggestionSource={suggestionSource}
             >
               <Toggles
                 patternType={search.patternType}
@@ -78,7 +127,7 @@ function App() {
                 setCaseSensitivity={(...args) => console.log('setCaseSensitivity', ...args)}
                 searchMode={search.searchMode}
                 setSearchMode={(...args) => console.log('setSearchMode', ...args)}
-                settingsCascade={EMPTY_SETTINGS_CASCADE}
+                settingsCascade={settingsCascade}
                 navbarSearchQuery={search.query}
               />
             </LazyCodeMirrorQueryInput>
