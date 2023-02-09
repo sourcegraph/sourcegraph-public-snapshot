@@ -60,6 +60,11 @@ export async function restoreOrCreateWindow() {
 
   if (window.isMinimized()) {
     window.restore();
+    window.show();
+  }
+
+  if (window.isVisible()) {
+    window.minimize();
   }
 
   window.isAlwaysOnTop();
