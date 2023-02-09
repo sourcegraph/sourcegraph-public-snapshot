@@ -10,6 +10,7 @@ import (
 	"os"
 	"regexp"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/pandatix/nvdapi/v2"
 )
 
@@ -25,6 +26,7 @@ type Dependency struct {
 }
 
 type ProductCPEs []nvdapi.CPEProduct
+type NVDCVEs []nvdapi.CVEItem
 
 type Vulnerability struct {
 	CVE                  string `json:"cve"`
@@ -51,33 +53,80 @@ func main() {
 		log.Fatal(err)
 	}
 
+	var allDependencyVulns []Vulnerability
 	for _, dep := range deps {
 		if dep.Manager != "npm" {
 			fmt.Printf("Skipping non-npm dependency\n")
 		}
 
 		vulns := jsDepToVuln(apiKey, dep.Name, dep.Version)
-		printCVEs(vulns)
+		// printCVEs(vulns)
+		allDependencyVulns = append(allDependencyVulns, vulns...)
 	}
 
-	// jsDepToVuln(apiKey, "electerm", "1.3.22")
-	// jsDepToVuln(apiKey, "lodash", "4.17.20")
+	spew.Dump(allDependencyVulns)
 
-	return
-
-	// getCPEs(apiKey, "", "grafana")
-	// vulnsForCPE(apiKey, "cpe:2.3:a:grafana:grafana:4.6.3:*:*:*:*:*:*:*")
-
-	// deps, err := parseDependencies("dependencies-simple-3.json")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// // spew.Dump(deps)
-	// printDeps(deps)
+	// frontendVulns := convertToVulnerabilities(allDependencyVulns)
+	// spew.Dump(frontendVulns)
 }
 
-func jsDepToVuln(apiKey string, inputProduct string, inputVersion string) []nvdapi.CVEItem {
+// convertToVulnerabilities converts from the API response format to the struct used by our frontend
+func convertToVulnerabilities(inputProduct string, inputVersion string, cveitems []nvdapi.CVEItem) (vs []Vulnerability) {
+
+	for _, cveitem := range cveitems {
+		spew.Dump(cveitem)
+
+		c := cveitem.CVE
+
+		v := Vulnerability{
+			CVE:                  *c.ID,
+			Description:          c.Descriptions[0].Value,
+			Dependency:           inputProduct,
+			PackageManager:       "npm",
+			PublishedDate:        *c.Published,
+			LastUpdate:           *c.LastModified,
+			SourceFile:           "xxx",
+			SourceFileLineNumber: 123,
+			AffectedVersion:      "unknown",
+			CurrentVersion:       inputVersion,
+			SeverityScore:        fmt.Sprintf("%.1f", c.Metrics.CVSSMetricV31[0].CVSSData.BaseScore),
+			SeverityString:       c.Metrics.CVSSMetricV31[0].CVSSData.BaseSeverity,
+		}
+
+		// CVSSData <- CVSSMetricsV31 <- []Metrics
+
+		vs = append(vs, v)
+	}
+
+	return vs
+}
+
+func exampleVulnerability() {
+	v := Vulnerability{
+		CVE:                  "CVE-2023-1234",
+		Description:          "Remote code exectuion vulnerability foo in bar",
+		Dependency:           "vulnerable-package",
+		PackageManager:       "npm",
+		PublishedDate:        "1st February 2023",
+		LastUpdate:           "9th February 2023",
+		SourceFile:           "github.com/sourcegraph/sourcegraph:README.md",
+		SourceFileLineNumber: 1,
+		AffectedVersion:      "<1.2.3",
+		CurrentVersion:       "1.2.2",
+		SeverityScore:        "9.8",
+		SeverityString:       "High",
+	}
+
+	vs := []Vulnerability{v}
+
+	jsonBytes, err := json.Marshal(vs)
+	if err != nil {
+		log.Fatal("JSON marshal error")
+	}
+	fmt.Printf("%s", jsonBytes)
+}
+
+func jsDepToVuln(apiKey string, inputProduct string, inputVersion string) []Vulnerability {
 	fmt.Printf("Looking up %s version %s\n", inputProduct, inputVersion)
 	author, product := lookupJSDependencyCPE(apiKey, inputProduct)
 	cpeString := fmt.Sprintf("cpe:2.3:a:%s:%s:%s:*:*:*:*:*:*:*", author, product, inputVersion)
@@ -85,7 +134,9 @@ func jsDepToVuln(apiKey string, inputProduct string, inputVersion string) []nvda
 
 	vulns := vulnsForCPE(apiKey, cpeString)
 
-	return vulns
+	vs := convertToVulnerabilities(inputProduct, inputVersion, vulns)
+
+	return vs
 }
 
 // Guess the CPE for a JS dependency
