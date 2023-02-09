@@ -141,13 +141,16 @@ export const SecurityView: FC<SecurityViewProps> = props => {
     )
 }
 
-const SecurityFilter: React.FunctionComponent<Props> = ({ className }) => (
-    <aside className={styles.filter}>
-        <div className={styles.filterContainer}>
-            <p>Filter</p>
-        </div>
-    </aside>
-)
+const SecurityFilter: React.FunctionComponent<Props> = ({ className }) => {
+    const svgSource = `${window.context?.assetsRoot || ''}/img/filter.png`
+    return (
+        <aside className={styles.filter}>
+            <div className={styles.filterContainer}>
+                <img src={svgSource} style={{ width: '100%' }} alt="filters" />
+            </div>
+        </aside>
+    )
+}
 
 interface Props {
     className?: string
