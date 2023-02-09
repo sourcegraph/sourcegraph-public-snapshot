@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -35,10 +37,10 @@ const (
 )
 
 // checkLabel invokes Claude asking whether contents of a given file
-func checkLabel(fileContents, label string) (bool, error) {
+func CheckLabel(fileContents, label string) (bool, error) {
 	posturl := "https://api.anthropic.com/v1/complete"
 	filePrompt := fmt.Sprintf("%sHere is the text of a source file:\n```\n%s\n```%sOK. Adding this to the context.", HumanPrompt, string(fileContents), AIPrompt)
-	prompt := fmt.Sprintf("%sDoes understanding the source file require %s expertise? Please answer with a 'Yes' or 'No'.%s", HumanPrompt, label, AIPrompt)
+	prompt := fmt.Sprintf("%sDoes understanding the source file require knowing a little bit about %s? Please answer with a 'Yes' or 'No'.%s", HumanPrompt, label, AIPrompt)
 	request := &ClaudeRequest{
 		Prompt:            filePrompt + prompt,
 		StopSequences:     []string{HumanPrompt},
@@ -74,11 +76,12 @@ func checkLabel(fileContents, label string) (bool, error) {
 	if got, want := res.StatusCode, http.StatusOK; got != want {
 		return false, errors.Newf("Response HTTP code, got %d, want, %d:\n%v", got, want, response)
 	}
+	fmt.Println("CLAUDE", response.Completion)
 	completion := " " + strings.ToLower(response.Completion) + " "
-	if strings.Contains(completion, " yes ") {
-		return true, nil
-	}
-	return false, nil
+	completion = strings.ReplaceAll(completion, ",", " ")
+	completion = strings.ReplaceAll(completion, ".", " ")
+	completion = strings.TrimSpace(completion)
+	return strings.HasPrefix(completion, "yes"), nil
 }
 
 func TestAskCody(t *testing.T) {
@@ -87,17 +90,27 @@ func TestAskCody(t *testing.T) {
 	if path == "" {
 		t.Fatalf("Please set FILE_PATH env var")
 	}
-	fileContents, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("Could not read %q: %s", path, err)
-	}
-	requiresSecurity, err := checkLabel(string(fileContents), "security")
+	var secFiles []string
+	err := filepath.Walk(path, func(path string, info fs.FileInfo, err error) error {
+		if info.IsDir() {
+			return nil
+		}
+		if len(secFiles) > 3 { // We just need a few for now
+			return nil
+		}
+		fileContents, err := os.ReadFile(path)
+		if err != nil {
+			return errors.Wrapf(err, "Could not read %q", path)
+		}
+		fmt.Println("PATH", path)
+		requiresSecurity, err := CheckLabel(string(fileContents), "security")
+		if requiresSecurity {
+			secFiles = append(secFiles, path)
+		}
+		return nil
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if requiresSecurity {
-		t.Error("File requires security expertise")
-	} else {
-		t.Error("File does not require security expertise")
-	}
+	t.Errorf("Files that require security expertise: %v", secFiles)
 }

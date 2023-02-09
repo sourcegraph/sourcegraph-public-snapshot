@@ -2639,6 +2639,65 @@ Referenced by:
 
 ```
 
+# Table "public.own_artifacts"
+```
+    Column     |  Type   | Collation | Nullable |                  Default                  
+---------------+---------+-----------+----------+-------------------------------------------
+ id            | integer |           | not null | nextval('own_artifacts_id_seq'::regclass)
+ repo_id       | integer |           | not null | 
+ absolute_path | text    |           |          | 
+Indexes:
+    "own_artifacts_pkey" PRIMARY KEY, btree (id)
+    "own_artifacts_index_repo_path" UNIQUE, btree (repo_id, absolute_path)
+Foreign-key constraints:
+    "own_artifacts_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+Referenced by:
+    TABLE "own_signals" CONSTRAINT "own_signals_artifact_id_fkey" FOREIGN KEY (artifact_id) REFERENCES own_artifacts(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
+# Table "public.own_blame_jobs"
+```
+       Column       |           Type           | Collation | Nullable |                  Default                   
+--------------------+--------------------------+-----------+----------+--------------------------------------------
+ id                 | integer                  |           | not null | nextval('own_blame_jobs_id_seq'::regclass)
+ state              | text                     |           |          | 'queued'::text
+ failure_message    | text                     |           |          | 
+ queued_at          | timestamp with time zone |           |          | now()
+ started_at         | timestamp with time zone |           |          | 
+ finished_at        | timestamp with time zone |           |          | 
+ process_after      | timestamp with time zone |           |          | 
+ num_resets         | integer                  |           | not null | 0
+ num_failures       | integer                  |           | not null | 0
+ last_heartbeat_at  | timestamp with time zone |           |          | 
+ execution_logs     | json[]                   |           |          | 
+ worker_hostname    | text                     |           | not null | ''::text
+ cancel             | boolean                  |           | not null | false
+ repository_id      | integer                  |           | not null | 
+ absolute_file_path | text                     |           | not null | 
+Indexes:
+    "own_blame_jobs_pkey" PRIMARY KEY, btree (id)
+
+```
+
+# Table "public.own_signals"
+```
+        Column        |           Type           | Collation | Nullable |                 Default                 
+----------------------+--------------------------+-----------+----------+-----------------------------------------
+ id                   | integer                  |           | not null | nextval('own_signals_id_seq'::regclass)
+ artifact_id          | integer                  |           | not null | 
+ who                  | text                     |           | not null | 
+ method               | text                     |           | not null | 
+ importance_indicator | integer                  |           | not null | 
+ updated_at           | timestamp with time zone |           | not null | now()
+ created_at           | timestamp with time zone |           | not null | now()
+Indexes:
+    "own_signals_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "own_signals_artifact_id_fkey" FOREIGN KEY (artifact_id) REFERENCES own_artifacts(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
 # Table "public.package_repo_versions"
 ```
    Column   |  Type  | Collation | Nullable |                      Default                      
@@ -2913,6 +2972,7 @@ Referenced by:
     TABLE "gitserver_repos" CONSTRAINT "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "lsif_index_configuration" CONSTRAINT "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "lsif_retention_configuration" CONSTRAINT "lsif_retention_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "own_artifacts" CONSTRAINT "own_artifacts_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "permission_sync_jobs" CONSTRAINT "permission_sync_jobs_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "repo_kvps" CONSTRAINT "repo_kvps_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
@@ -3951,6 +4011,31 @@ Foreign-key constraints:
            FROM outbound_webhook_event_types
           WHERE (outbound_webhook_event_types.outbound_webhook_id = outbound_webhooks.id))) AS event_types
    FROM outbound_webhooks;
+```
+
+# View "public.own_blame_jobs_with_repository_name"
+
+## View query:
+
+```sql
+ SELECT j.id,
+    j.state,
+    j.failure_message,
+    j.queued_at,
+    j.started_at,
+    j.finished_at,
+    j.process_after,
+    j.num_resets,
+    j.num_failures,
+    j.last_heartbeat_at,
+    j.execution_logs,
+    j.worker_hostname,
+    j.cancel,
+    j.repository_id,
+    j.absolute_file_path,
+    r.name
+   FROM (own_blame_jobs j
+     JOIN repo r ON ((r.id = j.repository_id)));
 ```
 
 # View "public.reconciler_changesets"

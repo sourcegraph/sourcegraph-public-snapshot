@@ -3296,6 +3296,90 @@ CREATE VIEW outbound_webhooks_with_event_types AS
           WHERE (outbound_webhook_event_types.outbound_webhook_id = outbound_webhooks.id))) AS event_types
    FROM outbound_webhooks;
 
+CREATE TABLE own_artifacts (
+    id integer NOT NULL,
+    repo_id integer NOT NULL,
+    absolute_path text
+);
+
+CREATE SEQUENCE own_artifacts_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE own_artifacts_id_seq OWNED BY own_artifacts.id;
+
+CREATE TABLE own_blame_jobs (
+    id integer NOT NULL,
+    state text DEFAULT 'queued'::text,
+    failure_message text,
+    queued_at timestamp with time zone DEFAULT now(),
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    last_heartbeat_at timestamp with time zone,
+    execution_logs json[],
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    cancel boolean DEFAULT false NOT NULL,
+    repository_id integer NOT NULL,
+    absolute_file_path text NOT NULL
+);
+
+CREATE SEQUENCE own_blame_jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE own_blame_jobs_id_seq OWNED BY own_blame_jobs.id;
+
+CREATE VIEW own_blame_jobs_with_repository_name AS
+ SELECT j.id,
+    j.state,
+    j.failure_message,
+    j.queued_at,
+    j.started_at,
+    j.finished_at,
+    j.process_after,
+    j.num_resets,
+    j.num_failures,
+    j.last_heartbeat_at,
+    j.execution_logs,
+    j.worker_hostname,
+    j.cancel,
+    j.repository_id,
+    j.absolute_file_path,
+    r.name
+   FROM (own_blame_jobs j
+     JOIN repo r ON ((r.id = j.repository_id)));
+
+CREATE TABLE own_signals (
+    id integer NOT NULL,
+    artifact_id integer NOT NULL,
+    who text NOT NULL,
+    method text NOT NULL,
+    importance_indicator integer NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE own_signals_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE own_signals_id_seq OWNED BY own_signals.id;
+
 CREATE TABLE package_repo_versions (
     id bigint NOT NULL,
     package_id bigint NOT NULL,
@@ -4206,6 +4290,12 @@ ALTER TABLE ONLY outbound_webhook_logs ALTER COLUMN id SET DEFAULT nextval('outb
 
 ALTER TABLE ONLY outbound_webhooks ALTER COLUMN id SET DEFAULT nextval('outbound_webhooks_id_seq'::regclass);
 
+ALTER TABLE ONLY own_artifacts ALTER COLUMN id SET DEFAULT nextval('own_artifacts_id_seq'::regclass);
+
+ALTER TABLE ONLY own_blame_jobs ALTER COLUMN id SET DEFAULT nextval('own_blame_jobs_id_seq'::regclass);
+
+ALTER TABLE ONLY own_signals ALTER COLUMN id SET DEFAULT nextval('own_signals_id_seq'::regclass);
+
 ALTER TABLE ONLY package_repo_versions ALTER COLUMN id SET DEFAULT nextval('package_repo_versions_id_seq'::regclass);
 
 ALTER TABLE ONLY permission_sync_jobs ALTER COLUMN id SET DEFAULT nextval('permission_sync_jobs_id_seq'::regclass);
@@ -4534,6 +4624,15 @@ ALTER TABLE ONLY outbound_webhook_logs
 
 ALTER TABLE ONLY outbound_webhooks
     ADD CONSTRAINT outbound_webhooks_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY own_artifacts
+    ADD CONSTRAINT own_artifacts_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY own_blame_jobs
+    ADD CONSTRAINT own_blame_jobs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY own_signals
+    ADD CONSTRAINT own_signals_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY package_repo_versions
     ADD CONSTRAINT package_repo_versions_pkey PRIMARY KEY (id);
@@ -4971,6 +5070,8 @@ CREATE INDEX outbound_webhook_logs_outbound_webhook_id_idx ON outbound_webhook_l
 CREATE INDEX outbound_webhook_payload_process_after_idx ON outbound_webhook_jobs USING btree (process_after);
 
 CREATE INDEX outbound_webhooks_logs_status_code_idx ON outbound_webhook_logs USING btree (status_code);
+
+CREATE UNIQUE INDEX own_artifacts_index_repo_path ON own_artifacts USING btree (repo_id, absolute_path);
 
 CREATE INDEX package_repo_versions_fk_idx ON package_repo_versions USING btree (package_id);
 
@@ -5471,6 +5572,12 @@ ALTER TABLE ONLY outbound_webhooks
 
 ALTER TABLE ONLY outbound_webhooks
     ADD CONSTRAINT outbound_webhooks_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL;
+
+ALTER TABLE ONLY own_artifacts
+    ADD CONSTRAINT own_artifacts_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY own_signals
+    ADD CONSTRAINT own_signals_artifact_id_fkey FOREIGN KEY (artifact_id) REFERENCES own_artifacts(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY package_repo_versions
     ADD CONSTRAINT package_id_fk FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos(id) ON DELETE CASCADE;
