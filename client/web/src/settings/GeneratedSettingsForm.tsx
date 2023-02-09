@@ -59,14 +59,14 @@ function convertPropertiesToComponents(node: settingsNode, parentNames: string[]
                 )
             case 'string':
                 return subNode.enum?.length ? (
-                    <>
-                        <Text className="text-muted">{subNode.description}</Text>
-                        <Select id={id} name={name} label={name} value="" className="mb-0">
-                            {subNode.enum.map(enumValue => (
-                                <option key={enumValue} value={enumValue} label={enumValue} />
-                            ))}
-                        </Select>
-                    </>
+                    <EnumItem
+                        key={id}
+                        id={id}
+                        name={name}
+                        enum={subNode.enum}
+                        title={subNode.title}
+                        description={subNode.description}
+                    />
                 ) : (
                     <StringSettingItem
                         key={id}
@@ -102,8 +102,8 @@ function convertPropertiesToComponents(node: settingsNode, parentNames: string[]
 function BooleanSettingItem(props: { id: string; name: string; title: string; description: string }): JSX.Element {
     return (
         <>
-            <Text className="text-muted">{props.description}</Text>
             <Checkbox id={props.id} label={props.name} checked={false} onChange={() => {}} />
+            <Text className="text-muted">{props.description}</Text>
         </>
     )
 }
@@ -112,8 +112,8 @@ function StringSettingItem(props: { id: string; name: string; title: string; des
     return (
         <>
             <Label htmlFor={props.id}>{props.name}</Label>
-            <Text className="text-muted">{props.description}</Text>
             <Input id={props.id} type="text" />
+            <Text className="text-muted">{props.description}</Text>
         </>
     )
 }
@@ -130,6 +130,26 @@ function NumberSettingItem(props: {
         <>
             <Label htmlFor={props.id}>{props.name}</Label>
             <Input id={props.id} type="number" min={props.minimum ?? 0} max={props.maximum ?? ''} />
+            <Text className="text-muted">{props.description}</Text>
+        </>
+    )
+}
+
+function EnumItem(props: {
+    id: string
+    name: string
+    title: string
+    description: string
+    enum: string[]
+}): JSX.Element {
+    return (
+        <>
+            <Select id={props.id} name={props.name} label={props.name} value="" onChange={() => {}} className="mb-0">
+                {props.enum.map(enumValue => (
+                    <option key={enumValue} value={enumValue} label={enumValue} />
+                ))}
+            </Select>
+            <Text className="text-muted">{props.description}</Text>
         </>
     )
 }
