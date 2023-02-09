@@ -172,6 +172,7 @@ const (
 	RepoModifiedPrivate
 	RepoModifiedStars
 	RepoModifiedMetadata
+	RepoModifiedKeyValuePairs
 	RepoModifiedSources
 )
 
@@ -210,6 +211,9 @@ func (m RepoModified) String() string {
 	}
 	if m&RepoModifiedSources == RepoModifiedSources {
 		modifications = append(modifications, "sources")
+	}
+	if m&RepoModifiedKeyValuePairs == RepoModifiedKeyValuePairs {
+		modifications = append(modifications, "key value pairs")
 	}
 	if m&RepoUnmodified == RepoUnmodified {
 		modifications = append(modifications, "unmodified")
@@ -266,6 +270,11 @@ func (r *Repo) Update(n *Repo) (modified RepoModified) {
 	if !reflect.DeepEqual(r.Metadata, n.Metadata) {
 		r.Metadata = n.Metadata
 		modified |= RepoModifiedMetadata
+	}
+
+	if !reflect.DeepEqual(r.KeyValuePairs, n.KeyValuePairs) {
+		r.KeyValuePairs = n.KeyValuePairs
+		modified |= RepoModifiedKeyValuePairs
 	}
 
 	for urn, info := range n.Sources {

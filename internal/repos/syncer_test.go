@@ -708,7 +708,9 @@ func TestSyncRepo(t *testing.T) {
 			Description:    "The description",
 			NameWithOwner:  "foo/bar",
 			StargazerCount: 100,
+			Topics:         []string{"a", "b"},
 		},
+		KeyValuePairs: map[string]*string{"a": nil, "b": nil},
 	}
 
 	now := time.Now().UTC()
@@ -834,6 +836,20 @@ func TestSyncRepo(t *testing.T) {
 				{Repo: repo, Modified: types.RepoModifiedName},
 			},
 		},
+	}, {
+		name:       "add and delete topics",
+		repo:       repo.Name,
+		background: true,
+		before:     types.Repos{repo},
+		sourced:    repo.With(typestest.Opt.Topics([]string{"b", "c"})),
+		returned:   repo,
+		after:      types.Repos{repo.With(typestest.Opt.Topics([]string{"b", "c"}))},
+		diff: repos.Diff{
+			Modified: repos.ReposModified{{
+				Repo:     repo.With(typestest.Opt.Topics([]string{"b", "c"})),
+				Modified: types.RepoModifiedMetadata | types.RepoModifiedKeyValuePairs,
+			}},
+		},
 	}}
 
 	for _, tc := range testCases {
@@ -846,10 +862,35 @@ func TestSyncRepo(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			q = sqlf.Sprintf("DELETE FROM repo_kvps")
+			_, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+			if err != nil {
+				t.Fatal(err)
+			}
 
 			if len(tc.before) > 0 {
-				if err := store.RepoStore().Create(ctx, tc.before.Clone()...); err != nil {
+				repos := tc.before.Clone()
+				fmt.Printf("%q\n", repos)
+				if err := store.RepoStore().Create(ctx, repos...); err != nil {
 					t.Fatalf("failed to prepare store: %v", err)
+				}
+				fmt.Printf("%q\n", repos)
+
+				for _, repo := range repos {
+					keys := make([]string, 0)
+					for key := range repo.KeyValuePairs {
+						keys = append(keys, key)
+					}
+					q := sqlf.Sprintf(`
+						INSERT INTO repo_kvps (repo_id, key)
+						SELECT %s, UNNEST(%s::text[])`,
+						repo.ID,
+						keys,
+					)
+					_, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+					if err != nil {
+						t.Fatal(err)
+					}
 				}
 			}
 
@@ -873,11 +914,11 @@ func TestSyncRepo(t *testing.T) {
 			}
 
 			opt := cmpopts.IgnoreFields(types.Repo{}, "ID", "CreatedAt", "UpdatedAt")
-			if diff := cmp.Diff(have, tc.returned, opt); diff != "" {
+			if diff := cmp.Diff(tc.returned, have, opt); diff != "" {
 				t.Errorf("returned mismatch: (-have, +want):\n%s", diff)
 			}
 
-			if diff := cmp.Diff(<-syncer.Synced, tc.diff, opt); diff != "" {
+			if diff := cmp.Diff(tc.diff, <-syncer.Synced, opt); diff != "" {
 				t.Errorf("diff mismatch: (-have, +want):\n%s", diff)
 			}
 
@@ -886,7 +927,7 @@ func TestSyncRepo(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(types.Repos(after), tc.after, opt); diff != "" {
+			if diff := cmp.Diff(tc.after, types.Repos(after), opt); diff != "" {
 				t.Errorf("repos mismatch: (-have, +want):\n%s", diff)
 			}
 		})

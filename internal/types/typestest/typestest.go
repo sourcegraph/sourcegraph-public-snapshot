@@ -230,6 +230,7 @@ var Opt = struct {
 	RepoMetadata              func(any) func(*types.Repo)
 	RepoArchived              func(bool) func(*types.Repo)
 	RepoExternalID            func(string) func(*types.Repo)
+	Topics                    func([]string) func(*types.Repo)
 }{
 	ExternalServiceID: func(n int64) func(*types.ExternalService) {
 		return func(e *types.ExternalService) {
@@ -299,6 +300,23 @@ var Opt = struct {
 	RepoExternalID: func(id string) func(*types.Repo) {
 		return func(r *types.Repo) {
 			r.ExternalRepo.ID = id
+		}
+	},
+	Topics: func(topics []string) func(*types.Repo) {
+		return func(r *types.Repo) {
+			r.KeyValuePairs = nil
+			if len(topics) > 0 {
+				r.KeyValuePairs = make(map[string]*string)
+			}
+			for _, topic := range topics {
+				r.KeyValuePairs[topic] = nil
+			}
+
+			if gm, ok := r.Metadata.(*github.Repository); ok {
+				newMetadata := *gm
+				newMetadata.Topics = topics
+				r.Metadata = &newMetadata
+			}
 		}
 	},
 }

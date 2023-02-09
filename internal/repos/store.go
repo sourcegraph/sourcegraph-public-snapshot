@@ -567,6 +567,7 @@ func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		defer func() { err = s.Done(err) }()
 	}
 
+	println(r.ID)
 	oldRepo, err := s.RepoStore().Get(ctx, r.ID)
 	if err != nil {
 		return err
