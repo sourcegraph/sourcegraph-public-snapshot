@@ -15,14 +15,14 @@
     border-radius: 8px;
     z-index: 100;
 
-    &:focus-within {
-        background-color: var(--color-bg-1);
-        box-shadow: var(--box-shadow);
+    // &:focus-within {
+    background-color: var(--color-bg-1);
+    box-shadow: var(--box-shadow);
 
-        .suggestions {
-            display: block;
-        }
-    }
+    // .suggestions {
+    //     display: block;
+    // }
+    // }
 }
 
 .focus-container {
@@ -83,7 +83,7 @@
 
 .suggestions {
     position: relative;
-    display: none;
+    -webkit-app-region: no-drag;
 }
 
 .separator {

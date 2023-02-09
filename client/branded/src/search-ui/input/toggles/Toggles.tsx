@@ -189,7 +189,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                         />
                     )}
                 </>
-                <div className={styles.separator} />
+                {/* <div className={styles.separator} />
                 <SmartSearchToggle
                     className="test-smart-search-toggle"
                     isActive={searchMode === SearchMode.SmartSearch}
@@ -202,7 +202,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                         isMacPlatform={isMacPlatform()}
                         className={classNames(styles.toggle, styles.copyQueryButton)}
                     />
-                )}
+                )} */}
             </>
         </div>
     )

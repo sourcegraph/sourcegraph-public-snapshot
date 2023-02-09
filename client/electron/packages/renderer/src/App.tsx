@@ -108,6 +108,7 @@ function App() {
         >
           <div className={classNames('d-flex', 'flex-grow-1', 'w-100', styles.noDrag)}>
             <LazyCodeMirrorQueryInput
+              autoFocus={true}
               patternType={search.patternType}
               interpretComments={false}
               queryState={search.query}

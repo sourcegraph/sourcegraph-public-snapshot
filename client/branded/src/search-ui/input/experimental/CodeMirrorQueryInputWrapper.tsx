@@ -242,6 +242,7 @@ export interface CodeMirrorQueryInputWrapperProps {
     placeholder: string
     suggestionSource: Source
     extensions?: Extension
+    autoFocus?: true
 }
 
 export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
@@ -257,6 +258,7 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
     suggestionSource,
     extensions: externalExtensions = empty,
     children,
+    autoFocus,
 }) => {
     const navigate = useNavigate()
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
@@ -326,6 +328,7 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
     const focus = useCallback(() => {
         editorRef.current?.contentDOM.focus()
     }, [editorRef])
+    useEffect(() => autoFocus && focus(), [autoFocus, focus])
 
     const clear = useCallback(() => {
         onChange({ query: '' })
@@ -350,18 +353,6 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
                         onClick={clear}
                     >
                         <Icon svgPath={mdiClose} aria-label="Clear" />
-                    </button>
-                    <button
-                        type="button"
-                        className={classNames(
-                            styles.inputButton,
-                            styles.globalShortcut,
-                            styles.hideWhenFocused,
-                            'mr-2'
-                        )}
-                        onClick={focus}
-                    >
-                        /
                     </button>
                     {children && <span className={classNames(styles.separator, !hasValue && styles.hideWhenFocused)} />}
                     {children}
