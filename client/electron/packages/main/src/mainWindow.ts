@@ -81,6 +81,13 @@ export async function restoreOrCreateWindow() {
   }
 }
 
+export async function hideWindow() {
+  let window = BrowserWindow.getAllWindows().find(w => !w.isDestroyed());
+  if (window != undefined && window.isVisible()) {
+    window.hide();
+  }
+}
+
 /**
  * Tray icon helpers.
  */

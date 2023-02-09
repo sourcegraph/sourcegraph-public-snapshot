@@ -1,6 +1,6 @@
 import {app, globalShortcut} from 'electron';
 import './security-restrictions';
-import {restoreOrCreateWindow} from '/@/mainWindow';
+import {restoreOrCreateWindow, hideWindow} from '/@/mainWindow';
 import {platform} from 'node:process';
 
 /**
@@ -39,6 +39,7 @@ app.on('activate', restoreOrCreateWindow);
  */
 app.on('ready', () => {
   globalShortcut.register('CommandOrControl+Shift+S', restoreOrCreateWindow);
+  globalShortcut.register('Esc', hideWindow);
 });
 
 /**
