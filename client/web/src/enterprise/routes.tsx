@@ -25,6 +25,7 @@ const GlobalCodeMonitoringArea = lazyComponent(
     'GlobalCodeMonitoringArea'
 )
 const CodeInsightsRouter = lazyComponent(() => import('./insights/CodeInsightsRouter'), 'CodeInsightsRouter')
+const SecurityRouter = lazyComponent(() => import('./security/SecurityRouter'), 'SecurityRouter')
 const SearchContextsListPage = lazyComponent(
     () => import('./searchContexts/SearchContextsListPage'),
     'SearchContextsListPage'
@@ -59,6 +60,11 @@ export const enterpriseRoutes: readonly LayoutRouteProps[] = [
         path: EnterprisePageRoutes.Insights,
         render: props => <CodeInsightsRouter {...props} />,
         condition: props => isCodeInsightsEnabled(props.settingsCascade),
+    },
+    {
+        path: EnterprisePageRoutes.Security,
+        render: props => <SecurityRouter {...props} />,
+        // add conditional?
     },
     {
         path: EnterprisePageRoutes.Contexts,

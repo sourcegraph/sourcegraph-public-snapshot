@@ -1,0 +1,296 @@
+.header {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    padding: 34px 0 14px 0;
+    border-bottom: 1px solid #e6ebf2;
+    font-size: 32px;
+}
+
+.hero-section {
+    display: flex;
+    flex-wrap: wrap;
+    // Override card default styles with flex-direction: column;
+    flex-direction: row;
+    padding: 1.5rem;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.hero-video-block {
+    flex-grow: 10;
+    flex-basis: 30rem;
+}
+
+.hero-description-block {
+    flex-grow: 1;
+    flex-basis: 25rem;
+}
+
+.heroImage {
+    width: 100%;
+}
+
+.vulnerability-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.list-item {
+    margin-bottom: 2rem;
+}
+
+.vulnerability-card {
+    border: 1px solid var(--border-color-2);
+    background-color: var(--color-bg-1);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+}
+
+.filter {
+    width: 15.5rem;
+}
+
+.filter-container {
+    padding: 0.75rem;
+    background-color: var(--color-bg-1);
+    border: 1px solid var(--border-color-2);
+    border-radius: var(--border-radius);
+}
+
+.page-container {
+    width: 100%;
+    padding: 0.5rem 1rem 0 1rem;
+}
+
+.container {
+    width: 100%;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+        'infobar  sidebar'
+        'contents sidebar';
+    column-gap: 1rem;
+    height: min-content;
+    padding: 0.5rem 0 1rem 0;
+
+    &--with-sidebar-hidden {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+            'infobar'
+            'contents';
+    }
+
+    @media (--md-breakpoint-down) {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto 1fr;
+        grid-template-areas:
+            'infobar'
+            'sidebar'
+            'contents';
+    }
+}
+
+.sidebar {
+    grid-area: sidebar;
+
+    .container--with-sidebar-hidden & {
+        display: none;
+
+        @media (--md-breakpoint-down) {
+            &--show-mobile {
+                display: block;
+            }
+        }
+    }
+
+    @media (--md-breakpoint-down) {
+        display: none;
+
+        &--show-mobile {
+            display: block;
+        }
+    }
+}
+
+.bar {
+    background-color: var(--color-bg-1);
+    border: 1px solid var(--border-color-2);
+    border-radius: var(--border-radius);
+    margin-bottom: 12px;
+}
+
+.bar-container {
+    display: grid;
+    grid-template-columns: 175px 175px 175px 175px auto;
+    padding: 16px;
+    column-gap: 20px;
+    button {
+        font-size: 12px;
+    }
+}
+
+.bar-item {
+    border-right: 1px solid var(--color-bg-2);
+    &:last-child {
+        border: none;
+    }
+}
+
+.subtitle {
+    font-family: var(--font-family-base);
+    font-style: normal;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 19.88px;
+    /* identical to box height, or 20px */
+
+    /* Semantic/text-muted/Light */
+
+    color: #5e6e8c;
+}
+
+.amount {
+    font-family: var(--font-family-base);
+    font-style: normal;
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 15px;
+    /* identical to box height, or 34px */
+
+    /* Semantic/text-primary/Strong */
+
+    color: #0e1e3f;
+}
+
+.vulnerability-container {
+    // padding: 0px 15px 14px 19px;
+}
+
+.vulnerability-header {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    border-bottom: 1px solid var(--color-bg-2);
+    padding-bottom: 12px;
+    margin-bottom: 17px;
+}
+
+.vulnerability-title {
+    display: grid;
+    align-items: center;
+}
+
+.cve {
+    padding-left: 10px;
+    font-family: 'Roboto Mono', 'SF Mono', 'Lucida Console', Monaco, monospace;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 136%;
+}
+
+.vulnerability-button-container {
+    align-items: flex-end;
+    text-align: end;
+    button:first-child {
+        margin-right: 0.5rem;
+    }
+    button {
+        font-size: 12px;
+    }
+}
+
+.vulnerability-description {
+    display: grid;
+    grid-template-columns: auto 15rem;
+    column-gap: 12rem;
+    grid-template-areas:
+        'content version'
+        'content version';
+}
+
+.vulnerability-description-container {
+    grid-area: 'content';
+}
+
+.vulnerability-versions {
+    grid-area: 'version';
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-items: end;
+}
+
+.version-title {
+    font-family: var(--font-family-base);
+    font-style: normal;
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 136%;
+    /* or 16px */
+
+    letter-spacing: -0.25px;
+
+    /* Semantic/body-color/Light */
+
+    color: #343a4d;
+}
+
+.version-number {
+    text-align: end;
+    font-family: var(--font-family-base);
+    font-style: normal;
+    font-weight: 600;
+    font-size: 20px;
+    line-height: 120%;
+    /* identical to box height, or 24px */
+
+    letter-spacing: -0.25px;
+
+    /* Semantic/success-01/Light */
+
+    &.green {
+        color: #37b24d;
+    }
+
+    &.red {
+        color: #b52626;
+    }
+}
+
+.description-table {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    column-gap: 40px;
+    padding-top: 30px;
+}
+
+.description-subheader {
+    font-family: var(--font-family-base);
+    font-style: normal;
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 136%;
+    /* or 16px */
+
+    letter-spacing: -0.25px;
+
+    /* Semantic/text-muted/Light */
+
+    color: #5e6e8c;
+}
+
+.description-value {
+    font-family: var(--font-family-base);
+    font-style: normal;
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 136%;
+    /* or 16px */
+
+    letter-spacing: -0.25px;
+
+    /* Semantic/body-color/Light */
+
+    color: #343a4d;
+}

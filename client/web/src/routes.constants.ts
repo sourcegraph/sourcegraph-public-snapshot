@@ -27,6 +27,7 @@ export enum EnterprisePageRoutes {
     BatchChanges = '/batch-changes/*',
     CodeMonitoring = '/code-monitoring/*',
     Insights = '/insights/*',
+    Security = '/security/*',
     Contexts = '/contexts',
     CreateContext = '/contexts/new',
     EditContext = '/contexts/:specOrOrg/:spec?/edit',

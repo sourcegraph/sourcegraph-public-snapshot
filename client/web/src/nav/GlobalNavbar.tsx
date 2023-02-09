@@ -2,6 +2,7 @@ import React, { SetStateAction, useEffect, useLayoutEffect, useMemo, useRef, use
 
 import classNames from 'classnames'
 import BarChartIcon from 'mdi-react/BarChartIcon'
+import ShieldHalfFullIcon from 'mdi-react/ShieldHalfFullIcon'
 import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import { useLocation } from 'react-router-dom-v5-compat'
@@ -243,6 +244,11 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             </NavLink>
                         </NavItem>
                     )}
+                    <NavItem icon={ShieldHalfFullIcon}>
+                        <NavLink variant={navLinkVariant} to="/security">
+                            Sentinel
+                        </NavLink>
+                    </NavItem>
                 </NavGroup>
                 <NavActions>
                     {!props.authenticatedUser && (
