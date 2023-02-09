@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react';
 import {renderer} from 'unplugin-auto-expose';
 import {join} from 'node:path';
 import {injectAppVersion} from '../../version/inject-app-version-plugin.mjs';
+import {P} from '@storybook/components';
 
 const PACKAGE_ROOT = __dirname;
 const PROJECT_ROOT = join(PACKAGE_ROOT, '../..');
@@ -17,9 +18,16 @@ const config = {
   mode: process.env.MODE,
   root: PACKAGE_ROOT,
   envDir: PROJECT_ROOT,
+  define: {
+    process: {
+      env: {},
+    },
+  },
   resolve: {
     alias: {
       '/@/': join(PACKAGE_ROOT, 'src') + '/',
+      wildcard: '@sourcegraph/wildcard',
+      path: 'path-browserify',
     },
   },
   base: '',

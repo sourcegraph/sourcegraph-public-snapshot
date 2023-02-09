@@ -869,6 +869,15 @@ importers:
 
   client/electron:
     specifiers:
+      '@sourcegraph/branded': workspace:*
+      '@sourcegraph/client-api': workspace:*
+      '@sourcegraph/codeintellify': workspace:*
+      '@sourcegraph/common': workspace:*
+      '@sourcegraph/http-client': workspace:*
+      '@sourcegraph/observability-client': workspace:*
+      '@sourcegraph/schema': workspace:*
+      '@sourcegraph/shared': workspace:*
+      '@sourcegraph/wildcard': workspace:*
       '@types/node': 18.13.0
       '@types/react': ^18.0.27
       '@types/react-dom': ^18.0.10
@@ -883,14 +892,29 @@ importers:
       playwright: 1.30.0
       react: ^18.2.0
       react-dom: ^18.2.0
+      react-router: ^5.2.0
+      react-router-dom: ^5.2.0
+      react-router-dom-v5-compat: ^6.8.1
       typescript: 4.9.5
       unplugin-auto-expose: 0.0.4
       vite: 4.1.1
       vitest: 0.28.4
     dependencies:
+      '@sourcegraph/branded': link:../branded
+      '@sourcegraph/client-api': link:../client-api
+      '@sourcegraph/codeintellify': link:../codeintellify
+      '@sourcegraph/common': link:../common
+      '@sourcegraph/http-client': link:../http-client
+      '@sourcegraph/observability-client': link:../observability-client
+      '@sourcegraph/schema': link:../../schema
+      '@sourcegraph/shared': link:../shared
+      '@sourcegraph/wildcard': link:../wildcard
       electron-updater: 5.3.0
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
+      react-router: 5.2.0_react@18.2.0
+      react-router-dom: 5.2.0_react@18.2.0
+      react-router-dom-v5-compat: 6.8.1_s6dh5ubvhexua4klzqpfxllx3q
     devDependencies:
       '@types/node': 18.13.0
       '@types/react': 18.0.27
@@ -8364,6 +8388,11 @@ packages:
   /@remix-run/router/1.3.0:
     resolution: {integrity: sha512-nwQoYb3m4DDpHTeOwpJEuDt8lWVcujhYYSFGLluC+9es2PyLjm+jjq3IeRBQbwBtPLJE/lkuHuGHr8uQLgmJRA==}
     engines: {node: '>=14'}
+
+  /@remix-run/router/1.3.2:
+    resolution: {integrity: sha512-t54ONhl/h75X94SWsHGQ4G/ZrCEguKSRQr7DrjTciJXW0YU1QhlwYeycvK5JgkzlxmvrK7wq1NB/PLtHxoiDcA==}
+    engines: {node: '>=14'}
+    dev: false
 
   /@repeaterjs/repeater/3.0.4:
     resolution: {integrity: sha512-AW8PKd6iX3vAZ0vA43nOUOnbq/X5ihgU+mSXXqunMkeQADGiqw/PY0JNeYtD5sr0PAy51YPgAPbDoeapv9r8WA==}
@@ -25596,6 +25625,19 @@ packages:
       tiny-warning: 1.0.3
     dev: false
 
+  /mini-create-react-context/0.4.0_sh5qlbywuemxd2y3xkrw2y2kr4:
+    resolution: {integrity: sha512-b0TytUgFSbgFJGzJqXPKCFCBWigAjpjo+Fl7Vf7ZbKRDptszpppKxXH6DRXEABZ/gcEQczeb0iZ7JvL8e8jjCA==}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+    peerDependencies:
+      prop-types: ^15.0.0
+      react: ^0.14.0 || ^15.0.0 || ^16.0.0
+    dependencies:
+      '@babel/runtime': 7.20.6
+      prop-types: 15.8.1
+      react: 18.2.0
+      tiny-warning: 1.0.3
+    dev: false
+
   /mini-css-extract-plugin/2.7.2_webpack@5.75.0:
     resolution: {integrity: sha512-EdlUizq13o0Pd+uCp+WO/JpkLvHRVGt97RqfeGhXqAcorYo1ypJSpkV+WDT0vY/kmh/p7wRdJNJtuyK540PXDw==}
     engines: {node: '>= 12.13.0'}
@@ -28956,6 +28998,22 @@ packages:
       react-router-dom: 5.2.0_react@18.1.0
     dev: false
 
+  /react-router-dom-v5-compat/6.8.1_s6dh5ubvhexua4klzqpfxllx3q:
+    resolution: {integrity: sha512-mPlQknOcbAcCXoenZpqk77RU5E8kqpg34T3W0kfFRTf+zhe2J//SsCox4eTw3QBDhY/a+ZHETjd4VlbjwKOXIw==}
+    engines: {node: '>=14'}
+    peerDependencies:
+      react: '>=16.8'
+      react-dom: '>=16.8'
+      react-router-dom: 4 || 5
+    dependencies:
+      '@remix-run/router': 1.3.0
+      history: 4.5.1
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+      react-router: 6.8.1_react@18.2.0
+      react-router-dom: 5.2.0_react@18.2.0
+    dev: false
+
   /react-router-dom/5.2.0_react@18.1.0:
     resolution: {integrity: sha512-gxAmfylo2QUjcwxI63RhQ5G85Qqt4voZpUXSEqCwykV0baaOTQDR1f0PmY8AELqIyVc0NEZUj0Gov5lNGcXgsA==}
     peerDependencies:
@@ -28967,6 +29025,21 @@ packages:
       prop-types: 15.8.1
       react: 18.1.0
       react-router: 5.2.0_react@18.1.0
+      tiny-invariant: 1.3.1
+      tiny-warning: 1.0.3
+    dev: false
+
+  /react-router-dom/5.2.0_react@18.2.0:
+    resolution: {integrity: sha512-gxAmfylo2QUjcwxI63RhQ5G85Qqt4voZpUXSEqCwykV0baaOTQDR1f0PmY8AELqIyVc0NEZUj0Gov5lNGcXgsA==}
+    peerDependencies:
+      react: '>=15'
+    dependencies:
+      '@babel/runtime': 7.20.6
+      history: 4.5.1
+      loose-envify: 1.4.0
+      prop-types: 15.8.1
+      react: 18.2.0
+      react-router: 5.2.0_react@18.2.0
       tiny-invariant: 1.3.1
       tiny-warning: 1.0.3
     dev: false
@@ -29001,6 +29074,24 @@ packages:
       tiny-warning: 1.0.3
     dev: false
 
+  /react-router/5.2.0_react@18.2.0:
+    resolution: {integrity: sha512-smz1DUuFHRKdcJC0jobGo8cVbhO3x50tCL4icacOlcwDOEQPq4TMqwx3sY1TP+DvtTgz4nm3thuo7A+BK2U0Dw==}
+    peerDependencies:
+      react: '>=15'
+    dependencies:
+      '@babel/runtime': 7.20.6
+      history: 4.5.1
+      hoist-non-react-statics: 3.3.2
+      loose-envify: 1.4.0
+      mini-create-react-context: 0.4.0_sh5qlbywuemxd2y3xkrw2y2kr4
+      path-to-regexp: 1.7.0
+      prop-types: 15.8.1
+      react: 18.2.0
+      react-is: 16.13.1
+      tiny-invariant: 1.3.1
+      tiny-warning: 1.0.3
+    dev: false
+
   /react-router/6.7.0_react@18.1.0:
     resolution: {integrity: sha512-KNWlG622ddq29MAM159uUsNMdbX8USruoKnwMMQcs/QWZgFUayICSn2oB7reHce1zPj6CG18kfkZIunSSRyGHg==}
     engines: {node: '>=14'}
@@ -29019,6 +29110,16 @@ packages:
     dependencies:
       '@remix-run/router': 1.3.0
       react: 18.2.0
+
+  /react-router/6.8.1_react@18.2.0:
+    resolution: {integrity: sha512-Jgi8BzAJQ8MkPt8ipXnR73rnD7EmZ0HFFb7jdQU24TynGW1Ooqin2KVDN9voSC+7xhqbbCd2cjGUepb6RObnyg==}
+    engines: {node: '>=14'}
+    peerDependencies:
+      react: '>=16.8'
+    dependencies:
+      '@remix-run/router': 1.3.2
+      react: 18.2.0
+    dev: false
 
   /react-shallow-renderer/16.15.0_react@18.1.0:
     resolution: {integrity: sha512-oScf2FqQ9LFVQgA73vr86xl2NaOIX73rh+YFqcOp68CWj56tSfgtGKrEbyhCj0rSijyG9M1CYprTh39fBi5hzA==}
