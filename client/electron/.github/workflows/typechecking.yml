@@ -1,0 +1,27 @@
+name: Typechecking
+on: [ workflow_call ]
+
+concurrency:
+  group: typechecking-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: 'bash'
+
+jobs:
+  typescript:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16 # Need for npm >=7.7
+          cache: 'npm'
+
+      - run: npm ci
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+
+      - run: npm run typecheck --if-present
