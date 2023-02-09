@@ -17,10 +17,22 @@ import (
 
 const JobShowLimit = 5
 
+type cacheItem[T any] struct {
+	Value     T
+	Timestamp time.Time
+}
+
+func newCacheItem[T any](value T) *cacheItem[T] {
+	return &cacheItem[T]{
+		Value:     value,
+		Timestamp: time.Now(),
+	}
+}
+
 type NotificationClient struct {
 	slack               slack.Client
 	team                team.TeammateResolver
-	commitTeammateCache map[string]*team.Teammate
+	commitTeammateCache map[string]cacheItem[*team.Teammate]
 	logger              log.Logger
 	channel             string
 }
@@ -66,18 +78,19 @@ func NewNotificationClient(logger log.Logger, slackToken, githubToken, channel s
 		logger:              logger.Scoped("notificationClient", "client which interacts with Slack and Github to send notifications"),
 		slack:               *slackClient,
 		team:                teamResolver,
-		commitTeammateCache: map[string]*team.Teammate{},
+		commitTeammateCache: map[string]cacheItem[*team.Teammate]{},
 		channel:             channel,
 	}
+
 }
 
 func (c *NotificationClient) getTeammateForBuild(build *Build) (*team.Teammate, error) {
 	// first check if we already have the details for this teammate
-	member, ok := c.commitTeammateCache[build.commit()]
+	cached, ok := c.commitTeammateCache[build.commit()]
 
 	// we have the details for this member already!
 	if ok {
-		return member, nil
+		return cached.Value, nil
 	}
 
 	result, err := c.team.ResolveByCommitAuthor(context.Background(), "sourcegraph", "sourcegraph", build.commit())
@@ -86,7 +99,7 @@ func (c *NotificationClient) getTeammateForBuild(build *Build) (*team.Teammate, 
 	}
 	// remember this teammate! for this commit
 	// we're not using the author email from the build since might not map 1:1 to the commit author
-	c.commitTeammateCache[build.commit()] = result
+	c.commitTeammateCache[build.commit()] = *newCacheItem(result)
 	return result, nil
 
 }
@@ -161,7 +174,7 @@ func (c *NotificationClient) createMessageBlocks(logger log.Logger, build *Build
 
 	// create a bulleted list of all the failed jobs
 	//
-	filteredJobs := build.Filter(FailedJobFilter, FixedJobFilter)
+	filteredJobs := build.filterJobs(FailedJobFilter, FixedJobFilter)
 
 	jobSection := ""
 	for group, groupJobs := range filteredJobs {
@@ -257,8 +270,17 @@ _Disable flakes on sight and save your fellow teammate some time!_`,
 	return blocks, nil
 }
 
+func (n *NotificationClient) cacheCleanup(hours int) {
+	for k, v := range n.commitTeammateCache {
+		duration := time.Since(v.Timestamp)
+		if duration.Hours() >= float64(hours) {
+			delete(n.commitTeammateCache, k)
+		}
+	}
+}
+
 func generateSlackHeader(build *Build) string {
-	if !build.isFixed() {
+	if build.isFixed() {
 		return fmt.Sprintf(":green_circle: Build %d fixed", build.number())
 	}
 	header := fmt.Sprintf(":red_circle: Build %d failed", build.number())

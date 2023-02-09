@@ -128,7 +128,7 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 		server.store.builds[*b.Number] = b
 		builds := server.store.FinishedBuilds()
 
-		stopFunc := server.startOldBuildCleaner(10*time.Millisecond, 24*time.Hour)
+		stopFunc := server.startCleaner(10*time.Millisecond, 24*time.Hour)
 		time.Sleep(20 * time.Millisecond)
 		stopFunc()
 
@@ -149,7 +149,7 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 		b = finishedBuild(3, "failed", time.Now())
 		server.store.builds[*b.Number] = b
 
-		stopFunc := server.startOldBuildCleaner(10*time.Millisecond, 24*time.Hour)
+		stopFunc := server.startCleaner(10*time.Millisecond, 24*time.Hour)
 		time.Sleep(20 * time.Millisecond)
 		stopFunc()
 
