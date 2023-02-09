@@ -48,6 +48,7 @@ export const RepositoriesField = forwardRef(function RepositoriesField(props, re
 
     const handleSelect = useCallback(
         (repositories: string[]) => {
+            setSearch('')
             onChange(repositories)
         },
         [onChange]
