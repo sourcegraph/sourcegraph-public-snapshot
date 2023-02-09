@@ -1,5 +1,5 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "./tsconfig.base.json",
   "references": [
     { "path": "client/template-parser" },
     { "path": "client/build-config" },
