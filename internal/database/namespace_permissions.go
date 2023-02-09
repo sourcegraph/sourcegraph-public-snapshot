@@ -62,7 +62,22 @@ INSERT INTO
 	RETURNING %s
 `
 
+type CreateNamespacePermissionOpts struct {
+	Namespace  string
+	ResourceID int64
+	Action     string
+	UserID     int32
+}
+
 func (n *namespacePermissionStore) Create(ctx context.Context, opts CreateNamespacePermissionOpts) (*types.NamespacePermission, error) {
+	if opts.ResourceID == 0 {
+		return nil, errors.New("resource id is required")
+	}
+
+	if opts.UserID == 0 {
+		return nil, errors.New("user id is required")
+	}
+
 	q := sqlf.Sprintf(
 		namespacePermissionCreateQueryFmtStr,
 		sqlf.Join(namespacePermissionInsertColums, ", "),
@@ -86,9 +101,13 @@ DELETE FROM namespace_permissions
 WHERE id = %s
 `
 
+type DeleteNamespacePermissionOpts struct {
+	ID int64
+}
+
 func (n *namespacePermissionStore) Delete(ctx context.Context, opts DeleteNamespacePermissionOpts) error {
 	if opts.ID == 0 {
-		return errors.New("missing namespace permission id")
+		return errors.New("namespace permission id is required")
 	}
 
 	q := sqlf.Sprintf(
@@ -117,6 +136,10 @@ const namespacePermissionGetQueryFmtStr = `
 SELECT %s FROM namespace_permissions WHERE id = %s
 `
 
+type GetNamespacePermissionOpts struct {
+	ID int64
+}
+
 func (n *namespacePermissionStore) Get(ctx context.Context, opts GetNamespacePermissionOpts) (*types.NamespacePermission, error) {
 	if opts.ID == 0 {
 		return nil, errors.New("missing namespace permission id")
@@ -133,7 +156,7 @@ func (n *namespacePermissionStore) Get(ctx context.Context, opts GetNamespacePer
 		if err == sql.ErrNoRows {
 			return nil, &NamespacePermissionNotFoundErr{ID: opts.ID}
 		}
-		return nil, errors.Wrap(err, "scanning role")
+		return nil, errors.Wrap(err, "scanning namespace permission")
 	}
 
 	return np, nil
@@ -153,21 +176,6 @@ func scanNamespacePermission(sc dbutil.Scanner) (*types.NamespacePermission, err
 	}
 
 	return &np, nil
-}
-
-type GetNamespacePermissionOpts struct {
-	ID int64
-}
-
-type DeleteNamespacePermissionOpts struct {
-	ID int64
-}
-
-type CreateNamespacePermissionOpts struct {
-	Namespace  string
-	ResourceID int64
-	Action     string
-	UserID     int32
 }
 
 type NamespacePermissionNotFoundErr struct {

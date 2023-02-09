@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -21,22 +22,46 @@ func TestCreateNamespacePermission(t *testing.T) {
 
 	user := createUserForNamespacePermission(ctx, t, db, "TestUser")
 
-	np, err := store.Create(ctx, CreateNamespacePermissionOpts{
-		Namespace:  "TestNamespace",
-		ResourceID: 1,
-		UserID:     user.ID,
-		Action:     "READ",
+	t.Run("missing resource id", func(t *testing.T) {
+		np, err := store.Create(ctx, CreateNamespacePermissionOpts{
+			Namespace: "TestNamespace",
+			UserID:    user.ID,
+			Action:    "READ",
+		})
+		require.Nil(t, np)
+		require.Error(t, err)
+		require.ErrorContains(t, err, "resource id is required")
 	})
-	assert.NoError(t, err)
-	assert.Equal(t, np.UserID, user.ID)
 
-	// check that the namespace permission created esists
-	existingNp, err := store.Get(ctx, GetNamespacePermissionOpts{
-		ID: np.ID,
+	t.Run("missing user id", func(t *testing.T) {
+		np, err := store.Create(ctx, CreateNamespacePermissionOpts{
+			Namespace:  "TestNamespace",
+			ResourceID: 1,
+			Action:     "READ",
+		})
+		require.Nil(t, np)
+		require.Error(t, err)
+		require.ErrorContains(t, err, "user id is required")
 	})
-	assert.NoError(t, err)
-	assert.NotNil(t, existingNp)
-	assert.Equal(t, existingNp.ID, np.ID)
+
+	t.Run("success", func(t *testing.T) {
+		np, err := store.Create(ctx, CreateNamespacePermissionOpts{
+			Namespace:  "TestNamespace",
+			ResourceID: 1,
+			UserID:     user.ID,
+			Action:     "READ",
+		})
+		require.NoError(t, err)
+		require.Equal(t, np.UserID, user.ID)
+
+		// check that the namespace permission created esists
+		existingNp, err := store.Get(ctx, GetNamespacePermissionOpts{
+			ID: np.ID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, existingNp)
+		require.Equal(t, existingNp.ID, np.ID)
+	})
 }
 
 func TestDeleteNamespacePermission(t *testing.T) {
@@ -51,8 +76,8 @@ func TestDeleteNamespacePermission(t *testing.T) {
 
 	t.Run("missing ID", func(t *testing.T) {
 		err := store.Delete(ctx, DeleteNamespacePermissionOpts{})
-		assert.Error(t, err)
-		assert.Equal(t, err.Error(), "missing namespace permission id")
+		require.Error(t, err)
+		require.ErrorContains(t, err, "namespace permission id is required")
 	})
 
 	t.Run("existing namespace permissions", func(t *testing.T) {
@@ -62,26 +87,27 @@ func TestDeleteNamespacePermission(t *testing.T) {
 			UserID:     user.ID,
 			Action:     "READ",
 		})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = store.Delete(ctx, DeleteNamespacePermissionOpts{
 			ID: np.ID,
 		})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		npID := np.ID
 
 		np, err = store.Get(ctx, GetNamespacePermissionOpts{ID: npID})
-		assert.Error(t, err)
-		assert.Equal(t, err, &NamespacePermissionNotFoundErr{ID: npID})
-		assert.Nil(t, np)
+		require.Error(t, err)
+		require.Equal(t, err, &NamespacePermissionNotFoundErr{ID: npID})
+		require.Nil(t, np)
 	})
 
 	t.Run("non-existent namespace permission", func(t *testing.T) {
 		nonExistedNamespacePermissionID := int64(1003)
 		err := store.Delete(ctx, DeleteNamespacePermissionOpts{ID: nonExistedNamespacePermissionID})
-		assert.Error(t, err)
-		assert.ErrorContains(t, err, "failed to delete namespace permission")
+
+		require.Error(t, err)
+		require.ErrorContains(t, err, "failed to delete namespace permission")
 	})
 }
 
@@ -104,27 +130,30 @@ func TestGetNamespacePermission(t *testing.T) {
 
 	t.Run("missing ID", func(t *testing.T) {
 		n, err := store.Get(ctx, GetNamespacePermissionOpts{})
-		assert.Nil(t, n)
-		assert.Error(t, err)
-		assert.Equal(t, err.Error(), "missing namespace permission id")
+
+		require.Nil(t, n)
+		require.Error(t, err)
+		require.Equal(t, err.Error(), "missing namespace permission id")
 	})
 
 	t.Run("existing namespace permission", func(t *testing.T) {
 		n, err := store.Get(ctx, GetNamespacePermissionOpts{ID: np.ID})
-		assert.NoError(t, err)
-		assert.Equal(t, n.ID, np.ID)
-		assert.Equal(t, n.Namespace, np.Namespace)
-		assert.Equal(t, n.Action, np.Action)
-		assert.Equal(t, n.ResourceID, np.ResourceID)
-		assert.Equal(t, n.UserID, np.UserID)
+
+		require.NoError(t, err)
+		require.Equal(t, n.ID, np.ID)
+		require.Equal(t, n.Namespace, np.Namespace)
+		require.Equal(t, n.Action, np.Action)
+		require.Equal(t, n.ResourceID, np.ResourceID)
+		require.Equal(t, n.UserID, np.UserID)
 	})
 
 	t.Run("non-existent namespace permission", func(t *testing.T) {
 		npID := int64(1003)
 		n, err := store.Get(ctx, GetNamespacePermissionOpts{ID: npID})
-		assert.Nil(t, n)
-		assert.Error(t, err)
-		assert.Equal(t, err, &NamespacePermissionNotFoundErr{ID: npID})
+
+		require.Nil(t, n)
+		require.Error(t, err)
+		require.Equal(t, err, &NamespacePermissionNotFoundErr{ID: npID})
 	})
 }
 
