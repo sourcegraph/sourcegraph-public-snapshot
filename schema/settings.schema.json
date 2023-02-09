@@ -21,24 +21,6 @@
             "pointer": true
           }
         },
-        "codeInsightsGqlApi": {
-          "deprecated": true,
-          "description": "DEPRECATED: Enables gql api instead of using setting cascade as a main storage fro code insights entities",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "codeInsightsAllRepos": {
-          "deprecated": true,
-          "description": "DEPRECATED: Enables the experimental ability to run an insight over all repositories on the instance.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "codeInsightsLandingPage": {
           "deprecated": true,
           "description": "DEPRECATED: Enables code insights landing page layout.",
@@ -89,40 +71,8 @@
             "pointer": true
           }
         },
-        "copyQueryButton": {
-          "description": "DEPRECATED: This feature is now permanently enabled. Enables displaying the copy query button in the search bar when hovering over the global navigation bar.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "showRepogroupHomepage": {
-          "description": "Enables the repository group homepage ",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "showOnboardingTour": {
-          "description": "REMOVED.",
-          "type": "boolean",
-          "default": true,
-          "!go": {
-            "pointer": true
-          }
-        },
         "showSearchContext": {
           "description": "Enables the search context dropdown.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "showSearchContextManagement": {
-          "description": "REMOVED.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -533,13 +483,6 @@
     "basicCodeIntel.unindexedSearchTimeout": {
       "description": "The timeout (in milliseconds) for un-indexed search requests.",
       "type": "number"
-    },
-    "codeIntelligence.autoIndexRepositoryGroups": {
-      "description": "A list of search.repositoryGroups that have auto-indexing enabled.",
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
     },
     "codeIntelligence.autoIndexPopularRepoLimit": {
       "description": "Up to this number of repos are auto-indexed automatically. Ordered by star count.",
