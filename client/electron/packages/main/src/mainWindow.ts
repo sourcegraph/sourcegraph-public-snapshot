@@ -21,8 +21,8 @@ async function createWindow() {
   /**
    * Add the tray icon and menu.
    */
-  const tray = new Tray(path.join(__dirname, '..', '..', '..', 'buildResources', getIcon()));
-  tray.setPressedImage(path.join(__dirname, '..', '..', '..', 'buildResources', getIcon()));
+  const tray = new Tray(path.join(getIconPath(), getIcon()));
+  tray.setPressedImage(path.join(getIconPath(), getIcon()));
   tray.setToolTip('Sourcegraph App');
   tray.setContextMenu(buildMenu());
 
@@ -83,7 +83,10 @@ export async function restoreOrCreateWindow() {
 /**
  * Tray icon helpers.
  */
-const clippings = [];
+
+const getIconPath = () => {
+  return path.join(__dirname, '..', '..', '..', 'buildResources');
+};
 
 const getIcon = () => {
   if (process.platform === 'win32') return 'icon-light@2x.ico';
