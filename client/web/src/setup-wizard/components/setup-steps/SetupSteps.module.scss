@@ -1,16 +1,16 @@
 .root {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1rem;
     flex-grow: 1;
     justify-content: center;
 }
 
 .header {
     display: flex;
-    justify-content: space-between;
     gap: 2rem;
-    margin: -1.5rem auto 0;
+    justify-content: space-between;
+    margin: -1.5rem auto 0.5rem;
 
     &-step {
         display: flex;
@@ -67,8 +67,11 @@
 }
 
 .content {
+    width: 100%;
     flex-grow: 1;
     margin: auto;
+    max-width: 55rem;
+    padding: 0.5rem;
 }
 
 .actions {
@@ -77,7 +80,8 @@
 
 .navigation {
     display: flex;
-    padding: 0.5rem;
+    position: sticky;
+    bottom: 0;
     background-color: var(--gray-02);
     border-top: 1px solid var(--border-color);
 
@@ -89,8 +93,10 @@
         display: flex;
         flex-grow: 1;
         gap: 0.5rem;
-        max-width: 40rem;
+        width: 100%;
+        max-width: 55rem;
         margin: auto;
+        padding: 0.5rem;
     }
 
     // Hide default next button if the custom button is rendered

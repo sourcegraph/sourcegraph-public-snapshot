@@ -1,0 +1,56 @@
+
+.loading-state {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--text-muted);
+}
+
+.empty-state {
+    // Top margin to compensate main and left content first line texts
+    margin-top: 0.2rem;
+
+    display: flex;
+    gap: 0.25rem;
+    align-items: baseline;
+    color: var(--text-muted);
+
+    &-icon {
+        flex-shrink: 0;
+    }
+}
+
+.list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    //gap: 0.25rem;
+}
+
+.item {
+    padding: 0.25rem 0.5rem;
+    margin: 0 -0.5rem;
+    border-radius: 3px;
+
+    &:hover {
+        background-color: var(--secondary-2);
+    }
+}
+
+.item-button {
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 0.25rem;
+    width: 100%;
+    text-align: start;
+    font-weight: normal;
+    padding: 0;
+}
+
+.item-description {
+    display: flex;
+    flex-direction: column;
+}
