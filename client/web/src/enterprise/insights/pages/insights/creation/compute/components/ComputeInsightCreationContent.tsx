@@ -146,6 +146,8 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                 >
                     <FormSeries
                         seriesField={series}
+                        // Compute doesn't support repo query selection
+                        repoQuery={null}
                         repositories={repositories.input.value}
                         showValidationErrorsOnMount={formAPI.submitted}
                         hasAddNewSeriesButton={false}

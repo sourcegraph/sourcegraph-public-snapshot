@@ -86,6 +86,8 @@ export const SearchInsightCreationForm: FC<CreationSearchInsightFormProps> = pro
             >
                 <FormSeries
                     seriesField={series}
+                    // Set repo query to preview only when search query mode is activated
+                    repoQuery={repoMode.input.value === 'search-query' ? repoQuery.input.value.query : null}
                     repositories={repositories.input.value}
                     showValidationErrorsOnMount={submitted}
                 />

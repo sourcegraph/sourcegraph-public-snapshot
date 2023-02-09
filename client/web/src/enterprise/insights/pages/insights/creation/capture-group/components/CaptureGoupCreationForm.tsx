@@ -112,6 +112,8 @@ export const CaptureGroupCreationForm: FC<CaptureGroupCreationFormProps> = props
                         <Input
                             as={CaptureGroupQueryInput}
                             required={true}
+                            // Set repo query to preview only when search query mode is activated
+                            repoQuery={repoMode.input.value === 'search-query' ? repoQuery.input.value.query : null}
                             repositories={repositories.input.value}
                             placeholder="Example: file:\.pom$ <java\.version>(.*)</java\.version>"
                             aria-labelledby="capture-group-query-label"

@@ -79,7 +79,7 @@ export const LineChartLivePreview: FC<LineChartLivePreviewProps> = props => {
                 {state.status === LivePreviewStatus.Loading ? (
                     <LivePreviewLoading>Loading code insight</LivePreviewLoading>
                 ) : state.status === LivePreviewStatus.Error ? (
-                    <ErrorAlert error={state.error} />
+                    <ErrorAlert error={state.error} className="m-0" />
                 ) : (
                     <LivePreviewChart>
                         {parent =>
