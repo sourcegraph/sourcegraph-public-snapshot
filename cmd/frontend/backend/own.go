@@ -35,12 +35,12 @@ type ownService struct {
 // These are in line with GitHub and GitLab documentation.
 // https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 var codeownersLocations = []string{
+	".github/test.CODEOWNERS", // hardcoded test file for internal dogfooding, first for priority.
+
 	"CODEOWNERS",
 	".github/CODEOWNERS",
 	".gitlab/CODEOWNERS",
 	"docs/CODEOWNERS",
-
-	".github/test.CODEOWNERS", // hardcoded test file for internal dogfooding
 }
 
 // OwnersFile makes a best effort attempt to return a CODEOWNERS file from one of
