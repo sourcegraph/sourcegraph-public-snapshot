@@ -1,4 +1,4 @@
-import {app, BrowserWindow, systemPreferences, Tray} from 'electron';
+import {app, BrowserWindow, Menu, systemPreferences, Tray} from 'electron';
 import * as path from 'node:path';
 import {join} from 'node:path';
 import {URL} from 'node:url';
@@ -24,6 +24,7 @@ async function createWindow() {
   const tray = new Tray(path.join(__dirname, '..', '..', '..', 'buildResources', getIcon()));
   tray.setPressedImage(path.join(__dirname, '..', '..', '..', 'buildResources', getIcon()));
   tray.setToolTip('Sourcegraph App');
+  tray.setContextMenu(buildMenu());
 
   /**
    * If the 'show' property of the BrowserWindow's constructor is omitted from the initialization options,
@@ -80,11 +81,36 @@ export async function restoreOrCreateWindow() {
 }
 
 /**
- * Tray icon settings
+ * Tray icon helpers.
  */
 const clippings = [];
 
 const getIcon = () => {
   if (process.platform === 'win32') return 'icon-light@2x.ico';
   return 'icon-dark.png';
+};
+
+const buildMenu = () => {
+  const menu = Menu.buildFromTemplate([
+    {
+      label: 'Settings',
+      click() {
+        openSettings();
+      },
+    },
+    {type: 'separator'},
+    {
+      label: 'Quit',
+      click() {
+        app.quit();
+      },
+      accelerator: 'CommandOrControl+Q',
+    },
+  ]);
+
+  return menu;
+};
+
+const openSettings = () => {
+  /* Open settings page on the browser. */
 };
