@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -126,18 +125,82 @@ func TestGetNamespacePermission(t *testing.T) {
 		UserID:     user.ID,
 		Action:     "READ",
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	t.Run("missing ID", func(t *testing.T) {
+	t.Run("missing namespace permission ID", func(t *testing.T) {
 		n, err := store.Get(ctx, GetNamespacePermissionOpts{})
 
 		require.Nil(t, n)
 		require.Error(t, err)
-		require.Equal(t, err.Error(), "missing namespace permission id")
+		require.Equal(t, err.Error(), "missing namespace permission query")
+	})
+
+	t.Run("missing namespace", func(t *testing.T) {
+		n, err := store.Get(ctx, GetNamespacePermissionOpts{
+			Action:     "READ",
+			UserID:     user.ID,
+			ResourceID: 1,
+		})
+
+		require.Nil(t, n)
+		require.Error(t, err)
+		require.Equal(t, err.Error(), "missing namespace permission query")
+	})
+
+	t.Run("missing action", func(t *testing.T) {
+		n, err := store.Get(ctx, GetNamespacePermissionOpts{
+			Namespace:  "BATCH_CHANGES",
+			UserID:     user.ID,
+			ResourceID: 1,
+		})
+
+		require.Nil(t, n)
+		require.Error(t, err)
+		require.Equal(t, err.Error(), "missing namespace permission query")
+	})
+
+	t.Run("missing resource id", func(t *testing.T) {
+		n, err := store.Get(ctx, GetNamespacePermissionOpts{
+			Namespace: "BATCH_CHANGES",
+			UserID:    user.ID,
+			Action:    "READ",
+		})
+
+		require.Nil(t, n)
+		require.Error(t, err)
+		require.Equal(t, err.Error(), "missing namespace permission query")
+	})
+
+	t.Run("missing user id", func(t *testing.T) {
+		n, err := store.Get(ctx, GetNamespacePermissionOpts{
+			Namespace:  "BATCH_CHANGES",
+			ResourceID: 1,
+			Action:     "READ",
+		})
+
+		require.Nil(t, n)
+		require.Error(t, err)
+		require.Equal(t, err.Error(), "missing namespace permission query")
+	})
+
+	t.Run("existing namespace permission (via ID)", func(t *testing.T) {
+		n, err := store.Get(ctx, GetNamespacePermissionOpts{ID: np.ID})
+
+		require.NoError(t, err)
+		require.Equal(t, n.ID, np.ID)
+		require.Equal(t, n.Namespace, np.Namespace)
+		require.Equal(t, n.Action, np.Action)
+		require.Equal(t, n.ResourceID, np.ResourceID)
+		require.Equal(t, n.UserID, np.UserID)
 	})
 
 	t.Run("existing namespace permission", func(t *testing.T) {
-		n, err := store.Get(ctx, GetNamespacePermissionOpts{ID: np.ID})
+		n, err := store.Get(ctx, GetNamespacePermissionOpts{
+			Namespace:  np.Namespace,
+			Action:     np.Action,
+			ResourceID: np.ResourceID,
+			UserID:     np.UserID,
+		})
 
 		require.NoError(t, err)
 		require.Equal(t, n.ID, np.ID)

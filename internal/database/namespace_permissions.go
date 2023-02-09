@@ -133,22 +133,36 @@ func (n *namespacePermissionStore) Delete(ctx context.Context, opts DeleteNamesp
 }
 
 const namespacePermissionGetQueryFmtStr = `
-SELECT %s FROM namespace_permissions WHERE id = %s
+SELECT %s FROM namespace_permissions WHERE %s
 `
 
 type GetNamespacePermissionOpts struct {
-	ID int64
+	ID         int64
+	Namespace  string
+	ResourceID int64
+	Action     string
+	UserID     int32
 }
 
 func (n *namespacePermissionStore) Get(ctx context.Context, opts GetNamespacePermissionOpts) (*types.NamespacePermission, error) {
-	if opts.ID == 0 {
-		return nil, errors.New("missing namespace permission id")
+	if !isGetNamsepaceOptsValid(opts) {
+		return nil, errors.New("missing namespace permission query")
+	}
+
+	var conds []*sqlf.Query
+	if opts.ID != 0 {
+		conds = append(conds, sqlf.Sprintf("id = %s", opts.ID))
+	} else {
+		conds = append(conds, sqlf.Sprintf("namespace = %s", opts.Namespace))
+		conds = append(conds, sqlf.Sprintf("action = %s", opts.Action))
+		conds = append(conds, sqlf.Sprintf("user_id = %s", opts.UserID))
+		conds = append(conds, sqlf.Sprintf("resource_id = %s", opts.ResourceID))
 	}
 
 	q := sqlf.Sprintf(
 		namespacePermissionGetQueryFmtStr,
 		sqlf.Join(namespacePermissionColumns, ", "),
-		opts.ID,
+		sqlf.Join(conds, " AND "),
 	)
 
 	np, err := scanNamespacePermission(n.QueryRow(ctx, q))
@@ -160,6 +174,18 @@ func (n *namespacePermissionStore) Get(ctx context.Context, opts GetNamespacePer
 	}
 
 	return np, nil
+}
+
+// isGetNamsepaceOptsValid is used to validate the options passed into the `namespacePermissionStore.Get` method are valid.
+// One of the conditions below need to be valid to execute a Get query.
+// 1. ID is provided
+// 2. Namespace, Actions, UserID and ResourceID is provided.
+func isGetNamsepaceOptsValid(opts GetNamespacePermissionOpts) bool {
+	areNonIDOptsValid := opts.Namespace != "" && opts.Action != "" && opts.UserID != 0 && opts.ResourceID != 0
+	if areNonIDOptsValid || opts.ID != 0 {
+		return true
+	}
+	return false
 }
 
 func scanNamespacePermission(sc dbutil.Scanner) (*types.NamespacePermission, error) {
