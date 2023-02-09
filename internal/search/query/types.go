@@ -610,6 +610,7 @@ type SymbolRelationship string
 const (
 	SymbolRelationshipReferences = "references"
 	SymbolRelationshipImplements = "implements"
+	SymbolRelationshipCalls      = "calls"
 )
 
 type SymbolSearch struct {
@@ -628,6 +629,12 @@ func (p Parameters) SymbolPredicateSearches() (symbolSearches []SymbolSearch) {
 		symbolSearches = append(symbolSearches, SymbolSearch{
 			SymbolSearch: pred.SymbolSearch,
 			Relationship: SymbolRelationshipImplements,
+		})
+	})
+	VisitTypedPredicate(toNodes(p), func(pred *SymbolCallsPredicate) {
+		symbolSearches = append(symbolSearches, SymbolSearch{
+			SymbolSearch: pred.SymbolSearch,
+			Relationship: SymbolRelationshipCalls,
 		})
 	})
 	return symbolSearches

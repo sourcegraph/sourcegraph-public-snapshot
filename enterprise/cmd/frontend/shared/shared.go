@@ -175,3 +175,15 @@ func (s *codeNavShim) GetImplementations(ctx context.Context, repo sgtypes.Minim
 	})
 	return toLocations(locs), err
 }
+
+func (s *codeNavShim) GetCallers(ctx context.Context, repo sgtypes.MinimalRepo, args sgtypes.CodeIntelRequestArgs) (_ []sgtypes.CodeIntelLocation, err error) {
+	uploads, err := s.svc.CodenavService.GetClosestDumpsForBlob(ctx, args.RepositoryID, args.Commit, args.Path, true, "")
+	if err != nil || len(uploads) == 0 {
+		return nil, err
+	}
+
+	reqState := codenav.NewRequestState(uploads, ossauthz.DefaultSubRepoPermsChecker, s.gs, repo.ToRepo(), string(args.Commit), args.Path, 10, s.hunkCache)
+
+	locs, err := s.svc.CodenavService.GetCallers(ctx, shared.RequestArgs(args), reqState)
+	return toLocations(locs), err
+}

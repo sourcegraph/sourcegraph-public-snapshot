@@ -67,7 +67,8 @@ func (s *CodeIntelSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 						case query.SymbolRelationshipImplements:
 							locations, err = codeintel.GetImplementations(ctx, fm.Repo, req)
 
-						// TODO: case "callers"
+						case query.SymbolRelationshipCalls:
+							locations, err = codeintel.GetCallers(ctx, fm.Repo, req)
 
 						default:
 							err = errors.Newf("unknown relationship query %q", s.Relationship)

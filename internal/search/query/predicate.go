@@ -50,7 +50,7 @@ var DefaultPredicateRegistry = PredicateRegistry{
 	FieldSymbol: {
 		"references": func() Predicate { return &SymbolReferencesPredicate{} },
 		"implements": func() Predicate { return &SymbolImplementsPredicate{} },
-		// "calls":      func() Predicate { return nil },
+		"calls":      func() Predicate { return &SymbolCallsPredicate{} },
 	},
 }
 
@@ -489,3 +489,17 @@ func (s *SymbolImplementsPredicate) Unmarshal(params string, negated bool) error
 
 func (s SymbolImplementsPredicate) Field() string { return FieldSymbol }
 func (s SymbolImplementsPredicate) Name() string  { return "implements" }
+
+type SymbolCallsPredicate struct {
+	SymbolSearch string
+	Negated      bool
+}
+
+func (s *SymbolCallsPredicate) Unmarshal(params string, negated bool) error {
+	s.SymbolSearch = params
+	s.Negated = negated
+	return nil
+}
+
+func (s SymbolCallsPredicate) Field() string { return FieldSymbol }
+func (s SymbolCallsPredicate) Name() string  { return "calls" }

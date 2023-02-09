@@ -10,6 +10,7 @@ type CodeIntelStore interface {
 	// References
 	GetReferences(ctx context.Context, repo types.MinimalRepo, args types.CodeIntelRequestArgs) (_ []types.CodeIntelLocation, err error)
 	GetImplementations(ctx context.Context, repo types.MinimalRepo, args types.CodeIntelRequestArgs) (_ []types.CodeIntelLocation, err error)
+	GetCallers(ctx context.Context, repo types.MinimalRepo, args types.CodeIntelRequestArgs) (_ []types.CodeIntelLocation, err error)
 
 	// TODO
 }
