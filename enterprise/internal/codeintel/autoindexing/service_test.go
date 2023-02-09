@@ -13,10 +13,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 func init() {
@@ -62,13 +62,11 @@ func TestQueueIndexesExplicit(t *testing.T) {
 		return api.CommitID(fmt.Sprintf("c%d", repositoryID)), nil
 	})
 
-	mockUploadSvc := NewMockUploadService()
 	inferenceService := NewMockInferenceService()
 
 	service := newService(
 		&observation.TestContext,
 		mockDBStore,
-		mockUploadSvc,
 		inferenceService,
 		nil, // repoUpdater
 		mockGitserverClient,
@@ -180,13 +178,11 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 	mockGitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, rev string) (api.CommitID, error) {
 		return api.CommitID(fmt.Sprintf("c%d", repositoryID)), nil
 	})
-	mockUploadSvc := NewMockUploadService()
 	inferenceService := NewMockInferenceService()
 
 	service := newService(
 		&observation.TestContext,
 		mockDBStore,
-		mockUploadSvc,
 		inferenceService,
 		nil, // repoUpdater
 		mockGitserverClient,
@@ -303,13 +299,11 @@ func TestQueueIndexesInRepository(t *testing.T) {
 		return file == "sourcegraph.yaml", nil
 	})
 	mockGitserverClient.RawContentsFunc.SetDefaultReturn(yamlIndexConfiguration, nil)
-	mockUploadSvc := NewMockUploadService()
 	inferenceService := NewMockInferenceService()
 
 	service := newService(
 		&observation.TestContext,
 		mockDBStore,
-		mockUploadSvc,
 		inferenceService,
 		nil, // repoUpdater
 		mockGitserverClient,
@@ -382,6 +376,7 @@ func TestQueueIndexesInRepository(t *testing.T) {
 
 func TestQueueIndexesInferred(t *testing.T) {
 	mockDBStore := NewMockStore()
+	mockDBStore.GetRepoNameFunc.SetDefaultHook(func(ctx context.Context, i int) (string, error) { return fmt.Sprintf("%d", i), nil })
 	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []types.Index) ([]types.Index, error) { return indexes, nil })
 
 	mockGitserverClient := NewMockGitserverClient()
@@ -398,8 +393,6 @@ func TestQueueIndexesInferred(t *testing.T) {
 			return nil, nil
 		}
 	})
-	mockUploadSvc := NewMockUploadService()
-	mockUploadSvc.GetRepoNameFunc.SetDefaultHook(func(ctx context.Context, i int) (string, error) { return fmt.Sprintf("%d", i), nil })
 	inferenceService := NewMockInferenceService()
 	inferenceService.InferIndexJobsFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, s1, s2 string) ([]config.IndexJob, error) {
 		switch rn {
@@ -415,7 +408,6 @@ func TestQueueIndexesInferred(t *testing.T) {
 	service := newService(
 		&observation.TestContext,
 		mockDBStore,
-		mockUploadSvc,
 		inferenceService,
 		nil, // repoUpdater
 		mockGitserverClient,
@@ -480,13 +472,11 @@ func TestQueueIndexesInferredTooLarge(t *testing.T) {
 
 		return nil, nil
 	})
-	mockUploadSvc := NewMockUploadService()
 	inferenceService := NewMockInferenceService()
 
 	service := newService(
 		&observation.TestContext,
 		mockDBStore,
-		mockUploadSvc,
 		inferenceService,
 		nil, // repoUpdater
 		mockGitserverClient,
@@ -524,9 +514,6 @@ func TestQueueIndexesForPackage(t *testing.T) {
 		return &protocol.RepoUpdateResponse{ID: 42}, nil
 	})
 
-	mockUploadSvc := NewMockUploadService()
-	mockUploadSvc.GetRepoNameFunc.SetDefaultHook(func(ctx context.Context, i int) (string, error) { return fmt.Sprintf("%d", i), nil })
-
 	inferenceService := NewMockInferenceService()
 	inferenceService.InferIndexJobsFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, s1, s2 string) ([]config.IndexJob, error) {
 		return []config.IndexJob{
@@ -547,18 +534,17 @@ func TestQueueIndexesForPackage(t *testing.T) {
 	service := newService(
 		&observation.TestContext,
 		mockDBStore,
-		mockUploadSvc,
 		inferenceService,
 		mockRepoUpdater, // repoUpdater
 		mockGitserverClient,
 		nil, //
 	)
 
-	_ = service.QueueIndexesForPackage(context.Background(), precise.Package{
+	_ = service.QueueIndexesForPackage(context.Background(), dependencies.MinimialVersionedPackageRepo{
 		Scheme:  "gomod",
 		Name:    "https://github.com/sourcegraph/sourcegraph",
 		Version: "v3.26.0-4e7eeb0f8a96",
-	})
+	}, false)
 
 	if len(mockDBStore.IsQueuedFunc.History()) != 1 {
 		t.Errorf("unexpected number of calls to IsQueued. want=%d have=%d", 1, len(mockDBStore.IsQueuedFunc.History()))

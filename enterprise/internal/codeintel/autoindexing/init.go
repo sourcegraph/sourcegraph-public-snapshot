@@ -24,7 +24,6 @@ var (
 func NewService(
 	observationCtx *observation.Context,
 	db database.DB,
-	uploadSvc UploadService,
 	depsSvc DependenciesService,
 	policiesSvc PoliciesService,
 	gitserver GitserverClient,
@@ -34,7 +33,7 @@ func NewService(
 	repoUpdater := repoupdater.DefaultClient
 	inferenceSvc := inference.NewService()
 
-	svc := newService(scopedContext("service", observationCtx), store, uploadSvc, inferenceSvc, repoUpdater, gitserver, symbolsClient)
+	svc := newService(scopedContext("service", observationCtx), store, inferenceSvc, repoUpdater, gitserver, symbolsClient)
 
 	return svc
 }

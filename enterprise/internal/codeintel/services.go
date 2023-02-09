@@ -37,7 +37,7 @@ func NewServices(deps ServiceDependencies) (Services, error) {
 	uploadsSvc := uploads.NewService(deps.ObservationCtx, db, codeIntelDB, gitserverClient)
 	dependenciesSvc := dependencies.NewService(deps.ObservationCtx, db)
 	policiesSvc := policies.NewService(deps.ObservationCtx, db, uploadsSvc, gitserverClient)
-	autoIndexingSvc := autoindexing.NewService(deps.ObservationCtx, db, uploadsSvc, dependenciesSvc, policiesSvc, gitserverClient)
+	autoIndexingSvc := autoindexing.NewService(deps.ObservationCtx, db, dependenciesSvc, policiesSvc, gitserverClient)
 	codenavSvc := codenav.NewService(deps.ObservationCtx, db, codeIntelDB, uploadsSvc, gitserverClient)
 	rankingSvc := ranking.NewService(deps.ObservationCtx, db, uploadsSvc, gitserverClient)
 
