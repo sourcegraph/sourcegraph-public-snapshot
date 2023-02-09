@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Checkbox } from '@sourcegraph/wildcard'
+import { Checkbox, Input } from '@sourcegraph/wildcard'
 
 import { SettingsSchema } from './SettingsFile'
 
@@ -24,6 +24,8 @@ function convertPropertiesToComponents(jsonSchema: settingsNode): (JSX.Element |
     return Object.entries(jsonSchema.properties).map(([name, node]) => {
         if (node.type === 'boolean') {
             return <BooleanSettingItem title={node.title} key={name + '.' + node.title} />
+        } else if (node.type === 'string') {
+            return <StringSettingItem title={node.title} key={name + '.' + node.title} />
         }
         return null
     })
@@ -32,4 +34,8 @@ function convertPropertiesToComponents(jsonSchema: settingsNode): (JSX.Element |
 function BooleanSettingItem(props: { title: string }): JSX.Element {
     // TODO: Use a more unique ID
     return <Checkbox id={props.title} label={props.title} checked={false} />
+}
+
+function StringSettingItem(props: { title: string }): JSX.Element {
+    return <Input />
 }
