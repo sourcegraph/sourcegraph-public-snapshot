@@ -27,10 +27,6 @@ async function createWindow() {
   tray.setToolTip('Sourcegraph App');
   tray.setContextMenu(buildMenu());
 
-  tray.on('click', function () {
-    restoreOrCreateWindow();
-  });
-
   /**
    * If the 'show' property of the BrowserWindow's constructor is omitted from the initialization options,
    * it then defaults to 'true'. This can cause flickering as the window loads the html content,
@@ -104,6 +100,12 @@ const getIcon = () => {
 
 const buildMenu = () => {
   const menu = Menu.buildFromTemplate([
+    {
+      label: 'Search',
+      click() {
+        restoreOrCreateWindow();
+      },
+    },
     {
       label: 'Settings',
       click() {
