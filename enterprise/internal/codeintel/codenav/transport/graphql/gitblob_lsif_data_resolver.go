@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
-	traceLog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
@@ -122,13 +121,13 @@ func (r *gitBlobLSIFDataResolver) Ranges(ctx context.Context, args *resolverstub
 func (r *gitBlobLSIFDataResolver) Definitions(ctx context.Context, args *resolverstubs.LSIFQueryPositionArgs) (_ resolverstubs.LocationConnectionResolver, err error) {
 	requestArgs := shared.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path, Line: int(args.Line), Character: int(args.Character)}
 	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.definitions, time.Second, observation.Args{
-		LogFields: []traceLog.Field{
-			traceLog.Int("repositoryID", requestArgs.RepositoryID),
-			traceLog.String("commit", requestArgs.Commit),
-			traceLog.String("path", requestArgs.Path),
-			traceLog.Int("line", requestArgs.Line),
-			traceLog.Int("character", requestArgs.Character),
-			traceLog.Int("limit", requestArgs.Limit),
+		LogFields: []log.Field{
+			log.Int("repositoryID", requestArgs.RepositoryID),
+			log.String("commit", requestArgs.Commit),
+			log.String("path", requestArgs.Path),
+			log.Int("line", requestArgs.Line),
+			log.Int("character", requestArgs.Character),
+			log.Int("limit", requestArgs.Limit),
 		},
 	})
 	defer endObservation()
@@ -255,7 +254,7 @@ func (r *gitBlobLSIFDataResolver) Implementations(ctx context.Context, args *res
 }
 
 // Callers returns the list of source locations that call the symbol at the given position.
-func (r *gitBlobLSIFDataResolver) Callers(ctx context.Context, args *resolverstubs.LSIFPagedQueryPositionArgs) (_ resolverstubs.LocationConnectionResolver, err error) {
+func (r *gitBlobLSIFDataResolver) Callers(ctx context.Context, args *resolverstubs.LSIFQueryPositionArgs) (_ resolverstubs.LocationConnectionResolver, err error) {
 	requestArgs := shared.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path, Line: int(args.Line), Character: int(args.Character)}
 
 	locations, err := r.codeNavSvc.GetCallers(ctx, requestArgs, r.requestState)

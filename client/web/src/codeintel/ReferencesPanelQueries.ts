@@ -68,6 +68,9 @@ export const USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY = gql`
         definitions(line: $line, character: $character, filter: $filter) {
             ...LocationConnectionFields
         }
+        callers(line: $line, character: $character, filter: $filter) {
+            ...LocationConnectionFields
+        }
     }
 
     query UsePreciseCodeIntelForPosition(

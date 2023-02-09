@@ -24,10 +24,11 @@ import {
 
 import { useSearchBasedCodeIntel } from './useSearchBasedCodeIntel'
 
-const EMPTY_CODE_INTEL_DATA = {
-    implementations: { endCursor: null, nodes: [] },
-    definitions: { endCursor: null, nodes: [] },
+const EMPTY_CODE_INTEL_DATA: CodeIntelData = {
+    definitions: { nodes: [] },
     references: { endCursor: null, nodes: [] },
+    implementations: { endCursor: null, nodes: [] },
+    callers: { nodes: [] },
 }
 
 export const useCodeIntel = ({
@@ -170,7 +171,6 @@ export const useCodeIntel = ({
             }
 
             setCodeIntelData({
-                implementations: previousData.implementations,
                 definitions: previousData.definitions,
                 references: {
                     endCursor: newReferenceData.pageInfo.endCursor,
@@ -179,6 +179,8 @@ export const useCodeIntel = ({
                         ...newReferenceData.nodes.map(buildPreciseLocation),
                     ]),
                 },
+                implementations: previousData.implementations,
+                callers: previousData.callers,
             })
 
             // If we've exhausted LSIF data and the flag is enabled, we add search-based data.
@@ -203,8 +205,8 @@ export const useCodeIntel = ({
             }
 
             setCodeIntelData({
-                references: previousData.references,
                 definitions: previousData.definitions,
+                references: previousData.references,
                 implementations: {
                     endCursor: newImplementationsData.pageInfo.endCursor,
                     nodes: dedupeLocations([
@@ -212,6 +214,7 @@ export const useCodeIntel = ({
                         ...newImplementationsData.nodes.map(buildPreciseLocation),
                     ]),
                 },
+                callers: previousData.callers,
             })
         },
     })
@@ -289,8 +292,10 @@ const getLsifData = ({
             nodes: dedupeLocations(lsif.references.nodes).map(buildPreciseLocation),
         },
         definitions: {
-            endCursor: lsif.definitions.pageInfo.endCursor,
             nodes: lsif.definitions.nodes.map(buildPreciseLocation),
+        },
+        callers: {
+            nodes: lsif.callers.nodes.map(buildPreciseLocation),
         },
     }
 }

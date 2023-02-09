@@ -17,7 +17,9 @@ export interface CodeIntelData {
         nodes: Location[]
     }
     definitions: {
-        endCursor: string | null
+        nodes: Location[]
+    }
+    callers: {
         nodes: Location[]
     }
 }

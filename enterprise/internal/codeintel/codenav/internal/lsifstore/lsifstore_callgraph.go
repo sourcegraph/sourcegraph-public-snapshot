@@ -2,7 +2,6 @@ package lsifstore
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
@@ -16,7 +15,7 @@ import (
 
 func (s *store) GetCallerLocations(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []shared.Location, err error) {
 	references, _, err := s.GetReferenceLocations(ctx, bundleID, path, line, character, limit, offset)
-	fmt.Printf("FOUND REFERENCES FOR LOCATION %+v\n", references)
+	// fmt.Printf("FOUND REFERENCES FOR LOCATION %+v\n", references)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get references for cursor")
 	}
@@ -49,15 +48,15 @@ func (s *store) GetCallerLocations(ctx context.Context, bundleID int, path strin
 			continue
 		}
 
-		fmt.Printf("FOUND OCCURRENCE %+v\n", occurrence)
+		// fmt.Printf("FOUND OCCURRENCE %+v\n", occurrence)
 
 		for _, occ := range documentData.SCIPData.Occurrences {
 			matches := strings.HasSuffix(occ.Symbol, occurrence.Owner)
-			fmt.Printf("CHECKING OCCURRENCE %s %s %t %t\n", occ.Symbol, occurrence.Owner, matches, occ.SymbolRoles == int32(scip.SymbolRole_Definition))
+			// fmt.Printf("CHECKING OCCURRENCE %s %s %t %t\n", occ.Symbol, occurrence.Owner, matches, occ.SymbolRoles == int32(scip.SymbolRole_Definition))
 
 			if matches && occ.SymbolRoles == int32(scip.SymbolRole_Definition) {
 
-				fmt.Printf("FOUND MATCHING OCCURRENCE %+v\n", occ)
+				// fmt.Printf("FOUND MATCHING OCCURRENCE %+v\n", occ)
 
 				var r types.Range
 				if len(occ.Range) == 3 {

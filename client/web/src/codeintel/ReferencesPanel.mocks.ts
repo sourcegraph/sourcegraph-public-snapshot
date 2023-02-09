@@ -258,6 +258,14 @@ const USE_PRECISE_CODE_INTEL_MOCK: UsePreciseCodeIntelForPositionResult = {
                         },
                         __typename: 'LocationConnection',
                     },
+                    callers: {
+                        nodes: MOCK_REFERENCES,
+                        pageInfo: {
+                            endCursor: null,
+                            __typename: 'PageInfo',
+                        },
+                        __typename: 'LocationConnection',
+                    },
                     __typename: 'GitBlobLSIFData',
                 },
                 __typename: 'GitBlob',
@@ -340,7 +348,8 @@ export const defaultProps: ReferencesPanelProps = {
             data: {
                 implementations: { endCursor: '', nodes: [] },
                 references: { endCursor: '', nodes: [] },
-                definitions: { endCursor: '', nodes: [] },
+                definitions: { nodes: [] },
+                callers: { nodes: [] },
             },
             loading: true,
             referencesHasNextPage: false,
@@ -377,8 +386,10 @@ export const defaultProps: ReferencesPanelProps = {
                             nodes: lsif.references.nodes.map(buildPreciseLocation),
                         },
                         definitions: {
-                            endCursor: lsif.definitions.pageInfo.endCursor,
                             nodes: lsif.definitions.nodes.map(buildPreciseLocation),
+                        },
+                        callers: {
+                            nodes: lsif.callers.nodes.map(buildPreciseLocation),
                         },
                     },
                 }))

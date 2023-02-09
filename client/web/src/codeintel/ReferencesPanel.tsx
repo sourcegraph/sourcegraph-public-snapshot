@@ -343,6 +343,7 @@ const ReferencesList: React.FunctionComponent<
     const references = useMemo(() => data?.references.nodes ?? [], [data])
     const definitions = useMemo(() => data?.definitions.nodes ?? [], [data])
     const implementations = useMemo(() => data?.implementations.nodes ?? [], [data])
+    const callers = useMemo(() => data?.callers.nodes ?? [], [data])
 
     // The "active URL" is the URL of the highlighted line number in SideBlob,
     // which also influences which item gets highlighted inside
@@ -502,6 +503,20 @@ const ReferencesList: React.FunctionComponent<
                         hasMore={implementationsHasNextPage}
                         fetchMore={fetchMoreImplementations}
                         loadingMore={fetchMoreImplementationsLoading}
+                        setActiveLocation={setActiveLocation}
+                        filter={debouncedFilter}
+                        isActiveLocation={isActiveLocation}
+                        activeURL={activeURL || ''}
+                        navigateToUrl={navigateToUrl}
+                        handleOpenChange={handleOpenChange}
+                        isOpen={isOpen}
+                    />
+                    <CollapsibleLocationList
+                        {...props}
+                        name="callers"
+                        locations={callers}
+                        hasMore={false}
+                        loadingMore={false}
                         setActiveLocation={setActiveLocation}
                         filter={debouncedFilter}
                         isActiveLocation={isActiveLocation}
