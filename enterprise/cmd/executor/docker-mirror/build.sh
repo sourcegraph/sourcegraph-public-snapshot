@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# This script builds the executor image as a GCP boot disk image and as an AWS AMI.
+# This script builds the executor image as a GCP boot disk image, AWS AMI, and Azure Disk image.
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 set -eu

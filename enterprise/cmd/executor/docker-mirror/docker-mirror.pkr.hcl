@@ -7,6 +7,10 @@ packer {
         googlecompute = {
             version = ">= 1.0.0"
             source  = "github.com/hashicorp/googlecompute"
+       }
+        azure = {
+            version = ">= 1.4.0"
+            source  = "github.com/hashicorp/azure"
         }
     }
 }
@@ -92,10 +96,29 @@ source "amazon-ebs" "aws" {
       }
 }
 
+source "azure-arm" "azure" {
+    # sourcegraph/infrastructure/org/azure
+    client_id = "5caef3ae-85d7-4ee1-bf98-ddc1c3dd7329"
+    resource_group_name = "sourcegraph-ci"
+    storage_account = "virtualmachines"
+
+    capture_container_name = "images"
+    capture_name_prefix = "packer"
+
+    os_type = "Linux"
+    image_publisher = "Canonical"
+    image_offer = "UbuntuServer"
+    image_sku = "20_04"
+
+    location = "East US"
+    vm_size = "Standard_A2"
+}
+
 build {
     sources = [
         "source.googlecompute.gcp",
-        "source.amazon-ebs.aws"
+        "source.amazon-ebs.aws",
+        "source.azure-arm.azure"
     ]
 
     provisioner "shell" {
@@ -107,6 +130,9 @@ build {
             },
             "aws" = {
                 environment_vars = ["PLATFORM_TYPE=aws"]
+            },
+            "azure" = {
+                environment_vars = ["PLATFORM_TYPE=azure"]
             }
         }
     }
