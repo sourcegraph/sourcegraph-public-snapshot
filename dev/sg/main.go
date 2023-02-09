@@ -289,6 +289,7 @@ var sg = &cli.App{
 
 		// Util
 		helpCommand,
+		embeddings,
 		feedbackCommand,
 		versionCommand,
 		updateCommand,
