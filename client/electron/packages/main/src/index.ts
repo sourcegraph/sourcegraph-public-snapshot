@@ -1,4 +1,4 @@
-import {app} from 'electron';
+import {app, globalShortcut} from 'electron';
 import './security-restrictions';
 import {restoreOrCreateWindow} from '/@/mainWindow';
 import {platform} from 'node:process';
@@ -33,7 +33,15 @@ app.on('window-all-closed', () => {
 app.on('activate', restoreOrCreateWindow);
 
 /**
- * Create the application window when the background process is ready.
+ * When the background process is ready
+ * register a global shortcut: COMMAND / CTL + Shift + S
+ */
+app.on('ready', () => {
+  globalShortcut.register('CommandOrControl+Shift+S', restoreOrCreateWindow);
+});
+
+/**
+ * Create the application window when the background process is ready
  */
 app
   .whenReady()
@@ -72,7 +80,7 @@ if (import.meta.env.PROD) {
       const autoUpdater =
         module.autoUpdater ||
         // @ts-expect-error Hotfix for https://github.com/electron-userland/electron-builder/issues/7338
-        (module.default.autoUpdater as (typeof module)['autoUpdater']);
+        (module.default.autoUpdater as typeof module['autoUpdater']);
       return autoUpdater.checkForUpdatesAndNotify();
     })
     .catch(e => console.error('Failed check and install updates:', e));

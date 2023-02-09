@@ -5,6 +5,8 @@ import {URL} from 'node:url';
 async function createWindow() {
   const browserWindow = new BrowserWindow({
     type: 'panel',
+    transparent: true,
+    frame: false,
     show: false, // Use the 'ready-to-show' event to show the instantiated BrowserWindow.
     webPreferences: {
       nodeIntegration: false,
@@ -60,6 +62,7 @@ export async function restoreOrCreateWindow() {
     window.restore();
   }
 
+  window.isAlwaysOnTop();
   window.focus();
 }
 
