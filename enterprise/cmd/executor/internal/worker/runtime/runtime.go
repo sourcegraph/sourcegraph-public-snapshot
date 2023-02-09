@@ -44,21 +44,6 @@ func SetupRuntimes(
 				cloneOptions: cloneOpts,
 			}
 		}
-
-		// Firecracker
-		notFoundFirecrackerTools, err := validateFirecrackerRuntime()
-		if err != nil {
-			logger.Warn("failed to determine if firecracker tools are configured", log.Error(err))
-		} else if len(notFoundDockerTools) > 0 {
-			logger.Warn("runtime 'firecracker' is not supported: missing required tools", log.Strings("firecrackerTools", notFoundFirecrackerTools))
-		} else if len(notFoundDockerTools) > 0 {
-			logger.Warn("runtime 'firecracker' is not supported: missing required docker tools", log.Strings("dockerTools", notFoundDockerTools))
-		} else {
-			logger.Info("runtime 'firecracker' is supported")
-			// TODO
-		}
-
-		// TODO log info on how to run the executor CLI to check why a runtime is not supported
 	})
 }
 

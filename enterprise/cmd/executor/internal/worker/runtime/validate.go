@@ -19,20 +19,6 @@ func validateDockerRuntime() ([]string, error) {
 	return notFoundTools, nil
 }
 
-func validateFirecrackerRuntime() ([]string, error) {
-	var notFoundTools []string
-	for _, tool := range config.RequiredCLIToolsFirecracker {
-		if found, err := existsPath(tool); err != nil {
-			return notFoundTools, err
-		} else if !found {
-			notFoundTools = append(notFoundTools, tool)
-		}
-	}
-	// check for ignite
-	// check cni
-	return notFoundTools, nil
-}
-
 func existsPath(name string) (bool, error) {
 	if _, err := exec.LookPath(name); err != nil {
 		if errors.Is(err, exec.ErrNotFound) {
