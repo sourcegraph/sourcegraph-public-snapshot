@@ -26,6 +26,7 @@
 }
 
 .focus-container {
+    -webkit-app-region: no-drag;
     display: flex;
     background-color: var(--color-bg-1);
     border-radius: 4px;

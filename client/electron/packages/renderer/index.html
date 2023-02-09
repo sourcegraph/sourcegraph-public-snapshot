@@ -1,16 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      content="script-src 'self' blob:"
+      http-equiv="Content-Security-Policy"
+    />
+    <meta
+      content="width=device-width, initial-scale=1.0"
+      name="viewport"
+    />
+    <title>Sourcegraph</title>
+  </head>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta content="script-src 'self' blob:" http-equiv="Content-Security-Policy" />
-  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-  <title>Sourcegraph</title>
-</head>
-
-<body style="-webkit-app-region: drag">
-  <div id="app"></div>
-  <script src="./src/index.tsx" type="module"></script>
-</body>
-
+  <body
+    style="-webkit-app-region: drag"
+    class="theme-light"
+  >
+    <div id="app"></div>
+    <script
+      src="./src/index.tsx"
+      type="module"
+    ></script>
+  </body>
 </html>
