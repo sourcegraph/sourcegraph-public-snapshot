@@ -26,49 +26,62 @@ export const GeneratedSettingsForm: React.FunctionComponent<GeneratedSettingsFor
 
 function convertPropertiesToComponents(node: settingsNode, parentNames: string[]): JSX.Element[] {
     return Object.entries(node.properties).map(([name, subNode]) => {
-        const key = name + '.' + subNode.title
+        const id = parentNames.concat(name).join('.')
         switch (subNode.type) {
             case 'boolean':
                 return (
-                    <BooleanSettingItem key={key} name={name} title={subNode.title} description={subNode.description} />
+                    <BooleanSettingItem
+                        key={id}
+                        id={id}
+                        name={name}
+                        title={subNode.title}
+                        description={subNode.description}
+                    />
                 )
             case 'string':
-                return <StringSettingItem key={key} name={name} title={subNode.title} />
+                return (
+                    <StringSettingItem
+                        key={id}
+                        id={id}
+                        name={name}
+                        title={subNode.title}
+                        description={subNode.description}
+                    />
+                )
             case 'object':
                 if (subNode.properties) {
                     return (
-                        <div key={key} className={groupLevelClasses[parentNames.length]}>
+                        <div key={id} className={groupLevelClasses[parentNames.length]}>
                             <H3>{subNode.title}</H3>
                             <Text>{subNode.description}</Text>
                             {convertPropertiesToComponents(subNode, [...parentNames, name])}
                         </div>
                     )
                 }
-                return <div key={key}>Unsupported object setting type</div>
+                return <div key={id}>Unsupported object setting type</div>
             default:
-                return <div key={key}>Unsupported setting type</div>
+                return <div key={id}>Unsupported setting type</div>
         }
     })
 }
 
-function BooleanSettingItem(props: { name: string; title: string; description: string }): JSX.Element {
-    // TODO: Include the parent group(s) in the id to make it unique
+function BooleanSettingItem(props: { id: string; name: string; title: string; description: string }): JSX.Element {
     return (
         <>
-            <Checkbox id={props.name} label={props.name} checked={false} onChange={() => {}} />
+            <Checkbox id={props.id} label={props.name} checked={false} onChange={() => {}} />
             <Text className="text-muted">{props.description}</Text>
         </>
     )
 }
 
-function StringSettingItem(props: { name: string; title: string }): JSX.Element {
-    // TODO: Include the parent group(s) in the id to make it unique
+function StringSettingItem(props: { id: string; name: string; title: string; description: string }): JSX.Element {
     return (
         <>
-            <Label className="sr-only" htmlFor={props.name}>
-                {props.title}
+            <Label htmlFor={props.id} className="sr-only">
+                {props.name}
             </Label>
-            <Input id={props.name} name={props.name} type="text" />
+            <Input id={props.id} type="text" />
+            <Text className="text-muted">{props.description}</Text>
         </>
     )
 }
