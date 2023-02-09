@@ -605,6 +605,34 @@ func (p Parameters) Visibility() RepoVisibility {
 	return ParseVisibility(visibilityStr)
 }
 
+type SymbolRelationship string
+
+const (
+	SymbolRelationshipReferences = "references"
+	SymbolRelationshipImplements = "implements"
+)
+
+type SymbolSearch struct {
+	SymbolSearch string
+	Relationship SymbolRelationship
+}
+
+func (p Parameters) SymbolPredicateSearches() (symbolSearches []SymbolSearch) {
+	VisitTypedPredicate(toNodes(p), func(pred *SymbolReferencesPredicate) {
+		symbolSearches = append(symbolSearches, SymbolSearch{
+			SymbolSearch: pred.SymbolSearch,
+			Relationship: SymbolRelationshipReferences,
+		})
+	})
+	VisitTypedPredicate(toNodes(p), func(pred *SymbolImplementsPredicate) {
+		symbolSearches = append(symbolSearches, SymbolSearch{
+			SymbolSearch: pred.SymbolSearch,
+			Relationship: SymbolRelationshipImplements,
+		})
+	})
+	return symbolSearches
+}
+
 // FindValue returns the first value of a parameter matching field in b. It
 // doesn't inspect whether the field is negated.
 func (p Parameters) FindValue(field string) (value string) {
