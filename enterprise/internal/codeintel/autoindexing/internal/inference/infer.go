@@ -63,7 +63,7 @@ func inferNpmRepositoryAndRevision(pkg dependencies.MinimialVersionedPackageRepo
 	}
 
 	logger := log.Scoped("inferNpmRepositoryAndRevision", "")
-	npmPkg, err := reposource.ParseNpmPackageFromPackageSyntax(reposource.PackageName(pkg.Name))
+	npmPkg, err := reposource.ParseNpmPackageFromPackageSyntax(pkg.Name)
 	if err != nil {
 		logger.Error("invalid npm package name in database", log.Error(err))
 		return "", "", false
@@ -85,7 +85,7 @@ func inferPythonRepositoryAndRevision(pkg dependencies.MinimialVersionedPackageR
 		return "", "", false
 	}
 
-	pythonPkg := reposource.ParsePythonPackageFromName(reposource.PackageName(pkg.Name))
+	pythonPkg := reposource.ParsePythonPackageFromName(pkg.Name)
 
 	return pythonPkg.RepoName(), pkg.Version, true
 }
@@ -95,7 +95,7 @@ func inferRubyRepositoryAndRevision(pkg dependencies.MinimialVersionedPackageRep
 		return "", "", false
 	}
 
-	rubyPkg := reposource.ParseRubyPackageFromName(reposource.PackageName(pkg.Name))
+	rubyPkg := reposource.ParseRubyPackageFromName(pkg.Name)
 
 	return rubyPkg.RepoName(), pkg.Version, true
 }
