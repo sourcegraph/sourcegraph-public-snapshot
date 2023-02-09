@@ -26,11 +26,7 @@ app.dock.hide();
 /**
  * Shout down background process if all windows was closed
  */
-app.on('window-all-closed', () => {
-  if (platform !== 'darwin') {
-    app.quit();
-  }
-});
+app.on('window-all-closed', restoreOrCreateWindow);
 
 /**
  * @see https://www.electronjs.org/docs/latest/api/app#event-activate-macos Event: 'activate'.

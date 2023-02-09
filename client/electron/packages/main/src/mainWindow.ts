@@ -6,7 +6,7 @@ import {URL} from 'node:url';
 async function createWindow() {
   const browserWindow = new BrowserWindow({
     type: 'panel',
-    transparent: true,
+    transparent: false,
     useContentSize: true, // The width and height would be used as web page's size.
     frame: false,
     show: false, // Use the 'ready-to-show' event to show the instantiated BrowserWindow.
@@ -70,14 +70,14 @@ export async function restoreOrCreateWindow() {
 
   if (window === undefined) {
     window = await createWindow();
-  }
-
-  if (window.isVisible()) {
-    window.hide();
   } else {
-    window.restore();
-    window.show();
-    window.focus();
+    if (window.isVisible()) {
+      window.hide();
+    } else {
+      window.restore();
+      window.show();
+      window.focus();
+    }
   }
 }
 
