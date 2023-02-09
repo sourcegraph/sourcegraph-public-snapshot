@@ -138,7 +138,7 @@ SELECT %s FROM namespace_permissions WHERE %s
 
 // When querying namespace permissions, you need to provide one of the following
 // 1. The ID belonging to the namespace to be retrieved.
-// 2. The Namespace, ResourceID, Action and UserID associated with the namespace permission.
+// 2. The Namespace, ResourceID and UserID associated with the namespace permission.
 type GetNamespacePermissionOpts struct {
 	ID         int64
 	Namespace  types.PermissionNamespace
