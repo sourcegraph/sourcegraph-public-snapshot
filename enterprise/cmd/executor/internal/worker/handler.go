@@ -98,13 +98,13 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 	}
 
 	// Setup all the file, mounts, etc...
+	logger.Info("Creating workspace")
 	ws, err := jobRuntime.PrepareWorkspace(ctx, commandLogger, job)
 	if err != nil {
 		return err
 	}
 	defer ws.Remove(ctx, h.options.KeepWorkspaces)
 
-	// TODO: how does this play with K8s?
 	// Before we setup a VM (and after we teardown), mark the name as in-use so that
 	// the janitor process cleaning up orphaned VMs doesn't try to stop/remove the one
 	// we're using for the current job.
@@ -113,6 +113,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 	defer h.nameSet.Remove(name)
 
 	// Create the runner that will actually run the commands.
+	logger.Info("Setting up runner")
 	runner, err := jobRuntime.NewRunner(ctx, commandLogger, name, ws.Path(), job)
 	if err != nil {
 		return err
@@ -127,12 +128,14 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 	}()
 
 	// Get the commands we will execute.
+	logger.Info("Creating commands")
 	commands, err := jobRuntime.GetCommands(ws, job.DockerSteps)
 	if err != nil {
 		return err
 	}
 
 	// Run all the things.
+	logger.Info("Running commands")
 	for _, spec := range commands {
 		if err := runner.Run(ctx, spec); err != nil {
 			return err
@@ -144,7 +147,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 
 // Handle clones the target code into a temporary directory, invokes the target indexer in a
 // fresh docker container, and uploads the results to the external frontend API.
-func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger command.Logger, job types.Job) (err error) {
+func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger command.Logger, job types.Job) error {
 	// Create a working directory for this job which will be removed once the job completes.
 	// If a repository is supplied as part of the job configuration, it will be cloned into
 	// the working directory.
