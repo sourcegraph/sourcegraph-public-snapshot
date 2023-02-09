@@ -123,7 +123,8 @@ func (s *store) GetDependencyOccurrences(ctx context.Context, bundleIDs []int, m
 	result, err := s.scanLocationsFromRows(s.db.Query(ctx, sqlf.Sprintf(
 		dependencyOccurrences,
 		pq.Array(bundleIDs),
-		fmt.Sprintf("%s . %s %s", scipEscape(manager), scipEscape(name), scipEscape(version)),
+		// HACK HACK HACK
+		fmt.Sprintf("scip-typescript %s %s %s", scipEscape(manager), scipEscape(name), scipEscape(version)),
 	)))
 	if err != nil {
 		return nil, err
@@ -230,9 +231,9 @@ func (s *store) scanLocationsFromRow(rows *sql.Rows) ([]Location, error) {
 }
 
 func scipEscape(s string) string {
-	if s == "" {
-		return "gomod" // WTF? - some data is not matched up correctly
-	}
+	// if s == "" {
+	// 	return "gomod" // WTF? - some data is not matched up correctly
+	// }
 
 	return strings.ReplaceAll(s, " ", "  ")
 }

@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
@@ -16,6 +17,8 @@ func (r *rootResolver) Dependencies(ctx context.Context, args *resolverstubs.Dep
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Printf("> %v\n", repositoryID)
 
 	deps, err := r.svc.GetDependencies(ctx, int(repositoryID))
 	if err != nil {
@@ -73,7 +76,14 @@ func (r *rootResolver) Vulnerabilities(ctx context.Context, args *resolverstubs.
 		if dep.Manager != "npm" {
 			continue
 		}
-		vulnerabilities, err := jsDepToVuln(apiKey, dep.Name, dep.Version)
+		// TODO: DO NOT SHIP.
+		dep2 := dep
+		if dep2.Name == "@types/lodash" {
+			dep2.Name = "lodash"
+			dep2.Version = "4.17.20"
+		}
+
+		vulnerabilities, err := jsDepToVuln(apiKey, dep2.Name, dep2.Version)
 		if err != nil {
 			return nil, err
 		}

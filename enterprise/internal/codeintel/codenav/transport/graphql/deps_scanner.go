@@ -165,7 +165,6 @@ func getCPEs(apiKey string, company string, product string, version string) (cpe
 		ResultsPerPage: ptr(50),
 	})
 	if err != nil {
-		fmt.Printf("OH NOOOOO %q: %v\n", fmt.Sprintf("cpe:2.3:*:%s:%s:%s", company, product, version), err)
 		return nil, err
 	}
 
