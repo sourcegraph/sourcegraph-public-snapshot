@@ -4,6 +4,7 @@ import {URL} from 'node:url';
 
 async function createWindow() {
   const browserWindow = new BrowserWindow({
+    type: "panel",
     show: false, // Use the 'ready-to-show' event to show the instantiated BrowserWindow.
     webPreferences: {
       nodeIntegration: false,
