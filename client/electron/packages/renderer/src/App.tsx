@@ -92,9 +92,10 @@ function App() {
     [platformContext],
   );
 
-  const onSubmit = useCallback((...args) => {
-    console.log('onSubmit', ...args);
-  }, []);
+  const onSubmit = useCallback(() => {
+    const url = 'https://sourcegraph.com/search?q=' + search.query.query;
+    open(url);
+  }, [search]);
 
   return (
     <div className="d-flex flex-row flex-shrink-past-contents">

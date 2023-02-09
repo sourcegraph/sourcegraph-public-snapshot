@@ -1,4 +1,4 @@
-import {app, BrowserWindow, Menu, nativeTheme, Tray} from 'electron';
+import {app, BrowserWindow, Menu, nativeTheme, Tray, shell} from 'electron';
 import * as path from 'node:path';
 import {join} from 'node:path';
 import {URL} from 'node:url';
@@ -68,6 +68,17 @@ export async function restoreOrCreateWindow() {
 
   if (window === undefined) {
     window = await createWindow();
+    window.webContents.setWindowOpenHandler(({url}) => {
+      let newUrl = new URL(url);
+      console.log(newUrl);
+      if (newUrl.protocol != 'vscode:' && newUrl.hostname != 'sourcegraph.com') {
+        newUrl.hostname = 'sourcegraph.com';
+        newUrl.port = '80';
+      }
+      shell.openExternal(newUrl.toString());
+      window?.hide();
+      return {action: 'deny'};
+    });
   } else {
     if (window.isVisible()) {
       window.hide();

@@ -563,7 +563,13 @@ function applyAction(view: EditorView, action: Action, option: Option): void {
             {
                 const historyOrNavigate = view.state.facet(suggestionsConfig).historyOrNavigate
                 if (historyOrNavigate) {
-                    compatNavigate(historyOrNavigate, action.url)
+                    if (action.url.startsWith('/github.com/sourcegraph/sourcegraph/-/blob/')) {
+                        const filename = action.url.slice('/github.com/sourcegraph/sourcegraph/-/blob/'.length)
+                        open('vscode://file/Users/bwork/Dev/sourcegraph/sourcegraph/' + filename)
+                        return
+                    }
+                    open(action.url)
+                    // compatNavigate(historyOrNavigate, action.url)
                 }
             }
             break

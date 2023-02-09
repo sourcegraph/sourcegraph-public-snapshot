@@ -49,14 +49,15 @@
     "@sourcegraph/observability-client": "workspace:*",
     "@sourcegraph/schema": "workspace:*",
     "@sourcegraph/shared": "workspace:*",
-    "@sourcegraph/wildcard": "workspace:*",
     "@sourcegraph/web": "workspace:*",
+    "@sourcegraph/wildcard": "workspace:*",
     "electron-updater": "5.3.0",
+    "open": "^8.4.1",
+    "open-color": "^1.8.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router": "^5.2.0",
     "react-router-dom": "^5.2.0",
-    "react-router-dom-v5-compat": "^6.8.1",
-    "open-color": "^1.8.0"
+    "react-router-dom-v5-compat": "^6.8.1"
   }
 }
