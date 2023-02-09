@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Checkbox, H3, Input, Label, Text } from '@sourcegraph/wildcard'
+import { Checkbox, H3, Input, Label, Select, Text } from '@sourcegraph/wildcard'
 
 import { SettingsSchema } from './SettingsFile'
 
@@ -16,6 +16,8 @@ interface settingsNode {
     type: 'array' | 'boolean' | 'integer' | 'null' | 'number' | 'object' | 'string'
     enum?: string[]
     properties: Record<string, settingsNode>
+    minimum?: number
+    maximum?: number
 }
 
 const groupLevelClasses = [styles.groupLevel0, styles.groupLevel1, styles.groupLevel2, styles.groupLevel3]
@@ -38,8 +40,27 @@ function convertPropertiesToComponents(node: settingsNode, parentNames: string[]
                         description={subNode.description}
                     />
                 )
-            case 'string':
+            case 'integer':
+            case 'number':
                 return (
+                    <Input
+                        label={<Text>{name}</Text>}
+                        type="number"
+                        min={subNode?.minimum ?? 0}
+                        max={subNode?.maximum ?? ''}
+                    />
+                )
+            case 'string':
+                return subNode.enum?.length ? (
+                    <>
+                        <Select id={id} name={name} label={name} value={''} className="mb-0">
+                            {subNode.enum.map(enumValue => (
+                                <option key={enumValue} value={enumValue} label={enumValue} />
+                            ))}
+                        </Select>
+                        <Text className="text-muted">{subNode.description}</Text>
+                    </>
+                ) : (
                     <StringSettingItem
                         key={id}
                         id={id}
@@ -77,9 +98,7 @@ function BooleanSettingItem(props: { id: string; name: string; title: string; de
 function StringSettingItem(props: { id: string; name: string; title: string; description: string }): JSX.Element {
     return (
         <>
-            <Label htmlFor={props.id} className="sr-only">
-                {props.name}
-            </Label>
+            <Label htmlFor={props.id}>{props.name}</Label>
             <Input id={props.id} type="text" />
             <Text className="text-muted">{props.description}</Text>
         </>
