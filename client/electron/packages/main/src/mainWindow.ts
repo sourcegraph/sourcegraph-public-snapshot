@@ -1,4 +1,5 @@
-import {app, BrowserWindow, systemPreferences} from 'electron';
+import {app, BrowserWindow, systemPreferences, Tray} from 'electron';
+import * as path from 'node:path';
 import {join} from 'node:path';
 import {URL} from 'node:url';
 
@@ -16,6 +17,13 @@ async function createWindow() {
       preload: join(app.getAppPath(), 'packages/preload/dist/index.cjs'),
     },
   });
+
+  /**
+   * Add the tray icon and get the correct version for the theme.
+   */
+  const tray = new Tray(path.join(__dirname, '..', '..', '..', 'buildResources', getIcon()));
+  tray.setPressedImage(path.join(__dirname, '..', '..', '..', 'buildResources', getIcon()));
+  tray.setToolTip('Sourcegraph App');
 
   /**
    * If the 'show' property of the BrowserWindow's constructor is omitted from the initialization options,
@@ -75,10 +83,8 @@ export async function restoreOrCreateWindow() {
  * Tray icon settings
  */
 const clippings = [];
-let tray = null;
 
 const getIcon = () => {
   if (process.platform === 'win32') return 'icon-light@2x.ico';
-  if (systemPreferences.isDarkMode()) return 'icon-light.png';
   return 'icon-dark.png';
 };
