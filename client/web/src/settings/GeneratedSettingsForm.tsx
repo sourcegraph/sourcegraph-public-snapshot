@@ -4,6 +4,8 @@ import { Checkbox, H3, Input, Label, Text } from '@sourcegraph/wildcard'
 
 import { SettingsSchema } from './SettingsFile'
 
+import styles from './GeneratedSettingsForm.module.scss'
+
 interface GeneratedSettingsFormProps {
     jsonSchema: SettingsSchema
 }
@@ -16,25 +18,29 @@ interface settingsNode {
     properties: Record<string, settingsNode>
 }
 
+const groupLevelClasses = [styles.groupLevel0, styles.groupLevel1, styles.groupLevel2, styles.groupLevel3]
+
 export const GeneratedSettingsForm: React.FunctionComponent<GeneratedSettingsFormProps> = ({ jsonSchema }) => (
-    <>{convertPropertiesToComponents(jsonSchema as unknown as settingsNode)}</>
+    <>{convertPropertiesToComponents(jsonSchema as unknown as settingsNode, [])}</>
 )
 
-function convertPropertiesToComponents(node: settingsNode): JSX.Element[] {
+function convertPropertiesToComponents(node: settingsNode, parentNames: string[]): JSX.Element[] {
     return Object.entries(node.properties).map(([name, subNode]) => {
         const key = name + '.' + subNode.title
         switch (subNode.type) {
             case 'boolean':
-                return <BooleanSettingItem key={key} name={name} title={subNode.title} />
+                return (
+                    <BooleanSettingItem key={key} name={name} title={subNode.title} description={subNode.description} />
+                )
             case 'string':
                 return <StringSettingItem key={key} name={name} title={subNode.title} />
             case 'object':
                 if (subNode.properties) {
                     return (
-                        <div key={key}>
+                        <div key={key} className={groupLevelClasses[parentNames.length]}>
                             <H3>{subNode.title}</H3>
                             <Text>{subNode.description}</Text>
-                            {convertPropertiesToComponents(subNode)}
+                            {convertPropertiesToComponents(subNode, [...parentNames, name])}
                         </div>
                     )
                 }
@@ -45,9 +51,14 @@ function convertPropertiesToComponents(node: settingsNode): JSX.Element[] {
     })
 }
 
-function BooleanSettingItem(props: { name: string; title: string }): JSX.Element {
+function BooleanSettingItem(props: { name: string; title: string; description: string }): JSX.Element {
     // TODO: Include the parent group(s) in the id to make it unique
-    return <Checkbox id={props.name} label={props.title} checked={false} onChange={() => {}} />
+    return (
+        <>
+            <Checkbox id={props.name} label={props.name} checked={false} onChange={() => {}} />
+            <Text className="text-muted">{props.description}</Text>
+        </>
+    )
 }
 
 function StringSettingItem(props: { name: string; title: string }): JSX.Element {
