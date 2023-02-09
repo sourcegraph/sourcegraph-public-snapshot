@@ -13,6 +13,7 @@ import { getWebGraphQLClient } from '$lib/web'
 
 // Disable server side rendering for the whole app
 export const ssr = false
+export const prerender = false
 
 if (browser) {
     // Necessary to make authenticated GrqphQL requests work
