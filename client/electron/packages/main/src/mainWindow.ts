@@ -9,6 +9,7 @@ async function createWindow() {
     transparent: true,
     useContentSize: true, // The width and height would be used as web page's size.
     frame: false,
+    hasShadow: false,
     show: false, // Use the 'ready-to-show' event to show the instantiated BrowserWindow.
     webPreferences: {
       nodeIntegration: false,
