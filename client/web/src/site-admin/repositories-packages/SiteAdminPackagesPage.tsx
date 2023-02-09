@@ -12,8 +12,6 @@ import {
     Input,
     useDebounce,
     Button,
-    Tooltip,
-    Icon,
 } from '@sourcegraph/wildcard'
 
 import {
@@ -21,24 +19,21 @@ import {
     FilterControl,
     FilteredConnectionFilter,
     FilteredConnectionFilterValue,
-} from '../components/FilteredConnection'
-import { useShowMorePagination } from '../components/FilteredConnection/hooks/useShowMorePagination'
-import { getFilterFromURL } from '../components/FilteredConnection/utils'
-import { PageTitle } from '../components/PageTitle'
-import { PackagesResult, PackagesVariables, SiteAdminPackageFields } from '../graphql-operations'
-
-import { PACKAGES_QUERY } from './backend'
-import { PackageHost, PackageRepositoryIcon } from './components/PackageRepositoryIcon'
-import { RepoMirrorInfo } from './components/RepoMirrorInfo'
-import { mdiDelete } from '@mdi/js'
+} from '../../components/FilteredConnection'
+import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
+import { getFilterFromURL } from '../../components/FilteredConnection/utils'
+import { PageTitle } from '../../components/PageTitle'
+import { PackagesResult, PackagesVariables, SiteAdminPackageFields } from '../../graphql-operations'
+import { PACKAGES_QUERY } from '../backend'
+import { PackageHost, PackageRepositoryIcon } from '../components/PackageRepositoryIcon'
+import { RepoMirrorInfo } from '../components/RepoMirrorInfo'
+import { ConnectionSummary } from '../../components/FilteredConnection/ui'
 
 interface SiteAdminPackagesPageProps extends TelemetryProps {}
 
 interface PackageNodeProps {
     node: SiteAdminPackageFields
 }
-
-const noop = (): void => {}
 
 const PackageNode: React.FunctionComponent<React.PropsWithChildren<PackageNodeProps>> = ({ node }) => (
     <li className="list-group-item px-0 py-2">
@@ -47,20 +42,6 @@ const PackageNode: React.FunctionComponent<React.PropsWithChildren<PackageNodePr
                 <PackageRepositoryIcon host={node.scheme as PackageHost} />
                 {node.repository ? <RepoLink repoName={node.name} to={node.repository.url} /> : node.name}
                 {node.repository && <RepoMirrorInfo mirrorInfo={node.repository.mirrorInfo} />}
-            </div>
-            <div>
-                <Tooltip content="Block and manage package versions">
-                    <Button variant="secondary" size="sm" onClick={noop} className="mr-2">
-                        Manage versions
-                    </Button>
-                </Tooltip>
-
-                <Tooltip content="Remove this package from this instance">
-                    <Button variant="danger" size="sm" onClick={noop}>
-                        <Icon aria-hidden={true} svgPath={mdiDelete} className="mr-1" />
-                        Delete
-                    </Button>
-                </Tooltip>
             </div>
         </div>
     </li>
@@ -146,21 +127,23 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
         return {
             ...args,
             name: query,
-            first: 10,
-            after: null,
+            first: 5,
+            // after: null, TODO: Cursor pagination seems broken
         }
     }, [filterValues, query])
 
-    const { connection, error, loading } = useShowMorePagination<
+    const { connection, error, loading, fetchMore, hasNextPage } = useShowMorePagination<
         PackagesResult,
         PackagesVariables,
         SiteAdminPackageFields
     >({
         query: PACKAGES_QUERY,
         variables,
+        options: {
+            useAlternateAfterCursor: true,
+        },
         getConnection: result => {
             const data = dataOrThrowErrors(result)
-
             return data.packageRepoReferences
         },
     })
@@ -216,11 +199,21 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
                 </div>
                 {error && !loading && <ErrorAlert error={error} />}
                 {loading && !error && <LoadingSpinner className="d-block mx-auto mt-3" />}
-                <ul className="list-group list-group-flush mt-4">
-                    {(connection?.nodes || []).map(node => (
-                        <PackageNode node={node} key={node.id} />
-                    ))}
-                </ul>
+                {connection?.nodes && connection.nodes.length > 0 && (
+                    <ul className="list-group list-group-flush mt-4">
+                        {(connection?.nodes || []).map(node => (
+                            <PackageNode node={node} key={node.id} />
+                        ))}
+                    </ul>
+                )}
+
+                {hasNextPage && (
+                    <div>
+                        <Button variant="link" size="sm" onClick={fetchMore}>
+                            Show more
+                        </Button>
+                    </div>
+                )}
             </Container>
         </div>
     )
