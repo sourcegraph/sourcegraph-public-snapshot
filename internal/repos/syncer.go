@@ -613,12 +613,15 @@ func (s *Syncer) SyncExternalService(
 			continue
 		}
 		for _, r := range diff.Added {
-			s.Store.RepoHistoryStore().Create(ctx, database.RepoHistory{
+			err := s.Store.RepoHistoryStore().Create(ctx, database.RepoHistory{
 				RepoID:    int(r.ID),
 				Timestamp: time.Now(),
 				EventType: "REPO_ADDED",
 				Message:   "Repository added during external service sync.",
 			})
+			if err != nil {
+				return err
+			}
 		}
 
 		syncProgress.Added += int32(diff.Added.Len())

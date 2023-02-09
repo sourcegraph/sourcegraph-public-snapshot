@@ -2,9 +2,10 @@ package database
 
 import (
 	"context"
+	"time"
+
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"time"
 )
 
 // RepoHistory represents the contents of the single row in the
@@ -52,7 +53,7 @@ func (s *repoHistoryStore) WithTransact(ctx context.Context, f func(RepoHistoryS
 
 func (s *repoHistoryStore) GetRepoHistory(ctx context.Context) (RepoHistory, error) {
 	var rs RepoHistory
-	row := s.QueryRow(ctx, sqlf.Sprintf(getRepoHistoryQueryFmtstr))
+	row := s.QueryRow(ctx, sqlf.Sprintf(getRepoHistoryQueryFmtstr, RepoHistoryColumns))
 	err := row.Scan(&rs.ID, &rs.Name, &rs.Timestamp, &rs.EventType, &rs.Message, &rs.Metadata)
 	if err != nil {
 		return rs, err
@@ -60,13 +61,16 @@ func (s *repoHistoryStore) GetRepoHistory(ctx context.Context) (RepoHistory, err
 	return rs, nil
 }
 
+var RepoHistoryColumns = []*sqlf.Query{
+	sqlf.Sprintf("repo_history.id"),
+	sqlf.Sprintf("repo_history.name"),
+	sqlf.Sprintf("repo_history.event_type"),
+	sqlf.Sprintf("repo_history.message"),
+	sqlf.Sprintf("repo_history.metadata"),
+}
+
 const getRepoHistoryQueryFmtstr = `
-SELECT
-	id,
-	name,
-	event_type,
-	message,
-	metadata
+SELECT %s
 FROM repo_history rh, repo r
 WHERE rh.repo_id = r.id
 `
