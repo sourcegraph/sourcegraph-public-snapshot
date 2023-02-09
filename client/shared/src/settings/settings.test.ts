@@ -136,41 +136,6 @@ describe('mergeSettings', () => {
                 { name: 'mycorp extensions', url: 'https://sourcegraph.com/extensions?query=mycorp%2F' },
             ],
         }))
-    test('merges search.repositoryGroups property', () =>
-        expect(
-            mergeSettings<{ a?: { [key: string]: string }; b?: { [key: string]: string } } & Settings>([
-                {
-                    'search.repositoryGroups': {
-                        sourcegraph: ['github.com/sourcegraph/sourcegraph', 'github.com/sourcegraph/codeintellify'],
-                    },
-                },
-                {
-                    'search.repositoryGroups': {
-                        k8s: ['github.com/kubernetes/kubernetes'],
-                    },
-                },
-                {
-                    'search.repositoryGroups': {
-                        docker: ['github.com/docker/docker'],
-                        sourcegraph: [
-                            'github.com/sourcegraph/sourcegraph',
-                            'github.com/sourcegraph/codeintellify',
-                            'github.com/sourcegraph/sourcegraph-typescript',
-                        ],
-                    },
-                },
-            ])
-        ).toEqual({
-            'search.repositoryGroups': {
-                k8s: ['github.com/kubernetes/kubernetes'],
-                docker: ['github.com/docker/docker'],
-                sourcegraph: [
-                    'github.com/sourcegraph/sourcegraph',
-                    'github.com/sourcegraph/codeintellify',
-                    'github.com/sourcegraph/sourcegraph-typescript',
-                ],
-            },
-        }))
     test('merges notices property', () =>
         expect(
             mergeSettings<{ a?: { [key: string]: string }; b?: { [key: string]: string } } & Settings>([

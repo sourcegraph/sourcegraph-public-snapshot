@@ -44,6 +44,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 - The Code insights "run over all repositories" mode has been replaced with search-powered repositories filed syntax. [#45687](https://github.com/sourcegraph/sourcegraph/pull/45687)
+- The settings `search.repositoryGroups`, ... have been removed as they were long deprecated and unsued. []()
 
 ## 4.4.2
 
