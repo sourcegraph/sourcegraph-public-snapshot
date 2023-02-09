@@ -2973,10 +2973,8 @@ CREATE TABLE namespace_permissions (
     id integer NOT NULL,
     namespace text NOT NULL,
     resource_id integer NOT NULL,
-    action text NOT NULL,
     user_id integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT action_not_blank CHECK ((action <> ''::text)),
     CONSTRAINT namespace_not_blank CHECK ((namespace <> ''::text))
 );
 
@@ -4627,9 +4625,6 @@ ALTER TABLE ONLY temporary_settings
 
 ALTER TABLE ONLY temporary_settings
     ADD CONSTRAINT temporary_settings_user_id_key UNIQUE (user_id);
-
-ALTER TABLE ONLY namespace_permissions
-    ADD CONSTRAINT unique_resource_permission UNIQUE (namespace, resource_id, action, user_id);
 
 ALTER TABLE ONLY user_credentials
     ADD CONSTRAINT user_credentials_domain_user_id_external_service_type_exter_key UNIQUE (domain, user_id, external_service_type, external_service_id);
