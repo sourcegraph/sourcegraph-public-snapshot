@@ -1759,8 +1759,9 @@ type Repository struct {
 	ViewerPermission string // ADMIN, WRITE, READ, or empty if unknown. Only the graphql api populates this. https://developer.github.com/v4/enum/repositorypermission/
 
 	// Metadata retained for ranking
-	StargazerCount int `json:",omitempty"`
-	ForkCount      int `json:",omitempty"`
+	StargazerCount int      `json:",omitempty"`
+	ForkCount      int      `json:",omitempty"`
+	Topics         []string `json:"topics,omitempty"`
 
 	// This is available for GitHub Enterprise Cloud and GitHub Enterprise Server 3.3.0+ and is used
 	// to identify if a repository is public or private or internal.
@@ -1789,6 +1790,7 @@ type restRepository struct {
 	Stars       int                       `json:"stargazers_count"`
 	Forks       int                       `json:"forks_count"`
 	Visibility  string                    `json:"visibility"`
+	Topics      []string                  `json:"topics"`
 }
 
 // getRepositoryFromAPI attempts to fetch a repository from the GitHub API without use of the redis cache.
@@ -1824,6 +1826,7 @@ func convertRestRepo(restRepo restRepository) *Repository {
 		ViewerPermission: convertRestRepoPermissions(restRepo.Permissions),
 		StargazerCount:   restRepo.Stars,
 		ForkCount:        restRepo.Forks,
+		Topics:           restRepo.Topics,
 	}
 
 	if conf.ExperimentalFeatures().EnableGithubInternalRepoVisibility {

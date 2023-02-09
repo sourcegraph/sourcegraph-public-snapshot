@@ -995,8 +995,11 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 			c := NewV4Client("Test", apiURL, nil, &mock)
 
 			repos, err := c.GetReposByNameWithOwner(context.Background(), namesWithOwners...)
-			if have, want := fmt.Sprint(err), fmt.Sprint(tc.err); tc.err != "" && have != want {
-				t.Errorf("error:\nhave: %v\nwant: %v", have, want)
+			if tc.err != "" {
+				if have, want := fmt.Sprint(err), fmt.Sprint(tc.err); tc.err != "" && have != want {
+					t.Fatalf("error:\nhave: %v\nwant: %v", have, want)
+				}
+				return
 			}
 
 			if want, have := len(tc.wantRepos), len(repos); want != have {

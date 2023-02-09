@@ -558,6 +558,7 @@ fragment RepositoryFields on Repository {
 	viewerPermission
 	stargazerCount
 	forkCount
+	topics
 }
 	`
 	}
@@ -588,6 +589,7 @@ fragment RepositoryFields on Repository {
 	isLocked
 	isDisabled
 	forkCount
+	topics
 	%s
 }
 	`, strings.Join(conditionalGHEFields, "\n	"))
