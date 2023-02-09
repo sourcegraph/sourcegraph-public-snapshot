@@ -233,6 +233,11 @@ extend type Query {
     dependencyOccurrences(repository: ID!, manager: String!, name: String!, version: String!): [Location!]!
 
     """
+    BING BONG KLING KLONG
+    """
+    vulnerabilities(repository: ID!): [Vulnerability!]!
+
+    """
     Returns precise code intelligence configuration policies that control data retention
     and (if enabled) auto-indexing behavior.
     """
@@ -486,6 +491,11 @@ type DependencyDescription {
     manager: String!
     name: String!
     version: String!
+}
+
+type Vulnerability {
+    # TODO - CVE stuff
+    locations: [Location!]!
 }
 
 """

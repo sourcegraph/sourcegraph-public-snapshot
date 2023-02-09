@@ -25,6 +25,7 @@ type CodeNavServiceResolver interface {
 	GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error)
 	Dependencies(ctx context.Context, args *DependenciesArgs) (_ []DependencyDescriptionResolver, err error)
 	DependencyOccurrences(ctx context.Context, args *DependencyOccurrencesArgs) (_ []LocationResolver, err error)
+	Vulnerabilities(ctx context.Context, args *VulnerabilitiesArgs) (_ []VulnerabilityResolver, err error)
 }
 
 type AutoindexingServiceResolver interface {
@@ -758,8 +759,16 @@ type DependencyOccurrencesArgs struct {
 	Version    string
 }
 
+type VulnerabilitiesArgs struct {
+	Repository graphql.ID
+}
+
 type DependencyDescriptionResolver interface {
 	Manager() string
 	Name() string
 	Version() string
+}
+
+type VulnerabilityResolver interface {
+	Locations() []LocationResolver
 }
