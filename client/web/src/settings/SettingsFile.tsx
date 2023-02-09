@@ -4,9 +4,11 @@ import classNames from 'classnames'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 
+import { ErrorLike } from '@sourcegraph/common'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { BeforeUnloadPrompt, LoadingSpinner, Tabs, Tab, TabList, TabPanels, TabPanel } from '@sourcegraph/wildcard'
+import { BeforeUnloadPrompt, LoadingSpinner, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { SaveToolbar } from '../components/SaveToolbar'
@@ -21,6 +23,8 @@ export type SettingsSchema = typeof settingsSchemaJSON
 
 interface Props extends TelemetryProps {
     settings: SiteAdminSettingsCascadeFields['subjects'][number]['latestSettings'] | null
+
+    settingsCascadeFinal: Settings | ErrorLike | null
 
     /**
      * Called when the user saves changes to the settings file's contents.
@@ -152,7 +156,10 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                     </TabList>
                     <TabPanels>
                         <TabPanel>
-                            <GeneratedSettingsForm jsonSchema={settingsSchemaJSON} />
+                            <GeneratedSettingsForm
+                                jsonSchema={settingsSchemaJSON}
+                                currentSettings={this.props.settingsCascadeFinal}
+                            />
                         </TabPanel>
                         <TabPanel>
                             <BeforeUnloadPrompt when={this.state.saving || this.dirty} message="Discard settings changes?" />
