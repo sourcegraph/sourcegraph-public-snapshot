@@ -78,12 +78,6 @@ export async function restoreOrCreateWindow() {
     window.show();
     window.focus();
   }
-<<<<<<< HEAD
-
-  window.isAlwaysOnTop();
-  window.focus();
-=======
->>>>>>> a1f7c537db (Hide instead of minimize on shortcut)
 }
 
 /**
