@@ -25,4 +25,4 @@ assignees: ''
 
 #### Customers impacted
 
-<!-- Paste account links from https://github.com/sourcegraph/accounts/issues -->
+<!-- Paste account links from https://github.com/sourcegraph/accounts/issues then add the tag to this issue (format acct-####) -->
