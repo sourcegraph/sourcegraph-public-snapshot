@@ -1,10 +1,10 @@
-import {app, BrowserWindow} from 'electron';
+import {app, BrowserWindow, systemPreferences} from 'electron';
 import {join} from 'node:path';
 import {URL} from 'node:url';
 
 async function createWindow() {
   const browserWindow = new BrowserWindow({
-    type: "panel",
+    type: 'panel',
     show: false, // Use the 'ready-to-show' event to show the instantiated BrowserWindow.
     webPreferences: {
       nodeIntegration: false,
@@ -62,3 +62,15 @@ export async function restoreOrCreateWindow() {
 
   window.focus();
 }
+
+/**
+ * Tray icon settings
+ */
+const clippings = [];
+let tray = null;
+
+const getIcon = () => {
+  if (process.platform === 'win32') return 'icon-light@2x.ico';
+  if (systemPreferences.isDarkMode()) return 'icon-light.png';
+  return 'icon-dark.png';
+};
