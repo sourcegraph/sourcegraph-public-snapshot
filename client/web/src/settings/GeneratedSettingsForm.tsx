@@ -20,7 +20,7 @@ interface settingsNode {
     maximum?: number
 }
 
-const groupLevelClasses = [styles.groupLevel0, styles.groupLevel1, styles.groupLevel2, styles.groupLevel3]
+const groupLevelClasses = [styles.groupLevel1, styles.groupLevel2, styles.groupLevel3]
 
 export const GeneratedSettingsForm: React.FunctionComponent<GeneratedSettingsFormProps> = ({ jsonSchema }) => (
     <>{convertPropertiesToComponents(jsonSchema as unknown as settingsNode, [])}</>
@@ -72,10 +72,12 @@ function convertPropertiesToComponents(node: settingsNode, parentNames: string[]
             case 'object':
                 if (subNode.properties) {
                     return (
-                        <div key={id} className={groupLevelClasses[parentNames.length]}>
+                        <div key={id}>
                             <H3>{subNode.title}</H3>
                             <Text>{subNode.description}</Text>
-                            {convertPropertiesToComponents(subNode, [...parentNames, name])}
+                            <div className={groupLevelClasses[parentNames.length]}>
+                                {convertPropertiesToComponents(subNode, [...parentNames, name])}
+                            </div>
                         </div>
                     )
                 }
