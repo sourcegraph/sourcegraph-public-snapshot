@@ -162,10 +162,11 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		}
 
 		// Create code-intel search jobs
-		if preds := b.Parameters.SymbolPredicateSearches(); len(preds) > 0 {
+		if preds := b.Parameters.SymbolPredicateSearches(); len(preds) > 0 && inputs.Features.CodeGraphSearch {
 			for _, ss := range preds {
-				// Hopefully the symbol search has symbol matches.
-				// TODO: can we reduce the accepted complexity here?
+				// TODO: can we reduce the accepted complexity here, e.g. by requiring
+				// this be a single-node 'type:symbol' search? For now, we hope that
+				// the provided query returns a reasonable set of symbol matches.
 				nodes, err := query.Parse(ss.SymbolSearch, query.SearchTypeLiteral)
 				if err != nil {
 					return nil, err
@@ -175,7 +176,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 				if err != nil {
 					return nil, err
 				}
-				addJob(&CodeIntelSearchJob{
+				addJob(&CodeGraphSearchJob{
 					SymbolSearch: job,
 					Relationship: ss.Relationship,
 				})

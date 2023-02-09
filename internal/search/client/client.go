@@ -294,6 +294,7 @@ func ToFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Feature
 		HybridSearch:            flagSet.GetBoolOr("search-hybrid", true), // can remove flag in 4.5
 		Ranking:                 flagSet.GetBoolOr("search-ranking", false),
 		Debug:                   flagSet.GetBoolOr("search-debug", false),
+		CodeGraphSearch:         flagSet.GetBoolOr("search-codegraph", false),
 	}
 }
 

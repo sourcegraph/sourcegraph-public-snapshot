@@ -17,8 +17,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type CodeIntelSearchJob struct {
+// CodeGraphSearchJob is an experimental search job for querying on code intel data and
+// relationships.
+type CodeGraphSearchJob struct {
+	// CodeIntel should be provided by internal/search/graph.Store(). It may be nil if
+	// unimplemented.
+	CodeIntel graph.CodeIntelStore
+	// SymbolSearch is a search job that should provide symbol results.
 	SymbolSearch job.Job
+	// Relationship is the code intel graph relationship to query on.
 	Relationship query.SymbolRelationship
 }
 
@@ -26,9 +33,14 @@ type streamingSenderFunc func(streaming.SearchEvent)
 
 func (s streamingSenderFunc) Send(e streaming.SearchEvent) { s(e) }
 
-func (s *CodeIntelSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+func (s *CodeGraphSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
+
+	if s.CodeIntel == nil {
+		err = errors.New("CodeIntel graph search unimplemented")
+		return nil, err
+	}
 
 	seenRanges := make(map[string]map[result.Range]struct{})
 	var symbolSearchErrors error
@@ -39,15 +51,13 @@ func (s *CodeIntelSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 		for _, m := range se.Results {
 			switch fm := m.(type) {
 			case *result.FileMatch:
-				codeintel := graph.Store()
-				if codeintel == nil {
-					return
-				}
-
 				if len(fm.Symbols) > 0 {
+					// For each symbol, get results with precise relationships to the
+					// symbol.
 					var locations []types.CodeIntelLocation
 					var err error
 					for _, symbol := range fm.Symbols {
+						// TODO: We should paginate code graph searches
 						req := types.CodeIntelRequestArgs{
 							RepositoryID: int(fm.Repo.ID),
 							Commit:       string(fm.CommitID),
@@ -60,12 +70,10 @@ func (s *CodeIntelSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 
 						switch s.Relationship {
 						case query.SymbolRelationshipReferences:
-							locations, err = codeintel.GetReferences(ctx, fm.Repo, req)
+							locations, err = s.CodeIntel.GetReferences(ctx, fm.Repo, req)
 
 						case query.SymbolRelationshipImplements:
-							locations, err = codeintel.GetImplementations(ctx, fm.Repo, req)
-
-						// TODO: case "callers"
+							locations, err = s.CodeIntel.GetImplementations(ctx, fm.Repo, req)
 
 						default:
 							err = errors.Newf("unknown relationship query %q", s.Relationship)
@@ -75,7 +83,9 @@ func (s *CodeIntelSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 						symbolSearchErrors = errors.Append(symbolSearchErrors, err)
 						continue
 					}
+
 					for _, l := range locations {
+						// Deduplicate results
 						r := result.Range{
 							Start: result.Location{
 								Offset: l.TargetRange.Start.Character,
@@ -92,33 +102,33 @@ func (s *CodeIntelSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 							continue
 						}
 
+						// TODO: Right now, we just return the result as a chunk match
+						// because we do not get the actual symbol at the location. We
+						// probably want to be able to adapt these back to symbol results.
 						f, err := clients.Gitserver.ReadFile(ctx, authz.DefaultSubRepoPermsChecker,
 							fm.Repo.Name, api.CommitID(l.TargetCommit), l.Path)
 						if err != nil {
 							symbolSearchErrors = errors.Append(symbolSearchErrors, err)
 							continue
 						}
-						stream.Send(streaming.SearchEvent{
-							Results: result.Matches{
-								&result.FileMatch{
-									File: result.File{
-										Repo:     fm.Repo,
-										CommitID: api.CommitID(l.TargetCommit),
-										InputRev: fm.InputRev,
-										Path:     l.Path,
+						match := &result.FileMatch{
+							File: result.File{
+								Repo:     fm.Repo,
+								CommitID: api.CommitID(l.TargetCommit),
+								InputRev: fm.InputRev,
+								Path:     l.Path,
+							},
+							ChunkMatches: result.ChunkMatches{
+								result.ChunkMatch{
+									Content: string(f),
+									ContentStart: result.Location{
+										Line: l.TargetRange.Start.Line,
 									},
-									ChunkMatches: result.ChunkMatches{
-										result.ChunkMatch{
-											Content: string(f),
-											ContentStart: result.Location{
-												Line: l.TargetRange.Start.Line,
-											},
-											Ranges: result.Ranges{r},
-										},
-									},
+									Ranges: result.Ranges{r},
 								},
 							},
-						})
+						}
+						stream.Send(streaming.SearchEvent{Results: result.Matches{match}})
 					}
 				}
 				return
@@ -137,13 +147,15 @@ func (s *CodeIntelSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 	return nil, nil
 }
 
-func (s *CodeIntelSearchJob) Children() []job.Describer { return nil }
+func (s *CodeGraphSearchJob) Children() []job.Describer { return nil }
 
-func (s *CodeIntelSearchJob) MapChildren(fn job.MapFunc) job.Job { return s }
+func (s *CodeGraphSearchJob) MapChildren(fn job.MapFunc) job.Job { return s }
 
-func (s *CodeIntelSearchJob) Fields(v job.Verbosity) (res []log.Field) {
+func (s *CodeGraphSearchJob) Fields(v job.Verbosity) (res []log.Field) {
 	return []log.Field{
+		log.Bool("implemented", s.CodeIntel != nil),
 		log.String("relationship", string(s.Relationship)),
 	}
 }
-func (s *CodeIntelSearchJob) Name() string { return "CodeIntelSearchJob" }
+
+func (s *CodeGraphSearchJob) Name() string { return "CodeIntelSearchJob" }

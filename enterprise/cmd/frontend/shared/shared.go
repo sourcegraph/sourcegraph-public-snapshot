@@ -16,9 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/gitserver"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
-	ossauthz "github.com/sourcegraph/sourcegraph/internal/authz"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches"
 	codeintelinit "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel"
@@ -34,8 +31,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/repos/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/scim"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -44,7 +39,6 @@ import (
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/graph"
-	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type EnterpriseInitializer = func(context.Context, *observation.Context, database.DB, codeintel.Services, conftypes.UnifiedWatchable, *enterprise.Services) error
@@ -88,15 +82,12 @@ func EnterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 	if err != nil {
 		logger.Fatal("failed to initialize code intelligence", log.Error(err))
 	}
-	c, err := codenav.NewHunkCache(100)
+
+	searchGraph, err := newGraphSearchCodeIntelStore(db, codeIntelServices, 500) // default value of PRECISE_CODE_INTEL_MAXIMUM_INDEXES_PER_MONIKER_SEARCH
 	if err != nil {
-		logger.Fatal("failed to initialize code intelligence", log.Error(err))
+		logger.Fatal("failed to initialize code intelligence for graph search", log.Error(err))
 	}
-	graph.RegisterStore(&codeNavShim{
-		svc:       codeIntelServices,
-		gs:        gitserver.New(&observation.TestContext, db),
-		hunkCache: c,
-	})
+	graph.RegisterStore(searchGraph)
 
 	for name, fn := range initFunctions {
 		if err := fn(ctx, observationCtx, db, codeIntelServices, conf, &enterpriseServices); err != nil {
@@ -124,54 +115,4 @@ func mustInitializeCodeIntelDB(logger log.Logger) codeintelshared.CodeIntelDB {
 	}
 
 	return codeintelshared.NewCodeIntelDB(logger, db)
-}
-
-type codeNavShim struct {
-	svc codeintel.Services
-	gs  *gitserver.Client
-
-	hunkCache codenav.HunkCache
-}
-
-func toLocations(uls []types.UploadLocation) []sgtypes.CodeIntelLocation {
-	ls := make([]sgtypes.CodeIntelLocation, len(uls))
-	for i, l := range uls {
-		ls[i] = sgtypes.CodeIntelLocation{
-			Path:         l.Path,
-			TargetCommit: l.TargetCommit,
-			TargetRange: sgtypes.CodeIntelRange{
-				Start: sgtypes.CodeIntelPosition(l.TargetRange.Start),
-				End:   sgtypes.CodeIntelPosition(l.TargetRange.End),
-			},
-		}
-	}
-	return ls
-}
-
-func (s *codeNavShim) GetReferences(ctx context.Context, repo sgtypes.MinimalRepo, args sgtypes.CodeIntelRequestArgs) (_ []sgtypes.CodeIntelLocation, err error) {
-	uploads, err := s.svc.CodenavService.GetClosestDumpsForBlob(ctx, args.RepositoryID, args.Commit, args.Path, true, "")
-	if err != nil || len(uploads) == 0 {
-		return nil, err
-	}
-
-	reqState := codenav.NewRequestState(uploads, ossauthz.DefaultSubRepoPermsChecker, s.gs, repo.ToRepo(), string(args.Commit), args.Path, 10, s.hunkCache)
-
-	locs, _, err := s.svc.CodenavService.GetReferences(ctx, shared.RequestArgs(args), reqState, shared.ReferencesCursor{
-		Phase: "local",
-	})
-	return toLocations(locs), err
-}
-
-func (s *codeNavShim) GetImplementations(ctx context.Context, repo sgtypes.MinimalRepo, args sgtypes.CodeIntelRequestArgs) (_ []sgtypes.CodeIntelLocation, err error) {
-	uploads, err := s.svc.CodenavService.GetClosestDumpsForBlob(ctx, args.RepositoryID, args.Commit, args.Path, true, "")
-	if err != nil || len(uploads) == 0 {
-		return nil, err
-	}
-
-	reqState := codenav.NewRequestState(uploads, ossauthz.DefaultSubRepoPermsChecker, s.gs, repo.ToRepo(), string(args.Commit), args.Path, 10, s.hunkCache)
-
-	locs, _, err := s.svc.CodenavService.GetImplementations(ctx, shared.RequestArgs(args), reqState, shared.ImplementationsCursor{
-		Phase: "local",
-	})
-	return toLocations(locs), err
 }

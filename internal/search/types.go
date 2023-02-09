@@ -8,8 +8,9 @@ import (
 
 	"github.com/grafana/regexp"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	zoektquery "github.com/sourcegraph/zoekt/query"
+
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -350,6 +351,10 @@ type Features struct {
 	// CodeOwnershipFilters when true will enable searching through code ownership
 	// using `file:has.owner({owner})` filter.
 	CodeOwnershipFilters bool `json:"codeownersip"`
+
+	// CodeGraphSearch when true will enable searching through code intel graph
+	// relationships with `symbol:references(...)` and `symbol:implements(...)`
+	CodeGraphSearch bool `json:"codegraphsearch"`
 }
 
 func (f *Features) String() string {
