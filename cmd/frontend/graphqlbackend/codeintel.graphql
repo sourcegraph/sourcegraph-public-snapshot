@@ -222,6 +222,8 @@ extend type Mutation {
 }
 
 extend type Query {
+    dependencies(repository: ID!): [DependencyDescription!]!
+
     """
     Returns precise code intelligence configuration policies that control data retention
     and (if enabled) auto-indexing behavior.
@@ -470,6 +472,12 @@ type CodeIntelligenceConfigurationPolicyConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
+}
+
+type DependencyDescription {
+    manager: String!
+    name: String!
+    version: String!
 }
 
 """

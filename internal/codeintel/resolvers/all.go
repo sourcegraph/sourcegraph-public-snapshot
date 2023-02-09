@@ -23,6 +23,7 @@ type RootResolver interface {
 
 type CodeNavServiceResolver interface {
 	GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error)
+	Dependencies(ctx context.Context, args *DependenciesArgs) (_ []DependencyDescriptionResolver, err error)
 }
 
 type AutoindexingServiceResolver interface {
@@ -743,4 +744,14 @@ func (r *inferredAvailableIndexersResolver) Index() string {
 
 func (r *inferredAvailableIndexersResolver) URL() string {
 	return r.url
+}
+
+type DependenciesArgs struct {
+	Repository graphql.ID
+}
+
+type DependencyDescriptionResolver interface {
+	Manager() string
+	Name() string
+	Version() string
 }
