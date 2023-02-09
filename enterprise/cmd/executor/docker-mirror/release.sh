@@ -27,3 +27,5 @@ else
   # Make AMI usable outside of Sourcegraph.
   aws ec2 --region="us-west-2" modify-image-attribute --image-id "${AWS_AMI_ID}" --launch-permission "Add=[{Group=all}]"
 fi
+
+# TODO azure it

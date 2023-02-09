@@ -40,6 +40,10 @@ EOF
   /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:"${CLOUDWATCH_CONFIG_FILE_PATH}"
 }
 
+function install_azure_angent() {
+  # TODO 
+}
+
 ## Install Docker
 function install_docker() {
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
@@ -214,6 +218,8 @@ function cleanup() {
 # Prerequisites
 if [ "${PLATFORM_TYPE}" == "gcp" ]; then
   install_ops_agent
+elif [ "${PLATFORM_TYPE}" == "azure" ]; then
+  install_azure_agent
 else
   install_cloudwatch_agent
 fi

@@ -15,36 +15,36 @@ packer {
     }
 }
 
-variable "name" {
-    type = string
-}
-
-variable "aws_access_key" {
-    type = string
-    sensitive = true
-}
-
-variable "aws_secret_key" {
-    type = string
-    sensitive = true
-}
-
-variable "aws_max_attempts" {
-    type = number
-}
-
-variable "aws_poll_delay_seconds" {
-    type = number
-}
-
-variable "aws_regions" {
-    type = list(string)
-
-    validation {
-        condition = length(var.aws_regions) > 0
-        error_message = "Must set at least 1 AWS region."
-    }
-}
+# variable "name" {
+#     type = string
+# }
+# 
+# variable "aws_access_key" {
+#     type = string
+#     sensitive = true
+# }
+# 
+# variable "aws_secret_key" {
+#     type = string
+#     sensitive = true
+# }
+# 
+# variable "aws_max_attempts" {
+#     type = number
+# }
+# 
+# variable "aws_poll_delay_seconds" {
+#     type = number
+# }
+# 
+# variable "aws_regions" {
+#     type = list(string)
+# 
+#     validation {
+#         condition = length(var.aws_regions) > 0
+#         error_message = "Must set at least 1 AWS region."
+#     }
+# }
 
 source "googlecompute" "gcp" {
     project_id = "sourcegraph-ci"
