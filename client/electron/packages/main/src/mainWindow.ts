@@ -6,7 +6,7 @@ import {URL} from 'node:url';
 async function createWindow() {
   const browserWindow = new BrowserWindow({
     type: 'panel',
-    transparent: false,
+    transparent: true,
     useContentSize: true, // The width and height would be used as web page's size.
     frame: false,
     show: false, // Use the 'ready-to-show' event to show the instantiated BrowserWindow.
@@ -43,7 +43,7 @@ async function createWindow() {
     browserWindow?.show();
 
     if (import.meta.env.DEV) {
-      browserWindow?.webContents.openDevTools();
+      browserWindow?.webContents.openDevTools({mode: 'detach'});
     }
   });
 
