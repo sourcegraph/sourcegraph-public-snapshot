@@ -5,14 +5,18 @@ import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, BeforeUnloadPrompt } from '@sourcegraph/wildcard'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { BeforeUnloadPrompt, LoadingSpinner, Tabs, Tab, TabList, TabPanels, TabPanel } from '@sourcegraph/wildcard'
 
+import { GeneratedSettingsForm } from './GeneratedSettingsForm'
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { SaveToolbar } from '../components/SaveToolbar'
 import { SiteAdminSettingsCascadeFields } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
 import styles from './SettingsFile.module.scss'
+
+export type SettingsSchema = typeof settingsSchemaJSON
 
 interface Props extends TelemetryProps {
     settings: SiteAdminSettingsCascadeFields['subjects'][number]['latestSettings'] | null
@@ -140,17 +144,30 @@ export class SettingsFile extends React.PureComponent<Props, State> {
 
         return (
             <div className={classNames('test-settings-file d-flex flex-grow-1 flex-column', styles.settingsFile)}>
-                <BeforeUnloadPrompt when={this.state.saving || this.dirty} message="Discard settings changes?" />
-                <React.Suspense fallback={<LoadingSpinner className="mt-2" />}>
-                    <MonacoSettingsEditor
-                        value={contents}
-                        jsonSchema={settingsSchemaJSON}
-                        onChange={this.onEditorChange}
-                        readOnly={this.state.saving}
-                        isLightTheme={this.props.isLightTheme}
-                        onDidSave={this.save}
-                    />
-                </React.Suspense>
+                <Tabs>
+                    <TabList>
+                        <Tab>Settings</Tab>
+                        <Tab>JSON Editor</Tab>
+                    </TabList>
+                    <TabPanels>
+                        <TabPanel>
+                            <GeneratedSettingsForm value={contents} jsonSchema={settingsSchemaJSON} />
+                        </TabPanel>
+                        <TabPanel>
+                            <BeforeUnloadPrompt when={this.state.saving || this.dirty} message="Discard settings changes?" />
+                            <React.Suspense fallback={<LoadingSpinner className="mt-2" />}>
+                                <MonacoSettingsEditor
+                                    value={contents}
+                                    jsonSchema={settingsSchemaJSON}
+                                    onChange={this.onEditorChange}
+                                    readOnly={this.state.saving}
+                                    isLightTheme={this.props.isLightTheme}
+                                    onDidSave={this.save}
+                                />
+                            </React.Suspense>
+                        </TabPanel>
+                    </TabPanels>
+                </Tabs>
                 <SaveToolbar
                     dirty={dirty}
                     error={this.props.commitError}
