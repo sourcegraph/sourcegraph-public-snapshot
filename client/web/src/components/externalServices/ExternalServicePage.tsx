@@ -2,8 +2,8 @@ import React, { useEffect, useState, useCallback, useMemo, FC } from 'react'
 
 import { mdiCog, mdiConnection, mdiDelete } from '@mdi/js'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Subject } from 'rxjs'
 import { useNavigate, useParams } from 'react-router-dom-v5-compat'
+import { Subject } from 'rxjs'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
