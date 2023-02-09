@@ -24,6 +24,8 @@ type LsifStore interface {
 	// Definition
 	GetDefinitionLocations(ctx context.Context, uploadID int, path string, line, character, limit, offset int) (_ []shared.Location, _ int, err error)
 
+	GetCallerLocations(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []shared.Location, err error)
+
 	// Monikers
 	GetMonikersByPosition(ctx context.Context, uploadID int, path string, line, character int) (_ [][]precise.MonikerData, err error)
 	GetBulkMonikerLocations(ctx context.Context, tableName string, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error)

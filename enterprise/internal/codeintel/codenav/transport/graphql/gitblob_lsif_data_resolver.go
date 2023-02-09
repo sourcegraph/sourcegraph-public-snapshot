@@ -254,6 +254,18 @@ func (r *gitBlobLSIFDataResolver) Implementations(ctx context.Context, args *res
 	return NewLocationConnectionResolver(impls, strPtr(nextCursor), r.locationResolver), nil
 }
 
+// Callers returns the list of source locations that call the symbol at the given position.
+func (r *gitBlobLSIFDataResolver) Callers(ctx context.Context, args *resolverstubs.LSIFPagedQueryPositionArgs) (_ resolverstubs.LocationConnectionResolver, err error) {
+	requestArgs := shared.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path, Line: int(args.Line), Character: int(args.Character)}
+
+	locations, err := r.codeNavSvc.GetCallers(ctx, requestArgs, r.requestState)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewLocationConnectionResolver(locations, nil, r.locationResolver), nil
+}
+
 // Hover returns the hover text and range for the symbol at the given position.
 func (r *gitBlobLSIFDataResolver) Hover(ctx context.Context, args *resolverstubs.LSIFQueryPositionArgs) (_ resolverstubs.HoverResolver, err error) {
 	requestArgs := shared.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path, Line: int(args.Line), Character: int(args.Character)}

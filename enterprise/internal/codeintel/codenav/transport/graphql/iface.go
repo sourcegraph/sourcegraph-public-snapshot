@@ -23,6 +23,7 @@ type CodeNavService interface {
 	GetReferences(ctx context.Context, args shared.RequestArgs, requestState codenav.RequestState, cursor shared.ReferencesCursor) (_ []types.UploadLocation, nextCursor shared.ReferencesCursor, err error)
 	GetImplementations(ctx context.Context, args shared.RequestArgs, requestState codenav.RequestState, cursor shared.ImplementationsCursor) (_ []types.UploadLocation, nextCursor shared.ImplementationsCursor, err error)
 	GetDefinitions(ctx context.Context, args shared.RequestArgs, requestState codenav.RequestState) (_ []types.UploadLocation, err error)
+	GetCallers(ctx context.Context, args shared.RequestArgs, requestState codenav.RequestState) (_ []types.UploadLocation, err error)
 	GetDiagnostics(ctx context.Context, args shared.RequestArgs, requestState codenav.RequestState) (diagnosticsAtUploads []shared.DiagnosticAtUpload, _ int, err error)
 	GetRanges(ctx context.Context, args shared.RequestArgs, requestState codenav.RequestState, startLine, endLine int) (adjustedRanges []shared.AdjustedCodeIntelligenceRange, err error)
 	GetStencil(ctx context.Context, args shared.RequestArgs, requestState codenav.RequestState) (adjustedRanges []types.Range, err error)

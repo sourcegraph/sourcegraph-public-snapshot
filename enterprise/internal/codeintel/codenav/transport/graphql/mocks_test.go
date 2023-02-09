@@ -833,6 +833,9 @@ func (c AutoIndexingServiceQueueRepoRevFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/transport/graphql)
 // used for unit testing.
 type MockCodeNavService struct {
+	// GetCallersFunc is an instance of a mock function object controlling
+	// the behavior of the method GetCallers.
+	GetCallersFunc *CodeNavServiceGetCallersFunc
 	// GetClosestDumpsForBlobFunc is an instance of a mock function object
 	// controlling the behavior of the method GetClosestDumpsForBlob.
 	GetClosestDumpsForBlobFunc *CodeNavServiceGetClosestDumpsForBlobFunc
@@ -869,6 +872,11 @@ type MockCodeNavService struct {
 // All methods return zero values for all results, unless overwritten.
 func NewMockCodeNavService() *MockCodeNavService {
 	return &MockCodeNavService{
+		GetCallersFunc: &CodeNavServiceGetCallersFunc{
+			defaultHook: func(context.Context, shared1.RequestArgs, codenav.RequestState) (r0 []types.UploadLocation, r1 error) {
+				return
+			},
+		},
 		GetClosestDumpsForBlobFunc: &CodeNavServiceGetClosestDumpsForBlobFunc{
 			defaultHook: func(context.Context, int, string, string, bool, string) (r0 []types.Dump, r1 error) {
 				return
@@ -926,6 +934,11 @@ func NewMockCodeNavService() *MockCodeNavService {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockCodeNavService() *MockCodeNavService {
 	return &MockCodeNavService{
+		GetCallersFunc: &CodeNavServiceGetCallersFunc{
+			defaultHook: func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]types.UploadLocation, error) {
+				panic("unexpected invocation of MockCodeNavService.GetCallers")
+			},
+		},
 		GetClosestDumpsForBlobFunc: &CodeNavServiceGetClosestDumpsForBlobFunc{
 			defaultHook: func(context.Context, int, string, string, bool, string) ([]types.Dump, error) {
 				panic("unexpected invocation of MockCodeNavService.GetClosestDumpsForBlob")
@@ -984,6 +997,9 @@ func NewStrictMockCodeNavService() *MockCodeNavService {
 // overwritten.
 func NewMockCodeNavServiceFrom(i CodeNavService) *MockCodeNavService {
 	return &MockCodeNavService{
+		GetCallersFunc: &CodeNavServiceGetCallersFunc{
+			defaultHook: i.GetCallers,
+		},
 		GetClosestDumpsForBlobFunc: &CodeNavServiceGetClosestDumpsForBlobFunc{
 			defaultHook: i.GetClosestDumpsForBlob,
 		},
@@ -1015,6 +1031,117 @@ func NewMockCodeNavServiceFrom(i CodeNavService) *MockCodeNavService {
 			defaultHook: i.GetUnsafeDB,
 		},
 	}
+}
+
+// CodeNavServiceGetCallersFunc describes the behavior when the GetCallers
+// method of the parent MockCodeNavService instance is invoked.
+type CodeNavServiceGetCallersFunc struct {
+	defaultHook func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]types.UploadLocation, error)
+	hooks       []func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]types.UploadLocation, error)
+	history     []CodeNavServiceGetCallersFuncCall
+	mutex       sync.Mutex
+}
+
+// GetCallers delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockCodeNavService) GetCallers(v0 context.Context, v1 shared1.RequestArgs, v2 codenav.RequestState) ([]types.UploadLocation, error) {
+	r0, r1 := m.GetCallersFunc.nextHook()(v0, v1, v2)
+	m.GetCallersFunc.appendCall(CodeNavServiceGetCallersFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetCallers method of
+// the parent MockCodeNavService instance is invoked and the hook queue is
+// empty.
+func (f *CodeNavServiceGetCallersFunc) SetDefaultHook(hook func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]types.UploadLocation, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetCallers method of the parent MockCodeNavService instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CodeNavServiceGetCallersFunc) PushHook(hook func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]types.UploadLocation, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeNavServiceGetCallersFunc) SetDefaultReturn(r0 []types.UploadLocation, r1 error) {
+	f.SetDefaultHook(func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]types.UploadLocation, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeNavServiceGetCallersFunc) PushReturn(r0 []types.UploadLocation, r1 error) {
+	f.PushHook(func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]types.UploadLocation, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeNavServiceGetCallersFunc) nextHook() func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]types.UploadLocation, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeNavServiceGetCallersFunc) appendCall(r0 CodeNavServiceGetCallersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeNavServiceGetCallersFuncCall objects
+// describing the invocations of this function.
+func (f *CodeNavServiceGetCallersFunc) History() []CodeNavServiceGetCallersFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeNavServiceGetCallersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeNavServiceGetCallersFuncCall is an object that describes an
+// invocation of method GetCallers on an instance of MockCodeNavService.
+type CodeNavServiceGetCallersFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared1.RequestArgs
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 codenav.RequestState
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []types.UploadLocation
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeNavServiceGetCallersFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeNavServiceGetCallersFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // CodeNavServiceGetClosestDumpsForBlobFunc describes the behavior when the

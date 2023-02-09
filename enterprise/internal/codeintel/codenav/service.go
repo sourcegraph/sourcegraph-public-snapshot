@@ -291,6 +291,41 @@ func (s *Service) GetReferences(ctx context.Context, args shared.RequestArgs, re
 	return referenceLocations, cursor, nil
 }
 
+func (s *Service) GetCallers(ctx context.Context, args shared.RequestArgs, requestState RequestState) (_ []types.UploadLocation, err error) {
+	visibleUploads, err := s.getVisibleUploads(ctx, args.Line, args.Character, requestState)
+	if err != nil {
+		return nil, err
+	}
+
+	// only care about 1 right now
+	upload := visibleUploads[0]
+	if upload.Upload.Commit != args.Commit {
+		panic("UPLOAD NOT FOR SAME COMMIT")
+	}
+
+	// Gather the "local" reference locations that are reachable via a referenceResult vertex.
+	// If the definition exists within the index, it should be reachable via an LSIF graph
+	// traversal and should not require an additional moniker search in the same index.
+	locations, err := s.lsifstore.GetCallerLocations(
+		ctx,
+		upload.Upload.ID,
+		upload.TargetPathWithoutRoot,
+		upload.TargetPosition.Line,
+		upload.TargetPosition.Character,
+		100,
+		0,
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "lsifStore.Callers")
+	}
+	if len(locations) > 0 {
+		// If we have a local definition, we won't find a better one and can exit early
+		return s.getUploadLocations(ctx, args, requestState, locations, true)
+	}
+
+	return nil, nil
+}
+
 // getUploadsWithDefinitionsForMonikers returns the set of uploads that provide any of the given monikers.
 // This method will not return uploads for commits which are unknown to gitserver.
 func (s *Service) getUploadsWithDefinitionsForMonikers(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData, requestState RequestState) ([]types.Dump, error) {

@@ -172,6 +172,9 @@ type MockLsifStore struct {
 	// GetBulkMonikerLocationsFunc is an instance of a mock function object
 	// controlling the behavior of the method GetBulkMonikerLocations.
 	GetBulkMonikerLocationsFunc *LsifStoreGetBulkMonikerLocationsFunc
+	// GetCallerLocationsFunc is an instance of a mock function object
+	// controlling the behavior of the method GetCallerLocations.
+	GetCallerLocationsFunc *LsifStoreGetCallerLocationsFunc
 	// GetDefinitionLocationsFunc is an instance of a mock function object
 	// controlling the behavior of the method GetDefinitionLocations.
 	GetDefinitionLocationsFunc *LsifStoreGetDefinitionLocationsFunc
@@ -211,6 +214,11 @@ func NewMockLsifStore() *MockLsifStore {
 	return &MockLsifStore{
 		GetBulkMonikerLocationsFunc: &LsifStoreGetBulkMonikerLocationsFunc{
 			defaultHook: func(context.Context, string, []int, []precise.MonikerData, int, int) (r0 []shared.Location, r1 int, r2 error) {
+				return
+			},
+		},
+		GetCallerLocationsFunc: &LsifStoreGetCallerLocationsFunc{
+			defaultHook: func(context.Context, int, string, int, int, int, int) (r0 []shared.Location, r1 error) {
 				return
 			},
 		},
@@ -276,6 +284,11 @@ func NewStrictMockLsifStore() *MockLsifStore {
 				panic("unexpected invocation of MockLsifStore.GetBulkMonikerLocations")
 			},
 		},
+		GetCallerLocationsFunc: &LsifStoreGetCallerLocationsFunc{
+			defaultHook: func(context.Context, int, string, int, int, int, int) ([]shared.Location, error) {
+				panic("unexpected invocation of MockLsifStore.GetCallerLocations")
+			},
+		},
 		GetDefinitionLocationsFunc: &LsifStoreGetDefinitionLocationsFunc{
 			defaultHook: func(context.Context, int, string, int, int, int, int) ([]shared.Location, int, error) {
 				panic("unexpected invocation of MockLsifStore.GetDefinitionLocations")
@@ -335,6 +348,9 @@ func NewMockLsifStoreFrom(i lsifstore.LsifStore) *MockLsifStore {
 	return &MockLsifStore{
 		GetBulkMonikerLocationsFunc: &LsifStoreGetBulkMonikerLocationsFunc{
 			defaultHook: i.GetBulkMonikerLocations,
+		},
+		GetCallerLocationsFunc: &LsifStoreGetCallerLocationsFunc{
+			defaultHook: i.GetCallerLocations,
 		},
 		GetDefinitionLocationsFunc: &LsifStoreGetDefinitionLocationsFunc{
 			defaultHook: i.GetDefinitionLocations,
@@ -493,6 +509,130 @@ func (c LsifStoreGetBulkMonikerLocationsFuncCall) Args() []interface{} {
 // invocation.
 func (c LsifStoreGetBulkMonikerLocationsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// LsifStoreGetCallerLocationsFunc describes the behavior when the
+// GetCallerLocations method of the parent MockLsifStore instance is
+// invoked.
+type LsifStoreGetCallerLocationsFunc struct {
+	defaultHook func(context.Context, int, string, int, int, int, int) ([]shared.Location, error)
+	hooks       []func(context.Context, int, string, int, int, int, int) ([]shared.Location, error)
+	history     []LsifStoreGetCallerLocationsFuncCall
+	mutex       sync.Mutex
+}
+
+// GetCallerLocations delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockLsifStore) GetCallerLocations(v0 context.Context, v1 int, v2 string, v3 int, v4 int, v5 int, v6 int) ([]shared.Location, error) {
+	r0, r1 := m.GetCallerLocationsFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6)
+	m.GetCallerLocationsFunc.appendCall(LsifStoreGetCallerLocationsFuncCall{v0, v1, v2, v3, v4, v5, v6, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetCallerLocations
+// method of the parent MockLsifStore instance is invoked and the hook queue
+// is empty.
+func (f *LsifStoreGetCallerLocationsFunc) SetDefaultHook(hook func(context.Context, int, string, int, int, int, int) ([]shared.Location, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetCallerLocations method of the parent MockLsifStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *LsifStoreGetCallerLocationsFunc) PushHook(hook func(context.Context, int, string, int, int, int, int) ([]shared.Location, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *LsifStoreGetCallerLocationsFunc) SetDefaultReturn(r0 []shared.Location, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, int, int, int, int) ([]shared.Location, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *LsifStoreGetCallerLocationsFunc) PushReturn(r0 []shared.Location, r1 error) {
+	f.PushHook(func(context.Context, int, string, int, int, int, int) ([]shared.Location, error) {
+		return r0, r1
+	})
+}
+
+func (f *LsifStoreGetCallerLocationsFunc) nextHook() func(context.Context, int, string, int, int, int, int) ([]shared.Location, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LsifStoreGetCallerLocationsFunc) appendCall(r0 LsifStoreGetCallerLocationsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LsifStoreGetCallerLocationsFuncCall objects
+// describing the invocations of this function.
+func (f *LsifStoreGetCallerLocationsFunc) History() []LsifStoreGetCallerLocationsFuncCall {
+	f.mutex.Lock()
+	history := make([]LsifStoreGetCallerLocationsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LsifStoreGetCallerLocationsFuncCall is an object that describes an
+// invocation of method GetCallerLocations on an instance of MockLsifStore.
+type LsifStoreGetCallerLocationsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 int
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 int
+	// Arg6 is the value of the 7th argument passed to this method
+	// invocation.
+	Arg6 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.Location
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LsifStoreGetCallerLocationsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5, c.Arg6}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LsifStoreGetCallerLocationsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // LsifStoreGetDefinitionLocationsFunc describes the behavior when the
