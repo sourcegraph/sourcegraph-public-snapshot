@@ -62,10 +62,11 @@ func (s *CodeGraphSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 							RepositoryID: int(fm.Repo.ID),
 							Commit:       string(fm.CommitID),
 							Path:         fm.Path,
-							Line:         symbol.Symbol.Line - 1,
-							Character:    symbol.Symbol.Character,
-							Limit:        100,
-							RawCursor:    "",
+							// symbols are 1-indexed but codeintel is 0-indexed
+							Line:      symbol.Symbol.Line - 1,
+							Character: symbol.Symbol.Character,
+							Limit:     100,
+							RawCursor: "",
 						}
 
 						switch s.Relationship {
@@ -85,17 +86,18 @@ func (s *CodeGraphSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 					}
 
 					for _, l := range locations {
-						// Deduplicate results
+						// Range identifies this result
 						r := result.Range{
 							Start: result.Location{
-								Offset: l.TargetRange.Start.Character,
+								Column: l.TargetRange.Start.Character,
 								Line:   l.TargetRange.Start.Line,
 							},
 							End: result.Location{
-								Offset: l.TargetRange.End.Character,
+								Column: l.TargetRange.End.Character,
 								Line:   l.TargetRange.End.Line,
 							},
 						}
+						// Deduplicate results
 						if seenRanges[l.Path] == nil {
 							seenRanges[l.Path] = map[result.Range]struct{}{r: {}}
 						} else if _, seen := seenRanges[l.Path][r]; seen {
