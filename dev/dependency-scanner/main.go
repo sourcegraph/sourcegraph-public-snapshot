@@ -26,6 +26,21 @@ type Dependency struct {
 
 type ProductCPEs []nvdapi.CPEProduct
 
+type Vulnerability struct {
+	CVE                  string `json:"cve"`
+	Description          string `json:"description"`
+	Dependency           string `json:"dependency"`
+	PackageManager       string `json:"package_manager"`
+	PublishedDate        string `json:"published_date"`
+	LastUpdate           string `json:"last_update"`
+	SourceFile           string `json:"source_file"`
+	SourceFileLineNumber int    `json:"source_file_line_number"`
+	AffectedVersion      string `json:"affected_version"`
+	CurrentVersion       string `json:"current_version"`
+	SeverityScore        string `json:"severity_score"`
+	SeverityString       string `json:"severity_string"`
+}
+
 func main() {
 	fmt.Printf("Sourcegraph Dependency Scanner\n")
 
