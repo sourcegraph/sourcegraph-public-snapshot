@@ -8,7 +8,7 @@ import { Observable } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
 import { memoizeObservable, numberWithCommas, pluralize } from '@sourcegraph/common'
-import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType, TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -42,6 +42,8 @@ import {
     TreeCommitsResult,
     TreePageRepositoryFields,
     TreeCommitsVariables,
+    FetchExpertsResult,
+    FetchExpertsVariables,
 } from '../../graphql-operations'
 import { PersonLink } from '../../person/PersonLink'
 import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
@@ -233,6 +235,11 @@ interface TreePageContentProps extends ExtensionsControllerProps, ThemeProps, Te
     revision: string
 }
 
+const q = gql`
+    query FetchExperts($filePath: String!) {
+        experts(filePath: $filePath)
+    }
+`
 export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<TreePageContentProps>> = ({
     filePath,
     tree,
@@ -321,9 +328,33 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
         </div>
     )
 
+    const { data: expertsData } = useQuery<FetchExpertsResult, FetchExpertsVariables>(q, {
+        variables: { filePath },
+    })
+
     return (
         <>
             {readmeEntry && <ReadmePreviewCard entry={readmeEntry} repoName={repo.name} revision={revision} />}
+
+            <Card className={styles.contributors}>
+                <CardHeader className={panelStyles.cardColHeaderWrapper}>Experts</CardHeader>
+                <ConnectionList className="list-group list-group-flush test-filtered-contributors-connection">
+                    {expertsData?.experts.slice(0, 10).map(node => (
+                        <li
+                            className={classNames('list-group-item py-2', contributorsStyles.repositoryContributorNode)}
+                        >
+                            <div className={contributorsStyles.person}>
+                                <UserAvatar
+                                    inline={true}
+                                    className="mr-2"
+                                    user={{ avatarURL: null, displayName: node }}
+                                />
+                                <div>{node}</div>
+                            </div>
+                        </li>
+                    ))}
+                </ConnectionList>
+            </Card>
 
             <section className={classNames('test-tree-entries container mb-3 px-0', styles.section)}>
                 <FilesCard diffStats={diffStats} entries={tree.entries} className={styles.files} filePath={filePath} />

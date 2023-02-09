@@ -1239,6 +1239,8 @@ type Query {
     """
     node(id: ID!): Node
 
+    experts(filePath: String!): [String!]!
+
     """
     Looks up a repository by either name or cloneURL.
     """

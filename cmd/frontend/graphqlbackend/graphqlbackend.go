@@ -4,10 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"math"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/alixaxel/pagerank"
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/introspection"
@@ -16,6 +19,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
+	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -711,6 +715,189 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 		return nil, nil
 	}
 	return resolver.repo, nil
+}
+
+type commitChange struct {
+	NumAddedLines   int       `json:"numAddedLines"`
+	NumRemovedLines int       `json:"numRemovedLines"`
+	DaysSince       int       `json:"daysSince"`
+	Timestamp       time.Time `json:"timestamp"`
+}
+
+type authorChangelog struct {
+	Name    string         `json:"name"`
+	Changes []commitChange `json:"changes"`
+}
+
+type fileChangelog struct {
+	Path    string            `json:"path"`
+	Authors []authorChangelog `json:"authors"`
+}
+
+type BPGraph struct {
+	Files       map[string]struct{}
+	Authors     map[string]struct{}
+	AuthorEdges map[string]map[string]float64
+	FileEdges   map[string]map[string]float64
+}
+
+func NewBPGraph() *BPGraph {
+	g := &BPGraph{
+		Files:       make(map[string]struct{}),
+		Authors:     make(map[string]struct{}),
+		AuthorEdges: make(map[string]map[string]float64),
+		FileEdges:   make(map[string]map[string]float64),
+	}
+	return g
+}
+
+func (g *BPGraph) AddEdge(author, file string, weight float64) {
+	g.Files[file] = struct{}{}
+	g.Authors[author] = struct{}{}
+
+	_, authorOk := g.AuthorEdges[author]
+	if !authorOk {
+		g.AuthorEdges[author] = map[string]float64{}
+	}
+
+	_, fileOk := g.FileEdges[file]
+	if !fileOk {
+		g.FileEdges[file] = map[string]float64{}
+	}
+
+	g.AuthorEdges[author][file] = weight
+	g.FileEdges[file][author] = weight
+}
+
+func (r *schemaResolver) Experts(ctx context.Context, args *struct {
+	FilePath string
+}) ([]string, error) {
+	content, err := ioutil.ReadFile("/tmp/changelog.json")
+	if err != nil {
+		return nil, err
+	}
+
+	var fileChangelogs []fileChangelog
+	err = json.Unmarshal(content, &fileChangelogs)
+	if err != nil {
+		return nil, err
+	}
+	// 	weight = 0.0
+	// 	for change in author["changes"]:
+	// 		decay_factor = 1.0 / math.sqrt(1.0 + change["daysSince"])
+	// 		weight += (
+	// 			float(change["numAddedLines"] + change["numRemovedLines"])
+	// 			* decay_factor
+	// 		)
+
+	// 	edges.append({"author": author["name"], "weight": weight})
+
+	// edges = sorted(edges, key=lambda x: x["weight"], reverse=True)
+	// nodes.append({"path": file["path"], "edges": edges})
+
+	g := NewBPGraph()
+	for _, file := range fileChangelogs {
+
+		if !strings.Contains(file.Path, args.FilePath) {
+			continue
+		}
+
+		for _, author := range file.Authors {
+			weight := 0.0
+			for _, change := range author.Changes {
+				decayFactor := 1.0 / math.Sqrt(1.0+float64(change.DaysSince))
+				weight += ((float64(change.NumAddedLines) + float64(change.NumRemovedLines)) * decayFactor)
+			}
+
+			g.AddEdge(author.Name, file.Path, weight)
+		}
+	}
+
+	// for u in nodes:
+	// nbrs2 = {n for nbr in set(B[u]) for n in B[nbr]} - {u}
+	// for v in nbrs2:
+	// 	weight = weight_function(B, u, v)
+	// 	G.add_edge(u, v, weight=weight)
+
+	idx := uint32(0)
+	authorToIndex := map[string]uint32{}
+	indexToAuthor := map[uint32]string{}
+	for author := range g.Authors {
+		authorToIndex[author] = idx
+		indexToAuthor[idx] = author
+		idx += 1
+	}
+
+	pagerankGraph := pagerank.NewGraph()
+	for author := range g.Authors {
+		authorNeighs := map[string]struct{}{}
+		for file := range g.AuthorEdges[author] {
+			for author2 := range g.FileEdges[file] {
+				if author != author2 {
+					authorNeighs[author2] = struct{}{}
+				}
+			}
+		}
+
+		for author2 := range authorNeighs {
+			pagerankGraph.Link(authorToIndex[author], authorToIndex[author2], getWeight(g, author, author2))
+			pagerankGraph.Link(authorToIndex[author2], authorToIndex[author], getWeight(g, author, author2))
+		}
+	}
+
+	ranks := []pgRank{}
+	pagerankGraph.Rank(0.85, 0.000001, func(node uint32, rank float64) {
+		ranks = append(ranks, pgRank{indexToAuthor[node], rank})
+	})
+
+	slices.SortFunc(ranks, func(a, b pgRank) bool { return a.rank > b.rank })
+
+	sortedAuthors := []string{}
+	for _, rank := range ranks {
+		sortedAuthors = append(sortedAuthors, rank.author)
+	}
+
+	return sortedAuthors, nil
+}
+
+type pgRank struct {
+	author string
+	rank   float64
+}
+
+// def combine_weights(G, u, v, weight="weight"):
+// w = 0.0
+// # u, v are authors
+// common_files = set(G[u]) & set(G[v])
+
+// for neigh in common_files:
+//     # w += G[u][neigh].get(weight) + G[v][neigh].get(weight)
+//     w += min(G[u][neigh].get(weight), G[v][neigh].get(weight))
+
+// return w
+
+func getWeight(g *BPGraph, author1, author2 string) float64 {
+	weight := 0.0
+
+	files1 := g.AuthorEdges[author1]
+	files2 := g.AuthorEdges[author2]
+
+	commonFiles := []string{}
+	for file1 := range files1 {
+		_, file1Ok := files2[file1]
+		if file1Ok {
+			commonFiles = append(commonFiles, file1)
+		}
+	}
+
+	for _, file := range commonFiles {
+		weight += math.Min(
+			g.AuthorEdges[author1][file],
+			g.AuthorEdges[author2][file],
+		)
+	}
+
+	return weight
 }
 
 // RecloneRepository deletes a repository from the gitserver disk and marks it as not cloned

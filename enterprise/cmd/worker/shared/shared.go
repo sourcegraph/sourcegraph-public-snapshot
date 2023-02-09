@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
@@ -13,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executors"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/expertnetwork"
 	workerinsights "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/insights"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/permissions"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/telemetry"
@@ -60,6 +62,8 @@ var additionalJobs = map[string]job.Job{
 
 	// Note: experimental (not documented)
 	"codeintel-ranking-sourcer": codeintel.NewRankingSourcerJob(),
+
+	"something-something": expertnetwork.NewExpertNetworkIndexerJob(),
 }
 
 // SetAuthzProviders waits for the database to be initialized, then periodically refreshes the

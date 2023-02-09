@@ -191,6 +191,7 @@ require github.com/XSAM/otelsql v0.15.0
 
 require (
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
+	github.com/alixaxel/pagerank v0.0.0-20200105181019-900657b89dcb // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/cloudflare/circl v1.3.0 // indirect

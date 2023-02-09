@@ -437,11 +437,24 @@ type Client interface {
 	// onCommit function for each.
 	RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (bool, error)) error
 
+	GetFileLog(ctx context.Context, repo api.RepoName, commit api.CommitID, filePath string) (string, error)
+
 	Addrs() []string
 }
 
 func (c *clientImplementor) Addrs() []string {
 	return c.addrs()
+}
+
+func (c *clientImplementor) GetFileLog(ctx context.Context, repo api.RepoName, commit api.CommitID, filePath string) (string, error) {
+	cmd := c.gitCommand(repo, "log", "--no-merges", "--pretty=%an,%aE,%aI", "--numstat", "--", filePath)
+
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(string(out)), nil
 }
 
 func (c *clientImplementor) AddrForRepo(ctx context.Context, repo api.RepoName) (string, error) {
