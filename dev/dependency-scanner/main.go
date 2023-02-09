@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strings"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/pandatix/nvdapi/v2"
@@ -90,7 +91,7 @@ func convertToVulnerabilities(inputProduct string, inputVersion string, cveitems
 			AffectedVersion:      "unknown",
 			CurrentVersion:       inputVersion,
 			SeverityScore:        fmt.Sprintf("%.1f", c.Metrics.CVSSMetricV31[0].CVSSData.BaseScore),
-			SeverityString:       c.Metrics.CVSSMetricV31[0].CVSSData.BaseSeverity,
+			SeverityString:       strings.Title(strings.ToLower(c.Metrics.CVSSMetricV31[0].CVSSData.BaseSeverity)),
 		}
 
 		// CVSSData <- CVSSMetricsV31 <- []Metrics
