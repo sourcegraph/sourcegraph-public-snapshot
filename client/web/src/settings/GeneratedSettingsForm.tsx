@@ -17,10 +17,7 @@ interface settingsNode {
 }
 
 export const GeneratedSettingsForm: React.FunctionComponent<GeneratedSettingsFormProps> = ({ jsonSchema }) => {
-    // Convert properties to headings and fields
-    convertPropertiesToComponents(jsonSchema as unknown as settingsNode)
-
-    return <>Hi</>
+    return <>{convertPropertiesToComponents(jsonSchema as unknown as settingsNode)}</>
 }
 
 function convertPropertiesToComponents(jsonSchema: settingsNode): (JSX.Element | null)[] {
