@@ -62,7 +62,7 @@ func (s *store) GetDependencies(ctx context.Context, bundleID int) (_ []Dependen
 				return di.Version < dj.Version
 			}
 
-			return di.Manager < dj.Manager
+			return di.Name < dj.Name
 		}
 
 		return di.Manager < dj.Manager
@@ -71,7 +71,9 @@ func (s *store) GetDependencies(ctx context.Context, bundleID int) (_ []Dependen
 	return descriptions, nil
 }
 
-// TODO
+//
+// TODO - build top down instead?
+
 const dependenciesQuery = `
 WITH RECURSIVE
 all_prefixes(upload_id, id, prefix) AS (
@@ -96,5 +98,10 @@ all_prefixes(upload_id, id, prefix) AS (
 	)
 )
 
-SELECT mp.prefix AS symbol_name FROM all_prefixes mp
+SELECT mp.prefix FROM all_prefixes mp
+WHERE NOT EXISTS (
+	SELECT 1
+	FROM codeintel_scip_symbol_names ssn
+	WHERE ssn.prefix_id = mp.id
+)
 `
