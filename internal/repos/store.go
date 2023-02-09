@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -388,11 +389,30 @@ func (s *store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		return err
 	}
 
-	return s.Exec(ctx, sqlf.Sprintf(upsertExternalServiceRepoQuery,
+	err = s.Exec(ctx, sqlf.Sprintf(upsertExternalServiceRepoQuery,
 		svc.ID,
 		r.ID,
 		src.CloneURL,
 	))
+	if err != nil {
+		return err
+	}
+
+	// If this is a GitHub repository, extract the topics as metadata
+	if githubMetadata, ok := r.Metadata.(*github.Repository); ok {
+		err = s.Exec(ctx, sqlf.Sprintf(`
+			INSERT INTO repo_kvps (repo_id, key)
+			SELECT %s, UNNEST(%s::text[])
+			ON CONFLICT IGNORE`,
+			r.ID,
+			githubMetadata.Topics,
+		))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 const createRepoQuery = `
@@ -547,15 +567,73 @@ func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		defer func() { err = s.Done(err) }()
 	}
 
+	oldRepo, err := s.RepoStore().Get(ctx, r.ID)
+	if err != nil {
+		return err
+	}
+
 	if err = s.QueryRow(ctx, q).Scan(&r.UpdatedAt); err != nil {
 		return err
 	}
 
-	return s.Exec(ctx, sqlf.Sprintf(upsertExternalServiceRepoQuery,
+	err = s.Exec(ctx, sqlf.Sprintf(upsertExternalServiceRepoQuery,
 		svc.ID,
 		r.ID,
 		src.CloneURL,
 	))
+	if err != nil {
+		return err
+	}
+
+	// If this is a GitHub repository, extract the topics as metadata
+	oldMetadata, ok1 := oldRepo.Metadata.(*github.Repository)
+	newMetadata, ok2 := r.Metadata.(*github.Repository)
+	if ok1 && ok2 {
+		add, remove := splitTopics(oldMetadata.Topics, newMetadata.Topics)
+
+		err = s.Exec(ctx, sqlf.Sprintf(`
+			INSERT INTO repo_kvps (repo_id, key)
+			SELECT %s, UNNEST(%s::text[])
+			ON CONFLICT IGNORE`,
+			r.ID,
+			add,
+		))
+		if err != nil {
+			return err
+		}
+
+		err = s.Exec(ctx, sqlf.Sprintf(`
+			DELETE FROM repo_kvps
+			WHERE repo_id = %s AND key IN (%s::text[])
+			`,
+			r.ID,
+			remove,
+		))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func splitTopics(oldTopics, newTopics []string) (added, removed []string) {
+	s := make(map[string]struct{}, len(oldTopics))
+	for _, oldTopic := range oldTopics {
+		s[oldTopic] = struct{}{}
+	}
+	for _, newTopic := range newTopics {
+		_, ok := s[newTopic]
+		if ok {
+			delete(s, newTopic)
+		} else {
+			added = append(added, newTopic)
+		}
+	}
+	for removedTopic := range s {
+		removed = append(removed, removedTopic)
+	}
+	return added, removed
 }
 
 const updateRepoQuery = `
