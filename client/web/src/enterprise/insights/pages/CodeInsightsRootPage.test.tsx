@@ -83,20 +83,20 @@ const mockedGQL: MockedResponse[] = [
 ]
 
 const renderWithBrandedContext = (component: ReactElement, { route = '/', path = '*', api = {} } = {}) => ({
-        ...render(
-            <MockedTestProvider mocks={mockedGQL}>
-                <Wrapper api={api}>
-                    <MemoryRouter initialEntries={[route]}>
-                        <CompatRouter>
-                            <Routes>
-                                <Route path={path} element={component} />
-                            </Routes>
-                        </CompatRouter>
-                    </MemoryRouter>
-                </Wrapper>
-            </MockedTestProvider>
-        ),
-    })
+    ...render(
+        <MockedTestProvider mocks={mockedGQL}>
+            <Wrapper api={api}>
+                <MemoryRouter initialEntries={[route]}>
+                    <CompatRouter>
+                        <Routes>
+                            <Route path={path} element={component} />
+                        </Routes>
+                    </CompatRouter>
+                </MemoryRouter>
+            </Wrapper>
+        </MockedTestProvider>
+    ),
+})
 
 describe('CodeInsightsRootPage', () => {
     beforeAll(() => {
