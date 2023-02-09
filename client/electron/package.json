@@ -1,7 +1,7 @@
 {
-  "name": "vite-electron-builder",
-  "description": "Secure boilerplate for Electron app based on Vite",
-  "version": "1.0.2",
+  "name": "sourcegraph-desktop-search",
+  "description": "Bringing Sourcegraph search to your desktop",
+  "version": "0.0.0",
   "private": true,
   "main": "packages/main/dist/index.cjs",
   "scripts": {
