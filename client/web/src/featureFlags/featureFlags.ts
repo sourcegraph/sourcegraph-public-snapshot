@@ -35,6 +35,7 @@ export const FEATURE_FLAGS = [
     'use-ssc-for-cody-subscription-on-web',
     'cody-pro-trial-ended',
     'cody-payments-testing-mode',
+    'visual-settings-editor',
 ] as const
 
 export type FeatureFlagName = typeof FEATURE_FLAGS[number]
