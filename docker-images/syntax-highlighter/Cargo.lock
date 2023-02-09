@@ -1712,6 +1712,7 @@ dependencies = [
  "tree-sitter-jsonnet",
  "tree-sitter-scala",
  "tree-sitter-sql",
+ "tree-sitter-xlsg",
 ]
 
 [[package]]
@@ -2242,6 +2243,15 @@ dependencies = [
 name = "tree-sitter-sql"
 version = "0.0.2"
 source = "git+https://github.com/sourcegraph/tree-sitter-sql#6ea62b8d33c9e39f6de8a398a6885d1873ed7e91"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
+name = "tree-sitter-xlsg"
+version = "0.0.1"
+source = "git+https://github.com/sourcegraph/tree-sitter-xlsg#945a7290bf211c57b43bed044c6d73092ca0484b"
 dependencies = [
  "cc",
  "tree-sitter",

@@ -141,6 +141,7 @@ var supportedFiletypes = map[string]struct{}{
 	"c_sharp": {},
 	"jsonnet": {},
 	"scala":   {},
+	"xlsg":    {},
 }
 
 // Client represents a client connection to a syntect_server.
