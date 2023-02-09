@@ -1,6 +1,7 @@
 package executorqueue
 
 import (
+	"crypto/subtle"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -169,7 +170,10 @@ func validateExecutorToken(w http.ResponseWriter, r *http.Request, logger log.Lo
 		return false
 	}
 
-	if token != expectedAccessToken {
+	// 🚨 SECURITY: Use constant-time comparisons to avoid leaking the verification
+	// code via timing attack. It is not important to avoid leaking the *length* of
+	// the code, because the length of verification codes is constant.
+	if subtle.ConstantTimeCompare([]byte(token), []byte(expectedAccessToken)) == 0 {
 		w.WriteHeader(http.StatusForbidden)
 		return false
 	}
@@ -226,7 +230,10 @@ func validateJobRequest(
 
 	// If the general executor access token was provided, simply check the value.
 	if tokenType == "token-executor" {
-		if authToken == conf.SiteConfig().ExecutorsAccessToken {
+		// 🚨 SECURITY: Use constant-time comparisons to avoid leaking the verification
+		// code via timing attack. It is not important to avoid leaking the *length* of
+		// the code, because the length of verification codes is constant.
+		if subtle.ConstantTimeCompare([]byte(authToken), []byte(conf.SiteConfig().ExecutorsAccessToken)) == 1 {
 			return true
 		} else {
 			w.WriteHeader(http.StatusForbidden)
@@ -288,14 +295,14 @@ func validateJobRequest(
 
 	// Check if the token is associated with the correct queue or repo.
 	if len(repo) > 0 {
-		if jobToken.Repo != repo {
+		if subtle.ConstantTimeCompare([]byte(jobToken.Repo), []byte(repo)) == 0 {
 			logger.Error("repo does not match")
 			http.Error(w, "invalid token", http.StatusForbidden)
 			return false
 		}
 	} else {
 		// Ensure the token was generated for the correct queue.
-		if jobToken.Queue != queue {
+		if subtle.ConstantTimeCompare([]byte(jobToken.Queue), []byte(queue)) == 0 {
 			logger.Error("queue name does not match")
 			http.Error(w, "invalid token", http.StatusForbidden)
 			return false
