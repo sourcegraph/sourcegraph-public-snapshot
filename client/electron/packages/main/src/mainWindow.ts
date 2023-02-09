@@ -19,7 +19,7 @@ async function createWindow() {
   });
 
   /**
-   * Add the tray icon and get the correct version for the theme.
+   * Add the tray icon and menu.
    */
   const tray = new Tray(path.join(__dirname, '..', '..', '..', 'buildResources', getIcon()));
   tray.setPressedImage(path.join(__dirname, '..', '..', '..', 'buildResources', getIcon()));
