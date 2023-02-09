@@ -284,7 +284,7 @@ UPDATE roles
 SET
     name = %s
 WHERE
-	id = %s
+	id = %s AND NOT system
 RETURNING
 	%s
 `
