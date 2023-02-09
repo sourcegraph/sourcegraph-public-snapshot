@@ -1,1 +1,4 @@
-@import "wildcard/src/global-styles";
+@import "@sourcegraph/wildcard/src/global-styles/colors.scss";
+@import "@sourcegraph/wildcard/src/global-styles/variables.scss";
+
+@import "@sourcegraph/wildcard/src/global-styles/base.scss";

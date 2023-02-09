@@ -55,6 +55,7 @@
     "react-dom": "^18.2.0",
     "react-router": "^5.2.0",
     "react-router-dom": "^5.2.0",
-    "react-router-dom-v5-compat": "^6.8.1"
+    "react-router-dom-v5-compat": "^6.8.1",
+    "open-color": "^1.8.0"
   }
 }

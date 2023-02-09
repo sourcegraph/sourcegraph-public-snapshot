@@ -23,11 +23,17 @@ const config = {
       env: {},
     },
   },
+  css: {
+    modules: {
+      localsConvention: 'camelCase',
+    },
+  },
   resolve: {
     alias: {
       '/@/': join(PACKAGE_ROOT, 'src') + '/',
       wildcard: '@sourcegraph/wildcard',
       path: 'path-browserify',
+      'open-color': '../../node_modules/open-color',
     },
   },
   base: '',
