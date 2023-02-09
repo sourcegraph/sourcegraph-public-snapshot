@@ -1,6 +1,6 @@
-import React from 'react'
+import { FC } from 'react'
 
-import { Route, Switch } from 'react-router'
+import { Route, Routes } from 'react-router-dom-v5-compat'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
@@ -19,19 +19,11 @@ const GlobalExecutorSecretsListPage = lazyComponent<
     'GlobalExecutorSecretsListPage'
 >(() => import('./secrets/ExecutorSecretsListPage'), 'GlobalExecutorSecretsListPage')
 
-const URL = '/site-admin/executors'
-
 /** The page area for all executors settings in site-admin. */
-export const ExecutorsSiteAdminArea: React.FC<{}> = () => (
-    <>
-        <Switch>
-            <Route render={() => <ExecutorsListPage />} path={URL} exact={true} />
-            <Route
-                path={`${URL}/secrets`}
-                render={props => <GlobalExecutorSecretsListPage {...props} />}
-                exact={true}
-            />
-            <Route render={() => <NotFoundPage pageType="settings" />} key="hardcoded-key" />
-        </Switch>
-    </>
+export const ExecutorsSiteAdminArea: FC = () => (
+    <Routes>
+        <Route index={true} element={<ExecutorsListPage />} />
+        <Route path="secrets" element={<GlobalExecutorSecretsListPage />} />
+        <Route element={<NotFoundPage pageType="settings" />} />
+    </Routes>
 )
