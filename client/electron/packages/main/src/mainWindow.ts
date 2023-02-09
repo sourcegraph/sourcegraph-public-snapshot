@@ -90,7 +90,7 @@ const getIconPath = () => {
 
 const getIcon = () => {
   if (process.platform === 'win32') return 'icon-light@2x.ico';
-  if (nativeTheme.shouldUseDarkColors) return 'icon-dark@2x.png';
+  if (nativeTheme.shouldUseDarkColors) return 'icon-light@2x.png';
   return 'icon-dark@2x.png';
 };
 
