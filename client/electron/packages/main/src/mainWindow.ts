@@ -1,4 +1,4 @@
-import {app, BrowserWindow, Menu, systemPreferences, Tray} from 'electron';
+import {app, BrowserWindow, Menu, nativeTheme, Tray} from 'electron';
 import * as path from 'node:path';
 import {join} from 'node:path';
 import {URL} from 'node:url';
@@ -87,7 +87,8 @@ const clippings = [];
 
 const getIcon = () => {
   if (process.platform === 'win32') return 'icon-light@2x.ico';
-  return 'icon-dark.png';
+  if (nativeTheme.shouldUseDarkColors) return 'icon-dark@2x.png';
+  return 'icon-dark@2x.png';
 };
 
 const buildMenu = () => {
