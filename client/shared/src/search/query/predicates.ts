@@ -64,9 +64,6 @@ export const PREDICATES: Access[] = [
                 name: 'implements',
             },
             {
-                name: 'calls',
-            },
-            {
                 name: 'references',
             },
         ],

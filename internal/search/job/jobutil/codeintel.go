@@ -3,7 +3,6 @@ package jobutil
 import (
 	"context"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -31,9 +30,8 @@ func (s *CodeIntelSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	spew.Dump("running")
-
 	seenRanges := make(map[string]map[result.Range]struct{})
+	var symbolSearchErrors error
 	alert, err = s.SymbolSearch.Run(ctx, clients, streaming.StreamFunc(func(se streaming.SearchEvent) {
 		if se.Results.Len() == 0 {
 			return
@@ -74,7 +72,8 @@ func (s *CodeIntelSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 						}
 					}
 					if err != nil {
-						spew.Dump(err)
+						symbolSearchErrors = errors.Append(symbolSearchErrors, err)
+						continue
 					}
 					for _, l := range locations {
 						r := result.Range{
@@ -96,7 +95,8 @@ func (s *CodeIntelSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 						f, err := clients.Gitserver.ReadFile(ctx, authz.DefaultSubRepoPermsChecker,
 							fm.Repo.Name, api.CommitID(l.TargetCommit), l.Path)
 						if err != nil {
-							spew.Dump(err)
+							symbolSearchErrors = errors.Append(symbolSearchErrors, err)
+							continue
 						}
 						stream.Send(streaming.SearchEvent{
 							Results: result.Matches{
@@ -128,6 +128,9 @@ func (s *CodeIntelSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 		}
 	}))
 	if err != nil {
+		return alert, err
+	}
+	if symbolSearchErrors != nil {
 		return alert, err
 	}
 

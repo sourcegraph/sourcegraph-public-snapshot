@@ -164,12 +164,14 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		// Create code-intel search jobs
 		if preds := b.Parameters.SymbolPredicateSearches(); len(preds) > 0 {
 			for _, ss := range preds {
-				// Hopefully the symbol search has symbol matches
+				// Hopefully the symbol search has symbol matches.
+				// TODO: can we reduce the accepted complexity here?
 				nodes, err := query.Parse(ss.SymbolSearch, query.SearchTypeLiteral)
 				if err != nil {
 					return nil, err
 				}
-				job, err := NewPlanJob(inputs, query.BuildPlan(nodes))
+				plan := query.BuildPlan(nodes)
+				job, err := NewPlanJob(inputs, plan)
 				if err != nil {
 					return nil, err
 				}
