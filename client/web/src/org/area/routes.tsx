@@ -11,7 +11,7 @@ const OrgSettingsArea = lazyComponent(() => import('../settings/OrgSettingsArea'
 export const orgAreaRoutes: readonly OrgAreaRoute[] = [
     {
         path: 'getstarted',
-        render: props => <Navigate to={`/organizations/${props.org.name}/settings/members`} />,
+        render: props => <Navigate to={`/organizations/${props.org.name}/settings/members`} replace={true} />,
     },
     {
         path: 'settings/*',
