@@ -47,18 +47,21 @@ function convertPropertiesToComponents(node: settingsNode, parentNames: string[]
             case 'integer':
             case 'number':
                 return (
-                    <Input
-                        label={<Text>{name}</Text>}
-                        type="number"
-                        min={subNode?.minimum ?? 0}
-                        max={subNode?.maximum ?? ''}
+                    <NumberSettingItem
+                        key={id}
+                        id={id}
+                        name={name}
+                        title={subNode.title}
+                        description={subNode.description}
+                        minimum={subNode?.minimum}
+                        maximum={subNode?.maximum}
                     />
                 )
             case 'string':
                 return subNode.enum?.length ? (
                     <>
                         <Text className="text-muted">{subNode.description}</Text>
-                        <Select id={id} name={name} label={name} value={''} className="mb-0">
+                        <Select id={id} name={name} label={name} value="" className="mb-0">
                             {subNode.enum.map(enumValue => (
                                 <option key={enumValue} value={enumValue} label={enumValue} />
                             ))}
@@ -111,6 +114,22 @@ function StringSettingItem(props: { id: string; name: string; title: string; des
             <Label htmlFor={props.id}>{props.name}</Label>
             <Text className="text-muted">{props.description}</Text>
             <Input id={props.id} type="text" />
+        </>
+    )
+}
+
+function NumberSettingItem(props: {
+    id: string
+    name: string
+    title: string
+    description: string
+    minimum?: number
+    maximum?: number
+}): JSX.Element {
+    return (
+        <>
+            <Label htmlFor={props.id}>{props.name}</Label>
+            <Input id={props.id} type="number" min={props.minimum ?? 0} max={props.maximum ?? ''} />
         </>
     )
 }
