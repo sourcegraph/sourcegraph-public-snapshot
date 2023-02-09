@@ -463,12 +463,10 @@ func (f FileHasOwnerPredicate) Name() string  { return "has.owner" }
 
 type SymbolReferencesPredicate struct {
 	SymbolSearch string
-	Negated      bool
 }
 
-func (s *SymbolReferencesPredicate) Unmarshal(params string, negated bool) error {
+func (s *SymbolReferencesPredicate) Unmarshal(params string, _ bool) error {
 	s.SymbolSearch = params
-	s.Negated = negated
 	return nil
 }
 
@@ -477,12 +475,10 @@ func (s SymbolReferencesPredicate) Name() string  { return "references" }
 
 type SymbolImplementsPredicate struct {
 	SymbolSearch string
-	Negated      bool
 }
 
-func (s *SymbolImplementsPredicate) Unmarshal(params string, negated bool) error {
+func (s *SymbolImplementsPredicate) Unmarshal(params string, _ bool) error {
 	s.SymbolSearch = params
-	s.Negated = negated
 	return nil
 }
 
