@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react'
 
-import { useHistory } from 'react-router'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
@@ -26,28 +25,28 @@ interface IntroCreationPageProps extends TelemetryProps {}
 export const IntroCreationPage: React.FunctionComponent<React.PropsWithChildren<IntroCreationPageProps>> = props => {
     const { telemetryService } = props
 
-    const history = useHistory()
+    const navigate = useNavigate()
     const { search } = useLocation()
     const { codeInsightsCompute } = useExperimentalFeatures()
 
     const handleCreateSearchBasedInsightClick = (): void => {
         telemetryService.log('CodeInsightsCreateSearchBasedInsightClick')
-        history.push(`/insights/create/search${search}`)
+        navigate(`/insights/create/search${search}`)
     }
 
     const handleCaptureGroupInsightClick = (): void => {
         telemetryService.log('CodeInsightsCreateCaptureGroupInsightClick')
-        history.push(`/insights/create/capture-group${search}`)
+        navigate(`/insights/create/capture-group${search}`)
     }
 
     const handleCreateComputeInsightClick = (): void => {
         telemetryService.log('CodeInsightsCreateComputeInsightClick')
-        history.push(`/insights/create/group-results${search}`)
+        navigate(`/insights/create/group-results${search}`)
     }
 
     const handleCreateCodeStatsInsightClick = (): void => {
         telemetryService.log('CodeInsightsCreateCodeStatsInsightClick')
-        history.push(`/insights/create/lang-stats${search}`)
+        navigate(`/insights/create/lang-stats${search}`)
     }
 
     useEffect(() => {

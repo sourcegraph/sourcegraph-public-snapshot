@@ -1,6 +1,6 @@
 import { useContext } from 'react'
 
-import { useHistory } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom-v5-compat'
 
 import { eventLogger } from '../../../../../../tracking/eventLogger'
 import { SubmissionErrors } from '../../../../components'
@@ -19,7 +19,7 @@ export interface useHandleSubmitOutput {
 export function useEditPageHandlers(props: { id: string | undefined }): useHandleSubmitOutput {
     const { id } = props
     const { updateInsight } = useContext(CodeInsightsBackendContext)
-    const history = useHistory()
+    const navigate = useNavigate()
 
     const { dashboardId, insight } = useQueryParameters(['dashboardId', 'insight'])
     const redirectUrl = getReturnToLink(insight, dashboardId)
@@ -36,11 +36,11 @@ export function useEditPageHandlers(props: { id: string | undefined }): useHandl
 
         const insightType = getTrackingTypeByInsightType(newInsight.type)
         eventLogger.log('InsightEdit', { insightType }, { insightType })
-        history.push(redirectUrl)
+        navigate(redirectUrl)
     }
 
     const handleCancel = (): void => {
-        history.push(redirectUrl)
+        navigate(redirectUrl)
     }
 
     return { handleSubmit, handleCancel }
