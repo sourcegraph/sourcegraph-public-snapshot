@@ -20,7 +20,7 @@ type DependencyDescription struct {
 	Version string
 }
 
-// GetDependencies returns a list of dependencies.
+// GetDependencies returns a list of dependencies for the given index.
 func (s *store) GetDependencies(ctx context.Context, bundleID int) (_ []DependencyDescription, err error) {
 	ctx, _, endObservation := s.operations.getExists.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
