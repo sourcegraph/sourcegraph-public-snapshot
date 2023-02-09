@@ -9,13 +9,12 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	grpcdefaults "github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -83,11 +82,7 @@ func SearchGRPC(
 			return false, errors.Wrap(err, "failed to parse URL")
 		}
 
-		var opts []grpc.DialOption
-		opts = append(opts, grpcdefaults.DialOptions()...)
-		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-
-		clientConn, err := grpc.DialContext(ctx, parsed.Host, opts...)
+		clientConn, err := grpc.DialContext(ctx, parsed.Host, defaults.DialOptions()...)
 		if err != nil {
 			return false, err
 		}
