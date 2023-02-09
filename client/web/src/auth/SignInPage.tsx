@@ -83,7 +83,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                         <UsernamePasswordSignInForm
                             {...props}
                             onAuthError={setError}
-                            className={classNames(thirdPartyAuthProviders.length > 0 && 'mb-3')}
+                            className={classNames({ 'mb-3': thirdPartyAuthProviders.length > 0 })}
                         />
                     )}
                     {builtInAuthProvider && showBuiltInAuthForm && thirdPartyAuthProviders.length > 0 && (
