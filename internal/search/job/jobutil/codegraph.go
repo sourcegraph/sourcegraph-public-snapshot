@@ -149,9 +149,15 @@ func (s *CodeGraphSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 	return nil, nil
 }
 
-func (s *CodeGraphSearchJob) Children() []job.Describer { return nil }
+func (s *CodeGraphSearchJob) Children() []job.Describer {
+	return []job.Describer{s.SymbolSearch}
+}
 
-func (s *CodeGraphSearchJob) MapChildren(fn job.MapFunc) job.Job { return s }
+func (s *CodeGraphSearchJob) MapChildren(fn job.MapFunc) job.Job {
+	cp := *s
+	cp.SymbolSearch = job.Map(cp.SymbolSearch, fn)
+	return &cp
+}
 
 func (s *CodeGraphSearchJob) Fields(v job.Verbosity) (res []log.Field) {
 	return []log.Field{
