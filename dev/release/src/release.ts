@@ -74,6 +74,7 @@ export type StepID =
     | '_test:srccliensure'
     | '_test:release-guide-content'
     | '_test:release-guide-update'
+    | '_test:mvu'
 
 /**
  * Runs given release step with the provided configuration and arguments.
@@ -1001,4 +1002,57 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
             await ensureSrcCliUpToDate()
         },
     },
+    {
+        id: '_test:mvu',
+        description: 'mvu',
+        argNames: ['version'],
+        run: async (config, version) => {
+            const matches = version.match('(\\d\\.\\d)\\.\\d')
+            if (!matches || matches.length !== 2) {
+                throw new Error('invalid release branch')
+            }
+            const releaseBranch = matches[1]
+            console.log(`release branch: ${releaseBranch}`)
+            const sets = await createChangesets({
+                requiredCommands: ['comby', 'go'],
+                changes: [
+                    {
+                        repo:'sourcegraph',
+                        owner: 'sourcegraph',
+                        body: 'Update the multi version upgrade constants',
+                        title: `${version} multi version upgrade constants`,
+                        base: 'main',
+                        head: `${version}-update-multi-version-upgrade`,
+                        commitMessage: `baking multi version upgrade files for version ${version}`,
+                        edits: [
+                            'git remote set-branches --add origin \'4.3\'',
+                            'git fetch --depth 1 origin 4.3',
+                            'git remote set-branches --add origin \'4.4\'',
+                            'git fetch --depth 1 origin 4.4',
+                            `comby -in-place 'const maxVersionString = ":[1]"' "const maxVersionString = \\"${version}\\"" internal/database/migration/shared/data/cmd/generator/consts.go`,
+                            'go generate internal/database/migration/shared/embed.go'
+                        ]
+                    },
+                    {
+                        repo:'sourcegraph',
+                        owner: 'sourcegraph',
+                        body: 'Update the multi version upgrade constants',
+                        title: `${version} multi version upgrade constants`,
+                        base: `${releaseBranch}`,
+                        head: `${version}-update-multi-version-upgrade`,
+                        commitMessage: `baking multi version upgrade files for version ${version}`,
+                        edits: [
+                            'git remote set-branches --add origin \'4.3\'',
+                            'git fetch --depth 1 origin 4.3',
+                            'git remote set-branches --add origin \'4.4\'',
+                            'git fetch --depth 1 origin 4.4',
+                            `comby -in-place 'const maxVersionString = ":[1]"' "const maxVersionString = \\"${version}\\"" internal/database/migration/shared/data/cmd/generator/consts.go`,
+                            'go generate internal/database/migration/shared/embed.go'
+                        ]
+                    },
+                ], dryRun: true,
+            })
+            console.log(sets)
+        },
+    }
 ]

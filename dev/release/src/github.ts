@@ -435,12 +435,14 @@ export interface CreateBranchWithChangesOptions {
     commitMessage: string
     edits: Edit[]
     dryRun?: boolean
+    workdir?: string
 }
 
 export interface ChangesetsOptions {
     requiredCommands: string[]
     changes: (Octokit.PullsCreateParams & CreateBranchWithChangesOptions)[]
     dryRun?: boolean
+    workdir?: string
 }
 
 export interface CreatedChangeset {
@@ -453,9 +455,9 @@ export interface CreatedChangeset {
 export async function createChangesets(options: ChangesetsOptions): Promise<CreatedChangeset[]> {
     // Overwriting `process.env` may not be a good practice,
     // but it's the easiest way to avoid making changes all over the place
-    const dockerHubCredential = await getContainerRegistryCredential('index.docker.io')
-    process.env.CR_USERNAME = dockerHubCredential.username
-    process.env.CR_PASSWORD = dockerHubCredential.password
+    // const dockerHubCredential = await getContainerRegistryCredential('index.docker.io')
+    // process.env.CR_USERNAME = dockerHubCredential.username
+    // process.env.CR_PASSWORD = dockerHubCredential.password
     for (const command of options.requiredCommands) {
         try {
             await commandExists(command)
@@ -475,7 +477,7 @@ export async function createChangesets(options: ChangesetsOptions): Promise<Crea
     for (const change of options.changes) {
         const repository = `${change.owner}/${change.repo}`
         console.log(`${repository}: Preparing change for on '${change.base}' to '${change.head}'`)
-        await createBranchWithChanges(octokit, { ...change, dryRun: options.dryRun })
+        await createBranchWithChanges(octokit, { ...change, dryRun: options.dryRun, workdir: options.workdir })
     }
 
     // Publish changes as pull requests only if all changes are successfully created. We
@@ -575,10 +577,13 @@ export const localSourcegraphRepo = `${process.cwd()}/../..`
 
 async function createBranchWithChanges(
     octokit: Octokit,
-    { owner, repo, base: baseRevision, head: headBranch, commitMessage, edits, dryRun }: CreateBranchWithChangesOptions
+    { owner, repo, base: baseRevision, head: headBranch, commitMessage, edits, dryRun, workdir }: CreateBranchWithChangesOptions
 ): Promise<void> {
-    // Set up repository
-    const { workdir } = await cloneRepo(octokit, owner, repo, { revision: baseRevision })
+    if (!workdir) {
+        // Set up repository if the working directory override has not been provided.
+        const result = await cloneRepo(octokit, owner, repo, { revision: baseRevision })
+        workdir = result.workdir
+    }
 
     // Apply edits
     for (const edit of edits) {
