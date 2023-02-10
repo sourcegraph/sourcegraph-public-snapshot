@@ -1,6 +1,14 @@
 import { BlobInfo, DiffInfo } from '../shared/codeHost'
 
-import { getDiffFileName, getDiffResolvedRevision, getEmbeddedData, getFilePath, isNewGitHubUI, parseURL } from './util'
+import {
+    getDiffFileName,
+    getDiffResolvedRevision,
+    getEmbeddedData,
+    getFilePath,
+    getFilePathFromURL,
+    isNewGitHubUI,
+    parseURL,
+} from './util'
 import { commitIDFromPermalink } from '../../util/dom'
 
 export const resolveDiffFileInfo = (codeView: HTMLElement): DiffInfo => {
@@ -43,14 +51,16 @@ export const resolveFileInfo = (): BlobInfo => {
     const { revisionAndFilePath, rawRepoName } = parsedURL
 
     if (isNewGitHubUI()) {
-        const embeddedData = getEmbeddedData()
+        const {
+            refInfo: { name: revision, currentOid: commitID },
+        } = getEmbeddedData()
 
         return {
             blob: {
                 rawRepoName,
-                filePath: embeddedData.path,
-                revision: embeddedData.refInfo.name,
-                commitID: embeddedData.refInfo.currentOid,
+                filePath: getFilePathFromURL(revision),
+                revision,
+                commitID,
             },
         }
     }

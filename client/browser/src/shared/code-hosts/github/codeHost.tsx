@@ -35,7 +35,7 @@ import { ViewResolver } from '../shared/views'
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './fileInfo'
-import { getFileContainers, parseURL, getFilePath, getSelectorFor } from './util'
+import { getFileContainers, parseURL, getSelectorFor } from './util'
 
 import styles from './codeHost.module.scss'
 
@@ -691,6 +691,9 @@ export const githubCodeHost: GithubCodeHost = {
                 // repository file tree navigation
                 const pageType = pathname.slice(1).split('/')[2]
                 if (pageType === 'blob' || pageType === 'tree') {
+                    // if (!pathname.endsWith(resolveFileInfo().blob.filePath)) {
+                    //     console.log({ pathname, pageType, filePath: resolveFileInfo().blob.filePath })
+                    // }
                     return pathname.endsWith(resolveFileInfo().blob.filePath) ? pathname : undefined
                 }
 
