@@ -5,7 +5,7 @@ import { H1, H2 } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
 
-import { RemoteRepositoriesStep } from './components/remote-repositories-step';
+import { RemoteRepositoriesStep } from './components/remote-repositories-step'
 import { SetupStepsRoot, StepConfiguration } from './components/setup-steps'
 
 import styles from './Setup.module.scss'
@@ -34,9 +34,12 @@ const SETUP_STEPS: StepConfiguration[] = [
 export const SetupWizard: FC = props => {
     const [activeStepId, setStepId, status] = useTemporarySetting('setup.activeStepId')
 
-    const handleStepChange = useCallback((step: StepConfiguration): void => {
-        setStepId(step.id)
-    }, [setStepId])
+    const handleStepChange = useCallback(
+        (step: StepConfiguration): void => {
+            setStepId(step.id)
+        },
+        [setStepId]
+    )
 
     if (status !== 'loaded') {
         return null
@@ -58,8 +61,5 @@ export const SetupWizard: FC = props => {
 }
 
 function LocalRepositoriesStep(props: any): ReactElement {
-    return (
-        <H2 {...props}>Hello local repositories step</H2>
-    )
+    return <H2 {...props}>Hello local repositories step</H2>
 }
-

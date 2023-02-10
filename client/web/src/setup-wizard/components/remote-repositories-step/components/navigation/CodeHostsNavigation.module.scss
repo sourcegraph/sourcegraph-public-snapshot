@@ -1,4 +1,3 @@
-
 .loading-state {
     display: flex;
     align-items: center;
@@ -26,16 +25,48 @@
     margin: 0;
     display: flex;
     flex-direction: column;
-    //gap: 0.25rem;
+    gap: 0.2rem;
 }
 
 .item {
-    padding: 0.25rem 0.5rem;
+    display: flex;
     margin: 0 -0.5rem;
     border-radius: 3px;
 
     &:hover {
         background-color: var(--secondary-2);
+    }
+
+    &--creation {
+        display: flex;
+        justify-content: flex-start;
+        align-items: flex-start;
+        gap: 0.25rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    &--active {
+        color: var(--light-text) !important;
+        background-color: var(--primary);
+
+        .item-button,
+        .item-description-status {
+            color: var(--light-text);
+        }
+
+        .delete {
+            color: var(--light-text);
+
+            &:hover,
+            &:focus {
+                color: var(--light-text) !important;
+                background-color: var(--primary-3) !important;
+            }
+        }
+
+        &:hover {
+            background-color: var(--primary);
+        }
     }
 }
 
@@ -44,13 +75,37 @@
     justify-content: flex-start;
     align-items: flex-start;
     gap: 0.25rem;
-    width: 100%;
     text-align: start;
     font-weight: normal;
-    padding: 0;
+    padding: 0.25rem 0 0.25rem 0.5rem;
+    flex-grow: 1;
 }
 
 .item-description {
     display: flex;
     flex-direction: column;
+
+    &-status {
+        color: var(--text-muted);
+    }
+}
+
+.delete {
+    color: var(--text-muted);
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+
+    &:hover,
+    &:focus {
+        color: var(--danger);
+        background-color: var(--danger-4);
+    }
+
+    :global(.theme-dark) & {
+        &:hover,
+        &:focus {
+            color: var(--light-text);
+            background-color: var(--danger-2);
+        }
+    }
 }

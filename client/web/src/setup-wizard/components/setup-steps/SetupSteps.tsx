@@ -7,7 +7,8 @@ import {
     useMemo,
     useContext,
     useCallback,
-    useEffect, useState,
+    useEffect,
+    useState,
 } from 'react'
 
 import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
@@ -54,7 +55,7 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
 
     const navigate = useNavigate()
     const location = useLocation()
-    const [nextButtonPortal, setNextButtonPortal] = useState<HTMLDivElement|null>(null)
+    const [nextButtonPortal, setNextButtonPortal] = useState<HTMLDivElement | null>(null)
 
     // Resolve current setup step and its index by URL matches
     const { currentStep, activeStepIndex } = useMemo<SetupStepURLContext>(() => {
@@ -124,8 +125,8 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
             <div className={styles.root}>
                 <SetupStepsHeader steps={steps} activeStepIndex={activeStepIndex} />
                 <Routes>
-                    {steps.map(({ path, component: Component}) => (
-                        <Route key="hardcoded-key" path={path} element={<Component className={styles.content} />}/>
+                    {steps.map(({ path, component: Component }) => (
+                        <Route key="hardcoded-key" path={path} element={<Component className={styles.content} />} />
                     ))}
                     <Route path="*" element={<Navigate to={currentStep.path} />} />
                 </Routes>

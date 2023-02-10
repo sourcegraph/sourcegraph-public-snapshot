@@ -16,7 +16,7 @@ import { SettingsCascadeProps, SettingsSubjectCommonFields } from '@sourcegraph/
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { FeedbackPrompt, Link, LoadingSpinner, Panel } from '@sourcegraph/wildcard'
+import { FeedbackPrompt, LoadingSpinner, Panel } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from './auth'
 import type { BatchChangesProps } from './batches'
@@ -162,7 +162,6 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                 enableContrastCompliantSyntaxHighlighting && CONTRAST_COMPLIANT_CLASSNAME
             )}
         >
-            <Link to='/setup'>Go to wizard</Link>
             {showHelpShortcut?.keybindings.map((keybinding, index) => (
                 <Shortcut key={index} {...keybinding} onMatch={showKeyboardShortcutsHelp} />
             ))}
