@@ -18,7 +18,9 @@ func New() Fakes {
 }
 
 // Fakes aggregates together specific stores and makes them accessible
-// to the test.
+// to the test. It also exposes methods useful for test setup
+// or data validation for white-box testing. The methods that correspond
+// to specific stores are implemented next to the specific fake store.
 type Fakes struct {
 	TeamStore *Teams
 	UserStore *Users

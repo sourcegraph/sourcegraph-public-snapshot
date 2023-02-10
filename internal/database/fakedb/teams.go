@@ -21,15 +21,15 @@ type Teams struct {
 }
 
 // ListAllTeams returns all stsored teams. It is meant to be used
-// for white-box testing, where we want to verify database contents.
+// for white-box testing, where we want to erify database contents.
 func (fs Fakes) ListAllTeams() []*types.Team {
 	return append([]*types.Team{}, fs.TeamStore.list...)
 }
 
-// AddMember is a test setup tool for adding membership to fake Teams
+// AddTeamMember is a test setup tool for adding membership to fake Teams
 // in-memory storage.
-func (teams *Teams) AddMember(moreMembers ...*types.TeamMember) {
-	teams.members = append(teams.members, moreMembers...)
+func (fs Fakes) AddTeamMember(moreMembers ...*types.TeamMember) {
+	fs.TeamStore.members = append(fs.TeamStore.members, moreMembers...)
 }
 
 func (teams *Teams) CreateTeam(_ context.Context, t *types.Team) error {

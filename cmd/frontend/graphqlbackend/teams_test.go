@@ -1015,7 +1015,7 @@ func TestMembersPaginated(t *testing.T) {
 	for _, team := range []*types.Team{teamWithMembers, differentTeam} {
 		for i := 1; i <= 25; i++ {
 			id := fs.UserStore.NewUser(types.User{Username: fmt.Sprintf("user-%d-%d", team.ID, i)})
-			fs.TeamStore.AddMember(&types.TeamMember{
+			fs.AddTeamMember(&types.TeamMember{
 				TeamID: team.ID,
 				UserID: id,
 			})
