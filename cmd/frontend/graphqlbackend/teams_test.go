@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sort"
-	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -17,165 +15,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const (
 	actorID = 54123451
 )
-
-type fakeTeamsDb struct {
-	database.TeamStore
-	list       []*types.Team
-	members    orderedTeamMembers
-	lastUsedID int32
-}
-
-func (teams *fakeTeamsDb) CreateTeam(_ context.Context, t *types.Team) error {
-	teams.lastUsedID++
-	u := *t
-	u.ID = teams.lastUsedID
-	teams.list = append(teams.list, &u)
-	return nil
-}
-
-func (teams *fakeTeamsDb) UpdateTeam(_ context.Context, t *types.Team) error {
-	if t == nil {
-		return errors.New("UpdateTeam: team cannot be nil")
-	}
-	if t.ID == 0 {
-		return errors.New("UpdateTeam: team.ID must be set (not 0)")
-	}
-	for _, u := range teams.list {
-		if u.ID == t.ID {
-			*u = *t
-			return nil
-		}
-	}
-	return errors.Newf("UpdateTeam: cannot find team with ID=%d", t.ID)
-}
-
-func (teams *fakeTeamsDb) GetTeamByID(_ context.Context, id int32) (*types.Team, error) {
-	for _, t := range teams.list {
-		if t.ID == id {
-			return t, nil
-		}
-	}
-	return nil, database.TeamNotFoundError{}
-}
-
-func (teams *fakeTeamsDb) GetTeamByName(_ context.Context, name string) (*types.Team, error) {
-	for _, t := range teams.list {
-		if t.Name == name {
-			return t, nil
-		}
-	}
-	return nil, database.TeamNotFoundError{}
-}
-
-func (teams *fakeTeamsDb) DeleteTeam(_ context.Context, id int32) error {
-	for i, t := range teams.list {
-		if t.ID == id {
-			maxI := len(teams.list) - 1
-			teams.list[i], teams.list[maxI] = teams.list[maxI], teams.list[i]
-			teams.list = teams.list[:maxI]
-			return nil
-		}
-	}
-	return database.TeamNotFoundError{}
-}
-
-func (teams *fakeTeamsDb) ListTeams(_ context.Context, opts database.ListTeamsOpts) (selected []*types.Team, next int32, err error) {
-	for _, t := range teams.list {
-		if matches(t, opts) {
-			selected = append(selected, t)
-		}
-	}
-	if opts.LimitOffset != nil {
-		selected = selected[opts.LimitOffset.Offset:]
-		if limit := opts.LimitOffset.Limit; limit != 0 && len(selected) > limit {
-			next = selected[opts.LimitOffset.Limit].ID
-			selected = selected[:opts.LimitOffset.Limit]
-		}
-	}
-	return selected, next, nil
-}
-
-func (teams *fakeTeamsDb) CountTeams(ctx context.Context, opts database.ListTeamsOpts) (int32, error) {
-	selected, _, err := teams.ListTeams(ctx, opts)
-	return int32(len(selected)), err
-}
-
-func matches(team *types.Team, opts database.ListTeamsOpts) bool {
-	if opts.Cursor != 0 && team.ID < opts.Cursor {
-		return false
-	}
-	if opts.WithParentID != 0 && team.ParentTeamID != opts.WithParentID {
-		return false
-	}
-	if opts.RootOnly && team.ParentTeamID != 0 {
-		return false
-	}
-	if opts.Search != "" {
-		search := strings.ToLower(opts.Search)
-		name := strings.ToLower(team.Name)
-		displayName := strings.ToLower(team.DisplayName)
-		if !strings.Contains(name, search) && !strings.Contains(displayName, search) {
-			return false
-		}
-	}
-	// opts.ForUserMember is not supported yet as there is no membership fake.
-	return true
-}
-
-type orderedTeamMembers []*types.TeamMember
-
-func (o orderedTeamMembers) Len() int { return len(o) }
-func (o orderedTeamMembers) Less(i, j int) bool {
-	if o[i].TeamID < o[j].TeamID {
-		return true
-	}
-	if o[i].TeamID == o[j].TeamID {
-		return o[i].UserID < o[j].UserID
-	}
-	return false
-}
-func (o orderedTeamMembers) Swap(i, j int) { o[i], o[j] = o[j], o[i] }
-
-func (teams *fakeTeamsDb) CountTeamMembers(ctx context.Context, opts database.ListTeamMembersOpts) (int32, error) {
-	ms, _, err := teams.ListTeamMembers(ctx, opts)
-	return int32(len(ms)), err
-}
-
-func (teams *fakeTeamsDb) ListTeamMembers(_ context.Context, opts database.ListTeamMembersOpts) (selected []*types.TeamMember, next *database.TeamMemberListCursor, err error) {
-	sort.Sort(teams.members)
-	if opts.Search != "" {
-		return nil, nil, errors.New("fakeTeamsDb does not suppor Search parameter in ListTeamMembers yet")
-	}
-	for _, m := range teams.members {
-		if opts.Cursor.TeamID > m.TeamID {
-			continue
-		}
-		if opts.Cursor.TeamID == m.TeamID && opts.Cursor.UserID > m.UserID {
-			continue
-		}
-		if opts.TeamID != 0 && opts.TeamID != m.TeamID {
-			continue
-		}
-		selected = append(selected, m)
-	}
-	if opts.LimitOffset != nil {
-		selected = selected[opts.LimitOffset.Offset:]
-		if limit := opts.LimitOffset.Limit; limit != 0 && len(selected) > limit {
-			next = &database.TeamMemberListCursor{
-				TeamID: selected[opts.LimitOffset.Limit].TeamID,
-				UserID: selected[opts.LimitOffset.Limit].UserID,
-			}
-			selected = selected[:opts.LimitOffset.Limit]
-		}
-	}
-	return selected, next, nil
-}
 
 func fakeContext(u types.User) context.Context {
 	return actor.WithActor(context.Background(), &actor.Actor{UID: u.ID})
@@ -183,12 +27,12 @@ func fakeContext(u types.User) context.Context {
 
 var (
 	db        *database.MockDB
-	fakeTeams *fakeTeamsDb
+	fakeTeams *fakedb.Teams
 	fakeUsers *fakedb.Users
 )
 
 func setupDB() {
-	fakeTeams = &fakeTeamsDb{}
+	fakeTeams = &fakedb.Teams{}
 	fakeUsers = &fakedb.Users{}
 	db = database.NewMockDB()
 	db.TeamsFunc.SetDefaultReturn(fakeTeams)
@@ -327,7 +171,7 @@ func TestCreateTeamBare(t *testing.T) {
 		Name:      "team-name-testing",
 		CreatorID: actor.FromContext(ctx).UID,
 	}
-	if diff := cmp.Diff([]*types.Team{expected}, fakeTeams.list); diff != "" {
+	if diff := cmp.Diff([]*types.Team{expected}, fakeTeams.ListAllTeams()); diff != "" {
 		t.Errorf("unexpected teams in fake database (-want,+got):\n%s", diff)
 	}
 }
@@ -506,7 +350,7 @@ func TestUpdateTeamByID(t *testing.T) {
 			DisplayName: "Updated Display Name",
 		},
 	}
-	if diff := cmp.Diff(wantTeams, fakeTeams.list); diff != "" {
+	if diff := cmp.Diff(wantTeams, fakeTeams.ListAllTeams()); diff != "" {
 		t.Errorf("fake teams storage (-want,+got):\n%s", diff)
 	}
 }
@@ -545,7 +389,7 @@ func TestUpdateTeamByName(t *testing.T) {
 			DisplayName: "Updated Display Name",
 		},
 	}
-	if diff := cmp.Diff(wantTeams, fakeTeams.list); diff != "" {
+	if diff := cmp.Diff(wantTeams, fakeTeams.ListAllTeams()); diff != "" {
 		t.Errorf("fake teams storage (-want,+got):\n%s", diff)
 	}
 }
@@ -721,7 +565,7 @@ func TestDeleteTeamByID(t *testing.T) {
 			"id": string(relay.MarshalID("Team", team.ID)),
 		},
 	})
-	if diff := cmp.Diff([]*types.Team{}, fakeTeams.list); diff != "" {
+	if diff := cmp.Diff([]*types.Team{}, fakeTeams.ListAllTeams()); diff != "" {
 		t.Errorf("expected no teams in fake db after deleting, (-want,+got):\n%s", diff)
 	}
 }
@@ -749,7 +593,7 @@ func TestDeleteTeamByName(t *testing.T) {
 			"name": "team",
 		},
 	})
-	if diff := cmp.Diff([]*types.Team{}, fakeTeams.list); diff != "" {
+	if diff := cmp.Diff([]*types.Team{}, fakeTeams.ListAllTeams()); diff != "" {
 		t.Errorf("expected no teams in fake db after deleting, (-want,+got):\n%s", diff)
 	}
 }
@@ -994,7 +838,7 @@ func TestTeamsPaginated(t *testing.T) {
 		}
 	}
 	var wantNames []string
-	for _, team := range fakeTeams.list {
+	for _, team := range fakeTeams.ListAllTeams() {
 		wantNames = append(wantNames, team.Name)
 	}
 	if diff := cmp.Diff(wantNames, gotNames); diff != "" {
@@ -1138,11 +982,10 @@ func TestMembersPaginated(t *testing.T) {
 	for _, team := range []*types.Team{teamWithMembers, differentTeam} {
 		for i := 1; i <= 25; i++ {
 			id := fakeUsers.NewUser(types.User{Username: fmt.Sprintf("user-%d-%d", team.ID, i)})
-			m := &types.TeamMember{
+			fakeTeams.AddMember(&types.TeamMember{
 				TeamID: team.ID,
 				UserID: id,
-			}
-			fakeTeams.members = append(fakeTeams.members, m)
+			})
 		}
 	}
 	var (
