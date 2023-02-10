@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/rbac/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -57,8 +57,8 @@ func TestPermissionResolver(t *testing.T) {
 		var response struct{ Node apitest.Permission }
 		errs := apitest.Exec(userCtx, t, s, input, &response, queryPermissionNode)
 
-		assert.Len(t, errs, 1)
-		assert.Equal(t, errs[0].Message, "must be site admin")
+		require.Len(t, errs, 1)
+		require.Equal(t, errs[0].Message, "must be site admin")
 	})
 
 	t.Run(" as site-administrator", func(t *testing.T) {
