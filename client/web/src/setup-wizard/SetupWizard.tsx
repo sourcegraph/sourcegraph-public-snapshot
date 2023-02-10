@@ -20,7 +20,7 @@ const SETUP_STEPS: StepConfiguration[] = [
     {
         id: '002',
         name: 'Add remote repositories',
-        path: '/setup/remote-repositories/*',
+        path: '/setup/remote-repositories1/*',
         component: RemoteRepositoriesStep,
     },
     {
@@ -48,7 +48,7 @@ export const SetupWizard: FC = props => {
                 <BrandLogo variant="logo" isLightTheme={false} className={styles.logo} />
 
                 <H2 as={H1} className="font-weight-normal text-white mt-3 mb-4">
-                    Welcome to Sourcegraph! Let's get started.
+                    Welcome to Sourcegraph! Let's get started22.
                 </H2>
             </header>
 

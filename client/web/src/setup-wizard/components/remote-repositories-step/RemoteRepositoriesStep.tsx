@@ -1,15 +1,14 @@
-import { FC, HTMLAttributes, ReactElement } from 'react';
+import { FC, HTMLAttributes } from 'react';
 
 import classNames from 'classnames';
 import { Routes, Route } from 'react-router-dom-v5-compat';
 
-import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations';
-import { Button, Container, Icon, Text } from '@sourcegraph/wildcard';
+import { Container, Text } from '@sourcegraph/wildcard';
 
 import { CustomNextButton } from '../setup-steps';
 
+import { CodeHostsPicker } from './components/code-host-picker';
 import { CodeHostsNavigation } from './components/navigation';
-import { getCodeHostIcon, getCodeHostName } from './helpers';
 
 import styles from './RemoteRepositoriesStep.module.scss'
 
@@ -29,49 +28,14 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = props => 
 
                 <Container className={styles.contentMain}>
                     <Routes>
-                        <Route path="" element={<CodeHostPicker/>} />
+                        <Route index={true} element={<CodeHostsPicker/>} />
                         <Route path=":codehost/create" element={<span>Hello creation UI</span>} />
+                        <Route path=":codehostid/edit" element={<span>Hello edit UI</span>} />
                     </Routes>
                 </Container>
             </section>
 
             <CustomNextButton label="Custom next step label" disabled={true} />
         </div>
-    )
-}
-
-enum ExternalCodeHostType {
-  GitHub,
-  GitLab,
-  BitBucket
-}
-
-const SUPPORT_CODE_HOSTS = [
-    ExternalServiceKind.GITHUB,
-    ExternalServiceKind.GITLAB,
-    ExternalServiceKind.BITBUCKETCLOUD,
-]
-
-interface CodeHostPickerProps {}
-
-function CodeHostPicker(props: CodeHostPickerProps): ReactElement {
-    return (
-        <section className={styles.codeHostPicker}>
-            <header className={styles.codeHostPickerHeader}>
-                <span>Add another remote code host</span>
-                <small className='text-muted'>Choose a provider from the list below</small>
-            </header>
-
-            <ul className={styles.codeHostPickerList}>
-                { SUPPORT_CODE_HOSTS.map(codeHostType =>
-                    <li key={codeHostType}>
-                        <Button variant='secondary' outline={true} className={styles.codeHostPickerItem}>
-                            <Icon svgPath={getCodeHostIcon(codeHostType)} aria-hidden={true}/>
-                            <span>{getCodeHostName(codeHostType)}</span>
-                        </Button>
-                    </li>
-                )}
-            </ul>
-        </section>
     )
 }

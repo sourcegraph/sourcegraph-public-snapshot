@@ -23,7 +23,7 @@ export interface StepConfiguration {
     id: string
     path: string
     name: string
-    component: ComponentType<{ className: string }>
+    component: ComponentType<{ className?: string }>
 }
 
 interface SetupStepsContextData {
