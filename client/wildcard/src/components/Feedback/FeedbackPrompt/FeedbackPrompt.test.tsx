@@ -4,11 +4,11 @@ import sinon from 'sinon'
 
 import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/testing'
 
+import { renderWithBrandedContext } from '../../../testing'
 import { Button } from '../../Button'
 import { PopoverTrigger } from '../../Popover'
 
 import { FeedbackPrompt } from '.'
-import { renderWithBrandedContext } from '../../../testing'
 
 const sampleFeedback = {
     feedback: 'Lorem ipsum dolor sit amet',

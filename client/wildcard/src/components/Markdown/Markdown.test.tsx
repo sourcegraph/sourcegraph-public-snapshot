@@ -1,5 +1,6 @@
-import { Markdown } from './Markdown'
 import { renderWithBrandedContext } from '../../testing'
+
+import { Markdown } from './Markdown'
 
 describe('Markdown', () => {
     it('renders', () => {

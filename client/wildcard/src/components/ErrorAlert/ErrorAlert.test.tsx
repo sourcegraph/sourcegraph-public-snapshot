@@ -1,5 +1,6 @@
-import { ErrorAlert } from './ErrorAlert'
 import { renderWithBrandedContext } from '../../testing'
+
+import { ErrorAlert } from './ErrorAlert'
 
 describe('ErrorAlert', () => {
     it('should render an Error object as an alert', () => {
