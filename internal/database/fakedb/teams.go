@@ -22,8 +22,8 @@ type Teams struct {
 
 // ListAllTeams returns all stsored teams. It is meant to be used
 // for white-box testing, where we want to verify database contents.
-func (teams *Teams) ListAllTeams() []*types.Team {
-	return append([]*types.Team{}, teams.list...)
+func (fs Fakes) ListAllTeams() []*types.Team {
+	return append([]*types.Team{}, fs.TeamStore.list...)
 }
 
 // AddMember is a test setup tool for adding membership to fake Teams

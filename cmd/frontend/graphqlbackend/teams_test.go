@@ -154,7 +154,7 @@ func TestCreateTeamBare(t *testing.T) {
 		Name:      "team-name-testing",
 		CreatorID: actor.FromContext(ctx).UID,
 	}
-	if diff := cmp.Diff([]*types.Team{expected}, fs.TeamStore.ListAllTeams()); diff != "" {
+	if diff := cmp.Diff([]*types.Team{expected}, fs.ListAllTeams()); diff != "" {
 		t.Errorf("unexpected teams in fake database (-want,+got):\n%s", diff)
 	}
 }
@@ -345,7 +345,7 @@ func TestUpdateTeamByID(t *testing.T) {
 			DisplayName: "Updated Display Name",
 		},
 	}
-	if diff := cmp.Diff(wantTeams, fs.TeamStore.ListAllTeams()); diff != "" {
+	if diff := cmp.Diff(wantTeams, fs.ListAllTeams()); diff != "" {
 		t.Errorf("fake teams storage (-want,+got):\n%s", diff)
 	}
 }
@@ -386,7 +386,7 @@ func TestUpdateTeamByName(t *testing.T) {
 			DisplayName: "Updated Display Name",
 		},
 	}
-	if diff := cmp.Diff(wantTeams, fs.TeamStore.ListAllTeams()); diff != "" {
+	if diff := cmp.Diff(wantTeams, fs.ListAllTeams()); diff != "" {
 		t.Errorf("fake teams storage (-want,+got):\n%s", diff)
 	}
 }
@@ -572,7 +572,7 @@ func TestDeleteTeamByID(t *testing.T) {
 			"id": string(relay.MarshalID("Team", team.ID)),
 		},
 	})
-	if diff := cmp.Diff([]*types.Team{}, fs.TeamStore.ListAllTeams()); diff != "" {
+	if diff := cmp.Diff([]*types.Team{}, fs.ListAllTeams()); diff != "" {
 		t.Errorf("expected no teams in fake db after deleting, (-want,+got):\n%s", diff)
 	}
 }
@@ -602,7 +602,7 @@ func TestDeleteTeamByName(t *testing.T) {
 			"name": "team",
 		},
 	})
-	if diff := cmp.Diff([]*types.Team{}, fs.TeamStore.ListAllTeams()); diff != "" {
+	if diff := cmp.Diff([]*types.Team{}, fs.ListAllTeams()); diff != "" {
 		t.Errorf("expected no teams in fake db after deleting, (-want,+got):\n%s", diff)
 	}
 }
@@ -863,7 +863,7 @@ func TestTeamsPaginated(t *testing.T) {
 		}
 	}
 	var wantNames []string
-	for _, team := range fs.TeamStore.ListAllTeams() {
+	for _, team := range fs.ListAllTeams() {
 		wantNames = append(wantNames, team.Name)
 	}
 	if diff := cmp.Diff(wantNames, gotNames); diff != "" {
