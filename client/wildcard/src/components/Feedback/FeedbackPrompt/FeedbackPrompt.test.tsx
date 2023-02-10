@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
 
@@ -8,6 +8,7 @@ import { Button } from '../../Button'
 import { PopoverTrigger } from '../../Popover'
 
 import { FeedbackPrompt } from '.'
+import { renderWithBrandedContext } from '../../../testing'
 
 const sampleFeedback = {
     feedback: 'Lorem ipsum dolor sit amet',
@@ -17,7 +18,7 @@ describe('FeedbackPrompt', () => {
     const onSubmit = sinon.stub()
 
     beforeEach(() => {
-        render(
+        renderWithBrandedContext(
             <FeedbackPrompt
                 openByDefault={true}
                 onSubmit={onSubmit}
