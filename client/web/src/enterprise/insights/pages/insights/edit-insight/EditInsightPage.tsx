@@ -26,14 +26,14 @@ import { useEditPageHandlers } from './hooks/use-edit-page-handlers'
 
 export interface EditInsightPageProps {}
 
-export const EditInsightPage: FC<EditInsightPageProps> = props => {
+export const EditInsightPage: FC<EditInsightPageProps> = () => {
     /** Normalized insight id <type insight>.insight.<name of insight> */
-    const { insightID } = useParams()
+    const { insightId } = useParams()
 
     const { getInsightById } = useContext(CodeInsightsBackendContext)
     const { licensed, insight: insightFeatures } = useUiFeatures()
 
-    const insight = useObservable(useMemo(() => getInsightById(insightID!), [getInsightById, insightID]))
+    const insight = useObservable(useMemo(() => getInsightById(insightId!), [getInsightById, insightId]))
     const { handleSubmit, handleCancel } = useEditPageHandlers({ id: insight?.id })
 
     const editPermission = useObservable(
