@@ -495,7 +495,6 @@ Body: ${change.body || 'none'}`)
             if (!options.dryRun) {
                 pullRequest = await createPR(octokit, change)
             }
-
             results.push({
                 repository,
                 branch: change.base,

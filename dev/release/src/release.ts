@@ -1006,53 +1006,46 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         id: '_test:mvu',
         description: 'mvu',
         argNames: ['version'],
-        run: async (config, version) => {
-            const matches = version.match('(\\d\\.\\d)\\.\\d')
-            if (!matches || matches.length !== 2) {
-                throw new Error('invalid release branch')
+        run: async config => {
+            const {previous, upcoming} = await releaseVersions(config)
+
+            const releaseBranch = `${upcoming.major}.${upcoming.minor}`
+            const prevReleaseBranch = `${previous.major}.${previous.minor}`
+            const version = upcoming.version
+
+            const prConfig = {
+                edits: [
+                    `git remote set-branches --add origin '${prevReleaseBranch}'`,
+                    `git fetch --depth 1 origin ${prevReleaseBranch}`,
+                    `git remote set-branches --add origin '${releaseBranch}'`,
+                    `git fetch --depth 1 origin ${prevReleaseBranch}`,
+                    `comby -in-place 'const maxVersionString = ":[1]"' "const maxVersionString = "${version}"" internal/database/migration/shared/data/cmd/generator/consts.go`,
+                    'go generate internal/database/migration/shared/embed.go'
+                ],
+                repo:'sourcegraph',
+                owner: 'sourcegraph',
+                body: 'Update the multi version upgrade constants',
+                title: `${version} multi version upgrade constants`,
+                head: `${version}-update-multi-version-upgrade`,
+                commitMessage: `baking multi version upgrade files for version ${version}`,
             }
-            const releaseBranch = matches[1]
-            console.log(`release branch: ${releaseBranch}`)
             const sets = await createChangesets({
                 requiredCommands: ['comby', 'go'],
                 changes: [
                     {
-                        repo:'sourcegraph',
-                        owner: 'sourcegraph',
-                        body: 'Update the multi version upgrade constants',
-                        title: `${version} multi version upgrade constants`,
-                        base: 'main',
-                        head: `${version}-update-multi-version-upgrade`,
-                        commitMessage: `baking multi version upgrade files for version ${version}`,
-                        edits: [
-                            'git remote set-branches --add origin \'4.3\'',
-                            'git fetch --depth 1 origin 4.3',
-                            'git remote set-branches --add origin \'4.4\'',
-                            'git fetch --depth 1 origin 4.4',
-                            `comby -in-place 'const maxVersionString = ":[1]"' "const maxVersionString = \\"${version}\\"" internal/database/migration/shared/data/cmd/generator/consts.go`,
-                            'go generate internal/database/migration/shared/embed.go'
-                        ]
+                        ...prConfig,
+                        base: 'main'
                     },
                     {
-                        repo:'sourcegraph',
-                        owner: 'sourcegraph',
-                        body: 'Update the multi version upgrade constants',
-                        title: `${version} multi version upgrade constants`,
+                        ...prConfig,
                         base: `${releaseBranch}`,
-                        head: `${version}-update-multi-version-upgrade`,
-                        commitMessage: `baking multi version upgrade files for version ${version}`,
-                        edits: [
-                            'git remote set-branches --add origin \'4.3\'',
-                            'git fetch --depth 1 origin 4.3',
-                            'git remote set-branches --add origin \'4.4\'',
-                            'git fetch --depth 1 origin 4.4',
-                            `comby -in-place 'const maxVersionString = ":[1]"' "const maxVersionString = \\"${version}\\"" internal/database/migration/shared/data/cmd/generator/consts.go`,
-                            'go generate internal/database/migration/shared/embed.go'
-                        ]
                     },
                 ], dryRun: true,
             })
-            console.log(sets)
+            console.log('Merge the following pull requests:\n')
+            for (const set of sets) {
+                console.log(set.pullRequestURL)
+            }
         },
     }
 ]
