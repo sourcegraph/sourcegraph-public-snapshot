@@ -31,12 +31,6 @@ type registryExtensionConnectionResolver struct {
 	err                error
 }
 
-var (
-	// ListLocalRegistryExtensions lists and returns local registry extensions according to the args. If
-	// there is no local extension registry, it is not implemented.
-	ListLocalRegistryExtensions func(context.Context, database.DB, graphqlbackend.RegistryExtensionConnectionArgs) ([]graphqlbackend.RegistryExtension, error)
-)
-
 func (r *registryExtensionConnectionResolver) compute(ctx context.Context) ([]graphqlbackend.RegistryExtension, error) {
 	r.once.Do(func() {
 		args2 := r.args
@@ -44,15 +38,6 @@ func (r *registryExtensionConnectionResolver) compute(ctx context.Context) ([]gr
 			tmp := *args2.First
 			tmp++ // so we can detect if there is a next page
 			args2.First = &tmp
-		}
-
-		// Query local registry extensions.
-		var local []graphqlbackend.RegistryExtension
-		if ListLocalRegistryExtensions != nil {
-			local, r.err = ListLocalRegistryExtensions(ctx, r.db, args2)
-			if r.err != nil {
-				return
-			}
 		}
 
 		// Query remote registry extensions, if filters would match any.
@@ -67,9 +52,8 @@ func (r *registryExtensionConnectionResolver) compute(ctx context.Context) ([]gr
 		if r.args.ExtensionIDs == nil {
 			remote = append(remote, xs...)
 		} else {
-			// The ExtensionIDs arg ("only include extensions specified by these IDs") is only
-			// applied at query time for local extensions, not remote extensions, so apply it
-			// here.
+			// The ExtensionIDs arg ("only include extensions specified by these IDs") is not
+			// applied at query time for remote extensions, so apply it here.
 			include := map[string]struct{}{}
 			for _, id := range *r.args.ExtensionIDs {
 				include[id] = struct{}{}
@@ -81,10 +65,9 @@ func (r *registryExtensionConnectionResolver) compute(ctx context.Context) ([]gr
 			}
 		}
 
-		r.registryExtensions = make([]graphqlbackend.RegistryExtension, len(local)+len(remote))
-		copy(r.registryExtensions, local)
+		r.registryExtensions = make([]graphqlbackend.RegistryExtension, len(remote))
 		for i, x := range remote {
-			r.registryExtensions[len(local)+i] = &registryExtensionRemoteResolver{v: x}
+			r.registryExtensions[i] = &registryExtensionRemoteResolver{v: x}
 		}
 
 		sort.SliceStable(r.registryExtensions, func(i, j int) bool {

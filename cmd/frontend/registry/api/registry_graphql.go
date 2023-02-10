@@ -20,17 +20,8 @@ func init() {
 var ExtensionRegistry extensionRegistryResolver
 
 // extensionRegistryResolver implements the GraphQL type ExtensionRegistry.
-//
-// Some methods are only implemented if there is a local extension registry. For these methods, the
-// implementation (if one exists) is set on the XyzFunc struct field.
 type extensionRegistryResolver struct {
 	db database.DB
-}
-
-// ImplementsLocalExtensionRegistry reports whether there is an implementation of a local extension
-// registry (which is a Sourcegraph Enterprise feature).
-func (r *extensionRegistryResolver) ImplementsLocalExtensionRegistry() bool {
-	return true
 }
 
 func (r *extensionRegistryResolver) FilterRemoteExtensions(ids []string) []string {
