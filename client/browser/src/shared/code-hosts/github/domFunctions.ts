@@ -39,7 +39,7 @@ const getLineNumberElementIndex = (part: DiffPart, isSplitDiff: boolean): number
     return isSplitDiff ? 2 : 1
 }
 
-const lineNumberFromElement = (element: HTMLElement | null): number | undefined => {
+const getLineNumberFromElement = (element: HTMLElement | null): number | undefined => {
     if (element?.dataset.lineNumber) {
         return parseInt(element.dataset.lineNumber, 10)
     }
@@ -124,7 +124,7 @@ export const diffDomFunctions: DOMFunctions = {
         // Walk all previous sibling cells until we find one with the line number
         let cell = codeElement.closest('td')?.previousElementSibling
         while (cell instanceof HTMLElement) {
-            const lineNumber = lineNumberFromElement(cell)
+            const lineNumber = getLineNumberFromElement(cell)
             if (typeof lineNumber === 'number') {
                 return lineNumber
             }
@@ -194,7 +194,7 @@ export const singleFileDOMFunctions: DOMFunctions = {
     getLineElementFromLineNumber: getSingleFileCodeElementFromLineNumber,
     getLineNumberFromCodeElement(codeElement: HTMLElement): number {
         const cell = isNewGitHubUI() ? (codeElement.querySelector('[data-line-number]') as HTMLElement) : codeElement
-        const lineNumber = lineNumberFromElement(cell)
+        const lineNumber = getLineNumberFromElement(cell)
         if (typeof lineNumber === 'number') {
             return lineNumber
         }
