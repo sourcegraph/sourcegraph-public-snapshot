@@ -53,7 +53,7 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
         )
     }
 
-    if (!data || loading) {
+    if (!data || (!data && loading)) {
         return (
             <small className={classNames(className, styles.loadingState)}>
                 <LoadingSpinner/>{' '}

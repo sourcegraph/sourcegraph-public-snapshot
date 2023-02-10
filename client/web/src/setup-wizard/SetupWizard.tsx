@@ -1,4 +1,4 @@
-import { FC, ReactElement } from 'react'
+import { FC, ReactElement, useCallback } from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { H1, H2 } from '@sourcegraph/wildcard'
@@ -20,7 +20,7 @@ const SETUP_STEPS: StepConfiguration[] = [
     {
         id: '002',
         name: 'Add remote repositories',
-        path: '/setup/remote-repositories1/*',
+        path: '/setup/remote-repositories/*',
         component: RemoteRepositoriesStep,
     },
     {
@@ -34,12 +34,12 @@ const SETUP_STEPS: StepConfiguration[] = [
 export const SetupWizard: FC = props => {
     const [activeStepId, setStepId, status] = useTemporarySetting('setup.activeStepId')
 
+    const handleStepChange = useCallback((step: StepConfiguration): void => {
+        setStepId(step.id)
+    }, [setStepId])
+
     if (status !== 'loaded') {
         return null
-    }
-
-    const handleStepChange = (step: StepConfiguration): void => {
-        setStepId(step.id)
     }
 
     return (
@@ -48,7 +48,7 @@ export const SetupWizard: FC = props => {
                 <BrandLogo variant="logo" isLightTheme={false} className={styles.logo} />
 
                 <H2 as={H1} className="font-weight-normal text-white mt-3 mb-4">
-                    Welcome to Sourcegraph! Let's get started22.
+                    Welcome to Sourcegraph! Let's get started.
                 </H2>
             </header>
 
