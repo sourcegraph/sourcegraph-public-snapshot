@@ -193,7 +193,9 @@ export const singleFileDOMFunctions: DOMFunctions = {
     getCodeElementFromLineNumber: getSingleFileCodeElementFromLineNumber,
     getLineElementFromLineNumber: getSingleFileCodeElementFromLineNumber,
     getLineNumberFromCodeElement(codeElement: HTMLElement): number {
-        const cell = isNewGitHubUI() ? codeElement.querySelector('[data-line-number]') : codeElement
+        const cell = isNewGitHubUI()
+            ? codeElement.querySelector('[data-line-number]')
+            : codeElement.previousElementSibling
         const lineNumber = getLineNumberFromElement(cell)
         if (typeof lineNumber === 'number') {
             return lineNumber

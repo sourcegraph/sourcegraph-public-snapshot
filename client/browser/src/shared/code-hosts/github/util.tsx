@@ -303,12 +303,8 @@ interface GitHubEmbeddedData {
 }
 
 const NEW_GITHUB_UI_EMBEDDED_DATA_SELECTOR = 'script[data-target="react-app.embeddedData"]'
-function getEmbeddedDataContainer(): HTMLScriptElement {
-    const script = document.querySelector<HTMLScriptElement>(NEW_GITHUB_UI_EMBEDDED_DATA_SELECTOR)
-    if (!script) {
-        throw new Error('Unable to find script with embedded data.')
-    }
-    return script
+function getEmbeddedDataContainer(): HTMLScriptElement | null {
+    return document.querySelector<HTMLScriptElement>(NEW_GITHUB_UI_EMBEDDED_DATA_SELECTOR)
 }
 
 export function isNewGitHubUI(): boolean {
@@ -316,8 +312,12 @@ export function isNewGitHubUI(): boolean {
 }
 
 export function getEmbeddedData(): GitHubEmbeddedData {
+    const script = getEmbeddedDataContainer()
+    if (!script) {
+        throw new Error('Unable to find script with embedded data.')
+    }
     try {
-        return JSON.parse(getEmbeddedDataContainer().textContent || '').payload
+        return JSON.parse(script.textContent || '').payload
     } catch {
         throw new Error(`Failed to parse embedded data.`)
     }
