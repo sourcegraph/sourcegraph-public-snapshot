@@ -2,7 +2,7 @@ import { forwardRef } from 'react'
 
 import classNames from 'classnames'
 
-import { ForwardReferenceComponent } from '../../types';
+import { ForwardReferenceComponent } from '../../types'
 
 import styles from './Container.module.scss'
 
@@ -10,5 +10,5 @@ import styles from './Container.module.scss'
 export const Container = forwardRef((props, ref) => {
     const { as: Comp = 'div', className, ...attributes } = props
 
-    return (<Comp className={classNames(styles.container, className)} {...attributes} />)
+    return <Comp className={classNames(styles.container, className)} {...attributes} />
 }) as ForwardReferenceComponent<'div'>
