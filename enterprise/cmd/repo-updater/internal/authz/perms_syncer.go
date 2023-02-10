@@ -449,7 +449,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 				}
 
 				// Load last synced repos for this user and account from user_repo_permissions table
-				currentRepos, err := s.permsStore.FetchReposByUserAndExternalAccount(ctx, user.ID, acct.ID)
+				currentRepos, err := s.permsStore.FetchReposByExternalAccount(ctx, acct.ID)
 				if err != nil {
 					return results, errors.Wrap(err, "fetching existing repo permissions")
 				}
@@ -568,16 +568,8 @@ func (s *PermsSyncer) saveUserPermsForAccount(ctx context.Context, userID int32,
 			log.Int32("ExternalAccountID", acctID)),
 	)
 
-	p := &authz.UserPermissions{
-		UserID: userID,
-		Perm:   authz.Read, // Note: We currently only support read for repository permissions.
-		Type:   authz.PermRepos,
-		IDs:    map[int32]struct{}{},
-	}
-
 	perms := []authz.Permission{}
 	for _, repoID := range repoIDs {
-		p.IDs[repoID] = struct{}{}
 		perms = append(perms, authz.Permission{
 			UserID:            userID,
 			ExternalAccountID: acctID,

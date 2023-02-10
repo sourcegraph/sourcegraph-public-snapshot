@@ -41,9 +41,8 @@ type PermsStore interface {
 	// LoadUserPermissions loads stored user permissions into p. An ErrPermsNotFound
 	// is returned when there are no valid permissions available.
 	LoadUserPermissions(ctx context.Context, p *authz.UserPermissions) error
-	// FetchReposByUserAndExternalAccount fetches repo ids that the given user can
-	// read and that originate from the given external account.
-	FetchReposByUserAndExternalAccount(ctx context.Context, userID int32, accountID int32) ([]api.RepoID, error)
+	// FetchReposByExternalAccount fetches repo ids that the originate from the given external account.
+	FetchReposByExternalAccount(ctx context.Context, accountID int32) ([]api.RepoID, error)
 	// FetchReposByUserAndExternalService fetches repo ids that the given user can
 	// read and that originate from the given external service.
 	FetchReposByUserAndExternalService(ctx context.Context, userID int32, serviceType, serviceID string) ([]api.RepoID, error)
@@ -314,17 +313,16 @@ func (s *permsStore) LoadUserPermissions(ctx context.Context, p *authz.UserPermi
 	return nil
 }
 
-func (s *permsStore) FetchReposByUserAndExternalAccount(ctx context.Context, userID int32, accountID int32) (ids []api.RepoID, err error) {
+func (s *permsStore) FetchReposByExternalAccount(ctx context.Context, accountID int32) (ids []api.RepoID, err error) {
 	const format = `
 SELECT repo_id
 FROM user_repo_permissions
-WHERE user_id = %s
-  AND user_external_account_id = %s;
+WHERE user_external_account_id = %s;
 `
 
-	q := sqlf.Sprintf(format, userID, accountID)
+	q := sqlf.Sprintf(format, accountID)
 
-	ctx, save := s.observe(ctx, "FetchReposByUserAndExternalService", "")
+	ctx, save := s.observe(ctx, "FetchReposByExternalAccount", "")
 	defer func() {
 		save(&err)
 	}()
@@ -409,10 +407,6 @@ func (s *permsStore) SetUserRepoPermissions(ctx context.Context, p []authz.Permi
 		save(&err, f...)
 	}()
 
-	if len(p) == 0 {
-		return nil
-	}
-
 	// Open a transaction for update consistency.
 	txs, err := s.transact(ctx)
 	if err != nil {
@@ -420,15 +414,20 @@ func (s *permsStore) SetUserRepoPermissions(ctx context.Context, p []authz.Permi
 	}
 	defer func() { err = txs.Done(err) }()
 
-	// Update the rows with new data
-	timestamps, err := txs.upsertUserRepoPermissions(ctx, p, source)
-	if err != nil {
-		return errors.Wrap(err, "upserting new user repo permissions")
+	beforeTime := time.Now()
+	if len(p) > 0 {
+		// Update the rows with new data
+		timestamps, err := txs.upsertUserRepoPermissions(ctx, p, source)
+		if err != nil {
+			return errors.Wrap(err, "upserting new user repo permissions")
+		}
+
+		beforeTime = timestamps[0]
 	}
 
 	// Now delete rows that were updated before. This will delete all rows, that were not updated on the last update
 	// which was tried above.
-	err = txs.deleteOldUserRepoPermissions(ctx, entity, timestamps[0])
+	err = txs.deleteOldUserRepoPermissions(ctx, entity, beforeTime)
 	if err != nil {
 		return errors.Wrap(err, "removing old user repo permissions")
 	}

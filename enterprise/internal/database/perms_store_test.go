@@ -843,6 +843,32 @@ func testPermsStore_SetUserRepoPermissions(db database.DB) func(*testing.T) {
 				ExternalAccountID: 1,
 			},
 		},
+		{
+			name: "remove only",
+			origPermissions: []authz.Permission{
+				{
+					UserID:            1,
+					ExternalAccountID: 1,
+					RepoID:            1,
+				},
+				{
+					UserID:            1,
+					ExternalAccountID: 1,
+					RepoID:            2,
+				},
+				{
+					UserID:            1,
+					ExternalAccountID: 1,
+					RepoID:            3,
+				},
+			},
+			permissions:         []authz.Permission{},
+			expectedPermissions: []authz.Permission{},
+			entity: authz.PermissionEntity{
+				UserID:            1,
+				ExternalAccountID: 1,
+			},
+		},
 	}
 
 	return func(t *testing.T) {
@@ -886,25 +912,22 @@ func testPermsStore_SetUserRepoPermissions(db database.DB) func(*testing.T) {
 	}
 }
 
-func testPermsStore_FetchReposByUserAndExternalAccount(db database.DB) func(*testing.T) {
+func testPermsStore_FetchReposByExternalAccount(db database.DB) func(*testing.T) {
 	source := "test"
 
 	tests := []struct {
 		name              string
 		origPermissions   []authz.Permission
 		expected          []api.RepoID
-		userID            int32
 		externalAccountID int32
 	}{
 		{
 			name:              "empty",
-			userID:            1,
 			externalAccountID: 1,
 			expected:          []api.RepoID{},
 		},
 		{
 			name:              "one match",
-			userID:            1,
 			externalAccountID: 1,
 			expected:          []api.RepoID{1},
 			origPermissions: []authz.Permission{
@@ -926,7 +949,6 @@ func testPermsStore_FetchReposByUserAndExternalAccount(db database.DB) func(*tes
 		},
 		{
 			name:              "multiple matches",
-			userID:            1,
 			externalAccountID: 1,
 			expected:          []api.RepoID{1, 2},
 			origPermissions: []authz.Permission{
@@ -967,7 +989,7 @@ func testPermsStore_FetchReposByUserAndExternalAccount(db database.DB) func(*tes
 					}
 				}
 
-				ids, err := s.FetchReposByUserAndExternalAccount(ctx, test.userID, test.externalAccountID)
+				ids, err := s.FetchReposByExternalAccount(ctx, test.externalAccountID)
 				if err != nil {
 					t.Fatal("testing fetch repos by user and external account", err)
 				}
