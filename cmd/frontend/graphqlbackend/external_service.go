@@ -355,6 +355,7 @@ func (r *externalServiceSyncJobConnectionResolver) compute(ctx context.Context) 
 
 type externalServiceSyncJobResolver struct {
 	job *types.ExternalServiceSyncJob
+	db  database.DB
 }
 
 func marshalExternalServiceSyncJobID(id int64) graphql.ID {
@@ -385,7 +386,7 @@ func externalServiceSyncJobByID(ctx context.Context, db database.DB, gqlID graph
 		return nil, err
 	}
 
-	return &externalServiceSyncJobResolver{job: job}, nil
+	return &externalServiceSyncJobResolver{db: db, job: job}, nil
 }
 
 func (r *externalServiceSyncJobResolver) ID() graphql.ID {
@@ -438,3 +439,11 @@ func (r *externalServiceSyncJobResolver) ReposDeleted() int32 { return r.job.Rep
 func (r *externalServiceSyncJobResolver) ReposModified() int32 { return r.job.ReposModified }
 
 func (r *externalServiceSyncJobResolver) ReposUnmodified() int32 { return r.job.ReposUnmodified }
+
+func (r *externalServiceSyncJobResolver) Logs() []ExecutionLogEntryResolver {
+	logs := []ExecutionLogEntryResolver{}
+	for _, e := range r.job.ExecutionLogs {
+		logs = append(logs, NewExecutionLogEntryResolver(r.db, e))
+	}
+	return logs
+}

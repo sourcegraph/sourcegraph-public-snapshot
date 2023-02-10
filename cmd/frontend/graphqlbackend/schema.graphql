@@ -3128,7 +3128,13 @@ type ExternalServiceSyncJob implements Node {
     The number of existing repos whose metadata did not change during this sync job.
     """
     reposUnmodified: Int!
+
+    """
+    Execution log entries related to syncing.
+    """
+    logs: [ExecutionLogEntry!]!
 }
+
 """
 A list of repositories.
 

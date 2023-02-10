@@ -25,8 +25,10 @@ type SyncWorkerOptions struct {
 	CleanupOldJobsInterval time.Duration // defaults to 1h
 }
 
+type handleInitializer func(dbworkerstore.Store[*SyncJob]) workerutil.Handler[*SyncJob]
+
 // NewSyncWorker creates a new external service sync worker.
-func NewSyncWorker(ctx context.Context, observationCtx *observation.Context, dbHandle basestore.TransactableHandle, handler workerutil.Handler[*SyncJob], opts SyncWorkerOptions) (*workerutil.Worker[*SyncJob], *dbworker.Resetter[*SyncJob]) {
+func NewSyncWorker(ctx context.Context, observationCtx *observation.Context, dbHandle basestore.TransactableHandle, newHandler handleInitializer, opts SyncWorkerOptions) (*workerutil.Worker[*SyncJob], *dbworker.Resetter[*SyncJob]) {
 	if opts.NumHandlers == 0 {
 		opts.NumHandlers = 3
 	}
@@ -65,6 +67,7 @@ func NewSyncWorker(ctx context.Context, observationCtx *observation.Context, dbH
 		MaxNumRetries:     0,
 	})
 
+	handler := newHandler(store)
 	worker := dbworker.NewWorker(ctx, store, handler, workerutil.WorkerOptions{
 		Name:              "repo_sync_worker",
 		Description:       "syncs repos in a streaming fashion",

@@ -33,6 +33,14 @@ type observedSource struct {
 	logger  log.Logger
 }
 
+func (s *observedSource) ListReposWithProgressLog(ctx context.Context, res chan SourceResult, progressLog func(context.Context, string)) {
+	if progSrc, ok := s.Source.(LoggingSource); ok {
+		progSrc.ListReposWithProgressLog(ctx, res, progressLog)
+	} else {
+		s.Source.ListRepos(ctx, res)
+	}
+}
+
 // SourceMetrics encapsulates the Prometheus metrics of a Source.
 type SourceMetrics struct {
 	ListRepos *metrics.REDMetrics

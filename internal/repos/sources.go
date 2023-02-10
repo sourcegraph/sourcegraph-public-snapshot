@@ -87,6 +87,10 @@ func NewSource(ctx context.Context, logger log.Logger, db database.DB, svc *type
 	}
 }
 
+type LoggingSource interface {
+	ListReposWithProgressLog(context.Context, chan SourceResult, func(context.Context, string))
+}
+
 // A Source yields repositories to be stored and analysed by Sourcegraph.
 // Successive calls to its ListRepos method may yield different results.
 type Source interface {

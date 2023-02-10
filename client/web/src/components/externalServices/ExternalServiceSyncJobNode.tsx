@@ -4,7 +4,7 @@ import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import { Subject } from 'rxjs'
 
 import { Timestamp, TimestampFormat } from '@sourcegraph/branded/src/components/Timestamp'
-import { Badge, Button, ErrorAlert, Icon } from '@sourcegraph/wildcard'
+import { Badge, Button, Code, ErrorAlert, Icon } from '@sourcegraph/wildcard'
 
 import { ExternalServiceSyncJobListFields, ExternalServiceSyncJobState } from '../../graphql-operations'
 import { ValueLegendList, ValueLegendListProps } from '../../site-admin/analytics/components/ValueLegendList'
@@ -159,6 +159,7 @@ export const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalService
             </div>
             {isExpanded && legends && <ValueLegendList className="mb-0" items={legends} />}
             {isExpanded && node.failureMessage && <ErrorAlert error={node.failureMessage} className="mt-2 mb-0" />}
+            {isExpanded && <Code>{node.logs.map(log => log.out)[0]}</Code>}
         </li>
     )
 }

@@ -13,6 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 func TestSyncWorkerPlumbing(t *testing.T) {
@@ -52,7 +54,11 @@ func TestSyncWorkerPlumbing(t *testing.T) {
 	h := &fakeRepoSyncHandler{
 		jobChan: jobChan,
 	}
-	worker, resetter := repos.NewSyncWorker(ctx, observation.TestContextTB(t), store.Handle(), h, repos.SyncWorkerOptions{
+	newHandler := func(_ dbworkerstore.Store[*repos.SyncJob]) workerutil.Handler[*repos.SyncJob] {
+		return h
+	}
+
+	worker, resetter := repos.NewSyncWorker(ctx, observation.TestContextTB(t), store.Handle(), newHandler, repos.SyncWorkerOptions{
 		NumHandlers:    1,
 		WorkerInterval: 1 * time.Millisecond,
 	})

@@ -306,7 +306,10 @@ func TestStatusMessages(t *testing.T) {
 				noopRecorder := func(ctx context.Context, progress SyncProgress, final bool) error {
 					return nil
 				}
-				err = syncer.SyncExternalService(ctx, extSvc.ID, time.Millisecond, noopRecorder)
+				noopLogger := func(ctx context.Context, message string) error {
+					return nil
+				}
+				err = syncer.SyncExternalService(ctx, extSvc.ID, time.Millisecond, noopRecorder, noopLogger)
 				// In prod, SyncExternalService is kicked off by a worker queue. Any error
 				// returned will be stored in the external_service_sync_jobs table, so we fake
 				// that here.

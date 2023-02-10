@@ -274,7 +274,32 @@ func (s *GitHubSource) CheckConnection(ctx context.Context) error {
 func (s *GitHubSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	unfiltered := make(chan *githubResult)
 	go func() {
-		s.listAllRepositories(ctx, unfiltered)
+		s.listAllRepositories(ctx, unfiltered, func(ctx context.Context, s string) {})
+		close(unfiltered)
+	}()
+
+	seen := make(map[int64]bool)
+	for res := range unfiltered {
+		if res.err != nil {
+			results <- SourceResult{Source: s, Err: res.err}
+			continue
+		}
+
+		s.logger.Debug("unfiltered", log.String("repo", res.repo.NameWithOwner))
+		if !seen[res.repo.DatabaseID] && !s.excludes(res.repo) {
+			results <- SourceResult{Source: s, Repo: s.makeRepo(res.repo)}
+			s.logger.Debug("sent to result", log.String("repo", res.repo.NameWithOwner))
+			seen[res.repo.DatabaseID] = true
+		}
+	}
+}
+
+// ListRepos returns all Github repositories accessible to all connections configured
+// in Sourcegraph via the external services configuration.
+func (s *GitHubSource) ListReposWithProgressLog(ctx context.Context, results chan SourceResult, progressLogger func(context.Context, string)) {
+	unfiltered := make(chan *githubResult)
+	go func() {
+		s.listAllRepositories(ctx, unfiltered, progressLogger)
 		close(unfiltered)
 	}()
 
@@ -895,16 +920,21 @@ func (s *GitHubSource) listRepositoryQuery(ctx context.Context, query string, re
 
 // listAllRepositories returns the repositories from the given `orgs`, `repos`, and
 // `repositoryQuery` config options excluding the ones specified by `exclude`.
-func (s *GitHubSource) listAllRepositories(ctx context.Context, results chan *githubResult) {
+func (s *GitHubSource) listAllRepositories(ctx context.Context, results chan *githubResult, progressLog func(context.Context, string)) {
+	progressLog(ctx, "fetching metadata for 'repos'")
 	s.listRepos(ctx, s.config.Repos, results)
 
 	// Admins normally add to end of lists, so end of list most likely has new
 	// repos => stream them first.
 	for i := len(s.config.RepositoryQuery) - 1; i >= 0; i-- {
+		if s.config.RepositoryQuery[i] != "none" {
+			progressLog(ctx, fmt.Sprintf("querying GitHub API to fetch repositories matching query %q", s.config.RepositoryQuery[i]))
+		}
 		s.listRepositoryQuery(ctx, s.config.RepositoryQuery[i], results)
 	}
 
 	for i := len(s.config.Orgs) - 1; i >= 0; i-- {
+		progressLog(ctx, fmt.Sprintf("querying GitHub API to fetch repositories of organisation %q", s.config.Orgs[i]))
 		s.listOrg(ctx, s.config.Orgs[i], results)
 	}
 }

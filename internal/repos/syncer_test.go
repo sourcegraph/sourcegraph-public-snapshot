@@ -646,7 +646,7 @@ func TestSyncerSync(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				err = syncer.SyncExternalService(ctx, svc.ID, time.Millisecond, noopProgressRecorder)
+				err = syncer.SyncExternalService(ctx, svc.ID, time.Millisecond, noopProgressRecorder, noopProgressLogger)
 				if have, want := fmt.Sprint(err), tc.err; !strings.Contains(have, want) {
 					t.Errorf("error %q doesn't contain %q", have, want)
 				}
@@ -1236,7 +1236,7 @@ func TestOrphanedRepo(t *testing.T) {
 		Store: store,
 		Now:   time.Now,
 	}
-	if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder); err != nil {
+	if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder, noopProgressLogger); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1245,7 +1245,7 @@ func TestOrphanedRepo(t *testing.T) {
 		s := repos.NewFakeSource(svc2, nil, githubRepo)
 		return s, nil
 	}
-	if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second, noopProgressRecorder); err != nil {
+	if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second, noopProgressRecorder, noopProgressLogger); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1260,7 +1260,7 @@ func TestOrphanedRepo(t *testing.T) {
 		s := repos.NewFakeSource(svc1, nil)
 		return s, nil
 	}
-	if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder); err != nil {
+	if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder, noopProgressLogger); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1284,7 +1284,7 @@ func TestOrphanedRepo(t *testing.T) {
 		s := repos.NewFakeSource(svc2, nil)
 		return s, nil
 	}
-	if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second, noopProgressRecorder); err != nil {
+	if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second, noopProgressRecorder, noopProgressLogger); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1338,7 +1338,7 @@ func TestCloudDefaultExternalServicesDontSync(t *testing.T) {
 		Now:   time.Now,
 	}
 
-	have := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder)
+	have := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder, noopProgressLogger)
 	want := repos.ErrCloudDefaultSync
 
 	if !errors.Is(have, want) {
@@ -1399,7 +1399,7 @@ func TestConflictingSyncers(t *testing.T) {
 		Store: store,
 		Now:   time.Now,
 	}
-	if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder); err != nil {
+	if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder, noopProgressLogger); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1413,7 +1413,7 @@ func TestConflictingSyncers(t *testing.T) {
 		Store: store,
 		Now:   time.Now,
 	}
-	if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second, noopProgressRecorder); err != nil {
+	if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second, noopProgressRecorder, noopProgressLogger); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1458,7 +1458,7 @@ func TestConflictingSyncers(t *testing.T) {
 		Store: tx1,
 		Now:   time.Now,
 	}
-	if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder); err != nil {
+	if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder, noopProgressLogger); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1477,7 +1477,7 @@ func TestConflictingSyncers(t *testing.T) {
 
 	errChan := make(chan error)
 	go func() {
-		errChan <- syncer2.SyncExternalService(ctx, svc2.ID, 10*time.Second, noopProgressRecorder)
+		errChan <- syncer2.SyncExternalService(ctx, svc2.ID, 10*time.Second, noopProgressRecorder, noopProgressLogger)
 	}()
 
 	tx1.Done(nil)
@@ -1558,7 +1558,7 @@ func TestSyncRepoMaintainsOtherSources(t *testing.T) {
 		Store: store,
 		Now:   time.Now,
 	}
-	if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder); err != nil {
+	if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder, noopProgressLogger); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1572,7 +1572,7 @@ func TestSyncRepoMaintainsOtherSources(t *testing.T) {
 		Store: store,
 		Now:   time.Now,
 	}
-	if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second, noopProgressRecorder); err != nil {
+	if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second, noopProgressRecorder, noopProgressLogger); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1659,7 +1659,7 @@ func TestNameOnConflictOnRename(t *testing.T) {
 		Store: store,
 		Now:   time.Now,
 	}
-	if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder); err != nil {
+	if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder, noopProgressLogger); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1673,7 +1673,7 @@ func TestNameOnConflictOnRename(t *testing.T) {
 		Store: store,
 		Now:   time.Now,
 	}
-	if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second, noopProgressRecorder); err != nil {
+	if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second, noopProgressRecorder, noopProgressLogger); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1692,7 +1692,7 @@ func TestNameOnConflictOnRename(t *testing.T) {
 		Store: store,
 		Now:   time.Now,
 	}
-	if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder); err != nil {
+	if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder, noopProgressLogger); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1767,7 +1767,7 @@ func TestDeleteExternalService(t *testing.T) {
 		Store: store,
 		Now:   time.Now,
 	}
-	if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder); err != nil {
+	if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder, noopProgressLogger); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1781,7 +1781,7 @@ func TestDeleteExternalService(t *testing.T) {
 		Store: store,
 		Now:   time.Now,
 	}
-	if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second, noopProgressRecorder); err != nil {
+	if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second, noopProgressRecorder, noopProgressLogger); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1996,5 +1996,9 @@ func setupSyncErroredTest(ctx context.Context, s repos.Store, t *testing.T,
 }
 
 var noopProgressRecorder = func(ctx context.Context, progress repos.SyncProgress, final bool) error {
+	return nil
+}
+
+var noopProgressLogger = func(ctx context.Context, message string) error {
 	return nil
 }

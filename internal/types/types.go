@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -620,6 +621,9 @@ type ExternalServiceSyncJob struct {
 	ReposDeleted    int32
 	ReposModified   int32
 	ReposUnmodified int32
+
+	// Logs
+	ExecutionLogs []executor.ExecutionLogEntry
 }
 
 // URN returns a unique resource identifier of this external service,

@@ -16,12 +16,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -67,13 +70,18 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 		s.initialUnmodifiedDiffFromStore(ctx, store)
 	}
 
-	worker, resetter := NewSyncWorker(ctx, observation.ContextWithLogger(s.ObsvCtx.Logger.Scoped("syncWorker", ""), s.ObsvCtx),
-		store.Handle(),
-		&syncHandler{
+	newHandler := func(workerStore dbworkerstore.Store[*SyncJob]) workerutil.Handler[*SyncJob] {
+		return &syncHandler{
 			syncer:          s,
 			store:           store,
+			workerStore:     workerStore,
 			minSyncInterval: opts.MinSyncInterval,
-		}, SyncWorkerOptions{
+		}
+	}
+
+	worker, resetter := NewSyncWorker(ctx, observation.ContextWithLogger(s.ObsvCtx.Logger.Scoped("syncWorker", ""), s.ObsvCtx),
+		store.Handle(),
+		newHandler, SyncWorkerOptions{
 			WorkerInterval: opts.DequeueInterval,
 			NumHandlers:    ConfRepoConcurrentExternalServiceSyncers(),
 			CleanupOldJobs: true,
@@ -102,6 +110,7 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 type syncHandler struct {
 	syncer          *Syncer
 	store           Store
+	workerStore     dbworkerstore.Store[*SyncJob]
 	minSyncInterval func() time.Duration
 }
 
@@ -124,7 +133,27 @@ func (s *syncHandler) Handle(ctx context.Context, _ log.Logger, sj *SyncJob) (er
 		return nil
 	}
 
-	return s.syncer.SyncExternalService(ctx, sj.ExternalServiceID, s.minSyncInterval(), progressRecorder)
+	entry := executor.ExecutionLogEntry{
+		Key:       fmt.Sprintf("external-service-id-%d", sj.ID),
+		Command:   []string{"syncing output"},
+		StartTime: time.Now(),
+	}
+	opts := dbworkerstore.ExecutionLogEntryOptions{}
+
+	logEntryID, err := s.workerStore.AddExecutionLogEntry(ctx, sj.ID, entry, opts)
+	if err != nil {
+		return err
+	}
+
+	progressLogger := func(ctx context.Context, message string) {
+		entry.Out += fmt.Sprintf("%s - %s\n", time.Now(), message)
+		err := s.workerStore.UpdateExecutionLogEntry(ctx, sj.ID, logEntryID, entry, opts)
+		if err != nil {
+			log.Error(err)
+		}
+	}
+
+	return s.syncer.SyncExternalService(ctx, sj.ExternalServiceID, s.minSyncInterval(), progressRecorder, progressLogger)
 }
 
 // TriggerExternalServiceSync will enqueue a sync job for the supplied external
@@ -480,6 +509,9 @@ type SyncProgress struct {
 // function to decide whether to drop some intermediate calls.
 type progressRecorderFunc func(ctx context.Context, progress SyncProgress, final bool) error
 
+// progressLoggerFunc is a func that logs progress
+type progressLoggerFunc func(ctx context.Context, message string)
+
 // SyncExternalService syncs repos using the supplied external service in a streaming fashion, rather than batch.
 // This allows very large sync jobs (i.e. that source potentially millions of repos) to incrementally persist changes.
 // Deletes of repositories that were not sourced are done at the end.
@@ -488,6 +520,7 @@ func (s *Syncer) SyncExternalService(
 	externalServiceID int64,
 	minSyncInterval time.Duration,
 	progressRecorder progressRecorderFunc,
+	progressLogger progressLoggerFunc,
 ) (err error) {
 	logger := s.ObsvCtx.Logger.With(log.Int64("externalServiceID", externalServiceID))
 	logger.Info("syncing external service")
@@ -508,6 +541,9 @@ func (s *Syncer) SyncExternalService(
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+
+	progressLogger(ctx, "starting sync")
+	defer func() { progressLogger(ctx, "stopping sync") }()
 
 	// From this point we always want to make a best effort attempt to update the
 	// service timestamps
@@ -547,7 +583,11 @@ func (s *Syncer) SyncExternalService(
 
 	results := make(chan SourceResult)
 	go func() {
-		src.ListRepos(ctx, results)
+		if progSrc, ok := src.(LoggingSource); ok {
+			progSrc.ListReposWithProgressLog(ctx, results, progressLogger)
+		} else {
+			src.ListRepos(ctx, results)
+		}
 		close(results)
 	}()
 

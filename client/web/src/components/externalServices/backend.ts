@@ -161,6 +161,10 @@ const EXTERNAL_SERVICE_SYNC_JOB_LIST_FIELDS_FRAGMENT = gql`
         reposDeleted
         reposModified
         reposUnmodified
+
+        logs {
+            out
+        }
     }
 `
 

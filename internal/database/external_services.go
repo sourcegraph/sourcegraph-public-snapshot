@@ -1077,7 +1077,8 @@ SELECT
 	repos_added,
 	repos_modified,
 	repos_unmodified,
-	repos_deleted
+	repos_deleted,
+	execution_logs
 FROM
 	external_service_sync_jobs
 WHERE %s
@@ -1224,6 +1225,7 @@ func scanExternalServiceSyncJob(sc dbutil.Scanner, job *types.ExternalServiceSyn
 		&job.ReposModified,
 		&job.ReposUnmodified,
 		&job.ReposDeleted,
+		pq.Array(&job.ExecutionLogs),
 	)
 }
 
