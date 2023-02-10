@@ -114,11 +114,11 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     const disableFeedbackSurvey = window.context?.disableFeedbackSurvey
     const isSiteInit = location.pathname === PageRoutes.SiteAdminInit
     const isSignInOrUp =
-        location.pathname === PageRoutes.SignIn ||
-        location.pathname === PageRoutes.SignUp ||
-        location.pathname === PageRoutes.PasswordReset ||
-        location.pathname === PageRoutes.Welcome ||
-        location.pathname === PageRoutes.RequestAccess
+        routeMatch === PageRoutes.SignIn ||
+        routeMatch === PageRoutes.SignUp ||
+        routeMatch === PageRoutes.PasswordReset ||
+        routeMatch === PageRoutes.Welcome ||
+        routeMatch === PageRoutes.RequestAccess
 
     const themeState = useTheme()
     const themeStateRef = useRef(themeState)

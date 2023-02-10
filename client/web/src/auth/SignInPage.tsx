@@ -20,6 +20,7 @@ import { getReturnTo } from './SignInSignUpCommon'
 import { UsernamePasswordSignInForm } from './UsernamePasswordSignInForm'
 
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
+import { useShouldShowRequestAccess } from './useShouldShowRequestAccess'
 
 interface SignInPageProps {
     authenticatedUser: AuthenticatedUser | null
@@ -41,6 +42,11 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     const location = useLocation()
     const [error, setError] = useState<Error | null>(null)
     const [searchParams] = useSearchParams()
+    const showRequestAccess = useShouldShowRequestAccess(
+        props.isSourcegraphDotCom,
+        props.context.allowSignup,
+        props.context.experimentalFeatures
+    )
 
     if (props.authenticatedUser) {
         const returnTo = getReturnTo(location)
@@ -65,11 +71,6 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     }
 
     const thirdPartyAuthProviders = nonBuiltinAuthProviders.filter(provider => shouldShowProvider(provider))
-    // TODO: check case when allowSignup=true and no seats
-    const showRequestAccess =
-        !props.isSourcegraphDotCom &&
-        !props.context.allowSignup &&
-        props.context.experimentalFeatures?.requestAccess?.enabled !== false
 
     const showBuiltInAuthForm = searchParams.has('email') || thirdPartyAuthProviders.length === 0
 
