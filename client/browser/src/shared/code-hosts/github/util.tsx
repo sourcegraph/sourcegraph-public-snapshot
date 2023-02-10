@@ -293,3 +293,32 @@ export const getSelectorFor = (key: keyof UISelectors): string =>
         .map(selectors => selectors[key])
         .filter(Boolean)
         .join(', ')
+
+interface GitHubEmbeddedData {
+    path: string
+    refInfo: {
+        name: string
+        currentOid: string
+    }
+}
+
+const NEW_GITHUB_UI_EMBEDDED_DATA_SELECTOR = 'script[data-target="react-app.embeddedData"]'
+function getEmbeddedDataContainer(): HTMLScriptElement {
+    const script = document.querySelector<HTMLScriptElement>(NEW_GITHUB_UI_EMBEDDED_DATA_SELECTOR)
+    if (!script) {
+        throw new Error('Unable to find script with embedded data.')
+    }
+    return script
+}
+
+export function isNewGitHubUI(): boolean {
+    return !!getEmbeddedDataContainer()
+}
+
+export function getEmbeddedData(): GitHubEmbeddedData {
+    try {
+        return JSON.parse(getEmbeddedDataContainer().textContent || '').payload
+    } catch {
+        throw new Error(`Failed to parse embedded data.`)
+    }
+}

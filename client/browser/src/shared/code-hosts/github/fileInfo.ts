@@ -1,7 +1,6 @@
 import { BlobInfo, DiffInfo } from '../shared/codeHost'
 
-import { getCommitIDFromPermalink } from './scrape'
-import { getDiffFileName, getDiffResolvedRevision, getFilePath, parseURL } from './util'
+import { getDiffFileName, getDiffResolvedRevision, getEmbeddedData, getFilePath, isNewGitHubUI, parseURL } from './util'
 import { commitIDFromPermalink } from '../../util/dom'
 
 export const resolveDiffFileInfo = (codeView: HTMLElement): DiffInfo => {
@@ -43,47 +42,45 @@ export const resolveFileInfo = (): BlobInfo => {
 
     const { revisionAndFilePath, rawRepoName } = parsedURL
 
-    let filePath: string
-    let commitID: string
-    let revision: string
+    if (isNewGitHubUI()) {
+        const embeddedData = getEmbeddedData()
 
-    const embeddedDataScriptSelector = 'script[data-target="react-app.embeddedData"]'
-    const script = document.querySelector<HTMLScriptElement>(embeddedDataScriptSelector)
-    if (script) {
-        // new UI
-        try {
-            const data = JSON.parse(script.textContent || '')
-            filePath = data.payload.path
-            commitID = data.payload.refInfo.currentOid
-            revision = data.payload.refInfo.name
-        } catch {
-            throw new Error(`Could not parse '${embeddedDataScriptSelector}' content or extract commit ID from it`)
+        return {
+            blob: {
+                rawRepoName,
+                filePath: embeddedData.path,
+                revision: embeddedData.refInfo.name,
+                commitID: embeddedData.refInfo.currentOid,
+            },
         }
-    } else {
-        // old UI
-
-        filePath = getFilePath()
-
-        // Don't prepend empty filePath with slash; it's the root directory of the repo
-        const filePathWithLeadingSlash = filePath && !filePath.startsWith('/') ? `/${filePath}` : filePath
-        // If filePath is empty, revisionAndFilePath == just the revision
-        revision = filePathWithLeadingSlash
-            ? revisionAndFilePath.slice(0, -filePathWithLeadingSlash.length)
-            : revisionAndFilePath
-
-        if (!revisionAndFilePath.endsWith(filePathWithLeadingSlash)) {
-            throw new Error(
-                `The file path ${filePathWithLeadingSlash} should always be a suffix of revAndFilePath ${revisionAndFilePath}, but isn't in this case.`
-            )
-        }
-
-        commitID = commitIDFromPermalink({
-            selector: '.js-permalink-shortcut',
-            hrefRegex: /^\/.*?\/.*?\/(?:blob|tree)\/([\da-f]{40})/,
-        })
     }
 
-    return { blob: { rawRepoName, filePath, revision, commitID } }
+    const filePath = getFilePath()
+
+    // Don't prepend empty filePath with slash; it's the root directory of the repo
+    const filePathWithLeadingSlash = filePath && !filePath.startsWith('/') ? `/${filePath}` : filePath
+    // If filePath is empty, revisionAndFilePath == just the revision
+    const revision = filePathWithLeadingSlash
+        ? revisionAndFilePath.slice(0, -filePathWithLeadingSlash.length)
+        : revisionAndFilePath
+
+    if (!revisionAndFilePath.endsWith(filePathWithLeadingSlash)) {
+        throw new Error(
+            `The file path ${filePathWithLeadingSlash} should always be a suffix of revAndFilePath ${revisionAndFilePath}, but isn't in this case.`
+        )
+    }
+
+    return {
+        blob: {
+            rawRepoName,
+            filePath,
+            revision,
+            commitID: commitIDFromPermalink({
+                selector: '.js-permalink-shortcut',
+                hrefRegex: /^\/.*?\/.*?\/(?:blob|tree)\/([\da-f]{40})/,
+            }),
+        },
+    }
 }
 
 const COMMIT_HASH_REGEX = /\/([\da-f]{40})$/i
