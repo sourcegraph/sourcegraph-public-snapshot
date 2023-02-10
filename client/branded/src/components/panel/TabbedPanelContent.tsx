@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 import { Remote } from 'comlink'
-import { useHistory, useLocation } from 'react-router'
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
 import { BehaviorSubject, from, Observable, combineLatest, of } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
@@ -167,8 +167,8 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
     const [tabIndex, setTabIndex] = useState(0)
     const location = useLocation()
     const { hash, pathname, search } = location
-    const history = useHistory()
-    const handlePanelClose = useCallback(() => history.replace(pathname), [history, pathname])
+    const navigate = useNavigate()
+    const handlePanelClose = useCallback(() => navigate(pathname, { replace: true }), [navigate, pathname])
     const [currentTabLabel, currentTabID] = hash.split('=')
 
     const legacyHierarchicalLocationViewHasResult = useObservable(hierarchicalLocationViewHasResultContext)
@@ -286,9 +286,9 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
 
     const handleActiveTab = useCallback(
         (index: number): void => {
-            history.replace(`${pathname}${search}${currentTabLabel}=${items[index].id}`)
+            navigate(`${pathname}${search}${currentTabLabel}=${items[index].id}`, { replace: true })
         },
-        [currentTabLabel, history, items, pathname, search]
+        [currentTabLabel, navigate, items, pathname, search]
     )
 
     useEffect(() => {
@@ -409,8 +409,8 @@ function transformPanelContributions(contributions: Evaluated<Contributions>): E
         const uniquePanelMenuItems = [...strings]
             .map(string => JSON.parse(string))
             // We render the MixPreciseAndSearchBasedReferencesToggle in React now
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
             .filter(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
                 (item: any) =>
                     item.action !== 'mixPreciseAndSearchBasedReferences.toggle' &&
                     item.action !== 'panel.locations.groupByFile'

@@ -1,15 +1,10 @@
 import { renderHook, act } from '@testing-library/react'
-import type { useHistory } from 'react-router'
+import type { useNavigate } from 'react-router-dom-v5-compat'
 import sinon from 'sinon'
 
 import { useURLSyncedState } from './useUrlSyncedState'
 
 const replaceSpy = sinon.spy()
-function useMockHistory() {
-    return {
-        replace: replaceSpy,
-    }
-}
 
 describe('useURLSyncedState', () => {
     beforeEach(() => {
@@ -20,7 +15,7 @@ describe('useURLSyncedState', () => {
         const searchParameters = new URLSearchParams()
         searchParameters.set('foo', 'foo')
         const { result } = renderHook(() =>
-            useURLSyncedState({ bar: 'bar' }, searchParameters, useMockHistory as unknown as typeof useHistory)
+            useURLSyncedState({ bar: 'bar' }, searchParameters, replaceSpy as unknown as typeof useNavigate)
         )
         const [data, setData] = result.current
 
