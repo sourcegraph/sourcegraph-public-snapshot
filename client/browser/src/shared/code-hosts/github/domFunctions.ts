@@ -1,9 +1,9 @@
 import { DiffPart } from '@sourcegraph/codeintellify'
 
+import { querySelectorOrSelf } from '../../util/dom'
 import { DOMFunctions } from '../shared/codeViews'
 
 import { getSelectorFor, isDiffPageType, isNewGitHubUI, parseURL } from './util'
-import { querySelectorOrSelf } from '../../util/dom'
 
 const getDiffCodePart = (codeElement: HTMLElement): DiffPart => {
     const tableCell = codeElement.closest('td')!
@@ -44,7 +44,6 @@ const getLineNumberElementIndex = (part: DiffPart, isSplitDiff: boolean): number
  * Gets the line number for a given code element on unified diff, split diff and blob views.
  */
 const getLineNumberFromCodeElement = (codeElement: HTMLElement): number => {
-    // In the new GitHub UI element may actually be the one containing the line number
     if (isNewGitHubUI()) {
         const element = querySelectorOrSelf<HTMLElement>(codeElement, '[data-line-number]')
         if (element?.dataset.lineNumber) {
@@ -53,9 +52,9 @@ const getLineNumberFromCodeElement = (codeElement: HTMLElement): number => {
         throw new Error('Could get line number from the code element.')
     }
 
-    // In diff views, the code element is the `<span>` inside the cell
-    // On blob views, the code element is the `<td>` itself, so `closest()` will simply return it
-    // Walk all previous sibling cells until we find one with the line number
+    // In diff views, the code element is the `<span>` inside the cell.
+    // On blob views, the code element is the `<td>` itself, so `closest()` will simply return it.
+    // Walk all previous sibling cells until we find one with the line number.
     let cell = codeElement.closest('td')!.previousElementSibling as HTMLTableCellElement
     while (cell) {
         if (cell.dataset.lineNumber) {

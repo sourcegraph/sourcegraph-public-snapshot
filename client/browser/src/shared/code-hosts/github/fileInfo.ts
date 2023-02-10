@@ -1,3 +1,4 @@
+import { commitIDFromPermalink } from '../../util/dom'
 import { BlobInfo, DiffInfo } from '../shared/codeHost'
 
 import {
@@ -9,7 +10,6 @@ import {
     isNewGitHubUI,
     parseURL,
 } from './util'
-import { commitIDFromPermalink } from '../../util/dom'
 
 export const resolveDiffFileInfo = (codeView: HTMLElement): DiffInfo => {
     const { rawRepoName } = parseURL()

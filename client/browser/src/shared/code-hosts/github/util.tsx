@@ -193,6 +193,9 @@ function getDiffResolvedRevisionFromPageSource(
 /**
  * Returns the file path for the current page. Must be on a blob or tree page.
  *
+ * Note: works only with 'old' GitHub UI blob page. When used with the new new UI this function will throw because
+ * there is no element with a permalink on the page. Use {@link getFilePathFromURL} instead.
+ *
  * Implementation details:
  *
  * This scrapes the file path from the permalink on GitHub blob pages:
@@ -240,7 +243,7 @@ export function getFilePathFromURL(rev: string): string {
     const [, , , pageType, ...revAndPathParts] = window.location.pathname.split('/')
     const revAndPath = revAndPathParts.join('/')
     if (!revAndPath.startsWith(rev) || (pageType !== 'tree' && revAndPath.length === rev.length)) {
-        throw new Error(`Failed to extract the file path from the URL.`)
+        throw new Error('Failed to extract the file path from the URL.')
     }
 
     return revAndPathParts.slice(rev.split('/').length).join('/')
@@ -338,6 +341,6 @@ export function getEmbeddedData(): GitHubEmbeddedData {
     try {
         return JSON.parse(script.textContent || '').payload
     } catch {
-        throw new Error(`Failed to parse embedded data.`)
+        throw new Error('Failed to parse embedded data.')
     }
 }
