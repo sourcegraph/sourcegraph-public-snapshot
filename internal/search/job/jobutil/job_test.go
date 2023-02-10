@@ -45,6 +45,7 @@ func TestNewPlanJob(t *testing.T) {
 		query      string
 		protocol   search.Protocol
 		searchType query.SearchType
+		features   search.Features
 		want       autogold.Value
 	}{{
 		query:      `foo context:@userA`,
@@ -777,6 +778,48 @@ func TestNewPlanJob(t *testing.T) {
             (patternInfo.pattern . (:[_]))(patternInfo.isStructural . true)(patternInfo.fileMatchLimit . 500)
             ))))))`),
 		},
+		{
+			query:      `symbol:references(type:symbol lang:go FooBar)`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeLiteral,
+			features: search.Features{
+				CodeGraphSearch: true,
+			},
+			want: autogold.Want("symbol references search", `
+(LOG
+  (ALERT
+    (query . )
+    (originalQuery . )
+    (patternType . literal)
+    (TIMEOUT
+      (timeout . 20s)
+      (LIMIT
+        (limit . 500)
+        (PARALLEL
+          (CODEGRAPHSEARCH
+            (implemented . false)
+            (relationship . references)
+            (LOG
+              (ALERT
+                (query . )
+                (originalQuery . )
+                (patternType . literal)
+                (TIMEOUT
+                  (timeout . 20s)
+                  (LIMIT
+                    (limit . 500)
+                    (PARALLEL
+                      (ZOEKTGLOBALSYMBOLSEARCH
+                        (query . (and sym:substr:"FooBar" file_regex:"\\.go(?m:$)"))
+                        (type . symbol)
+                        )
+                      (REPOSCOMPUTEEXCLUDED
+                        )
+                      NoopJob))))))
+          (REPOSCOMPUTEEXCLUDED
+            )
+          NoopJob)))))`),
+		},
 	}
 
 	for _, tc := range cases {
@@ -788,7 +831,7 @@ func TestNewPlanJob(t *testing.T) {
 				UserSettings:        &schema.Settings{},
 				PatternType:         tc.searchType,
 				Protocol:            tc.protocol,
-				Features:            &search.Features{},
+				Features:            &tc.features,
 				OnSourcegraphDotCom: true,
 			}
 

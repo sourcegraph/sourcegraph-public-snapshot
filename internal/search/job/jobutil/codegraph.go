@@ -166,4 +166,4 @@ func (s *CodeGraphSearchJob) Fields(v job.Verbosity) (res []log.Field) {
 	}
 }
 
-func (s *CodeGraphSearchJob) Name() string { return "CodeIntelSearchJob" }
+func (s *CodeGraphSearchJob) Name() string { return "CodeGraphSearchJob" }
