@@ -20,11 +20,11 @@ type Users struct {
 // NewUser creates new user in the fake user storage.
 // This method is tailored for data setup in tests - it does not fail,
 // and conveniently returns ID of newly created user.
-func (users *Users) NewUser(u types.User) int32 {
-	id := users.lastUserID + 1
-	users.lastUserID = id
+func (fs Fakes) AddUser(u types.User) int32 {
+	id := fs.UserStore.lastUserID + 1
+	fs.UserStore.lastUserID = id
 	u.ID = id
-	users.list = append(users.list, u)
+	fs.UserStore.list = append(fs.UserStore.list, u)
 	return id
 }
 
