@@ -502,7 +502,6 @@ func (r *schemaResolver) AddTeamMembers(ctx context.Context, args *TeamMembersAr
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("NEW USER IDS %v\n", memberIDs)
 	team, err := findTeam(ctx, r.db.Teams(), args.Team, args.TeamName)
 	if err != nil {
 		return nil, err
@@ -515,7 +514,6 @@ func (r *schemaResolver) AddTeamMembers(ctx context.Context, args *TeamMembersAr
 		if err != nil {
 			return nil, err
 		}
-		fmt.Printf("EXISTING USER IDS %v\n", existingMembers)
 		for _, m := range existingMembers {
 			delete(memberIDs, m.UserID)
 		}
@@ -524,7 +522,6 @@ func (r *schemaResolver) AddTeamMembers(ctx context.Context, args *TeamMembersAr
 		}
 		listOpts.Cursor = *cursor
 	}
-	fmt.Printf("NEW USER IDS AFTER DIFFING %v\n", memberIDs)
 	var membersToAdd []*types.TeamMember
 	for userID := range memberIDs {
 		membersToAdd = append(membersToAdd, &types.TeamMember{
@@ -532,7 +529,6 @@ func (r *schemaResolver) AddTeamMembers(ctx context.Context, args *TeamMembersAr
 			UserID: userID,
 		})
 	}
-	fmt.Printf("DIFFED USERS TO ADD %v\n", membersToAdd)
 	if len(membersToAdd) > 0 {
 		if err := r.db.Teams().CreateTeamMember(ctx, membersToAdd...); err != nil {
 			return nil, err
