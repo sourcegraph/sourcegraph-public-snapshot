@@ -39,6 +39,13 @@ const getLineNumberElementIndex = (part: DiffPart, isSplitDiff: boolean): number
     return isSplitDiff ? 2 : 1
 }
 
+const lineNumberFromElement = (element: HTMLElement | null): number | undefined => {
+    if (element?.dataset.lineNumber) {
+        return parseInt(element.dataset.lineNumber, 10)
+    }
+    return undefined
+}
+
 /**
  * Gets the `<td>` element for a target that contains the code
  */
@@ -117,8 +124,9 @@ export const diffDomFunctions: DOMFunctions = {
         // Walk all previous sibling cells until we find one with the line number
         let cell = codeElement.closest('td')?.previousElementSibling
         while (cell instanceof HTMLElement) {
-            if (cell.dataset.lineNumber) {
-                return parseInt(cell.dataset.lineNumber, 10)
+            const lineNumber = lineNumberFromElement(cell)
+            if (typeof lineNumber === 'number') {
+                return lineNumber
             }
             cell = cell.previousElementSibling
         }
@@ -186,8 +194,9 @@ export const singleFileDOMFunctions: DOMFunctions = {
     getLineElementFromLineNumber: getSingleFileCodeElementFromLineNumber,
     getLineNumberFromCodeElement(codeElement: HTMLElement): number {
         const cell = isNewGitHubUI() ? (codeElement.querySelector('[data-line-number]') as HTMLElement) : codeElement
-        if (cell instanceof HTMLElement && cell.dataset.lineNumber) {
-            return parseInt(cell.dataset.lineNumber, 10)
+        const lineNumber = lineNumberFromElement(cell)
+        if (typeof lineNumber === 'number') {
+            return lineNumber
         }
         throw new Error('Failed to get a line number from a code element.')
     },
