@@ -119,7 +119,7 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if err := checkEmailFormat(creds.Email); err != nil {
+	if err := CheckEmailFormat(creds.Email); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -254,7 +254,7 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 	}
 }
 
-func checkEmailFormat(email string) error {
+func CheckEmailFormat(email string) error {
 	// Max email length is 320 chars https://datatracker.ietf.org/doc/html/rfc3696#section-3
 	if len(email) > 320 {
 		return errors.Newf("maximum email length is 320, got %d", len(email))
