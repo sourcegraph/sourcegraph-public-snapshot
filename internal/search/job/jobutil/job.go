@@ -168,6 +168,8 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 				// TODO: can we reduce the accepted complexity here, e.g. by requiring
 				// this be a single-node 'type:symbol' search? For now, we hope that
 				// the provided query returns a reasonable set of symbol matches.
+				// Eventually we'll want to support (or only support) globally unique
+				// symbol names, when those become available.
 				nodes, err := query.Parse(ss.SymbolSearch, query.SearchTypeLiteral)
 				if err != nil {
 					return nil, err
