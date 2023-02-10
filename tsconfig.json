@@ -1,8 +1,0 @@
-{
-  "extends": "./tsconfig.base.json",
-  "references": [
-    {
-      "path": "client/extension-api"
-    }
-  ]
-}
