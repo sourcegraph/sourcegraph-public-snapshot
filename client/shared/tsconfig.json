@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
     "module": "commonjs",
@@ -23,6 +23,9 @@
     },
     {
       "path": "../common",
+    },
+    {
+      "path": "../extension-api",
     },
     {
       "path": "../extension-api-types",
