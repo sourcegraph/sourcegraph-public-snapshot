@@ -33,12 +33,11 @@ export interface RouteDescriptor<C extends object = {}, P extends object = any> 
 }
 
 /**
- * Configuration for a route.
+ * Configuration for a react-router 6 route.
  *
  * @template C Context information that is passed to `render` and `condition`
  */
 export interface RouteV6Descriptor<C extends object = {}> extends Conditional<C> {
-    /** Path of this route (appended to the current match) */
     readonly path: string
     readonly render: (props: C) => React.ReactNode
 }

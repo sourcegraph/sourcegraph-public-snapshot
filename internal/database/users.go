@@ -1307,8 +1307,7 @@ func (u *userStore) UpdatePassword(ctx context.Context, id int32, oldPassword, n
 	return nil
 }
 
-// CreatePassword creates a user's password iff don't have a password and they
-// don't have any valid login connections.
+// CreatePassword creates a user's password if they don't have a password.
 func (u *userStore) CreatePassword(ctx context.Context, id int32, password string) error {
 	// 🚨 SECURITY: Check min and max password length
 	if err := CheckPassword(password); err != nil {
@@ -1329,15 +1328,7 @@ WHERE id=%s
   AND passwd IS NULL
   AND passwd_reset_code IS NULL
   AND passwd_reset_time IS NULL
-  AND NOT EXISTS (
-    SELECT 1
-    FROM user_external_accounts
-    WHERE
-          user_id = %s
-      AND deleted_at IS NULL
-      AND expired_at IS NULL
-    )
-`, passwd, id, id))
+`, passwd, id))
 	if err != nil {
 		return errors.Wrap(err, "creating password")
 	}

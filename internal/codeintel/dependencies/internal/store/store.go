@@ -74,11 +74,23 @@ func (s *store) ListPackageRepoRefs(ctx context.Context, opts ListDependencyRepo
 		return dep.ID, dep, err
 	}, dependencyVersionsReducer{})
 
+	var offsetCond *sqlf.Query
+	switch {
+	case opts.MostRecentlyUpdated && opts.After > 0:
+		offsetCond = sqlf.Sprintf("AND id < %s", opts.After)
+	case !opts.MostRecentlyUpdated && opts.After > 0:
+		offsetCond = sqlf.Sprintf("AND id > %s", opts.After)
+	default:
+		offsetCond = sqlf.Sprintf("")
+	}
+
 	query := sqlf.Sprintf(
 		listDependencyReposQuery,
 		selectColumns,
 		sqlf.Join(makeListDependencyReposConds(opts), "AND"),
+		offsetCond,
 		makeLimit(opts.Limit),
+		sqlf.Sprintf("JOIN package_repo_versions prv ON lr.id = prv.package_id"),
 		sqlf.Sprintf(sortExpr),
 	)
 	err = scanner(s.db.Query(ctx, query))
@@ -90,7 +102,7 @@ func (s *store) ListPackageRepoRefs(ctx context.Context, opts ListDependencyRepo
 		listDependencyReposQuery,
 		sqlf.Sprintf("COUNT(lr.id)"),
 		sqlf.Join(makeListDependencyReposConds(opts), "AND"),
-		sqlf.Sprintf(""), sqlf.Sprintf(""),
+		sqlf.Sprintf(""), sqlf.Sprintf(""), sqlf.Sprintf(""), sqlf.Sprintf(""),
 	)
 	totalCount, _, err := basestore.ScanFirstInt(s.db.Query(ctx, query))
 	if err != nil {
@@ -117,30 +129,34 @@ const listDependencyReposQuery = `
 SELECT %s
 FROM (
 	SELECT id, scheme, name
-	FROM lsif_dependency_repos
-	WHERE %s
+	FROM (
+		SELECT id, scheme, name, ROW_NUMBER() OVER(
+			PARTITION BY scheme, name
+			ORDER BY id
+		) AS row_num
+		FROM lsif_dependency_repos
+		WHERE %s
+	) AS single_entry
+	WHERE row_num = 1
+	-- ID based offset
+	%s
+	-- limit results
 	%s
 ) lr
-JOIN package_repo_versions prv
-ON lr.id = prv.package_id
+-- optional join
+%s
+-- final sort
 %s
 `
 
 func makeListDependencyReposConds(opts ListDependencyReposOpts) []*sqlf.Query {
-	conds := make([]*sqlf.Query, 0, 3)
+	conds := make([]*sqlf.Query, 0, 2)
 	conds = append(conds, sqlf.Sprintf("scheme = %s", opts.Scheme))
 
 	if opts.Name != "" && opts.ExactNameOnly {
 		conds = append(conds, sqlf.Sprintf("name = %s", opts.Name))
 	} else if opts.Name != "" {
 		conds = append(conds, sqlf.Sprintf("name LIKE ('%%%%' || %s || '%%%%')", opts.Name))
-	}
-
-	switch {
-	case opts.MostRecentlyUpdated && opts.After > 0:
-		conds = append(conds, sqlf.Sprintf("id < %s", opts.After))
-	case !opts.MostRecentlyUpdated && opts.After > 0:
-		conds = append(conds, sqlf.Sprintf("id > %s", opts.After))
 	}
 
 	return conds

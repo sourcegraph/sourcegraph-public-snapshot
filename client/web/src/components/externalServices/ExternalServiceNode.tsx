@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import { FC, useCallback, useState } from 'react'
 
 import { mdiCircle, mdiCog, mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
@@ -17,15 +17,10 @@ import styles from './ExternalServiceNode.module.scss'
 
 export interface ExternalServiceNodeProps {
     node: ListExternalServiceFields
-    routingPrefix: string
     editingDisabled: boolean
 }
 
-export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildren<ExternalServiceNodeProps>> = ({
-    node,
-    routingPrefix,
-    editingDisabled,
-}) => {
+export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editingDisabled }) => {
     const [isDeleting, setIsDeleting] = useState<boolean | Error>(false)
     const onDelete = useCallback<React.MouseEventHandler>(async () => {
         if (!window.confirm(`Delete the external service ${node.displayName}?`)) {
@@ -110,7 +105,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                     <Tooltip content={`${editingDisabled ? 'View' : 'Edit'} code host connection settings`}>
                         <Button
                             className="test-edit-external-service-button"
-                            to={`${routingPrefix}/external-services/${node.id}/edit`}
+                            to={`/site-admin/external-services/${node.id}/edit`}
                             variant="secondary"
                             size="sm"
                             as={Link}

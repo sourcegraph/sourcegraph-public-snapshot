@@ -1607,6 +1607,19 @@
           "Comment": ""
         },
         {
+          "Name": "series_num_samples",
+          "Index": 14,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "series_sort_direction",
           "Index": 12,
           "TypeName": "series_sort_direction_enum",

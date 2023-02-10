@@ -11,7 +11,6 @@ const SettingsArea = lazyComponent(() => import('../../settings/SettingsArea'), 
 export const orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[] = [
     {
         path: '',
-        exact: true,
         render: props => (
             <div>
                 <SettingsArea
@@ -38,13 +37,11 @@ export const orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[] = [
         ),
     },
     {
-        path: '/profile',
-        exact: true,
+        path: 'profile',
         render: lazyComponent(() => import('./profile/OrgSettingsProfilePage'), 'OrgSettingsProfilePage'),
     },
     {
-        path: '/members',
-        exact: true,
+        path: 'members',
         render: lazyComponent(() => import('./members/OrgSettingsMembersPage'), 'OrgSettingsMembersPage'),
     },
 ]

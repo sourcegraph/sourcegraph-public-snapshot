@@ -1710,7 +1710,9 @@ dependencies = [
  "tree-sitter-go",
  "tree-sitter-highlight",
  "tree-sitter-jsonnet",
+ "tree-sitter-scala",
  "tree-sitter-sql",
+ "tree-sitter-xlsg",
 ]
 
 [[package]]
@@ -2181,9 +2183,9 @@ dependencies = [
 
 [[package]]
 name = "tree-sitter"
-version = "0.20.6"
+version = "0.20.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09b3b781640108d29892e8b9684642d2cda5ea05951fd58f0fea1db9edeb9b71"
+checksum = "d4423c784fe11398ca91e505cdc71356b07b1a924fc8735cfab5333afe3e18bc"
 dependencies = [
  "cc",
  "regex",
@@ -2229,9 +2231,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "tree-sitter-scala"
+version = "0.20.7"
+source = "git+https://github.com/sourcegraph/tree-sitter-scala#6cd3cb6074624dd3d88e458343475ca4c701cb06"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
 name = "tree-sitter-sql"
 version = "0.0.2"
 source = "git+https://github.com/sourcegraph/tree-sitter-sql#6ea62b8d33c9e39f6de8a398a6885d1873ed7e91"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
+name = "tree-sitter-xlsg"
+version = "0.0.1"
+source = "git+https://github.com/sourcegraph/tree-sitter-xlsg#945a7290bf211c57b43bed044c6d73092ca0484b"
 dependencies = [
  "cc",
  "tree-sitter",

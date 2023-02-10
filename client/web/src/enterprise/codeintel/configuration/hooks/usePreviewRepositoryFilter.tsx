@@ -25,8 +25,8 @@ interface RepositoryPreviewResult {
 }
 
 export const PREVIEW_REPOSITORY_FILTER = gql`
-    query PreviewRepositoryFilter($patterns: [String!]!) {
-        previewRepositoryFilter(patterns: $patterns) {
+    query PreviewRepositoryFilter($patterns: [String!]!, $first: Int) {
+        previewRepositoryFilter(patterns: $patterns, first: $first) {
             nodes {
                 name
                 url
@@ -42,12 +42,13 @@ export const PREVIEW_REPOSITORY_FILTER = gql`
     }
 `
 
-export const usePreviewRepositoryFilter = (patterns: string[]): SearchRepositoriesResult => {
+export const usePreviewRepositoryFilter = (patterns: string[], first: number = 15): SearchRepositoriesResult => {
     const { data, loading, error } = useQuery<PreviewRepositoryFilterResult, PreviewRepositoryFilterVariables>(
         PREVIEW_REPOSITORY_FILTER,
         {
             variables: {
                 patterns,
+                first,
             },
         }
     )

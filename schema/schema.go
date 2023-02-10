@@ -1949,8 +1949,6 @@ type Settings struct {
 	CodeIntelTraceExtension bool `json:"codeIntel.traceExtension,omitempty"`
 	// CodeIntelligenceAutoIndexPopularRepoLimit description: Up to this number of repos are auto-indexed automatically. Ordered by star count.
 	CodeIntelligenceAutoIndexPopularRepoLimit int `json:"codeIntelligence.autoIndexPopularRepoLimit,omitempty"`
-	// CodeIntelligenceAutoIndexRepositoryGroups description: A list of search.repositoryGroups that have auto-indexing enabled.
-	CodeIntelligenceAutoIndexRepositoryGroups []string `json:"codeIntelligence.autoIndexRepositoryGroups,omitempty"`
 	// CodeIntelligenceClickToGoToDefinition description: Enable click to go to definition.
 	CodeIntelligenceClickToGoToDefinition bool `json:"codeIntelligence.clickToGoToDefinition,omitempty"`
 	// CodeIntelligenceMaxPanelResults description: Maximum number of references/definitions (or other code intelligence results provided by extensions) shown in the panel. If not set a default value will be used to ensure best performance.
@@ -2006,10 +2004,6 @@ type Settings struct {
 	SearchIncludeArchived *bool `json:"search.includeArchived,omitempty"`
 	// SearchIncludeForks description: Whether searches should include searching forked repositories.
 	SearchIncludeForks *bool `json:"search.includeForks,omitempty"`
-	// SearchRepositoryGroups description: DEPRECATED: Use search contexts instead.
-	//
-	// Named groups of repositories that can be referenced in a search query using the `repogroup:` operator. The list can contain string literals (to include single repositories) and JSON objects with a "regex" field (to include all repositories matching the regular expression). Retrieving repogroups via the GQL interface will currently exclude repositories matched by regex patterns. #14208.
-	SearchRepositoryGroups map[string][]any `json:"search.repositoryGroups,omitempty"`
 	// SearchSavedQueries description: DEPRECATED: Saved search queries
 	SearchSavedQueries []*SearchSavedQueries `json:"search.savedQueries,omitempty"`
 	// SearchScopes description: Predefined search snippets that can be appended to any search (also known as search scopes)
@@ -2062,7 +2056,6 @@ func (v *Settings) UnmarshalJSON(data []byte) error {
 	delete(m, "codeIntel.referencesPanel")
 	delete(m, "codeIntel.traceExtension")
 	delete(m, "codeIntelligence.autoIndexPopularRepoLimit")
-	delete(m, "codeIntelligence.autoIndexRepositoryGroups")
 	delete(m, "codeIntelligence.clickToGoToDefinition")
 	delete(m, "codeIntelligence.maxPanelResults")
 	delete(m, "experimentalFeatures")
@@ -2087,7 +2080,6 @@ func (v *Settings) UnmarshalJSON(data []byte) error {
 	delete(m, "search.hideSuggestions")
 	delete(m, "search.includeArchived")
 	delete(m, "search.includeForks")
-	delete(m, "search.repositoryGroups")
 	delete(m, "search.savedQueries")
 	delete(m, "search.scopes")
 	if len(m) > 0 {
@@ -2109,12 +2101,8 @@ type SettingsExperimentalFeatures struct {
 	ClientSearchResultRanking *string `json:"clientSearchResultRanking,omitempty"`
 	// CodeInsights description: Enables code insights on directory pages.
 	CodeInsights *bool `json:"codeInsights,omitempty"`
-	// CodeInsightsAllRepos description: DEPRECATED: Enables the experimental ability to run an insight over all repositories on the instance.
-	CodeInsightsAllRepos *bool `json:"codeInsightsAllRepos,omitempty"`
 	// CodeInsightsCompute description: Enables Compute powered Code Insights
 	CodeInsightsCompute *bool `json:"codeInsightsCompute,omitempty"`
-	// CodeInsightsGqlApi description: DEPRECATED: Enables gql api instead of using setting cascade as a main storage fro code insights entities
-	CodeInsightsGqlApi *bool `json:"codeInsightsGqlApi,omitempty"`
 	// CodeInsightsLandingPage description: DEPRECATED: Enables code insights landing page layout.
 	CodeInsightsLandingPage *bool `json:"codeInsightsLandingPage,omitempty"`
 	// CodeInsightsRepoUI description: Specifies which (code insight repo) editor to use for repo query UI
@@ -2124,8 +2112,6 @@ type SettingsExperimentalFeatures struct {
 	CodeMonitoringWebHooks *bool `json:"codeMonitoringWebHooks,omitempty"`
 	// CodeNavigation description: What kind of experimental code navigation UX to enable. The most recommended option is 'selection-driven'.
 	CodeNavigation *string `json:"codeNavigation,omitempty"`
-	// CopyQueryButton description: DEPRECATED: This feature is now permanently enabled. Enables displaying the copy query button in the search bar when hovering over the global navigation bar.
-	CopyQueryButton *bool `json:"copyQueryButton,omitempty"`
 	// EnableCodeMirrorFileView description: Uses CodeMirror to display files. In this first iteration not all features of the current file view are available.
 	EnableCodeMirrorFileView *bool `json:"enableCodeMirrorFileView,omitempty"`
 	// EnableGoImportsSearchQueryTransform description: Lets you easily search for all files using a Go package. Adds a new operator `go.imports`: for all import statements of the package passed to the operator.
@@ -2176,14 +2162,8 @@ type SettingsExperimentalFeatures struct {
 	ShowCodeMonitoringLogs *bool `json:"showCodeMonitoringLogs,omitempty"`
 	// ShowMultilineSearchConsole description: Enables the multiline search console at search/console
 	ShowMultilineSearchConsole *bool `json:"showMultilineSearchConsole,omitempty"`
-	// ShowOnboardingTour description: REMOVED.
-	ShowOnboardingTour *bool `json:"showOnboardingTour,omitempty"`
-	// ShowRepogroupHomepage description: Enables the repository group homepage
-	ShowRepogroupHomepage *bool `json:"showRepogroupHomepage,omitempty"`
 	// ShowSearchContext description: Enables the search context dropdown.
 	ShowSearchContext *bool `json:"showSearchContext,omitempty"`
-	// ShowSearchContextManagement description: REMOVED.
-	ShowSearchContextManagement *bool `json:"showSearchContextManagement,omitempty"`
 	// SymbolKindTags description: Show the initial letter of the symbol kind instead of icons.
 	SymbolKindTags bool           `json:"symbolKindTags,omitempty"`
 	Additional     map[string]any `json:"-"` // additionalProperties not explicitly defined in the schema
@@ -2223,15 +2203,12 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "batchChangesExecution")
 	delete(m, "clientSearchResultRanking")
 	delete(m, "codeInsights")
-	delete(m, "codeInsightsAllRepos")
 	delete(m, "codeInsightsCompute")
-	delete(m, "codeInsightsGqlApi")
 	delete(m, "codeInsightsLandingPage")
 	delete(m, "codeInsightsRepoUI")
 	delete(m, "codeIntelRepositoryBadge")
 	delete(m, "codeMonitoringWebHooks")
 	delete(m, "codeNavigation")
-	delete(m, "copyQueryButton")
 	delete(m, "enableCodeMirrorFileView")
 	delete(m, "enableGoImportsSearchQueryTransform")
 	delete(m, "enableLazyBlobSyntaxHighlighting")
@@ -2257,10 +2234,7 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "setupWizard")
 	delete(m, "showCodeMonitoringLogs")
 	delete(m, "showMultilineSearchConsole")
-	delete(m, "showOnboardingTour")
-	delete(m, "showRepogroupHomepage")
 	delete(m, "showSearchContext")
-	delete(m, "showSearchContextManagement")
 	delete(m, "symbolKindTags")
 	if len(m) > 0 {
 		v.Additional = make(map[string]any, len(m))

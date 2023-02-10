@@ -94,6 +94,10 @@ type Permission implements Node {
     """
     action: String!
     """
+    A unique, human-readable string used to represent a permission, taking the form: <namespace>:<object_id>#<relation>@<user_id | user_group>
+    """
+    displayName: String!
+    """
     The date and time when the permission was created.
     """
     createdAt: DateTime!
@@ -143,6 +147,19 @@ extend type Query {
         """
         before: String
     ): PermissionConnection!
+}
+
+extend type Mutation {
+    """
+    Deletes a role. This mutation targets only non-system roles.
+    Any users who were assigned to the role will be unassigned and lose any permissions associated with it.
+    """
+    deleteRole(role: ID!): EmptyResponse!
+
+    """
+    Creates a role.
+    """
+    createRole(name: String!): Role!
 }
 
 extend type User {

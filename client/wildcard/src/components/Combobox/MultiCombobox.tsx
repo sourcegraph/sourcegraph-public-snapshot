@@ -86,6 +86,7 @@ export interface MultiComboboxProps<T> extends Omit<ComboboxProps, 'onSelect'> {
     getItemName: (item: T) => string
     getItemKey: (item: T) => string | number
     className?: string
+    children: ReactNode | ReactNode[]
     onSelectedItemsChange: (selectedItems: T[]) => void
 }
 
@@ -97,13 +98,24 @@ export function MultiCombobox<T>(props: MultiComboboxProps<T>): ReactElement {
     const [isPopoverOpen, setPopoverState] = useState<boolean>(false)
     const [inputElement, setInputElement] = useState<HTMLElement | null>(null)
 
-    const setSuggestOptions = useCallback((items: T[]) => {
-        suggestItemsRef.current = items
-    }, [])
+    const setSuggestOptions = useCallback(
+        (items: T[]) => {
+            suggestItemsRef.current = items
+            // We have to trigger re-positioning every time when suggestions are changed
+            // With different number of suggestions suggestion panel can be in different
+            // positions on the page.
+            tether?.forceUpdate()
+        },
+        [tether]
+    )
 
     const handleSelectedItemsChange = useCallback(
         (items: T[]): void => {
             onSelectedItemsChange(items)
+            // We have to trigger re-positioning every time when selected items are changed
+            // With different number of picked items input element can be in different
+            // positions on the page and this mean suggestions panel should follow the new
+            // input position.
             tether?.forceUpdate()
         },
         [tether, onSelectedItemsChange]
@@ -187,7 +199,7 @@ interface MultiValueInputProps extends InputHTMLAttributes<HTMLInputElement> {
 // Forward ref doesn't support function components with generic,
 // so we have to cast a proper FC types with generic props
 const MultiValueInput = forwardRef((props: MultiValueInputProps, ref: Ref<HTMLInputElement>) => {
-    const { onKeyDown, onFocus, onBlur, byPassValue, value, ...attributes } = props
+    const { onKeyDown, onFocus, onBlur, byPassValue, value, className, ...attributes } = props
 
     const {
         setInputElement,
@@ -271,7 +283,7 @@ const MultiValueInput = forwardRef((props: MultiValueInputProps, ref: Ref<HTMLIn
                 {...attributes}
                 value={byPassValue}
                 ref={inputRef}
-                className={styles.inputContainer}
+                className={classNames(className, styles.inputContainer)}
                 inputClassName={styles.input}
                 onKeyDown={handleKeyDown}
                 onFocus={handleFocus}

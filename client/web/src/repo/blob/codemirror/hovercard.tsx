@@ -73,7 +73,7 @@ import {
     WebHoverOverlay,
     WebHoverOverlayProps,
 } from '../../../components/WebHoverOverlay'
-import { BlobProps, updateBrowserHistoryIfChanged } from '../Blob'
+import { type BlobProps, updateBrowserHistoryIfChanged } from '../CodeMirrorBlob'
 
 import { CodeMirrorContainer } from './react-interop'
 import {

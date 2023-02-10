@@ -13,7 +13,7 @@ import (
 //go:embed schema.yaml
 var schema embed.FS
 
-var schemaYaml = func() Schema {
+var RBACSchema = func() Schema {
 	contents, err := schema.ReadFile("schema.yaml")
 	if err != nil {
 		panic(fmt.Sprintf("malformed rbac schema definition: %s", err.Error()))
@@ -29,8 +29,8 @@ var schemaYaml = func() Schema {
 
 // ComparePermissions takes two slices of permissions (one from the database and another from the schema file)
 // and extracts permissions that need to be added / deleted in the database based on those contained in the schema file.
-func ComparePermissions(dbPerms []*types.Permission) (added []database.CreatePermissionOpts, deleted []database.DeletePermissionOpts) {
-	// Create map to hold the items in both arrays
+func ComparePermissions(dbPerms []*types.Permission, schemaPerms Schema) (added []database.CreatePermissionOpts, deleted []database.DeletePermissionOpts) {
+	// Create map to hold the union of both permissions in the database and those in the schema file. `internal/rbac/schema.yaml`
 	ps := make(map[string]struct {
 		count int
 		id    int32
@@ -38,9 +38,10 @@ func ComparePermissions(dbPerms []*types.Permission) (added []database.CreatePer
 
 	// save all database permissions to the map
 	for _, p := range dbPerms {
-		// Since dbPerms contain an ID we save the ID which will be used
-		// if we need to delete
-		ps[p.Namespace+p.Action] = struct {
+		currentPerm := p.DisplayName()
+		// Since dbPerms contain an ID we save the ID which will be used to delete redundant permissions.
+		// This also ensures all permissions are unique and we never have duplicate permissions.
+		ps[currentPerm] = struct {
 			count int
 			id    int32
 		}{
@@ -49,11 +50,11 @@ func ComparePermissions(dbPerms []*types.Permission) (added []database.CreatePer
 		}
 	}
 
-	var schemaPerms []*types.Permission
+	var parsedSchemaPerms []*types.Permission
 
-	for _, n := range schemaYaml.Namespaces {
+	for _, n := range schemaPerms.Namespaces {
 		for _, a := range n.Actions {
-			schemaPerms = append(schemaPerms, &types.Permission{
+			parsedSchemaPerms = append(parsedSchemaPerms, &types.Permission{
 				Namespace: n.Name,
 				Action:    a,
 			})
@@ -61,17 +62,19 @@ func ComparePermissions(dbPerms []*types.Permission) (added []database.CreatePer
 	}
 
 	// Check items in schema file to see which exists in the database
-	for _, p := range schemaPerms {
-		// If item is not in map, it means it doesn't exist in the database so we
-		// add it to the `added` slice.
-		if perm, ok := ps[p.Namespace+p.Action]; !ok {
+	for _, p := range parsedSchemaPerms {
+		currentPerm := p.DisplayName()
+
+		if perm, ok := ps[currentPerm]; !ok {
+			// If item is not in map, it means it doesn't exist in the database so we
+			// add it to the `added` slice.
 			added = append(added, database.CreatePermissionOpts{
 				Namespace: p.Namespace,
 				Action:    p.Action,
 			})
 		} else {
 			// If item is in map, it means it already exist in the database
-			ps[p.Namespace+p.Action] = struct {
+			ps[currentPerm] = struct {
 				count int
 				id    int32
 			}{

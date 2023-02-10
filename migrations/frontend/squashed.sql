@@ -3614,7 +3614,6 @@ CREATE TABLE roles (
     id integer NOT NULL,
     name text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    deleted_at timestamp with time zone,
     system boolean DEFAULT false NOT NULL,
     CONSTRAINT name_not_blank CHECK ((name <> ''::text))
 );
@@ -5626,7 +5625,7 @@ INSERT INTO lsif_configuration_policies VALUES (3, NULL, 'Default commit retenti
 
 SELECT pg_catalog.setval('lsif_configuration_policies_id_seq', 3, true);
 
-INSERT INTO roles VALUES (1, 'USER', '2023-01-04 16:29:41.195966+00', NULL, true);
-INSERT INTO roles VALUES (2, 'SITE_ADMINISTRATOR', '2023-01-04 16:29:41.195966+00', NULL, true);
+INSERT INTO roles VALUES (1, 'USER', '2023-01-04 16:29:41.195966+00', true);
+INSERT INTO roles VALUES (2, 'SITE_ADMINISTRATOR', '2023-01-04 16:29:41.195966+00', true);
 
 SELECT pg_catalog.setval('roles_id_seq', 3, true);

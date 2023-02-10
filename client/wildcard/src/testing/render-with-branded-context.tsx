@@ -4,7 +4,7 @@ import { RenderResult, render } from '@testing-library/react'
 import { MemoryHistory, createMemoryHistory } from 'history'
 import * as H from 'history'
 import { Router } from 'react-router-dom'
-import { CompatRouter, useLocation } from 'react-router-dom-v5-compat'
+import { CompatRouter, Routes, Route, useLocation } from 'react-router-dom-v5-compat'
 
 import { WildcardThemeContext, WildcardTheme } from '../hooks/useWildcardTheme'
 
@@ -14,6 +14,7 @@ export interface RenderWithBrandedContextResult extends RenderResult {
 
 interface RenderWithBrandedContextOptions {
     route?: string
+    path?: string
     history?: MemoryHistory<unknown>
     onLocationChange?: (location: H.Location) => void
 }
@@ -26,6 +27,7 @@ export function renderWithBrandedContext(
     children: ReactNode,
     {
         route = '/',
+        path = '*',
         history = createMemoryHistory({ initialEntries: [route] }),
         onLocationChange = (_location: H.Location) => {},
     }: RenderWithBrandedContextOptions = {}
@@ -35,7 +37,9 @@ export function renderWithBrandedContext(
             <WildcardThemeContext.Provider value={wildcardTheme}>
                 <Router history={history}>
                     <CompatRouter>
-                        {children}
+                        <Routes>
+                            <Route path={path} element={children} />
+                        </Routes>
                         <ExtractCurrentPathname onLocationChange={onLocationChange} />
                     </CompatRouter>
                 </Router>

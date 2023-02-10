@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/run"
+	"go.bobheadxi.dev/streamline/pipeline"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -307,7 +307,7 @@ func dependencyGcloud() *dependency {
 					"curl https://sdk.cloud.google.com | bash -s -- --disable-prompts").
 					Input(cio.Input).
 					Run().
-					Map(func(_ context.Context, line []byte, dst io.Writer) (int, error) {
+					Pipeline(pipeline.Map(func(line []byte) []byte {
 						// Listen for gcloud telling us to source paths
 						if matches := gcloudSourceRegexp.FindSubmatch(line); len(matches) > 0 {
 							shouldSource := matches[gcloudSourceRegexp.SubexpIndex("path")]
@@ -315,9 +315,8 @@ func dependencyGcloud() *dependency {
 								pathsToSource = append(pathsToSource, string(shouldSource))
 							}
 						}
-						// Pass through to underlying writer
-						return dst.Write(line)
-					}).
+						return line
+					})).
 					StreamLines(cio.Write); err != nil {
 					return err
 				}

@@ -1,5 +1,8 @@
 import assert from 'assert'
 
+import delay from 'delay'
+import { Key } from 'ts-key-enum'
+
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -92,18 +95,12 @@ describe('Code insight edit insight page', () => {
                     },
                 }),
 
-                // Mock for async repositories field validation.
-                BulkRepositoriesSearch: () => ({
-                    repoSearch0: { name: 'github.com/sourcegraph/sourcegraph' },
-                    repoSearch1: { name: 'github.com/sourcegraph/about' },
-                }),
-
                 // Mocks live preview chart
                 GetInsightPreview: () => SEARCH_INSIGHT_LIVE_PREVIEW_FIXTURE,
 
                 // Mock for repository suggest component
                 RepositorySearchSuggestions: () => ({
-                    repositories: { nodes: [] },
+                    repositories: { nodes: [{ id: '001', name: 'github.com/sourcegraph/about' }] },
                 }),
 
                 UpdateLineChartSearchInsight: () => ({
@@ -129,6 +126,13 @@ describe('Code insight edit insight page', () => {
 
         // Add new repo to repositories field
         await driver.page.keyboard.type(', github.com/sourcegraph/about')
+
+        // Wait a bit while suggestion debounce will fire fetch event
+        await delay(600)
+
+        // Pick first suggestions
+        await driver.page.keyboard.press(Key.ArrowDown)
+        await driver.page.keyboard.press(Key.Enter)
 
         // Change insight title
         await clearAndType(driver, 'input[name="title"]', 'Test insight title')
@@ -258,11 +262,6 @@ describe('Code insight edit insight page', () => {
         overrideInsightsGraphQLApi({
             testContext,
             overrides: {
-                // Mock for async repositories field validation.
-                BulkRepositoriesSearch: () => ({
-                    repoSearch0: { name: 'github.com/sourcegraph/sourcegraph' },
-                }),
-
                 // Mocks live preview chart
                 GetInsightPreview: () => SEARCH_INSIGHT_LIVE_PREVIEW_FIXTURE,
 

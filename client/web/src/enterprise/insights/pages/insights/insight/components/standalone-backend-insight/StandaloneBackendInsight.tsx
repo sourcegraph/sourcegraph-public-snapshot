@@ -1,7 +1,7 @@
 import React, { useContext, useState } from 'react'
 
 import classNames from 'classnames'
-import { useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom-v5-compat'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -49,7 +49,7 @@ interface StandaloneBackendInsight extends TelemetryProps {
 
 export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackendInsight> = props => {
     const { telemetryService, insight, className } = props
-    const history = useHistory()
+    const navigate = useNavigate()
     const { updateInsight } = useContext(CodeInsightsBackendContext)
     const [saveAsNewView] = useSaveInsightAsNewView({ dashboard: null })
 
@@ -133,7 +133,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
         })
 
         setOriginalInsightFilters(filters)
-        history.push('/insights/all')
+        navigate('/insights/all')
         telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
     }
 

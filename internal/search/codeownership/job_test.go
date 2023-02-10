@@ -2,6 +2,7 @@ package codeownership
 
 import (
 	"context"
+	"io/fs"
 	"strings"
 	"testing"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestApplyCodeOwnershipFiltering(t *testing.T) {
@@ -272,7 +272,7 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 			gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, file string) ([]byte, error) {
 				content, ok := tt.args.repoContent[file]
 				if !ok {
-					return nil, errors.New("file does not exist")
+					return nil, fs.ErrNotExist
 				}
 				return []byte(content), nil
 			})

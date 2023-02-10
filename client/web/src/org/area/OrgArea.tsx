@@ -3,8 +3,7 @@ import * as React from 'react'
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, Switch } from 'react-router'
-import { NavigateFunction } from 'react-router-dom-v5-compat'
+import { Route, Routes, NavigateFunction } from 'react-router-dom-v5-compat'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
@@ -25,7 +24,7 @@ import { HeroPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
 import { OrganizationResult, OrganizationVariables, OrgAreaOrganizationFields } from '../../graphql-operations'
 import { NamespaceProps } from '../../namespaces'
-import { RouteDescriptor } from '../../util/contributions'
+import { RouteV6Descriptor } from '../../util/contributions'
 import { OrgSettingsAreaRoute } from '../settings/OrgSettingsArea'
 import { OrgSettingsSidebarItems } from '../settings/OrgSettingsSidebar'
 
@@ -83,7 +82,7 @@ const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = 
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested organization was not found." />
 )
 
-export interface OrgAreaRoute extends RouteDescriptor<OrgAreaRouteContext> {
+export interface OrgAreaRoute extends RouteV6Descriptor<OrgAreaRouteContext> {
     /** When true, the header is not rendered and the component is not wrapped in a container. */
     fullPage?: boolean
 }
@@ -252,9 +251,7 @@ export class OrgArea extends React.Component<OrgAreaProps> {
             orgSettingsSideBarItems: this.props.orgSettingsSideBarItems,
         }
 
-        const url = `/organizations/${this.props.orgName}`
-
-        if (this.props.location.pathname === `${url}/invitation`) {
+        if (this.props.location.pathname === `/organizations/${this.props.orgName}/invitation`) {
             // The OrgInvitationPageLegacy is displayed without the OrgHeader because it is modal-like.
             return <OrgInvitationPageLegacy {...context} onDidRespondToInvitation={this.onDidRespondToInvitation} />
         }
@@ -262,17 +259,16 @@ export class OrgArea extends React.Component<OrgAreaProps> {
         return (
             <ErrorBoundary location={this.props.location}>
                 <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
-                    <Switch>
+                    <Routes>
                         {this.props.orgAreaRoutes.map(
-                            ({ path, exact, render, condition = () => true, fullPage }) =>
+                            ({ path, render, condition = () => true, fullPage }) =>
                                 condition(context) && (
                                     <Route
-                                        path={url + path}
+                                        path={path}
                                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        exact={exact}
-                                        render={routeComponentProps =>
+                                        element={
                                             fullPage ? (
-                                                render({ ...context, ...routeComponentProps })
+                                                render(context)
                                             ) : (
                                                 <Page className="org-area">
                                                     <OrgHeader
@@ -281,17 +277,15 @@ export class OrgArea extends React.Component<OrgAreaProps> {
                                                         navItems={this.props.orgAreaHeaderNavItems}
                                                         className="mb-3"
                                                     />
-                                                    <div className="container">
-                                                        {render({ ...context, ...routeComponentProps })}
-                                                    </div>
+                                                    <div className="container">{render(context)}</div>
                                                 </Page>
                                             )
                                         }
                                     />
                                 )
                         )}
-                        <Route key="hardcoded-key" component={NotFoundPage} />
-                    </Switch>
+                        <Route element={<NotFoundPage />} />
+                    </Routes>
                 </React.Suspense>
             </ErrorBoundary>
         )

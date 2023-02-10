@@ -14,7 +14,7 @@ rocket = { git = "https://github.com/SergioBenitez/Rocket", features = ["json"] 
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 lazy_static = "1.0"
-tree-sitter = "0.20.3"
+tree-sitter = "0.20.7"
 tree-sitter-highlight = "0.20"
 base64 = "0.13.0"
 anyhow = "1"
@@ -43,6 +43,11 @@ tree-sitter-sql = { git = "https://github.com/sourcegraph/tree-sitter-sql" }
 tree-sitter-c-sharp = { git = "https://github.com/tree-sitter/tree-sitter-c-sharp" }
 
 tree-sitter-jsonnet = { git = "https://github.com/sourcegraph/tree-sitter-jsonnet" }
+
+# Using a fork of tree-sitter-scala because upstream Rust crate didn't compile.
+tree-sitter-scala = { git = "https://github.com/sourcegraph/tree-sitter-scala" }
+
+tree-sitter-xlsg = { git = "https://github.com/sourcegraph/tree-sitter-xlsg" }
 
 [dev-dependencies]
 insta = "1.11.0"

@@ -16,7 +16,6 @@ import (
 
 type JobSelector struct {
 	store           store.Store
-	uploadSvc       UploadService
 	inferenceSvc    InferenceService
 	gitserverClient GitserverClient
 	logger          log.Logger
@@ -24,14 +23,12 @@ type JobSelector struct {
 
 func NewJobSelector(
 	store store.Store,
-	uploadSvc UploadService,
 	inferenceSvc InferenceService,
 	gitserverClient GitserverClient,
 	logger log.Logger,
 ) *JobSelector {
 	return &JobSelector{
 		store:           store,
-		uploadSvc:       uploadSvc,
 		inferenceSvc:    inferenceSvc,
 		gitserverClient: gitserverClient,
 		logger:          logger,
@@ -45,7 +42,7 @@ var (
 
 // InferIndexJobsFromRepositoryStructure collects the result of InferIndexJobs over all registered recognizers.
 func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]config.IndexJob, error) {
-	repoName, err := s.uploadSvc.GetRepoName(ctx, repositoryID)
+	repoName, err := s.store.GetRepoName(ctx, repositoryID)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +70,7 @@ func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context,
 
 // inferIndexJobsFromRepositoryStructure collects the result of  InferIndexJobHints over all registered recognizers.
 func (s *JobSelector) InferIndexJobHintsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error) {
-	repoName, err := s.uploadSvc.GetRepoName(ctx, repositoryID)
+	repoName, err := s.store.GetRepoName(ctx, repositoryID)
 	if err != nil {
 		return nil, err
 	}

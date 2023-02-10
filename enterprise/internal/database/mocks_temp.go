@@ -6862,6 +6862,9 @@ type MockEnterpriseDB struct {
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *EnterpriseDBHandleFunc
+	// NamespacePermissionsFunc is an instance of a mock function object
+	// controlling the behavior of the method NamespacePermissions.
+	NamespacePermissionsFunc *EnterpriseDBNamespacePermissionsFunc
 	// NamespacesFunc is an instance of a mock function object controlling
 	// the behavior of the method Namespaces.
 	NamespacesFunc *EnterpriseDBNamespacesFunc
@@ -7050,6 +7053,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		HandleFunc: &EnterpriseDBHandleFunc{
 			defaultHook: func() (r0 basestore.TransactableHandle) {
+				return
+			},
+		},
+		NamespacePermissionsFunc: &EnterpriseDBNamespacePermissionsFunc{
+			defaultHook: func() (r0 database.NamespacePermissionStore) {
 				return
 			},
 		},
@@ -7315,6 +7323,11 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.Handle")
 			},
 		},
+		NamespacePermissionsFunc: &EnterpriseDBNamespacePermissionsFunc{
+			defaultHook: func() database.NamespacePermissionStore {
+				panic("unexpected invocation of MockEnterpriseDB.NamespacePermissions")
+			},
+		},
 		NamespacesFunc: &EnterpriseDBNamespacesFunc{
 			defaultHook: func() database.NamespaceStore {
 				panic("unexpected invocation of MockEnterpriseDB.Namespaces")
@@ -7545,6 +7558,9 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		},
 		HandleFunc: &EnterpriseDBHandleFunc{
 			defaultHook: i.Handle,
+		},
+		NamespacePermissionsFunc: &EnterpriseDBNamespacePermissionsFunc{
+			defaultHook: i.NamespacePermissions,
 		},
 		NamespacesFunc: &EnterpriseDBNamespacesFunc{
 			defaultHook: i.Namespaces,
@@ -9267,6 +9283,108 @@ func (c EnterpriseDBHandleFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBNamespacePermissionsFunc describes the behavior when the
+// NamespacePermissions method of the parent MockEnterpriseDB instance is
+// invoked.
+type EnterpriseDBNamespacePermissionsFunc struct {
+	defaultHook func() database.NamespacePermissionStore
+	hooks       []func() database.NamespacePermissionStore
+	history     []EnterpriseDBNamespacePermissionsFuncCall
+	mutex       sync.Mutex
+}
+
+// NamespacePermissions delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) NamespacePermissions() database.NamespacePermissionStore {
+	r0 := m.NamespacePermissionsFunc.nextHook()()
+	m.NamespacePermissionsFunc.appendCall(EnterpriseDBNamespacePermissionsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the NamespacePermissions
+// method of the parent MockEnterpriseDB instance is invoked and the hook
+// queue is empty.
+func (f *EnterpriseDBNamespacePermissionsFunc) SetDefaultHook(hook func() database.NamespacePermissionStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// NamespacePermissions method of the parent MockEnterpriseDB instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *EnterpriseDBNamespacePermissionsFunc) PushHook(hook func() database.NamespacePermissionStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBNamespacePermissionsFunc) SetDefaultReturn(r0 database.NamespacePermissionStore) {
+	f.SetDefaultHook(func() database.NamespacePermissionStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBNamespacePermissionsFunc) PushReturn(r0 database.NamespacePermissionStore) {
+	f.PushHook(func() database.NamespacePermissionStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBNamespacePermissionsFunc) nextHook() func() database.NamespacePermissionStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBNamespacePermissionsFunc) appendCall(r0 EnterpriseDBNamespacePermissionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBNamespacePermissionsFuncCall
+// objects describing the invocations of this function.
+func (f *EnterpriseDBNamespacePermissionsFunc) History() []EnterpriseDBNamespacePermissionsFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBNamespacePermissionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBNamespacePermissionsFuncCall is an object that describes an
+// invocation of method NamespacePermissions on an instance of
+// MockEnterpriseDB.
+type EnterpriseDBNamespacePermissionsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.NamespacePermissionStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBNamespacePermissionsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBNamespacePermissionsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

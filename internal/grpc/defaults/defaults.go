@@ -7,6 +7,7 @@ package defaults
 import (
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -22,6 +23,7 @@ func DialOptions() []grpc.DialOption {
 	// because these options depend on some globals (tracer, trace sampling)
 	// that are not initialized during init time.
 	return []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithChainStreamInterceptor(
 			internalgrpc.StreamClientPropagator(actor.ActorPropagator{}),
 			internalgrpc.StreamClientPropagator(policy.ShouldTracePropagator{}),

@@ -1,6 +1,6 @@
 import { FC, useContext } from 'react'
 
-import { useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom-v5-compat'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
@@ -32,7 +32,7 @@ interface InsightCreationPageProps extends TelemetryProps {
 export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
     const { mode, telemetryService } = props
 
-    const history = useHistory()
+    const navigate = useNavigate()
     const { createInsight } = useContext(CodeInsightsBackendContext)
     const { dashboardId } = useQueryParameters(['dashboardId'])
 
@@ -47,22 +47,22 @@ export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
     const handleInsightSuccessfulCreation = (): void => {
         if (!dashboardId) {
             // Navigate to the dashboard page with new created dashboard
-            history.push('/insights/all')
+            navigate('/insights/all')
 
             return
         }
 
-        history.push(`/insights/dashboards/${dashboardId}`)
+        navigate(`/insights/dashboards/${dashboardId}`)
     }
 
     const handleCancel = (): void => {
         if (!dashboardId) {
-            history.push('/insights/all')
+            navigate('/insights/all')
 
             return
         }
 
-        history.push(`/insights/dashboards/${dashboardId}`)
+        navigate(`/insights/dashboards/${dashboardId}`)
     }
 
     const backCreateUrl = encodeDashboardIdQueryParam('/insights/create', dashboardId)

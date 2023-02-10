@@ -58,6 +58,8 @@ type Store interface {
 
 	GetUnsafeDB() database.DB
 
+	GetRepoName(ctx context.Context, repositoryID int) (_ string, err error)
+
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error)
 	ExpireFailedRecords(ctx context.Context, batchSize int, failedIndexMaxAge time.Duration, now time.Time) error
 }

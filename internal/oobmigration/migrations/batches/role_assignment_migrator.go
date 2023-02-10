@@ -11,32 +11,32 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-type roleAssignmentMigrator struct {
+type userRoleAssignmentMigrator struct {
 	store     *basestore.Store
 	batchSize int
 }
 
-func NewRoleAssignmentMigrator(store *basestore.Store, batchSize int) *roleAssignmentMigrator {
-	return &roleAssignmentMigrator{
+func NewUserRoleAssignmentMigrator(store *basestore.Store, batchSize int) *userRoleAssignmentMigrator {
+	return &userRoleAssignmentMigrator{
 		store:     store,
 		batchSize: batchSize,
 	}
 }
 
-var _ oobmigration.Migrator = &roleAssignmentMigrator{}
+var _ oobmigration.Migrator = &userRoleAssignmentMigrator{}
 
-func (m *roleAssignmentMigrator) ID() int                 { return 19 }
-func (m *roleAssignmentMigrator) Interval() time.Duration { return time.Second * 10 }
+func (m *userRoleAssignmentMigrator) ID() int                 { return 19 }
+func (m *userRoleAssignmentMigrator) Interval() time.Duration { return time.Second * 10 }
 
 // Progress returns the percentage (ranged [0, 1]) of users who have a system role (USER or SITE_ADMINISTRATOR) assigned.
-func (m *roleAssignmentMigrator) Progress(ctx context.Context, _ bool) (float64, error) {
-	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(roleAssignmentMigratorProgressQuery)))
+func (m *userRoleAssignmentMigrator) Progress(ctx context.Context, _ bool) (float64, error) {
+	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(userRoleAssignmentMigratorProgressQuery)))
 	return progress, err
 }
 
 // This query checks the total number of user_roles in the database vs. the sum of the total number of users and the total number of users who are site_admin.
 // We use a CTE here to only check for system roles (e.g USER and SITE_ADMINISTRATOR) since those are the two system roles that should be available on every instance.
-const roleAssignmentMigratorProgressQuery = `
+const userRoleAssignmentMigratorProgressQuery = `
 WITH system_roles AS MATERIALIZED (
 	SELECT id FROM roles WHERE system
 )
@@ -49,11 +49,11 @@ FROM
 	(SELECT COUNT(1) AS count FROM user_roles WHERE role_id IN (SELECT id FROM system_roles)) ur1
 `
 
-func (m *roleAssignmentMigrator) Up(ctx context.Context) (err error) {
+func (m *userRoleAssignmentMigrator) Up(ctx context.Context) (err error) {
 	return m.store.Exec(ctx, sqlf.Sprintf(userRolesMigratorUpQuery, string(types.UserSystemRole), string(types.SiteAdministratorSystemRole), m.batchSize))
 }
 
-func (m *roleAssignmentMigrator) Down(ctx context.Context) error {
+func (m *userRoleAssignmentMigrator) Down(ctx context.Context) error {
 	// non-destructive
 	return nil
 }

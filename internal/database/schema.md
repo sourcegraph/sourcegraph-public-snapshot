@@ -3023,7 +3023,6 @@ Foreign-key constraints:
  id         | integer                  |           | not null | nextval('roles_id_seq'::regclass)
  name       | text                     |           | not null | 
  created_at | timestamp with time zone |           | not null | now()
- deleted_at | timestamp with time zone |           |          | 
  system     | boolean                  |           | not null | false
 Indexes:
     "roles_pkey" PRIMARY KEY, btree (id)

@@ -46,17 +46,18 @@ const AuthenticatedOrgsArea: React.FunctionComponent<React.PropsWithChildren<Pro
             <Route path="new" element={<NewOrganizationPage />} />
         )}
         <Route path="invitation/:token" element={<OrgInvitationPage {...props} />} />
-        <Route path=":name/*" element={<OrgAreaWithRouteProps {...props} />} />
+        <Route path=":orgName/*" element={<OrgAreaWithRouteProps {...props} />} />
         <Route element={<NotFoundPage pageType="organization" />} />
     </Routes>
 )
 
 // TODO: Migrate this into the OrgArea component once it's migrated to a function component.
 function OrgAreaWithRouteProps(props: Omit<OrgAreaProps, 'orgName' | 'location' | 'navigate'>): JSX.Element {
-    const { name } = useParams<{ name: string }>()
+    const { orgName } = useParams<{ orgName: string }>()
     const location = useLocation()
     const navigate = useNavigate()
-    return <OrgArea {...props} orgName={name!} location={location} navigate={navigate} />
+
+    return <OrgArea {...props} orgName={orgName!} location={location} navigate={navigate} />
 }
 
 export const OrgsArea = withAuthenticatedUser(AuthenticatedOrgsArea)
