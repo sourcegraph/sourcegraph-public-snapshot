@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { mdiBitbucket, mdiGithub, mdiGitlab, mdiEmail } from '@mdi/js'
 import classNames from 'classnames'
 import { partition } from 'lodash'
-import { Navigate, useLocation } from 'react-router-dom-v5-compat'
+import { Navigate, useLocation, useSearchParams } from 'react-router-dom-v5-compat'
 
 import { Alert, Icon, Text, Link, Button, ErrorAlert } from '@sourcegraph/wildcard'
 
@@ -34,6 +34,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
 
     const location = useLocation()
     const [error, setError] = useState<Error | null>(null)
+    const [searchParams] = useSearchParams()
 
     if (props.authenticatedUser) {
         const returnTo = getReturnTo(location)
@@ -49,7 +50,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
         // Hide the Sourcegraph Operator authentication provider by default because it is
         // not useful to customer users and may even cause confusion.
         if (provider.serviceType === 'sourcegraph-operator') {
-            return new URLSearchParams(location.search).has('sourcegraph-operator')
+            return searchParams.has('sourcegraph-operator')
         }
         if (provider.serviceType === 'gerrit') {
             return false
@@ -59,10 +60,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
 
     const thirdPartyAuthProviders = nonBuiltinAuthProviders.filter(provider => shouldShowProvider(provider))
 
-    const searchParams = new URLSearchParams(location.search)
     const showBuiltInAuthForm = searchParams.has('email') || thirdPartyAuthProviders.length === 0
-    searchParams.set('email', '1')
-    const builtInAuthProviderURL = `${location.pathname}?${searchParams.toString()}`
 
     const body =
         !builtInAuthProvider && thirdPartyAuthProviders.length === 0 ? (
@@ -111,7 +109,12 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                     ))}
                     {builtInAuthProvider && !showBuiltInAuthForm && (
                         <div className="mb-2">
-                            <Button to={builtInAuthProviderURL} display="block" variant="secondary" as={Link}>
+                            <Button
+                                to={`?email=1&${searchParams.toString()}`}
+                                display="block"
+                                variant="secondary"
+                                as={Link}
+                            >
                                 <Icon aria-hidden={true} svgPath={mdiEmail} /> Continue with Email
                             </Button>
                         </div>
