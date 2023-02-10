@@ -178,7 +178,7 @@ func TestPermissionBulkCreate(t *testing.T) {
 		}
 		perms = append(perms, CreatePermissionOpts{
 			Action:    action,
-			Namespace: fmt.Sprintf("namespace-%d", i),
+			Namespace: types.PermissionNamespace(fmt.Sprintf("namespace-%d", i)),
 		})
 	}
 
@@ -206,7 +206,7 @@ func TestPermissionBulkDelete(t *testing.T) {
 		}
 		perms = append(perms, CreatePermissionOpts{
 			Action:    action,
-			Namespace: fmt.Sprintf("namespace-for-deletion-%d", i),
+			Namespace: types.PermissionNamespace(fmt.Sprintf("namespace-for-deletion-%d", i)),
 		})
 	}
 
@@ -332,7 +332,7 @@ func createTestPermissions(ctx context.Context, t *testing.T, store PermissionSt
 	totalPerms := 10
 	for i := 1; i <= totalPerms; i++ {
 		permission, err := store.Create(ctx, CreatePermissionOpts{
-			Namespace: fmt.Sprintf("PERMISSION-%d", i),
+			Namespace: types.PermissionNamespace(fmt.Sprintf("PERMISSION-%d", i)),
 			Action:    "READ",
 		})
 		require.NoError(t, err)

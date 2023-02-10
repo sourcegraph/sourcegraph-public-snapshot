@@ -78,10 +78,10 @@ type PermissionConnection {
 }
 
 """
-The different namespaces guarded by the RBAC system.
-A namespace represents a project / feature on a Sourcegraph instance.
+A namespace represents a distinct context within which permission policies
+are defined and enforced.
 """
-enum Namespace {
+enum PermissionNamespace {
     """
     This represents the Batch Changes namespace.
     """
@@ -99,7 +99,7 @@ type Permission implements Node {
     """
     The namespace in which this permission belongs to.
     """
-    namespace: Namespace!
+    namespace: PermissionNamespace!
     """
     The unique action which is granted to a bearer of this permission.
     """

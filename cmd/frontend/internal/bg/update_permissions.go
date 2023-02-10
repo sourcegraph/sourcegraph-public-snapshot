@@ -28,7 +28,6 @@ func UpdatePermissions(ctx context.Context, logger log.Logger, db database.DB) {
 		}
 
 		toBeAdded, toBeDeleted := rbac.ComparePermissions(dbPerms, rbac.RBACSchema)
-		scopedLog.Info("RBAC Permissions update", log.Int("added", len(toBeAdded)), log.Int("deleted", len(toBeDeleted)))
 
 		if len(toBeDeleted) > 0 {
 			// We delete all the permissions that need to be deleted from the database. The role <> permissions are
@@ -61,6 +60,7 @@ func UpdatePermissions(ctx context.Context, logger log.Logger, db database.DB) {
 			}
 		}
 
+		scopedLog.Info("RBAC Permissions update", log.Int("added", len(toBeAdded)), log.Int("deleted", len(toBeDeleted)))
 		return nil
 	})
 
