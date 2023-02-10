@@ -1,8 +1,8 @@
-import React, { useContext, useMemo } from 'react'
+import { FC, useContext, useMemo } from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { useHistory } from 'react-router'
+import { useParams, useNavigate } from 'react-router-dom-v5-compat'
 
 import { Button, Container, LoadingSpinner, PageHeader, useObservable, Link } from '@sourcegraph/wildcard'
 
@@ -27,16 +27,12 @@ import {
 
 import styles from './EditDashboardPage.module.scss'
 
-interface EditDashboardPageProps {
-    dashboardId: string
-}
-
 /**
  * Displays the edit (configure) dashboard page.
  */
-export const EditDashboardPage: React.FunctionComponent<React.PropsWithChildren<EditDashboardPageProps>> = props => {
-    const { dashboardId } = props
-    const history = useHistory()
+export const EditDashboardPage: FC = () => {
+    const navigate = useNavigate()
+    const { dashboardId } = useParams()
 
     const { getDashboardOwners, updateDashboard } = useContext(CodeInsightsBackendContext)
 
@@ -74,10 +70,10 @@ export const EditDashboardPage: React.FunctionComponent<React.PropsWithChildren<
             },
         }).toPromise()
 
-        history.push(`/insights/dashboards/${updatedDashboard.id}`)
+        navigate(`/insights/dashboards/${updatedDashboard.id}`)
     }
 
-    const handleCancel = (): void => history.goBack()
+    const handleCancel = (): void => navigate(-1)
 
     return (
         <CodeInsightsPage className={classNames('col-8', styles.page)}>

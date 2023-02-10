@@ -1,7 +1,6 @@
 import { FC } from 'react'
 
-import { useRouteMatch } from 'react-router'
-import { Redirect } from 'react-router-dom'
+import { Navigate } from 'react-router-dom-v5-compat'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
@@ -24,7 +23,6 @@ export interface DashboardsViewProps extends TelemetryProps {
 export const DashboardsView: FC<DashboardsViewProps> = props => {
     const { dashboardId, telemetryService } = props
 
-    const { url } = useRouteMatch()
     const { dashboards } = useInsightDashboards()
 
     if (!dashboards) {
@@ -38,7 +36,7 @@ export const DashboardsView: FC<DashboardsViewProps> = props => {
     if (!dashboardId && dashboards.length > 0) {
         const currentDashboard = dashboards.find(isPersonalDashboard) ?? dashboards[0]
 
-        return <Redirect push={false} to={`${url}/${currentDashboard.id}`} />
+        return <Navigate replace={true} to={`./${currentDashboard.id}`} />
     }
 
     // We have dashboards and dashboard id in URL, try to find a current dashboard

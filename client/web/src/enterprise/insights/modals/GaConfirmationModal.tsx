@@ -1,4 +1,4 @@
-import React from 'react'
+import { FC } from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Button, Modal, Link, H1, Text } from '@sourcegraph/wildcard'
@@ -9,7 +9,7 @@ import { FourLineChart, LangStatsInsightChart, ThreeLineChart } from './componen
 
 import styles from './GaConfirmationModal.module.scss'
 
-export const GaConfirmationModal: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => {
+export const GaConfirmationModal: FC = () => {
     const [isGaAccepted, setGaAccepted] = useTemporarySetting('insights.freeGaExpiredAccepted', false)
     const { licensed } = useUiFeatures()
 
@@ -39,9 +39,7 @@ interface GaConfirmationModalContentProps {
  * Exported especially for storybook story component cause chromatic has a problem of rendering modals
  * on CI.
  */
-export const GaConfirmationModalContent: React.FunctionComponent<
-    React.PropsWithChildren<GaConfirmationModalContentProps>
-> = props => {
+export const GaConfirmationModalContent: FC<GaConfirmationModalContentProps> = props => {
     const { onAccept } = props
 
     return (
