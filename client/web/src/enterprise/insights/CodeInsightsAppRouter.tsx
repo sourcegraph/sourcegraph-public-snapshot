@@ -36,7 +36,7 @@ const rootPagePathsToTab = {
     'dashboards/:dashboardId?': CodeInsightsRootPageTab.Dashboards,
     all: CodeInsightsRootPageTab.AllInsights,
     about: CodeInsightsRootPageTab.GettingStarted,
-} as const
+}
 
 export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter>(props => {
     const { telemetryService } = props
@@ -102,18 +102,18 @@ const CodeInsightsSmartRoutingRedirect: FC = () => {
     // No dashboards status means that there are no insights either, so redirect
     // to the getting started page in this case
     if (state.status === 'noDashboards') {
-        return <Navigate to="/insights/about" replace={true} />
+        return <Navigate to="about" replace={true} />
     }
 
     // There are some dashboards, but we didn't find any particular dashboard in the user
     // temporal settings so redirect to the dashboard tab and select first private dashboard
     if (state.status === 'availableDashboard') {
-        return <Navigate to="/insights/dashboards" replace={true} />
+        return <Navigate to="dashboards" replace={true} />
     }
 
     // We found a recently viewed dashboard id in the temporal settings, so redirect to this
     // dashboard.
-    return <Navigate to={`/insights/dashboards/${state.dashboardId}`} replace={true} />
+    return <Navigate to={`dashboards/${state.dashboardId}`} replace={true} />
 }
 
 type DashboardExistence =
