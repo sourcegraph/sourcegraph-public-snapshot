@@ -6,7 +6,6 @@ overrides:
   cssnano: 4.1.10
   webpack: '5'
   tslib: 2.1.0
-  jsprim: 1.4.2
 
 packageExtensionsChecksum: 4b1de42ef6cd5dc58798836c97782882
 
