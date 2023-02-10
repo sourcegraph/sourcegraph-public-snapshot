@@ -176,6 +176,18 @@ func (teams *fakeTeamsDb) ListTeamMembers(_ context.Context, opts database.ListT
 	return selected, next, nil
 }
 
+func (teams *fakeTeamsDb) CreateTeamMember(ctx context.Context, members ...*types.TeamMember) error {
+	for _, existingMember := range teams.members {
+		for _, newMember := range members {
+			if *existingMember == *newMember {
+				return errors.Newf("Member teamID=%d userID=%d already exists.", newMember.TeamID, newMember.UserID)
+			}
+		}
+	}
+	teams.members = append(teams.members, members...)
+	return nil
+}
+
 type fakeUsersDB struct {
 	database.UserStore
 	lastUserID int32
@@ -1240,4 +1252,56 @@ func TestMembersPaginated(t *testing.T) {
 	if diff := cmp.Diff(wantUsernames, gotUsernames); diff != "" {
 		t.Errorf("unexpected member usernames (-want,+got):\n%s", diff)
 	}
+}
+
+func TestMembersAdd(t *testing.T) {
+	setupDB()
+	ctx := userCtx(fakeUsers.newUser(types.User{SiteAdmin: true}))
+	if err := fakeTeams.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+		t.Fatalf("failed to create parent team: %s", err)
+	}
+	team, err := fakeTeams.GetTeamByName(ctx, "team")
+	if err != nil {
+		t.Fatalf("cannot fetch parent team: %s", err)
+	}
+	userExistingID := fakeUsers.newUser(types.User{Username: "existing"})
+	userExistingAndAddedID := fakeUsers.newUser(types.User{Username: "existingAndAdded"})
+	userAddedID := fakeUsers.newUser(types.User{Username: "added"})
+	fakeTeams.members = append(fakeTeams.members,
+		&types.TeamMember{TeamID: team.ID, UserID: userExistingID},
+		&types.TeamMember{TeamID: team.ID, UserID: userExistingAndAddedID},
+	)
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `mutation AddTeamMembers($existingAndAddedId: ID!, $addedId: ID!) {
+			addTeamMembers(teamName: "team", members: [
+				$existingAndAddedId,
+				$addedId
+			]) {
+				members {
+					nodes {
+						... on User {
+							username
+						}
+					}
+				}
+			}
+		}`,
+		ExpectedResult: `{
+			"addTeamMembers": {
+				"members": {
+					"nodes": [
+						{"username": "existing"},
+						{"username": "existingAndAdded"},
+						{"username": "added"}
+					]
+				}
+			}
+		}`,
+		Variables: map[string]any{
+			"existingAndAddedId": string(relay.MarshalID("TeamMember", userExistingAndAddedID)),
+			"addedId":            string(relay.MarshalID("TeamMember", userAddedID)),
+		},
+	})
 }
