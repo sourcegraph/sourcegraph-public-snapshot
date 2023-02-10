@@ -122,6 +122,68 @@ func (b *SeriesBackfill) SetFailed(ctx context.Context, store *BackfillStore) er
 	return b.setState(ctx, store, BackfillStateFailed)
 }
 
+func (b *SeriesBackfill) SetLowestPriority(ctx context.Context, store *BackfillStore) error {
+	tx, err := store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	currentMax, found, err := basestore.ScanFirstInt(tx.Query(ctx,
+		sqlf.Sprintf(`
+		SELECT max(estimated_cost)
+		FROM insight_series_backfill
+		WHERE state in ('new','in-progress')
+	`)))
+	if err != nil {
+		return err
+	}
+	newCost := 10000 //default lowest cost
+	if found && (currentMax*2 > newCost) {
+		newCost = currentMax * 2
+	}
+
+	return b.setCost(ctx, tx, newCost)
+}
+
+func (b *SeriesBackfill) SetHighestPriority(ctx context.Context, store *BackfillStore) error {
+	tx, err := store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	return b.setCost(ctx, tx, 0)
+}
+
+func (b *SeriesBackfill) RestBackfillAttempt(ctx context.Context, store *BackfillStore) (err error) {
+	tx, err := store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+	iterator, err := b.repoIterator(ctx, tx)
+	if err != nil {
+		return err
+	}
+	err = iterator.Restart(ctx, tx.Store)
+	if err != nil {
+		return err
+	}
+	return b.setState(ctx, tx, BackfillStateProcessing)
+}
+
+func (b *SeriesBackfill) setCost(ctx context.Context, storeTx *BackfillStore, newCost int) (err error) {
+	defer func(ic float64) {
+		err = storeTx.Done(err)
+		if err != nil {
+			b.EstimatedCost = ic
+		}
+	}(b.EstimatedCost)
+	err = storeTx.Exec(ctx, sqlf.Sprintf("update insight_series_backfill set estimated_cost = %s where id = %s;", newCost, b.Id))
+	if err != nil {
+		return err
+	}
+	b.EstimatedCost = 0
+	return nil
+}
+
 func (b *SeriesBackfill) setState(ctx context.Context, store *BackfillStore, newState BackfillState) error {
 	err := store.Exec(ctx, sqlf.Sprintf("update insight_series_backfill set state = %s where id = %s;", string(newState), b.Id))
 	if err != nil {
