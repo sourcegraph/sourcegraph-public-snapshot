@@ -106,8 +106,8 @@ func (p *permissionStore) WithTransact(ctx context.Context, f func(PermissionSto
 }
 
 func (p *permissionStore) Create(ctx context.Context, opts CreatePermissionOpts) (*types.Permission, error) {
-	if opts.Action != "" || opts.Namespace.Valid() {
-		return nil, errors.New("a valid action and namespace is required")
+	if opts.Action == "" || !opts.Namespace.Valid() {
+		return nil, errors.New("valid action and namespace is required")
 	}
 
 	q := sqlf.Sprintf(
@@ -143,7 +143,7 @@ func (p *permissionStore) BulkCreate(ctx context.Context, opts []CreatePermissio
 	var values []*sqlf.Query
 	for _, opt := range opts {
 		if !opt.Namespace.Valid() {
-			return nil, errors.New("invalid namespace")
+			return nil, errors.New("valid namespace is required")
 		}
 		values = append(values, sqlf.Sprintf("(%s, %s)", opt.Namespace, opt.Action))
 	}

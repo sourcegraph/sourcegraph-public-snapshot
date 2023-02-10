@@ -8,7 +8,7 @@ import (
 type Permission struct {
 	Typename    string `json:"__typename"`
 	ID          string
-	Namespace   types.Namespace
+	Namespace   types.PermissionNamespace
 	DisplayName string
 	Action      string
 	CreatedAt   gqlutil.DateTime

@@ -841,7 +841,7 @@ func (n PermissionNamespace) String() string {
 // Valid checks if a namespace is valid and supported by the Sourcegraph RBAC system.
 func (n PermissionNamespace) Valid() bool {
 	switch n {
-	case BatchChangesNamespace, NotebookNamespace:
+	case BatchChangesNamespace:
 		return true
 	default:
 		return false
@@ -850,7 +850,6 @@ func (n PermissionNamespace) Valid() bool {
 
 // BatchChangesNamespace represents the Batch Changes namespace.
 const BatchChangesNamespace PermissionNamespace = "BATCH_CHANGES"
-const NotebookNamespace PermissionNamespace = "NOTEBOOKS"
 
 type Permission struct {
 	ID        int32

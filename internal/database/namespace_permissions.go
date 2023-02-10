@@ -78,8 +78,12 @@ func (n *namespacePermissionStore) Create(ctx context.Context, opts CreateNamesp
 		return nil, errors.New("user id is required")
 	}
 
+	if opts.Action == "" {
+		return nil, errors.New("action is required")
+	}
+
 	if !opts.Namespace.Valid() {
-		return nil, errors.New("invalid namespace")
+		return nil, errors.New("valid namespace is required")
 	}
 
 	q := sqlf.Sprintf(
