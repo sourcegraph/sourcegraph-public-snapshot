@@ -34,7 +34,6 @@ import (
 type ReposService interface {
 	Get(ctx context.Context, repo api.RepoID) (*types.Repo, error)
 	GetByName(ctx context.Context, name api.RepoName) (*types.Repo, error)
-	Add(ctx context.Context, name api.RepoName) (api.RepoName, error)
 	List(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error)
 	ListIndexable(ctx context.Context) ([]types.MinimalRepo, error)
 	GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (*inventory.Inventory, error)
@@ -105,7 +104,7 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 		return nil, err
 	}
 
-	newName, err := s.Add(ctx, name)
+	newName, err := s.add(ctx, name)
 	if err == nil {
 		return s.store.GetByName(ctx, newName)
 	}
@@ -132,10 +131,10 @@ var metricIsRepoCloneable = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "temporary metric to measure if this codepath is valuable on sourcegraph.com",
 }, []string{"status"})
 
-// Add adds the repository with the given name to the database by calling
+// add adds the repository with the given name to the database by calling
 // repo-updater when in sourcegraph.com mode. It's possible that the repo has
 // been renamed on the code host in which case a different name may be returned.
-func (s *repos) Add(ctx context.Context, name api.RepoName) (addedName api.RepoName, err error) {
+func (s *repos) add(ctx context.Context, name api.RepoName) (addedName api.RepoName, err error) {
 	ctx, done := trace(ctx, "Repos", "Add", name, &err)
 	defer done()
 
