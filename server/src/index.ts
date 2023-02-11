@@ -109,14 +109,18 @@ httpServer.on('upgrade', (request, socket, head) => {
 		return
 	}
 
-	const headers = request.headers
-	const user = authenticate(headers['authorization'], getUsers(usersPath))
+	const { pathname, search } = parse(request.url)
+
+	const user = authenticate(
+		request.headers['authorization'],
+		new URLSearchParams(search || '').get('access_token'),
+		getUsers(usersPath)
+	)
 	if (!user) {
 		socket.end('HTTP/1.1 401 Unauthorized\r\n\r\n')
 		return
 	}
 
-	const { pathname } = parse(request.url)
 	if (pathname === '/completions') {
 		wssCompletions.handleUpgrade(request, socket, head, ws => {
 			wssCompletions.emit('connection', ws, request)
