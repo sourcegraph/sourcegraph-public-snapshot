@@ -1,4 +1,4 @@
-import { useLocation } from 'react-router'
+import { useLocation } from 'react-router-dom-v5-compat'
 
 import helloWorldSample from '../batch-spec/edit/library/hello-world.batch.yaml'
 import { insertQueryIntoLibraryItem, insertNameIntoLibraryItem } from '../batch-spec/yaml-util'

@@ -1,6 +1,5 @@
 import * as React from 'react'
 
-import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
 
@@ -28,7 +27,7 @@ import { updatePassword } from '../backend'
 
 import styles from './UserSettingsPasswordPage.module.scss'
 
-interface Props extends RouteComponentProps<{}> {
+interface Props {
     user: UserAreaUserFields
     authenticatedUser: AuthenticatedUser
 }
