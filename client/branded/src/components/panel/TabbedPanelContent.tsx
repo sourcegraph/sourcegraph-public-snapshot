@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
-import { useHistory, useLocation } from 'react-router'
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
 import { BehaviorSubject, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -80,10 +80,10 @@ export function useBuiltinTabbedPanelViews(panels: Panel[]): void {
  */
 export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
     const [tabIndex, setTabIndex] = useState(0)
-    const location = useLocation()
-    const { hash, pathname, search } = location
-    const history = useHistory()
-    const handlePanelClose = useCallback(() => history.replace(pathname), [history, pathname])
+    const { hash, pathname, search } = useLocation()
+    const navigate = useNavigate()
+
+    const handlePanelClose = useCallback(() => navigate(pathname, { replace: true }), [navigate, pathname])
     const [currentTabLabel, currentTabID] = hash.split('=')
 
     const trackTabClick = useCallback(
@@ -110,9 +110,9 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
 
     const handleActiveTab = useCallback(
         (index: number): void => {
-            history.replace(`${pathname}${search}${currentTabLabel}=${panels ? panels[index].id : ''}`)
+            navigate(`${pathname}${search}${currentTabLabel}=${panels ? panels[index].id : ''}`, { replace: true })
         },
-        [currentTabLabel, history, panels, pathname, search]
+        [currentTabLabel, navigate, panels, pathname, search]
     )
 
     useEffect(() => {

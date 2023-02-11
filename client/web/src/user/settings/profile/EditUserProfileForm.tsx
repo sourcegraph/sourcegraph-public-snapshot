@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
-import { useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom-v5-compat'
 
 import { gql, useMutation } from '@sourcegraph/http-client'
 import { Container, Button, Alert, Form } from '@sourcegraph/wildcard'
@@ -36,11 +36,11 @@ export const EditUserProfileForm: React.FunctionComponent<React.PropsWithChildre
     initialValue,
     after,
 }) => {
-    const history = useHistory()
+    const navigate = useNavigate()
     const [updateUser, { data, loading, error }] = useMutation<UpdateUserResult, UpdateUserVariables>(UPDATE_USER, {
         onCompleted: ({ updateUser }) => {
             eventLogger.log('UserProfileUpdated')
-            history.replace(`/users/${updateUser.username}/settings/profile`)
+            navigate(`/users/${updateUser.username}/settings/profile`, { replace: true })
 
             // In case the edited user is the current user, immediately reflect the changes in the
             // UI.

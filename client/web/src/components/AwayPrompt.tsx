@@ -1,9 +1,11 @@
-import React, { useEffect, useState, useRef } from 'react'
+import { FC, useEffect, useState, useRef } from 'react'
 
 import * as H from 'history'
-import { useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom-v5-compat'
 
 import { Button, Modal, H3 } from '@sourcegraph/wildcard'
+
+import { globalHistory } from '../util/globalHistory'
 
 type Func = () => void
 interface Props {
@@ -16,10 +18,10 @@ interface Props {
 
 export const ALLOW_NAVIGATION = 'allow'
 
-export const AwayPrompt: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
+export const AwayPrompt: FC<Props> = props => {
     const { message, when, header = 'Navigate away?', button_ok_text = 'OK', button_cancel_text = 'Cancel' } = props
 
-    const history = useHistory()
+    const navigate = useNavigate()
     const [pendingLocation, setPendingLocation] = useState<H.Location>()
     const unblock = useRef<() => void>()
 
@@ -29,12 +31,12 @@ export const AwayPrompt: React.FunctionComponent<React.PropsWithChildren<Props>>
 
         if (pendingLocation && shouldNavigate) {
             unblock.current?.()
-            history.push(pendingLocation)
+            navigate(pendingLocation)
         }
     }
 
     useEffect(() => {
-        unblock.current = history.block((location: H.Location) => {
+        unblock.current = globalHistory.block(location => {
             if (location.state === ALLOW_NAVIGATION) {
                 return unblock.current?.()
             }
@@ -54,7 +56,7 @@ export const AwayPrompt: React.FunctionComponent<React.PropsWithChildren<Props>>
         return () => {
             unblock.current?.()
         }
-    }, [history, when])
+    }, [when])
 
     return pendingLocation ? (
         <Modal aria-labelledby={header}>
