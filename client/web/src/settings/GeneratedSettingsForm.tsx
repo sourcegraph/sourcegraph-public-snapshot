@@ -63,9 +63,11 @@ export const GeneratedSettingsForm: React.FunctionComponent<GeneratedSettingsFor
         } else {
             setChanges(changes => ({ ...changes, [change.parentsAndName.join('.')]: change }))
         }
-
-        reportDirtiness(Object.values(changes).length > 0)
     }
+
+    useEffect(() => {
+        reportDirtiness(Object.values(changes).length > 0)
+    }, [changes, reportDirtiness])
 
     if (!currentSettings) {
         return <div>Settings not loaded yet</div>
@@ -84,7 +86,8 @@ export const GeneratedSettingsForm: React.FunctionComponent<GeneratedSettingsFor
     return (
         <>
             <section className={classNames(styles.wrapper, 'mt-3')}>
-                <H3>Changes:</H3>
+                {/* TODO: Remove this H3 and ul */}
+                <H3>Changes: (only here while WIP)</H3>
                 <ul>
                     {Object.values(changes).map(change => (
                         <li key={change.parentsAndName.join('.')}>
