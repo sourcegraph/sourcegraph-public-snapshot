@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react'
+import { FC } from 'react'
 
-import { MemoryRouter, MemoryRouterProps, RouteComponentProps, withRouter } from 'react-router'
+import { MemoryRouter, MemoryRouterProps } from 'react-router'
 import { Routes, Route, CompatRouter } from 'react-router-dom-v5-compat'
 
 import { MockedStoryProvider, MockedStoryProviderProps } from '@sourcegraph/shared/src/stories'
@@ -22,16 +22,12 @@ if (!window.context) {
     window.context = {} as SourcegraphContext & Mocha.SuiteFunction
 }
 
-export type WebStoryChildrenProps = ThemeProps &
-    BreadcrumbSetters &
-    BreadcrumbsProps &
-    TelemetryProps &
-    RouteComponentProps<any>
+export type WebStoryChildrenProps = ThemeProps & BreadcrumbSetters & BreadcrumbsProps & TelemetryProps
 
 export interface WebStoryProps
     extends Omit<MemoryRouterProps, 'children'>,
         Pick<MockedStoryProviderProps, 'mocks' | 'useStrictMocking'> {
-    children: React.FunctionComponent<WebStoryChildrenProps>
+    children: FC<WebStoryChildrenProps>
     path?: string
 }
 
@@ -39,8 +35,8 @@ export interface WebStoryProps
  * Wrapper component for webapp Storybook stories that provides light theme and react-router props.
  * Takes a render function as children that gets called with the props.
  */
-export const WebStory: React.FunctionComponent<WebStoryProps> = ({
-    children,
+export const WebStory: FC<WebStoryProps> = ({
+    children: Children,
     mocks,
     path = '*',
     useStrictMocking,
@@ -48,7 +44,6 @@ export const WebStory: React.FunctionComponent<WebStoryProps> = ({
 }) => {
     const isLightTheme = useTheme()
     const breadcrumbSetters = useBreadcrumbs()
-    const Children = useMemo(() => withRouter(children), [children])
 
     usePrependStyles('web-styles', webStyles)
     setExperimentalFeaturesForTesting()
