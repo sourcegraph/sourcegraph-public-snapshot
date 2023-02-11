@@ -1,8 +1,7 @@
 import React, { useCallback } from 'react'
 
 import { mdiMagnify } from '@mdi/js'
-import { Redirect } from 'react-router'
-import { useLocation } from 'react-router-dom-v5-compat'
+import { Navigate, useLocation } from 'react-router-dom-v5-compat'
 import { Observable } from 'rxjs'
 
 import {
@@ -53,7 +52,7 @@ export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<
     )
 
     if (!authenticatedUser) {
-        return <Redirect to="/sign-in" />
+        return <Navigate to="/sign-in" replace={true} />
     }
 
     return (
