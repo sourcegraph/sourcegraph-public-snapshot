@@ -46,6 +46,7 @@ interface Props extends TelemetryProps {
 interface State {
     contents?: string
     saving: boolean
+    isFormDirty: boolean
 
     /**
      * The lastID that we started editing from. If null, then no
@@ -68,7 +69,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props)
 
-        this.state = { saving: false }
+        this.state = { saving: false, isFormDirty: false }
 
         // Reset state upon navigation to a different subject.
         this.subscriptions.add(
@@ -136,12 +137,11 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    private get dirty(): boolean {
+    private get isJSONEditorDirty(): boolean {
         return this.state.contents !== undefined && this.state.contents !== this.getPropsSettingsContentsOrEmpty()
     }
 
     public render(): JSX.Element | null {
-        const dirty = this.dirty
         const contents =
             this.state.contents === undefined ? this.getPropsSettingsContentsOrEmpty() : this.state.contents
 
@@ -149,14 +149,15 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             <div className={classNames('test-settings-file d-flex flex-grow-1 flex-column', styles.settingsFile)}>
                 <Tabs>
                     <TabList>
-                        <Tab>Settings</Tab>
-                        <Tab>JSON Editor</Tab>
+                        <Tab disabled={false /* TODO: Make this dynamic */}>Settings</Tab>
+                        <Tab disabled={this.state.isFormDirty}>JSON Editor</Tab>
                     </TabList>
                     <TabPanels>
                         <TabPanel>
                             <GeneratedSettingsForm
                                 jsonSchema={settingsSchemaJSON as unknown as SettingsNode}
                                 currentSettings={this.props.settingsCascadeFinal}
+                                reportDirtiness={this.onFormChange}
                             />
                         </TabPanel>
                         <TabPanel>
@@ -165,22 +166,22 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                                 <MonacoSettingsEditor
                                     value={contents}
                                     jsonSchema={settingsSchemaJSON}
-                                    onChange={this.onEditorChange}
+                                    onChange={this.onJSONEditorChange}
                                     readOnly={this.state.saving}
                                     isLightTheme={this.props.isLightTheme}
-                                    onDidSave={this.save}
+                                    onDidSave={this.saveJSON}
                                 />
                             </React.Suspense>
+                            <SaveToolbar
+                                dirty={this.isJSONEditorDirty}
+                                error={this.props.commitError}
+                                saving={this.state.saving}
+                                onSave={this.saveJSON}
+                                onDiscard={this.discardJSON}
+                            />
                         </TabPanel>
                     </TabPanels>
                 </Tabs>
-                <SaveToolbar
-                    dirty={dirty}
-                    error={this.props.commitError}
-                    saving={this.state.saving}
-                    onSave={this.save}
-                    onDiscard={this.discard}
-                />
             </div>
         )
     }
@@ -193,7 +194,11 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         return this.props.settings ? this.props.settings.id : null
     }
 
-    private discard = (): void => {
+    private onFormChange = (isDirty: boolean): void => {
+        this.setState({ isFormDirty: isDirty })
+    }
+
+    private discardJSON = (): void => {
         if (
             this.getPropsSettingsContentsOrEmpty() === this.state.contents ||
             window.confirm('Discard settings edits?')
@@ -209,14 +214,14 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         }
     }
 
-    private onEditorChange = (newValue: string): void => {
+    private onJSONEditorChange = (newValue: string): void => {
         if (newValue !== this.getPropsSettingsContentsOrEmpty()) {
             this.setState({ editingLastID: this.getPropsSettingsID() })
         }
         this.setState({ contents: newValue })
     }
 
-    private save = (): void => {
+    private saveJSON = (): void => {
         eventLogger.log('SettingsFileSaved')
         this.setState({ saving: true }, () => {
             this.props.onDidCommit(this.getPropsSettingsID(), this.state.contents!)
