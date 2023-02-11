@@ -50,7 +50,7 @@ func LoadSqliteConfig(baseConfig env.BaseConfig, ctags CtagsConfig, repositoryFe
 		CacheSizeMB:             baseConfig.GetInt("SYMBOLS_CACHE_SIZE_MB", "100000", "maximum size of the disk cache (in megabytes)"),
 		NumCtagsProcesses:       baseConfig.GetInt("CTAGS_PROCESSES", strconv.Itoa(runtime.GOMAXPROCS(0)), "number of concurrent parser processes to run"),
 		RequestBufferSize:       baseConfig.GetInt("REQUEST_BUFFER_SIZE", "8192", "maximum size of buffered parser request channel"),
-		ProcessingTimeout:       baseConfig.GetInterval("PROCESSING_TIMEOUT", "2h", "maximum time to spend processing a repository"),
+		ProcessingTimeout:       baseConfig.GetInterval("PROCESSING_TIMEOUT", "2h0m0s", "maximum time to spend processing a repository"),
 		MaxConcurrentlyIndexing: baseConfig.GetInt("MAX_CONCURRENTLY_INDEXING", "10", "maximum number of repositories to index at a time"),
 	}
 }

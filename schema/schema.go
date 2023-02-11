@@ -1943,16 +1943,12 @@ type Settings struct {
 	CodeIntelDisableSearchBased bool `json:"codeIntel.disableSearchBased,omitempty"`
 	// CodeIntelMixPreciseAndSearchBasedReferences description: Whether to supplement precise references with search-based results.
 	CodeIntelMixPreciseAndSearchBasedReferences bool `json:"codeIntel.mixPreciseAndSearchBasedReferences,omitempty"`
-	// CodeIntelReferencesPanel description: What kind of references panel to use for exploring definitions and references. The tabbed panel is deprecated.
-	CodeIntelReferencesPanel string `json:"codeIntel.referencesPanel,omitempty"`
 	// CodeIntelTraceExtension description: Whether to enable trace logging on the extension.
 	CodeIntelTraceExtension bool `json:"codeIntel.traceExtension,omitempty"`
 	// CodeIntelligenceAutoIndexPopularRepoLimit description: Up to this number of repos are auto-indexed automatically. Ordered by star count.
 	CodeIntelligenceAutoIndexPopularRepoLimit int `json:"codeIntelligence.autoIndexPopularRepoLimit,omitempty"`
 	// CodeIntelligenceClickToGoToDefinition description: Enable click to go to definition.
 	CodeIntelligenceClickToGoToDefinition bool `json:"codeIntelligence.clickToGoToDefinition,omitempty"`
-	// CodeIntelligenceMaxPanelResults description: Maximum number of references/definitions (or other code intelligence results provided by extensions) shown in the panel. If not set a default value will be used to ensure best performance.
-	CodeIntelligenceMaxPanelResults int `json:"codeIntelligence.maxPanelResults,omitempty"`
 	// ExperimentalFeatures description: Experimental features and settings.
 	ExperimentalFeatures *SettingsExperimentalFeatures `json:"experimentalFeatures,omitempty"`
 	// Extensions description: The Sourcegraph extensions to use. Enable an extension by adding a property `"my/extension": true` (where `my/extension` is the extension ID). Override a previously enabled extension and disable it by setting its value to `false`.
@@ -2053,11 +2049,9 @@ func (v *Settings) UnmarshalJSON(data []byte) error {
 	delete(m, "codeIntel.disableRangeQueries")
 	delete(m, "codeIntel.disableSearchBased")
 	delete(m, "codeIntel.mixPreciseAndSearchBasedReferences")
-	delete(m, "codeIntel.referencesPanel")
 	delete(m, "codeIntel.traceExtension")
 	delete(m, "codeIntelligence.autoIndexPopularRepoLimit")
 	delete(m, "codeIntelligence.clickToGoToDefinition")
-	delete(m, "codeIntelligence.maxPanelResults")
 	delete(m, "experimentalFeatures")
 	delete(m, "extensions")
 	delete(m, "extensions.activeLoggers")

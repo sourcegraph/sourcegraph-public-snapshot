@@ -1,8 +1,10 @@
+import React from 'react'
+
 import { cleanup, fireEvent } from '@testing-library/react'
 
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { TabbedPanelContent } from './TabbedPanelContent'
+import { Panel, TabbedPanelContent, useBuiltinTabbedPanelViews } from './TabbedPanelContent'
 import { panels, panelProps } from './TabbedPanelContent.fixtures'
 
 describe('TabbedPanel', () => {
@@ -15,8 +17,18 @@ describe('TabbedPanel', () => {
 
     afterEach(cleanup)
 
+    const TabbedPanelContentWithPanels: React.FunctionComponent<
+        { panels: Panel[] } & React.ComponentPropsWithoutRef<typeof TabbedPanelContent>
+    > = ({ panels, ...props }) => {
+        useBuiltinTabbedPanelViews(panels)
+        return <TabbedPanelContent {...props} />
+    }
+
     it('preserves `location.pathname` and `location.hash` on tab change', async () => {
-        const renderResult = renderWithBrandedContext(<TabbedPanelContent {...panelProps} />, { route })
+        const renderResult = renderWithBrandedContext(
+            <TabbedPanelContentWithPanels panels={panels} {...panelProps} />,
+            { route }
+        )
 
         const panelToSelect = panels[2]
         const panelButton = await renderResult.findByRole('tab', { name: panelToSelect.title })

@@ -81,10 +81,10 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
 
                 <Route
                     // Deprecated URL, delete this in the 4.10
-                    path="insight/:id"
+                    path="insight/:insightId"
                     element={<RedirectRoute getRedirectURL={({ params }) => `/insights/${params.insightId}`} />}
                 />
-                <Route path=":id" element={<CodeInsightIndependentPage telemetryService={telemetryService} />} />
+                <Route path=":insightId" element={<CodeInsightIndependentPage telemetryService={telemetryService} />} />
 
                 <Route element={<NotFoundPage pageType="code insights" />} />
             </Routes>
