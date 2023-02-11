@@ -69,7 +69,7 @@ import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
 import { fetchBlob, fetchStencil } from './backend'
 import { BlobLoadingSpinner } from './BlobLoadingSpinner'
-import { Blob as CodeMirrorBlob, type BlobInfo } from './CodeMirrorBlob'
+import { CodeMirrorBlob, type BlobInfo } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
 import { LegacyBlob } from './LegacyBlob'
 import { BlobPanel } from './panel/BlobPanel'
@@ -509,7 +509,7 @@ export const BlobPage: FC<BlobPageProps> = ({ className, ...props }) => {
         )
     }
 
-    const BlobComponent = enableCodeMirror ? CodeMirrorBlob : LegacyBlob
+    const BlobComponent = false ? CodeMirrorBlob : LegacyBlob
 
     return (
         <div className={className}>
@@ -567,9 +567,6 @@ export const BlobPage: FC<BlobPageProps> = ({ className, ...props }) => {
                     }}
                 >
                     <BlobComponent
-                        navigate={navigate}
-                        location={location}
-                        history={globalHistory}
                         data-testid="repo-blob"
                         className={classNames(styles.blob, styles.border)}
                         blobInfo={{ ...blobInfoOrError, commitID, stencil }}

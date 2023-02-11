@@ -9,7 +9,7 @@ import { Compartment, EditorState, Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import * as H from 'history'
 import { isEqual } from 'lodash'
-import { createPath, NavigateFunction, type Location } from 'react-router-dom-v5-compat'
+import { createPath, NavigateFunction, useLocation, useNavigate, type Location } from 'react-router-dom-v5-compat'
 
 import {
     addLineRangeQueryParameter,
@@ -88,7 +88,9 @@ export interface BlobProps
 
     isBlameVisible?: boolean
     blameHunks?: BlameHunkData
+}
 
+export interface BlobPropsFacet extends BlobProps {
     navigate: NavigateFunction
 
     /**
@@ -182,7 +184,7 @@ const blobPropsCompartment = new Compartment()
 // Compartment for line wrapping.
 const wrapCodeCompartment = new Compartment()
 
-export const Blob: React.FunctionComponent<BlobProps> = props => {
+export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     const {
         className,
         wrapCode,
@@ -200,10 +202,10 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
         overrideBrowserSearchKeybinding,
         'data-testid': dataTestId,
-
-        location,
-        navigate,
     } = props
+
+    const navigate = useNavigate()
+    const location = useLocation()
 
     const [useFileSearch, setUseFileSearch] = useLocalStorage('blob.overrideBrowserFindOnPage', true)
 
