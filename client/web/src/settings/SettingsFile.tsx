@@ -12,6 +12,7 @@ import { BeforeUnloadPrompt, LoadingSpinner, Tab, TabList, TabPanel, TabPanels, 
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { SaveToolbar } from '../components/SaveToolbar'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { SiteAdminSettingsCascadeFields } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -51,8 +52,11 @@ export const SettingsFile = ({
     const [isFormDirty, setIsFormDirty] = React.useState(false)
     // The lastID that we started editing from. If null, then no previous versions of the settings exist, and we're creating them from scratch.
     const [editingLastID, setEditingLastID] = React.useState<number | null | undefined>(undefined)
+
     // eslint-disable-next-line no-restricted-syntax
     const history = useHistory()
+
+    const enableVisualSettingsEditor = useFeatureFlag('visual-settings-editor')
 
     // Reset state upon navigation to a different subject.
     React.useEffect(() => {
@@ -93,43 +97,54 @@ export const SettingsFile = ({
         return () => blocker()
     }, [saving, isFormDirty, history])
 
+    const jsonEditor = (
+        <>
+            <BeforeUnloadPrompt when={saving || isFormDirty || isJSONEditorDirty()} message="Discard settings changes?" />
+            <React.Suspense fallback={<LoadingSpinner className="mt-2" />}>
+                <MonacoSettingsEditor
+                    value={contents}
+                    jsonSchema={settingsSchemaJSON}
+                    onChange={onJSONEditorChange}
+                    readOnly={saving}
+                    isLightTheme={isLightTheme}
+                    onDidSave={saveJSON}
+                />
+            </React.Suspense>
+            <SaveToolbar
+                dirty={isJSONEditorDirty()}
+                error={commitError}
+                saving={saving}
+                onSave={saveJSON}
+                onDiscard={discardJSON}
+            />
+        </>
+    )
+
+    if (enableVisualSettingsEditor) {
+        return (
+            <div className={classNames('test-settings-file d-flex flex-grow-1 flex-column', styles.settingsFile)}>
+                <Tabs>
+                    <TabList>
+                        <Tab disabled={false /* TODO: Make this dynamic */}>Settings</Tab>
+                        <Tab disabled={isFormDirty}>JSON Editor</Tab>
+                    </TabList>
+                    <TabPanels>
+                        <TabPanel>
+                            <GeneratedSettingsForm
+                                jsonSchema={settingsSchemaJSON as unknown as SettingsNode}
+                                currentSettings={settingsCascadeFinal}
+                                reportDirtiness={onFormChange}
+                            />
+                        </TabPanel>
+                        <TabPanel>{jsonEditor}</TabPanel>
+                    </TabPanels>
+                </Tabs>
+            </div>
+        )
+    }
     return (
         <div className={classNames('test-settings-file d-flex flex-grow-1 flex-column', styles.settingsFile)}>
-            <Tabs>
-                <TabList>
-                    <Tab disabled={false /* TODO: Make this dynamic */}>Settings</Tab>
-                    <Tab disabled={isFormDirty}>JSON Editor</Tab>
-                </TabList>
-                <TabPanels>
-                    <TabPanel>
-                        <GeneratedSettingsForm
-                            jsonSchema={settingsSchemaJSON as unknown as SettingsNode}
-                            currentSettings={settingsCascadeFinal}
-                            reportDirtiness={onFormChange}
-                        />
-                    </TabPanel>
-                    <TabPanel>
-                        <BeforeUnloadPrompt when={this.state.saving || this.dirty} message="Discard settings changes?" />
-                            <React.Suspense fallback={<LoadingSpinner className="mt-2" />}>
-                            <MonacoSettingsEditor
-                                value={contents}
-                                jsonSchema={settingsSchemaJSON}
-                                onChange={onJSONEditorChange}
-                                readOnly={saving}
-                                isLightTheme={isLightTheme}
-                                onDidSave={saveJSON}
-                            />
-                        </React.Suspense>
-                        <SaveToolbar
-                            dirty={isJSONEditorDirty()}
-                            error={commitError}
-                            saving={saving}
-                            onSave={saveJSON}
-                            onDiscard={discardJSON}
-                        />
-                    </TabPanel>
-                </TabPanels>
-            </Tabs>
+            {jsonEditor}
         </div>
     )
 
