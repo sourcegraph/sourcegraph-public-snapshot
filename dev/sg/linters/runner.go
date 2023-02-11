@@ -18,7 +18,7 @@ func NewRunner(out *std.Output, annotations bool, targets ...Target) Runner {
 		if c.Fix == nil {
 			return ""
 		}
-		return fmt.Sprintf("Try `sg lint -fix %s` to fix this issue!", category)
+		return fmt.Sprintf("Try `sg lint --fix %s` to fix this issue!", category)
 	}
 	return runner
 }
