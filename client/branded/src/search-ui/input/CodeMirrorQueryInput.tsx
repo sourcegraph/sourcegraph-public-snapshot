@@ -26,7 +26,7 @@ import {
     WidgetType,
 } from '@codemirror/view'
 import classNames from 'classnames'
-import { useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom-v5-compat'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
@@ -139,6 +139,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
     const [editor, setEditor] = useState<EditorView | undefined>()
     const editorReference = useRef<EditorView>()
     const focusSearchBarShortcut = useKeyboardShortcut('focusSearch')
+    const navigate = useNavigate()
 
     const editorCreated = useCallback(
         (editor: EditorView) => {
@@ -149,8 +150,6 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
         [editorReference, onEditorCreated]
     )
 
-    const history = useHistory()
-
     const autocompletion = useMemo(
         () =>
             createDefaultSuggestions({
@@ -158,13 +157,13 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
                     fetchStreamSuggestions(appendContextFilter(query, selectedSearchContextSpec)),
                 globbing,
                 isSourcegraphDotCom,
-                history,
+                navigate,
                 applyOnEnter: applySuggestionsOnEnter,
             }),
         [
             globbing,
             isSourcegraphDotCom,
-            history,
+            navigate,
             applySuggestionsOnEnter,
             fetchStreamSuggestions,
             selectedSearchContextSpec,

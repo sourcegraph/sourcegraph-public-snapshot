@@ -55,9 +55,6 @@ export function submitSearch({
         searchQueryParameter = searchQueryParameter + '&' + preserved
     }
 
-    // Go to search results page
-    const path = '/search?' + searchQueryParameter
-
     const queryWithContext = appendContextFilter(query, selectedSearchContextSpec)
     eventLogger.log(
         'SearchSubmitted',
@@ -67,7 +64,16 @@ export function submitSearch({
         },
         { source }
     )
-    const state = { ...(typeof location.state === 'object' ? location.state : null), query }
 
-    compatNavigate(historyOrNavigate, path, { state })
+    const state = {
+        ...(typeof location.state === 'object' ? location.state : null),
+        queryTimestamp: Date.now(),
+        query,
+    }
+
+    // Go to search results page
+    compatNavigate(historyOrNavigate, '/search?' + searchQueryParameter, {
+        state,
+        replace: searchQueryParameter === location.search.slice(1),
+    })
 }

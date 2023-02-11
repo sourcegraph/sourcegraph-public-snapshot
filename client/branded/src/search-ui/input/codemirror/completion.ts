@@ -45,8 +45,8 @@ import {
     mdiWeb,
     mdiWrench,
 } from '@mdi/js'
-import * as H from 'history'
 import { isEqual, startCase } from 'lodash'
+import { NavigateFunction } from 'react-router-dom-v5-compat'
 
 import { isDefined } from '@sourcegraph/common'
 import { SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
@@ -131,7 +131,7 @@ export type StandardSuggestionSource = SuggestionSource<CompletionResult | null,
  */
 export function searchQueryAutocompletion(
     sources: StandardSuggestionSource[],
-    history?: H.History,
+    navigate?: NavigateFunction,
     // By default we do not enable suggestion selection with enter because that
     // interferes with the query submission logic.
     applyOnEnter = false
@@ -247,8 +247,8 @@ export function searchQueryAutocompletion(
                                   const selected = selectedCompletion(view.state)
                                   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
                                   const url = (selected as any)?.url
-                                  if (history && typeof url === 'string') {
-                                      history.push(url)
+                                  if (navigate && typeof url === 'string') {
+                                      navigate(url)
                                       return true
                                   }
                                   // Otherwise apply the selected completion item
