@@ -61,12 +61,12 @@ func (s *store) ListPackageRepoRefs(ctx context.Context, opts ListDependencyRepo
 		}})
 	}()
 
+	selectColumns := sqlf.Sprintf("lr.id, lr.scheme, lr.name, prv.id, prv.package_id, prv.version")
+
 	sortExpr := "ORDER BY lr.id ASC"
 	if opts.MostRecentlyUpdated {
 		sortExpr = "ORDER BY prv.id DESC"
 	}
-
-	selectColumns := sqlf.Sprintf("lr.id, lr.scheme, lr.name, prv.id, prv.package_id, prv.version")
 
 	depReposMap := basestore.NewOrderedMap[int, shared.PackageRepoReference]()
 	scanner := basestore.NewKeyedCollectionScanner[*basestore.OrderedMap[int, shared.PackageRepoReference], int, shared.PackageRepoReference, shared.PackageRepoReference](depReposMap, func(s dbutil.Scanner) (int, shared.PackageRepoReference, error) {
@@ -132,10 +132,11 @@ FROM (
 	FROM (
 		SELECT id, scheme, name, ROW_NUMBER() OVER(
 			PARTITION BY scheme, name
-			ORDER BY id
+			ORDER BY id ASC
 		) AS row_num
 		FROM lsif_dependency_repos
 		WHERE %s
+		ORDER BY id ASC
 	) AS single_entry
 	WHERE row_num = 1
 	-- ID based offset
