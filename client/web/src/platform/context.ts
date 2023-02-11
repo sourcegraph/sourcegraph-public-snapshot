@@ -71,10 +71,10 @@ export function createPlatformContext(): PlatformContext {
         },
         getGraphQLClient: getWebGraphQLClient,
         requestGraphQL: ({ request, variables }) => requestGraphQL(request, variables),
-        createExtensionHost: async () =>
-            (await import('@sourcegraph/shared/src/api/extension/worker')).createExtensionHost(),
+        createExtensionHost: () => {
+            throw new Error('extensions are no longer supported in the web app')
+        },
         urlToFile: toPrettyWebBlobURL,
-        getScriptURLForExtension: () => undefined,
         sourcegraphURL: window.context.externalURL,
         clientApplication: 'sourcegraph',
         telemetryService: eventLogger,

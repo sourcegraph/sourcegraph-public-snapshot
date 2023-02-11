@@ -465,11 +465,6 @@
             }
           ]
         },
-        "enableLegacyExtensions": {
-          "description": "Enable the extension registry and the use of extensions (doesn't affect code intel and git extras).",
-          "type": "boolean",
-          "default": false
-        },
         "insightsAlternateLoadingStrategy": {
           "description": "Use an in-memory strategy of loading Code Insights. Should only be used for benchmarking on large instances, not for customer use currently.",
           "type": "boolean",
@@ -1148,47 +1143,6 @@
       "description": "The shared secret between Sourcegraph and executors.",
       "type": "string",
       "minLength": 20
-    },
-    "extensions": {
-      "description": "Configures Sourcegraph extensions.",
-      "type": "object",
-      "properties": {
-        "disabled": {
-          "description": "Disable all usage of extensions.",
-          "type": "boolean",
-          "default": false,
-          "!go": { "pointer": true }
-        },
-        "remoteRegistry": {
-          "description": "The remote extension registry URL, or `false` to not use a remote extension registry. If not set, the default remote extension registry URL is used.",
-          "oneOf": [
-            { "type": "string", "format": "uri" },
-            { "type": "boolean", "const": false }
-          ]
-        },
-        "allowRemoteExtensions": {
-          "description": "Allow only the explicitly listed remote extensions (by extension ID, such as \"alice/myextension\") from the remote registry. If not set, all remote extensions may be used from the remote registry. To completely disable the remote registry, set `remoteRegistry` to `false`.\n\nOnly available in Sourcegraph Enterprise.",
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "allowOnlySourcegraphAuthoredExtensions": {
-          "description": "Allow only Sourcegraph authored extensions from the default remote registry. If not set, all remote extensions may be used from the remote registry. If certain extensions are marked as allowed in `allowRemoteExtensions` field or `remoteRegistry` points to other than default registry, `allowOnlySourcegraphAuthoredExtensions` setting value will be ignored. To completely disable the remote registry, set `remoteRegistry` to `false`.",
-          "type": "boolean",
-          "default": false
-        }
-      },
-      "default": {
-        "remoteRegistry": "https://sourcegraph.com/.api/registry"
-      },
-      "examples": [
-        {
-          "remoteRegistry": "https://sourcegraph.com/.api/registry",
-          "allowRemoteExtensions": ["sourcegraph/java"]
-        }
-      ],
-      "group": "Extensions"
     },
     "auth.userOrgMap": {
       "description": "Ensure that matching users are members of the specified orgs (auto-joining users to the orgs if they are not already a member). Provide a JSON object of the form `{\"*\": [\"org1\", \"org2\"]}`, where org1 and org2 are orgs that all users are automatically joined to. Currently the only supported key is `\"*\"`.",
