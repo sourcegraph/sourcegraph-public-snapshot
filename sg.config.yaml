@@ -1135,10 +1135,10 @@ commandsets:
       - git
     commands:
       - sourcegraph
-      - docsite
+      # - docsite
       - web
       # TODO: App's dependency on syntax-highlighter will be removed.
-      - syntax-highlighter
+      # - syntax-highlighter
       - caddy
 
 tests:
