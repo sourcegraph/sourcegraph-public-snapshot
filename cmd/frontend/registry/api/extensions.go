@@ -70,15 +70,6 @@ func getRemoteRegistryExtension(ctx context.Context, field, value string) (*regi
 	return x, err
 }
 
-// FilterRemoteExtensions is called to filter the list of extensions retrieved from the remote
-// registry before the list is used by any other part of the application.
-//
-// It can be overridden to use custom logic.
-var FilterRemoteExtensions = func(extensions []*registry.Extension) []*registry.Extension {
-	// By default, all remote extensions are allowed.
-	return extensions
-}
-
 // listRemoteRegistryExtensions lists the remote registry extensions and rewrites their fields to be
 // from the frame-of-reference of this site.
 func listRemoteRegistryExtensions(ctx context.Context, query string) ([]*registry.Extension, error) {
@@ -91,7 +82,6 @@ func listRemoteRegistryExtensions(ctx context.Context, query string) ([]*registr
 	if err != nil {
 		return nil, err
 	}
-	xs = FilterRemoteExtensions(xs)
 	for _, x := range xs {
 		x.RegistryURL = registryURL.String()
 	}
