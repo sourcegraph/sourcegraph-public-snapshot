@@ -1,5 +1,5 @@
 import { EditorState } from '@codemirror/state'
-import { mdiFilterOutline, mdiTextSearchVariant, mdiSourceRepository, mdiStar, mdiFileOutline } from '@mdi/js'
+import { mdiFilterOutline, mdiSourceRepository, mdiStar, mdiFileOutline } from '@mdi/js'
 import { byLengthAsc, extendedMatch, Fzf, FzfOptions, FzfResultItem } from 'fzf'
 
 import { tokenAt, tokens as queryTokens } from '@sourcegraph/branded'
@@ -9,10 +9,7 @@ import {
     Group,
     Option,
     Source,
-    getEditorConfig,
     SuggestionResult,
-    submitQueryInfo,
-    queryRenderer,
     filterRenderer,
     filterValueRenderer,
     shortenPath,
@@ -26,9 +23,7 @@ import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { regexInsertText } from '@sourcegraph/shared/src/search/query/completion-utils'
 import { FILTERS, FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { Node, OperatorKind } from '@sourcegraph/shared/src/search/query/parser'
-import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { CharacterRange, Filter, PatternKind, Token } from '@sourcegraph/shared/src/search/query/token'
-import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { getSymbolIconSVGPath } from '@sourcegraph/shared/src/symbols/symbolIcons'
 
 import { AuthenticatedUser } from '../../auth'
@@ -292,55 +287,6 @@ function toSymbolSuggestion({ item, positions }: FzfResultItem<CodeSymbol>, from
             type: 'goto',
             url: item.url,
         },
-    }
-}
-
-/**
- * If the query is not empty, this source will return a single command
- * suggestion which submits the query when selected.
- */
-const currentQuery: InternalSource = ({ token, input }) => {
-    if (token?.type === 'filter') {
-        return null
-    }
-
-    let label = input
-    let actionName = 'Search everywhere'
-
-    const contextFilter = findFilter(input, FilterType.context, FilterKind.Global)
-
-    if (contextFilter) {
-        label = omitFilter(input, contextFilter)
-        if (contextFilter.value?.value !== 'global') {
-            actionName = `Search '${contextFilter.value?.value ?? ''}'`
-        }
-    }
-
-    if (label.trim() === '') {
-        return null
-    }
-
-    return {
-        result: [
-            {
-                title: '',
-                options: [
-                    {
-                        icon: mdiTextSearchVariant,
-                        label,
-                        action: {
-                            type: 'command',
-                            name: actionName,
-                            apply: (_option, view) => {
-                                getEditorConfig(view.state).onSubmit()
-                            },
-                        },
-                        render: queryRenderer,
-                        info: submitQueryInfo,
-                    },
-                ],
-            },
-        ],
     }
 }
 
@@ -827,7 +773,6 @@ export const createSuggestionsSource = ({
     }
 
     const sources: InternalSource[] = [
-        currentQuery,
         filterValueSuggestions(caches),
         filterSuggestions,
         repoSuggestions(caches.repo),
