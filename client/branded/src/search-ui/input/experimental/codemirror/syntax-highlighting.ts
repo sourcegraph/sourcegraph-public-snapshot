@@ -2,9 +2,10 @@ import { RangeSetBuilder } from '@codemirror/state'
 import { Decoration, EditorView } from '@codemirror/view'
 import inRange from 'lodash/inRange'
 
-import { decoratedTokens, queryTokens } from '../../codemirror/parsedQuery'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { isFilterOfType } from '@sourcegraph/shared/src/search/query/utils'
+
+import { decoratedTokens, queryTokens } from '../../codemirror/parsedQuery'
 
 const validFilter = Decoration.mark({ class: 'sg-filter' })
 const invalidFilter = Decoration.mark({ class: 'sg-filter sg-invalid-filter' })
