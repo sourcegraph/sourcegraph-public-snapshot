@@ -185,7 +185,7 @@ func codeintelUploadOutput() (out *output.Output) {
 
 func isSCIPAvailable() (bool, error) {
 	client := cfg.apiClient(codeintelUploadFlags.apiFlags, codeintelUploadFlagSet.Output())
-	req, err := client.NewHTTPRequest(context.Background(), "HEAD", "/.api/scip/upload", nil)
+	req, err := client.NewHTTPRequest(context.Background(), "HEAD", strings.ReplaceAll(codeintelUploadFlags.uploadRoute, "lsif", "scip"), nil)
 	if err != nil {
 		return false, err
 	}

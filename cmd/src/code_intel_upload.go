@@ -148,7 +148,7 @@ func codeintelUploadOptions(out *output.Output, isSCIPAvailable bool) upload.Upl
 	path := codeintelUploadFlags.uploadRoute
 	if isSCIPAvailable && filepath.Ext(codeintelUploadFlags.file) == ".scip" {
 		cfg.AdditionalHeaders["Content-Type"] = "application/x-protobuf+scip"
-		path = "/.api/scip/upload"
+		path = strings.ReplaceAll(path, "lsif", "scip")
 	}
 
 	logger := upload.NewRequestLogger(
