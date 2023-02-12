@@ -1,10 +1,9 @@
 import { Extension, SelectionRange, StateField } from '@codemirror/state'
 import { EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view'
+import { Location } from 'react-router-dom-v5-compat'
 
 import { Occurrence, Range } from '@sourcegraph/shared/src/codeintel/scip'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-
-import { Location } from 'react-router-dom-v5-compat'
 
 import { blobPropsFacet } from '..'
 import { cmSelectionToRange, occurrenceAtPosition, rangeToCmSelection } from '../occurrence-utils'
