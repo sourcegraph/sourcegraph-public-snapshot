@@ -51,7 +51,6 @@ import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
 import { OpenInEditorActionItem } from '../../open-in-editor/OpenInEditorActionItem'
 import { SearchStreamingProps } from '../../search'
 import { useNotepad, useExperimentalFeatures } from '../../stores'
-import { globalHistory } from '../../util/globalHistory'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
 import { serviceKindDisplayNameAndIcon } from '../actions/GoToCodeHostAction'
@@ -509,7 +508,7 @@ export const BlobPage: FC<BlobPageProps> = ({ className, ...props }) => {
         )
     }
 
-    const BlobComponent = false ? CodeMirrorBlob : LegacyBlob
+    const BlobComponent = enableCodeMirror ? CodeMirrorBlob : LegacyBlob
 
     return (
         <div className={className}>

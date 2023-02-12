@@ -4,7 +4,7 @@ import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronUp, mdiFilterOutline, 
 import classNames from 'classnames'
 import * as H from 'history'
 import { capitalize, uniqBy } from 'lodash'
-import { Location as RRLocation, useNavigate, useLocation } from 'react-router-dom-v5-compat'
+import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -60,7 +60,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
-import { Blob as CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
+import { CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
 import { LegacyBlob } from '../repo/blob/LegacyBlob'
 import * as BlobAPI from '../repo/blob/use-blob-store'
 import { HoverThresholdProps } from '../repo/RepoContainer'
@@ -693,7 +693,6 @@ function parseSideBlobProps(
 }
 
 const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> = props => {
-    const navigate = useNavigate()
     const useCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
     const BlobComponent = useCodeMirror ? CodeMirrorBlob : LegacyBlob
 
@@ -714,12 +713,6 @@ const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> 
         fetchPolicy: 'cache-and-network',
         nextFetchPolicy: 'network-only',
     })
-
-    const history = useMemo(() => H.createMemoryHistory(), [])
-    const location = useMemo(() => {
-        history.replace(props.activeURL)
-        return history.location as RRLocation
-    }, [history, props.activeURL])
 
     // If we're loading and haven't received any data yet
     if (loading && !data) {
@@ -760,9 +753,6 @@ const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> 
         <BlobComponent
             {...props}
             nav={props.blobNav}
-            navigate={navigate}
-            history={history}
-            location={location}
             wrapCode={true}
             className={styles.sideBlobCode}
             navigateToLineOnAnyClick={true}

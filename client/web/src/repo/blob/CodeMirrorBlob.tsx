@@ -7,9 +7,8 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { openSearchPanel } from '@codemirror/search'
 import { Compartment, EditorState, Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import * as H from 'history'
 import { isEqual } from 'lodash'
-import { createPath, NavigateFunction, useLocation, useNavigate, type Location } from 'react-router-dom-v5-compat'
+import { createPath, NavigateFunction, useLocation, useNavigate, Location } from 'react-router-dom-v5-compat'
 
 import {
     addLineRangeQueryParameter,
@@ -92,18 +91,6 @@ export interface BlobProps
 
 export interface BlobPropsFacet extends BlobProps {
     navigate: NavigateFunction
-
-    /**
-     * TODO(valery): RR6
-     *
-     * @deprecated prefer using useNavigate()
-     */
-    history: H.History
-    /**
-     * TODO(valery): RR6
-     *
-     * @deprecated prefer using useLocation()
-     */
     location: Location
 }
 
@@ -216,7 +203,15 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     const position = useMemo(() => parseQueryAndHash(location.search, location.hash), [location.search, location.hash])
     const hasPin = useMemo(() => urlIsPinned(location.search), [location.search])
 
-    const blobProps = useMemo(() => blobPropsFacet.of(props), [props])
+    const blobProps = useMemo(
+        () =>
+            blobPropsFacet.of({
+                ...props,
+                navigate,
+                location,
+            }),
+        [props, navigate, location]
+    )
 
     const themeSettings = useMemo(() => EditorView.darkTheme.of(isLightTheme === false), [isLightTheme])
     const wrapCodeSettings = useMemo<Extension>(() => (wrapCode ? EditorView.lineWrapping : []), [wrapCode])
@@ -481,7 +476,7 @@ function useDistinctBlob(blobInfo: BlobInfo): BlobInfo {
  */
 export function updateBrowserHistoryIfChanged(
     navigate: NavigateFunction,
-    location: H.Location,
+    location: Location,
     newSearchParameters: URLSearchParams,
     /** If set to true replace the current history entry instead of adding a new one. */
     replace: boolean = false
