@@ -26,7 +26,7 @@ import {
     createFileNamesResult,
     createResolveCloningRepoRevisionResult,
 } from './graphQlResponseHelpers'
-import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
+import { commonWebGraphQlResults } from './graphQlResults'
 import { createEditorAPI, percySnapshotWithVariants } from './utils'
 
 export const getCommonRepositoryGraphQlResults = (
@@ -35,13 +35,6 @@ export const getCommonRepositoryGraphQlResults = (
     fileEntries: string[] = []
 ): Partial<WebGraphQlOperations & SharedGraphQlOperations> => ({
     ...commonWebGraphQlResults,
-    ...createViewerSettingsGraphQLOverride({
-        user: {
-            experimentalFeatures: {
-                enableCodeMirrorFileView: false,
-            },
-        },
-    }),
     RepoChangesetsStats: () => createRepoChangesetsStatsResult(),
     ResolveRepoRev: () => createResolveRepoRevisionResult(repositoryName),
     FileNames: () => createFileNamesResult(),
