@@ -8,6 +8,7 @@ import { Container, Text } from '@sourcegraph/wildcard'
 import { CustomNextButton } from '../setup-steps'
 
 import { CodeHostsPicker } from './components/code-host-picker'
+import { CodeHostCreation } from './components/code-hosts'
 import { CodeHostsNavigation } from './components/navigation'
 
 import styles from './RemoteRepositoriesStep.module.scss'
@@ -18,18 +19,20 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = props => 
     const { className, ...attributes } = props
 
     const location = useLocation()
-    const editConnectionRouteMatch = matchPath('/setup/remote-repositories/:codehostid/edit', location.pathname)
-    const newConnectionRouteMatch = matchPath('/setup/remote-repositories/:codehost/create', location.pathname)
+    const editConnectionRouteMatch = matchPath('/setup/remote-repositories/:codehostId/edit', location.pathname)
+    const newConnectionRouteMatch = matchPath('/setup/remote-repositories/:codeHostType/create', location.pathname)
 
     return (
         <div {...attributes} className={classNames(className, styles.root)}>
-            <Text className="mb-2">Connect remote code hosts where your source code lives.</Text>
+            <Text size="small" className="mb-2">
+                Connect remote code hosts where your source code lives.
+            </Text>
 
             <section className={styles.content}>
                 <Container className={styles.contentNavigation}>
                     <CodeHostsNavigation
-                        activeConnectionId={editConnectionRouteMatch?.params?.codehostid}
-                        addNewCodeHost={newConnectionRouteMatch !== null}
+                        activeConnectionId={editConnectionRouteMatch?.params?.codehostId}
+                        createConnectionType={newConnectionRouteMatch?.params?.codeHostType}
                         className={styles.navigation}
                     />
                 </Container>
@@ -37,8 +40,8 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = props => 
                 <Container className={styles.contentMain}>
                     <Routes>
                         <Route index={true} element={<CodeHostsPicker />} />
-                        <Route path=":codehost/create" element={<span>Hello creation UI</span>} />
-                        <Route path=":codehostid/edit" element={<span>Hello edit UI</span>} />
+                        <Route path=":codeHostType/create" element={<CodeHostCreation />} />
+                        <Route path=":codehostId/edit" element={<span>Hello edit UI</span>} />
                     </Routes>
                 </Container>
             </section>

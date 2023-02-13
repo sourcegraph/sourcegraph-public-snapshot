@@ -126,7 +126,11 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
                 <SetupStepsHeader steps={steps} activeStepIndex={activeStepIndex} />
                 <Routes>
                     {steps.map(({ path, component: Component }) => (
-                        <Route key="hardcoded-key" path={path} element={<Component className={styles.content} />} />
+                        <Route
+                            key="hardcoded-key"
+                            path={`${path}/*`}
+                            element={<Component className={styles.content} />}
+                        />
                     ))}
                     <Route path="*" element={<Navigate to={currentStep.path} />} />
                 </Routes>
@@ -162,7 +166,14 @@ export const SetupStepsHeader: FC<SetupStepsHeaderProps> = props => {
                     >
                         {index + 1}
                     </span>
-                    <small className={styles.headerStepLabel}>{step.name}</small>
+                    <small
+                        data-label-text={step.name}
+                        className={classNames(styles.headerStepLabel, {
+                            [styles.headerStepLabelActive]: index === activeStepIndex,
+                        })}
+                    >
+                        {step.name}
+                    </small>
                 </div>
             ))}
         </header>

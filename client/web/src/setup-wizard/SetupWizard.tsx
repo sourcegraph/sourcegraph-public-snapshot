@@ -20,7 +20,7 @@ const SETUP_STEPS: StepConfiguration[] = [
     {
         id: '002',
         name: 'Add remote repositories',
-        path: '/setup/remote-repositories/*',
+        path: '/setup/remote-repositories',
         component: RemoteRepositoriesStep,
     },
     {

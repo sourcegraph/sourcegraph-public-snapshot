@@ -2,7 +2,7 @@ import { mdiBitbucket, mdiGithub, mdiGitlab, mdiAws } from '@mdi/js'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 
-export const getCodeHostIcon = (codeHostType: ExternalServiceKind): string => {
+export const getCodeHostIcon = (codeHostType: ExternalServiceKind | null): string => {
     switch (codeHostType) {
         case ExternalServiceKind.GITHUB:
             return mdiGithub
@@ -19,7 +19,7 @@ export const getCodeHostIcon = (codeHostType: ExternalServiceKind): string => {
     }
 }
 
-export const getCodeHostName = (codeHostType: ExternalServiceKind): string => {
+export const getCodeHostName = (codeHostType: ExternalServiceKind | null): string => {
     switch (codeHostType) {
         case ExternalServiceKind.GITHUB:
             return 'GitHub'

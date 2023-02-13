@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import { FC, ReactElement } from 'react'
 
 import { gql, useQuery } from '@apollo/client'
 import { mdiInformationOutline, mdiDelete, mdiPlus } from '@mdi/js'
@@ -7,7 +7,7 @@ import classNames from 'classnames'
 import { ErrorAlert, Icon, LoadingSpinner, Button, Tooltip, Link } from '@sourcegraph/wildcard'
 
 import { GetCodeHostsResult } from '../../../../../graphql-operations'
-import { getCodeHostIcon } from '../../helpers'
+import { getCodeHostIcon, getCodeHostKindFromURLParam, getCodeHostName } from '../../helpers'
 
 import styles from './CodeHostsNavigation.module.scss'
 
@@ -28,12 +28,12 @@ const GET_CODE_HOSTS = gql`
 
 interface CodeHostsNavigationProps {
     activeConnectionId: string | undefined
-    addNewCodeHost: boolean
+    createConnectionType: string | undefined
     className?: string
 }
 
 export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
-    const { activeConnectionId, addNewCodeHost, className } = props
+    const { activeConnectionId, createConnectionType, className } = props
 
     const { data, loading, error, refetch } = useQuery<GetCodeHostsResult>(GET_CODE_HOSTS, {
         fetchPolicy: 'cache-and-network',
@@ -77,19 +77,7 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
 
     return (
         <ul className={styles.list}>
-            {addNewCodeHost && (
-                <li className={classNames(styles.item, styles.itemCreation, styles.itemActive)}>
-                    <span>
-                        <Icon svgPath={mdiPlus} aria-hidden={true} />
-                    </span>
-                    <span className={styles.itemDescription}>
-                        <span>Connect new code host</span>
-                        <small className={styles.itemDescriptionStatus}>
-                            New code host will appear in the list as soon as you connect it
-                        </small>
-                    </span>
-                </li>
-            )}
+            {createConnectionType && <CreateCodeHostConnectionCard codeHostType={createConnectionType} />}
             {data.externalServices.nodes.map(codeHost => (
                 <li
                     key={codeHost.id}
@@ -127,5 +115,31 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
                 </li>
             ))}
         </ul>
+    )
+}
+
+interface CreateCodeHostConnectionCardProps {
+    codeHostType: string
+}
+
+function CreateCodeHostConnectionCard(props: CreateCodeHostConnectionCardProps): ReactElement {
+    const { codeHostType } = props
+    const codeHostKind = getCodeHostKindFromURLParam(codeHostType)
+
+    return (
+        <li className={classNames(styles.item, styles.itemCreation, styles.itemActive)}>
+            <span>
+                <Icon svgPath={mdiPlus} aria-hidden={true} />
+            </span>
+            <span className={styles.itemDescription}>
+                <span>
+                    Connect <Icon svgPath={getCodeHostIcon(codeHostKind)} aria-hidden={true} />{' '}
+                    {getCodeHostName(codeHostKind)}
+                </span>
+                <small className={styles.itemDescriptionStatus}>
+                    New code host will appear in the list as soon as you connect it
+                </small>
+            </span>
+        </li>
     )
 }

@@ -63,6 +63,21 @@
 
     &-step-label {
         font-weight: normal;
+
+        // Font normal and font bold have different text size, in order to
+        // avoid text layout jumps we reserve element width based on bold version
+        // of label.
+        &:before {
+            content: attr(data-label-text);
+            display: block;
+            font-weight: bold;
+            height: 0;
+            visibility: hidden;
+        }
+
+        &--active {
+            font-weight: bold;
+        }
     }
 }
 

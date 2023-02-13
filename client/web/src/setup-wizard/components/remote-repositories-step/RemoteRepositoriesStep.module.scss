@@ -10,6 +10,8 @@
 
     &-navigation {
         flex-basis: 35%;
+        flex-grow: 0;
+        flex-shrink: 0;
         padding: 1rem;
     }
 
