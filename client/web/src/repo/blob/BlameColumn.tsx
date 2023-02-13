@@ -64,7 +64,7 @@ export const BlameColumn = React.memo<BlameColumnProps>(
             }
 
             const subscription = codeViewElements.subscribe(codeView => {
-                if (codeView?.firstElementChild instanceOf HTMLTableElement) {
+                if (codeView?.firstElementChild instanceof HTMLTableElement) {
                     const table = codeView.firstElementChild
 
                     for (let index = 0; index < table.rows.length; index++) {
