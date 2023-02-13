@@ -38,7 +38,6 @@
 		"@sourcegraph/shared": "workspace:*",
 		"@sourcegraph/web": "workspace:*",
 		"@sourcegraph/wildcard": "workspace:*",
-		"@sveltejs/svelte-virtual-list": "^3.0.1",
 		"lodash-es": "^4.17.21",
 		"prismjs": "^1.29.0"
 	}

@@ -57,7 +57,7 @@ commands have not been updated yet to keep this experiment contained.
 
 Run
 
-```
+```sh
 pnpm run lint
 pnpm run format
 ```
@@ -69,3 +69,14 @@ TypeScript, CSS, etc in Svelte components. This currently produces many errors
 because it also validates imported modules from other packages, and we are not
 explicitly marking type-only imports with `type` in other parts of the code
 base (which is required by this package).
+
+## Production build
+
+A production version of this app can be built with
+
+```sh
+pnpm run build
+```
+
+Currently SvelteKit is configured to create a client-side single page
+application.

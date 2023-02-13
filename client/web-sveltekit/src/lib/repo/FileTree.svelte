@@ -1,6 +1,5 @@
 <script lang="ts">
     import { mdiFileDocumentOutline, mdiFolderOutline } from '@mdi/js'
-    import VirtualList from '@sveltejs/svelte-virtual-list'
 
     import { isErrorLike, type ErrorLike } from '$lib/common'
     import type { TreeFields } from '$lib/graphql/shared'
@@ -25,7 +24,7 @@
     <h3>Files</h3>
 </slot>
 <ul>
-    <VirtualList items={entries} let:item={entry}>
+    {#each entries as entry}
         <li class:active={entry.name === activeEntry} use:scrollIntoView={entry.name === 'activeEntry'}>
             <a href={entry.url}>
                 <span>
@@ -37,7 +36,7 @@
                 <span class="ml-5">{commitData}</span>
             {/if}
         </li>
-    </VirtualList>
+    {/each}
 </ul>
 
 <style lang="scss">
