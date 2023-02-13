@@ -15,7 +15,6 @@
     "sourcegraph": "workspace:*"
   },
   "dependencies": {
-    "@sourcegraph/template-parser": "workspace:*",
-    "sourcegraph": "workspace:*"
+    "@sourcegraph/template-parser": "workspace:*"
   }
 }

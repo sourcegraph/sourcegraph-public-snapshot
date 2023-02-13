@@ -360,7 +360,7 @@ importers:
       sinon: ^9.0.2
       socket.io: ^4.5.2
       socket.io-client: ^4.5.2
-      sourcegraph: workspace:^25.7.0
+      sourcegraph: workspace:*
       speed-measure-webpack-plugin: ^1.5.0
       storybook-addon-designs: ^6.3.1
       storybook-dark-mode: ^2.0.4
@@ -528,7 +528,6 @@ importers:
       rxjs: 6.6.7
       sanitize-html: 2.3.3
       semver: 7.3.8
-      sourcegraph: link:client/extension-api
       stream-http: 3.2.0
       string-score: 1.0.1
       tabbable: 5.2.1
@@ -772,6 +771,7 @@ importers:
       sinon: 9.0.2
       socket.io: 4.5.2
       socket.io-client: 4.5.2
+      sourcegraph: link:client/extension-api
       speed-measure-webpack-plugin: 1.5.0_webpack@5.75.0
       storybook-addon-designs: 6.3.1_react@18.1.0
       storybook-dark-mode: 2.0.4_ef5jwxihqo6n7gxfmzogljlgcm
@@ -855,9 +855,9 @@ importers:
       sourcegraph: workspace:*
     dependencies:
       '@sourcegraph/template-parser': link:../template-parser
-      sourcegraph: link:../extension-api
     devDependencies:
       '@sourcegraph/extension-api-types': link:../extension-api-types
+      sourcegraph: link:../extension-api
 
   client/codeintellify:
     specifiers:
@@ -1000,11 +1000,11 @@ importers:
       '@sourcegraph/http-client': link:../http-client
       '@sourcegraph/template-parser': link:../template-parser
       '@sourcegraph/wildcard': link:../wildcard
-      sourcegraph: link:../extension-api
     devDependencies:
       '@sourcegraph/build-config': link:../build-config
       '@sourcegraph/extension-api-types': link:../extension-api-types
       '@sourcegraph/testing': link:../testing
+      sourcegraph: link:../extension-api
 
   client/storybook:
     specifiers:
@@ -19066,7 +19066,7 @@ packages:
       lodash: 4.17.21
       pretty-error: 4.0.0
       tapable: 2.2.1
-      webpack: 5.75.0_ehsben5to4ps4x332te7f3wqri
+      webpack: 5.75.0_cw4su4nzareykaft5p7arksy5i
     dev: true
 
   /htmlparser2/6.1.0:
