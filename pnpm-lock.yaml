@@ -324,6 +324,7 @@ importers:
       postcss-loader: ^7.0.2
       postcss-modules: ^6.0.0
       prettier: 2.8.1
+      prettier-plugin-svelte: ^2.9.0
       pretty-bytes: ^5.3.0
       process: ^0.11.10
       prop-types: ^15.7.2
@@ -591,7 +592,7 @@ importers:
       '@storybook/addon-console': 1.2.3_473b6rbrlfbkiblbxydosemc4u
       '@storybook/addon-docs': 6.5.14_n74oemzcnypl2s3rq5tdbc5xhi
       '@storybook/addon-links': 6.5.14_ef5jwxihqo6n7gxfmzogljlgcm
-      '@storybook/addon-storyshots': 6.5.14_gzyzx5yuo3akd542jxbxe4tdzm
+      '@storybook/addon-storyshots': 6.5.14_vsrvjzhb5gfydkbj6hltwf6bya
       '@storybook/addon-storyshots-puppeteer': 6.5.14_5bskxofbdzb2fai5lt3jrwan6e
       '@storybook/addon-storysource': 6.5.14_ef5jwxihqo6n7gxfmzogljlgcm
       '@storybook/addon-toolbars': 6.5.14_ef5jwxihqo6n7gxfmzogljlgcm
@@ -756,6 +757,7 @@ importers:
       postcss-loader: 7.0.2_6jdsrmfenkuhhw3gx4zvjlznce
       postcss-modules: 6.0.0_postcss@8.4.21
       prettier: 2.8.1
+      prettier-plugin-svelte: 2.9.0_4h247imu46srxjbpsfob5j3nnq
       process: 0.11.10
       punycode: 2.1.1
       puppeteer: 13.7.0
@@ -8172,7 +8174,7 @@ packages:
         optional: true
     dependencies:
       '@axe-core/puppeteer': 4.4.2_puppeteer@13.7.0
-      '@storybook/addon-storyshots': 6.5.14_gzyzx5yuo3akd542jxbxe4tdzm
+      '@storybook/addon-storyshots': 6.5.14_vsrvjzhb5gfydkbj6hltwf6bya
       '@storybook/csf': 0.0.2--canary.4566f4d.1
       '@storybook/node-logger': 6.5.14
       '@types/jest-image-snapshot': 4.3.0
@@ -8184,7 +8186,7 @@ packages:
       - jest
     dev: true
 
-  /@storybook/addon-storyshots/6.5.14_gzyzx5yuo3akd542jxbxe4tdzm:
+  /@storybook/addon-storyshots/6.5.14_vsrvjzhb5gfydkbj6hltwf6bya:
     resolution: {integrity: sha512-BSYt+GyMeTlxCwMNVwsmfetKjeIZVVRFdhvtyTuSf9MvikBq+SXw6IihkeWbX2g6pssCz9Wc+s6rRK/HJpqTlA==}
     peerDependencies:
       '@angular/core': '>=6.0.0'
@@ -8261,6 +8263,7 @@ packages:
       read-pkg-up: 7.0.1
       regenerator-runtime: 0.13.11
       rxjs: 6.6.7
+      svelte: 3.55.1
       ts-dedent: 2.0.0
     transitivePeerDependencies:
       - '@storybook/builder-webpack5'
@@ -19063,7 +19066,7 @@ packages:
       lodash: 4.17.21
       pretty-error: 4.0.0
       tapable: 2.2.1
-      webpack: 5.75.0_cw4su4nzareykaft5p7arksy5i
+      webpack: 5.75.0_ehsben5to4ps4x332te7f3wqri
     dev: true
 
   /htmlparser2/6.1.0:
@@ -25954,6 +25957,16 @@ packages:
   /prepend-http/2.0.0:
     resolution: {integrity: sha512-ravE6m9Atw9Z/jjttRUZ+clIXogdghyZAuWJ3qEzjT+jI/dL1ifAqhZeC5VHzQp1MSt1+jxKkFNemj/iO7tVUA==}
     engines: {node: '>=4'}
+    dev: true
+
+  /prettier-plugin-svelte/2.9.0_4h247imu46srxjbpsfob5j3nnq:
+    resolution: {integrity: sha512-3doBi5NO4IVgaNPtwewvrgPpqAcvNv0NwJNflr76PIGgi9nf1oguQV1Hpdm9TI2ALIQVn/9iIwLpBO5UcD2Jiw==}
+    peerDependencies:
+      prettier: ^1.16.4 || ^2.0.0
+      svelte: ^3.2.0
+    dependencies:
+      prettier: 2.8.1
+      svelte: 3.55.1
     dev: true
 
   /prettier-plugin-svelte/2.9.0_jrsxveqmsx2uadbqiuq74wlc4u:
