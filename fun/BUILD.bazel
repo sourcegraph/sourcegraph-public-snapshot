@@ -1,6 +1,8 @@
-load("@rules_foreign_cc//tools/build_defs:configure.bzl", "configure_make")
-load("@rules_foreign_cc//tools/build_defs:make.bzl", "make")
-load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+load("@rules_foreign_cc//foreign_cc:defs.bzl", "configure_make", "make", "cmake")
+load("@bazel_skylib//lib:dicts.bzl", "dicts")
+
+
+# load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -10,38 +12,72 @@ package(default_visibility = ["//visibility:public"])
 # depends_on "libyaml"
 # uses_from_macos "libxml2"
 
-configure_make(
-    name = "libgnutls",
-    lib_source = "@libgnutls//:all",
-    configure_options = ["--with-included-unistring"],
-    out_include_dir = "include/gnutls",
-    shared_libraries = ["libgnutls.so"],
+# TODO wtf is that
+CONFIGURE_ENV_VARS = {
+    "CFLAGS": "-Dredacted='\\\"redacted\\\"'",
+    "CXXFLAGS": "-Dredacted='\\\"redacted\\\"'",
+}
+
+# configure_make(
+#     name = "jansson",
+#     lib_source = "@jansson//:all",
+#     env = {"AR": ""},
+#     # env = select({
+#     #     "@platforms//os:macos": dicts.add(
+#     #         {"AR": "/usr/bin/ar"},
+#     #         CONFIGURE_ENV_VARS,
+#     #     ),
+#     #     "//conditions:default": CONFIGURE_ENV_VARS,
+#     # }),
+#     configure_in_place = True,
+#     # autoconf = True,
+#     # configure_options = [""],
+#     # out_include_dir = "include/jansson",
+#     # shared_libraries = ["libgnutls.so"],
+#
+# )
+
+cmake(
+    name = "jansson",
+    lib_source = "@jansson//:all",
+    out_static_libs = ["libjansson.a"],
+    visibility = ["//visibility:public"],
+)
+
+cmake(
+    name = "libyaml",
+    lib_source = "@libyaml//:all",
+    out_static_libs = ["libyaml.a"],
+    visibility = ["//visibility:public"],
+)
+
+cmake(
+    name = "libxml2",
+    cache_entries = {"LIBXML2_WITH_PYTHON":"OFF", "BUILD_SHARED_LIBS":"OFF"},
+    lib_source = "@libxml2//:all",
+    out_static_libs = ["libxml2.a"],
+    visibility = ["//visibility:public"],
 )
 
 configure_make(
-    name = "libmicrohttpd",
-    lib_source = "@libmicrohttpd//:all",
-    deps = [":libgnutls"],
+    name = "universal_ctags",
+    lib_source = "@universal_ctags//:all",
+     env = select({
+         "@platforms//os:macos": dicts.add(
+             {"PATH": "/opt/homebrew/bin:$$PATH"},
+             {"AR": ""},
+         ),
+     }),
+    autogen = True,
+    configure_in_place = True,
+    deps = [":jansson", ":libyaml", ":libxml2"],
+    copts = ["-Wno-implicit-function-declaration"],
 )
 
-make(
-    name = "libhttpserver",
-    lib_source = "@libhttpserver//:all",
-    make_commands = [
-        "./bootstrap",
-        "mkdir build_dir",
-        "cd build_dir",
-        "../configure --prefix=${INSTALLDIR}",
-        "make",
-        "make install",
-    ],
-    deps = [":libmicrohttpd", ":libgnutls"],
-)
-
-cc_binary(
-    name = "hello-world",
-    srcs = ["hello_world.cc"],
-    deps = [
-        ":libhttpserver"
-    ],
-)
+# cc_binary(
+#     name = "hello-world",
+#     srcs = ["hello_world.cc"],
+#     deps = [
+#         ":libhttpserver"
+#     ],
+# )

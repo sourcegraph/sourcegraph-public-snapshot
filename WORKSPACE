@@ -177,13 +177,15 @@ tools_dependencies()
 
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
+all_content = """filegroup(name = "all", srcs = glob(["**"]), visibility = ["//visibility:public"])"""
+
 git_repository(
     name = "universal_ctags",
     remote = "https://github.com/universal-ctags/ctags.git",
     commit = "3af413544a0ed0a4c52200894cfd6391f06d2e94",
+    build_file_content = all_content,
 )
 
-all_content = """filegroup(name = "all", srcs = glob(["e@bazel_tools//tools/build_defs/repo:git.bzl.*"]), visibility = ["//visibility:public"])"""
 
 http_archive(
     name = "jansson",
