@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/graph"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
@@ -72,4 +73,7 @@ type RuntimeClients struct {
 	Zoekt        zoekt.Streamer
 	SearcherURLs *endpoint.Map
 	Gitserver    gitserver.Client
+	// CodeIntel should be provided by internal/search/graph.Store(). It may be nil if
+	// unimplemented, i.e. in Sourcegraph OSS.
+	CodeIntel graph.CodeIntelStore
 }

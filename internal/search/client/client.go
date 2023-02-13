@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/graph"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -156,6 +157,7 @@ func (s *searchClient) JobClients() job.RuntimeClients {
 		Zoekt:        s.zoekt,
 		SearcherURLs: s.searcherURLs,
 		Gitserver:    gitserver.NewClient(),
+		CodeIntel:    graph.Store(),
 	}
 }
 

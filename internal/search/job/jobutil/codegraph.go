@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/graph"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -21,9 +20,6 @@ import (
 // CodeGraphSearchJob is an experimental search job for querying on code intel data and
 // relationships.
 type CodeGraphSearchJob struct {
-	// CodeIntel should be provided by internal/search/graph.Store(). It may be nil if
-	// unimplemented.
-	CodeIntel graph.CodeIntelStore
 	// SymbolSearch is a search job that should provide symbol results.
 	SymbolSearch job.Job
 	// Relationship is the code intel graph relationship to query on.
@@ -34,7 +30,7 @@ func (s *CodeGraphSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	if s.CodeIntel == nil {
+	if clients.CodeIntel == nil {
 		err = errors.New("CodeIntel graph search unimplemented")
 		return nil, err
 	}
@@ -93,13 +89,13 @@ func (s *CodeGraphSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 				// the search to encompass more repositories.
 				switch s.Relationship {
 				case query.SymbolRelationshipDefinitions:
-					locations, err = s.CodeIntel.GetDefinitions(ctx, fm.Repo, req)
+					locations, err = clients.CodeIntel.GetDefinitions(ctx, fm.Repo, req)
 
 				case query.SymbolRelationshipReferences:
-					locations, err = s.CodeIntel.GetReferences(ctx, fm.Repo, req)
+					locations, err = clients.CodeIntel.GetReferences(ctx, fm.Repo, req)
 
 				case query.SymbolRelationshipImplements:
-					locations, err = s.CodeIntel.GetImplementations(ctx, fm.Repo, req)
+					locations, err = clients.CodeIntel.GetImplementations(ctx, fm.Repo, req)
 
 				default:
 					err = errors.Newf("unknown relationship query %q", s.Relationship)
@@ -190,7 +186,6 @@ func (s *CodeGraphSearchJob) MapChildren(fn job.MapFunc) job.Job {
 
 func (s *CodeGraphSearchJob) Fields(v job.Verbosity) (res []log.Field) {
 	return []log.Field{
-		log.Bool("enabled", s.CodeIntel != nil),
 		log.String("relationship", string(s.Relationship)),
 	}
 }

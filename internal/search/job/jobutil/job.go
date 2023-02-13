@@ -14,7 +14,6 @@ import (
 	codeownershipjob "github.com/sourcegraph/sourcegraph/internal/search/codeownership"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
-	"github.com/sourcegraph/sourcegraph/internal/search/graph"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/keyword"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
@@ -180,7 +179,6 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 					return nil, err
 				}
 				addJob(&CodeGraphSearchJob{
-					CodeIntel:    graph.Store(),
 					SymbolSearch: job,
 					Relationship: ss.Relationship,
 				})
