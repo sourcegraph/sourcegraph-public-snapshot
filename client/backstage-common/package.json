@@ -17,9 +17,9 @@
   },
   "scripts": {
     "es": "ts-node --transpile-only ./scripts/esbuild.ts && cp package.dist.json dist/",
+    "test": "jest",
     "build": "backstage-cli package build",
     "lint": "backstage-cli package lint",
-    "test": "backstage-cli package test",
     "clean": "backstage-cli package clean",
     "prepack": "backstage-cli package prepack",
     "postpack": "backstage-cli package postpack"
@@ -28,9 +28,9 @@
     "@backstage/cli": "^0.22.1",
     "@jest/globals": "^29.4.0",
     "@sourcegraph/tsconfig": "^4.0.1",
-    "@types/jest": "^29.4.0",
-    "ts-jest": "^29.0.5",
-    "winston": "^3.8.2"
+    "winston": "^3.8.2",
+    "babel-jest": "^28.1.0",
+    "babel-loader": "^9.1.0"
   },
   "dependencies": {
     "@backstage/backend-common": "^0.18.1",

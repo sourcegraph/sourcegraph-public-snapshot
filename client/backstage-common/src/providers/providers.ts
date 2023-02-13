@@ -24,7 +24,7 @@ abstract class BaseEntityProvider implements EntityProvider {
     this.endpoint = config.getString('sourcegraph.endpoint')
     this.entityType = entityType
     this.entityParseFn = parserForType(entityType)
-    this.query = withDefault(queryConfig.getString("query"), "")
+    this.query = queryConfig.getOptionalString("query") ?? ""
 
     // TODO(@burmudar): remove - only temporary
     console.log(entityType, "QUERY", this.query)

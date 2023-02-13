@@ -1,6 +1,6 @@
 {
   "name": "@sourcegraph/backstage-common",
-  "description": "Common functionalities for the Sourcegraph plugin",
+  "description": "Common functionalities for the Sourcegraph plugin. This differs from the base package.json since it lists internal packages which cannot be fetched and are bundled instead.",
   "version": "0.1.0",
   "main": "index.js",
   "types": "index.d.ts",
