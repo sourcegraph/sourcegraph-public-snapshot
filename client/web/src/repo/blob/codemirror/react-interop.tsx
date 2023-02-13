@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react'
 
-import { History } from 'history'
 import { Router } from 'react-router'
 import { CompatRouter } from 'react-router-dom-v5-compat'
 
@@ -9,7 +8,6 @@ import { WildcardThemeContext } from '@sourcegraph/wildcard'
 import { globalHistory } from '../../../util/globalHistory'
 
 interface CodeMirrorContainerProps {
-    history: History
     onMount?: () => void
     onRender?: () => void
 }
