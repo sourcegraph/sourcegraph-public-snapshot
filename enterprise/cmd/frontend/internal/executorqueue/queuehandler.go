@@ -95,11 +95,15 @@ func newExecutorQueuesHandler(
 		// Upload LSIF indexes without a sudo access token or github tokens.
 		lsifRouter := base.PathPrefix("/lsif").Name("executor-lsif").Subrouter()
 		lsifRouter.Path("/upload").Methods("POST").Handler(uploadHandler)
-		base.Path("/scip/upload").Methods("POST").Handler(uploadHandler)
-		base.Path("/lsif/upload").Methods("POST").Handler(uploadHandler)
-		base.Path("/scip/upload").Methods("HEAD").Handler(noopHandler)
 		// The lsif route are treated as an internal actor and require the executor access token to authenticate.
 		lsifRouter.Use(withInternalActor, executorAuth)
+
+		// Upload SCIP indexes without a sudo access token or github tokens.
+		scipRouter := base.PathPrefix("/scip").Name("executor-scip").Subrouter()
+		scipRouter.Path("/upload").Methods("POST").Handler(uploadHandler)
+		scipRouter.Path("/upload").Methods("HEAD").Handler(noopHandler)
+		// The scip route are treated as an internal actor and require the executor access token to authenticate.
+		scipRouter.Use(withInternalActor, executorAuth)
 
 		filesRouter := base.PathPrefix("/files").Name("executor-files").Subrouter()
 		batchChangesRouter := filesRouter.PathPrefix("/batch-changes").Subrouter()
