@@ -1,13 +1,4 @@
-import {
-    ChangeEvent,
-    Dispatch,
-    FocusEventHandler,
-    InputHTMLAttributes,
-    RefObject,
-    useCallback,
-    useLayoutEffect,
-    useRef,
-} from 'react'
+import { ChangeEvent, Dispatch, InputHTMLAttributes, RefObject, useCallback, useLayoutEffect, useRef } from 'react'
 
 import { noop } from 'rxjs'
 
@@ -24,7 +15,9 @@ export interface Validators<FieldValue, ErrorContext> {
 /**
  * Subset of native input props that useField can set to the native input element.
  */
-export interface InputProps<Value> extends Omit<InputHTMLAttributes<HTMLInputElement>, 'name' | 'value' | 'onChange'> {
+export interface InputProps<Value>
+    extends Omit<InputHTMLAttributes<HTMLInputElement>, 'name' | 'value' | 'onChange' | 'onBlur'> {
+    onBlur?: () => void
     onChange?: (value: Value) => void
 }
 
@@ -44,7 +37,7 @@ export interface useFieldAPI<FieldValue, ErrorContext = unknown> {
         name: string
         value: FieldValue
         onChange: (event: ChangeEvent<HTMLInputElement> | FieldValue) => void
-        onBlur: FocusEventHandler<HTMLInputElement> | (() => void)
+        onBlur: () => void
     } & InputProps<FieldValue>
 
     /**
@@ -78,7 +71,7 @@ export type UseFieldProps<FormValues, Key, Value, ErrorContext> = {
 export function useField<ErrorContext, FormValues, Key extends keyof FormValues>(
     props: UseFieldProps<FormValues, Key, FormValues[Key], ErrorContext>
 ): useFieldAPI<FormValues[Key], ErrorContext> {
-    const { formApi, name, validators, onChange = noop, ...inputProps } = props
+    const { formApi, name, validators, onChange = noop, disabled, ...inputProps } = props
     const { submitted, touched: formTouched } = formApi
     const { sync: syncValidator, async: asyncValidator } = validators ?? {}
 
@@ -106,7 +99,7 @@ export function useField<ErrorContext, FormValues, Key extends keyof FormValues>
 
         // If we got error from native attr validation (required, pattern, type)
         // we still run validator in order to get some custom error message for
-        // standard validation error if validator doesn't provide message we fallback
+        // standard validation error if validator doesn't provide message we fall back
         // on standard validationMessage string [1] (ex. Please fill in input.)
         const nativeErrorMessage = inputElement?.validationMessage ?? ''
         const customValidationResult = syncValidator ? syncValidator(state.value, validity) : undefined
@@ -150,6 +143,17 @@ export function useField<ErrorContext, FormValues, Key extends keyof FormValues>
             }))
         }
 
+        // Hide any validation errors by default if the field is in the disabled
+        // state.
+        if (disabled && !syncValidator && !asyncValidator) {
+            return setState(state => ({
+                ...state,
+                validState: 'NOT_VALIDATED',
+                error: '',
+                validity,
+            }))
+        }
+
         return setState(state => ({
             ...state,
             validState: 'VALID' as const,
@@ -157,7 +161,7 @@ export function useField<ErrorContext, FormValues, Key extends keyof FormValues>
             errorContext: customValidationContext,
             validity,
         }))
-    }, [state.value, syncValidator, startAsyncValidation, asyncValidator, cancelAsyncValidation, setState])
+    }, [state.value, syncValidator, startAsyncValidation, asyncValidator, cancelAsyncValidation, setState, disabled])
 
     const handleBlur = useCallback(() => setState(state => ({ ...state, touched: true })), [setState])
     const handleChange = useCallback(
@@ -177,6 +181,7 @@ export function useField<ErrorContext, FormValues, Key extends keyof FormValues>
             value: state.value,
             onBlur: handleBlur,
             onChange: handleChange,
+            disabled,
             ...inputProps,
         },
         meta: {

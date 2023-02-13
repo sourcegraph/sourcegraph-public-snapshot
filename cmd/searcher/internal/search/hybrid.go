@@ -3,7 +3,7 @@ package search
 import (
 	"bytes"
 	"context"
-	"regexp/syntax" // nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
+	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
 	"sort"
 	"time"
 
@@ -312,14 +312,6 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 	return zoektquery.Simplify(zoektquery.NewAnd(parts...)), nil
 }
 
-func zoektIgnorePaths(paths []string) zoektquery.Q {
-	if len(paths) == 0 {
-		return &zoektquery.Const{Value: true}
-	}
-
-	return &zoektquery.Not{Child: zoektquery.NewFileNameSet(paths...)}
-}
-
 // zoektIndexedCommit returns the default indexed commit for a repository.
 func zoektIndexedCommit(ctx context.Context, client zoekt.Streamer, repo api.RepoName) (api.CommitID, bool, error) {
 	// TODO check we are using the most efficient way to List. I tested with
@@ -331,7 +323,7 @@ func zoektIndexedCommit(ctx context.Context, client zoekt.Streamer, repo api.Rep
 		return "", false, err
 	}
 
-	for _, v := range resp.Minimal {
+	for _, v := range resp.Minimal { //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 		return api.CommitID(v.Branches[0].Version), true, nil
 	}
 

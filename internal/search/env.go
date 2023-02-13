@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
@@ -26,6 +25,8 @@ var (
 
 	indexedDialerOnce sync.Once
 	indexedDialer     backend.ZoektDialer
+
+	IndexedMock zoekt.Streamer
 )
 
 func SearcherURLs() *endpoint.Map {
@@ -38,6 +39,9 @@ func SearcherURLs() *endpoint.Map {
 }
 
 func Indexed() zoekt.Streamer {
+	if IndexedMock != nil {
+		return IndexedMock
+	}
 	indexedSearchOnce.Do(func() {
 		indexedSearch = backend.NewCachedSearcher(conf.Get().ServiceConnections().ZoektListTTL, backend.NewMeteredSearcher(
 			"", // no hostname means its the aggregator
@@ -52,21 +56,11 @@ func Indexed() zoekt.Streamer {
 	return indexedSearch
 }
 
-// ListAllIndexed lists all indexed repositories with `Minimal: true`. If any
-// crashes occur an error is returned instead of returning partial results.
+// ListAllIndexed lists all indexed repositories with `Minimal: true`.
 func ListAllIndexed(ctx context.Context) (*zoekt.RepoList, error) {
 	q := &query.Const{Value: true}
 	opts := &zoekt.ListOptions{Minimal: true}
-	rl, err := Indexed().List(ctx, q, opts)
-	if err != nil {
-		return nil, err
-	}
-
-	if rl.Crashes > 0 {
-		return nil, errors.New("zoekt.List call occurred while not all Zoekt replicas are available")
-	}
-
-	return rl, nil
+	return Indexed().List(ctx, q, opts)
 }
 
 func Indexers() *backend.Indexers {
@@ -90,7 +84,7 @@ func reposAtEndpoint(dial func(string) zoekt.Streamer) func(context.Context, str
 			return map[uint32]*zoekt.MinimalRepoListEntry{}
 		}
 
-		return resp.Minimal
+		return resp.Minimal //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 	}
 }
 

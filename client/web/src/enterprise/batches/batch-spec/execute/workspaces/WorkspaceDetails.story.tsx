@@ -3,10 +3,10 @@ import { noop } from 'lodash'
 import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { CardBody, Card } from '@sourcegraph/wildcard'
+import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { BatchSpecWorkspaceByIDResult } from '../../../../../graphql-operations'
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../../preview/list/backend'
@@ -21,10 +21,13 @@ import {
     FAILED_WORKSPACE,
     CANCELING_WORKSPACE,
     CANCELED_WORKSPACE,
+    WORKSPACE_STEP_OUTPUT_LINES_PAGE_ONE,
+    WORKSPACE_STEP_OUTPUT_LINES_PAGE_TWO,
 } from '../../batch-spec.mock'
 import {
     BATCH_SPEC_WORKSPACE_BY_ID,
     queryBatchSpecWorkspaceStepFileDiffs as _queryBatchSpecWorkspaceStepFileDiffs,
+    BATCH_SPEC_WORKSPACE_STEP,
 } from '../backend'
 
 import { WorkspaceDetails } from './WorkspaceDetails'
@@ -73,6 +76,36 @@ const BaseStory: React.FunctionComponent<BaseStoryProps> = ({ node, queries = {}
                 variables: MATCH_ANY_PARAMETERS,
             },
             result: { data: { node } },
+            nMatches: Number.POSITIVE_INFINITY,
+        },
+        {
+            request: {
+                query: getDocumentNode(BATCH_SPEC_WORKSPACE_STEP),
+                variables: {
+                    workspaceID: 'test-1234',
+                    stepIndex: 1,
+                    first: 500,
+                    after: null,
+                },
+            },
+            result: {
+                data: WORKSPACE_STEP_OUTPUT_LINES_PAGE_ONE,
+            },
+            nMatches: Number.POSITIVE_INFINITY,
+        },
+        {
+            request: {
+                query: getDocumentNode(BATCH_SPEC_WORKSPACE_STEP),
+                variables: {
+                    workspaceID: 'test-1234',
+                    stepIndex: 1,
+                    first: 500,
+                    after: '500',
+                },
+            },
+            result: {
+                data: WORKSPACE_STEP_OUTPUT_LINES_PAGE_TWO,
+            },
             nMatches: Number.POSITIVE_INFINITY,
         },
     ])

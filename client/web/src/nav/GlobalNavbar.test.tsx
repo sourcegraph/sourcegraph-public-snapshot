@@ -1,16 +1,13 @@
 import React from 'react'
 
-import { createLocation, createMemoryHistory } from 'history'
-
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { useExperimentalFeatures } from '../stores'
 import { ThemePreference } from '../theme'
 
 import { GlobalNavbar } from './GlobalNavbar'
@@ -18,12 +15,9 @@ import { GlobalNavbar } from './GlobalNavbar'
 jest.mock('../search/input/SearchNavbarItem', () => ({ SearchNavbarItem: 'SearchNavbarItem' }))
 jest.mock('../components/branding/BrandLogo', () => ({ BrandLogo: 'BrandLogo' }))
 
-const history = createMemoryHistory()
 const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     authenticatedUser: null,
     extensionsController,
-    location: createLocation('/'),
-    history,
     isSourcegraphDotCom: false,
     onThemePreferenceChange: () => undefined,
     isLightTheme: true,
@@ -53,7 +47,6 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
 describe('GlobalNavbar', () => {
     const origContext = window.context
     beforeEach(() => {
-        useExperimentalFeatures.setState({ codeMonitoring: false, showSearchContext: true })
         window.context = {
             enableLegacyExtensions: false,
         } as any

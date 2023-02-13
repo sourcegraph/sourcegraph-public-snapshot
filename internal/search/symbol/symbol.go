@@ -37,7 +37,7 @@ func indexedSymbolsBranch(ctx context.Context, repo *types.MinimalRepo, commit s
 		return ""
 	}
 
-	r, ok := list.Minimal[uint32(repo.ID)]
+	r, ok := list.Minimal[uint32(repo.ID)] //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 	if !ok || !r.HasSymbols {
 		return ""
 	}
@@ -51,7 +51,7 @@ func indexedSymbolsBranch(ctx context.Context, repo *types.MinimalRepo, commit s
 	return ""
 }
 
-func filterZoektResults(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, results []*result.SymbolMatch) ([]*result.SymbolMatch, error) {
+func FilterZoektResults(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, results []*result.SymbolMatch) ([]*result.SymbolMatch, error) {
 	if !authz.SubRepoEnabled(checker) {
 		return results, nil
 	}
@@ -71,7 +71,10 @@ func filterZoektResults(ctx context.Context, checker authz.SubRepoPermissionChec
 }
 
 func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, branch string, queryString *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
-	raw := *queryString
+	var raw string
+	if queryString != nil {
+		raw = *queryString
+	}
 	if raw == "" {
 		raw = ".*"
 	}
@@ -194,7 +197,7 @@ func Compute(ctx context.Context, checker authz.SubRepoPermissionChecker, repoNa
 		if err != nil {
 			return nil, errors.Wrap(err, "zoekt symbol search")
 		}
-		results, err = filterZoektResults(ctx, checker, repoName.Name, results)
+		results, err = FilterZoektResults(ctx, checker, repoName.Name, results)
 		if err != nil {
 			return nil, errors.Wrap(err, "checking permissions")
 		}
@@ -220,7 +223,7 @@ func Compute(ctx context.Context, checker authz.SubRepoPermissionChecker, repoNa
 		First:           limitOrDefault(first) + 1, // add 1 so we can determine PageInfo.hasNextPage
 		Repo:            repoName.Name,
 		IncludePatterns: includePatternsSlice,
-		Timeout:         int(serverTimeout.Seconds()),
+		Timeout:         serverTimeout,
 	}
 	if query != nil {
 		searchArgs.Query = *query

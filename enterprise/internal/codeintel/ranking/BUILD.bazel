@@ -1,0 +1,56 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "ranking",
+    srcs = [
+        "config.go",
+        "iface.go",
+        "init.go",
+        "observability.go",
+        "service.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//enterprise/internal/codeintel/ranking/internal/background",
+        "//enterprise/internal/codeintel/ranking/internal/store",
+        "//enterprise/internal/codeintel/uploads",
+        "//internal/api",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/lazyregexp",
+        "//internal/metrics",
+        "//internal/observation",
+        "//internal/symbols",
+        "//schema",
+        "@com_github_sourcegraph_log//:log",
+        "@com_google_cloud_go_storage//:storage",
+        "@org_golang_google_api//option",
+    ],
+)
+
+go_test(
+    name = "ranking_test",
+    srcs = [
+        "mocks_test.go",
+        "service_test.go",
+    ],
+    embed = [":ranking"],
+    deps = [
+        "//enterprise/internal/codeintel/ranking/internal/store",
+        "//internal/api",
+        "//internal/authz",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/gitserver",
+        "//internal/observation",
+        "//internal/search",
+        "//internal/search/result",
+        "//schema",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_grafana_regexp//:regexp",
+    ],
+)

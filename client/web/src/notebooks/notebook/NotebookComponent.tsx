@@ -3,34 +3,22 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { mdiPlayCircleOutline, mdiDownload, mdiContentCopy } from '@mdi/js'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
-import { useLocation } from 'react-router'
-import { Redirect } from 'react-router-dom'
-import { Observable, ReplaySubject } from 'rxjs'
-import { catchError, delay, filter, map, startWith, switchMap, tap, withLatestFrom } from 'rxjs/operators'
+import { Navigate, useLocation } from 'react-router-dom-v5-compat'
+import { Observable } from 'rxjs'
+import { catchError, delay, startWith, switchMap, tap } from 'rxjs/operators'
 
-import { HoverMerged } from '@sourcegraph/client-api'
-import { createHoverifier } from '@sourcegraph/codeintellify'
-import { asError, isDefined, isErrorLike, property } from '@sourcegraph/common'
-import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
-import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
-import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
-import { getModeFromPath } from '@sourcegraph/shared/src/languages'
+import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
+import { asError, isErrorLike } from '@sourcegraph/common'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, useEventObservable, Icon, useObservable } from '@sourcegraph/wildcard'
+import { Button, useEventObservable, Icon } from '@sourcegraph/wildcard'
 
 import { Block, BlockDirection, BlockInit, BlockInput, BlockType } from '..'
 import { AuthenticatedUser } from '../../auth'
-import { getHover, getDocumentHighlights } from '../../backend/features'
-import { WebHoverOverlay } from '../../components/WebHoverOverlay'
 import { NotebookFields } from '../../graphql-operations'
-import { getLSPTextDocumentPositionParameters } from '../../repo/blob/Blob'
 import { EnterprisePageRoutes } from '../../routes.constants'
 import { SearchStreamingProps } from '../../search'
-import { useExperimentalFeatures } from '../../stores'
 import { NotebookFileBlock } from '../blocks/file/NotebookFileBlock'
 import { NotebookMarkdownBlock } from '../blocks/markdown/NotebookMarkdownBlock'
 import { NotebookQueryBlock } from '../blocks/query/NotebookQueryBlock'
@@ -53,7 +41,6 @@ export interface NotebookComponentProps
     isReadOnly?: boolean
     blocks: BlockInit[]
     authenticatedUser: AuthenticatedUser | null
-    extensionsController: Pick<ExtensionsController, 'extHostAPI' | 'executeCommand'> | null
     platformContext: Pick<PlatformContext, 'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'>
     exportedFileName: string
     isEmbedded?: boolean
@@ -94,7 +81,6 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         onSerializeBlocks,
         onCopyNotebook,
         isReadOnly = false,
-        extensionsController,
         exportedFileName,
         isEmbedded,
         authenticatedUser,
@@ -109,17 +95,12 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         settingsCascade,
         outlineContainerElement,
     }) => {
-        const enableGoImportsSearchQueryTransform = useExperimentalFeatures(
-            features => features.enableGoImportsSearchQueryTransform
-        )
         const notebook = useMemo(
             () =>
                 new Notebook(initialBlocks, {
-                    extensionHostAPI: extensionsController !== null ? extensionsController.extHostAPI : null,
                     fetchHighlightedFileLineRanges,
-                    enableGoImportsSearchQueryTransform,
                 }),
-            [initialBlocks, fetchHighlightedFileLineRanges, extensionsController, enableGoImportsSearchQueryTransform]
+            [initialBlocks, fetchHighlightedFileLineRanges]
         )
 
         const notebookElement = useRef<HTMLDivElement | null>(null)
@@ -384,63 +365,6 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         )
         useNotebookEventHandlers(notebookEventHandlersProps)
 
-        // Element reference subjects passed to `hoverifier`
-        const notebookElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
-        useEffect(() => notebookElements.next(notebookElement.current), [notebookElement, notebookElements])
-        const hoverOverlayElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
-        const nextOverlayElement = useCallback(
-            (overlayElement: HTMLElement | null) => hoverOverlayElements.next(overlayElement),
-            [hoverOverlayElements]
-        )
-
-        // Subject that emits on every render. Source for `hoverOverlayRerenders`, used to
-        // reposition hover overlay if needed when `SearchNotebook` rerenders
-        const rerenders = useMemo(() => new ReplaySubject(1), [])
-        useEffect(() => rerenders.next())
-
-        // Create hoverifier.
-        const hoverifier = useMemo(
-            () =>
-                createHoverifier<HoverContext, HoverMerged, ActionItemAction>({
-                    hoverOverlayElements,
-                    hoverOverlayRerenders: rerenders.pipe(
-                        withLatestFrom(hoverOverlayElements, notebookElements),
-                        map(([, hoverOverlayElement, blockElement]) => ({
-                            hoverOverlayElement,
-                            relativeElement: blockElement,
-                        })),
-                        filter(property('relativeElement', isDefined)),
-                        // Can't reposition HoverOverlay if it wasn't rendered
-                        filter(property('hoverOverlayElement', isDefined))
-                    ),
-                    getHover: context =>
-                        getHover(getLSPTextDocumentPositionParameters(context, getModeFromPath(context.filePath)), {
-                            extensionsController,
-                        }),
-                    getDocumentHighlights: context =>
-                        getDocumentHighlights(
-                            getLSPTextDocumentPositionParameters(context, getModeFromPath(context.filePath)),
-                            { extensionsController }
-                        ),
-                    getActions: context => getHoverActions({ extensionsController, platformContext }, context),
-                    tokenize: false,
-                }),
-            [
-                // None of these dependencies are likely to change
-                extensionsController,
-                platformContext,
-                hoverOverlayElements,
-                notebookElements,
-                rerenders,
-            ]
-        )
-
-        // Passed to HoverOverlay
-        const hoverState = useObservable(hoverifier.hoverStateUpdates) || {}
-
-        // Dispose hoverifier or change/unmount.
-        useEffect(() => () => hoverifier.unsubscribe(), [hoverifier])
-
         const renderBlock = useCallback(
             (block: Block) => {
                 const isSelected = selectedBlockId === block.id
@@ -468,8 +392,6 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                             <NotebookFileBlock
                                 {...block}
                                 {...blockProps}
-                                hoverifier={hoverifier}
-                                extensionsController={extensionsController}
                                 telemetryService={telemetryService}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                                 globbing={globbing}
@@ -488,8 +410,6 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 telemetryService={telemetryService}
                                 platformContext={platformContext}
                                 authenticatedUser={authenticatedUser}
-                                hoverifier={hoverifier}
-                                extensionsController={extensionsController}
                             />
                         )
                     case 'symbol':
@@ -501,8 +421,6 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 globbing={globbing}
                                 telemetryService={telemetryService}
                                 platformContext={platformContext}
-                                hoverifier={hoverifier}
-                                extensionsController={extensionsController}
                             />
                         )
                 }
@@ -519,8 +437,6 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 isLightTheme,
                 isReadOnly,
                 selectedBlockId,
-                hoverifier,
-                extensionsController,
                 telemetryService,
                 isSourcegraphDotCom,
                 globbing,
@@ -547,7 +463,9 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         }, [])
 
         if (copiedNotebookOrError && !isErrorLike(copiedNotebookOrError) && copiedNotebookOrError !== LOADING) {
-            return <Redirect to={EnterprisePageRoutes.Notebook.replace(':id', copiedNotebookOrError.id)} />
+            return (
+                <Navigate to={EnterprisePageRoutes.Notebook.replace(':id', copiedNotebookOrError.id)} replace={true} />
+            )
         }
 
         return (
@@ -622,20 +540,9 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                         blocks={blocks}
                     />
                 )}
-                {hoverState.hoverOverlayProps && extensionsController !== null && (
-                    <WebHoverOverlay
-                        {...hoverState.hoverOverlayProps}
-                        platformContext={platformContext}
-                        settingsCascade={settingsCascade}
-                        hoveredTokenElement={hoverState.hoveredTokenElement}
-                        hoverRef={nextOverlayElement}
-                        extensionsController={extensionsController}
-                        location={location}
-                        telemetryService={telemetryService}
-                        isLightTheme={isLightTheme}
-                    />
-                )}
             </div>
         )
     }
 )
+
+NotebookComponent.displayName = 'NotebookComponent'

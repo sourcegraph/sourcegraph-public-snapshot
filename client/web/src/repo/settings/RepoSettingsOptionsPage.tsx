@@ -1,114 +1,145 @@
-import * as React from 'react'
+import { FC, useCallback, useEffect, useState } from 'react'
 
-import { RouteComponentProps } from 'react-router'
-import { Subject, Subscription } from 'rxjs'
-import { switchMap } from 'rxjs/operators'
+import { noop } from 'lodash'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { asError } from '@sourcegraph/common'
-import { Container, PageHeader, LoadingSpinner, Input, Text } from '@sourcegraph/wildcard'
+import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { Button, Container, ErrorAlert, H2, LoadingSpinner, PageHeader, renderError, Text } from '@sourcegraph/wildcard'
 
-import { ExternalServiceCard } from '../../components/externalServices/ExternalServiceCard'
-import { defaultExternalServices } from '../../components/externalServices/externalServices'
+import { CopyableText } from '../../components/CopyableText'
 import { PageTitle } from '../../components/PageTitle'
-import { SettingsAreaRepositoryFields } from '../../graphql-operations'
+import {
+    ExcludeRepoFromExternalServicesResult,
+    ExcludeRepoFromExternalServicesVariables,
+    SettingsAreaRepositoryFields,
+    SettingsAreaRepositoryResult,
+    SettingsAreaRepositoryVariables,
+    SiteExternalServiceConfigResult,
+    SiteExternalServiceConfigVariables,
+} from '../../graphql-operations'
+import { SITE_EXTERNAL_SERVICE_CONFIG } from '../../site-admin/backend'
 import { eventLogger } from '../../tracking/eventLogger'
 
-import { fetchSettingsAreaRepository } from './backend'
+import { EXCLUDE_REPO_FROM_EXTERNAL_SERVICES, FETCH_SETTINGS_AREA_REPOSITORY_GQL } from './backend'
+import { ExternalServiceEntry } from './components/ExternalServiceEntry'
+import { RedirectionAlert } from './components/RedirectionAlert'
 
-interface Props extends RouteComponentProps<{}> {
+import styles from './RepoSettingsOptionsPage.module.scss'
+
+interface Props {
     repo: SettingsAreaRepositoryFields
-}
-
-interface State {
-    /**
-     * The repository object, refreshed after we make changes that modify it.
-     */
-    repo: SettingsAreaRepositoryFields
-
-    loading: boolean
-    error?: string
 }
 
 /**
  * The repository settings options page.
  */
-export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
-    private repoUpdates = new Subject<void>()
-    private subscriptions = new Subscription()
-
-    constructor(props: Props) {
-        super(props)
-
-        this.state = {
-            loading: false,
-            repo: props.repo,
-        }
-    }
-
-    public componentDidMount(): void {
+export const RepoSettingsOptionsPage: FC<Props> = ({ repo }) => {
+    useEffect(() => {
         eventLogger.logViewEvent('RepoSettings')
+    })
 
-        this.subscriptions.add(
-            this.repoUpdates.pipe(switchMap(() => fetchSettingsAreaRepository(this.props.repo.name))).subscribe(
-                repo => this.setState({ repo }),
-                error => this.setState({ error: asError(error).message })
-            )
-        )
-    }
+    const { data, error, loading } = useQuery<SettingsAreaRepositoryResult, SettingsAreaRepositoryVariables>(
+        FETCH_SETTINGS_AREA_REPOSITORY_GQL,
+        { variables: { name: repo.name } }
+    )
 
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
+    // This state shows that any of possible "exclude" buttons (in this or child components) were pushed.
+    // It is used to disable all the "exclude" buttons except the button which was actually clicked.
+    const [exclusionInProgress, setExclusionInProgress] = useState<boolean>(false)
 
-    public render(): JSX.Element | null {
-        const services = this.state.repo.externalServices.nodes
-        return (
-            <>
-                <PageTitle title="Repository settings" />
-                <PageHeader path={[{ text: 'Settings' }]} headingElement="h2" className="mb-3" />
-                <Container className="repo-settings-options-page">
-                    {this.state.loading && <LoadingSpinner />}
-                    {this.state.error && <ErrorAlert error={this.state.error} />}
-                    {services.length > 0 && (
-                        <div className="mb-3">
-                            {services.map(service => (
-                                <div className="mb-3" key={service.id}>
-                                    <ExternalServiceCard
-                                        {...defaultExternalServices[service.kind]}
-                                        kind={service.kind}
-                                        title={service.displayName}
-                                        shortDescription="Update this external service configuration to manage repository mirroring."
-                                        to={`/site-admin/external-services/${service.id}`}
-                                    />
-                                </div>
-                            ))}
-                            {services.length > 1 && (
+    // Callback used in child components (ExternalServiceEntry) to update the state in current component.
+    const updateExclusion = useCallback((updatedExclusionState: boolean) => {
+        setExclusionInProgress(updatedExclusionState)
+    }, [])
+
+    const services = data?.repository?.__typename === 'Repository' && data?.repository?.externalServices.nodes
+
+    const { data: siteConfigData, error: siteConfigError } = useQuery<
+        SiteExternalServiceConfigResult,
+        SiteExternalServiceConfigVariables
+    >(SITE_EXTERNAL_SERVICE_CONFIG, {})
+
+    const [excludeRepo, { data: excludeData, error: excludeError, loading: isExcluding }] = useMutation<
+        ExcludeRepoFromExternalServicesResult,
+        ExcludeRepoFromExternalServicesVariables
+    >(EXCLUDE_REPO_FROM_EXTERNAL_SERVICES)
+
+    const excludingDisabled =
+        (!siteConfigError &&
+            siteConfigData?.site?.externalServicesFromFile &&
+            !siteConfigData?.site?.allowEditExternalServicesWithFile) ||
+        false
+
+    return (
+        <>
+            <PageTitle title="Repository settings" />
+            <PageHeader path={[{ text: 'Settings' }]} headingElement="h2" className="mb-3" />
+            <Container className="repo-settings-options-page">
+                <H2 className="mb-3">Repository name</H2>
+                <CopyableText className="mb-3" text={repo.name} size={repo.name.length} />
+                <H2 className="mb-3">Code hosts</H2>
+                {loading && <LoadingSpinner />}
+                {error && <ErrorAlert error={error} />}
+                {services && services.length > 0 && (
+                    <div>
+                        {services.map(service => (
+                            <ExternalServiceEntry
+                                key={service.id}
+                                service={service}
+                                excludingDisabled={excludingDisabled}
+                                excludingLoading={exclusionInProgress}
+                                updateExclusionLoading={updateExclusion}
+                                repo={repo}
+                                redirectAfterExclusion={services.length < 2}
+                            />
+                        ))}
+                        {services.length > 1 && (
+                            <>
                                 <Text>
-                                    This repository is mirrored by multiple external services. To change access,
-                                    disable, or remove this repository, the configuration must be updated on all
-                                    external services.
+                                    This repository is mirrored by multiple code hosts. To change access, disable, or
+                                    remove this repository, the configuration must be updated on all code hosts.
                                 </Text>
-                            )}
-                        </div>
-                    )}
-                    <Form>
-                        <Input
-                            id="repo-settings-options-page__name"
-                            readOnly={true}
-                            disabled={true}
-                            value={this.state.repo.name}
-                            required={true}
-                            spellCheck={false}
-                            autoCapitalize="off"
-                            autoCorrect="off"
-                            label="Repository name"
-                            className="mb-0"
-                        />
-                    </Form>
-                </Container>
-            </>
-        )
-    }
+                                <Button
+                                    variant="primary"
+                                    className={styles.button}
+                                    onClick={event => {
+                                        event.preventDefault()
+                                        setExclusionInProgress(true)
+                                        excludeRepo({
+                                            variables: {
+                                                externalServices: services.map(svc => svc.id),
+                                                repo: repo.id,
+                                            },
+                                        })
+                                            .catch(
+                                                // noop here is used because update error is handled directly when useMutation is called
+                                                noop
+                                            )
+                                            .finally(() => {
+                                                setExclusionInProgress(false)
+                                            })
+                                    }}
+                                    disabled={excludingDisabled || (exclusionInProgress && !isExcluding)}
+                                >
+                                    <span className={exclusionInProgress && isExcluding ? styles.invisibleText : ''}>
+                                        Exclude repository from all code hosts
+                                    </span>
+                                    {exclusionInProgress && isExcluding && <LoadingSpinner className={styles.loader} />}
+                                </Button>
+                                {excludeError && (
+                                    <ErrorAlert error={`Failed to exclude repository: ${renderError(excludeError)}`} />
+                                )}
+                                {excludeData && (
+                                    <RedirectionAlert
+                                        to="/site-admin/external-services"
+                                        messagePrefix="Code host configurations updated."
+                                        className="mt-2"
+                                    />
+                                )}
+                            </>
+                        )}{' '}
+                    </div>
+                )}
+            </Container>
+        </>
+    )
 }

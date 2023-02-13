@@ -1,8 +1,7 @@
-import React, { FunctionComponent, useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import { mdiMapSearch } from '@mdi/js'
-import { useHistory } from 'react-router'
 
 import { Container, Link, PageHeader, Icon, H3, Text } from '@sourcegraph/wildcard'
 
@@ -44,12 +43,8 @@ export interface ExecutorsListPageProps {
     queryExecutors?: typeof defaultQueryExecutors
 }
 
-export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<ExecutorsListPageProps>> = ({
-    queryExecutors = defaultQueryExecutors,
-}) => {
+export const ExecutorsListPage: React.FC<ExecutorsListPageProps> = ({ queryExecutors = defaultQueryExecutors }) => {
     useEffect(() => eventLogger.logViewEvent('ExecutorsList'))
-
-    const history = useHistory()
 
     const apolloClient = useApolloClient()
     const queryExecutorsCallback = useCallback(
@@ -99,8 +94,6 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
                     nodeComponent={ExecutorNode}
                     nodeComponentProps={{}}
                     queryConnection={queryExecutorsCallback}
-                    history={history}
-                    location={history.location}
                     cursorPaging={true}
                     filters={filters}
                     emptyElement={<NoExecutors />}

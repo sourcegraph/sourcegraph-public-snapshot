@@ -318,7 +318,7 @@ func unmarshal(data []byte, v any) error {
 // determineGitHubVersion returns a *semver.Version for the targetted GitHub instance by this client. When an
 // error occurs, we print a warning to the logs but don't fail and return the allMatchingSemver.
 func (c *V4Client) determineGitHubVersion(ctx context.Context) *semver.Version {
-	url := normalizeURL(c.apiURL.String())
+	urlStr := normalizeURL(c.apiURL.String())
 	globalVersionCache.mu.Lock()
 	defer globalVersionCache.mu.Unlock()
 
@@ -327,11 +327,11 @@ func (c *V4Client) determineGitHubVersion(ctx context.Context) *semver.Version {
 		globalVersionCache.lastReset = time.Now()
 		globalVersionCache.versions = make(map[string]*semver.Version)
 	}
-	if version, ok := globalVersionCache.versions[url]; ok {
+	if version, ok := globalVersionCache.versions[urlStr]; ok {
 		return version
 	}
 	version := c.fetchGitHubVersion(ctx)
-	globalVersionCache.versions[url] = version
+	globalVersionCache.versions[urlStr] = version
 	return version
 }
 

@@ -9,7 +9,7 @@ function checksum_client_code {
   trap "rm \"$tmpfile\"" EXIT
 
   {
-    find "./client" "./ui" "yarn.lock" -type f -exec sha1sum {} \;
+    find "./client" "./ui" "pnpm-lock.yaml" -type f -exec sha1sum {} \;
     find . -maxdepth 1 -type f -name "*.js" -exec sha1sum {} \;
     find . -maxdepth 1 -type f -name "*.ts" -exec sha1sum {} \;
     find . -maxdepth 1 -type f -name "*.json" -exec sha1sum {} \;

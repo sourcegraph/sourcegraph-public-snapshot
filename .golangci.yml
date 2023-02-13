@@ -10,15 +10,11 @@ linters:
     - gosimple
     - govet
     - ineffassign
-    # this is flakey: https://github.com/sourcegraph/sourcegraph/issues/34304
-    # - nolintlint
+    #- nolintlint see https://github.com/golangci/golangci-lint/issues/3228.
     - staticcheck
     - typecheck
     - unconvert
-    # Both of these are disabled because they produce a lot of errors. The issues below address these errors
-    # https://github.com/sourcegraph/sourcegraph/issues/43753
-    # https://github.com/sourcegraph/sourcegraph/issues/43755
-    #- unused
+    # - unused
     - unparam
     - exportloopref
 
@@ -45,7 +41,7 @@ linters-settings:
       - exitAfterDefer # Only occurs in auxiliary tools
       - ifElseChain # Noisy for not much gain
       - singleCaseSwitch # Noisy for not much gain
-  unparam:
+  #unparam:
 
   govet:
     disable:
@@ -53,7 +49,6 @@ linters-settings:
   staticcheck:
     checks:
       - "all"
-      - "-SA1019" #TODO(burmudar): Mostly because of opentracing deprecatio
   forbidigo:
     forbid:
       # Use errors.Newf instead
@@ -102,10 +97,3 @@ run:
     - main.go
     # In ./internal/cmd/progress-bot
     - main.go
-    # In ./internal/cmd/resources-report
-    - aws.go
-    - gcp.go
-    - main.go
-    - resource.go
-    - sheets.go
-    - slack.go

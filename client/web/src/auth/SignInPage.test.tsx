@@ -1,7 +1,7 @@
 import { within } from '@testing-library/dom'
 import { Route, Routes } from 'react-router-dom-v5-compat'
 
-import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { AuthenticatedUser } from '../auth'
 import { SourcegraphContext } from '../jscontext'
@@ -41,7 +41,6 @@ describe('SignInPage', () => {
                                     authProviders,
                                     resetPasswordEnabled: true,
                                     xhrHeaders: {},
-                                    experimentalFeatures: {},
                                 }}
                                 isSourcegraphDotCom={false}
                             />
@@ -53,67 +52,74 @@ describe('SignInPage', () => {
         ).toMatchSnapshot()
     })
 
-    describe('with Sourcegraph auth provider', () => {
-        it('renders page with 3 providers (experimentalFeature disabled)', () => {
-            const rendered = render(false, '/sign-in')
+    const render = (route: string, authProviders: SourcegraphContext['authProviders']) =>
+        renderWithBrandedContext(
+            <Routes>
+                <Route
+                    path="/sign-in"
+                    element={
+                        <SignInPage
+                            authenticatedUser={null}
+                            context={{
+                                allowSignup: true,
+                                sourcegraphDotComMode: false,
+                                authProviders,
+                                resetPasswordEnabled: true,
+                                xhrHeaders: {},
+                            }}
+                            isSourcegraphDotCom={false}
+                        />
+                    }
+                />
+            </Routes>,
+            { route }
+        )
 
-            expect(
-                within(rendered.baseElement).queryByText(txt => txt.includes('Sourcegraph Employee'))
-            ).toBeInTheDocument()
-            expect(rendered.asFragment()).toMatchSnapshot()
-        })
+    describe('with Sourcegraph operator auth provider', () => {
+        const withSourcegraphOperator: SourcegraphContext['authProviders'] = [
+            ...authProviders,
+            {
+                displayName: 'Sourcegraph Operators',
+                isBuiltin: false,
+                serviceType: 'sourcegraph-operator',
+                authenticationURL: '',
+                serviceID: '',
+            },
+        ]
 
-        it('renders page with 2 providers (experimentalFeature enabled)', () => {
-            const rendered = render(true, '/sign-in')
+        it('renders page with 2 providers', () => {
+            const rendered = render('/sign-in', withSourcegraphOperator)
             expect(
-                within(rendered.baseElement).queryByText(txt => txt.includes('Sourcegraph Employee'))
+                within(rendered.baseElement).queryByText(txt => txt.includes('Sourcegraph Operators'))
             ).not.toBeInTheDocument()
             expect(rendered.asFragment()).toMatchSnapshot()
         })
 
-        it('renders page with 3 providers (experimentalFeature enabled & url-param present)', () => {
-            const rendered = render(true, '/sign-in?sourcegraph-operator')
+        it('renders page with 3 providers (url-param present)', () => {
+            const rendered = render('/sign-in?sourcegraph-operator', withSourcegraphOperator)
             expect(
-                within(rendered.baseElement).queryByText(txt => txt.includes('Sourcegraph Employee'))
+                within(rendered.baseElement).queryByText(txt => txt.includes('Sourcegraph Operators'))
             ).toBeInTheDocument()
             expect(rendered.asFragment()).toMatchSnapshot()
         })
+    })
 
-        function render(hideSourcegraphOperatorLogin: boolean, route: string) {
-            const withSourcegraphOperator: SourcegraphContext['authProviders'] = [
-                ...authProviders,
-                {
-                    displayName: 'Sourcegraph Employee',
-                    isBuiltin: false,
-                    serviceType: 'openidconnect',
-                    authenticationURL: '',
-                    serviceID: '',
-                },
-            ]
-
-            return renderWithBrandedContext(
-                <Routes>
-                    <Route
-                        path="/sign-in"
-                        element={
-                            <SignInPage
-                                authenticatedUser={null}
-                                context={{
-                                    allowSignup: true,
-                                    sourcegraphDotComMode: false,
-                                    authProviders: withSourcegraphOperator,
-                                    resetPasswordEnabled: true,
-                                    xhrHeaders: {},
-                                    experimentalFeatures: { hideSourcegraphOperatorLogin },
-                                }}
-                                isSourcegraphDotCom={false}
-                            />
-                        }
-                    />
-                </Routes>,
-                { route }
-            )
-        }
+    describe('with Gerrit auth provider', () => {
+        const withGerritProvider: SourcegraphContext['authProviders'] = [
+            ...authProviders,
+            {
+                displayName: 'Gerrit',
+                isBuiltin: false,
+                serviceType: 'gerrit',
+                authenticationURL: '',
+                serviceID: '',
+            },
+        ]
+        it('does not render the Gerrit provider', () => {
+            const rendered = render('/sign-in', withGerritProvider)
+            expect(within(rendered.baseElement).queryByText(txt => txt.includes('Gerrit'))).not.toBeInTheDocument()
+            expect(rendered.asFragment()).toMatchSnapshot()
+        })
     })
 
     it('renders sign in page (cloud)', () => {
@@ -131,7 +137,6 @@ describe('SignInPage', () => {
                                     authProviders,
                                     resetPasswordEnabled: true,
                                     xhrHeaders: {},
-                                    experimentalFeatures: {},
                                 }}
                                 isSourcegraphDotCom={false}
                             />
@@ -148,7 +153,7 @@ describe('SignInPage', () => {
         const mockUser = {
             id: 'userID',
             username: 'username',
-            email: 'user@me.com',
+            emails: [{ email: 'user@me.com', isPrimary: true, verified: true }],
             siteAdmin: true,
         } as AuthenticatedUser
 
@@ -166,7 +171,6 @@ describe('SignInPage', () => {
                                     authProviders,
                                     xhrHeaders: {},
                                     resetPasswordEnabled: true,
-                                    experimentalFeatures: {},
                                 }}
                                 isSourcegraphDotCom={false}
                             />

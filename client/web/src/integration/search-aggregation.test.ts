@@ -2,13 +2,12 @@ import delay from 'delay'
 import expect from 'expect'
 import { test } from 'mocha'
 
-import { SearchAggregationMode, SearchGraphQlOperations } from '@sourcegraph/search'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { GetSearchAggregationResult, WebGraphQlOperations } from '../graphql-operations'
+import { GetSearchAggregationResult, WebGraphQlOperations, SearchAggregationMode } from '../graphql-operations'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
@@ -108,7 +107,7 @@ const mockDefaultStreamEvents: SearchEvent[] = [
     { type: 'done', data: {} },
 ]
 
-const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations> = {
+const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
     IsSearchContextAvailable: () => ({ isSearchContextAvailable: true }),
     UserAreaUserProfile: () => ({
@@ -123,6 +122,7 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
             viewerCanAdminister: true,
             builtinAuth: true,
             tags: [],
+            createdAt: '2020-03-02T11:52:15Z',
         },
     }),
 }

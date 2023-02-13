@@ -7,16 +7,13 @@ import { SourcegraphWebApp } from '../SourcegraphWebApp'
 import { CodeIntelligenceBadgeContent } from './codeintel/badge/components/CodeIntelligenceBadgeContent'
 import { CodeIntelligenceBadgeMenu } from './codeintel/badge/components/CodeIntelligenceBadgeMenu'
 import { useCodeIntel } from './codeintel/useCodeIntel'
-import { enterpriseExtensionAreaHeaderNavItems } from './extensions/extension/extensionAreaHeaderNavItems'
-import { enterpriseExtensionAreaRoutes } from './extensions/extension/routes'
-import { enterpriseExtensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
-import { enterpriseExtensionsAreaRoutes } from './extensions/routes'
 import { enterpriseOrgAreaHeaderNavItems } from './organizations/navitems'
 import { enterpriseOrganizationAreaRoutes } from './organizations/routes'
 import { enterpriseOrgSettingsAreaRoutes } from './organizations/settings/routes'
 import { enterpriseOrgSettingsSideBarItems } from './organizations/settings/sidebaritems'
+import { enterpriseRepoContainerRoutes } from './repo/enterpriseRepoContainerRoutes'
+import { enterpriseRepoRevisionContainerRoutes } from './repo/enterpriseRepoRevisionContainerRoutes'
 import { enterpriseRepoHeaderActionButtons } from './repo/repoHeaderActionButtons'
-import { enterpriseRepoContainerRoutes, enterpriseRepoRevisionContainerRoutes } from './repo/routes'
 import { enterpriseRepoSettingsAreaRoutes } from './repo/settings/routes'
 import { enterpriseRepoSettingsSidebarGroups } from './repo/settings/sidebaritems'
 import { enterpriseRoutes } from './routes'
@@ -30,12 +27,6 @@ import { enterpriseUserSettingsSideBarItems } from './user/settings/sidebaritems
 
 export const EnterpriseWebApp: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <SourcegraphWebApp
-        extensionAreaRoutes={enterpriseExtensionAreaRoutes}
-        extensionAreaHeaderNavItems={enterpriseExtensionAreaHeaderNavItems}
-        extensionsAreaRoutes={window.context.enableLegacyExtensions ? enterpriseExtensionsAreaRoutes : undefined}
-        extensionsAreaHeaderActionButtons={
-            window.context.enableLegacyExtensions ? enterpriseExtensionsAreaHeaderActionButtons : undefined
-        }
         siteAdminAreaRoutes={enterpriseSiteAdminAreaRoutes}
         siteAdminSideBarGroups={enterpriseSiteAdminSidebarGroups}
         siteAdminOverviewComponents={enterpriseSiteAdminOverviewComponents}
@@ -62,5 +53,6 @@ export const EnterpriseWebApp: React.FunctionComponent<React.PropsWithChildren<u
         searchContextsEnabled={true}
         notebooksEnabled={true}
         codeMonitoringEnabled={true}
+        searchAggregationEnabled={true}
     />
 )

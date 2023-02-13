@@ -54,12 +54,6 @@ Current version: 3.26.0
 Recommended Version: 3.26.1
 ```
 
-#### Extension details
-
-The following details should be supplied if the user administrates their own [extension registry](../../admin/extensions/index.md).
-
-- The manifest of relevant language extensions (e.g. _sourcegraph/go_, _sourcegraph/typescript_) viewable from the `/extensions/{extension name}/-/manifest` page on their instance. As an example, see the [Go language extension manifest](https://sourcegraph.com/extensions/sourcegraph/go/-/manifest) on Sourcegraph.com (generally, the value of `gitHead` is enough).
-
 #### Settings
 
 The following user settings should be supplied if there is an issue with _displaying_ code navigation results. Only these settings should be necessary, but additional settings can be supplied after private settings such as passwords or secret keys have been removed.

@@ -1,39 +1,26 @@
-import React, { useCallback, useState } from 'react'
+import { FC, useCallback, useState } from 'react'
 
 import { mdiCircle, mdiCog, mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
-import { Button, Link, Icon, Tooltip, Text } from '@sourcegraph/wildcard'
+import { Button, Link, LoadingSpinner, Icon, Tooltip, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { ListExternalServiceFields } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
-import { Timestamp } from '../time/Timestamp'
 
 import { deleteExternalService } from './backend'
-import { defaultExternalServices } from './externalServices'
+import { defaultExternalServices, EXTERNAL_SERVICE_SYNC_RUNNING_STATUSES } from './externalServices'
 
 import styles from './ExternalServiceNode.module.scss'
 
 export interface ExternalServiceNodeProps {
     node: ListExternalServiceFields
-    onDidUpdate: () => void
-    history: H.History
-    routingPrefix: string
-    afterDeleteRoute: string
     editingDisabled: boolean
 }
 
-export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildren<ExternalServiceNodeProps>> = ({
-    node,
-    onDidUpdate,
-    history,
-    routingPrefix,
-    afterDeleteRoute,
-    editingDisabled,
-}) => {
+export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editingDisabled }) => {
     const [isDeleting, setIsDeleting] = useState<boolean | Error>(false)
     const onDelete = useCallback<React.MouseEventHandler>(async () => {
         if (!window.confirm(`Delete the external service ${node.displayName}?`)) {
@@ -43,14 +30,14 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
         try {
             await deleteExternalService(node.id)
             setIsDeleting(false)
-            onDidUpdate()
             // eslint-disable-next-line rxjs/no-ignored-subscription
             refreshSiteFlags().subscribe()
-            history.push(afterDeleteRoute)
         } catch (error) {
             setIsDeleting(asError(error))
+        } finally {
+            window.location.reload()
         }
-    }, [afterDeleteRoute, history, node.displayName, node.id, onDidUpdate])
+    }, [node])
 
     const IconComponent = defaultExternalServices[node.kind].icon
 
@@ -61,7 +48,13 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
         >
             <div className="d-flex align-items-center justify-content-between">
                 <div className="align-self-start">
-                    {node.lastSyncError === null && (
+                    {EXTERNAL_SERVICE_SYNC_RUNNING_STATUSES.has(node.syncJobs?.nodes[0]?.state) ? (
+                        <Tooltip content="Sync is running">
+                            <div aria-label="Sync is running">
+                                <LoadingSpinner className="mr-2" inline={true} />
+                            </div>
+                        </Tooltip>
+                    ) : node.lastSyncError === null ? (
                         <Tooltip content="All good, no errors!">
                             <Icon
                                 svgPath={mdiCircle}
@@ -69,8 +62,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                                 className="text-success mr-2"
                             />
                         </Tooltip>
-                    )}
-                    {node.lastSyncError !== null && (
+                    ) : (
                         <Tooltip content="Syncing failed, check the error message for details!">
                             <Icon
                                 svgPath={mdiCircle}
@@ -84,7 +76,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                     <div>
                         <Icon as={IconComponent} aria-label="Code host logo" className="mr-2" />
                         <strong>
-                            {node.displayName}{' '}
+                            <Link to={`/site-admin/external-services/${node.id}`}>{node.displayName}</Link>{' '}
                             <small className="text-muted">
                                 ({node.repoCount} {pluralize('repository', node.repoCount, 'repositories')})
                             </small>
@@ -113,7 +105,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                     <Tooltip content={`${editingDisabled ? 'View' : 'Edit'} code host connection settings`}>
                         <Button
                             className="test-edit-external-service-button"
-                            to={`${routingPrefix}/external-services/${node.id}`}
+                            to={`/site-admin/external-services/${node.id}/edit`}
                             variant="secondary"
                             size="sm"
                             as={Link}
@@ -131,6 +123,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                             size="sm"
                         >
                             <Icon aria-hidden={true} svgPath={mdiDelete} />
+                            {' Delete'}
                         </Button>
                     </Tooltip>
                 </div>

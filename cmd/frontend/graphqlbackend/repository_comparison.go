@@ -202,7 +202,11 @@ func (r *RepositoryComparisonResolver) FileDiffs(ctx context.Context, args *File
 // repositoryComparisonNewFile is the default NewFileFunc used by
 // RepositoryComparisonResolver to produce the new file in a FileDiffResolver.
 func repositoryComparisonNewFile(db database.DB, r *FileDiffResolver) FileResolver {
-	return NewGitTreeEntryResolver(db, r.gitserverClient, r.Head, CreateFileInfo(r.FileDiff.NewName, false))
+	opts := GitTreeEntryResolverOpts{
+		commit: r.Head,
+		stat:   CreateFileInfo(r.FileDiff.NewName, false),
+	}
+	return NewGitTreeEntryResolver(db, r.gitserverClient, opts)
 }
 
 // computeRepositoryComparisonDiff returns a ComputeDiffFunc for the given
@@ -243,13 +247,13 @@ func computeRepositoryComparisonDiff(cmp *RepositoryComparisonResolver) ComputeD
 			}
 
 			var iter *gitserver.DiffFileIterator
-			iter, err = cmp.gitserverClient.Diff(ctx, gitserver.DiffOptions{
+			iter, err = cmp.gitserverClient.Diff(ctx, authz.DefaultSubRepoPermsChecker, gitserver.DiffOptions{
 				Repo:      cmp.repo.RepoName(),
 				Base:      base,
 				Head:      string(cmp.head.OID()),
 				RangeType: cmp.rangeType,
 				Paths:     paths,
-			}, authz.DefaultSubRepoPermsChecker)
+			})
 			if err != nil {
 				return
 			}
@@ -437,7 +441,11 @@ func (r *FileDiffResolver) OldFile() FileResolver {
 	if diffPathOrNull(r.FileDiff.OrigName) == nil {
 		return nil
 	}
-	return NewGitTreeEntryResolver(r.db, r.gitserverClient, r.Base, CreateFileInfo(r.FileDiff.OrigName, false))
+	opts := GitTreeEntryResolverOpts{
+		commit: r.Base,
+		stat:   CreateFileInfo(r.FileDiff.OrigName, false),
+	}
+	return NewGitTreeEntryResolver(r.db, r.gitserverClient, opts)
 }
 
 func (r *FileDiffResolver) NewFile() FileResolver {
@@ -490,7 +498,10 @@ func (r *fileDiffHighlighter) Highlight(ctx context.Context, args *HighlightArgs
 			if file == nil {
 				return nil, nil
 			}
-			content, err := file.Content(ctx)
+			content, err := file.Content(ctx, &GitTreeContentPageArgs{
+				StartLine: args.StartLine,
+				EndLine:   args.EndLine,
+			})
 			if err != nil {
 				return nil, err
 			}

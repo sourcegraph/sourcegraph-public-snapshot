@@ -31,7 +31,7 @@ func (j *updater) Config() []env.Config {
 	return nil
 }
 
-func (j *updater) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *updater) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
@@ -63,7 +63,7 @@ func (h *handler) Handle(ctx context.Context) error {
 		return err
 	}
 
-	return h.db.ZoektRepos().UpdateIndexStatuses(ctx, indexed.Minimal)
+	return h.db.ZoektRepos().UpdateIndexStatuses(ctx, indexed.Minimal) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 }
 
 func (h *handler) HandleError(err error) {

@@ -28,7 +28,7 @@ type HttpHeaders struct {
 	values []string
 }
 
-// accessTokenConnectionResolver resolves a list of access tokens.
+// outboundRequestConnectionResolver resolves a list of access tokens.
 //
 // 🚨 SECURITY: When instantiating an outboundRequestConnectionResolver value, the caller MUST check
 // permissions.
@@ -72,7 +72,7 @@ func (r *schemaResolver) outboundRequestByID(ctx context.Context, id graphql.ID)
 	}
 
 	var key string
-	err := relay.UnmarshalSpec(id, key)
+	err := relay.UnmarshalSpec(id, &key)
 	if err != nil {
 		return nil, err
 	}

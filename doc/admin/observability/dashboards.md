@@ -1,6 +1,6 @@
 # Dashboards reference
 
-<!-- DO NOT EDIT: generated via: go generate ./monitoring -->
+<!-- DO NOT EDIT: generated via: 'RELOAD=false sg run monitoring-generator' -->
 
 This document contains a complete reference on Sourcegraph's available dashboards, as well as details on how to interpret the panels and metrics.
 
@@ -16712,13 +16712,255 @@ Query: `sum(increase(get_index_options_error_total[5m]))`
 
 ### Zoekt: Search requests
 
+#### zoekt: indexed_search_request_duration_p99_aggregate
+
+<p class="subtitle">99th percentile indexed search duration over 1m (aggregate)</p>
+
+This dashboard shows the 99th percentile of search request durations over the last minute (aggregated across all instances).
+
+Large duration spikes can be an indicator of saturation and / or a performance regression.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100100` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum by (le, name)(rate(zoekt_search_duration_seconds_bucket[1m])))`
+
+</details>
+
+<br />
+
+#### zoekt: indexed_search_request_duration_p90_aggregate
+
+<p class="subtitle">90th percentile indexed search duration over 1m (aggregate)</p>
+
+This dashboard shows the 90th percentile of search request durations over the last minute (aggregated across all instances).
+
+Large duration spikes can be an indicator of saturation and / or a performance regression.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100101` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name)(rate(zoekt_search_duration_seconds_bucket[1m])))`
+
+</details>
+
+<br />
+
+#### zoekt: indexed_search_request_duration_p75_aggregate
+
+<p class="subtitle">75th percentile indexed search duration over 1m (aggregate)</p>
+
+This dashboard shows the 75th percentile of search request durations over the last minute (aggregated across all instances).
+
+Large duration spikes can be an indicator of saturation and / or a performance regression.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100102` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name)(rate(zoekt_search_duration_seconds_bucket[1m])))`
+
+</details>
+
+<br />
+
+#### zoekt: indexed_search_request_duration_p99_by_instance
+
+<p class="subtitle">99th percentile indexed search duration over 1m (per instance)</p>
+
+This dashboard shows the 99th percentile of search request durations over the last minute (broken out per instance).
+
+Large duration spikes can be an indicator of saturation and / or a performance regression.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100110` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.99, sum by (le, instance)(rate(zoekt_search_duration_seconds_bucket{instance=~`${instance:regex}`}[1m])))`
+
+</details>
+
+<br />
+
+#### zoekt: indexed_search_request_duration_p90_by_instance
+
+<p class="subtitle">90th percentile indexed search duration over 1m (per instance)</p>
+
+This dashboard shows the 90th percentile of search request durations over the last minute (broken out per instance).
+
+Large duration spikes can be an indicator of saturation and / or a performance regression.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100111` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, instance)(rate(zoekt_search_duration_seconds_bucket{instance=~`${instance:regex}`}[1m])))`
+
+</details>
+
+<br />
+
+#### zoekt: indexed_search_request_duration_p75_by_instance
+
+<p class="subtitle">75th percentile indexed search duration over 1m (per instance)</p>
+
+This dashboard shows the 75th percentile of search request durations over the last minute (broken out per instance).
+
+Large duration spikes can be an indicator of saturation and / or a performance regression.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100112` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, instance)(rate(zoekt_search_duration_seconds_bucket{instance=~`${instance:regex}`}[1m])))`
+
+</details>
+
+<br />
+
+#### zoekt: indexed_search_num_concurrent_requests_aggregate
+
+<p class="subtitle">Amount of in-flight indexed search requests (aggregate)</p>
+
+This dashboard shows the current number of indexed search requests that are in-flight, aggregated across all instances.
+
+In-flight search requests include both running and queued requests.
+
+The number of in-flight requests can serve as a proxy for the general load that webserver instances are under.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100120` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (name) (zoekt_search_running)`
+
+</details>
+
+<br />
+
+#### zoekt: indexed_search_num_concurrent_requests_by_instance
+
+<p class="subtitle">Amount of in-flight indexed search requests (per instance)</p>
+
+This dashboard shows the current number of indexed search requests that are-flight, broken out per instance.
+
+In-flight search requests include both running and queued requests.
+
+The number of in-flight requests can serve as a proxy for the general load that webserver instances are under.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100121` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (instance, name) (zoekt_search_running{instance=~`${instance:regex}`})`
+
+</details>
+
+<br />
+
+#### zoekt: indexed_search_concurrent_request_growth_rate_1m_aggregate
+
+<p class="subtitle">Rate of growth of in-flight indexed search requests over 1m (aggregate)</p>
+
+This dashboard shows the rate of growth of in-flight requests, aggregated across all instances.
+
+In-flight search requests include both running and queued requests.
+
+This metric gives a notion of how quickly the indexed-search backend is working through its request load
+(taking into account the request arrival rate and processing time). A sustained high rate of growth
+can indicate that the indexed-search backend is saturated.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100130` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (name) (deriv(zoekt_search_running[1m]))`
+
+</details>
+
+<br />
+
+#### zoekt: indexed_search_concurrent_request_growth_rate_1m_per_instance
+
+<p class="subtitle">Rate of growth of in-flight indexed search requests over 1m (per instance)</p>
+
+This dashboard shows the rate of growth of in-flight requests, broken out per instance.
+
+In-flight search requests include both running and queued requests.
+
+This metric gives a notion of how quickly the indexed-search backend is working through its request load
+(taking into account the request arrival rate and processing time). A sustained high rate of growth
+can indicate that the indexed-search backend is saturated.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100131` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (instance) (deriv(zoekt_search_running[1m]))`
+
+</details>
+
+<br />
+
 #### zoekt: indexed_search_request_errors
 
 <p class="subtitle">Indexed search request errors every 5m by code</p>
 
 Refer to the [alerts reference](./alerts.md#zoekt-indexed-search-request-errors) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100100` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100140` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -16746,7 +16988,7 @@ For a full explanation of the states see https://github.com/sourcegraph/zoekt/bl
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100110` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100150` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -16774,7 +17016,7 @@ For a full explanation of the states see https://github.com/sourcegraph/zoekt/bl
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100111` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100151` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -18493,6 +18735,48 @@ To see this dashboard, visit `/-/debug/grafana/d/prometheus/prometheus` on your 
 
 ### Prometheus: Metrics
 
+#### prometheus: metrics_cardinality
+
+<p class="subtitle">Metrics with highest cardinalities</p>
+
+The 10 highest-cardinality metrics collected by this Prometheus instance.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100000` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `topk(10, count by (__name__, job)({__name__!=""}))`
+
+</details>
+
+<br />
+
+#### prometheus: samples_scraped
+
+<p class="subtitle">Samples scraped by job</p>
+
+The number of samples scraped after metric relabeling was applied by this Prometheus instance.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100001` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by(job) (scrape_samples_post_metric_relabeling{job!=""})`
+
+</details>
+
+<br />
+
 #### prometheus: prometheus_rule_eval_duration
 
 <p class="subtitle">Average prometheus rule group evaluation duration over 10m by rule group</p>
@@ -18504,7 +18788,7 @@ Rules that Sourcegraph ships with are grouped under `/sg_config_prometheus`. [Cu
 
 Refer to the [alerts reference](./alerts.md#prometheus-prometheus-rule-eval-duration) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100000` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100010` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -18525,7 +18809,7 @@ Rules that Sourcegraph ships with are grouped under `/sg_config_prometheus`. [Cu
 
 Refer to the [alerts reference](./alerts.md#prometheus-prometheus-rule-eval-failures) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100001` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100011` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -18679,6 +18963,64 @@ Query: `increase(prometheus_target_scrapes_sample_duplicate_timestamp_total[10m]
 
 <br />
 
+### Prometheus: Google Managed Prometheus (only available for `sourcegraph/prometheus-gcp`)
+
+#### prometheus: samples_exported
+
+<p class="subtitle">Samples exported to GMP every 5m</p>
+
+A high value indicates that large numbers of samples are being exported, potentially impacting costs.
+In [Sourcegraph Cloud centralized observability](https://handbook.sourcegraph.com/departments/cloud/technical-docs/observability/), high values can be investigated by:
+
+- going to per-instance self-hosted dashboards for Prometheus in (Internals -> Metrics cardinality).
+- querying for `monitoring_googleapis_com:billing_samples_ingested`, for example:
+
+```
+topk(10, sum by(metric_type, project_id) (rate(monitoring_googleapis_com:billing_samples_ingested[1h])))
+```
+
+This is required because GMP does not allow queries aggregating on `__name__`
+
+See [Anthos metrics](https://cloud.google.com/monitoring/api/metrics_anthos) for more details about `gcm_export_samples_sent_total`.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100300` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://handbook.sourcegraph.com/departments/cloud).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `rate(gcm_export_samples_sent_total[5m])`
+
+</details>
+
+<br />
+
+#### prometheus: pending_exports
+
+<p class="subtitle">Samples pending export to GMP per minute</p>
+
+A high value indicates exports are taking a long time.
+
+See [`gmc_*` Anthos metrics](https://cloud.google.com/monitoring/api/metrics_anthos) for more details about `gcm_export_pending_requests`.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100301` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud team](https://handbook.sourcegraph.com/departments/cloud).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum_over_time(gcm_export_pending_requests[1m])`
+
+</details>
+
+<br />
+
 ### Prometheus: Container monitoring (not available on server)
 
 #### prometheus: container_missing
@@ -18697,7 +19039,7 @@ value change independent of deployment events (such as an upgrade), it could ind
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100300` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100400` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -18716,7 +19058,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^prometheus.*"}) > 
 
 Refer to the [alerts reference](./alerts.md#prometheus-container-cpu-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100301` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100401` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -18735,7 +19077,7 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^prometheus.*"}`
 
 Refer to the [alerts reference](./alerts.md#prometheus-container-memory-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100302` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100402` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -18757,7 +19099,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100303` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100403` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -18778,7 +19120,7 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^prometheus.*"}[1h]) 
 
 Refer to the [alerts reference](./alerts.md#prometheus-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100400` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100500` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -18797,7 +19139,7 @@ Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{na
 
 Refer to the [alerts reference](./alerts.md#prometheus-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100401` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100501` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -18816,7 +19158,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^p
 
 Refer to the [alerts reference](./alerts.md#prometheus-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100410` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100510` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -18835,7 +19177,7 @@ Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^prom
 
 Refer to the [alerts reference](./alerts.md#prometheus-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100411` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100511` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -18857,7 +19199,7 @@ When it occurs frequently, it is an indicator of underprovisioning.
 
 Refer to the [alerts reference](./alerts.md#prometheus-container-oomkill-events-total) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100412` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100512` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -18878,7 +19220,7 @@ Query: `max by (name) (container_oom_events_total{name=~"^prometheus.*"})`
 
 Refer to the [alerts reference](./alerts.md#prometheus-pods-available-percentage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100500` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100600` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -24174,7 +24516,7 @@ Query: `max(src_codeintel_commit_graph_queued_duration_seconds_total{job=~"^${so
 
 ### Code Intelligence > Uploads: Codeintel: Uploads > Expiration task
 
-#### codeintel-uploads: codeintel_background_repositories_scanned_total_total
+#### codeintel-uploads: codeintel_background_repositories_scanned_total
 
 <p class="subtitle">Lsif upload repository scan repositories scanned every 5m</p>
 
@@ -24189,13 +24531,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_repositories_scanned_total_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_repositories_scanned_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-uploads: codeintel_background_upload_records_scanned_total_total
+#### codeintel-uploads: codeintel_background_upload_records_scanned_total
 
 <p class="subtitle">Lsif upload records scan records scanned every 5m</p>
 
@@ -24210,13 +24552,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_upload_records_scanned_total_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_upload_records_scanned_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-uploads: codeintel_background_commits_scanned_total_total
+#### codeintel-uploads: codeintel_background_commits_scanned_total
 
 <p class="subtitle">Lsif upload commits scanned commits scanned every 5m</p>
 
@@ -24231,13 +24573,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_commits_scanned_total_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_commits_scanned_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-uploads: codeintel_background_upload_records_expired_total_total
+#### codeintel-uploads: codeintel_background_upload_records_expired_total
 
 <p class="subtitle">Lsif upload records expired uploads scanned every 5m</p>
 
@@ -24252,7 +24594,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_upload_records_expired_total_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_upload_records_expired_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -24480,6 +24822,299 @@ To see this panel, visit `/-/debug/grafana/d/telemetry/telemetry?viewPanel=10020
 <summary>Technical details</summary>
 
 Query: `rate(src_telemetry_job_total{op="SendEvents"}[1h]) / on() group_right() src_telemetry_job_max_throughput * 100`
+
+</details>
+
+<br />
+
+## OpenTelemetry Collector
+
+<p class="subtitle">The OpenTelemetry collector ingests OpenTelemetry data from Sourcegraph and exports it to the configured backends.</p>
+
+To see this dashboard, visit `/-/debug/grafana/d/otel-collector/otel-collector` on your Sourcegraph instance.
+
+### OpenTelemetry Collector: Receivers
+
+#### otel-collector: otel_span_receive_rate
+
+<p class="subtitle">Spans received per receiver per minute</p>
+
+Shows the rate of spans accepted by the configured reveiver
+
+A Trace is a collection of spans and a span represents a unit of work or operation. Spans are the building blocks of Traces.
+The spans have only been accepted by the receiver, which means they still have to move through the configured pipeline to be exported.
+For more information on tracing and configuration of a OpenTelemetry receiver see https://opentelemetry.io/docs/collector/configuration/#receivers.
+
+See the Exporters section see spans that have made it through the pipeline and are exported.
+
+Depending the configured processors, received spans might be dropped and not exported. For more information on configuring processors see
+https://opentelemetry.io/docs/collector/configuration/#processors.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100000` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (receiver) (rate(otelcol_receiver_accepted_spans[1m]))`
+
+</details>
+
+<br />
+
+#### otel-collector: otel_span_refused
+
+<p class="subtitle">Spans refused per receiver</p>
+
+
+
+Refer to the [alerts reference](./alerts.md#otel-collector-otel-span-refused) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100001` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (receiver) (rate(otelcol_receiver_refused_spans[1m]))`
+
+</details>
+
+<br />
+
+### OpenTelemetry Collector: Exporters
+
+#### otel-collector: otel_span_export_rate
+
+<p class="subtitle">Spans exported per exporter per minute</p>
+
+Shows the rate of spans being sent by the exporter
+
+A Trace is a collection of spans. A Span represents a unit of work or operation. Spans are the building blocks of Traces.
+The rate of spans here indicates spans that have made it through the configured pipeline and have been sent to the configured export destination.
+
+For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100100` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (exporter) (rate(otelcol_exporter_sent_spans[1m]))`
+
+</details>
+
+<br />
+
+#### otel-collector: otel_span_export_failures
+
+<p class="subtitle">Span export failures by exporter</p>
+
+Shows the rate of spans failed to be sent by the configured reveiver. A number higher than 0 for a long period can indicate a problem with the exporter configuration or with the service that is being exported too
+
+For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.
+
+Refer to the [alerts reference](./alerts.md#otel-collector-otel-span-export-failures) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100101` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (exporter) (rate(otelcol_exporter_send_failed_spans[1m]))`
+
+</details>
+
+<br />
+
+### OpenTelemetry Collector: Collector resource usage
+
+#### otel-collector: otel_cpu_usage
+
+<p class="subtitle">Cpu usage of the collector</p>
+
+Shows CPU usage as reported by the OpenTelemetry collector.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100200` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (job) (rate(otelcol_process_cpu_seconds{job=~"^.*"}[1m]))`
+
+</details>
+
+<br />
+
+#### otel-collector: otel_memory_resident_set_size
+
+<p class="subtitle">Memory allocated to the otel collector</p>
+
+Shows the allocated memory Resident Set Size (RSS) as reported by the OpenTelemetry collector.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100201` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (job) (rate(otelcol_process_memory_rss{job=~"^.*"}[1m]))`
+
+</details>
+
+<br />
+
+#### otel-collector: otel_memory_usage
+
+<p class="subtitle">Memory used by the collector</p>
+
+Shows how much memory is being used by the otel collector.
+
+* High memory usage might indicate thad the configured pipeline is keeping a lot of spans in memory for processing
+* Spans failing to be sent and the exporter is configured to retry
+* A high batch count by using a batch processor
+
+For more information on configuring processors for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#processors.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100202` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (job) (rate(otelcol_process_runtime_total_alloc_bytes{job=~"^.*"}[1m]))`
+
+</details>
+
+<br />
+
+### OpenTelemetry Collector: Container monitoring (not available on server)
+
+#### otel-collector: container_missing
+
+<p class="subtitle">Container missing</p>
+
+This value is the number of times a container has not been seen for more than one minute. If you observe this
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
+
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod otel-collector` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p otel-collector`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' otel-collector` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the otel-collector container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs otel-collector` (note this will include logs from the previous and currently running container).
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100300` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `count by(name) ((time() - container_last_seen{name=~"^otel-collector.*"}) > 60)`
+
+</details>
+
+<br />
+
+#### otel-collector: container_cpu_usage
+
+<p class="subtitle">Container cpu usage total (1m average) across all cores by instance</p>
+
+Refer to the [alerts reference](./alerts.md#otel-collector-container-cpu-usage) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100301` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^otel-collector.*"}`
+
+</details>
+
+<br />
+
+#### otel-collector: container_memory_usage
+
+<p class="subtitle">Container memory usage by instance</p>
+
+Refer to the [alerts reference](./alerts.md#otel-collector-container-memory-usage) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100302` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `cadvisor_container_memory_usage_percentage_total{name=~"^otel-collector.*"}`
+
+</details>
+
+<br />
+
+#### otel-collector: fs_io_operations
+
+<p class="subtitle">Filesystem reads and writes rate by instance over 1h</p>
+
+This value indicates the number of filesystem read and write operations by containers of this service.
+When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself, especially if high values or spikes correlate with {{CONTAINER_NAME}} issues.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100303` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by(name) (rate(container_fs_reads_total{name=~"^otel-collector.*"}[1h]) + rate(container_fs_writes_total{name=~"^otel-collector.*"}[1h]))`
+
+</details>
+
+<br />
+
+### OpenTelemetry Collector: Kubernetes monitoring (only available on Kubernetes)
+
+#### otel-collector: pods_available_percentage
+
+<p class="subtitle">Percentage pods available</p>
+
+Refer to the [alerts reference](./alerts.md#otel-collector-pods-available-percentage) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100400` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by(app) (up{app=~".*otel-collector"}) / count by (app) (up{app=~".*otel-collector"}) * 100`
 
 </details>
 

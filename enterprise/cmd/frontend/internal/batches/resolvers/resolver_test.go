@@ -20,11 +20,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -57,8 +59,8 @@ func TestNullIDResilience(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 
 	ids := []graphql.ID{
-		marshalBatchChangeID(0),
-		marshalChangesetID(0),
+		bgql.MarshalBatchChangeID(0),
+		bgql.MarshalChangesetID(0),
 		marshalBatchSpecRandID(""),
 		marshalChangesetSpecRandID(""),
 		marshalBatchChangesCredentialID(0, false),
@@ -85,26 +87,26 @@ func TestNullIDResilience(t *testing.T) {
 	}
 
 	mutations := []string{
-		fmt.Sprintf(`mutation { closeBatchChange(batchChange: %q) { id } }`, marshalBatchChangeID(0)),
-		fmt.Sprintf(`mutation { deleteBatchChange(batchChange: %q) { alwaysNil } }`, marshalBatchChangeID(0)),
-		fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, marshalChangesetID(0)),
-		fmt.Sprintf(`mutation { reenqueueChangeset(changeset: %q) { id } }`, marshalChangesetID(0)),
+		fmt.Sprintf(`mutation { closeBatchChange(batchChange: %q) { id } }`, bgql.MarshalBatchChangeID(0)),
+		fmt.Sprintf(`mutation { deleteBatchChange(batchChange: %q) { alwaysNil } }`, bgql.MarshalBatchChangeID(0)),
+		fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, bgql.MarshalChangesetID(0)),
+		fmt.Sprintf(`mutation { reenqueueChangeset(changeset: %q) { id } }`, bgql.MarshalChangesetID(0)),
 		fmt.Sprintf(`mutation { applyBatchChange(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
 		fmt.Sprintf(`mutation { createBatchChange(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
-		fmt.Sprintf(`mutation { moveBatchChange(batchChange: %q, newName: "foobar") { id } }`, marshalBatchChangeID(0)),
+		fmt.Sprintf(`mutation { moveBatchChange(batchChange: %q, newName: "foobar") { id } }`, bgql.MarshalBatchChangeID(0)),
 		fmt.Sprintf(`mutation { createBatchChangesCredential(externalServiceKind: GITHUB, externalServiceURL: "http://test", credential: "123123", user: %q) { id } }`, graphqlbackend.MarshalUserID(0)),
 		fmt.Sprintf(`mutation { deleteBatchChangesCredential(batchChangesCredential: %q) { alwaysNil } }`, marshalBatchChangesCredentialID(0, false)),
 		fmt.Sprintf(`mutation { deleteBatchChangesCredential(batchChangesCredential: %q) { alwaysNil } }`, marshalBatchChangesCredentialID(0, true)),
-		fmt.Sprintf(`mutation { createChangesetComments(batchChange: %q, changesets: [], body: "test") { id } }`, marshalBatchChangeID(0)),
-		fmt.Sprintf(`mutation { createChangesetComments(batchChange: %q, changesets: [%q], body: "test") { id } }`, marshalBatchChangeID(1), marshalChangesetID(0)),
-		fmt.Sprintf(`mutation { reenqueueChangesets(batchChange: %q, changesets: []) { id } }`, marshalBatchChangeID(0)),
-		fmt.Sprintf(`mutation { reenqueueChangesets(batchChange: %q, changesets: [%q]) { id } }`, marshalBatchChangeID(1), marshalChangesetID(0)),
-		fmt.Sprintf(`mutation { mergeChangesets(batchChange: %q, changesets: []) { id } }`, marshalBatchChangeID(0)),
-		fmt.Sprintf(`mutation { mergeChangesets(batchChange: %q, changesets: [%q]) { id } }`, marshalBatchChangeID(1), marshalChangesetID(0)),
-		fmt.Sprintf(`mutation { closeChangesets(batchChange: %q, changesets: []) { id } }`, marshalBatchChangeID(0)),
-		fmt.Sprintf(`mutation { closeChangesets(batchChange: %q, changesets: [%q]) { id } }`, marshalBatchChangeID(1), marshalChangesetID(0)),
-		fmt.Sprintf(`mutation { publishChangesets(batchChange: %q, changesets: []) { id } }`, marshalBatchChangeID(0)),
-		fmt.Sprintf(`mutation { publishChangesets(batchChange: %q, changesets: [%q]) { id } }`, marshalBatchChangeID(1), marshalChangesetID(0)),
+		fmt.Sprintf(`mutation { createChangesetComments(batchChange: %q, changesets: [], body: "test") { id } }`, bgql.MarshalBatchChangeID(0)),
+		fmt.Sprintf(`mutation { createChangesetComments(batchChange: %q, changesets: [%q], body: "test") { id } }`, bgql.MarshalBatchChangeID(1), bgql.MarshalChangesetID(0)),
+		fmt.Sprintf(`mutation { reenqueueChangesets(batchChange: %q, changesets: []) { id } }`, bgql.MarshalBatchChangeID(0)),
+		fmt.Sprintf(`mutation { reenqueueChangesets(batchChange: %q, changesets: [%q]) { id } }`, bgql.MarshalBatchChangeID(1), bgql.MarshalChangesetID(0)),
+		fmt.Sprintf(`mutation { mergeChangesets(batchChange: %q, changesets: []) { id } }`, bgql.MarshalBatchChangeID(0)),
+		fmt.Sprintf(`mutation { mergeChangesets(batchChange: %q, changesets: [%q]) { id } }`, bgql.MarshalBatchChangeID(1), bgql.MarshalChangesetID(0)),
+		fmt.Sprintf(`mutation { closeChangesets(batchChange: %q, changesets: []) { id } }`, bgql.MarshalBatchChangeID(0)),
+		fmt.Sprintf(`mutation { closeChangesets(batchChange: %q, changesets: [%q]) { id } }`, bgql.MarshalBatchChangeID(1), bgql.MarshalChangesetID(0)),
+		fmt.Sprintf(`mutation { publishChangesets(batchChange: %q, changesets: []) { id } }`, bgql.MarshalBatchChangeID(0)),
+		fmt.Sprintf(`mutation { publishChangesets(batchChange: %q, changesets: [%q]) { id } }`, bgql.MarshalBatchChangeID(1), bgql.MarshalChangesetID(0)),
 		fmt.Sprintf(`mutation { executeBatchSpec(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
 		fmt.Sprintf(`mutation { cancelBatchSpecExecution(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
 		fmt.Sprintf(`mutation { replaceBatchSpecInput(previousSpec: %q, batchSpec: "name: testing") { id } }`, marshalBatchSpecRandID("")),
@@ -128,6 +130,9 @@ func TestCreateBatchSpec(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	licensingInfo := func(tags ...string) *licensing.Info {
+		return &licensing.Info{Info: license.Info{Tags: tags, ExpiresAt: time.Now().Add(1 * time.Hour)}}
+	}
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
@@ -145,8 +150,10 @@ func TestCreateBatchSpec(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	maxNumChangesets := 10
+
 	// Create enough changeset specs to hit the licence check.
-	changesetSpecs := make([]*btypes.ChangesetSpec, maxUnlicensedChangesets+1)
+	changesetSpecs := make([]*btypes.ChangesetSpec, maxNumChangesets+1)
 	for i := range changesetSpecs {
 		changesetSpecs[i] = &btypes.ChangesetSpec{
 			BaseRepoID: repo.ID,
@@ -170,41 +177,38 @@ func TestCreateBatchSpec(t *testing.T) {
 
 	for name, tc := range map[string]struct {
 		changesetSpecs []*btypes.ChangesetSpec
-		hasLicenseFor  map[licensing.Feature]struct{}
+		licenseInfo    *licensing.Info
 		wantErr        bool
 	}{
-		"batch changes license, over the limit": {
+		"batch changes license, restricted, over the limit": {
 			changesetSpecs: changesetSpecs,
-			hasLicenseFor: map[licensing.Feature]struct{}{
-				licensing.FeatureBatchChanges: {},
-			},
-			wantErr: false,
+			licenseInfo:    licensingInfo("starter"),
+			wantErr:        true,
 		},
-		"campaigns license, over the limit": {
-			changesetSpecs: changesetSpecs,
-			hasLicenseFor: map[licensing.Feature]struct{}{
-				licensing.FeatureCampaigns: {},
-			},
-			wantErr: false,
-		},
-		"no licence, but under the limit": {
-			changesetSpecs: changesetSpecs[0:maxUnlicensedChangesets],
-			hasLicenseFor:  map[licensing.Feature]struct{}{},
+		"batch changes license, restricted, under the limit": {
+			changesetSpecs: changesetSpecs[0 : maxNumChangesets-1],
+			licenseInfo:    licensingInfo("starter"),
 			wantErr:        false,
 		},
-		"no licence, over the limit": {
+		"batch changes license, unrestricted, over the limit": {
 			changesetSpecs: changesetSpecs,
-			hasLicenseFor:  map[licensing.Feature]struct{}{},
+			licenseInfo:    licensingInfo("starter", "batch-changes"),
+			wantErr:        false,
+		},
+		"campaigns license, no limit": {
+			changesetSpecs: changesetSpecs,
+			licenseInfo:    licensingInfo("starter", "campaigns"),
+			wantErr:        false,
+		},
+		"no license": {
+			changesetSpecs: changesetSpecs[0:1],
 			wantErr:        true,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			oldMock := licensing.MockCheckFeature
 			licensing.MockCheckFeature = func(feature licensing.Feature) error {
-				if _, ok := tc.hasLicenseFor[feature]; !ok {
-					return licensing.NewFeatureNotActivatedError("no batch changes for you!")
-				}
-				return nil
+				return feature.Check(tc.licenseInfo)
 			}
 
 			defer func() {
@@ -355,7 +359,7 @@ func TestCreateBatchSpecFromRaw(t *testing.T) {
 	rawSpec := bt.TestRawBatchSpec
 
 	userAPIID := string(graphqlbackend.MarshalUserID(userID))
-	batchChangeID := string(marshalBatchChangeID(bc.ID))
+	batchChangeID := string(bgql.MarshalBatchChangeID(bc.ID))
 
 	input := map[string]any{
 		"namespace":   userAPIID,
@@ -494,6 +498,79 @@ mutation($changesetSpec: String!){
 }
 `
 
+func TestCreateChangesetSpecs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	userID := bt.CreateTestUser(t, db, true).ID
+
+	bstore := store.New(db, &observation.TestContext, nil)
+	repoStore := database.ReposWith(logger, bstore)
+	esStore := database.ExternalServicesWith(logger, bstore)
+
+	repo1 := newGitHubTestRepo("github.com/sourcegraph/create-changeset-spec-test1", newGitHubExternalService(t, esStore))
+	err := repoStore.Create(ctx, repo1)
+	require.NoError(t, err)
+
+	repo2 := newGitHubTestRepo("github.com/sourcegraph/create-changeset-spec-test2", newGitHubExternalService(t, esStore))
+	err = repoStore.Create(ctx, repo2)
+	require.NoError(t, err)
+
+	r := &Resolver{store: bstore}
+	s, err := newSchema(db, r)
+	require.NoError(t, err)
+
+	input := map[string]any{
+		"changesetSpecs": []string{
+			bt.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo1.ID), "d34db33f"),
+			bt.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo2.ID), "d34db33g"),
+		},
+	}
+
+	var response struct{ CreateChangesetSpecs []apitest.ChangesetSpec }
+
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateChangesetSpecs)
+
+	specs := response.CreateChangesetSpecs
+	assert.Len(t, specs, 2)
+
+	for _, spec := range specs {
+		assert.NotEmpty(t, spec.Typename)
+		assert.NotEmpty(t, spec.ID)
+		assert.NotNil(t, spec.ExpiresAt)
+
+		randID, err := unmarshalChangesetSpecID(graphql.ID(spec.ID))
+		require.NoError(t, err)
+
+		cs, err := bstore.GetChangesetSpec(ctx, store.GetChangesetSpecOpts{RandID: randID})
+		require.NoError(t, err)
+
+		if cs.BaseRev == "d34db33f" {
+			assert.Equal(t, repo1.ID, cs.BaseRepoID)
+		} else {
+			assert.Equal(t, repo2.ID, cs.BaseRepoID)
+		}
+	}
+}
+
+const mutationCreateChangesetSpecs = `
+mutation($changesetSpecs: [String!]!){
+  createChangesetSpecs(changesetSpecs: $changesetSpecs) {
+	__typename
+	... on VisibleChangesetSpec {
+		id
+		expiresAt
+	}
+  }
+}
+`
+
 func TestApplyBatchChange(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -501,6 +578,9 @@ func TestApplyBatchChange(t *testing.T) {
 
 	oldMock := licensing.MockCheckFeature
 	licensing.MockCheckFeature = func(feature licensing.Feature) error {
+		if bcFeature, ok := feature.(*licensing.FeatureBatchChanges); ok {
+			bcFeature.Unrestricted = true
+		}
 		return nil
 	}
 
@@ -629,7 +709,7 @@ func TestApplyBatchChange(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	input["ensureBatchChange"] = marshalBatchChangeID(batchChangeID + 999)
+	input["ensureBatchChange"] = bgql.MarshalBatchChangeID(batchChangeID + 999)
 	errs := apitest.Exec(actorCtx, t, s, input, &response, mutationApplyBatchChange)
 	if len(errs) == 0 {
 		t.Fatalf("expected errors, got none")
@@ -704,12 +784,12 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 	}
 
 	// Second time should fail because namespace + name are not unique
-	errors := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateEmptyBatchChange)
+	errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateEmptyBatchChange)
 
-	if len(errors) != 1 {
+	if len(errs) != 1 {
 		t.Fatalf("expected single errors, but got none")
 	}
-	if have, want := errors[0].Message, service.ErrNameNotUnique.Error(); have != want {
+	if have, want := errs[0].Message, service.ErrNameNotUnique.Error(); have != want {
 		t.Fatalf("wrong error. want=%q, have=%q", want, have)
 	}
 
@@ -734,14 +814,14 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 		"name":      "not: valid:\nname",
 	}
 
-	errors = apitest.Exec(actorCtx, t, s, input3, &response, mutationCreateEmptyBatchChange)
+	errs = apitest.Exec(actorCtx, t, s, input3, &response, mutationCreateEmptyBatchChange)
 
-	if len(errors) != 1 {
+	if len(errs) != 1 {
 		t.Fatalf("expected single errors, but got none")
 	}
 
 	expError := "The batch change name can only contain word characters, dots and dashes."
-	if have, want := errors[0].Message, expError; !strings.Contains(have, "The batch change name can only contain word characters, dots and dashes.") {
+	if have, want := errs[0].Message, expError; !strings.Contains(have, "The batch change name can only contain word characters, dots and dashes.") {
 		t.Fatalf("wrong error. want to contain=%q, have=%q", want, have)
 	}
 }
@@ -801,15 +881,15 @@ func TestUpsertEmptyBatchChange(t *testing.T) {
 		"name":      "my-batch-change",
 	}
 
-	errors := apitest.Exec(actorCtx, t, s, badInput, &response, mutationUpsertEmptyBatchChange)
+	errs := apitest.Exec(actorCtx, t, s, badInput, &response, mutationUpsertEmptyBatchChange)
 
-	if len(errors) != 1 {
+	if len(errs) != 1 {
 		t.Fatalf("expected single errors")
 	}
 
 	wantError := "invalid ID \"bad_namespace-id\" for namespace"
 
-	if have, want := errors[0].Message, wantError; have != want {
+	if have, want := errs[0].Message, wantError; have != want {
 		t.Fatalf("wrong error. want=%q, have=%q", want, have)
 	}
 }
@@ -869,12 +949,12 @@ func TestCreateBatchChange(t *testing.T) {
 	}
 
 	// Second time it should fail
-	errors := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateBatchChange)
+	errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateBatchChange)
 
-	if len(errors) != 1 {
+	if len(errs) != 1 {
 		t.Fatalf("expected single errors, but got none")
 	}
-	if have, want := errors[0].Message, service.ErrMatchingBatchChangeExists.Error(); have != want {
+	if have, want := errs[0].Message, service.ErrMatchingBatchChangeExists.Error(); have != want {
 		t.Fatalf("wrong error. want=%q, have=%q", want, have)
 	}
 }
@@ -894,6 +974,9 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 
 	oldMock := licensing.MockCheckFeature
 	licensing.MockCheckFeature = func(feature licensing.Feature) error {
+		if bcFeature, ok := feature.(*licensing.FeatureBatchChanges); ok {
+			bcFeature.Unrestricted = true
+		}
 		return nil
 	}
 
@@ -1139,6 +1222,18 @@ func TestApplyBatchChangeWithLicenseFail(t *testing.T) {
 		"batchSpec": string(marshalBatchSpecRandID(batchSpec.RandID)),
 	}
 
+	maxNumBatchChanges := 5
+	oldMock := licensing.MockCheckFeature
+	licensing.MockCheckFeature = func(feature licensing.Feature) error {
+		if bcFeature, ok := feature.(*licensing.FeatureBatchChanges); ok {
+			bcFeature.MaxNumChangesets = maxNumBatchChanges
+		}
+		return nil
+	}
+	defer func() {
+		licensing.MockCheckFeature = oldMock
+	}()
+
 	tests := []struct {
 		name          string
 		numChangesets int
@@ -1149,22 +1244,15 @@ func TestApplyBatchChangeWithLicenseFail(t *testing.T) {
 		},
 		{
 			name:          "ApplyBatchChange at limit",
-			numChangesets: 5,
+			numChangesets: 10,
 		},
 		{
 			name:          "ApplyBatchChange over limit",
-			numChangesets: 6,
+			numChangesets: 11,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			oldMock := licensing.MockCheckFeature
-			licensing.MockCheckFeature = func(feature licensing.Feature) error {
-				return licensing.NewFeatureNotActivatedError("no batch changes for you!")
-			}
-			defer func() {
-				licensing.MockCheckFeature = oldMock
-			}()
 
 			// Create enough changeset specs to hit the license check.
 			changesetSpecs := make([]*btypes.ChangesetSpec, test.numChangesets)
@@ -1189,9 +1277,10 @@ func TestApplyBatchChangeWithLicenseFail(t *testing.T) {
 			var response struct{ ApplyBatchChange apitest.BatchChange }
 			actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 			errs := apitest.Exec(actorCtx, t, s, input, &response, mutationApplyBatchChange)
-			if test.numChangesets > maxUnlicensedChangesets {
+
+			if test.numChangesets > maxNumBatchChanges {
 				assert.Len(t, errs, 1)
-				assert.ErrorAs(t, errs[0], &ErrBatchChangesUnlicensed{})
+				assert.ErrorAs(t, errs[0], &ErrBatchChangesOverLimit{})
 			} else {
 				assert.Len(t, errs, 0)
 			}
@@ -1244,7 +1333,7 @@ func TestMoveBatchChange(t *testing.T) {
 	}
 
 	// Move to a new name
-	batchChangeAPIID := string(marshalBatchChangeID(batchChange.ID))
+	batchChangeAPIID := string(bgql.MarshalBatchChangeID(batchChange.ID))
 	newBatchChagneName := "new-name"
 	input := map[string]any{
 		"batchChange": batchChangeAPIID,
@@ -1268,7 +1357,7 @@ func TestMoveBatchChange(t *testing.T) {
 	// Move to a new namespace
 	orgAPIID := graphqlbackend.MarshalOrgID(orgID)
 	input = map[string]any{
-		"batchChange":  string(marshalBatchChangeID(batchChange.ID)),
+		"batchChange":  string(bgql.MarshalBatchChangeID(batchChange.ID)),
 		"newNamespace": orgAPIID,
 	}
 
@@ -1521,7 +1610,7 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 	t.Run("User credential", func(t *testing.T) {
 		input := map[string]any{
 			"user":                graphqlbackend.MarshalUserID(userID),
-			"externalServiceKind": string(extsvc.KindGitHub),
+			"externalServiceKind": extsvc.KindGitHub,
 			"externalServiceURL":  "https://github.com/",
 			"credential":          "SOSECRET",
 		}
@@ -1567,7 +1656,7 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 	t.Run("Site credential", func(t *testing.T) {
 		input := map[string]any{
 			"user":                nil,
-			"externalServiceKind": string(extsvc.KindGitHub),
+			"externalServiceKind": extsvc.KindGitHub,
 			"externalServiceURL":  "https://github.com/",
 			"credential":          "SOSECRET",
 		}
@@ -1601,12 +1690,12 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 		}
 
 		// Second time it should fail
-		errors := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCredential)
+		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCredential)
 
-		if len(errors) != 1 {
+		if len(errs) != 1 {
 			t.Fatalf("expected single errors, but got none")
 		}
-		if have, want := errors[0].Extensions["code"], "ErrDuplicateCredential"; have != want {
+		if have, want := errs[0].Extensions["code"], "ErrDuplicateCredential"; have != want {
 			t.Fatalf("wrong error code. want=%q, have=%q", want, have)
 		}
 	})
@@ -1671,12 +1760,12 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 		apitest.MustExec(actorCtx, t, s, input, &response, mutationDeleteCredential)
 
 		// Second time it should fail
-		errors := apitest.Exec(actorCtx, t, s, input, &response, mutationDeleteCredential)
+		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationDeleteCredential)
 
-		if len(errors) != 1 {
-			t.Fatalf("expected single errors, but got none")
+		if len(errs) != 1 {
+			t.Fatalf("expected a single error, but got %d", len(errs))
 		}
-		if have, want := errors[0].Message, fmt.Sprintf("user credential not found: [%d]", userCred.ID); have != want {
+		if have, want := errs[0].Message, fmt.Sprintf("user credential not found: [%d]", userCred.ID); have != want {
 			t.Fatalf("wrong error code. want=%q, have=%q", want, have)
 		}
 	})
@@ -1693,12 +1782,12 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 		apitest.MustExec(actorCtx, t, s, input, &response, mutationDeleteCredential)
 
 		// Second time it should fail
-		errors := apitest.Exec(actorCtx, t, s, input, &response, mutationDeleteCredential)
+		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationDeleteCredential)
 
-		if len(errors) != 1 {
+		if len(errs) != 1 {
 			t.Fatalf("expected single errors, but got none")
 		}
-		if have, want := errors[0].Message, "no results"; have != want {
+		if have, want := errs[0].Message, "no results"; have != want {
 			t.Fatalf("wrong error code. want=%q, have=%q", want, have)
 		}
 	})
@@ -1745,8 +1834,8 @@ func TestCreateChangesetComments(t *testing.T) {
 
 	generateInput := func() map[string]any {
 		return map[string]any{
-			"batchChange": marshalBatchChangeID(batchChange.ID),
-			"changesets":  []string{string(marshalChangesetID(changeset.ID))},
+			"batchChange": bgql.MarshalBatchChangeID(batchChange.ID),
+			"changesets":  []string{string(bgql.MarshalChangesetID(changeset.ID))},
 			"body":        "test-body",
 		}
 	}
@@ -1784,7 +1873,7 @@ func TestCreateChangesetComments(t *testing.T) {
 
 	t.Run("changeset in different batch change fails", func(t *testing.T) {
 		input := generateInput()
-		input["changesets"] = []string{string(marshalChangesetID(otherChangeset.ID))}
+		input["changesets"] = []string{string(bgql.MarshalChangesetID(otherChangeset.ID))}
 		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateChangesetComments)
 
 		if len(errs) != 1 {
@@ -1855,8 +1944,8 @@ func TestReenqueueChangesets(t *testing.T) {
 
 	generateInput := func() map[string]any {
 		return map[string]any{
-			"batchChange": marshalBatchChangeID(batchChange.ID),
-			"changesets":  []string{string(marshalChangesetID(changeset.ID))},
+			"batchChange": bgql.MarshalBatchChangeID(batchChange.ID),
+			"changesets":  []string{string(bgql.MarshalChangesetID(changeset.ID))},
 		}
 	}
 
@@ -1880,7 +1969,7 @@ func TestReenqueueChangesets(t *testing.T) {
 
 	t.Run("changeset in different batch change fails", func(t *testing.T) {
 		input := generateInput()
-		input["changesets"] = []string{string(marshalChangesetID(otherChangeset.ID))}
+		input["changesets"] = []string{string(bgql.MarshalChangesetID(otherChangeset.ID))}
 		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationReenqueueChangesets)
 
 		if len(errs) != 1 {
@@ -1893,7 +1982,7 @@ func TestReenqueueChangesets(t *testing.T) {
 
 	t.Run("successful changeset fails", func(t *testing.T) {
 		input := generateInput()
-		input["changesets"] = []string{string(marshalChangesetID(successfulChangeset.ID))}
+		input["changesets"] = []string{string(bgql.MarshalChangesetID(successfulChangeset.ID))}
 		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationReenqueueChangesets)
 
 		if len(errs) != 1 {
@@ -1966,8 +2055,8 @@ func TestMergeChangesets(t *testing.T) {
 
 	generateInput := func() map[string]any {
 		return map[string]any{
-			"batchChange": marshalBatchChangeID(batchChange.ID),
-			"changesets":  []string{string(marshalChangesetID(changeset.ID))},
+			"batchChange": bgql.MarshalBatchChangeID(batchChange.ID),
+			"changesets":  []string{string(bgql.MarshalChangesetID(changeset.ID))},
 		}
 	}
 
@@ -1991,7 +2080,7 @@ func TestMergeChangesets(t *testing.T) {
 
 	t.Run("changeset in different batch change fails", func(t *testing.T) {
 		input := generateInput()
-		input["changesets"] = []string{string(marshalChangesetID(otherChangeset.ID))}
+		input["changesets"] = []string{string(bgql.MarshalChangesetID(otherChangeset.ID))}
 		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationMergeChangesets)
 
 		if len(errs) != 1 {
@@ -2004,7 +2093,7 @@ func TestMergeChangesets(t *testing.T) {
 
 	t.Run("merged changeset fails", func(t *testing.T) {
 		input := generateInput()
-		input["changesets"] = []string{string(marshalChangesetID(mergedChangeset.ID))}
+		input["changesets"] = []string{string(bgql.MarshalChangesetID(mergedChangeset.ID))}
 		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationMergeChangesets)
 
 		if len(errs) != 1 {
@@ -2077,8 +2166,8 @@ func TestCloseChangesets(t *testing.T) {
 
 	generateInput := func() map[string]any {
 		return map[string]any{
-			"batchChange": marshalBatchChangeID(batchChange.ID),
-			"changesets":  []string{string(marshalChangesetID(changeset.ID))},
+			"batchChange": bgql.MarshalBatchChangeID(batchChange.ID),
+			"changesets":  []string{string(bgql.MarshalChangesetID(changeset.ID))},
 		}
 	}
 
@@ -2102,7 +2191,7 @@ func TestCloseChangesets(t *testing.T) {
 
 	t.Run("changeset in different batch change fails", func(t *testing.T) {
 		input := generateInput()
-		input["changesets"] = []string{string(marshalChangesetID(otherChangeset.ID))}
+		input["changesets"] = []string{string(bgql.MarshalChangesetID(otherChangeset.ID))}
 		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCloseChangesets)
 
 		if len(errs) != 1 {
@@ -2115,7 +2204,7 @@ func TestCloseChangesets(t *testing.T) {
 
 	t.Run("merged changeset fails", func(t *testing.T) {
 		input := generateInput()
-		input["changesets"] = []string{string(marshalChangesetID(mergedChangeset.ID))}
+		input["changesets"] = []string{string(bgql.MarshalChangesetID(mergedChangeset.ID))}
 		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCloseChangesets)
 
 		if len(errs) != 1 {
@@ -2210,10 +2299,10 @@ func TestPublishChangesets(t *testing.T) {
 
 	generateInput := func() map[string]any {
 		return map[string]any{
-			"batchChange": marshalBatchChangeID(batchChange.ID),
+			"batchChange": bgql.MarshalBatchChangeID(batchChange.ID),
 			"changesets": []string{
-				string(marshalChangesetID(publishableChangeset.ID)),
-				string(marshalChangesetID(unpublishableChangeset.ID)),
+				string(bgql.MarshalChangesetID(publishableChangeset.ID)),
+				string(bgql.MarshalChangesetID(unpublishableChangeset.ID)),
 			},
 			"draft": true,
 		}
@@ -2239,7 +2328,7 @@ func TestPublishChangesets(t *testing.T) {
 
 	t.Run("changeset in different batch change fails", func(t *testing.T) {
 		input := generateInput()
-		input["changesets"] = []string{string(marshalChangesetID(otherChangeset.ID))}
+		input["changesets"] = []string{string(bgql.MarshalChangesetID(otherChangeset.ID))}
 		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationPublishChangesets)
 
 		if len(errs) != 1 {
@@ -2385,7 +2474,7 @@ func TestMaxUnlicensedChangesets(t *testing.T) {
 
 	apitest.MustExec(actorCtx, t, s, nil, &response, querymaxUnlicensedChangesets)
 
-	assert.Equal(t, int32(5), response.MaxUnlicensedChangesets)
+	assert.Equal(t, int32(10), response.MaxUnlicensedChangesets)
 }
 
 const querymaxUnlicensedChangesets = `

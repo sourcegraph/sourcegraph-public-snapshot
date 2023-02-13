@@ -3,7 +3,7 @@ import { subDays } from 'date-fns'
 import { NEVER, Observable, of } from 'rxjs'
 import sinon from 'sinon'
 
-import { SearchContextFields } from '@sourcegraph/search'
+import { SearchContextFields } from '@sourcegraph/shared/src/graphql-operations'
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { AuthenticatedUser } from '../../auth'
@@ -68,7 +68,6 @@ const searchContextToEdit: SearchContextFields = {
 const authUser: AuthenticatedUser = {
     __typename: 'User',
     id: '0',
-    email: 'alice@sourcegraph.com',
     username: 'alice',
     avatarURL: null,
     session: { canSignOut: true },
@@ -87,7 +86,8 @@ const authUser: AuthenticatedUser = {
     databaseID: 0,
     tosAccepted: true,
     searchable: true,
-    emails: [],
+    emails: [{ email: 'alice@sourcegraph.com', isPrimary: true, verified: true }],
+    latestSettings: null,
 }
 
 const deleteSearchContext = sinon.fake(() => NEVER)

@@ -2,11 +2,13 @@ import React, { useState } from 'react'
 
 import { mdiMagnify, mdiPlus } from '@mdi/js'
 
-import { SearchContextProps } from '@sourcegraph/search'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchContextProps } from '@sourcegraph/shared/src/search'
+import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { PageHeader, Link, Button, Icon, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { CloudCtaBanner } from '../../components/CloudCtaBanner'
 import { Page } from '../../components/Page'
 import { eventLogger } from '../../tracking/eventLogger'
 
@@ -40,30 +42,37 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                                 <Icon aria-hidden={true} svgPath={mdiPlus} />
                                 Create search context
                             </Button>
-                            {isSourcegraphDotCom && (
-                                <Button
-                                    to="https://signup.sourcegraph.com/?p=context"
-                                    className="mt-2"
-                                    as={Link}
-                                    variant="secondary"
-                                    onClick={() => eventLogger.log('ClickedOnCloudCTA')}
-                                >
-                                    Search private code
-                                </Button>
-                            )}
                         </div>
                     }
                     description={
-                        <span className="text-muted">
-                            Search code you care about with search contexts.{' '}
-                            <Link
-                                to="/help/code_search/explanations/features#search-contexts"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                Learn more
-                            </Link>
-                        </span>
+                        <>
+                            <span className="text-muted">
+                                Search code you care about with search contexts.{' '}
+                                <Link
+                                    to="/help/code_search/explanations/features#search-contexts"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    Learn more
+                                </Link>
+                            </span>
+                            {isSourcegraphDotCom && (
+                                <CloudCtaBanner variant="filled" className="mb-0">
+                                    To search across your team's private repos,{' '}
+                                    <Link
+                                        to={buildCloudTrialURL(authenticatedUser, 'context')}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={() =>
+                                            eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'ContextsSettings' })
+                                        }
+                                    >
+                                        try Sourcegraph Cloud
+                                    </Link>
+                                    .
+                                </CloudCtaBanner>
+                            )}
+                        </>
                     }
                     className="mb-3"
                 >
@@ -73,21 +82,6 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                     </PageHeader.Heading>
                 </PageHeader>
                 {alert && <Alert variant="danger">{alert}</Alert>}
-                <div id="search-context-tabs-list" className="nav nav-tabs">
-                    <div className="nav-item" role="tablist">
-                        <Link
-                            to="/contexts"
-                            role="tab"
-                            aria-selected={true}
-                            aria-controls="search-context-list"
-                            className="nav-link active"
-                        >
-                            <span className="text-content" data-tab-content="Your search contexts">
-                                Available contexts
-                            </span>
-                        </Link>
-                    </div>
-                </div>
                 <div role="tabpanel" id="search-context-list">
                     <SearchContextsList
                         authenticatedUser={authenticatedUser}

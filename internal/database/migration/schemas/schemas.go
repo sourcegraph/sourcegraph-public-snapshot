@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/migrations"
 )
@@ -24,12 +25,12 @@ var (
 )
 
 func mustResolveSchema(name string) *Schema {
-	fs, err := fs.Sub(migrations.QueryDefinitions, name)
+	fsys, err := fs.Sub(migrations.QueryDefinitions, name)
 	if err != nil {
 		panic(fmt.Sprintf("malformed migration definitions %q: %s", name, err))
 	}
 
-	schema, err := ResolveSchema(fs, name)
+	schema, err := ResolveSchema(fsys, name)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -46,7 +47,19 @@ func ResolveSchema(fs fs.FS, name string) (*Schema, error) {
 	return &Schema{
 		Name:                name,
 		MigrationsTableName: MigrationsTableName(name),
-		FS:                  fs,
+		Definitions:         definitions,
+	}, nil
+}
+
+func ResolveSchemaAtRev(name, rev string) (*Schema, error) {
+	definitions, err := shared.GetFrozenDefinitions(name, rev)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Schema{
+		Name:                name,
+		MigrationsTableName: MigrationsTableName(name),
 		Definitions:         definitions,
 	}, nil
 }

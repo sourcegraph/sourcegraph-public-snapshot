@@ -7,7 +7,7 @@ client/browser/build
 **/coverage
 internal/database/schema*.md
 internal/database/schema*.json
-internal/database/migration/shared/upgradedata/stitched-migration-graph.json
+internal/database/migration/shared/data/**/*.json
 cmd/xlang-python/python-langserver/
 package-lock.json
 package.json
@@ -16,7 +16,6 @@ vendor/
 .nyc_output/
 out/
 dist/
-client/shared/src/graphqlschema.ts
 client/shared/src/schema/*.d.ts
 ts-node-*
 testdata
@@ -41,3 +40,6 @@ client/jetbrains/.gradle
 .browserslistrc
 code-intel-extensions.json
 .direnv
+pnpm-lock.yaml
+client/plugin-backstage/
+node_modules/

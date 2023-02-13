@@ -13,8 +13,10 @@ import (
 )
 
 var (
-	pool      = redispool.Store
-	keyPrefix = "license_user_count:"
+	// cacheStore is used to cache the output from the database. We use Store
+	// since we want it to be durable.
+	cacheStore = redispool.Store
+	keyPrefix  = "license_user_count:"
 
 	started bool
 )
@@ -29,39 +31,33 @@ type UsersStore interface {
 
 // setMaxUsers sets the max users associated with a license key if the new max count is greater than the previous max.
 func setMaxUsers(key string, count int) error {
-	c := pool.Get()
-	defer c.Close()
-
-	lastMax, _, err := getMaxUsers(c, key)
+	lastMax, _, err := getMaxUsers(key)
 	if err != nil {
 		return err
 	}
 
 	if count > lastMax {
-		err = c.Send("HSET", maxUsersKey(), key, count)
+		err := cacheStore.HSet(maxUsersKey(), key, count)
 		if err != nil {
 			return err
 		}
-		return c.Send("HSET", maxUsersTimeKey(), key, time.Now().Format("2006-01-02 15:04:05 UTC"))
+		return cacheStore.HSet(maxUsersTimeKey(), key, time.Now().Format("2006-01-02 15:04:05 UTC"))
 	}
 	return nil
 }
 
 // GetMaxUsers gets the max users associated with a license key.
 func GetMaxUsers(signature string) (int, string, error) {
-	c := pool.Get()
-	defer c.Close()
-
 	if signature == "" {
 		// No license key is in use.
 		return 0, "", nil
 	}
 
-	return getMaxUsers(c, signature)
+	return getMaxUsers(signature)
 }
 
-func getMaxUsers(c redis.Conn, key string) (int, string, error) {
-	lastMax, err := redis.String(c.Do("HGET", maxUsersKey(), key))
+func getMaxUsers(key string) (int, string, error) {
+	lastMax, err := cacheStore.HGet(maxUsersKey(), key).String()
 	if err != nil && err != redis.ErrNil {
 		return 0, "", err
 	}
@@ -72,7 +68,7 @@ func getMaxUsers(c redis.Conn, key string) (int, string, error) {
 			return 0, "", err
 		}
 	}
-	lastMaxDate, err := redis.String(c.Do("HGET", maxUsersTimeKey(), key))
+	lastMaxDate, err := cacheStore.HGet(maxUsersTimeKey(), key).String()
 	if err != nil && err != redis.ErrNil {
 		return 0, "", err
 	}

@@ -3,14 +3,8 @@ import { parse as parseJSONC } from 'jsonc-parser'
 import { Observable } from 'rxjs'
 import { map, mapTo, tap } from 'rxjs/operators'
 
-import { createAggregateError, repeatUntil, resetAllMemoizationCaches } from '@sourcegraph/common'
-import {
-    createInvalidGraphQLMutationResponseError,
-    dataOrThrowErrors,
-    gql,
-    isErrorGraphQLResult,
-    useQuery,
-} from '@sourcegraph/http-client'
+import { resetAllMemoizationCaches } from '@sourcegraph/common'
+import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
@@ -24,14 +18,10 @@ import {
     CreateUserResult,
     DeleteOrganizationResult,
     DeleteOrganizationVariables,
-    DeleteUserResult,
-    DeleteUserVariables,
     ExternalServiceKind,
     FeatureFlagFields,
     FeatureFlagsResult,
     FeatureFlagsVariables,
-    InvalidateSessionsByIDResult,
-    InvalidateSessionsByIDVariables,
     OrganizationsConnectionFields,
     OrganizationsResult,
     OrganizationsVariables,
@@ -41,30 +31,20 @@ import {
     RandomizeUserPasswordResult,
     ReloadSiteResult,
     ReloadSiteVariables,
-    RepositoriesResult,
-    RepositoriesVariables,
-    RepositoryOrderBy,
     Scalars,
     ScheduleRepositoryPermissionsSyncResult,
     ScheduleRepositoryPermissionsSyncVariables,
     SetUserIsSiteAdminResult,
     SetUserIsSiteAdminVariables,
-    SetUserTagResult,
-    SetUserTagVariables,
     SiteAdminAccessTokenConnectionFields,
     SiteAdminAccessTokensResult,
     SiteAdminAccessTokensVariables,
     SiteAdminSettingsCascadeFields,
-    SiteMonitoringStatisticsResult,
     SiteResult,
     SiteUpdateCheckResult,
     SiteUpdateCheckVariables,
-    SiteUsageStatisticsResult,
     UpdateSiteConfigurationResult,
     UpdateSiteConfigurationVariables,
-    UserActivePeriod,
-    UsersResult,
-    UserUsageStatisticsResult,
     WebhookByIdResult,
     WebhookByIdVariables,
     WebhookFields,
@@ -79,49 +59,6 @@ import {
 import { accessTokenFragment } from '../settings/tokens/AccessTokenNode'
 
 import { WEBHOOK_LOGS_BY_ID } from './webhooks/backend'
-
-/**
- * Fetches all users.
- */
-export function fetchAllUsers(args: { first?: number; query?: string }): Observable<UsersResult['users']> {
-    return queryGraphQL(
-        gql`
-            query Users($first: Int, $query: String) {
-                users(first: $first, query: $query) {
-                    nodes {
-                        ...UserNodeFields
-                    }
-                    totalCount
-                }
-            }
-
-            fragment UserNodeFields on User {
-                id
-                username
-                displayName
-                emails {
-                    email
-                    verified
-                    verificationPending
-                    viewerCanManuallyVerify
-                    isPrimary
-                }
-                createdAt
-                siteAdmin
-                organizations {
-                    nodes {
-                        name
-                    }
-                }
-                tags
-            }
-        `,
-        args
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.users)
-    )
-}
 
 /**
  * Fetches all organizations.
@@ -174,6 +111,10 @@ const mirrorRepositoryInfoFieldsFragment = gql`
         cloned
         cloneInProgress
         updatedAt
+        isCorrupted
+        corruptionLogs {
+            timestamp
+        }
         lastError
         byteSize
         shard
@@ -192,6 +133,7 @@ const siteAdminRepositoryFieldsFragment = gql`
     ${externalRepositoryFieldsFragment}
 
     fragment SiteAdminRepositoryFields on Repository {
+        __typename
         id
         name
         createdAt
@@ -206,88 +148,54 @@ const siteAdminRepositoryFieldsFragment = gql`
         }
     }
 `
-
-export const SiteUsagePeriodFragment = gql`
-    fragment SiteUsagePeriodFields on SiteUsagePeriod {
-        userCount
-        registeredUserCount
-        anonymousUserCount
-        startTime
+export const REPOSITORIES_QUERY = gql`
+    query Repositories(
+        $first: Int
+        $last: Int
+        $after: String
+        $before: String
+        $query: String
+        $indexed: Boolean
+        $notIndexed: Boolean
+        $failedFetch: Boolean
+        $corrupted: Boolean
+        $cloneStatus: CloneStatus
+        $orderBy: RepositoryOrderBy
+        $descending: Boolean
+        $externalService: ID
+    ) {
+        repositories(
+            first: $first
+            last: $last
+            after: $after
+            before: $before
+            query: $query
+            indexed: $indexed
+            notIndexed: $notIndexed
+            failedFetch: $failedFetch
+            corrupted: $corrupted
+            cloneStatus: $cloneStatus
+            orderBy: $orderBy
+            descending: $descending
+            externalService: $externalService
+        ) {
+            nodes {
+                ...SiteAdminRepositoryFields
+            }
+            totalCount
+            pageInfo {
+                hasNextPage
+                hasPreviousPage
+                startCursor
+                endCursor
+            }
+        }
     }
+
+    ${siteAdminRepositoryFieldsFragment}
 `
 
-/**
- * Fetches all repositories.
- *
- * @returns Observable that emits the list of repositories
- */
-function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<RepositoriesResult['repositories']> {
-    return requestGraphQL<RepositoriesResult, RepositoriesVariables>(
-        gql`
-            query Repositories(
-                $first: Int
-                $query: String
-                $indexed: Boolean
-                $notIndexed: Boolean
-                $failedFetch: Boolean
-                $cloneStatus: CloneStatus
-                $orderBy: RepositoryOrderBy
-                $descending: Boolean
-            ) {
-                repositories(
-                    first: $first
-                    query: $query
-                    indexed: $indexed
-                    notIndexed: $notIndexed
-                    failedFetch: $failedFetch
-                    cloneStatus: $cloneStatus
-                    orderBy: $orderBy
-                    descending: $descending
-                ) {
-                    nodes {
-                        ...SiteAdminRepositoryFields
-                    }
-                    totalCount(precise: true)
-                    pageInfo {
-                        hasNextPage
-                    }
-                }
-            }
-
-            ${siteAdminRepositoryFieldsFragment}
-        `,
-        {
-            indexed: args.indexed ?? true,
-            notIndexed: args.notIndexed ?? true,
-            failedFetch: args.failedFetch ?? false,
-            first: args.first ?? null,
-            query: args.query ?? null,
-            cloneStatus: args.cloneStatus ?? null,
-            orderBy: args.orderBy ?? RepositoryOrderBy.REPOSITORY_NAME,
-            descending: args.descending ?? false,
-        }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.repositories)
-    )
-}
-
 export const REPO_PAGE_POLL_INTERVAL = 5000
-
-export function fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(
-    args: Partial<RepositoriesVariables>
-): Observable<RepositoriesResult['repositories']> {
-    return fetchAllRepositories(args).pipe(
-        // Poll every 5000ms if repositories are being cloned or the list is empty.
-        repeatUntil(
-            result =>
-                result.nodes &&
-                result.nodes.length > 0 &&
-                result.nodes.every(nodes => !nodes.mirrorInfo.cloneInProgress && nodes.mirrorInfo.cloned),
-            { delay: REPO_PAGE_POLL_INTERVAL }
-        )
-    )
-}
 
 export const SLOW_REQUESTS = gql`
     query SlowRequests($after: String) {
@@ -344,8 +252,44 @@ export const OUTBOUND_REQUESTS = gql`
         }
     }
 `
+export const BACKGROUND_JOBS = gql`
+    query BackgroundJobs($recentRunCount: Int) {
+        backgroundJobs(recentRunCount: $recentRunCount) {
+            nodes {
+                name
 
-export const OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL = 5000
+                routines {
+                    name
+                    type
+                    description
+                    intervalMs
+                    instances {
+                        hostName
+                        lastStartedAt
+                        lastStoppedAt
+                    }
+                    recentRuns {
+                        at
+                        hostName
+                        durationMs
+                        errorMessage
+                    }
+                    stats {
+                        since
+                        runCount
+                        errorCount
+                        minDurationMs
+                        avgDurationMs
+                        maxDurationMs
+                    }
+                }
+            }
+        }
+    }
+`
+
+export const OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL_MS = 5000
+export const BACKGROUND_JOBS_PAGE_POLL_INTERVAL_MS = 5000
 
 export const UPDATE_MIRROR_REPOSITORY = gql`
     mutation UpdateMirrorRepository($repository: ID!) {
@@ -372,7 +316,7 @@ export function checkMirrorRepositoryConnection(
               name: string
           }
 ): Observable<CheckMirrorRepositoryConnectionResult['checkMirrorRepositoryConnection']> {
-    return mutateGraphQL(CHECK_MIRROR_REPOSITORY_CONNECTION, args).pipe(
+    return mutateGraphQL<CheckMirrorRepositoryConnectionResult>(CHECK_MIRROR_REPOSITORY_CONNECTION, args).pipe(
         map(dataOrThrowErrors),
         tap(() => resetAllMemoizationCaches()),
         map(data => data.checkMirrorRepositoryConnection)
@@ -405,81 +349,12 @@ export const RECLONE_REPOSITORY_MUTATION = gql`
 `
 
 /**
- * Fetches usage statistics for all users.
- *
- * @returns Observable that emits the list of users and their usage data
- */
-export function fetchUserUsageStatistics(args: {
-    activePeriod?: UserActivePeriod
-    query?: string
-    first?: number
-}): Observable<UserUsageStatisticsResult['users']> {
-    return queryGraphQL(
-        gql`
-            query UserUsageStatistics($activePeriod: UserActivePeriod, $query: String, $first: Int) {
-                users(activePeriod: $activePeriod, query: $query, first: $first) {
-                    nodes {
-                        id
-                        username
-                        usageStatistics {
-                            ...UserUsageStatisticsFields
-                        }
-                    }
-                    totalCount
-                }
-            }
-
-            fragment UserUsageStatisticsFields on UserUsageStatistics {
-                searchQueries
-                pageViews
-                codeIntelligenceActions
-                lastActiveTime
-                lastActiveCodeHostIntegrationTime
-            }
-        `,
-        args
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.users)
-    )
-}
-
-/**
- * Fetches site-wide usage statitics.
- *
- * @returns Observable that emits the list of users and their usage data
- */
-export function fetchSiteUsageStatistics(): Observable<SiteUsageStatisticsResult['site']['usageStatistics']> {
-    return queryGraphQL(gql`
-        query SiteUsageStatistics {
-            site {
-                usageStatistics {
-                    daus {
-                        ...SiteUsagePeriodFields
-                    }
-                    waus {
-                        ...SiteUsagePeriodFields
-                    }
-                    maus {
-                        ...SiteUsagePeriodFields
-                    }
-                }
-            }
-        }
-        ${SiteUsagePeriodFragment}
-    `).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.site.usageStatistics)
-    )
-}
-
-/**
  * Fetches the site and its configuration.
  *
  * @returns Observable that emits the site
  */
 export function fetchSite(): Observable<SiteResult['site']> {
-    return queryGraphQL(gql`
+    return queryGraphQL<SiteResult>(gql`
         query Site {
             site {
                 __typename
@@ -523,7 +398,7 @@ interface AllConfig {
  * Fetches all the configuration and settings (requires site admin privileges).
  */
 export function fetchAllConfigAndSettings(): Observable<AllConfig> {
-    return queryGraphQL(
+    return queryGraphQL<AllConfigResult>(
         gql`
             query AllConfig($first: Int) {
                 site {
@@ -667,30 +542,15 @@ export function setUserIsSiteAdmin(userID: Scalars['ID'], siteAdmin: boolean): O
     )
 }
 
-export function invalidateSessionsByID(userID: Scalars['ID']): Observable<void> {
-    return requestGraphQL<InvalidateSessionsByIDResult, InvalidateSessionsByIDVariables>(
-        gql`
-            mutation InvalidateSessionsByID($userID: ID!) {
-                invalidateSessionsByID(userID: $userID) {
-                    alwaysNil
-                }
-            }
-        `,
-        { userID }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(() => undefined)
-    )
-}
-
 export function randomizeUserPassword(
     user: Scalars['ID']
 ): Observable<RandomizeUserPasswordResult['randomizeUserPassword']> {
-    return mutateGraphQL(
+    return mutateGraphQL<RandomizeUserPasswordResult>(
         gql`
             mutation RandomizeUserPassword($user: ID!) {
                 randomizeUserPassword(user: $user) {
                     resetPasswordURL
+                    emailSent
                 }
             }
         `,
@@ -701,31 +561,11 @@ export function randomizeUserPassword(
     )
 }
 
-export function deleteUser(user: Scalars['ID'], hard?: boolean): Observable<void> {
-    return requestGraphQL<DeleteUserResult, DeleteUserVariables>(
-        gql`
-            mutation DeleteUser($user: ID!, $hard: Boolean) {
-                deleteUser(user: $user, hard: $hard) {
-                    alwaysNil
-                }
-            }
-        `,
-        { user, hard: hard ?? null }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            if (!data.deleteUser) {
-                throw createInvalidGraphQLMutationResponseError('DeleteUser')
-            }
-        })
-    )
-}
-
 export function createUser(username: string, email: string | undefined): Observable<CreateUserResult['createUser']> {
-    return mutateGraphQL(
+    return mutateGraphQL<CreateUserResult>(
         gql`
-            mutation CreateUser($username: String!, $email: String) {
-                createUser(username: $username, email: $email) {
+            mutation SiteAdminCreateUser($username: String!, $email: String) {
+                createUser(username: $username, email: $email, verifiedEmail: false) {
                     resetPasswordURL
                 }
             }
@@ -734,26 +574,6 @@ export function createUser(username: string, email: string | undefined): Observa
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.createUser)
-    )
-}
-
-export function setUserTag(node: string, tag: string, present: boolean = true): Observable<void> {
-    return requestGraphQL<SetUserTagResult, SetUserTagVariables>(
-        gql`
-            mutation SetUserTag($node: ID!, $tag: String!, $present: Boolean!) {
-                setTag(node: $node, tag: $tag, present: $present) {
-                    alwaysNil
-                }
-            }
-        `,
-        { node, tag, present }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            if (!data.setTag) {
-                throw createInvalidGraphQLMutationResponseError('SetUserTag')
-            }
-        })
     )
 }
 
@@ -798,52 +618,6 @@ export function fetchSiteUpdateCheck(): Observable<SiteUpdateCheckResult['site']
     return requestGraphQL<SiteUpdateCheckResult, SiteUpdateCheckVariables>(SITE_UPDATE_CHECK).pipe(
         map(dataOrThrowErrors),
         map(data => data.site)
-    )
-}
-
-/**
- * Resolves to `false` if prometheus API is unavailable (due to being disabled or not configured in this deployment)
- *
- * @param days number of days of data to fetch
- */
-export function fetchMonitoringStats(
-    days: number
-): Observable<SiteMonitoringStatisticsResult['site']['monitoringStatistics'] | false> {
-    // more details in /internal/srcprometheus.ErrPrometheusUnavailable
-    const errorPrometheusUnavailable = 'prometheus API is unavailable'
-    return queryGraphQL(
-        gql`
-            query SiteMonitoringStatistics($days: Int!) {
-                site {
-                    monitoringStatistics(days: $days) {
-                        alerts {
-                            serviceName
-                            name
-                            timestamp
-                            average
-                            owner
-                        }
-                    }
-                }
-            }
-        `,
-        { days }
-    ).pipe(
-        map(result => {
-            if (isErrorGraphQLResult(result)) {
-                if (result.errors.find(error => error.message.includes(errorPrometheusUnavailable))) {
-                    return false
-                }
-                throw createAggregateError(result.errors)
-            }
-            return result.data
-        }),
-        map(data => {
-            if (data) {
-                return data.site.monitoringStatistics
-            }
-            return data
-        })
     )
 }
 
@@ -934,6 +708,7 @@ export const REPOSITORY_STATS = gql`
             cloned
             cloning
             failedFetch
+            corrupted
             indexed
         }
     }

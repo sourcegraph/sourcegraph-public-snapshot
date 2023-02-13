@@ -159,30 +159,41 @@ func (s *Service) GetRetentionPolicyOverview(ctx context.Context, upload types.U
 	}
 
 	sort.Slice(potentialMatches, func(i, j int) bool {
+		// Sort implicit policy at the top
 		if potentialMatches[i].ConfigurationPolicy == nil {
 			return true
 		} else if potentialMatches[j].ConfigurationPolicy == nil {
 			return false
 		}
+
+		// Then sort matches first
+		if potentialMatches[i].Matched {
+			return !potentialMatches[j].Matched
+		}
+		if potentialMatches[j].Matched {
+			return false
+		}
+
+		// Then sort by ids
 		return potentialMatches[i].ID < potentialMatches[j].ID
 	})
 
 	return potentialMatches, len(potentialMatches), nil
 }
 
-func (s *Service) GetPreviewRepositoryFilter(ctx context.Context, patterns []string, limit, offset int) (_ []int, totalCount int, repositoryMatchLimit *int, err error) {
+func (s *Service) GetPreviewRepositoryFilter(ctx context.Context, patterns []string, limit int) (_ []int, totalCount int, repositoryMatchLimit *int, err error) {
 	ctx, _, endObservation := s.operations.getPreviewRepositoryFilter.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	if val := conf.CodeIntelAutoIndexingPolicyRepositoryMatchLimit(); val != -1 {
 		repositoryMatchLimit = &val
 
-		if offset+limit > *repositoryMatchLimit {
-			limit = *repositoryMatchLimit - offset
+		if limit > *repositoryMatchLimit {
+			limit = *repositoryMatchLimit
 		}
 	}
 
-	ids, totalCount, err := s.store.GetRepoIDsByGlobPatterns(ctx, patterns, limit, offset)
+	ids, totalCount, err := s.store.GetRepoIDsByGlobPatterns(ctx, patterns, limit, 0)
 	if err != nil {
 		return nil, 0, nil, err
 	}
@@ -190,27 +201,73 @@ func (s *Service) GetPreviewRepositoryFilter(ctx context.Context, patterns []str
 	return ids, totalCount, repositoryMatchLimit, nil
 }
 
-func (s *Service) GetPreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType types.GitObjectType, pattern string) (_ map[string][]string, err error) {
+type GitObject struct {
+	Name        string
+	Rev         string
+	CommittedAt time.Time
+}
+
+func (s *Service) GetPreviewGitObjectFilter(
+	ctx context.Context,
+	repositoryID int,
+	gitObjectType types.GitObjectType,
+	pattern string,
+	limit int,
+	countObjectsYoungerThanHours *int32,
+) (_ []GitObject, totalCount int, totalCountYoungerThanThreshold *int, err error) {
 	ctx, _, endObservation := s.operations.getPreviewGitObjectFilter.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	policyMatcher := s.getPolicyMatcherFromFactory(s.gitserver, policies.NoopExtractor, false, false)
-	policyMatches, err := policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, []types.ConfigurationPolicy{{Type: gitObjectType, Pattern: pattern}}, timeutil.Now())
+	policyMatches, err := policyMatcher.CommitsDescribedByPolicy(
+		ctx,
+		repositoryID,
+		[]types.ConfigurationPolicy{{Type: gitObjectType, Pattern: pattern}},
+		timeutil.Now(),
+	)
 	if err != nil {
-		return nil, err
+		return nil, 0, nil, err
 	}
 
-	namesByCommit := make(map[string][]string, len(policyMatches))
+	gitObjects := make([]GitObject, 0, len(policyMatches))
 	for commit, policyMatches := range policyMatches {
-		names := make([]string, 0, len(policyMatches))
 		for _, policyMatch := range policyMatches {
-			names = append(names, policyMatch.Name)
+			gitObjects = append(gitObjects, GitObject{
+				Name:        policyMatch.Name,
+				Rev:         commit,
+				CommittedAt: *policyMatch.CommittedAt,
+			})
+		}
+	}
+	sort.Slice(gitObjects, func(i, j int) bool {
+		if countObjectsYoungerThanHours != nil && gitObjects[i].CommittedAt != gitObjects[j].CommittedAt {
+			return !gitObjects[i].CommittedAt.Before(gitObjects[j].CommittedAt)
 		}
 
-		namesByCommit[commit] = names
+		if gitObjects[i].Name == gitObjects[j].Name {
+			return gitObjects[i].Rev < gitObjects[j].Rev
+		}
+
+		return gitObjects[i].Name < gitObjects[j].Name
+	})
+
+	if countObjectsYoungerThanHours != nil {
+		count := 0
+		for _, gitObject := range gitObjects {
+			if time.Since(gitObject.CommittedAt) <= time.Duration(*countObjectsYoungerThanHours)*time.Hour {
+				count++
+			}
+		}
+
+		totalCountYoungerThanThreshold = &count
 	}
 
-	return namesByCommit, nil
+	totalCount = len(gitObjects)
+	if limit < totalCount {
+		gitObjects = gitObjects[:limit]
+	}
+
+	return gitObjects, totalCount, totalCountYoungerThanThreshold, nil
 }
 
 func (s *Service) GetUnsafeDB() database.DB {

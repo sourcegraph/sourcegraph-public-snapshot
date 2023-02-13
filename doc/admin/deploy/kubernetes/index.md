@@ -19,6 +19,7 @@ Deploying Sourcegraph on Kubernetes is for organizations that need highly scalab
 Our Kubernetes support has the following requirements:
 
 - [Sourcegraph Enterprise license](configure.md#add-license-key). _You can run through these instructions without one, but you must obtain a license for instances of more than 10 users_
+- A deployed kubernetes cluster. You can do this yourself, or use [our terraform configs](https://github.com/sourcegraph/tf-k8s-configs) to quickly deploy a cluster that will support a standard Sourcegraph instance on Google Cloud Platform (GKE) or Amazon Web Services (EKS).
 - Minimum Kubernetes version: [v1.19](https://kubernetes.io/blog/2020/08/26/kubernetes-release-1.19-accentuate-the-paw-sitive/) and [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.19 or later (check kubectl docs for backward and forward compatibility with Kubernetes versions)
 - Support for Persistent Volumes (SSDs recommended)
 

@@ -70,7 +70,7 @@ func (r *schemaResolver) SetMigrationDirection(ctx context.Context, args *struct
 		return nil, err
 	}
 
-	return nil, nil
+	return &EmptyResponse{}, nil
 }
 
 // MarshalOutOfBandMigrationID converts an internal out of band migration id into a GraphQL id.

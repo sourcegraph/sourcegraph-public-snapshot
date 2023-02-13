@@ -21,6 +21,7 @@ type gitCommitConnectionResolver struct {
 	first  *int32
 	query  *string
 	path   *string
+	follow bool
 	author *string
 
 	// after corresponds to --after in the git log / git rev-spec commands. Not to be confused with
@@ -28,6 +29,7 @@ type gitCommitConnectionResolver struct {
 	// the field. See next field.
 	after       *string
 	afterCursor *string
+	before      *string
 
 	repo *RepositoryResolver
 
@@ -75,15 +77,17 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain
 			return []*gitdomain.Commit{}, errors.Wrap(err, "failed to parse afterCursor")
 		}
 
-		return r.gitserverClient.Commits(ctx, r.repo.RepoName(), gitserver.CommitsOptions{
+		return r.gitserverClient.Commits(ctx, authz.DefaultSubRepoPermsChecker, r.repo.RepoName(), gitserver.CommitsOptions{
 			Range:        r.revisionRange,
 			N:            uint(n),
 			MessageQuery: toValue(r.query).(string),
 			Author:       toValue(r.author).(string),
 			After:        toValue(r.after).(string),
 			Skip:         uint(afterCursor),
+			Before:       toValue(r.before).(string),
 			Path:         toValue(r.path).(string),
-		}, authz.DefaultSubRepoPermsChecker)
+			Follow:       r.follow,
+		})
 	}
 
 	r.once.Do(func() { r.commits, r.err = do() })

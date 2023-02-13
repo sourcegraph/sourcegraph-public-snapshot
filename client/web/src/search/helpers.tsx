@@ -1,4 +1,5 @@
-import { SubmitSearchParameters } from '@sourcegraph/search'
+import { compatNavigate } from '@sourcegraph/common'
+import { SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
@@ -32,7 +33,8 @@ function preservedQuery(query: string): string {
  * flow.
  */
 export function submitSearch({
-    history,
+    historyOrNavigate,
+    location,
     query,
     patternType,
     caseSensitive,
@@ -48,7 +50,7 @@ export function submitSearch({
         searchMode
     )
 
-    const preserved = preservedQuery(history.location.search)
+    const preserved = preservedQuery(location.search)
     if (preserved !== '') {
         searchQueryParameter = searchQueryParameter + '&' + preserved
     }
@@ -65,5 +67,7 @@ export function submitSearch({
         },
         { source }
     )
-    history.push(path, { ...(typeof history.location.state === 'object' ? history.location.state : null), query })
+    const state = { ...(typeof location.state === 'object' ? location.state : null), query }
+
+    compatNavigate(historyOrNavigate, path, { state })
 }

@@ -2,7 +2,7 @@ import React from 'react'
 
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 
-import { formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/search-ui'
+import { formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/branded'
 import { PathMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { RepoName } from './RepoName'

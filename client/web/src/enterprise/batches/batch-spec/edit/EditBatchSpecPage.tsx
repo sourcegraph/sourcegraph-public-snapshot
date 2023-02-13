@@ -1,7 +1,7 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { FC, useCallback, useMemo, useState } from 'react'
 
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import { useHistory } from 'react-router'
+import { useNavigate, useParams } from 'react-router-dom-v5-compat'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -16,8 +16,8 @@ import {
     CheckExecutorsAccessTokenVariables,
     GetBatchChangeToEditResult,
     GetBatchChangeToEditVariables,
-    Scalars,
 } from '../../../../graphql-operations'
+import { NamespaceProps } from '../../../../namespaces'
 import { BatchSpecDownloadLink } from '../../BatchSpec'
 import { EXECUTORS, GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
 import { ConfigurationForm } from '../../create/ConfigurationForm'
@@ -42,15 +42,16 @@ import { WorkspacesPreviewPanel } from './workspaces-preview/WorkspacesPreviewPa
 import layoutStyles from '../Layout.module.scss'
 import styles from './EditBatchSpecPage.module.scss'
 
-export interface EditBatchSpecPageProps extends SettingsCascadeProps<Settings>, ThemeProps {
+export interface EditBatchSpecPageProps extends NamespaceProps, SettingsCascadeProps<Settings>, ThemeProps {
     authenticatedUser: AuthenticatedUser | null
-    batchChange: { name: string; namespace: Scalars['ID'] }
 }
 
-export const EditBatchSpecPage: React.FunctionComponent<React.PropsWithChildren<EditBatchSpecPageProps>> = ({
-    batchChange,
-    ...props
-}) => {
+export const EditBatchSpecPage: FC<EditBatchSpecPageProps> = props => {
+    const { batchChangeName } = useParams()
+    const { id } = props.namespace
+
+    const batchChange = useMemo(() => ({ name: batchChangeName!, namespace: id }), [batchChangeName, id])
+
     const { data, error, loading, refetch } = useQuery<GetBatchChangeToEditResult, GetBatchChangeToEditVariables>(
         GET_BATCH_CHANGE_TO_EDIT,
         {
@@ -130,7 +131,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
     errors,
     authenticatedUser,
 }) {
-    const history = useHistory()
+    const navigate = useNavigate()
 
     const { insightTitle } = useInsightTemplates(settingsCascade)
     const { searchQuery } = useSearchTemplate()
@@ -177,12 +178,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                 onChangeOptions={editor.setExecutionOptions}
             />
             {downloadSpecModalDismissed ? (
-                <BatchSpecDownloadLink
-                    name={batchChange.name}
-                    originalInput={editor.code}
-                    isLightTheme={isLightTheme}
-                    asButton={false}
-                >
+                <BatchSpecDownloadLink name={batchChange.name} originalInput={editor.code} asButton={false}>
                     or download for src-cli
                 </BatchSpecDownloadLink>
             ) : (
@@ -199,7 +195,6 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                 <BatchSpecDownloadLink
                     name={batchChange.name}
                     originalInput={editor.code}
-                    isLightTheme={isLightTheme}
                     asButton={true}
                     className="mb-2"
                 >
@@ -232,7 +227,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                 You're about to edit a batch spec that is currently being executed. You might want to view or cancel
                 that execution first.
             </div>
-            <Button variant="primary" onClick={() => history.replace(`${batchChange.url}/executions/${batchSpec.id}`)}>
+            <Button variant="primary" onClick={() => navigate(`${batchChange.url}/executions/${batchSpec.id}`)}>
                 Go to execution
             </Button>
         </Alert>
@@ -290,7 +285,6 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                 <DownloadSpecModal
                     name={batchChange.name}
                     originalInput={editor.code}
-                    isLightTheme={isLightTheme}
                     setDownloadSpecModalDismissed={setDownloadSpecModalDismissed}
                     setIsDownloadSpecModalOpen={setIsDownloadSpecModalOpen}
                 />

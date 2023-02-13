@@ -9,6 +9,7 @@ import (
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -123,7 +124,7 @@ func (h *handler[T]) dequeue(ctx context.Context, metadata executorMetadata) (_ 
 }
 
 // addExecutionLogEntry calls AddExecutionLogEntry for the given job.
-func (h *handler[T]) addExecutionLogEntry(ctx context.Context, executorName string, jobID int, entry workerutil.ExecutionLogEntry) (entryID int, err error) {
+func (h *handler[T]) addExecutionLogEntry(ctx context.Context, executorName string, jobID int, entry executor.ExecutionLogEntry) (entryID int, err error) {
 	if err := validateWorkerHostname(executorName); err != nil {
 		return 0, err
 	}
@@ -143,7 +144,7 @@ func (h *handler[T]) addExecutionLogEntry(ctx context.Context, executorName stri
 }
 
 // updateExecutionLogEntry calls UpdateExecutionLogEntry for the given job and entry.
-func (h *handler[T]) updateExecutionLogEntry(ctx context.Context, executorName string, jobID int, entryID int, entry workerutil.ExecutionLogEntry) error {
+func (h *handler[T]) updateExecutionLogEntry(ctx context.Context, executorName string, jobID int, entryID int, entry executor.ExecutionLogEntry) error {
 	if err := validateWorkerHostname(executorName); err != nil {
 		return err
 	}

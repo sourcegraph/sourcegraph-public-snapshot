@@ -2,7 +2,11 @@ import { memoize } from 'lodash'
 import { Observable } from 'rxjs'
 
 import { getGraphQLClient, GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
+import { cache } from '@sourcegraph/shared/src/backend/apolloCache'
+
+import { WebGraphQlOperations } from '../graphql-operations'
+
+import { persistenceMapper } from './persistenceMapper'
 
 const getHeaders = (): { [header: string]: string } => {
     const headers: { [header: string]: string } = {
@@ -41,6 +45,8 @@ export const requestGraphQL = <TResult, TVariables = object>(
         headers: getHeaders(),
     })
 
+type WebGraphQlOperationResults = ReturnType<WebGraphQlOperations[keyof WebGraphQlOperations]>
+
 /**
  * Does a GraphQL query to the Sourcegraph GraphQL API running under `/.api/graphql`
  *
@@ -50,8 +56,11 @@ export const requestGraphQL = <TResult, TVariables = object>(
  *
  * @deprecated Prefer using `requestGraphQL()` and passing auto-generated query types as type parameters.
  */
-export const queryGraphQL = (request: string, variables?: {}): Observable<GraphQLResult<GQL.IQuery>> =>
-    requestGraphQLCommon<GQL.IQuery>({
+export const queryGraphQL = <TResult extends WebGraphQlOperationResults>(
+    request: string,
+    variables?: {}
+): Observable<GraphQLResult<TResult>> =>
+    requestGraphQLCommon<TResult>({
         request,
         variables,
         headers: getHeaders(),
@@ -66,8 +75,11 @@ export const queryGraphQL = (request: string, variables?: {}): Observable<GraphQ
  *
  * @deprecated Prefer using `requestGraphQL()` and passing auto-generated query types as type parameters.
  */
-export const mutateGraphQL = (request: string, variables?: {}): Observable<GraphQLResult<GQL.IMutation>> =>
-    requestGraphQLCommon<GQL.IMutation>({
+export const mutateGraphQL = <TResult extends WebGraphQlOperationResults>(
+    request: string,
+    variables?: {}
+): Observable<GraphQLResult<TResult>> =>
+    requestGraphQLCommon<TResult>({
         request,
         variables,
         headers: getHeaders(),
@@ -79,6 +91,8 @@ export const mutateGraphQL = (request: string, variables?: {}): Observable<Graph
  */
 export const getWebGraphQLClient = memoize(() =>
     getGraphQLClient({
+        cache,
+        persistenceMapper,
         isAuthenticated: window.context.isAuthenticatedUser,
         headers: getHeaders(),
     })

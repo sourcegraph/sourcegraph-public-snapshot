@@ -13,7 +13,6 @@
 - [How to troubleshoot pod evictions](troubleshoot-pod-eviction.md)
 - [How to monitor your Sourcegraph instance](monitoring-guide.md)
 - [How to troubleshoot a repository that is not being updated](repo-not-updated.md)
-- [How to troubleshoot a Sourcegraph extension](troubleshoot-sg-extension.md)
 - [How to configure submodules](submodule-configuration.md)
 - [How to remove users or edit users with the GraphQL API](mutate-user-api.md)
 - [How to setup HTTPS connection with Ingress controller on your Kubernetes instance](setup-https.md)
@@ -27,3 +26,4 @@
 - [How to import a set of internal repositories to Sourcegraph](internal_github_repos.md)
 - [How to identify and resolve index corruption in postgres 14](postgres14-index-corruption.md)
 - [How to use a static endpoint for updates and pings](static-ip-for-updates-and-pings.md)
+- [Migrating code intelligence data from LSIF to SCIP (Sourcegraph 4.5 -> 4.6)](lsif_scip_migration.md)

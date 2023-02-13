@@ -214,14 +214,10 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		}
 	}
 
-	if p.FetchTimeout == "" {
-		p.FetchTimeout = "500ms"
+	if p.FetchTimeout == time.Duration(0) {
+		p.FetchTimeout = 500 * time.Millisecond
 	}
-	fetchTimeout, err := time.ParseDuration(p.FetchTimeout)
-	if err != nil {
-		return err
-	}
-	prepareCtx, cancel := context.WithTimeout(ctx, fetchTimeout)
+	prepareCtx, cancel := context.WithTimeout(ctx, p.FetchTimeout)
 	defer cancel()
 
 	getZf := func() (string, *zipFile, error) {

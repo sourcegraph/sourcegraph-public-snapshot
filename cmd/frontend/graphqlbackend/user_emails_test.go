@@ -8,9 +8,13 @@ import (
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -90,10 +94,12 @@ func TestSetUserEmailVerified(t *testing.T) {
 
 		db := database.NewMockDB()
 
-		db.TransactFunc.SetDefaultReturn(db, nil)
-		db.DoneFunc.SetDefaultHook(func(err error) error {
-			return err
+		db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+			return f(db)
 		})
+
+		ffs := database.NewMockFeatureFlagStore()
+		db.FeatureFlagsFunc.SetDefaultReturn(ffs)
 
 		users := database.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
@@ -154,7 +160,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db, gitserver.NewClient(db)).SetUserEmailVerified(
+				_, err := newSchemaResolver(db, gitserver.NewClient()).SetUserEmailVerified(
 					test.ctx,
 					&setUserEmailVerifiedArgs{
 						User: MarshalUserID(1),
@@ -232,20 +238,18 @@ func TestSetUserEmailVerified(t *testing.T) {
 			userExternalAccounts := database.NewMockUserExternalAccountsStore()
 			userExternalAccounts.DeleteFunc.SetDefaultReturn(nil)
 
-			subrepoPerms := database.NewMockSubRepoPermsStore()
-			subrepoPerms.DeleteByUserFunc.SetDefaultReturn(nil)
+			permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ protocol.PermsSyncRequest) {}
+			t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
 
 			db := database.NewMockDB()
-			db.TransactFunc.SetDefaultReturn(db, nil)
-			db.DoneFunc.SetDefaultHook(func(err error) error {
-				return err
+			db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+				return f(db)
 			})
 
 			db.UsersFunc.SetDefaultReturn(users)
 			db.UserEmailsFunc.SetDefaultReturn(userEmails)
 			db.AuthzFunc.SetDefaultReturn(authz)
 			db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccounts)
-			db.SubRepoPermsFunc.SetDefaultReturn(subrepoPerms)
 
 			RunTests(t, test.gqlTests(db))
 

@@ -1,13 +1,12 @@
-import * as React from 'react'
+import { FC } from 'react'
 
 import { mdiFile } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
+import { useLocation } from 'react-router-dom-v5-compat'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Icon, Link } from '@sourcegraph/wildcard'
+import { Icon, Link, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { useShowMorePagination } from '../components/FilteredConnection/hooks/useShowMorePagination'
 import {
@@ -26,44 +25,41 @@ import styles from './RepoRevisionSidebarCommits.module.scss'
 
 interface CommitNodeProps {
     node: GitCommitFields
-    location: H.Location
     preferAbsoluteTimestamps: boolean
 }
 
-const CommitNode: React.FunctionComponent<React.PropsWithChildren<CommitNodeProps>> = ({
-    node,
-    location,
-    preferAbsoluteTimestamps,
-}) => (
-    <li className={classNames(styles.commitContainer, 'list-group-item p-0')}>
-        <GitCommitNode
-            className={styles.commitNode}
-            compact={true}
-            node={node}
-            hideExpandCommitMessageBody={true}
-            preferAbsoluteTimestamps={preferAbsoluteTimestamps}
-            afterElement={
-                <Link
-                    to={replaceRevisionInURL(location.pathname + location.search + location.hash, node.oid)}
-                    className={classNames(styles.fileIcon, 'ml-2')}
-                    title="View current file at this commit"
-                >
-                    <Icon aria-hidden={true} svgPath={mdiFile} />
-                </Link>
-            }
-        />
-    </li>
-)
+const CommitNode: FC<CommitNodeProps> = ({ node, preferAbsoluteTimestamps }) => {
+    const location = useLocation()
+
+    return (
+        <li className={classNames(styles.commitContainer, 'list-group-item p-0')}>
+            <GitCommitNode
+                className={styles.commitNode}
+                compact={true}
+                node={node}
+                hideExpandCommitMessageBody={true}
+                preferAbsoluteTimestamps={preferAbsoluteTimestamps}
+                afterElement={
+                    <Link
+                        to={replaceRevisionInURL(location.pathname + location.search + location.hash, node.oid)}
+                        className={classNames(styles.fileIcon, 'ml-2')}
+                        title="View current file at this commit"
+                    >
+                        <Icon aria-hidden={true} svgPath={mdiFile} />
+                    </Link>
+                }
+            />
+        </li>
+    )
+}
 
 interface Props extends Partial<RevisionSpec>, FileSpec {
     repoID: Scalars['ID']
-    history: H.History
-    location: H.Location
     preferAbsoluteTimestamps: boolean
     defaultPageSize?: number
 }
 
-export const RepoRevisionSidebarCommits: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
+export const RepoRevisionSidebarCommits: FC<Props> = props => {
     const { connection, error, loading, hasNextPage, fetchMore } = useShowMorePagination<
         FetchCommitsResult,
         FetchCommitsVariables,
@@ -107,16 +103,13 @@ export const RepoRevisionSidebarCommits: React.FunctionComponent<React.PropsWith
         <ConnectionContainer>
             {error && <ErrorAlert error={error} />}
             {connection?.nodes.map(node => (
-                <CommitNode
-                    key={node.id}
-                    node={node}
-                    location={props.location}
-                    preferAbsoluteTimestamps={props.preferAbsoluteTimestamps}
-                />
+                <CommitNode key={node.id} node={node} preferAbsoluteTimestamps={props.preferAbsoluteTimestamps} />
             ))}
             {loading && <ConnectionLoading />}
             {!loading && connection && (
-                <SummaryContainer>{hasNextPage && <ShowMoreButton onClick={fetchMore} />}</SummaryContainer>
+                <SummaryContainer centered={true}>
+                    {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
+                </SummaryContainer>
             )}
         </ConnectionContainer>
     )

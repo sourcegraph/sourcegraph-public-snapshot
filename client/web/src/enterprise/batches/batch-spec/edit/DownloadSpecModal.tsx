@@ -13,7 +13,6 @@ import styles from './DownloadSpecModal.module.scss'
 export interface DownloadSpecModalProps {
     name: string
     originalInput: string
-    isLightTheme: boolean
     setIsDownloadSpecModalOpen: (condition: boolean) => void
     setDownloadSpecModalDismissed: (condition: boolean) => void
 }
@@ -21,7 +20,6 @@ export interface DownloadSpecModalProps {
 export const DownloadSpecModal: React.FunctionComponent<React.PropsWithChildren<DownloadSpecModalProps>> = ({
     name,
     originalInput,
-    isLightTheme,
     setIsDownloadSpecModalOpen,
     setDownloadSpecModalDismissed,
 }) => (
@@ -71,7 +69,7 @@ export const DownloadSpecModal: React.FunctionComponent<React.PropsWithChildren<
                         <span className="text-monospace">batch</span> command allows to run batch specification files
                         using Docker.
                     </Text>
-                    <Link to="https://docs.sourcegraph.com/cli">Download src-cli</Link>
+                    <Link to="/help/cli">Download src-cli</Link>
                 </div>
             </div>
         </div>
@@ -90,12 +88,7 @@ export const DownloadSpecModal: React.FunctionComponent<React.PropsWithChildren<
                 >
                     Cancel
                 </Button>
-                <BatchSpecDownloadLink
-                    name={name}
-                    originalInput={originalInput}
-                    isLightTheme={isLightTheme}
-                    asButton={false}
-                >
+                <BatchSpecDownloadLink name={name} originalInput={originalInput} asButton={false}>
                     <Button
                         variant="primary"
                         onClick={() => {

@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect } from 'react'
 
+import classNames from 'classnames'
+import { Location, useLocation } from 'react-router-dom-v5-compat'
 import { fromEvent, Observable } from 'rxjs'
 import { finalize, tap } from 'rxjs/operators'
 
@@ -36,9 +38,12 @@ export interface WebHoverOverlayProps
      */
     hoveredTokenClick?: Observable<unknown>
     nav?: (url: string) => void
+
+    hoverOverlayContainerClassName?: string
 }
 
 export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<WebHoverOverlayProps>> = props => {
+    const location = useLocation()
     const { onAlertDismissed: outerOnAlertDismissed } = props
     const [dismissedAlerts, setDismissedAlerts] = useLocalStorage<string[]>('WebHoverOverlay.dismissedAlerts', [])
     const onAlertDismissed = useCallback(
@@ -85,7 +90,7 @@ export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<We
             return
         }
 
-        const urlAndType = getGoToURL(props.actionsOrError, props.location)
+        const urlAndType = getGoToURL(props.actionsOrError, location)
         if (!urlAndType) {
             return
         }
@@ -120,7 +125,7 @@ export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<We
         props.actionsOrError,
         props.hoveredTokenElement,
         props.hoveredTokenClick,
-        props.location,
+        location,
         props.nav,
         props.telemetryService,
         clickToGoToDefinition,
@@ -130,7 +135,7 @@ export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<We
     return (
         <HoverOverlay
             {...propsToUse}
-            className={styles.webHoverOverlay}
+            className={classNames(styles.webHoverOverlay, props.hoverOverlayContainerClassName)}
             closeButtonClassName={styles.webHoverOverlayCloseButton}
             actionItemClassName="border-0"
             onAlertDismissed={onAlertDismissed}
@@ -150,7 +155,7 @@ WebHoverOverlay.displayName = 'WebHoverOverlay'
  */
 export const getGoToURL = (
     actionsOrError: WebHoverOverlayProps['actionsOrError'],
-    location: WebHoverOverlayProps['location']
+    location: Location
 ): {
     url: string
     actionType: 'definition' | 'reference'

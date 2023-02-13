@@ -23,6 +23,12 @@ type Build struct {
 
 	// ConsecutiveFailure indicates whether this build is the nth consecutive failure.
 	ConsecutiveFailure int `json:"consecutiveFailures"`
+
+	// Notification is the details about the notification that was sent for this build.
+	Notification *SlackNotification
+
+	// Mutex is used to to control and stop other changes being made to the build.
+	sync.Mutex
 }
 
 // updateFromEvent updates the current build with the build and pipeline from the event.
@@ -92,6 +98,10 @@ func (b *Build) failedJobs() []*Job {
 	return result
 }
 
+func (b *Build) hasNotification() bool {
+	return b.Notification != nil
+}
+
 type Job struct {
 	buildkite.Job
 }
@@ -110,6 +120,14 @@ func (j *Job) exitStatus() int {
 
 func (j *Job) failed() bool {
 	return !j.SoftFailed && j.exitStatus() > 0
+}
+
+func (j *Job) state() string {
+	return strp(j.State)
+}
+
+func (j *Job) hasTimedOut() bool {
+	return j.state() == "timed_out"
 }
 
 // Pipeline wraps a buildkite.Pipeline and provides convenience functions to access values of the wrapped pipeline is a safe maner
@@ -155,6 +173,10 @@ func (b *Event) pipeline() *Pipeline {
 
 func (b *Event) isBuildFinished() bool {
 	return b.Name == "build.finished"
+}
+
+func (b *Event) isJobFinished() bool {
+	return b.Name == "job.finished"
 }
 
 func (b *Event) jobName() string {
@@ -203,6 +225,10 @@ func (s *BuildStore) Add(event *Event) {
 		build = event.build()
 		s.builds[event.buildNumber()] = build
 	}
+
+	// Now that we have a build, lets make sure it isn't modified while we look and possibly update it
+	build.Lock()
+	defer build.Unlock()
 
 	// if the build is finished replace the original build with the replaced one since it
 	// will be more up to date, and tack on some finalized data

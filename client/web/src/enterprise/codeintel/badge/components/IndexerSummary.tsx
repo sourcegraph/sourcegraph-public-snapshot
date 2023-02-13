@@ -3,10 +3,10 @@ import React from 'react'
 import { mdiCheck, mdiAlert, mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { isDefined } from '@sourcegraph/common'
 import { Badge, Text, Icon } from '@sourcegraph/wildcard'
 
-import { Timestamp } from '../../../../components/time/Timestamp'
 import {
     LsifIndexFields,
     CodeIntelIndexerFields,

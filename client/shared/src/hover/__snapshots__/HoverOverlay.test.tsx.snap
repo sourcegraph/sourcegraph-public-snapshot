@@ -68,6 +68,7 @@ exports[`HoverOverlay actions and hover loading 1`] = `
           aria-label="Loading"
           aria-live="polite"
           class="mdi-icon loadingSpinner"
+          data-loading-spinner="true"
           role="img"
         />
       </div>
@@ -243,6 +244,7 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
           aria-label="Loading"
           aria-live="polite"
           class="mdi-icon loadingSpinner"
+          data-loading-spinner="true"
           role="img"
         />
       </div>
@@ -439,6 +441,7 @@ exports[`HoverOverlay hover loading 1`] = `
           aria-label="Loading"
           aria-live="polite"
           class="mdi-icon loadingSpinner"
+          data-loading-spinner="true"
           role="img"
         />
       </div>

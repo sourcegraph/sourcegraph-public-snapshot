@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/go-diff/diff"
+	godiff "github.com/sourcegraph/go-diff/diff"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -95,7 +94,6 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 	ctx = actor.WithActor(ctx, &actor.Actor{
 		UID: 1,
 	})
-	db := database.NewMockDB()
 
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
@@ -106,13 +104,13 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 		label               string
 		extraGitCommands    []string
 		expectedDiffFiles   []string
-		expectedFileStat    *diff.Stat
+		expectedFileStat    *godiff.Stat
 		rangeOverAllCommits bool
 	}{
 		{
 			label:               "adding files",
 			expectedDiffFiles:   []string{"file1", "file3", "file3.3"},
-			expectedFileStat:    &diff.Stat{Added: 3},
+			expectedFileStat:    &godiff.Stat{Added: 3},
 			rangeOverAllCommits: true,
 		},
 		{
@@ -123,7 +121,7 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 				makeGitCommit("rename", 7),
 			},
 			expectedDiffFiles: []string{"file_can_access"},
-			expectedFileStat:  &diff.Stat{Added: 1},
+			expectedFileStat:  &godiff.Stat{Added: 1},
 		},
 		{
 			label: "file modified",
@@ -135,7 +133,7 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 				makeGitCommit("edit_files", 7),
 			},
 			expectedDiffFiles: []string{"file1"}, // file2 is updated but user doesn't have access
-			expectedFileStat:  &diff.Stat{Changed: 1},
+			expectedFileStat:  &godiff.Stat{Changed: 1},
 		},
 		{
 			label: "diff for commit w/ no access returns empty result",
@@ -145,14 +143,14 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 				makeGitCommit("no_access", 7),
 			},
 			expectedDiffFiles: []string{},
-			expectedFileStat:  &diff.Stat{},
+			expectedFileStat:  &godiff.Stat{},
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.label, func(t *testing.T) {
 			repo := MakeGitRepository(t, append(cmds, tc.extraGitCommands...)...)
-			c := NewClient(db)
-			commits, err := c.Commits(ctx, repo, CommitsOptions{}, nil)
+			c := NewClient()
+			commits, err := c.Commits(ctx, nil, repo, CommitsOptions{})
 			if err != nil {
 				t.Fatalf("err fetching commits: %s", err)
 			}
@@ -162,13 +160,13 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 				baseCommit = commits[len(commits)-1]
 			}
 
-			iter, err := c.Diff(ctx, DiffOptions{Base: string(baseCommit.ID), Head: string(headCommit.ID), Repo: repo}, checker)
+			iter, err := c.Diff(ctx, checker, DiffOptions{Base: string(baseCommit.ID), Head: string(headCommit.ID), Repo: repo})
 			if err != nil {
 				t.Fatalf("error fetching diff: %s", err)
 			}
 			defer iter.Close()
 
-			stat := &diff.Stat{}
+			stat := &godiff.Stat{}
 			fileNames := make([]string, 0, 3)
 			for {
 				file, err := iter.Next()
@@ -180,10 +178,10 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 
 				fileNames = append(fileNames, file.NewName)
 
-				fs := file.Stat()
-				stat.Added += fs.Added
-				stat.Changed += fs.Changed
-				stat.Deleted += fs.Deleted
+				fileStat := file.Stat()
+				stat.Added += fileStat.Added
+				stat.Changed += fileStat.Changed
+				stat.Deleted += fileStat.Deleted
 			}
 			if diff := cmp.Diff(fileNames, tc.expectedDiffFiles); diff != "" {
 				t.Fatal(diff)
@@ -197,7 +195,6 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 
 func TestDiff(t *testing.T) {
 	ctx := context.Background()
-	db := database.NewMockDB()
 
 	t.Run("invalid bases", func(t *testing.T) {
 		for _, input := range []string{
@@ -206,7 +203,7 @@ func TestDiff(t *testing.T) {
 			".foo",
 		} {
 			t.Run("invalid base: "+input, func(t *testing.T) {
-				i, err := NewClient(db).Diff(ctx, DiffOptions{Base: input}, nil)
+				i, err := NewClient().Diff(ctx, nil, DiffOptions{Base: input})
 				if i != nil {
 					t.Errorf("unexpected non-nil iterator: %+v", i)
 				}
@@ -232,7 +229,7 @@ func TestDiff(t *testing.T) {
 					}
 					return nil, nil
 				})
-				_, _ = c.Diff(ctx, tc.opts, nil)
+				_, _ = c.Diff(ctx, nil, tc.opts)
 			})
 		}
 	})
@@ -241,7 +238,7 @@ func TestDiff(t *testing.T) {
 		c := NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
 			return nil, errors.New("ExecReader error")
 		})
-		i, err := c.Diff(ctx, DiffOptions{Base: "foo", Head: "bar"}, nil)
+		i, err := c.Diff(ctx, nil, DiffOptions{Base: "foo", Head: "bar"})
 		if i != nil {
 			t.Errorf("unexpected non-nil iterator: %+v", i)
 		}
@@ -320,7 +317,7 @@ index 9bd8209..d2acfa9 100644
 			return io.NopCloser(strings.NewReader(testDiff)), nil
 		})
 
-		i, err := c.Diff(ctx, DiffOptions{Base: "foo", Head: "bar"}, nil)
+		i, err := c.Diff(ctx, nil, DiffOptions{Base: "foo", Head: "bar"})
 		if i == nil {
 			t.Error("unexpected nil iterator")
 		}
@@ -457,7 +454,7 @@ func TestRepository_BlameFile(t *testing.T) {
 		},
 	}
 
-	client := NewClient(database.NewMockDB())
+	client := NewClient()
 	for label, test := range tests {
 		newestCommitID, err := client.ResolveRevision(ctx, test.repo, string(test.opt.NewestCommit), ResolveRevisionOptions{})
 		if err != nil {
@@ -499,7 +496,7 @@ func runBlameFileTest(ctx context.Context, t *testing.T, repo api.RepoName, path
 	checker authz.SubRepoPermissionChecker, label string, wantHunks []*Hunk,
 ) {
 	t.Helper()
-	hunks, err := NewClient(database.NewMockDB()).BlameFile(ctx, checker, repo, path, opt)
+	hunks, err := NewClient().BlameFile(ctx, checker, repo, path, opt)
 	if err != nil {
 		t.Errorf("%s: BlameFile(%s, %+v): %s", label, path, opt, err)
 		return
@@ -544,7 +541,7 @@ func TestRepository_ResolveBranch(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := NewClient(database.NewMockDB()).ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
+		commitID, err := NewClient().ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
 		if err != nil {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -576,7 +573,7 @@ func TestRepository_ResolveBranch_error(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := NewClient(database.NewMockDB()).ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
+		commitID, err := NewClient().ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
 		if !test.wantErr(err) {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -609,7 +606,7 @@ func TestRepository_ResolveTag(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := NewClient(database.NewMockDB()).ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
+		commitID, err := NewClient().ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
 		if err != nil {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -641,7 +638,7 @@ func TestRepository_ResolveTag_error(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commitID, err := NewClient(database.NewMockDB()).ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
+		commitID, err := NewClient().ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
 		if !test.wantErr(err) {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -656,7 +653,7 @@ func TestRepository_ResolveTag_error(t *testing.T) {
 func TestLsFiles(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
-	client := NewClient(database.NewMockDB())
+	client := NewClient()
 	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) ([]string, error) {
 		return client.LsFiles(ctx, checker, repo, "HEAD")
 	})
@@ -798,7 +795,7 @@ func TestCleanDirectoriesForLsTree(t *testing.T) {
 func TestListDirectoryChildren(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
-	client := NewClient(database.NewMockDB())
+	client := NewClient()
 	gitCommands := []string{
 		"mkdir -p dir{1..3}/sub{1..3}",
 		"touch dir1/sub1/file",
@@ -885,7 +882,7 @@ func TestListTags(t *testing.T) {
 		{Name: "t3", CommitID: "afeafc4a918c144329807df307e68899e6b65018", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 	}
 
-	client := NewClient(database.NewMockDB())
+	client := NewClient()
 	tags, err := client.ListTags(context.Background(), repo)
 	require.Nil(t, err)
 
@@ -946,8 +943,7 @@ func TestMerger_MergeBase(t *testing.T) {
 	defer ResetClientMocks()
 
 	ctx := context.Background()
-	db := database.NewMockDB()
-	client := NewClient(db)
+	client := NewClient()
 
 	// TODO(sqs): implement for hg
 	// TODO(sqs): make a more complex test case
@@ -1015,7 +1011,6 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
 
-	db := database.NewMockDB()
 	gitCommands := []string{
 		"touch file1",
 		"mkdir dir1",
@@ -1035,7 +1030,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 	dir := InitGitRepository(t, gitCommands...)
 	repo := api.RepoName(filepath.Base(dir))
 
-	client := NewClient(db)
+	client := NewClient()
 
 	commitID := api.CommitID(ComputeCommitHash(dir, true))
 
@@ -1112,7 +1107,6 @@ func TestStat(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
 
-	db := database.NewMockDB()
 	gitCommands := []string{
 		"mkdir dir1",
 		"touch dir1/file1",
@@ -1122,7 +1116,7 @@ func TestStat(t *testing.T) {
 
 	dir := InitGitRepository(t, gitCommands...)
 	repo := api.RepoName(filepath.Base(dir))
-	client := NewClient(db)
+	client := NewClient()
 
 	commitID := api.CommitID(ComputeCommitHash(dir, true))
 
@@ -1186,7 +1180,6 @@ func TestRepository_GetCommit(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
-	db := database.NewMockDB()
 	gitCommands := []string{
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m bar --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
@@ -1203,7 +1196,7 @@ func TestRepository_GetCommit(t *testing.T) {
 		revisionNotFoundError bool
 	}
 
-	client := NewClient(db)
+	client := NewClient()
 	runGetCommitTests := func(checker authz.SubRepoPermissionChecker, tests map[string]testCase) {
 		for label, test := range tests {
 			t.Run(label, func(t *testing.T) {
@@ -1221,7 +1214,7 @@ func TestRepository_GetCommit(t *testing.T) {
 				resolveRevisionOptions := ResolveRevisionOptions{
 					NoEnsureRevision: test.noEnsureRevision,
 				}
-				commit, err := client.GetCommit(ctx, testRepo, test.id, resolveRevisionOptions, checker)
+				commit, err := client.GetCommit(ctx, checker, testRepo, test.id, resolveRevisionOptions)
 				if err != nil {
 					if test.revisionNotFoundError {
 						if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
@@ -1238,7 +1231,7 @@ func TestRepository_GetCommit(t *testing.T) {
 				}
 
 				// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-				if _, err := client.GetCommit(ctx, testRepo, NonExistentCommitID, resolveRevisionOptions, checker); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+				if _, err := client.GetCommit(ctx, checker, testRepo, NonExistentCommitID, resolveRevisionOptions); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 					t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
 				}
 
@@ -1302,8 +1295,6 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
-
-	db := database.NewMockDB()
 
 	testCases := []struct {
 		label                 string
@@ -1374,7 +1365,7 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 		},
 	}
 
-	client := NewClient(db)
+	client := NewClient()
 	t.Run("basic", func(t *testing.T) {
 		for _, tc := range testCases {
 			t.Run(tc.label, func(t *testing.T) {
@@ -1383,7 +1374,7 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 					gitCommands[i] = fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit --allow-empty -m foo --author='a <a@a.com>'", date)
 				}
 				repo := MakeGitRepository(t, gitCommands...)
-				got, err := client.HasCommitAfter(ctx, repo, tc.after, tc.revspec, nil)
+				got, err := client.HasCommitAfter(ctx, nil, repo, tc.after, tc.revspec)
 				if err != nil || got != tc.want {
 					t.Errorf("got %t hascommitafter, want %t", got, tc.want)
 				}
@@ -1403,7 +1394,7 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 				// Case where user can't view commit 2, but can view commits 0 and 1. In each test case the result should match the case where no sub-repo perms enabled
 				checker := getTestSubRepoPermsChecker("file2")
 				repo := MakeGitRepository(t, gitCommands...)
-				got, err := client.HasCommitAfter(ctx, repo, tc.after, tc.revspec, checker)
+				got, err := client.HasCommitAfter(ctx, checker, repo, tc.after, tc.revspec)
 				if err != nil {
 					t.Errorf("got error: %s", err)
 				}
@@ -1413,7 +1404,7 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 
 				// Case where user can't view commit 1 or commit 2, which will mean in some cases since HasCommitAfter will be false due to those commits not being visible.
 				checker = getTestSubRepoPermsChecker("file1", "file2")
-				got, err = client.HasCommitAfter(ctx, repo, tc.after, tc.revspec, checker)
+				got, err = client.HasCommitAfter(ctx, checker, repo, tc.after, tc.revspec)
 				if err != nil {
 					t.Errorf("got error: %s", err)
 				}
@@ -1431,8 +1422,6 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
-
-	db := database.NewMockDB()
 
 	testCases := []struct {
 		commitDates []string
@@ -1455,7 +1444,7 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 			want: "2007-01-02T15:04:05Z",
 		},
 	}
-	client := NewClient(db)
+	client := NewClient()
 	t.Run("basic", func(t *testing.T) {
 		for _, tc := range testCases {
 			gitCommands := make([]string, len(tc.commitDates))
@@ -1464,7 +1453,7 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 			}
 
 			repo := MakeGitRepository(t, gitCommands...)
-			gotCommit, err := client.FirstEverCommit(ctx, repo, nil)
+			gotCommit, err := client.FirstEverCommit(ctx, nil, repo)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1478,7 +1467,7 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 	// Added for awareness if this error message changes. Insights skip over empty repos and check against error message
 	t.Run("empty repo", func(t *testing.T) {
 		repo := MakeGitRepository(t)
-		_, err := client.FirstEverCommit(ctx, repo, nil)
+		_, err := client.FirstEverCommit(ctx, nil, repo)
 		wantErr := `git command [rev-list --reverse --date-order --max-parents=0 HEAD] failed (output: ""): exit status 128`
 		if err.Error() != wantErr {
 			t.Errorf("expected :%s, got :%s", wantErr, err)
@@ -1499,12 +1488,12 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 
 			repo := MakeGitRepository(t, gitCommands...)
 			// Try to get first commit when user doesn't have permission to view
-			_, err := client.FirstEverCommit(ctx, repo, checkerWithoutAccessFirstCommit)
+			_, err := client.FirstEverCommit(ctx, checkerWithoutAccessFirstCommit, repo)
 			if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 				t.Errorf("expected a RevisionNotFoundError since the user does not have access to view this commit, got :%s", err)
 			}
 			// Try to get first commit when user does have permission to view, should succeed
-			gotCommit, err := client.FirstEverCommit(ctx, repo, checkerWithAccessFirstCommit)
+			gotCommit, err := client.FirstEverCommit(ctx, checkerWithAccessFirstCommit, repo)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1517,7 +1506,7 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 				UID:      1,
 				Internal: true,
 			})
-			gotCommit, err = client.FirstEverCommit(newCtx, repo, checkerWithoutAccessFirstCommit)
+			gotCommit, err = client.FirstEverCommit(newCtx, checkerWithoutAccessFirstCommit, repo)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1535,13 +1524,12 @@ func TestCommitExists(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
-	db := database.NewMockDB()
-	client := NewClient(db)
+	client := NewClient()
 	testCommitExists := func(label string, gitCommands []string, commitID, nonExistentCommitID api.CommitID, checker authz.SubRepoPermissionChecker) {
 		t.Run(label, func(t *testing.T) {
 			repo := MakeGitRepository(t, gitCommands...)
 
-			exists, err := client.CommitExists(ctx, repo, commitID, checker)
+			exists, err := client.CommitExists(ctx, checker, repo, commitID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1549,7 +1537,7 @@ func TestCommitExists(t *testing.T) {
 				t.Fatal("Should exist")
 			}
 
-			exists, err = client.CommitExists(ctx, repo, nonExistentCommitID, checker)
+			exists, err = client.CommitExists(ctx, checker, repo, nonExistentCommitID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1613,14 +1601,14 @@ func TestRepository_Commits(t *testing.T) {
 			wantTotal:   2,
 		},
 	}
-	client := NewClient(database.NewMockDB())
+	client := NewClient()
 	runCommitsTests := func(checker authz.SubRepoPermissionChecker) {
 		for label, test := range tests {
 			t.Run(label, func(t *testing.T) {
-				testCommits(ctx, label, test.repo, CommitsOptions{Range: string(test.id)}, checker, test.wantTotal, test.wantCommits, t)
+				testCommits(ctx, label, test.repo, CommitsOptions{Range: string(test.id)}, checker, test.wantCommits, t)
 
 				// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-				if _, err := client.Commits(ctx, test.repo, CommitsOptions{Range: string(NonExistentCommitID)}, nil); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+				if _, err := client.Commits(ctx, nil, test.repo, CommitsOptions{Range: string(NonExistentCommitID)}); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 					t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
 				}
 			})
@@ -1705,7 +1693,7 @@ func TestCommits_SubRepoPerms(t *testing.T) {
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
 			checker := getTestSubRepoPermsChecker(test.noAccessPaths...)
-			commits, err := NewClient(database.NewMockDB()).Commits(ctx, repo, test.opt, checker)
+			commits, err := NewClient().Commits(ctx, checker, repo, test.opt)
 			if err != nil {
 				t.Errorf("%s: Commits(): %s", label, err)
 				return
@@ -1797,11 +1785,11 @@ func TestCommits_SubRepoPerms_ReturnNCommits(t *testing.T) {
 		},
 	}
 
-	client := NewClient(database.NewMockDB())
+	client := NewClient()
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
 			checker := getTestSubRepoPermsChecker(test.noAccessPaths...)
-			commits, err := client.Commits(ctx, test.repo, test.opt, checker)
+			commits, err := client.Commits(ctx, checker, test.repo, test.opt)
 			if err != nil {
 				t.Errorf("%s: Commits(): %s", label, err)
 				return
@@ -1881,7 +1869,7 @@ func TestRepository_Commits_options(t *testing.T) {
 		for label, test := range tests {
 			t.Run(label, func(t *testing.T) {
 				repo := MakeGitRepository(t, gitCommands...)
-				testCommits(ctx, label, repo, test.opt, checker, test.wantTotal, test.wantCommits, t)
+				testCommits(ctx, label, repo, test.opt, checker, test.wantCommits, t)
 			})
 		}
 		// Added for awareness if this error message changes. Insights record last repo indexing and consider empty
@@ -1894,7 +1882,7 @@ func TestRepository_Commits_options(t *testing.T) {
 			repo := MakeGitRepository(t)
 			before := ""
 			after := time.Date(2022, 11, 11, 12, 10, 0, 4, time.UTC).Format(time.RFC3339)
-			_, err := NewClient(database.NewMockDB()).Commits(ctx, repo, CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after, Before: before}, checker)
+			_, err := NewClient().Commits(ctx, checker, repo, CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after, Before: before})
 			if err == nil {
 				t.Error("expected error, got nil")
 			}
@@ -1940,7 +1928,6 @@ func TestRepository_Commits_options_path(t *testing.T) {
 	tests := map[string]struct {
 		opt         CommitsOptions
 		wantCommits []*gitdomain.Commit
-		wantTotal   uint
 	}{
 		"git cmd Path 0": {
 			opt: CommitsOptions{
@@ -1948,7 +1935,6 @@ func TestRepository_Commits_options_path(t *testing.T) {
 				Path:  "doesnt-exist",
 			},
 			wantCommits: nil,
-			wantTotal:   0,
 		},
 		"git cmd Path 1": {
 			opt: CommitsOptions{
@@ -1956,7 +1942,6 @@ func TestRepository_Commits_options_path(t *testing.T) {
 				Path:  "file1",
 			},
 			wantCommits: wantGitCommits,
-			wantTotal:   1,
 		},
 	}
 
@@ -1964,7 +1949,7 @@ func TestRepository_Commits_options_path(t *testing.T) {
 		for label, test := range tests {
 			t.Run(label, func(t *testing.T) {
 				repo := MakeGitRepository(t, gitCommands...)
-				testCommits(ctx, label, repo, test.opt, checker, test.wantTotal, test.wantCommits, t)
+				testCommits(ctx, label, repo, test.opt, checker, test.wantCommits, t)
 			})
 		}
 	}
@@ -2192,7 +2177,7 @@ func TestFilterRefDescriptions(t *testing.T) { // KEEP
 	}
 
 	checker := getTestSubRepoPermsChecker("file3")
-	client := NewClient(database.NewMockDB()).(*clientImplementor)
+	client := NewClient().(*clientImplementor)
 	filtered := client.filterRefDescriptions(ctx, repo, refDescriptions, checker)
 	expectedRefDescriptions := map[string][]gitdomain.RefDescription{
 		"d38233a79e037d2ab8170b0d0bc0aa438473e6da": {},
@@ -2210,8 +2195,7 @@ func TestRefDescriptions(t *testing.T) { // KEEP
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
-	db := database.NewMockDB()
-	client := NewClient(db)
+	client := NewClient()
 	gitCommands := append(getGitCommandsWithFiles("file1", "file2"), "git checkout -b my-other-branch")
 	gitCommands = append(gitCommands, getGitCommandsWithFiles("file1-b2", "file2-b2")...)
 	gitCommands = append(gitCommands, "git checkout -b my-branch-no-access")
@@ -2223,7 +2207,7 @@ func TestRefDescriptions(t *testing.T) { // KEEP
 	}
 
 	t.Run("basic", func(t *testing.T) {
-		refDescriptions, err := client.RefDescriptions(ctx, repo, nil)
+		refDescriptions, err := client.RefDescriptions(ctx, nil, repo)
 		if err != nil {
 			t.Errorf("err calling RefDescriptions: %s", err)
 		}
@@ -2239,7 +2223,7 @@ func TestRefDescriptions(t *testing.T) { // KEEP
 
 	t.Run("with sub-repo enabled", func(t *testing.T) {
 		checker := getTestSubRepoPermsChecker("file-with-no-access")
-		refDescriptions, err := client.RefDescriptions(ctx, repo, checker)
+		refDescriptions, err := client.RefDescriptions(ctx, checker, repo)
 		if err != nil {
 			t.Errorf("err calling RefDescriptions: %s", err)
 		}
@@ -2259,14 +2243,13 @@ func TestCommitsUniqueToBranch(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
-	db := database.NewMockDB()
-	client := NewClient(db)
+	client := NewClient()
 	gitCommands := append([]string{"git checkout -b my-branch"}, getGitCommandsWithFiles("file1", "file2")...)
 	gitCommands = append(gitCommands, getGitCommandsWithFiles("file3", "file-with-no-access")...)
 	repo := MakeGitRepository(t, gitCommands...)
 
 	t.Run("basic", func(t *testing.T) {
-		commits, err := client.CommitsUniqueToBranch(ctx, repo, "my-branch", true, &time.Time{}, nil)
+		commits, err := client.CommitsUniqueToBranch(ctx, nil, repo, "my-branch", true, &time.Time{})
 		if err != nil {
 			t.Errorf("err calling RefDescriptions: %s", err)
 		}
@@ -2283,7 +2266,7 @@ func TestCommitsUniqueToBranch(t *testing.T) {
 
 	t.Run("with sub-repo enabled", func(t *testing.T) {
 		checker := getTestSubRepoPermsChecker("file-with-no-access")
-		commits, err := client.CommitsUniqueToBranch(ctx, repo, "my-branch", true, &time.Time{}, checker)
+		commits, err := client.CommitsUniqueToBranch(ctx, checker, repo, "my-branch", true, &time.Time{})
 		if err != nil {
 			t.Errorf("err calling RefDescriptions: %s", err)
 		}
@@ -2304,13 +2287,12 @@ func TestCommitDate(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{
 		UID: 1,
 	})
-	db := database.NewMockDB()
-	client := NewClient(db)
+	client := NewClient()
 	gitCommands := getGitCommandsWithFiles("file1", "file2")
 	repo := MakeGitRepository(t, gitCommands...)
 
 	t.Run("basic", func(t *testing.T) {
-		_, date, commitExists, err := client.CommitDate(ctx, repo, "d38233a79e037d2ab8170b0d0bc0aa438473e6da", nil)
+		_, date, commitExists, err := client.CommitDate(ctx, nil, repo, "d38233a79e037d2ab8170b0d0bc0aa438473e6da")
 		if err != nil {
 			t.Errorf("error fetching CommitDate: %s", err)
 		}
@@ -2324,7 +2306,7 @@ func TestCommitDate(t *testing.T) {
 
 	t.Run("with sub-repo permissions enabled", func(t *testing.T) {
 		checker := getTestSubRepoPermsChecker("file1")
-		_, date, commitExists, err := client.CommitDate(ctx, repo, "d38233a79e037d2ab8170b0d0bc0aa438473e6da", checker)
+		_, date, commitExists, err := client.CommitDate(ctx, checker, repo, "d38233a79e037d2ab8170b0d0bc0aa438473e6da")
 		if err != nil {
 			t.Errorf("error fetching CommitDate: %s", err)
 		}
@@ -2337,24 +2319,15 @@ func TestCommitDate(t *testing.T) {
 	})
 }
 
-func testCommits(ctx context.Context, label string, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, wantTotal uint, wantCommits []*gitdomain.Commit, t *testing.T) {
+func testCommits(ctx context.Context, label string, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, wantCommits []*gitdomain.Commit, t *testing.T) {
 	t.Helper()
-	db := database.NewMockDB()
-	client := NewClient(db).(*clientImplementor)
-	commits, err := client.Commits(ctx, repo, opt, checker)
+	client := NewClient().(*clientImplementor)
+	commits, err := client.Commits(ctx, checker, repo, opt)
 	if err != nil {
 		t.Errorf("%s: Commits(): %s", label, err)
 		return
 	}
 
-	total, err := client.commitCount(ctx, repo, opt)
-	if err != nil {
-		t.Errorf("%s: commitCount(): %s", label, err)
-		return
-	}
-	if total != wantTotal {
-		t.Errorf("%s: got %d total commits, want %d", label, total, wantTotal)
-	}
 	if len(commits) != len(wantCommits) {
 		t.Errorf("%s: got %d commits, want %d", label, len(commits), len(wantCommits))
 	}
@@ -2482,7 +2455,7 @@ func TestArchiveReaderForRepoWithSubRepoPermissions(t *testing.T) {
 		Treeish:   commitID,
 		Pathspecs: []gitdomain.Pathspec{"."},
 	}
-	client := NewClient(database.NewMockDB())
+	client := NewClient()
 	if _, err := client.ArchiveReader(context.Background(), checker, repo.Name, opts); err == nil {
 		t.Error("Error should not be null because ArchiveReader is invoked for a repo with sub-repo permissions")
 	}
@@ -2517,7 +2490,7 @@ func TestArchiveReaderForRepoWithoutSubRepoPermissions(t *testing.T) {
 		Treeish:   commitID,
 		Pathspecs: []gitdomain.Pathspec{"."},
 	}
-	client := NewClient(database.NewMockDB())
+	client := NewClient()
 	readCloser, err := client.ArchiveReader(context.Background(), checker, repo.Name, opts)
 	if err != nil {
 		t.Error("Error should not be thrown because ArchiveReader is invoked for a repo without sub-repo permissions")
@@ -2529,7 +2502,6 @@ func TestArchiveReaderForRepoWithoutSubRepoPermissions(t *testing.T) {
 }
 
 func TestRead(t *testing.T) {
-	db := database.NewMockDB()
 	const wantData = "abcd\n"
 	repo := MakeGitRepository(t,
 		"echo abcd > file1",
@@ -2569,7 +2541,7 @@ func TestRead(t *testing.T) {
 		},
 	}
 
-	client := NewClient(db)
+	client := NewClient()
 	ClientMocks.LocalGitserver = true
 	t.Cleanup(func() {
 		ResetClientMocks()
@@ -2582,7 +2554,7 @@ func TestRead(t *testing.T) {
 			UID: 1,
 		})
 		t.Run(name+"-ReadFile", func(t *testing.T) {
-			data, err := client.ReadFile(ctx, repo, commitID, test.file, nil)
+			data, err := client.ReadFile(ctx, nil, repo, commitID, test.file)
 			test.checkFn(t, err, data)
 		})
 		t.Run(name+"-ReadFile-with-sub-repo-permissions-no-op", func(t *testing.T) {
@@ -2595,7 +2567,7 @@ func TestRead(t *testing.T) {
 				}
 				return authz.None, nil
 			})
-			data, err := client.ReadFile(ctx, repo, commitID, test.file, checker)
+			data, err := client.ReadFile(ctx, checker, repo, commitID, test.file)
 			test.checkFn(t, err, data)
 		})
 		t.Run(name+"-ReadFile-with-sub-repo-permissions-filters-file", func(t *testing.T) {
@@ -2605,7 +2577,7 @@ func TestRead(t *testing.T) {
 			checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
 				return authz.None, nil
 			})
-			data, err := client.ReadFile(ctx, repo, commitID, test.file, checker)
+			data, err := client.ReadFile(ctx, checker, repo, commitID, test.file)
 			if err != os.ErrNotExist {
 				t.Errorf("unexpected error reading file: %s", err)
 			}
@@ -2635,7 +2607,7 @@ func TestRead(t *testing.T) {
 			checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
 				return authz.None, nil
 			})
-			rc, err := client.NewFileReader(ctx, repo, commitID, test.file, checker)
+			rc, err := client.NewFileReader(ctx, checker, repo, commitID, test.file)
 			if err != os.ErrNotExist {
 				t.Fatalf("unexpected error: %s", err)
 			}
@@ -2649,7 +2621,7 @@ func TestRead(t *testing.T) {
 func runNewFileReaderTest(ctx context.Context, t *testing.T, repo api.RepoName, commitID api.CommitID, file string,
 	checker authz.SubRepoPermissionChecker, checkFn func(*testing.T, error, []byte)) {
 	t.Helper()
-	rc, err := NewClient(database.NewMockDB()).NewFileReader(ctx, repo, commitID, file, checker)
+	rc, err := NewClient().NewFileReader(ctx, checker, repo, commitID, file)
 	if err != nil {
 		checkFn(t, err, nil)
 		return
@@ -2715,7 +2687,7 @@ func TestRepository_Branches_MergedInto(t *testing.T) {
 	repo := MakeGitRepository(t, gitCommands...)
 	wantBranches := gitBranches
 	for branch, mergedInto := range wantBranches {
-		branches, err := NewClient(database.NewMockDB()).ListBranches(context.Background(), repo, BranchesOptions{MergedInto: branch})
+		branches, err := NewClient().ListBranches(context.Background(), repo, BranchesOptions{MergedInto: branch})
 		require.Nil(t, err)
 		if diff := cmp.Diff(mergedInto, branches); diff != "" {
 			t.Fatalf("branch mismatch (-want +got):\n%s", diff)
@@ -2746,7 +2718,7 @@ func TestRepository_Branches_ContainsCommit(t *testing.T) {
 	repo := MakeGitRepository(t, gitCommands...)
 	commitToWantBranches := gitWantBranches
 	for commit, wantBranches := range commitToWantBranches {
-		branches, err := NewClient(database.NewMockDB()).ListBranches(context.Background(), repo, BranchesOptions{ContainsCommit: commit})
+		branches, err := NewClient().ListBranches(context.Background(), repo, BranchesOptions{ContainsCommit: commit})
 		require.Nil(t, err)
 
 		sort.Sort(gitdomain.Branches(branches))
@@ -2828,7 +2800,7 @@ func testBranches(t *testing.T, gitCommands []string, wantBranches []*gitdomain.
 	t.Helper()
 
 	repo := MakeGitRepository(t, gitCommands...)
-	gotBranches, err := NewClient(database.NewMockDB()).ListBranches(context.Background(), repo, options)
+	gotBranches, err := NewClient().ListBranches(context.Background(), repo, options)
 	require.Nil(t, err)
 
 	sort.Sort(gitdomain.Branches(wantBranches))
@@ -2882,7 +2854,7 @@ func TestLFSSmudge(t *testing.T) {
 	// seems to work under the assumption of a working copy.
 	repo := MakeBareGitRepository(t, gitCmds...)
 
-	c := NewClient(database.NewMockDB())
+	c := NewClient()
 	head, err := c.ResolveRevision(ctx, repo, "HEAD", ResolveRevisionOptions{})
 	if err != nil {
 		t.Fatal(err)
@@ -2890,7 +2862,7 @@ func TestLFSSmudge(t *testing.T) {
 
 	// Check that LFSSmudge always returns the file contents
 	for path, content := range files {
-		r, err := c.LFSSmudge(ctx, repo, head, path, nil)
+		r, err := c.LFSSmudge(ctx, nil, repo, head, path)
 		if err != nil {
 			t.Fatalf("failed to run lfs-smudge on %q: %v", path, err)
 		}
@@ -2911,7 +2883,7 @@ func TestLFSSmudge(t *testing.T) {
 		if path == "in-lfs.txt" {
 			continue
 		}
-		b, err := c.ReadFile(ctx, repo, head, path, nil)
+		b, err := c.ReadFile(ctx, nil, repo, head, path)
 		if err != nil {
 			t.Fatalf("failed to read file %q: %v", path, err)
 		}
@@ -2925,7 +2897,7 @@ func TestLFSSmudge(t *testing.T) {
 oid sha256:6779da4a4fc9920a86eeb6f7a01062513dbbcc8f221028c7345993884e89a508
 size 12
 `
-	b, err := c.ReadFile(ctx, repo, head, "in-lfs.txt", nil)
+	b, err := c.ReadFile(ctx, nil, repo, head, "in-lfs.txt")
 	if err != nil {
 		t.Fatalf("failed to read file in-lfs.txt: %v", err)
 	}
@@ -2953,11 +2925,11 @@ previous ec809e79094cbcd05825446ee14c6d072466a0b7 release.sh
 filename release.sh
 	#!/usr/bin/env bash
 3f61310114082d6179c23f75950b88d1842fe2de 2 2
-	
+
 3f61310114082d6179c23f75950b88d1842fe2de 3 3
 	set -euf -o pipefail
 3f61310114082d6179c23f75950b88d1842fe2de 4 4
-	
+
 fbb98e0b7ff0752798463d9f49d922858a4188f6 5 5 10
 author Adam Harvey
 author-mail <aharvey@sourcegraph.com>
@@ -2988,7 +2960,7 @@ fbb98e0b7ff0752798463d9f49d922858a4188f6 12 12
 fbb98e0b7ff0752798463d9f49d922858a4188f6 13 13
 	esac
 fbb98e0b7ff0752798463d9f49d922858a4188f6 14 14
-	
+
 8a75c6f8b4cbe2a2f3c8be0f2c50bc766499f498 15 15 1
 author Adam Harvey
 author-mail <adam@adamharvey.name>
@@ -3009,7 +2981,7 @@ filename release.sh
 3f61310114082d6179c23f75950b88d1842fe2de 8 18
 	fi
 3f61310114082d6179c23f75950b88d1842fe2de 9 19
-	
+
 67b7b725a7ff913da520b997d71c840230351e30 10 20 1
 author Thorsten Ball
 author-mail <mrnugget@gmail.com>
@@ -3141,7 +3113,7 @@ filename format.go
 
 var testGitBlameOutputHunks = []*Hunk{
 	{
-		StartLine: 1, EndLine: 5, StartByte: 0, EndByte: 43,
+		StartLine: 1, EndLine: 5, StartByte: 0, EndByte: 41,
 		CommitID: "3f61310114082d6179c23f75950b88d1842fe2de",
 		Author: gitdomain.Signature{
 			Name:  "Thorsten Ball",
@@ -3152,7 +3124,7 @@ var testGitBlameOutputHunks = []*Hunk{
 		Filename: "release.sh",
 	},
 	{
-		StartLine: 5, EndLine: 15, StartByte: 43, EndByte: 252,
+		StartLine: 5, EndLine: 15, StartByte: 41, EndByte: 249,
 		CommitID: "fbb98e0b7ff0752798463d9f49d922858a4188f6",
 		Author: gitdomain.Signature{
 			Name:  "Adam Harvey",
@@ -3163,7 +3135,7 @@ var testGitBlameOutputHunks = []*Hunk{
 		Filename: "release.sh",
 	},
 	{
-		StartLine: 15, EndLine: 16, StartByte: 252, EndByte: 331,
+		StartLine: 15, EndLine: 16, StartByte: 249, EndByte: 328,
 		CommitID: "8a75c6f8b4cbe2a2f3c8be0f2c50bc766499f498",
 		Author: gitdomain.Signature{
 			Name:  "Adam Harvey",
@@ -3174,7 +3146,7 @@ var testGitBlameOutputHunks = []*Hunk{
 		Filename: "release.sh",
 	},
 	{
-		StartLine: 16, EndLine: 20, StartByte: 331, EndByte: 398,
+		StartLine: 16, EndLine: 20, StartByte: 328, EndByte: 394,
 		CommitID: "3f61310114082d6179c23f75950b88d1842fe2de",
 		Author: gitdomain.Signature{
 			Name:  "Thorsten Ball",
@@ -3185,7 +3157,7 @@ var testGitBlameOutputHunks = []*Hunk{
 		Filename: "release.sh",
 	},
 	{
-		StartLine: 20, EndLine: 21, StartByte: 398, EndByte: 508,
+		StartLine: 20, EndLine: 21, StartByte: 394, EndByte: 504,
 		CommitID: "67b7b725a7ff913da520b997d71c840230351e30",
 		Author: gitdomain.Signature{
 			Name:  "Thorsten Ball",
@@ -3196,7 +3168,7 @@ var testGitBlameOutputHunks = []*Hunk{
 		Filename: "release.sh",
 	},
 	{
-		StartLine: 21, EndLine: 22, StartByte: 508, EndByte: 557,
+		StartLine: 21, EndLine: 22, StartByte: 504, EndByte: 553,
 		CommitID: "3f61310114082d6179c23f75950b88d1842fe2de",
 		Author: gitdomain.Signature{
 			Name:  "Thorsten Ball",
@@ -3207,7 +3179,7 @@ var testGitBlameOutputHunks = []*Hunk{
 		Filename: "release.sh",
 	},
 	{
-		StartLine: 22, EndLine: 24, StartByte: 557, EndByte: 699,
+		StartLine: 22, EndLine: 24, StartByte: 553, EndByte: 695,
 		CommitID: "67b7b725a7ff913da520b997d71c840230351e30",
 		Author: gitdomain.Signature{
 			Name:  "Thorsten Ball",
@@ -3243,7 +3215,7 @@ func TestStreamBlameFile(t *testing.T) {
 		checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
 			return authz.None, nil
 		})
-		hr, err := streamBlameFileCmd(ctx, checker, api.RepoName("foobar"), "README.md", nil, func(_ []string) GitCommand { return nil })
+		hr, err := streamBlameFileCmd(ctx, checker, "foobar", "README.md", nil, func(_ []string) GitCommand { return nil })
 		if hr != nil {
 			t.Fatalf("expected nil HunkReader")
 		}

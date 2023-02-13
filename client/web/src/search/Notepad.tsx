@@ -22,8 +22,8 @@ import {
 import classNames from 'classnames'
 import type { LocationDescriptorObject } from 'history'
 
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { isMacPlatform } from '@sourcegraph/common'
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { HighlightLineRange, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendContextFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'

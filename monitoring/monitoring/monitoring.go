@@ -2,6 +2,7 @@ package monitoring
 
 import (
 	"fmt"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -52,11 +53,12 @@ type Dashboard struct {
 }
 
 func (c *Dashboard) validate() error {
-	if !isValidGrafanaUID(c.Name) {
-		return errors.Errorf("Name must be lowercase alphanumeric + dashes; found \"%s\"", c.Name)
+	if err := grafana.ValidateUID(c.Name); err != nil {
+		return errors.Wrapf(err, "Name %q is invalid", c.Name)
 	}
-	if c.Title != strings.Title(c.Title) {
-		return errors.Errorf("Title must be in Title Case; found \"%s\" want \"%s\"", c.Title, strings.Title(c.Title))
+
+	if c.Title != Title(c.Title) {
+		return errors.Errorf("Title must be in Title Case; found \"%s\" want \"%s\"", c.Title, Title(c.Title))
 	}
 	if c.Description != withPeriod(c.Description) || c.Description != upperFirst(c.Description) {
 		return errors.Errorf("Description must be sentence starting with an uppercase letter and ending with period; found \"%s\"", c.Description)
@@ -101,6 +103,9 @@ func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folde
 	uid := c.Name
 	if folder != "" {
 		uid = fmt.Sprintf("%s-%s", folder, uid)
+		if err := grafana.ValidateUID(uid); err != nil {
+			return nil, errors.Wrapf(err, "generated UID %q is invalid", uid)
+		}
 	}
 	board := grafana.NewBoard(uid, c.Title, []string{"builtin"})
 
@@ -329,13 +334,13 @@ func (c *Dashboard) alertDescription(o Observable, alert *ObservableAlertDefinit
 	return description, nil
 }
 
-// renderRules generates the Prometheus rules file which defines our
+// RenderPrometheusRules generates the Prometheus rules file which defines our
 // high-level alerting metrics for the container. For more information about
 // how these work, see:
 //
 // https://docs.sourcegraph.com/admin/observability/metrics#high-level-alerting-metrics
-func (c *Dashboard) renderRules(injectLabelMatchers []*labels.Matcher) (*promRulesFile, error) {
-	group := promGroup{Name: c.Name}
+func (c *Dashboard) RenderPrometheusRules(injectLabelMatchers []*labels.Matcher) (*PrometheusRules, error) {
+	group := newPrometheusRuleGroup(c.Name)
 	for groupIndex, g := range c.Groups {
 		for rowIndex, r := range g.Rows {
 			for observableIndex, o := range r {
@@ -362,7 +367,7 @@ func (c *Dashboard) renderRules(injectLabelMatchers []*labels.Matcher) (*promRul
 							c.Name, o.Name, level, err)
 					}
 
-					labels := map[string]string{
+					labelMap := map[string]string{
 						"name":         o.Name,
 						"level":        level,
 						"service_name": c.Name,
@@ -375,9 +380,9 @@ func (c *Dashboard) renderRules(injectLabelMatchers []*labels.Matcher) (*promRul
 					}
 					// Inject labels as fixed values for alert rules
 					for _, l := range injectLabelMatchers {
-						labels[l.Name] = l.Value
+						labelMap[l.Name] = l.Value
 					}
-					group.appendRow(alertQuery, labels, a.duration)
+					group.appendRow(alertQuery, labelMap, a.duration)
 				}
 			}
 		}
@@ -385,8 +390,8 @@ func (c *Dashboard) renderRules(injectLabelMatchers []*labels.Matcher) (*promRul
 	if err := group.validate(); err != nil {
 		return nil, err
 	}
-	return &promRulesFile{
-		Groups: []promGroup{group},
+	return &PrometheusRules{
+		Groups: []PrometheusRuleGroup{group},
 	}, nil
 }
 
@@ -446,9 +451,13 @@ func (r Row) validate(variables []ContainerVariable) error {
 // the handbook: https://handbook.sourcegraph.com/departments/engineering/
 type ObservableOwner struct {
 	// identifier is the team's name on OpsGenie and is used for routing alerts.
-	identifier       string
-	handbookSlug     string
-	handbookTeamName string
+	identifier string
+	// human-friendly name for this team
+	teamName string
+	// path relative to handbookBaseURL for this team's page
+	handbookSlug string
+	// optional - defaults to /departments/engineering/teams
+	handbookBasePath string
 }
 
 // identifer must be all lowercase, and optionally  hyphenated.
@@ -467,62 +476,71 @@ var identifierPattern = regexp.MustCompile("^([a-z]+)(-[a-z]+)*?$")
 
 var (
 	ObservableOwnerSearch = ObservableOwner{
-		identifier:       "search",
-		handbookSlug:     "search/product",
-		handbookTeamName: "Search",
+		identifier:   "search",
+		handbookSlug: "search/product",
+		teamName:     "Search",
 	}
 	ObservableOwnerSearchCore = ObservableOwner{
-		identifier:       "search-core",
-		handbookSlug:     "search/core",
-		handbookTeamName: "Search Core",
+		identifier:   "search-core",
+		handbookSlug: "search/core",
+		teamName:     "Search Core",
 	}
 	ObservableOwnerBatches = ObservableOwner{
-		identifier:       "batch-changes",
-		handbookSlug:     "batch-changes",
-		handbookTeamName: "Batch Changes",
+		identifier:   "batch-changes",
+		handbookSlug: "batch-changes",
+		teamName:     "Batch Changes",
 	}
 	ObservableOwnerCodeIntel = ObservableOwner{
-		identifier:       "code-intel",
-		handbookSlug:     "code-intelligence",
-		handbookTeamName: "Code intelligence",
+		identifier:   "code-intel",
+		handbookSlug: "code-intelligence",
+		teamName:     "Code intelligence",
 	}
 	ObservableOwnerSecurity = ObservableOwner{
-		identifier:       "security",
-		handbookSlug:     "security",
-		handbookTeamName: "Security",
+		identifier:   "security",
+		handbookSlug: "security",
+		teamName:     "Security",
 	}
 	ObservableOwnerRepoManagement = ObservableOwner{
-		identifier:       "repo-management",
-		handbookSlug:     "repo-management",
-		handbookTeamName: "Repo Management",
+		identifier:   "repo-management",
+		handbookSlug: "repo-management",
+		teamName:     "Repo Management",
 	}
 	ObservableOwnerCodeInsights = ObservableOwner{
-		identifier:       "code-insights",
-		handbookSlug:     "code-insights",
-		handbookTeamName: "Code Insights",
+		identifier:   "code-insights",
+		handbookSlug: "code-insights",
+		teamName:     "Code Insights",
 	}
 	ObservableOwnerDevOps = ObservableOwner{
-		identifier:       "devops",
-		handbookSlug:     "devops",
-		handbookTeamName: "Cloud DevOps",
+		identifier:   "devops",
+		handbookSlug: "devops",
+		teamName:     "Cloud DevOps",
 	}
 	ObservableOwnerIAM = ObservableOwner{
-		identifier:       "iam",
-		handbookSlug:     "iam",
-		handbookTeamName: "Identity and Access Management",
+		identifier:   "iam",
+		handbookSlug: "iam",
+		teamName:     "Identity and Access Management",
 	}
 	ObservableOwnerDataAnalytics = ObservableOwner{
-		identifier:       "data-analytics",
-		handbookSlug:     "data-analytics",
-		handbookTeamName: "Data & Analytics",
+		identifier:   "data-analytics",
+		handbookSlug: "data-analytics",
+		teamName:     "Data & Analytics",
+	}
+	ObservableOwnerCloud = ObservableOwner{
+		identifier:       "cloud",
+		handbookSlug:     "cloud",
+		handbookBasePath: "/departments",
+		teamName:         "Cloud",
 	}
 )
 
 // toMarkdown returns a Markdown string that also links to the owner's team page in the handbook.
 func (o ObservableOwner) toMarkdown() string {
-	return fmt.Sprintf(
-		"[Sourcegraph %s team](https://handbook.sourcegraph.com/departments/engineering/teams/%s)",
-		o.handbookTeamName, o.handbookSlug,
+	basePath := "/departments/engineering/teams"
+	if o.handbookBasePath != "" {
+		basePath = o.handbookBasePath
+	}
+	return fmt.Sprintf("[Sourcegraph %s team](https://%s)",
+		o.teamName, path.Join("handbook.sourcegraph.com", basePath, o.handbookSlug),
 	)
 }
 

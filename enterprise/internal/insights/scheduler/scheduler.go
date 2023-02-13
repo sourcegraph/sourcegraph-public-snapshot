@@ -12,13 +12,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -36,7 +39,7 @@ type BaseJob struct {
 	NumResets       int
 	NumFailures     int
 	LastHeartbeatAt time.Time
-	ExecutionLogs   []workerutil.ExecutionLogEntry
+	ExecutionLogs   []executor.ExecutionLogEntry
 	WorkerHostname  string
 	Cancel          bool
 	backfillId      int
@@ -65,7 +68,7 @@ var baseJobColumns = []*sqlf.Query{
 
 func scanBaseJob(s dbutil.Scanner) (*BaseJob, error) {
 	var job BaseJob
-	var executionLogs []dbworkerstore.ExecutionLogEntry
+	var executionLogs []executor.ExecutionLogEntry
 
 	if err := s.Scan(
 		&job.ID,
@@ -86,9 +89,7 @@ func scanBaseJob(s dbutil.Scanner) (*BaseJob, error) {
 		return nil, err
 	}
 
-	for _, entry := range executionLogs {
-		job.ExecutionLogs = append(job.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
-	}
+	job.ExecutionLogs = append(job.ExecutionLogs, executionLogs...)
 
 	return &job, nil
 }
@@ -104,13 +105,14 @@ type BackgroundJobMonitor struct {
 }
 
 type JobMonitorConfig struct {
-	InsightsDB      edb.InsightsDB
-	InsightStore    store.Interface
-	RepoStore       database.RepoStore
-	BackfillRunner  pipeline.Backfiller
-	ObservationCtx  *observation.Context
-	AllRepoIterator *discovery.AllReposIterator
-	CostAnalyzer    *priority.QueryAnalyzer
+	InsightsDB        edb.InsightsDB
+	InsightStore      store.Interface
+	RepoStore         database.RepoStore
+	BackfillRunner    pipeline.Backfiller
+	ObservationCtx    *observation.Context
+	AllRepoIterator   *discovery.AllReposIterator
+	CostAnalyzer      *priority.QueryAnalyzer
+	RepoQueryExecutor query.RepoQueryExecutor
 }
 
 func NewBackgroundJobMonitor(ctx context.Context, config JobMonitorConfig) *BackgroundJobMonitor {
@@ -180,4 +182,9 @@ func (s *Scheduler) InitialBackfill(ctx context.Context, series types.InsightSer
 		return nil, errors.Wrap(err, "enqueueBackfill")
 	}
 	return bf, nil
+}
+
+// RepoQueryExecutor is the consumer interface for query.RepoQueryExecutor, used for tests.
+type RepoQueryExecutor interface {
+	ExecuteRepoList(ctx context.Context, query string) ([]itypes.MinimalRepo, error)
 }

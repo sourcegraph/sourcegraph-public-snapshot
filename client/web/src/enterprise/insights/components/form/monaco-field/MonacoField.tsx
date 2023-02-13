@@ -2,14 +2,12 @@ import { createContext, forwardRef, InputHTMLAttributes, useContext, useImperati
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
-import * as Monaco from 'monaco-editor'
 
-import { QueryChangeSource } from '@sourcegraph/search'
-import { LazyMonacoQueryInput, DEFAULT_MONACO_OPTIONS } from '@sourcegraph/search-ui'
+import { LazyQueryInput } from '@sourcegraph/branded'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { QueryState } from '@sourcegraph/shared/src/search'
 import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
-import { useExperimentalFeatures } from '../../../../../stores'
 import { useTheme, ThemePreference } from '../../../../../theme'
 
 import styles from './MonacoField.module.scss'
@@ -43,27 +41,16 @@ export const MonacoFocusContainer = forwardRef((props, reference) => {
     )
 }) as ForwardReferenceComponent<'div'>
 
-const MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstructionOptions = {
-    ...DEFAULT_MONACO_OPTIONS,
-    wordWrap: 'on',
-    fixedOverflowWidgets: false,
-    lineHeight: 21,
-    scrollbar: {
-        vertical: 'auto',
-        horizontal: 'hidden',
-    },
-}
-
 export interface MonacoFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'onBlur'> {
-    value: string
+    queryState: QueryState
     patternType?: SearchPatternType
     onBlur?: () => void
-    onChange?: (value: string) => void
+    onChange?: (value: QueryState) => void
 }
 
 export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props, reference) => {
     const {
-        value,
+        queryState,
         className,
         onChange = noop,
         onBlur = noop,
@@ -72,6 +59,9 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
         placeholder,
         patternType = SearchPatternType.regexp,
         'aria-labelledby': ariaLabelledby,
+        'aria-invalid': ariaInvalid,
+        'aria-busy': ariaBusy,
+        tabIndex = 0,
     } = props
 
     const { renderedWithinFocusContainer } = useContext(MonacoFieldContext)
@@ -84,34 +74,32 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
     useImperativeHandle(reference, () => null)
 
     const { enhancedThemePreference } = useTheme()
-    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
-    const applySuggestionsOnEnter =
-        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
-    const monacoOptions = useMemo(() => ({ ...MONACO_OPTIONS, readOnly: disabled }), [disabled])
+    const monacoOptions = useMemo(() => ({ readOnly: disabled }), [disabled])
 
     return (
-        <LazyMonacoQueryInput
+        <LazyQueryInput
             ariaLabelledby={ariaLabelledby}
-            editorComponent={editorComponent}
-            queryState={{ query: value, changeSource: QueryChangeSource.userInput }}
+            ariaInvalid={ariaInvalid?.toString()}
+            ariaBusy={ariaBusy?.toString()}
+            queryState={queryState}
             isLightTheme={enhancedThemePreference === ThemePreference.Light}
             isSourcegraphDotCom={false}
             preventNewLine={false}
-            onChange={({ query }) => onChange(query)}
+            interpretComments={true}
+            onChange={onChange}
             patternType={patternType}
             caseSensitive={false}
-            globbing={true}
-            height="auto"
+            globbing={false}
             placeholder={placeholder}
             className={classNames(className, styles.monacoField, 'form-control', 'with-invalid-icon', {
                 [styles.focusContainer]: !renderedWithinFocusContainer,
                 [styles.monacoFieldWithoutFieldStyles]: renderedWithinFocusContainer,
             })}
             editorOptions={monacoOptions}
-            editorClassName={classNames(styles.editor, { [styles.editorWithPlaceholder]: !value })}
             autoFocus={autoFocus}
             onBlur={onBlur}
-            applySuggestionsOnEnter={applySuggestionsOnEnter}
+            applySuggestionsOnEnter={false}
+            tabIndex={tabIndex}
         />
     )
 })

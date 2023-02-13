@@ -3,17 +3,22 @@ import React, { useEffect, useMemo } from 'react'
 import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Container, Icon, Link, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { CloudCtaBanner } from '../../components/CloudCtaBanner'
 import { EnterprisePageRoutes } from '../../routes.constants'
 import { useTheme, ThemePreference } from '../../theme'
+import { eventLogger } from '../../tracking/eventLogger'
 
 import styles from './NotebooksGettingStartedTab.module.scss'
 
-interface NotebooksGettingStartedTabProps extends TelemetryProps {}
+interface NotebooksGettingStartedTabProps extends TelemetryProps {
+    authenticatedUser: AuthenticatedUser | null
+}
 
 const functionalityPanels = [
     {
@@ -50,7 +55,7 @@ const functionalityPanels = [
 
 export const NotebooksGettingStartedTab: React.FunctionComponent<
     React.PropsWithChildren<NotebooksGettingStartedTabProps>
-> = ({ telemetryService }) => {
+> = ({ telemetryService, authenticatedUser }) => {
     useEffect(() => telemetryService.log('NotebooksGettingStartedTabViewed'), [telemetryService])
 
     const [, setHasSeenGettingStartedTab] = useTemporarySetting('search.notebooks.gettingStartedTabSeen', false)
@@ -124,10 +129,12 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                 <CloudCtaBanner variant="filled">
                     To create Notebooks across your team's private repositories,{' '}
                     <Link
-                        to="https://signup.sourcegraph.com/?p=notebooks"
+                        to={buildCloudTrialURL(authenticatedUser, 'notebooks')}
                         target="_blank"
                         rel="noopener noreferrer"
-                        onClick={() => telemetryService.log('ClickedOnCloudCTA')}
+                        onClick={() =>
+                            eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NotebooksGettingStarted' })
+                        }
                     >
                         try Sourcegraph Cloud
                     </Link>

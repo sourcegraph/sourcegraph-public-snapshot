@@ -56,14 +56,6 @@ func (r *Resolver) SearchContextsToResolvers(searchContexts []*types.SearchConte
 	return searchContextResolvers
 }
 
-func (r *Resolver) AutoDefinedSearchContexts(ctx context.Context) ([]graphqlbackend.SearchContextResolver, error) {
-	searchContexts, err := searchcontexts.GetAutoDefinedSearchContexts(ctx, r.db)
-	if err != nil {
-		return nil, err
-	}
-	return r.SearchContextsToResolvers(searchContexts), nil
-}
-
 func (r *Resolver) SearchContextBySpec(ctx context.Context, args graphqlbackend.SearchContextBySpecArgs) (graphqlbackend.SearchContextResolver, error) {
 	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, args.Spec)
 	if err != nil {
@@ -508,7 +500,7 @@ func (r *searchContextResolver) Repositories(ctx context.Context) ([]graphqlback
 
 	searchContextRepositories := make([]graphqlbackend.SearchContextRepositoryRevisionsResolver, len(repoRevs))
 	for idx, repoRev := range repoRevs {
-		searchContextRepositories[idx] = &searchContextRepositoryRevisionsResolver{graphqlbackend.NewRepositoryResolver(r.db, gitserver.NewClient(r.db), repoRev.Repo.ToRepo()), repoRev.Revisions}
+		searchContextRepositories[idx] = &searchContextRepositoryRevisionsResolver{graphqlbackend.NewRepositoryResolver(r.db, gitserver.NewClient(), repoRev.Repo.ToRepo()), repoRev.Revisions}
 	}
 	return searchContextRepositories, nil
 }

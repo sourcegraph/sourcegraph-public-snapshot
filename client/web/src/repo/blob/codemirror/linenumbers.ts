@@ -1,5 +1,6 @@
 import {
     Annotation,
+    EditorSelection,
     EditorState,
     Extension,
     Range,
@@ -13,13 +14,18 @@ import {
     EditorView,
     gutterLineClass,
     GutterMarker,
+    layer,
     lineNumbers,
     PluginValue,
+    RectangleMarker,
     ViewPlugin,
     ViewUpdate,
 } from '@codemirror/view'
+import classNames from 'classnames'
 
 import { isValidLineRange, MOUSE_MAIN_BUTTON, preciseOffsetAtCoords } from './utils'
+
+import { blobPropsFacet } from './index'
 
 /**
  * Represents the currently selected line range. null means no lines are
@@ -30,12 +36,16 @@ export type SelectedLineRange = { line: number; character?: number; endLine?: nu
 
 const selectedLineDecoration = Decoration.line({
     class: 'selected-line',
-    attributes: { tabIndex: '-1', 'data-line-focusable': '' },
+    attributes: {
+        tabIndex: '-1',
+        'data-line-focusable': '',
+        'data-testid': 'selected-line',
+    },
 })
 const selectedLineGutterMarker = new (class extends GutterMarker {
     public elementClass = 'selected-line'
 })()
-const setSelectedLines = StateEffect.define<SelectedLineRange>()
+export const setSelectedLines = StateEffect.define<SelectedLineRange>()
 const setEndLine = StateEffect.define<number>()
 
 /**
@@ -83,6 +93,85 @@ export const selectedLines = StateField.define<SelectedLineRange>({
 
             return builder.finish()
         }),
+
+        /**
+         * We highlight selected lines using layer instead of line decorations.
+         * With this approach both selected lines and editor selection layers may be visible (with the latter taking precedence).
+         * It makes selected text highlighted even if it is on a selected line.
+         *
+         * We can't use line decorations for this because the editor selection layer is positioned behind the document content
+         * and thus the line background set by line decorations overrides the layer background making selected text
+         * not highlighted.
+         */
+        layer({
+            above: false,
+            markers(view) {
+                const range = view.state.field(field)
+                if (!range) {
+                    return []
+                }
+
+                const endLineNumber = range.endLine ?? range.line
+                const startLine = view.state.doc.line(Math.min(range.line, endLineNumber))
+                const endLine = view.state.doc.line(
+                    Math.min(view.state.doc.lines, startLine.number === endLineNumber ? range.line : endLineNumber)
+                )
+
+                return RectangleMarker.forRange(
+                    view,
+                    classNames('selected-line', { ['blame-visible']: view.state.facet(blobPropsFacet).isBlameVisible }),
+                    EditorSelection.range(startLine.from, Math.min(endLine.to + 1, view.state.doc.length))
+                )
+            },
+            update(update) {
+                return (
+                    update.docChanged ||
+                    update.selectionSet ||
+                    update.viewportChanged ||
+                    update.transactions.some(transaction =>
+                        transaction.effects.some(effect => effect.is(setSelectedLines) || effect.is(setEndLine))
+                    )
+                )
+            },
+            class: 'selected-lines-layer',
+        }),
+        EditorView.theme({
+            /**
+             * [RectangleMarker.forRange](https://sourcegraph.com/github.com/codemirror/view@a0a0b9ef5a4deaf58842422ac080030042d83065/-/blob/src/layer.ts?L60-75)
+             * returns absolutely positioned markers. Markers top position has extra 1px (6px in case blame decorations
+             * are visible) more in its `top` value breaking alignment wih the line.
+             * We compensate this spacing by setting negative margin-top.
+             */
+            '.selected-lines-layer .selected-line': {
+                marginTop: '-1px',
+
+                // Ensure selection marker height matches line height.
+                minHeight: '1rem',
+            },
+            '.selected-lines-layer .selected-line.blame-visible': {
+                marginTop: '-6px',
+
+                // Ensure selection marker height matches the increased line height.
+                minHeight: 'calc(1.5rem + 1px)',
+            },
+
+            // Selected line background is set by adding 'selected-line' class to the layer markers.
+            '.cm-line.selected-line': {
+                background: 'transparent',
+            },
+
+            /**
+             * Rectangle markers `left` position matches the position of the character at the start of range
+             * (for selected lines it is first character of the first line in a range). When line content (`.cm-line`)
+             * has some padding to the left (e.g. to create extra space between gutters and code) there is a gap in
+             * highlight (background color) between the selected line gutters (decorated with {@link selectedLineGutterMarker}) and layer.
+             * To remove this gap we move padding from `.cm-line` to the last gutter.
+             */
+            '.cm-gutter:last-child .cm-gutterElement': {
+                paddingRight: '1rem',
+            },
+        }),
+
         gutterLineClass.compute([field], state => {
             const range = state.field(field)
             const marks: Range<GutterMarker>[] = []
@@ -103,14 +192,20 @@ export const selectedLines = StateField.define<SelectedLineRange>({
 })
 
 /**
- * An annotation to indicate where a line selection is comming from.
- * Transactions that set selected lines without this annotion are assumed to be
+ * An annotation to indicate where a line selection is coming from.
+ * Transactions that set selected lines without this annotation are assumed to be
  * "external" (e.g. from syncing with the URL).
  */
 const lineSelectionSource = Annotation.define<'gutter'>()
 
 /**
- * View plugin resonsible for scrolling the selected line(s) into view if/when
+ * An annotation to indicate that we have to scroll the current selected line
+ * into the view regardless of last selected line cache.
+ */
+export const lineScrollEnforcing = Annotation.define<'scroll-enforcing'>()
+
+/**
+ * View plugin responsible for scrolling the selected line(s) into view if/when
  * necessary.
  */
 const scrollIntoView = ViewPlugin.fromClass(
@@ -123,13 +218,19 @@ const scrollIntoView = ViewPlugin.fromClass(
 
         public update(update: ViewUpdate): void {
             const currentSelectedLines = update.state.field(selectedLines)
-            if (
-                this.lastSelectedLines !== currentSelectedLines &&
-                update.transactions.some(transaction => transaction.annotation(lineSelectionSource) !== 'gutter')
-            ) {
+            const isForcedScroll = update.transactions.some(
+                transaction => transaction.annotation(lineScrollEnforcing) === 'scroll-enforcing'
+            )
+
+            const hasSelectedLineChanged = isForcedScroll ? true : this.lastSelectedLines !== currentSelectedLines
+            const isExternalTrigger = update.transactions.some(
+                transaction => transaction.annotation(lineSelectionSource) !== 'gutter'
+            )
+
+            if (hasSelectedLineChanged && isExternalTrigger) {
                 // Only scroll selected lines into view when the user isn't
                 // currently selecting lines themselves (as indicated by the
-                // presence of the "gutter" annotation). Otherwise the scroll
+                // presence of the "gutter" annotation). Otherwise, the scroll
                 // position might change while the user is selecting lines.
                 this.lastSelectedLines = currentSelectedLines
                 this.scrollIntoView(currentSelectedLines)
@@ -344,6 +445,11 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
             '.cm-lineNumbers': {
                 cursor: 'pointer',
                 color: 'var(--line-number-color)',
+            },
+            '.cm-lineNumbers .cm-gutterElement': {
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-end',
             },
             '.cm-lineNumbers .cm-gutterElement:hover': {
                 textDecoration: 'underline',

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/go-diff/diff"
+	godiff "github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -240,7 +240,7 @@ index 9bd8209..d2acfa9 100644
 		}
 		fileDiff := fileDiffs[0]
 
-		gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, name string, _ authz.SubRepoPermissionChecker) ([]byte, error) {
+		gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, name string) ([]byte, error) {
 			if name != "INSTALL.md" {
 				t.Fatalf("ReadFile received call for wrong file: %s", name)
 			}
@@ -266,7 +266,7 @@ Line 9
 Line 10
 `
 
-		haveContent, err := newFile.Content(ctx)
+		haveContent, err := newFile.Content(ctx, &GitTreeContentPageArgs{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -556,7 +556,7 @@ index 373ae20..89ad131 100644
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			fileDiff, err := diff.ParseFileDiff([]byte(tc.patch))
+			fileDiff, err := godiff.ParseFileDiff([]byte(tc.patch))
 			if err != nil {
 				t.Fatal(err)
 			}

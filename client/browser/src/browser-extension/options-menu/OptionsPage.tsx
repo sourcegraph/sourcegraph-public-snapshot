@@ -5,12 +5,11 @@ import { Combobox, ComboboxInput, ComboboxOption, ComboboxPopover, ComboboxList 
 import classNames from 'classnames'
 import { Observable } from 'rxjs'
 
-import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { SourcegraphLogo } from '@sourcegraph/branded/src/components/SourcegraphLogo'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Button, Link, Icon, Label, H4, Text } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Label, H4, Text, LoaderInput } from '@sourcegraph/wildcard'
 
 import { CurrentUserResult } from '../../graphql-operations'
 import { getPlatformName, isDefaultSourcegraphUrl } from '../../shared/util/context'
@@ -102,7 +101,7 @@ export const OptionsPage: React.FunctionComponent<React.PropsWithChildren<Option
             </section>
             <section className={styles.section}>
                 Get code navigation tooltips while browsing and reviewing code on your code host.{' '}
-                <Link to="https://docs.sourcegraph.com/integration/browser_extension#features" {...NEW_TAB_LINK_PROPS}>
+                <Link to="/help/integration/browser_extension#features" {...NEW_TAB_LINK_PROPS}>
                     Learn more
                 </Link>{' '}
                 about the extension and compatible code hosts.
@@ -130,11 +129,7 @@ export const OptionsPage: React.FunctionComponent<React.PropsWithChildren<Option
             )}
 
             <section className={styles.section}>
-                <Link
-                    to="https://docs.sourcegraph.com/integration/browser_extension#privacy"
-                    {...NEW_TAB_LINK_PROPS}
-                    className="d-block mb-1"
-                >
+                <Link to="/help/integration/browser_extension#privacy" {...NEW_TAB_LINK_PROPS} className="d-block mb-1">
                     <small>How do we keep your code private?</small>{' '}
                     <Icon
                         className="ml-2"

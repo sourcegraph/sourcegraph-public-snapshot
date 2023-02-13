@@ -2,18 +2,16 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiBookOutline } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
-import { Redirect, useHistory, useLocation } from 'react-router'
+import { Location, Navigate, useNavigate, useLocation, NavigateFunction } from 'react-router-dom-v5-compat'
 import { Observable } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, Button, useEventObservable, Alert, ButtonLink, Link } from '@sourcegraph/wildcard'
+import { PageHeader, Button, useEventObservable, Alert, ButtonLink } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { CloudCtaBanner } from '../../components/CloudCtaBanner'
 import { FilteredConnectionFilter } from '../../components/FilteredConnection'
 import { Page } from '../../components/Page'
 import { CreateNotebookVariables, NotebooksOrderBy } from '../../graphql-operations'
@@ -35,10 +33,6 @@ type NotebooksTab = 'notebooks' | 'getting-started'
 type Tabs = { tab: NotebooksTab; title: string; isActive: boolean; logEventName: string }[]
 
 function getSelectedTabFromLocation(locationSearch: string, authenticatedUser: AuthenticatedUser | null): NotebooksTab {
-    if (!authenticatedUser) {
-        return 'getting-started'
-    }
-
     const urlParameters = new URLSearchParams(locationSearch)
     switch (urlParameters.get('tab')) {
         case 'notebooks':
@@ -46,14 +40,14 @@ function getSelectedTabFromLocation(locationSearch: string, authenticatedUser: A
         case 'getting-started':
             return 'getting-started'
     }
-    return 'notebooks'
+    return authenticatedUser ? 'notebooks' : 'getting-started'
 }
 
-function setSelectedLocationTab(location: H.Location, history: H.History, selectedTab: NotebooksTab): void {
+function setSelectedLocationTab(location: Location, navigate: NavigateFunction, selectedTab: NotebooksTab): void {
     const urlParameters = new URLSearchParams(location.search)
     urlParameters.set('tab', selectedTab)
     if (location.search !== urlParameters.toString()) {
-        history.replace({ ...location, search: urlParameters.toString() })
+        navigate({ ...location, search: urlParameters.toString() }, { replace: true })
     }
 }
 
@@ -75,9 +69,8 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
         telemetryService.logPageView('SearchNotebooksListPage')
     }, [telemetryService])
 
-    const isSourcegraphDotCom: boolean = window.context?.sourcegraphDotComMode || false
     const [importState, setImportState] = useState<typeof LOADING | ErrorLike | undefined>()
-    const history = useHistory()
+    const navigate = useNavigate()
     const location = useLocation()
 
     const [selectedTab, setSelectedTab] = useState<NotebooksTab>(
@@ -96,10 +89,10 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
     const onSelectTab = useCallback(
         (tab: NotebooksTab, logName: string) => {
             setSelectedTab(tab)
-            setSelectedLocationTab(location, history, tab)
+            setSelectedLocationTab(location, navigate, tab)
             telemetryService.log(logName)
         },
-        [history, location, setSelectedTab, telemetryService]
+        [navigate, location, setSelectedTab, telemetryService]
     )
 
     const orderOptions: FilteredConnectionFilter[] = [
@@ -241,7 +234,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
 
     if (importedNotebookOrError && importedNotebookOrError !== LOADING) {
         telemetryService.log('SearchNotebookImportedFromMarkdown')
-        return <Redirect to={EnterprisePageRoutes.Notebook.replace(':id', importedNotebookOrError.id)} />
+        return <Navigate to={EnterprisePageRoutes.Notebook.replace(':id', importedNotebookOrError.id)} replace={true} />
     }
 
     return (
@@ -288,21 +281,6 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                                 </ButtonLink>
                             </div>
                         ))}
-
-                        {selectedTab === 'notebooks' && isSourcegraphDotCom && (
-                            <CloudCtaBanner variant="outlined" small={true} className="ml-sm-auto mt-md-0 mt-3">
-                                To create Notebooks across your private repositories,{' '}
-                                <Link
-                                    to="https://signup.sourcegraph.com/?p=notebooks"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    onClick={() => telemetryService.log('ClickedOnCloudCTA')}
-                                >
-                                    try Sourcegraph Cloud
-                                </Link>
-                                .
-                            </CloudCtaBanner>
-                        )}
                     </div>
                 </div>
 
@@ -339,7 +317,10 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                 )}
 
                 {selectedTab === 'getting-started' && (
-                    <NotebooksGettingStartedTab telemetryService={telemetryService} />
+                    <NotebooksGettingStartedTab
+                        telemetryService={telemetryService}
+                        authenticatedUser={authenticatedUser}
+                    />
                 )}
             </Page>
         </div>

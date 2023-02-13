@@ -17,9 +17,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
+	return StandaloneRunRun(cliCtx.Context, logger, cfg, cliCtx.Bool("verify"))
+}
+
+func StandaloneRunRun(ctx context.Context, logger log.Logger, cfg *config.Config, runVerifyChecks bool) error {
 	if err := cfg.Validate(); err != nil {
 		return err
 	}
@@ -42,14 +47,14 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 	opts := apiWorkerOptions(cfg, queueTelemetryOptions)
 
 	// TODO: This is too similar to the RunValidate func. Make it share even more code.
-	if cliCtx.Bool("verify") {
+	if runVerifyChecks {
 		// Then, validate all tools that are required are installed.
 		if err := validateToolsRequired(cfg.UseFirecracker); err != nil {
 			return err
 		}
 
 		// Validate git is of the right version.
-		if err := validateGitVersion(cliCtx.Context); err != nil {
+		if err := validateGitVersion(ctx); err != nil {
 			return err
 		}
 
@@ -60,13 +65,18 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 		if err != nil {
 			return err
 		}
-		if err := validateSrcCLIVersion(cliCtx.Context, client, opts.QueueOptions.BaseClientOptions.EndpointOptions); err != nil {
-			return err
+		if err = validateSrcCLIVersion(ctx, client, opts.QueueOptions.BaseClientOptions.EndpointOptions); err != nil {
+			if errors.Is(err, ErrSrcPatchBehind) {
+				// This is ok. The patch just doesn't match but still works.
+				logger.Warn("A newer patch release version of src-cli is available, consider running executor install src-cli to upgrade", log.Error(err))
+			} else {
+				return err
+			}
 		}
 
 		if cfg.UseFirecracker {
 			// Validate ignite is installed.
-			if err := validateIgniteInstalled(cliCtx.Context); err != nil {
+			if err := validateIgniteInstalled(ctx); err != nil {
 				return err
 			}
 
@@ -81,16 +91,14 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 	}
 
 	nameSet := janitor.NewNameSet()
-	ctx, cancel := context.WithCancel(cliCtx.Context)
-	worker, err := worker.NewWorker(observationCtx, nameSet, opts)
+	ctx, cancel := context.WithCancel(ctx)
+	wrk, err := worker.NewWorker(observationCtx, nameSet, opts)
 	if err != nil {
 		cancel()
 		return err
 	}
 
-	routines := []goroutine.BackgroundRoutine{
-		worker,
-	}
+	routines := []goroutine.BackgroundRoutine{wrk}
 
 	if cfg.UseFirecracker {
 		routines = append(routines, janitor.NewOrphanedVMJanitor(
@@ -108,7 +116,7 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 		// in that we want a maximum runtime and/or number of jobs to be
 		// executed by a single instance, after which the service should shut
 		// down without error.
-		worker.Wait()
+		wrk.Wait()
 
 		// Once the worker has finished its current set of jobs and stops
 		// the dequeue loop, we want to finish off the rest of the sibling

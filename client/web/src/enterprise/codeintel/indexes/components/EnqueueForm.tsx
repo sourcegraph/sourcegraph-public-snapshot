@@ -2,14 +2,14 @@ import { FunctionComponent, useCallback, useState } from 'react'
 
 import { Subject } from 'rxjs'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Alert, Input, Label, Link } from '@sourcegraph/wildcard'
+import { Alert, Button, ErrorAlert, Input, Label, Link } from '@sourcegraph/wildcard'
 
-import { useEnqueueIndexJob } from '../hooks/useEnqueueIndexJob'
+import { useEnqueueIndexJob as defaultUseEnqueueIndexJob } from '../hooks/useEnqueueIndexJob'
 
 export interface EnqueueFormProps {
     repoId: string
     querySubject: Subject<string>
+    useEnqueueIndexJob?: typeof defaultUseEnqueueIndexJob
 }
 
 enum State {
@@ -18,7 +18,11 @@ enum State {
     Queued,
 }
 
-export const EnqueueForm: FunctionComponent<React.PropsWithChildren<EnqueueFormProps>> = ({ repoId, querySubject }) => {
+export const EnqueueForm: FunctionComponent<EnqueueFormProps> = ({
+    repoId,
+    querySubject,
+    useEnqueueIndexJob = defaultUseEnqueueIndexJob,
+}) => {
     const [revlike, setRevlike] = useState('HEAD')
     const [state, setState] = useState(() => State.Idle)
     const [queueResult, setQueueResult] = useState<number>()

@@ -1,16 +1,15 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
 import { isEqual } from 'lodash'
+import { useNavigate } from 'react-router-dom-v5-compat'
 import { Observable } from 'rxjs'
 import { mergeMap, startWith, catchError, tap, filter } from 'rxjs/operators'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Container, Button, useEventObservable, Alert, Link, Select, Input } from '@sourcegraph/wildcard'
+import { Container, Button, useEventObservable, Alert, Link, Select, Input, Form } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { CodeMonitorFields } from '../../../graphql-operations'
@@ -23,8 +22,6 @@ import { FormTriggerArea } from './FormTriggerArea'
 import styles from './CodeMonitorForm.module.scss'
 
 export interface CodeMonitorFormProps extends ThemeProps {
-    history: H.History
-    location: H.Location
     authenticatedUser: AuthenticatedUser
     /**
      * A function that takes in a code monitor and emits an Observable with all or some
@@ -55,7 +52,6 @@ interface FormCompletionSteps {
 export const CodeMonitorForm: React.FunctionComponent<React.PropsWithChildren<CodeMonitorFormProps>> = ({
     authenticatedUser,
     onSubmit,
-    history,
     submitButtonLabel,
     codeMonitor,
     showDeleteButton,
@@ -66,6 +62,8 @@ export const CodeMonitorForm: React.FunctionComponent<React.PropsWithChildren<Co
     isSourcegraphDotCom,
 }) => {
     const LOADING = 'loading' as const
+
+    const navigate = useNavigate()
 
     const [currentCodeMonitorState, setCodeMonitor] = useState<CodeMonitorFields>(
         codeMonitor ?? {
@@ -120,13 +118,13 @@ export const CodeMonitorForm: React.FunctionComponent<React.PropsWithChildren<Co
                             catchError(error => [asError(error)]),
                             tap(successOrError => {
                                 if (!isErrorLike(successOrError) && successOrError !== LOADING) {
-                                    history.push('/code-monitoring')
+                                    navigate('/code-monitoring')
                                 }
                             })
                         )
                     )
                 ),
-            [onSubmit, currentCodeMonitorState, history, formCompletion]
+            [onSubmit, currentCodeMonitorState, navigate, formCompletion]
         )
     )
 
@@ -142,12 +140,12 @@ export const CodeMonitorForm: React.FunctionComponent<React.PropsWithChildren<Co
     const onCancel = useCallback(() => {
         if (hasChangedFields) {
             if (window.confirm('Leave page? All unsaved changes will be lost.')) {
-                history.push('/code-monitoring')
+                navigate('/code-monitoring')
             }
         } else {
-            history.push('/code-monitoring')
+            navigate('/code-monitoring')
         }
-    }, [history, hasChangedFields])
+    }, [navigate, hasChangedFields])
 
     const [showDeleteModal, setShowDeleteModal] = useState(false)
 
@@ -300,7 +298,6 @@ export const CodeMonitorForm: React.FunctionComponent<React.PropsWithChildren<Co
                 <DeleteMonitorModal
                     isOpen={showDeleteModal}
                     deleteCodeMonitor={deleteCodeMonitor}
-                    history={history}
                     codeMonitor={codeMonitor}
                     toggleDeleteModal={toggleDeleteModal}
                 />

@@ -13,6 +13,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 
+	srp "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -624,7 +625,7 @@ read    group   Dev1    *   //depot/main/.../*.go
 			} else if ok && tc.noRules {
 				t.Fatal("expected no rules")
 			}
-			checker, err := authz.NewSimpleChecker(api.RepoName(tc.depot), rules.Paths)
+			checker, err := srp.NewSimpleChecker(api.RepoName(tc.depot), rules.Paths)
 			if err != nil {
 				t.Fatal(err)
 			}

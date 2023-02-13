@@ -1,15 +1,13 @@
 import React, { useCallback, useEffect } from 'react'
 
 import { mdiPlus } from '@mdi/js'
-import * as H from 'history'
-import { Redirect, RouteComponentProps } from 'react-router'
+import { Navigate } from 'react-router-dom-v5-compat'
 import { merge, of, Observable } from 'rxjs'
 import { catchError, concatMapTo, map, tap } from 'rxjs/operators'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { Button, useEventObservable, Link, Alert, Icon, H2 } from '@sourcegraph/wildcard'
+import { Button, useEventObservable, Link, Alert, Icon, H2, Form } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { mutateGraphQL, queryGraphQL } from '../../../../backend/graphql'
@@ -29,17 +27,12 @@ interface UserCreateSubscriptionNodeProps {
      * The user to display in this list item.
      */
     node: ProductSubscriptionAccountFields
-
-    /**
-     * Browser history, used to redirect the user to the new subscription after one is successfully created.
-     */
-    history: H.History
 }
 
 const createProductSubscription = (
     args: CreateProductSubscriptionVariables
 ): Observable<CreateProductSubscriptionResult['dotcom']['createProductSubscription']> =>
-    mutateGraphQL(
+    mutateGraphQL<CreateProductSubscriptionResult>(
         gql`
             mutation CreateProductSubscription($accountID: ID!) {
                 dotcom {
@@ -86,7 +79,9 @@ const UserCreateSubscriptionNode: React.FunctionComponent<React.PropsWithChildre
             {createdSubscription &&
                 createdSubscription !== 'saving' &&
                 !isErrorLike(createdSubscription) &&
-                createdSubscription.urlForSiteAdmin && <Redirect to={createdSubscription.urlForSiteAdmin} />}
+                createdSubscription.urlForSiteAdmin && (
+                    <Navigate replace={true} to={createdSubscription.urlForSiteAdmin} />
+                )}
             <li className="list-group-item py-2">
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
@@ -120,12 +115,7 @@ const UserCreateSubscriptionNode: React.FunctionComponent<React.PropsWithChildre
     )
 }
 
-class FilteredUserConnection extends FilteredConnection<
-    ProductSubscriptionAccountFields,
-    Pick<UserCreateSubscriptionNodeProps, 'history'>
-> {}
-
-interface Props extends RouteComponentProps<{}> {
+interface Props {
     authenticatedUser: AuthenticatedUser
 }
 
@@ -144,7 +134,7 @@ export const SiteAdminCreateProductSubscriptionPage: React.FunctionComponent<
         <div className="site-admin-create-product-subscription-page">
             <PageTitle title="Create product subscription" />
             <H2>Create product subscription</H2>
-            <FilteredUserConnection
+            <FilteredConnection<ProductSubscriptionAccountFields, {}>
                 {...props}
                 className="list-group list-group-flush mt-3"
                 noun="user"
@@ -160,7 +150,7 @@ export const SiteAdminCreateProductSubscriptionPage: React.FunctionComponent<
 function queryAccounts(
     args: Partial<ProductSubscriptionAccountsVariables>
 ): Observable<ProductSubscriptionAccountsResult['users']> {
-    return queryGraphQL(
+    return queryGraphQL<ProductSubscriptionAccountsResult>(
         gql`
             query ProductSubscriptionAccounts($first: Int, $query: String) {
                 users(first: $first, query: $query) {

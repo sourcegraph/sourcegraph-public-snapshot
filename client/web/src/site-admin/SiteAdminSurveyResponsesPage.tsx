@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react'
 
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import {
     Badge,
     BADGE_VARIANTS,
@@ -21,13 +21,13 @@ import {
     Card,
 } from '@sourcegraph/wildcard'
 
-import { FilteredConnection } from '../components/FilteredConnection'
+import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { Timestamp } from '../components/time/Timestamp'
 import {
     SurveyResponseAggregateFields,
     SurveyResponseFields,
     UserWithSurveyResponseFields,
+    UserActivePeriod,
 } from '../graphql-operations'
 import {
     fetchAllSurveyResponses,
@@ -39,9 +39,42 @@ import { eventLogger } from '../tracking/eventLogger'
 import { userURL } from '../user'
 
 import { ValueLegendItem } from './analytics/components/ValueLegendList'
-import { USER_ACTIVITY_FILTERS } from './SiteAdminUsageStatisticsPage'
 
 import styles from './SiteAdminSurveyResponsesPage.module.scss'
+
+const USER_ACTIVITY_FILTERS: FilteredConnectionFilter[] = [
+    {
+        label: '',
+        type: 'radio',
+        id: 'user-activity-filters',
+        values: [
+            {
+                label: 'All users',
+                value: 'all',
+                tooltip: 'Show all users',
+                args: { activePeriod: UserActivePeriod.ALL_TIME },
+            },
+            {
+                label: 'Active today',
+                value: 'today',
+                tooltip: 'Show users active since this morning at 00:00 UTC',
+                args: { activePeriod: UserActivePeriod.TODAY },
+            },
+            {
+                label: 'Active this week',
+                value: 'week',
+                tooltip: 'Show users active since Monday at 00:00 UTC',
+                args: { activePeriod: UserActivePeriod.THIS_WEEK },
+            },
+            {
+                label: 'Active this month',
+                value: 'month',
+                tooltip: 'Show users active since the first day of the month at 00:00 UTC',
+                args: { activePeriod: UserActivePeriod.THIS_MONTH },
+            },
+        ],
+    },
+]
 
 interface SurveyResponseNodeProps {
     /**
@@ -278,17 +311,14 @@ class SiteAdminSurveyResponsesSummary extends React.PureComponent<{}, SiteAdminS
     }
 }
 
-interface Props extends RouteComponentProps<{}> {}
-
-class FilteredSurveyResponseConnection extends FilteredConnection<SurveyResponseFields, {}> {}
-class FilteredUserSurveyResponseConnection extends FilteredConnection<UserWithSurveyResponseFields, {}> {}
+interface Props {}
 
 const LAST_TAB_STORAGE_KEY = 'site-admin-survey-responses-last-tab'
 /**
  * A page displaying the survey responses on this site.
  */
 
-export const SiteAdminSurveyResponsesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
+export const SiteAdminSurveyResponsesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
     const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
 
     useEffect(() => {
@@ -316,7 +346,7 @@ export const SiteAdminSurveyResponsesPage: React.FunctionComponent<React.PropsWi
                 </TabList>
                 <TabPanels>
                     <TabPanel>
-                        <FilteredSurveyResponseConnection
+                        <FilteredConnection<SurveyResponseFields, {}>
                             key="chronological"
                             className="list-group list-group-flush"
                             hideSearch={true}
@@ -324,12 +354,10 @@ export const SiteAdminSurveyResponsesPage: React.FunctionComponent<React.PropsWi
                             pluralNoun="survey responses"
                             queryConnection={fetchAllSurveyResponses}
                             nodeComponent={SurveyResponseNode}
-                            history={props.history}
-                            location={props.location}
                         />
                     </TabPanel>
                     <TabPanel>
-                        <FilteredUserSurveyResponseConnection
+                        <FilteredConnection<UserWithSurveyResponseFields, {}>
                             key="by-user"
                             listComponent="table"
                             headComponent={UserSurveyResponsesHeader}
@@ -340,8 +368,6 @@ export const SiteAdminSurveyResponsesPage: React.FunctionComponent<React.PropsWi
                             pluralNoun="users"
                             queryConnection={fetchAllUsersWithSurveyResponses}
                             nodeComponent={UserSurveyResponseNode}
-                            history={props.history}
-                            location={props.location}
                         />
                     </TabPanel>
                 </TabPanels>

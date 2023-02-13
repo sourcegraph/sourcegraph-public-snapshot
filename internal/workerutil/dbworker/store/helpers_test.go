@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
@@ -26,7 +27,7 @@ func testStore[T workerutil.Record](db *sql.DB, options Options[T]) *store[T] {
 type TestRecord struct {
 	ID            int
 	State         string
-	ExecutionLogs []ExecutionLogEntry
+	ExecutionLogs []executor.ExecutionLogEntry
 }
 
 func (v TestRecord) RecordID() int {

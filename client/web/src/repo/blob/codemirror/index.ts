@@ -1,6 +1,6 @@
 import { Facet } from '@codemirror/state'
 
-import { BlobProps } from '../Blob'
+import { BlobProps } from '../CodeMirrorBlob'
 
 /**
  * This facet is a necessary evil to allow access to props passed to the blob

@@ -17,7 +17,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cespare/xxhash/v2"
 	"github.com/grafana/regexp"
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
@@ -25,22 +24,26 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
 
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/go-diff/diff"
-	"github.com/sourcegraph/go-rendezvous"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/migration"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/proto"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -72,14 +75,13 @@ func ResetClientMocks() {
 var _ Client = &clientImplementor{}
 
 // NewClient returns a new gitserver.Client.
-func NewClient(db database.DB) Client {
+func NewClient() Client {
 	return &clientImplementor{
 		logger: sglog.Scoped("NewClient", "returns a new gitserver.Client"),
 		addrs: func() []string {
 			return conf.Get().ServiceConnections().GitServers
 		},
 		pinned:      pinnedReposFromConfig,
-		db:          db,
 		httpClient:  defaultDoer,
 		HTTPLimiter: defaultLimiter,
 		// Use the binary name for userAgent. This should effectively identify
@@ -92,7 +94,7 @@ func NewClient(db database.DB) Client {
 
 // NewTestClient returns a test client that will use the given hard coded list of
 // addresses instead of reading them from config.
-func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) Client {
+func NewTestClient(cli httpcli.Doer, addrs []string) Client {
 	logger := sglog.Scoped("NewTestClient", "Test New client")
 	return &clientImplementor{
 		logger: logger,
@@ -106,7 +108,6 @@ func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) Client {
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
 		userAgent:  filepath.Base(os.Args[0]),
-		db:         db,
 		operations: newOperations(observation.ContextWithLogger(logger, &observation.TestContext)),
 	}
 }
@@ -116,7 +117,7 @@ func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) Client {
 func NewMockClientWithExecReader(execReader func(context.Context, api.RepoName, []string) (io.ReadCloser, error)) *MockClient {
 	client := NewMockClient()
 	// NOTE: This hook is the same as DiffFunc, but with `execReader` used above
-	client.DiffFunc.SetDefaultHook(func(ctx context.Context, opts DiffOptions, checker authz.SubRepoPermissionChecker) (*DiffFileIterator, error) {
+	client.DiffFunc.SetDefaultHook(func(ctx context.Context, checker authz.SubRepoPermissionChecker, opts DiffOptions) (*DiffFileIterator, error) {
 		if opts.Base == DevNullSHA {
 			opts.RangeType = ".."
 		} else if opts.RangeType != ".." {
@@ -207,9 +208,6 @@ type clientImplementor struct {
 	// and sync the pinned map.
 	pinned func() map[string]string
 
-	// db is a connection to the database
-	db database.DB
-
 	// operations are used for internal observability
 	operations *operations
 }
@@ -258,7 +256,7 @@ type Client interface {
 
 	// HasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
 	// contains a commit past a specified date.
-	HasCommitAfter(ctx context.Context, repo api.RepoName, date string, revspec string, checker authz.SubRepoPermissionChecker) (bool, error)
+	HasCommitAfter(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, date string, revspec string) (bool, error)
 
 	// IsRepoCloneable returns nil if the repository is cloneable.
 	IsRepoCloneable(context.Context, api.RepoName) error
@@ -280,10 +278,6 @@ type Client interface {
 
 	// RemoveFrom removes the repository clone from the given gitserver.
 	RemoveFrom(ctx context.Context, repo api.RepoName, from string) error
-
-	// RendezvousAddrForRepo returns the gitserver address to use for the given
-	// repo name using the Rendezvous hashing scheme.
-	RendezvousAddrForRepo(api.RepoName) string
 
 	RepoCloneProgress(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)
 
@@ -309,10 +303,6 @@ type Client interface {
 	// Note: If the statistics for a gitserver have not been computed, the
 	// UpdatedAt field will be zero. This can happen for new gitservers.
 	ReposStats(context.Context) (map[string]*protocol.ReposStats, error)
-
-	// RequestRepoMigrate is effectively RequestRepoUpdate but with some additional metadata to make
-	// gitserver instances clone a repo from one instance to another
-	RequestRepoMigrate(ctx context.Context, repo api.RepoName, from, to string) (*protocol.RepoUpdateResponse, error)
 
 	// RequestRepoUpdate is the new protocol endpoint for synchronous requests
 	// with more detailed responses. Do not use this if you are not repo-updater.
@@ -342,20 +332,20 @@ type Client interface {
 
 	// NewFileReader returns an io.ReadCloser reading from the named file at commit.
 	// The caller should always close the reader after use
-	NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, checker authz.SubRepoPermissionChecker) (io.ReadCloser, error)
+	NewFileReader(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error)
 
 	// DiffSymbols performs a diff command which is expected to be parsed by our symbols package
 	DiffSymbols(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error)
 
 	// ListFiles returns a list of root-relative file paths matching the given
 	// pattern in a particular commit of a repository.
-	ListFiles(ctx context.Context, repo api.RepoName, commit api.CommitID, pattern *regexp.Regexp, checker authz.SubRepoPermissionChecker) ([]string, error)
+	ListFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pattern *regexp.Regexp) ([]string, error)
 
 	// Commits returns all commits matching the options.
-	Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error)
+	Commits(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, opt CommitsOptions) ([]*gitdomain.Commit, error)
 
 	// FirstEverCommit returns the first commit ever made to the repository.
-	FirstEverCommit(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker) (*gitdomain.Commit, error)
+	FirstEverCommit(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) (*gitdomain.Commit, error)
 
 	// ListTags returns a list of all tags in the repository. If commitObjs is non-empty, only all tags pointing at those commits are returned.
 	ListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) ([]*gitdomain.Tag, error)
@@ -368,38 +358,38 @@ type Client interface {
 	// Diff returns an iterator that can be used to access the diff between two
 	// commits on a per-file basis. The iterator must be closed with Close when no
 	// longer required.
-	Diff(ctx context.Context, opts DiffOptions, checker authz.SubRepoPermissionChecker) (*DiffFileIterator, error)
+	Diff(ctx context.Context, checker authz.SubRepoPermissionChecker, opts DiffOptions) (*DiffFileIterator, error)
 
 	// ReadFile returns the first maxBytes of the named file at commit. If maxBytes <= 0, the entire
 	// file is read. (If you just need to check a file's existence, use Stat, not ReadFile.)
-	ReadFile(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, checker authz.SubRepoPermissionChecker) ([]byte, error)
+	ReadFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, name string) ([]byte, error)
 
 	// BranchesContaining returns a map from branch names to branch tip hashes for
 	// each branch containing the given commit.
-	BranchesContaining(ctx context.Context, repo api.RepoName, commit api.CommitID, checker authz.SubRepoPermissionChecker) ([]string, error)
+	BranchesContaining(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID) ([]string, error)
 
 	// RefDescriptions returns a map from commits to descriptions of the tip of each
 	// branch and tag of the given repository.
-	RefDescriptions(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker, gitObjs ...string) (map[string][]gitdomain.RefDescription, error)
+	RefDescriptions(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, gitObjs ...string) (map[string][]gitdomain.RefDescription, error)
 
 	// CommitExists determines if the given commit exists in the given repository.
-	CommitExists(ctx context.Context, repo api.RepoName, id api.CommitID, checker authz.SubRepoPermissionChecker) (bool, error)
+	CommitExists(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, id api.CommitID) (bool, error)
 
 	// CommitsExist determines if the given commits exists in the given repositories. This function returns
 	// a slice of the same size as the input slice, true indicating that the commit at the symmetric index
 	// exists.
-	CommitsExist(ctx context.Context, repoCommits []api.RepoCommit, checker authz.SubRepoPermissionChecker) ([]bool, error)
+	CommitsExist(ctx context.Context, checker authz.SubRepoPermissionChecker, repoCommits []api.RepoCommit) ([]bool, error)
 
 	// Head determines the tip commit of the default branch for the given repository.
 	// If no HEAD revision exists for the given repository (which occurs with empty
 	// repositories), a false-valued flag is returned along with a nil error and
 	// empty revision.
-	Head(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker) (string, bool, error)
+	Head(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) (string, bool, error)
 
 	// CommitDate returns the time that the given commit was committed. If the given
 	// revision does not exist, a false-valued flag is returned along with a nil
 	// error and zero-valued time.
-	CommitDate(ctx context.Context, repo api.RepoName, commit api.CommitID, checker authz.SubRepoPermissionChecker) (string, time.Time, bool, error)
+	CommitDate(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID) (string, time.Time, bool, error)
 
 	// CommitGraph returns the commit graph for the given repository as a mapping
 	// from a commit to its parents. If a commit is supplied, the returned graph will
@@ -413,7 +403,7 @@ type Client interface {
 	// commits on {branchName} not also on the tip of the default branch. If the
 	// supplied branch name is the default branch, then this method instead returns
 	// all commits reachable from HEAD.
-	CommitsUniqueToBranch(ctx context.Context, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time, checker authz.SubRepoPermissionChecker) (map[string]time.Time, error)
+	CommitsUniqueToBranch(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time) (map[string]time.Time, error)
 
 	// LsFiles returns the output of `git ls-files`
 	LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error)
@@ -421,7 +411,7 @@ type Client interface {
 	// LFSSmudge returns a reader of the contents from LFS of the LFS pointer
 	// at path. If the path is not an LFS pointer, the file contents from git
 	// are returned instead.
-	LFSSmudge(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, checker authz.SubRepoPermissionChecker) (io.ReadCloser, error)
+	LFSSmudge(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (io.ReadCloser, error)
 
 	// GetCommits returns a git commit object describing each of the given repository and commit pairs. This
 	// function returns a slice of the same size as the input slice. Values in the output slice may be nil if
@@ -429,7 +419,7 @@ type Client interface {
 	//
 	// If ignoreErrors is true, then errors arising from any single failed git log operation will cause the
 	// resulting commit to be nil, but not fail the entire operation.
-	GetCommits(ctx context.Context, repoCommits []api.RepoCommit, ignoreErrors bool, checker authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error)
+	GetCommits(ctx context.Context, checker authz.SubRepoPermissionChecker, repoCommits []api.RepoCommit, ignoreErrors bool) ([]*gitdomain.Commit, error)
 
 	// GetCommit returns the commit with the given commit ID, or ErrCommitNotFound if no such commit
 	// exists.
@@ -437,7 +427,7 @@ type Client interface {
 	// The remoteURLFunc is called to get the Git remote URL if it's not set in repo and if it is
 	// needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
 	// the repository or if the commit must be fetched from the remote.
-	GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions, checker authz.SubRepoPermissionChecker) (*gitdomain.Commit, error)
+	GetCommit(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (*gitdomain.Commit, error)
 
 	// GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
 	// revspecs).
@@ -465,21 +455,10 @@ func (c *clientImplementor) AddrForRepo(ctx context.Context, repo api.RepoName) 
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
-	return AddrForRepo(ctx, c.userAgent, c.db, repo, GitServerAddresses{
+	return AddrForRepo(ctx, c.userAgent, repo, GitServerAddresses{
 		Addresses:     addrs,
 		PinnedServers: c.pinned(),
 	})
-}
-
-func (c *clientImplementor) RendezvousAddrForRepo(repo api.RepoName) string {
-	addrs := c.Addrs()
-	if len(addrs) == 0 {
-		panic("unexpected state: no gitserver addresses")
-	}
-	if repoPinned, addr := getPinnedRepoAddr(string(repo), c.pinned()); repoPinned {
-		return addr
-	}
-	return RendezvousAddrForRepo(repo, addrs)
 }
 
 var addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
@@ -489,21 +468,13 @@ var addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
 // It should never be called with a nil addresses pointer.
-func AddrForRepo(ctx context.Context, userAgent string, db database.DB, repo api.RepoName, addresses GitServerAddresses) (string, error) {
+func AddrForRepo(ctx context.Context, userAgent string, repo api.RepoName, addresses GitServerAddresses) (string, error) {
 	addrForRepoInvoked.WithLabelValues(userAgent).Inc()
 
 	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
 	rs := string(repo)
-	if repoPinned, addr := getPinnedRepoAddr(string(repo), addresses.PinnedServers); repoPinned {
+	if repoPinned, addr := getPinnedRepoAddr(rs, addresses.PinnedServers); repoPinned {
 		return addr, nil
-	}
-
-	useRendezvous, err := shouldUseRendezvousHashing(ctx, db, rs)
-	if err != nil {
-		return "", err
-	}
-	if useRendezvous {
-		return RendezvousAddrForRepo(repo, addresses.Addresses), nil
 	}
 
 	return addrForKey(rs, addresses.Addresses), nil
@@ -512,15 +483,6 @@ func AddrForRepo(ctx context.Context, userAgent string, db database.DB, repo api
 type GitServerAddresses struct {
 	Addresses     []string
 	PinnedServers map[string]string
-}
-
-// RendezvousAddrForRepo returns the gitserver address to use for the given repo name using the
-// Rendezvous hashing scheme.
-//
-// It should never be called with an empty slice.
-func RendezvousAddrForRepo(repo api.RepoName, addrs []string) string {
-	r := rendezvous.New(addrs, xxhash.Sum64String)
-	return r.Lookup(string(protocol.NormalizeRepo(repo)))
 }
 
 // addrForKey returns the gitserver address to use for the given string key,
@@ -601,10 +563,10 @@ type badRequestError struct{ error }
 
 func (e badRequestError) BadRequest() bool { return true }
 
-func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, errRes error) {
+func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRes error) {
 	repoName := protocol.NormalizeRepo(c.repo)
 
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.sendExec")
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.sendExec") //nolint:staticcheck // OT is deprecated
 	defer func() {
 		if errRes != nil {
 			ext.Error.Set(span, true)
@@ -619,42 +581,135 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, _ htt
 	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {
 		deadlineExceededCounter.Inc()
-		return nil, nil, err
+		return nil, err
 	}
 
-	req := &protocol.ExecRequest{
-		Repo:           repoName,
-		EnsureRevision: c.EnsureRevision(),
-		Args:           c.args[1:],
-		Stdin:          c.stdin,
-		NoTimeout:      c.noTimeout,
-	}
-	resp, err := c.execFn(ctx, repoName, "exec", req)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	switch resp.StatusCode {
-	case http.StatusOK:
-		return resp.Body, resp.Trailer, nil
-
-	case http.StatusNotFound:
-		var payload protocol.NotFoundPayload
-		if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
-			resp.Body.Close()
-			return nil, nil, err
+	if featureflag.FromContext(ctx).GetBoolOr("grpc", false) {
+		req := &proto.ExecRequest{
+			Repo:           string(repoName),
+			EnsureRevision: c.EnsureRevision(),
+			Args:           c.args[1:],
+			Stdin:          c.stdin,
+			NoTimeout:      c.noTimeout,
 		}
-		resp.Body.Close()
-		return nil, nil, &gitdomain.RepoNotExistError{Repo: repoName, CloneInProgress: payload.CloneInProgress, CloneProgress: payload.CloneProgress}
+		addr, err := c.execer.AddrForRepo(ctx, repoName)
+		if err != nil {
+			return nil, err
+		}
 
-	default:
-		resp.Body.Close()
-		return nil, nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
+		conn, err := grpc.DialContext(ctx, addr, defaults.DialOptions()...)
+		if err != nil {
+			return nil, err
+		}
+
+		client := proto.NewGitserverServiceClient(conn)
+		stream, err := client.Exec(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+		r := streamio.NewReader(func() ([]byte, error) {
+			msg, err := stream.Recv()
+			if err != nil {
+
+				return nil, err
+			}
+			return msg.GetData(), nil
+		})
+
+		return &readCloseWrapper{r: r, closeFn: conn.Close}, err
+
+	} else {
+		req := &protocol.ExecRequest{
+			Repo:           repoName,
+			EnsureRevision: c.EnsureRevision(),
+			Args:           c.args[1:],
+			Stdin:          c.stdin,
+			NoTimeout:      c.noTimeout,
+		}
+		resp, err := c.execer.httpPost(ctx, repoName, "exec", req)
+		if err != nil {
+			return nil, err
+		}
+
+		switch resp.StatusCode {
+		case http.StatusOK:
+			return &cmdReader{rc: resp.Body, trailer: resp.Trailer}, nil
+
+		case http.StatusNotFound:
+			var payload protocol.NotFoundPayload
+			if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+				resp.Body.Close()
+				return nil, err
+			}
+			resp.Body.Close()
+			return nil, &gitdomain.RepoNotExistError{Repo: repoName, CloneInProgress: payload.CloneInProgress, CloneProgress: payload.CloneProgress}
+
+		default:
+			resp.Body.Close()
+			return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
+		}
 	}
 }
 
+type readCloseWrapper struct {
+	r       io.Reader
+	closeFn func() error
+}
+
+func (r *readCloseWrapper) Read(p []byte) (int, error) {
+	n, err := r.r.Read(p)
+	if err != nil {
+		st, ok := status.FromError(err)
+		if !ok {
+			return n, err
+		}
+
+		for _, detail := range st.Details() {
+			switch payload := detail.(type) {
+			case *proto.ExecStatusPayload:
+				return n, &CommandStatusError{
+					Message:    st.Message(),
+					Stderr:     payload.Stderr,
+					StatusCode: payload.StatusCode,
+				}
+			case *proto.NotFoundPayload:
+				return n, &gitdomain.RepoNotExistError{
+					Repo:            api.RepoName(payload.Repo),
+					CloneInProgress: payload.CloneInProgress,
+					CloneProgress:   payload.CloneProgress,
+				}
+			}
+		}
+	}
+	return n, err
+}
+
+func (r *readCloseWrapper) Close() error {
+	return r.closeFn()
+}
+
+type CommandStatusError struct {
+	Message    string
+	StatusCode int32
+	Stderr     string
+}
+
+func (c *CommandStatusError) Error() string {
+	stderr := c.Stderr
+	if len(stderr) > 100 {
+		stderr = stderr[:100] + "... (truncated)"
+	}
+	if c.Message != "" {
+		return fmt.Sprintf("%s (stderr: %q)", c.Message, stderr)
+	}
+	if c.StatusCode != 0 {
+		return fmt.Sprintf("non-zero exit status: %d (stderr: %q)", c.StatusCode, stderr)
+	}
+	return stderr
+}
+
 func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "GitserverClient.Search")
+	span, ctx := ot.StartSpanFromContext(ctx, "GitserverClient.Search") //nolint:staticcheck // OT is deprecated
 	span.SetTag("repo", string(args.Repo))
 	span.SetTag("query", args.Query.String())
 	span.SetTag("diff", args.IncludeDiff)
@@ -716,7 +771,7 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 }
 
 func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password string, args ...string) (_ io.ReadCloser, _ http.Header, errRes error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.P4Exec")
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.P4Exec") //nolint:staticcheck // OT is deprecated
 	defer func() {
 		if errRes != nil {
 			ext.Error.Set(span, true)
@@ -805,7 +860,7 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 			return err
 		}
 		defer resp.Body.Close()
-		logger.Log(log.Int("resp.StatusCode", resp.StatusCode))
+		logger.AddEvent("POST", attribute.Int("resp.StatusCode", resp.StatusCode))
 
 		if resp.StatusCode != http.StatusOK {
 			return errors.Newf("http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200)))
@@ -815,7 +870,7 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 			return err
 		}
-		logger.Log(log.Int("numResults", len(response.Results)))
+		logger.AddEvent("read response", attribute.Int("numResults", len(response.Results)))
 
 		for _, result := range response.Results {
 			var err error
@@ -922,7 +977,7 @@ func (c *clientImplementor) gitCommand(repo api.RepoName, arg ...string) GitComm
 	}
 	return &RemoteGitCommand{
 		repo:   repo,
-		execFn: c.httpPost,
+		execer: c,
 		args:   append([]string{git}, arg...),
 	}
 }
@@ -947,41 +1002,6 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 
 	var info *protocol.RepoUpdateResponse
 	err = json.NewDecoder(resp.Body).Decode(&info)
-	return info, err
-}
-
-func (c *clientImplementor) RequestRepoMigrate(ctx context.Context, repo api.RepoName, from, to string) (*protocol.RepoUpdateResponse, error) {
-	// We do not need to set a value for the attribute "Since" because the repo is not expected to
-	// be cloned at the new gitserver instance. And for not cloned repos, this attribute is already
-	// ignored.
-	req := &protocol.RepoUpdateRequest{
-		Repo:           repo,
-		CloneFromShard: "http://" + from,
-	}
-
-	// We set "uri" to the HTTP URL of the gitserver instance that should be the new owner of this
-	// "repo" based on the rendezvous hashing scheme. This way, when the gitserver instance receives
-	// the request at /repo-update, it will treat it as a new clone operation and attempt to clone
-	// the repo from the URL set in CloneFromShard - the gitserver instance that owns this repo based
-	// on the existing hashing scheme.
-	uri := "http://" + to + "/repo-update"
-	resp, err := c.httpPostWithURI(ctx, repo, uri, req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, &url.Error{
-			URL: resp.Request.URL.String(),
-			Op:  "RepoMigrate",
-			Err: errors.Errorf("RepoMigrate: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
-		}
-	}
-
-	var info *protocol.RepoUpdateResponse
-	err = json.NewDecoder(resp.Body).Decode(&info)
-
 	return info, err
 }
 
@@ -1041,7 +1061,12 @@ func (c *clientImplementor) IsRepoCloneable(ctx context.Context, repo api.RepoNa
 	// requirements on what a valid URL is we should treat bad requests,
 	// etc as not found.
 	notFound := strings.Contains(resp.Reason, "not found") || strings.Contains(resp.Reason, "The requested URL returned error: 4")
-	return &RepoNotCloneableErr{repo: repo, reason: resp.Reason, notFound: notFound}
+	return &RepoNotCloneableErr{
+		repo:     repo,
+		reason:   resp.Reason,
+		notFound: notFound,
+		cloned:   resp.Cloned,
+	}
 }
 
 // RepoNotCloneableErr is the error that happens when a repository can not be cloned.
@@ -1049,6 +1074,7 @@ type RepoNotCloneableErr struct {
 	repo     api.RepoName
 	reason   string
 	notFound bool
+	cloned   bool // Has the repo ever been cloned in the past
 }
 
 // NotFound returns true if the repo could not be cloned because it wasn't found.
@@ -1059,7 +1085,11 @@ func (e *RepoNotCloneableErr) NotFound() bool {
 }
 
 func (e *RepoNotCloneableErr) Error() string {
-	return fmt.Sprintf("repo not found (name=%s notfound=%v) because %s", e.repo, e.notFound, e.reason)
+	msg := "unable to clone repo"
+	if e.cloned {
+		msg = "unable to update repo"
+	}
+	return fmt.Sprintf("%s (name=%q notfound=%v) because %s", msg, e.repo, e.notFound, e.reason)
 }
 
 func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
@@ -1201,8 +1231,7 @@ func (c *clientImplementor) RemoveFrom(ctx context.Context, repo api.RepoName, f
 }
 
 // httpPost will apply the MD5 hashing scheme on the repo name to determine the gitserver instance
-// to which the HTTP POST request is sent. To use the rendezvous hashing scheme, see
-// httpPostWithURI.
+// to which the HTTP POST request is sent.
 func (c *clientImplementor) httpPost(ctx context.Context, repo api.RepoName, op string, payload any) (resp *http.Response, err error) {
 	b, err := json.Marshal(payload)
 	if err != nil {
@@ -1217,18 +1246,6 @@ func (c *clientImplementor) httpPost(ctx context.Context, repo api.RepoName, op 
 	return c.do(ctx, repo, "POST", uri, b)
 }
 
-// httpPostWithURI does not apply any transformations to the given URI. This allows the consumer to
-// use the predetermined hashing scheme (md5 or rendezvous) of their choice to derive the gitserver
-// instance to which the HTTP POST request is sent.
-func (c *clientImplementor) httpPostWithURI(ctx context.Context, repo api.RepoName, uri string, payload any) (resp *http.Response, err error) {
-	b, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-
-	return c.do(ctx, repo, "POST", uri, b)
-}
-
 // do performs a request to a gitserver instance based on the address in the uri
 // argument.
 //
@@ -1240,7 +1257,7 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 		return nil, errors.Wrap(err, "do")
 	}
 
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.do")
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.do") //nolint:staticcheck // OT is deprecated
 	defer func() {
 		if repo != "" {
 			span.LogKV("repo", string(repo), "method", method, "path", parsedURL.Path)
@@ -1405,21 +1422,6 @@ func revsToGitArgs(revSpecs []protocol.RevisionSpecifier) []string {
 	return args
 }
 
-// shouldUseRendezvousHashing returns true if rendezvous hashing is to be used to find
-// an address of gitserver instance for a given repo
-func shouldUseRendezvousHashing(ctx context.Context, db database.DB, repo string) (bool, error) {
-	cursor, err := migration.GetCursor(ctx, db)
-	if err != nil {
-		return false, err
-	}
-	if cursor == "" {
-		return false, nil
-	}
-
-	// Migration is in progress or finished, if the name is less than or equal to cursor -- use rendezvous
-	return repo <= cursor, nil
-}
-
 // getPinnedRepoAddr returns true and gitserver address if given repo is pinned.
 // Otherwise, if repo is not pinned -- false and empty string are returned
 func getPinnedRepoAddr(repo string, pinnedServers map[string]string) (bool, string) {
@@ -1446,7 +1448,7 @@ func readResponseBody(body io.Reader) string {
 
 	// strings.TrimSpace is needed to remove trailing \n characters that is added by the
 	// server. We use http.Error in the server which in turn uses fmt.Fprintln to format
-	// the error message. And in translation that newline gets escapted into a \n
+	// the error message. And in translation that newline gets escaped into a \n
 	// character.  For what the error message would look in the UI without
 	// strings.TrimSpace, see attached screenshots in this pull request:
 	// https://github.com/sourcegraph/sourcegraph/pull/39358.

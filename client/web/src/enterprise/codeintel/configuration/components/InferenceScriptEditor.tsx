@@ -1,10 +1,7 @@
 import { FunctionComponent, useCallback, useMemo, useState } from 'react'
 
-import { useHistory } from 'react-router'
-
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, PageHeader, screenReaderAnnounce } from '@sourcegraph/wildcard'
+import { LoadingSpinner, PageHeader, screenReaderAnnounce, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { PageTitle } from '../../../../components/PageTitle'
@@ -20,7 +17,7 @@ export interface InferenceScriptEditorProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
 }
 
-export const InferenceScriptEditor: FunctionComponent<React.PropsWithChildren<InferenceScriptEditorProps>> = ({
+export const InferenceScriptEditor: FunctionComponent<InferenceScriptEditorProps> = ({
     authenticatedUser,
     telemetryService,
 }) => {
@@ -40,7 +37,6 @@ export const InferenceScriptEditor: FunctionComponent<React.PropsWithChildren<In
     )
 
     const [dirty, setDirty] = useState<boolean>()
-    const history = useHistory()
     const isLightTheme = useTheme().enhancedThemePreference === ThemePreference.Light
 
     const customToolbar = useMemo<{
@@ -108,7 +104,6 @@ export const InferenceScriptEditor: FunctionComponent<React.PropsWithChildren<In
                     saving={isUpdating}
                     height={600}
                     isLightTheme={isLightTheme}
-                    history={history}
                     telemetryService={telemetryService}
                     customSaveToolbar={authenticatedUser?.siteAdmin ? customToolbar : undefined}
                     onDirtyChange={setDirty}

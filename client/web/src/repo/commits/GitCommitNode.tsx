@@ -4,10 +4,10 @@ import { mdiDotsHorizontal, mdiContentCopy, mdiFileDocument } from '@mdi/js'
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { pluralize } from '@sourcegraph/common'
 import { Button, ButtonGroup, Link, Icon, Code, screenReaderAnnounce, Tooltip } from '@sourcegraph/wildcard'
 
-import { Timestamp } from '../../components/time/Timestamp'
 import { GitCommitFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { DiffModeSelector } from '../commit/DiffModeSelector'
@@ -25,9 +25,6 @@ export interface GitCommitNodeProps {
 
     /** Display in a single line (more compactly). */
     compact?: boolean
-
-    /** Display in sidebar mode. */
-    sidebar?: boolean
 
     /** Expand the commit message body. */
     expandCommitMessageBody?: boolean
@@ -68,7 +65,6 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     afterElement,
     className,
     compact,
-    sidebar,
     expandCommitMessageBody,
     hideExpandCommitMessageBody,
     messageSubjectClassName,
@@ -141,7 +137,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
 
     const bylineElement = (
         <GitCommitNodeByline
-            className={classNames(styles.byline, sidebar ? 'd-flex text-muted w-50' : 'd-flex text-muted')}
+            className={classNames(styles.byline, 'd-flex text-muted')}
             avatarClassName={compact ? undefined : styles.signatureUserAvatar}
             author={node.author}
             committer={node.committer}
@@ -237,29 +233,6 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
             {node.abbreviatedOID}
         </Code>
     )
-
-    if (sidebar) {
-        return (
-            <WrapperElement
-                key={node.id}
-                className={classNames(styles.gitCommitNode, styles.gitCommitNodeCompact, className)}
-            >
-                <div
-                    className={classNames('w-100 d-flex justify-content-between align-items-center flex-wrap-reverse')}
-                >
-                    {bylineElement}
-                    <small className={classNames('text-muted', styles.messageTimestamp)}>
-                        <Timestamp
-                            noAbout={true}
-                            preferAbsolute={preferAbsoluteTimestamps}
-                            date={node.committer ? node.committer.date : node.author.date}
-                        />
-                    </small>
-                    <Link to={node.canonicalURL}>{oidElement}</Link>
-                </div>
-            </WrapperElement>
-        )
-    }
 
     return (
         <WrapperElement

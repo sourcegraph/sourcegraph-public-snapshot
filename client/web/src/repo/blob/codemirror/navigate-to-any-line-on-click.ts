@@ -29,7 +29,11 @@ class LineLinkManager implements PluginValue {
                 builder.add(
                     line.from,
                     line.to,
-                    Decoration.mark({ tagName: 'a', attributes: { href, 'data-line-link': '' } })
+                    Decoration.mark({
+                        tagName: 'a',
+                        attributes: { href, 'data-line-link': '' },
+                        class: 'text-decoration-none',
+                    })
                 )
                 pos = line.to + 1
             }

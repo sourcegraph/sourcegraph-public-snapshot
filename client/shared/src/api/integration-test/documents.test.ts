@@ -1,6 +1,5 @@
-import { TextDocument } from 'sourcegraph'
-
-import { assertToJSON, collectSubscribableValues, integrationTestContext } from './testHelpers'
+import type { TextDocument } from '../../codeintel/legacy-extensions/api'
+import { assertToJSON, collectSubscribableValues, integrationTestContext } from '../../testing/testHelpers'
 
 describe('Documents (integration)', () => {
     describe('workspace.textDocuments', () => {

@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "rbac",
+    srcs = [
+        "permissions.go",
+        "types.go",
+    ],
+    embedsrcs = ["schema.yaml"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/rbac",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database",
+        "//internal/types",
+        "@in_gopkg_yaml_v3//:yaml_v3",
+    ],
+)

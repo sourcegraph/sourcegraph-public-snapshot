@@ -1,5 +1,5 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "./tsconfig.base.json",
   "references": [
     { "path": "client/template-parser" },
     { "path": "client/build-config" },
@@ -18,8 +18,7 @@
     { "path": "client/extension-api" },
     { "path": "client/extension-api-types" },
     { "path": "client/storybook" },
-    { "path": "client/search" },
-    { "path": "client/search-ui" },
+    { "path": "client/testing" },
     { "path": "dev/release" },
     { "path": "schema" },
     { "path": "client/codeintellify" },

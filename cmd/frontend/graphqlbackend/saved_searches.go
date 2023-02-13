@@ -2,10 +2,12 @@ package graphqlbackend
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -111,20 +113,80 @@ func (r *schemaResolver) toSavedSearchResolver(entry types.SavedSearch) *savedSe
 	return &savedSearchResolver{db: r.db, s: entry}
 }
 
-func (r *schemaResolver) SavedSearches(ctx context.Context) ([]*savedSearchResolver, error) {
-	a := actor.FromContext(ctx)
-	if !a.IsAuthenticated() {
-		return nil, errors.New("no currently authenticated user")
+type savedSearchesArgs struct {
+	graphqlutil.ConnectionResolverArgs
+	Namespace graphql.ID
+}
+
+func (r *schemaResolver) SavedSearches(ctx context.Context, args savedSearchesArgs) (*graphqlutil.ConnectionResolver[*savedSearchResolver], error) {
+	var userID, orgID int32
+	if err := UnmarshalNamespaceID(args.Namespace, &userID, &orgID); err != nil {
+		return nil, err
 	}
 
-	allSavedSearches, err := r.db.SavedSearches().ListSavedSearchesByUserID(ctx, a.UID)
+	if userID != 0 {
+		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+			return nil, err
+		}
+	} else if orgID != 0 {
+		if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, errors.New("User or Organisation namespace must be provided.")
+	}
+
+	connectionStore := &savedSearchesConnectionStore{
+		db:     r.db,
+		userID: &userID,
+		orgID:  &orgID,
+	}
+
+	return graphqlutil.NewConnectionResolver[*savedSearchResolver](connectionStore, &args.ConnectionResolverArgs, nil)
+}
+
+type savedSearchesConnectionStore struct {
+	db     database.DB
+	userID *int32
+	orgID  *int32
+}
+
+func (s *savedSearchesConnectionStore) MarshalCursor(node *savedSearchResolver, _ database.OrderBy) (*string, error) {
+	cursor := string(node.ID())
+
+	return &cursor, nil
+}
+
+func (s *savedSearchesConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+	nodeID, err := unmarshalSavedSearchID(graphql.ID(cursor))
+	if err != nil {
+		return nil, err
+	}
+
+	id := strconv.Itoa(int(nodeID))
+
+	return &id, nil
+}
+
+func (s *savedSearchesConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+	count, err := s.db.SavedSearches().CountSavedSearchesByOrgOrUser(ctx, s.userID, s.orgID)
+	if err != nil {
+		return nil, err
+	}
+
+	total := int32(count)
+	return &total, nil
+}
+
+func (s *savedSearchesConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*savedSearchResolver, error) {
+	allSavedSearches, err := s.db.SavedSearches().ListSavedSearchesByOrgOrUser(ctx, s.userID, s.orgID, args)
 	if err != nil {
 		return nil, err
 	}
 
 	var savedSearches []*savedSearchResolver
 	for _, savedSearch := range allSavedSearches {
-		savedSearches = append(savedSearches, r.toSavedSearchResolver(*savedSearch))
+		savedSearches = append(savedSearches, &savedSearchResolver{db: s.db, s: *savedSearch})
 	}
 
 	return savedSearches, nil

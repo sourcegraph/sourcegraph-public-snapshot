@@ -1,10 +1,11 @@
-import React, { MouseEvent, KeyboardEvent, useCallback, useMemo } from 'react'
+import React, { MouseEvent, KeyboardEvent, useCallback } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { LastSyncedIcon, FileMatchChildrenStyles as styles, CodeExcerpt } from '@sourcegraph/branded'
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import {
@@ -12,7 +13,6 @@ import {
     appendSubtreeQueryParameter,
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
-import { LastSyncedIcon, FileMatchChildrenStyles as styles, CodeExcerpt } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
@@ -22,7 +22,6 @@ import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '@sourcegr
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
 import { Button, Code } from '@sourcegraph/wildcard'
 
 import { HighlightLineRange } from '../../../graphql-operations'
@@ -142,7 +141,7 @@ function navigateToFileOnMiddleMouseButtonClick(event: MouseEvent<HTMLElement>):
 }
 
 export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<FileMatchProps>> = props => {
-    const { result, grouped, fetchHighlightedFileLineRanges, telemetryService, extensionsController } = props
+    const { result, grouped, fetchHighlightedFileLineRanges, telemetryService } = props
 
     const { openFile, openSymbol } = useOpenSearchResultsContext()
 
@@ -184,20 +183,6 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
             positionOrRangeQueryParameter
         )
     }
-
-    const codeIntelViewerUpdatesProps = useMemo(
-        () =>
-            grouped && result.type === 'content' && extensionsController
-                ? {
-                      extensionsController,
-                      repositoryName: result.repository,
-                      filePath: result.path,
-                      revision: result.commit,
-                  }
-                : undefined,
-        [extensionsController, result, grouped]
-    )
-    const viewerUpdates = useCodeIntelViewerUpdates(codeIntelViewerUpdatesProps)
 
     /**
      * This handler implements the logic to simulate the click/keyboard
@@ -322,8 +307,6 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                                     highlightRanges={group.matches}
                                     fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
                                     blobLines={group.blobLines}
-                                    viewerUpdates={viewerUpdates}
-                                    hoverifier={props.hoverifier}
                                 />
                             </div>
                         </div>

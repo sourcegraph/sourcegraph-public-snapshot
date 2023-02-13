@@ -17,6 +17,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -70,7 +71,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Log events to trace
-	streamWriter.StatHook = eventStreamOTHook(tr.LogFields)
+	streamWriter.StatHook = eventStreamOTHook(tr.LogFields) //nolint:staticcheck // TODO when updating observation package
 
 	eventWriter := newEventWriter(streamWriter)
 	defer eventWriter.Done()
@@ -92,11 +93,11 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 	if err != nil {
 		return err
 	}
-	tr.TagFields(
-		otlog.String("query", args.Query),
-		otlog.String("version", args.Version),
-		otlog.String("pattern_type", args.PatternType),
-		otlog.Int("search_mode", args.SearchMode),
+	tr.SetAttributes(
+		attribute.String("query", args.Query),
+		attribute.String("version", args.Version),
+		attribute.String("pattern_type", args.PatternType),
+		attribute.Int("search_mode", args.SearchMode),
 	)
 
 	settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, h.db)
@@ -324,6 +325,10 @@ func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searche
 
 	if fm.InputRev != nil {
 		pathEvent.Branches = []string{*fm.InputRev}
+	}
+
+	if fm.Debug != nil {
+		pathEvent.Debug = *fm.Debug
 	}
 
 	return pathEvent
@@ -561,8 +566,8 @@ func GuessSource(r *http.Request) trace.SourceType {
 
 func repoIDs(results []result.Match) []api.RepoID {
 	ids := make(map[api.RepoID]struct{}, 5)
-	for _, result := range results {
-		ids[result.RepoName().ID] = struct{}{}
+	for _, r := range results {
+		ids[r.RepoName().ID] = struct{}{}
 	}
 
 	res := make([]api.RepoID, 0, len(ids))

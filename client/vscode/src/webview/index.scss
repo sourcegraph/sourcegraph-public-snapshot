@@ -1,10 +1,10 @@
 // Global styles provided by @reach packages. Should be imported once in the global scope.
 @import '@reach/tabs/styles';
 
-@import '../../../branded/src/global-styles/base.scss';
-@import './theming/highlight.scss';
-@import './theming/monaco.scss';
-@import '../../../../node_modules/@vscode/codicons/dist/codicon.css';
+@import 'wildcard/src/global-styles/base';
+@import './theming/highlight';
+@import './theming/monaco';
+@import '@vscode/codicons/dist/codicon';
 
 :root {
     // v2/debt: redefine our CSS variables using VS Code's CSS variables
@@ -72,13 +72,6 @@
     --media-md: 768px;
     --media-lg: 992px;
     --media-xl: 1200px;
-}
-
-// stylelint-disable-next-line selector-max-id
-html,
-body,
-#root {
-    height: 100%;
 }
 
 body {

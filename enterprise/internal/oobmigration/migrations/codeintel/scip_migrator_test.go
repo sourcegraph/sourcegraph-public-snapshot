@@ -14,14 +14,16 @@ import (
 )
 
 func init() {
-	scipMigratorUploadBatchSize = 1
-	scipMigratorDocumentBatchSize = 4
-	scipMigratorResultChunkDefaultCacheSize = 16
+	scipMigratorUploadReaderBatchSize = 1
+	scipMigratorDocumentReaderBatchSize = 4
+	scipMigratorResultChunkReaderCacheSize = 16
 }
 
 func TestSCIPMigrator(t *testing.T) {
 	logger := logtest.Scoped(t)
+	// TODO - use the AtRev constructor after this has been deprecated
 	rawDB := dbtest.NewDB(logger, t)
+	// rawDB := dbtest.NewDBAtRev(logger, t, "4.3.0")
 	db := database.NewDB(logger, rawDB)
 	codeIntelDB := stores.NewCodeIntelDB(logger, rawDB)
 	store := basestore.NewWithHandle(db.Handle())
@@ -75,7 +77,7 @@ func TestSCIPMigrator(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error counting symbols: %s", err)
 	}
-	if expected := 3745; symbolsCount != expected {
+	if expected := 4221; symbolsCount != expected {
 		t.Fatalf("unexpected number of documents. want=%d have=%d", expected, symbolsCount)
 	}
 }

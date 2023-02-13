@@ -19,7 +19,10 @@ func buildQueries() <-chan queryFunc {
 		defer close(fns)
 
 		for _, testCase := range testCases {
-			// Definition returns defintion
+			referencesWithDefinition := append([]Location{testCase.Definition}, testCase.References...)
+			sortLocations(referencesWithDefinition)
+
+			// Definition returns definition
 			fns <- makeTestFunc("def -> def", queryDefinitions, testCase.Definition, []Location{testCase.Definition})
 
 			// References return definition
@@ -27,13 +30,18 @@ func buildQueries() <-chan queryFunc {
 				fns <- makeTestFunc("refs -> def", queryDefinitions, reference, []Location{testCase.Definition})
 			}
 
-			// Definition returns references
-			fns <- makeTestFunc("def -> refs", queryReferences, testCase.Definition, testCase.References)
+			// Definition returns references (including definition)
+			fns <- makeTestFunc("def -> refs", queryReferences, testCase.Definition, referencesWithDefinition)
 
 			// References return references
 			if queryReferencesOfReferences {
 				for _, reference := range testCase.References {
-					fns <- makeTestFunc("refs -> refs", queryReferences, reference, testCase.References)
+					references := testCase.References
+					if reference.Repo == testCase.Definition.Repo && reference.Rev == testCase.Definition.Rev && reference.Path == testCase.Definition.Path {
+						references = referencesWithDefinition
+
+					}
+					fns <- makeTestFunc("refs -> refs", queryReferences, reference, references)
 				}
 			}
 		}

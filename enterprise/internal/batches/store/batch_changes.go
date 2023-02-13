@@ -118,7 +118,7 @@ func (s *Store) upsertBatchChangeQuery(c *btypes.BatchChange) *sqlf.Query {
 		c.CreatedAt,
 		c.UpdatedAt,
 		dbutil.NullTimeColumn(c.ClosedAt),
-		dbutil.NullInt64Column(c.BatchSpecID),
+		c.BatchSpecID,
 		sqlf.Join(conflictTarget, ", "),
 		predicate,
 		sqlf.Join(batchChangeInsertColumns, ", "),
@@ -132,7 +132,7 @@ func (s *Store) upsertBatchChangeQuery(c *btypes.BatchChange) *sqlf.Query {
 		c.CreatedAt,
 		c.UpdatedAt,
 		dbutil.NullTimeColumn(c.ClosedAt),
-		dbutil.NullInt64Column(c.BatchSpecID),
+		c.BatchSpecID,
 		sqlf.Join(batchChangeColumns, ", "),
 	)
 }
@@ -184,7 +184,7 @@ func (s *Store) createBatchChangeQuery(c *btypes.BatchChange) *sqlf.Query {
 		c.CreatedAt,
 		c.UpdatedAt,
 		dbutil.NullTimeColumn(c.ClosedAt),
-		dbutil.NullInt64Column(c.BatchSpecID),
+		c.BatchSpecID,
 		sqlf.Join(batchChangeColumns, ", "),
 	)
 }
@@ -231,7 +231,7 @@ func (s *Store) updateBatchChangeQuery(c *btypes.BatchChange) *sqlf.Query {
 		c.CreatedAt,
 		c.UpdatedAt,
 		dbutil.NullTimeColumn(c.ClosedAt),
-		dbutil.NullInt64Column(c.BatchSpecID),
+		c.BatchSpecID,
 		c.ID,
 		sqlf.Join(batchChangeColumns, ", "),
 	)
@@ -306,11 +306,11 @@ func countBatchChangesQuery(opts *CountBatchChangesOpts, repoAuthzConds *sqlf.Qu
 		for _, state := range opts.States {
 			switch state {
 			case btypes.BatchChangeStateOpen:
-				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.closed_at IS NULL AND batch_changes.batch_spec_id IS NOT NULL"))
+				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.closed_at IS NULL AND batch_changes.last_applied_at IS NOT NULL"))
 			case btypes.BatchChangeStateClosed:
 				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.closed_at IS NOT NULL"))
 			case btypes.BatchChangeStateDraft:
-				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.batch_spec_id IS NULL AND batch_changes.closed_at IS NULL"))
+				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.last_applied_at IS NULL AND batch_changes.closed_at IS NULL"))
 			}
 		}
 		if len(stateConds) > 0 {
@@ -328,17 +328,16 @@ func countBatchChangesQuery(opts *CountBatchChangesOpts, repoAuthzConds *sqlf.Qu
 		// If it's not my namespace and I can't see other users' drafts, filter out
 		// unapplied (draft) batch changes from this list.
 		if opts.ExcludeDraftsNotOwnedByUserID != 0 && opts.ExcludeDraftsNotOwnedByUserID != opts.NamespaceUserID {
-			preds = append(preds, sqlf.Sprintf("batch_changes.batch_spec_id IS NOT NULL"))
+			preds = append(preds, sqlf.Sprintf("batch_changes.last_applied_at IS NOT NULL"))
 		}
 		// For batch changes filtered by org namespace, or not filtered by namespace at
-		// all, I can't see other users' drafts, so filter out unapplied (draft) batch
-		// changes except those that I created from this list.
+		// all, if I can't see other users' drafts, filter out unapplied (draft) batch
+		// changes except those that I authored the batch spec of from this list.
 	} else if opts.ExcludeDraftsNotOwnedByUserID != 0 {
-		cond := sqlf.Sprintf(`(
-	batch_changes.batch_spec_id IS NOT NULL
-OR
-	batch_changes.creator_id = %s
-)`, opts.ExcludeDraftsNotOwnedByUserID)
+		cond := sqlf.Sprintf(`(batch_changes.last_applied_at IS NOT NULL
+		OR
+		EXISTS (SELECT 1 FROM batch_specs WHERE batch_specs.id = batch_changes.batch_spec_id AND batch_specs.user_id = %s))
+		`, opts.ExcludeDraftsNotOwnedByUserID)
 		preds = append(preds, cond)
 	}
 
@@ -402,7 +401,7 @@ func (s *Store) GetBatchChange(ctx context.Context, opts GetBatchChangeOpts) (bc
 			&c.CreatedAt,
 			&c.UpdatedAt,
 			&dbutil.NullTime{Time: &c.ClosedAt},
-			&dbutil.NullInt64{N: &c.BatchSpecID},
+			&c.BatchSpecID,
 			// Namespace deleted values
 			&dbutil.NullTime{Time: &userDeletedAt},
 			&dbutil.NullTime{Time: &orgDeletedAt},
@@ -634,11 +633,11 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Quer
 		for i := 0; i < len(opts.States); i++ {
 			switch opts.States[i] {
 			case btypes.BatchChangeStateOpen:
-				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.closed_at IS NULL AND batch_changes.batch_spec_id IS NOT NULL"))
+				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.closed_at IS NULL AND batch_changes.last_applied_at IS NOT NULL"))
 			case btypes.BatchChangeStateClosed:
 				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.closed_at IS NOT NULL"))
 			case btypes.BatchChangeStateDraft:
-				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.batch_spec_id IS NULL AND batch_changes.closed_at IS NULL"))
+				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.last_applied_at IS NULL AND batch_changes.closed_at IS NULL"))
 			}
 		}
 		if len(stateConds) > 0 {
@@ -655,17 +654,16 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Quer
 		// If it's not my namespace and I can't see other users' drafts, filter out
 		// unapplied (draft) batch changes from this list.
 		if opts.ExcludeDraftsNotOwnedByUserID != 0 && opts.ExcludeDraftsNotOwnedByUserID != opts.NamespaceUserID {
-			preds = append(preds, sqlf.Sprintf("batch_changes.batch_spec_id IS NOT NULL"))
+			preds = append(preds, sqlf.Sprintf("batch_changes.last_applied_at IS NOT NULL"))
 		}
 		// For batch changes filtered by org namespace, or not filtered by namespace at
-		// all, I can't see other users' drafts, so filter out unapplied (draft) batch
-		// changes except those that I created from this list.
+		// all, if I can't see other users' drafts, filter out unapplied (draft) batch
+		// changes except those that I authored the batch spec of from this list.
 	} else if opts.ExcludeDraftsNotOwnedByUserID != 0 {
-		cond := sqlf.Sprintf(`(
-	batch_changes.batch_spec_id IS NOT NULL
-OR
-	batch_changes.creator_id = %s
-)`, opts.ExcludeDraftsNotOwnedByUserID)
+		cond := sqlf.Sprintf(`(batch_changes.last_applied_at IS NOT NULL
+		OR
+		EXISTS (SELECT 1 FROM batch_specs WHERE batch_specs.id = batch_changes.batch_spec_id AND batch_specs.user_id = %s))
+		`, opts.ExcludeDraftsNotOwnedByUserID)
 		preds = append(preds, cond)
 	}
 
@@ -711,7 +709,7 @@ func scanBatchChange(c *btypes.BatchChange, s dbutil.Scanner) error {
 		&c.CreatedAt,
 		&c.UpdatedAt,
 		&dbutil.NullTime{Time: &c.ClosedAt},
-		&dbutil.NullInt64{N: &c.BatchSpecID},
+		&c.BatchSpecID,
 	)
 }
 

@@ -1,16 +1,12 @@
 import { useState } from 'react'
 
 import { MockedResponse } from '@apollo/client/testing'
-import { EMPTY, NEVER, noop, of, Subscription } from 'rxjs'
+import { of } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
 import { getDocumentNode, dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
-import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src/api/util'
-import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
-import { Controller } from '@sourcegraph/shared/src/extensions/controller'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { ConnectionQueryArguments } from '../components/FilteredConnection'
 import { asGraphQLResult } from '../components/FilteredConnection/utils'
@@ -100,7 +96,7 @@ export function buildReferencePanelMocks(): ReferencePanelMock {
     const resolveRepoRevisionBlobVariables: ResolveRepoAndRevisionVariables = {
         repoName,
         filePath: path,
-        revision: '',
+        revision: commit,
     }
 
     const fetchHighlightedBlobVariables: ReferencesPanelHighlightedBlobVariables = {
@@ -112,7 +108,7 @@ export function buildReferencePanelMocks(): ReferencePanelMock {
     }
 
     return {
-        url: `/${repoName}/-/blob/${path}?L${line}:${character}&subtree=true#tab=references`,
+        url: `/${repoName}@${commit}/-/blob/${path}?L${line}:${character}&subtree=true#tab=references`,
         requestMocks: [
             {
                 request: {
@@ -304,6 +300,7 @@ const HIGHLIGHTED_FILE_MOCK = {
             commit: {
                 id: 'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3lNRFE9IiwiYyI6IjlkMWYzNTNhMjg1YjMwOTRiYzMzYmRhZTI3N2ExOWFlZGFiZThiNzEifQ==',
                 blob: {
+                    content: 'content',
                     highlight: {
                         aborted: false,
                         html: highlightedDiffFileContent,
@@ -319,43 +316,14 @@ const HIGHLIGHTED_FILE_MOCK = {
     },
 }
 
-const NOOP_SETTINGS_CASCADE = {
-    subjects: null,
-    final: null,
-}
-
-const NOOP_PLATFORM_CONTEXT: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL' | 'settings'> = {
-    requestGraphQL: () => EMPTY,
-    urlToFile: () => '',
-    settings: of(NOOP_SETTINGS_CASCADE),
-}
-
-const NOOP_EXTENSIONS_CONTROLLER: Controller = {
-    executeCommand: () => Promise.resolve(),
-    registerCommand: () => new Subscription(),
-    extHostAPI: Promise.resolve(
-        pretendRemote<FlatExtensionHostAPI>({
-            getContributions: () => pretendProxySubscribable(NEVER),
-            registerContributions: () => pretendProxySubscribable(EMPTY).subscribe(noop as never),
-            haveInitialExtensionsLoaded: () => pretendProxySubscribable(of(true)),
-            addTextDocumentIfNotExists: () => {},
-            addViewerIfNotExists: (): ViewerId => ({ viewerId: 'MOCK_VIEWER_ID' }),
-            setEditorSelections: () => {},
-            removeViewer: () => {},
-        })
-    ),
-    commandErrors: EMPTY,
-    unsubscribe: noop,
-}
-
-export const defaultProps: Omit<ReferencesPanelProps, 'externalHistory' | 'externalLocation'> = {
-    extensionsController: NOOP_EXTENSIONS_CONTROLLER,
+export const defaultProps: ReferencesPanelProps = {
+    extensionsController: null,
     telemetryService: NOOP_TELEMETRY_SERVICE,
     settingsCascade: {
         subjects: null,
         final: null,
     },
-    platformContext: NOOP_PLATFORM_CONTEXT,
+    platformContext: NOOP_PLATFORM_CONTEXT as any,
     isLightTheme: false,
     fetchHighlightedFileLineRanges: args => {
         if (args.filePath === 'cmd/go-diff/go-diff.go') {

@@ -29,7 +29,7 @@ func editorRev(ctx context.Context, logger log.Logger, db database.DB, repoName 
 	if rev == "HEAD" {
 		return ""
 	}
-	repos := backend.NewRepos(logger, db, gitserver.NewClient(db))
+	repos := backend.NewRepos(logger, db, gitserver.NewClient())
 	repo, err := repos.GetByName(ctx, repoName)
 	if err != nil {
 		// We weren't able to fetch the repo. This means it either doesn't
@@ -108,7 +108,7 @@ func (r *editorRequest) searchRedirect(ctx context.Context) (string, error) {
 	var repoFilter string
 	if s.remoteURL != "" {
 		// Search in this repository.
-		repoName, err := cloneurls.ReposourceCloneURLToRepoName(ctx, r.db, s.remoteURL)
+		repoName, err := cloneurls.RepoSourceCloneURLToRepoName(ctx, r.db, s.remoteURL)
 		if err != nil {
 			return "", err
 		}
@@ -159,7 +159,7 @@ func (r *editorRequest) searchRedirect(ctx context.Context) (string, error) {
 func (r *editorRequest) openFileRedirect(ctx context.Context) (string, error) {
 	of := r.openFileRequest
 	// Determine the repo name and branch.
-	repoName, err := cloneurls.ReposourceCloneURLToRepoName(ctx, r.db, of.remoteURL)
+	repoName, err := cloneurls.RepoSourceCloneURLToRepoName(ctx, r.db, of.remoteURL)
 	if err != nil {
 		return "", err
 	}

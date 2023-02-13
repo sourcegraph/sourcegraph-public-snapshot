@@ -5,6 +5,7 @@ exports[`Input Renders status 'error' correctly 1`] = `
   class="container loader-input loaderInput"
 >
   <input
+    aria-invalid="true"
     class="form-control with-invalid-icon is-invalid"
     type="text"
     value=""
@@ -25,6 +26,7 @@ exports[`Input Renders status 'loading' correctly 1`] = `
     aria-label="Loading"
     aria-live="polite"
     class="mdi-icon loadingSpinner spinner"
+    data-loading-spinner="true"
     role="img"
   />
 </div>
@@ -40,4 +42,39 @@ exports[`Input Renders status 'valid' correctly 1`] = `
     value=""
   />
 </div>
+`;
+
+exports[`Input renders an input with label correctly 1`] = `
+<label
+  class="label label"
+>
+  <div
+    class="mb-2"
+  >
+    Input label
+  </div>
+  <div
+    class="container loader-input loaderInput"
+  >
+    <input
+      class="inputLoading form-control with-invalid-icon"
+      placeholder="loading status input"
+      title="Input loading"
+      type="text"
+      value="Input value"
+    />
+    <div
+      aria-label="Loading"
+      aria-live="polite"
+      class="mdi-icon loadingSpinner spinner"
+      data-loading-spinner="true"
+      role="img"
+    />
+  </div>
+  <small
+    class="text-muted form-text font-weight-normal descriptionBlock mt-2"
+  >
+    random message
+  </small>
+</label>
 `;

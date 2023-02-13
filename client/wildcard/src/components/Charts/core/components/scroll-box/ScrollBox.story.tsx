@@ -1,17 +1,12 @@
 import { Meta } from '@storybook/react'
 
-import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+import { BrandedStory } from '../../../../../stories/BrandedStory'
 
 import { ScrollBox } from './ScrollBox'
 
 export default {
     title: 'wildcard/Charts/Core',
-    decorators: [
-        story => (
-            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
-        ),
-    ],
+    decorators: [story => <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>],
 } as Meta
 
 export const ScrollBoxDemo = () => (

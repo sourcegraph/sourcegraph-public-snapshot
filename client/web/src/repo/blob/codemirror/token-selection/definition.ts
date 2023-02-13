@@ -1,22 +1,26 @@
-import { Facet, RangeSet, StateEffect, StateField } from '@codemirror/state'
-import { Decoration, EditorView } from '@codemirror/view'
+import { Extension, StateEffect, StateField } from '@codemirror/state'
+import { EditorView } from '@codemirror/view'
 import * as H from 'history'
 
 import { TextDocumentPositionParameters } from '@sourcegraph/client-api'
 import { Location } from '@sourcegraph/extension-api-types'
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { getOrCreateCodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
 import { Occurrence, Position, Range } from '@sourcegraph/shared/src/codeintel/scip'
 import { BlobViewState, parseRepoURI, toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
 
 import { blobPropsFacet } from '..'
-import { isInteractiveOccurrence, occurrenceAtMouseEvent, OccurrenceMap, rangeToCmSelection } from '../occurrence-utils'
+import {
+    isInteractiveOccurrence,
+    occurrenceAtMouseEvent,
+    occurrenceAtPosition,
+    OccurrenceMap,
+} from '../occurrence-utils'
 import { LoadingTooltip } from '../tooltips/LoadingTooltip'
 import { showTemporaryTooltip } from '../tooltips/TemporaryTooltip'
 import { preciseOffsetAtCoords } from '../utils'
 
-import { hoveredOccurrenceField } from './hover'
-import { isModifierKey, isModifierKeyHeld } from './modifier-click'
-import { selectOccurrence, selectRange } from './selections'
+import { getCodeIntelTooltipState, selectOccurrence, setFocusedOccurrenceTooltip } from './code-intel-tooltips'
+import { isModifierKey } from './modifier-click'
 
 export interface DefinitionResult {
     handler: (position: Position) => void
@@ -24,12 +28,9 @@ export interface DefinitionResult {
     locations: Location[]
     atTheDefinition?: boolean
 }
-const emptyDefinitionResult: DefinitionResult = { handler: () => {}, locations: [] }
-const definitionReady = Decoration.mark({
-    class: 'cm-token-selection-definition-ready',
-})
+
 const setDefinitionEffect = StateEffect.define<OccurrenceMap<string>>()
-const definitionUrlField = StateField.define<OccurrenceMap<string>>({
+export const definitionUrlField = StateField.define<OccurrenceMap<string>>({
     create: () => new OccurrenceMap(new Map(), 'empty-definition'),
     update(value, transaction) {
         for (const effect of transaction.effects) {
@@ -46,34 +47,18 @@ export const definitionCache = StateField.define<Map<Occurrence, Promise<Definit
     update: value => value,
 })
 
-export const underlinedDefinitionFacet = Facet.define<unknown, unknown>({
-    combine: props => props[0],
-    enables: () => [
-        definitionUrlField,
-        EditorView.decorations.compute([definitionUrlField, hoveredOccurrenceField, isModifierKeyHeld], state => {
-            const occ = state.field(hoveredOccurrenceField)
-            const { value: url, hasOccurrence: hasDefinition } = state.field(definitionUrlField).get(occ)
-            if (occ && state.field(isModifierKeyHeld) && hasDefinition) {
-                const range = rangeToCmSelection(state, occ.range)
-                if (range.from === range.to) {
-                    return RangeSet.empty
-                }
-                if (url) {
-                    // Insert an HTML link to support Context-menu>Open-link-in-new-tab
-                    const definitionURL = Decoration.mark({
-                        attributes: {
-                            href: url,
-                        },
-                        tagName: 'a',
-                    })
-                    return RangeSet.of([definitionURL.range(range.from, range.to)])
-                }
-                return RangeSet.of([definitionReady.range(range.from, range.to)])
-            }
-            return RangeSet.empty
-        }),
-    ],
-})
+export function definitionExtension(): Extension {
+    return [definitionCache, definitionUrlField]
+}
+
+export function preloadDefinition(view: EditorView, occurrence: Occurrence): void {
+    if (!view.state.field(definitionCache).has(occurrence)) {
+        goToDefinitionAtOccurrence(view, occurrence).then(
+            () => {},
+            () => {}
+        )
+    }
+}
 
 export function goToDefinitionOnMouseEvent(
     view: EditorView,
@@ -86,17 +71,32 @@ export function goToDefinitionOnMouseEvent(
     }
     if (isInteractiveOccurrence(atEvent.occurrence)) {
         selectOccurrence(view, atEvent.occurrence)
+
+        // Ensure editor remains focused for the keyboard navigation to work
+        view.contentDOM.focus()
     }
     if (!isModifierKey(event) && !options?.isLongClick) {
         return
     }
-    const spinner = new LoadingTooltip(view, preciseOffsetAtCoords(view, { x: event.clientX, y: event.clientY }))
+
+    const offset = preciseOffsetAtCoords(view, { x: event.clientX, y: event.clientY })
+    if (offset === null) {
+        return
+    }
+
+    view.dispatch({ effects: setFocusedOccurrenceTooltip.of(new LoadingTooltip(offset)) })
     goToDefinitionAtOccurrence(view, atEvent.occurrence)
         .then(
             ({ handler }) => handler(atEvent.position),
             () => {}
         )
-        .finally(() => spinner.stop())
+        .finally(() => {
+            // close loading tooltip if any
+            const current = getCodeIntelTooltipState(view, 'focus')
+            if (current?.tooltip instanceof LoadingTooltip && current?.occurrence === atEvent.occurrence) {
+                view.dispatch({ effects: setFocusedOccurrenceTooltip.of(null) })
+            }
+        })
 }
 
 export function goToDefinitionAtOccurrence(view: EditorView, occurrence: Occurrence): Promise<DefinitionResult> {
@@ -129,31 +129,26 @@ async function goToDefinition(
     occurrence: Occurrence,
     params: TextDocumentPositionParameters
 ): Promise<DefinitionResult> {
-    const api = await view.state.facet(blobPropsFacet).extensionsController?.extHostAPI
-    if (!api) {
-        return emptyDefinitionResult
-    }
-    const definition = await api.getDefinition(params)
+    const api = await getOrCreateCodeIntelAPI(view.state.facet(blobPropsFacet).platformContext)
+    const definition = await api.getDefinition(params).toPromise()
+    const locationFrom: Location = { uri: params.textDocument.uri, range: occurrence.range }
 
-    const result = await wrapRemoteObservable(definition).toPromise()
-    if (!result || result.isLoading) {
-        return emptyDefinitionResult
-    }
-    if (result.result.length === 0) {
+    if (definition.length === 0) {
         return {
             handler: position => showTemporaryTooltip(view, 'No definition found', position, 2000, { arrow: true }),
             locations: [],
         }
     }
-    const locationFrom: Location = { uri: params.textDocument.uri, range: occurrence.range }
-    for (const location of result.result) {
+
+    for (const location of definition) {
         if (location.uri === params.textDocument.uri && location.range && location.range) {
-            const requestPosition = new Position(params.position.line, params.position.character)
             const {
                 start: { line: startLine, character: startCharacter },
                 end: { line: endLine, character: endCharacter },
             } = location.range
             const resultRange = Range.fromNumbers(startLine, startCharacter, endLine, endCharacter)
+            const requestPosition = new Position(params.position.line, params.position.character)
+
             if (resultRange.contains(requestPosition)) {
                 const refPanelURL = locationToURL(locationFrom, 'references')
                 return {
@@ -166,18 +161,20 @@ async function goToDefinition(
                             history.replace(refPanelURL)
                         }
                     },
-                    locations: result.result,
+                    locations: definition,
                 }
             }
         }
     }
-    if (result.result.length === 1) {
-        const destination = result.result[0]
+
+    if (definition.length === 1) {
+        const destination = definition[0]
         const hrefTo = locationToURL(destination)
-        const { range, uri } = result.result[0]
+        const { range, uri } = definition[0]
+
         if (hrefTo && range) {
             return {
-                locations: result.result,
+                locations: definition,
                 url: hrefTo,
                 handler: () => {
                     interface DefinitionState {
@@ -187,24 +184,24 @@ async function goToDefinition(
                         previousURL?: string
                     }
                     const history = view.state.facet(blobPropsFacet).history as H.History<DefinitionState>
-                    const selectionRange = Range.fromNumbers(
-                        range.start.line,
-                        range.start.character,
-                        range.end.line,
-                        range.end.character
-                    )
                     const hrefFrom = locationToURL(locationFrom)
                     // Don't push URLs into the history if the last goto-def
                     // action was from the same URL same as this action. This
                     // happens when the user repeatedly triggers goto-def, which
-                    // is easy to do when the the definition URL is close to
+                    // is easy to do when the definition URL is close to
                     // where the action got triggered.
                     const shouldPushHistory = history.location.state?.previousURL !== hrefFrom
                     if (hrefFrom && shouldPushHistory && history.createHref(history.location) !== hrefFrom) {
                         history.push(hrefFrom)
                     }
                     if (uri === params.textDocument.uri) {
-                        selectRange(view, selectionRange)
+                        const definitionOccurrence = occurrenceAtPosition(
+                            view.state,
+                            new Position(range.start.line, range.start.character)
+                        )
+                        if (definitionOccurrence) {
+                            selectOccurrence(view, definitionOccurrence)
+                        }
                     }
                     if (shouldPushHistory) {
                         history.push(hrefTo, { previousURL: hrefFrom })
@@ -217,8 +214,9 @@ async function goToDefinition(
     // implement a component to resolve ambiguous results inside the blob
     // view similar to how VS Code "Peek definition" works like.
     const refPanelURL = locationToURL(locationFrom, 'def')
+
     return {
-        locations: result.result,
+        locations: definition,
         url: refPanelURL,
         handler: () => {
             if (refPanelURL) {

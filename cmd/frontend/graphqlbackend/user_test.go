@@ -303,7 +303,7 @@ func TestUpdateUser(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, Username: "2"}, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
-		result, err := newSchemaResolver(db, gitserver.NewClient(db)).UpdateUser(context.Background(),
+		result, err := newSchemaResolver(db, gitserver.NewClient()).UpdateUser(context.Background(),
 			&updateUserArgs{
 				User: "VXNlcjox",
 			},
@@ -324,7 +324,7 @@ func TestUpdateUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		_, err := newSchemaResolver(db, gitserver.NewClient(db)).UpdateUser(ctx,
+		_, err := newSchemaResolver(db, gitserver.NewClient()).UpdateUser(ctx,
 			&updateUserArgs{
 				User:     MarshalUserID(1),
 				Username: strptr("about"),
@@ -351,7 +351,7 @@ func TestUpdateUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(db, gitserver.NewClient(db)).UpdateUser(ctx,
+		result, err := newSchemaResolver(db, gitserver.NewClient()).UpdateUser(ctx,
 			&updateUserArgs{
 				User:     "VXNlcjox",
 				Username: strptr("alice"),
@@ -454,7 +454,7 @@ func TestUpdateUser(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db, gitserver.NewClient(db)).UpdateUser(
+				_, err := newSchemaResolver(db, gitserver.NewClient()).UpdateUser(
 					test.ctx,
 					&updateUserArgs{
 						User: MarshalUserID(1),
@@ -490,7 +490,7 @@ func TestUpdateUser(t *testing.T) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				_, err := newSchemaResolver(db, gitserver.NewClient(db)).UpdateUser(
+				_, err := newSchemaResolver(db, gitserver.NewClient()).UpdateUser(
 					context.Background(),
 					&updateUserArgs{
 						User:      MarshalUserID(1),
@@ -501,6 +501,44 @@ func TestUpdateUser(t *testing.T) {
 				assert.Equal(t, test.wantErr, got)
 			})
 		}
+	})
+
+	t.Run("success with an empty avatarURL", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+			return &types.User{
+				ID:       id,
+				Username: strconv.Itoa(int(id)),
+			}, nil
+		})
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+		users.UpdateFunc.SetDefaultReturn(nil)
+		db.UsersFunc.SetDefaultReturn(users)
+
+		RunTests(t, []*Test{
+			{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
+			mutation {
+				updateUser(
+					user: "VXNlcjox",
+					username: "alice.bob-chris-",
+					avatarURL: ""
+				) {
+					username
+				}
+			}
+		`,
+				ExpectedResult: `
+			{
+				"updateUser": {
+					"username": "1"
+				}
+			}
+		`,
+			},
+		})
+
 	})
 
 	t.Run("success", func(t *testing.T) {

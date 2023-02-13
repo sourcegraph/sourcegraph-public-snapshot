@@ -2,15 +2,18 @@
 
 ## Documentation
 
-1. [Creating developer account for browser extensions](#creating-developer-accounts-for-browser-extensions)
-   - [Chrome](#create-for-chrome)
-   - [Firefox](#create-for-firefox)
-   - [Safari](#create-for-safari)
-1. [Testing Checklist](#testing-checklist)
-1. [Releasing Browser Extensions](#releasing-browser-extensions)
-   - [Chrome](#chrome)
-   - [Firefox](#firefox)
-   - [Safari](#safari)
+- [Browser Extension Release Process](#browser-extension-release-process)
+  - [Documentation](#documentation)
+  - [Creating developer accounts for browser extensions](#creating-developer-accounts-for-browser-extensions)
+    - [Chrome](#chrome)
+    - [Firefox](#firefox)
+    - [Safari](#safari)
+  - [Testing Checklist](#testing-checklist)
+  - [Releasing Browser Extensions](#releasing-browser-extensions)
+    - [Chrome](#chrome-1)
+    - [Firefox](#firefox-1)
+    - [Safari](#safari-1)
+    - [Add status message to slack for public visibility for the org + history.](#add-status-message-to-slack-for-public-visibility-for-the-org--history)
 
 ## Creating developer accounts for browser extensions
 
@@ -74,7 +77,7 @@ Release Steps:
 The release process for Safari is currently not automated. The review process usually takes between half a day to a day. To check the status of the release, visit the [App Store Connect](https://appstoreconnect.apple.com/apps/1543262193/appstore/macos/version/deliverable).
 Steps:
 
-1. On your terminal and run the command `yarn --cwd client/browser build`.
+1. On your terminal and run the command `pnpm --filter @sourcegraph/browser build`.
 1. Build will generate an Xcode project under `./sourcegraph/client/browser/build/Sourcegraph for Safari`.
    1. If you run into Xcode related errors, make sure that you've downloaded Xcode from the app store, opened it and accepted the license/terms agreements.
 1. Open the project using Xcode.

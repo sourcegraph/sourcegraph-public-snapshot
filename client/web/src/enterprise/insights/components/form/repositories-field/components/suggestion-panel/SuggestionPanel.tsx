@@ -4,21 +4,15 @@ import { mdiSourceRepository } from '@mdi/js'
 import { ComboboxList, ComboboxOption, ComboboxOptionText } from '@reach/combobox'
 import classNames from 'classnames'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner, Icon } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Icon, ErrorAlert } from '@sourcegraph/wildcard'
 
 import styles from './SuggestionPanel.module.scss'
 
 interface SuggestionsPanelProps {
     value: string | null
-    suggestions?: Error | RepositorySuggestion[]
+    suggestions: string[]
     className?: string
-}
-
-interface RepositorySuggestion {
-    id: string
-    name: string
 }
 
 /**
@@ -49,7 +43,7 @@ export const SuggestionsPanel: React.FunctionComponent<React.PropsWithChildren<S
     return (
         <ComboboxList className={classNames(styles.suggestionsList, className)}>
             {suggestions.map(suggestion => (
-                <ComboboxOption className={styles.suggestionsListItem} key={suggestion.id} value={suggestion.name}>
+                <ComboboxOption className={styles.suggestionsListItem} key={suggestion} value={suggestion}>
                     <Icon
                         className="mr-1"
                         svgPath={mdiSourceRepository}

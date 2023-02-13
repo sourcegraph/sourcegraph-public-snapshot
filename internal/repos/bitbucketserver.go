@@ -89,10 +89,11 @@ func newBitbucketServerSource(logger log.Logger, svc *types.ExternalService, c *
 	}, nil
 }
 
-// CheckConnection at this point assumes availability and relies on errors returned
-// from the subsequent calls. This is going to be expanded as part of issue #44683
-// to actually only return true if the source can serve requests.
 func (s BitbucketServerSource) CheckConnection(ctx context.Context) error {
+	_, err := s.AuthenticatedUsername(ctx)
+	if err != nil {
+		return errors.Wrap(err, "connection check failed. could not fetch authenticated user")
+	}
 	return nil
 }
 
@@ -174,7 +175,7 @@ func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo, isArchived b
 			ServiceType: extsvc.TypeBitbucketServer,
 			ServiceID:   host.String(),
 		},
-		Description: repo.Name,
+		Description: repo.Description,
 		Fork:        repo.Origin != nil,
 		Archived:    isArchived,
 		Private:     !repo.Public,

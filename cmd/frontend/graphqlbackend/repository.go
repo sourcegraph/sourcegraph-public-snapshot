@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -188,7 +189,7 @@ type RepositoryCommitArgs struct {
 }
 
 func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitArgs) (*GitCommitResolver, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "repository.commit")
+	span, ctx := ot.StartSpanFromContext(ctx, "repository.commit") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 	span.SetTag("commit", args.Rev)
 
@@ -206,6 +207,26 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 	}
 
 	return r.CommitFromID(ctx, args, commitID)
+}
+
+func (r *RepositoryResolver) FirstEverCommit(ctx context.Context) (*GitCommitResolver, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "repository.firstEverCommit") //nolint:staticcheck // OT is deprecated
+	defer span.Finish()
+
+	repo, err := r.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	commit, err := r.gitserverClient.FirstEverCommit(ctx, authz.DefaultSubRepoPermsChecker, repo.Name)
+	if err != nil {
+		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return r.CommitFromID(ctx, &RepositoryCommitArgs{}, commit.ID)
 }
 
 func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryCommitArgs, commitID api.CommitID) (*GitCommitResolver, error) {
@@ -271,6 +292,14 @@ func (r *RepositoryResolver) CreatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: time.Now()}
 }
 
+func (r *RepositoryResolver) RawCreatedAt() string {
+	if r.innerRepo == nil {
+		return ""
+	}
+
+	return r.innerRepo.CreatedAt.Format(time.RFC3339)
+}
+
 func (r *RepositoryResolver) UpdatedAt() *gqlutil.DateTime {
 	return nil
 }
@@ -307,7 +336,7 @@ func (r *RepositoryResolver) Label() (Markdown, error) {
 }
 
 func (r *RepositoryResolver) Detail() Markdown {
-	return Markdown("Repository match")
+	return "Repository match"
 }
 
 func (r *RepositoryResolver) Matches() []*searchResultMatchResolver {
@@ -391,7 +420,7 @@ func (r *RepositoryResolver) CodeIntelSummary(ctx context.Context) (resolverstub
 	return EnterpriseResolvers.codeIntelResolver.RepositorySummary(ctx, r.ID())
 }
 
-func (r *RepositoryResolver) PreviewGitObjectFilter(ctx context.Context, args *resolverstubs.PreviewGitObjectFilterArgs) ([]resolverstubs.GitObjectFilterPreviewResolver, error) {
+func (r *RepositoryResolver) PreviewGitObjectFilter(ctx context.Context, args *resolverstubs.PreviewGitObjectFilterArgs) (resolverstubs.GitObjectFilterPreviewResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.PreviewGitObjectFilter(ctx, r.ID(), args)
 }
 

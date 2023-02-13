@@ -4,7 +4,6 @@ import classNames from 'classnames'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { HighlightLineRange, HighlightResponseFormat } from '@sourcegraph/search'
 import {
     LastSyncedIcon,
     SymbolSearchResultStyles as styles,
@@ -13,7 +12,7 @@ import {
     navigateToFileOnMiddleMouseButtonClick,
     ResultContainer,
     CopyPathAction,
-} from '@sourcegraph/search-ui'
+} from '@sourcegraph/branded'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { getFileMatchUrl, getRepositoryUrl, getRevision, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -21,6 +20,7 @@ import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 
+import { HighlightLineRange, HighlightResponseFormat } from '../../../graphql-operations'
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'
 
 import { RepoFileLink } from './RepoFileLink'

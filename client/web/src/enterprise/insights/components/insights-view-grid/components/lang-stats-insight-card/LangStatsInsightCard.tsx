@@ -2,9 +2,8 @@ import { forwardRef, useContext, useState, HTMLAttributes } from 'react'
 
 import { useMergeRefs } from 'use-callback-ref'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, ParentSize } from '@sourcegraph/wildcard'
+import { Link, ParentSize, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { LangStatsInsight } from '../../../../core'
 import { useLazyLivePreviewLangStatsInsight } from '../../../../core/hooks/live-preview-insight'
@@ -63,7 +62,7 @@ export const LangStatsInsightCard = forwardRef<HTMLElement, BuiltInInsightProps>
             <InsightCardHeader
                 title={
                     <Link
-                        to={`${window.location.origin}/insights/insight/${insight.id}`}
+                        to={`${window.location.origin}/insights/${insight.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
                     >

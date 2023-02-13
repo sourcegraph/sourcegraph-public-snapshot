@@ -1,10 +1,10 @@
 import React, { useCallback, useMemo } from 'react'
 
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, PageHeader, Link, Code } from '@sourcegraph/wildcard'
@@ -12,7 +12,6 @@ import { Container, PageHeader, Link, Code } from '@sourcegraph/wildcard'
 import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
-import { Timestamp } from '../../../components/time/Timestamp'
 import {
     UserEventLogFields,
     UserEventLogsConnectionFields,
@@ -53,18 +52,13 @@ export const UserEventNode: React.FunctionComponent<React.PropsWithChildren<User
     </li>
 )
 
-export interface UserEventLogsPageProps
-    extends Pick<UserSettingsAreaRouteContext, 'user'>,
-        Pick<RouteComponentProps, 'history' | 'location'>,
-        TelemetryProps {}
+export interface UserEventLogsPageProps extends Pick<UserSettingsAreaRouteContext, 'user'>, TelemetryProps {}
 
 /**
  * A page displaying usage statistics for the site.
  */
 export const UserEventLogsPage: React.FunctionComponent<React.PropsWithChildren<UserEventLogsPageProps>> = ({
     telemetryService,
-    history,
-    location,
     user,
 }) => {
     useMemo(() => {
@@ -133,8 +127,6 @@ export const UserEventLogsPage: React.FunctionComponent<React.PropsWithChildren<
                     pluralNoun="user events"
                     queryConnection={queryUserEventLogs}
                     nodeComponent={UserEventNode}
-                    history={history}
-                    location={location}
                 />
             </Container>
         </>

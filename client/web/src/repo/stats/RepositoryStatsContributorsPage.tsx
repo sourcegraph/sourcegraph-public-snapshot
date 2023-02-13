@@ -3,27 +3,36 @@ import { useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
-import { RouteComponentProps } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { numberWithCommas, pluralize } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, ButtonGroup, Link, CardHeader, CardBody, Card, Input, Label, Tooltip } from '@sourcegraph/wildcard'
+import {
+    Button,
+    ButtonGroup,
+    Link,
+    CardHeader,
+    CardBody,
+    Card,
+    Input,
+    Label,
+    Tooltip,
+    PageSwitcher,
+    Form,
+} from '@sourcegraph/wildcard'
 
-import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
+import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import {
     ConnectionList,
     ConnectionContainer,
     ConnectionLoading,
     ConnectionError,
     SummaryContainer,
-    ConnectionSummary,
-    ShowMoreButton,
 } from '../../components/FilteredConnection/ui'
 import { PageTitle } from '../../components/PageTitle'
-import { Timestamp } from '../../components/time/Timestamp'
 import {
     RepositoryContributorNodeFields,
     RepositoryContributorsResult,
@@ -112,10 +121,27 @@ const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren
 }
 
 const CONTRIBUTORS_QUERY = gql`
-    query RepositoryContributors($repo: ID!, $first: Int, $revisionRange: String, $afterDate: String, $path: String) {
+    query RepositoryContributors(
+        $repo: ID!
+        $first: Int
+        $last: Int
+        $after: String
+        $before: String
+        $revisionRange: String
+        $afterDate: String
+        $path: String
+    ) {
         node(id: $repo) {
             ... on Repository {
-                contributors(first: $first, revisionRange: $revisionRange, afterDate: $afterDate, path: $path) {
+                contributors(
+                    first: $first
+                    last: $last
+                    before: $before
+                    after: $after
+                    revisionRange: $revisionRange
+                    afterDate: $afterDate
+                    path: $path
+                ) {
                     ...RepositoryContributorConnectionFields
                 }
             }
@@ -126,6 +152,9 @@ const CONTRIBUTORS_QUERY = gql`
         totalCount
         pageInfo {
             hasNextPage
+            hasPreviousPage
+            endCursor
+            startCursor
         }
         nodes {
             ...RepositoryContributorNodeFields
@@ -142,6 +171,7 @@ const CONTRIBUTORS_QUERY = gql`
                 username
                 url
                 displayName
+                avatarURL
             }
         }
         count
@@ -163,7 +193,7 @@ const BATCH_COUNT = 20
 
 const equalOrEmpty = (a: string | undefined, b: string | undefined): boolean => a === b || (!a && !b)
 
-interface Props extends RepositoryStatsAreaPageProps, RouteComponentProps<{}> {
+interface Props extends RepositoryStatsAreaPageProps {
     globbing: boolean
 }
 
@@ -185,12 +215,9 @@ const getUrlQuery = (spec: Partial<QuerySpec>): string => {
 }
 
 /** A page that shows a repository's contributors. */
-export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = ({
-    location,
-    history,
-    repo,
-    globbing,
-}) => {
+export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = ({ repo, globbing }) => {
+    const location = useLocation()
+    const navigate = useNavigate()
     const queryParameters = new URLSearchParams(location.search)
     const spec: QuerySpec = {
         revisionRange: queryParameters.get('revisionRange') ?? '',
@@ -202,14 +229,13 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
     const [after, setAfter] = useState(spec.after)
     const [path, setPath] = useState(spec.path)
 
-    const { connection, error, loading, hasNextPage, fetchMore } = useShowMorePagination<
+    const { connection, error, loading, ...paginationArgs } = usePageSwitcherPagination<
         RepositoryContributorsResult,
         RepositoryContributorsVariables,
         RepositoryContributorNodeFields
     >({
         query: CONTRIBUTORS_QUERY,
         variables: {
-            first: BATCH_COUNT,
             repo: repo.id,
             revisionRange: spec.revisionRange,
             afterDate: spec.after,
@@ -227,6 +253,7 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
         },
         options: {
             fetchPolicy: 'cache-first',
+            pageSize: BATCH_COUNT,
         },
     })
 
@@ -263,7 +290,7 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
     // Update the URL to reflect buffer state
     const onSubmit: React.FormEventHandler<HTMLFormElement> = event => {
         event.preventDefault()
-        history.push({
+        navigate({
             search: getUrlQuery({ revisionRange, after, path }),
         })
     }
@@ -278,7 +305,7 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
 
     // Push new query param to history, state change will follow via `useEffect` on `location.search`
     const updateAfter = (after: string | undefined): void => {
-        history.push({ search: getUrlQuery({ ...spec, after }) })
+        navigate({ search: getUrlQuery({ ...spec, after }) })
     }
 
     // Whether the user has entered new option values that differ from what's in the URL query and has not yet
@@ -305,17 +332,12 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
                 </ConnectionList>
             )}
             {loading && <ConnectionLoading />}
-            <SummaryContainer>
-                {connection && (
-                    <ConnectionSummary
-                        connection={connection}
-                        first={BATCH_COUNT}
-                        noun="contributor"
-                        pluralNoun="contributors"
-                        hasNextPage={hasNextPage}
-                    />
-                )}
-                {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+            <SummaryContainer className="justify-content-center pt-3">
+                <PageSwitcher
+                    totalCount={connection?.totalCount ?? null}
+                    totalLabel={connection?.totalCount === 1 ? 'contributor' : 'contributors'}
+                    {...paginationArgs}
+                />
             </SummaryContainer>
         </ConnectionContainer>
     )

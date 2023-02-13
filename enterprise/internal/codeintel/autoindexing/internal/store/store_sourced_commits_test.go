@@ -30,9 +30,9 @@ func newTest(db database.DB) *store {
 }
 
 func TestProcessStaleSourcedCommits(t *testing.T) {
-	logger := logtest.Scoped(t)
-	sqlDB := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, sqlDB)
+	log := logtest.Scoped(t)
+	sqlDB := dbtest.NewDB(log, t)
+	db := database.NewDB(log, sqlDB)
 	store := newTest(db)
 
 	ctx := context.Background()

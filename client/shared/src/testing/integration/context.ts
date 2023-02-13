@@ -16,8 +16,6 @@ import { first, timeoutWith } from 'rxjs/operators'
 import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
 import { logger, asError, keyExistsIn } from '@sourcegraph/common'
 import { ErrorGraphQLResult, GraphQLResult } from '@sourcegraph/http-client'
-// eslint-disable-next-line no-restricted-imports
-import { SourcegraphContext } from '@sourcegraph/web/src/jscontext'
 
 import { getConfig } from '../config'
 import { recordCoverage } from '../coverage'
@@ -98,8 +96,12 @@ export interface IntegrationTestOptions {
     /**
      * Test specific JS context object override. It's used in order to override
      * standard JSContext object for some particulars test.
+     *
+     * The `SourcegraphContext` type from `client/web/src/jscontext` should be used here
+     * but it creates a circular dependency between packages. So until it's resolved the
+     * generic `object` type is used here.
      */
-    customContext?: Partial<SourcegraphContext>
+    customContext?: object
 }
 
 const DISPOSE_ACTION_TIMEOUT = 5 * 1000
@@ -156,7 +158,7 @@ export const createSharedIntegrationTestContext = async <
 
     // Fail the test in the case a request handler threw an error,
     // e.g. because a request had no mock defined.
-    const cdpAdapter = polly.adapters.get(CdpAdapter.id) as CdpAdapter
+    const cdpAdapter = polly.adapters.get(CdpAdapter.id) as unknown as CdpAdapter
     subscriptions.add(
         cdpAdapter.errors.subscribe(error => {
             /**

@@ -4,14 +4,14 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { subMonths } from 'date-fns'
 import { useDarkMode } from 'storybook-dark-mode'
 
-import { SymbolKind } from '@sourcegraph/search'
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
-import { usePrependStyles } from '@sourcegraph/storybook'
+import { usePrependStyles } from '@sourcegraph/wildcard/src/stories'
 
 import { applyTheme } from '..'
 import { dark } from '../../bridge-mock/theme-snapshots/dark'
 import { light } from '../../bridge-mock/theme-snapshots/light'
+import { SymbolKind } from '../../graphql-operations'
 
 import { SearchResultList } from './SearchResultList'
 

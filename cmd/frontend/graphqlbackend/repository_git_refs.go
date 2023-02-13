@@ -35,10 +35,9 @@ func (r *RepositoryResolver) Tags(ctx context.Context, args *refsArgs) (*gitRefC
 
 func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitRefConnectionResolver, error) {
 	var branches []*gitdomain.Branch
-	db := r.db
 	if args.Type == nil || *args.Type == gitRefTypeBranch {
 		var err error
-		branches, err = gitserver.NewClient(db).ListBranches(ctx, r.RepoName(), gitserver.BranchesOptions{
+		branches, err = gitserver.NewClient().ListBranches(ctx, r.RepoName(), gitserver.BranchesOptions{
 			// We intentionally do not ask for commits here since it requires
 			// a separate git call per branch. We only need the git commits to
 			// sort by author/commit date and there are few enough branches to
@@ -105,7 +104,7 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 	var tags []*gitdomain.Tag
 	if args.Type == nil || *args.Type == gitRefTypeTag {
 		var err error
-		tags, err = gitserver.NewClient(r.db).ListTags(ctx, r.RepoName())
+		tags, err = gitserver.NewClient().ListTags(ctx, r.RepoName())
 		if err != nil {
 			return nil, err
 		}
@@ -144,7 +143,6 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 	return &gitRefConnectionResolver{
 		first: args.First,
 		refs:  refs,
-		repo:  r,
 	}, nil
 }
 
@@ -160,7 +158,7 @@ func hydrateBranchCommits(ctx context.Context, gitserverClient gitserver.Client,
 	}
 
 	for _, branch := range branches {
-		branch.Commit, err = gitserverClient.GetCommit(ctx, repo, branch.Head, gitserver.ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
+		branch.Commit, err = gitserverClient.GetCommit(ctx, authz.DefaultSubRepoPermsChecker, repo, branch.Head, gitserver.ResolveRevisionOptions{})
 		if err != nil {
 			if parentCtx.Err() == nil && ctx.Err() != nil {
 				// reached interactive timeout
@@ -176,8 +174,6 @@ func hydrateBranchCommits(ctx context.Context, gitserverClient gitserver.Client,
 type gitRefConnectionResolver struct {
 	first *int32
 	refs  []*GitRefResolver
-
-	repo *RepositoryResolver
 }
 
 func (r *gitRefConnectionResolver) Nodes() []*GitRefResolver {

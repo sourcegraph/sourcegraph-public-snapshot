@@ -89,7 +89,7 @@ func Test_serveRawWithHTTPRequestMethodHEAD(t *testing.T) {
 		db.ReposFunc.SetDefaultReturn(rstore)
 		rstore.GetByNameFunc.SetDefaultReturn(&types.Repo{ID: 123}, nil)
 
-		err := serveRaw(db, gitserver.NewClient(db))(w, req)
+		err := serveRaw(db, gitserver.NewClient())(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -112,7 +112,7 @@ func Test_serveRawWithHTTPRequestMethodHEAD(t *testing.T) {
 		db.ReposFunc.SetDefaultReturn(rstore)
 		rstore.GetByNameFunc.SetDefaultReturn(nil, &database.RepoNotFoundErr{ID: 123})
 
-		err := serveRaw(db, gitserver.NewClient(db))(w, req)
+		err := serveRaw(db, gitserver.NewClient())(w, req)
 		if err == nil {
 			t.Fatal("Want error but got nil")
 		}
@@ -147,7 +147,7 @@ func Test_serveRawWithContentArchive(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		db := database.NewMockDB()
-		err := serveRaw(db, gitserver.NewClient(db))(w, req)
+		err := serveRaw(db, gitserver.NewClient())(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -187,7 +187,7 @@ func Test_serveRawWithContentArchive(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		db := database.NewMockDB()
-		err := serveRaw(db, gitserver.NewClient(db))(w, req)
+		err := serveRaw(db, gitserver.NewClient())(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -319,7 +319,7 @@ c.go`
 
 		gitserverClient := gitserver.NewMockClient()
 		gitserverClient.StatFunc.SetDefaultReturn(&fileutil.FileInfo{Mode_: 0}, nil)
-		gitserverClient.NewFileReaderFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, string, authz.SubRepoPermissionChecker) (io.ReadCloser, error) {
+		gitserverClient.NewFileReaderFunc.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string) (io.ReadCloser, error) {
 			return io.NopCloser(strings.NewReader("this is a test file")), nil
 		})
 
@@ -352,7 +352,7 @@ c.go`
 
 		gitserverClient := gitserver.NewMockClient()
 		gitserverClient.StatFunc.SetDefaultReturn(&fileutil.FileInfo{Mode_: 0}, nil)
-		gitserverClient.NewFileReaderFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, string, authz.SubRepoPermissionChecker) (io.ReadCloser, error) {
+		gitserverClient.NewFileReaderFunc.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string) (io.ReadCloser, error) {
 			return io.NopCloser(strings.NewReader("this is a test file")), nil
 		})
 

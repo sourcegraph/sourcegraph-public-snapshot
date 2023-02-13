@@ -5,24 +5,8 @@
   "description": "Configuration for a Sourcegraph site.",
   "allowComments": true,
   "type": "object",
-  "additionalProperties": false,
+  "additionalProperties": true,
   "properties": {
-    "dontIncludeSymbolResultsByDefault": {
-      "description": "Set to `true` to not include symbol results if no `type:` filter was given",
-      "type": "boolean",
-      "group": "Search"
-    },
-    "disableBuiltInSearches": {
-      "description": "Whether built-in searches should be hidden on the Searches page.",
-      "type": "boolean",
-      "group": "Search"
-    },
-    "search.index.enabled": {
-      "description": "REMOVED.",
-      "type": "boolean",
-      "!go": { "pointer": true },
-      "group": "Search"
-    },
     "search.index.symbols.enabled": {
       "description": "Whether indexed symbol search is enabled. This is contingent on the indexed search configuration, and is true by default for instances with indexed search enabled. Enabling this will cause every repository to re-index, which is a time consuming (several hours) operation. Additionally, it requires more storage and ram to accommodate the added symbols information in the search index.",
       "type": "boolean",
@@ -43,12 +27,6 @@
       "type": "integer",
       "group": "Debug",
       "examples": [["20"]]
-    },
-    "apidocs.search.index-size-limit-factor": {
-      "description": "Deprecated.",
-      "type": "number",
-      "default": 1.0,
-      "additionalProperties": false
     },
     "cloneProgress.log": {
       "description": "Whether clone progress should be logged to a file. If enabled, logs are written to files in the OS default path for temporary files.",
@@ -121,9 +99,9 @@
       }
     },
     "experimentalFeatures": {
-      "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
+      "description": "Experimental features and settings.",
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "rateLimitAnonymous": {
           "description": "Configures the hourly rate limits for anonymous calls to the GraphQL API. Setting limit to 0 disables the limiter. This is only relevant if unauthenticated calls to the API are permitted.",
@@ -180,20 +158,8 @@
             }
           }
         },
-        "apidocs.search.indexing": {
-          "description": "Deprecated.",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "enabled"
-        },
         "structuralSearch": {
           "description": "Enables structural search.",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "enabled"
-        },
-        "andOrQuery": {
-          "description": "DEPRECATED: Interpret a search input query as an and/or query.",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "enabled"
@@ -203,12 +169,6 @@
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
-        },
-        "searchMultipleRevisionsPerRepository": {
-          "description": "DEPRECATED. Always on. Will be removed in 3.19.",
-          "type": "boolean",
-          "default": false,
-          "!go": { "pointer": true }
         },
         "perforce": {
           "description": "Allow adding Perforce code host connections",
@@ -258,8 +218,8 @@
           "enum": ["enabled", "disabled"],
           "default": "disabled"
         },
-        "gerrit": {
-          "description": "Allow adding Gerrit code host connections",
+        "azureDevOps": {
+          "description": "Allow adding Azure DevOps code host connections",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
@@ -396,75 +356,6 @@
           "type": "boolean",
           "default": false
         },
-        "versionContexts": {
-          "description": "DEPRECATED: Use search contexts instead.\n\nJSON array of version context configuration",
-          "type": "array",
-          "items": {
-            "title": "VersionContext",
-            "description": "Configuration of the version context",
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["name", "revisions"],
-            "properties": {
-              "name": {
-                "description": "Name of the version context, it must be unique.",
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 50
-              },
-              "revisions": {
-                "description": "List of repositories of the version context",
-                "type": "array",
-                "items": {
-                  "title": "VersionContextRevision",
-                  "description": "Description of the chosen repository and revision",
-                  "type": "object",
-                  "additionalProperties": false,
-                  "required": ["repo", "rev"],
-                  "properties": {
-                    "repo": {
-                      "description": "Repository name",
-                      "type": "string"
-                    },
-                    "rev": {
-                      "description": "Branch, tag, or commit hash. \"HEAD\" or \"\" can be used for the default branch.",
-                      "type": "string"
-                    }
-                  }
-                }
-              },
-              "description": {
-                "description": "Description of the version context",
-                "type": "string"
-              }
-            }
-          },
-          "examples": [
-            {
-              "name": "Release foo",
-              "revisions": [
-                {
-                  "repo": "github.com/sourcegraph/sourcegraph",
-                  "rev": "3.15"
-                },
-                {
-                  "repo": "github.com/sourcegraph/lib1",
-                  "rev": "23edr233r"
-                },
-                {
-                  "repo": "github.com/sourcegraph/lib2",
-                  "rev": "2.4"
-                }
-              ]
-            }
-          ]
-        },
-        "enableWebhookRepoSync": {
-          "description": "Enable webhooks for repo syncing",
-          "type": "boolean",
-          "default": false,
-          "!go": { "pointer": false }
-        },
         "enablePermissionsWebhooks": {
           "description": "Enables webhook consumers to sync permissions from external services faster than the defaults schedule",
           "type": "boolean",
@@ -516,6 +407,13 @@
               "type": "integer",
               "default": 0,
               "group": "Search"
+            },
+            "documentRanksWeight": {
+              "description": "Controls the impact of document ranks on the final ranking when the 'search-ranking' feature is enabled. This is intended for internal testing purposes only, it's not recommended for users to change this.",
+              "type": "number",
+              "default": 4500,
+              "group": "Search",
+              "!go": { "pointer": true }
             }
           }
         },
@@ -538,14 +436,9 @@
           }
         },
         "enableGithubInternalRepoVisibility": {
-          "description": "Enable support for visilibity of internal Github repositories",
+          "description": "Enable support for visibility of internal Github repositories",
           "type": "boolean",
           "default": false
-        },
-        "enableGitServerCommandExecFilter": {
-          "description": "DEPRECATED: Setting any value to this flag has no effect.",
-          "type": "boolean",
-          "default": true
         },
         "gitServerPinnedRepos": {
           "description": "List of repositories pinned to specific gitserver instances. The specified repositories will remain at their pinned servers on scaling the cluster. If the specified pinned server differs from the current server that stores the repository, then it must be re-cloned to the specified server.",
@@ -570,16 +463,19 @@
           "type": "boolean",
           "default": false
         },
-        "hideSourcegraphOperatorLogin": {
-          "description": "Enables hiding Sourcegraph operator auth provider on login page.",
-          "type": "boolean",
-          "default": false
-        },
         "insightsBackfillerV2": {
-          "description": "Use v2 of the insights backfiller which backfills a series at a time.",
+          "description": "DEPRECATED: Setting any value to this flag has no effect.",
           "type": "boolean",
           "default": true,
           "!go": { "pointer": true }
+        },
+        "insightsDataRetention": {
+          "description": "Code insights data points beyond the sample size defined in the site configuration will be periodically archived",
+          "type": "boolean",
+          "default": true,
+          "!go": {
+            "pointer": true
+          }
         }
       },
       "examples": [
@@ -603,20 +499,6 @@
         }
       ],
       "group": "Experimental"
-    },
-    "campaigns.enabled": {
-      "description": "DEPRECATED: Use batchChanges.enabled instead. This setting is non-functional.",
-      "type": "boolean",
-      "!go": { "pointer": true },
-      "group": "Campaigns",
-      "default": true
-    },
-    "campaigns.restrictToAdmins": {
-      "description": "DEPRECATED: Use batchChanges.restrictToAdmins instead. This setting is non-functional.",
-      "type": "boolean",
-      "!go": { "pointer": true },
-      "group": "Campaigns",
-      "default": false
     },
     "batchChanges.enabled": {
       "description": "Enables/disables the Batch Changes feature.",
@@ -725,13 +607,6 @@
       "group": "Code intelligence",
       "default": false
     },
-    "codeIntelLockfileIndexing.enabled": {
-      "description": "DEPRECATED: Enables/disables the code intel lockfile-indexing feature. Currently experimental.",
-      "type": "boolean",
-      "!go": { "pointer": true },
-      "group": "Code intelligence",
-      "default": false
-    },
     "corsOrigin": {
       "description": "Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.",
       "type": "string",
@@ -747,6 +622,12 @@
     },
     "disableNonCriticalTelemetry": {
       "description": "Disable aggregated event counts from being sent to Sourcegraph.com via pings.",
+      "type": "boolean",
+      "default": false,
+      "group": "Misc."
+    },
+    "disableFeedbackSurvey": {
+      "description": "Disable the feedback survey",
       "type": "boolean",
       "default": false,
       "group": "Misc."
@@ -812,18 +693,6 @@
         }
       },
       "group": "External services"
-    },
-    "githubClientID": {
-      "description": "Client ID for GitHub. (DEPRECATED)",
-      "type": "string",
-      "group": "Internal",
-      "hide": true
-    },
-    "githubClientSecret": {
-      "description": "Client secret for GitHub. (DEPRECATED)",
-      "type": "string",
-      "group": "Internal",
-      "hide": true
     },
     "gitLongCommandTimeout": {
       "description": "Maximum number of seconds that a long Git command (e.g. clone or remote update) is allowed to execute. The default is 3600 seconds, or 1 hour.",
@@ -937,6 +806,12 @@
         }
       }
     },
+    "scim.authToken": {
+      "type": "string",
+      "description": "DISCLAIMER: UNDER DEVELOPMENT. THE ENDPOINT DOES NOT COMPLY WITH THE SCIM STANDARD YET. The SCIM auth token is used to authenticate SCIM requests. If not set, SCIM is disabled.",
+      "default": "",
+      "group": "External services"
+    },
     "maxReposToSearch": {
       "description": "DEPRECATED: Configure maxRepos in search.limits. The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.",
       "type": "integer",
@@ -1019,10 +894,10 @@
       "type": "integer",
       "default": 5
     },
-    "authz.syncJobsRecordsTTL": {
-      "description": "EXPERIMENTAL: Time interval (in minutes) of how long to keep sync job records for. Set to a negative value to disable.",
+    "authz.syncJobsRecordsLimit": {
+      "description": "EXPERIMENTAL: Number of sync job records to retain. Set to a negative value to disable sync jobs records entirely.",
       "type": "integer",
-      "default": 5
+      "default": 100
     },
     "externalService.userMode": {
       "description": "Enable to allow users to add external services for public and private repositories to the Sourcegraph instance.",
@@ -1083,6 +958,19 @@
       "description": "The maximum number of user-centric permissions syncing jobs that can be spawned concurrently. Service restart is required to take effect for changes.",
       "type": "integer",
       "default": 1
+    },
+    "permissions.syncJobsHistorySize": {
+      "description": "The number of last repo/user permission jobs to keep for history.",
+      "type": "integer",
+      "default": 5,
+      "minimum": 5,
+      "!go": { "pointer": true }
+    },
+    "permissions.syncJobCleanupInterval": {
+      "description": "Time interval (in seconds) of how often cleanup worker should remove old jobs from permissions sync jobs table.",
+      "type": "integer",
+      "default": 60,
+      "minimum": 1
     },
     "branding": {
       "description": "Customize Sourcegraph homepage logo and search icon.\n\nOnly available in Sourcegraph Enterprise.",
@@ -1225,7 +1113,7 @@
       "group": "Email"
     },
     "executors.frontendURL": {
-      "description": "The frontend URL for Sourcegraph. Only root URLs are allowed. If not set, falls back to externalURL",
+      "description": "The URL where Sourcegraph executors can reach the Sourcegraph instance. If not set, defaults to externalURL. URLs with a path (other than `/`) are not allowed. For Docker executors, the special hostname `host.docker.internal` can be used to refer to the Docker container's host.",
       "type": "string",
       "examples": ["https://sourcegraph.example.com"]
     },
@@ -1513,25 +1401,6 @@
       "group": "CodeInsights",
       "default": 60
     },
-    "insights.historical.frames": {
-      "description": "DEPRECATED: (debug) number of historical insights timeframes to populate",
-      "type": "integer",
-      "group": "Debug",
-      "examples": [6]
-    },
-    "insights.historical.frameLength": {
-      "description": "DEPRECATED: (debug) duration of historical insights timeframes, one point per repository will be recorded in each timeframe.",
-      "type": "string",
-      "group": "Debug",
-      "examples": ["30d"]
-    },
-    "insights.historical.speedFactor": {
-      "description": "DEPRECATED: (debug) Speed factor for building historical insights data. A value like 1.5 indicates approximately to use 1.5x as much repo-updater and gitserver resources.",
-      "!go": { "pointer": true },
-      "type": "number",
-      "group": "Debug",
-      "examples": ["1.0"]
-    },
     "insights.query.worker.concurrency": {
       "description": "Number of concurrent executions of a code insight query on a worker node",
       "type": "integer",
@@ -1554,41 +1423,20 @@
       "default": 20,
       "examples": [10, 20]
     },
-    "insights.compute.graphql": {
-      "description": "DEPRECATED: Force GraphQL mode for insights compute searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API",
-      "type": "boolean",
-      "!go": { "pointer": true },
-      "group": "CodeInsights",
-      "default": false
-    },
-    "insights.search.graphql": {
-      "description": "DEPRECATED: Force GraphQL mode for insights searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API",
-      "type": "boolean",
-      "!go": { "pointer": true },
-      "group": "CodeInsights",
-      "default": false
-    },
     "insights.historical.worker.rateLimit": {
       "description": "Maximum number of historical Code Insights data frames that may be analyzed per second.",
       "type": "number",
       "group": "CodeInsights",
-      "default": 10,
+      "default": 20,
       "examples": [50.0, 0.5],
       "!go": { "pointer": true }
     },
-    "insights.commit.indexer.interval": {
-      "description": "The interval (in minutes) at which the insights commit indexer will check for new commits.",
+    "insights.historical.worker.rateLimitBurst": {
+      "description": "The allowed burst rate for the Code Insights historical worker rate limiter.",
       "type": "integer",
       "group": "CodeInsights",
-      "default": 60,
-      "examples": [120]
-    },
-    "insights.commit.indexer.windowDuration": {
-      "description": "The number of days of commits the insights commit indexer will pull during each request (0 is no limit).",
-      "type": "integer",
-      "group": "CodeInsights",
-      "default": 0,
-      "examples": [30]
+      "default": 20,
+      "examples": [10, 20]
     },
     "insights.aggregations.bufferSize": {
       "description": "The size of the buffer for aggregations ran in-memory. A higher limit might strain memory for the frontend",
@@ -1601,6 +1449,14 @@
       "type": "integer",
       "group": "CodeInsights",
       "default": 50000
+    },
+    "insights.maximumSampleSize": {
+      "description": "The maximum number of data points that will be available to view for a series on a code insight. Points beyond that will be stored in a separate table and available for data export.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 30,
+      "maximum": 90,
+      "examples": [12, 24, 50]
     },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",
@@ -1650,6 +1506,24 @@
         "clientSecret": {
           "type": "string",
           "description": "The Client Secret of the GitHub App for Sourcegraph, accessible from https://github.com/settings/apps ."
+        }
+      }
+    },
+    "gitRecorder": {
+      "description": "Record git operations that are executed on configured repositories. The following commands are not recorded: show, log, rev-parse and diff.",
+      "type": "object",
+      "properties": {
+        "size": {
+          "description": "Defines how many recordings to keep. Once this size is reached, the oldest entry will be removed.",
+          "type": "integer",
+          "default": 100000
+        },
+        "repos": {
+          "description": "List of repositories whose git operations should be recorded.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
@@ -1727,7 +1601,7 @@
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["builtin", "saml", "openidconnect", "http-header", "github", "gitlab"]
+            "enum": ["builtin", "saml", "openidconnect", "http-header", "github", "gitlab", "bitbucketcloud", "gerrit"]
           }
         },
         "oneOf": [
@@ -1736,7 +1610,9 @@
           { "$ref": "#/definitions/OpenIDConnectAuthProvider" },
           { "$ref": "#/definitions/HTTPHeaderAuthProvider" },
           { "$ref": "#/definitions/GitHubAuthProvider" },
-          { "$ref": "#/definitions/GitLabAuthProvider" }
+          { "$ref": "#/definitions/GitLabAuthProvider" },
+          { "$ref": "#/definitions/BitbucketCloudAuthProvider" },
+          { "$ref": "#/definitions/GerritAuthProvider" }
         ],
         "!go": {
           "taggedUnionType": true
@@ -1817,20 +1693,6 @@
       "examples": ["none"],
       "group": "Misc."
     },
-    "userRepos.maxPerSite": {
-      "description": "The site wide maximum number of repos that can be added by non site admins",
-      "type": "integer",
-      "default": 200000,
-      "group": "Misc.",
-      "deprecationMessage": "Deprecated as we no longer support user added code"
-    },
-    "userRepos.maxPerUser": {
-      "description": "The per user maximum number of repos that can be added by non site admins",
-      "type": "integer",
-      "default": 2000,
-      "group": "Misc.",
-      "deprecationMessage": "Deprecated as we no longer support user added code"
-    },
     "productResearchPage.enabled": {
       "description": "Enables users access to the product research page in their settings.",
       "type": "boolean",
@@ -1856,6 +1718,9 @@
           "$ref": "#/definitions/EncryptionKey"
         },
         "externalServiceKey": {
+          "$ref": "#/definitions/EncryptionKey"
+        },
+        "outboundWebhookKey": {
           "$ref": "#/definitions/EncryptionKey"
         },
         "userExternalAccountKey": {
@@ -2285,6 +2150,60 @@
         }
       }
     },
+    "BitbucketCloudAuthProvider": {
+      "description": "Configures the Bitbucket Cloud OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your Bitbucket Cloud workspace: https://support.atlassian.com/bitbucket-cloud/docs/use-oauth-on-bitbucket-cloud/. The application should have account, email, and repository scopes and the callback URL set to the concatenation of your Sourcegraph instance URL and \"/.auth/bitbucketcloud/callback\".",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "clientKey", "clientSecret"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "bitbucketcloud"
+        },
+        "url": {
+          "type": "string",
+          "description": "URL of the Bitbucket Cloud instance.",
+          "default": "https://bitbucket.org/"
+        },
+        "clientKey": {
+          "type": "string",
+          "description": "The Key of the Bitbucket OAuth app."
+        },
+        "clientSecret": {
+          "type": "string",
+          "description": "The Client Secret of the Bitbucket OAuth app."
+        },
+        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" },
+        "apiScope": {
+          "type": "string",
+          "description": "The OAuth API scope that should be used",
+          "default": "account,email,repository",
+          "enum": ["account", "email", "repository"]
+        },
+        "allowSignup": {
+          "description": "Allows new visitors to sign up for accounts via Bitbucket Cloud authentication. If false, users signing in via Bitbucket Cloud must have an existing Sourcegraph account, which will be linked to their Bitbucket Cloud identity after sign-in.",
+          "default": true,
+          "type": "boolean"
+        }
+      }
+    },
+    "GerritAuthProvider": {
+      "description": "Gerrit auth provider",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "url"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "gerrit"
+        },
+        "url": {
+          "type": "string",
+          "description": "URL of the Gerrit instance, such as https://gerrit-review.googlesource.com or https://gerrit.example.com.",
+          "default": "https://gerrit-review.googlesource.com/"
+        }
+      }
+    },
     "AuthProviderCommon": {
       "$comment": "This schema is not used directly. The *AuthProvider schemas refer to its properties directly.",
       "description": "Common properties for authentication providers.",
@@ -2520,18 +2439,18 @@
     },
     "EmailTemplate": {
       "type": "object",
-      "required": ["subject", "text", "html"],
+      "required": ["subject", "html"],
       "properties": {
         "subject": {
           "description": "Template for email subject header",
           "type": "string"
         },
-        "text": {
-          "description": "Template for plain-text body",
-          "type": "string"
-        },
         "html": {
           "description": "Template for HTML body",
+          "type": "string"
+        },
+        "text": {
+          "description": "Optional template for plain-text body. If not provided, a plain-text body will be automatically generated from the HTML template.",
           "type": "string"
         }
       }

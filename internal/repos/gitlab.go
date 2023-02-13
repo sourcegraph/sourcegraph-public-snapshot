@@ -161,10 +161,11 @@ func (s GitLabSource) ValidateAuthenticator(ctx context.Context) error {
 	return s.client.ValidateToken(ctx)
 }
 
-// CheckConnection at this point assumes availability and relies on errors returned
-// from the subsequent calls. This is going to be expanded as part of issue #44683
-// to actually only return true if the source can serve requests.
 func (s GitLabSource) CheckConnection(ctx context.Context) error {
+	_, err := s.client.GetUser(ctx, "")
+	if err != nil {
+		return errors.Wrap(err, "connection check failed. could not fetch authenticated user")
+	}
 	return nil
 }
 
@@ -224,7 +225,7 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *types.Repo {
 	}
 }
 
-// remoteURL returns the GitLab projects's Git remote URL
+// remoteURL returns the GitLab project's Git remote URL
 //
 // note: this used to contain credentials but that is no longer the case
 // if you need to get an authenticated clone url use repos.CloneURL
@@ -309,7 +310,7 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 		go func(projectQuery string) {
 			defer wg.Done()
 
-			url, err := projectQueryToURL(projectQuery, perPage) // first page URL
+			urlStr, err := projectQueryToURL(projectQuery, perPage) // first page URL
 			if err != nil {
 				ch <- batch{err: errors.Wrapf(err, "invalid GitLab projectQuery=%q", projectQuery)}
 				return
@@ -320,16 +321,16 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 					ch <- batch{err: err}
 					return
 				}
-				projects, nextPageURL, err := s.client.ListProjects(ctx, url)
+				projects, nextPageURL, err := s.client.ListProjects(ctx, urlStr)
 				if err != nil {
-					ch <- batch{err: errors.Wrapf(err, "error listing GitLab projects: url=%q", url)}
+					ch <- batch{err: errors.Wrapf(err, "error listing GitLab projects: url=%q", urlStr)}
 					return
 				}
 				ch <- batch{projs: projects}
 				if nextPageURL == nil {
 					return
 				}
-				url = *nextPageURL
+				urlStr = *nextPageURL
 
 				// 0-duration sleep unless nearing rate limit exhaustion. If context has been canceled, next iteration of loop will return error.
 				timeutil.SleepWithContext(ctx, s.client.RateLimitMonitor().RecommendedWaitForBackgroundOp(1))

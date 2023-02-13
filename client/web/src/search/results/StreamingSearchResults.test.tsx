@@ -2,14 +2,13 @@ import React from 'react'
 
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { createBrowserHistory } from 'history'
 import { BrowserRouter } from 'react-router-dom'
 import { CompatRouter } from 'react-router-dom-v5-compat'
 import { EMPTY, NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
-import { SearchMode, SearchQueryStateStoreProvider } from '@sourcegraph/search'
 import { GitRefType, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { SearchMode, SearchQueryStateStoreProvider } from '@sourcegraph/shared/src/search'
 import { AggregateStreamingSearchResults, Skipped } from '@sourcegraph/shared/src/search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -25,23 +24,19 @@ import {
 import { simulateMenuItemClick } from '@sourcegraph/shared/src/testing/simulateMenuItemClick'
 
 import { AuthenticatedUser } from '../../auth'
-import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
+import { useNavbarQueryState } from '../../stores'
 import * as helpers from '../helpers'
 
 import { generateMockedResponses } from './sidebar/Revisions.mocks'
 import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
 
 describe('StreamingSearchResults', () => {
-    const history = createBrowserHistory()
-
     const streamingSearchResult = MULTIPLE_SEARCH_RESULT
 
     const defaultProps: StreamingSearchResultsProps = {
         extensionsController,
         telemetryService: NOOP_TELEMETRY_SERVICE,
 
-        history,
-        location: history.location,
         authenticatedUser: null,
 
         settingsCascade: {
@@ -56,6 +51,8 @@ describe('StreamingSearchResults', () => {
         isLightTheme: true,
         isSourcegraphDotCom: false,
         searchContextsEnabled: true,
+        searchAggregationEnabled: false,
+        codeMonitoringEnabled: true,
     }
 
     const revisionsMockResponses = generateMockedResponses(GitRefType.GIT_BRANCH, 5, 'github.com/golang/oauth2')
@@ -78,7 +75,7 @@ describe('StreamingSearchResults', () => {
     const mockUser = {
         id: 'userID',
         username: 'username',
-        email: 'user@me.com',
+        emails: [{ email: 'user@me.com', isPrimary: true, verified: true }],
         siteAdmin: true,
     } as AuthenticatedUser
 
@@ -87,7 +84,6 @@ describe('StreamingSearchResults', () => {
             searchCaseSensitivity: false,
             searchQueryFromURL: 'r:golang/oauth2 test f:travis',
         })
-        useExperimentalFeatures.setState({ showSearchContext: true, codeMonitoring: false })
         window.context = {
             enableLegacyExtensions: false,
         } as any

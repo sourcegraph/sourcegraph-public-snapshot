@@ -261,10 +261,11 @@ func (s *GitHubSource) Version(ctx context.Context) (string, error) {
 	return s.v3Client.GetVersion(ctx)
 }
 
-// CheckConnection at this point assumes availability and relies on errors returned
-// from the subsequent calls. This is going to be expanded as part of issue #44683
-// to actually only return true if the source can serve requests.
 func (s *GitHubSource) CheckConnection(ctx context.Context) error {
+	_, err := s.v3Client.GetAuthenticatedUser(ctx)
+	if err != nil {
+		return errors.Wrap(err, "connection check failed. could not fetch authenticated user")
+	}
 	return nil
 }
 
@@ -347,8 +348,8 @@ func (s *GitHubSource) makeRepo(r *github.Repository) *types.Repo {
 // if you need to get an authenticated clone url use repos.CloneURL
 func (s *GitHubSource) remoteURL(repo *github.Repository) string {
 	if s.config.GitURLType == "ssh" {
-		url := fmt.Sprintf("git@%s:%s.git", s.originalHostname, repo.NameWithOwner)
-		return url
+		assembledURL := fmt.Sprintf("git@%s:%s.git", s.originalHostname, repo.NameWithOwner)
+		return assembledURL
 	}
 
 	return repo.URL
@@ -443,7 +444,7 @@ func (s *GitHubSource) listOrg(ctx context.Context, org string, results chan *gi
 				if page == 1 {
 					var e *github.APIError
 					if errors.As(err, &e) && e.Code == 404 {
-						oerr = errors.Errorf("organisation %q not found", org)
+						oerr = errors.Errorf("organisation %q (specified in configuration) not found", org)
 						err = nil
 					}
 				}

@@ -1,9 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
-	"os"
+	"fmt"
 	"testing"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
@@ -14,8 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/team"
 )
 
-var RunSlackIntegrationTest *bool = flag.Bool("RunSlackIntegrationTest", false, "Run Slack integration tests")
-var RunGitHubIntegrationTest *bool = flag.Bool("RunGitHubIntegrationTest", false, "Run Github integration tests")
+var RunSlackIntegrationTest = flag.Bool("RunSlackIntegrationTest", false, "Run Slack integration tests")
+var RunGitHubIntegrationTest = flag.Bool("RunGitHubIntegrationTest", false, "Run Github integration tests")
 
 func newJob(name string, exit int) *Job {
 	return &Job{buildkite.Job{
@@ -26,16 +25,38 @@ func newJob(name string, exit int) *Job {
 }
 
 func TestLargeAmountOfFailures(t *testing.T) {
-	f, err := os.Open("testdata/build_golden.json")
-	if err != nil {
-		t.Fatalf("failed to read build.json: %s", err)
+	num := 160000
+	commit := "ca7c44f79984ff8d645b580bfaaf08ce9a37a05d"
+	url := "http://www.google.com"
+	pipelineID := "sourcegraph"
+	msg := "Large amount of failures test"
+	build := Build{
+		Build: buildkite.Build{
+			Message: &msg,
+			WebURL:  &url,
+			Creator: &buildkite.Creator{
+				AvatarURL: "https://www.gravatar.com/avatar/7d4f6781b10e48a94d1052c443d13149",
+			},
+			Pipeline: &buildkite.Pipeline{
+				ID:   &pipelineID,
+				Name: &pipelineID,
+			},
+			Author: &buildkite.Author{
+				Name:  "William Bezuidenhout",
+				Email: "william.bezuidenhout@sourcegraph.com",
+			},
+			Number: &num,
+			URL:    &url,
+			Commit: &commit,
+		},
+		Pipeline: &Pipeline{buildkite.Pipeline{
+			Name: &pipelineID,
+		}},
+		Jobs: map[string]Job{},
 	}
-	defer f.Close()
-
-	goldenBuild := buildkite.Build{}
-
-	if err := json.NewDecoder(f).Decode(&goldenBuild); err != nil {
-		t.Fatalf("failed to decode build json: %s", err)
+	for i := 1; i <= 30; i++ {
+		job := *newJob(fmt.Sprintf("%d fake step", i), i)
+		build.Jobs[job.name()] = job
 	}
 
 	flag.Parse()
@@ -51,23 +72,7 @@ func TestLargeAmountOfFailures(t *testing.T) {
 
 	client := NewNotificationClient(logger, conf.SlackToken, conf.GithubToken, DefaultChannel)
 
-	pipelineID := "sourcegraph"
-	jobs := make(map[string]Job)
-
-	for _, j := range goldenBuild.Jobs {
-		job := Job{*j}
-		jobs[job.name()] = job
-	}
-
-	err = client.sendFailedBuild(
-		&Build{
-			Build: goldenBuild,
-			Pipeline: &Pipeline{buildkite.Pipeline{
-				Name: &pipelineID,
-			}},
-			Jobs: jobs,
-		},
-	)
+	_, err = client.sendNewMessage(&build)
 	if err != nil {
 		t.Fatalf("failed to send build: %s", err)
 	}
@@ -164,7 +169,7 @@ func TestGetTeammateFromBuild(t *testing.T) {
 	})
 }
 
-func TestSlack(t *testing.T) {
+func TestSlackNotification(t *testing.T) {
 	flag.Parse()
 	if !*RunSlackIntegrationTest {
 		t.Skip("Slack Integration test not enabled")
@@ -184,8 +189,8 @@ func TestSlack(t *testing.T) {
 	pipelineID := "sourcegraph"
 	exit := 999
 	msg := "this is a test"
-	err = client.sendFailedBuild(
-		&Build{
+	t.Run("send new notification", func(t *testing.T) {
+		build := &Build{
 			Build: buildkite.Build{
 				Message: &msg,
 				WebURL:  &url,
@@ -213,11 +218,138 @@ func TestSlack(t *testing.T) {
 				":three: fake step": *newJob(":three: fake step", exit),
 				":four: fake step":  *newJob(":four: fake step", exit),
 			},
-		},
-	)
+		}
 
+		notification, err := client.sendNewMessage(build)
+		if err != nil {
+			t.Fatalf("failed to send slack notification: %v", err)
+		}
+
+		if notification == nil {
+			t.Fatalf("expected not nil notificaiton after new notification")
+		}
+		if notification.ID == "" {
+			t.Error("expected notification id to not be empty")
+		}
+		if notification.ChannelID == "" {
+			t.Error("expected notification channel id to not be empty")
+		}
+	})
+	t.Run("update notification", func(t *testing.T) {
+		build := &Build{
+			Build: buildkite.Build{
+				Message: &msg,
+				WebURL:  &url,
+				Creator: &buildkite.Creator{
+					AvatarURL: "https://www.gravatar.com/avatar/7d4f6781b10e48a94d1052c443d13149",
+				},
+				Pipeline: &buildkite.Pipeline{
+					ID:   &pipelineID,
+					Name: &pipelineID,
+				},
+				Author: &buildkite.Author{
+					Name:  "William Bezuidenhout",
+					Email: "william.bezuidenhout@sourcegraph.com",
+				},
+				Number: &num,
+				URL:    &url,
+				Commit: &commit,
+			},
+			Pipeline: &Pipeline{buildkite.Pipeline{
+				Name: &pipelineID,
+			}},
+			Jobs: map[string]Job{
+				":one: fake step": *newJob(":one: fake step", exit),
+			},
+		}
+
+		// post a new notification
+		newNotification, err := client.sendNewMessage(build)
+		if err != nil {
+			t.Fatalf("failed to send slack notification: %v", err)
+		}
+		if newNotification == nil {
+			t.Errorf("expected not nil notification after new message")
+		}
+		// now update the notification with additional jobs that failed
+		build.Jobs[":alarm_clock: delayed job"] = *newJob(":clock: delayed job", exit)
+		updatedNotification, err := client.sendUpdatedMessage(build, newNotification)
+		if err != nil {
+			t.Fatalf("failed to send slack notification: %v", err)
+		}
+		if updatedNotification == nil {
+			t.Errorf("expected not nil notification after updated message")
+		}
+		if newNotification.Equals(updatedNotification) {
+			t.Errorf("expected new and updated notifications to differ - new '%v' updated '%v'", newNotification, updatedNotification)
+		}
+	})
+}
+func TestServerNotify(t *testing.T) {
+	flag.Parse()
+	if !*RunSlackIntegrationTest {
+		t.Skip("Slack Integration test not enabled")
+	}
+	logger := logtest.NoOp(t)
+
+	config, err := configFromEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	server := NewServer(logger, *config)
+
+	num := 160000
+	url := "http://www.google.com"
+	commit := "78926a5b3b836a8a104a5d5adf891e5626b1e405"
+	pipelineID := "sourcegraph"
+	exit := 999
+	msg := "this is a test"
+	build := &Build{
+		Build: buildkite.Build{
+			Message: &msg,
+			WebURL:  &url,
+			Creator: &buildkite.Creator{
+				AvatarURL: "https://www.gravatar.com/avatar/7d4f6781b10e48a94d1052c443d13149",
+			},
+			Pipeline: &buildkite.Pipeline{
+				ID:   &pipelineID,
+				Name: &pipelineID,
+			},
+			Author: &buildkite.Author{
+				Name:  "William Bezuidenhout",
+				Email: "william.bezuidenhout@sourcegraph.com",
+			},
+			Number: &num,
+			URL:    &url,
+			Commit: &commit,
+		},
+		Pipeline: &Pipeline{buildkite.Pipeline{
+			Name: &pipelineID,
+		}},
+		Jobs: map[string]Job{
+			":one: fake step": *newJob(":one: fake step", exit),
+		},
+	}
+
+	// post a new notification
+	err = server.notifyIfFailed(build)
 	if err != nil {
 		t.Fatalf("failed to send slack notification: %v", err)
+	}
+	if !build.hasNotification() {
+		t.Fatalf("expected build to have a notification after failure notification")
+	}
+	// now update the notification with additional jobs that failed
+	build.Jobs[":alarm_clock: delayed job"] = *newJob(":alarm_clock: delayed job", exit)
+	// even though we call the same method, it has a different flow because the build has a previous notification present
+	oldNotification := build.Notification
+	err = server.notifyIfFailed(build)
+	if err != nil {
+		t.Fatalf("failed to send slack notification: %v", err)
+	}
+	if oldNotification.Equals(build.Notification) {
+		t.Fatalf("expected notification to be different after new/update sending another notification")
 	}
 }
 

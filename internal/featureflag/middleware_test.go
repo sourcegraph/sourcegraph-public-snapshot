@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 func TestMiddleware(t *testing.T) {
@@ -172,19 +173,19 @@ func setupRedisTest(t *testing.T) {
 
 	t.Cleanup(func() { mockConn.Clear(); mockConn.Close() })
 
-	mockConn.GenericCommand("HSET").Handle(redigomock.ResponseHandler(func(args []interface{}) (interface{}, error) {
+	mockConn.GenericCommand("HSET").Handle(func(args []interface{}) (interface{}, error) {
 		cache[args[0].(string)] = []byte(args[2].(string))
 		return nil, nil
-	}))
+	})
 
-	mockConn.GenericCommand("HGET").Handle(redigomock.ResponseHandler(func(args []interface{}) (interface{}, error) {
+	mockConn.GenericCommand("HGET").Handle(func(args []interface{}) (interface{}, error) {
 		return cache[args[0].(string)], nil
-	}))
+	})
 
-	mockConn.GenericCommand("DEL").Handle(redigomock.ResponseHandler(func(args []interface{}) (interface{}, error) {
+	mockConn.GenericCommand("DEL").Handle(func(args []interface{}) (interface{}, error) {
 		delete(cache, args[0].(string))
 		return nil, nil
-	}))
+	})
 
-	pool = redis.NewPool(func() (redis.Conn, error) { return mockConn, nil }, 10)
+	evalStore = redispool.RedisKeyValue(&redis.Pool{Dial: func() (redis.Conn, error) { return mockConn, nil }, MaxIdle: 10})
 }

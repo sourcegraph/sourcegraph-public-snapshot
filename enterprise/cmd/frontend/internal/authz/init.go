@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/enforcement"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
+	srp "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
@@ -29,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var clock = timeutil.Now
@@ -60,15 +62,22 @@ func Init(
 
 		// Add connection validation issue
 		for _, p := range providers {
-			for _, problem := range p.ValidateConnection(ctx) {
-				warnings = append(warnings, fmt.Sprintf("%s provider %q: %s", p.ServiceType(), p.ServiceID(), problem))
+			if err := p.ValidateConnection(ctx); err != nil {
+				warnings = append(warnings, fmt.Sprintf("%s provider %q: %s", p.ServiceType(), p.ServiceID(), err))
 			}
 		}
+
 		problems = append(problems, conf.NewExternalServiceProblems(warnings...)...)
 		return problems
 	})
 
 	enterpriseServices.PermissionsGitHubWebhook = webhooks.NewGitHubWebhook(log.Scoped("PermissionsGitHubWebhook", "permissions sync webhook handler for GitHub webhooks"))
+
+	var err error
+	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(edb.NewEnterpriseDB(db).SubRepoPerms())
+	if err != nil {
+		return errors.Wrap(err, "Failed to createe sub-repo client")
+	}
 
 	// Warn about usage of authz providers that are not enabled by the license.
 	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
@@ -129,10 +138,16 @@ func Init(
 				MessageValue: "Error reading Sourcegraph license key. Check the logs for more information, or update the license key in the [**site configuration**](/site-admin/configuration).",
 			}}
 		}
-		if info != nil && info.IsExpiredWithGracePeriod() {
+		if info != nil && info.IsExpired() {
 			return []*graphqlbackend.Alert{{
 				TypeValue:    graphqlbackend.AlertTypeError,
 				MessageValue: "Sourcegraph license expired! All non-admin users are locked out of Sourcegraph. Update the license key in the [**site configuration**](/site-admin/configuration) or downgrade to only using Sourcegraph Free features.",
+			}}
+		}
+		if info != nil && info.IsExpiringSoon() {
+			return []*graphqlbackend.Alert{{
+				TypeValue:    graphqlbackend.AlertTypeWarning,
+				MessageValue: fmt.Sprintf("Sourcegraph license will expire soon! Expires on: %s. Update the license key in the [**site configuration**](/site-admin/configuration) or downgrade to only using Sourcegraph Free features.", info.ExpiresAt.UTC().Truncate(time.Hour).Format(time.UnixDate)),
 			}}
 		}
 		return nil
@@ -178,7 +193,7 @@ func Init(
 				})
 				return
 			}
-			if info != nil && info.IsExpiredWithGracePeriod() {
+			if info != nil && info.IsExpired() {
 				siteadminOrHandler(func() {
 					enforcement.WriteSubscriptionErrorResponse(w, http.StatusForbidden, "Sourcegraph license expired", "To continue using Sourcegraph, a site admin must renew the Sourcegraph license (or downgrade to only using Sourcegraph Free features). Update the license key in the [**site configuration**](/site-admin/configuration).")
 				})

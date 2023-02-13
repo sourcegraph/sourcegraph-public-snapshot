@@ -8,6 +8,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/commitgraph"
@@ -60,7 +61,7 @@ func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, 
 	if err != nil {
 		return nil, err
 	}
-	trace.Log(log.Int("numDumps", len(dumps)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numDumps", len(dumps)))
 
 	return dumps, nil
 }
@@ -123,10 +124,9 @@ func (s *store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositor
 	if err != nil {
 		return nil, err
 	}
-	trace.Log(
-		log.Int("numCommitGraphViewMetaKeys", len(commitGraphView.Meta)),
-		log.Int("numCommitGraphViewTokenKeys", len(commitGraphView.Tokens)),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numCommitGraphViewMetaKeys", len(commitGraphView.Meta)),
+		attribute.Int("numCommitGraphViewTokenKeys", len(commitGraphView.Tokens)))
 
 	var ids []*sqlf.Query
 	for _, uploadMeta := range commitgraph.NewGraph(commitGraph, commitGraphView).UploadsVisibleAtCommit(commit) {
@@ -143,7 +143,7 @@ func (s *store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositor
 	if err != nil {
 		return nil, err
 	}
-	trace.Log(log.Int("numDumps", len(dumps)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numDumps", len(dumps)))
 
 	return dumps, nil
 }
@@ -213,7 +213,7 @@ func (s *store) GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers
 	if err != nil {
 		return nil, err
 	}
-	trace.Log(log.Int("numDumps", len(dumps)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numDumps", len(dumps)))
 
 	return dumps, nil
 }
@@ -287,7 +287,7 @@ func (s *store) GetDumpsByIDs(ctx context.Context, ids []int) (_ []types.Dump, e
 	if err != nil {
 		return nil, err
 	}
-	trace.Log(log.Int("numDumps", len(dumps)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numDumps", len(dumps)))
 
 	return dumps, nil
 }
@@ -332,7 +332,7 @@ func (s *store) DeleteOverlappingDumps(ctx context.Context, repositoryID int, co
 	if err != nil {
 		return err
 	}
-	trace.Log(log.Int("count", count))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("count", count))
 
 	return nil
 }

@@ -91,12 +91,12 @@ func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitdomain.Commi
 		}
 
 		opts := gitserver.ResolveRevisionOptions{}
-		r.commit, r.commitErr = r.gitserverClient.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid), opts, authz.DefaultSubRepoPermsChecker)
+		r.commit, r.commitErr = r.gitserverClient.GetCommit(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), opts)
 	})
 	return r.commit, r.commitErr
 }
 
-// gitCommitGQLID is a type used for marshaling and unmarshaling a Git commit's
+// gitCommitGQLID is a type used for marshaling and unmarshalling a Git commit's
 // GraphQL ID.
 type gitCommitGQLID struct {
 	Repository graphql.ID  `json:"r"`
@@ -193,15 +193,15 @@ func (r *GitCommitResolver) Parents(ctx context.Context) ([]*GitCommitResolver, 
 }
 
 func (r *GitCommitResolver) URL() string {
-	url := r.repoResolver.url()
-	url.Path += "/-/commit/" + r.inputRevOrImmutableRev()
-	return url.String()
+	repoUrl := r.repoResolver.url()
+	repoUrl.Path += "/-/commit/" + r.inputRevOrImmutableRev()
+	return repoUrl.String()
 }
 
 func (r *GitCommitResolver) CanonicalURL() string {
-	url := r.repoResolver.url()
-	url.Path += "/-/commit/" + string(r.oid)
-	return url.String()
+	repoUrl := r.repoResolver.url()
+	repoUrl.Path += "/-/commit/" + string(r.oid)
+	return repoUrl.String()
 }
 
 func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
@@ -260,7 +260,7 @@ func (r *GitCommitResolver) Path(ctx context.Context, args *struct {
 }
 
 func (r *GitCommitResolver) path(ctx context.Context, path string, validate func(fs.FileInfo) error) (*GitTreeEntryResolver, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "commit.path")
+	span, ctx := ot.StartSpanFromContext(ctx, "commit.path") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 	span.SetTag("path", path)
 
@@ -274,8 +274,11 @@ func (r *GitCommitResolver) path(ctx context.Context, path string, validate func
 	if err := validate(stat); err != nil {
 		return nil, err
 	}
-
-	return NewGitTreeEntryResolver(r.db, r.gitserverClient, r, stat), nil
+	opts := GitTreeEntryResolverOpts{
+		commit: r,
+		stat:   stat,
+	}
+	return NewGitTreeEntryResolver(r.db, r.gitserverClient, opts), nil
 }
 
 func (r *GitCommitResolver) FileNames(ctx context.Context) ([]string, error) {
@@ -319,13 +322,17 @@ func (r *GitCommitResolver) LanguageStatistics(ctx context.Context) ([]*language
 	return stats, nil
 }
 
-func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
+type AncestorsArgs struct {
 	graphqlutil.ConnectionArgs
 	Query       *string
 	Path        *string
+	Follow      bool
 	After       *string
 	AfterCursor *string
-}) (*gitCommitConnectionResolver, error) {
+	Before      *string
+}
+
+func (r *GitCommitResolver) Ancestors(ctx context.Context, args *AncestorsArgs) (*gitCommitConnectionResolver, error) {
 	return &gitCommitConnectionResolver{
 		db:              r.db,
 		gitserverClient: r.gitserverClient,
@@ -333,8 +340,10 @@ func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
 		first:           args.ConnectionArgs.First,
 		query:           args.Query,
 		path:            args.Path,
+		follow:          args.Follow,
 		after:           args.After,
 		afterCursor:     args.AfterCursor,
+		before:          args.Before,
 		repo:            r.repoResolver,
 	}, nil
 }
@@ -389,7 +398,7 @@ func (r *GitCommitResolver) inputRevOrImmutableRev() string {
 // "/REPO/-/commit/REVSPEC").
 func (r *GitCommitResolver) repoRevURL() *url.URL {
 	// Dereference to copy to avoid mutation
-	url := *r.repoResolver.RepoMatch.URL()
+	repoUrl := *r.repoResolver.RepoMatch.URL()
 	var rev string
 	if r.inputRev != nil {
 		rev = *r.inputRev // use the original input rev from the user
@@ -397,14 +406,14 @@ func (r *GitCommitResolver) repoRevURL() *url.URL {
 		rev = string(r.oid)
 	}
 	if rev != "" {
-		url.Path += "@" + rev
+		repoUrl.Path += "@" + rev
 	}
-	return &url
+	return &repoUrl
 }
 
 func (r *GitCommitResolver) canonicalRepoRevURL() *url.URL {
 	// Dereference to copy the URL to avoid mutation
-	url := *r.repoResolver.RepoMatch.URL()
-	url.Path += "@" + string(r.oid)
-	return &url
+	repoUrl := *r.repoResolver.RepoMatch.URL()
+	repoUrl.Path += "@" + string(r.oid)
+	return &repoUrl
 }

@@ -8,10 +8,10 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/cliutil"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -86,21 +86,25 @@ func (gt generateTargets) Commands() (cmds []*cli.Command) {
 				return err
 			}
 			report := c.Runner(cmd.Context, cmd.Args().Slice())
+			if report.Err != nil {
+				return report.Err
+			}
+
 			fmt.Printf(report.Output)
 			std.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "(%ds)", report.Duration/time.Second))
 			return nil
 		}
 	}
 	for _, c := range gt {
-		var completions cli.BashCompleteFunc
+		var complete cli.BashCompleteFunc
 		if c.Completer != nil {
-			completions = cliutil.CompleteOptions(c.Completer)
+			complete = completions.CompleteOptions(c.Completer)
 		}
 		cmds = append(cmds, &cli.Command{
 			Name:         c.Name,
 			Usage:        c.Help,
 			Action:       actionFactory(c),
-			BashComplete: completions,
+			BashComplete: complete,
 		})
 	}
 	return cmds

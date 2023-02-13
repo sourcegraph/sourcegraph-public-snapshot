@@ -11,6 +11,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -58,10 +59,9 @@ func (s *store) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (
 	if err != nil {
 		return nil, 0, err
 	}
-	trace.Log(
-		log.Int("totalCount", totalCount),
-		log.Int("numUploads", len(uploads)),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("totalCount", totalCount),
+		attribute.Int("numUploads", len(uploads)))
 
 	return uploads, totalCount, nil
 }
@@ -90,6 +90,7 @@ SELECT
 	u.upload_size,
 	u.associated_index_id,
 	u.content_type,
+	u.should_reindex,
 	s.rank,
 	u.uncompressed_size,
 	COUNT(*) OVER() AS count
@@ -113,7 +114,14 @@ FROM lsif_uploads_with_repository_name r
 WHERE r.state = 'queued'
 `
 
-const visibleAtTipSubselectQuery = `SELECT 1 FROM lsif_uploads_visible_at_tip uvt WHERE uvt.repository_id = u.repository_id AND uvt.upload_id = u.id`
+const visibleAtTipSubselectQuery = `
+SELECT 1
+FROM lsif_uploads_visible_at_tip uvt
+WHERE
+	uvt.repository_id = u.repository_id AND
+	uvt.upload_id = u.id AND
+	uvt.is_default_branch
+`
 
 const deletedUploadsFromAuditLogsCTEQuery = `
 SELECT
@@ -130,6 +138,7 @@ SELECT
 	COALESCE((snapshot->'num_parts')::integer, -1) AS num_parts,
 	NULL::integer[] as uploaded_parts,
 	au.upload_size, au.associated_index_id, au.content_type,
+	false AS should_reindex, -- TODO
 	COALESCE((snapshot->'expired')::boolean, false) AS expired,
 	NULL::bigint AS uncompressed_size
 FROM (
@@ -238,6 +247,7 @@ SELECT
 	u.upload_size,
 	u.associated_index_id,
 	u.content_type,
+	u.should_reindex,
 	s.rank,
 	u.uncompressed_size
 FROM lsif_uploads u
@@ -308,6 +318,7 @@ SELECT
 	u.upload_size,
 	u.associated_index_id,
 	u.content_type,
+	u.should_reindex,
 	s.rank,
 	u.uncompressed_size
 FROM lsif_uploads u
@@ -331,7 +342,7 @@ func (s *store) GetRecentUploadsSummary(ctx context.Context, repositoryID int) (
 	if err != nil {
 		return nil, err
 	}
-	logger.Log(log.Int("numUploads", len(uploads)))
+	logger.AddEvent("scanUploadComplete", attribute.Int("numUploads", len(uploads)))
 
 	groupedUploads := make([]shared.UploadsWithRepositoryNamespace, 1, len(uploads)+1)
 	for _, index := range uploads {
@@ -411,6 +422,7 @@ SELECT
 	u.upload_size,
 	u.associated_index_id,
 	u.content_type,
+	u.should_reindex,
 	s.rank,
 	u.uncompressed_size
 FROM lsif_uploads_with_repository_name u
@@ -474,10 +486,9 @@ func (s *store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Tim
 	for _, numDeleted := range repositories {
 		count += numDeleted
 	}
-	trace.Log(
-		log.Int("count", count),
-		log.Int("numRepositories", len(repositories)),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("count", count),
+		attribute.Int("numRepositories", len(repositories)))
 
 	return repositories, nil
 }
@@ -522,7 +533,7 @@ func (s *store) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore 
 	if err != nil {
 		return 0, err
 	}
-	trace.Log(log.Int("count", count))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("count", count))
 
 	return count, nil
 }
@@ -576,10 +587,9 @@ func (s *store) SoftDeleteExpiredUploads(ctx context.Context, batchSize int) (co
 	for _, numUpdated := range repositories {
 		count += numUpdated
 	}
-	trace.Log(
-		log.Int("count", count),
-		log.Int("numRepositories", len(repositories)),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("count", count),
+		attribute.Int("numRepositories", len(repositories)))
 
 	for repositoryID := range repositories {
 		if err := s.setRepositoryAsDirtyWithTx(ctx, repositoryID, tx); err != nil {
@@ -745,10 +755,9 @@ func (s *store) SoftDeleteExpiredUploadsViaTraversal(ctx context.Context, traver
 	for _, numUpdated := range repositories {
 		count += numUpdated
 	}
-	trace.Log(
-		log.Int("count", count),
-		log.Int("numRepositories", len(repositories)),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("count", count),
+		attribute.Int("numRepositories", len(repositories)))
 
 	for repositoryID := range repositories {
 		if err := s.setRepositoryAsDirtyWithTx(ctx, repositoryID, tx); err != nil {
@@ -919,13 +928,23 @@ func (s *store) HardDeleteUploadsByIDs(ctx context.Context, ids ...int) (err err
 }
 
 const hardDeleteUploadsByIDsQuery = `
-WITH locked_uploads AS (
-	SELECT u.id
+WITH
+locked_uploads AS (
+	SELECT u.id, u.associated_index_id
 	FROM lsif_uploads u
 	WHERE u.id IN (%s)
 	ORDER BY u.id FOR UPDATE
+),
+delete_uploads AS (
+	DELETE FROM lsif_uploads WHERE id IN (SELECT id FROM locked_uploads)
+),
+locked_indexes AS (
+	SELECT u.id
+	FROM lsif_indexes U
+	WHERE u.id IN (SELECT associated_index_id FROM locked_uploads)
+	ORDER BY u.id FOR UPDATE
 )
-DELETE FROM lsif_uploads WHERE id IN (SELECT id FROM locked_uploads)
+DELETE FROM lsif_indexes WHERE id IN (SELECT id FROM locked_indexes)
 `
 
 // DeleteUploadByID deletes an upload by its identifier. This method returns a true-valued flag if a record
@@ -1077,12 +1096,12 @@ func (s *store) SourcedCommitsWithoutCommittedAt(ctx context.Context, batchSize 
 	}})
 	defer func() { endObservation(1, observation.Args{}) }()
 
-	batch, err := scanSourcedCommits(s.db.Query(ctx, sqlf.Sprintf(sourcedCommitsWithoutCommittedAtQuery, batchSize)))
+	batchOfCommits, err := scanSourcedCommits(s.db.Query(ctx, sqlf.Sprintf(sourcedCommitsWithoutCommittedAtQuery, batchSize)))
 	if err != nil {
 		return nil, err
 	}
 
-	return batch, nil
+	return batchOfCommits, nil
 }
 
 const sourcedCommitsWithoutCommittedAtQuery = `
@@ -1150,10 +1169,9 @@ func (s *store) UpdateUploadsVisibleToCommits(
 	if err != nil {
 		return err
 	}
-	trace.Log(
-		log.String("maxAgeForNonStaleBranches", maxAgeForNonStaleBranches.String()),
-		log.String("maxAgeForNonStaleTags", maxAgeForNonStaleTags.String()),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.String("maxAgeForNonStaleBranches", maxAgeForNonStaleBranches.String()),
+		attribute.String("maxAgeForNonStaleTags", maxAgeForNonStaleTags.String()))
 
 	// Pull all queryable upload metadata known to this repository so we can correlate
 	// it with the current  commit graph.
@@ -1161,10 +1179,9 @@ func (s *store) UpdateUploadsVisibleToCommits(
 	if err != nil {
 		return err
 	}
-	trace.Log(
-		log.Int("numCommitGraphViewMetaKeys", len(commitGraphView.Meta)),
-		log.Int("numCommitGraphViewTokenKeys", len(commitGraphView.Tokens)),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numCommitGraphViewMetaKeys", len(commitGraphView.Meta)),
+		attribute.Int("numCommitGraphViewTokenKeys", len(commitGraphView.Tokens)))
 
 	// Determine which uploads are visible to which commits for this repository
 	graph := commitgraph.NewGraph(commitGraph, commitGraphView)
@@ -1307,10 +1324,9 @@ func (s *store) GetUploadIDsWithReferences(
 		filtered[packageReference.DumpID] = struct{}{}
 	}
 
-	trace.Log(
-		log.Int("uploadIDsWithReferences.numFiltered", len(filtered)),
-		log.Int("uploadIDsWithReferences.numRecordsScanned", recordsScanned),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("uploadIDsWithReferences.numFiltered", len(filtered)),
+		attribute.Int("uploadIDsWithReferences.numRecordsScanned", recordsScanned))
 
 	flattened := make([]int, 0, len(filtered))
 	for k := range filtered {
@@ -1360,7 +1376,7 @@ func (s *store) GetVisibleUploadsMatchingMonikers(ctx context.Context, repositor
 	if err != nil {
 		return nil, 0, err
 	}
-	trace.Log(log.Int("totalCount", totalCount))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("totalCount", totalCount))
 
 	query := sqlf.Sprintf(referenceIDsQuery, visibleUploadsQuery, repositoryID, sqlf.Join(qs, ", "), authzConds, limit, offset)
 	rows, err := s.db.Query(ctx, query)
@@ -1598,11 +1614,10 @@ func (s *store) writeVisibleUploads(ctx context.Context, sanitizedInput *sanitiz
 	if err := g.Wait(); err != nil {
 		return err
 	}
-	trace.Log(
-		log.Int("numNearestUploadsRecords", int(sanitizedInput.numNearestUploadsRecords)),
-		log.Int("numNearestUploadsLinksRecords", int(sanitizedInput.numNearestUploadsLinksRecords)),
-		log.Int("numUploadsVisibleAtTipRecords", int(sanitizedInput.numUploadsVisibleAtTipRecords)),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numNearestUploadsRecords", int(sanitizedInput.numNearestUploadsRecords)),
+		attribute.Int("numNearestUploadsLinksRecords", int(sanitizedInput.numNearestUploadsLinksRecords)),
+		attribute.Int("numUploadsVisibleAtTipRecords", int(sanitizedInput.numUploadsVisibleAtTipRecords)))
 
 	return nil
 }
@@ -1623,11 +1638,10 @@ func (s *store) persistNearestUploads(ctx context.Context, repositoryID int, tx 
 	if err != nil {
 		return err
 	}
-	trace.Log(
-		log.Int("lsif_nearest_uploads.ins", rowsInserted),
-		log.Int("lsif_nearest_uploads.upd", rowsUpdated),
-		log.Int("lsif_nearest_uploads.del", rowsDeleted),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("lsif_nearest_uploads.ins", rowsInserted),
+		attribute.Int("lsif_nearest_uploads.upd", rowsUpdated),
+		attribute.Int("lsif_nearest_uploads.del", rowsDeleted))
 
 	return nil
 }
@@ -1672,11 +1686,10 @@ func (s *store) persistNearestUploadsLinks(ctx context.Context, repositoryID int
 	if err != nil {
 		return err
 	}
-	trace.Log(
-		log.Int("lsif_nearest_uploads_links.ins", rowsInserted),
-		log.Int("lsif_nearest_uploads_links.upd", rowsUpdated),
-		log.Int("lsif_nearest_uploads_links.del", rowsDeleted),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("lsif_nearest_uploads_links.ins", rowsInserted),
+		attribute.Int("lsif_nearest_uploads_links.upd", rowsUpdated),
+		attribute.Int("lsif_nearest_uploads_links.del", rowsDeleted))
 
 	return nil
 }
@@ -1719,11 +1732,10 @@ func (s *store) persistUploadsVisibleAtTip(ctx context.Context, repositoryID int
 	if err != nil {
 		return err
 	}
-	trace.Log(
-		log.Int("lsif_uploads_visible_at_tip.ins", rowsInserted),
-		log.Int("lsif_uploads_visible_at_tip.upd", rowsUpdated),
-		log.Int("lsif_uploads_visible_at_tip.del", rowsDeleted),
-	)
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("lsif_uploads_visible_at_tip.ins", rowsInserted),
+		attribute.Int("lsif_uploads_visible_at_tip.upd", rowsUpdated),
+		attribute.Int("lsif_uploads_visible_at_tip.del", rowsDeleted))
 
 	return nil
 }
@@ -1911,7 +1923,7 @@ func (s *store) MarkQueued(ctx context.Context, id int, uploadSize *int64) (err 
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.db.Exec(ctx, sqlf.Sprintf(markQueuedQuery, uploadSize, id))
+	return s.db.Exec(ctx, sqlf.Sprintf(markQueuedQuery, dbutil.NullInt64{N: uploadSize}, id))
 }
 
 const markQueuedQuery = `
@@ -1977,7 +1989,7 @@ func nilTimeToString(t *time.Time) string {
 }
 
 func buildGetConditionsAndCte(opts shared.GetUploadsOptions) (*sqlf.Query, []*sqlf.Query, []cteDefinition) {
-	conds := make([]*sqlf.Query, 0, 12)
+	conds := make([]*sqlf.Query, 0, 13)
 
 	allowDeletedUploads := opts.AllowDeletedUpload && (opts.State == "" || opts.State == "deleted")
 
@@ -1988,7 +2000,10 @@ func buildGetConditionsAndCte(opts shared.GetUploadsOptions) (*sqlf.Query, []*sq
 		conds = append(conds, makeSearchCondition(opts.Term))
 	}
 	if opts.State != "" {
-		conds = append(conds, makeStateCondition(opts.State))
+		opts.States = append(opts.States, opts.State)
+	}
+	if len(opts.States) > 0 {
+		conds = append(conds, makeStateCondition(opts.States))
 	} else if !allowDeletedUploads {
 		conds = append(conds, sqlf.Sprintf("u.state != 'deleted'"))
 	}
@@ -2064,6 +2079,7 @@ func buildGetConditionsAndCte(opts shared.GetUploadsOptions) (*sqlf.Query, []*sq
 				upload_size,
 				associated_index_id,
 				content_type,
+				should_reindex,
 				expired,
 				uncompressed_size
 			FROM lsif_uploads
@@ -2105,8 +2121,8 @@ func buildDeleteConditions(opts shared.DeleteUploadsOptions) []*sqlf.Query {
 	if opts.Term != "" {
 		conds = append(conds, makeSearchCondition(opts.Term))
 	}
-	if opts.State != "" {
-		conds = append(conds, makeStateCondition(opts.State))
+	if len(opts.States) > 0 {
+		conds = append(conds, makeStateCondition(opts.States))
 	}
 	if opts.VisibleAtTip {
 		conds = append(conds, sqlf.Sprintf("EXISTS ("+visibleAtTipSubselectQuery+")"))
@@ -2136,21 +2152,29 @@ func makeSearchCondition(term string) *sqlf.Query {
 }
 
 // makeStateCondition returns a disjunction of clauses comparing the upload against the target state.
-func makeStateCondition(state string) *sqlf.Query {
-	states := make([]string, 0, 2)
-	if state == "errored" || state == "failed" {
-		// Treat errored and failed states as equivalent
-		states = append(states, "errored", "failed")
-	} else {
-		states = append(states, state)
-	}
-
-	queries := make([]*sqlf.Query, 0, len(states))
+func makeStateCondition(states []string) *sqlf.Query {
+	stateMap := make(map[string]struct{}, 2)
 	for _, state := range states {
-		queries = append(queries, sqlf.Sprintf("u.state = %s", state))
+		// Treat errored and failed states as equivalent
+		if state == "errored" || state == "failed" {
+			stateMap["errored"] = struct{}{}
+			stateMap["failed"] = struct{}{}
+		} else {
+			stateMap[state] = struct{}{}
+		}
 	}
 
-	return sqlf.Sprintf("(%s)", sqlf.Join(queries, " OR "))
+	orderedStates := make([]string, 0, len(stateMap))
+	for state := range stateMap {
+		orderedStates = append(orderedStates, state)
+	}
+	sort.Strings(orderedStates)
+
+	if len(orderedStates) == 1 {
+		return sqlf.Sprintf("u.state = %s", orderedStates[0])
+	}
+
+	return sqlf.Sprintf("u.state = ANY(%s)", pq.Array(orderedStates))
 }
 
 func buildCTEPrefix(cteDefinitions []cteDefinition) *sqlf.Query {
@@ -2187,7 +2211,7 @@ func buildGetUploadsLogFields(opts shared.GetUploadsOptions) []log.Field {
 
 func buildDeleteUploadsLogFields(opts shared.DeleteUploadsOptions) []log.Field {
 	return []log.Field{
-		log.String("state", opts.State),
+		log.String("states", strings.Join(opts.States, ",")),
 		log.String("term", opts.Term),
 		log.Bool("visibleAtTip", opts.VisibleAtTip),
 	}

@@ -1,23 +1,13 @@
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 
-import { BulkSearchRepositories, WebGraphQlOperations } from '../../../graphql-operations'
+import { WebGraphQlOperations } from '../../../graphql-operations'
 import { WebIntegrationTestContext } from '../../context'
 import { commonWebGraphQlResults } from '../../graphQlResults'
 
-/**
- * Some insight creation UI gql api requests do not have
- * generated types due their dynamic nature. Because of that we
- * must write these api call types below manually for testing purposes.
- */
-interface CustomInsightsOperations {
-    /** API handler used for repositories field async validation. */
-    BulkRepositoriesSearch: () => Record<string, BulkSearchRepositories>
-}
-
 export interface OverrideGraphQLExtensionsProps {
     testContext: WebIntegrationTestContext
-    overrides?: Partial<WebGraphQlOperations & SharedGraphQlOperations & CustomInsightsOperations>
+    overrides?: Partial<WebGraphQlOperations & SharedGraphQlOperations>
 }
 
 /**
@@ -67,6 +57,16 @@ export function overrideInsightsGraphQLApi(props: OverrideGraphQLExtensionsProps
             },
         }),
 
+        GetAllInsightConfigurations: () => ({
+            __typename: 'Query',
+            insightViews: {
+                __typename: 'InsightViewConnection',
+                nodes: [],
+                pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
+                totalCount: 0,
+            },
+        }),
+
         CurrentAuthState: () => ({
             currentUser: {
                 __typename: 'User',
@@ -97,6 +97,7 @@ export function overrideInsightsGraphQLApi(props: OverrideGraphQLExtensionsProps
                 viewerCanAdminister: true,
                 searchable: true,
                 emails: [],
+                latestSettings: null,
             },
         }),
         ...overrides,

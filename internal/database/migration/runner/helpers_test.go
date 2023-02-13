@@ -22,12 +22,12 @@ func makeTestSchemas(t *testing.T) []*schemas.Schema {
 }
 
 func makeTestSchema(t *testing.T, name string) *schemas.Schema {
-	fs, err := fs.Sub(testdata.Content, name)
+	fsys, err := fs.Sub(testdata.Content, name)
 	if err != nil {
 		t.Fatalf("malformed migration definitions %q: %s", name, err)
 	}
 
-	definitions, err := definition.ReadDefinitions(fs, name)
+	definitions, err := definition.ReadDefinitions(fsys, name)
 	if err != nil {
 		t.Fatalf("malformed migration definitions %q: %s", name, err)
 	}
@@ -35,7 +35,6 @@ func makeTestSchema(t *testing.T, name string) *schemas.Schema {
 	return &schemas.Schema{
 		Name:                name,
 		MigrationsTableName: fmt.Sprintf("%s_migrations_table", name),
-		FS:                  fs,
 		Definitions:         definitions,
 	}
 }

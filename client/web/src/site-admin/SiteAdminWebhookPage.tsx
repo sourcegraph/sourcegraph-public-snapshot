@@ -1,13 +1,24 @@
 import { FC, useEffect, useState } from 'react'
 
-import { mdiCog } from '@mdi/js'
+import { mdiCog, mdiDelete } from '@mdi/js'
 import { noop } from 'lodash'
-import { RouteComponentProps } from 'react-router'
+import { useNavigate, useParams } from 'react-router-dom-v5-compat'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useMutation } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, ButtonLink, Container, H2, H5, Link, LoadingSpinner, PageHeader, Tooltip } from '@sourcegraph/wildcard'
+import {
+    Button,
+    ButtonLink,
+    Container,
+    H2,
+    H5,
+    Link,
+    LoadingSpinner,
+    PageHeader,
+    Tooltip,
+    ErrorAlert,
+    Icon,
+} from '@sourcegraph/wildcard'
 
 import { CreatedByAndUpdatedByInfoByline } from '../components/Byline/CreatedByAndUpdatedByInfoByline'
 import {
@@ -29,16 +40,13 @@ import { WebhookLogNode } from './webhooks/WebhookLogNode'
 
 import styles from './SiteAdminWebhookPage.module.scss'
 
-export interface WebhookPageProps extends TelemetryProps, RouteComponentProps<{ id: string }> {}
+export interface WebhookPageProps extends TelemetryProps {}
 
 export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
-    const {
-        match: {
-            params: { id },
-        },
-        telemetryService,
-        history,
-    } = props
+    const { telemetryService } = props
+
+    const { id = '' } = useParams<{ id: string }>()
+    const navigate = useNavigate()
 
     const [onlyErrors, setOnlyErrors] = useState(false)
     const { loading, hasNextPage, fetchMore, connection, error } = useWebhookLogsConnection(id, 20, onlyErrors)
@@ -51,7 +59,7 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
     const [deleteWebhook, { error: deleteError, loading: isDeleting }] = useMutation<
         DeleteWebhookResult,
         DeleteWebhookVariables
-    >(DELETE_WEBHOOK, { variables: { hookID: id }, onCompleted: () => history.push('/site-admin/webhooks') })
+    >(DELETE_WEBHOOK, { variables: { hookID: id }, onCompleted: () => navigate('/site-admin/webhooks') })
 
     return (
         <Container>
@@ -85,7 +93,8 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
                                         variant="primary"
                                         display="inline"
                                     >
-                                        Edit
+                                        <Icon aria-hidden={true} svgPath={mdiCog} />
+                                        {' Edit'}
                                     </ButtonLink>
                                 </Tooltip>
                             </div>
@@ -114,7 +123,8 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
                                     >
                                         <>
                                             {isDeleting && <LoadingSpinner />}
-                                            Delete
+                                            <Icon aria-hidden={true} svgPath={mdiDelete} />
+                                            {' Delete'}
                                         </>
                                     </Button>
                                 </Tooltip>
@@ -144,7 +154,7 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
                 {loading && !connection && <ConnectionLoading />}
 
                 <ConnectionList aria-label="WebhookLogs" className={styles.logs}>
-                    <Header />
+                    <SiteAdminWebhookPageHeader timeLabel="Received at" />
                     {connection?.nodes?.map(node => (
                         <WebhookLogNode doNotShowExternalService={true} key={node.id} node={node} />
                     ))}
@@ -170,15 +180,19 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
     )
 }
 
-const Header: FC = () => (
+export interface SiteAdminWebhookPageHeaderProps {
+    middleColumnLabel?: string
+    timeLabel: string
+}
+
+export const SiteAdminWebhookPageHeader: FC<SiteAdminWebhookPageHeaderProps> = ({ middleColumnLabel, timeLabel }) => (
     <>
         {/* Render an empty element here to fill in available space for the first column*/}
         {/* element in the header row*/}
         <span className="d-md-block" />
         <H5 className="text-uppercase text-center text-nowrap">Status code</H5>
-        {/* Another empty element to fill in the empty middle of the grid */}
-        <span className="d-md-block" />
-        <H5 className="text-uppercase text-nowrap">Received at</H5>
+        <H5 className="text-uppercase text-nowrap">{middleColumnLabel}</H5>
+        <H5 className="text-uppercase text-nowrap">{timeLabel}</H5>
     </>
 )
 

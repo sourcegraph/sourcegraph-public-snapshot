@@ -27,7 +27,7 @@ func (j *policiesRepositoryMatcherJob) Config() []env.Config {
 	}
 }
 
-func (j *policiesRepositoryMatcherJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *policiesRepositoryMatcherJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	services, err := codeintel.InitServices(observationCtx)
 	if err != nil {
 		return nil, err

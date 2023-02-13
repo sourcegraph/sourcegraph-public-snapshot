@@ -18,6 +18,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
+const Unlimited = 0
+
 type Runner struct {
 	source      CodeHostSource
 	destination CodeHostDestination
@@ -68,7 +70,54 @@ func (r *Runner) addSSHKey(ctx context.Context) (func(), error) {
 	}, nil
 }
 
-func (r *Runner) Run(ctx context.Context, concurrency int) error {
+func (r *Runner) List(ctx context.Context, limit int) error {
+	out := output.NewOutput(os.Stdout, output.OutputOpts{})
+
+	// Load existing repositories.
+	srcRepos, err := r.store.Load()
+	if err != nil {
+		r.logger.Error("failed to open state database", log.Error(err))
+		return err
+	}
+	loadedFromDB := true
+
+	// If we're starting fresh, really fetch them.
+	if len(srcRepos) == 0 {
+		loadedFromDB = false
+		r.logger.Info("No existing state found, creating ...")
+		out.WriteLine(output.Line(output.EmojiHourglass, output.StyleBold, "Listing repos"))
+
+		var repos []*store.Repo
+		repoIter := r.source.Iterator()
+		for !repoIter.Done() && repoIter.Err() == nil {
+			repos = append(repos, repoIter.Next(ctx)...)
+			if limit != Unlimited && len(repos) >= limit {
+				break
+			}
+		}
+
+		if repoIter.Err() != nil {
+			r.logger.Error("failed to list repositories from source", log.Error(err))
+			return err
+		}
+		srcRepos = repos
+		if err := r.store.Insert(repos); err != nil {
+			r.logger.Error("failed to insert repositories from source", log.Error(err))
+			return err
+		}
+	}
+	block := out.Block(output.Line(output.EmojiInfo, output.StyleBold, fmt.Sprintf("List of repos (db: %v limit: %d total: %d)", loadedFromDB, limit, len(srcRepos))))
+	if limit != 0 && limit < len(srcRepos) {
+		srcRepos = srcRepos[:limit]
+	}
+	for _, r := range srcRepos {
+		block.Writef("Name: %s Created: %v Pushed: %v GitURL: %s ToGitURL: %s Failed: %s", r.Name, r.Created, r.Pushed, r.GitURL, r.ToGitURL, r.Failed)
+	}
+	block.Close()
+	return nil
+}
+
+func (r *Runner) Copy(ctx context.Context, concurrency int) error {
 	out := output.NewOutput(os.Stdout, output.OutputOpts{})
 
 	out.WriteLine(output.Line(output.EmojiInfo, output.StyleGrey, "Adding codehost ssh key"))
@@ -121,38 +170,40 @@ func (r *Runner) Run(ctx context.Context, concurrency int) error {
 			r.logger.Error("failed to insert repositories from source", log.Error(err))
 		}
 
-		for _, repo := range repos {
-			currentRepo := repo
+		for _, rr := range repos {
+			repo := rr
 			g.Go(func() error {
 				// Create the repo on destination.
-				if !currentRepo.Created {
-					toGitURL, cErr := r.destination.CreateRepo(ctx, currentRepo.Name)
-					if cErr != nil {
-						currentRepo.Failed = cErr.Error()
-						r.logger.Error("failed to create repo", logRepo(currentRepo, log.Error(cErr))...)
+				if !repo.Created {
+					toGitURL, err := r.destination.CreateRepo(ctx, repo.Name)
+					if err != nil {
+						repo.Failed = err.Error()
+						r.logger.Error("failed to create repo", logRepo(repo, log.Error(err))...)
 					} else {
-						currentRepo.ToGitURL = toGitURL.String()
-						currentRepo.Created = true
+						repo.ToGitURL = toGitURL.String()
+						repo.Created = true
+						// If we resumed and this repo previously failed, we need to clear the failed status as it succeeded now
+						repo.Failed = ""
 					}
-					if cErr = r.store.SaveRepo(currentRepo); cErr != nil {
-						r.logger.Error("failed to save repo", logRepo(currentRepo, log.Error(cErr))...)
-						return cErr
+					if err = r.store.SaveRepo(repo); err != nil {
+						r.logger.Error("failed to save repo", logRepo(repo, log.Error(err))...)
+						return err
 					}
 				}
 
 				// Push the repo on destination.
-				if !currentRepo.Pushed && currentRepo.Created {
-					cErr := pushRepo(ctx, currentRepo, r.source.GitOpts(), r.destination.GitOpts())
-					// state might be out of date so ignore existing repos
-					if cErr != nil && !strings.Contains(cErr.Error(), "has already been taken") {
-						currentRepo.Failed = cErr.Error()
-						r.logger.Error("failed to push repo", logRepo(currentRepo, log.Error(cErr))...)
+				if !repo.Pushed && repo.Created {
+					err := pushRepo(ctx, repo, r.source.GitOpts(), r.destination.GitOpts())
+					if err != nil {
+						repo.Failed = err.Error()
+						r.logger.Error("failed to push repo", logRepo(repo, log.Error(err))...)
+						println()
 					} else {
-						currentRepo.Pushed = true
+						repo.Pushed = true
 					}
-					if cErr = r.store.SaveRepo(currentRepo); cErr != nil {
-						r.logger.Error("failed to save repo", logRepo(currentRepo, log.Error(cErr))...)
-						return cErr
+					if err = r.store.SaveRepo(repo); err != nil {
+						r.logger.Error("failed to save repo", logRepo(repo, log.Error(err))...)
+						return err
 					}
 				}
 				atomic.AddInt64(&done, 1)
@@ -162,6 +213,11 @@ func (r *Runner) Run(ctx context.Context, concurrency int) error {
 			})
 		}
 	}
+
+	if repoIter.Err() != nil {
+		return repoIter.Err()
+	}
+
 	errs := g.Wait()
 	for _, e := range errs {
 		if e != nil {
@@ -172,6 +228,11 @@ func (r *Runner) Run(ctx context.Context, concurrency int) error {
 }
 
 func pushRepo(ctx context.Context, repo *store.Repo, srcOpts []GitOpt, destOpts []GitOpt) error {
+	// Handle the testing case
+	if strings.HasPrefix(repo.ToGitURL, "https://dummy.local") {
+		return nil
+	}
+
 	tmpDir, err := os.MkdirTemp(os.TempDir(), fmt.Sprintf("repo__%s", repo.Name))
 	if err != nil {
 		return err
@@ -180,7 +241,9 @@ func pushRepo(ctx context.Context, repo *store.Repo, srcOpts []GitOpt, destOpts 
 		_ = os.RemoveAll(tmpDir)
 	}()
 
-	cmd := run.Bash(ctx, "git clone", repo.GitURL).Dir(tmpDir)
+	// we add the repo name so that we ensure we cd to the right repo directory
+	// if we don't do this, there is no guarantee that the repo name and the git url are the same
+	cmd := run.Bash(ctx, "git clone --bare", repo.GitURL, repo.Name).Dir(tmpDir)
 	for _, opt := range srcOpts {
 		cmd = opt(cmd)
 	}
@@ -189,7 +252,7 @@ func pushRepo(ctx context.Context, repo *store.Repo, srcOpts []GitOpt, destOpts 
 		return err
 	}
 	repoDir := filepath.Join(tmpDir, repo.Name)
-	cmd = run.Bash(ctx, "git remote add destination", repo.ToGitURL).Dir(repoDir)
+	cmd = run.Bash(ctx, "git remote set-url origin", repo.ToGitURL).Dir(repoDir)
 	for _, opt := range destOpts {
 		cmd = opt(cmd)
 	}
@@ -203,17 +266,20 @@ func pushRepo(ctx context.Context, repo *store.Repo, srcOpts []GitOpt, destOpts 
 func gitPushWithRetry(ctx context.Context, dir string, retry int, destOpts ...GitOpt) error {
 	var err error
 	for i := 0; i < retry; i++ {
-		cmd := run.Bash(ctx, "git push destination").Dir(dir)
+		// --force, with mirror we want the remote to look exactly as we have it
+		cmd := run.Bash(ctx, "git push --mirror --force origin").Dir(dir)
 		for _, opt := range destOpts {
 			cmd = opt(cmd)
 		}
 		err = cmd.Run().Wait()
 		if err != nil {
-			if strings.Contains(err.Error(), "timed out") {
+			errStr := err.Error()
+			if strings.Contains(errStr, "timed out") || strings.Contains(errStr, "502") {
 				continue
 			}
 			return err
 		}
+		break
 	}
 	return nil
 }

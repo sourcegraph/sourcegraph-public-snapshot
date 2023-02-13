@@ -1117,6 +1117,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Repo: 2},
 			},
 			{
+				name:   `repo contains file using deprecated syntax`,
+				query:  `repo:contains.file(go\.mod)`,
+				counts: counts{Repo: 2},
+			},
+			{
 				name:   `repo contains file but not content`,
 				query:  `repo:contains.path(go\.mod) -repo:contains.content(go-diff)`,
 				counts: counts{Repo: 1},
@@ -1219,6 +1224,16 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:   `commit results with repo filter`,
 				query:  `repo:contains.file(path:diff.pb.go) type:commit LSIF`,
 				counts: counts{Commit: 2},
+			},
+			{
+				name:   `repo contains file using deprecated syntax`,
+				query:  `repo:contains(file:go\.mod)`,
+				counts: counts{Repo: 2},
+			},
+			{
+				name:   `repo contains content using deprecated syntax`,
+				query:  `repo:contains(content:nextFileFirstLine)`,
+				counts: counts{Repo: 1},
 			},
 			{
 				name:   `predicate logic does not conflict with unrecognized patterns`,
@@ -1449,20 +1464,9 @@ func testSearchClient(t *testing.T, client searchClient) {
 // which are not replicated in the streaming API (statistics and suggestions).
 func testSearchOther(t *testing.T) {
 	t.Run("search statistics", func(t *testing.T) {
-		err := client.OverwriteSettings(client.AuthenticatedUserID(), `{"experimentalFeatures":{"searchStats": true}}`)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer func() {
-			err := client.OverwriteSettings(client.AuthenticatedUserID(), `{}`)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}()
-
 		var lastResult *gqltestutil.SearchStatsResult
 		// Retry because the configuration update endpoint is eventually consistent
-		err = gqltestutil.Retry(5*time.Second, func() error {
+		err := gqltestutil.Retry(5*time.Second, func() error {
 			// This is a substring that appears in the sgtest/go-diff repository.
 			// It is OK if it starts to appear in other repositories, the test just
 			// checks that it is found in at least 1 Go file.

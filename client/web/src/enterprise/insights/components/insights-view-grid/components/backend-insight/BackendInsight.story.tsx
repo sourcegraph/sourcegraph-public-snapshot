@@ -9,13 +9,7 @@ import { H2 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../../../components/WebStory'
 import { GetInsightViewResult, SeriesSortDirection, SeriesSortMode } from '../../../../../../graphql-operations'
-import {
-    SeriesChartContent,
-    SearchBasedInsight,
-    CaptureGroupInsight,
-    InsightExecutionType,
-    InsightType,
-} from '../../../../core'
+import { SeriesChartContent, SearchBasedInsight, CaptureGroupInsight, InsightType } from '../../../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend'
 import { InsightInProcessError } from '../../../../core/backend/utils/errors'
 
@@ -37,19 +31,20 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBasedInsight = {
     id: 'searchInsights.insight.mock_backend_insight_id',
     title: 'Backend Insight Mock',
     repositories: [],
+    repoQuery: '',
     series: [
         { id: 'series_001', query: '', name: 'A metric', stroke: 'var(--warning)' },
         { id: 'series_002', query: '', name: 'B metric', stroke: 'var(--warning)' },
     ],
     type: InsightType.SearchBased,
-    executionType: InsightExecutionType.Backend,
     step: { weeks: 2 },
     filters: {
         excludeRepoRegexp: '',
         includeRepoRegexp: '',
         context: '',
         seriesDisplayOptions: {
-            limit: '20',
+            numSamples: 12,
+            limit: 20,
             sortOptions: {
                 direction: SeriesSortDirection.DESC,
                 mode: SeriesSortMode.RESULT_COUNT,
@@ -58,13 +53,6 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBasedInsight = {
     },
     dashboardReferenceCount: 0,
     isFrozen: false,
-    seriesDisplayOptions: {
-        limit: 20,
-        sortOptions: {
-            direction: SeriesSortDirection.DESC,
-            mode: SeriesSortMode.RESULT_COUNT,
-        },
-    },
     dashboards: [],
 }
 
@@ -146,13 +134,10 @@ function generateSeries(chartContent: SeriesChartContent<BackendInsightDatum>, i
             dateTime: new Date(point.x).toUTCString(),
             value: point.value,
             __typename: 'InsightDataPoint',
+            diffQuery: 'type:diff',
         })),
         status: {
-            backfillQueuedAt: '2021-06-06T15:48:11Z',
-            completedJobs: 0,
-            pendingJobs: isFetchingHistoricalData ? 10 : 0,
-            failedJobs: 0,
-            isLoading: isFetchingHistoricalData,
+            isLoadingData: isFetchingHistoricalData,
             incompleteDatapoints: series.alerts
                 ? [{ __typename: 'TimeoutDatapointAlert', time: '2022-04-21T01:13:43Z' }]
                 : [],
@@ -178,6 +163,7 @@ const mockInsightAPIResponse = ({
                         filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
                         seriesDisplayOptions: {
                             limit: 20,
+                            numSamples: 12,
                             sortOptions: {
                                 direction: SeriesSortDirection.DESC,
                                 mode: SeriesSortMode.RESULT_COUNT,
@@ -199,6 +185,7 @@ const mockInsightAPIResponse = ({
                     filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
                     seriesDisplayOptions: {
                         limit: 20,
+                        numSamples: 12,
                         sortOptions: {
                             direction: SeriesSortDirection.DESC,
                             mode: SeriesSortMode.RESULT_COUNT,
@@ -256,7 +243,6 @@ const TestBackendInsight: React.FunctionComponent<React.PropsWithChildren<unknow
 
 const COMPONENT_MIGRATION_INSIGHT_CONFIGURATION: SearchBasedInsight = {
     type: InsightType.SearchBased,
-    executionType: InsightExecutionType.Backend,
     id: 'backend-mock',
     title: 'Backend Insight Mock',
     series: [
@@ -270,7 +256,8 @@ const COMPONENT_MIGRATION_INSIGHT_CONFIGURATION: SearchBasedInsight = {
         includeRepoRegexp: '',
         context: '',
         seriesDisplayOptions: {
-            limit: '20',
+            limit: 20,
+            numSamples: 12,
             sortOptions: {
                 direction: SeriesSortDirection.DESC,
                 mode: SeriesSortMode.RESULT_COUNT,
@@ -280,12 +267,12 @@ const COMPONENT_MIGRATION_INSIGHT_CONFIGURATION: SearchBasedInsight = {
     dashboardReferenceCount: 0,
     isFrozen: false,
     repositories: [],
+    repoQuery: '',
     dashboards: [],
 }
 
 const DATA_FETCHING_INSIGHT_CONFIGURATION: SearchBasedInsight = {
     type: InsightType.SearchBased,
-    executionType: InsightExecutionType.Backend,
     id: 'backend-mock',
     title: 'Backend Insight Mock',
     series: [
@@ -299,7 +286,8 @@ const DATA_FETCHING_INSIGHT_CONFIGURATION: SearchBasedInsight = {
         includeRepoRegexp: '',
         context: '',
         seriesDisplayOptions: {
-            limit: '20',
+            limit: 20,
+            numSamples: 12,
             sortOptions: {
                 direction: SeriesSortDirection.DESC,
                 mode: SeriesSortMode.RESULT_COUNT,
@@ -309,23 +297,25 @@ const DATA_FETCHING_INSIGHT_CONFIGURATION: SearchBasedInsight = {
     dashboardReferenceCount: 0,
     isFrozen: false,
     repositories: [],
+    repoQuery: '',
     dashboards: [],
 }
 
 const TERRAFORM_INSIGHT_CONFIGURATION: CaptureGroupInsight = {
     type: InsightType.CaptureGroup,
-    executionType: InsightExecutionType.Backend,
     id: 'backend-mock',
     title: 'Backend Insight Mock',
     step: { weeks: 2 },
     repositories: [],
+    repoQuery: '',
     query: '',
     filters: {
         excludeRepoRegexp: '',
         includeRepoRegexp: '',
         context: '',
         seriesDisplayOptions: {
-            limit: '20',
+            limit: 20,
+            numSamples: 12,
             sortOptions: {
                 direction: SeriesSortDirection.DESC,
                 mode: SeriesSortMode.RESULT_COUNT,
@@ -345,6 +335,7 @@ const BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK: MockedResponse<GetInsightViewRes
             filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
             seriesDisplayOptions: {
                 limit: 20,
+                numSamples: 12,
                 sortOptions: {
                     direction: SeriesSortDirection.DESC,
                     mode: SeriesSortMode.RESULT_COUNT,
@@ -367,66 +358,79 @@ const BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK: MockedResponse<GetInsightViewRes
                                         dateTime: '2022-04-26T00:03:19Z',
                                         value: 1311,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-04-21T01:13:43Z',
                                         value: 586,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-03-21T01:13:25Z',
                                         value: 586,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-02-21T00:00:00Z',
                                         value: 1212,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-01-21T00:00:00Z',
                                         value: 1164,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-12-21T00:00:00Z',
                                         value: 490,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-11-21T00:00:00Z',
                                         value: 393,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-10-21T00:00:00Z',
                                         value: 357,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-09-21T00:00:00Z',
                                         value: 348,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-08-21T00:00:00Z',
                                         value: 276,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-07-21T00:00:00Z',
                                         value: 213,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-06-21T00:00:00Z',
                                         value: 192,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-05-21T00:00:00Z',
                                         value: 81,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                 ],
                                 status: {
@@ -444,66 +448,79 @@ const BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK: MockedResponse<GetInsightViewRes
                                         dateTime: '2022-04-26T00:03:24Z',
                                         value: 538,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-04-21T01:13:44Z',
                                         value: 283,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-03-21T01:13:25Z',
                                         value: 283,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-02-21T00:00:00Z',
                                         value: 516,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-01-21T00:00:00Z',
                                         value: 513,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-12-21T00:00:00Z',
                                         value: 275,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-11-21T00:00:00Z',
                                         value: 267,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-10-21T00:00:00Z',
                                         value: 261,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-09-21T00:00:00Z',
                                         value: 252,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-08-21T00:00:00Z',
                                         value: 243,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-07-21T00:00:00Z',
                                         value: 216,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-06-21T00:00:00Z',
                                         value: 213,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-05-21T00:00:00Z',
                                         value: 213,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                 ],
                                 status: {
@@ -521,66 +538,79 @@ const BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK: MockedResponse<GetInsightViewRes
                                         dateTime: '2022-04-26T00:03:37Z',
                                         value: 468,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-04-21T01:13:44Z',
                                         value: 328,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-03-21T01:13:25Z',
                                         value: 328,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-02-21T00:00:00Z',
                                         value: 475,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-01-21T00:00:00Z',
                                         value: 477,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-12-21T00:00:00Z',
                                         value: 671,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-11-21T00:00:00Z',
                                         value: 660,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-10-21T00:00:00Z',
                                         value: 648,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-09-21T00:00:00Z',
                                         value: 642,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-08-21T00:00:00Z',
                                         value: 621,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-07-21T00:00:00Z',
                                         value: 606,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-06-21T00:00:00Z',
                                         value: 573,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-05-21T00:00:00Z',
                                         value: 564,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                 ],
                                 status: {
@@ -608,6 +638,7 @@ const BACKEND_INSIGHT_DATA_FETCHING_MOCK: MockedResponse<GetInsightViewResult> =
             filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
             seriesDisplayOptions: {
                 limit: 20,
+                numSamples: 12,
                 sortOptions: {
                     direction: SeriesSortDirection.DESC,
                     mode: SeriesSortMode.RESULT_COUNT,
@@ -630,66 +661,79 @@ const BACKEND_INSIGHT_DATA_FETCHING_MOCK: MockedResponse<GetInsightViewResult> =
                                         dateTime: '2022-04-26T00:02:30Z',
                                         value: 235,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-04-21T00:13:43Z',
                                         value: 239,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-03-21T00:13:20Z',
                                         value: 228,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-02-20T00:00:00Z',
                                         value: 232,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-01-20T00:00:00Z',
                                         value: 226,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-12-20T00:00:00Z',
                                         value: 217,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-11-20T00:00:00Z',
                                         value: 214,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-10-20T00:00:00Z',
                                         value: 212,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-09-20T00:00:00Z',
                                         value: 227,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-08-20T00:00:00Z',
                                         value: 218,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-07-20T00:00:00Z',
                                         value: 211,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-06-20T00:00:00Z',
                                         value: 213,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-05-20T00:00:00Z',
                                         value: 200,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                 ],
                                 status: {
@@ -707,66 +751,79 @@ const BACKEND_INSIGHT_DATA_FETCHING_MOCK: MockedResponse<GetInsightViewResult> =
                                         dateTime: '2022-04-26T00:02:31Z',
                                         value: 71,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-04-21T00:13:42Z',
                                         value: 71,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-03-21T00:13:20Z',
                                         value: 73,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-02-20T00:00:00Z',
                                         value: 73,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-01-20T00:00:00Z',
                                         value: 74,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-12-20T00:00:00Z',
                                         value: 73,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-11-20T00:00:00Z',
                                         value: 73,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-10-20T00:00:00Z',
                                         value: 75,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-09-20T00:00:00Z',
                                         value: 76,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-08-20T00:00:00Z',
                                         value: 79,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-07-20T00:00:00Z',
                                         value: 80,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-06-20T00:00:00Z',
                                         value: 80,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-05-20T00:00:00Z',
                                         value: 82,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                 ],
                                 status: {
@@ -784,66 +841,79 @@ const BACKEND_INSIGHT_DATA_FETCHING_MOCK: MockedResponse<GetInsightViewResult> =
                                         dateTime: '2022-04-26T00:02:53Z',
                                         value: 227,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-04-21T00:13:48Z',
                                         value: 219,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-03-21T00:13:21Z',
                                         value: 200,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-02-20T00:00:00Z',
                                         value: 156,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-01-20T00:00:00Z',
                                         value: 109,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-12-20T00:00:00Z',
                                         value: 102,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-11-20T00:00:00Z',
                                         value: 85,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-10-20T00:00:00Z',
                                         value: 62,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-09-20T00:00:00Z',
                                         value: 49,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-08-20T00:00:00Z',
                                         value: 24,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-07-20T00:00:00Z',
                                         value: 11,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-06-20T00:00:00Z',
                                         value: 5,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-05-20T00:00:00Z',
                                         value: 5,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                 ],
                                 status: {
@@ -871,6 +941,7 @@ const BACKEND_INSIGHT_TERRAFORM_AWS_VERSIONS_MOCK: MockedResponse<GetInsightView
             filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
             seriesDisplayOptions: {
                 limit: 20,
+                numSamples: 12,
                 sortOptions: {
                     direction: SeriesSortDirection.DESC,
                     mode: SeriesSortMode.RESULT_COUNT,
@@ -893,66 +964,79 @@ const BACKEND_INSIGHT_TERRAFORM_AWS_VERSIONS_MOCK: MockedResponse<GetInsightView
                                         dateTime: '2022-04-26T00:03:02Z',
                                         value: 2,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-04-21T01:13:41Z',
                                         value: 2,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-03-21T01:13:19Z',
                                         value: 2,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-02-21T00:00:00Z',
                                         value: 2,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-01-21T00:00:00Z',
                                         value: 2,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-12-21T00:00:00Z',
                                         value: 2,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-11-21T00:00:00Z',
                                         value: 2,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-10-21T00:00:00Z',
                                         value: 2,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-09-21T00:00:00Z',
                                         value: 2,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-08-21T00:00:00Z',
                                         value: 2,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-07-21T00:00:00Z',
                                         value: 2,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-06-21T00:00:00Z',
                                         value: 2,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-05-21T00:00:00Z',
                                         value: 2,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                 ],
                                 status: {
@@ -970,66 +1054,79 @@ const BACKEND_INSIGHT_TERRAFORM_AWS_VERSIONS_MOCK: MockedResponse<GetInsightView
                                         dateTime: '2022-04-26T00:03:05Z',
                                         value: 12,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-04-21T01:13:41Z',
                                         value: 12,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-03-21T01:13:20Z',
                                         value: 12,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-02-21T00:00:00Z',
                                         value: 12,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-01-21T00:00:00Z',
                                         value: 12,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-12-21T00:00:00Z',
                                         value: 12,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-11-21T00:00:00Z',
                                         value: 12,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-10-21T00:00:00Z',
                                         value: 2,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-09-21T00:00:00Z',
                                         value: 2,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-08-21T00:00:00Z',
                                         value: 2,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-07-21T00:00:00Z',
                                         value: 2,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-06-21T00:00:00Z',
                                         value: 2,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-05-21T00:00:00Z',
                                         value: 0,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                 ],
                                 status: {
@@ -1047,66 +1144,79 @@ const BACKEND_INSIGHT_TERRAFORM_AWS_VERSIONS_MOCK: MockedResponse<GetInsightView
                                         dateTime: '2022-04-26T00:02:49Z',
                                         value: 4,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-04-21T01:13:41Z',
                                         value: 4,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-03-21T01:13:20Z',
                                         value: 4,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-02-21T00:00:00Z',
                                         value: 4,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-01-21T00:00:00Z',
                                         value: 4,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-12-21T00:00:00Z',
                                         value: 4,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-11-21T00:00:00Z',
                                         value: 4,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-10-21T00:00:00Z',
                                         value: 4,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-09-21T00:00:00Z',
                                         value: 4,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-08-21T00:00:00Z',
                                         value: 4,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-07-21T00:00:00Z',
                                         value: 4,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-06-21T00:00:00Z',
                                         value: 4,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-05-21T00:00:00Z',
                                         value: 4,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                 ],
                                 status: {
@@ -1124,66 +1234,79 @@ const BACKEND_INSIGHT_TERRAFORM_AWS_VERSIONS_MOCK: MockedResponse<GetInsightView
                                         dateTime: '2022-04-26T00:02:59Z',
                                         value: 2,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-04-21T01:13:43Z',
                                         value: 2,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-03-21T01:13:20Z',
                                         value: 2,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-02-21T00:00:00Z',
                                         value: 2,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2022-01-21T00:00:00Z',
                                         value: 2,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-12-21T00:00:00Z',
                                         value: 2,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-11-21T00:00:00Z',
                                         value: 2,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-10-21T00:00:00Z',
                                         value: 2,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-09-21T00:00:00Z',
                                         value: 0,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-08-21T00:00:00Z',
                                         value: 0,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-07-21T00:00:00Z',
                                         value: 0,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-06-21T00:00:00Z',
                                         value: 0,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                     {
                                         dateTime: '2021-05-21T00:00:00Z',
                                         value: 0,
                                         __typename: 'InsightDataPoint',
+                                        diffQuery: 'type:diff',
                                     },
                                 ],
                                 status: {

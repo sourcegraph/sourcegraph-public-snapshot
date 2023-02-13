@@ -8,7 +8,10 @@ Ensure that the following tools are available on your path:
 
 - [`src`](https://github.com/sourcegraph/src-cli)
 - [`lsif-go`](https://github.com/sourcegraph/lsif-go)
-- [`gsutil`](https://cloud.google.com/storage/docs/gsutil_install) (and authenticated to the `sourcegraph-dev` project)
+- [`scip-go`](https://github.com/sourcegraph/scip-go)
+- [`scip-typescript`](https://github.com/sourcegraph/scip-typescript)
+
+You should have enviornment variables that authenticate you to the `sourcegraph-dev` GCS project if you plan to upload or download index files (as we do in CI).
 
 Set:
 
@@ -26,20 +29,24 @@ SOURCEGRAPH_SUDO_TOKEN=<YOUR SOURCEGRAPH API ACCESS TOKEN>
     "sourcegraph-testing/etcd",
     "sourcegraph-testing/tidb",
     "sourcegraph-testing/titan",
-    "sourcegraph-testing/zap"
+    "sourcegraph-testing/zap",
+    "sourcegraph-testing/nacelle",
+    "sourcegraph-testing/nacelle-config",
+    "sourcegraph-testing/nacelle-service",
+    "sourcegraph/code-intel-extensions"
   ],
 ```
 
 2. Download the test indexes by running the following command:
 
 ```
-./scripts/download.sh
+go run ./cmd/download
 ```
 
 Alternatively, generate them by running the following command (this takes much longer):
 
 ```
-./scripts/clone-and-index.sh
+go run ./cmd/clone-and-index
 ```
 
 If there is previous upload or index state on the target instance, they can be cleared by running the following command:
@@ -67,13 +74,13 @@ If there is a change to an indexer that needs to be tested, the indexes can be r
 Generate indexes by running the following command:
 
 ```
-./scripts/clone-and-index.sh
+go run ./cmd/clone-and-index
 ```
 
-Upload the generated indexes by running the following command:
+Upload the generated indexes to GCS by running the following command:
 
 ```
-./scripts/upload.sh
+go run ./cmd/upload-gcs
 ```
 
 Or if you just want to test an indexer change locally, you can:
@@ -82,4 +89,4 @@ Or if you just want to test an indexer change locally, you can:
 rm -rf testdata/indexes/
 ```
 
-Then rerun the testing steps described above (starting at `clone-and-index.sh`)
+Then run the `clone-and-index` step described above.

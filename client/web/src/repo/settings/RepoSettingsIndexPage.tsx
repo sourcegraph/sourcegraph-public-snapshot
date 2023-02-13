@@ -1,27 +1,37 @@
-import * as React from 'react'
+import React from 'react'
 
 import { mdiCheckCircle } from '@mdi/js'
 import classNames from 'classnames'
 import prettyBytes from 'pretty-bytes'
-import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { map, switchMap, tap } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { createAggregateError, pluralize } from '@sourcegraph/common'
 import { gql, useMutation } from '@sourcegraph/http-client'
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { Button, Container, PageHeader, LoadingSpinner, Link, Alert, Icon, Code, H3 } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Container,
+    PageHeader,
+    LoadingSpinner,
+    Link,
+    Alert,
+    Icon,
+    Code,
+    H3,
+    ErrorAlert,
+    LinkOrSpan,
+} from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
-import { Timestamp } from '../../components/time/Timestamp'
 import {
     reindexResult,
     reindexVariables,
     RepositoryTextSearchIndexRepository,
     Scalars,
     SettingsAreaRepositoryFields,
+    RepositoryTextSearchIndexResult,
 } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { prettyBytesBigint } from '../../util/prettyBytesBigint'
@@ -35,7 +45,7 @@ type RepositoryTextSearchIndex = RepositoryTextSearchIndexRepository['textSearch
  * Fetches a repository's text search index information.
  */
 function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<RepositoryTextSearchIndex> {
-    return queryGraphQL(
+    return queryGraphQL<RepositoryTextSearchIndexResult>(
         gql`
             query RepositoryTextSearchIndex($id: ID!) {
                 node(id: $id) {
@@ -144,7 +154,7 @@ const Reindex: React.FunctionComponent<React.PropsWithChildren<{ id: Scalars['ID
             }
             details={
                 <>
-                    {error && <ErrorAlert className="mt-4 mb-0" error={error} icon={false} />}
+                    {error && <ErrorAlert className="mt-4 mb-0" error={error} />}
                     {loading && (
                         <Alert className="mt-4 mb-0" variant="primary">
                             <LoadingSpinner /> Triggering reindex ...
@@ -210,7 +220,7 @@ const TextSearchIndexedReference: React.FunctionComponent<
     )
 }
 
-interface Props extends RouteComponentProps<{}> {
+interface Props {
     repo: SettingsAreaRepositoryFields
 }
 

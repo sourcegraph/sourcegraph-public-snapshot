@@ -6,6 +6,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -180,7 +181,7 @@ func (s *store) SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	trace.Log(log.Int("numConfigurationPolicies", len(configurationPolicies)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numConfigurationPolicies", len(configurationPolicies)))
 
 	return configurationPolicies, nil
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -27,10 +28,10 @@ func setupMockGSClient(t *testing.T, wantRev api.CommitID, returnErr error, hunk
 	gsClient := gitserver.NewMockClient()
 	gsClient.GetCommitFunc.SetDefaultHook(
 		func(_ context.Context,
+			checker authz.SubRepoPermissionChecker,
 			repoName api.RepoName,
 			commit api.CommitID,
 			opts gitserver.ResolveRevisionOptions,
-			checker authz.SubRepoPermissionChecker,
 		) (*gitdomain.Commit, error) {
 			return &gitdomain.Commit{
 				Parents: []api.CommitID{"xxx", "yyy"},
@@ -96,13 +97,19 @@ func TestStreamBlame(t *testing.T) {
 	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
 		switch rev {
 		case "1234":
-			return api.CommitID("efgh"), nil
+			return "efgh", nil
 		case "":
-			return api.CommitID("abcd"), nil
+			return "abcd", nil
 		default:
-			return api.CommitID(""), &gitdomain.RevisionNotFoundError{Repo: repo.Name}
+			return "", &gitdomain.RevisionNotFoundError{Repo: repo.Name}
 		}
 	}
+	usersStore := database.NewMockUserStore()
+	errNotFound := &errcode.Mock{
+		IsNotFound: true,
+	}
+	usersStore.GetByVerifiedEmailFunc.SetDefaultReturn(nil, errNotFound)
+	db.UsersFunc.SetDefaultReturn(usersStore)
 
 	t.Cleanup(func() {
 		backend.Mocks.Repos = backend.MockRepos{}

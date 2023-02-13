@@ -1,17 +1,15 @@
 /* eslint jsx-a11y/no-static-element-interactions: warn, jsx-a11y/tabindex-no-positive: warn, jsx-a11y/no-noninteractive-tabindex: warn */
 import * as React from 'react'
 
-import * as H from 'history'
 import { isEqual } from 'lodash'
+import { Location, NavigateFunction } from 'react-router-dom-v5-compat'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, startWith } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
 import { formatSearchParameters } from '@sourcegraph/common'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepo } from '@sourcegraph/shared/src/util/url'
 
 import { dirname } from '../util/path'
@@ -21,8 +19,9 @@ import { getDomElement, scrollIntoView } from './util'
 
 import styles from './Tree.module.scss'
 
-interface Props extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps, TelemetryProps {
-    history: H.History
+interface Props extends AbsoluteRepo, TelemetryProps {
+    navigate: NavigateFunction
+    location: Location
     scrollRootSelector?: string
 
     /** The tree entry that is currently active, or '' if none (which means the root). */
@@ -33,7 +32,6 @@ interface Props extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps, Tel
     /** The localStorage key that stores the current size of the (resizable) RepoRevisionSidebar. */
     sizeKey: string
     repoID: Scalars['ID']
-    enableMergedFileSymbolSidebar: boolean
 }
 
 interface State {
@@ -207,7 +205,7 @@ export class Tree extends React.PureComponent<Props, State> {
                 }
                 this.selectNode(this.state.selectedNode)
                 this.setActiveNode(this.state.selectedNode)
-                this.props.history.push(this.state.selectedNode.url)
+                this.props.navigate(this.state.selectedNode.url)
             }
         },
     }
@@ -256,7 +254,7 @@ export class Tree extends React.PureComponent<Props, State> {
                 .pipe(startWith(this.props), distinctUntilChanged(isEqual))
                 .subscribe((props: Props) => {
                     const newParentPath = props.activePathIsDir ? props.activePath : dirname(props.activePath)
-                    const queryParameters = new URLSearchParams(this.props.history.location.search)
+                    const queryParameters = new URLSearchParams(this.props.location.search)
                     const queryParametersHasSubtree = queryParameters.get('subtree') === 'true'
 
                     // If we're updating due to a file/directory suggestion or code intel action,
@@ -285,10 +283,15 @@ export class Tree extends React.PureComponent<Props, State> {
                     // Strip the ?subtree query param. Handle both when going from ancestor -> child and child -> ancestor.
                     queryParameters.delete('subtree')
                     if (queryParametersHasSubtree && !queryParameters.has('tab')) {
-                        this.props.history.replace({
-                            search: formatSearchParameters(queryParameters),
-                            hash: this.props.history.location.hash,
-                        })
+                        this.props.navigate(
+                            {
+                                search: formatSearchParameters(queryParameters),
+                                hash: this.props.location.hash,
+                            },
+                            {
+                                replace: true,
+                            }
+                        )
                     }
                 })
         )
@@ -342,10 +345,7 @@ export class Tree extends React.PureComponent<Props, State> {
                     setChildNodes={this.setChildNode}
                     setActiveNode={this.setActiveNode}
                     sizeKey={this.props.sizeKey}
-                    extensionsController={this.props.extensionsController}
-                    isLightTheme={this.props.isLightTheme}
                     telemetryService={this.props.telemetryService}
-                    enableMergedFileSymbolSidebar={this.props.enableMergedFileSymbolSidebar}
                 />
             </div>
         )

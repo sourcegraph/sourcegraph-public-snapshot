@@ -21,8 +21,8 @@ import { createRoot, Root } from 'react-dom/client'
 import { Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged, startWith } from 'rxjs/operators'
 
+import { QueryInputToggle } from '@sourcegraph/branded'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { QueryInputToggle } from '@sourcegraph/search-ui'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { Button, Icon, Input, Label, Text, Tooltip } from '@sourcegraph/wildcard'
@@ -30,7 +30,7 @@ import { Button, Icon, Input, Label, Text, Tooltip } from '@sourcegraph/wildcard
 import { Keybindings } from '../../../components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { createElement } from '../../../util/dom'
 
-import { Container } from './react-interop'
+import { CodeMirrorContainer } from './react-interop'
 
 import { blobPropsFacet } from '.'
 
@@ -152,7 +152,7 @@ class SearchPanel implements Panel {
         }
 
         this.root.render(
-            <Container
+            <CodeMirrorContainer
                 history={history}
                 onMount={() => {
                     this.input?.focus()
@@ -233,7 +233,7 @@ class SearchPanel implements Panel {
                     </Label>
                     {searchKeybindingTooltip}
                 </div>
-            </Container>
+            </CodeMirrorContainer>
         )
     }
 

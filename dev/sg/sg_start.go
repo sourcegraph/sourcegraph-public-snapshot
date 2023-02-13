@@ -13,11 +13,12 @@ import (
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/cliutil"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
+	"github.com/sourcegraph/sourcegraph/lib/cliutil/exit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -99,7 +100,7 @@ sg start -describe oss
 				Destination: &critStartServices,
 			},
 		},
-		BashComplete: cliutil.CompleteOptions(func() (options []string) {
+		BashComplete: completions.CompleteOptions(func() (options []string) {
 			config, _ := getConfig()
 			if config == nil {
 				return
@@ -198,14 +199,14 @@ func startExec(ctx *cli.Context) error {
 		repoRoot, err := root.RepositoryRoot()
 		if err != nil {
 			std.Out.WriteLine(output.Styledf(output.StyleWarning, "Failed to determine repository root location: %s", err))
-			return cliutil.NewEmptyExitErr(1)
+			return exit.NewEmptyExitErr(1)
 		}
 
 		devPrivatePath := filepath.Join(repoRoot, "..", "dev-private")
 		exists, err := pathExists(devPrivatePath)
 		if err != nil {
 			std.Out.WriteLine(output.Styledf(output.StyleWarning, "Failed to check whether dev-private repository exists: %s", err))
-			return cliutil.NewEmptyExitErr(1)
+			return exit.NewEmptyExitErr(1)
 		}
 		if !exists {
 			std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: dev-private repository not found!"))
@@ -223,7 +224,7 @@ func startExec(ctx *cli.Context) error {
 `, set.Name))
 			std.Out.Write("")
 
-			return cliutil.NewEmptyExitErr(1)
+			return exit.NewEmptyExitErr(1)
 		}
 
 		// dev-private exists, let's see if there are any changes
@@ -252,11 +253,11 @@ func shouldUpdateDevPrivate(ctx context.Context, path, branch string) (bool, err
 		return false, err
 	}
 	// Now we check if there are any changes. If the output is empty, we're not missing out on anything.
-	output, err := sgrun.Bash(ctx, fmt.Sprintf("git diff --shortstat origin/%s", branch)).Dir(path).Run().String()
+	outputStr, err := sgrun.Bash(ctx, fmt.Sprintf("git diff --shortstat origin/%s", branch)).Dir(path).Run().String()
 	if err != nil {
 		return false, err
 	}
-	return len(output) > 0, err
+	return len(outputStr) > 0, err
 
 }
 

@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { mdiChevronDoubleDown, mdiChevronDoubleUp, mdiMenuDown, mdiMenuUp, mdiPlus, mdiPuzzleOutline } from '@mdi/js'
+import { mdiChevronDoubleDown, mdiChevronDoubleUp, mdiMenuDown, mdiMenuUp, mdiPuzzleOutline } from '@mdi/js'
 import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
-import * as H from 'history'
 import { head, last } from 'lodash'
+import { useLocation } from 'react-router-dom-v5-compat'
 import { BehaviorSubject, from, of } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { focusable, FocusableElement } from 'tabbable'
@@ -19,7 +19,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { isSettingsValid } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, ButtonLink, Icon, Link, LoadingSpinner, Tooltip, useObservable } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Icon, LoadingSpinner, Tooltip, useObservable } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
@@ -180,7 +180,6 @@ export function useWebActionItems(): Pick<ActionItemsBarProps, 'useActionItemsBa
 export interface ActionItemsBarProps extends ExtensionsControllerProps, TelemetryProps, PlatformContextProps {
     repo?: RepositoryFields
     useActionItemsBar: () => { isOpen: boolean | undefined; barReference: React.RefCallback<HTMLElement> }
-    location: H.Location
     source?: 'compare' | 'commit' | 'blob'
 }
 
@@ -193,7 +192,9 @@ const actionItemClassName = classNames(
  * Renders extensions (both migrated to the core workflow and legacy) actions items in the sidebar.
  */
 export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionItemsBar(props) {
-    const { extensionsController, location, source } = props
+    const { extensionsController, source } = props
+
+    const location = useLocation()
     const { isOpen, barReference } = props.useActionItemsBar()
     const { repoName, rawRevision, filePath, commitRange, position, range } = parseBrowserRepoURL(
         location.pathname + location.search + location.hash
@@ -219,13 +220,13 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
         (settings?.['perforce.codeHostToSwarmMap'] as { [codeHost: string]: string } | undefined) || {}
 
     if (!isOpen) {
-        return <div className={styles.barCollapsed} />
+        return <div className={classNames(styles.bar, styles.barCollapsed)} />
     }
 
     return (
         <div className={classNames('p-0 mr-2 position-relative d-flex flex-column', styles.bar)} ref={barReference}>
             {/* To be clear to users that this isn't an error reported by extensions about e.g. the code they're viewing. */}
-            <ErrorBoundary location={props.location} render={error => <span>Component error: {error.message}</span>}>
+            <ErrorBoundary location={location} render={error => <span>Component error: {error.message}</span>}>
                 <ActionItemsDivider />
                 {canScrollNegative && (
                     <Button
@@ -258,11 +259,13 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
 
                 {source === 'blob' && (
                     <>
-                        <ToggleBlameAction />
+                        <ToggleBlameAction actionType="nav" source="actionItemsBar" />
                         {window.context.isAuthenticatedUser && (
                             <OpenInEditorActionItem
                                 platformContext={props.platformContext}
                                 externalServiceType={props.repo?.externalRepository?.serviceType}
+                                actionType="nav"
+                                source="actionItemsBar"
                             />
                         )}
                     </>
@@ -274,7 +277,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                         returnInactiveMenuItems={true}
                         extensionsController={extensionsController}
                         empty={null}
-                        location={props.location}
+                        location={location}
                         platformContext={props.platformContext}
                         telemetryService={props.telemetryService}
                     >
@@ -303,6 +306,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                                             <ActionItem
                                                 {...props}
                                                 {...item}
+                                                location={location}
                                                 extensionsController={extensionsController}
                                                 className={className}
                                                 dataContent={dataContent}
@@ -334,21 +338,6 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                     </Button>
                 )}
                 {haveExtensionsLoaded && <ActionItemsDivider />}
-                <div className="list-unstyled m-0">
-                    {extensionsController !== null && window.context.enableLegacyExtensions ? (
-                        <div className={styles.listItem}>
-                            <Tooltip content="Add extensions">
-                                <Link
-                                    to="/extensions"
-                                    className={classNames(styles.listItem, styles.auxIcon, actionItemClassName)}
-                                    aria-label="Add"
-                                >
-                                    <Icon aria-hidden={true} svgPath={mdiPlus} />
-                                </Link>
-                            </Tooltip>
-                        </div>
-                    ) : null}
-                </div>
             </ErrorBoundary>
         </div>
     )
@@ -400,11 +389,7 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
                             {!haveExtensionsLoaded ? (
                                 <LoadingSpinner />
                             ) : isOpen ? (
-                                <Icon
-                                    data-testid="action-items-toggle-open"
-                                    aria-hidden={true}
-                                    svgPath={mdiChevronDoubleUp}
-                                />
+                                <Icon aria-hidden={true} svgPath={mdiChevronDoubleUp} />
                             ) : (
                                 <Icon
                                     aria-hidden={true}

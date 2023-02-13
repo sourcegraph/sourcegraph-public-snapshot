@@ -1,7 +1,6 @@
 import { HTMLAttributes, FC } from 'react'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { useDeepMemo, BarChart, LegendList, LegendItem, useDebounce } from '@sourcegraph/wildcard'
+import { useDeepMemo, BarChart, LegendList, LegendItem, useDebounce, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { GroupByField } from '../../../../../../../graphql-operations'
 import {
@@ -11,7 +10,6 @@ import {
     LivePreviewChart,
     LivePreviewBlurBackdrop,
     LivePreviewBanner,
-    getSanitizedRepositories,
     COMPUTE_MOCK_CHART,
 } from '../../../../../components'
 import { CategoricalChartContent, SearchBasedInsightSeries } from '../../../../../core'
@@ -26,7 +24,7 @@ interface LanguageUsageDatum {
 
 interface ComputeLivePreviewProps extends HTMLAttributes<HTMLElement> {
     disabled: boolean
-    repositories: string
+    repositories: string[]
     className?: string
     groupBy: GroupByField
     series: SearchBasedInsightSeries[]
@@ -37,8 +35,9 @@ export const ComputeLivePreview: FC<ComputeLivePreviewProps> = props => {
 
     const settings = useDebounce(
         useDeepMemo({
+            disabled,
             groupBy,
-            repositories: getSanitizedRepositories(repositories),
+            repositories,
             series: series.map(srs => ({
                 query: srs.query,
                 label: srs.name,
@@ -49,7 +48,10 @@ export const ComputeLivePreview: FC<ComputeLivePreviewProps> = props => {
     )
 
     const { state, refetch } = useLivePreviewComputeInsight({
-        skip: disabled,
+        // If disabled false then rely on debounced settings.disabled
+        // because we don't want to run live preview before debounced will be updated
+        // if disabled true then disable live preview immediately
+        skip: disabled || settings.disabled,
         ...settings,
     })
 
@@ -61,7 +63,7 @@ export const ComputeLivePreview: FC<ComputeLivePreviewProps> = props => {
                 {state.status === LivePreviewStatus.Loading ? (
                     <LivePreviewLoading>Loading code insight</LivePreviewLoading>
                 ) : state.status === LivePreviewStatus.Error ? (
-                    <ErrorAlert error={state.error} />
+                    <ErrorAlert error={state.error} className="m-0" />
                 ) : (
                     <LivePreviewChart>
                         {parent =>

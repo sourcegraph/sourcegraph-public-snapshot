@@ -1,18 +1,25 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
 import * as jsonc from 'jsonc-parser'
-import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { logger } from '@sourcegraph/common'
 import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner, Link, Alert, Code, Text, PageHeader, Container } from '@sourcegraph/wildcard'
+import {
+    Button,
+    LoadingSpinner,
+    Link,
+    Alert,
+    Code,
+    Text,
+    PageHeader,
+    Container,
+    ErrorAlert,
+} from '@sourcegraph/wildcard'
 
 import siteSchemaJSON from '../../../../schema/site.schema.json'
 import { PageTitle } from '../components/PageTitle'
@@ -202,9 +209,7 @@ const quickConfigureActions: {
     },
 ]
 
-interface Props extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
-    history: H.History
-}
+interface Props extends ThemeProps, TelemetryProps {}
 
 interface State {
     site?: SiteResult['site']
@@ -403,7 +408,6 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                                 isLightTheme={this.props.isLightTheme}
                                 onSave={this.onSave}
                                 actions={quickConfigureActions}
-                                history={this.props.history}
                                 telemetryService={this.props.telemetryService}
                                 explanation={
                                     <Text className="form-text text-muted">

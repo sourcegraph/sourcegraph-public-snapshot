@@ -2,16 +2,14 @@ import React, { useState, useMemo } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
-import { entries, escapeRegExp, flatMap, flow, groupBy, isEqual } from 'lodash/fp'
+import { escapeRegExp, isEqual, groupBy } from 'lodash'
 import { NavLink, useLocation } from 'react-router-dom'
 
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { logger } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import { SymbolKind as SymbolKindEnum } from '@sourcegraph/shared/src/schema'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Alert, useDebounce } from '@sourcegraph/wildcard'
+import { Alert, useDebounce, ErrorMessage } from '@sourcegraph/wildcard'
 
 import { useShowMorePagination } from '../components/FilteredConnection/hooks/useShowMorePagination'
 import {
@@ -22,7 +20,13 @@ import {
     SummaryContainer,
     ShowMoreButton,
 } from '../components/FilteredConnection/ui'
-import { Scalars, SymbolNodeFields, SymbolsResult, SymbolsVariables } from '../graphql-operations'
+import {
+    Scalars,
+    SymbolNodeFields,
+    SymbolsResult,
+    SymbolsVariables,
+    SymbolKind as SymbolKindEnum,
+} from '../graphql-operations'
 import { useExperimentalFeatures } from '../stores'
 import { parseBrowserRepoURL } from '../util/url'
 
@@ -191,13 +195,11 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
         )
     }
 
-    const heirarchicalSymbols = useMemo(
+    const hierarchicalSymbols = useMemo<SymbolWithChildren[]>(
         () =>
-            flow(
-                groupBy<SymbolNodeFields>(symbol => symbol.location.resource.path),
-                entries,
-                flatMap(([, symbols]) => hierarchyOf(symbols))
-            )(connection?.nodes ?? []),
+            Object.values(groupBy(connection?.nodes ?? [], symbol => symbol.location.resource.path)).flatMap(symbols =>
+                hierarchyOf(symbols)
+            ),
         [connection?.nodes]
     )
 
@@ -222,7 +224,7 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
             )}
             {connection && (
                 <HierarchicalSymbols
-                    symbols={heirarchicalSymbols}
+                    symbols={hierarchicalSymbols}
                     render={args => (
                         <SymbolNode
                             node={args.symbol}

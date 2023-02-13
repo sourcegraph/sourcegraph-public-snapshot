@@ -5,16 +5,16 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 type executionLogEntryResolver struct {
 	svc   AutoIndexingService
-	entry workerutil.ExecutionLogEntry
+	entry executor.ExecutionLogEntry
 }
 
-func NewExecutionLogEntryResolver(svc AutoIndexingService, entry workerutil.ExecutionLogEntry) resolverstubs.ExecutionLogEntryResolver {
+func NewExecutionLogEntryResolver(svc AutoIndexingService, entry executor.ExecutionLogEntry) resolverstubs.ExecutionLogEntryResolver {
 	return &executionLogEntryResolver{
 		svc:   svc,
 		entry: entry,

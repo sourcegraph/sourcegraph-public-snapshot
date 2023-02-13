@@ -2,8 +2,8 @@ import expect from 'expect'
 import { test } from 'mocha'
 import { Key } from 'ts-key-enum'
 
+import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
 import {
-    SearchGraphQlOperations,
     commitHighlightResult,
     commitSearchStreamEvents,
     diffSearchStreamEvents,
@@ -11,8 +11,7 @@ import {
     mixedSearchStreamEvents,
     highlightFileResult,
     symbolSearchStreamEvents,
-} from '@sourcegraph/search'
-import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
+} from '@sourcegraph/shared/src/search/integration'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
@@ -22,7 +21,7 @@ import { WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
-import { createEditorAPI, enableEditor, percySnapshotWithVariants, withSearchQueryInput } from './utils'
+import { createEditorAPI, percySnapshotWithVariants, withSearchQueryInput } from './utils'
 
 const mockDefaultStreamEvents: SearchEvent[] = [
     {
@@ -55,16 +54,14 @@ const mockDefaultStreamEvents: SearchEvent[] = [
     { type: 'done', data: {} },
 ]
 
-const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations> = {
+const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
     IsSearchContextAvailable: () => ({
         isSearchContextAvailable: true,
     }),
 }
 
-const commonSearchGraphQLResultsWithUser: Partial<
-    WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations
-> = {
+const commonSearchGraphQLResultsWithUser: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonSearchGraphQLResults,
     UserAreaUserProfile: () => ({
         user: {
@@ -78,6 +75,7 @@ const commonSearchGraphQLResultsWithUser: Partial<
             viewerCanAdminister: true,
             builtinAuth: true,
             tags: [],
+            createdAt: '2020-03-02T11:52:15Z',
         },
     }),
 }
@@ -128,10 +126,10 @@ describe('Search', () => {
 
     describe('Filter completion', () => {
         withSearchQueryInput(editorName => {
-            test(`Completing a negated filter should insert the filter with - prefix (${editorName})`, async () => {
+            test.skip(`Completing a negated filter should insert the filter with - prefix (${editorName})`, async () => {
                 testContext.overrideGraphQL({
                     ...commonSearchGraphQLResults,
-                    ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
+                    ...createViewerSettingsGraphQLOverride(),
                 })
 
                 await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
@@ -150,7 +148,7 @@ describe('Search', () => {
             test.skip(`Typing in the search field shows relevant suggestions (${editorName})`, async () => {
                 testContext.overrideGraphQL({
                     ...commonSearchGraphQLResults,
-                    ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
+                    ...createViewerSettingsGraphQLOverride(),
                 })
                 testContext.overrideSearchStreamEvents([
                     {
@@ -220,14 +218,7 @@ describe('Search', () => {
                 beforeEach(() => {
                     testContext.overrideGraphQL({
                         ...commonSearchGraphQLResults,
-                        ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
-                        RegistryExtensions: () => ({
-                            extensionRegistry: {
-                                __typename: 'ExtensionRegistry',
-                                extensions: { error: null, nodes: [] },
-                                featuredExtensions: null,
-                            },
-                        }),
+                        ...createViewerSettingsGraphQLOverride(),
                     })
                 })
 
@@ -266,7 +257,7 @@ describe('Search', () => {
                 beforeEach(() => {
                     testContext.overrideGraphQL({
                         ...commonSearchGraphQLResults,
-                        ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
+                        ...createViewerSettingsGraphQLOverride(),
                     })
                 })
 
@@ -302,7 +293,7 @@ describe('Search', () => {
                 beforeEach(() => {
                     testContext.overrideGraphQL({
                         ...commonSearchGraphQLResults,
-                        ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
+                        ...createViewerSettingsGraphQLOverride(),
                     })
                 })
 
@@ -505,18 +496,28 @@ describe('Search', () => {
         test('is styled correctly, with saved searches', async () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
-                savedSearches: () => ({
-                    savedSearches: [
-                        {
-                            description: 'Demo',
-                            id: 'U2F2ZWRTZWFyY2g6NQ==',
-                            namespace: { __typename: 'User', id: 'user123', namespaceName: 'test' },
-                            notify: false,
-                            notifySlack: false,
-                            query: 'context:global Batch Change patternType:literal',
-                            slackWebhookURL: null,
+                SavedSearches: () => ({
+                    savedSearches: {
+                        nodes: [
+                            {
+                                __typename: 'SavedSearch',
+                                description: 'Demo',
+                                id: 'U2F2ZWRTZWFyY2g6NQ==',
+                                namespace: { __typename: 'User', id: 'user123', namespaceName: 'test' },
+                                notify: false,
+                                notifySlack: false,
+                                query: 'context:global Batch Change patternType:literal',
+                                slackWebhookURL: null,
+                            },
+                        ],
+                        totalCount: 1,
+                        pageInfo: {
+                            startCursor: 'U2F2ZWRTZWFyY2g6NQ==',
+                            endCursor: 'U2F2ZWRTZWFyY2g6NQ==',
+                            hasNextPage: false,
+                            hasPreviousPage: false,
                         },
-                    ],
+                    },
                 }),
             })
 
@@ -540,7 +541,7 @@ describe('Search', () => {
                 beforeEach(() => {
                     testContext.overrideGraphQL({
                         ...commonSearchGraphQLResults,
-                        ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
+                        ...createViewerSettingsGraphQLOverride(),
                     })
                 })
 

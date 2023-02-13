@@ -6,9 +6,8 @@ import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/setting
 
 const defaultSettings: SettingsExperimentalFeatures = {
     codeMonitoring: true,
-    showEnterpriseHomePanels: false,
     /**
-     * Whether we show the mulitiline editor at /search/console
+     * Whether we show the multiline editor at /search/console
      */
     showMultilineSearchConsole: false,
     showSearchContext: true,
@@ -17,7 +16,9 @@ const defaultSettings: SettingsExperimentalFeatures = {
     showCodeMonitoringLogs: true,
     codeInsightsCompute: false,
     editor: 'codemirror6',
+    codeInsightsRepoUI: 'search-query-or-strict-list',
     applySearchQuerySuggestionOnEnter: false,
+    setupWizard: false,
 }
 
 export const useExperimentalFeatures = create<SettingsExperimentalFeatures>(() => ({}))

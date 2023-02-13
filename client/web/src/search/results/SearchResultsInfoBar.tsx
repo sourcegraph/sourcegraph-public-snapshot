@@ -2,20 +2,20 @@ import React, { useMemo, useState } from 'react'
 
 import { mdiChevronDoubleUp, mdiChevronDoubleDown } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
+import { useLocation } from 'react-router-dom-v5-compat'
 
 import { ContributableMenu } from '@sourcegraph/client-api'
-import { SearchPatternTypeProps, CaseSensitivityProps } from '@sourcegraph/search'
 import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchPatternTypeProps, CaseSensitivityProps } from '@sourcegraph/shared/src/search'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
+import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Icon, Link } from '@sourcegraph/wildcard'
+import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { CloudCtaBanner } from '../../components/CloudCtaBanner'
 
 import {
     getCodeMonitoringCreateAction,
@@ -30,23 +30,19 @@ import styles from './SearchResultsInfoBar.module.scss'
 
 export interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
-        PlatformContextProps<'settings' | 'sourcegraphURL'>,
         TelemetryProps,
+        PlatformContextProps<'settings' | 'sourcegraphURL'>,
         SearchPatternTypeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'> {
-    history: H.History
     /** The currently authenticated user or null */
-    authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
+    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'displayName' | 'emails'> | null
 
-    /**
-     * Whether the code insights feature flag is enabled.
-     */
     enableCodeInsights?: boolean
     enableCodeMonitoring: boolean
 
-    /** The search query and if any results were found */
+    /** The search query and results */
     query?: string
-    resultsFound: boolean
+    results?: AggregateStreamingSearchResults
 
     batchChangesEnabled?: boolean
     /** Whether running batch changes server-side is enabled */
@@ -58,8 +54,6 @@ export interface SearchResultsInfoBarProps
 
     // Saved queries
     onSaveQueryClick: () => void
-
-    location: H.Location
 
     className?: string
 
@@ -80,6 +74,7 @@ export interface SearchResultsInfoBarProps
 export const SearchResultsInfoBar: React.FunctionComponent<
     React.PropsWithChildren<SearchResultsInfoBarProps>
 > = props => {
+    const location = useLocation()
     const globalTypeFilter = useMemo(
         () => (props.query ? findFilter(props.query, 'type', FilterKind.Global)?.value?.value : undefined),
         [props.query]
@@ -111,16 +106,10 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     )
                 ),
                 getSearchContextCreateAction(props.query, props.authenticatedUser),
-                getInsightsCreateAction(
-                    props.query,
-                    props.patternType,
-                    props.authenticatedUser,
-                    props.enableCodeInsights
-                ),
+                getInsightsCreateAction(props.query, props.patternType, window.context.codeInsightsEnabled),
             ].filter((button): button is CreateAction => button !== null),
         [
             props.authenticatedUser,
-            props.enableCodeInsights,
             props.patternType,
             props.query,
             props.batchChangesEnabled,
@@ -165,27 +154,13 @@ export const SearchResultsInfoBar: React.FunctionComponent<
             <div className={styles.row}>
                 {props.stats}
 
-                {props.isSourcegraphDotCom && (
-                    <CloudCtaBanner className="mb-0" variant="outlined">
-                        To search across your private repositories,{' '}
-                        <Link
-                            to="https://signup.sourcegraph.com"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={() => props.telemetryService.log('ClickedOnCloudCTA')}
-                        >
-                            try Sourcegraph Cloud
-                        </Link>
-                        .
-                    </CloudCtaBanner>
-                )}
-
                 <div className={styles.expander} />
 
                 <ul className="nav align-items-center">
                     {extensionsController !== null && window.context.enableLegacyExtensions ? (
                         <ActionsContainer
                             {...props}
+                            location={location}
                             extensionsController={extensionsController}
                             extraContext={extraContext}
                             menu={ContributableMenu.SearchResultsToolbar}
@@ -196,6 +171,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                                         <ActionItem
                                             {...props}
                                             {...actionItem}
+                                            location={location}
                                             extensionsController={extensionsController}
                                             key={actionItem.action.id}
                                             showLoadingSpinnerDuringExecution={false}
@@ -222,7 +198,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                         createActions={createActions}
                         createCodeMonitorAction={createCodeMonitorAction}
                         canCreateMonitor={canCreateMonitorFromQuery}
-                        resultsFound={props.resultsFound}
+                        results={props.results}
                         allExpanded={props.allExpanded}
                         onExpandAllResultsToggle={props.onExpandAllResultsToggle}
                         onSaveQueryClick={props.onSaveQueryClick}

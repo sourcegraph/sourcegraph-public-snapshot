@@ -4,10 +4,10 @@ import classNames from 'classnames'
 import { Observable } from 'rxjs'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
-import { SearchPatternType, getUserSearchContextNamespaces, QueryState, SearchMode } from '@sourcegraph/search'
-import { IEditor, SearchBox, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
+import { IEditor, SearchBox, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/branded'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
+import { getUserSearchContextNamespaces, QueryState, SearchMode } from '@sourcegraph/shared/src/search'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import {
     appendContextFilter,
@@ -18,6 +18,7 @@ import { LATEST_VERSION, RepositoryMatch, SearchMatch } from '@sourcegraph/share
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
+import { SearchPatternType } from '../../graphql-operations'
 import { SearchResultsState } from '../../state'
 import { WebviewPageProps } from '../platform/context'
 
@@ -354,7 +355,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     containerClassName={styles.searchBoxContainer}
                     autoFocus={true}
                     onEditorCreated={setEditor}
-                    editorComponent="monaco"
                 />
             </form>
 
@@ -404,7 +404,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                             // for search examples. Fix on VSCE.
                             isSourcegraphDotCom={false}
                             searchContextsEnabled={true}
-                            showSearchContext={true}
                             platformContext={platformContext}
                             results={context.searchResults ?? undefined}
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRangesWithContext}
@@ -413,6 +412,9 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                             // TODO "no results" video thumbnail assets
                             // In build, copy ui/assets/img folder to dist/
                             assetsRoot="https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/ui/assets"
+                            showQueryExamplesOnNoResultsPage={true}
+                            setQueryState={setUserQueryState}
+                            selectedSearchContextSpec={context.selectedSearchContextSpec}
                         />
                     </MatchHandlersContext.Provider>
                 </div>

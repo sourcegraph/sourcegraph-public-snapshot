@@ -39,7 +39,7 @@ The web application exposes a global `window.buildInfo` object containing `versi
 
 Based on our experience, we decided to:
 
-- Use only the most standard tools: `tsc` and `yarn`. (Bonus points for not using `yarn`-specific features, to preserve optionality to switch back to `npm`.)
+- Use only the most standard tools: `tsc` and `pnpm`. (Bonus points for not using `pnpm`-specific features, to preserve optionality to switch back to `npm`.)
 - Do not build shared code to an intermediate output directory. Instead, import shared `.ts` and `.tsx` files directory from product code.
 - Use a single root `package.json` that specifies all dependencies needed by any product or shared code.
 
@@ -49,11 +49,11 @@ The one "hack" is that each subproject's `node_modules/.bin` is symlinked to the
 
 #### Add a dependency
 
-Run `yarn add PACKAGE` or `yarn add -D PACKAGE` in the root directory.
+Run `pnpm add PACKAGE` or `pnpm add -D PACKAGE` in the root directory.
 
 #### Upgrade a dependency
 
-Run `yarn upgrade -L PACKAGE`.
+Run `pnpm up --latest PACKAGE`.
 
 ### esbuild
 

@@ -3,8 +3,8 @@ import expect from 'expect'
 import { range } from 'lodash'
 import { test } from 'mocha'
 
-import { highlightFileResult, mixedSearchStreamEvents, SearchContextMinimalFields } from '@sourcegraph/search'
-import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { SharedGraphQlOperations, SearchContextMinimalFields } from '@sourcegraph/shared/src/graphql-operations'
+import { highlightFileResult, mixedSearchStreamEvents } from '@sourcegraph/shared/src/search/integration'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -13,7 +13,7 @@ import { WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
-import { createEditorAPI, enableEditor, percySnapshotWithVariants, withSearchQueryInput } from './utils'
+import { createEditorAPI, percySnapshotWithVariants, withSearchQueryInput } from './utils'
 
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
@@ -98,7 +98,6 @@ describe('Search contexts', () => {
                     user: {
                         experimentalFeatures: {
                             showSearchContext: true,
-                            ...enableEditor(editorName).experimentalFeatures,
                         },
                     },
                 }),

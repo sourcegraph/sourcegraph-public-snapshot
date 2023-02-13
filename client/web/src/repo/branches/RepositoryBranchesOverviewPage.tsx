@@ -1,19 +1,21 @@
 import * as React from 'react'
 
 import { mdiChevronRight } from '@mdi/js'
-import { RouteComponentProps } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, createAggregateError, ErrorLike, isErrorLike, logger, memoizeObservable } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { Link, LoadingSpinner, CardHeader, Card, Icon } from '@sourcegraph/wildcard'
+import { Link, LoadingSpinner, CardHeader, Card, Icon, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
-import { GitRefFields, RepositoryGitBranchesOverviewRepository } from '../../graphql-operations'
+import {
+    GitRefFields,
+    RepositoryGitBranchesOverviewRepository,
+    RepositoryGitBranchesOverviewResult,
+} from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { gitReferenceFragments, GitReferenceNode } from '../GitReference'
 
@@ -29,7 +31,7 @@ interface Data {
 
 export const queryGitBranches = memoizeObservable(
     (args: { repo: Scalars['ID']; first: number }): Observable<Data> =>
-        queryGraphQL(
+        queryGraphQL<RepositoryGitBranchesOverviewResult>(
             gql`
                 query RepositoryGitBranchesOverview($repo: ID!, $first: Int!, $withBehindAhead: Boolean!) {
                     node(id: $repo) {
@@ -75,7 +77,7 @@ export const queryGitBranches = memoizeObservable(
     args => `${args.repo}:${args.first}`
 )
 
-interface Props extends RepositoryBranchesAreaPageProps, RouteComponentProps<{}> {}
+interface Props extends RepositoryBranchesAreaPageProps {}
 
 interface State {
     /** The page content, undefined while loading, or an error. */

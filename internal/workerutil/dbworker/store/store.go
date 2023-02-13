@@ -3,8 +3,6 @@ package store
 import (
 	"context"
 	"database/sql"
-	"database/sql/driver"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -14,11 +12,13 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -89,7 +89,7 @@ type Store[T workerutil.Record] interface {
 	MaxDurationInQueue(ctx context.Context) (time.Duration, error)
 
 	// Dequeue selects the first queued record matching the given conditions and updates the state to processing. If there
-	// is such a record, it is returned. If there is no such unclaimed record, a nil record and and a nil cancel function
+	// is such a record, it is returned. If there is no such unclaimed record, a nil record and a nil cancel function
 	// will be returned along with a false-valued flag. This method must not be called from within a transaction.
 	//
 	// The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
@@ -106,11 +106,11 @@ type Store[T workerutil.Record] interface {
 	// AddExecutionLogEntry adds an executor log entry to the record and returns the ID of the new entry (which can be
 	// used with UpdateExecutionLogEntry) and a possible error. When the record is not found (due to options not matching
 	// or the record being deleted), ErrExecutionLogEntryNotUpdated is returned.
-	AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry, options ExecutionLogEntryOptions) (entryID int, err error)
+	AddExecutionLogEntry(ctx context.Context, id int, entry executor.ExecutionLogEntry, options ExecutionLogEntryOptions) (entryID int, err error)
 
 	// UpdateExecutionLogEntry updates the executor log entry with the given ID on the given record. When the record is not
 	// found (due to options not matching or the record being deleted), ErrExecutionLogEntryNotUpdated is returned.
-	UpdateExecutionLogEntry(ctx context.Context, recordID, entryID int, entry workerutil.ExecutionLogEntry, options ExecutionLogEntryOptions) error
+	UpdateExecutionLogEntry(ctx context.Context, recordID, entryID int, entry executor.ExecutionLogEntry, options ExecutionLogEntryOptions) error
 
 	// MarkComplete attempts to update the state of the record to complete. If this record has already been moved from
 	// the processing state to a terminal state, this method will have no effect. This method returns a boolean flag
@@ -133,21 +133,6 @@ type Store[T workerutil.Record] interface {
 	// identifiers the age of the record's last heartbeat timestamp for each record reset to queued and failed states,
 	// respectively.
 	ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs map[int]time.Duration, err error)
-}
-
-type ExecutionLogEntry workerutil.ExecutionLogEntry
-
-func (e *ExecutionLogEntry) Scan(value any) error {
-	b, ok := value.([]byte)
-	if !ok {
-		return errors.Errorf("value is not []byte: %T", value)
-	}
-
-	return json.Unmarshal(b, &e)
-}
-
-func (e ExecutionLogEntry) Value() (driver.Value, error) {
-	return json.Marshal(e)
 }
 
 type store[T workerutil.Record] struct {
@@ -388,7 +373,7 @@ WHERE
 
 // MaxDurationInQueue returns the longest duration for which a job associated with this store instance has
 // been in the queued state (including errored records that can be retried in the future). This method returns
-// an duration of zero if there are no jobs ready for processing.
+// a duration of zero if there are no jobs ready for processing.
 //
 // If records backed by this store do not have an initial state of 'queued', or if it is possible to requeue
 // records outside of this package, manual care should be taken to set the queued_at column to the proper time.
@@ -469,7 +454,7 @@ var columnsUpdatedByDequeue = []string{
 }
 
 // Dequeue selects the first queued record matching the given conditions and updates the state to processing. If there
-// is such a record, it is returned. If there is no such unclaimed record, a nil record and and a nil cancel function
+// is such a record, it is returned. If there is no such unclaimed record, a nil record and a nil cancel function
 // will be returned along with a false-valued flag. This method must not be called from within a transaction.
 //
 // A background goroutine that continuously updates the record's last modified time will be started. The returned cancel
@@ -533,7 +518,7 @@ func (s *store[T]) Dequeue(ctx context.Context, workerHostname string, condition
 	if len(records) == 0 {
 		return ret, false, nil
 	}
-	trace.Log(otlog.Int("recordID", records[0].RecordID()))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("recordID", records[0].RecordID()))
 
 	return records[0], true, nil
 }
@@ -732,7 +717,7 @@ WHERE {id} = %s
 // AddExecutionLogEntry adds an executor log entry to the record and returns the ID of the new entry (which can be
 // used with UpdateExecutionLogEntry) and a possible error. When the record is not found (due to options not matching
 // or the record being deleted), ErrExecutionLogEntryNotUpdated is returned.
-func (s *store[T]) AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry, options ExecutionLogEntryOptions) (entryID int, err error) {
+func (s *store[T]) AddExecutionLogEntry(ctx context.Context, id int, entry executor.ExecutionLogEntry, options ExecutionLogEntryOptions) (entryID int, err error) {
 	ctx, _, endObservation := s.operations.addExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.Int("id", id),
 	}})
@@ -746,7 +731,7 @@ func (s *store[T]) AddExecutionLogEntry(ctx context.Context, id int, entry worke
 	entryID, ok, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
 		addExecutionLogEntryQuery,
 		quote(s.options.TableName),
-		ExecutionLogEntry(entry),
+		entry,
 		sqlf.Join(conds, "AND"),
 	)))
 	if err != nil {
@@ -782,7 +767,7 @@ RETURNING array_length({execution_logs}, 1)
 
 // UpdateExecutionLogEntry updates the executor log entry with the given ID on the given record. When the record is not
 // found (due to options not matching or the record being deleted), ErrExecutionLogEntryNotUpdated is returned.
-func (s *store[T]) UpdateExecutionLogEntry(ctx context.Context, recordID, entryID int, entry workerutil.ExecutionLogEntry, options ExecutionLogEntryOptions) (err error) {
+func (s *store[T]) UpdateExecutionLogEntry(ctx context.Context, recordID, entryID int, entry executor.ExecutionLogEntry, options ExecutionLogEntryOptions) (err error) {
 	ctx, _, endObservation := s.operations.updateExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.Int("recordID", recordID),
 		otlog.Int("entryID", entryID),
@@ -799,7 +784,7 @@ func (s *store[T]) UpdateExecutionLogEntry(ctx context.Context, recordID, entryI
 		updateExecutionLogEntryQuery,
 		quote(s.options.TableName),
 		entryID,
-		ExecutionLogEntry(entry),
+		entry,
 		sqlf.Join(conds, "AND"),
 	)))
 	if err != nil {
@@ -950,7 +935,7 @@ func (s *store[T]) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, 
 	if err != nil {
 		return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, err
 	}
-	trace.Log(otlog.Int("numResetIDs", len(resetLastHeartbeatsByIDs)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numResetIDs", len(resetLastHeartbeatsByIDs)))
 
 	resetFailureMessage := s.options.ResetFailureMessage
 	if resetFailureMessage == "" {
@@ -972,7 +957,7 @@ func (s *store[T]) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, 
 	if err != nil {
 		return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, err
 	}
-	trace.Log(otlog.Int("numErroredIDs", len(failedLastHeartbeatsByIDs)))
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numErroredIDs", len(failedLastHeartbeatsByIDs)))
 
 	return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, nil
 }
@@ -1098,10 +1083,10 @@ type MatchingColumnExpressions struct {
 }
 
 // matchModifiedColumnExpressions returns a slice of columns to which each of the
-// given column expressions refers. Column references that do not refere to a member
+// given column expressions refers. Column references that do not refer to a member
 // of the columnsUpdatedByDequeue slice are ignored. Each match indicates the column
 // name and whether or not the expression is an exact reference or a reference within
-// a more complex expression (arithmetic, function call argument, etc).
+// a more complex expression (arithmetic, function call argument, etc.).
 //
 // The output slice has the same number of elements as the input column expressions
 // and the results are ordered in parallel with the given column expressions.

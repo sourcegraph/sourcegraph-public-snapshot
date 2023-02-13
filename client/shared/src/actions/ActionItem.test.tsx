@@ -3,10 +3,11 @@ import userEvent from '@testing-library/user-event'
 import * as H from 'history'
 import { NEVER } from 'rxjs'
 
-import { assertAriaEnabled } from '../../dev/aria-asserts'
-import { createBarrier } from '../api/integration-test/testHelpers'
+import { assertAriaEnabled } from '@sourcegraph/testing'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
+
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
-import { renderWithBrandedContext } from '../testing'
+import { createBarrier } from '../testing/testHelpers'
 
 import { ActionItem } from './ActionItem'
 

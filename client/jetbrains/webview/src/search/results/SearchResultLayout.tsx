@@ -3,7 +3,7 @@ import React from 'react'
 import classNames from 'classnames'
 import { MdiReactIconComponentType } from 'mdi-react'
 
-import { CodeHostIcon } from '@sourcegraph/search-ui'
+import { CodeHostIcon } from '@sourcegraph/branded'
 import { Icon } from '@sourcegraph/wildcard'
 
 import styles from './SearchResultLayout.module.scss'

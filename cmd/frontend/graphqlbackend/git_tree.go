@@ -14,8 +14,8 @@ import (
 )
 
 func (r *GitTreeEntryResolver) IsRoot() bool {
-	path := path.Clean(r.Path())
-	return path == "/" || path == "." || path == ""
+	cleanPath := path.Clean(r.Path())
+	return cleanPath == "/" || cleanPath == "." || cleanPath == ""
 }
 
 type gitTreeEntryConnectionArgs struct {
@@ -24,6 +24,9 @@ type gitTreeEntryConnectionArgs struct {
 	// If recurseSingleChild is true, we will return a flat list of every
 	// directory and file in a single-child nest.
 	RecursiveSingleChild bool
+	// If Ancestors is true and the tree is loaded from a subdirectory, we will
+	// return a flat list of all entries in all parent directories.
+	Ancestors bool
 }
 
 func (r *GitTreeEntryResolver) Entries(ctx context.Context, args *gitTreeEntryConnectionArgs) ([]*GitTreeEntryResolver, error) {
@@ -39,7 +42,7 @@ func (r *GitTreeEntryResolver) Files(ctx context.Context, args *gitTreeEntryConn
 }
 
 func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryConnectionArgs, filter func(fi fs.FileInfo) bool) ([]*GitTreeEntryResolver, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "tree.entries")
+	span, ctx := ot.StartSpanFromContext(ctx, "tree.entries") //nolint:staticcheck // OT is deprecated
 	defer span.Finish()
 
 	entries, err := r.gitserverClient.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID()), r.Path(), r.isRecursive || args.Recursive)
@@ -60,12 +63,17 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 	l := make([]*GitTreeEntryResolver, 0, len(entries))
 	for _, entry := range entries {
 		// Apply any additional filtering
+
 		if filter == nil || filter(entry) {
-			l = append(l, NewGitTreeEntryResolver(r.db, r.gitserverClient, r.commit, entry))
+			opts := GitTreeEntryResolverOpts{
+				commit: r.Commit(),
+				stat:   entry,
+			}
+			l = append(l, NewGitTreeEntryResolver(r.db, r.gitserverClient, opts))
 		}
 	}
 
-	// Update after filtering
+	// Update endLine filtering
 	hasSingleChild := len(l) == 1
 	for i := range l {
 		l[i].isSingleChild = &hasSingleChild
@@ -77,6 +85,21 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 			return nil, err
 		}
 		l = append(l, subEntries...)
+	}
+
+	if args.Ancestors && !r.IsRoot() {
+		var parent *GitTreeEntryResolver
+		parent, err = r.parent(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if parent != nil {
+			parentEntries, err := parent.Entries(ctx, args)
+			if err != nil {
+				return nil, err
+			}
+			l = append(parentEntries, l...)
+		}
 	}
 
 	return l, nil

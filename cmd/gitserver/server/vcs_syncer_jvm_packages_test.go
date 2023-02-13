@@ -166,8 +166,8 @@ func createMaliciousJar(t *testing.T, name string) {
 	writer := zip.NewWriter(f)
 	defer writer.Close()
 
-	for _, filepath := range maliciousPaths {
-		_, err = writer.Create(filepath)
+	for _, filePath := range maliciousPaths {
+		_, err = writer.Create(filePath)
 		assert.Nil(t, err)
 	}
 

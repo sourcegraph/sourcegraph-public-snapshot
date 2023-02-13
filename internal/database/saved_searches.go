@@ -5,10 +5,11 @@ import (
 	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
-	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -22,7 +23,9 @@ type SavedSearchStore interface {
 	ListAll(context.Context) ([]api.SavedQuerySpecAndConfig, error)
 	ListSavedSearchesByOrgID(ctx context.Context, orgID int32) ([]*types.SavedSearch, error)
 	ListSavedSearchesByUserID(ctx context.Context, userID int32) ([]*types.SavedSearch, error)
-	Transact(context.Context) (SavedSearchStore, error)
+	ListSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32, paginationArgs *PaginationArgs) ([]*types.SavedSearch, error)
+	CountSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32) (int, error)
+	WithTransact(context.Context, func(SavedSearchStore) error) error
 	Update(context.Context, *types.SavedSearch) (*types.SavedSearch, error)
 	With(basestore.ShareableStore) SavedSearchStore
 	basestore.ShareableStore
@@ -41,9 +44,10 @@ func (s *savedSearchStore) With(other basestore.ShareableStore) SavedSearchStore
 	return &savedSearchStore{Store: s.Store.With(other)}
 }
 
-func (s *savedSearchStore) Transact(ctx context.Context) (SavedSearchStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	return &savedSearchStore{Store: txBase}, err
+func (s *savedSearchStore) WithTransact(ctx context.Context, f func(SavedSearchStore) error) error {
+	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&savedSearchStore{Store: tx})
+	})
 }
 
 // IsEmpty tells if there are no saved searches (at all) on this Sourcegraph
@@ -70,7 +74,7 @@ func (s *savedSearchStore) ListAll(ctx context.Context) (savedSearches []api.Sav
 	tr, ctx := trace.New(ctx, "database.SavedSearches.ListAll", "")
 	defer func() {
 		tr.SetError(err)
-		tr.LogFields(otlog.Int("count", len(savedSearches)))
+		tr.SetAttributes(attribute.Int("count", len(savedSearches)))
 		tr.Finish()
 	}()
 
@@ -237,6 +241,73 @@ func (s *savedSearchStore) ListSavedSearchesByOrgID(ctx context.Context, orgID i
 		savedSearches = append(savedSearches, &ss)
 	}
 	return savedSearches, nil
+}
+
+// ListSavedSearchesByOrgOrUser lists all the saved searches associated with an
+// organization for the user.
+//
+// 🚨 SECURITY: This method does NOT verify the user's identity or that the
+// user is an admin. It is the caller's responsibility to ensure only admins or
+// members of the specified organization can access the returned saved
+// searches.
+func (s *savedSearchStore) ListSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32, paginationArgs *PaginationArgs) ([]*types.SavedSearch, error) {
+	p := paginationArgs.SQL()
+
+	var where []*sqlf.Query
+
+	if userID != nil && *userID != 0 {
+		where = append(where, sqlf.Sprintf("user_id = %v", *userID))
+	} else if orgID != nil && *orgID != 0 {
+		where = append(where, sqlf.Sprintf("org_id = %v", *orgID))
+	} else {
+		return nil, errors.New("userID or orgID must be provided.")
+	}
+
+	if p.Where != nil {
+		where = append(where, p.Where)
+	}
+
+	query := sqlf.Sprintf(listSavedSearchesQueryFmtStr, sqlf.Sprintf("WHERE %v", sqlf.Join(where, " AND ")))
+	query = p.AppendOrderToQuery(query)
+	query = p.AppendLimitToQuery(query)
+
+	return scanSavedSearches(s.Query(ctx, query))
+}
+
+const listSavedSearchesQueryFmtStr = `
+SELECT
+	id,
+	description,
+	query,
+	notify_owner,
+	notify_slack,
+	user_id,
+	org_id,
+	slack_webhook_url
+FROM saved_searches %v
+`
+
+var scanSavedSearches = basestore.NewSliceScanner(scanSavedSearch)
+
+func scanSavedSearch(s dbutil.Scanner) (*types.SavedSearch, error) {
+	var ss types.SavedSearch
+	if err := s.Scan(&ss.ID, &ss.Description, &ss.Query, &ss.Notify, &ss.NotifySlack, &ss.UserID, &ss.OrgID, &ss.SlackWebhookURL); err != nil {
+		return nil, errors.Wrap(err, "Scan")
+	}
+	return &ss, nil
+}
+
+// CountSavedSearchesByOrgOrUser counts all the saved searches associated with an
+// organization for the user.
+//
+// 🚨 SECURITY: This method does NOT verify the user's identity or that the
+// user is an admin. It is the callers responsibility to ensure only admins or
+// members of the specified organization can access the returned saved
+// searches.
+func (s *savedSearchStore) CountSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32) (int, error) {
+	query := sqlf.Sprintf(`SELECT COUNT(*) FROM saved_searches WHERE user_id=%v OR org_id=%v`, userID, orgID)
+	count, _, err := basestore.ScanFirstInt(s.Query(ctx, query))
+	return count, err
 }
 
 // Create creates a new saved search with the specified parameters. The ID

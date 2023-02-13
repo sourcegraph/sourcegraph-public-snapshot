@@ -7,7 +7,16 @@ export type DeployType = 'kubernetes' | 'docker-container' | 'docker-compose' | 
  */
 
 export interface AuthProvider {
-    serviceType: 'github' | 'gitlab' | 'http-header' | 'openidconnect' | 'sourcegraph-operator' | 'saml' | 'builtin'
+    serviceType:
+        | 'github'
+        | 'gitlab'
+        | 'bitbucketCloud'
+        | 'http-header'
+        | 'openidconnect'
+        | 'sourcegraph-operator'
+        | 'saml'
+        | 'builtin'
+        | 'gerrit'
     displayName: string
     isBuiltin: boolean
     authenticationURL: string
@@ -113,6 +122,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether global policies are enabled for auto-indexing. */
     codeIntelAutoIndexingAllowGlobalPolicies: boolean
 
+    /** Whether code insights API is enabled on the site. */
+    codeInsightsEnabled: boolean
+
     /** Whether users are allowed to add their own code and at what permission level. */
     externalServicesUserMode: 'disabled' | 'public' | 'all' | 'unknown'
 
@@ -155,7 +167,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether the product research sign-up page is enabled on the site. */
     productResearchPageEnabled: boolean
 
-    /** Whether the extension registry and the use of extensions are enabled. (Doesn't affect code intel and git extras.) */
+    /** Whether the use of extensions are enabled. (Doesn't affect code intel and git extras.) */
     enableLegacyExtensions?: boolean
 
     /** Contains information about the product license. */
@@ -171,6 +183,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     RedirectUnsupportedBrowser?: boolean
 
     outboundRequestLogLimit?: number
+
+    /** Whether the feedback survey is enabled. */
+    disableFeedbackSurvey?: boolean
 }
 
 export interface BrandAssets {

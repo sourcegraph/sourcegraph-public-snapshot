@@ -6,8 +6,6 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/gomodule/redigo/redis"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -16,16 +14,13 @@ import (
 )
 
 var (
-	pool                = redispool.Store
+	store               = redispool.Store
 	scopeKey            = "adminanalytics:"
 	cacheDisabledInTest = false
 )
 
 func getArrayFromCache[K interface{}](cacheKey string) ([]*K, error) {
-	rdb := pool.Get()
-	defer rdb.Close()
-
-	data, err := redis.String(rdb.Do("GET", scopeKey+cacheKey))
+	data, err := store.Get(scopeKey + cacheKey).String()
 	if err != nil {
 		return nil, err
 	}
@@ -40,10 +35,7 @@ func getArrayFromCache[K interface{}](cacheKey string) ([]*K, error) {
 }
 
 func getItemFromCache[T interface{}](cacheKey string) (*T, error) {
-	rdb := pool.Get()
-	defer rdb.Close()
-
-	data, err := redis.String(rdb.Do("GET", scopeKey+cacheKey))
+	data, err := store.Get(scopeKey + cacheKey).String()
 	if err != nil {
 		return nil, err
 	}
@@ -57,42 +49,31 @@ func getItemFromCache[T interface{}](cacheKey string) (*T, error) {
 	return &summary, nil
 }
 
-func setDataToCache(key string, data string, expire int64) (bool, error) {
+func setDataToCache(key string, data string, expireSeconds int) error {
 	if cacheDisabledInTest {
-		return true, nil
+		return nil
 	}
 
-	rdb := pool.Get()
-	defer rdb.Close()
-
-	if _, err := rdb.Do("SET", scopeKey+key, data); err != nil {
-		return false, err
+	if expireSeconds == 0 {
+		expireSeconds = 24 * 60 * 60 // 1 day
 	}
 
-	if expire == 0 {
-		expire = int64((24 * time.Hour).Seconds())
-	}
-
-	if _, err := rdb.Do("EXPIRE", scopeKey+key, expire); err != nil {
-		return false, err
-	}
-
-	return true, nil
+	return store.SetEx(scopeKey+key, expireSeconds, data)
 }
 
-func setArrayToCache[T interface{}](cacheKey string, nodes []*T) (bool, error) {
+func setArrayToCache[T interface{}](cacheKey string, nodes []*T) error {
 	data, err := json.Marshal(nodes)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	return setDataToCache(cacheKey, string(data), 0)
 }
 
-func setItemToCache[T interface{}](cacheKey string, summary *T) (bool, error) {
+func setItemToCache[T interface{}](cacheKey string, summary *T) error {
 	data, err := json.Marshal(summary)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	return setDataToCache(cacheKey, string(data), 0)
@@ -153,10 +134,8 @@ func StartAnalyticsCacheRefresh(ctx context.Context, db database.DB) {
 
 	const delay = 24 * time.Hour
 	for {
-		if !featureflag.FromContext(ctx).GetBoolOr("admin-analytics-disabled", false) {
-			if err := refreshAnalyticsCache(ctx, db); err != nil {
-				logger.Error("Error refreshing admin analytics cache", log.Error(err))
-			}
+		if err := refreshAnalyticsCache(ctx, db); err != nil {
+			logger.Error("Error refreshing admin analytics cache", log.Error(err))
 		}
 
 		// Randomize sleep to prevent thundering herds.

@@ -9,7 +9,13 @@ import { LayoutRouteProps } from '../routes'
  *
  * @returns A matching route pattern
  */
-export const useRoutesMatch = (routes: readonly LayoutRouteProps<{}>[]): string | undefined => {
+export const useRoutesMatch = (routes: readonly LayoutRouteProps[]): string | undefined => {
     const location = useLocation()
-    return routes.find(({ path, exact }) => matchPath(location.pathname, { path, exact }))?.path
+
+    // TODO: Replace with useMatches once top-level <Router/> is V6
+    return routes.find(
+        route =>
+            matchPath(location.pathname, { path: route.path, exact: true }) ||
+            matchPath(location.pathname, { path: route.path.replace(/\/\*$/, ''), exact: true })
+    )?.path
 }

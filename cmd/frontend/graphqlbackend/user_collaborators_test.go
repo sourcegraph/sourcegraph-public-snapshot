@@ -26,7 +26,7 @@ func TestUserCollaborators_gitserverParallelRecentCommitters(t *testing.T) {
 		callsMu sync.Mutex
 		calls   []args
 	)
-	gitCommitsFunc := func(ctx context.Context, repoName api.RepoName, opt gitserver.CommitsOptions, perms authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
+	gitCommitsFunc := func(ctx context.Context, perms authz.SubRepoPermissionChecker, repoName api.RepoName, opt gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
 		callsMu.Lock()
 		calls = append(calls, args{repoName, opt})
 		callsMu.Unlock()
@@ -66,7 +66,7 @@ func TestUserCollaborators_gitserverParallelRecentCommitters(t *testing.T) {
 
 	autogold.Want("calls", []args{
 		{
-			repoName: api.RepoName("golang/go"),
+			repoName: "golang/go",
 			opt: gitserver.CommitsOptions{
 				N:                200,
 				NoEnsureRevision: true,
@@ -74,7 +74,7 @@ func TestUserCollaborators_gitserverParallelRecentCommitters(t *testing.T) {
 			},
 		},
 		{
-			repoName: api.RepoName("gorilla/mux"),
+			repoName: "gorilla/mux",
 			opt: gitserver.CommitsOptions{
 				N:                200,
 				NoEnsureRevision: true,
@@ -82,7 +82,7 @@ func TestUserCollaborators_gitserverParallelRecentCommitters(t *testing.T) {
 			},
 		},
 		{
-			repoName: api.RepoName("sourcegraph/sourcegraph"),
+			repoName: "sourcegraph/sourcegraph",
 			opt: gitserver.CommitsOptions{
 				N:                200,
 				NoEnsureRevision: true,

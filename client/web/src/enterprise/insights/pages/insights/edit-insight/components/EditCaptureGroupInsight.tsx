@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import { useMemo, FC } from 'react'
 
 import {
     CodeInsightCreationMode,
@@ -20,23 +20,25 @@ interface EditCaptureGroupInsightProps {
     onCancel: () => void
 }
 
-export const EditCaptureGroupInsight: React.FunctionComponent<
-    React.PropsWithChildren<EditCaptureGroupInsightProps>
-> = props => {
+export const EditCaptureGroupInsight: FC<EditCaptureGroupInsightProps> = props => {
     const { insight, licensed, isEditAvailable, onSubmit, onCancel } = props
 
-    const insightFormValues = useMemo<CaptureGroupFormFields>(
-        () => ({
+    const insightFormValues = useMemo<CaptureGroupFormFields>(() => {
+        const isAllReposInsight = insight.repoQuery === '' && insight.repositories.length === 0
+        const repoQuery = isAllReposInsight ? 'repo:.*' : insight.repoQuery
+
+        return {
             title: insight.title,
-            repositories: insight.repositories.join(', '),
+            repoMode: repoQuery ? 'search-query' : 'urls-list',
+            repoQuery: { query: repoQuery },
+            repositories: insight.repositories,
             groupSearchQuery: insight.query,
             stepValue: Object.values(insight.step)[0]?.toString() ?? '3',
             step: Object.keys(insight.step)[0] as InsightStep,
             allRepos: insight.repositories.length === 0,
             dashboardReferenceCount: insight.dashboardReferenceCount,
-        }),
-        [insight]
-    )
+        }
+    }, [insight])
 
     const handleSubmit = (values: CaptureGroupFormFields): SubmissionErrors | Promise<SubmissionErrors> | void => {
         const sanitizedInsight = getSanitizedCaptureGroupInsight(values)
@@ -46,7 +48,6 @@ export const EditCaptureGroupInsight: React.FunctionComponent<
         return onSubmit({
             ...sanitizedInsight,
             filters: insight.filters,
-            seriesDisplayOptions: insight.seriesDisplayOptions,
         })
     }
 

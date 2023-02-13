@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewBeforeCreateUserHook returns a BeforeCreateUserHook closure with the given UsersStore
@@ -100,20 +101,26 @@ func NewAfterCreateUserHook() func(context.Context, database.DB, *types.User) er
 }
 
 // NewBeforeSetUserIsSiteAdmin returns a BeforeSetUserIsSiteAdmin closure that determines whether
-// non-site admin roles are allowed (i.e. revoke site admins) based on the product license.
+// the creation or removal of site admins are allowed.
 func NewBeforeSetUserIsSiteAdmin() func(isSiteAdmin bool) error {
 	return func(isSiteAdmin bool) error {
-		if isSiteAdmin {
-			return nil
-		}
-
 		info, err := licensing.GetConfiguredProductLicenseInfo()
 		if err != nil {
 			return err
 		}
 
-		if info != nil && info.Plan() != licensing.PlanFree0 {
-			return nil
+		if info != nil {
+			if info.IsExpired() {
+				return errors.New("The Sourcegraph license has expired. No site-admins can be created until the license is updated.")
+			}
+			if info.Plan() != licensing.PlanFree0 {
+				return nil
+			}
+
+			// Allow users to be promoted to site admins on the Free plan.
+			if info.Plan() == licensing.PlanFree0 && isSiteAdmin {
+				return nil
+			}
 		}
 
 		return licensing.NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", "non-site admin roles"))

@@ -3,17 +3,17 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
-import { RouteComponentProps } from 'react-router'
+import { useParams } from 'react-router-dom-v5-compat'
 import { catchError, startWith } from 'rxjs/operators'
 
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, isErrorLike, renderMarkdown, pluralize } from '@sourcegraph/common'
-import { SearchContextProps, SearchContextRepositoryRevisionsFields } from '@sourcegraph/search'
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
-import { Scalars, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { SearchContextRepositoryRevisionsFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import {
     Badge,
@@ -26,11 +26,12 @@ import {
     Alert,
     H3,
     Input,
+    Markdown,
 } from '@sourcegraph/wildcard'
 
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { Timestamp } from '../../components/time/Timestamp'
+import { SearchPatternType } from '../../graphql-operations'
 
 import { useDefaultContext } from './hooks/useDefaultContext'
 import { useToggleSearchContextStar } from './hooks/useToggleSearchContextStar'
@@ -39,8 +40,7 @@ import { SearchContextStarButton } from './SearchContextStarButton'
 import styles from './SearchContextPage.module.scss'
 
 export interface SearchContextPageProps
-    extends Pick<RouteComponentProps<{ spec: Scalars['ID'] }>, 'match'>,
-        Pick<SearchContextProps, 'fetchSearchContextBySpec'>,
+    extends Pick<SearchContextProps, 'fetchSearchContextBySpec'>,
         PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
 }
@@ -143,21 +143,23 @@ const SearchContextRepositories: React.FunctionComponent<
 }
 
 export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> = ({
-    match,
     fetchSearchContextBySpec,
     platformContext,
     authenticatedUser,
 }) => {
+    const params = useParams()
+    const spec: string = params.spec ? `${params.specOrOrg}/${params.spec}` : params.specOrOrg!
+
     const LOADING = 'loading' as const
 
     const searchContextOrError = useObservable(
         React.useMemo(
             () =>
-                fetchSearchContextBySpec(match.params.spec, platformContext).pipe(
+                fetchSearchContextBySpec(spec, platformContext).pipe(
                     startWith(LOADING),
                     catchError(error => [asError(error)])
                 ),
-            [match.params.spec, fetchSearchContextBySpec, platformContext]
+            [spec, fetchSearchContextBySpec, platformContext]
         )
     )
 

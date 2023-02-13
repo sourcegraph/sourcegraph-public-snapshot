@@ -40,17 +40,17 @@ func HTTPMiddleware(operation string, h http.Handler, opts ...otelhttp.Option) h
 		)...)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var trace bool
+		var shouldTrace bool
 		switch policy.GetTracePolicy() {
 		case policy.TraceSelective:
-			trace = policy.RequestWantsTracing(r)
+			shouldTrace = policy.RequestWantsTracing(r)
 		case policy.TraceAll:
-			trace = true
+			shouldTrace = true
 		default:
-			trace = false
+			shouldTrace = false
 		}
 		// Pass through to instrumented handler with trace policy in context
-		instrumentedHandler.ServeHTTP(w, r.WithContext(policy.WithShouldTrace(r.Context(), trace)))
+		instrumentedHandler.ServeHTTP(w, r.WithContext(policy.WithShouldTrace(r.Context(), shouldTrace)))
 	})
 }
 

@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react'
 
-import { mdiGithub, mdiGitlab } from '@mdi/js'
+import { mdiBitbucket, mdiGithub, mdiGitlab } from '@mdi/js'
 import classNames from 'classnames'
 import { partition } from 'lodash'
 import { Navigate, useLocation } from 'react-router-dom-v5-compat'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Alert, Icon, Text, Link, AnchorLink, Button } from '@sourcegraph/wildcard'
+import { Alert, Icon, Text, Link, AnchorLink, Button, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
@@ -25,12 +24,7 @@ interface SignInPageProps {
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
-        | 'allowSignup'
-        | 'authProviders'
-        | 'sourcegraphDotComMode'
-        | 'xhrHeaders'
-        | 'resetPasswordEnabled'
-        | 'experimentalFeatures'
+        'allowSignup' | 'authProviders' | 'sourcegraphDotComMode' | 'xhrHeaders' | 'resetPasswordEnabled'
     >
     isSourcegraphDotCom: boolean
 }
@@ -40,8 +34,6 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
 
     const location = useLocation()
     const [error, setError] = useState<Error | null>(null)
-
-    const isOperatorHidingEnabled = props.context.experimentalFeatures.hideSourcegraphOperatorLogin ?? false
 
     if (props.authenticatedUser) {
         const returnTo = getReturnTo(location)
@@ -54,15 +46,13 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     )
 
     const shouldShowProvider = function (provider: AuthProvider): boolean {
-        // Hide the legacy OIDC sign-in by default if the hiding feature flag is turned on.
-        if (provider.serviceType === 'openidconnect' && provider.displayName === 'Sourcegraph Employee') {
-            return !isOperatorHidingEnabled || new URLSearchParams(location.search).has('sourcegraph-operator')
-        }
-
         // Hide the Sourcegraph Operator authentication provider by default because it is
         // not useful to customer users and may even cause confusion.
         if (provider.serviceType === 'sourcegraph-operator') {
             return new URLSearchParams(location.search).has('sourcegraph-operator')
+        }
+        if (provider.serviceType === 'gerrit') {
+            return false
         }
         return true
     }
@@ -76,7 +66,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
             </Alert>
         ) : (
             <div className={classNames('mb-4 pb-5', signInSignUpCommonStyles.signinPageContainer)}>
-                {error && <ErrorAlert className="mt-4 mb-0 text-left" error={error} icon={false} />}
+                {error && <ErrorAlert className="mt-4 mb-0 text-left" error={error} />}
                 <div
                     className={classNames(
                         'test-signin-form rounded p-4 my-3',
@@ -108,6 +98,11 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                                         <Icon aria-hidden={true} svgPath={mdiGitlab} />{' '}
                                     </>
                                 )}
+                                {provider.serviceType === 'bitbucketCloud' && (
+                                    <>
+                                        <Icon aria-hidden={true} svgPath={mdiBitbucket} />{' '}
+                                    </>
+                                )}
                                 Continue with {provider.displayName}
                             </Button>
                         </div>
@@ -121,7 +116,9 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                                 to="https://signup.sourcegraph.com"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                                onClick={() =>
+                                    eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NavBarLoggedOut' })
+                                }
                             >
                                 Sign up
                             </Link>

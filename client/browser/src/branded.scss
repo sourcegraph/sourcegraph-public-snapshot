@@ -1,4 +1,4 @@
 // CSS entry point for branded contexts (options menu and after-install page)
 // global CSS classes etc can be used freely here (in opposite to the content page styles in app.scss)
 
-@import '../../branded/src/global-styles/index.scss';
+@import 'wildcard/src/global-styles';

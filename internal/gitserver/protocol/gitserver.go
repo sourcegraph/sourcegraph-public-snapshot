@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -94,11 +95,10 @@ type Signature struct {
 type ExecRequest struct {
 	Repo api.RepoName `json:"repo"`
 
-	EnsureRevision string      `json:"ensureRevision"`
-	Args           []string    `json:"args"`
-	Stdin          []byte      `json:"stdin,omitempty"`
-	Opt            *RemoteOpts `json:"opt"`
-	NoTimeout      bool        `json:"noTimeout"`
+	EnsureRevision string   `json:"ensureRevision"`
+	Args           []string `json:"args"`
+	Stdin          []byte   `json:"stdin,omitempty"`
+	NoTimeout      bool     `json:"noTimeout"`
 }
 
 // BatchLogRequest is a request to execute a `git log` command inside a set of
@@ -115,6 +115,13 @@ func (req BatchLogRequest) LogFields() []log.Field {
 	return []log.Field{
 		log.Int("numRepoCommits", len(req.RepoCommits)),
 		log.String("format", req.Format),
+	}
+}
+
+func (req BatchLogRequest) SpanAttributes() []attribute.KeyValue {
+	return []attribute.KeyValue{
+		attribute.Int("numRepoCommits", len(req.RepoCommits)),
+		attribute.String("format", req.Format),
 	}
 }
 
@@ -140,25 +147,6 @@ type P4ExecRequest struct {
 	P4User   string   `json:"p4user"`
 	P4Passwd string   `json:"p4passwd"`
 	Args     []string `json:"args"`
-}
-
-// RemoteOpts configures interactions with a remote repository.
-type RemoteOpts struct {
-	SSH   *SSHConfig   `json:"ssh"`   // SSH configuration for communication with the remote
-	HTTPS *HTTPSConfig `json:"https"` // HTTPS configuration for communication with the remote
-}
-
-// SSHConfig configures and authenticates SSH for communication with remotes.
-type SSHConfig struct {
-	User       string `json:"user,omitempty"`      // SSH user (if empty, inferred from URL)
-	PublicKey  []byte `json:"publicKey,omitempty"` // SSH public key (if nil, inferred from PrivateKey)
-	PrivateKey []byte `json:"privateKey"`          // SSH private key, usually passed to ssh.ParsePrivateKey (passphrases currently unsupported)
-}
-
-// HTTPSConfig configures and authenticates HTTPS for communication with remotes.
-type HTTPSConfig struct {
-	User string `json:"user"` // the username provided to the remote
-	Pass string `json:"pass"` // the password provided to the remote
 }
 
 // RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.
@@ -207,6 +195,7 @@ type IsRepoCloneableRequest struct {
 // IsRepoCloneableResponse is the response type for the IsRepoCloneableRequest.
 type IsRepoCloneableResponse struct {
 	Cloneable bool   // whether the repo is cloneable
+	Cloned    bool   // true if the repo was ever cloned in the past
 	Reason    string // if not cloneable, the reason why not
 }
 

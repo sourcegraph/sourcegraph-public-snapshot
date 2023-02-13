@@ -1,7 +1,6 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 
@@ -9,21 +8,16 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
+import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { SaveToolbar } from '../components/SaveToolbar'
 import { SiteAdminSettingsCascadeFields } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
+import { globalHistory } from '../util/globalHistory'
 
 import styles from './SettingsFile.module.scss'
 
 interface Props extends ThemeProps, TelemetryProps {
-    history: H.History
-
     settings: SiteAdminSettingsCascadeFields['subjects'][number]['latestSettings'] | null
-
-    /**
-     * JSON Schema of the document.
-     */
-    jsonSchema?: { $id: string }
 
     /**
      * Called when the user saves changes to the settings file's contents.
@@ -130,7 +124,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
     public componentDidMount(): void {
         // Prevent navigation when dirty.
         this.subscriptions.add(
-            this.props.history.block((location: H.Location, action: H.Action) => {
+            globalHistory.block((location, action) => {
                 if (action === 'REPLACE') {
                     return undefined
                 }
@@ -164,7 +158,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                 <React.Suspense fallback={<LoadingSpinner className="mt-2" />}>
                     <MonacoSettingsEditor
                         value={contents}
-                        jsonSchema={this.props.jsonSchema}
+                        jsonSchema={settingsSchemaJSON}
                         onChange={this.onEditorChange}
                         readOnly={this.state.saving}
                         isLightTheme={this.props.isLightTheme}

@@ -26,18 +26,18 @@ func newExporter(
 	switch protocol {
 	case otlpenv.ProtocolGRPC:
 		exporterFactory = otlpexporter.NewFactory()
-		config := exporterFactory.CreateDefaultConfig().(*otlpexporter.Config)
-		config.GRPCClientSettings.Endpoint = endpoint
-		config.GRPCClientSettings.TLSSetting = configtls.TLSClientSetting{
+		tempConfig := exporterFactory.CreateDefaultConfig().(*otlpexporter.Config)
+		tempConfig.GRPCClientSettings.Endpoint = endpoint
+		tempConfig.GRPCClientSettings.TLSSetting = configtls.TLSClientSetting{
 			Insecure: otlpenv.IsInsecure(endpoint),
 		}
-		signalExporterConfig = config
+		signalExporterConfig = tempConfig
 
 	case otlpenv.ProtocolHTTPJSON:
 		exporterFactory = otlphttpexporter.NewFactory()
-		config := exporterFactory.CreateDefaultConfig().(*otlphttpexporter.Config)
-		config.HTTPClientSettings.Endpoint = endpoint
-		signalExporterConfig = config
+		tempConfig := exporterFactory.CreateDefaultConfig().(*otlphttpexporter.Config)
+		tempConfig.HTTPClientSettings.Endpoint = endpoint
+		signalExporterConfig = tempConfig
 
 	default:
 		err = errors.Newf("unexpected protocol %q", protocol)

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -38,7 +39,7 @@ func MakeSqliteSearchFunc(observationCtx *observation.Context, cachedDatabaseWri
 			log.String("includePatterns", strings.Join(args.IncludePatterns, ":")),
 			log.String("excludePattern", args.ExcludePattern),
 			log.Int("first", args.First),
-			log.Int("timeout", args.Timeout),
+			log.Float64("timeoutSeconds", args.Timeout.Seconds()),
 		}})
 		defer func() {
 			endObservation(1, observation.Args{
@@ -49,8 +50,8 @@ func MakeSqliteSearchFunc(observationCtx *observation.Context, cachedDatabaseWri
 		ctx = observability.SeedParseAmount(ctx)
 
 		timeout := searchTimeout
-		if args.Timeout > 0 && time.Duration(args.Timeout)*time.Second < timeout {
-			timeout = time.Duration(args.Timeout) * time.Second
+		if args.Timeout > 0 && args.Timeout < timeout {
+			timeout = args.Timeout
 		}
 		ctx, cancel := context.WithTimeout(ctx, timeout)
 		defer cancel()
@@ -84,7 +85,7 @@ func MakeSqliteSearchFunc(observationCtx *observation.Context, cachedDatabaseWri
 		if err != nil {
 			return nil, errors.Wrap(err, "databaseWriter.GetOrCreateDatabaseFile")
 		}
-		trace.Log(log.String("dbFile", dbFile))
+		trace.AddEvent("databaseWriter", attribute.String("dbFile", dbFile))
 
 		var res result.Symbols
 		err = store.WithSQLiteStore(observationCtx, dbFile, func(db store.Store) (err error) {

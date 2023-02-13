@@ -15,16 +15,6 @@ export interface Owner {
     name?: string
 }
 
-export const externalServiceUserMode = (): 'disabled' | 'public' | 'all' | 'unknown' => 'disabled'
-
-export const showPasswordsPage = (props: UserProps): boolean => {
-    // user is signed-in with builtin Auth and External Service is not public
-    const mode = externalServiceUserMode()
-    return props.user.builtinAuth && (mode === 'disabled' || mode === 'unknown')
-}
-
-export const showAccountSecurityPage = (props: UserProps): boolean => !showPasswordsPage(props)
-
 export const externalServiceUserModeFromTags = (tags?: string[]): 'disabled' | 'public' | 'all' | 'unknown' => {
     const siteMode = window.context.externalServicesUserMode
     if (siteMode === 'all') {

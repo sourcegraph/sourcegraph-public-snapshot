@@ -15,48 +15,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-
 	itypes "github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type StreamingQueryExecutor struct {
-	justInTimeExecutor
+	previewExecutor
 
 	logger log.Logger
 }
 
 func NewStreamingExecutor(postgres database.DB, clock func() time.Time) *StreamingQueryExecutor {
 	return &StreamingQueryExecutor{
-		justInTimeExecutor: justInTimeExecutor{
-			db:        postgres,
+		previewExecutor: previewExecutor{
 			repoStore: postgres.Repos(),
 			filter:    &compression.NoopFilter{},
 			clock:     clock,
 		},
 		logger: log.Scoped("StreamingQueryExecutor", ""),
 	}
-}
-
-func (c *StreamingQueryExecutor) ExecuteRepoList(ctx context.Context, query string) ([]itypes.MinimalRepo, error) {
-	decoder, selectRepoResult := streaming.SelectRepoDecoder()
-	err := streaming.Search(ctx, query, nil, decoder)
-	if err != nil {
-		return nil, errors.Wrap(err, "streaming.Search")
-	}
-
-	repoResult := *selectRepoResult
-	if len(repoResult.SkippedReasons) > 0 {
-		c.logger.Error("insights query issue", log.String("reasons", fmt.Sprintf("%v", repoResult.SkippedReasons)), log.String("query", query))
-	}
-	if len(repoResult.Errors) > 0 {
-		return nil, errors.Errorf("streaming search: errors: %v", repoResult.Errors)
-	}
-	if len(repoResult.Alerts) > 0 {
-		return nil, errors.Errorf("streaming search: alerts: %v", repoResult.Alerts)
-	}
-
-	return repoResult.Repos, nil
 }
 
 func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seriesLabel string, seriesID string, repositories []string, interval timeseries.TimeInterval) ([]GeneratedTimeSeries, error) {
@@ -75,7 +52,7 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 	timeDataPoints := []TimeDataPoint{}
 
 	for _, repository := range repositories {
-		firstCommit, err := gitserver.GitFirstEverCommit(ctx, c.db, api.RepoName(repository))
+		firstCommit, err := gitserver.GitFirstEverCommit(ctx, api.RepoName(repository))
 		if err != nil {
 			if errors.Is(err, gitserver.EmptyRepoErr) {
 				continue
@@ -95,7 +72,7 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 				// since we are using uncompressed plans (to avoid this problem and others) right now, each execution is standalone
 				continue
 			}
-			commits, err := gitserver.NewGitCommitClient(c.db).RecentCommits(ctx, api.RepoName(repository), execution.RecordingTime, "")
+			commits, err := gitserver.NewGitCommitClient().RecentCommits(ctx, api.RepoName(repository), execution.RecordingTime, "")
 			if err != nil {
 				return nil, errors.Wrap(err, "git.Commits")
 			} else if len(commits) < 1 {
@@ -146,4 +123,38 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 		Points:   timeDataPoints,
 	}}
 	return generated, nil
+}
+
+type RepoQueryExecutor interface {
+	ExecuteRepoList(ctx context.Context, query string) ([]itypes.MinimalRepo, error)
+}
+
+type StreamingRepoQueryExecutor struct {
+	logger log.Logger
+}
+
+func NewStreamingRepoQueryExecutor(logger log.Logger) RepoQueryExecutor {
+	return &StreamingRepoQueryExecutor{
+		logger: logger,
+	}
+}
+
+func (c *StreamingRepoQueryExecutor) ExecuteRepoList(ctx context.Context, query string) ([]itypes.MinimalRepo, error) {
+	decoder, result := streaming.RepoDecoder()
+	err := streaming.Search(ctx, query, nil, decoder)
+	if err != nil {
+		return nil, errors.Wrap(err, "RepoDecoder")
+	}
+
+	repoResult := *result
+	if len(repoResult.SkippedReasons) > 0 {
+		c.logger.Error("repo search encountered skipped events", log.String("reasons", fmt.Sprintf("%v", repoResult.SkippedReasons)), log.String("query", query))
+	}
+	if len(repoResult.Errors) > 0 {
+		return nil, errors.Errorf("streaming repo search: errors: %v", repoResult.Errors)
+	}
+	if len(repoResult.Alerts) > 0 {
+		return nil, errors.Errorf("streaming repo search: alerts: %v", repoResult.Alerts)
+	}
+	return repoResult.Repos, nil
 }

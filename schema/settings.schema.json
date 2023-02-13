@@ -5,39 +5,16 @@
   "description": "Configuration settings for users and organizations on Sourcegraph.",
   "allowComments": true,
   "type": "object",
+  "additionalProperties": true,
   "properties": {
     "experimentalFeatures": {
       "title": "SettingsExperimentalFeatures",
-      "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
+      "description": "Experimental features and settings.",
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
-        "homePanelsComputeSuggestions": {
-          "type": "boolean",
-          "default": false,
-          "deprecated": false,
-          "description": "Enable the home panels compute suggestions feature."
-        },
         "codeInsights": {
           "description": "Enables code insights on directory pages.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "codeInsightsGqlApi": {
-          "deprecated": true,
-          "description": "DEPRECATED: Enables gql api instead of using setting cascade as a main storage fro code insights entities",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "codeInsightsAllRepos": {
-          "deprecated": true,
-          "description": "DEPRECATED: Enables the experimental ability to run an insight over all repositories on the instance.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -53,24 +30,17 @@
             "pointer": true
           }
         },
-        "codeMonitoring": {
-          "description": "Enables code monitoring.",
-          "type": "boolean",
-          "default": true,
+        "codeInsightsRepoUI": {
+          "description": "Specifies which (code insight repo) editor to use for repo query UI",
+          "type": "string",
+          "default": "single-search-query",
+          "enum": ["old-strict-list", "single-search-query", "search-query-or-strict-list"],
           "!go": {
             "pointer": true
           }
         },
-        "apiDocs": {
-          "description": "Deprecated.",
-          "type": "boolean",
-          "default": true,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "showCodeMonitoringTestEmailButton": {
-          "description": "REMOVED. Previously, enabled the 'Send test email' button in the code monitoring list.",
+        "setupWizard": {
+          "description": "Experimental setup wizard",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -101,30 +71,6 @@
             "pointer": true
           }
         },
-        "copyQueryButton": {
-          "description": "DEPRECATED: This feature is now permanently enabled. Enables displaying the copy query button in the search bar when hovering over the global navigation bar.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "showRepogroupHomepage": {
-          "description": "Enables the repository group homepage ",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "showOnboardingTour": {
-          "description": "REMOVED.",
-          "type": "boolean",
-          "default": true,
-          "!go": {
-            "pointer": true
-          }
-        },
         "showSearchContext": {
           "description": "Enables the search context dropdown.",
           "type": "boolean",
@@ -133,72 +79,8 @@
             "pointer": true
           }
         },
-        "showSearchContextManagement": {
-          "description": "REMOVED.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "showEnterpriseHomePanels": {
-          "description": "Enabled the homepage panels in the Enterprise homepage",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "showMultilineSearchConsole": {
           "description": "Enables the multiline search console at search/console",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "showSearchNotebook": {
-          "description": "Enables the search notebook at search/notebook",
-          "type": "boolean",
-          "default": true,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "showComputeComponent": {
-          "description": "REMOVED.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "showQueryBuilder": {
-          "description": "REMOVED. Previously, enabled the search query builder page. This page has been removed.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "enableSmartQuery": {
-          "description": "REMOVED. Previously, added more syntax highlighting and hovers for queries in the web app. This behavior is active by default now.",
-          "type": "boolean",
-          "default": true,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "enableFastResultLoading": {
-          "description": "Enables optimized search result loading (syntax highlighting / file contents fetching)",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "enableMergedFileSymbolSidebar": {
-          "description": "Enables the new file sidebar experience with merged file and symbol entries.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -263,26 +145,10 @@
             "pointer": true
           }
         },
-        "treeSitterEnabled": {
-          "description": "DEPRECATED: Enables tree sitter for enabled filetypes.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "batchChangesExecution": {
           "description": "Enables/disables the Batch Changes server side execution feature.",
           "type": "boolean",
           "default": true,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "enableSearchStack": {
-          "description": "REMOVED: This feature can now be enabled/disabled via the notepad button on the notebooks list page.",
-          "type": "boolean",
-          "default": false,
           "!go": {
             "pointer": true
           }
@@ -298,14 +164,6 @@
         },
         "codeMonitoringWebHooks": {
           "description": "Shows code monitor webhook and Slack webhook actions in the UI, allowing users to configure them.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "coolCodeIntel": {
-          "description": "Use the (cool) experimental reference panel for code intelligence.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -347,15 +205,6 @@
           "description": "Shows a panel to invite collaborators to Sourcegraph on home page.",
           "type": "boolean",
           "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "editor": {
-          "description": "Specifies which (code) editor to use for query and text input",
-          "type": "string",
-          "default": "codemirror6",
-          "enum": ["monaco", "codemirror6"],
           "!go": {
             "pointer": true
           }
@@ -447,11 +296,6 @@
           "!go": {
             "pointer": true
           }
-        },
-        "insightsAlternateLoadingStrategy": {
-          "description": "Use an in-memory strategy of loading Code Insights. Should only be used for benchmarking on large instances, not for customer use currently.",
-          "type": "boolean",
-          "default": false
         },
         "preloadGoToDefinition": {
           "description": "Preload definitions for available tokens in the visible viewport.",
@@ -579,10 +423,6 @@
             "type": "string",
             "description": "Query string"
           },
-          "showOnHomepage": {
-            "type": "boolean",
-            "description": "DEPRECATED: saved searches are no longer shown on the homepage. This will be removed in a future release."
-          },
           "notify": {
             "type": "boolean",
             "description": "Notify the owner of this configuration file when new results are available"
@@ -596,14 +436,6 @@
         "required": ["key", "description", "query"]
       }
     },
-    "search.globbing": {
-      "description": "REMOVED. Previously an experimental setting to interpret file and repo patterns as glob syntax.",
-      "type": "boolean",
-      "default": false,
-      "!go": {
-        "pointer": true
-      }
-    },
     "search.scopes": {
       "description": "Predefined search snippets that can be appended to any search (also known as search scopes)",
       "type": "array",
@@ -611,37 +443,9 @@
         "$ref": "#/definitions/SearchScope"
       }
     },
-    "search.repositoryGroups": {
-      "description": "DEPRECATED: Use search contexts instead.\n\nNamed groups of repositories that can be referenced in a search query using the `repogroup:` operator. The list can contain string literals (to include single repositories) and JSON objects with a \"regex\" field (to include all repositories matching the regular expression). Retrieving repogroups via the GQL interface will currently exclude repositories matched by regex patterns. #14208.",
-      "type": "object",
-      "additionalProperties": {
-        "type": "array",
-        "items": {
-          "anyOf": [
-            {
-              "type": "object",
-              "required": ["regex"]
-            },
-            {
-              "type": "string"
-            }
-          ]
-        }
-      }
-    },
-    "codeIntel.referencesPanel": {
-      "description": "What kind of references panel to use for exploring definitions and references. The tabbed panel is deprecated.",
-      "type": "string",
-      "enum": ["tree-view", "tabbed"]
-    },
     "codeIntel.disableSearchBased": {
       "description": "Never fall back to search-based code intelligence.",
       "type": "boolean"
-    },
-    "codeIntel.blobKeyboardNavigation": {
-      "description": "DEPRECATED. Use 'experimentalFeatures.codeNavigation':'link-driven' instead.",
-      "type": "string",
-      "enum": ["none", "token"]
     },
     "codeIntel.traceExtension": {
       "description": "Whether to enable trace logging on the extension.",
@@ -675,22 +479,11 @@
       "description": "The timeout (in milliseconds) for un-indexed search requests.",
       "type": "number"
     },
-    "codeIntelligence.autoIndexRepositoryGroups": {
-      "description": "A list of search.repositoryGroups that have auto-indexing enabled.",
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    },
     "codeIntelligence.autoIndexPopularRepoLimit": {
       "description": "Up to this number of repos are auto-indexed automatically. Ordered by star count.",
       "type": "integer",
       "minimum": 0,
       "default": 0
-    },
-    "codeIntelligence.maxPanelResults": {
-      "description": "Maximum number of references/definitions (or other code intelligence results provided by extensions) shown in the panel. If not set a default value will be used to ensure best performance.",
-      "type": "integer"
     },
     "codeIntelligence.clickToGoToDefinition": {
       "description": "Enable click to go to definition.",
@@ -834,22 +627,6 @@
       "type": "boolean",
       "default": false
     },
-    "search.uppercase": {
-      "description": "REMOVED. Previously, when active, any uppercase characters in the pattern will make the entire query case-sensitive.",
-      "type": "boolean",
-      "default": false,
-      "!go": {
-        "pointer": true
-      }
-    },
-    "search.migrateParser": {
-      "description": "REMOVED. Previously, a flag to enable and/or-expressions in queries as an aid transition to new language features in versions <= 3.24.0.",
-      "type": "boolean",
-      "default": true,
-      "!go": {
-        "pointer": true
-      }
-    },
     "search.hideSuggestions": {
       "description": "Disable search suggestions below the search bar when constructing queries. Defaults to false.",
       "type": "boolean",
@@ -877,35 +654,6 @@
       "default": true,
       "!go": {
         "pointer": true
-      }
-    },
-    "insights": {
-      "description": "EXPERIMENTAL: Code Insights",
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/Insight"
-      }
-    },
-    "insights.allrepos": {
-      "type": "object",
-      "description": "EXPERIMENTAL: Backend-based Code Insights",
-      "propertyNames": {
-        "type": "string",
-        "description": "A valid insight ID."
-      },
-      "additionalProperties": {
-        "$ref": "#/definitions/BackendInsight"
-      }
-    },
-    "insights.dashboards": {
-      "description": "EXPERIMENTAL: Code Insights Dashboards",
-      "type": "object",
-      "propertyNames": {
-        "type": "string",
-        "description": "A valid dashboards ID."
-      },
-      "additionalProperties": {
-        "$ref": "#/definitions/InsightDashboard"
       }
     },
     "insights.aggregations.extendedTimeout": {

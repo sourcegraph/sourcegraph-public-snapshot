@@ -111,6 +111,7 @@ func TestGetUploads(t *testing.T) {
 	type testCase struct {
 		repositoryID        int
 		state               string
+		states              []string
 		term                string
 		visibleAtTip        bool
 		dependencyOf        int
@@ -149,13 +150,15 @@ func TestGetUploads(t *testing.T) {
 		{dependentOf: 11, expectedIDs: []int{}},
 		{allowDeletedRepo: true, state: "deleted", expectedIDs: []int{12, 13, 14, 15}},
 		{allowDeletedRepo: true, state: "deleted", alllowDeletedUpload: true, expectedIDs: []int{12, 13, 14, 15, 16, 17}},
+		{states: []string{"completed", "failed"}, expectedIDs: []int{2, 7, 8, 10, 11}},
 	}
 
 	runTest := func(testCase testCase, lo, hi int) (errors int) {
 		name := fmt.Sprintf(
-			"repositoryID=%d|state='%s'|term='%s'|visibleAtTip=%v|dependencyOf=%d|dependentOf=%d|offset=%d",
+			"repositoryID=%d|state='%s'|states='%s',term='%s'|visibleAtTip=%v|dependencyOf=%d|dependentOf=%d|offset=%d",
 			testCase.repositoryID,
 			testCase.state,
+			strings.Join(testCase.states, ","),
 			testCase.term,
 			testCase.visibleAtTip,
 			testCase.dependencyOf,
@@ -167,6 +170,7 @@ func TestGetUploads(t *testing.T) {
 			uploads, totalCount, err := store.GetUploads(ctx, shared.GetUploadsOptions{
 				RepositoryID:       testCase.repositoryID,
 				State:              testCase.state,
+				States:             testCase.states,
 				Term:               testCase.term,
 				VisibleAtTip:       testCase.visibleAtTip,
 				DependencyOf:       testCase.dependencyOf,
@@ -644,7 +648,7 @@ func TestDeleteUploads(t *testing.T) {
 	)
 
 	err := store.DeleteUploads(context.Background(), shared.DeleteUploadsOptions{
-		State:        "uploading",
+		States:       []string{"uploading"},
 		Term:         "",
 		VisibleAtTip: false,
 	})
@@ -2063,6 +2067,28 @@ func TestMarkQueued(t *testing.T) {
 	}
 }
 
+func TestMarkQueuedNoSize(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	insertUploads(t, db, types.Upload{ID: 1, State: "uploading"})
+
+	if err := store.MarkQueued(context.Background(), 1, nil); err != nil {
+		t.Fatalf("unexpected error marking upload as queued: %s", err)
+	}
+
+	if upload, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error getting upload: %s", err)
+	} else if !exists {
+		t.Fatal("expected record to exist")
+	} else if upload.State != "queued" {
+		t.Errorf("unexpected state. want=%q have=%q", "queued", upload.State)
+	} else if upload.UploadSize != nil {
+		t.Errorf("unexpected upload size. want=%v have=%v", nil, upload.UploadSize)
+	}
+}
+
 func TestMarkFailed(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -2159,7 +2185,6 @@ func insertVisibleAtTipInternal(t testing.TB, db database.DB, repositoryID int, 
 	}
 }
 
-//nolint:unparam // unparam complains that `repositoryID` always has same value across call-sites, but that's OK
 func getVisibleUploads(t testing.TB, db database.DB, repositoryID int, commits []string) map[string][]int {
 	idsByCommit := map[string][]int{}
 	for _, commit := range commits {
@@ -2181,7 +2206,6 @@ func getVisibleUploads(t testing.TB, db database.DB, repositoryID int, commits [
 	return idsByCommit
 }
 
-//nolint:unparam // unparam complains that `repositoryID` always has same value across call-sites, but that's OK
 func getUploadsVisibleAtTip(t testing.TB, db database.DB, repositoryID int) []int {
 	query := sqlf.Sprintf(
 		`SELECT upload_id FROM lsif_uploads_visible_at_tip WHERE repository_id = %s AND is_default_branch ORDER BY upload_id`,

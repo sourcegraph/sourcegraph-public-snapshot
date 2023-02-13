@@ -1,13 +1,13 @@
 import { FC, useContext } from 'react'
 
-import { useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom-v5-compat'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../../../../stores'
-import { CodeInsightsBackendContext, CreationInsightInput, useInsightDashboard } from '../../../core'
+import { CodeInsightsBackendContext, CreationInsightInput } from '../../../core'
 import { useQueryParameters } from '../../../hooks'
+import { encodeDashboardIdQueryParam } from '../../../routers.constant'
 
 import { CaptureGroupCreationPage } from './capture-group'
 import { ComputeInsightCreationPage } from './compute'
@@ -32,48 +32,45 @@ interface InsightCreationPageProps extends TelemetryProps {
 export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
     const { mode, telemetryService } = props
 
-    const history = useHistory()
+    const navigate = useNavigate()
     const { createInsight } = useContext(CodeInsightsBackendContext)
-
     const { dashboardId } = useQueryParameters(['dashboardId'])
-    const { dashboard, loading } = useInsightDashboard({ id: dashboardId })
 
     const { codeInsightsCompute } = useExperimentalFeatures()
-
-    if (dashboard === undefined || loading) {
-        return <LoadingSpinner inline={false} />
-    }
 
     const handleInsightCreateRequest = async (event: InsightCreateEvent): Promise<unknown> => {
         const { insight } = event
 
-        return createInsight({ insight, dashboard }).toPromise()
+        return createInsight({ insight, dashboardId: dashboardId ?? null }).toPromise()
     }
 
     const handleInsightSuccessfulCreation = (): void => {
-        if (!dashboard) {
+        if (!dashboardId) {
             // Navigate to the dashboard page with new created dashboard
-            history.push('/insights/all')
+            navigate('/insights/all')
 
             return
         }
 
-        history.push(`/insights/dashboards/${dashboard.id}`)
+        navigate(`/insights/dashboards/${dashboardId}`)
     }
 
     const handleCancel = (): void => {
-        if (!dashboard) {
-            history.push('/insights/all')
+        if (!dashboardId) {
+            navigate('/insights/all')
 
             return
         }
 
-        history.push(`/insights/dashboards/${dashboard.id}`)
+        navigate(`/insights/dashboards/${dashboardId}`)
     }
+
+    const backCreateUrl = encodeDashboardIdQueryParam('/insights/create', dashboardId)
 
     if (mode === InsightCreationPageType.CaptureGroup) {
         return (
             <CaptureGroupCreationPage
+                backUrl={backCreateUrl}
                 telemetryService={telemetryService}
                 onInsightCreateRequest={handleInsightCreateRequest}
                 onSuccessfulCreation={handleInsightSuccessfulCreation}
@@ -85,6 +82,7 @@ export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
     if (mode === InsightCreationPageType.Search) {
         return (
             <SearchInsightCreationPage
+                backUrl={backCreateUrl}
                 telemetryService={telemetryService}
                 onInsightCreateRequest={handleInsightCreateRequest}
                 onSuccessfulCreation={handleInsightSuccessfulCreation}
@@ -96,6 +94,7 @@ export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
     if (codeInsightsCompute && mode === InsightCreationPageType.Compute) {
         return (
             <ComputeInsightCreationPage
+                backUrl={backCreateUrl}
                 telemetryService={telemetryService}
                 onInsightCreateRequest={handleInsightCreateRequest}
                 onSuccessfulCreation={handleInsightSuccessfulCreation}
@@ -106,6 +105,7 @@ export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
 
     return (
         <LangStatsInsightCreationPage
+            backUrl={backCreateUrl}
             telemetryService={telemetryService}
             onInsightCreateRequest={handleInsightCreateRequest}
             onSuccessfulCreation={handleInsightSuccessfulCreation}

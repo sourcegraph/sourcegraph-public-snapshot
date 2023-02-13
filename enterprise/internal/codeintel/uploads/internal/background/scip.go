@@ -5,8 +5,8 @@ import (
 	"io"
 	"sort"
 
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -66,8 +66,20 @@ func correlateSCIP(
 			}
 
 			// While processing this document, stash the unique packages of each symbol name
-			// that is associated with an occurrence. If the occurrence is a definition, mark
-			// that package as being one that we define (rather than simply reference).
+			// in the document. If there is an occurrence that defines that symbol, mark that
+			// package as being one that we define (rather than simply reference).
+
+			for _, symbol := range document.Symbols {
+				if pkg, ok := packageFromSymbol(symbol.Symbol); ok {
+					packageSet[pkg] = false
+				}
+
+				for _, relationship := range symbol.Relationships {
+					if pkg, ok := packageFromSymbol(relationship.Symbol); ok {
+						packageSet[pkg] = false
+					}
+				}
+			}
 
 			for _, occurrence := range document.Occurrences {
 				if occurrence.Symbol == "" || scip.IsLocalSymbol(occurrence.Symbol) {
@@ -259,25 +271,56 @@ func canonicalizeDocument(document *scip.Document, externalSymbolsByName map[str
 // if there is an occurrence that references the external symbol name and no local symbol information
 // exists.
 func injectExternalSymbols(document *scip.Document, externalSymbolsByName map[string]*scip.SymbolInformation) {
-	symbolNames := make(map[string]struct{}, len(document.Symbols))
+	// Build set of existing definitions
+	definitionsSet := make(map[string]struct{}, len(document.Symbols))
 	for _, symbol := range document.Symbols {
-		symbolNames[symbol.Symbol] = struct{}{}
+		definitionsSet[symbol.Symbol] = struct{}{}
 	}
 
+	// Build a set of occurrence and symbol relationship references
+	referencesSet := make(map[string]struct{}, len(document.Symbols))
+	for _, symbol := range document.Symbols {
+		for _, relationship := range symbol.Relationships {
+			referencesSet[relationship.Symbol] = struct{}{}
+		}
+	}
 	for _, occurrence := range document.Occurrences {
 		if occurrence.Symbol == "" || scip.IsLocalSymbol(occurrence.Symbol) {
 			continue
 		}
 
-		// Ensure we only add each symbol once
-		if _, ok := symbolNames[occurrence.Symbol]; ok {
-			continue
-		}
-		symbolNames[occurrence.Symbol] = struct{}{}
+		referencesSet[occurrence.Symbol] = struct{}{}
+	}
 
-		if symbol, ok := externalSymbolsByName[occurrence.Symbol]; ok {
+	// Add any references that do not have an associated definition
+	for len(referencesSet) > 0 {
+		// Collect unreferenced symbol names for new symbols. This can happen if we have
+		// a set of external symbols that reference each other. The references set acts
+		// as the frontier of our search.
+		newReferencesSet := map[string]struct{}{}
+
+		for symbolName := range referencesSet {
+			if _, ok := definitionsSet[symbolName]; ok {
+				continue
+			}
+			definitionsSet[symbolName] = struct{}{}
+
+			symbol, ok := externalSymbolsByName[symbolName]
+			if !ok {
+				continue
+			}
+
+			// Add new definition for referenced symbol
 			document.Symbols = append(document.Symbols, symbol)
+
+			// Populate new frontier
+			for _, relationship := range symbol.Relationships {
+				newReferencesSet[relationship.Symbol] = struct{}{}
+			}
 		}
+
+		// Continue resolving references while we added new symbols
+		referencesSet = newReferencesSet
 	}
 }
 
@@ -333,13 +376,13 @@ func writeSCIPData(
 
 		numDocuments += 1
 	}
-	trace.Log(otlog.Uint32("numDocuments", numDocuments))
+	trace.AddEvent("TODO Domain Owner", attribute.Int64("numDocuments", int64(numDocuments)))
 
 	count, err := scipWriter.Flush(ctx)
 	if err != nil {
 		return err
 	}
-	trace.Log(otlog.Uint32("numSymbols", count))
+	trace.AddEvent("TODO Domain Owner", attribute.Int64("numSymbols", int64(count)))
 
 	return nil
 }

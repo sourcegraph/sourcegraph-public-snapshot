@@ -1,7 +1,7 @@
 import { Suspense, FC, memo } from 'react'
 
 import { mdiPlus } from '@mdi/js'
-import { useHistory } from 'react-router'
+import { useParams, useNavigate } from 'react-router-dom-v5-compat'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
@@ -20,11 +20,10 @@ import {
 
 import { CodeInsightsIcon } from '../../../insights/Icons'
 import { CodeInsightsPage } from '../components'
-import { ALL_INSIGHTS_DASHBOARD } from '../constants'
 import { useQueryParameters } from '../hooks'
 import { encodeDashboardIdQueryParam } from '../routers.constant'
 
-import { DashboardInsights } from './dashboards/dashboard-view/components/dashboards-content/components/dashboard-inisghts/DashboardInsights'
+import { AllInsightsView } from './all-insights-view'
 import { DashboardsView } from './dashboards/dashboard-view/DashboardsView'
 
 import styles from './CodeInsightsRootPage.module.scss'
@@ -46,9 +45,10 @@ interface CodeInsightsRootPageProps extends TelemetryProps {
 }
 
 export const CodeInsightsRootPage: FC<CodeInsightsRootPageProps> = memo(props => {
-    const { dashboardId, activeTab, telemetryService } = props
+    const { activeTab, telemetryService } = props
 
-    const history = useHistory()
+    const navigate = useNavigate()
+    const { dashboardId } = useParams()
     const { dashboardId: queryParameterDashboardId } = useQueryParameters(['dashboardId'])
 
     // Set either active dashboard from the dashboard tab param (dashboard)
@@ -60,15 +60,15 @@ export const CodeInsightsRootPage: FC<CodeInsightsRootPageProps> = memo(props =>
         switch (selectedTab) {
             case CodeInsightsRootPageTab.Dashboards: {
                 if (queryParameterDashboardId) {
-                    return history.push(`/insights/dashboards/${queryParameterDashboardId}`)
+                    return navigate(`/insights/dashboards/${queryParameterDashboardId}`)
                 }
 
-                return history.push('/insights/dashboards')
+                return navigate('/insights/dashboards')
             }
             case CodeInsightsRootPageTab.AllInsights:
-                return history.push(encodeDashboardIdQueryParam('/insights/all', absoluteDashboardId))
+                return navigate(encodeDashboardIdQueryParam('/insights/all', absoluteDashboardId))
             case CodeInsightsRootPageTab.GettingStarted:
-                return history.push(encodeDashboardIdQueryParam('/insights/about', absoluteDashboardId))
+                return navigate(encodeDashboardIdQueryParam('/insights/about', absoluteDashboardId))
         }
     }
 
@@ -99,10 +99,7 @@ export const CodeInsightsRootPage: FC<CodeInsightsRootPageProps> = memo(props =>
                         <DashboardsView dashboardId={dashboardId} telemetryService={telemetryService} />
                     </TabPanel>
                     <TabPanel tabIndex={-1}>
-                        <DashboardInsights
-                            currentDashboard={ALL_INSIGHTS_DASHBOARD}
-                            telemetryService={telemetryService}
-                        />
+                        <AllInsightsView telemetryService={telemetryService} />
                     </TabPanel>
                     <TabPanel tabIndex={-1}>
                         <Suspense fallback={<LoadingSpinner aria-label="Loading Code Insights Getting started page" />}>

@@ -24,7 +24,7 @@ describe('DiffSplitHunk', () => {
                 },
                 {
                     kind: DiffHunkLineType.UNCHANGED,
-                    html: '        const decorationType = sourcegraph.app.createDecorationType()',
+                    html: '        const foo = sourcegraph.app.foo()',
                 },
                 {
                     kind: DiffHunkLineType.UNCHANGED,
@@ -75,9 +75,7 @@ describe('DiffSplitHunk', () => {
         beforeEach(() => {
             queries = renderWithProps({
                 hunk,
-                decorations: { head: new Map(), base: new Map() },
                 lineNumbers: true,
-                isLightTheme: true,
                 fileDiffAnchor: 'anchor_',
             })
         })

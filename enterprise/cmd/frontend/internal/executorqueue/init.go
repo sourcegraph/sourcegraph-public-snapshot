@@ -5,7 +5,9 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -27,7 +29,13 @@ func Init(
 	codeintelUploadHandler := enterpriseServices.NewCodeIntelUploadHandler(false)
 	batchesWorkspaceFileGetHandler := enterpriseServices.BatchesChangesFileGetHandler
 	batchesWorkspaceFileExistsHandler := enterpriseServices.BatchesChangesFileGetHandler
-	accessToken := func() string { return conf.SiteConfig().ExecutorsAccessToken }
+	accessToken := func() string {
+		isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
+		if isSingleProgram {
+			return confdefaults.SingleProgramInMemoryExecutorPassword
+		}
+		return conf.SiteConfig().ExecutorsAccessToken
+	}
 	logger := log.Scoped("executorqueue", "")
 
 	metricsStore := metricsstore.NewDistributedStore("executors:")

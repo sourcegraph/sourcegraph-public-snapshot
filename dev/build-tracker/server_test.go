@@ -161,3 +161,54 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 	})
 
 }
+
+func TestShouldNotify(t *testing.T) {
+	logger := logtest.Scoped(t)
+
+	num := 160000
+	build := Build{
+		Build: buildkite.Build{
+			Number: &num,
+		},
+		Jobs: map[string]Job{},
+	}
+	newEvent := func(name, job, state string) *Event {
+		return &Event{
+			Name:     name,
+			Build:    build.Build,
+			Pipeline: buildkite.Pipeline{},
+			Job: buildkite.Job{
+				Name:  &job,
+				State: &state,
+			},
+		}
+	}
+	server := NewServer(logger, config{})
+	server.store.builds[*build.Number] = &build
+	server.store.Add(newEvent("job.finished", "Job 1", "failed"))
+	server.store.Add(newEvent("job.finished", "Job 2", "failed"))
+
+	// build is still busy, so we shouldn't notify
+	if server.shouldNotify(&build, newEvent("job.finished", "", "failed")) {
+		t.Errorf("expected shouldNotify to be false, for 2 failed jobs and non-failed build")
+	}
+
+	// now fail the build
+	state := "failed"
+	build.State = &state
+	if !server.shouldNotify(&build, newEvent("build.finished", "", "failed")) {
+		t.Errorf("expected shouldNotify to be true, for 2 failed jobs and a failed build")
+	}
+
+	// Should still notify if we receive late jobs
+	if !server.shouldNotify(&build, newEvent("job.finished", ":jest:", "failed")) {
+		t.Errorf("expected shouldNotify to be true, for failed job after build is also finished")
+	}
+
+	// Huzzah! the build passed, but now we shouldn't send notification
+	state = "passed"
+	build.State = &state
+	if server.shouldNotify(&build, newEvent("job.finished", ":jest:", "success")) {
+		t.Errorf("expected shouldNotify to be false, for success job after build is also finished")
+	}
+}

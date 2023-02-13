@@ -1,12 +1,10 @@
 import { MockedProvider, MockedResponse } from '@apollo/client/testing'
 import { getAllByRole, getByRole, queryByRole, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { createMemoryHistory } from 'history'
-import { Router } from 'react-router'
+import { MemoryRouter } from 'react-router-dom-v5-compat'
 import { spy, stub, assert } from 'sinon'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { IEmptyResponse } from '@sourcegraph/shared/src/schema'
 import {
     mockAuthenticatedUser,
     mockFetchSearchContexts,
@@ -15,12 +13,12 @@ import {
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { simulateMenuItemClick } from '@sourcegraph/shared/src/testing/simulateMenuItemClick'
 
+import { setDefaultSearchContextResult } from '../../graphql-operations'
+
 import { SET_DEFAULT_SEARCH_CONTEXT_MUTATION } from './hooks/useDefaultContext'
 import { SearchContextsList, SearchContextsListProps } from './SearchContextsList'
 
 describe('SearchContextsList', () => {
-    const history = createMemoryHistory()
-
     const defaultProps: SearchContextsListProps = {
         authenticatedUser: mockAuthenticatedUser,
         fetchSearchContexts: mockFetchSearchContexts,
@@ -33,9 +31,9 @@ describe('SearchContextsList', () => {
         it('renders list with default context', () => {
             const { container } = render(
                 <MockedProvider>
-                    <Router history={history}>
+                    <MemoryRouter>
                         <SearchContextsList {...defaultProps} />
-                    </Router>
+                    </MemoryRouter>
                 </MockedProvider>
             )
 
@@ -48,7 +46,7 @@ describe('SearchContextsList', () => {
         })
 
         it('saves default context and updates list', () => {
-            const mockSetDefault: MockedResponse<IEmptyResponse> = {
+            const mockSetDefault: MockedResponse<setDefaultSearchContextResult['setDefaultSearchContext']> = {
                 request: {
                     query: getDocumentNode(SET_DEFAULT_SEARCH_CONTEXT_MUTATION),
                 },
@@ -61,9 +59,9 @@ describe('SearchContextsList', () => {
 
             const { container } = render(
                 <MockedProvider mocks={[mockSetDefault]}>
-                    <Router history={history}>
+                    <MemoryRouter>
                         <SearchContextsList {...defaultProps} setAlert={setAlert} />
-                    </Router>
+                    </MemoryRouter>
                 </MockedProvider>
             )
 

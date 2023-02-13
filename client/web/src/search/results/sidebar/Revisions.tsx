@@ -2,10 +2,9 @@ import React from 'react'
 
 import classNames from 'classnames'
 
+import { FilterLink, RevisionsProps, TabIndex } from '@sourcegraph/branded'
+import styles from '@sourcegraph/branded/src/search-ui/results/sidebar/SearchFilterSection.module.scss'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { FilterLink, RevisionsProps, TabIndex } from '@sourcegraph/search-ui'
-// eslint-disable-next-line no-restricted-imports
-import styles from '@sourcegraph/search-ui/src/results/sidebar/SearchFilterSection.module.scss'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Button, LoadingSpinner, Tab, TabList, TabPanel, TabPanels, Tabs, Text } from '@sourcegraph/wildcard'

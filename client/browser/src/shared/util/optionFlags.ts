@@ -10,12 +10,7 @@ import { isDefaultSourcegraphUrl, observeSourcegraphURL } from './context'
 
 const OPTION_FLAGS_SYNC_STORAGE_KEY = 'featureFlags'
 
-export type OptionFlagKey =
-    | 'sendTelemetry'
-    | 'allowErrorReporting'
-    | 'experimentalLinkPreviews'
-    | 'experimentalTextFieldCompletion'
-    | 'clickToGoToDefinition'
+export type OptionFlagKey = 'sendTelemetry' | 'allowErrorReporting' | 'clickToGoToDefinition'
 
 export interface OptionFlagDefinition {
     label: string
@@ -39,10 +34,6 @@ export const optionFlagDefinitions: OptionFlagDefinition[] = [
         label: 'Allow error reporting',
     },
     {
-        key: 'experimentalLinkPreviews',
-        label: 'Experimental link previews',
-    },
-    {
         key: 'clickToGoToDefinition',
         label: 'Enable click to go to definition',
     },
@@ -51,8 +42,6 @@ export const optionFlagDefinitions: OptionFlagDefinition[] = [
 const optionFlagDefaults: OptionFlagValues = {
     sendTelemetry: false,
     allowErrorReporting: false,
-    experimentalLinkPreviews: false,
-    experimentalTextFieldCompletion: false,
     clickToGoToDefinition: false,
 }
 

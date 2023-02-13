@@ -13,14 +13,11 @@ import {
 } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
-import { cloneDeep } from 'lodash'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import indicator from 'ordinal/indicator'
-import { useHistory } from 'react-router'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     Badge,
     LoadingSpinner,
@@ -45,12 +42,13 @@ import {
     Collapse,
     Heading,
     Tooltip,
+    ErrorAlert,
 } from '@sourcegraph/wildcard'
 
 import { DiffStat } from '../../../../../components/diff/DiffStat'
-import { FileDiffConnection } from '../../../../../components/diff/FileDiffConnection'
-import { FileDiffNode } from '../../../../../components/diff/FileDiffNode'
-import { FilteredConnectionQueryArguments } from '../../../../../components/FilteredConnection'
+import { FileDiffNode, FileDiffNodeProps } from '../../../../../components/diff/FileDiffNode'
+import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../../components/FilteredConnection'
+import { useShowMorePagination } from '../../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import { HeroPage } from '../../../../../components/HeroPage'
 import { LogOutput } from '../../../../../components/LogOutput'
 import { Duration } from '../../../../../components/time/Duration'
@@ -61,6 +59,9 @@ import {
     HiddenBatchSpecWorkspaceFields,
     Scalars,
     VisibleBatchSpecWorkspaceFields,
+    FileDiffFields,
+    BatchSpecWorkspaceStepResult,
+    BatchSpecWorkspaceStepVariables,
 } from '../../../../../graphql-operations'
 import { eventLogger } from '../../../../../tracking/eventLogger'
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../../preview/list/backend'
@@ -69,6 +70,7 @@ import {
     useBatchSpecWorkspace,
     useRetryWorkspaceExecution,
     queryBatchSpecWorkspaceStepFileDiffs as _queryBatchSpecWorkspaceStepFileDiffs,
+    BATCH_SPEC_WORKSPACE_STEP,
 } from '../backend'
 import { DiagnosticsModal } from '../DiagnosticsModal'
 
@@ -77,7 +79,7 @@ import { WorkspaceStateIcon } from './WorkspaceStateIcon'
 
 import styles from './WorkspaceDetails.module.scss'
 
-export interface WorkspaceDetailsProps extends ThemeProps {
+export interface WorkspaceDetailsProps {
     id: Scalars['ID']
     /** Handler to deselect the current workspace, i.e. close the details panel. */
     deselectWorkspace?: () => void
@@ -229,7 +231,6 @@ interface VisibleWorkspaceDetailsProps extends Omit<WorkspaceDetailsProps, 'id'>
 }
 
 const VisibleWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<VisibleWorkspaceDetailsProps>> = ({
-    isLightTheme,
     workspace,
     deselectWorkspace,
     queryBatchSpecWorkspaceStepFileDiffs,
@@ -293,7 +294,6 @@ const VisibleWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<V
                         <React.Fragment key={changesetSpec.id}>
                             <ChangesetSpecNode
                                 node={changesetSpec}
-                                isLightTheme={isLightTheme}
                                 queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                             />
                             {index !== workspace.changesetSpecs!.length - 1 && <hr className="m-0" />}
@@ -308,7 +308,6 @@ const VisibleWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<V
                         step={step}
                         cachedResultFound={workspace.cachedResultFound}
                         workspaceID={workspace.id}
-                        isLightTheme={isLightTheme}
                         queryBatchSpecWorkspaceStepFileDiffs={queryBatchSpecWorkspaceStepFileDiffs}
                     />
                     {index !== workspace.steps.length - 1 && <hr className="my-2" />}
@@ -365,18 +364,15 @@ const NumberInQueue: React.FunctionComponent<React.PropsWithChildren<{ number: n
     </>
 )
 
-interface ChangesetSpecNodeProps extends ThemeProps {
+interface ChangesetSpecNodeProps {
     node: BatchSpecWorkspaceChangesetSpecFields
     queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
 }
 
 const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<ChangesetSpecNodeProps>> = ({
     node,
-    isLightTheme,
     queryChangesetSpecFileDiffs = _queryChangesetSpecFileDiffs,
 }) => {
-    const history = useHistory()
-
     // TODO: Under what conditions should this be auto-expanded?
     const [isExpanded, setIsExpanded] = useState(true)
     const [areChangesExpanded, setAreChangesExpanded] = useState(true)
@@ -455,9 +451,6 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
                             </CollapseHeader>
                             <CollapsePanel>
                                 <ChangesetSpecFileDiffConnection
-                                    history={history}
-                                    isLightTheme={isLightTheme}
-                                    location={history.location}
                                     spec={node.id}
                                     queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                                 />
@@ -481,7 +474,7 @@ function publishBadgeLabel(state: Scalars['PublishedValue']): string {
     }
 }
 
-interface WorkspaceStepProps extends ThemeProps {
+interface WorkspaceStepProps {
     cachedResultFound: boolean
     step: BatchSpecWorkspaceStepFields
     workspaceID: Scalars['ID']
@@ -489,41 +482,99 @@ interface WorkspaceStepProps extends ThemeProps {
     queryBatchSpecWorkspaceStepFileDiffs?: typeof _queryBatchSpecWorkspaceStepFileDiffs
 }
 
+export const OUTPUT_LINES_PER_PAGE = 500
+
+export const WorkspaceStepOutputLines: React.FunctionComponent<
+    React.PropsWithChildren<Pick<WorkspaceStepProps, 'step' | 'workspaceID'>>
+> = ({ step, workspaceID }) => {
+    const { connection, error, loading, fetchMore, hasNextPage } = useShowMorePagination<
+        BatchSpecWorkspaceStepResult,
+        BatchSpecWorkspaceStepVariables,
+        string
+    >({
+        query: BATCH_SPEC_WORKSPACE_STEP,
+        variables: {
+            workspaceID,
+            stepIndex: step.number,
+            first: OUTPUT_LINES_PER_PAGE,
+            after: null,
+        },
+        options: {
+            useURL: false,
+            fetchPolicy: 'cache-and-network',
+        },
+        getConnection: result => {
+            const data = dataOrThrowErrors(result)
+            if (data.node?.__typename !== 'VisibleBatchSpecWorkspace' || data.node.step === null) {
+                throw new Error('unable to fetch workspace step')
+            }
+
+            return data.node.step.outputLines
+        },
+    })
+
+    const additionalOutputLines = useMemo(() => {
+        const lines = []
+
+        if (connection) {
+            if (connection.nodes.length === 0) {
+                lines.push('stdout: This command did not produce any output')
+            }
+
+            if (step.exitCode !== null && step.exitCode !== 0) {
+                lines.push(`stderr: Command failed with status ${step.exitCode}`)
+            }
+
+            if (step.exitCode === 0) {
+                lines.push(`stdout: \nstdout: Command exited successfully with status ${step.exitCode}`)
+            }
+        }
+
+        return lines
+    }, [connection, step.exitCode])
+
+    if (loading && !connection) {
+        return (
+            <div className="d-flex justify-content-center mt-4">
+                <LoadingSpinner />
+            </div>
+        )
+    }
+
+    if (error || !connection || connection.error) {
+        return (
+            <Text className="text-muted">
+                <span className="text-muted">Unable to fetch output logs for step ${step.number}.</span>
+            </Text>
+        )
+    }
+
+    return (
+        <div className={styles.stepOutputContainer}>
+            {connection.nodes.length > 0 && <LogOutput text={connection.nodes.join('\n')} />}
+            {hasNextPage && (
+                <>
+                    {loading ? (
+                        <LoadingSpinner className="bg-transparent ml-3" />
+                    ) : (
+                        <Button size="sm" className={styles.stepOutputShowMoreBtn} onClick={fetchMore}>
+                            Load more ...
+                        </Button>
+                    )}
+                </>
+            )}
+            <LogOutput text={additionalOutputLines.join('\n')} />
+        </div>
+    )
+}
+
 const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceStepProps>> = ({
     step,
-    isLightTheme,
     workspaceID,
     cachedResultFound,
     queryBatchSpecWorkspaceStepFileDiffs,
 }) => {
     const [isExpanded, setIsExpanded] = useState(false)
-
-    const outputLines = useMemo(() => {
-        const outputLines = cloneDeep(step.outputLines)
-        if (outputLines !== null) {
-            if (
-                outputLines.every(
-                    line =>
-                        line
-                            .replaceAll(/'^std(out|err):'/g, '')
-                            .replaceAll('\n', '')
-                            .trim() === ''
-                )
-            ) {
-                outputLines.push('stdout: This command did not produce any output')
-            }
-
-            if (step.exitCode === 0) {
-                outputLines.push(`\nstdout: \nstdout: Command exited successfully with status ${step.exitCode}`)
-            }
-
-            if (step.exitCode !== null && step.exitCode !== 0) {
-                outputLines.push(`stderr: Command failed with status ${step.exitCode}`)
-            }
-        }
-
-        return outputLines
-    }, [step.exitCode, step.outputLines])
     const tabsNames = ['logs', 'output', 'diff', 'files_env', 'cmd_container']
     return (
         <Collapse isOpen={isExpanded} onOpenChange={setIsExpanded}>
@@ -585,10 +636,11 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                                 </TabList>
                                 <TabPanels>
                                     <TabPanel className="pt-2" key="logs">
-                                        {!step.startedAt && (
+                                        {step.startedAt ? (
+                                            <WorkspaceStepOutputLines step={step} workspaceID={workspaceID} />
+                                        ) : (
                                             <Text className="text-muted mb-0">Step not started yet</Text>
                                         )}
-                                        {step.startedAt && outputLines && <LogOutput text={outputLines.join('\n')} />}
                                     </TabPanel>
                                     <TabPanel className="pt-2" key="output-variables">
                                         {!step.startedAt && (
@@ -611,7 +663,6 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                                         )}
                                         {step.startedAt && (
                                             <WorkspaceStepFileDiffConnection
-                                                isLightTheme={isLightTheme}
                                                 step={step}
                                                 workspaceID={workspaceID}
                                                 queryBatchSpecWorkspaceStepFileDiffs={
@@ -672,7 +723,7 @@ const StepTimer: React.FunctionComponent<React.PropsWithChildren<{ startedAt: st
     finishedAt,
 }) => <Duration start={startedAt} end={finishedAt ?? undefined} />
 
-interface WorkspaceStepFileDiffConnectionProps extends ThemeProps {
+interface WorkspaceStepFileDiffConnectionProps {
     workspaceID: Scalars['ID']
     // Require the entire step instead of just the spec number to ensure the query gets called as the step changes.
     step: BatchSpecWorkspaceStepFields
@@ -681,12 +732,7 @@ interface WorkspaceStepFileDiffConnectionProps extends ThemeProps {
 
 const WorkspaceStepFileDiffConnection: React.FunctionComponent<
     React.PropsWithChildren<WorkspaceStepFileDiffConnectionProps>
-> = ({
-    workspaceID,
-    step,
-    isLightTheme,
-    queryBatchSpecWorkspaceStepFileDiffs = _queryBatchSpecWorkspaceStepFileDiffs,
-}) => {
+> = ({ workspaceID, step, queryBatchSpecWorkspaceStepFileDiffs = _queryBatchSpecWorkspaceStepFileDiffs }) => {
     const queryFileDiffs = useCallback(
         (args: FilteredConnectionQueryArguments) =>
             queryBatchSpecWorkspaceStepFileDiffs({
@@ -697,26 +743,21 @@ const WorkspaceStepFileDiffConnection: React.FunctionComponent<
             }),
         [workspaceID, step, queryBatchSpecWorkspaceStepFileDiffs]
     )
-    const history = useHistory()
     return (
-        <FileDiffConnection
+        <FilteredConnection<FileDiffFields, Omit<FileDiffNodeProps, 'node'>>
             listClassName="list-group list-group-flush"
             noun="changed file"
             pluralNoun="changed files"
             queryConnection={queryFileDiffs}
             nodeComponent={FileDiffNode}
             nodeComponentProps={{
-                history,
-                location: history.location,
-                isLightTheme,
                 persistLines: true,
                 lineNumbers: true,
             }}
             defaultFirst={15}
             hideSearch={true}
             noSummaryIfAllNodesVisible={true}
-            history={history}
-            location={history.location}
+            withCenteredSummary={true}
             useURLQuery={false}
             cursorPaging={true}
         />

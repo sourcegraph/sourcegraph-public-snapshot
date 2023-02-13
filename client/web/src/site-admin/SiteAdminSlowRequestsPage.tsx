@@ -3,9 +3,9 @@ import React, { ReactNode, useCallback, useEffect, useState } from 'react'
 import { mdiChevronDown, mdiContentCopy } from '@mdi/js'
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
-import { RouteComponentProps } from 'react-router'
 import { map } from 'rxjs/operators'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -30,14 +30,13 @@ import {
     FilteredConnectionQueryArguments,
 } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { Timestamp } from '../components/time/Timestamp'
 import { SlowRequestsResult, SlowRequestsVariables } from '../graphql-operations'
 
 import { SLOW_REQUESTS } from './backend'
 
 import styles from './SiteAdminSlowRequestsPage.module.scss'
 
-export interface SiteAdminSlowRequestsPageProps extends RouteComponentProps, TelemetryProps {}
+export interface SiteAdminSlowRequestsPageProps extends TelemetryProps {}
 
 type SlowRequest = SlowRequestsResult['slowRequests']['nodes'][0]
 
@@ -71,7 +70,7 @@ const filters: FilteredConnectionFilter[] = [
 
 export const SiteAdminSlowRequestsPage: React.FunctionComponent<
     React.PropsWithChildren<SiteAdminSlowRequestsPageProps>
-> = ({ history, telemetryService }) => {
+> = ({ telemetryService }) => {
     useEffect(() => {
         telemetryService.logPageView('SiteAdminSlowRequests')
     }, [telemetryService])
@@ -138,8 +137,6 @@ export const SiteAdminSlowRequestsPage: React.FunctionComponent<
                     queryConnection={querySlowRequests}
                     nodeComponent={SlowRequestNode}
                     filters={filters}
-                    history={history}
-                    location={history.location}
                     cursorPaging={true}
                 />
             </Container>

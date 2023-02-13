@@ -1,13 +1,12 @@
 import React, { useCallback, useEffect } from 'react'
 
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom-v5-compat'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { logger } from '@sourcegraph/common'
 import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
 import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
-import { Alert, AnchorLink, Button, LoadingSpinner, Link, H2, H3 } from '@sourcegraph/wildcard'
+import { Alert, AnchorLink, Button, LoadingSpinner, Link, H2, H3, Form } from '@sourcegraph/wildcard'
 
 import { orgURL } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -26,7 +25,7 @@ import { OrgAvatar } from '../OrgAvatar'
 
 import styles from './OrgInvitationPage.module.scss'
 
-interface Props extends RouteComponentProps<{ token: string }> {
+interface Props {
     authenticatedUser: AuthenticatedUser
     className?: string
 }
@@ -70,10 +69,9 @@ export const INVITATION_BY_TOKEN = gql`
 export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     authenticatedUser,
     className,
-    history,
-    match,
 }) => {
-    const token = match.params.token
+    const { token } = useParams<{ token: string }>()
+    const navigate = useNavigate()
 
     const {
         data: inviteData,
@@ -82,7 +80,7 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
     } = useQuery<InvitationByTokenResult, InvitationByTokenVariables>(INVITATION_BY_TOKEN, {
         skip: !authenticatedUser || !token,
         variables: {
-            token,
+            token: token!,
         },
     })
 
@@ -142,9 +140,9 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
         }
 
         if (orgName) {
-            history.push(orgURL(orgName))
+            navigate(orgURL(orgName))
         }
-    }, [data?.id, history, orgId, orgName, respondToInvitation, willVerifyEmail])
+    }, [data?.id, navigate, orgId, orgName, respondToInvitation, willVerifyEmail])
 
     const declineInvitation = useCallback(async () => {
         eventLogger.log(
@@ -180,8 +178,8 @@ export const OrgInvitationPage: React.FunctionComponent<React.PropsWithChildren<
             )
         }
 
-        history.push(userURL(authenticatedUser.username))
-    }, [authenticatedUser.username, data?.id, history, orgId, respondToInvitation, willVerifyEmail])
+        navigate(userURL(authenticatedUser.username))
+    }, [authenticatedUser.username, data?.id, navigate, orgId, respondToInvitation, willVerifyEmail])
 
     const loading = inviteLoading || respondLoading
     const error = inviteError?.message || respondError?.message

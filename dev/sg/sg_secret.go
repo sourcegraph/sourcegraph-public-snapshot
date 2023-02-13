@@ -6,9 +6,9 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/cliutil"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -34,7 +34,7 @@ sg secret reset buildkite
 				ArgsUsage:    "<...key>",
 				Usage:        "Remove a specific secret from secrets file",
 				Action:       resetSecretExec,
-				BashComplete: cliutil.CompleteOptions(bashCompleteSecrets),
+				BashComplete: completions.CompleteOptions(bashCompleteSecrets),
 			},
 			{
 				Name:  "list",
@@ -108,9 +108,9 @@ func listSecretExec(ctx *cli.Context) error {
 }
 
 func bashCompleteSecrets() (options []string) {
-	secrets, err := loadSecrets()
+	allSecrets, err := loadSecrets()
 	if err != nil {
 		return nil
 	}
-	return secrets.Keys()
+	return allSecrets.Keys()
 }

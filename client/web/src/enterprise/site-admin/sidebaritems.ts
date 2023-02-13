@@ -1,14 +1,13 @@
 import BrainIcon from 'mdi-react/BrainIcon'
 import BriefcaseIcon from 'mdi-react/BriefcaseIcon'
 import PackageVariantIcon from 'mdi-react/PackageVariantIcon'
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 
 import { BatchChangesIcon } from '../../batches/icons'
 import {
     apiConsoleGroup,
+    analyticsGroup,
     configurationGroup as ossConfigurationGroup,
     maintenanceGroup as ossMaintenanceGroup,
-    overviewGroup,
     repositoriesGroup as ossRepositoriesGroup,
     usersGroup,
 } from '../../site-admin/sidebaritems'
@@ -48,19 +47,6 @@ const executorsGroup: SiteAdminSideBarGroup = {
     ],
 }
 
-const extensionsGroup: SiteAdminSideBarGroup = {
-    header: {
-        label: 'Extensions',
-        icon: PuzzleOutlineIcon,
-    },
-    items: [
-        {
-            label: 'Extensions',
-            to: '/site-admin/registry/extensions',
-        },
-    ],
-}
-
 export const batchChangesGroup: SiteAdminSideBarGroup = {
     header: {
         label: 'Batch Changes',
@@ -80,6 +66,10 @@ export const batchChangesGroup: SiteAdminSideBarGroup = {
             label: 'Incoming webhooks',
             to: '/site-admin/batch-changes/webhook-logs',
             condition: props => props.batchChangesWebhookLogsEnabled,
+        },
+        {
+            label: 'Outgoing webhooks',
+            to: '/site-admin/outbound-webhooks',
         },
     ],
     condition: ({ batchChangesEnabled }) => batchChangesEnabled,
@@ -111,13 +101,8 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
     header: { label: 'Code graph', icon: BrainIcon },
     items: [
         {
-            to: '/site-admin/code-graph/uploads',
-            label: 'Uploads',
-        },
-        {
             to: '/site-admin/code-graph/indexes',
-            label: 'Auto-indexing',
-            condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
+            label: 'Precise indexes',
         },
         {
             to: '/site-admin/code-graph/configuration',
@@ -142,14 +127,13 @@ const repositoriesGroup: SiteAdminSideBarGroup = {
 }
 
 export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = [
-    overviewGroup,
+    analyticsGroup,
     configurationGroup,
     repositoriesGroup,
     codeIntelGroup,
     usersGroup,
     executorsGroup,
     maintenanceGroup,
-    window.context.enableLegacyExtensions ? extensionsGroup : undefined,
     batchChangesGroup,
     businessGroup,
     apiConsoleGroup,

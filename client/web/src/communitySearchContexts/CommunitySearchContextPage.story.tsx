@@ -4,8 +4,8 @@ import { subDays } from 'date-fns'
 import { EMPTY, NEVER, Observable, of } from 'rxjs'
 
 import { subtypeOf } from '@sourcegraph/common'
-import { SearchContextFields } from '@sourcegraph/search'
 import { ActionItemComponentProps } from '@sourcegraph/shared/src/actions/ActionItem'
+import { SearchContextFields } from '@sourcegraph/shared/src/graphql-operations'
 import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
@@ -54,7 +54,6 @@ const PLATFORM_CONTEXT: CommunitySearchContextPageProps['platformContext'] = {
 const authUser: AuthenticatedUser = {
     __typename: 'User',
     id: '0',
-    email: 'alice@sourcegraph.com',
     username: 'alice',
     avatarURL: null,
     session: { canSignOut: true },
@@ -73,7 +72,8 @@ const authUser: AuthenticatedUser = {
     databaseID: 0,
     tosAccepted: true,
     searchable: true,
-    emails: [],
+    emails: [{ email: 'alice@sourcegraph.com', isPrimary: true, verified: true }],
+    latestSettings: null,
 }
 
 const repositories: SearchContextFields['repositories'] = [

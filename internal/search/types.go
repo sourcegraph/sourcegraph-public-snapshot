@@ -4,20 +4,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/grafana/regexp"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
-	zoektquery "github.com/sourcegraph/zoekt/query"
 )
 
 // Inputs contains fields we set before kicking off search.
@@ -105,8 +106,10 @@ type SymbolsParameters struct {
 	// First indicates that only the first n symbols should be returned.
 	First int
 
-	// Timeout in seconds.
-	Timeout int
+	// Timeout is the maximum amount of time the symbols search should take.
+	//
+	// If Timeout isn't specified, a default timeout of 60 seconds is used.
+	Timeout time.Duration
 }
 
 type SymbolsResponse struct {
@@ -336,10 +339,6 @@ type Features struct {
 	// what has changed since the indexed commit.
 	HybridSearch bool `json:"search-hybrid"`
 
-	// When true lucky search runs by default. Adding for A/B testing in
-	// 08/2022. To be removed at latest by 12/2022.
-	AbLuckySearch bool `json:"ab-lucky-search"`
-
 	// Ranking when true will use a our new #ranking signals and code paths
 	// for ranking results from Zoekt.
 	Ranking bool `json:"ranking"`
@@ -347,6 +346,10 @@ type Features struct {
 	// Debug when true will set the Debug field on FileMatches. This may grow
 	// from here. For now we treat this like a feature flag for convenience.
 	Debug bool `json:"debug"`
+
+	// CodeOwnershipFilters when true will enable searching through code ownership
+	// using `file:has.owner({owner})` filter.
+	CodeOwnershipFilters bool `json:"codeownersip"`
 }
 
 func (f *Features) String() string {
@@ -365,7 +368,7 @@ func (f *Features) String() string {
 // in their search query that affect which repos should be searched.
 // When adding fields to this struct, be sure to update IsGlobal().
 type RepoOptions struct {
-	RepoFilters         []string
+	RepoFilters         []query.ParsedRepoFilter
 	MinusRepoFilters    []string
 	DescriptionPatterns []string
 
@@ -404,7 +407,7 @@ func (op *RepoOptions) Tags() []otlog.Field {
 	}
 
 	if len(op.RepoFilters) > 0 {
-		add(trace.Strings("repoFilters", op.RepoFilters))
+		add(trace.Printf("repoFilters", "%v", op.RepoFilters))
 	}
 	if len(op.MinusRepoFilters) > 0 {
 		add(trace.Strings("minusRepoFilters", op.MinusRepoFilters))

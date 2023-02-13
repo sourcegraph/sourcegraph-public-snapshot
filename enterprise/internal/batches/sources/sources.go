@@ -391,8 +391,8 @@ func getCloneURL(repo *types.Repo) (*vcs.URL, error) {
 	}
 
 	parsedURLs := make([]*vcs.URL, 0, len(cloneURLs))
-	for _, url := range cloneURLs {
-		parsedURL, err := vcs.ParseURL(url)
+	for _, cloneURL := range cloneURLs {
+		parsedURL, err := vcs.ParseURL(cloneURL)
 		if err != nil {
 			return nil, err
 		}

@@ -37,7 +37,7 @@ lazy_static::lazy_static! {
 /// Struct from: internal/gosyntect/gosyntect.go
 ///
 /// Keep in sync with that struct.
-#[derive(Deserialize, Default)]
+#[derive(Deserialize, Default, Debug)]
 pub struct SourcegraphQuery {
     // Deprecated field with a default empty string value, kept for backwards
     // compatability with old clients.
@@ -70,7 +70,7 @@ pub struct SourcegraphQuery {
     pub theme: String,
 }
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize, Default, Debug)]
 pub enum SyntaxEngine {
     #[default]
     #[serde(rename = "syntect")]
@@ -80,7 +80,7 @@ pub enum SyntaxEngine {
     TreeSitter,
 }
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize, Default, Debug)]
 pub struct ScipHighlightQuery {
     // Which highlighting engine to use.
     pub engine: SyntaxEngine,
@@ -160,11 +160,18 @@ pub fn determine_language<'a>(
         prefix_langs: Vec<(&'static str, &'static str)>,
         default: &'static str,
     }
-    let overrides = vec![Override {
-        extension: "cls",
-        prefix_langs: vec![("%", "TeX"), ("\\", "TeX")],
-        default: "Apex",
-    }];
+    let overrides = vec![
+        Override {
+            extension: "cls",
+            prefix_langs: vec![("%", "TeX"), ("\\", "TeX")],
+            default: "Apex",
+        },
+        Override {
+            extension: "xlsg",
+            prefix_langs: vec![],
+            default: "xlsg",
+        },
+    ];
 
     if let Some(Override {
         prefix_langs,

@@ -1,9 +1,9 @@
 import { Observable, of } from 'rxjs'
 import { catchError, map, startWith, switchMap } from 'rxjs/operators'
-import type { HoverAlert } from 'sourcegraph'
 
 import { combineLatestOrDefault } from '@sourcegraph/common'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
+import type { HoverAlert } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import { ButtonLink } from '@sourcegraph/wildcard'
 
 import { observeStorageKey, storage } from '../../../browser-extension/web-extension-api/storage'
@@ -59,7 +59,7 @@ export const createRepoNotFoundHoverAlert = (codeHost: Pick<CodeHost, 'hoverOver
     buttons: [
         <ButtonLink
             key="learn_more"
-            href="https://docs.sourcegraph.com/admin/repo/add"
+            href="/help/admin/repo/add"
             className={codeHost.hoverOverlayClassProps?.actionItemClassName ?? ''}
             target="_blank"
             rel="noopener norefferer"

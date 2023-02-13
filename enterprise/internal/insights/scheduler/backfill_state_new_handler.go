@@ -60,13 +60,14 @@ func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*worke
 		workerStore:     workerStore,
 		backfillStore:   backfillStore,
 		seriesReader:    store.NewInsightStore(insightsDB),
-		repoIterator:    discovery.NewSeriesRepoIterator(config.AllRepoIterator, config.RepoStore),
+		repoIterator:    discovery.NewSeriesRepoIterator(config.AllRepoIterator, config.RepoStore, config.RepoQueryExecutor),
 		costAnalyzer:    *config.CostAnalyzer,
 		timeseriesStore: config.InsightStore,
 	}
 
 	worker := dbworker.NewWorker(ctx, workerStore, workerutil.Handler[*BaseJob](&task), workerutil.WorkerOptions{
 		Name:              name,
+		Description:       "determines the repos for a code insight and an approximate cost of the backfill",
 		NumHandlers:       1,
 		Interval:          5 * time.Second,
 		HeartbeatInterval: 15 * time.Second,
@@ -76,7 +77,7 @@ func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*worke
 	resetter := dbworker.NewResetter(log.Scoped("BackfillNewResetter", ""), workerStore, dbworker.ResetterOptions{
 		Name:     fmt.Sprintf("%s_resetter", name),
 		Interval: time.Second * 20,
-		Metrics:  *dbworker.NewResetterMetrics(config.ObservationCtx, name),
+		Metrics:  dbworker.NewResetterMetrics(config.ObservationCtx, name),
 	})
 
 	return worker, resetter, workerStore
@@ -170,11 +171,11 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, job 
 
 func parseQuery(series types.InsightSeries) (query.Plan, error) {
 	if series.GeneratedFromCaptureGroups {
-		query, err := compute.Parse(series.Query)
+		seriesQuery, err := compute.Parse(series.Query)
 		if err != nil {
 			return nil, errors.Wrap(err, "compute.Parse")
 		}
-		searchQuery, err := query.ToSearchQuery()
+		searchQuery, err := seriesQuery.ToSearchQuery()
 		if err != nil {
 			return nil, errors.Wrap(err, "ToSearchQuery")
 		}

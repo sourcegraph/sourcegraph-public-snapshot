@@ -12,18 +12,19 @@ import (
 	"time"
 
 	"github.com/google/go-github/v47/github"
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
 	fewebhooks "github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -113,8 +114,8 @@ func TestGitHubWebhooks(t *testing.T) {
 	wh, err := whStore.Create(ctx, "test-webhook", extsvc.KindGitHub, "https://github.com", u.ID, nil)
 	require.NoError(t, err)
 
-	hook := fewebhooks.GitHubWebhook{WebhookRouter: &fewebhooks.WebhookRouter{DB: db}}
-	ghWebhook.Register(hook.WebhookRouter)
+	hook := fewebhooks.GitHubWebhook{Router: &fewebhooks.Router{DB: db}}
+	ghWebhook.Register(hook.Router)
 
 	newReq := func(t *testing.T, eventType string, event any) *http.Request {
 		t.Helper()
@@ -256,16 +257,15 @@ func TestGitHubWebhooks(t *testing.T) {
 			// detection by test runner
 			wantRepo := webhookTest.wantRepo
 			wantUser := webhookTest.wantUser
-			repoupdater.MockSchedulePermsSync = func(_ context.Context, args protocol.PermsSyncRequest) error {
+			permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
 				if wantRepo {
-					webhookCalled <- args.RepoIDs[0] == repo.ID
+					webhookCalled <- req.RepoIDs[0] == repo.ID
 				}
 				if wantUser {
-					webhookCalled <- args.UserIDs[0] == u.ID
+					webhookCalled <- req.UserIDs[0] == u.ID
 				}
-				return nil
 			}
-			t.Cleanup(func() { repoupdater.MockSchedulePermsSync = nil })
+			t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
 
 			req := newReq(t, webhookTest.eventType, webhookTest.event)
 

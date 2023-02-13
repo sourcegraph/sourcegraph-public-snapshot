@@ -1,9 +1,5 @@
 import React from 'react'
 
-import * as H from 'history'
-
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-
 import { ChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
 
@@ -13,10 +9,8 @@ import { VisibleChangesetApplyPreviewNode } from './VisibleChangesetApplyPreview
 
 import styles from './ChangesetApplyPreviewNode.module.scss'
 
-export interface ChangesetApplyPreviewNodeProps extends ThemeProps {
+export interface ChangesetApplyPreviewNodeProps {
     node: ChangesetApplyPreviewFields
-    history: H.History
-    location: H.Location
     authenticatedUser: PreviewPageAuthenticatedUser
     selectable?: {
         onSelect: (id: string) => void

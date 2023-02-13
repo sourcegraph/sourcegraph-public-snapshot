@@ -147,7 +147,6 @@ func (c *V3Client) get(ctx context.Context, requestURI string, result any) (*htt
 	return c.request(ctx, req, result)
 }
 
-//nolint:unparam // Return *httpResponseState for consistency with other methods
 func (c *V3Client) post(ctx context.Context, requestURI string, payload, result any) (*httpResponseState, error) {
 	body, err := json.Marshal(payload)
 	if err != nil {
@@ -695,6 +694,14 @@ func (c *V3Client) listRepositories(ctx context.Context, requestURI string) ([]*
 	}
 	repos := make([]*Repository, 0, len(restRepos))
 	for _, restRepo := range restRepos {
+		// Sometimes GitHub API returns null JSON objects and JSON decoder unmarshalls
+		// them as a zero-valued `restRepository` objects.
+		//
+		// See https://github.com/sourcegraph/customer/issues/1688 for details.
+		if restRepo.ID == "" {
+			c.log.Warn("GitHub returned a repository without an ID", log.String("restRepository", fmt.Sprintf("%#v", restRepo)))
+			continue
+		}
 		repos = append(repos, convertRestRepo(restRepo))
 	}
 	return repos, respState.hasNextPage(), nil
@@ -781,7 +788,7 @@ type Config struct {
 // Cloud API docs: https://docs.github.com/en/enterprise-cloud@latest/rest/webhooks/repos#create-a-repository-webhook
 // Server API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#create-a-repository-webhook
 func (c *V3Client) CreateSyncWebhook(ctx context.Context, repoName, targetHost, secret string) (int, error) {
-	url, err := webhookURLBuilder(repoName)
+	hooksUrl, err := webhookURLBuilder(repoName)
 	if err != nil {
 		return 0, err
 	}
@@ -801,7 +808,7 @@ func (c *V3Client) CreateSyncWebhook(ctx context.Context, repoName, targetHost, 
 	}
 
 	var result WebhookPayload
-	resp, err := c.post(ctx, url, payload, &result)
+	resp, err := c.post(ctx, hooksUrl, payload, &result)
 	if err != nil {
 		return 0, err
 	}
@@ -818,13 +825,13 @@ func (c *V3Client) CreateSyncWebhook(ctx context.Context, repoName, targetHost, 
 // Cloud API docs: https://docs.github.com/en/enterprise-cloud@latest/rest/webhooks/repos#list-repository-webhooks
 // Server API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#list-repository-webhooks
 func (c *V3Client) ListSyncWebhooks(ctx context.Context, repoName string) ([]WebhookPayload, error) {
-	url, err := webhookURLBuilder(repoName)
+	hooksUrl, err := webhookURLBuilder(repoName)
 	if err != nil {
 		return nil, err
 	}
 
 	var results []WebhookPayload
-	resp, err := c.get(ctx, url, &results)
+	resp, err := c.get(ctx, hooksUrl, &results)
 	if err != nil {
 		return nil, err
 	}
@@ -859,12 +866,12 @@ func (c *V3Client) FindSyncWebhook(ctx context.Context, repoName string) (*Webho
 // Cloud API docs: https://docs.github.com/en/enterprise-cloud@latest/rest/webhooks/repos#delete-a-repository-webhook
 // Server API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#delete-a-repository-webhook
 func (c *V3Client) DeleteSyncWebhook(ctx context.Context, repoName string, hookID int) (bool, error) {
-	url, err := webhookURLBuilderWithID(repoName, hookID)
+	hookUrl, err := webhookURLBuilderWithID(repoName, hookID)
 	if err != nil {
 		return false, err
 	}
 
-	resp, err := c.delete(ctx, url)
+	resp, err := c.delete(ctx, hookUrl)
 	if err != nil && err != io.EOF {
 		return false, err
 	}

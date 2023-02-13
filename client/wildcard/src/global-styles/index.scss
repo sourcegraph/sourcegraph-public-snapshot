@@ -1,0 +1,5 @@
+// The VSCode extension uses its syntax-highlighting theme,
+// that's why we need a separate base.scss entry point for all branded styles without syntax highlighting.
+// Client applications that want to inherit the default theme fully should use this file as a base theme.
+@import './base';
+@import './highlight';

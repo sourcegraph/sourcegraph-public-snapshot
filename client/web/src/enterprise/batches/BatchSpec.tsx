@@ -3,10 +3,10 @@ import React, { useMemo } from 'react'
 import { mdiFileDownload } from '@mdi/js'
 import { kebabCase } from 'lodash'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link, Icon, Text, Tooltip, Button, AnchorLink } from '@sourcegraph/wildcard'
 
-import { Timestamp } from '../../components/time/Timestamp'
 import { BatchChangeFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
@@ -26,7 +26,7 @@ export const getFileName = (name: string): string => `${kebabCase(name)}.batch.y
 
 export interface BatchSpecProps extends ThemeProps {
     name: string
-    originalInput: NonNullable<BatchChangeFields['currentSpec']>['originalInput']
+    originalInput: BatchChangeFields['currentSpec']['originalInput']
     className?: string
 }
 
@@ -56,7 +56,7 @@ export const BatchSpec: React.FunctionComponent<BatchSpecProps> = ({
     )
 }
 
-interface BatchSpecDownloadLinkProps extends BatchSpecProps, Pick<BatchChangeFields, 'name'> {
+interface BatchSpecDownloadLinkProps extends Omit<BatchSpecProps, 'isLightTheme'>, Pick<BatchChangeFields, 'name'> {
     className?: string
     asButton: boolean
 }
@@ -91,14 +91,15 @@ export const BatchSpecDownloadLink: React.FunctionComponent<React.PropsWithChild
     })
 
 // TODO: Consider merging this component with BatchSpecDownloadLink
-export const BatchSpecDownloadButton: React.FunctionComponent<BatchSpecProps & Pick<BatchChangeFields, 'name'>> =
-    React.memo(function BatchSpecDownloadButton(props) {
-        return (
-            <BatchSpecDownloadLink className="text-right text-nowrap" {...props} asButton={false}>
-                <Icon aria-hidden={true} svgPath={mdiFileDownload} /> Download YAML
-            </BatchSpecDownloadLink>
-        )
-    })
+export const BatchSpecDownloadButton: React.FunctionComponent<
+    Omit<BatchSpecProps, 'isLightTheme'> & Pick<BatchChangeFields, 'name'>
+> = React.memo(function BatchSpecDownloadButton(props) {
+    return (
+        <BatchSpecDownloadLink className="text-right text-nowrap" {...props} asButton={false}>
+            <Icon aria-hidden={true} svgPath={mdiFileDownload} /> Download YAML
+        </BatchSpecDownloadLink>
+    )
+})
 
 type BatchSpecMetaProps = Pick<BatchChangeFields, 'createdAt' | 'lastApplier' | 'lastAppliedAt'>
 

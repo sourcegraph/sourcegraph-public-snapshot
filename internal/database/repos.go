@@ -15,9 +15,9 @@ import (
 	regexpsyntax "github.com/grafana/regexp/syntax"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
 
@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
@@ -543,6 +544,8 @@ func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 		r.Metadata = new(github.Repository)
 	case extsvc.TypeGitLab:
 		r.Metadata = new(gitlab.Project)
+	case extsvc.TypeAzureDevOps:
+		r.Metadata = new(azuredevops.Repository)
 	case extsvc.TypeGerrit:
 		r.Metadata = new(gerrit.Project)
 	case extsvc.TypeBitbucketServer:
@@ -706,6 +709,10 @@ type ReposListOptions struct {
 	// last_error value in the gitserver_repos table.
 	FailedFetch bool
 
+	// OnlyCorrupted, if true, will filter to only repos where corruption has been detected.
+	// A repository is corrupt in the gitserver_repos table if it has a non-null value in gitserver_repos.corrupted_at
+	OnlyCorrupted bool
+
 	// MinLastChanged finds repository metadata or data that has changed since
 	// MinLastChanged. It filters against repos.UpdatedAt,
 	// gitserver.LastChanged and searchcontexts.UpdatedAt.
@@ -734,6 +741,9 @@ type ReposListOptions struct {
 	// ExcludeSources, if true, will NULL out the Sources field on repo. Computing it is relatively costly
 	// and if it doesn't end up being used this is wasted compute.
 	ExcludeSources bool
+
+	// cursor-based pagination args
+	PaginationArgs *PaginationArgs
 
 	*LimitOffset
 }
@@ -903,7 +913,7 @@ func (s *repoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 		return err
 	}
 
-	tr.LogFields(trace.SQL(q))
+	tr.LogFields(trace.SQL(q)) //nolint:staticcheck // TODO when updating observation package
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
@@ -925,6 +935,19 @@ func (s *repoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 
 func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListOptions) (*sqlf.Query, error) {
 	var ctes, joins, where []*sqlf.Query
+
+	querySuffix := sqlf.Sprintf("%s %s", opt.OrderBy.SQL(), opt.LimitOffset.SQL())
+
+	if opt.PaginationArgs != nil {
+		p := opt.PaginationArgs.SQL()
+
+		if p.Where != nil {
+			where = append(where, p.Where)
+		}
+
+		querySuffix = p.AppendOrderToQuery(&sqlf.Query{})
+		querySuffix = p.AppendLimitToQuery(querySuffix)
+	}
 
 	// Cursor-based pagination requires parsing a handful of extra fields, which
 	// may result in additional query conditions.
@@ -1041,6 +1064,11 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 	if opt.FailedFetch {
 		where = append(where, sqlf.Sprintf("gr.last_error IS NOT NULL"))
 	}
+
+	if opt.OnlyCorrupted {
+		where = append(where, sqlf.Sprintf("gr.corrupted_at IS NOT NULL"))
+	}
+
 	if !opt.MinLastChanged.IsZero() {
 		conds := []*sqlf.Query{
 			sqlf.Sprintf("EXISTS (SELECT 1 FROM gitserver_repos gr WHERE gr.repo_id = repo.id AND gr.last_changed >= %s)", opt.MinLastChanged),
@@ -1105,8 +1133,8 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 		where = append(where, sqlf.Sprintf("external_service_repos.org_id = %d", opt.OrgID))
 	}
 
-	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || opt.joinGitserverRepos ||
-		opt.CloneStatus != types.CloneStatusUnknown || containsSizeField(opt.OrderBy) {
+	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || opt.OnlyCorrupted || opt.joinGitserverRepos ||
+		opt.CloneStatus != types.CloneStatusUnknown || containsSizeField(opt.OrderBy) || (opt.PaginationArgs != nil && containsOrderBySizeField(opt.PaginationArgs.OrderBy)) {
 		joins = append(joins, sqlf.Sprintf("JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
 	}
 	if opt.OnlyIndexed || opt.NoIndexed {
@@ -1163,8 +1191,6 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 		queryPrefix = sqlf.Sprintf("WITH %s", sqlf.Join(ctes, ",\n"))
 	}
 
-	querySuffix := sqlf.Sprintf("%s %s", opt.OrderBy.SQL(), opt.LimitOffset.SQL())
-
 	columns := repoColumns
 	if !opt.ExcludeSources {
 		columns = append(columns, getSourcesByRepoQueryStr)
@@ -1195,6 +1221,15 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 func containsSizeField(orderBy RepoListOrderBy) bool {
 	for _, field := range orderBy {
 		if field.Field == RepoListSize {
+			return true
+		}
+	}
+	return false
+}
+
+func containsOrderBySizeField(orderBy OrderBy) bool {
+	for _, field := range orderBy {
+		if field.Field == string(RepoListSize) {
 			return true
 		}
 	}
@@ -1612,12 +1647,12 @@ func parsePattern(tr *trace.Trace, p string, caseSensitive bool) ([]*sqlf.Query,
 		return nil, err
 	}
 
-	tr.LogFields(
-		otlog.String("parsePattern", p),
-		otlog.Bool("caseSensitive", caseSensitive),
-		trace.Strings("exact", exact),
-		trace.Strings("like", like),
-		otlog.String("pattern", pattern))
+	tr.SetAttributes(
+		attribute.String("parsePattern", p),
+		attribute.Bool("caseSensitive", caseSensitive),
+		attribute.StringSlice("exact", exact),
+		attribute.StringSlice("like", like),
+		attribute.String("pattern", pattern))
 
 	var conds []*sqlf.Query
 	if exact != nil {
@@ -1650,11 +1685,11 @@ func parseDescriptionPattern(tr *trace.Trace, p string) ([]*sqlf.Query, error) {
 		return nil, err
 	}
 
-	tr.LogFields(
-		otlog.String("parseDescriptionPattern", p),
-		trace.Strings("exact", exact),
-		trace.Strings("like", like),
-		otlog.String("pattern", pattern))
+	tr.SetAttributes(
+		attribute.String("parseDescriptionPattern", p),
+		attribute.StringSlice("exact", exact),
+		attribute.StringSlice("like", like),
+		attribute.String("pattern", pattern))
 
 	var conds []*sqlf.Query
 	if len(exact) > 0 {

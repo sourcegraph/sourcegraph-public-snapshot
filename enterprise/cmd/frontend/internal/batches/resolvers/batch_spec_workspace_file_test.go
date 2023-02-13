@@ -31,10 +31,13 @@ func (m *mockFileResolver) Binary(ctx context.Context) (bool, error) {
 func (m *mockFileResolver) ByteSize(ctx context.Context) (int32, error) {
 	return 0, errors.New("not implemented")
 }
-func (m *mockFileResolver) Content(ctx context.Context) (string, error) {
+func (m *mockFileResolver) TotalLines(ctx context.Context) (int32, error) {
+	return 0, errors.New("not implemented")
+}
+func (m *mockFileResolver) Content(ctx context.Context, args *graphqlbackend.GitTreeContentPageArgs) (string, error) {
 	return "", errors.New("not implemented")
 }
-func (m *mockFileResolver) RichHTML(ctx context.Context) (string, error) {
+func (m *mockFileResolver) RichHTML(ctx context.Context, args *graphqlbackend.GitTreeContentPageArgs) (string, error) {
 	return "", errors.New("not implemented")
 }
 func (m *mockFileResolver) URL(ctx context.Context) (string, error) {
@@ -158,7 +161,7 @@ func TestBatchSpecWorkspaceFileResolver(t *testing.T) {
 			{
 				name: "Content",
 				getActual: func() (interface{}, error) {
-					return resolver.Content(context.Background())
+					return resolver.Content(context.Background(), &graphqlbackend.GitTreeContentPageArgs{})
 				},
 				expected:    "",
 				expectedErr: errors.New("not implemented"),
@@ -173,7 +176,7 @@ func TestBatchSpecWorkspaceFileResolver(t *testing.T) {
 			{
 				name: "RichHTML",
 				getActual: func() (interface{}, error) {
-					return resolver.RichHTML(context.Background())
+					return resolver.RichHTML(context.Background(), &graphqlbackend.GitTreeContentPageArgs{})
 				},
 				expected:    "",
 				expectedErr: errors.New("not implemented"),
@@ -183,7 +186,7 @@ func TestBatchSpecWorkspaceFileResolver(t *testing.T) {
 				getActual: func() (interface{}, error) {
 					return resolver.URL(context.Background())
 				},
-				expected: fmt.Sprintf("/files/batch-changes/%s/%s", file.RandID, batchSpecRandID),
+				expected: fmt.Sprintf("/files/batch-changes/%s/%s", batchSpecRandID, file.RandID),
 			},
 			{
 				name: "CanonicalURL",
@@ -303,7 +306,7 @@ func TestBatchSpecWorkspaceFileResolver(t *testing.T) {
 			{
 				name: "Content",
 				getActual: func() (interface{}, error) {
-					return resolver.Content(context.Background())
+					return resolver.Content(context.Background(), &graphqlbackend.GitTreeContentPageArgs{})
 				},
 				expected:    "",
 				expectedErr: errors.New("not implemented"),
@@ -318,7 +321,7 @@ func TestBatchSpecWorkspaceFileResolver(t *testing.T) {
 			{
 				name: "RichHTML",
 				getActual: func() (interface{}, error) {
-					return resolver.RichHTML(context.Background())
+					return resolver.RichHTML(context.Background(), &graphqlbackend.GitTreeContentPageArgs{})
 				},
 				expected:    "",
 				expectedErr: errors.New("not implemented"),
@@ -328,7 +331,7 @@ func TestBatchSpecWorkspaceFileResolver(t *testing.T) {
 				getActual: func() (interface{}, error) {
 					return resolver.URL(context.Background())
 				},
-				expected: fmt.Sprintf("/files/batch-changes/%s/%s", file.RandID, batchSpecRandID),
+				expected: fmt.Sprintf("/files/batch-changes/%s/%s", batchSpecRandID, file.RandID),
 			},
 			{
 				name: "CanonicalURL",

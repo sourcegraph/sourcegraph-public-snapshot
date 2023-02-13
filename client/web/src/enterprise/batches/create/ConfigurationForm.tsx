@@ -3,13 +3,11 @@ import React, { useCallback, useState } from 'react'
 import { mdiInformationOutline, mdiLock } from '@mdi/js'
 import classNames from 'classnames'
 import { noop } from 'lodash'
-import { useHistory, useLocation } from 'react-router'
+import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation } from '@sourcegraph/http-client'
-import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
-import { Alert, Button, Container, Icon, Input, RadioButton, Tooltip } from '@sourcegraph/wildcard'
+import { UserSettingFields, OrgSettingFields } from '@sourcegraph/shared/src/graphql-operations'
+import { Alert, Button, Container, Icon, Input, RadioButton, Tooltip, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import {
@@ -99,7 +97,7 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
 
     // The namespace selected for creating the new batch change under.
     const [selectedNamespace, setSelectedNamespace] = useState<
-        Pick<SettingsUserSubject, 'id'> | Pick<SettingsOrgSubject, 'id'>
+        Pick<UserSettingFields, 'id'> | Pick<OrgSettingFields, 'id'>
     >(defaultSelectedNamespace)
 
     const [nameInput, setNameInput] = useState(batchChange?.name || '')
@@ -112,9 +110,9 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
 
     const { isUnlicensed, maxUnlicensedChangesets } = useBatchChangesLicense()
 
-    const history = useHistory()
+    const navigate = useNavigate()
     const location = useLocation()
-    const handleCancel = (): void => history.goBack()
+    const handleCancel = (): void => navigate(-1)
     const handleCreate: React.FormEventHandler = (event): void => {
         event.preventDefault()
         const redirectSearchParameters = new URLSearchParams(location.search)
@@ -147,9 +145,7 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                     : Promise.resolve(args)
             })
             .then(({ data }) =>
-                data
-                    ? history.push(`${data.createEmptyBatchChange.url}/edit${serializedRedirectSearchParameters}`)
-                    : noop()
+                data ? navigate(`${data.createEmptyBatchChange.url}/edit${serializedRedirectSearchParameters}`) : noop()
             )
             // We destructure and surface the error from `useMutation` instead.
             .catch(noop)

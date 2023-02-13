@@ -3,12 +3,10 @@ import React, { FC, useCallback, useMemo, useState } from 'react'
 import classNames from 'classnames'
 import { parse as parseJSONC } from 'jsonc-parser'
 import { noop } from 'lodash'
-import { RouteComponentProps } from 'react-router'
+import { useNavigate } from 'react-router-dom-v5-compat'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
-import { Alert, Button, ButtonLink, H2, Input, Select } from '@sourcegraph/wildcard'
+import { Alert, Button, ButtonLink, H2, Input, Select, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { EXTERNAL_SERVICES } from '../components/externalServices/backend'
 import { defaultExternalServices } from '../components/externalServices/externalServices'
@@ -23,12 +21,13 @@ import {
     UpdateWebhookVariables,
     WebhookFields,
 } from '../graphql-operations'
+import { generateSecret } from '../util/security'
 
 import { CREATE_WEBHOOK_QUERY, UPDATE_WEBHOOK_QUERY } from './backend'
 
 import styles from './WebhookCreateUpdatePage.module.scss'
 
-interface WebhookCreateUpdatePageProps extends Pick<RouteComponentProps, 'history'> {
+interface WebhookCreateUpdatePageProps {
     // existingWebhook is present when this page is used as an update page.
     existingWebhook?: WebhookFields
 }
@@ -40,7 +39,8 @@ export interface Webhook {
     secret: string | null
 }
 
-export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ history, existingWebhook }) => {
+export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ existingWebhook }) => {
+    const navigate = useNavigate()
     const update = existingWebhook !== undefined
     const initialWebhook = update
         ? {
@@ -134,14 +134,14 @@ export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ hist
     const [createWebhook, { error: createWebhookError, loading: creationLoading }] = useMutation<
         CreateWebhookResult,
         CreateWebhookVariables
-    >(CREATE_WEBHOOK_QUERY, { onCompleted: data => history.push(`/site-admin/webhooks/${data.createWebhook.id}`) })
+    >(CREATE_WEBHOOK_QUERY, { onCompleted: data => navigate(`/site-admin/webhooks/${data.createWebhook.id}`) })
 
     const [updateWebhook, { error: updateWebhookError, loading: updateLoading }] = useMutation<
         UpdateWebhookResult,
         UpdateWebhookVariables
     >(UPDATE_WEBHOOK_QUERY, {
         variables: buildUpdateWebhookVariables(webhook, existingWebhook?.id),
-        onCompleted: data => history.push(`/site-admin/webhooks/${data.updateWebhook.id}`),
+        onCompleted: data => navigate(`/site-admin/webhooks/${data.updateWebhook.id}`),
     })
 
     return (
@@ -255,7 +255,7 @@ export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ hist
                                             Update
                                         </Button>
                                     </div>
-                                    <div className="ml-3">
+                                    <div className="ml-1">
                                         <ButtonLink
                                             to={`/site-admin/webhooks/${existingWebhook.id}`}
                                             variant="secondary"
@@ -330,13 +330,4 @@ function convertWebhookToCreateWebhookVariables(webhook: Webhook): CreateWebhook
         codeHostURN: webhook.codeHostURN,
         secret,
     }
-}
-
-function generateSecret(): string {
-    let text = ''
-    const possible = 'ABCDEF0123456789'
-    for (let index = 0; index < 12; index++) {
-        text += possible.charAt(Math.floor(Math.random() * possible.length))
-    }
-    return text
 }

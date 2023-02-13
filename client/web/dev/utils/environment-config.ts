@@ -10,6 +10,8 @@ type WEB_BUILDER = 'esbuild' | 'webpack'
 
 const NODE_ENV = process.env.NODE_ENV || 'development'
 
+const NODE_DEBUG = process.env.NODE_DEBUG
+
 export const IS_DEVELOPMENT = NODE_ENV === 'development'
 export const IS_PRODUCTION = NODE_ENV === 'production'
 
@@ -20,6 +22,7 @@ export const ENVIRONMENT_CONFIG = {
      * ----------------------------------------
      */
     NODE_ENV,
+    NODE_DEBUG,
     // Determines if build is running on CI.
     CI: getEnvironmentBoolean('CI'),
     // Determines if the build will be used for integration tests.
@@ -58,6 +61,13 @@ export const ENVIRONMENT_CONFIG = {
     //  Webpack is the default web build tool, and esbuild is an experimental option (see
     //  https://docs.sourcegraph.com/dev/background-information/web/build#esbuild).
     DEV_WEB_BUILDER: (process.env.DEV_WEB_BUILDER === 'esbuild' ? 'esbuild' : 'webpack') as WEB_BUILDER,
+
+    /**
+     * Omit slow deps (such as Monaco and GraphiQL) in the build to get a ~40% reduction in esbuild
+     * rebuild time. The web app will show placeholders if features needing these deps are used.
+     * (Esbuild only.)
+     */
+    DEV_WEB_BUILDER_OMIT_SLOW_DEPS: Boolean(process.env.DEV_WEB_BUILDER_OMIT_SLOW_DEPS),
 
     /**
      * ----------------------------------------

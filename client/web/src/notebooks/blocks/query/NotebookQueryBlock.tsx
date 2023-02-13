@@ -5,21 +5,16 @@ import { mdiPlayCircleOutline, mdiOpenInNew, mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
 import { Observable, of } from 'rxjs'
 
-import { HoverMerged } from '@sourcegraph/client-api'
-import { Hoverifier } from '@sourcegraph/codeintellify'
-import { SearchContextProps } from '@sourcegraph/search'
 import {
     StreamingSearchResultsList,
     CodeMirrorQueryInput,
     changeListener,
     createDefaultSuggestions,
-} from '@sourcegraph/search-ui'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+} from '@sourcegraph/branded'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { editorHeight } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -45,13 +40,11 @@ interface NotebookQueryBlockProps
         ThemeProps,
         SettingsCascadeProps,
         TelemetryProps,
-        PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings'>,
-        ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
+        PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings'> {
     globbing: boolean
     isSourcegraphDotCom: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     authenticatedUser: AuthenticatedUser | null
-    hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
 // Defines the max height for the CodeMirror editor
@@ -74,15 +67,14 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
         telemetryService,
         settingsCascade,
         isSelected,
-        hoverifier,
         onBlockInputChange,
         fetchHighlightedFileLineRanges,
         onRunBlock,
         globbing,
         isSourcegraphDotCom,
+        searchContextsEnabled,
         ...props
     }) => {
-        const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
         const [editor, setEditor] = useState<EditorView>()
         const searchResults = useObservable(output ?? of(undefined))
         const [executedQuery, setExecutedQuery] = useState<string>(input.query)
@@ -204,18 +196,15 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                         <div className={styles.results}>
                             <StreamingSearchResultsList
                                 isSourcegraphDotCom={isSourcegraphDotCom}
-                                searchContextsEnabled={props.searchContextsEnabled}
+                                searchContextsEnabled={searchContextsEnabled}
                                 allExpanded={false}
                                 results={searchResults}
                                 isLightTheme={isLightTheme}
                                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 telemetryService={telemetryService}
                                 settingsCascade={settingsCascade}
-                                showSearchContext={showSearchContext}
                                 assetsRoot={window.context?.assetsRoot || ''}
                                 platformContext={props.platformContext}
-                                extensionsController={props.extensionsController}
-                                hoverifier={hoverifier}
                                 openMatchesInNewTab={true}
                                 executedQuery={executedQuery}
                             />

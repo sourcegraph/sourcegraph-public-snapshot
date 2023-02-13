@@ -3,9 +3,6 @@ package workerdb
 import (
 	"database/sql"
 
-	"github.com/sourcegraph/log"
-
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -33,10 +30,5 @@ var initDatabaseMemo = memo.NewMemoizedConstructorWithArg(func(observationCtx *o
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
 
-	// ideally we could memoize the LRU cache only for this, and then create new clients on-demand with a passed-in observationCtx
-	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.NewDB(log.Scoped("initDatabaseMemo", ""), db).SubRepoPerms())
-	if err != nil {
-		return nil, errors.Errorf("Failed to create sub-repo client: %v", err)
-	}
 	return db, nil
 })

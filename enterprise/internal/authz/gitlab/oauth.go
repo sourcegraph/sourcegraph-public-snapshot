@@ -61,7 +61,7 @@ func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer) *OAuthProvider {
 	}
 }
 
-func (p *OAuthProvider) ValidateConnection(context.Context) (problems []string) {
+func (p *OAuthProvider) ValidateConnection(context.Context) error {
 	return nil
 }
 

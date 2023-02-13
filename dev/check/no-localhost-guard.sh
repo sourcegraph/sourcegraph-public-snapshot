@@ -12,7 +12,7 @@ path_filter() {
 }
 
 set +e
-LOCALHOST_MATCHES=$(git grep -e localhost --and --not -e '^\s*//' --and --not -e 'CI\:LOCALHOST_OK' -- '*.go' \
+LOCALHOST_MATCHES=$(git grep -e localhost --and -e '^(?!\s*//)' --and --not -e 'CI\:LOCALHOST_OK' -- '*.go' \
   ':(exclude)*_test.go' \
   ':(exclude)cmd/server/shared/nginx.go' \
   ':(exclude)dev/sg/sg_setup.go' \
