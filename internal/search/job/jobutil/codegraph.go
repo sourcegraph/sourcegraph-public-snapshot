@@ -29,10 +29,6 @@ type CodeGraphSearchJob struct {
 	Relationship query.SymbolRelationship
 }
 
-type streamingSenderFunc func(streaming.SearchEvent)
-
-func (s streamingSenderFunc) Send(e streaming.SearchEvent) { s(e) }
-
 func (s *CodeGraphSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
@@ -49,93 +45,93 @@ func (s *CodeGraphSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 			return
 		}
 		for _, m := range se.Results {
-			switch fm := m.(type) {
-			case *result.FileMatch:
-				if len(fm.Symbols) > 0 {
-					// For each symbol, get results with precise relationships to the
-					// symbol.
-					var locations []types.CodeIntelLocation
-					var err error
-					for _, symbol := range fm.Symbols {
-						// TODO: We should paginate code graph searches
-						req := types.CodeIntelRequestArgs{
-							RepositoryID: int(fm.Repo.ID),
-							Commit:       string(fm.CommitID),
-							Path:         fm.Path,
-							// symbols are 1-indexed but codeintel is 0-indexed
-							Line:      symbol.Symbol.Line - 1,
-							Character: symbol.Symbol.Character,
-							Limit:     100,
-							RawCursor: "",
-						}
-
-						switch s.Relationship {
-						case query.SymbolRelationshipReferences:
-							locations, err = s.CodeIntel.GetReferences(ctx, fm.Repo, req)
-
-						case query.SymbolRelationshipImplements:
-							locations, err = s.CodeIntel.GetImplementations(ctx, fm.Repo, req)
-
-						default:
-							err = errors.Newf("unknown relationship query %q", s.Relationship)
-						}
-					}
-					if err != nil {
-						symbolSearchErrors = errors.Append(symbolSearchErrors, err)
-						continue
-					}
-
-					for _, l := range locations {
-						// Range identifies this result
-						r := result.Range{
-							Start: result.Location{
-								Column: l.TargetRange.Start.Character,
-								Line:   l.TargetRange.Start.Line,
-							},
-							End: result.Location{
-								Column: l.TargetRange.End.Character,
-								Line:   l.TargetRange.End.Line,
-							},
-						}
-						// Deduplicate results
-						if seenRanges[l.Path] == nil {
-							seenRanges[l.Path] = map[result.Range]struct{}{r: {}}
-						} else if _, seen := seenRanges[l.Path][r]; seen {
-							continue
-						}
-
-						// TODO: Right now, we just return the result as a chunk match
-						// because we do not get the actual symbol at the location. We
-						// probably want to be able to adapt these back to symbol results.
-						f, err := clients.Gitserver.ReadFile(ctx, authz.DefaultSubRepoPermsChecker,
-							fm.Repo.Name, api.CommitID(l.TargetCommit), l.Path)
-						if err != nil {
-							symbolSearchErrors = errors.Append(symbolSearchErrors, err)
-							continue
-						}
-						match := &result.FileMatch{
-							File: result.File{
-								Repo:     fm.Repo,
-								CommitID: api.CommitID(l.TargetCommit),
-								InputRev: fm.InputRev,
-								Path:     l.Path,
-							},
-							ChunkMatches: result.ChunkMatches{
-								result.ChunkMatch{
-									Content: string(f),
-									ContentStart: result.Location{
-										Line: l.TargetRange.Start.Line,
-									},
-									Ranges: result.Ranges{r},
-								},
-							},
-						}
-						stream.Send(streaming.SearchEvent{Results: result.Matches{match}})
-					}
+			// Symbol results are always FileMatch
+			fm, ok := m.(*result.FileMatch)
+			if !ok {
+				continue
+			}
+			if len(fm.Symbols) == 0 {
+				continue
+			}
+			// For each symbol, get results with precise relationships to the
+			// symbol.
+			var locations []types.CodeIntelLocation
+			var err error
+			for _, symbol := range fm.Symbols {
+				// TODO: We should paginate code graph searches
+				req := types.CodeIntelRequestArgs{
+					RepositoryID: int(fm.Repo.ID),
+					Commit:       string(fm.CommitID),
+					Path:         fm.Path,
+					// symbols are 1-indexed but codeintel is 0-indexed
+					Line:      symbol.Symbol.Line - 1,
+					Character: symbol.Symbol.Character,
+					Limit:     100,
+					RawCursor: "",
 				}
-				return
-			default:
-				// ignore
+
+				switch s.Relationship {
+				case query.SymbolRelationshipReferences:
+					locations, err = s.CodeIntel.GetReferences(ctx, fm.Repo, req)
+
+				case query.SymbolRelationshipImplements:
+					locations, err = s.CodeIntel.GetImplementations(ctx, fm.Repo, req)
+
+				default:
+					err = errors.Newf("unknown relationship query %q", s.Relationship)
+				}
+			}
+			if err != nil {
+				symbolSearchErrors = errors.Append(symbolSearchErrors, err)
+				continue
+			}
+
+			for _, l := range locations {
+				// Range identifies this result
+				r := result.Range{
+					Start: result.Location{
+						Column: l.TargetRange.Start.Character,
+						Line:   l.TargetRange.Start.Line,
+					},
+					End: result.Location{
+						Column: l.TargetRange.End.Character,
+						Line:   l.TargetRange.End.Line,
+					},
+				}
+				// Deduplicate results
+				if seenRanges[l.Path] == nil {
+					seenRanges[l.Path] = map[result.Range]struct{}{r: {}}
+				} else if _, seen := seenRanges[l.Path][r]; seen {
+					continue
+				}
+
+				// TODO: Right now, we just return the result as a chunk match
+				// because we do not get the actual symbol at the location. We
+				// probably want to be able to adapt these back to symbol results.
+				f, err := clients.Gitserver.ReadFile(ctx, authz.DefaultSubRepoPermsChecker,
+					fm.Repo.Name, api.CommitID(l.TargetCommit), l.Path)
+				if err != nil {
+					symbolSearchErrors = errors.Append(symbolSearchErrors, err)
+					continue
+				}
+				match := &result.FileMatch{
+					File: result.File{
+						Repo:     fm.Repo,
+						CommitID: api.CommitID(l.TargetCommit),
+						InputRev: fm.InputRev,
+						Path:     l.Path,
+					},
+					ChunkMatches: result.ChunkMatches{
+						result.ChunkMatch{
+							Content: string(f),
+							ContentStart: result.Location{
+								Line: l.TargetRange.Start.Line,
+							},
+							Ranges: result.Ranges{r},
+						},
+					},
+				}
+				stream.Send(streaming.SearchEvent{Results: result.Matches{match}})
 			}
 		}
 	}))
