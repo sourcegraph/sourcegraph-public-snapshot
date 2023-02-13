@@ -40,11 +40,11 @@ CREATE TYPE cm_email_priority AS ENUM (
 );
 
 CREATE TYPE configuration_policies_transition_columns AS (
-    name text,
-    type text,
-    pattern text,
-    retention_enabled boolean,
-    retention_duration_hours integer,
+        name text,
+        type text,
+        pattern text,
+        retention_enabled boolean,
+        retention_duration_hours integer,
     retain_intermediate_commits boolean,
     indexing_enabled boolean,
     index_commit_max_age_hours integer,
