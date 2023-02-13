@@ -49,6 +49,11 @@ type PermsStore interface {
 	// LoadRepoPermissions loads stored repository permissions into p. An
 	// ErrPermsNotFound is returned when there are no valid permissions available.
 	LoadRepoPermissions(ctx context.Context, p *authz.RepoPermissions) error
+
+	// SetUserExternalAccountPerms sets the users permissions for repos in the database. Uses SetUserRepoPermissions internally.
+	SetUserExternalAccountPerms(ctx context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32) error
+	// SetRepoPerms sets the users that can access a repo. Uses SetUserRepoPermissions internally.
+	SetRepoPerms(ctx context.Context, repoID int32, userIDs []authz.UserIDWithExternalAccountID) error
 	// SetUserRepoPermissions performs a full update for p, new rows for pairs of user_id, repo_id
 	// found in p will be upserted and pairs of user_id, repo_id no longer in p will be removed.
 	// This method updates both `user_repo_permissions` table.
@@ -79,6 +84,7 @@ type PermsStore interface {
 	//
 	// So one repo {id:2} was removed and one was added {id:233} to the user
 	SetUserRepoPermissions(ctx context.Context, p []authz.Permission, entity authz.PermissionEntity, source string) error
+	// LEGACY:
 	// SetUserPermissions performs a full update for p, new object IDs found in p
 	// will be upserted and object IDs no longer in p will be removed. This method
 	// updates both `user_permissions` and `repo_permissions` tables.
@@ -103,6 +109,7 @@ type PermsStore interface {
 	//         1 |       read |           {1} |      NOW() | <Unchanged>
 	//         2 |       read |           {1} |      NOW() | <Unchanged>
 	SetUserPermissions(ctx context.Context, p *authz.UserPermissions) (*database.SetPermissionsResult, error)
+	// LEGACY:
 	// SetRepoPermissions performs a full update for p, new user IDs found in p will
 	// be upserted and user IDs no longer in p will be removed. This method updates
 	// both `user_permissions` and `repo_permissions` tables.
@@ -225,7 +232,7 @@ type PermsStore interface {
 	// account specs. The returned set has mapping relation as "account ID -> user
 	// ID". The number of results could be less than the candidate list due to some
 	// users are not associated with any external account.
-	GetUserIDsByExternalAccounts(ctx context.Context, accounts *extsvc.Accounts) (map[string]authz.PermissionEntity, error)
+	GetUserIDsByExternalAccounts(ctx context.Context, accounts *extsvc.Accounts) (map[string]authz.UserIDWithExternalAccountID, error)
 	// UserIDsWithNoPerms returns a list of user IDs with no permissions found in the
 	// database.
 	UserIDsWithNoPerms(ctx context.Context) ([]int32, error)
@@ -389,6 +396,45 @@ func (s *permsStore) LoadRepoPermissions(ctx context.Context, p *authz.RepoPermi
 	return nil
 }
 
+// SetUserExternalAccountPerms sets the users permissions for repos in the database. Uses SetUserRepoPermissions internally.
+func (s *permsStore) SetUserExternalAccountPerms(ctx context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32) error {
+	p := make([]authz.Permission, len(repoIDs))
+
+	for _, repoID := range repoIDs {
+		p = append(p, authz.Permission{
+			UserID:            user.UserID,
+			ExternalAccountID: user.ExternalAccountID,
+			RepoID:            int32(repoID),
+		})
+	}
+
+	entity := authz.PermissionEntity{
+		UserID:            user.UserID,
+		ExternalAccountID: user.ExternalAccountID,
+	}
+
+	return s.SetUserRepoPermissions(ctx, p, entity, authz.SourceUserSync)
+}
+
+// SetRepoPerms sets the users that can access a repo. Uses SetUserRepoPermissions internally.
+func (s *permsStore) SetRepoPerms(ctx context.Context, repoID int32, userIDs []authz.UserIDWithExternalAccountID) error {
+	p := make([]authz.Permission, len(userIDs))
+
+	for _, user := range userIDs {
+		p = append(p, authz.Permission{
+			UserID:            user.UserID,
+			ExternalAccountID: user.ExternalAccountID,
+			RepoID:            repoID,
+		})
+	}
+
+	entity := authz.PermissionEntity{
+		RepoID: repoID,
+	}
+
+	return s.SetUserRepoPermissions(ctx, p, entity, authz.SourceRepoSync)
+}
+
 func (s *permsStore) SetUserRepoPermissions(ctx context.Context, p []authz.Permission, entity authz.PermissionEntity, source string) (err error) {
 	ctx, save := s.observe(ctx, "SetUserRepoPermissions", "")
 	defer func() {
@@ -425,60 +471,6 @@ func (s *permsStore) SetUserRepoPermissions(ctx context.Context, p []authz.Permi
 	}
 
 	return nil
-}
-
-// TODO: maybe not needed at all in the end, check references
-// loadUserRepoPermissions is a method that scans either user_id or repo_id from the user_repo_permissions table, depending on the entity:
-// []int32 (ids).
-func (s *permsStore) loadUserRepoPermissions(ctx context.Context, entity authz.PermissionEntity) (ids []int32, err error) {
-	format := `
-SELECT user_id
-FROM user_repo_permissions
-WHERE user_id = %d
-`
-	id := entity.UserID
-	if entity.RepoID > 0 {
-		format = `
-SELECT repo_id
-FROM user_repo_permissions
-WHERE repo_id = %d
-`
-		id = entity.RepoID
-	}
-
-	q := sqlf.Sprintf(format, id)
-	ctx, save := s.observe(ctx, "load", "")
-	defer func() {
-		save(&err,
-			otlog.String("Query.Query", q.Query(sqlf.PostgresBindVar)),
-			otlog.Object("Query.Args", q.Args()),
-		)
-	}()
-	var rows *sql.Rows
-	rows, err = s.Query(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO: is this really needed?
-	if !rows.Next() {
-		// One row is expected, return ErrPermsNotFound if no other errors occurred.
-		err = rows.Err()
-		if err == nil {
-			err = authz.ErrPermsNotFound
-		}
-		return nil, err
-	}
-
-	if err = rows.Scan(pq.Array(&ids)); err != nil {
-		return nil, err
-	}
-
-	if err = rows.Close(); err != nil {
-		return nil, err
-	}
-
-	return ids, nil
 }
 
 // upsertUserRepoPermissions upserts multiple rows of permissions. It also updates the updated_at and source
@@ -1690,7 +1682,7 @@ AND permission = %s
 	return id, ids, updatedAt, syncedAt, nil
 }
 
-func (s *permsStore) GetUserIDsByExternalAccounts(ctx context.Context, accounts *extsvc.Accounts) (_ map[string]authz.PermissionEntity, err error) {
+func (s *permsStore) GetUserIDsByExternalAccounts(ctx context.Context, accounts *extsvc.Accounts) (_ map[string]authz.UserIDWithExternalAccountID, err error) {
 	ctx, save := s.observe(ctx, "ListUsersByExternalAccounts", "")
 	defer func() { save(&err, accounts.TracingFields()...) }()
 
@@ -1714,14 +1706,14 @@ AND expired_at IS NULL
 	}
 	defer func() { _ = rows.Close() }()
 
-	userIDs := make(map[string]authz.PermissionEntity)
+	userIDs := make(map[string]authz.UserIDWithExternalAccountID)
 	for rows.Next() {
 		var externalAccountID, userID int32
 		var accountID string
 		if err := rows.Scan(&externalAccountID, &userID, &accountID); err != nil {
 			return nil, err
 		}
-		userIDs[accountID] = authz.PermissionEntity{
+		userIDs[accountID] = authz.UserIDWithExternalAccountID{
 			UserID:            userID,
 			ExternalAccountID: externalAccountID,
 		}

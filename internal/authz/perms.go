@@ -108,6 +108,15 @@ type PermissionEntity struct {
 	RepoID            int32 // The internal database ID of a repo
 }
 
+type UserIDWithExternalAccountID struct {
+	UserID            int32
+	ExternalAccountID int32
+}
+
+const SourceRepoSync = "repo_sync"
+const SourceUserSync = "user_sync"
+const SourceAPI = "api"
+
 // TracingFields returns tracing fields for the opentracing log.
 func (p *Permission) TracingFields() []otlog.Field {
 	fs := []otlog.Field{

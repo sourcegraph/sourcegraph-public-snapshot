@@ -315,7 +315,7 @@ func testPermsStore_FetchReposByUserAndExternalService(db database.DB) func(*tes
 			if err != nil {
 				t.Fatal(err)
 			}
-			equal(t, "repos", []api.RepoID{}, repos)
+			equal(t, "repos", 0, len(repos))
 		})
 	}
 }
@@ -924,7 +924,7 @@ func testPermsStore_FetchReposByExternalAccount(db database.DB) func(*testing.T)
 		{
 			name:              "empty",
 			externalAccountID: 1,
-			expected:          []api.RepoID{},
+			expected:          nil,
 		},
 		{
 			name:              "one match",

@@ -12,6 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
+	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -568,24 +569,16 @@ func (s *PermsSyncer) saveUserPermsForAccount(ctx context.Context, userID int32,
 			log.Int32("ExternalAccountID", acctID)),
 	)
 
-	perms := []authz.Permission{}
-	for _, repoID := range repoIDs {
-		perms = append(perms, authz.Permission{
-			UserID:            userID,
-			ExternalAccountID: acctID,
-			RepoID:            repoID,
-		})
-	}
-
 	// NOTE: Please read the docstring of permsUpdateLock field for reasoning of the lock.
 	s.permsUpdateLock.Lock()
 	// Save new permissions to database
 	defer s.permsUpdateLock.Unlock()
 
-	err := s.permsStore.SetUserRepoPermissions(ctx, perms, authz.PermissionEntity{
+	err := s.permsStore.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{
 		UserID:            userID,
 		ExternalAccountID: acctID,
-	}, "user_sync")
+	}, repoIDs)
+
 	if err != nil {
 		logger.Warn("saving perms to DB", log.Error(err))
 		return err
@@ -755,7 +748,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	}
 
 	pendingAccountIDsSet := make(map[string]struct{})
-	accountIDsToUserIDs := make(map[string]authz.PermissionEntity) // User External Account ID -> User ID
+	accountIDsToUserIDs := make(map[string]authz.UserIDWithExternalAccountID) // User External Account ID -> User ID
 
 	extAccountIDs, err := provider.FetchRepoPerms(ctx, &extsvc.Repository{
 		URI:              repo.URI,
@@ -835,16 +828,9 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		Perm:    authz.Read, // Note: We currently only support read for repository permissions.
 		UserIDs: map[int32]struct{}{},
 	}
-
-	perms := []authz.Permission{}
 	for aid, perm := range accountIDsToUserIDs {
 		// Add existing user to permissions
 		p.UserIDs[perm.UserID] = struct{}{}
-		perms = append(perms, authz.Permission{
-			UserID:            perm.UserID,
-			ExternalAccountID: perm.ExternalAccountID,
-			RepoID:            int32(repoID),
-		})
 
 		// Remove existing user from the set of pending users
 		delete(pendingAccountIDsSet, aid)
@@ -866,7 +852,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	defer func() { err = txs.Done(err) }()
 
 	if UserRepoPermsEnabled(ctx, s.db) {
-		if err = txs.SetUserRepoPermissions(ctx, perms, authz.PermissionEntity{RepoID: int32(repoID)}, "repo_sync"); err != nil {
+		if err = txs.SetRepoPerms(ctx, int32(repoID), maps.Values(accountIDsToUserIDs)); err != nil {
 			return result, providerStates, errors.Wrapf(err, "set user repo permissions for repository %q (id: %d)", repo.Name, repo.ID)
 		}
 	}
