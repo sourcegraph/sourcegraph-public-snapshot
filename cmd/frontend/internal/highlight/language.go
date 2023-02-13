@@ -59,8 +59,9 @@ var highlightConfig = syntaxHighlightConfig{
 }
 var baseHighlightConfig = syntaxHighlightConfig{
 	Extensions: map[string]string{
-		"sbt": "scala",
-		"sc":  "scala",
+		"sbt":  "scala",
+		"sc":   "scala",
+		"xlsg": "xlsg",
 	},
 	Patterns: []languagePattern{},
 }
@@ -93,6 +94,7 @@ var baseEngineConfig = syntaxEngineConfig{
 		"scala":   EngineTreeSitter,
 		"c#":      EngineTreeSitter,
 		"jsonnet": EngineTreeSitter,
+		"xlsg":    EngineTreeSitter,
 	},
 }
 
@@ -133,6 +135,16 @@ func init() {
 				engineConfig.Overrides[name] = engine
 			}
 
+			engineConfig.Overrides = map[string]EngineType{}
+			for name, engine := range baseEngineConfig.Overrides {
+				engineConfig.Overrides[name] = engine
+			}
+
+			highlightConfig.Extensions = map[string]string{}
+			for extension, language := range baseHighlightConfig.Extensions {
+				highlightConfig.Extensions[extension] = language
+			}
+
 			config := conf.Get()
 			if config == nil {
 				return
@@ -153,20 +165,12 @@ func init() {
 			// previously in the table from the last configuration.
 			//
 			// After that, we set the values from the new configuration
-			engineConfig.Overrides = map[string]EngineType{}
-			for name, engine := range baseEngineConfig.Overrides {
-				engineConfig.Overrides[name] = engine
-			}
 			for name, engine := range config.SyntaxHighlighting.Engine.Overrides {
 				if overrideEngine, ok := engineNameToEngineType(engine); ok {
 					engineConfig.Overrides[strings.ToLower(name)] = overrideEngine
 				}
 			}
 
-			highlightConfig.Extensions = map[string]string{}
-			for extension, language := range baseHighlightConfig.Extensions {
-				highlightConfig.Extensions[extension] = language
-			}
 			for extension, language := range config.SyntaxHighlighting.Languages.Extensions {
 				highlightConfig.Extensions[extension] = language
 			}

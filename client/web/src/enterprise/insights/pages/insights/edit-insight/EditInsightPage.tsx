@@ -1,6 +1,7 @@
-import React, { useContext, useMemo } from 'react'
+import { FC, useContext, useMemo } from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import { useParams } from 'react-router-dom-v5-compat'
 
 import { LoadingSpinner, useObservable, Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
@@ -23,18 +24,16 @@ import { EditLangStatsInsight } from './components/EditLangStatsInsight'
 import { EditSearchBasedInsight } from './components/EditSearchInsight'
 import { useEditPageHandlers } from './hooks/use-edit-page-handlers'
 
-export interface EditInsightPageProps {
-    /** Normalized insight id <type insight>.insight.<name of insight> */
-    insightID: string
-}
+export interface EditInsightPageProps {}
 
-export const EditInsightPage: React.FunctionComponent<React.PropsWithChildren<EditInsightPageProps>> = props => {
-    const { insightID } = props
+export const EditInsightPage: FC<EditInsightPageProps> = () => {
+    /** Normalized insight id <type insight>.insight.<name of insight> */
+    const { insightId } = useParams()
 
     const { getInsightById } = useContext(CodeInsightsBackendContext)
     const { licensed, insight: insightFeatures } = useUiFeatures()
 
-    const insight = useObservable(useMemo(() => getInsightById(insightID), [getInsightById, insightID]))
+    const insight = useObservable(useMemo(() => getInsightById(insightId!), [getInsightById, insightId]))
     const { handleSubmit, handleCancel } = useEditPageHandlers({ id: insight?.id })
 
     const editPermission = useObservable(

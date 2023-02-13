@@ -43,6 +43,9 @@ var (
 	cacheDir    = env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
 	cacheSizeMB = env.Get("SEARCHER_CACHE_SIZE_MB", "100000", "maximum size of the on disk cache in megabytes")
 
+	// Same environment variable name (and default value) used by symbols.
+	backgroundTimeout = env.MustGetDuration("PROCESSING_TIMEOUT", 2*time.Hour, "maximum time to spend processing a repository")
+
 	maxTotalPathsLengthRaw = env.Get("MAX_TOTAL_PATHS_LENGTH", "100000", "maximum sum of lengths of all paths in a single call to git archive")
 )
 
@@ -153,6 +156,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 			FilterTar:         search.NewFilter,
 			Path:              filepath.Join(cacheDir, "searcher-archives"),
 			MaxCacheSizeBytes: cacheSizeBytes,
+			BackgroundTimeout: backgroundTimeout,
 			Log:               storeObservationCtx.Logger,
 			ObservationCtx:    storeObservationCtx,
 		},
