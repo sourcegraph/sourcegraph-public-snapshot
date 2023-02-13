@@ -797,7 +797,7 @@ func TestNewPlanJob(t *testing.T) {
         (limit . 500)
         (PARALLEL
           (CODEGRAPHSEARCH
-            (implemented . false)
+            (enabled . false)
             (relationship . references)
             (LOG
               (ALERT

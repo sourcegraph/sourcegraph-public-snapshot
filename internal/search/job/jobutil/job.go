@@ -170,7 +170,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 				// the provided query returns a reasonable set of symbol matches.
 				// Eventually we'll want to support (or only support) globally unique
 				// symbol names, when those become available.
-				nodes, err := query.Parse(ss.SymbolSearch, query.SearchTypeLiteral)
+				nodes, err := query.Parse(ss.RawSymbolSearch, query.SearchTypeLiteral)
 				if err != nil {
 					return nil, err
 				}

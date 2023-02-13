@@ -613,21 +613,25 @@ const (
 )
 
 type SymbolRelationshipSearch struct {
-	SymbolSearch string
 	Relationship SymbolRelationship
+
+	// RawSymbolSearch is the raw query for a search that should return symbol matches
+	// that should then be used to query for a corresponding precise code intel symbol
+	// from which to execute a search for Relationship.
+	RawSymbolSearch string
 }
 
 func (p Parameters) SymbolRelationshipSearches() (symbolSearches []SymbolRelationshipSearch) {
 	VisitTypedPredicate(toNodes(p), func(pred *SymbolReferencesPredicate) {
 		symbolSearches = append(symbolSearches, SymbolRelationshipSearch{
-			SymbolSearch: pred.SymbolSearch,
-			Relationship: SymbolRelationshipReferences,
+			RawSymbolSearch: pred.SymbolSearch,
+			Relationship:    SymbolRelationshipReferences,
 		})
 	})
 	VisitTypedPredicate(toNodes(p), func(pred *SymbolImplementsPredicate) {
 		symbolSearches = append(symbolSearches, SymbolRelationshipSearch{
-			SymbolSearch: pred.SymbolSearch,
-			Relationship: SymbolRelationshipImplements,
+			RawSymbolSearch: pred.SymbolSearch,
+			Relationship:    SymbolRelationshipImplements,
 		})
 	})
 	return symbolSearches

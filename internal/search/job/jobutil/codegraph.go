@@ -176,7 +176,7 @@ func (s *CodeGraphSearchJob) MapChildren(fn job.MapFunc) job.Job {
 
 func (s *CodeGraphSearchJob) Fields(v job.Verbosity) (res []log.Field) {
 	return []log.Field{
-		log.Bool("implemented", s.CodeIntel != nil),
+		log.Bool("enabled", s.CodeIntel != nil),
 		log.String("relationship", string(s.Relationship)),
 	}
 }
