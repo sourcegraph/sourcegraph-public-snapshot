@@ -167,15 +167,39 @@ type EventCommitMatch struct {
 
 func (e *EventCommitMatch) eventMatch() {}
 
-type EventOwnerMatch struct {
-	// Type is always OwnerMatchType. Included here for marshalling.
+type EventPersonMatch struct {
+	// Type is always PersonMatchType. Included here for marshalling.
+	Type MatchType `json:"type"`
+
+	Handle string `json:"handle"`
+	Email  string `json:"email"`
+
+	// TODO: add person specific fields.
+}
+
+func (e *EventPersonMatch) eventMatch() {}
+
+type EventTeamMatch struct {
+	// Type is always TeamMatchType. Included here for marshalling.
+	Type MatchType `json:"type"`
+
+	Handle string `json:"handle"`
+	Email  string `json:"email"`
+
+	// TODO: add team specific fields.
+}
+
+func (e *EventTeamMatch) eventMatch() {}
+
+type EventUnknownOwnerMatch struct {
+	// Type is always UnknownOwnerMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
 	Handle string `json:"handle"`
 	Email  string `json:"email"`
 }
 
-func (e *EventOwnerMatch) eventMatch() {}
+func (e *EventUnknownOwnerMatch) eventMatch() {}
 
 // EventFilter is a suggestion for a search filter. Currently has a 1-1
 // correspondance with the SearchFilter graphql type.
