@@ -15,21 +15,15 @@ const SavedSearchUpdateForm = lazyComponent(
 
 export const namespaceAreaRoutes: readonly NamespaceAreaRoute[] = [
     {
-        path: '/searches',
+        path: 'searches',
         render: props => <SavedSearchListPage {...props} />,
-        // TODO: Remove once RR6 migration is finished. For now these work on both RR5 and RR6.
-        exact: true,
     },
     {
-        path: '/searches/add',
+        path: 'searches/add',
         render: props => <SavedSearchCreateForm {...props} />,
-        // TODO: Remove once RR6 migration is finished. For now these work on both RR5 and RR6.
-        exact: true,
     },
     {
-        path: '/searches/:id',
+        path: 'searches/:id',
         render: props => <SavedSearchUpdateForm {...props} />,
-        // TODO: Remove once RR6 migration is finished. For now these work on both RR5 and RR6.
-        exact: true,
     },
 ]

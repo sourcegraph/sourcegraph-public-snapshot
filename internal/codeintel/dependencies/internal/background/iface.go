@@ -22,6 +22,11 @@ type GitserverClient interface {
 type ExternalServiceStore interface {
 	List(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error)
 	Upsert(ctx context.Context, svcs ...*types.ExternalService) (err error)
+	GetByID(ctx context.Context, id int64) (*types.ExternalService, error)
+}
+
+type AutoIndexingService interface {
+	QueueIndexesForPackage(ctx context.Context, pkg shared.MinimialVersionedPackageRepo, assumeSynced bool) (err error)
 }
 
 type DependenciesService interface {

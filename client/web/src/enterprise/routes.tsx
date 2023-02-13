@@ -1,4 +1,3 @@
-import { Redirect } from 'react-router'
 import { Navigate } from 'react-router-dom-v5-compat'
 
 import { isErrorLike } from '@sourcegraph/common'
@@ -98,7 +97,7 @@ export const enterpriseRoutes: readonly LayoutRouteProps[] = [
         render: props => {
             const { showSearchNotebook } = useExperimentalFeatures.getState()
 
-            return showSearchNotebook ? <NotebookPage {...props} /> : <Redirect to={PageRoutes.Search} />
+            return showSearchNotebook ? <NotebookPage {...props} /> : <Navigate to={PageRoutes.Search} replace={true} />
         },
     },
     {

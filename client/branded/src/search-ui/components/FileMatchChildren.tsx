@@ -1,7 +1,7 @@
 import React, { useCallback, KeyboardEvent, MouseEvent } from 'react'
 
 import classNames from 'classnames'
-import { useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom-v5-compat'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -114,11 +114,11 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
         )
     }
 
-    const history = useHistory()
+    const navigate = useNavigate()
     const navigateToFile = useCallback(
         (event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>): void =>
-            navigateToCodeExcerpt(event, props.openInNewTab ?? false, history),
-        [props.openInNewTab, history]
+            navigateToCodeExcerpt(event, props.openInNewTab ?? false, navigate),
+        [props.openInNewTab, navigate]
     )
 
     const logEventOnCopy = useCallback(() => {

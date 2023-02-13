@@ -2683,6 +2683,7 @@ Foreign-key constraints:
  permissions_added    | integer                  |           | not null | 0
  permissions_removed  | integer                  |           | not null | 0
  permissions_found    | integer                  |           | not null | 0
+ code_host_states     | json[]                   |           |          | 
 Indexes:
     "permission_sync_jobs_pkey" PRIMARY KEY, btree (id)
     "permission_sync_jobs_unique" UNIQUE, btree (priority, user_id, repository_id, cancel, process_after) WHERE state = 'queued'::text
@@ -3023,7 +3024,6 @@ Foreign-key constraints:
  id         | integer                  |           | not null | nextval('roles_id_seq'::regclass)
  name       | text                     |           | not null | 
  created_at | timestamp with time zone |           | not null | now()
- deleted_at | timestamp with time zone |           |          | 
  system     | boolean                  |           | not null | false
 Indexes:
     "roles_pkey" PRIMARY KEY, btree (id)
