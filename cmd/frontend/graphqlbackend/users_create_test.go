@@ -17,7 +17,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func makeUsersCreateTestDB() (*database.MockDB, *database.MockAuthzStore, *database.MockRoleStore, *database.MockUserRoleStore) {
+type mockFuncs struct {
+	dB             *database.MockDB
+	authzStore     *database.MockAuthzStore
+	roleStore      *database.MockRoleStore
+	userRoleStore  *database.MockUserRoleStore
+	userEmailStore *database.MockUserEmailsStore
+}
+
+func makeUsersCreateTestDB() mockFuncs {
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 	users.CreateFunc.SetDefaultReturn(&types.User{ID: 1, Username: "alice"}, nil)
@@ -31,17 +39,26 @@ func makeUsersCreateTestDB() (*database.MockDB, *database.MockAuthzStore, *datab
 	userRoles := database.NewMockUserRoleStore()
 	userRoles.AssignFunc.SetDefaultReturn(&types.UserRole{}, nil)
 
+	userEmails := database.NewMockUserEmailsStore()
+
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.AuthzFunc.SetDefaultReturn(authz)
 	db.RolesFunc.SetDefaultReturn(roles)
 	db.UserRolesFunc.SetDefaultReturn(userRoles)
+	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
-	return db, authz, roles, userRoles
+	return mockFuncs{
+		dB:             db,
+		authzStore:     authz,
+		roleStore:      roles,
+		userRoleStore:  userRoles,
+		userEmailStore: userEmails,
+	}
 }
 
 func TestCreateUser(t *testing.T) {
-	db, authz, roles, userRoles := makeUsersCreateTestDB()
+	mocks := makeUsersCreateTestDB()
 
 	RunTests(t, []*Test{
 		{
@@ -67,9 +84,9 @@ func TestCreateUser(t *testing.T) {
 		},
 	})
 
-	mockrequire.CalledOnce(t, authz.GrantPendingPermissionsFunc)
-	mockrequire.CalledOnce(t, roles.GetFunc)
-	mockrequire.CalledOnce(t, userRoles.AssignFunc)
+	mockrequire.CalledOnce(t, mocks.authzStore.GrantPendingPermissionsFunc)
+	mockrequire.CalledOnce(t, mocks.roleStore.GetFunc)
+	mockrequire.CalledOnce(t, mocks.userRoleStore.AssignFunc)
 }
 
 func TestCreateUserResetPasswordURL(t *testing.T) {
@@ -83,7 +100,7 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 	})
 
 	t.Run("with SMTP disabled", func(t *testing.T) {
-		db, authz, _, _ := makeUsersCreateTestDB()
+		mocks := makeUsersCreateTestDB()
 
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
@@ -118,7 +135,7 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 			},
 		})
 
-		mockrequire.Called(t, authz.GrantPendingPermissionsFunc)
+		mockrequire.Called(t, mocks.authzStore.GrantPendingPermissionsFunc)
 	})
 
 	t.Run("with SMTP enabled", func(t *testing.T) {
@@ -138,9 +155,7 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 			txemail.MockSend = nil
 		})
 
-		db, authz, _, _ := makeUsersCreateTestDB()
-		userEmails := database.NewMockUserEmailsStore()
-		db.UserEmailsFunc.SetDefaultReturn(userEmails)
+		mocks := makeUsersCreateTestDB()
 
 		RunTests(t, []*Test{
 			{
@@ -173,8 +188,8 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 		assert.Contains(t, data.URL, "&emailVerifyCode=")
 		assert.Contains(t, data.URL, "&email=")
 
-		mockrequire.Called(t, authz.GrantPendingPermissionsFunc)
-		mockrequire.Called(t, userEmails.SetLastVerificationFunc)
+		mockrequire.Called(t, mocks.authzStore.GrantPendingPermissionsFunc)
+		mockrequire.Called(t, mocks.userEmailStore.SetLastVerificationFunc)
 	})
 
 	t.Run("with SMTP enabled, without verifiedEmail", func(t *testing.T) {
@@ -194,7 +209,7 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 			txemail.MockSend = nil
 		})
 
-		db, authz, _, _ := makeUsersCreateTestDB()
+		mocks := makeUsersCreateTestDB()
 		userEmails := database.NewMockUserEmailsStore()
 		db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
@@ -230,7 +245,7 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 		assert.NotContains(t, data.URL, "&emailVerifyCode=")
 		assert.NotContains(t, data.URL, "&email=")
 
-		mockrequire.Called(t, authz.GrantPendingPermissionsFunc)
+		mockrequire.Called(t, mocks.authzStore.GrantPendingPermissionsFunc)
 		mockrequire.NotCalled(t, userEmails.SetLastVerificationFunc)
 	})
 }

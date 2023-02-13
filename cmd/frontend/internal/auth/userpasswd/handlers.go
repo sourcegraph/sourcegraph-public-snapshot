@@ -198,27 +198,22 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 	}
 
 	{
-		systemRoles, err := db.Roles().List(r.Context(), database.RolesListOptions{
-			System: true,
+		_, err = db.UserRoles().AssignSystemRole(r.Context(), database.AssignSystemRoleOpts{
+			UserID:   usr.ID,
+			RoleName: types.UserSystemRole,
 		})
 		if err != nil {
-			logger.Error("Failed to fetch system roles", log.Error(err))
+			logger.Error("Failed to assign USER role to user", log.Error(err))
 		}
 
-		var roleIDs []int32
-		for _, role := range systemRoles {
-			// We only want to assign the site administrator role if the user is a site administrator
-			if role.Name == string(types.SiteAdministratorSystemRole) && !usr.SiteAdmin {
-				continue
+		if usr.SiteAdmin {
+			_, err = db.UserRoles().AssignSystemRole(r.Context(), database.AssignSystemRoleOpts{
+				UserID:   usr.ID,
+				RoleName: types.SiteAdministratorSystemRole,
+			})
+			if err != nil {
+				logger.Error("Failed to assign SITE_ADMINISTRATOR role to user", log.Error(err))
 			}
-			roleIDs = append(roleIDs, role.ID)
-		}
-
-		if _, err := db.UserRoles().BulkAssignToUser(r.Context(), database.BulkAssignToUserOpts{
-			UserID:  usr.ID,
-			RoleIDs: roleIDs,
-		}); err != nil {
-			logger.Error("Failed to assign roles to user", log.Int32("userID", usr.ID), log.Error(err))
 		}
 	}
 
