@@ -404,6 +404,7 @@ func Test_BackfillWithInterrupt(t *testing.T) {
 		clock:              clock,
 	}
 	handler.config.interruptAfter = time.Second * 5
+	handler.config.pageSize = 2 // setting the page size to only complete 1/2 repos in 1 iteration
 
 	err = handler.Handle(ctx, logger, dequeue)
 	require.NoError(t, err)
