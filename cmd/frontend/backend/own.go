@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // OwnService gives access to code ownership data.
@@ -32,6 +33,7 @@ func NewOwnService(g gitserver.Client, db database.DB) OwnService {
 	return ownService{
 		gitserverClient: g,
 		userStore:       db.Users(),
+		teamStore:       db.Teams(),
 		ownerCache:      make(map[string]codeowners.ResolvedOwner),
 	}
 }
@@ -39,7 +41,7 @@ func NewOwnService(g gitserver.Client, db database.DB) OwnService {
 type ownService struct {
 	gitserverClient gitserver.Client
 	userStore       database.UserStore
-	// todo add team store
+	teamStore       database.TeamStore
 
 	ownerCache map[string]codeowners.ResolvedOwner // handle/email -> ResolvedOwner
 }
@@ -81,54 +83,70 @@ func (s ownService) OwnersFile(ctx context.Context, repoName api.RepoName, commi
 func (s ownService) ResolveOwnersWithType(ctx context.Context, protoOwners []*codeownerspb.Owner) ([]codeowners.ResolvedOwner, error) {
 	resolved := make([]codeowners.ResolvedOwner, 0, len(protoOwners))
 
-	// we have to look up owner by owner because of the branching conditions:
-	// we first try to find a user given the owner information. if we cannot find an owner we try to match a team.
-	// if all fails, we return an unknown owner type with the information we have from the proto.
+	// We have to look up owner by owner because of the branching conditions:
+	// We first try to find a user given the owner information. If we cannot find a user, we try to match a team.
+	// If all fails, we return an unknown owner type with the information we have from the proto.
 	for _, po := range protoOwners {
-		// an owner proto should have either handle or email set.
-		ownerIdentifier := getHandleOrEmail(po)
-		if cached, ok := s.ownerCache[ownerIdentifier]; ok {
+		if cached, ok := s.ownerCache[po.Handle+po.Email]; ok {
 			resolved = append(resolved, cached)
 			continue
 		}
-		if ownerIdentifier == "" {
-			// safeguard
+
+		resolvedOwner, err := s.resolveOwner(ctx, po.Handle, po.Email)
+		if err != nil {
+			return nil, err
+		} else if resolvedOwner == nil {
+			// This is a safeguard in case somehow neither email or handle are set.
 			continue
 		}
-
-		var resolvedOwner codeowners.ResolvedOwner
-		if po.Handle != "" {
-			user, err := s.userStore.GetByUsername(ctx, po.Handle)
-			if err != nil {
-				if errcode.IsNotFound(err) {
-					// attempt team lookup
-					continue
-				} else {
-					return nil, err
-				}
-			}
-			resolvedOwner = codeowners.Person{OwnerIdentifier: po.Handle, User: user}
-		} else if po.Email != "" {
-			user, err := s.userStore.GetByVerifiedEmail(ctx, po.Email)
-			if err != nil {
-				if errcode.IsNotFound(err) {
-					// attempt team lookup
-					continue
-				} else {
-					return nil, err
-				}
-			}
-			resolvedOwner = codeowners.Person{OwnerIdentifier: po.Email, User: user}
-		}
 		resolved = append(resolved, resolvedOwner)
-		s.ownerCache[ownerIdentifier] = resolvedOwner
+		s.ownerCache[po.Handle+po.Email] = resolvedOwner
 	}
+
 	return resolved, nil
 }
 
-func getHandleOrEmail(owner *codeownerspb.Owner) string {
-	if owner.Handle != "" {
-		return owner.Handle
+func (s ownService) resolveOwner(ctx context.Context, handle, email string) (codeowners.ResolvedOwner, error) {
+	if handle != "" {
+		resolvedOwner, err := tryGetUserThenTeam(ctx, handle, s.userStore.GetByUsername, s.teamStore.GetTeamByName)
+		if err != nil {
+			return unknownOwnerOrError(handle, email, err)
+		}
+		return resolvedOwner, nil
+	} else if email != "" {
+		// Teams cannot be identified by emails, so we do not pass in a team getter here.
+		resolvedOwner, err := tryGetUserThenTeam(ctx, email, s.userStore.GetByVerifiedEmail, nil)
+		if err != nil {
+			return unknownOwnerOrError(handle, email, err)
+		}
+		return resolvedOwner, nil
 	}
-	return owner.Email
+	return nil, nil
+}
+
+type userGetterFunc func(context.Context, string) (*types.User, error)
+type teamGetterFunc func(context.Context, string) (*types.Team, error)
+
+func tryGetUserThenTeam(ctx context.Context, identifier string, userGetter userGetterFunc, teamGetter teamGetterFunc) (codeowners.ResolvedOwner, error) {
+	user, err := userGetter(ctx, identifier)
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			if teamGetter != nil {
+				team, err := teamGetter(ctx, identifier)
+				if err != nil {
+					return nil, err
+				}
+				return codeowners.Team{Team: team, OwnerIdentifier: identifier}, nil
+			}
+		}
+		return nil, err
+	}
+	return codeowners.Person{User: user, OwnerIdentifier: identifier}, nil
+}
+
+func unknownOwnerOrError(handle, email string, err error) (codeowners.UnknownOwner, error) {
+	if errcode.IsNotFound(err) {
+		return codeowners.UnknownOwner{Handle: handle, Email: email}, nil
+	}
+	return codeowners.UnknownOwner{}, err
 }

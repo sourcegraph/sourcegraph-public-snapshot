@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 )
 
@@ -74,4 +75,64 @@ func TestOwnersCannotFindFile(t *testing.T) {
 	got, err := backend.NewOwnService(git, database.NewMockDB()).OwnersFile(context.Background(), "repo", "SHA")
 	require.NoError(t, err)
 	assert.Nil(t, got)
+}
+
+func TestResolveOwnersWithType(t *testing.T) {
+	t.Run("no owners returns empty", func(t *testing.T) {
+		git := gitserver.NewMockClient()
+		got, err := backend.NewOwnService(git, database.NewMockDB()).ResolveOwnersWithType(context.Background(), nil)
+		require.NoError(t, err)
+		assert.Empty(t, got)
+	})
+	t.Run("no user or team match returns unknown owner", func(t *testing.T) {
+		git := gitserver.NewMockClient()
+		mockUserStore := database.NewMockUserStore()
+		mockTeamStore := database.NewMockTeamStore()
+		db := database.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(mockUserStore)
+		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
+		ownService := backend.NewOwnService(git, db)
+
+		mockUserStore.GetByUsernameFunc.SetDefaultReturn(nil, database.MockUserNotFoundErr)
+		mockTeamStore.GetTeamByNameFunc.SetDefaultReturn(nil, database.TeamNotFoundError{})
+		owners := []*codeownerspb.Owner{
+			{
+				Handle: "unknown",
+			},
+		}
+
+		got, err := ownService.ResolveOwnersWithType(context.Background(), owners)
+		require.NoError(t, err)
+		assert.Equal(t, []codeowners.ResolvedOwner{
+			NewUnknownOwner("unknown", ""),
+		}, got)
+	})
+	t.Run("user match from handle returns person owner", func(t *testing.T) {
+
+	})
+	t.Run("user match from email returns person owner", func(t *testing.T) {
+
+	})
+	t.Run("team match from handle returns team owner", func(t *testing.T) {
+
+	})
+	t.Run("team match from email returns team owner", func(t *testing.T) {
+
+	})
+	t.Run("mix of person and team match", func(t *testing.T) {
+
+	})
+	t.Run("makes use of cache", func(t *testing.T) {
+
+	})
+	t.Run("errors", func(t *testing.T) {
+
+	})
+}
+
+func NewUnknownOwner(handle, email string) codeowners.ResolvedOwner {
+	return codeowners.UnknownOwner{
+		Handle: handle,
+		Email:  email,
+	}
 }
