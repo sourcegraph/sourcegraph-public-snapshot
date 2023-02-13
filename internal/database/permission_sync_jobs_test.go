@@ -68,8 +68,17 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 			Status:       "SUCCESS",
 			Message:      "successful success",
 		},
+		{
+			ProviderID:   "ID",
+			ProviderType: "Type",
+			Status:       "ERROR",
+			Message:      "unsuccessful unsuccess :(",
+		},
 	}
-	_, err = db.ExecContext(ctx, "UPDATE permission_sync_jobs SET code_host_states=array['{\"provider_id\":\"ID\",\"provider_type\":\"Type\",\"status\":\"SUCCESS\",\"message\":\"successful success\"}']::json[] WHERE id=3")
+	_, err = db.ExecContext(ctx, "UPDATE permission_sync_jobs SET code_host_states=array["+
+		"'{\"provider_id\":\"ID\",\"provider_type\":\"Type\",\"status\":\"SUCCESS\",\"message\":\"successful success\"}',"+
+		"'{\"provider_id\":\"ID\",\"provider_type\":\"Type\",\"status\":\"ERROR\",\"message\":\"unsuccessful unsuccess :(\"}'"+
+		"]::json[] WHERE id=3")
 	require.NoError(t, err)
 
 	jobs, err = store.List(ctx, ListPermissionSyncJobOpts{})
