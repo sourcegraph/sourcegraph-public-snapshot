@@ -8,6 +8,7 @@ export type ParserFunction = (results: SearchResult[], providerName: string) => 
 const apiEntityDefinitionParser = (searchResults: SearchResult[], providerName: string, entityType: EntityType): DeferredEntity[] => {
   const results: DeferredEntity[] = []
 
+  // TODO(@burmudar): remove - only temporary
   console.log(`parsing ${searchResults.length} proto results`)
   searchResults.forEach((r: SearchResult) => {
     const location = {

@@ -26,6 +26,7 @@ abstract class BaseEntityProvider implements EntityProvider {
     this.entityParseFn = parserForType(entityType)
     this.query = withDefault(queryConfig.getString("query"), "")
 
+    // TODO(@burmudar): remove - only temporary
     console.log(entityType, "QUERY", this.query)
     this.disabled = this.query == ""
     if (this.disabled) {
@@ -52,6 +53,7 @@ abstract class BaseEntityProvider implements EntityProvider {
   }
 
   async fullMutation() {
+    // TODO(@burmudar): remove - only temporary
     console.log(`STARTING ${this.entityType} SEARCH ⌛`)
     const results = await this.sourcegraph.SearchQuery(this.query)
     console.log(`${results.length} items matched query ${this.query}`)

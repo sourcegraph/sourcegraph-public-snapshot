@@ -3,46 +3,48 @@ import type { AuthenticatedUser } from '../../../shared/src/auth'
 import { currentAuthStateQuery } from '../../../shared/src/auth'
 
 export interface Query<T> {
-    gql(): string
-    vars(): string
-    Marshal(data: any): T[]
+  gql(): string
+  vars(): string
+  Marshal(data: any): T[]
 }
 
 export interface SearchResult {
-    readonly repository: string
-    readonly filename: string
-    readonly fileContent: string
+  readonly repository: string
+  readonly filename: string
+  readonly fileContent: string
 }
 
 export class SearchQuery implements Query<SearchResult> {
-    private readonly query: string
+  private readonly query: string
 
-    constructor(query: string) {
-        this.query = query
+  constructor(query: string) {
+    this.query = query
+  }
+
+  Marshal(data: any): SearchResult[] {
+    const results = new Array<SearchResult>()
+    if (!data.search) {
+      // TODO(@burmudar): remove - only temporary
+      console.log('undefined data.search')
+      return results
     }
 
-    Marshal(data: any): SearchResult[] {
-        const results = new Array<SearchResult>()
-        if (!data.search) {
-            console.log('undefined data.search')
-            return results
-        }
+    // TODO(@burmudar): remove - only temporary
+    console.log('raw', data)
 
-        console.log('raw', data)
-
-        for (const v of data.search.results.results) {
-            results.push({ repository: v.repository.name, filename: v.file.name, fileContent: v.file.content })
-        }
-
-        return results
+    for (const v of data.search.results.results) {
+      results.push({ repository: v.repository.name, filename: v.file.name, fileContent: v.file.content })
     }
 
-    vars(): any {
-        return { search: this.query }
-    }
+    return results
+  }
 
-    gql(): string {
-        return gql`
+  vars(): any {
+    return { search: this.query }
+  }
+
+  gql(): string {
+    return gql`
             query ($search: String!) {
                 search(query: $search) {
                     results {
@@ -62,39 +64,39 @@ export class SearchQuery implements Query<SearchResult> {
                 }
             }
         `
-    }
+  }
 }
 
 export class UserQuery implements Query<string> {
-    Marshal(data: any): string[] {
-        if ('currentUser' in data) {
-            return [data.currentUser.username]
-        }
-        throw new Error('username not found')
+  Marshal(data: any): string[] {
+    if ('currentUser' in data) {
+      return [data.currentUser.username]
     }
-    vars(): string {
-        return ''
-    }
-    gql(): string {
-        return gql`
+    throw new Error('username not found')
+  }
+  vars(): string {
+    return ''
+  }
+  gql(): string {
+    return gql`
             query {
                 currentUser {
                     username
                 }
             }
         `
-    }
+  }
 }
 
 export type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 export class AuthenticatedUserQuery implements Query<AuthenticatedUser> {
-    gql(): string {
-        return currentAuthStateQuery
-    }
-    vars(): string {
-        return ''
-    }
-    Marshal(data: any): AuthenticatedUser[] {
-        return [data.currentUser]
-    }
+  gql(): string {
+    return currentAuthStateQuery
+  }
+  vars(): string {
+    return ''
+  }
+  Marshal(data: any): AuthenticatedUser[] {
+    return [data.currentUser]
+  }
 }
