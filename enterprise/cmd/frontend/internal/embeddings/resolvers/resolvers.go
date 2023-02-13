@@ -5,15 +5,20 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
+	embeddingsbg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
-func NewResolver(db database.DB) graphqlbackend.EmbeddingsResolver {
-	return &Resolver{db: db}
+func NewResolver(db database.DB, store embeddingsbg.RepoEmbeddingJobsStore, gitserverClient gitserver.Client) graphqlbackend.EmbeddingsResolver {
+	return &Resolver{db: db, gitserverClient: gitserverClient, store: store}
 }
 
 type Resolver struct {
-	db database.DB
+	db              database.DB
+	gitserverClient gitserver.Client
+	store           embeddingsbg.RepoEmbeddingJobsStore
 }
 
 func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.EmbeddingsSearchInputArgs) (graphqlbackend.EmbeddingsSearchResultsResolver, error) {
@@ -38,6 +43,26 @@ func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.Emb
 	}
 
 	return &embeddingsSearchResultsResolver{results}, nil
+}
+
+func (r *Resolver) ScheduleRepositoriesForEmbedding(ctx context.Context, args graphqlbackend.ScheduleRepositoriesForEmbeddingArgs) (*graphqlbackend.EmptyResponse, error) {
+	// TODO: Check if repos exists, and check if repo + revision embedding job already exists and is not completed
+	repoStore := r.db.Repos()
+	for _, repoName := range args.RepoNames {
+		repo, err := repoStore.GetByName(ctx, api.RepoName(repoName))
+		if err != nil {
+			return nil, err
+		}
+		latestRevision, err := r.gitserverClient.ResolveRevision(ctx, repo.Name, "", gitserver.ResolveRevisionOptions{})
+		if err != nil {
+			return nil, err
+		}
+		_, err = r.store.CreateRepoEmbeddingJob(ctx, repo.ID, latestRevision)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &graphqlbackend.EmptyResponse{}, nil
 }
 
 type embeddingsSearchResultsResolver struct {

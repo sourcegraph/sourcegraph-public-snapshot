@@ -8,6 +8,10 @@ extend type Query {
     # isContextRequiredForQuery(query: String!): Boolean!
 }
 
+extend type Mutation {
+    scheduleRepositoriesForEmbedding(repoNames: [String!]!): EmptyResponse!
+}
+
 type EmbeddingsSearchResult {
     filePath: String!
     startLine: Int!

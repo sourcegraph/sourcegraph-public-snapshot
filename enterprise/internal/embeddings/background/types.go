@@ -1,4 +1,4 @@
-package embeddings
+package background
 
 import (
 	"time"
@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 )
 
-type EmbeddingJob struct {
+type RepoEmbeddingJob struct {
 	ID              int
 	State           string
 	FailureMessage  *string
@@ -23,9 +23,9 @@ type EmbeddingJob struct {
 	Cancel          bool
 
 	RepoID   api.RepoID
-	Revision string
+	Revision api.CommitID
 }
 
-func (j *EmbeddingJob) RecordID() int {
+func (j *RepoEmbeddingJob) RecordID() int {
 	return j.ID
 }

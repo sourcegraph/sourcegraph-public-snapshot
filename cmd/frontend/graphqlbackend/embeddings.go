@@ -8,6 +8,12 @@ import (
 
 type EmbeddingsResolver interface {
 	EmbeddingsSearch(ctx context.Context, args EmbeddingsSearchInputArgs) (EmbeddingsSearchResultsResolver, error)
+
+	ScheduleRepositoriesForEmbedding(ctx context.Context, args ScheduleRepositoriesForEmbeddingArgs) (*EmptyResponse, error)
+}
+
+type ScheduleRepositoriesForEmbeddingArgs struct {
+	RepoNames []string
 }
 
 type EmbeddingsSearchInputArgs struct {

@@ -61,8 +61,8 @@ var additionalJobs = map[string]job.Job{
 	"auth-permission-sync-job-cleaner":   auth.NewPermissionSyncJobCleaner(),
 	"auth-permission-sync-job-scheduler": auth.NewPermissionSyncJobScheduler(),
 
-	"embedding-janitor": embeddings.NewEmbeddingJanitorJob(),
-	"embedding-job":     embeddings.NewEmbeddingJob(),
+	"repo-embedding-janitor": embeddings.NewRepoEmbeddingJanitorJob(),
+	"repo-embedding-job":     embeddings.NewRepoEmbeddingJob(),
 
 	// Note: experimental (not documented)
 	"codeintel-ranking-sourcer": codeintel.NewRankingSourcerJob(),

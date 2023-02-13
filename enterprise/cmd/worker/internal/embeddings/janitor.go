@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
+	embeddingsbg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -13,31 +14,31 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-type embeddingJanitorJob struct{}
+type repoEmbeddingJanitorJob struct{}
 
-func NewEmbeddingJanitorJob() job.Job {
-	return &embeddingJanitorJob{}
+func NewRepoEmbeddingJanitorJob() job.Job {
+	return &repoEmbeddingJanitorJob{}
 }
 
-func (j *embeddingJanitorJob) Description() string {
+func (j *repoEmbeddingJanitorJob) Description() string {
 	return ""
 }
 
-func (j *embeddingJanitorJob) Config() []env.Config {
+func (j *repoEmbeddingJanitorJob) Config() []env.Config {
 	return []env.Config{}
 }
 
-func (j *embeddingJanitorJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *repoEmbeddingJanitorJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	// TODO: Check if embeddings are enabled
 	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
 	}
-	store := newEmbeddingJobWorkerStore(observationCtx, db.Handle())
-	return []goroutine.BackgroundRoutine{newEmbeddingJobResetter(observationCtx, store)}, nil
+	store := embeddingsbg.NewRepoEmbeddingJobWorkerStore(observationCtx, db.Handle())
+	return []goroutine.BackgroundRoutine{newRepoEmbeddingJobResetter(observationCtx, store)}, nil
 }
 
-func newEmbeddingJobResetter(observationCtx *observation.Context, workerStore dbworkerstore.Store[*EmbeddingJob]) *dbworker.Resetter[*EmbeddingJob] {
+func newRepoEmbeddingJobResetter(observationCtx *observation.Context, workerStore dbworkerstore.Store[*embeddingsbg.RepoEmbeddingJob]) *dbworker.Resetter[*embeddingsbg.RepoEmbeddingJob] {
 	return dbworker.NewResetter(observationCtx.Logger, workerStore, dbworker.ResetterOptions{
 		Name:     "embedding_job_worker_resetter",
 		Interval: time.Minute * 60, // Check for orphaned jobs every 60 minutes

@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS embedding_jobs (
+CREATE TABLE IF NOT EXISTS repo_embedding_jobs (
     id SERIAL PRIMARY KEY,
     state text DEFAULT 'queued',
     failure_message text,
