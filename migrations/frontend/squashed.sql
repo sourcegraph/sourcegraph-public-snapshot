@@ -767,14 +767,6 @@ BEGIN
 END;
 $$;
 
-CREATE FUNCTION update_codeintel_global_ranks_updated_at_column() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$ BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$;
-
 CREATE FUNCTION update_codeintel_path_ranks_updated_at_column() RETURNS trigger
     LANGUAGE plpgsql
     AS $$ BEGIN
@@ -1532,11 +1524,6 @@ COMMENT ON COLUMN codeintel_commit_dates.repository_id IS 'Identifies a row in t
 COMMENT ON COLUMN codeintel_commit_dates.commit_bytea IS 'Identifies the 40-character commit hash.';
 
 COMMENT ON COLUMN codeintel_commit_dates.committed_at IS 'The commit date (may be -infinity if unresolvable).';
-
-CREATE TABLE codeintel_global_ranks (
-    payload jsonb NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
 
 CREATE TABLE codeintel_inference_scripts (
     insert_timestamp timestamp with time zone DEFAULT now() NOT NULL,
@@ -5060,8 +5047,6 @@ CREATE TRIGGER trigger_lsif_uploads_delete AFTER DELETE ON lsif_uploads REFERENC
 CREATE TRIGGER trigger_lsif_uploads_insert AFTER INSERT ON lsif_uploads FOR EACH ROW EXECUTE FUNCTION func_lsif_uploads_insert();
 
 CREATE TRIGGER trigger_lsif_uploads_update BEFORE UPDATE OF state, num_resets, num_failures, worker_hostname, expired, committed_at ON lsif_uploads FOR EACH ROW EXECUTE FUNCTION func_lsif_uploads_update();
-
-CREATE TRIGGER update_codeintel_global_ranks_updated_at BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW EXECUTE FUNCTION update_codeintel_global_ranks_updated_at_column();
 
 CREATE TRIGGER update_codeintel_path_ranks_updated_at BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN ((new.* IS DISTINCT FROM old.*)) EXECUTE FUNCTION update_codeintel_path_ranks_updated_at_column();
 
