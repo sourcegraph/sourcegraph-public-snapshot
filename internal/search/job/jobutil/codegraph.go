@@ -2,6 +2,7 @@ package jobutil
 
 import (
 	"context"
+	"sync"
 
 	"github.com/opentracing/opentracing-go/log"
 
@@ -38,8 +39,20 @@ func (s *CodeGraphSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 		return nil, err
 	}
 
-	seenRanges := make(map[string]map[result.Range]struct{})
-	var symbolSearchErrors error
+	// pathRange is used as the identifier for deduplicating matches.
+	type pathRange struct {
+		Path  string
+		Range result.Range
+	}
+	seenRanges := make(map[pathRange]struct{})
+
+	// symbolSearchErrors collects errors seen when executing the symbol search job. The
+	// symbolSearchErrorsMux must be held before adding to the errors.
+	var (
+		symbolSearchErrors    error
+		symbolSearchErrorsMux sync.Mutex
+	)
+
 	alert, err = s.SymbolSearch.Run(ctx, clients, streaming.StreamFunc(func(se streaming.SearchEvent) {
 		if se.Results.Len() == 0 {
 			return
@@ -98,12 +111,13 @@ func (s *CodeGraphSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 						Line:   l.TargetRange.End.Line,
 					},
 				}
+
 				// Deduplicate results
-				if seenRanges[l.Path] == nil {
-					seenRanges[l.Path] = map[result.Range]struct{}{r: {}}
-				} else if _, seen := seenRanges[l.Path][r]; seen {
+				rangeKey := pathRange{Path: l.Path, Range: r}
+				if _, seen := seenRanges[rangeKey]; seen {
 					continue
 				}
+				seenRanges[rangeKey] = struct{}{}
 
 				// TODO: Right now, we just return the result as a chunk match
 				// because we do not get the actual symbol at the location. We
@@ -111,7 +125,9 @@ func (s *CodeGraphSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 				f, err := clients.Gitserver.ReadFile(ctx, authz.DefaultSubRepoPermsChecker,
 					fm.Repo.Name, api.CommitID(l.TargetCommit), l.Path)
 				if err != nil {
+					symbolSearchErrorsMux.Lock()
 					symbolSearchErrors = errors.Append(symbolSearchErrors, err)
+					symbolSearchErrorsMux.Unlock()
 					continue
 				}
 				match := &result.FileMatch{
