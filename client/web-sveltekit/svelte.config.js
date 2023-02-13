@@ -12,7 +12,7 @@ const config = {
 
   kit: {
     adapter: adapter({
-      fallback: 'index.html'
+      fallback: 'index.html',
     }),
     alias: {
       // Makes it easier to refer to files outside packages (such as images)

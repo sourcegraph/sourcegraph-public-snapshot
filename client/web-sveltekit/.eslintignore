@@ -10,6 +10,7 @@ vite.config.ts
 svelte.config.js
 playwright.config.ts
 src/lib/graphql-operations.ts
+/server.js
 
 # Ignore files for PNPM, NPM and YARN
 pnpm-lock.yaml

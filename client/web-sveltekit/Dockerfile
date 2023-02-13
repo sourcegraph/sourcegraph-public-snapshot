@@ -5,7 +5,7 @@ ARG PROJECT_ROOT="."
 
 WORKDIR /usr/src/app
 RUN echo '{"type": "module"}' > package.json
-RUN npm install express http-proxy-middleware
+RUN npm install express@~4.18 http-proxy-middleware@~2.0
 COPY  ${PROJECT_ROOT}/server.js ./
 COPY ${PROJECT_ROOT}/build ./build
 
