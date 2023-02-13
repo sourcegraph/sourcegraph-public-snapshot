@@ -187,16 +187,13 @@ func (r *redisKeyValue) HSet(key, field string, val any) error {
 func (r *redisKeyValue) LPush(key string, value any) error {
 	return r.do("LPUSH", r.prefix+key, value).err
 }
-
 func (r *redisKeyValue) LTrim(key string, start, stop int) error {
 	return r.do("LTRIM", r.prefix+key, start, stop).err
 }
-
 func (r *redisKeyValue) LLen(key string) (int, error) {
 	raw := r.do("LLEN", r.prefix+key)
 	return redis.Int(raw.reply, raw.err)
 }
-
 func (r *redisKeyValue) LRange(key string, start, stop int) Values {
 	return Values(r.do("LRANGE", r.prefix+key, start, stop))
 }
