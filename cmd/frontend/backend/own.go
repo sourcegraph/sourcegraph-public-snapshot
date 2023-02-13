@@ -96,7 +96,7 @@ func (s ownService) ResolveOwnersWithType(ctx context.Context, protoOwners []*co
 		if err != nil {
 			return nil, err
 		} else if resolvedOwner == nil {
-			// This is a safeguard in case somehow neither email or handle are set.
+			// This is a safeguard in case somehow neither email nor handle are set.
 			continue
 		}
 		resolved = append(resolved, resolvedOwner)
