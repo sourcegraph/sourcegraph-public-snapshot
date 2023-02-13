@@ -99,6 +99,7 @@ func (s *CodeGraphSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 				continue
 			}
 
+			matches := make(result.Matches, 0, len(locations))
 			for _, l := range locations {
 				// Range identifies this result
 				r := result.Range{
@@ -130,7 +131,7 @@ func (s *CodeGraphSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 					symbolSearchErrorsMux.Unlock()
 					continue
 				}
-				match := &result.FileMatch{
+				matches = append(matches, &result.FileMatch{
 					File: result.File{
 						Repo:     fm.Repo,
 						CommitID: api.CommitID(l.TargetCommit),
@@ -146,9 +147,11 @@ func (s *CodeGraphSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 							Ranges: result.Ranges{r},
 						},
 					},
-				}
-				stream.Send(streaming.SearchEvent{Results: result.Matches{match}})
+				})
 			}
+
+			// Send aggregated matches
+			stream.Send(streaming.SearchEvent{Results: matches})
 		}
 	}))
 	if err != nil {
