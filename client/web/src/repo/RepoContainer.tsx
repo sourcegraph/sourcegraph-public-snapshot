@@ -3,13 +3,12 @@ import React, { FC, Suspense, useEffect, useMemo, useState } from 'react'
 import { mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
-import { matchPath } from 'react-router'
-import { Location, useLocation, Route, Routes } from 'react-router-dom-v5-compat'
+import { matchPath, Location, useLocation, Route, Routes } from 'react-router-dom-v5-compat'
 import { NEVER, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
-import { asError, encodeURIPathComponent, ErrorLike, isErrorLike, logger, repeatUntil } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, logger, repeatUntil } from '@sourcegraph/common'
 import {
     isCloneInProgressErrorLike,
     isRepoSeeOtherErrorLike,
@@ -279,8 +278,6 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
 
     const { useActionItemsBar, useActionItemsToggle } = useWebActionItems()
 
-    const repoMatchURL = '/' + encodeURIPathComponent(repoName)
-
     // render go to the code host action on all the repo container routes and on all compare spec routes
     const isGoToCodeHostActionVisible = useMemo(() => {
         if (!window.context.enableLegacyExtensions) {
@@ -293,8 +290,8 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
             commitsPath,
         ]
 
-        return paths.some(path => matchPath(location.pathname, { path: repoMatchURL + path }))
-    }, [repoContainerRoutes, repoMatchURL, location.pathname])
+        return paths.some(path => matchPath(path, location.pathname))
+    }, [repoContainerRoutes, location.pathname])
 
     const isError = isErrorLike(repoOrError) || isErrorLike(resolvedRevisionOrError)
 

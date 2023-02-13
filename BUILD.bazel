@@ -29,7 +29,7 @@ ts_config(
     visibility = ["//visibility:public"],
     deps = [
         "//:node_modules/@sourcegraph/tsconfig",
-        "//:tsconfig.json",
+        "//:tsconfig.base.json",
     ],
 )
 

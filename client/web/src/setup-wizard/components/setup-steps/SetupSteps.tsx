@@ -60,7 +60,7 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
     // Resolve current setup step and its index by URL matches
     const { currentStep, activeStepIndex } = useMemo<SetupStepURLContext>(() => {
         // Try to find step by URL based on available steps
-        const urlStepIndex = steps.findIndex(step => matchPath(location.pathname, step.path) !== null)
+        const urlStepIndex = steps.findIndex(step => matchPath(step.path, location.pathname) !== null)
 
         if (urlStepIndex !== -1) {
             return {

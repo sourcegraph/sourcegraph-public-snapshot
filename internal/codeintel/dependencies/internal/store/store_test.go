@@ -94,18 +94,28 @@ func TestListPackageRepoRefs(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	batches := []shared.MinimalPackageRepoRef{
-		{Scheme: "npm", Name: "bar", Versions: []string{"2.0.0"}},    // id=1
-		{Scheme: "npm", Name: "foo", Versions: []string{"1.0.0"}},    // id=2
-		{Scheme: "npm", Name: "bar", Versions: []string{"2.0.1"}},    // id=3
-		{Scheme: "npm", Name: "foo", Versions: []string{"1.0.0"}},    // id=4
-		{Scheme: "npm", Name: "bar", Versions: []string{"3.0.0"}},    // id=5
-		{Scheme: "npm", Name: "banana", Versions: []string{"2.0.0"}}, // id=6
-		{Scheme: "npm", Name: "turtle", Versions: []string{"4.2.0"}}, // id=7
+	batches := [][]shared.MinimalPackageRepoRef{
+		{
+			{Scheme: "npm", Name: "bar", Versions: []string{"2.0.0"}},
+			{Scheme: "npm", Name: "foo", Versions: []string{"1.0.0"}},
+			{Scheme: "npm", Name: "bar", Versions: []string{"2.0.1"}},
+			{Scheme: "npm", Name: "foo", Versions: []string{"1.0.0"}},
+		},
+		{
+			{Scheme: "npm", Name: "bar", Versions: []string{"3.0.0"}},
+			{Scheme: "npm", Name: "banana", Versions: []string{"2.0.0"}},
+			{Scheme: "npm", Name: "turtle", Versions: []string{"4.2.0"}},
+		},
+		// catch lack of ordering by ID at the right place
+		{
+			{Scheme: "npm", Name: "applesauce", Versions: []string{"1.2.3"}},
+		},
 	}
 
-	if _, _, err := store.InsertPackageRepoRefs(ctx, batches); err != nil {
-		t.Fatal(err)
+	for _, insertBatch := range batches {
+		if _, _, err := store.InsertPackageRepoRefs(ctx, insertBatch); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	// want to mimic data that might exist because of the 2-step migration
@@ -115,8 +125,8 @@ func TestListPackageRepoRefs(t *testing.T) {
 
 	var lastID int
 	for _, test := range [][]shared.PackageRepoReference{
-		{{Scheme: "npm", Name: "banana"}, {Scheme: "npm", Name: "bar"}, {Scheme: "npm", Name: "foo"}},
-		{{Scheme: "npm", Name: "turtle"}},
+		{{Scheme: "npm", Name: "bar"}, {Scheme: "npm", Name: "foo"}, {Scheme: "npm", Name: "banana"}},
+		{{Scheme: "npm", Name: "turtle"}, {Scheme: "npm", Name: "applesauce"}},
 	} {
 		depRepos, total, err := store.ListPackageRepoRefs(ctx, ListDependencyReposOpts{
 			Scheme: "npm",
@@ -127,8 +137,8 @@ func TestListPackageRepoRefs(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		if total != 4 {
-			t.Errorf("unexpected total count of package repos: want=%d got=%d", 4, total)
+		if total != 5 {
+			t.Errorf("unexpected total count of package repos: want=%d got=%d", 5, total)
 		}
 
 		lastID = depRepos[len(depRepos)-1].ID

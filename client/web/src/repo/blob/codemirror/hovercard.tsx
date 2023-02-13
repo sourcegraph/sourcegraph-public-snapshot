@@ -73,7 +73,7 @@ import {
     WebHoverOverlay,
     WebHoverOverlayProps,
 } from '../../../components/WebHoverOverlay'
-import { type BlobProps, updateBrowserHistoryIfChanged } from '../CodeMirrorBlob'
+import { updateBrowserHistoryIfChanged, BlobPropsFacet } from '../CodeMirrorBlob'
 
 import { CodeMirrorContainer } from './react-interop'
 import {
@@ -554,8 +554,8 @@ export class HovercardView implements TooltipView {
     public dom: HTMLElement
     private root: Root | null = null
     private nextContainer = new Subject<HTMLElement>()
-    private nextProps = new Subject<BlobProps>()
-    private props: BlobProps | null = null
+    private nextProps = new Subject<BlobPropsFacet>()
+    private props: BlobPropsFacet | null = null
     public overlap = true
     private nextPinned = new Subject<boolean>()
     private subscription: Subscription
@@ -599,7 +599,12 @@ export class HovercardView implements TooltipView {
         this.root?.unmount()
     }
 
-    private render(root: Root, { hoverOrError, actionsOrError }: HoverData, props: BlobProps, pinned: boolean): void {
+    private render(
+        root: Root,
+        { hoverOrError, actionsOrError }: HoverData,
+        props: BlobPropsFacet,
+        pinned: boolean
+    ): void {
         const hoverContext = {
             commitID: props.blobInfo.commitID,
             filePath: props.blobInfo.filePath,
@@ -620,7 +625,7 @@ export class HovercardView implements TooltipView {
         }
 
         root.render(
-            <CodeMirrorContainer onRender={() => repositionTooltips(this.view)} history={props.history}>
+            <CodeMirrorContainer onRender={() => repositionTooltips(this.view)}>
                 <div
                     className={classNames({
                         'cm-code-intel-hovercard': true,
@@ -793,7 +798,7 @@ function tokenRangeToHovercard(
                                         if (props.nav) {
                                             props.nav(url)
                                         } else {
-                                            props.history.push(url)
+                                            props.navigate(url)
                                         }
                                     }
                                 }

@@ -451,14 +451,14 @@ const pinManager = ViewPlugin.fromClass(
 
             if (update.selectionSet && update.state.field(pin)) {
                 // Remove `popover=pinned` from the URL when the user updates the selection.
-                const history = update.state.facet(blobPropsFacet).history
-                const params = new URLSearchParams(history.location.search)
+                const { navigate, location } = update.state.facet(blobPropsFacet)
+                const params = new URLSearchParams(location.search)
                 params.delete('popover')
                 window.requestAnimationFrame(() =>
-                    // Use `history.push` instead of `history.replace` in case
+                    // Use `navigate(to)` instead of `navigate(to, { replace: true })` in case
                     // the user accidentally clicked somewhere without intending to
                     // dismiss the popover.
-                    history.push({ ...history.location, search: formatSearchParameters(params) })
+                    navigate({ search: formatSearchParameters(params) })
                 )
             }
         }

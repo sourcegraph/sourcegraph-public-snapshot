@@ -61,6 +61,25 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 	opts = PermissionSyncJobOpts{Priority: LowPriorityPermissionSync, InvalidateCaches: true, ProcessAfter: processAfter, Reason: ReasonManualUserSync}
 	err = store.CreateUserSyncJob(ctx, user2.ID, opts)
 	require.NoError(t, err)
+	codeHostStates := []PermissionSyncCodeHostState{
+		{
+			ProviderID:   "ID",
+			ProviderType: "Type",
+			Status:       "SUCCESS",
+			Message:      "successful success",
+		},
+		{
+			ProviderID:   "ID",
+			ProviderType: "Type",
+			Status:       "ERROR",
+			Message:      "unsuccessful unsuccess :(",
+		},
+	}
+	_, err = db.ExecContext(ctx, "UPDATE permission_sync_jobs SET code_host_states=array["+
+		"'{\"provider_id\":\"ID\",\"provider_type\":\"Type\",\"status\":\"SUCCESS\",\"message\":\"successful success\"}',"+
+		"'{\"provider_id\":\"ID\",\"provider_type\":\"Type\",\"status\":\"ERROR\",\"message\":\"unsuccessful unsuccess :(\"}'"+
+		"]::json[] WHERE id=3")
+	require.NoError(t, err)
 
 	jobs, err = store.List(ctx, ListPermissionSyncJobOpts{})
 	require.NoError(t, err)
@@ -95,6 +114,7 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 			InvalidateCaches: true,
 			ProcessAfter:     processAfter,
 			Reason:           ReasonManualUserSync,
+			CodeHostStates:   codeHostStates,
 		},
 	}
 	if diff := cmp.Diff(jobs, wantJobs, cmpopts.IgnoreFields(PermissionSyncJob{}, "QueuedAt")); diff != "" {
