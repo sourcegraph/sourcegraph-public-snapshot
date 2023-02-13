@@ -126,7 +126,9 @@ describe('Notepad', () => {
         })
 
         it('creates notebooks', () => {
-            const createNotebookSpy = jest.spyOn(backend, 'createNotebook').mockImplementation(() => of({} as unknown as NotebookFields))
+            const createNotebookSpy = jest
+                .spyOn(backend, 'createNotebook')
+                .mockImplementation(() => of({} as unknown as NotebookFields))
 
             renderNotepad()
             open()

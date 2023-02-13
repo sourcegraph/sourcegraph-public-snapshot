@@ -8,7 +8,7 @@ import { NEVER, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
-import { asError, encodeURIPathComponent, ErrorLike, isErrorLike, logger, repeatUntil } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, logger, repeatUntil } from '@sourcegraph/common'
 import {
     isCloneInProgressErrorLike,
     isRepoSeeOtherErrorLike,
@@ -278,8 +278,6 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
 
     const { useActionItemsBar, useActionItemsToggle } = useWebActionItems()
 
-    const repoMatchURL = '/' + encodeURIPathComponent(repoName)
-
     // render go to the code host action on all the repo container routes and on all compare spec routes
     const isGoToCodeHostActionVisible = useMemo(() => {
         if (!window.context.enableLegacyExtensions) {
@@ -293,7 +291,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
         ]
 
         return paths.some(path => matchPath(path, location.pathname))
-    }, [repoContainerRoutes, repoMatchURL, location.pathname])
+    }, [repoContainerRoutes, location.pathname])
 
     const isError = isErrorLike(repoOrError) || isErrorLike(resolvedRevisionOrError)
 
