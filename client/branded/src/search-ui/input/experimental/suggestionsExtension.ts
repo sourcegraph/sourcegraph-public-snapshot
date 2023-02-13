@@ -442,7 +442,7 @@ class SuggestionsState {
                 !registeredSource.inactive,
                 state.source.state === RegisteredSourceState.Inactive ||
                 state.source.state === RegisteredSourceState.Complete
-                    ? 0
+                    ? -1
                     : state.selectedOption
             )
         }
