@@ -630,7 +630,7 @@ const CollapsibleLocationList: React.FunctionComponent<
                             fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
                         />
                     ) : (
-                        <Text className="text-muted pl-2">
+                        <Text className="text-muted pl-4 pb-0">
                             {props.filter ? (
                                 <i>
                                     No {props.name} matching <strong>{props.filter}</strong> found
