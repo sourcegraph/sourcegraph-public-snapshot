@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -518,11 +519,32 @@ func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.Sear
 	return commitEvent
 }
 
-func fromOwner(owner *result.OwnerMatch) *streamhttp.EventOwnerMatch {
-	return &streamhttp.EventOwnerMatch{
-		Type:   streamhttp.OwnerMatchType,
-		Handle: owner.Handle,
-		Email:  owner.Email,
+func fromOwner(owner *result.OwnerMatch) streamhttp.EventMatch {
+	switch owner.ResolvedOwner.Type() {
+	case codeowners.OwnerTypePerson:
+		return &streamhttp.EventPersonMatch{
+			Type: streamhttp.PersonMatchType,
+			// todo flesh out
+			Handle: "person",
+		}
+	case codeowners.OwnerTypeTeam:
+		return &streamhttp.EventTeamMatch{
+			Type: streamhttp.TeamMatchType,
+			// todo flesh out
+			Handle: "team",
+		}
+	case codeowners.OwnerTypeUnknown:
+		return &streamhttp.EventUnknownOwnerMatch{
+			Type: streamhttp.UnknownOwnerMatchType,
+			// todo flesh out
+			Handle: "unknown",
+		}
+	}
+	// todo return default
+	return &streamhttp.EventUnknownOwnerMatch{
+		Type: streamhttp.UnknownOwnerMatchType,
+		// todo flesh out
+		Handle: "unknown",
 	}
 }
 
