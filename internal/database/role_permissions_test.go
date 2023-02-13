@@ -232,7 +232,7 @@ func TestRolePermissionGetByPermissionID(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.RolePermissions()
 
-	p := createTestPermissionForRolePermission(ctx, "BATCH CHANGES", "READ", t, db)
+	p := createTestPermissionForRolePermission(ctx, "READ", t, db)
 
 	totalRolePermissions := 5
 	for i := 1; i <= totalRolePermissions; i++ {
@@ -335,10 +335,10 @@ func TestRolePermissionDelete(t *testing.T) {
 	})
 }
 
-func createTestPermissionForRolePermission(ctx context.Context, namespace types.PermissionNamespace, action string, t *testing.T, db DB) *types.Permission {
+func createTestPermissionForRolePermission(ctx context.Context, action string, t *testing.T, db DB) *types.Permission {
 	t.Helper()
 	p, err := db.Permissions().Create(ctx, CreatePermissionOpts{
-		Namespace: namespace,
+		Namespace: types.BatchChangesNamespace,
 		Action:    action,
 	})
 	if err != nil {
@@ -350,7 +350,7 @@ func createTestPermissionForRolePermission(ctx context.Context, namespace types.
 
 func createRoleAndPermission(ctx context.Context, t *testing.T, db DB) (*types.Role, *types.Permission) {
 	t.Helper()
-	permission := createTestPermissionForRolePermission(ctx, types.BatchChangesNamespace, "READ", t, db)
+	permission := createTestPermissionForRolePermission(ctx, "READ", t, db)
 	role := createTestRoleForRolePermission(ctx, "TEST ROLE", t, db)
 	return role, permission
 }

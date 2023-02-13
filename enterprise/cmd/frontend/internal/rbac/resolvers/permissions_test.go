@@ -7,13 +7,14 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/rbac/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestPermissionsResolver(t *testing.T) {
@@ -39,27 +40,27 @@ func TestPermissionsResolver(t *testing.T) {
 
 	ps, err := db.Permissions().BulkCreate(ctx, []database.CreatePermissionOpts{
 		{
-			Namespace: "TEST-NAMESPACE",
+			Namespace: types.BatchChangesNamespace,
 			Action:    "READ",
 		},
 		{
-			Namespace: "TEST-NAMESPACE",
+			Namespace: types.BatchChangesNamespace,
 			Action:    "WRITE",
 		},
 		{
-			Namespace: "TEST-NAMESPACE",
+			Namespace: types.BatchChangesNamespace,
 			Action:    "EXECUTE",
 		},
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	t.Run("as non site-administrator", func(t *testing.T) {
 		input := map[string]any{"first": 1}
 		var response struct{ Permissions apitest.PermissionConnection }
 		errs := apitest.Exec(actor.WithActor(userCtx, actor.FromUser(user.ID)), t, s, input, &response, queryPermissionConnection)
 
-		assert.Len(t, errs, 1)
-		assert.Equal(t, errs[0].Message, "must be site admin")
+		require.Len(t, errs, 1)
+		require.Equal(t, errs[0].Message, "must be site admin")
 	})
 
 	t.Run("as site-administrator", func(t *testing.T) {
@@ -145,29 +146,29 @@ func TestUserPermissionsListing(t *testing.T) {
 
 	r := &Resolver{logger: logger, db: db}
 	s, err := newSchema(db, r)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// create a new role
 	role, err := db.Roles().Create(ctx, "TEST-ROLE", false)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, err = db.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
 		RoleID: role.ID,
 		UserID: userID,
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	p, err := db.Permissions().Create(ctx, database.CreatePermissionOpts{
-		Namespace: "TEST-NAMESPACE",
+		Namespace: types.BatchChangesNamespace,
 		Action:    "READ",
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, err = db.RolePermissions().Assign(ctx, database.AssignRolePermissionOpts{
 		RoleID:       role.ID,
 		PermissionID: p.ID,
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	t.Run("listing a user's permissions (same user)", func(t *testing.T) {
 		userAPIID := string(gql.MarshalUserID(userID))
@@ -223,8 +224,8 @@ func TestUserPermissionsListing(t *testing.T) {
 
 		var response struct{}
 		errs := apitest.Exec(actorCtx, t, s, input, &response, listUserPermissions)
-		assert.Len(t, errs, 1)
-		assert.Equal(t, errs[0].Message, "must be authenticated as the authorized user or site admin")
+		require.Len(t, errs, 1)
+		require.Equal(t, errs[0].Message, "must be authenticated as the authorized user or site admin")
 	})
 }
 
