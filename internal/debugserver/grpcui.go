@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 const gRPCWebUIPath = "/debug/grpcui"
@@ -16,13 +15,9 @@ const gRPCWebUIPath = "/debug/grpcui"
 // NewGRPCWebUIEndpoint returns a new Endpoint that serves a gRPC Web UI instance
 // that targets the gRPC server specified by target.
 func NewGRPCWebUIEndpoint(target string) Endpoint {
-	var opts []grpc.DialOption
-	opts = append(opts, defaults.DialOptions()...)
-	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-
 	var handler http.Handler = &grpcHandler{
 		target:   target,
-		dialOpts: opts,
+		dialOpts: defaults.DialOptions(),
 	}
 
 	// gRPC Web UI expects to serve all of its resources

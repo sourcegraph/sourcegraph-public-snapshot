@@ -17208,6 +17208,19 @@
           "Comment": "Specifies why permissions sync job was cancelled."
         },
         {
+          "Name": "code_host_states",
+          "Index": 25,
+          "TypeName": "json[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "execution_logs",
           "Index": 12,
           "TypeName": "json[]",
@@ -19454,19 +19467,6 @@
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
           "Default": "now()",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "deleted_at",
-          "Index": 4,
-          "TypeName": "timestamp with time zone",
-          "IsNullable": true,
-          "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",

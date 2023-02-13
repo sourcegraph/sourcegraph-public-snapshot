@@ -3792,6 +3792,9 @@ type MockDB struct {
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *DBHandleFunc
+	// NamespacePermissionsFunc is an instance of a mock function object
+	// controlling the behavior of the method NamespacePermissions.
+	NamespacePermissionsFunc *DBNamespacePermissionsFunc
 	// NamespacesFunc is an instance of a mock function object controlling
 	// the behavior of the method Namespaces.
 	NamespacesFunc *DBNamespacesFunc
@@ -3969,6 +3972,11 @@ func NewMockDB() *MockDB {
 		},
 		HandleFunc: &DBHandleFunc{
 			defaultHook: func() (r0 basestore.TransactableHandle) {
+				return
+			},
+		},
+		NamespacePermissionsFunc: &DBNamespacePermissionsFunc{
+			defaultHook: func() (r0 NamespacePermissionStore) {
 				return
 			},
 		},
@@ -4219,6 +4227,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.Handle")
 			},
 		},
+		NamespacePermissionsFunc: &DBNamespacePermissionsFunc{
+			defaultHook: func() NamespacePermissionStore {
+				panic("unexpected invocation of MockDB.NamespacePermissions")
+			},
+		},
 		NamespacesFunc: &DBNamespacesFunc{
 			defaultHook: func() NamespaceStore {
 				panic("unexpected invocation of MockDB.Namespaces")
@@ -4435,6 +4448,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		HandleFunc: &DBHandleFunc{
 			defaultHook: i.Handle,
+		},
+		NamespacePermissionsFunc: &DBNamespacePermissionsFunc{
+			defaultHook: i.NamespacePermissions,
 		},
 		NamespacesFunc: &DBNamespacesFunc{
 			defaultHook: i.Namespaces,
@@ -6035,6 +6051,105 @@ func (c DBHandleFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBNamespacePermissionsFunc describes the behavior when the
+// NamespacePermissions method of the parent MockDB instance is invoked.
+type DBNamespacePermissionsFunc struct {
+	defaultHook func() NamespacePermissionStore
+	hooks       []func() NamespacePermissionStore
+	history     []DBNamespacePermissionsFuncCall
+	mutex       sync.Mutex
+}
+
+// NamespacePermissions delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) NamespacePermissions() NamespacePermissionStore {
+	r0 := m.NamespacePermissionsFunc.nextHook()()
+	m.NamespacePermissionsFunc.appendCall(DBNamespacePermissionsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the NamespacePermissions
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBNamespacePermissionsFunc) SetDefaultHook(hook func() NamespacePermissionStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// NamespacePermissions method of the parent MockDB instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *DBNamespacePermissionsFunc) PushHook(hook func() NamespacePermissionStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBNamespacePermissionsFunc) SetDefaultReturn(r0 NamespacePermissionStore) {
+	f.SetDefaultHook(func() NamespacePermissionStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBNamespacePermissionsFunc) PushReturn(r0 NamespacePermissionStore) {
+	f.PushHook(func() NamespacePermissionStore {
+		return r0
+	})
+}
+
+func (f *DBNamespacePermissionsFunc) nextHook() func() NamespacePermissionStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBNamespacePermissionsFunc) appendCall(r0 DBNamespacePermissionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBNamespacePermissionsFuncCall objects
+// describing the invocations of this function.
+func (f *DBNamespacePermissionsFunc) History() []DBNamespacePermissionsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBNamespacePermissionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBNamespacePermissionsFuncCall is an object that describes an invocation
+// of method NamespacePermissions on an instance of MockDB.
+type DBNamespacePermissionsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 NamespacePermissionStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBNamespacePermissionsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBNamespacePermissionsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

@@ -47,6 +47,8 @@ tree-sitter-jsonnet = { git = "https://github.com/sourcegraph/tree-sitter-jsonne
 # Using a fork of tree-sitter-scala because upstream Rust crate didn't compile.
 tree-sitter-scala = { git = "https://github.com/sourcegraph/tree-sitter-scala" }
 
+tree-sitter-xlsg = { git = "https://github.com/sourcegraph/tree-sitter-xlsg" }
+
 [dev-dependencies]
 insta = "1.11.0"
 pretty_assertions = "1.2.1"

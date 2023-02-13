@@ -53,7 +53,7 @@ git push origin $MAJOR.$MINOR
 
 Create and test the first release candidate:
 
-- [ ] Push a release candidate tag:
+- [ ] Push a new release candidate tag. This command will automatically detect the appropriate release candidate number. This command can be executed as many times as required, and will increment the release candidate number for each subsequent build: :
   ```sh
   pnpm run release release:create-candidate
   ```
@@ -61,9 +61,7 @@ Create and test the first release candidate:
 **Note**: Ensure that you've pulled both main and release branches before running this command.
 
 - [ ] Ensure that the following Buildkite pipelines all pass for the `v$MAJOR.$MINOR.$PATCH-rc.1` tag:
-
-  - [ ] [Sourcegraph pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH-rc.1)
-
+- [ ] [Sourcegraph pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH-rc.1)
 - [ ] File any failures and regressions in the pipelines as `release-blocker` issues and assign the appropriate teams.
 
 **Note**: You will need to re-check the above pipelines for any subsequent release candidates. You can see the Buildkite logs by tweaking the "branch" query parameter in the URLs to point to the desired release candidate. In general, the URL scheme looks like the following (replacing `N` in the URL):
@@ -77,14 +75,16 @@ Create and test the first release candidate:
 <!-- Keep in sync with release_issue_template's "Stage release" section -->
 
 - [ ] Verify the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md) on `main` and `$MAJOR.$MINOR` are accurate.
-- [ ] Tag the final release:
+- [ ] Promote a release candidate to the final release build. You will need to provide the tag of the release candidate which you would like to promote as an argument. To get a list of available release candidates, you can use:
+  ```shell
+  pnpm run release release:check-candidate
+  ```
+  To promote the candidate, use the command:
   ```sh
-  pnpm run release release:create-candidate final
+  pnpm run release release:promote-candidate tag
   ```
 - [ ] Ensure that the following pipelines all pass for the `v$MAJOR.$MINOR.$PATCH` tag:
-
-  - [ ] [Sourcegraph pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH)
-
+- [ ] [Sourcegraph pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH)
 - [ ] Wait for the `v$MAJOR.$MINOR.$PATCH` release Docker images to be available in [Docker Hub](https://hub.docker.com/r/sourcegraph/server/tags)
 - [ ] Open PRs that publish the new release and address any action items required to finalize draft PRs (track PR status via the [generated release batch change](https://k8s.sgdev.org/organizations/sourcegraph/batch-changes)):
   ```sh
