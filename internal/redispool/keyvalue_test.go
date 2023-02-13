@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
-
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -462,7 +461,6 @@ func (t require) Equal(got redispool.Value, want any) {
 		t.Fatalf("unsupported want type for %q: %T", want, want)
 	}
 }
-
 func (t require) AllEqual(got redispool.Values, want any) {
 	t.Helper()
 	switch wantV := want.(type) {
@@ -488,7 +486,6 @@ func (t require) AllEqual(got redispool.Values, want any) {
 		t.Fatalf("unsupported want type for %q: %T", want, want)
 	}
 }
-
 func (t require) ListLen(kv redispool.KeyValue, key string, want int) {
 	t.Helper()
 	got, err := kv.LLen(key)
@@ -499,7 +496,6 @@ func (t require) ListLen(kv redispool.KeyValue, key string, want int) {
 		t.Fatalf("unexpected list length got=%d want=%d", got, want)
 	}
 }
-
 func (t require) TTL(kv redispool.KeyValue, key string, want int) {
 	t.Helper()
 	got, err := kv.TTL(key)
