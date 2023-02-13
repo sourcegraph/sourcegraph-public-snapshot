@@ -67,7 +67,7 @@ func (s *store) ListPackageRepoRefs(ctx context.Context, opts ListDependencyRepo
 	}
 
 	depReposMap := basestore.NewOrderedMap[int, shared.PackageRepoReference]()
-	scanner := basestore.NewKeyedCollectionScanner[*basestore.OrderedMap[int, shared.PackageRepoReference], int, shared.PackageRepoReference, shared.PackageRepoReference](depReposMap, func(s dbutil.Scanner) (int, shared.PackageRepoReference, error) {
+	scanner := basestore.NewKeyedCollectionScanner[int, shared.PackageRepoReference, shared.PackageRepoReference](depReposMap, func(s dbutil.Scanner) (int, shared.PackageRepoReference, error) {
 		dep, err := scanDependencyRepo(s)
 		return dep.ID, dep, err
 	}, dependencyVersionsReducer{})
