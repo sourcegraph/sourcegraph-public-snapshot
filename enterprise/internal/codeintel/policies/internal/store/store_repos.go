@@ -106,7 +106,7 @@ func makeWildcardPattern(pattern string) string {
 	return strings.ToLower(strings.ReplaceAll(pattern, "*", "%"))
 }
 
-// TODO
+// RepoCount returns the total number of policy-selectable repos.
 func (s *store) RepoCount(ctx context.Context) (_ int, err error) {
 	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM repo WHERE deleted_at IS NULL AND blocked IS NULL`)))
 	if err != nil {
