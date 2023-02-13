@@ -1,4 +1,4 @@
-# an exmaple config to use with Backstage
+# an example config to use with Backstage
 app:
   title: Sourcegraph Backstage App
   baseUrl: http://localhost:3000

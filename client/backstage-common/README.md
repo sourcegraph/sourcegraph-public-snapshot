@@ -8,9 +8,9 @@ Backstage has a cli named `backstage-cli` which performs a bunch of operations r
 
 There are a few plugin types but we're only interested in the following types for now:
 
-- frontend-plugin: a plugin that adds components and integration with the Backstage frontend. The generated scaffolding allows run the plugin on it's own without Backstage, as long as there is a `app-config.yaml` for configuration.
-- backend-plugin: a plugin that integrates with the Backstage backend. Typically does not contain any visual components. The generated scaffolding allows you to run the plugin on it's own as a backend application, meaning there won't be a web page to visit.
-- common-plugin: a plugin that is more a library, with common functionality you want to share across plugins. Unlike the other plugin types, this plugin cannot be run on it's own.
+- frontend-plugin: a plugin that adds components and integration with the Backstage frontend. The generated scaffolding allows running the plugin on its own without Backstage, as long as there is an `app-config.yaml` for configuration.
+- backend-plugin: a plugin that integrates with the Backstage backend. Typically does not contain any visual components. The generated scaffolding allows you to run the plugin on its own as a backend application, meaning there won't be a web page to visit.
+- common-plugin: a plugin that is more a library, with common functionality you want to share across plugins. Unlike the other plugin types, this plugin cannot be run on its own.
 
 ### How to generate plugin scaffolding.
 
@@ -100,7 +100,7 @@ The above `tsconfig` was copied from `client/jetbrains` and adapted to fit our u
 17 directories, 27 files
 ```
 
-3. The plugin will use libraries and components from the Sourcegraph repo which are all private and not available on the npm registry. Which means, when this plugin is installed into Backstage will try to look for any dependencies defined in the `package.json` on the npm registry. It will find some, but any Sourcegraph referenced projects, it won't be able to find anything. We thus need make some changes to the `package.json` and also look into using a buncler like `esbuild`.
+3. The plugin will use libraries and components from the Sourcegraph repo, which are all private and not available on the npm registry. Which means, when this plugin is installed into Backstage, it will try to look for any dependencies defined in the `package.json` on the npm registry. It will find some, but any Sourcegraph referenced projects, it won't be able to find anything. We thus need to make some changes to the `package.json` and also look into using a bundler like `esbuild`.
 
 4. The notable changes we make in the `package.json` are that:
 

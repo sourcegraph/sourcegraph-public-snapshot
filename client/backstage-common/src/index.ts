@@ -1,4 +1,3 @@
-/***/
 /**
  * Common functionalities for the sg-common plugin.
  *
