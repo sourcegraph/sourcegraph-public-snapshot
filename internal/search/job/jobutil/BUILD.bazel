@@ -30,6 +30,7 @@ go_library(
         "//internal/featureflag",
         "//internal/search",
         "//internal/search/alert",
+        "//internal/search/codeownership",
         "//internal/search/commit",
         "//internal/search/filter",
         "//internal/search/job",

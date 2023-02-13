@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
 import { mdiInformation, mdiClose, mdiDelete, mdiPencil } from '@mdi/js'
-import * as H from 'history'
+import { useNavigate } from 'react-router-dom-v5-compat'
 
 import { isErrorLike, asError } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
@@ -19,7 +19,6 @@ export interface BatchChangeDetailsActionSectionProps extends SettingsCascadePro
     batchChangeClosed: boolean
     batchChangeNamespaceURL: string
     batchChangeURL: string
-    history: H.History
 
     /** For testing only. */
     deleteBatchChange?: typeof _deleteBatchChange
@@ -32,11 +31,11 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<
     batchChangeClosed,
     batchChangeNamespaceURL,
     batchChangeURL,
-    history,
     settingsCascade,
     deleteBatchChange = _deleteBatchChange,
 }) => {
     const showEditButton = isBatchChangesExecutionEnabled(settingsCascade)
+    const navigate = useNavigate()
 
     const [isDeleting, setIsDeleting] = useState<boolean | Error>(false)
     const onDeleteBatchChange = useCallback(async () => {
@@ -46,11 +45,11 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<
         setIsDeleting(true)
         try {
             await deleteBatchChange(batchChangeID)
-            history.push(batchChangeNamespaceURL + '/batch-changes')
+            navigate(batchChangeNamespaceURL + '/batch-changes')
         } catch (error) {
             setIsDeleting(asError(error))
         }
-    }, [batchChangeID, deleteBatchChange, history, batchChangeNamespaceURL])
+    }, [batchChangeID, deleteBatchChange, navigate, batchChangeNamespaceURL])
     if (batchChangeClosed) {
         return (
             <Tooltip content="Deleting this batch change is a final action." placement="left">

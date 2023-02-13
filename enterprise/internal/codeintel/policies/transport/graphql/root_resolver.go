@@ -2,7 +2,6 @@ package graphql
 
 import (
 	"context"
-	"sort"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
@@ -94,12 +93,12 @@ func (r *rootResolver) CodeIntelligenceConfigurationPolicies(ctx context.Context
 		opts.ForIndexing = *args.ForIndexing
 	}
 
-	policies, totalCount, err := r.policySvc.GetConfigurationPolicies(ctx, opts)
+	configPolicies, totalCount, err := r.policySvc.GetConfigurationPolicies(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewCodeIntelligenceConfigurationPolicyConnectionResolver(r.policySvc, policies, totalCount, traceErrs), nil
+	return NewCodeIntelligenceConfigurationPolicyConnectionResolver(r.policySvc, configPolicies, totalCount, traceErrs), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
@@ -210,23 +209,18 @@ func (r *rootResolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Con
 	return &resolverstubs.EmptyResponse{}, nil
 }
 
-const DefaultRepositoryFilterPreviewPageSize = 50
+const DefaultRepositoryFilterPreviewPageSize = 15 // TEMP: 50
 
 func (r *rootResolver) PreviewRepositoryFilter(ctx context.Context, args *resolverstubs.PreviewRepositoryFilterArgs) (_ resolverstubs.RepositoryFilterPreviewResolver, err error) {
 	ctx, _, endObservation := r.operations.previewRepoFilter.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
-
-	offset, err := graphqlutil.DecodeIntCursor(args.After)
-	if err != nil {
-		return nil, err
-	}
 
 	pageSize := DefaultRepositoryFilterPreviewPageSize
 	if args.First != nil {
 		pageSize = int(*args.First)
 	}
 
-	ids, totalMatches, repositoryMatchLimit, err := r.policySvc.GetPreviewRepositoryFilter(ctx, args.Patterns, pageSize, offset)
+	ids, totalMatches, repositoryMatchLimit, err := r.policySvc.GetPreviewRepositoryFilter(ctx, args.Patterns, pageSize)
 	if err != nil {
 		return nil, err
 	}
@@ -248,10 +242,12 @@ func (r *rootResolver) PreviewRepositoryFilter(ctx context.Context, args *resolv
 		limitedCount = *repositoryMatchLimit
 	}
 
-	return NewRepositoryFilterPreviewResolver(resv, limitedCount, totalMatches, offset, repositoryMatchLimit), nil
+	return NewRepositoryFilterPreviewResolver(resv, limitedCount, totalMatches, repositoryMatchLimit), nil
 }
 
-func (r *rootResolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *resolverstubs.PreviewGitObjectFilterArgs) (_ []resolverstubs.GitObjectFilterPreviewResolver, err error) {
+const DefaultGitObjectFilterPreviewPageSize = 15 // TEMP: 100
+
+func (r *rootResolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *resolverstubs.PreviewGitObjectFilterArgs) (_ resolverstubs.GitObjectFilterPreviewResolver, err error) {
 	ctx, _, endObservation := r.operations.previewGitObjectFilter.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -260,24 +256,27 @@ func (r *rootResolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID
 		return nil, err
 	}
 
-	namesByRev, err := r.policySvc.GetPreviewGitObjectFilter(ctx, int(repositoryID), types.GitObjectType(args.Type), args.Pattern)
+	pageSize := DefaultGitObjectFilterPreviewPageSize
+	if args.First != nil {
+		pageSize = int(*args.First)
+	}
+
+	gitObjects, totalCount, totalCountYoungerThanThreshold, err := r.policySvc.GetPreviewGitObjectFilter(
+		ctx,
+		int(repositoryID),
+		types.GitObjectType(args.Type),
+		args.Pattern,
+		pageSize,
+		args.CountObjectsYoungerThanHours,
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	var previews []resolverstubs.GitObjectFilterPreviewResolver
-	for rev, names := range namesByRev {
-		for _, name := range names {
-			previews = append(previews, &gitObjectFilterPreviewResolver{
-				name: name,
-				rev:  rev,
-			})
-		}
+	var gitObjectResolvers []resolverstubs.CodeIntelGitObjectResolver
+	for _, gitObject := range gitObjects {
+		gitObjectResolvers = append(gitObjectResolvers, NewGitObjectResolver(gitObject.Name, gitObject.Rev, gitObject.CommittedAt))
 	}
 
-	sort.Slice(previews, func(i, j int) bool {
-		return previews[i].Name() < previews[j].Name() || (previews[i].Name() == previews[j].Name() && previews[i].Rev() < previews[j].Rev())
-	})
-
-	return previews, nil
+	return NewGitObjectFilterPreviewResolver(gitObjectResolvers, totalCount, totalCountYoungerThanThreshold), nil
 }

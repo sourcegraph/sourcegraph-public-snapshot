@@ -17,10 +17,14 @@ func TestRedisKeyValue(t *testing.T) {
 }
 
 func testKeyValue(t *testing.T, kv redispool.KeyValue) {
+	t.Parallel()
+
 	errWrongType := errors.New("WRONGTYPE")
 
 	// "strings" is the name of the classic group of commands in redis (get, set, ttl, etc). We call it classic since that is less confusing.
 	t.Run("classic", func(t *testing.T) {
+		t.Parallel()
+
 		require := require{TB: t}
 
 		// Redis returns nil on unset values
@@ -58,6 +62,8 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 	})
 
 	t.Run("hash", func(t *testing.T) {
+		t.Parallel()
+
 		require := require{TB: t}
 
 		// Pretty much copy-pasta above tests but on a hash
@@ -88,6 +94,8 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 	})
 
 	t.Run("list", func(t *testing.T) {
+		t.Parallel()
+
 		require := require{TB: t}
 
 		// Redis behaviour on unset lists
@@ -142,6 +150,8 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 	})
 
 	t.Run("empty", func(t *testing.T) {
+		t.Parallel()
+
 		require := require{TB: t}
 
 		// Strings group
@@ -161,15 +171,26 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 	})
 
 	t.Run("expire", func(t *testing.T) {
-		require := require{TB: t}
-
 		// Skips because of time.Sleep
 		if testing.Short() {
 			t.Skip()
 		}
+		t.Parallel()
 
-		// TODO test expire works on different data types after mutation.
-		// Check that expire works after incr.
+		require := require{TB: t}
+
+		// Set removes expire
+		{
+			k := "expires-set-reset"
+			require.Works(kv.SetEx(k, 60, "1"))
+			require.Equal(kv.Get(k), "1")
+			require.TTL(kv, k, 60)
+
+			require.Works(kv.Set(k, "2"))
+			require.Equal(kv.Get(k), "2")
+			require.TTL(kv, k, -1)
+
+		}
 
 		// SetEx, Expire and TTL
 		require.Works(kv.SetEx("expires-setex", 60, "1"))
@@ -195,7 +216,73 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 		require.TTL(kv, "expires-set", -2)
 	})
 
+	t.Run("hash-expire", func(t *testing.T) {
+		// Skips because of time.Sleep
+		if testing.Short() {
+			t.Skip()
+		}
+		t.Parallel()
+
+		require := require{TB: t}
+
+		// Hash mutations keep expire
+		require.Works(kv.HSet("expires-unset-hash", "simple", "1"))
+		require.Works(kv.HSet("expires-set-hash", "simple", "1"))
+		require.Works(kv.Expire("expires-set-hash", 60))
+		require.TTL(kv, "expires-unset-hash", -1)
+		require.TTL(kv, "expires-set-hash", 60)
+		require.Equal(kv.HGet("expires-unset-hash", "simple"), "1")
+		require.Equal(kv.HGet("expires-set-hash", "simple"), "1")
+
+		require.Works(kv.HSet("expires-unset-hash", "simple", "2"))
+		require.Works(kv.HSet("expires-set-hash", "simple", "2"))
+		require.TTL(kv, "expires-unset-hash", -1)
+		require.TTL(kv, "expires-set-hash", 60)
+		require.Equal(kv.HGet("expires-unset-hash", "simple"), "2")
+		require.Equal(kv.HGet("expires-set-hash", "simple"), "2")
+
+		// Check expiration happens on hashes
+		require.Works(kv.Expire("expires-set-hash", 1))
+		time.Sleep(1100 * time.Millisecond)
+		require.Equal(kv.HGet("expires-set-hash", "simple"), nil)
+		require.TTL(kv, "expires-set-hash", -2)
+	})
+
+	t.Run("hash-expire", func(t *testing.T) {
+		// Skips because of time.Sleep
+		if testing.Short() {
+			t.Skip()
+		}
+		t.Parallel()
+
+		require := require{TB: t}
+
+		// Hash mutations keep expire
+		require.Works(kv.LPush("expires-unset-list", "1"))
+		require.Works(kv.LPush("expires-set-list", "1"))
+		require.Works(kv.Expire("expires-set-list", 60))
+		require.TTL(kv, "expires-unset-list", -1)
+		require.TTL(kv, "expires-set-list", 60)
+		require.AllEqual(kv.LRange("expires-unset-list", 0, -1), []string{"1"})
+		require.AllEqual(kv.LRange("expires-set-list", 0, -1), []string{"1"})
+
+		require.Works(kv.LPush("expires-unset-list", "2"))
+		require.Works(kv.LPush("expires-set-list", "2"))
+		require.TTL(kv, "expires-unset-list", -1)
+		require.TTL(kv, "expires-set-list", 60)
+		require.AllEqual(kv.LRange("expires-unset-list", 0, -1), []string{"2", "1"})
+		require.AllEqual(kv.LRange("expires-set-list", 0, -1), []string{"2", "1"})
+
+		// Check expiration happens on hashes
+		require.Works(kv.Expire("expires-set-list", 1))
+		time.Sleep(1100 * time.Millisecond)
+		require.Equal(kv.HGet("expires-set-list", "simple"), nil)
+		require.TTL(kv, "expires-set-list", -2)
+	})
+
 	t.Run("wrongtype", func(t *testing.T) {
+		t.Parallel()
+
 		require := require{TB: t}
 		requireWrongType := func(err error) {
 			t.Helper()

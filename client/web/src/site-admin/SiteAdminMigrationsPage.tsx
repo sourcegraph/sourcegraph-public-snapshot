@@ -2,7 +2,6 @@ import React, { useCallback, useMemo } from 'react'
 
 import { mdiAlertCircle, mdiAlert, mdiArrowLeftBold, mdiArrowRightBold } from '@mdi/js'
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router'
 import { Observable, of, timer } from 'rxjs'
 import { catchError, concatMap, delay, map, repeatWhen, takeWhile } from 'rxjs/operators'
 import { parse as _parseVersion, SemVer } from 'semver'
@@ -36,7 +35,7 @@ import {
 
 import styles from './SiteAdminMigrationsPage.module.scss'
 
-export interface SiteAdminMigrationsPageProps extends RouteComponentProps<{}>, TelemetryProps {
+export interface SiteAdminMigrationsPageProps extends TelemetryProps {
     fetchAllMigrations?: typeof defaultFetchAllMigrations
     fetchSiteUpdateCheck?: () => Observable<{ productVersion: string }>
     now?: () => Date
@@ -86,7 +85,6 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<
     fetchSiteUpdateCheck = defaultFetchSiteUpdateCheck,
     now,
     telemetryService,
-    ...props
 }) => {
     const migrationsOrError = useObservable(
         useMemo(
@@ -163,8 +161,6 @@ export const SiteAdminMigrationsPage: React.FunctionComponent<
                             queryConnection={queryMigrations}
                             nodeComponent={MigrationNode}
                             nodeComponentProps={{ now }}
-                            history={props.history}
-                            location={props.location}
                             filters={filters}
                         />
                     </Container>

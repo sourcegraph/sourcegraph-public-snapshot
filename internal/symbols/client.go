@@ -16,22 +16,20 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/go-ctags"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/symbols/proto"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/resetonce"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -138,8 +136,8 @@ func (c *Client) listLanguageMappingsGRPC(ctx context.Context, repository api.Re
 
 	defer conn.Close()
 
-	client := proto.NewSymbolsClient(conn)
-	resp, err := client.ListLanguages(ctx, &emptypb.Empty{})
+	client := proto.NewSymbolsServiceClient(conn)
+	resp, err := client.ListLanguages(ctx, &proto.ListLanguagesRequest{})
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +243,7 @@ func (c *Client) searchGRPC(ctx context.Context, args search.SymbolsParameters) 
 
 	defer conn.Close()
 
-	grpcClient := proto.NewSymbolsClient(conn)
+	grpcClient := proto.NewSymbolsServiceClient(conn)
 
 	var protoArgs proto.SearchRequest
 	protoArgs.FromInternal(&args)
@@ -315,7 +313,7 @@ func (c *Client) localCodeIntelGRPC(ctx context.Context, path types.RepoCommitPa
 
 	defer conn.Close()
 
-	grpcClient := proto.NewSymbolsClient(conn)
+	grpcClient := proto.NewSymbolsServiceClient(conn)
 
 	var rcp proto.RepoCommitPath
 	rcp.FromInternal(&path)
@@ -412,7 +410,7 @@ func (c *Client) symbolInfoGRPC(ctx context.Context, args types.RepoCommitPathPo
 
 	defer conn.Close()
 
-	client := proto.NewSymbolsClient(conn)
+	client := proto.NewSymbolsServiceClient(conn)
 
 	var rcp proto.RepoCommitPath
 	rcp.FromInternal(&args.RepoCommitPath)
@@ -474,7 +472,7 @@ func (c *Client) httpPost(
 		span.Finish()
 	}()
 
-	url, err := c.url(repo)
+	repoUrl, err := c.url(repo)
 	if err != nil {
 		return nil, err
 	}
@@ -484,10 +482,10 @@ func (c *Client) httpPost(
 		return nil, err
 	}
 
-	if !strings.HasSuffix(url, "/") {
-		url += "/"
+	if !strings.HasSuffix(repoUrl, "/") {
+		repoUrl += "/"
 	}
-	req, err := http.NewRequest("POST", url+method, bytes.NewReader(reqBody))
+	req, err := http.NewRequest("POST", repoUrl+method, bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
 	}
@@ -523,14 +521,7 @@ func (c *Client) dialGRPC(ctx context.Context, repository api.RepoName) (*grpc.C
 		return nil, errors.Wrap(err, "parsing symbols service URL")
 	}
 
-	opts := []grpc.DialOption{
-		// 🚨 SECURITY: We use insecure connections to the symbols service. During the
-		// grpc prototyping phase - we're leaving TLS authentication out of scope.
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	}
-
-	opts = append(opts, defaults.DialOptions()...)
-	conn, err := grpc.DialContext(ctx, u.Host, opts...)
+	conn, err := grpc.DialContext(ctx, u.Host, defaults.DialOptions()...)
 	if err != nil {
 		return nil, errors.Wrap(err, "dialing symbols GRPC service")
 	}

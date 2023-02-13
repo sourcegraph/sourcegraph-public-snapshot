@@ -16,7 +16,7 @@ type Operations struct {
 }
 
 func NewOperations(observationCtx *observation.Context, domain, storeName string) *Operations {
-	metrics := metrics.NewREDMetrics(
+	redMetrics := metrics.NewREDMetrics(
 		observationCtx.Registerer,
 		fmt.Sprintf("%s_%s", domain, storeName),
 		metrics.WithLabels("op"),
@@ -27,7 +27,7 @@ func NewOperations(observationCtx *observation.Context, domain, storeName string
 		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("%s.%s.%s", domain, storeName, name),
 			MetricLabelValues: []string{name},
-			Metrics:           metrics,
+			Metrics:           redMetrics,
 		})
 	}
 

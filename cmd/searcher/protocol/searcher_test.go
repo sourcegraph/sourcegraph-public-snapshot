@@ -1,17 +1,18 @@
-package protocol
+package protocol_test
 
 import (
 	"testing"
 	"testing/quick"
 
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/stretchr/testify/require"
 )
 
 func TestRequestProtoRoundtrip(t *testing.T) {
-	quick.Check(func(r1 Request) bool {
+	quick.Check(func(r1 protocol.Request) bool {
 		p1 := r1.ToProto()
 
-		var r2 Request
+		var r2 protocol.Request
 		r2.FromProto(p1)
 		require.Equal(t, r1, r2)
 

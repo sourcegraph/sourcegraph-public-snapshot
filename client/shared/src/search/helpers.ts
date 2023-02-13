@@ -1,5 +1,6 @@
 import * as H from 'history'
-import { NavigateFunction } from 'react-router-dom-v5-compat'
+
+import { HistoryOrNavigate } from '@sourcegraph/common'
 
 import { SearchPatternType } from '../graphql-operations'
 
@@ -72,7 +73,7 @@ export interface SubmitSearchParameters
     extends SearchPatternTypeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec'> {
-    historyOrNavigate: H.History | NavigateFunction
+    historyOrNavigate: HistoryOrNavigate
     location: H.Location
     query: string
     source:

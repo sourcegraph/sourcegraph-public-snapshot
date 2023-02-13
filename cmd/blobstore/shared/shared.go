@@ -26,8 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-var dataDir = env.Get("BLOBSTORE_DATA_DIR", "/data", "directory to store blobstore buckets and objects.")
-
 const port = "9000"
 
 func shutdownOnSignal(ctx context.Context, server *http.Server) error {
@@ -56,20 +54,20 @@ func shutdownOnSignal(ctx context.Context, server *http.Server) error {
 	return server.Shutdown(ctx)
 }
 
-func Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc) error {
+func Start(ctx context.Context, observationCtx *observation.Context, config *Config, ready service.ReadyFunc) error {
 	logger := observationCtx.Logger
 
 	// Ready immediately
 	ready()
 
-	service := &blobstore.Service{
-		DataDir:        dataDir,
+	bsService := &blobstore.Service{
+		DataDir:        config.DataDir,
 		Log:            logger,
 		ObservationCtx: observation.NewContext(logger),
 	}
 
 	// Set up handler middleware
-	handler := actor.HTTPMiddleware(logger, service)
+	handler := actor.HTTPMiddleware(logger, bsService)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
 

@@ -1,3 +1,4 @@
+import { compatNavigate } from '@sourcegraph/common'
 import { SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
@@ -68,9 +69,5 @@ export function submitSearch({
     )
     const state = { ...(typeof location.state === 'object' ? location.state : null), query }
 
-    if (typeof historyOrNavigate === 'function') {
-        historyOrNavigate(path, { state })
-    } else {
-        historyOrNavigate.push(path, state)
-    }
+    compatNavigate(historyOrNavigate, path, { state })
 }

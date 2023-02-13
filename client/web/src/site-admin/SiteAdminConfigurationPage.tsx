@@ -1,9 +1,7 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
 import * as jsonc from 'jsonc-parser'
-import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
 
@@ -211,9 +209,7 @@ const quickConfigureActions: {
     },
 ]
 
-interface Props extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
-    history: H.History
-}
+interface Props extends ThemeProps, TelemetryProps {}
 
 interface State {
     site?: SiteResult['site']
@@ -412,7 +408,6 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                                 isLightTheme={this.props.isLightTheme}
                                 onSave={this.onSave}
                                 actions={quickConfigureActions}
-                                history={this.props.history}
                                 telemetryService={this.props.telemetryService}
                                 explanation={
                                     <Text className="form-text text-muted">

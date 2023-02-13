@@ -134,11 +134,11 @@ func (c *Output) Run(ctx context.Context, r result.Match) (Result, error) {
 			return nil, err
 		}
 
-		result, err := toTextResult(ctx, content, c.SearchPattern, outputPattern, c.Separator, c.Selector)
+		textResult, err := toTextResult(ctx, content, c.SearchPattern, outputPattern, c.Separator, c.Selector)
 		if err != nil {
 			return nil, err
 		}
-		sb.WriteString(result)
+		sb.WriteString(textResult)
 	}
 
 	switch c.Kind {

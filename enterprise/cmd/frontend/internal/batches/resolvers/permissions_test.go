@@ -1831,11 +1831,11 @@ func testBatchSpecWorkspacesResponse(t *testing.T, s *graphql.Schema, ctx contex
 		t.Fatalf("unexpected workspaces total count (-want +got):\n%s", diff)
 	}
 
-	types := map[string]int{}
+	typeCounts := map[string]int{}
 	for _, c := range response.Node.WorkspaceResolution.Workspaces.Nodes {
-		types[c.Typename]++
+		typeCounts[c.Typename]++
 	}
-	if diff := cmp.Diff(w.types, types); diff != "" {
+	if diff := cmp.Diff(w.types, typeCounts); diff != "" {
 		t.Fatalf("unexpected workspace types (-want +got):\n%s", diff)
 	}
 }

@@ -1,6 +1,5 @@
 import React, { useCallback } from 'react'
 
-import * as H from 'history'
 import { map } from 'rxjs/operators'
 
 import { Container, H3, H5 } from '@sourcegraph/wildcard'
@@ -17,8 +16,6 @@ import styles from './RepoBatchChanges.module.scss'
 
 interface Props {
     viewerCanAdminister: boolean
-    history: H.History
-    location: H.Location
     repo: RepositoryFields
     onlyArchived?: boolean
 
@@ -33,8 +30,6 @@ interface Props {
  */
 export const RepoBatchChanges: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     viewerCanAdminister,
-    history,
-    location,
     repo,
     queryRepoBatchChanges = _queryRepoBatchChanges,
     queryExternalChangesetWithFileDiffs = _queryExternalChangesetWithFileDiffs,
@@ -55,12 +50,8 @@ export const RepoBatchChanges: React.FunctionComponent<React.PropsWithChildren<P
     return (
         <Container role="region" aria-label="batch changes">
             <FilteredConnection<RepoBatchChange, Omit<BatchChangeNodeProps, 'node'>>
-                history={history}
-                location={location}
                 nodeComponent={BatchChangeNode}
                 nodeComponentProps={{
-                    history,
-                    location,
                     queryExternalChangesetWithFileDiffs,
                     viewerCanAdminister,
                 }}

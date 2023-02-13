@@ -19,14 +19,14 @@ How relevant containers are identified from exported cAdvisor metrics is documen
 Because cAdvisor run on a *machine* and exports *container* metrics, standard strategies for identifying what container a metric belongs to (such as Prometheus scrape target labels) cannot be used, because all the metrics look like they belong to cAdvisor.
 Making things complicated is how containers are identified on various environments (namely Kubernetes and docker-compose) varies, sometimes due to characteristics of the environments and sometimes due to naming inconsistencies within Sourcegraph.
 Variations in how cAdvisor generates the `name` label it provides also makes things difficult (in some environments, it cannot generate one at all!).
-This means that cAdvisor can pick up non-Sourcegraph metrics, which can be problematic - see [known issues](#known-issues) for more details and current workarounds.
+This means that cAdvisor can pick up non-Sourcegraph metrics, which can be problematic—see [known issues](#known-issues) for more details and current workarounds.
 
 ## Available metrics
 
 Exported metrics are documented in the [cAdvisor Prometheus metrics list](https://github.com/google/cadvisor/blob/master/docs/storage/prometheus.md#prometheus-container-metrics).
 In the list, the column `-disable_metrics parameter` indicates the "group" the metric belongs in.
 
-Container runtime and deployment environment compatability for various metrics seem to be grouped by these groups - before using a metric, ensure that the metric is supported in all relevant environments (for example, both Docker and `containerd` container runtimes).
+Container runtime and deployment environment compatability for various metrics seem to be grouped by these groups—before using a metric, ensure that the metric is supported in all relevant environments (for example, both Docker and `containerd` container runtimes).
 Support is generally poorly documented, but a search through the [cAdvisor repository issues](https://github.com/google/cadvisor/issues) might provide some hints.
 
 ## Known issues

@@ -30,6 +30,7 @@ Use this to start your Sourcegraph environment!
 Available comamndsets in `sg.config.yaml`:
 
 * api-only
+* app
 * batches 🦡
 * codeintel
 * dotcom
@@ -37,12 +38,10 @@ Available comamndsets in `sg.config.yaml`:
 * enterprise-codeinsights
 * enterprise-codeintel 🧠
 * enterprise-e2e
-* enterprise-single-program
 * iam
 * monitoring
 * monitoring-alerts
 * oss
-* oss-single-program
 * oss-web-standalone
 * oss-web-standalone-prod
 * otel

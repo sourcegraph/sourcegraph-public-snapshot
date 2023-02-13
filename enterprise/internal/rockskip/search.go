@@ -561,20 +561,20 @@ func regexMatch(conditions Conditions, regex string, isCaseSensitive bool) *sqlf
 // If so, this function returns true along with the literal search query. If not, this
 // function returns false.
 func isLiteralEquality(expr string) (string, bool, error) {
-	regexp, err := syntax.Parse(expr, syntax.Perl)
+	regex, err := syntax.Parse(expr, syntax.Perl)
 	if err != nil {
 		return "", false, errors.Wrap(err, "regexp/syntax.Parse")
 	}
 
 	// want a concat of size 3 which is [begin, literal, end]
-	if regexp.Op == syntax.OpConcat && len(regexp.Sub) == 3 {
+	if regex.Op == syntax.OpConcat && len(regex.Sub) == 3 {
 		// starts with ^
-		if regexp.Sub[0].Op == syntax.OpBeginLine || regexp.Sub[0].Op == syntax.OpBeginText {
+		if regex.Sub[0].Op == syntax.OpBeginLine || regex.Sub[0].Op == syntax.OpBeginText {
 			// is a literal
-			if regexp.Sub[1].Op == syntax.OpLiteral {
+			if regex.Sub[1].Op == syntax.OpLiteral {
 				// ends with $
-				if regexp.Sub[2].Op == syntax.OpEndLine || regexp.Sub[2].Op == syntax.OpEndText {
-					return string(regexp.Sub[1].Rune), true, nil
+				if regex.Sub[2].Op == syntax.OpEndLine || regex.Sub[2].Op == syntax.OpEndText {
+					return string(regex.Sub[1].Rune), true, nil
 				}
 			}
 		}
@@ -587,18 +587,18 @@ func isLiteralEquality(expr string) (string, bool, error) {
 // If so, this function returns true along with the literal search query. If not, this
 // function returns false.
 func isLiteralPrefix(expr string) (string, bool, error) {
-	regexp, err := syntax.Parse(expr, syntax.Perl)
+	regex, err := syntax.Parse(expr, syntax.Perl)
 	if err != nil {
 		return "", false, errors.Wrap(err, "regexp/syntax.Parse")
 	}
 
 	// want a concat of size 2 which is [begin, literal]
-	if regexp.Op == syntax.OpConcat && len(regexp.Sub) == 2 {
+	if regex.Op == syntax.OpConcat && len(regex.Sub) == 2 {
 		// starts with ^
-		if regexp.Sub[0].Op == syntax.OpBeginLine || regexp.Sub[0].Op == syntax.OpBeginText {
+		if regex.Sub[0].Op == syntax.OpBeginLine || regex.Sub[0].Op == syntax.OpBeginText {
 			// is a literal
-			if regexp.Sub[1].Op == syntax.OpLiteral {
-				return string(regexp.Sub[1].Rune), true, nil
+			if regex.Sub[1].Op == syntax.OpLiteral {
+				return string(regex.Sub[1].Rune), true, nil
 			}
 		}
 	}

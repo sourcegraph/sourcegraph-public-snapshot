@@ -138,10 +138,16 @@ func Init(
 				MessageValue: "Error reading Sourcegraph license key. Check the logs for more information, or update the license key in the [**site configuration**](/site-admin/configuration).",
 			}}
 		}
-		if info != nil && info.IsExpiredWithGracePeriod() {
+		if info != nil && info.IsExpired() {
 			return []*graphqlbackend.Alert{{
 				TypeValue:    graphqlbackend.AlertTypeError,
 				MessageValue: "Sourcegraph license expired! All non-admin users are locked out of Sourcegraph. Update the license key in the [**site configuration**](/site-admin/configuration) or downgrade to only using Sourcegraph Free features.",
+			}}
+		}
+		if info != nil && info.IsExpiringSoon() {
+			return []*graphqlbackend.Alert{{
+				TypeValue:    graphqlbackend.AlertTypeWarning,
+				MessageValue: fmt.Sprintf("Sourcegraph license will expire soon! Expires on: %s. Update the license key in the [**site configuration**](/site-admin/configuration) or downgrade to only using Sourcegraph Free features.", info.ExpiresAt.UTC().Truncate(time.Hour).Format(time.UnixDate)),
 			}}
 		}
 		return nil
@@ -187,7 +193,7 @@ func Init(
 				})
 				return
 			}
-			if info != nil && info.IsExpiredWithGracePeriod() {
+			if info != nil && info.IsExpired() {
 				siteadminOrHandler(func() {
 					enforcement.WriteSubscriptionErrorResponse(w, http.StatusForbidden, "Sourcegraph license expired", "To continue using Sourcegraph, a site admin must renew the Sourcegraph license (or downgrade to only using Sourcegraph Free features). Update the license key in the [**site configuration**](/site-admin/configuration).")
 				})

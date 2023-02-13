@@ -109,7 +109,7 @@ const usePopover = ({
     return { isOpen, open, close, openWithTimeout, closeWithTimeout }
 }
 
-export const BlameDecoration: React.FunctionComponent<{
+interface BlameDecorationProps {
     line: number // 1-based line number
     blameHunk?: BlameHunk
     firstCommitDate?: BlameHunkData['firstCommitDate']
@@ -119,7 +119,19 @@ export const BlameDecoration: React.FunctionComponent<{
     onDeselect?: (line: number) => void
     isLightTheme: boolean
     hideRecency: boolean
-}> = ({ line, blameHunk, history, onSelect, onDeselect, firstCommitDate, externalURLs, isLightTheme, hideRecency }) => {
+}
+
+export const BlameDecoration: React.FunctionComponent<BlameDecorationProps> = ({
+    line,
+    blameHunk,
+    onSelect,
+    onDeselect,
+    firstCommitDate,
+    externalURLs,
+    isLightTheme,
+    hideRecency,
+    history,
+}) => {
     const hunkStartLine = blameHunk?.startLine ?? line
     const id = hunkStartLine?.toString() || ''
     const onOpen = useCallback(() => {

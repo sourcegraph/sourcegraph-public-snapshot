@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react'
+import { FC } from 'react'
 
-import { MemoryRouter, MemoryRouterProps, RouteComponentProps, withRouter } from 'react-router'
-import { CompatRouter } from 'react-router-dom-v5-compat'
+import { MemoryRouter, MemoryRouterProps } from 'react-router'
+import { Routes, Route, CompatRouter } from 'react-router-dom-v5-compat'
 
 import { MockedStoryProvider, MockedStoryProviderProps } from '@sourcegraph/shared/src/stories'
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -22,31 +22,28 @@ if (!window.context) {
     window.context = {} as SourcegraphContext & Mocha.SuiteFunction
 }
 
-export type WebStoryChildrenProps = ThemeProps &
-    BreadcrumbSetters &
-    BreadcrumbsProps &
-    TelemetryProps &
-    RouteComponentProps<any>
+export type WebStoryChildrenProps = ThemeProps & BreadcrumbSetters & BreadcrumbsProps & TelemetryProps
 
 export interface WebStoryProps
     extends Omit<MemoryRouterProps, 'children'>,
         Pick<MockedStoryProviderProps, 'mocks' | 'useStrictMocking'> {
-    children: React.FunctionComponent<WebStoryChildrenProps>
+    children: FC<WebStoryChildrenProps>
+    path?: string
 }
 
 /**
  * Wrapper component for webapp Storybook stories that provides light theme and react-router props.
  * Takes a render function as children that gets called with the props.
  */
-export const WebStory: React.FunctionComponent<WebStoryProps> = ({
-    children,
+export const WebStory: FC<WebStoryProps> = ({
+    children: Children,
     mocks,
+    path = '*',
     useStrictMocking,
     ...memoryRouterProps
 }) => {
     const isLightTheme = useTheme()
     const breadcrumbSetters = useBreadcrumbs()
-    const Children = useMemo(() => withRouter(children), [children])
 
     usePrependStyles('web-styles', webStyles)
     setExperimentalFeaturesForTesting()
@@ -56,11 +53,18 @@ export const WebStory: React.FunctionComponent<WebStoryProps> = ({
             <WildcardThemeContext.Provider value={{ isBranded: true }}>
                 <MemoryRouter {...memoryRouterProps}>
                     <CompatRouter>
-                        <Children
-                            {...breadcrumbSetters}
-                            isLightTheme={isLightTheme}
-                            telemetryService={NOOP_TELEMETRY_SERVICE}
-                        />
+                        <Routes>
+                            <Route
+                                path={path}
+                                element={
+                                    <Children
+                                        {...breadcrumbSetters}
+                                        isLightTheme={isLightTheme}
+                                        telemetryService={NOOP_TELEMETRY_SERVICE}
+                                    />
+                                }
+                            />
+                        </Routes>
                     </CompatRouter>
                 </MemoryRouter>
             </WildcardThemeContext.Provider>

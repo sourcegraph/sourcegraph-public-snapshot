@@ -1,8 +1,7 @@
 import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
-import { useHistory } from 'react-router'
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
 import { Observable } from 'rxjs'
 
 import { limitHit, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/branded'
@@ -28,7 +27,6 @@ import { CodeMonitoringProps } from '../../codeMonitoring'
 import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { CodeInsightsProps } from '../../insights/types'
-import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
 import { fetchBlob, usePrefetchBlobFormat } from '../../repo/blob/backend'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { useExperimentalFeatures, useNavbarQueryState, useNotepad } from '../../stores'
@@ -58,8 +56,6 @@ export interface StreamingSearchResultsProps
         SearchAggregationProps,
         CodeMonitoringProps {
     authenticatedUser: AuthenticatedUser | null
-    location: H.Location
-    history: H.History
     isSourcegraphDotCom: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
@@ -67,17 +63,17 @@ export interface StreamingSearchResultsProps
 export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => {
     const {
         streamSearch,
-        location,
         authenticatedUser,
         telemetryService,
-        codeInsightsEnabled,
         isSourcegraphDotCom,
         extensionsController,
         searchAggregationEnabled,
         codeMonitoringEnabled,
     } = props
 
-    const history = useHistory()
+    const location = useLocation()
+    const navigate = useNavigate()
+
     // Feature flags
     const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
     const [enableSearchResultsKeyboardNavigation] = useFeatureFlag('search-results-keyboard-navigation', true)
@@ -271,23 +267,23 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             submitQuerySearch(
                 {
                     selectedSearchContextSpec: props.selectedSearchContextSpec,
-                    historyOrNavigate: history,
-                    location: history.location,
+                    historyOrNavigate: navigate,
+                    location,
                     source: 'filter',
                 },
                 updates
             ),
-        [submitQuerySearch, props.selectedSearchContextSpec, history]
+        [submitQuerySearch, props.selectedSearchContextSpec, navigate, location]
     )
 
     const onSearchAgain = useCallback(
         (additionalFilters: string[]) => {
             telemetryService.log('SearchSkippedResultsAgainClicked')
 
-            const { history, selectedSearchContextSpec } = props
+            const { selectedSearchContextSpec } = props
             submitSearch({
-                historyOrNavigate: history,
-                location: history.location,
+                historyOrNavigate: navigate,
+                location,
                 selectedSearchContextSpec,
                 caseSensitive,
                 patternType,
@@ -295,14 +291,14 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 source: 'excludedResults',
             })
         },
-        [submittedURLQuery, telemetryService, patternType, caseSensitive, props]
+        [telemetryService, props, navigate, location, caseSensitive, patternType, submittedURLQuery]
     )
 
     const handleSearchAggregationBarClick = (query: string): void => {
-        const { history, selectedSearchContextSpec } = props
+        const { selectedSearchContextSpec } = props
         submitSearch({
-            historyOrNavigate: history,
-            location: history.location,
+            historyOrNavigate: navigate,
+            location,
             selectedSearchContextSpec,
             caseSensitive,
             patternType,
@@ -318,17 +314,17 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const showAggregationPanel = searchAggregationEnabled && hasResultsToAggregate
 
     const onDisableSmartSearch = useCallback(() => {
-        const { history, selectedSearchContextSpec } = props
+        const { selectedSearchContextSpec } = props
         submitSearch({
-            historyOrNavigate: history,
-            location: history.location,
+            historyOrNavigate: navigate,
+            location,
             selectedSearchContextSpec,
             caseSensitive,
             patternType: SearchPatternType.standard,
             query: submittedURLQuery,
             source: 'smartSearchDisabled',
         })
-    }, [caseSensitive, props, submittedURLQuery])
+    }, [caseSensitive, location, navigate, props, submittedURLQuery])
 
     const prefetchFile: FilePrefetcher = useCallback(
         params =>
@@ -386,7 +382,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                         patternType={patternType}
                         caseSensitive={caseSensitive}
                         query={submittedURLQuery}
-                        enableCodeInsights={codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)}
                         enableCodeMonitoring={codeMonitoringEnabled}
                         results={results}
                         className={styles.infobar}
@@ -427,6 +422,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                         {showSavedSearchModal && (
                             <SavedSearchModal
                                 {...props}
+                                navigate={navigate}
                                 patternType={patternType}
                                 query={submittedURLQuery}
                                 authenticatedUser={authenticatedUser}

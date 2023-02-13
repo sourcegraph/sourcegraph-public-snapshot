@@ -70,6 +70,9 @@ const tempDirName = ".tmp"
 // and where it will store cache data.
 const P4HomeName = ".p4home"
 
+// UnsetExitStatus is a sentinel value for an unknown/unset exit status.
+const UnsetExitStatus = -10810
+
 // traceLogs is controlled via the env SRC_GITSERVER_TRACE. If true we trace
 // logs to stderr
 var traceLogs bool
@@ -121,7 +124,7 @@ func runCommand(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error)
 	}()
 
 	err = cmd.Run()
-	exitStatus := -10810                  // sentinel value to indicate not set
+	exitStatus := UnsetExitStatus
 	if cmd.Unwrap().ProcessState != nil { // is nil if process failed to start
 		exitStatus = cmd.Unwrap().ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 	}
@@ -147,7 +150,7 @@ func runCommandGraceful(ctx context.Context, logger log.Logger, cmd wrexec.Cmder
 		span.Finish()
 	}()
 
-	exitCode = -10810 // sentinel value to indicate not set
+	exitCode = UnsetExitStatus
 	err = cmd.Start()
 	if err != nil {
 		return exitCode, err
@@ -415,7 +418,7 @@ func shortGitCommandSlow(args []string) time.Duration {
 // header contains the correct value. See "What does X-Requested-With do, anyway?" in
 // https://github.com/sourcegraph/sourcegraph/pull/27931.
 func headerXRequestedWithMiddleware(next http.Handler) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		l := log.Scoped("gitserver", "headerXRequestedWithMiddleware")
 
 		// Do not apply the middleware to /ping and /git endpoints.
@@ -437,7 +440,7 @@ func headerXRequestedWithMiddleware(next http.Handler) http.HandlerFunc {
 		}
 
 		next.ServeHTTP(w, r)
-	})
+	}
 }
 
 // recordCommandsOnRepos returns a ShouldRecordFunc which determines whether the given command should be recorded
@@ -1229,7 +1232,7 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 	req.Args = append(req.Args, treeish, "--")
 	req.Args = append(req.Args, pathspecs...)
 
-	s.exec(w, r, req)
+	s.execHTTP(w, r, req)
 }
 
 func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
@@ -1638,7 +1641,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		log.Strings("args", args),
 	)
 
-	s.exec(w, r, &req)
+	s.execHTTP(w, r, &req)
 }
 
 var blockedCommandExecutedCounter = promauto.NewCounter(prometheus.CounterOpts{
@@ -1646,28 +1649,30 @@ var blockedCommandExecutedCounter = promauto.NewCounter(prometheus.CounterOpts{
 	Help: "Incremented each time a command not in the allowlist for gitserver is executed",
 })
 
-func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.ExecRequest) {
-	logger := s.Logger.Scoped("exec", "").With(log.Strings("req.Args", req.Args))
+var ErrInvalidCommand = errors.New("invalid command")
 
-	// Flush writes more aggressively than standard net/http so that clients
-	// with a context deadline see as much partial response body as possible.
-	if fw := newFlushingResponseWriter(logger, w); fw != nil {
-		w = fw
-		defer fw.Close()
-	}
+type NotFoundError struct {
+	Payload *protocol.NotFoundPayload
+}
 
+func (e *NotFoundError) Error() string { return "not found" }
+
+type execStatus struct {
+	ExitStatus int
+	Stderr     string
+	Err        error
+}
+
+// exec runs a git command. After the first write to w, it must not return an error.
+// TODO(@camdencheek): once gRPC is the only consumer of this, do everything with errors
+// because gRPC can handle trailing errors on a stream.
+func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.ExecRequest, userAgent string, w io.Writer) (execStatus, error) {
 	// 🚨 SECURITY: Ensure that only commands in the allowed list are executed.
 	// See https://github.com/sourcegraph/security-issues/issues/213.
 	if !gitdomain.IsAllowedGitCmd(logger, req.Args) {
 		blockedCommandExecutedCounter.Inc()
-		logger.Warn("exec: bad command", log.String("RemoteAddr", r.RemoteAddr))
-
-		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("invalid command"))
-		return
+		return execStatus{}, ErrInvalidCommand
 	}
-
-	ctx := r.Context()
 
 	if !req.NoTimeout {
 		var cancel context.CancelFunc
@@ -1677,7 +1682,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 	start := time.Now()
 	var cmdStart time.Time // set once we have ensured commit
-	exitStatus := -10810   // sentinel value to indicate not set
+	exitStatus := UnsetExitStatus
 	var stdoutN, stderrN int64
 	var status string
 	var execErr error
@@ -1736,7 +1741,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 				ev.AddField("actor", act.UIDString())
 				ev.AddField("ensure_revision", req.EnsureRevision)
 				ev.AddField("ensure_revision_status", ensureRevisionStatus)
-				ev.AddField("client", r.UserAgent())
+				ev.AddField("client", userAgent)
 				ev.AddField("duration_ms", duration.Milliseconds())
 				ev.AddField("stdin_size", len(req.Stdin))
 				ev.AddField("stdout_size", stdoutN)
@@ -1779,9 +1784,8 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 		} else {
 			status = "repo-not-found"
 		}
-		w.WriteHeader(http.StatusNotFound)
-		_ = json.NewEncoder(w).Encode(notFoundPayload)
-		return
+
+		return execStatus{}, &NotFoundError{notFoundPayload}
 	}
 
 	dir := s.dir(req.Repo)
@@ -1789,36 +1793,23 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 		ensureRevisionStatus = "fetched"
 	}
 
-	w.Header().Set("Content-Type", "application/octet-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-
-	w.Header().Set("Trailer", "X-Exec-Error")
-	w.Header().Add("Trailer", "X-Exec-Exit-Status")
-	w.Header().Add("Trailer", "X-Exec-Stderr")
-	w.WriteHeader(http.StatusOK)
-
 	// Special-case `git rev-parse HEAD` requests. These are invoked by search queries for every repo in scope.
 	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
 	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
 	if len(req.Args) == 2 && req.Args[0] == "rev-parse" && req.Args[1] == "HEAD" {
 		if resolved, err := quickRevParseHead(dir); err == nil && isAbsoluteRevision(resolved) {
 			_, _ = w.Write([]byte(resolved))
-			w.Header().Set("X-Exec-Error", "")
-			w.Header().Set("X-Exec-Exit-Status", "0")
-			w.Header().Set("X-Exec-Stderr", "")
-			return
+			return execStatus{}, nil
 		}
 	}
+
 	// Special-case `git symbolic-ref HEAD` requests. These are invoked by resolvers determining the default branch of a repo.
 	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
 	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
 	if len(req.Args) == 2 && req.Args[0] == "symbolic-ref" && req.Args[1] == "HEAD" {
 		if resolved, err := quickSymbolicRefHead(dir); err == nil {
 			_, _ = w.Write([]byte(resolved))
-			w.Header().Set("X-Exec-Error", "")
-			w.Header().Set("X-Exec-Exit-Status", "0")
-			w.Header().Set("X-Exec-Stderr", "")
-			return
+			return execStatus{}, nil
 		}
 	}
 
@@ -1842,10 +1833,53 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	stderr := stderrBuf.String()
 	s.logIfCorrupt(ctx, req.Repo, dir, stderr)
 
-	// write trailer
-	w.Header().Set("X-Exec-Error", errorString(execErr))
-	w.Header().Set("X-Exec-Exit-Status", status)
-	w.Header().Set("X-Exec-Stderr", stderr)
+	return execStatus{
+		Err:        execErr,
+		Stderr:     stderr,
+		ExitStatus: exitStatus,
+	}, nil
+}
+
+// execHTTP translates the results of an exec into the expected HTTP statuses and payloads
+func (s *Server) execHTTP(w http.ResponseWriter, r *http.Request, req *protocol.ExecRequest) {
+	logger := s.Logger.Scoped("exec", "").With(log.Strings("req.Args", req.Args))
+
+	// Flush writes more aggressively than standard net/http so that clients
+	// with a context deadline see as much partial response body as possible.
+	if fw := newFlushingResponseWriter(logger, w); fw != nil {
+		w = fw
+		defer fw.Close()
+	}
+
+	ctx := r.Context()
+
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+
+	w.Header().Set("Trailer", "X-Exec-Error")
+	w.Header().Add("Trailer", "X-Exec-Exit-Status")
+	w.Header().Add("Trailer", "X-Exec-Stderr")
+
+	execStatus, err := s.exec(ctx, logger, req, r.UserAgent(), w)
+	w.Header().Set("X-Exec-Error", errorString(execStatus.Err))
+	w.Header().Set("X-Exec-Exit-Status", strconv.Itoa(execStatus.ExitStatus))
+	w.Header().Set("X-Exec-Stderr", execStatus.Stderr)
+	if err != nil {
+		if v := (&NotFoundError{}); errors.As(err, &v) {
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(v.Payload)
+
+		} else if errors.Is(err, ErrInvalidCommand) {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte("invalid command"))
+
+		} else {
+			// If it's not a well-known error, send the error text
+			// and a generic error code.
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+		}
+	}
 }
 
 func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
@@ -1909,7 +1943,7 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 
 	start := time.Now()
 	var cmdStart time.Time // set once we have ensured commit
-	exitStatus := -10810   // sentinel value to indicate not set
+	exitStatus := UnsetExitStatus
 	var stdoutN, stderrN int64
 	var status string
 	var execErr error
@@ -2787,12 +2821,12 @@ func setHEAD(ctx context.Context, logger log.Logger, rf *wrexec.RecordingCommand
 		// branch does not exist, pick first branch
 		cmd := exec.CommandContext(ctx, "git", "branch")
 		dir.Set(cmd)
-		list, err := cmd.Output()
+		output, err := cmd.Output()
 		if err != nil {
 			logger.Error("Failed to list branches", log.Error(err), log.String("output", string(output)))
 			return errors.Wrap(err, "failed to list branches")
 		}
-		lines := strings.Split(string(list), "\n")
+		lines := strings.Split(string(output), "\n")
 		branch := strings.TrimPrefix(strings.TrimPrefix(lines[0], "* "), "  ")
 		if branch != "" {
 			headBranch = branch

@@ -2,7 +2,6 @@ package authz
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/syncjobs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -27,22 +25,24 @@ const errorMsg = "Sorry, wrong number."
 
 func TestPermsSyncerWorker_Handle(t *testing.T) {
 	ctx := context.Background()
-
 	dummySyncer := &dummyPermsSyncer{}
-
-	worker := MakePermsSyncerWorker(&observation.TestContext, dummySyncer)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	syncJobsStore := db.PermissionSyncJobs()
 
 	t.Run("user sync request", func(t *testing.T) {
+		worker := MakePermsSyncerWorker(&observation.TestContext, dummySyncer, SyncTypeUser, syncJobsStore)
 		_ = worker.Handle(ctx, logtest.Scoped(t), &database.PermissionSyncJob{
 			ID:               99,
 			UserID:           1234,
 			InvalidateCaches: true,
 			Priority:         database.HighPriorityPermissionSync,
+			NoPerms:          true,
 		})
 
 		wantRequest := combinedRequest{
 			UserID:  1234,
-			NoPerms: false,
+			NoPerms: true,
 			Options: authz.FetchPermsOptions{
 				InvalidateCaches: true,
 			},
@@ -53,6 +53,7 @@ func TestPermsSyncerWorker_Handle(t *testing.T) {
 	})
 
 	t.Run("repo sync request", func(t *testing.T) {
+		worker := MakePermsSyncerWorker(&observation.TestContext, dummySyncer, SyncTypeRepo, syncJobsStore)
 		_ = worker.Handle(ctx, logtest.Scoped(t), &database.PermissionSyncJob{
 			ID:               777,
 			RepositoryID:     4567,
@@ -73,7 +74,7 @@ func TestPermsSyncerWorker_Handle(t *testing.T) {
 	})
 }
 
-func TestPermsSyncerWorker(t *testing.T) {
+func TestPermsSyncerWorker_RepoSyncJobs(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -89,40 +90,39 @@ func TestPermsSyncerWorker(t *testing.T) {
 	user2, err := userStore.Create(ctx, database.NewUser{Username: "user2"})
 	require.NoError(t, err)
 	repoStore := db.Repos()
-	err = repoStore.Create(ctx, &types.Repo{Name: "github.com/soucegraph/sourcegraph"}, &types.Repo{Name: "github.com/soucegraph/about"})
+	err = repoStore.Create(ctx, &types.Repo{Name: "github.com/soucegraph/sourcegraph"}, &types.Repo{Name: "github.com/soucegraph/about"}, &types.Repo{Name: "github.com/soucegraph/hello"})
 	require.NoError(t, err)
 
 	// Creating a worker.
 	observationCtx := &observation.TestContext
 	dummySyncer := &dummySyncerWithErrors{
-		repoIDErrors: map[api.RepoID]struct{}{2: {}},
-		userIDErrors: map[int32]struct{}{2: {}},
+		repoIDErrors: map[api.RepoID]struct{}{3: {}},
 	}
 
-	workerStore := MakeStore(observationCtx, db.Handle())
-	worker := MakeTestWorker(ctx, observationCtx, workerStore, dummySyncer)
-	go worker.Start()
-	t.Cleanup(func() { worker.Stop() })
-
-	// Adding user perms sync jobs.
 	syncJobsStore := db.PermissionSyncJobs()
-	err = syncJobsStore.CreateUserSyncJob(ctx, user1.ID,
-		database.PermissionSyncJobOpts{Reason: permssync.ReasonUserOutdatedPermissions, Priority: database.LowPriorityPermissionSync})
-	require.NoError(t, err)
-
-	err = syncJobsStore.CreateUserSyncJob(ctx, user2.ID,
-		database.PermissionSyncJobOpts{Reason: permssync.ReasonRepoNoPermissions, Priority: database.HighPriorityPermissionSync, TriggeredByUserID: user1.ID})
-	require.NoError(t, err)
+	workerStore := MakeStore(observationCtx, db.Handle(), SyncTypeRepo)
+	worker := MakeTestWorker(ctx, observationCtx, workerStore, dummySyncer, SyncTypeRepo, syncJobsStore)
+	go worker.Start()
+	t.Cleanup(worker.Stop)
 
 	// Adding repo perms sync jobs.
-	err = syncJobsStore.CreateRepoSyncJob(ctx, api.RepoID(1), database.PermissionSyncJobOpts{Reason: permssync.ReasonManualRepoSync, Priority: database.MediumPriorityPermissionSync, TriggeredByUserID: user1.ID})
+	err = syncJobsStore.CreateRepoSyncJob(ctx, api.RepoID(1), database.PermissionSyncJobOpts{Reason: database.ReasonManualRepoSync, Priority: database.MediumPriorityPermissionSync, TriggeredByUserID: user1.ID})
 	require.NoError(t, err)
 
-	err = syncJobsStore.CreateRepoSyncJob(ctx, api.RepoID(2), database.PermissionSyncJobOpts{Reason: permssync.ReasonManualRepoSync, Priority: database.MediumPriorityPermissionSync, TriggeredByUserID: user1.ID})
+	err = syncJobsStore.CreateRepoSyncJob(ctx, api.RepoID(2), database.PermissionSyncJobOpts{Reason: database.ReasonManualRepoSync, Priority: database.MediumPriorityPermissionSync, TriggeredByUserID: user1.ID})
+	require.NoError(t, err)
+
+	err = syncJobsStore.CreateRepoSyncJob(ctx, api.RepoID(3), database.PermissionSyncJobOpts{Reason: database.ReasonManualRepoSync, Priority: database.MediumPriorityPermissionSync, TriggeredByUserID: user1.ID})
+	require.NoError(t, err)
+
+	// Adding user perms sync job, which should not be processed by current worker!
+	err = syncJobsStore.CreateUserSyncJob(ctx, user2.ID,
+		database.PermissionSyncJobOpts{Reason: database.ReasonRepoNoPermissions, Priority: database.HighPriorityPermissionSync, TriggeredByUserID: user1.ID})
 	require.NoError(t, err)
 
 	// Wait for all jobs to be processed.
 	timeout := time.After(60 * time.Second)
+	remainingRounds := 3
 loop:
 	for {
 		jobs, err := syncJobsStore.List(ctx, database.ListPermissionSyncJobOpts{})
@@ -130,11 +130,25 @@ loop:
 			t.Fatal(err)
 		}
 		for _, job := range jobs {
-			fmt.Println(job.State)
-			if job.State == "queued" || job.State == "processing" {
+			// We don't check job with ID=4 because it is a user sync job which is not
+			// processed by current worker.
+			if job.ID != 4 && (job.State == "queued" || job.State == "processing") {
 				// wait and retry
 				time.Sleep(500 * time.Millisecond)
-				continue
+				continue loop
+			}
+		}
+
+		// Adding additional 3 rounds of checks to make sure that we've waited enough
+		// time to get a chance for user sync job to be processed (by mistake).
+		for _, job := range jobs {
+			// We only check job with ID=3 because it is a user sync job which should not
+			// processed by current worker.
+			if job.ID == 4 && remainingRounds > 0 {
+				// wait and retry
+				time.Sleep(500 * time.Millisecond)
+				remainingRounds = remainingRounds - 1
+				continue loop
 			}
 		}
 
@@ -150,20 +164,171 @@ loop:
 	require.NoError(t, err)
 
 	for _, job := range jobs {
-		if job.ID%2 == 1 {
-			continue
+		jobID := job.ID
+
+		// Check that repo IDs are correctly assigned.
+		if job.RepositoryID > 0 {
+			require.Equal(t, jobID, job.RepositoryID)
 		}
-		switch job.ID {
-		case 2:
-			// User sync job.
-			require.Equal(t, 2, job.UserID)
-		case 4:
-			// Repo sync job.
-			require.Equal(t, 2, job.RepositoryID)
+
+		// Check that repo sync job was completed and results were saved.
+		if jobID == 2 {
+			require.Equal(t, "completed", job.State)
+			require.Nil(t, job.FailureMessage)
+			require.Equal(t, 1, job.PermissionsAdded)
+			require.Equal(t, 2, job.PermissionsRemoved)
+			require.Equal(t, 5, job.PermissionsFound)
 		}
-		require.NotNil(t, job.FailureMessage)
-		require.Equal(t, errorMsg, *job.FailureMessage)
-		require.Equal(t, 1, job.NumFailures)
+
+		// Check that failed job has the failure message.
+		if jobID == 3 {
+			require.NotNil(t, job.FailureMessage)
+			require.Equal(t, errorMsg, *job.FailureMessage)
+			require.Equal(t, 1, job.NumFailures)
+			require.Equal(t, 0, job.PermissionsAdded)
+			require.Equal(t, 0, job.PermissionsRemoved)
+			require.Equal(t, 0, job.PermissionsFound)
+		}
+
+		// Check that user sync job wasn't picked up by repo sync worker.
+		if jobID == 4 {
+			require.Equal(t, "queued", job.State)
+			require.Nil(t, job.FailureMessage)
+			require.Equal(t, 0, job.PermissionsAdded)
+			require.Equal(t, 0, job.PermissionsRemoved)
+			require.Equal(t, 0, job.PermissionsFound)
+		}
+	}
+}
+
+func TestPermsSyncerWorker_UserSyncJobs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// Creating users and repos.
+	userStore := db.Users()
+	user1, err := userStore.Create(ctx, database.NewUser{Username: "user1"})
+	require.NoError(t, err)
+	user2, err := userStore.Create(ctx, database.NewUser{Username: "user2"})
+	require.NoError(t, err)
+	user3, err := userStore.Create(ctx, database.NewUser{Username: "user3"})
+	require.NoError(t, err)
+	repoStore := db.Repos()
+	err = repoStore.Create(ctx, &types.Repo{Name: "github.com/soucegraph/sourcegraph"}, &types.Repo{Name: "github.com/soucegraph/about"})
+	require.NoError(t, err)
+
+	// Creating a worker.
+	observationCtx := &observation.TestContext
+	dummySyncer := &dummySyncerWithErrors{
+		userIDErrors: map[int32]struct{}{3: {}},
+	}
+
+	syncJobsStore := db.PermissionSyncJobs()
+	workerStore := MakeStore(observationCtx, db.Handle(), SyncTypeUser)
+	worker := MakeTestWorker(ctx, observationCtx, workerStore, dummySyncer, SyncTypeUser, syncJobsStore)
+	go worker.Start()
+	t.Cleanup(worker.Stop)
+
+	// Adding user perms sync jobs.
+	err = syncJobsStore.CreateUserSyncJob(ctx, user1.ID,
+		database.PermissionSyncJobOpts{Reason: database.ReasonUserOutdatedPermissions, Priority: database.LowPriorityPermissionSync})
+	require.NoError(t, err)
+
+	err = syncJobsStore.CreateUserSyncJob(ctx, user2.ID,
+		database.PermissionSyncJobOpts{Reason: database.ReasonRepoNoPermissions, NoPerms: true, Priority: database.HighPriorityPermissionSync, TriggeredByUserID: user1.ID})
+	require.NoError(t, err)
+
+	err = syncJobsStore.CreateUserSyncJob(ctx, user3.ID,
+		database.PermissionSyncJobOpts{Reason: database.ReasonRepoNoPermissions, NoPerms: true, Priority: database.HighPriorityPermissionSync, TriggeredByUserID: user1.ID})
+	require.NoError(t, err)
+
+	// Adding repo perms sync job, which should not be processed by current worker!
+	err = syncJobsStore.CreateRepoSyncJob(ctx, api.RepoID(1), database.PermissionSyncJobOpts{Reason: database.ReasonManualRepoSync, Priority: database.MediumPriorityPermissionSync, TriggeredByUserID: user1.ID})
+	require.NoError(t, err)
+
+	// Wait for all jobs to be processed.
+	timeout := time.After(60 * time.Second)
+	remainingRounds := 3
+loop:
+	for {
+		jobs, err := syncJobsStore.List(ctx, database.ListPermissionSyncJobOpts{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, job := range jobs {
+			// We don't check job with ID=3 because it is a repo sync job which is not
+			// processed by current worker.
+			if job.ID != 4 && (job.State == "queued" || job.State == "processing") {
+				// wait and retry
+				time.Sleep(500 * time.Millisecond)
+				continue loop
+			}
+		}
+
+		// Adding additional 3 rounds of checks to make sure that we've waited enough
+		// time to get a chance for repo sync job to be processed (by mistake).
+		for _, job := range jobs {
+			// We only check job with ID=3 because it is a repo sync job which should not
+			// processed by current worker.
+			if job.ID == 4 && remainingRounds > 0 {
+				// wait and retry
+				time.Sleep(500 * time.Millisecond)
+				remainingRounds = remainingRounds - 1
+				continue loop
+			}
+		}
+
+		select {
+		case <-timeout:
+			t.Fatal("Perms sync jobs are not processing or processing takes too much time.")
+		default:
+			break loop
+		}
+	}
+
+	jobs, err := syncJobsStore.List(ctx, database.ListPermissionSyncJobOpts{})
+	require.NoError(t, err)
+
+	for _, job := range jobs {
+		jobID := job.ID
+
+		// Check that user IDs are correctly assigned.
+		if job.UserID > 0 {
+			require.Equal(t, jobID, job.UserID)
+		}
+
+		if jobID == 2 {
+			require.Equal(t, "completed", job.State)
+			require.Nil(t, job.FailureMessage)
+			require.Equal(t, 1, job.PermissionsAdded)
+			require.Equal(t, 2, job.PermissionsRemoved)
+			require.Equal(t, 5, job.PermissionsFound)
+		}
+
+		// Check that failed job has the failure message.
+		if jobID == 3 {
+			require.NotNil(t, job.FailureMessage)
+			require.Equal(t, errorMsg, *job.FailureMessage)
+			require.Equal(t, 1, job.NumFailures)
+			require.True(t, job.NoPerms)
+			require.Equal(t, 0, job.PermissionsAdded)
+			require.Equal(t, 0, job.PermissionsRemoved)
+			require.Equal(t, 0, job.PermissionsFound)
+		}
+
+		// Check that repo sync job wasn't picked up by user sync worker.
+		if jobID == 4 {
+			require.Equal(t, "queued", job.State)
+			require.Nil(t, job.FailureMessage)
+			require.Equal(t, 0, job.PermissionsAdded)
+			require.Equal(t, 0, job.PermissionsRemoved)
+			require.Equal(t, 0, job.PermissionsFound)
+		}
 	}
 }
 
@@ -213,7 +378,7 @@ func TestPermsSyncerWorker_Store_Dequeue_Order(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	store := MakeStore(&observation.TestContext, db.Handle())
+	store := MakeStore(&observation.TestContext, db.Handle(), SyncTypeRepo)
 	jobIDs := []int{}
 	wantJobIDs := []int{5, 6, 8, 7, 3, 4, 10, 9, 1, 2, 12, 11, 0, 0, 0, 0}
 	var dequeueErr error
@@ -239,8 +404,8 @@ func TestPermsSyncerWorker_Store_Dequeue_Order(t *testing.T) {
 	}
 }
 
-func MakeTestWorker(ctx context.Context, observationCtx *observation.Context, workerStore dbworkerstore.Store[*database.PermissionSyncJob], permsSyncer permsSyncer) *workerutil.Worker[*database.PermissionSyncJob] {
-	handler := MakePermsSyncerWorker(observationCtx, permsSyncer)
+func MakeTestWorker(ctx context.Context, observationCtx *observation.Context, workerStore dbworkerstore.Store[*database.PermissionSyncJob], permsSyncer permsSyncer, typ syncType, jobsStore database.PermissionSyncJobStore) *workerutil.Worker[*database.PermissionSyncJob] {
+	handler := MakePermsSyncerWorker(observationCtx, permsSyncer, typ, jobsStore)
 	return dbworker.NewWorker[*database.PermissionSyncJob](ctx, workerStore, handler, workerutil.WorkerOptions{
 		Name:              "permission_sync_job_worker",
 		Interval:          time.Second,
@@ -263,21 +428,21 @@ type dummyPermsSyncer struct {
 	request combinedRequest
 }
 
-func (d *dummyPermsSyncer) syncRepoPerms(_ context.Context, repoID api.RepoID, noPerms bool, options authz.FetchPermsOptions) ([]syncjobs.ProviderStatus, error) {
+func (d *dummyPermsSyncer) syncRepoPerms(_ context.Context, repoID api.RepoID, noPerms bool, options authz.FetchPermsOptions) (*database.SetPermissionsResult, []syncjobs.ProviderStatus, error) {
 	d.request = combinedRequest{
 		RepoID:  repoID,
 		NoPerms: noPerms,
 		Options: options,
 	}
-	return []syncjobs.ProviderStatus{}, nil
+	return &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}, []syncjobs.ProviderStatus{}, nil
 }
-func (d *dummyPermsSyncer) syncUserPerms(_ context.Context, userID int32, noPerms bool, options authz.FetchPermsOptions) ([]syncjobs.ProviderStatus, error) {
+func (d *dummyPermsSyncer) syncUserPerms(_ context.Context, userID int32, noPerms bool, options authz.FetchPermsOptions) (*database.SetPermissionsResult, []syncjobs.ProviderStatus, error) {
 	d.request = combinedRequest{
 		UserID:  userID,
 		NoPerms: noPerms,
 		Options: options,
 	}
-	return []syncjobs.ProviderStatus{}, nil
+	return &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}, []syncjobs.ProviderStatus{}, nil
 }
 
 type dummySyncerWithErrors struct {
@@ -286,25 +451,25 @@ type dummySyncerWithErrors struct {
 	repoIDErrors map[api.RepoID]struct{}
 }
 
-func (d *dummySyncerWithErrors) syncRepoPerms(_ context.Context, repoID api.RepoID, noPerms bool, options authz.FetchPermsOptions) ([]syncjobs.ProviderStatus, error) {
+func (d *dummySyncerWithErrors) syncRepoPerms(_ context.Context, repoID api.RepoID, noPerms bool, options authz.FetchPermsOptions) (*database.SetPermissionsResult, []syncjobs.ProviderStatus, error) {
 	if _, ok := d.repoIDErrors[repoID]; ok {
-		return nil, errors.New(errorMsg)
+		return nil, nil, errors.New(errorMsg)
 	}
 	d.request = combinedRequest{
 		RepoID:  repoID,
 		NoPerms: noPerms,
 		Options: options,
 	}
-	return []syncjobs.ProviderStatus{}, nil
+	return &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}, []syncjobs.ProviderStatus{}, nil
 }
-func (d *dummySyncerWithErrors) syncUserPerms(_ context.Context, userID int32, noPerms bool, options authz.FetchPermsOptions) ([]syncjobs.ProviderStatus, error) {
+func (d *dummySyncerWithErrors) syncUserPerms(_ context.Context, userID int32, noPerms bool, options authz.FetchPermsOptions) (*database.SetPermissionsResult, []syncjobs.ProviderStatus, error) {
 	if _, ok := d.userIDErrors[userID]; ok {
-		return nil, errors.New(errorMsg)
+		return nil, nil, errors.New(errorMsg)
 	}
 	d.request = combinedRequest{
 		UserID:  userID,
 		NoPerms: noPerms,
 		Options: options,
 	}
-	return []syncjobs.ProviderStatus{}, nil
+	return &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}, []syncjobs.ProviderStatus{}, nil
 }

@@ -38,29 +38,26 @@ if [ $# -eq 0 ]; then
 fi
 
 name=${1%/}
-
-if [ ! -d "wolfi-images/${name}" ]; then
-  echo "Directory '$name' does not exist"
+if [ ! -f "wolfi-images/${name}.yaml" ]; then
+  echo "File '$name.yaml' does not exist"
   exit 1
 fi
 
-if [ ! -f "wolfi-images/${name}/apko.yaml" ]; then
-  echo "File '$name/apko.yaml' does not exist"
-  exit 1
-fi
+tag=${2-latest}
 
-cd "wolfi-images/${name}"
+cd "wolfi-images/"
 
 # Build base image with apko
-echo " * Building apko base image '$name'"
+echo " * Building base image '$name' with apko..."
 image_name="sourcegraph-wolfi/${name}-base"
 tarball="sourcegraph-wolfi-${name}-base.tar"
-apko build --debug apko.yaml \
+apko build --debug "${name}.yaml" \
   "$image_name:latest" \
   "$tarball" ||
   (echo "*** Build failed ***" && exit 1)
 
 # Tag image and upload to GCP Artifact Registry
 docker load <"$tarball"
-docker tag "$image_name" "us.gcr.io/sourcegraph-dev/wolfi-${name}:latest"
-docker push "us.gcr.io/sourcegraph-dev/wolfi-${name}:latest"
+
+docker tag "$image_name" "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:$tag"
+docker push "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:$tag"

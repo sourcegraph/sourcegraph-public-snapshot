@@ -62,7 +62,7 @@ export interface GlobalNavbarProps
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     showSearchBox: boolean
-    routes: readonly LayoutRouteProps<{}>[]
+    routes: readonly LayoutRouteProps[]
 
     // Whether globbing is enabled for filters.
     globbing: boolean
@@ -225,7 +225,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                     {showCodeMonitoring && (
                         <NavItem icon={CodeMonitoringLogo}>
-                            <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.CodeMonitoring}>
+                            <NavLink variant={navLinkVariant} to="/code-monitoring">
                                 Monitoring
                             </NavLink>
                         </NavItem>
@@ -238,7 +238,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                     {codeInsights && (
                         <NavItem icon={BarChartIcon}>
-                            <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Insights}>
+                            <NavLink variant={navLinkVariant} to="/insights">
                                 Insights
                             </NavLink>
                         </NavItem>
@@ -287,7 +287,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                     {props.authenticatedUser && isSourcegraphDotCom && (
                         <ButtonLink
-                            className={styles.signUp}
+                            variant="secondary"
+                            outline={true}
                             to={buildCloudTrialURL(props.authenticatedUser)}
                             size="sm"
                             onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NavBarLoggedIn' })}
@@ -329,8 +330,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                         Sign in
                                     </Button>
                                     <ButtonLink
-                                        className={styles.signUp}
                                         to={buildGetStartedURL(isSourcegraphDotCom, props.authenticatedUser)}
+                                        variant="primary"
                                         size="sm"
                                         onClick={() => eventLogger.log('ClickedOnTopNavTrialButton')}
                                     >

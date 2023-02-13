@@ -99,7 +99,7 @@ func (g *generator) generate(ctx context.Context) error {
 	if err := g.eachLsifIndex(ctx, func(each gqlLSIFIndex, total uint64) error {
 		if time.Since(lastUpdate) >= g.progressUpdates {
 			lastUpdate = time.Now()
-			g.logger.Info("progress: discovered LSIF indexes", log.Int("n", queried), log.Uint64("of", (total)))
+			g.logger.Info("progress: discovered LSIF indexes", log.Int("n", queried), log.Uint64("of", total))
 		}
 		queried++
 		if strings.Contains(each.InputIndexer, "lsif-go") {
@@ -307,7 +307,7 @@ func (g *generator) generate(ctx context.Context) error {
 			return errors.Wrap(err, "failed to write sitemap.xml.gz")
 		}
 	}
-	for index, sitemap := range sitemaps {
+	for index, sm := range sitemaps {
 		fileName := fmt.Sprintf("sitemap_%03d.xml.gz", index)
 		outFile, err := os.Create(filepath.Join(g.outDir, fileName))
 		if err != nil {
@@ -316,7 +316,7 @@ func (g *generator) generate(ctx context.Context) error {
 		defer outFile.Close()
 		writer := gzip.NewWriter(outFile)
 		defer writer.Close()
-		_, err = sitemap.WriteTo(writer)
+		_, err = sm.WriteTo(writer)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("failed to write %s", fileName))
 		}

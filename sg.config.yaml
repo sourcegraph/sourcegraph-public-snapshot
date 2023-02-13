@@ -226,7 +226,7 @@ commands:
     <<: *oss_gitserver_template
     env:
       <<: *gitserverenv
-      HOSTNAME: 127.0.0.1:3501
+      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3501
       GITSERVER_ADDR: 127.0.0.1:3501
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
       SRC_PROF_HTTP: 127.0.0.1:3551
@@ -235,7 +235,7 @@ commands:
     <<: *oss_gitserver_template
     env:
       <<: *oss_gitserverenv
-      HOSTNAME: 127.0.0.1:3502
+      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3502
       GITSERVER_ADDR: 127.0.0.1:3502
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_2
       SRC_PROF_HTTP: 127.0.0.1:3552
@@ -249,7 +249,7 @@ commands:
     <<: *gitserver_template
     env:
       <<: *gitserverenv
-      HOSTNAME: 127.0.0.1:3501
+      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3501
       GITSERVER_ADDR: 127.0.0.1:3501
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
       SRC_PROF_HTTP: 127.0.0.1:3551
@@ -258,7 +258,7 @@ commands:
     <<: *gitserver_template
     env:
       <<: *gitserverenv
-      HOSTNAME: 127.0.0.1:3502
+      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3502
       GITSERVER_ADDR: 127.0.0.1:3502
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_2
       SRC_PROF_HTTP: 127.0.0.1:3552
@@ -328,7 +328,6 @@ commands:
       go build -gcflags="$GCFLAGS" -o .bin/repo-updater github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
     checkBinary: .bin/repo-updater
     env:
-      HOSTNAME: $SRC_GIT_SERVER_1
       ENTERPRISE: 1
     watch:
       - lib
@@ -848,7 +847,7 @@ commands:
   sourcegraph:
     description: Single program (Go static binary) distribution
     cmd: |
-      unset SRC_GIT_SERVERS INDEXED_SEARCH_SERVERS
+      unset SRC_GIT_SERVERS INDEXED_SEARCH_SERVERS REDIS_ENDPOINT
 
       # TODO: This should be fixed
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
@@ -1149,30 +1148,17 @@ commandsets:
       - otel-collector
       - jaeger
 
-  enterprise-single-program:
+  app:
     requiresDevPrivate: true
     checks:
       - docker
-      - redis
       - postgres
       - git
     commands:
       - sourcegraph
       - docsite
       - web
-      - syntax-highlighter
-      - caddy
-
-  oss-single-program:
-    checks:
-      - docker
-      - redis
-      - postgres
-      - git
-    commands:
-      - sourcegraph-oss
-      - docsite
-      - oss-web
+      # TODO: App's dependency on syntax-highlighter will be removed.
       - syntax-highlighter
       - caddy
 

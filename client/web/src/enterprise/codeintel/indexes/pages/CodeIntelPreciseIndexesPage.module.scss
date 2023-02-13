@@ -1,0 +1,43 @@
+.grid {
+    display: grid;
+    grid-template-columns: min-content [info] minmax(auto, 1fr) [state] 6rem [end];
+    row-gap: 1rem;
+    column-gap: 1rem;
+    align-items: center;
+    @media (--sm-breakpoint-down) {
+        row-gap: 0.5rem;
+        column-gap: 0.5rem;
+    }
+
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--border-color-2);
+}
+
+.grid:hover {
+    cursor: pointer;
+    background-color: var(--gray-02);
+}
+
+.state,
+.information {
+    @media (--xs-breakpoint-down) {
+        grid-column: 1 / -1;
+    }
+}
+
+.tag {
+    color: #ae6e00;
+    background-color: #ff9e0045;
+}
+
+.header {
+    display: grid;
+    grid-template-columns: min-content [info] minmax(auto, 1fr) [end];
+    row-gap: 1rem;
+    column-gap: 1rem;
+    align-items: center;
+    @media (--sm-breakpoint-down) {
+        row-gap: 0.5rem;
+        column-gap: 0.5rem;
+    }
+}

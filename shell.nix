@@ -68,6 +68,9 @@ pkgs.mkShell {
     rustfmt
     libiconv
     clippy
+
+    # The future?
+    bazel_6
   ];
 
   # Startup postgres

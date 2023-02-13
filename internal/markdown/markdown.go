@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	chroma "github.com/alecthomas/chroma/v2"
+	"github.com/alecthomas/chroma/v2"
 	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/yuin/goldmark"
@@ -36,6 +36,12 @@ func Render(content string) (string, error) {
 		policy.AllowAttrs("type").Matching(regexp.MustCompile(`^checkbox$`)).OnElements("input")
 		policy.AllowAttrs("checked", "disabled").Matching(regexp.MustCompile(`^$`)).OnElements("input")
 		policy.AllowAttrs("class").Matching(regexp.MustCompile(`^(?:chroma-[a-zA-Z0-9\-]+)|chroma$`)).OnElements("pre", "code", "span")
+		policy.AllowAttrs("align").OnElements("img", "p")
+		policy.AllowElements("picture", "video", "track", "source")
+		policy.AllowAttrs("srcset", "src", "type", "media", "width", "height", "sizes").OnElements("source")
+		policy.AllowAttrs("playsinline", "muted", "autoplay", "loop", "controls", "width", "height", "poster", "src").OnElements("video")
+		policy.AllowAttrs("src", "kind", "srclang", "default", "label").OnElements("track")
+		policy.AddTargetBlankToFullyQualifiedLinks(true)
 
 		html.LinkAttributeFilter.Add([]byte("aria-hidden"))
 		html.LinkAttributeFilter.Add([]byte("name"))

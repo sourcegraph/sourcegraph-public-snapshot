@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
 
 import { QueryExamples } from '@sourcegraph/branded/src/search-ui/components/QueryExamples'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -22,7 +21,6 @@ import { useExperimentalFeatures } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 
-import { CloudHomepageCta } from './CloudHomepageCta'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
 
@@ -38,8 +36,6 @@ export interface SearchPageProps
         SearchContextInputProps,
         CodeInsightsProps {
     authenticatedUser: AuthenticatedUser | null
-    location: H.Location
-    history: H.History
     isSourcegraphDotCom: boolean
     autoFocus?: boolean
 
@@ -78,7 +74,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
             {props.isSourcegraphDotCom && (
                 <div className="d-sm-flex flex-row text-center">
                     <div className={classNames(width >= VIEWPORT_SM && 'border-right', 'text-muted mt-3 mr-sm-2 pr-2')}>
-                        Search millions of open source repositories
+                        Search millions of public repositories
                     </div>
                     <div className="mt-3">
                         <Link
@@ -119,16 +115,13 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                 })}
             >
                 {(!!props.authenticatedUser || props.isSourcegraphDotCom) && (
-                    <div>
-                        {props.isSourcegraphDotCom && <CloudHomepageCta authenticatedUser={props.authenticatedUser} />}
-                        <QueryExamples
-                            selectedSearchContextSpec={props.selectedSearchContextSpec}
-                            telemetryService={props.telemetryService}
-                            queryState={queryState}
-                            setQueryState={setQueryState}
-                            isSourcegraphDotCom={props.isSourcegraphDotCom}
-                        />
-                    </div>
+                    <QueryExamples
+                        selectedSearchContextSpec={props.selectedSearchContextSpec}
+                        telemetryService={props.telemetryService}
+                        queryState={queryState}
+                        setQueryState={setQueryState}
+                        isSourcegraphDotCom={props.isSourcegraphDotCom}
+                    />
                 )}
             </div>
 

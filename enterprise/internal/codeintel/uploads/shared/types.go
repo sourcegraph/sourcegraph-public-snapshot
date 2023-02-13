@@ -38,9 +38,16 @@ type GetUploadsOptions struct {
 	InCommitGraph bool
 }
 
+type ReindexUploadsOptions struct {
+	States       []string
+	Term         string
+	RepositoryID int
+	VisibleAtTip bool
+}
+
 type DeleteUploadsOptions struct {
 	RepositoryID int
-	State        string
+	States       []string
 	Term         string
 	VisibleAtTip bool
 }

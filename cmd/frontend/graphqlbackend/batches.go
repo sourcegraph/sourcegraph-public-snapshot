@@ -638,7 +638,7 @@ type ListRecentlyErroredWorkspacesArgs struct {
 
 type BatchSpecWorkspaceStepOutputLinesArgs struct {
 	First int32
-	After *int32
+	After *string
 }
 
 type BatchChangeResolver interface {
@@ -907,6 +907,12 @@ type BatchSpecWorkspaceStagesResolver interface {
 	Teardown() []ExecutionLogEntryResolver
 }
 
+type BatchSpecWorkspaceStepOutputLineConnectionResolver interface {
+	TotalCount() (int32, error)
+	PageInfo() (*graphqlutil.PageInfo, error)
+	Nodes() ([]string, error)
+}
+
 type BatchSpecWorkspaceStepResolver interface {
 	Number() int32
 	Run() string
@@ -914,7 +920,7 @@ type BatchSpecWorkspaceStepResolver interface {
 	IfCondition() *string
 	CachedResultFound() bool
 	Skipped() bool
-	OutputLines(ctx context.Context, args *BatchSpecWorkspaceStepOutputLinesArgs) (*[]string, error)
+	OutputLines(ctx context.Context, args *BatchSpecWorkspaceStepOutputLinesArgs) BatchSpecWorkspaceStepOutputLineConnectionResolver
 
 	StartedAt() *gqlutil.DateTime
 	FinishedAt() *gqlutil.DateTime

@@ -407,7 +407,7 @@ func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatt
 
 	var filePatterns []string
 	if v, ok := paths.(subset); ok {
-		filePatterns = []string(v)
+		filePatterns = v
 	}
 	span.LogFields(otlog.Int("paths", len(filePatterns)))
 

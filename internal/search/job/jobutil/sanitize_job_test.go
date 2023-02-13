@@ -157,16 +157,16 @@ func TestSanitizeJob(t *testing.T) {
 				return nil, nil
 			})
 
-			var result streaming.SearchEvent
+			var searchEvent streaming.SearchEvent
 			streamCollector := streaming.StreamFunc(func(event streaming.SearchEvent) {
-				result = event
+				searchEvent = event
 			})
 
 			j := NewSanitizeJob(omitPatterns, childJob)
 			alert, err := j.Run(context.Background(), job.RuntimeClients{}, streamCollector)
 			require.Nil(t, alert)
 			require.NoError(t, err)
-			require.Equal(t, tc.outputEvent, result)
+			require.Equal(t, tc.outputEvent, searchEvent)
 		})
 	}
 }

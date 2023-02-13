@@ -1339,3 +1339,172 @@ type RepositoryPreviewPayload {
     """
     numberOfRepositories: Int
 }
+
+extend type Query {
+    """
+    Fetch information related to the queue of backfilling insights.
+    """
+    insightAdminBackfillQueue(
+        """
+        Returns the first n queue items from the list.
+        """
+        first: Int
+        """
+        Returns the last n queue items from the list.
+        """
+        last: Int
+        """
+        An opaque cursor that is used for pagination.
+        """
+        after: String
+        """
+        An opaque cursor that is used for pagination.
+        """
+        before: String
+        """
+        How to order the list.
+        """
+        orderBy: BackfillQueueOrderBy = STATE
+        """
+        Sort direction.
+        """
+        descending: Boolean = false
+        """
+        List of states to filter list by.
+        """
+        states: [InsightQueueItemState!]
+        """
+        Text to filter the list, checking the Insight Title and Series Label
+        """
+        textSearch: String
+    ): InsightBackfillQueueItemConnection!
+}
+
+"""
+BackfillQueueOrderBy enumerates the ways a backfill queue list can be ordered.
+"""
+enum BackfillQueueOrderBy {
+    STATE
+    QUEUE_POSITION
+}
+
+"""
+Returns information regarding the insights backfill queue to admin users.
+"""
+type InsightBackfillQueueItemConnection implements Connection {
+    """
+    A list of insight backfill queue items.
+    """
+    nodes: [InsightBackfillQueueItem!]!
+
+    """
+    The total number of insight backfill queue items in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: ConnectionPageInfo!
+}
+
+"""
+Information about an item in the insights backfill queue
+"""
+type InsightBackfillQueueItem {
+    """
+    The ID of the Backfill item
+    """
+    id: ID!
+    """
+    The title of the insight view
+    """
+    insightViewTitle: String!
+    # """
+    # The user that originally created the insight view
+    # """
+    # creator: User
+    """
+    The name of the series on the associated insight view
+    """
+    seriesLabel: String!
+    """
+    The search query for the series
+    """
+    seriesSearchQuery: String!
+    """
+    Information on the current backfill status
+    """
+    backfillQueueStatus: BackfillStatus!
+}
+
+"""
+The status of an insights backfill
+"""
+type BackfillStatus {
+    """
+    The current backfill queue state
+    """
+    state: InsightQueueItemState!
+    """
+    If the item is queued the position in the queue of
+    """
+    queuePosition: Int
+    """
+    A list of errors that have occurred during backfilling
+    """
+    errors: [String!]
+    """
+    The estimated cost of the backfill process
+    """
+    cost: Int
+    """
+    The percent complete of the backfill
+    """
+    percentComplete: Int
+    """
+    The date/time when the backfill was created
+    """
+    createdAt: DateTime
+    """
+    The date/time when the backfill started processing
+    """
+    startedAt: DateTime
+    """
+    The date/time when the backfill completed processing
+    """
+    completedAt: DateTime
+    """
+    The actual runtime duration spent processing the backfill
+    """
+    runtime: String
+}
+
+"""
+Possible queue states
+"""
+enum InsightQueueItemState {
+    NEW
+    QUEUED
+    COMPLETED
+    PROCESSING
+    FAILED
+    UNKNOWN
+}
+
+# extend type Mutation {
+#     """
+#     Retry the backfill for a failed insight series. Can only be used by a site admin.
+#     """
+#     retryInsightSeriesBackfill(id: ID!): InsightBackfillQueueItem!
+
+#     """
+#     Updates the priority of an insight series backfill making it the highest priority
+#     """
+#     moveInsightSeriesBackfillToFrontOfQueue(id: ID!): InsightBackfillQueueItem!
+
+#     """
+#     Updates the priority of an insight series backfill making it the lowest priority
+#     """
+#     moveInsightSeriesBackfillToBackOfQueue(id: ID!): InsightBackfillQueueItem!
+# }

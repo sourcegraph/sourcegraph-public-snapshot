@@ -1730,6 +1730,8 @@ type QuickLink struct {
 
 // Ranking description: Experimental search result ranking options.
 type Ranking struct {
+	// DocumentRanksWeight description: Controls the impact of document ranks on the final ranking when the 'search-ranking' feature is enabled. This is intended for internal testing purposes only, it's not recommended for users to change this.
+	DocumentRanksWeight *float64 `json:"documentRanksWeight,omitempty"`
 	// MaxQueueMatchCount description: The maximum number of matches that can be buffered to sort results. The default is -1 (unbounded). Setting this to a positive integer protects frontend against OOMs for queries with extremely high count of matches per repository.
 	MaxQueueMatchCount *int `json:"maxQueueMatchCount,omitempty"`
 	// MaxQueueSizeBytes description: The maximum number of bytes that can be buffered to sort results. The default is -1 (unbounded). Setting this to a positive integer protects frontend against OOMs.
@@ -1941,18 +1943,12 @@ type Settings struct {
 	CodeIntelDisableSearchBased bool `json:"codeIntel.disableSearchBased,omitempty"`
 	// CodeIntelMixPreciseAndSearchBasedReferences description: Whether to supplement precise references with search-based results.
 	CodeIntelMixPreciseAndSearchBasedReferences bool `json:"codeIntel.mixPreciseAndSearchBasedReferences,omitempty"`
-	// CodeIntelReferencesPanel description: What kind of references panel to use for exploring definitions and references. The tabbed panel is deprecated.
-	CodeIntelReferencesPanel string `json:"codeIntel.referencesPanel,omitempty"`
 	// CodeIntelTraceExtension description: Whether to enable trace logging on the extension.
 	CodeIntelTraceExtension bool `json:"codeIntel.traceExtension,omitempty"`
 	// CodeIntelligenceAutoIndexPopularRepoLimit description: Up to this number of repos are auto-indexed automatically. Ordered by star count.
 	CodeIntelligenceAutoIndexPopularRepoLimit int `json:"codeIntelligence.autoIndexPopularRepoLimit,omitempty"`
-	// CodeIntelligenceAutoIndexRepositoryGroups description: A list of search.repositoryGroups that have auto-indexing enabled.
-	CodeIntelligenceAutoIndexRepositoryGroups []string `json:"codeIntelligence.autoIndexRepositoryGroups,omitempty"`
 	// CodeIntelligenceClickToGoToDefinition description: Enable click to go to definition.
 	CodeIntelligenceClickToGoToDefinition bool `json:"codeIntelligence.clickToGoToDefinition,omitempty"`
-	// CodeIntelligenceMaxPanelResults description: Maximum number of references/definitions (or other code intelligence results provided by extensions) shown in the panel. If not set a default value will be used to ensure best performance.
-	CodeIntelligenceMaxPanelResults int `json:"codeIntelligence.maxPanelResults,omitempty"`
 	// ExperimentalFeatures description: Experimental features and settings.
 	ExperimentalFeatures *SettingsExperimentalFeatures `json:"experimentalFeatures,omitempty"`
 	// Extensions description: The Sourcegraph extensions to use. Enable an extension by adding a property `"my/extension": true` (where `my/extension` is the extension ID). Override a previously enabled extension and disable it by setting its value to `false`.
@@ -2004,10 +2000,6 @@ type Settings struct {
 	SearchIncludeArchived *bool `json:"search.includeArchived,omitempty"`
 	// SearchIncludeForks description: Whether searches should include searching forked repositories.
 	SearchIncludeForks *bool `json:"search.includeForks,omitempty"`
-	// SearchRepositoryGroups description: DEPRECATED: Use search contexts instead.
-	//
-	// Named groups of repositories that can be referenced in a search query using the `repogroup:` operator. The list can contain string literals (to include single repositories) and JSON objects with a "regex" field (to include all repositories matching the regular expression). Retrieving repogroups via the GQL interface will currently exclude repositories matched by regex patterns. #14208.
-	SearchRepositoryGroups map[string][]any `json:"search.repositoryGroups,omitempty"`
 	// SearchSavedQueries description: DEPRECATED: Saved search queries
 	SearchSavedQueries []*SearchSavedQueries `json:"search.savedQueries,omitempty"`
 	// SearchScopes description: Predefined search snippets that can be appended to any search (also known as search scopes)
@@ -2057,12 +2049,9 @@ func (v *Settings) UnmarshalJSON(data []byte) error {
 	delete(m, "codeIntel.disableRangeQueries")
 	delete(m, "codeIntel.disableSearchBased")
 	delete(m, "codeIntel.mixPreciseAndSearchBasedReferences")
-	delete(m, "codeIntel.referencesPanel")
 	delete(m, "codeIntel.traceExtension")
 	delete(m, "codeIntelligence.autoIndexPopularRepoLimit")
-	delete(m, "codeIntelligence.autoIndexRepositoryGroups")
 	delete(m, "codeIntelligence.clickToGoToDefinition")
-	delete(m, "codeIntelligence.maxPanelResults")
 	delete(m, "experimentalFeatures")
 	delete(m, "extensions")
 	delete(m, "extensions.activeLoggers")
@@ -2085,7 +2074,6 @@ func (v *Settings) UnmarshalJSON(data []byte) error {
 	delete(m, "search.hideSuggestions")
 	delete(m, "search.includeArchived")
 	delete(m, "search.includeForks")
-	delete(m, "search.repositoryGroups")
 	delete(m, "search.savedQueries")
 	delete(m, "search.scopes")
 	if len(m) > 0 {
@@ -2107,12 +2095,8 @@ type SettingsExperimentalFeatures struct {
 	ClientSearchResultRanking *string `json:"clientSearchResultRanking,omitempty"`
 	// CodeInsights description: Enables code insights on directory pages.
 	CodeInsights *bool `json:"codeInsights,omitempty"`
-	// CodeInsightsAllRepos description: DEPRECATED: Enables the experimental ability to run an insight over all repositories on the instance.
-	CodeInsightsAllRepos *bool `json:"codeInsightsAllRepos,omitempty"`
 	// CodeInsightsCompute description: Enables Compute powered Code Insights
 	CodeInsightsCompute *bool `json:"codeInsightsCompute,omitempty"`
-	// CodeInsightsGqlApi description: DEPRECATED: Enables gql api instead of using setting cascade as a main storage fro code insights entities
-	CodeInsightsGqlApi *bool `json:"codeInsightsGqlApi,omitempty"`
 	// CodeInsightsLandingPage description: DEPRECATED: Enables code insights landing page layout.
 	CodeInsightsLandingPage *bool `json:"codeInsightsLandingPage,omitempty"`
 	// CodeInsightsRepoUI description: Specifies which (code insight repo) editor to use for repo query UI
@@ -2122,8 +2106,6 @@ type SettingsExperimentalFeatures struct {
 	CodeMonitoringWebHooks *bool `json:"codeMonitoringWebHooks,omitempty"`
 	// CodeNavigation description: What kind of experimental code navigation UX to enable. The most recommended option is 'selection-driven'.
 	CodeNavigation *string `json:"codeNavigation,omitempty"`
-	// CopyQueryButton description: DEPRECATED: This feature is now permanently enabled. Enables displaying the copy query button in the search bar when hovering over the global navigation bar.
-	CopyQueryButton *bool `json:"copyQueryButton,omitempty"`
 	// EnableCodeMirrorFileView description: Uses CodeMirror to display files. In this first iteration not all features of the current file view are available.
 	EnableCodeMirrorFileView *bool `json:"enableCodeMirrorFileView,omitempty"`
 	// EnableGoImportsSearchQueryTransform description: Lets you easily search for all files using a Go package. Adds a new operator `go.imports`: for all import statements of the package passed to the operator.
@@ -2168,18 +2150,14 @@ type SettingsExperimentalFeatures struct {
 	SearchStats *bool `json:"searchStats,omitempty"`
 	// SearchStreaming description: DEPRECATED: This feature is now permanently enabled. Enables streaming search support.
 	SearchStreaming *bool `json:"searchStreaming,omitempty"`
+	// SetupWizard description: Experimental setup wizard
+	SetupWizard *bool `json:"setupWizard,omitempty"`
 	// ShowCodeMonitoringLogs description: Shows code monitoring logs tab.
 	ShowCodeMonitoringLogs *bool `json:"showCodeMonitoringLogs,omitempty"`
 	// ShowMultilineSearchConsole description: Enables the multiline search console at search/console
 	ShowMultilineSearchConsole *bool `json:"showMultilineSearchConsole,omitempty"`
-	// ShowOnboardingTour description: REMOVED.
-	ShowOnboardingTour *bool `json:"showOnboardingTour,omitempty"`
-	// ShowRepogroupHomepage description: Enables the repository group homepage
-	ShowRepogroupHomepage *bool `json:"showRepogroupHomepage,omitempty"`
 	// ShowSearchContext description: Enables the search context dropdown.
 	ShowSearchContext *bool `json:"showSearchContext,omitempty"`
-	// ShowSearchContextManagement description: REMOVED.
-	ShowSearchContextManagement *bool `json:"showSearchContextManagement,omitempty"`
 	// SymbolKindTags description: Show the initial letter of the symbol kind instead of icons.
 	SymbolKindTags bool           `json:"symbolKindTags,omitempty"`
 	Additional     map[string]any `json:"-"` // additionalProperties not explicitly defined in the schema
@@ -2219,15 +2197,12 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "batchChangesExecution")
 	delete(m, "clientSearchResultRanking")
 	delete(m, "codeInsights")
-	delete(m, "codeInsightsAllRepos")
 	delete(m, "codeInsightsCompute")
-	delete(m, "codeInsightsGqlApi")
 	delete(m, "codeInsightsLandingPage")
 	delete(m, "codeInsightsRepoUI")
 	delete(m, "codeIntelRepositoryBadge")
 	delete(m, "codeMonitoringWebHooks")
 	delete(m, "codeNavigation")
-	delete(m, "copyQueryButton")
 	delete(m, "enableCodeMirrorFileView")
 	delete(m, "enableGoImportsSearchQueryTransform")
 	delete(m, "enableLazyBlobSyntaxHighlighting")
@@ -2250,12 +2225,10 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "searchResultsAggregations")
 	delete(m, "searchStats")
 	delete(m, "searchStreaming")
+	delete(m, "setupWizard")
 	delete(m, "showCodeMonitoringLogs")
 	delete(m, "showMultilineSearchConsole")
-	delete(m, "showOnboardingTour")
-	delete(m, "showRepogroupHomepage")
 	delete(m, "showSearchContext")
-	delete(m, "showSearchContextManagement")
 	delete(m, "symbolKindTags")
 	if len(m) > 0 {
 		v.Additional = make(map[string]any, len(m))
@@ -2513,6 +2486,8 @@ type SiteConfiguration struct {
 	RepoListUpdateInterval int `json:"repoListUpdateInterval,omitempty"`
 	// RepoPurgeWorker description: Configuration for repository purge worker.
 	RepoPurgeWorker *RepoPurgeWorker `json:"repoPurgeWorker,omitempty"`
+	// ScimAuthToken description: DISCLAIMER: UNDER DEVELOPMENT. THE ENDPOINT DOES NOT COMPLY WITH THE SCIM STANDARD YET. The SCIM auth token is used to authenticate SCIM requests. If not set, SCIM is disabled.
+	ScimAuthToken string `json:"scim.authToken,omitempty"`
 	// SearchIndexSymbolsEnabled description: Whether indexed symbol search is enabled. This is contingent on the indexed search configuration, and is true by default for instances with indexed search enabled. Enabling this will cause every repository to re-index, which is a time consuming (several hours) operation. Additionally, it requires more storage and ram to accommodate the added symbols information in the search index.
 	SearchIndexSymbolsEnabled *bool `json:"search.index.symbols.enabled,omitempty"`
 	// SearchLargeFiles description: A list of file glob patterns where matching files will be indexed and searched regardless of their size. Files still need to be valid utf-8 to be indexed. The glob pattern syntax can be found here: https://github.com/bmatcuk/doublestar#patterns.
@@ -2659,6 +2634,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "repoConcurrentExternalServiceSyncers")
 	delete(m, "repoListUpdateInterval")
 	delete(m, "repoPurgeWorker")
+	delete(m, "scim.authToken")
 	delete(m, "search.index.symbols.enabled")
 	delete(m, "search.largeFiles")
 	delete(m, "search.limits")

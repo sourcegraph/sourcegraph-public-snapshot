@@ -44,7 +44,7 @@ export const ComputeInsightCreationPage: FunctionComponent<ComputeInsightCreatio
     // render creation UI form.
     // eslint-disable-next-line no-restricted-syntax
     const [initialFormValues, setInitialFormValues] = useLocalStorage<CreateComputeInsightFormFields | undefined>(
-        'insights.compute-creation-ui',
+        'insights.compute-creation-ui-v2',
         undefined
     )
 
@@ -81,7 +81,7 @@ export const ComputeInsightCreationPage: FunctionComponent<ComputeInsightCreatio
     }, [setInitialFormValues, telemetryService, onCancel])
 
     return (
-        <CodeInsightsPage className="col-11">
+        <CodeInsightsPage>
             <PageTitle title="Create group results insight - Code Insights" />
 
             <PageHeader

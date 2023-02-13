@@ -1,26 +1,72 @@
-load("@aspect_rules_js//js:defs.bzl", "js_library")
-load("//dev:defs.bzl", "sass_library")
+load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
+load("//dev:defs.bzl", "sass")
 
-sass_library(
-    name = "global-style-vars",
+module_style_typings(
+    name = "module_style_typings",
+    deps = [
+        ":sass-breakpoints",
+        "//:node_modules/@reach/dialog",
+        "//:node_modules/@reach/tabs",
+        "//:node_modules/open-color",
+    ],
+)
+
+sass(
+    name = "module_styles",
+    srcs = glob(["src/**/*.module.scss"]),
+    deps = [
+        ":sass-breakpoints",
+        "//:node_modules/@reach/dialog",
+        "//:node_modules/@reach/tabs",
+    ],
+)
+
+# Files that can be loaded or imported as css.
+GLOBAL_SASS_ENTRY_POINTS = [
+    "src/global-styles/base.scss",
+    "src/global-styles/index.scss",
+    "src/global-styles/forms.scss",
+]
+
+# Files that can be loaded as sass utils.
+SASS_UTILS = [
+    "src/global-styles/colors.scss",
+    "src/global-styles/functions.scss",
+    "src/global-styles/icons.scss",
+    "src/global-styles/mixins.scss",
+    "src/global-styles/variables.scss",
+    "src/global-styles/utilities/text.scss",
+    "src/global-styles/utilities/screenreaders.scss",
+]
+
+sass(
+    name = "global-styles",
+    srcs = GLOBAL_SASS_ENTRY_POINTS,
+    visibility = ["//visibility:public"],
+    runtime_deps = ["//:node_modules/open-color"],
+    deps = glob(
+        ["src/global-styles/**/*.scss"],
+        exclude = ["**/*.module.scss"] + GLOBAL_SASS_ENTRY_POINTS,
+    ) + [
+        "//:node_modules/@reach/combobox",
+        "//:node_modules/@reach/menu-button",
+        "//:node_modules/@reach/tabs",
+        "//:node_modules/open-color",
+        "//:node_modules/react-resizable",
+    ],
+)
+
+copy_to_bin(
+    name = "sass-breakpoints",
     srcs = [
         "src/global-styles/breakpoints.scss",
     ],
     visibility = ["//visibility:public"],
 )
 
-module_style_typings(
-    name = "module_style_typings",
-    deps = [
-        ":wildcard",
-        "//:node_modules/@reach/dialog",
-        "//:node_modules/@reach/tabs",
-    ],
-)
-
-js_library(
-    name = "wildcard",
-    srcs = glob(["src/**/*.scss"]),
-    visibility = ["//client:__subpackages__"],
+copy_to_bin(
+    name = "sass-utils",
+    srcs = SASS_UTILS,
+    visibility = ["//visibility:public"],
 )

@@ -18,13 +18,13 @@ func TestGitserverProxySimple(t *testing.T) {
 	}))
 	defer originServer.Close()
 
-	url, err := url.Parse(originServer.URL)
+	originServerURL, err := url.Parse(originServer.URL)
 	if err != nil {
 		t.Fatalf("unexpected error parsing url: %s", err)
 	}
 
 	gs := NewMockGitserverClient()
-	gs.AddrForRepoFunc.PushReturn(url.Host, nil)
+	gs.AddrForRepoFunc.PushReturn(originServerURL.Host, nil)
 
 	proxyServer := httptest.NewServer(gitserverProxy(logtest.Scoped(t), gs, "/info/refs"))
 	defer proxyServer.Close()
@@ -57,13 +57,13 @@ func TestGitserverProxyTargetPath(t *testing.T) {
 	}))
 	defer originServer.Close()
 
-	url, err := url.Parse(originServer.URL)
+	originServerURL, err := url.Parse(originServer.URL)
 	if err != nil {
 		t.Fatalf("unexpected error parsing url: %s", err)
 	}
 
 	gs := NewMockGitserverClient()
-	gs.AddrForRepoFunc.PushReturn(url.Host, nil)
+	gs.AddrForRepoFunc.PushReturn(originServerURL.Host, nil)
 
 	proxyServer := httptest.NewServer(gitserverProxy(logtest.Scoped(t), gs, "/foo"))
 	defer proxyServer.Close()
@@ -89,13 +89,13 @@ func TestGitserverProxyHeaders(t *testing.T) {
 	}))
 	defer originServer.Close()
 
-	url, err := url.Parse(originServer.URL)
+	originServerURL, err := url.Parse(originServer.URL)
 	if err != nil {
 		t.Fatalf("unexpected error parsing url: %s", err)
 	}
 
 	gs := NewMockGitserverClient()
-	gs.AddrForRepoFunc.PushReturn(url.Host, nil)
+	gs.AddrForRepoFunc.PushReturn(originServerURL.Host, nil)
 
 	proxyServer := httptest.NewServer(gitserverProxy(logtest.Scoped(t), gs, "/test"))
 	defer proxyServer.Close()
@@ -137,13 +137,13 @@ func TestGitserverProxyRedirectWithPayload(t *testing.T) {
 	}))
 	defer originServer.Close()
 
-	url, err := url.Parse(originServer.URL)
+	originServerURL, err := url.Parse(originServer.URL)
 	if err != nil {
 		t.Fatalf("unexpected error parsing url: %s", err)
 	}
 
 	gs := NewMockGitserverClient()
-	gs.AddrForRepoFunc.PushReturn(url.Host, nil)
+	gs.AddrForRepoFunc.PushReturn(originServerURL.Host, nil)
 
 	proxyServer := httptest.NewServer(gitserverProxy(logtest.Scoped(t), gs, "/test"))
 	defer proxyServer.Close()

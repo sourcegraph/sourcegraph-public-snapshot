@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	stesting "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/testing"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	bstore "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -30,7 +30,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	store := store.New(db, &observation.TestContext, nil)
+	store := bstore.New(db, &observation.TestContext, nil)
 
 	admin := bt.CreateTestUser(t, db, true)
 

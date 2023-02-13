@@ -10,18 +10,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
-var baseImageRegex = lazyregexp.New(`wolfi-images\/([^\/]+)\/[\w-]+[.]yaml`)
+var baseImageRegex = lazyregexp.New(`wolfi-images\/([\w-]+)[.]yaml`)
 var packageRegex = lazyregexp.New(`wolfi-packages\/([\w-]+)[.]yaml`)
 
-func WolfiBaseImagesOperations(changedFiles []string) *operations.Set {
+func WolfiBaseImagesOperations(changedFiles []string, tag string, packagesChanged bool) *operations.Set {
 	// TODO: Should we require the image name, or the full path to the yaml file?
-	ops := operations.NewSet()
+	ops := operations.NewNamedSet("Base image builds")
 	logger := log.Scoped("gen-pipeline", "generates the pipeline for ci")
 
 	for _, c := range changedFiles {
 		match := baseImageRegex.FindStringSubmatch(c)
 		if len(match) == 2 {
-			ops.Append(buildWolfi(match[1]))
+			ops.Append(buildWolfi(match[1], tag, packagesChanged))
 		} else {
 			logger.Fatal(fmt.Sprintf("Unable to extract base image name from '%s', matches were %+v\n", c, match))
 		}
@@ -32,7 +32,7 @@ func WolfiBaseImagesOperations(changedFiles []string) *operations.Set {
 
 func WolfiPackagesOperations(changedFiles []string) *operations.Set {
 	// TODO: Should we require the image name, or the full path to the yaml file?
-	ops := operations.NewSet()
+	ops := operations.NewNamedSet("Dependency packages")
 	logger := log.Scoped("gen-pipeline", "generates the pipeline for ci")
 
 	var stepKeys []string
@@ -82,14 +82,22 @@ func buildRepoIndex(branch string, packageKeys []string) func(*bk.Pipeline) {
 	}
 }
 
-func buildWolfi(target string) func(*bk.Pipeline) {
+func buildWolfi(target string, tag string, dependOnPackages bool) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(fmt.Sprintf(":wolf: Build Wolfi base image '%s'", target),
-			bk.Cmd(fmt.Sprintf("./enterprise/dev/ci/scripts/wolfi/build-base-image.sh %s", target)),
+
+		opts := []bk.StepOpt{
+			bk.Cmd(fmt.Sprintf("./enterprise/dev/ci/scripts/wolfi/build-base-image.sh %s %s", target, tag)),
 			// We want to run on the bazel queue, so we have a pretty minimal agent.
 			bk.Agent("queue", "bazel"),
-			// Wait for repo to be re-indexed as images may depend on new packages
-			bk.DependsOn("buildRepoIndex"),
+		}
+		// If packages have changed, wait for repo to be re-indexed as base images may depend on new packages
+		if dependOnPackages {
+			opts = append(opts, bk.DependsOn("buildRepoIndex"))
+		}
+
+		pipeline.AddStep(
+			fmt.Sprintf(":octopus: Build Wolfi base image '%s'", target),
+			opts...,
 		)
 	}
 }

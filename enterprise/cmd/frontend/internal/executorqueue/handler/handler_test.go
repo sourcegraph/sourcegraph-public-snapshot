@@ -11,9 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	workerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	workerstoremocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	dbworkerstoremocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -28,7 +27,7 @@ func TestDequeue(t *testing.T) {
 		},
 	}
 
-	store := workerstoremocks.NewMockStore[testRecord]()
+	store := dbworkerstoremocks.NewMockStore[testRecord]()
 	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42, Payload: "secret"}, true, nil)
 	recordTransformer := func(ctx context.Context, _ string, tr testRecord, _ ResourceMetadata) (apiclient.Job, error) {
 		if tr.Payload != "secret" {
@@ -62,7 +61,7 @@ func TestDequeueNoRecord(t *testing.T) {
 	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 
-	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: workerstoremocks.NewMockStore[testRecord]()})
+	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: dbworkerstoremocks.NewMockStore[testRecord]()})
 
 	_, dequeued, err := handler.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
 	if err != nil {
@@ -74,7 +73,7 @@ func TestDequeueNoRecord(t *testing.T) {
 }
 
 func TestAddExecutionLogEntry(t *testing.T) {
-	store := workerstoremocks.NewMockStore[testRecord]()
+	store := dbworkerstoremocks.NewMockStore[testRecord]()
 	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, true, nil)
 	recordTransformer := func(ctx context.Context, _ string, record testRecord, _ ResourceMetadata) (apiclient.Job, error) {
 		return apiclient.Job{ID: 42}, nil
@@ -120,8 +119,8 @@ func TestAddExecutionLogEntry(t *testing.T) {
 }
 
 func TestAddExecutionLogEntryUnknownJob(t *testing.T) {
-	store := workerstoremocks.NewMockStore[testRecord]()
-	store.AddExecutionLogEntryFunc.SetDefaultReturn(0, workerstore.ErrExecutionLogEntryNotUpdated)
+	store := dbworkerstoremocks.NewMockStore[testRecord]()
+	store.AddExecutionLogEntryFunc.SetDefaultReturn(0, dbworkerstore.ErrExecutionLogEntryNotUpdated)
 	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store})
@@ -136,7 +135,7 @@ func TestAddExecutionLogEntryUnknownJob(t *testing.T) {
 }
 
 func TestUpdateExecutionLogEntry(t *testing.T) {
-	store := workerstoremocks.NewMockStore[testRecord]()
+	store := dbworkerstoremocks.NewMockStore[testRecord]()
 	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, true, nil)
 	recordTransformer := func(ctx context.Context, _ string, record testRecord, _ ResourceMetadata) (apiclient.Job, error) {
 		return apiclient.Job{ID: 42}, nil
@@ -180,8 +179,8 @@ func TestUpdateExecutionLogEntry(t *testing.T) {
 }
 
 func TestUpdateExecutionLogEntryUnknownJob(t *testing.T) {
-	store := workerstoremocks.NewMockStore[testRecord]()
-	store.UpdateExecutionLogEntryFunc.SetDefaultReturn(workerstore.ErrExecutionLogEntryNotUpdated)
+	store := dbworkerstoremocks.NewMockStore[testRecord]()
+	store.UpdateExecutionLogEntryFunc.SetDefaultReturn(dbworkerstore.ErrExecutionLogEntryNotUpdated)
 	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store})
@@ -196,7 +195,7 @@ func TestUpdateExecutionLogEntryUnknownJob(t *testing.T) {
 }
 
 func TestMarkComplete(t *testing.T) {
-	store := workerstoremocks.NewMockStore[testRecord]()
+	store := dbworkerstoremocks.NewMockStore[testRecord]()
 	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, true, nil)
 	store.MarkCompleteFunc.SetDefaultReturn(true, nil)
 	recordTransformer := func(ctx context.Context, _ string, record testRecord, _ ResourceMetadata) (apiclient.Job, error) {
@@ -230,7 +229,7 @@ func TestMarkComplete(t *testing.T) {
 }
 
 func TestMarkCompleteUnknownJob(t *testing.T) {
-	store := workerstoremocks.NewMockStore[testRecord]()
+	store := dbworkerstoremocks.NewMockStore[testRecord]()
 	store.MarkCompleteFunc.SetDefaultReturn(false, nil)
 	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
@@ -242,7 +241,7 @@ func TestMarkCompleteUnknownJob(t *testing.T) {
 }
 
 func TestMarkCompleteStoreError(t *testing.T) {
-	store := workerstoremocks.NewMockStore[testRecord]()
+	store := dbworkerstoremocks.NewMockStore[testRecord]()
 	internalErr := errors.New("something went wrong")
 	store.MarkCompleteFunc.SetDefaultReturn(false, internalErr)
 	executorStore := database.NewMockExecutorStore()
@@ -255,7 +254,7 @@ func TestMarkCompleteStoreError(t *testing.T) {
 }
 
 func TestMarkErrored(t *testing.T) {
-	store := workerstoremocks.NewMockStore[testRecord]()
+	store := dbworkerstoremocks.NewMockStore[testRecord]()
 	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, true, nil)
 	store.MarkErroredFunc.SetDefaultReturn(true, nil)
 	recordTransformer := func(ctx context.Context, _ string, record testRecord, _ ResourceMetadata) (apiclient.Job, error) {
@@ -292,7 +291,7 @@ func TestMarkErrored(t *testing.T) {
 }
 
 func TestMarkErroredUnknownJob(t *testing.T) {
-	store := workerstoremocks.NewMockStore[testRecord]()
+	store := dbworkerstoremocks.NewMockStore[testRecord]()
 	store.MarkErroredFunc.SetDefaultReturn(false, nil)
 	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
@@ -304,7 +303,7 @@ func TestMarkErroredUnknownJob(t *testing.T) {
 }
 
 func TestMarkErroredStoreError(t *testing.T) {
-	store := workerstoremocks.NewMockStore[testRecord]()
+	store := dbworkerstoremocks.NewMockStore[testRecord]()
 	storeErr := errors.New("something went wrong")
 	store.MarkErroredFunc.SetDefaultReturn(false, storeErr)
 	executorStore := database.NewMockExecutorStore()
@@ -317,7 +316,7 @@ func TestMarkErroredStoreError(t *testing.T) {
 }
 
 func TestMarkFailed(t *testing.T) {
-	store := workerstoremocks.NewMockStore[testRecord]()
+	store := dbworkerstoremocks.NewMockStore[testRecord]()
 	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, true, nil)
 	store.MarkFailedFunc.SetDefaultReturn(true, nil)
 	recordTransformer := func(ctx context.Context, _ string, record testRecord, _ ResourceMetadata) (apiclient.Job, error) {
@@ -354,7 +353,7 @@ func TestMarkFailed(t *testing.T) {
 }
 
 func TestMarkFailedUnknownJob(t *testing.T) {
-	store := workerstoremocks.NewMockStore[testRecord]()
+	store := dbworkerstoremocks.NewMockStore[testRecord]()
 	store.MarkFailedFunc.SetDefaultReturn(false, nil)
 	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
@@ -366,7 +365,7 @@ func TestMarkFailedUnknownJob(t *testing.T) {
 }
 
 func TestMarkFailedStoreError(t *testing.T) {
-	store := workerstoremocks.NewMockStore[testRecord]()
+	store := dbworkerstoremocks.NewMockStore[testRecord]()
 	storeErr := errors.New("something went wrong")
 	store.MarkFailedFunc.SetDefaultReturn(false, storeErr)
 	executorStore := database.NewMockExecutorStore()
@@ -379,19 +378,19 @@ func TestMarkFailedStoreError(t *testing.T) {
 }
 
 func TestHeartbeat(t *testing.T) {
-	s := workerstoremocks.NewMockStore[testRecord]()
+	s := dbworkerstoremocks.NewMockStore[testRecord]()
 	recordTransformer := func(ctx context.Context, _ string, record testRecord, _ ResourceMetadata) (apiclient.Job, error) {
 		return apiclient.Job{ID: record.RecordID()}, nil
 	}
 	testKnownID := 10
-	s.HeartbeatFunc.SetDefaultHook(func(ctx context.Context, ids []int, options store.HeartbeatOptions) ([]int, []int, error) {
+	s.HeartbeatFunc.SetDefaultHook(func(ctx context.Context, ids []int, options dbworkerstore.HeartbeatOptions) ([]int, []int, error) {
 		return []int{testKnownID}, []int{testKnownID}, nil
 	})
 
 	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 
-	executor := types.Executor{
+	exec := types.Executor{
 		Hostname:        "test-hostname",
 		QueueName:       "test-queue-name",
 		OS:              "test-os",
@@ -405,7 +404,7 @@ func TestHeartbeat(t *testing.T) {
 
 	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: s, RecordTransformer: recordTransformer})
 
-	if knownIDs, canceled, err := handler.heartbeat(context.Background(), executor, []int{testKnownID, 10}); err != nil {
+	if knownIDs, canceled, err := handler.heartbeat(context.Background(), exec, []int{testKnownID, 10}); err != nil {
 		t.Fatalf("unexpected error performing heartbeat: %s", err)
 	} else if diff := cmp.Diff([]int{testKnownID}, knownIDs); diff != "" {
 		t.Errorf("unexpected unknown ids (-want +got):\n%s", diff)
@@ -415,7 +414,7 @@ func TestHeartbeat(t *testing.T) {
 
 	if callCount := len(executorStore.UpsertHeartbeatFunc.History()); callCount != 1 {
 		t.Errorf("unexpected heartbeat upsert count. want=%d have=%d", 1, callCount)
-	} else if name := executorStore.UpsertHeartbeatFunc.History()[0].Arg1; name != executor {
+	} else if name := executorStore.UpsertHeartbeatFunc.History()[0].Arg1; name != exec {
 		t.Errorf("unexpected heartbeat name. want=%q have=%q", "deadbeef", name)
 	}
 }

@@ -14,12 +14,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/keegancsmith/tmpfriend"
+	"github.com/sourcegraph/log"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
-
-	"github.com/keegancsmith/tmpfriend"
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -34,7 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	sharedsearch "github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/searcher/proto"
+	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -43,6 +42,9 @@ import (
 var (
 	cacheDir    = env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
 	cacheSizeMB = env.Get("SEARCHER_CACHE_SIZE_MB", "100000", "maximum size of the on disk cache in megabytes")
+
+	// Same environment variable name (and default value) used by symbols.
+	backgroundTimeout = env.MustGetDuration("PROCESSING_TIMEOUT", 2*time.Hour, "maximum time to spend processing a repository")
 
 	maxTotalPathsLengthRaw = env.Get("MAX_TOTAL_PATHS_LENGTH", "100000", "maximum sum of lengths of all paths in a single call to git archive")
 )
@@ -126,7 +128,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 
 	git := gitserver.NewClient()
 
-	service := &search.Service{
+	sService := &search.Service{
 		Store: &search.Store{
 			FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 				// We pass in a nil sub-repo permissions checker and an internal actor here since
@@ -154,6 +156,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 			FilterTar:         search.NewFilter,
 			Path:              filepath.Join(cacheDir, "searcher-archives"),
 			MaxCacheSizeBytes: cacheSizeBytes,
+			BackgroundTimeout: backgroundTimeout,
 			Log:               storeObservationCtx.Logger,
 			ObservationCtx:    storeObservationCtx,
 		},
@@ -169,10 +172,10 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 
 		Log: logger,
 	}
-	service.Store.Start()
+	sService.Store.Start()
 
 	// Set up handler middleware
-	handler := actor.HTTPMiddleware(logger, service)
+	handler := actor.HTTPMiddleware(logger, sService)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
 
@@ -181,15 +184,11 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 
 	grpcServer := grpc.NewServer(grpcdefaults.ServerOptions(logger)...)
 	reflection.Register(grpcServer)
-	grpcServer.RegisterService(&proto.Searcher_ServiceDesc, &search.Server{
-		Service: service,
+	grpcServer.RegisterService(&proto.SearcherService_ServiceDesc, &search.Server{
+		Service: sService,
 	})
 
-	host := ""
-	if env.InsecureDev {
-		host = "127.0.0.1"
-	}
-	addr := net.JoinHostPort(host, port)
+	addr := getAddr()
 	server := &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
@@ -225,4 +224,13 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	})
 
 	return g.Wait()
+}
+
+func getAddr() string {
+	host := ""
+	if env.InsecureDev {
+		host = "127.0.0.1"
+	}
+
+	return net.JoinHostPort(host, port)
 }

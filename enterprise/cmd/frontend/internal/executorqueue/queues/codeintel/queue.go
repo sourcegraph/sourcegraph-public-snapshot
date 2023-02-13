@@ -9,7 +9,7 @@ import (
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 func QueueOptions(observationCtx *observation.Context, db database.DB, accessToken func() string) handler.QueueOptions[types.Index] {
@@ -17,7 +17,7 @@ func QueueOptions(observationCtx *observation.Context, db database.DB, accessTok
 		return transformRecord(ctx, db, record, resourceMetadata, accessToken())
 	}
 
-	store := store.New(observationCtx, db.Handle(), autoindexing.IndexWorkerStoreOptions)
+	store := dbworkerstore.New(observationCtx, db.Handle(), autoindexing.IndexWorkerStoreOptions)
 
 	return handler.QueueOptions[types.Index]{
 		Name:              "codeintel",

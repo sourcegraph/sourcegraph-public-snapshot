@@ -78,8 +78,8 @@ func naturallyOrdered(node Node, reverse bool) bool {
 	// (like post-order DFS).
 	rightmostParameterPos := 0
 	rightmostPatternPos := 0
-	leftmostParameterPos := (1 << 30)
-	leftmostPatternPos := (1 << 30)
+	leftmostParameterPos := 1 << 30
+	leftmostPatternPos := 1 << 30
 	v := &Visitor{
 		Parameter: func(_, _ string, _ bool, a Annotation) {
 			if a.Range.Start.Column > rightmostParameterPos {

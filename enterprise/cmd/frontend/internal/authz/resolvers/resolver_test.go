@@ -189,12 +189,12 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 			perms := edb.NewStrictMockPermsStore()
 			perms.TransactFunc.SetDefaultReturn(perms, nil)
 			perms.DoneFunc.SetDefaultReturn(nil)
-			perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) error {
+			perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
 				ids := p.UserIDs
 				if diff := cmp.Diff(test.expUserIDs, ids); diff != "" {
-					return errors.Errorf("p.UserIDs: %v", diff)
+					return nil, errors.Errorf("p.UserIDs: %v", diff)
 				}
-				return nil
+				return nil, nil
 			})
 			perms.SetRepoPendingPermissionsFunc.SetDefaultHook(func(_ context.Context, accounts *extsvc.Accounts, _ *authz.RepoPermissions) error {
 				if diff := cmp.Diff(test.expAccounts, accounts); diff != "" {
@@ -1405,11 +1405,8 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 		})
 
 		db := edb.NewStrictMockEnterpriseDB()
-		db.TransactFunc.SetDefaultHook(func(ctx context.Context) (database.DB, error) {
-			return db, nil
-		})
-		db.DoneFunc.SetDefaultHook(func(err error) error {
-			return nil
+		db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+			return f(db)
 		})
 		db.UsersFunc.SetDefaultReturn(usersStore)
 		db.SubRepoPermsFunc.SetDefaultReturn(subReposStore)
@@ -1507,7 +1504,7 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 				ExpectedErrors: []*gqlerrors.QueryError{
 					{
 						Message: "either both pathIncludes and pathExcludes needs to be set, or paths needs to be set",
-						Path:    []any{string("setSubRepositoryPermissionsForUsers")},
+						Path:    []any{"setSubRepositoryPermissionsForUsers"},
 					},
 				},
 				ExpectedResult: "null",

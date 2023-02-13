@@ -790,19 +790,19 @@ func TestV4Client_WithAuthenticator(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	old := &V4Client{
+	oldClient := &V4Client{
 		apiURL: uri,
 		auth:   &auth.OAuthBearerToken{Token: "old_token"},
 	}
 
 	newToken := &auth.OAuthBearerToken{Token: "new_token"}
-	new := old.WithAuthenticator(newToken)
-	if old == new {
+	newClient := oldClient.WithAuthenticator(newToken)
+	if oldClient == newClient {
 		t.Fatal("both clients have the same address")
 	}
 
-	if new.auth != newToken {
-		t.Fatalf("token: want %p but got %p", newToken, new.auth)
+	if newClient.auth != newToken {
+		t.Fatalf("token: want %p but got %p", newToken, newClient.auth)
 	}
 }
 

@@ -309,10 +309,13 @@ var expectedState = gqltestutil.BatchSpecDeep{
 							Number:    1,
 							Run:       "IFS=$'\\n'; echo Hello World | tee -a $(find -name README.md)",
 							Container: "ubuntu:18.04",
-							OutputLines: []string{
-								"stderr: WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested",
-								"stderr: Hello World",
-								"",
+							OutputLines: gqltestutil.WorkspaceOutputLines{
+								Nodes: []string{
+									"stderr: WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested",
+									"stderr: Hello World",
+									"",
+								},
+								TotalCount: 3,
 							},
 							ExitCode:        0,
 							Environment:     []gqltestutil.WorkspaceEnvironmentVariable{},

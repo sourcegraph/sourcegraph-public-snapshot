@@ -90,6 +90,7 @@ SELECT
 	u.upload_size,
 	u.associated_index_id,
 	u.content_type,
+	u.should_reindex,
 	s.rank,
 	u.uncompressed_size,
 	COUNT(*) OVER() AS count
@@ -113,7 +114,14 @@ FROM lsif_uploads_with_repository_name r
 WHERE r.state = 'queued'
 `
 
-const visibleAtTipSubselectQuery = `SELECT 1 FROM lsif_uploads_visible_at_tip uvt WHERE uvt.repository_id = u.repository_id AND uvt.upload_id = u.id`
+const visibleAtTipSubselectQuery = `
+SELECT 1
+FROM lsif_uploads_visible_at_tip uvt
+WHERE
+	uvt.repository_id = u.repository_id AND
+	uvt.upload_id = u.id AND
+	uvt.is_default_branch
+`
 
 const deletedUploadsFromAuditLogsCTEQuery = `
 SELECT
@@ -130,6 +138,7 @@ SELECT
 	COALESCE((snapshot->'num_parts')::integer, -1) AS num_parts,
 	NULL::integer[] as uploaded_parts,
 	au.upload_size, au.associated_index_id, au.content_type,
+	false AS should_reindex, -- TODO
 	COALESCE((snapshot->'expired')::boolean, false) AS expired,
 	NULL::bigint AS uncompressed_size
 FROM (
@@ -238,6 +247,7 @@ SELECT
 	u.upload_size,
 	u.associated_index_id,
 	u.content_type,
+	u.should_reindex,
 	s.rank,
 	u.uncompressed_size
 FROM lsif_uploads u
@@ -308,6 +318,7 @@ SELECT
 	u.upload_size,
 	u.associated_index_id,
 	u.content_type,
+	u.should_reindex,
 	s.rank,
 	u.uncompressed_size
 FROM lsif_uploads u
@@ -411,6 +422,7 @@ SELECT
 	u.upload_size,
 	u.associated_index_id,
 	u.content_type,
+	u.should_reindex,
 	s.rank,
 	u.uncompressed_size
 FROM lsif_uploads_with_repository_name u
@@ -916,13 +928,23 @@ func (s *store) HardDeleteUploadsByIDs(ctx context.Context, ids ...int) (err err
 }
 
 const hardDeleteUploadsByIDsQuery = `
-WITH locked_uploads AS (
-	SELECT u.id
+WITH
+locked_uploads AS (
+	SELECT u.id, u.associated_index_id
 	FROM lsif_uploads u
 	WHERE u.id IN (%s)
 	ORDER BY u.id FOR UPDATE
+),
+delete_uploads AS (
+	DELETE FROM lsif_uploads WHERE id IN (SELECT id FROM locked_uploads)
+),
+locked_indexes AS (
+	SELECT u.id
+	FROM lsif_indexes U
+	WHERE u.id IN (SELECT associated_index_id FROM locked_uploads)
+	ORDER BY u.id FOR UPDATE
 )
-DELETE FROM lsif_uploads WHERE id IN (SELECT id FROM locked_uploads)
+DELETE FROM lsif_indexes WHERE id IN (SELECT id FROM locked_indexes)
 `
 
 // DeleteUploadByID deletes an upload by its identifier. This method returns a true-valued flag if a record
@@ -1074,12 +1096,12 @@ func (s *store) SourcedCommitsWithoutCommittedAt(ctx context.Context, batchSize 
 	}})
 	defer func() { endObservation(1, observation.Args{}) }()
 
-	batch, err := scanSourcedCommits(s.db.Query(ctx, sqlf.Sprintf(sourcedCommitsWithoutCommittedAtQuery, batchSize)))
+	batchOfCommits, err := scanSourcedCommits(s.db.Query(ctx, sqlf.Sprintf(sourcedCommitsWithoutCommittedAtQuery, batchSize)))
 	if err != nil {
 		return nil, err
 	}
 
-	return batch, nil
+	return batchOfCommits, nil
 }
 
 const sourcedCommitsWithoutCommittedAtQuery = `
@@ -2057,6 +2079,7 @@ func buildGetConditionsAndCte(opts shared.GetUploadsOptions) (*sqlf.Query, []*sq
 				upload_size,
 				associated_index_id,
 				content_type,
+				should_reindex,
 				expired,
 				uncompressed_size
 			FROM lsif_uploads
@@ -2098,8 +2121,8 @@ func buildDeleteConditions(opts shared.DeleteUploadsOptions) []*sqlf.Query {
 	if opts.Term != "" {
 		conds = append(conds, makeSearchCondition(opts.Term))
 	}
-	if opts.State != "" {
-		conds = append(conds, makeStateCondition([]string{opts.State}))
+	if len(opts.States) > 0 {
+		conds = append(conds, makeStateCondition(opts.States))
 	}
 	if opts.VisibleAtTip {
 		conds = append(conds, sqlf.Sprintf("EXISTS ("+visibleAtTipSubselectQuery+")"))
@@ -2188,7 +2211,7 @@ func buildGetUploadsLogFields(opts shared.GetUploadsOptions) []log.Field {
 
 func buildDeleteUploadsLogFields(opts shared.DeleteUploadsOptions) []log.Field {
 	return []log.Field{
-		log.String("state", opts.State),
+		log.String("states", strings.Join(opts.States, ",")),
 		log.String("term", opts.Term),
 		log.Bool("visibleAtTip", opts.VisibleAtTip),
 	}

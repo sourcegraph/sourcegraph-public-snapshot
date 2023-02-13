@@ -1,7 +1,6 @@
 import { Remote } from 'comlink'
 import * as H from 'history'
 import { isEqual, uniqWith } from 'lodash'
-import { NavigateFunction } from 'react-router-dom-v5-compat'
 import { combineLatest, merge, Observable, of, Subscription, Unsubscribable, concat, from, EMPTY } from 'rxjs'
 import {
     catchError,
@@ -19,7 +18,15 @@ import {
 
 import { ContributableMenu, TextDocumentPositionParameters } from '@sourcegraph/client-api'
 import { HoveredToken, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/codeintellify'
-import { asError, ErrorLike, isErrorLike, isExternalLink, logger } from '@sourcegraph/common'
+import {
+    asError,
+    compatNavigate,
+    ErrorLike,
+    HistoryOrNavigate,
+    isErrorLike,
+    isExternalLink,
+    logger,
+} from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
 import { Context } from '@sourcegraph/template-parser'
 
@@ -323,7 +330,7 @@ export function registerHoverContributions({
     extensionsController: Pick<Controller, 'extHostAPI' | 'registerCommand'>
     platformContext: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL'>
 } & {
-    historyOrNavigate: H.History | NavigateFunction
+    historyOrNavigate: HistoryOrNavigate
     locationAssign: typeof globalThis.location.assign
     getLocation: () => H.Location
     /** Implementation of `window.location.assign()` used to navigate to external URLs. */
@@ -444,7 +451,7 @@ export function registerHoverContributions({
                             // Use react router to handle in-app navigation
                             historyOrNavigate(result.url)
                         } else {
-                            historyOrNavigate.push(result.url)
+                            compatNavigate(historyOrNavigate, result.url)
                         }
                     },
                 })

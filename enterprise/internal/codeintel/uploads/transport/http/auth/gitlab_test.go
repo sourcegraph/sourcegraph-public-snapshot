@@ -22,8 +22,8 @@ func TestEnforceAuthViaGitLab(t *testing.T) {
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		makeLinkHeader := func(cursor string) string {
-			url := fmt.Sprintf("%s?cursor=%s", gitlabURL, cursor)
-			link := linkheader.Link{URL: url, Rel: "next"}
+			urlWithCursor := fmt.Sprintf("%s?cursor=%s", gitlabURL, cursor)
+			link := linkheader.Link{URL: urlWithCursor, Rel: "next"}
 			return link.String()
 		}
 

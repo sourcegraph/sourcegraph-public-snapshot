@@ -64,7 +64,7 @@ type EnterpriseInit func(
 	keyring keyring.Ring,
 	cf *httpcli.Factory,
 	server *repoupdater.Server,
-) (map[string]debugserver.Dumper, func(ctx context.Context, repo api.RepoID, syncReason string) error)
+) (map[string]debugserver.Dumper, func(ctx context.Context, repo api.RepoID, syncReason database.PermissionSyncJobReason) error)
 
 type LazyDebugserverEndpoint struct {
 	repoUpdaterStateEndpoint     http.HandlerFunc
@@ -145,7 +145,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	// All dependencies ready
 	debugDumpers := make(map[string]debugserver.Dumper)
-	var enqueueRepoPerms func(context.Context, api.RepoID, string) error
+	var enqueueRepoPerms func(context.Context, api.RepoID, database.PermissionSyncJobReason) error
 	if enterpriseInit != nil {
 		debugDumpers, enqueueRepoPerms = enterpriseInit(observationCtx, db, store, keyring.Default(), cf, server)
 	}
@@ -449,7 +449,7 @@ func watchSyncer(
 	logger log.Logger,
 	syncer *repos.Syncer,
 	sched *repos.UpdateScheduler,
-	enqueueRepoPermsJob func(ctx context.Context, repo api.RepoID, syncReason string) error,
+	enqueueRepoPermsJob func(ctx context.Context, repo api.RepoID, syncReason database.PermissionSyncJobReason) error,
 	changesetSyncer batches.UnarchivedChangesetSyncRegistry,
 ) {
 	logger.Debug("started new repo syncer updates scheduler relay thread")
@@ -467,7 +467,7 @@ func watchSyncer(
 			// modified.
 			if enqueueRepoPermsJob != nil {
 				for _, repo := range getPrivateAddedOrModifiedRepos(diff) {
-					err := enqueueRepoPermsJob(ctx, repo, permssync.ReasonRepoUpdatedFromCodeHost)
+					err := enqueueRepoPermsJob(ctx, repo, database.ReasonRepoUpdatedFromCodeHost)
 					if err != nil {
 						logger.Warn("failed to create repo sync job", log.Error(err), log.Int32("repo", int32(repo)))
 					}

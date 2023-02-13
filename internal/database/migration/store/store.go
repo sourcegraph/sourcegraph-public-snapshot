@@ -491,18 +491,18 @@ func scanMigrationLogs(rows *sql.Rows, queryErr error) (_ []migrationLog, err er
 
 	var logs []migrationLog
 	for rows.Next() {
-		var log migrationLog
+		var mLog migrationLog
 
 		if err := rows.Scan(
-			&log.Schema,
-			&log.Version,
-			&log.Up,
-			&log.Success,
+			&mLog.Schema,
+			&mLog.Version,
+			&mLog.Up,
+			&mLog.Success,
 		); err != nil {
 			return nil, err
 		}
 
-		logs = append(logs, log)
+		logs = append(logs, mLog)
 	}
 
 	return logs, nil

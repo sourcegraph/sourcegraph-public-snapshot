@@ -56,9 +56,9 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 		}
 	}
 
-	job := NewAlertJob(inputs, jobTree)
-	job = NewLogJob(inputs, job)
-	return job, nil
+	alertJob := NewAlertJob(inputs, jobTree)
+	logJob := NewLogJob(inputs, alertJob)
+	return logJob, nil
 }
 
 // NewBasicJob converts a query.Basic into its job tree representation.
@@ -104,20 +104,20 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		if resultTypes.Has(result.TypeFile | result.TypePath) {
 			// Create Global Text Search jobs.
 			if repoUniverseSearch {
-				job, err := builder.newZoektGlobalSearch(search.TextRequest)
+				searchJob, err := builder.newZoektGlobalSearch(search.TextRequest)
 				if err != nil {
 					return nil, err
 				}
-				addJob(job)
+				addJob(searchJob)
 			}
 
 			if !skipRepoSubsetSearch && runZoektOverRepos {
-				job, err := builder.newZoektSearch(search.TextRequest)
+				searchJob, err := builder.newZoektSearch(search.TextRequest)
 				if err != nil {
 					return nil, err
 				}
 				addJob(&repoPagerJob{
-					child:            &reposPartialJob{job},
+					child:            &reposPartialJob{searchJob},
 					repoOpts:         repoOptions,
 					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
 				})
@@ -127,20 +127,20 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		if resultTypes.Has(result.TypeSymbol) {
 			// Create Global Symbol Search jobs.
 			if repoUniverseSearch {
-				job, err := builder.newZoektGlobalSearch(search.SymbolRequest)
+				searchJob, err := builder.newZoektGlobalSearch(search.SymbolRequest)
 				if err != nil {
 					return nil, err
 				}
-				addJob(job)
+				addJob(searchJob)
 			}
 
 			if !skipRepoSubsetSearch && runZoektOverRepos {
-				job, err := builder.newZoektSearch(search.SymbolRequest)
+				searchJob, err := builder.newZoektSearch(search.SymbolRequest)
 				if err != nil {
 					return nil, err
 				}
 				addJob(&repoPagerJob{
-					child:            &reposPartialJob{job},
+					child:            &reposPartialJob{searchJob},
 					repoOpts:         repoOptions,
 					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
 				})
@@ -533,11 +533,11 @@ func timeoutDuration(b query.Basic) time.Duration {
 }
 
 func mapSlice(values []string, f func(string) string) []string {
-	result := make([]string, len(values))
+	res := make([]string, len(values))
 	for i, v := range values {
-		result[i] = f(v)
+		res[i] = f(v)
 	}
-	return result
+	return res
 }
 
 func count(b query.Basic, p search.Protocol) int {

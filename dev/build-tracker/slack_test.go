@@ -13,8 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/team"
 )
 
-var RunSlackIntegrationTest *bool = flag.Bool("RunSlackIntegrationTest", false, "Run Slack integration tests")
-var RunGitHubIntegrationTest *bool = flag.Bool("RunGitHubIntegrationTest", false, "Run Github integration tests")
+var RunSlackIntegrationTest = flag.Bool("RunSlackIntegrationTest", false, "Run Slack integration tests")
+var RunGitHubIntegrationTest = flag.Bool("RunGitHubIntegrationTest", false, "Run Github integration tests")
 
 func newJob(name string, exit int) *Job {
 	return &Job{buildkite.Job{

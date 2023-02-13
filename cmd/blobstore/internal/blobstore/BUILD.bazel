@@ -5,7 +5,8 @@ go_library(
     srcs = [
         "blobstore.go",
         "multipart.go",
-        "s3.go",
+        "s3_routes.go",
+        "s3_types.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/blobstore/internal/blobstore",
     visibility = ["//cmd/blobstore:__subpackages__"],

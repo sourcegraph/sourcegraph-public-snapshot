@@ -47,8 +47,8 @@ var checks = map[string]check.CheckFunc{
 func runChecksWithName(ctx context.Context, names []string) error {
 	funcs := make(map[string]check.CheckFunc, len(names))
 	for _, name := range names {
-		if check, ok := checks[name]; ok {
-			funcs[name] = check
+		if c, ok := checks[name]; ok {
+			funcs[name] = c
 		} else {
 			return errors.Newf("check %q not found", name)
 		}
@@ -81,10 +81,10 @@ func runChecks(ctx context.Context, checks map[string]check.CheckFunc) error {
 
 	var failed []string
 
-	for name, check := range checks {
+	for name, c := range checks {
 		p := std.Out.Pending(output.Linef(output.EmojiLightbulb, output.StylePending, "Running check %q...", name))
 
-		if err := check(ctx); err != nil {
+		if err := c(ctx); err != nil {
 			p.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Check %q failed with the following errors:", name))
 
 			std.Out.WriteLine(output.Styledf(output.StyleWarning, "%s", err))
@@ -244,8 +244,8 @@ func checkGitVersion(versionConstraint string) func(context.Context) error {
 		}
 
 		elems := strings.Split(string(out), " ")
-		if len(elems) != 3 {
-			return errors.Newf("unexpected output from git server: %s", out)
+		if len(elems) != 3 && len(elems) != 5 {
+			return errors.Newf("unexpected output from git: %s", out)
 		}
 
 		trimmed := strings.TrimSpace(elems[2])

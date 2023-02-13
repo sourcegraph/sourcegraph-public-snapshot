@@ -98,8 +98,8 @@ func ParseDiff(files []string) (diff Diff, changedFiles ChangedFiles) {
 			diff |= Client
 		}
 		// dev/release contains a nodejs script that doesn't have tests but needs to be
-		// linted with Client linters
-		if strings.HasPrefix(p, "dev/release/") {
+		// linted with Client linters. We skip the release config file to reduce friction editing during releases.
+		if strings.HasPrefix(p, "dev/release/") && !strings.Contains(p, "release-config") {
 			diff |= Client
 		}
 
@@ -110,7 +110,7 @@ func ParseDiff(files []string) (diff Diff, changedFiles ChangedFiles) {
 
 		// Affects DB schema
 		if strings.HasPrefix(p, "migrations/") {
-			diff |= (DatabaseSchema | Go)
+			diff |= DatabaseSchema | Go
 		}
 		if strings.HasPrefix(p, "dev/ci/go-backcompat") {
 			diff |= DatabaseSchema
@@ -129,7 +129,7 @@ func ParseDiff(files []string) (diff Diff, changedFiles ChangedFiles) {
 
 		// Affects Dockerfiles (which assumes images are being changed as well)
 		if strings.HasPrefix(p, "Dockerfile") || strings.HasSuffix(p, "Dockerfile") {
-			diff |= (Dockerfiles | DockerImages)
+			diff |= Dockerfiles | DockerImages
 		}
 		// Affects anything in docker-images directories (which implies image build
 		// scripts and/or resources are affected)

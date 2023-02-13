@@ -55,9 +55,11 @@ var additionalJobs = map[string]job.Job{
 	"codeintel-upload-janitor":                    codeintel.NewUploadJanitorJob(),
 	"codeintel-upload-graph-exporter":             codeintel.NewGraphExporterJob(),
 	"codeintel-uploadstore-expirer":               codeintel.NewPreciseCodeIntelUploadExpirer(),
+	"codeintel-crates-syncer":                     codeintel.NewCratesSyncerJob(),
 
-	"auth-sourcegraph-operator-cleaner": auth.NewSourcegraphOperatorCleaner(),
-	"auth-permission-sync-job-cleaner":  auth.NewPermissionSyncJobCleaner(),
+	"auth-sourcegraph-operator-cleaner":  auth.NewSourcegraphOperatorCleaner(),
+	"auth-permission-sync-job-cleaner":   auth.NewPermissionSyncJobCleaner(),
+	"auth-permission-sync-job-scheduler": auth.NewPermissionSyncJobScheduler(),
 
 	"embedding-janitor": embeddings.NewEmbeddingJanitorJob(),
 	"embedding-job":     embeddings.NewEmbeddingJob(),
@@ -97,5 +99,4 @@ func getEnterpriseInit(logger log.Logger) func(database.DB) {
 			logger.Fatal("Failed to create sub-repo client", log.Error(err))
 		}
 	}
-
 }

@@ -648,7 +648,7 @@ func TestDeleteUploads(t *testing.T) {
 	)
 
 	err := store.DeleteUploads(context.Background(), shared.DeleteUploadsOptions{
-		State:        "uploading",
+		States:       []string{"uploading"},
 		Term:         "",
 		VisibleAtTip: false,
 	})

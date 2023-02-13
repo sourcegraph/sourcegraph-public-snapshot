@@ -25,6 +25,12 @@ dev/release/node_modules
 client/plugin-backstage/node_modules
 
 cmd/symbols/squirrel/test_repos/starlark
+
+# generated and hosted in GCS bucket
+cmd/sitemap
 docker-images/syntax-highlighter/crates/sg-syntax/src/snapshots/
 
 lib/codeintel/precise/diff/testdata/
+
+# temporary ignores
+internal/cmd/progress-bot

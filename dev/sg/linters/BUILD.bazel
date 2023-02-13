@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "linters",
     srcs = [
+        "buf.go",
         "client.go",
         "dockerfiles.go",
         "enterprise.go",
@@ -22,6 +23,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/linters",
     visibility = ["//visibility:public"],
     deps = [
+        "//dev/sg/buf",
         "//dev/sg/internal/check",
         "//dev/sg/internal/docker",
         "//dev/sg/internal/generate/golang",

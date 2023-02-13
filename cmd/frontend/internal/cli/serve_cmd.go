@@ -50,7 +50,7 @@ import (
 )
 
 var (
-	printLogo, _ = strconv.ParseBool(env.Get("LOGO", "false", "print Sourcegraph logo upon startup"))
+	printLogo, _ = strconv.ParseBool(env.Get("LOGO", defaultPrintLogo(), "print Sourcegraph logo upon startup"))
 
 	httpAddr = env.Get("SRC_HTTP_ADDR", func() string {
 		if env.InsecureDev {
@@ -65,6 +65,14 @@ var (
 	// production browser extension ID. This is found by viewing our extension in the chrome store.
 	prodExtension = "chrome-extension://dgjhfomjieaadpoljlnidmbgkdffpack"
 )
+
+func defaultPrintLogo() string {
+	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
+	if isSingleProgram {
+		return "true"
+	}
+	return "false"
+}
 
 // InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
@@ -107,6 +115,11 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		}
 	}
 
+	// After our DB, redis is our next most important datastore
+	if err := redispoolRegisterDB(db); err != nil {
+		return errors.Wrap(err, "failed to register postgres backed redis")
+	}
+
 	// override site config first
 	if err := overrideSiteConfig(ctx, logger, db); err != nil {
 		return errors.Wrap(err, "failed to apply site config overrides")
@@ -130,7 +143,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 
 	// Run enterprise setup hook
-	enterprise := enterpriseSetupHook(db, conf.DefaultClient())
+	enterpriseServices := enterpriseSetupHook(db, conf.DefaultClient())
 
 	if err != nil {
 		return errors.Wrap(err, "Failed to create sub-repo client")
@@ -201,19 +214,20 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	schema, err := graphqlbackend.NewSchema(db,
 		gitserver.NewClient(),
-		enterprise.BatchChangesResolver,
-		enterprise.CodeIntelResolver,
-		enterprise.InsightsResolver,
-		enterprise.AuthzResolver,
-		enterprise.CodeMonitorsResolver,
-		enterprise.LicenseResolver,
-		enterprise.DotcomResolver,
-		enterprise.SearchContextsResolver,
-		enterprise.NotebooksResolver,
-		enterprise.ComputeResolver,
-		enterprise.InsightsAggregationResolver,
-		enterprise.WebhooksResolver,
-		enterprise.EmbeddingsResolver,
+		enterpriseServices.BatchChangesResolver,
+		enterpriseServices.CodeIntelResolver,
+		enterpriseServices.InsightsResolver,
+		enterpriseServices.AuthzResolver,
+		enterpriseServices.CodeMonitorsResolver,
+		enterpriseServices.LicenseResolver,
+		enterpriseServices.DotcomResolver,
+		enterpriseServices.SearchContextsResolver,
+		enterpriseServices.NotebooksResolver,
+		enterpriseServices.ComputeResolver,
+		enterpriseServices.InsightsAggregationResolver,
+		enterpriseServices.WebhooksResolver,
+		enterpriseServices.EmbeddingsResolver,
+		enterpriseServices.RBACResolver,
 	)
 	if err != nil {
 		return err
@@ -224,12 +238,12 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return err
 	}
 
-	server, err := makeExternalAPI(db, logger, schema, enterprise, rateLimitWatcher)
+	server, err := makeExternalAPI(db, logger, schema, enterpriseServices, rateLimitWatcher)
 	if err != nil {
 		return err
 	}
 
-	internalAPI, err := makeInternalAPI(db, logger, schema, enterprise, rateLimitWatcher)
+	internalAPI, err := makeInternalAPI(db, logger, schema, enterpriseServices, rateLimitWatcher)
 	if err != nil {
 		return err
 	}
@@ -276,6 +290,7 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 			BatchesChangesFileGetHandler:    enterprise.BatchesChangesFileGetHandler,
 			BatchesChangesFileExistsHandler: enterprise.BatchesChangesFileExistsHandler,
 			BatchesChangesFileUploadHandler: enterprise.BatchesChangesFileUploadHandler,
+			SCIMHandler:                     enterprise.SCIMHandler,
 			NewCodeIntelUploadHandler:       enterprise.NewCodeIntelUploadHandler,
 			NewComputeStreamHandler:         enterprise.NewComputeStreamHandler,
 			CodeInsightsDataExportHandler:   enterprise.CodeInsightsDataExportHandler,
@@ -371,4 +386,16 @@ func makeRateLimitWatcher() (*graphqlbackend.BasicLimitWatcher, error) {
 	}
 
 	return graphqlbackend.NewBasicLimitWatcher(sglog.Scoped("BasicLimitWatcher", "basic rate-limiter"), store), nil
+}
+
+// redispoolRegisterDB registers our postgres backed redis. These package
+// avoid depending on each other, hence the wrapping to get Go to play nice
+// with the interface definitions.
+func redispoolRegisterDB(db database.DB) error {
+	kvNoTX := db.RedisKeyValue()
+	return redispool.DBRegisterStore(func(ctx context.Context, f func(redispool.DBStore) error) error {
+		return kvNoTX.WithTransact(ctx, func(tx database.RedisKeyValueStore) error {
+			return f(tx)
+		})
+	})
 }

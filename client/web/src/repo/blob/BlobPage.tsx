@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, FC } from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import FileAlertIcon from 'mdi-react/FileAlertIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Redirect } from 'react-router'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom-v5-compat'
 import { Observable, of } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { Optional } from 'utility-types'
@@ -52,6 +51,7 @@ import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
 import { OpenInEditorActionItem } from '../../open-in-editor/OpenInEditorActionItem'
 import { SearchStreamingProps } from '../../search'
 import { useNotepad, useExperimentalFeatures } from '../../stores'
+import { globalHistory } from '../../util/globalHistory'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
 import { serviceKindDisplayNameAndIcon } from '../actions/GoToCodeHostAction'
@@ -68,10 +68,10 @@ import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
 import { fetchBlob, fetchStencil } from './backend'
-import { Blob, BlobInfo } from './Blob'
 import { BlobLoadingSpinner } from './BlobLoadingSpinner'
-import { Blob as CodeMirrorBlob } from './CodeMirrorBlob'
+import { Blob as CodeMirrorBlob, type BlobInfo } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
+import { LegacyBlob } from './LegacyBlob'
 import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
 
@@ -96,8 +96,6 @@ interface BlobPageProps
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled' | 'useCodeIntel'>,
         NotebookProps {
-    location: H.Location
-    history: H.History
     authenticatedUser: AuthenticatedUser | null
     globbing: boolean
     isMacPlatform: boolean
@@ -118,10 +116,13 @@ interface BlobPageInfo extends Optional<BlobInfo, 'commitID'> {
     aborted: boolean
 }
 
-export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageProps>> = ({ className, ...props }) => {
+export const BlobPage: FC<BlobPageProps> = ({ className, ...props }) => {
+    const location = useLocation()
+    const navigate = useNavigate()
+
     const { span } = useCurrentSpan()
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
-    let renderMode = getModeFromURL(props.location)
+    let renderMode = getModeFromURL(location)
     const { repoID, repoName, revision, commitID, filePath, isLightTheme, useBreadcrumb, mode } = props
     const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
     const experimentalCodeNavigation = useExperimentalFeatures(features => features.codeNavigation)
@@ -133,8 +134,8 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     const enableLinkDrivenCodeNavigation = experimentalCodeNavigation === 'link-driven'
 
     const lineOrRange = useMemo(
-        () => parseQueryAndHash(props.location.search, props.location.hash),
-        [props.location.search, props.location.hash]
+        () => parseQueryAndHash(location.search, location.hash),
+        [location.search, location.hash]
     )
 
     // Log view event whenever a new Blob, or a Blob with a different render mode, is visited.
@@ -401,12 +402,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
             >
                 {context => (
-                    <ToggleHistoryPanel
-                        {...context}
-                        key="toggle-blob-panel"
-                        location={props.location}
-                        history={props.history}
-                    />
+                    <ToggleHistoryPanel {...context} key="toggle-blob-panel" location={location} navigate={navigate} />
                 )}
             </RepoHeaderContributionPortal>
             {renderMode === 'code' && (
@@ -446,7 +442,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
         // they cannot easily determine eagerly if a file path is a tree or a blob.
         // We don't have error names on GraphQL errors.
         if (/not a blob/i.test(blobInfoOrError.message)) {
-            return <Redirect to={toTreeURL(props)} />
+            return <Navigate to={toTreeURL(props)} replace={true} />
         }
         return (
             <>
@@ -513,7 +509,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
         )
     }
 
-    const BlobComponent = enableCodeMirror ? CodeMirrorBlob : Blob
+    const BlobComponent = enableCodeMirror ? CodeMirrorBlob : LegacyBlob
 
     return (
         <div className={className}>
@@ -547,11 +543,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                 </React.Suspense>
             )}
             {!isSearchNotebook && blobInfoOrError.richHTML && renderMode === 'rendered' && (
-                <RenderedFile
-                    dangerousInnerHTML={blobInfoOrError.richHTML}
-                    location={props.location}
-                    className={styles.border}
-                />
+                <RenderedFile dangerousInnerHTML={blobInfoOrError.richHTML} className={styles.border} />
             )}
             {!blobInfoOrError.richHTML && blobInfoOrError.aborted && (
                 <div>
@@ -575,6 +567,9 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                     }}
                 >
                     <BlobComponent
+                        navigate={navigate}
+                        location={location}
+                        history={globalHistory}
                         data-testid="repo-blob"
                         className={classNames(styles.blob, styles.border)}
                         blobInfo={{ ...blobInfoOrError, commitID, stencil }}
@@ -583,10 +578,8 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         extensionsController={props.extensionsController}
                         settingsCascade={props.settingsCascade}
                         onHoverShown={props.onHoverShown}
-                        history={props.history}
                         isLightTheme={isLightTheme}
                         telemetryService={props.telemetryService}
-                        location={props.location}
                         role="region"
                         ariaLabel="File blob"
                         isBlameVisible={isBlameVisible}
