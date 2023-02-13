@@ -16,4 +16,3 @@ sourcegraph:
     query: "repo:^github\\.com/sourcegraph/sourcegraph$ file:.proto$"
   graphql:
     query: "repo:^github\\.com/sourcegraph/sourcegraph$ file:schema\\.graphql"
-

@@ -8,9 +8,7 @@ const exportedConfig = {
   ...config,
   displayName: 'backstage-common',
   rootDir: __dirname,
-  setupFiles: [
-    ...config.setupFiles,
-  ],
+  setupFiles: [...config.setupFiles],
 }
 
 module.exports = exportedConfig
