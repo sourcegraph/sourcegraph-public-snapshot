@@ -174,7 +174,10 @@ type EventPersonMatch struct {
 	Handle string `json:"handle"`
 	Email  string `json:"email"`
 
-	// TODO: add person specific fields.
+	// The following are a subset of types.User fields.
+	Username    string `json:"username"`
+	DisplayName string `json:"displayName"`
+	AvatarURL   string `json:"avatarURL"`
 }
 
 func (e *EventPersonMatch) eventMatch() {}
@@ -186,7 +189,9 @@ type EventTeamMatch struct {
 	Handle string `json:"handle"`
 	Email  string `json:"email"`
 
-	// TODO: add team specific fields.
+	// The following are a subset of types.Team fields.
+	Name        string `json:"name"`
+	DisplayName string `json:"DisplayName"`
 }
 
 func (e *EventTeamMatch) eventMatch() {}

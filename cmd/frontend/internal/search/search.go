@@ -520,32 +520,29 @@ func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.Sear
 }
 
 func fromOwner(owner *result.OwnerMatch) streamhttp.EventMatch {
-	switch owner.ResolvedOwner.Type() {
-	case codeowners.OwnerTypePerson:
+	switch v := owner.ResolvedOwner.(type) {
+	case codeowners.Person:
 		return &streamhttp.EventPersonMatch{
-			Type: streamhttp.PersonMatchType,
-			// todo flesh out
-			Handle: "person",
+			Type:        streamhttp.PersonMatchType,
+			Username:    v.User.Username,
+			DisplayName: v.User.DisplayName,
+			AvatarURL:   v.User.AvatarURL,
 		}
-	case codeowners.OwnerTypeTeam:
+	case codeowners.Team:
 		return &streamhttp.EventTeamMatch{
-			Type: streamhttp.TeamMatchType,
-			// todo flesh out
-			Handle: "team",
+			Type:        streamhttp.TeamMatchType,
+			Name:        v.Team.Name,
+			DisplayName: v.Team.DisplayName,
 		}
-	case codeowners.OwnerTypeUnknown:
+	case codeowners.UnknownOwner:
 		return &streamhttp.EventUnknownOwnerMatch{
-			Type: streamhttp.UnknownOwnerMatchType,
-			// todo flesh out
-			Handle: "unknown",
+			Type:   streamhttp.UnknownOwnerMatchType,
+			Handle: v.Handle,
+			Email:  v.Email,
 		}
 	}
-	// todo return default
-	return &streamhttp.EventUnknownOwnerMatch{
-		Type: streamhttp.UnknownOwnerMatchType,
-		// todo flesh out
-		Handle: "unknown",
-	}
+	// We shouldn't reach this.
+	return nil
 }
 
 // eventStreamOTHook returns a StatHook which logs to log.

@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // OwnService gives access to code ownership data.
@@ -82,6 +81,9 @@ func (s ownService) OwnersFile(ctx context.Context, repoName api.RepoName, commi
 func (s ownService) ResolveOwnersWithType(ctx context.Context, protoOwners []*codeownerspb.Owner) ([]codeowners.ResolvedOwner, error) {
 	resolved := make([]codeowners.ResolvedOwner, 0, len(protoOwners))
 
+	// we have to look up owner by owner because of the branching conditions:
+	// we first try to find a user given the owner information. if we cannot find an owner we try to match a team.
+	// if all fails, we return an unknown owner type with the information we have from the proto.
 	for _, po := range protoOwners {
 		// an owner proto should have either handle or email set.
 		ownerIdentifier := getHandleOrEmail(po)
@@ -90,41 +92,38 @@ func (s ownService) ResolveOwnersWithType(ctx context.Context, protoOwners []*co
 			continue
 		}
 		if ownerIdentifier == "" {
-			// safeguard, maybe error
+			// safeguard
 			continue
 		}
 
-		// we have to look up owner by owner because of the branching conditions.
 		var resolvedOwner codeowners.ResolvedOwner
 		if po.Handle != "" {
 			user, err := s.userStore.GetByUsername(ctx, po.Handle)
 			if err != nil {
 				if errcode.IsNotFound(err) {
 					// attempt team lookup
+					continue
 				} else {
 					return nil, err
 				}
 			}
-			resolvedOwner = codeowners.Person{Handle: po.Handle, User: user}
+			resolvedOwner = codeowners.Person{OwnerIdentifier: po.Handle, User: user}
 		} else if po.Email != "" {
 			user, err := s.userStore.GetByVerifiedEmail(ctx, po.Email)
 			if err != nil {
 				if errcode.IsNotFound(err) {
 					// attempt team lookup
+					continue
 				} else {
 					return nil, err
 				}
 			}
-			resolvedOwner = codeowners.Person{Email: po.Email, User: user}
+			resolvedOwner = codeowners.Person{OwnerIdentifier: po.Email, User: user}
 		}
 		resolved = append(resolved, resolvedOwner)
 		s.ownerCache[ownerIdentifier] = resolvedOwner
 	}
 	return resolved, nil
-}
-
-func NewPerson(user *types.User) codeowners.ResolvedOwner {
-	return codeowners.Person{User: user}
 }
 
 func getHandleOrEmail(owner *codeownerspb.Owner) string {

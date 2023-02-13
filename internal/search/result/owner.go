@@ -55,8 +55,7 @@ func (om *OwnerMatch) Key() Key {
 		Path:     om.Path,
 	}
 	if om.ResolvedOwner != nil {
-		// todo give access to handle/email
-		k.Metadata = string(om.ResolvedOwner.Type())
+		k.Metadata = string(om.ResolvedOwner.Type()) + om.ResolvedOwner.Identifier()
 	}
 	if om.InputRev != nil {
 		k.Rev = *om.InputRev
