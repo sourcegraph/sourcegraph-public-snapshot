@@ -328,25 +328,17 @@ func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 			return err
 		}
 
-		// Fetch site admin role
-		sr, err := tx.Roles().Get(ctx, database.GetRoleOpts{
-			Name: string(types.SiteAdministratorSystemRole),
-		})
-		if err != nil {
-			return err
-		}
-
 		if args.SiteAdmin {
-			if _, err = tx.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
-				UserID: affectedUserID,
-				RoleID: sr.ID,
+			if _, err = tx.UserRoles().AssignSystemRole(ctx, database.AssignSystemRoleOpts{
+				UserID:   affectedUserID,
+				RoleName: types.SiteAdministratorSystemRole,
 			}); err != nil {
 				return err
 			}
 		} else {
-			if err = tx.UserRoles().Delete(ctx, database.DeleteUserRoleOpts{
-				UserID: affectedUserID,
-				RoleID: sr.ID,
+			if err = tx.UserRoles().RevokeSystemRole(ctx, database.RevokeSystemRoleOpts{
+				UserID:   affectedUserID,
+				RoleName: types.SiteAdministratorSystemRole,
 			}); err != nil {
 				return err
 			}

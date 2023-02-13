@@ -118,7 +118,7 @@ func TestUserRoleDelete(t *testing.T) {
 	}
 
 	t.Run("missing user id", func(t *testing.T) {
-		err := store.Delete(ctx, DeleteUserRoleOpts{
+		err := store.Revoke(ctx, RevokeUserRoleOpts{
 			RoleID: role.ID,
 		})
 		require.Error(t, err)
@@ -126,7 +126,7 @@ func TestUserRoleDelete(t *testing.T) {
 	})
 
 	t.Run("missing role id", func(t *testing.T) {
-		err := store.Delete(ctx, DeleteUserRoleOpts{
+		err := store.Revoke(ctx, RevokeUserRoleOpts{
 			UserID: user.ID,
 		})
 		require.Error(t, err)
@@ -134,7 +134,7 @@ func TestUserRoleDelete(t *testing.T) {
 	})
 
 	t.Run("with existing user role", func(t *testing.T) {
-		err := store.Delete(ctx, DeleteUserRoleOpts{
+		err := store.Revoke(ctx, RevokeUserRoleOpts{
 			RoleID: role.ID,
 			UserID: user.ID,
 		})
@@ -156,7 +156,7 @@ func TestUserRoleDelete(t *testing.T) {
 		roleID := int32(1234)
 		userID := int32(4321)
 
-		err := store.Delete(ctx, DeleteUserRoleOpts{
+		err := store.Revoke(ctx, RevokeUserRoleOpts{
 			RoleID: roleID,
 			UserID: userID,
 		})

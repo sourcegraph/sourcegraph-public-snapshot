@@ -781,30 +781,19 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 			return err
 		}
 
-		// We fetch the site administrator role to be assigned to the user.
-		sr, err := tx.Roles().Get(ctx, GetRoleOpts{
-			Name: string(types.SiteAdministratorSystemRole),
-		})
-		if err != nil {
-			return err
-		}
-
 		userRoleStore := tx.UserRoles()
-
 		if isSiteAdmin {
-			_, err := userRoleStore.Assign(ctx, AssignUserRoleOpts{
-				UserID: id,
-				RoleID: sr.ID,
+			_, err := userRoleStore.AssignSystemRole(ctx, AssignSystemRoleOpts{
+				UserID:   id,
+				RoleName: types.SiteAdministratorSystemRole,
 			})
 
 			return err
 		}
 
-		// If revoking the site admin role for a user, we simply delete the `user <> role` relationship
-		// from the `UserRoles` table.
-		err = userRoleStore.Delete(ctx, DeleteUserRoleOpts{
-			UserID: id,
-			RoleID: sr.ID,
+		err = userRoleStore.RevokeSystemRole(ctx, RevokeSystemRoleOpts{
+			UserID:   id,
+			RoleName: types.SiteAdministratorSystemRole,
 		})
 		return err
 	})

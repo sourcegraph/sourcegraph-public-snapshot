@@ -193,24 +193,10 @@ func dbAddUserAction(cmd *cli.Context) error {
 			return err
 		}
 
-		systemRoles, err := tx.Roles().List(ctx, database.RolesListOptions{
-			System: true,
-		})
-		if err != nil {
-			return err
-		}
-
-		var roleIDs []int32
-		for _, role := range systemRoles {
-			roleIDs = append(roleIDs, role.ID)
-		}
-
-		opts := database.BulkAssignToUserOpts{
-			UserID:  user.ID,
-			RoleIDs: roleIDs,
-		}
-
-		if _, err = tx.UserRoles().BulkAssignToUser(ctx, opts); err != nil {
+		if _, err = tx.UserRoles().AssignSystemRole(ctx, database.AssignSystemRoleOpts{
+			UserID:   user.ID,
+			RoleName: types.UserSystemRole,
+		}); err != nil {
 			return err
 		}
 

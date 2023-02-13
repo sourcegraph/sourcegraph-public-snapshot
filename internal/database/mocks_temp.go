@@ -56507,12 +56507,12 @@ type MockUserRoleStore struct {
 	// AssignFunc is an instance of a mock function object controlling the
 	// behavior of the method Assign.
 	AssignFunc *UserRoleStoreAssignFunc
+	// AssignSystemRoleFunc is an instance of a mock function object
+	// controlling the behavior of the method AssignSystemRole.
+	AssignSystemRoleFunc *UserRoleStoreAssignSystemRoleFunc
 	// BulkAssignToUserFunc is an instance of a mock function object
 	// controlling the behavior of the method BulkAssignToUser.
 	BulkAssignToUserFunc *UserRoleStoreBulkAssignToUserFunc
-	// DeleteFunc is an instance of a mock function object controlling the
-	// behavior of the method Delete.
-	DeleteFunc *UserRoleStoreDeleteFunc
 	// GetByRoleIDFunc is an instance of a mock function object controlling
 	// the behavior of the method GetByRoleID.
 	GetByRoleIDFunc *UserRoleStoreGetByRoleIDFunc
@@ -56525,6 +56525,12 @@ type MockUserRoleStore struct {
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *UserRoleStoreHandleFunc
+	// RevokeFunc is an instance of a mock function object controlling the
+	// behavior of the method Revoke.
+	RevokeFunc *UserRoleStoreRevokeFunc
+	// RevokeSystemRoleFunc is an instance of a mock function object
+	// controlling the behavior of the method RevokeSystemRole.
+	RevokeSystemRoleFunc *UserRoleStoreRevokeSystemRoleFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *UserRoleStoreWithFunc
@@ -56542,13 +56548,13 @@ func NewMockUserRoleStore() *MockUserRoleStore {
 				return
 			},
 		},
-		BulkAssignToUserFunc: &UserRoleStoreBulkAssignToUserFunc{
-			defaultHook: func(context.Context, BulkAssignToUserOpts) (r0 []*types.UserRole, r1 error) {
+		AssignSystemRoleFunc: &UserRoleStoreAssignSystemRoleFunc{
+			defaultHook: func(context.Context, AssignSystemRoleOpts) (r0 *types.UserRole, r1 error) {
 				return
 			},
 		},
-		DeleteFunc: &UserRoleStoreDeleteFunc{
-			defaultHook: func(context.Context, DeleteUserRoleOpts) (r0 error) {
+		BulkAssignToUserFunc: &UserRoleStoreBulkAssignToUserFunc{
+			defaultHook: func(context.Context, BulkAssignToUserOpts) (r0 []*types.UserRole, r1 error) {
 				return
 			},
 		},
@@ -56569,6 +56575,16 @@ func NewMockUserRoleStore() *MockUserRoleStore {
 		},
 		HandleFunc: &UserRoleStoreHandleFunc{
 			defaultHook: func() (r0 basestore.TransactableHandle) {
+				return
+			},
+		},
+		RevokeFunc: &UserRoleStoreRevokeFunc{
+			defaultHook: func(context.Context, RevokeUserRoleOpts) (r0 error) {
+				return
+			},
+		},
+		RevokeSystemRoleFunc: &UserRoleStoreRevokeSystemRoleFunc{
+			defaultHook: func(context.Context, RevokeSystemRoleOpts) (r0 error) {
 				return
 			},
 		},
@@ -56594,14 +56610,14 @@ func NewStrictMockUserRoleStore() *MockUserRoleStore {
 				panic("unexpected invocation of MockUserRoleStore.Assign")
 			},
 		},
+		AssignSystemRoleFunc: &UserRoleStoreAssignSystemRoleFunc{
+			defaultHook: func(context.Context, AssignSystemRoleOpts) (*types.UserRole, error) {
+				panic("unexpected invocation of MockUserRoleStore.AssignSystemRole")
+			},
+		},
 		BulkAssignToUserFunc: &UserRoleStoreBulkAssignToUserFunc{
 			defaultHook: func(context.Context, BulkAssignToUserOpts) ([]*types.UserRole, error) {
 				panic("unexpected invocation of MockUserRoleStore.BulkAssignToUser")
-			},
-		},
-		DeleteFunc: &UserRoleStoreDeleteFunc{
-			defaultHook: func(context.Context, DeleteUserRoleOpts) error {
-				panic("unexpected invocation of MockUserRoleStore.Delete")
 			},
 		},
 		GetByRoleIDFunc: &UserRoleStoreGetByRoleIDFunc{
@@ -56622,6 +56638,16 @@ func NewStrictMockUserRoleStore() *MockUserRoleStore {
 		HandleFunc: &UserRoleStoreHandleFunc{
 			defaultHook: func() basestore.TransactableHandle {
 				panic("unexpected invocation of MockUserRoleStore.Handle")
+			},
+		},
+		RevokeFunc: &UserRoleStoreRevokeFunc{
+			defaultHook: func(context.Context, RevokeUserRoleOpts) error {
+				panic("unexpected invocation of MockUserRoleStore.Revoke")
+			},
+		},
+		RevokeSystemRoleFunc: &UserRoleStoreRevokeSystemRoleFunc{
+			defaultHook: func(context.Context, RevokeSystemRoleOpts) error {
+				panic("unexpected invocation of MockUserRoleStore.RevokeSystemRole")
 			},
 		},
 		WithFunc: &UserRoleStoreWithFunc{
@@ -56645,11 +56671,11 @@ func NewMockUserRoleStoreFrom(i UserRoleStore) *MockUserRoleStore {
 		AssignFunc: &UserRoleStoreAssignFunc{
 			defaultHook: i.Assign,
 		},
+		AssignSystemRoleFunc: &UserRoleStoreAssignSystemRoleFunc{
+			defaultHook: i.AssignSystemRole,
+		},
 		BulkAssignToUserFunc: &UserRoleStoreBulkAssignToUserFunc{
 			defaultHook: i.BulkAssignToUser,
-		},
-		DeleteFunc: &UserRoleStoreDeleteFunc{
-			defaultHook: i.Delete,
 		},
 		GetByRoleIDFunc: &UserRoleStoreGetByRoleIDFunc{
 			defaultHook: i.GetByRoleID,
@@ -56662,6 +56688,12 @@ func NewMockUserRoleStoreFrom(i UserRoleStore) *MockUserRoleStore {
 		},
 		HandleFunc: &UserRoleStoreHandleFunc{
 			defaultHook: i.Handle,
+		},
+		RevokeFunc: &UserRoleStoreRevokeFunc{
+			defaultHook: i.Revoke,
+		},
+		RevokeSystemRoleFunc: &UserRoleStoreRevokeSystemRoleFunc{
+			defaultHook: i.RevokeSystemRole,
 		},
 		WithFunc: &UserRoleStoreWithFunc{
 			defaultHook: i.With,
@@ -56779,6 +56811,116 @@ func (c UserRoleStoreAssignFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// UserRoleStoreAssignSystemRoleFunc describes the behavior when the
+// AssignSystemRole method of the parent MockUserRoleStore instance is
+// invoked.
+type UserRoleStoreAssignSystemRoleFunc struct {
+	defaultHook func(context.Context, AssignSystemRoleOpts) (*types.UserRole, error)
+	hooks       []func(context.Context, AssignSystemRoleOpts) (*types.UserRole, error)
+	history     []UserRoleStoreAssignSystemRoleFuncCall
+	mutex       sync.Mutex
+}
+
+// AssignSystemRole delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUserRoleStore) AssignSystemRole(v0 context.Context, v1 AssignSystemRoleOpts) (*types.UserRole, error) {
+	r0, r1 := m.AssignSystemRoleFunc.nextHook()(v0, v1)
+	m.AssignSystemRoleFunc.appendCall(UserRoleStoreAssignSystemRoleFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the AssignSystemRole
+// method of the parent MockUserRoleStore instance is invoked and the hook
+// queue is empty.
+func (f *UserRoleStoreAssignSystemRoleFunc) SetDefaultHook(hook func(context.Context, AssignSystemRoleOpts) (*types.UserRole, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AssignSystemRole method of the parent MockUserRoleStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *UserRoleStoreAssignSystemRoleFunc) PushHook(hook func(context.Context, AssignSystemRoleOpts) (*types.UserRole, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserRoleStoreAssignSystemRoleFunc) SetDefaultReturn(r0 *types.UserRole, r1 error) {
+	f.SetDefaultHook(func(context.Context, AssignSystemRoleOpts) (*types.UserRole, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserRoleStoreAssignSystemRoleFunc) PushReturn(r0 *types.UserRole, r1 error) {
+	f.PushHook(func(context.Context, AssignSystemRoleOpts) (*types.UserRole, error) {
+		return r0, r1
+	})
+}
+
+func (f *UserRoleStoreAssignSystemRoleFunc) nextHook() func(context.Context, AssignSystemRoleOpts) (*types.UserRole, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserRoleStoreAssignSystemRoleFunc) appendCall(r0 UserRoleStoreAssignSystemRoleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserRoleStoreAssignSystemRoleFuncCall
+// objects describing the invocations of this function.
+func (f *UserRoleStoreAssignSystemRoleFunc) History() []UserRoleStoreAssignSystemRoleFuncCall {
+	f.mutex.Lock()
+	history := make([]UserRoleStoreAssignSystemRoleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserRoleStoreAssignSystemRoleFuncCall is an object that describes an
+// invocation of method AssignSystemRole on an instance of
+// MockUserRoleStore.
+type UserRoleStoreAssignSystemRoleFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 AssignSystemRoleOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.UserRole
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserRoleStoreAssignSystemRoleFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserRoleStoreAssignSystemRoleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // UserRoleStoreBulkAssignToUserFunc describes the behavior when the
 // BulkAssignToUser method of the parent MockUserRoleStore instance is
 // invoked.
@@ -56887,110 +57029,6 @@ func (c UserRoleStoreBulkAssignToUserFuncCall) Args() []interface{} {
 // invocation.
 func (c UserRoleStoreBulkAssignToUserFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// UserRoleStoreDeleteFunc describes the behavior when the Delete method of
-// the parent MockUserRoleStore instance is invoked.
-type UserRoleStoreDeleteFunc struct {
-	defaultHook func(context.Context, DeleteUserRoleOpts) error
-	hooks       []func(context.Context, DeleteUserRoleOpts) error
-	history     []UserRoleStoreDeleteFuncCall
-	mutex       sync.Mutex
-}
-
-// Delete delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockUserRoleStore) Delete(v0 context.Context, v1 DeleteUserRoleOpts) error {
-	r0 := m.DeleteFunc.nextHook()(v0, v1)
-	m.DeleteFunc.appendCall(UserRoleStoreDeleteFuncCall{v0, v1, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the Delete method of the
-// parent MockUserRoleStore instance is invoked and the hook queue is empty.
-func (f *UserRoleStoreDeleteFunc) SetDefaultHook(hook func(context.Context, DeleteUserRoleOpts) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Delete method of the parent MockUserRoleStore instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *UserRoleStoreDeleteFunc) PushHook(hook func(context.Context, DeleteUserRoleOpts) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *UserRoleStoreDeleteFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, DeleteUserRoleOpts) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *UserRoleStoreDeleteFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, DeleteUserRoleOpts) error {
-		return r0
-	})
-}
-
-func (f *UserRoleStoreDeleteFunc) nextHook() func(context.Context, DeleteUserRoleOpts) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *UserRoleStoreDeleteFunc) appendCall(r0 UserRoleStoreDeleteFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of UserRoleStoreDeleteFuncCall objects
-// describing the invocations of this function.
-func (f *UserRoleStoreDeleteFunc) History() []UserRoleStoreDeleteFuncCall {
-	f.mutex.Lock()
-	history := make([]UserRoleStoreDeleteFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// UserRoleStoreDeleteFuncCall is an object that describes an invocation of
-// method Delete on an instance of MockUserRoleStore.
-type UserRoleStoreDeleteFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 DeleteUserRoleOpts
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c UserRoleStoreDeleteFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c UserRoleStoreDeleteFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // UserRoleStoreGetByRoleIDFunc describes the behavior when the GetByRoleID
@@ -57415,6 +57453,217 @@ func (c UserRoleStoreHandleFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UserRoleStoreHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// UserRoleStoreRevokeFunc describes the behavior when the Revoke method of
+// the parent MockUserRoleStore instance is invoked.
+type UserRoleStoreRevokeFunc struct {
+	defaultHook func(context.Context, RevokeUserRoleOpts) error
+	hooks       []func(context.Context, RevokeUserRoleOpts) error
+	history     []UserRoleStoreRevokeFuncCall
+	mutex       sync.Mutex
+}
+
+// Revoke delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockUserRoleStore) Revoke(v0 context.Context, v1 RevokeUserRoleOpts) error {
+	r0 := m.RevokeFunc.nextHook()(v0, v1)
+	m.RevokeFunc.appendCall(UserRoleStoreRevokeFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Revoke method of the
+// parent MockUserRoleStore instance is invoked and the hook queue is empty.
+func (f *UserRoleStoreRevokeFunc) SetDefaultHook(hook func(context.Context, RevokeUserRoleOpts) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Revoke method of the parent MockUserRoleStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *UserRoleStoreRevokeFunc) PushHook(hook func(context.Context, RevokeUserRoleOpts) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserRoleStoreRevokeFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, RevokeUserRoleOpts) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserRoleStoreRevokeFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, RevokeUserRoleOpts) error {
+		return r0
+	})
+}
+
+func (f *UserRoleStoreRevokeFunc) nextHook() func(context.Context, RevokeUserRoleOpts) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserRoleStoreRevokeFunc) appendCall(r0 UserRoleStoreRevokeFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserRoleStoreRevokeFuncCall objects
+// describing the invocations of this function.
+func (f *UserRoleStoreRevokeFunc) History() []UserRoleStoreRevokeFuncCall {
+	f.mutex.Lock()
+	history := make([]UserRoleStoreRevokeFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserRoleStoreRevokeFuncCall is an object that describes an invocation of
+// method Revoke on an instance of MockUserRoleStore.
+type UserRoleStoreRevokeFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 RevokeUserRoleOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserRoleStoreRevokeFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserRoleStoreRevokeFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// UserRoleStoreRevokeSystemRoleFunc describes the behavior when the
+// RevokeSystemRole method of the parent MockUserRoleStore instance is
+// invoked.
+type UserRoleStoreRevokeSystemRoleFunc struct {
+	defaultHook func(context.Context, RevokeSystemRoleOpts) error
+	hooks       []func(context.Context, RevokeSystemRoleOpts) error
+	history     []UserRoleStoreRevokeSystemRoleFuncCall
+	mutex       sync.Mutex
+}
+
+// RevokeSystemRole delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUserRoleStore) RevokeSystemRole(v0 context.Context, v1 RevokeSystemRoleOpts) error {
+	r0 := m.RevokeSystemRoleFunc.nextHook()(v0, v1)
+	m.RevokeSystemRoleFunc.appendCall(UserRoleStoreRevokeSystemRoleFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RevokeSystemRole
+// method of the parent MockUserRoleStore instance is invoked and the hook
+// queue is empty.
+func (f *UserRoleStoreRevokeSystemRoleFunc) SetDefaultHook(hook func(context.Context, RevokeSystemRoleOpts) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RevokeSystemRole method of the parent MockUserRoleStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *UserRoleStoreRevokeSystemRoleFunc) PushHook(hook func(context.Context, RevokeSystemRoleOpts) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserRoleStoreRevokeSystemRoleFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, RevokeSystemRoleOpts) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserRoleStoreRevokeSystemRoleFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, RevokeSystemRoleOpts) error {
+		return r0
+	})
+}
+
+func (f *UserRoleStoreRevokeSystemRoleFunc) nextHook() func(context.Context, RevokeSystemRoleOpts) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserRoleStoreRevokeSystemRoleFunc) appendCall(r0 UserRoleStoreRevokeSystemRoleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserRoleStoreRevokeSystemRoleFuncCall
+// objects describing the invocations of this function.
+func (f *UserRoleStoreRevokeSystemRoleFunc) History() []UserRoleStoreRevokeSystemRoleFuncCall {
+	f.mutex.Lock()
+	history := make([]UserRoleStoreRevokeSystemRoleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserRoleStoreRevokeSystemRoleFuncCall is an object that describes an
+// invocation of method RevokeSystemRole on an instance of
+// MockUserRoleStore.
+type UserRoleStoreRevokeSystemRoleFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 RevokeSystemRoleOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserRoleStoreRevokeSystemRoleFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserRoleStoreRevokeSystemRoleFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

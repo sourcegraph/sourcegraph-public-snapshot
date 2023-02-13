@@ -31,9 +31,19 @@ type UserRoleOpts struct {
 
 type (
 	AssignUserRoleOpts UserRoleOpts
-	DeleteUserRoleOpts UserRoleOpts
+	RevokeUserRoleOpts UserRoleOpts
 	GetUserRoleOpts    UserRoleOpts
 )
+
+type AssignSystemRoleOpts struct {
+	UserID   int32
+	RoleName types.SystemRole
+}
+
+type RevokeSystemRoleOpts struct {
+	UserID   int32
+	RoleName types.SystemRole
+}
 
 type BulkAssignToUserOpts struct {
 	UserID  int32
@@ -45,6 +55,8 @@ type UserRoleStore interface {
 
 	// Assign is used to assign a role to a user.
 	Assign(ctx context.Context, opts AssignUserRoleOpts) (*types.UserRole, error)
+	// AssignSystemRole assigns a system role to a user.
+	AssignSystemRole(ctx context.Context, opts AssignSystemRoleOpts) (*types.UserRole, error)
 	// BulkAssignToUser assigns multiple roles to a single user. This is useful
 	// when we want to assign a user more than one role.
 	BulkAssignToUser(ctx context.Context, opts BulkAssignToUserOpts) ([]*types.UserRole, error)
@@ -54,8 +66,10 @@ type UserRoleStore interface {
 	GetByRoleIDAndUserID(ctx context.Context, opts GetUserRoleOpts) (*types.UserRole, error)
 	// GetByUserID returns all UserRole associated with the provided user ID
 	GetByUserID(ctx context.Context, opts GetUserRoleOpts) ([]*types.UserRole, error)
-	// Delete deletes the user and role relationship from the database.
-	Delete(ctx context.Context, opts DeleteUserRoleOpts) error
+	// Revoke deletes the user and role relationship from the database.
+	Revoke(ctx context.Context, opts RevokeUserRoleOpts) error
+	// RevokeSystemRole revokes a system role that has previously being assigned to a user.
+	RevokeSystemRole(ctx context.Context, opts RevokeSystemRoleOpts) error
 	// Transact creates a transaction for the UserRoleStore.
 	WithTransact(context.Context, func(UserRoleStore) error) error
 	// With is used to merge the store with another to pull data via other stores.
@@ -153,9 +167,35 @@ func (r *userRoleStore) BulkAssignToUser(ctx context.Context, opts BulkAssignToU
 	return userRoles, nil
 }
 
+func (r *userRoleStore) AssignSystemRole(ctx context.Context, opts AssignSystemRoleOpts) (*types.UserRole, error) {
+	if opts.UserID == 0 {
+		return nil, errors.New("userID is required")
+	}
+
+	if opts.RoleName == "" {
+		return nil, errors.New("roleName is required")
+	}
+
+	roleQuery := sqlf.Sprintf("SELECT id FROM roles WHERE name = %s", opts.RoleName)
+
+	q := sqlf.Sprintf(
+		userRoleAssignQueryFmtStr,
+		sqlf.Join(userRoleInsertColumns, ", "),
+		sqlf.Sprintf("( %s, (%s) )", opts.UserID, roleQuery),
+		sqlf.Join(userRoleColumns, ", "),
+	)
+
+	rm, err := scanUserRole(r.QueryRow(ctx, q))
+	if err != nil {
+		return nil, errors.Wrap(err, "scanning user role")
+	}
+	return rm, nil
+}
+
 type UserRoleNotFoundErr struct {
-	UserID int32
-	RoleID int32
+	UserID   int32
+	RoleID   int32
+	RoleName types.SystemRole
 }
 
 func (e *UserRoleNotFoundErr) Error() string {
@@ -166,12 +206,12 @@ func (e *UserRoleNotFoundErr) NotFound() bool {
 	return true
 }
 
-const deleteUserRoleQueryFmtStr = `
+const revokeUserRoleQueryFmtStr = `
 DELETE FROM user_roles
 WHERE %s
 `
 
-func (r *userRoleStore) Delete(ctx context.Context, opts DeleteUserRoleOpts) error {
+func (r *userRoleStore) Revoke(ctx context.Context, opts RevokeUserRoleOpts) error {
 	if opts.UserID == 0 {
 		return errors.New("missing user id")
 	}
@@ -181,7 +221,7 @@ func (r *userRoleStore) Delete(ctx context.Context, opts DeleteUserRoleOpts) err
 	}
 
 	q := sqlf.Sprintf(
-		deleteUserRoleQueryFmtStr,
+		revokeUserRoleQueryFmtStr,
 		sqlf.Sprintf("user_id = %s AND role_id = %s", opts.UserID, opts.RoleID),
 	)
 
@@ -196,7 +236,46 @@ func (r *userRoleStore) Delete(ctx context.Context, opts DeleteUserRoleOpts) err
 	}
 
 	if rowsAffected == 0 {
-		return errors.Wrap(&UserRoleNotFoundErr{opts.UserID, opts.RoleID}, "failed to delete user role")
+		return errors.Wrap(&UserRoleNotFoundErr{
+			UserID: opts.UserID,
+			RoleID: opts.RoleID,
+		}, "failed to delete user role")
+	}
+
+	return nil
+}
+
+func (r *userRoleStore) RevokeSystemRole(ctx context.Context, opts RevokeSystemRoleOpts) error {
+	if opts.UserID == 0 {
+		return errors.New("userID is required")
+	}
+
+	if opts.RoleName == "" {
+		return errors.New("roleName is required")
+	}
+
+	roleQuery := sqlf.Sprintf("SELECT id FROM roles WHERE name = %s", opts.RoleName)
+
+	q := sqlf.Sprintf(
+		revokeUserRoleQueryFmtStr,
+		sqlf.Sprintf("user_id = %s AND role_id = (%s)", opts.UserID, roleQuery),
+	)
+
+	result, err := r.ExecResult(ctx, q)
+	if err != nil {
+		return errors.Wrap(err, "running delete query")
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return errors.Wrap(err, "checking deleted rows")
+	}
+
+	if rowsAffected == 0 {
+		return errors.Wrap(&UserRoleNotFoundErr{
+			UserID:   opts.UserID,
+			RoleName: opts.RoleName,
+		}, "failed to delete user role")
 	}
 
 	return nil
