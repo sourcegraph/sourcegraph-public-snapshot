@@ -30,12 +30,12 @@ type UserRoleOpts struct {
 }
 
 type (
-	CreateUserRoleOpts UserRoleOpts
+	AssignUserRoleOpts UserRoleOpts
 	DeleteUserRoleOpts UserRoleOpts
 	GetUserRoleOpts    UserRoleOpts
 )
 
-type BulkCreateForUserOpts struct {
+type BulkAssignToUserOpts struct {
 	UserID  int32
 	RoleIDs []int32
 }
@@ -44,10 +44,10 @@ type UserRoleStore interface {
 	basestore.ShareableStore
 
 	// Assign is used to assign a role to a user.
-	Assign(ctx context.Context, opts CreateUserRoleOpts) (*types.UserRole, error)
-	// BulkCreateForUser assigns multiple roles to a single user. This is useful
+	Assign(ctx context.Context, opts AssignUserRoleOpts) (*types.UserRole, error)
+	// BulkAssignToUser assigns multiple roles to a single user. This is useful
 	// when we want to assign a user more than one role.
-	BulkCreateForUser(ctx context.Context, opts BulkCreateForUserOpts) ([]*types.UserRole, error)
+	BulkAssignToUser(ctx context.Context, opts BulkAssignToUserOpts) ([]*types.UserRole, error)
 	// GetByRoleID returns all UserRole associated with the provided role ID
 	GetByRoleID(ctx context.Context, opts GetUserRoleOpts) ([]*types.UserRole, error)
 	// GetByRoleIDAndUserID returns one UserRole associated with the provided role and user.
@@ -82,14 +82,15 @@ func (r *userRoleStore) WithTransact(ctx context.Context, f func(UserRoleStore) 
 	})
 }
 
-const userRoleCreateQueryFmtStr = `
+const userRoleAssignQueryFmtStr = `
 INSERT INTO
 	user_roles (%s)
 VALUES %s
+ON CONFLICT DO NOTHING
 RETURNING %s;
 `
 
-func (r *userRoleStore) Create(ctx context.Context, opts CreateUserRoleOpts) (*types.UserRole, error) {
+func (r *userRoleStore) Assign(ctx context.Context, opts AssignUserRoleOpts) (*types.UserRole, error) {
 	if opts.UserID == 0 {
 		return nil, errors.New("missing user id")
 	}
@@ -99,7 +100,7 @@ func (r *userRoleStore) Create(ctx context.Context, opts CreateUserRoleOpts) (*t
 	}
 
 	q := sqlf.Sprintf(
-		userRoleCreateQueryFmtStr,
+		userRoleAssignQueryFmtStr,
 		sqlf.Join(userRoleInsertColumns, ", "),
 		sqlf.Sprintf("( %s, %s )", opts.UserID, opts.RoleID),
 		sqlf.Join(userRoleColumns, ", "),
@@ -112,7 +113,7 @@ func (r *userRoleStore) Create(ctx context.Context, opts CreateUserRoleOpts) (*t
 	return rm, nil
 }
 
-func (r *userRoleStore) BulkCreateForUser(ctx context.Context, opts BulkCreateForUserOpts) ([]*types.UserRole, error) {
+func (r *userRoleStore) BulkAssignToUser(ctx context.Context, opts BulkAssignToUserOpts) ([]*types.UserRole, error) {
 	if opts.UserID == 0 {
 		return nil, errors.New("missing user id")
 	}
@@ -128,7 +129,7 @@ func (r *userRoleStore) BulkCreateForUser(ctx context.Context, opts BulkCreateFo
 	}
 
 	q := sqlf.Sprintf(
-		userRoleCreateQueryFmtStr,
+		userRoleAssignQueryFmtStr,
 		sqlf.Join(userRoleInsertColumns, ", "),
 		sqlf.Join(urs, ", "),
 		sqlf.Join(userRoleColumns, ", "),

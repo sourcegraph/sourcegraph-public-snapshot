@@ -337,7 +337,7 @@ func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 		}
 
 		if args.SiteAdmin {
-			if _, err = tx.UserRoles().Create(ctx, database.CreateUserRoleOpts{
+			if _, err = tx.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
 				UserID: affectedUserID,
 				RoleID: sr.ID,
 			}); err != nil {

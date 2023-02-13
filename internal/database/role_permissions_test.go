@@ -23,7 +23,7 @@ func TestRolePermissionCreate(t *testing.T) {
 	r, p := createRoleAndPermission(ctx, t, db)
 
 	t.Run("without permission id", func(t *testing.T) {
-		rp, err := store.Create(ctx, CreateRolePermissionOpts{
+		rp, err := store.Assign(ctx, AssignRolePermissionOpts{
 			RoleID: r.ID,
 		})
 		assert.Nil(t, rp)
@@ -32,7 +32,7 @@ func TestRolePermissionCreate(t *testing.T) {
 	})
 
 	t.Run("without role id", func(t *testing.T) {
-		rp, err := store.Create(ctx, CreateRolePermissionOpts{
+		rp, err := store.Assign(ctx, AssignRolePermissionOpts{
 			PermissionID: p.ID,
 		})
 		assert.Nil(t, rp)
@@ -41,7 +41,7 @@ func TestRolePermissionCreate(t *testing.T) {
 	})
 
 	t.Run("with correct args", func(t *testing.T) {
-		rp, err := store.Create(ctx, CreateRolePermissionOpts{
+		rp, err := store.Assign(ctx, AssignRolePermissionOpts{
 			RoleID:       r.ID,
 			PermissionID: p.ID,
 		})
@@ -59,7 +59,7 @@ func TestRolePermissionGetByRoleIDAndPermissionID(t *testing.T) {
 	store := db.RolePermissions()
 
 	r, p := createRoleAndPermission(ctx, t, db)
-	_, err := store.Create(ctx, CreateRolePermissionOpts{
+	_, err := store.Assign(ctx, AssignRolePermissionOpts{
 		RoleID:       r.ID,
 		PermissionID: p.ID,
 	})
@@ -121,7 +121,7 @@ func TestRolePermissionGetByRoleID(t *testing.T) {
 	totalRolePermissions := 5
 	for i := 1; i <= totalRolePermissions; i++ {
 		p := createTestPermissionForRolePermission(ctx, "BATCH CHANGES", fmt.Sprintf("action-%d", i), t, db)
-		_, err := store.Create(ctx, CreateRolePermissionOpts{
+		_, err := store.Assign(ctx, AssignRolePermissionOpts{
 			RoleID:       r.ID,
 			PermissionID: p.ID,
 		})
@@ -164,7 +164,7 @@ func TestRolePermissionGetByPermissionID(t *testing.T) {
 	totalRolePermissions := 5
 	for i := 1; i <= totalRolePermissions; i++ {
 		r := createTestRoleForRolePermission(ctx, fmt.Sprintf("TEST ROLE-%d", i), t, db)
-		_, err := store.Create(ctx, CreateRolePermissionOpts{
+		_, err := store.Assign(ctx, AssignRolePermissionOpts{
 			RoleID:       r.ID,
 			PermissionID: p.ID,
 		})
@@ -206,7 +206,7 @@ func TestRolePermissionDelete(t *testing.T) {
 
 	r, p := createRoleAndPermission(ctx, t, db)
 
-	_, err := store.Create(ctx, CreateRolePermissionOpts{
+	_, err := store.Assign(ctx, AssignRolePermissionOpts{
 		RoleID:       r.ID,
 		PermissionID: p.ID,
 	})

@@ -219,7 +219,7 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 			roleIDs = append(roleIDs, role.ID)
 		}
 
-		if _, err := db.UserRoles().BulkCreateForUser(r.Context(), database.BulkCreateForUserOpts{
+		if _, err := db.UserRoles().BulkAssignToUser(r.Context(), database.BulkAssignToUserOpts{
 			UserID:  usr.ID,
 			RoleIDs: roleIDs,
 		}); err != nil {

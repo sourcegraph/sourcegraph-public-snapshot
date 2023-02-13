@@ -64,7 +64,7 @@ func UpdatePermissions(ctx context.Context, logger log.Logger, db database.DB) {
 
 			for _, permission := range permissions {
 				for _, role := range systemRoles {
-					_, err := rolePermissionStore.Create(ctx, database.CreateRolePermissionOpts{
+					_, err := rolePermissionStore.Create(ctx, database.AssignRolePermissionOpts{
 						PermissionID: permission.ID,
 						RoleID:       role.ID,
 					})

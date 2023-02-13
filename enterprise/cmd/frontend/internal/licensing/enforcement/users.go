@@ -106,11 +106,11 @@ func NewAfterCreateUserHook() func(context.Context, database.DB, *types.User) er
 					return err
 				}
 
-				opts := database.CreateUserRoleOpts{
+				opts := database.AssignUserRoleOpts{
 					UserID: user.ID,
 					RoleID: sr.ID,
 				}
-				if _, err := tx.UserRoles().Create(ctx, opts); err != nil {
+				if _, err := tx.UserRoles().Assign(ctx, opts); err != nil {
 					return err
 				}
 

@@ -211,12 +211,12 @@ func dbAddUserAction(cmd *cli.Context) error {
 			roleIDs = append(roleIDs, role.ID)
 		}
 
-		opts := database.BulkCreateForUserOpts{
+		opts := database.BulkAssignToUserOpts{
 			UserID:  user.ID,
 			RoleIDs: roleIDs,
 		}
 
-		if _, err = tx.UserRoles().BulkCreateForUser(ctx, opts); err != nil {
+		if _, err = tx.UserRoles().BulkAssignToUser(ctx, opts); err != nil {
 			return err
 		}
 

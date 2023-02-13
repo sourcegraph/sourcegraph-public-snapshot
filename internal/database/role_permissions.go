@@ -30,7 +30,7 @@ type RolePermissionOpts struct {
 }
 
 type (
-	CreateRolePermissionOpts RolePermissionOpts
+	AssignRolePermissionOpts RolePermissionOpts
 	DeleteRolePermissionOpts RolePermissionOpts
 	GetRolePermissionOpts    RolePermissionOpts
 )
@@ -38,8 +38,8 @@ type (
 type RolePermissionStore interface {
 	basestore.ShareableStore
 
-	// Create inserts the given role and permission relationship into the database.
-	Create(ctx context.Context, opts CreateRolePermissionOpts) (*types.RolePermission, error)
+	// Assign is used to assign a permission to a role.
+	Assign(ctx context.Context, opts AssignRolePermissionOpts) (*types.RolePermission, error)
 	// GetByRoleIDAndPermissionID returns one RolePermission associated with the provided role and permission.
 	GetByRoleIDAndPermissionID(ctx context.Context, opts GetRolePermissionOpts) (*types.RolePermission, error)
 	// GetByRoleID returns all RolePermission associated with the provided role ID
@@ -219,17 +219,18 @@ func (rp *rolePermissionStore) GetByRoleIDAndPermissionID(ctx context.Context, o
 	return rolePermission, nil
 }
 
-const rolePermissionCreateQueryFmtStr = `
+const rolePermissionAssignQueryFmtStr = `
 INSERT INTO
 	role_permissions (%s)
 VALUES (
 	%s,
 	%s
 )
+ON CONFLICT DO NOTHING
 RETURNING %s
 `
 
-func (rp *rolePermissionStore) Create(ctx context.Context, opts CreateRolePermissionOpts) (*types.RolePermission, error) {
+func (rp *rolePermissionStore) Assign(ctx context.Context, opts AssignRolePermissionOpts) (*types.RolePermission, error) {
 	if opts.PermissionID == 0 {
 		return nil, errors.New("missing permission id")
 	}
@@ -239,7 +240,7 @@ func (rp *rolePermissionStore) Create(ctx context.Context, opts CreateRolePermis
 	}
 
 	q := sqlf.Sprintf(
-		rolePermissionCreateQueryFmtStr,
+		rolePermissionAssignQueryFmtStr,
 		sqlf.Join(rolePermissionInsertColumns, ", "),
 		opts.RoleID,
 		opts.PermissionID,

@@ -210,7 +210,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 						return err
 					}
 
-					if _, err = tx.UserRoles().Create(ctx, database.CreateUserRoleOpts{
+					if _, err = tx.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
 						UserID: result.User.ID,
 						RoleID: sr.ID,
 					}); err != nil {

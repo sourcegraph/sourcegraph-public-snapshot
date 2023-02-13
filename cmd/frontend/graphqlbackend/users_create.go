@@ -84,8 +84,8 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 		r.logger.Error("failed to fetch user role",
 			log.Error(err))
 	}
-	opts := database.CreateUserRoleOpts{UserID: user.ID, RoleID: ur.ID}
-	if _, err = r.db.UserRoles().Create(ctx, opts); err != nil {
+	opts := database.AssignUserRoleOpts{UserID: user.ID, RoleID: ur.ID}
+	if _, err = r.db.UserRoles().Assign(ctx, opts); err != nil {
 		r.logger.Error("failed to assign user role to user",
 			log.Error(err))
 	}

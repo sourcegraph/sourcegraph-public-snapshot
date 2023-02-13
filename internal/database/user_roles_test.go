@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -23,32 +23,32 @@ func TestUserRoleCreate(t *testing.T) {
 	user, role := createUserAndRole(ctx, t, db)
 
 	t.Run("without user id", func(t *testing.T) {
-		ur, err := store.Create(ctx, CreateUserRoleOpts{
+		ur, err := store.Assign(ctx, AssignUserRoleOpts{
 			RoleID: role.ID,
 		})
-		assert.Nil(t, ur)
-		assert.Error(t, err)
-		assert.Equal(t, err.Error(), "missing user id")
+		require.Nil(t, ur)
+		require.Error(t, err)
+		require.Equal(t, err.Error(), "missing user id")
 	})
 
 	t.Run("without role id", func(t *testing.T) {
-		ur, err := store.Create(ctx, CreateUserRoleOpts{
+		ur, err := store.Assign(ctx, AssignUserRoleOpts{
 			UserID: user.ID,
 		})
-		assert.Nil(t, ur)
-		assert.Error(t, err)
-		assert.Equal(t, err.Error(), "missing role id")
+		require.Nil(t, ur)
+		require.Error(t, err)
+		require.Equal(t, err.Error(), "missing role id")
 	})
 
 	t.Run("with correct args", func(t *testing.T) {
-		ur, err := store.Create(ctx, CreateUserRoleOpts{
+		ur, err := store.Assign(ctx, AssignUserRoleOpts{
 			RoleID: role.ID,
 			UserID: user.ID,
 		})
-		assert.NoError(t, err)
-		assert.NotNil(t, ur)
-		assert.Equal(t, ur.RoleID, role.ID)
-		assert.Equal(t, ur.UserID, user.ID)
+		require.NoError(t, err)
+		require.NotNil(t, ur)
+		require.Equal(t, ur.RoleID, role.ID)
+		require.Equal(t, ur.UserID, user.ID)
 	})
 }
 
@@ -62,35 +62,38 @@ func TestUserRoleBulkCreateForUser(t *testing.T) {
 
 	user, role := createUserAndRole(ctx, t, db)
 	role2, err := createTestRole(ctx, "another-role", false, t, db.Roles())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	t.Run("without user id", func(t *testing.T) {
-		urs, err := store.BulkCreateForUser(ctx, BulkCreateForUserOpts{})
-		assert.Nil(t, urs)
-		assert.Error(t, err)
-		assert.Equal(t, err.Error(), "missing user id")
+		urs, err := store.BulkAssignToUser(ctx, BulkAssignToUserOpts{})
+
+		require.Nil(t, urs)
+		require.Error(t, err)
+		require.Equal(t, err.Error(), "missing user id")
 	})
 
 	t.Run("without role ids", func(t *testing.T) {
-		urs, err := store.BulkCreateForUser(ctx, BulkCreateForUserOpts{
+		urs, err := store.BulkAssignToUser(ctx, BulkAssignToUserOpts{
 			UserID: user.ID,
 		})
-		assert.Nil(t, urs)
-		assert.Error(t, err)
-		assert.Equal(t, err.Error(), "missing role ids")
+
+		require.Nil(t, urs)
+		require.Error(t, err)
+		require.Equal(t, err.Error(), "missing role ids")
 	})
 
 	t.Run("success", func(t *testing.T) {
 		roleIDs := []int32{role.ID, role2.ID}
-		urs, err := store.BulkCreateForUser(ctx, BulkCreateForUserOpts{
+		urs, err := store.BulkAssignToUser(ctx, BulkAssignToUserOpts{
 			UserID:  user.ID,
 			RoleIDs: roleIDs,
 		})
-		assert.NoError(t, err)
-		assert.Len(t, urs, 2)
+
+		require.NoError(t, err)
+		require.Len(t, urs, 2)
 		for i, ur := range urs {
-			assert.Equal(t, ur.UserID, user.ID)
-			assert.Equal(t, ur.RoleID, roleIDs[i])
+			require.Equal(t, ur.UserID, user.ID)
+			require.Equal(t, ur.RoleID, roleIDs[i])
 		}
 	})
 }
@@ -106,7 +109,7 @@ func TestUserRoleDelete(t *testing.T) {
 	user, role := createUserAndRole(ctx, t, db)
 
 	// create a user role
-	_, err := store.Create(ctx, CreateUserRoleOpts{
+	_, err := store.Assign(ctx, AssignUserRoleOpts{
 		RoleID: role.ID,
 		UserID: user.ID,
 	})
@@ -118,16 +121,16 @@ func TestUserRoleDelete(t *testing.T) {
 		err := store.Delete(ctx, DeleteUserRoleOpts{
 			RoleID: role.ID,
 		})
-		assert.Error(t, err)
-		assert.Equal(t, err.Error(), "missing user id")
+		require.Error(t, err)
+		require.Equal(t, err.Error(), "missing user id")
 	})
 
 	t.Run("missing role id", func(t *testing.T) {
 		err := store.Delete(ctx, DeleteUserRoleOpts{
 			UserID: user.ID,
 		})
-		assert.Error(t, err)
-		assert.Equal(t, err.Error(), "missing role id")
+		require.Error(t, err)
+		require.Equal(t, err.Error(), "missing role id")
 	})
 
 	t.Run("with existing user role", func(t *testing.T) {
@@ -135,15 +138,15 @@ func TestUserRoleDelete(t *testing.T) {
 			RoleID: role.ID,
 			UserID: user.ID,
 		})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		ur, err := store.GetByRoleIDAndUserID(ctx, GetUserRoleOpts{
 			RoleID: role.ID,
 			UserID: user.ID,
 		})
-		assert.Nil(t, ur)
-		assert.Error(t, err)
-		assert.Equal(t, err, &UserRoleNotFoundErr{
+		require.Nil(t, ur)
+		require.Error(t, err)
+		require.Equal(t, err, &UserRoleNotFoundErr{
 			RoleID: role.ID,
 			UserID: user.ID,
 		})
@@ -157,8 +160,8 @@ func TestUserRoleDelete(t *testing.T) {
 			RoleID: roleID,
 			UserID: userID,
 		})
-		assert.Error(t, err)
-		assert.ErrorContains(t, err, "failed to delete user role")
+		require.Error(t, err)
+		require.ErrorContains(t, err, "failed to delete user role")
 	})
 }
 
@@ -175,7 +178,7 @@ func TestUserRoleGetByRoleID(t *testing.T) {
 		username := fmt.Sprintf("ANOTHERTESTUSER%d", i)
 		user := createTestUserForUserRole(ctx, fmt.Sprintf("testa%d@example.com", i), username, t, db)
 
-		_, err := store.Create(ctx, CreateUserRoleOpts{
+		_, err := store.Assign(ctx, AssignUserRoleOpts{
 			RoleID: role.ID,
 			UserID: user.ID,
 		})
@@ -186,9 +189,9 @@ func TestUserRoleGetByRoleID(t *testing.T) {
 
 	t.Run("missing role id", func(t *testing.T) {
 		urs, err := store.GetByRoleID(ctx, GetUserRoleOpts{})
-		assert.Error(t, err)
-		assert.Nil(t, urs)
-		assert.Equal(t, err.Error(), "missing id or name")
+		require.Error(t, err)
+		require.Nil(t, urs)
+		require.Equal(t, err.Error(), "missing id or name")
 	})
 
 	t.Run("with provided role id", func(t *testing.T) {
@@ -196,11 +199,11 @@ func TestUserRoleGetByRoleID(t *testing.T) {
 			RoleID: role.ID,
 		})
 
-		assert.NoError(t, err)
-		assert.Len(t, urs, totalUsersWithRole)
+		require.NoError(t, err)
+		require.Len(t, urs, totalUsersWithRole)
 
 		for _, ur := range urs {
-			assert.Equal(t, ur.RoleID, role.ID)
+			require.Equal(t, ur.RoleID, role.ID)
 		}
 	})
 }
@@ -218,7 +221,7 @@ func TestUserRoleGetByUserID(t *testing.T) {
 		name := fmt.Sprintf("TESTROLE%d", i)
 		role := createTestRoleForUserRole(ctx, name, t, db)
 
-		_, err := store.Create(ctx, CreateUserRoleOpts{
+		_, err := store.Assign(ctx, AssignUserRoleOpts{
 			RoleID: role.ID,
 			UserID: user.ID,
 		})
@@ -229,9 +232,9 @@ func TestUserRoleGetByUserID(t *testing.T) {
 
 	t.Run("missing user id", func(t *testing.T) {
 		urs, err := store.GetByUserID(ctx, GetUserRoleOpts{})
-		assert.Error(t, err)
-		assert.Nil(t, urs)
-		assert.Equal(t, err.Error(), "missing user id")
+		require.Error(t, err)
+		require.Nil(t, urs)
+		require.Equal(t, err.Error(), "missing user id")
 	})
 
 	t.Run("with provided role id", func(t *testing.T) {
@@ -239,11 +242,11 @@ func TestUserRoleGetByUserID(t *testing.T) {
 			UserID: user.ID,
 		})
 
-		assert.NoError(t, err)
-		assert.Len(t, urs, totalRoles)
+		require.NoError(t, err)
+		require.Len(t, urs, totalRoles)
 
 		for _, ur := range urs {
-			assert.Equal(t, ur.UserID, user.ID)
+			require.Equal(t, ur.UserID, user.ID)
 		}
 	})
 }
@@ -255,7 +258,7 @@ func TestUserRoleGetByRoleIDAndUserID(t *testing.T) {
 	store := db.UserRoles()
 
 	user, role := createUserAndRole(ctx, t, db)
-	_, err := store.Create(ctx, CreateUserRoleOpts{
+	_, err := store.Assign(ctx, AssignUserRoleOpts{
 		RoleID: role.ID,
 		UserID: user.ID,
 	})
@@ -267,18 +270,18 @@ func TestUserRoleGetByRoleIDAndUserID(t *testing.T) {
 		ur, err := store.GetByRoleIDAndUserID(ctx, GetUserRoleOpts{
 			RoleID: role.ID,
 		})
-		assert.Nil(t, ur)
-		assert.Error(t, err)
-		assert.Equal(t, err.Error(), "missing user id")
+		require.Nil(t, ur)
+		require.Error(t, err)
+		require.Equal(t, err.Error(), "missing user id")
 	})
 
 	t.Run("without role id", func(t *testing.T) {
 		ur, err := store.GetByRoleIDAndUserID(ctx, GetUserRoleOpts{
 			UserID: user.ID,
 		})
-		assert.Nil(t, ur)
-		assert.Error(t, err)
-		assert.Equal(t, err.Error(), "missing role id")
+		require.Nil(t, ur)
+		require.Error(t, err)
+		require.Equal(t, err.Error(), "missing role id")
 	})
 
 	t.Run("with correct args", func(t *testing.T) {
@@ -287,9 +290,9 @@ func TestUserRoleGetByRoleIDAndUserID(t *testing.T) {
 			RoleID: role.ID,
 		})
 
-		assert.NoError(t, err)
-		assert.Equal(t, ur.RoleID, role.ID)
-		assert.Equal(t, ur.UserID, user.ID)
+		require.NoError(t, err)
+		require.Equal(t, ur.RoleID, role.ID)
+		require.Equal(t, ur.UserID, user.ID)
 	})
 }
 

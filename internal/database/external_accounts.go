@@ -282,11 +282,11 @@ func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUs
 			roleIDs = append(roleIDs, role.ID)
 		}
 
-		opts := BulkCreateForUserOpts{
+		opts := BulkAssignToUserOpts{
 			UserID:  createdUser.ID,
 			RoleIDs: roleIDs,
 		}
-		if _, err = UserRolesWith(tx).BulkCreateForUser(ctx, opts); err != nil {
+		if _, err = UserRolesWith(tx).BulkAssignToUser(ctx, opts); err != nil {
 			s.logger.Error("failed to assign roles to user", log.Error(err))
 		}
 	}

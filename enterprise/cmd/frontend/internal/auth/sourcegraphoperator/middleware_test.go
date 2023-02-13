@@ -144,9 +144,9 @@ func newMockDBAndRequester(t *testing.T) (*database.MockUserStore, *database.Moc
 	})
 
 	userRoleStore := database.NewMockUserRoleStore()
-	userRoleStore.CreateFunc.SetDefaultHook(func(ctx context.Context, curo database.CreateUserRoleOpts) (*types.UserRole, error) {
+	userRoleStore.CreateFunc.SetDefaultHook(func(ctx context.Context, curo database.AssignUserRoleOpts) (*types.UserRole, error) {
 		if curo.RoleID != siteAdminRole.ID {
-			t.Fatalf("expected UserRoles().Create to be called with roleID %d, got %d", siteAdminRole.ID, curo.RoleID)
+			t.Fatalf("expected UserRoles().Assign to be called with roleID %d, got %d", siteAdminRole.ID, curo.RoleID)
 		}
 		return &types.UserRole{}, nil
 	})
