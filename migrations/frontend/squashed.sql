@@ -40,17 +40,17 @@ CREATE TYPE cm_email_priority AS ENUM (
 );
 
 CREATE TYPE configuration_policies_transition_columns AS (
-        name text,
-        type text,
-        pattern text,
-        retention_enabled boolean,
-        retention_duration_hours integer,
-        retain_intermediate_commits boolean,
-        indexing_enabled boolean,
-        index_commit_max_age_hours integer,
-        index_intermediate_commits boolean,
-        protected boolean,
-        repository_patterns text[]
+	name text,
+	type text,
+	pattern text,
+	retention_enabled boolean,
+	retention_duration_hours integer,
+	retain_intermediate_commits boolean,
+	indexing_enabled boolean,
+	index_commit_max_age_hours integer,
+	index_intermediate_commits boolean,
+	protected boolean,
+	repository_patterns text[]
 );
 
 COMMENT ON TYPE configuration_policies_transition_columns IS 'A type containing the columns that make-up the set of tracked transition columns. Primarily used to create a nulled record due to `OLD` being unset in INSERT queries, and creating a nulled record with a subquery is not allowed.';
@@ -84,12 +84,12 @@ CREATE TYPE lsif_upload_state AS ENUM (
 );
 
 CREATE TYPE lsif_uploads_transition_columns AS (
-    state text,
-    expired boolean,
-    num_resets integer,
-    num_failures integer,
-    worker_hostname text,
-    committed_at timestamp with time zone
+	state text,
+	expired boolean,
+	num_resets integer,
+	num_failures integer,
+	worker_hostname text,
+	committed_at timestamp with time zone
 );
 
 COMMENT ON TYPE lsif_uploads_transition_columns IS 'A type containing the columns that make-up the set of tracked transition columns. Primarily used to create a nulled record due to `OLD` being unset in INSERT queries, and creating a nulled record with a subquery is not allowed.';
