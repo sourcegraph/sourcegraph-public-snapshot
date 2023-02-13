@@ -448,6 +448,11 @@ type RepositoryFilterPreview {
     totalCount: Int!
 
     """
+    If every repository currently on the instance is matched by this filter.
+    """
+    matchesAllRepos: Boolean!
+
+    """
     The maximum number of repository matches a single policy can make.
     """
     limit: Int
