@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -32,10 +33,13 @@ func (n *noopBackfillRunner) Run(ctx context.Context, req pipeline.BackfillReque
 }
 
 type delegateBackfillRunner struct {
+	mu          sync.Mutex
 	doSomething func(ctx context.Context, req pipeline.BackfillRequest) error
 }
 
 func (e *delegateBackfillRunner) Run(ctx context.Context, req pipeline.BackfillRequest) error {
+	e.mu.Lock()
+	defer e.mu.Unlock()
 	return e.doSomething(ctx, req)
 }
 
@@ -229,6 +233,7 @@ func Test_BackfillWithRetry(t *testing.T) {
 	attemptCounts := make(map[int]int)
 	runner := &delegateBackfillRunner{
 		doSomething: func(ctx context.Context, req pipeline.BackfillRequest) error {
+
 			val := attemptCounts[int(req.Repo.ID)]
 			attemptCounts[int(req.Repo.ID)] += 1
 			if val > 2 {
