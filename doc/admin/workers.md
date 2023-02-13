@@ -138,6 +138,10 @@ This job periodically fetches the list of indexed repositories from Zoekt shards
 
 This job periodically cleans up the Sourcegraph Operator user accounts on the instance. It hard deletes expired Sourcegraph Operator user accounts based on the configured lifecycle duration every minute. It skips users that have external accounts connected other than service type `sourcegraph-operator` (i.e. a special case handling for "sourcegraph.sourcegraph.com").
 
+#### `codeintel-sentinel-cve-scanner`
+
+This job runs period checks against your data to check for matches against currently known vulnerabilities.
+
 ## Deploying workers
 
 By default, all of the jobs listed above are registered to a single instance of the `worker` service. For Sourcegraph instances operating over large data (e.g., a high number of repositories, large monorepos, high commit frequency, or regular code graph data uploads), a single `worker` instance may experience low throughput or stability issues.

@@ -55,6 +55,7 @@ var additionalJobs = map[string]job.Job{
 	"codeintel-upload-graph-exporter":             codeintel.NewGraphExporterJob(),
 	"codeintel-uploadstore-expirer":               codeintel.NewPreciseCodeIntelUploadExpirer(),
 	"codeintel-crates-syncer":                     codeintel.NewCratesSyncerJob(),
+	"codeintel-sentinel-cve-scanner":              codeintel.NewSentinelCVEScannerJob(),
 
 	"auth-sourcegraph-operator-cleaner":  auth.NewSourcegraphOperatorCleaner(),
 	"auth-permission-sync-job-cleaner":   auth.NewPermissionSyncJobCleaner(),

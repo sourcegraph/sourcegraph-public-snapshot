@@ -19,6 +19,11 @@ type RootResolver interface {
 	AutoindexingServiceResolver
 	UploadsServiceResolver
 	PoliciesServiceResolver
+	SentinelServiceResolver
+}
+
+type SentinelServiceResolver interface {
+	Foo(ctx context.Context) error
 }
 
 type CodeNavServiceResolver interface {

@@ -14,6 +14,7 @@ type Resolver struct {
 	codenavResolver          resolverstubs.CodeNavServiceResolver
 	policiesRootResolver     resolverstubs.PoliciesServiceResolver
 	uploadsRootResolver      resolverstubs.UploadsServiceResolver
+	SentinelRootResolver     resolverstubs.SentinelServiceResolver
 }
 
 func newResolver(
@@ -21,12 +22,14 @@ func newResolver(
 	codenavResolver resolverstubs.CodeNavServiceResolver,
 	policiesRootResolver resolverstubs.PoliciesServiceResolver,
 	uploadsRootResolver resolverstubs.UploadsServiceResolver,
+	sentinelRootResolver resolverstubs.SentinelServiceResolver,
 ) *Resolver {
 	return &Resolver{
 		autoIndexingRootResolver: autoIndexingRootResolver,
 		codenavResolver:          codenavResolver,
 		policiesRootResolver:     policiesRootResolver,
 		uploadsRootResolver:      uploadsRootResolver,
+		SentinelRootResolver:     sentinelRootResolver,
 	}
 }
 
@@ -45,6 +48,10 @@ func (r *Resolver) NodeResolvers() map[string]gql.NodeByIDFunc {
 			return r.PreciseIndexByID(ctx, id)
 		},
 	}
+}
+
+func (r *Resolver) Foo(ctx context.Context) (err error) {
+	return r.SentinelRootResolver.Foo(ctx)
 }
 
 func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ resolverstubs.LSIFUploadResolver, err error) {
