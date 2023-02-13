@@ -5,8 +5,10 @@ import { useParams } from 'react-router-dom-v5-compat'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { Alert, H4, Link, Button } from '@sourcegraph/wildcard'
 
+import { defaultExternalServices } from '../../../../../components/externalServices/externalServices'
 import { getCodeHostKindFromURLParam } from '../../helpers'
 
+import { CodeHostJSONForm } from './common'
 import { GithubConnectView } from './github/GithubConnectView'
 import { CodeHostFormState } from './types'
 
@@ -41,8 +43,6 @@ export const CodeHostCreation: FC = () => {
                     <Button as={Link} size="sm" to="/setup/remote-repositories" variant="secondary">
                         Cancel
                     </Button>
-
-                    {/*<small>After connecting, repositories will start sync in the background.</small>*/}
                 </footer>
             )}
         </CodeHostCreationView>
@@ -62,15 +62,17 @@ interface CodeHostCreationFormProps {
 const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
     const { codeHostKind, children } = props
 
-    if (codeHostKind === ExternalServiceKind.GITHUB) {
-        return <GithubConnectView>{children}</GithubConnectView>
+    const handleSubmit = async () => {
+        console.log('SUBMIT')
     }
 
-    // TODO: extend this view with all supported code host connections form UI
+    if (codeHostKind === ExternalServiceKind.GITHUB) {
+        return <GithubConnectView onSubmit={handleSubmit}>{children}</GithubConnectView>
+    }
+
     return (
-        <span>
-            Oh no, we haven't implemented code host connection form for {codeHostKind}
-            code host type, Todo: add this type code host connection form!
-        </span>
+        <CodeHostJSONForm externalServiceOptions={defaultExternalServices[codeHostKind]} onSubmit={handleSubmit}>
+            {children}
+        </CodeHostJSONForm>
     )
 }

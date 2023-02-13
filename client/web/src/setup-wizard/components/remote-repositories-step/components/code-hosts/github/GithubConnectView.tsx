@@ -6,8 +6,8 @@ import { parse as parseJSONC } from 'jsonc-parser'
 import { modify } from '@sourcegraph/common'
 import { Tabs, Tab, TabList, TabPanel, TabPanels, Input, Checkbox, useLocalStorage } from '@sourcegraph/wildcard'
 
+import { codeHostExternalServices } from '../../../../../../components/externalServices/externalServices'
 import {
-    SubmissionErrors,
     useField,
     useForm,
     Form,
@@ -16,32 +16,20 @@ import {
     useControlledField,
 } from '../../../../../../enterprise/insights/components'
 import { AddExternalServiceInput, ExternalServiceKind } from '../../../../../../graphql-operations'
-import { RadioGroupSection } from '../common'
+import { CodeHostJSONFormContent, RadioGroupSection, CodeHostConnectFormFields, CodeHostJSONFormState } from '../common'
 
 import { GithubOrganizationsPicker, GithubRepositoriesPicker } from './GithubEntityPickers'
-import { GithubJSONTabView } from './GithubJSONTab'
 
 import styles from './GithubConnectView.module.scss'
 
-const DEFAULT_CONFIGURATION = `
+const DEFAULT_FORM_VALUES: CodeHostConnectFormFields = {
+    displayName: codeHostExternalServices.github.defaultDisplayName,
+    configuration: `
 {
     "url": "https://github.com",
     "token": ""
 }
-`
-const DEFAULT_FORM_VALUES: GithubConnectFormFields = {
-    displayName: 'GitHub',
-    configuration: DEFAULT_CONFIGURATION.trim(),
-}
-
-interface GithubConnectFormFields {
-    displayName: string
-    configuration: string
-}
-
-interface CodeHostCreationFormState {
-    submitting: boolean
-    submitErrors: SubmissionErrors
+`.trim(),
 }
 
 interface GithubConnectViewProps {
@@ -50,8 +38,8 @@ interface GithubConnectViewProps {
      * form actions UI, like save, cancel, clear fields. Action layout is the same
      * for all variations of this form (create, edit UI) but content is different
      */
-    children: (state: CodeHostCreationFormState) => ReactNode
-    onGithubConnect: (input: AddExternalServiceInput) => Promise<any>
+    children: (state: CodeHostJSONFormState) => ReactNode
+    onSubmit: (input: AddExternalServiceInput) => Promise<any>
 }
 
 /**
@@ -60,13 +48,13 @@ interface GithubConnectViewProps {
  * storage
  */
 export const GithubConnectView: FC<GithubConnectViewProps> = props => {
-    const { children, onGithubConnect } = props
+    const { children, onSubmit } = props
     const [initialValues, setInitialValues] = useLocalStorage('github-connection-form', DEFAULT_FORM_VALUES)
 
     const handleSubmit = useCallback(
-        async (values: GithubConnectFormFields): Promise<void> => {
+        async (values: CodeHostConnectFormFields): Promise<void> => {
             // Perform public API code host connection create action
-            await onGithubConnect({
+            await onSubmit({
                 kind: ExternalServiceKind.GITHUB,
                 displayName: values.displayName,
                 config: values.configuration,
@@ -75,7 +63,7 @@ export const GithubConnectView: FC<GithubConnectViewProps> = props => {
             // Reset initial values after successful connect action
             setInitialValues(DEFAULT_FORM_VALUES)
         },
-        [setInitialValues, onGithubConnect]
+        [setInitialValues, onSubmit]
     )
 
     return (
@@ -91,10 +79,10 @@ enum GithubConnectFormTab {
 }
 
 interface GithubConnectFormProps {
-    initialValues: GithubConnectFormFields
-    children: (state: CodeHostCreationFormState) => ReactNode
-    onChange: (values: GithubConnectFormFields) => void
-    onSubmit: (values: GithubConnectFormFields) => void
+    initialValues: CodeHostConnectFormFields
+    children: (state: CodeHostJSONFormState) => ReactNode
+    onChange: (values: CodeHostConnectFormFields) => void
+    onSubmit: (values: CodeHostConnectFormFields) => void
 }
 
 /**
@@ -105,7 +93,7 @@ export const GithubConnectForm: FC<GithubConnectFormProps> = props => {
     const { initialValues, children, onChange, onSubmit } = props
 
     const [activeTab, setActiveTab] = useState(GithubConnectFormTab.Form)
-    const form = useForm<GithubConnectFormFields>({
+    const form = useForm<CodeHostConnectFormFields>({
         initialValues,
         onSubmit,
         onChange: event => onChange(event.values),
@@ -152,17 +140,21 @@ export const GithubConnectForm: FC<GithubConnectFormProps> = props => {
                     />
                 </TabPanel>
                 <TabPanel as="fieldset" tabIndex={-1} className={styles.formView}>
-                    <GithubJSONTabView displayNameField={displayName} configurationField={configuration} />
+                    <CodeHostJSONFormContent
+                        displayNameField={displayName}
+                        configurationField={configuration}
+                        externalServiceOptions={codeHostExternalServices.github}
+                    />
                 </TabPanel>
             </TabPanels>
 
-            {children({ submitting: false, submitErrors: undefined })}
+            {children(form.formAPI)}
         </Tabs>
     )
 }
 
 interface GithubFormViewProps {
-    form: Form<GithubConnectFormFields>
+    form: Form<CodeHostConnectFormFields>
     displayNameField: useFieldAPI<string>
     configurationField: useFieldAPI<string>
     isTabActive: boolean

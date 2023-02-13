@@ -1,3 +1,18 @@
+.form-view {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    height: 100%;
+}
+
+.footer {
+    margin: auto -1rem -1rem;
+    position: sticky;
+    // Calculated value since we already have sticky footer element for
+    // the core wizard UI.
+    bottom: 51px;
+}
+
 .configuration-group {
     &-label {
         font-weight: 500;
@@ -12,6 +27,7 @@
         margin-top: 0.25rem;
         font-size: 0.8rem;
         color: var(--body-color);
+        margin-left: -1.5rem;
     }
 
     &-editor {
