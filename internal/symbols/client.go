@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gobwas/glob"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
@@ -41,30 +42,35 @@ func defaultEndpoints() *endpoint.Map {
 	})
 }
 
-func LoadConfig() {
-	DefaultClient = &Client{
-		Endpoints:           defaultEndpoints(),
+var (
+	defaultEndpointsMap = defaultEndpoints()
+	defaultLimiter      = parallel.NewRun(500)
+
+	defaultDoer = func() httpcli.Doer {
+		d, err := httpcli.NewInternalClientFactory("symbols").Doer()
+		if err != nil {
+			panic(err)
+		}
+		return d
+	}()
+)
+
+// DefaultClient is the default Client. Unless overwritten, it is connected to the server specified by the
+// SYMBOLS_URL environment variable.
+var DefaultClient = func(metrics *grpc_prometheus.ClientMetrics) *Client {
+	return &Client{
+		clientMetrics:       metrics,
+		Endpoints:           defaultEndpointsMap,
 		HTTPClient:          defaultDoer,
-		HTTPLimiter:         parallel.NewRun(500),
+		HTTPLimiter:         defaultLimiter,
 		SubRepoPermsChecker: func() authz.SubRepoPermissionChecker { return authz.DefaultSubRepoPermsChecker },
 	}
 }
 
-// DefaultClient is the default Client. Unless overwritten, it is connected to the server specified by the
-// SYMBOLS_URL environment variable.
-var DefaultClient *Client
-
-var defaultDoer = func() httpcli.Doer {
-	d, err := httpcli.NewInternalClientFactory("symbols").Doer()
-	if err != nil {
-		panic(err)
-	}
-	return d
-}()
-
 // Client is a symbols service client.
 type Client struct {
 	// Endpoints to symbols service.
+
 	Endpoints *endpoint.Map
 
 	// HTTP client to use
@@ -77,6 +83,8 @@ type Client struct {
 	// function since we expect the client to be set at runtime once we have a
 	// database connection.
 	SubRepoPermsChecker func() authz.SubRepoPermissionChecker
+
+	clientMetrics *grpc_prometheus.ClientMetrics
 
 	langMappingOnce  resetonce.Once
 	langMappingCache map[string][]glob.Glob
@@ -521,7 +529,7 @@ func (c *Client) dialGRPC(ctx context.Context, repository api.RepoName) (*grpc.C
 		return nil, errors.Wrap(err, "parsing symbols service URL")
 	}
 
-	conn, err := grpc.DialContext(ctx, u.Host, defaults.DialOptions()...)
+	conn, err := grpc.DialContext(ctx, u.Host, defaults.DialOptions(c.clientMetrics)...)
 	if err != nil {
 		return nil, errors.Wrap(err, "dialing symbols GRPC service")
 	}

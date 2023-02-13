@@ -7,6 +7,7 @@ import (
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/grafana/regexp"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 
@@ -189,7 +190,7 @@ func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.C
 	return
 }
 
-func Compute(ctx context.Context, checker authz.SubRepoPermissionChecker, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
+func Compute(ctx context.Context, metrics *grpc_prometheus.ClientMetrics, checker authz.SubRepoPermissionChecker, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
 	// TODO(keegancsmith) we should be able to use indexedSearchRequest here
 	// and remove indexedSymbolsBranch.
 	if branch := indexedSymbolsBranch(ctx, &repoName, string(commitID)); branch != "" {
@@ -229,7 +230,7 @@ func Compute(ctx context.Context, checker authz.SubRepoPermissionChecker, repoNa
 		searchArgs.Query = *query
 	}
 
-	symbols, err := backend.Symbols.ListTags(ctx, searchArgs)
+	symbols, err := backend.Symbols.ListTags(ctx, metrics, searchArgs)
 	if err != nil {
 		return nil, err
 	}
@@ -255,12 +256,12 @@ func Compute(ctx context.Context, checker authz.SubRepoPermissionChecker, repoNa
 
 // GetMatchAtLineCharacter retrieves the shortest matching symbol (if exists) defined
 // at a specific line number and character offset in the provided file.
-func GetMatchAtLineCharacter(ctx context.Context, checker authz.SubRepoPermissionChecker, repo types.MinimalRepo, commitID api.CommitID, filePath string, line int, character int) (*result.SymbolMatch, error) {
+func GetMatchAtLineCharacter(ctx context.Context, metrics *grpc_prometheus.ClientMetrics, checker authz.SubRepoPermissionChecker, repo types.MinimalRepo, commitID api.CommitID, filePath string, line int, character int) (*result.SymbolMatch, error) {
 	// Should be large enough to include all symbols from a single file
 	first := int32(999999)
 	emptyString := ""
 	includePatterns := []string{regexp.QuoteMeta(filePath)}
-	symbolMatches, err := Compute(ctx, checker, repo, commitID, &emptyString, &emptyString, &first, &includePatterns)
+	symbolMatches, err := Compute(ctx, metrics, checker, repo, commitID, &emptyString, &emptyString, &first, &includePatterns)
 	if err != nil {
 		return nil, err
 	}

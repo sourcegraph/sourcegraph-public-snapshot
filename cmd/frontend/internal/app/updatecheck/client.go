@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 
@@ -182,10 +183,10 @@ func getAndMarshalHomepagePanelsJSON(ctx context.Context, db database.DB) (_ jso
 	return json.Marshal(homepagePanels)
 }
 
-func getAndMarshalRepositoriesJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+func getAndMarshalRepositoriesJSON(ctx context.Context, db database.DB, metrics *grpc_prometheus.ClientMetrics) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalRepositoriesJSON")(&err)
 
-	repos, err := usagestats.GetRepositories(ctx, db)
+	repos, err := usagestats.GetRepositories(ctx, db, metrics)
 	if err != nil {
 		return nil, err
 	}
@@ -403,7 +404,7 @@ func parseRedisInfo(buf []byte) (map[string]string, error) {
 	return m, nil
 }
 
-func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Reader, error) {
+func updateBody(ctx context.Context, logger log.Logger, db database.DB, metrics *grpc_prometheus.ClientMetrics) (io.Reader, error) {
 	scopedLog := logger.Scoped("telemetry", "track and update various usages stats")
 	logFunc := scopedLog.Debug
 	if envvar.SourcegraphDotComMode() {
@@ -515,7 +516,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 			logFunc("getAndMarshalSearchOnboardingJSON failed", log.Error(err))
 		}
 
-		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx, db)
+		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx, db, metrics)
 		if err != nil {
 			logFunc("getAndMarshalRepositoriesJSON failed", log.Error(err))
 		}
@@ -608,7 +609,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 
 		wg.Wait()
 	} else {
-		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx, db)
+		r.Repositories, err = getAndMarshalRepositoriesJSON(ctx, db, metrics)
 		if err != nil {
 			logFunc("getAndMarshalRepositoriesJSON failed", log.Error(err))
 		}
@@ -674,14 +675,14 @@ func updateCheckURL(logger log.Logger) string {
 }
 
 // check performs an update check and updates the global state.
-func check(logger log.Logger, db database.DB) {
+func check(logger log.Logger, db database.DB, metrics *grpc_prometheus.ClientMetrics) {
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
 
 	endpoint := updateCheckURL(logger)
 
 	doCheck := func() (updateVersion string, err error) {
-		body, err := updateBody(ctx, logger, db)
+		body, err := updateBody(ctx, logger, db, metrics)
 		if err != nil {
 			return "", err
 		}
@@ -746,7 +747,7 @@ func check(logger log.Logger, db database.DB) {
 var started bool
 
 // Start starts checking for software updates periodically.
-func Start(logger log.Logger, db database.DB) {
+func Start(logger log.Logger, db database.DB, metrics *grpc_prometheus.ClientMetrics) {
 	if started {
 		panic("already started")
 	}
@@ -759,7 +760,7 @@ func Start(logger log.Logger, db database.DB) {
 	const delay = 30 * time.Minute
 	scopedLog := logger.Scoped("updatecheck", "checks for updates of services and updates usage telemetry")
 	for {
-		check(scopedLog, db)
+		check(scopedLog, db, metrics)
 
 		// Randomize sleep to prevent thundering herds.
 		randomDelay := time.Duration(rand.Intn(600)) * time.Second

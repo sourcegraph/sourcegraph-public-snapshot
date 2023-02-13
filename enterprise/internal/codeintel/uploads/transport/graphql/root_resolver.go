@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"github.com/opentracing/opentracing-go/log"
 
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
@@ -14,6 +15,7 @@ import (
 )
 
 type rootResolver struct {
+	metrics      *grpc_prometheus.ClientMetrics
 	uploadSvc    UploadService
 	autoindexSvc AutoIndexingService
 	policySvc    PolicyService
@@ -65,7 +67,7 @@ func (r *rootResolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ res
 	// the same graphQL request, not across different request.
 	db := r.autoindexSvc.GetUnsafeDB()
 	prefetcher := sharedresolvers.NewPrefetcher(r.autoindexSvc, r.uploadSvc)
-	locationResolver := sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient())
+	locationResolver := sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient(r.metrics))
 
 	upload, exists, err := prefetcher.GetUploadByID(ctx, int(uploadID))
 	if err != nil || !exists {
@@ -99,7 +101,7 @@ func (r *rootResolver) LSIFUploadsByRepo(ctx context.Context, args *resolverstub
 	prefetcher := sharedresolvers.NewPrefetcher(r.autoindexSvc, r.uploadSvc)
 	uploadsResolver := sharedresolvers.NewUploadsResolver(r.uploadSvc, opts)
 
-	return sharedresolvers.NewUploadConnectionResolver(r.uploadSvc, r.autoindexSvc, r.policySvc, uploadsResolver, prefetcher, traceErrs), nil
+	return sharedresolvers.NewUploadConnectionResolver(r.metrics, r.uploadSvc, r.autoindexSvc, r.policySvc, uploadsResolver, prefetcher, traceErrs), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence upload data

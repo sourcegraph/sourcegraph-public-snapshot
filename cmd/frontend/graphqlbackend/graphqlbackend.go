@@ -13,6 +13,7 @@ import (
 	"github.com/graph-gophers/graphql-go/introspection"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/graph-gophers/graphql-go/trace"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
@@ -379,40 +380,41 @@ func prometheusGraphQLRequestName(requestName string) string {
 	return "other"
 }
 
-func NewSchemaWithoutResolvers(db database.DB) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+func NewSchemaWithoutResolvers(db database.DB, metrics *grpc_prometheus.ClientMetrics) (*graphql.Schema, error) {
+	return NewSchema(db, metrics, gitserver.NewClient(metrics), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
-func NewSchemaWithNotebooksResolver(db database.DB, notebooks NotebooksResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, notebooks, nil, nil, nil, nil)
+func NewSchemaWithNotebooksResolver(db database.DB, metrics *grpc_prometheus.ClientMetrics, notebooks NotebooksResolver) (*graphql.Schema, error) {
+	return NewSchema(db, metrics, gitserver.NewClient(metrics), nil, nil, nil, nil, nil, nil, nil, nil, notebooks, nil, nil, nil, nil)
 }
 
-func NewSchemaWithAuthzResolver(db database.DB, authz AuthzResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, authz, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+func NewSchemaWithAuthzResolver(db database.DB, metrics *grpc_prometheus.ClientMetrics, authz AuthzResolver) (*graphql.Schema, error) {
+	return NewSchema(db, metrics, gitserver.NewClient(metrics), nil, nil, nil, authz, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
-func NewSchemaWithBatchChangesResolver(db database.DB, batchChanges BatchChangesResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), batchChanges, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+func NewSchemaWithBatchChangesResolver(db database.DB, metrics *grpc_prometheus.ClientMetrics, batchChanges BatchChangesResolver) (*graphql.Schema, error) {
+	return NewSchema(db, metrics, gitserver.NewClient(metrics), batchChanges, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
-func NewSchemaWithCodeMonitorsResolver(db database.DB, codeMonitors CodeMonitorsResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, codeMonitors, nil, nil, nil, nil, nil, nil, nil, nil)
+func NewSchemaWithCodeMonitorsResolver(db database.DB, metrics *grpc_prometheus.ClientMetrics, codeMonitors CodeMonitorsResolver) (*graphql.Schema, error) {
+	return NewSchema(db, metrics, gitserver.NewClient(metrics), nil, nil, nil, nil, codeMonitors, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
-func NewSchemaWithLicenseResolver(db database.DB, license LicenseResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, license, nil, nil, nil, nil, nil, nil, nil)
+func NewSchemaWithLicenseResolver(db database.DB, metrics *grpc_prometheus.ClientMetrics, license LicenseResolver) (*graphql.Schema, error) {
+	return NewSchema(db, metrics, gitserver.NewClient(metrics), nil, nil, nil, nil, nil, license, nil, nil, nil, nil, nil, nil, nil)
 }
 
-func NewSchemaWithWebhooksResolver(db database.DB, webhooksResolver WebhooksResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, webhooksResolver, nil)
+func NewSchemaWithWebhooksResolver(db database.DB, metrics *grpc_prometheus.ClientMetrics, webhooksResolver WebhooksResolver) (*graphql.Schema, error) {
+	return NewSchema(db, metrics, gitserver.NewClient(metrics), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, webhooksResolver, nil)
 }
 
-func NewSchemaWithRBACResolver(db database.DB, rbacResolver RBACResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, rbacResolver)
+func NewSchemaWithRBACResolver(db database.DB, metrics *grpc_prometheus.ClientMetrics, rbacResolver RBACResolver) (*graphql.Schema, error) {
+	return NewSchema(db, metrics, gitserver.NewClient(metrics), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, rbacResolver)
 }
 
 func NewSchema(
 	db database.DB,
+	metrics *grpc_prometheus.ClientMetrics,
 	gitserverClient gitserver.Client,
 	batchChanges BatchChangesResolver,
 	codeIntel CodeIntelResolver,
@@ -428,7 +430,7 @@ func NewSchema(
 	webhooksResolver WebhooksResolver,
 	rbacResolver RBACResolver,
 ) (*graphql.Schema, error) {
-	resolver := newSchemaResolver(db, gitserverClient)
+	resolver := newSchemaResolver(db, metrics, gitserverClient)
 	schemas := []string{mainSchema, outboundWebhooksSchema}
 
 	if batchChanges != nil {
@@ -564,6 +566,7 @@ func NewSchema(
 type schemaResolver struct {
 	logger            log.Logger
 	db                database.DB
+	metrics           *grpc_prometheus.ClientMetrics
 	gitserverClient   gitserver.Client
 	repoupdaterClient *repoupdater.Client
 	nodeByIDFns       map[string]NodeByIDFunc
@@ -587,10 +590,11 @@ type schemaResolver struct {
 
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
 // defaults. It does not implement any sub-resolvers.
-func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schemaResolver {
-	r := &schemaResolver{
+func newSchemaResolver(db database.DB, metrics *grpc_prometheus.ClientMetrics, gitserverClient gitserver.Client) *schemaResolver {
+	r := &gschemaResolver{
 		logger:            log.Scoped("schemaResolver", "GraphQL schema resolver"),
 		db:                db,
+		metrics:           metrics,
 		gitserverClient:   gitserverClient,
 		repoupdaterClient: repoupdater.DefaultClient,
 	}
@@ -690,7 +694,7 @@ var EnterpriseResolvers = struct {
 
 // DEPRECATED
 func (r *schemaResolver) Root() *schemaResolver {
-	return newSchemaResolver(r.db, r.gitserverClient)
+	return newSchemaResolver(r.db, r.metrics, r.gitserverClient)
 }
 
 func (r *schemaResolver) Repository(ctx context.Context, args *struct {
@@ -778,7 +782,7 @@ func (r *schemaResolver) repositoryByID(ctx context.Context, id graphql.ID) (*Re
 	if err != nil {
 		return nil, err
 	}
-	return NewRepositoryResolver(r.db, r.gitserverClient, repo), nil
+	return NewRepositoryResolver(r.db, r.metrics, r.gitserverClient, repo), nil
 }
 
 type RedirectResolver struct {
@@ -815,7 +819,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *repositor
 		if err != nil {
 			return nil, err
 		}
-		return &repositoryRedirect{repo: NewRepositoryResolver(r.db, r.gitserverClient, repo)}, nil
+		return &repositoryRedirect{repo: NewRepositoryResolver(r.db, r.metrics, r.gitserverClient, repo)}, nil
 	}
 	var name api.RepoName
 	if args.Name != nil {
@@ -847,7 +851,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *repositor
 		}
 		return nil, err
 	}
-	return &repositoryRedirect{repo: NewRepositoryResolver(r.db, r.gitserverClient, repo)}, nil
+	return &repositoryRedirect{repo: NewRepositoryResolver(r.db, r.metrics, r.gitserverClient, repo)}, nil
 }
 
 func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {

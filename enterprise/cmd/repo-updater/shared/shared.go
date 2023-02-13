@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"time"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
@@ -32,6 +34,7 @@ import (
 func EnterpriseInit(
 	observationCtx *observation.Context,
 	db ossDB.DB,
+	metrics *grpc_prometheus.ClientMetrics,
 	repoStore repos.Store,
 	keyring keyring.Ring,
 	cf *httpcli.Factory,
@@ -88,13 +91,13 @@ func EnterpriseInit(
 
 	go goroutine.MonitorBackgroundRoutines(ctx, repoSyncWorker, userSyncWorker, resetter)
 
-	go startBackgroundPermsSync(ctx, permsSyncer, db)
+	go startBackgroundPermsSync(ctx, metrics, permsSyncer, db)
 
 	return map[string]debugserver.Dumper{"repoPerms": permsSyncer}, enqueueRepoPermsJob
 }
 
 // startBackgroundPermsSync sets up background permissions syncing.
-func startBackgroundPermsSync(ctx context.Context, syncer *authz.PermsSyncer, db ossDB.DB) {
+func startBackgroundPermsSync(ctx context.Context, metrics *grpc_prometheus.ClientMetrics, syncer *authz.PermsSyncer, db ossDB.DB) {
 	globals.WatchPermissionsUserMapping()
 	go func() {
 		t := time.NewTicker(frontendAuthz.RefreshInterval())
@@ -104,6 +107,7 @@ func startBackgroundPermsSync(ctx context.Context, syncer *authz.PermsSyncer, db
 				conf.Get(),
 				db.ExternalServices(),
 				db,
+				metrics,
 			)
 			ossAuthz.SetProviders(allowAccessByDefault, authzProviders)
 		}

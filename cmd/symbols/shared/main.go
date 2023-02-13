@@ -9,7 +9,9 @@ import (
 	"strconv"
 	"time"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api"
@@ -22,6 +24,7 @@ import (
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
@@ -37,13 +40,15 @@ var (
 	baseConfig              = env.BaseConfig{}
 	RepositoryFetcherConfig types.RepositoryFetcherConfig
 	CtagsConfig             types.CtagsConfig
+
+	grpcClientMetrics = defaults.RegisteredClientMetrics("symbols")
 )
 
 const addr = ":3184"
 
 type SetupFunc func(observationCtx *observation.Context, db database.DB, gitserverClient gitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error)
 
-func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, setup SetupFunc) error {
+func Main(ctx context.Context, observationCtx *observation.Context, metrics *grpc_prometheus.ClientMetrics, ready service.ReadyFunc, setup SetupFunc) error {
 	logger := observationCtx.Logger
 
 	routines := []goroutine.BackgroundRoutine{}
@@ -75,7 +80,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	db := database.NewDB(logger, sqlDB)
 
 	// Run setup
-	gitserverClient := gitserver.NewClient(observationCtx)
+	gitserverClient := gitserver.NewClient(observationCtx, metrics)
 	repositoryFetcher := fetcher.NewRepositoryFetcher(observationCtx, gitserverClient, RepositoryFetcherConfig.MaxTotalPathsLength, int64(RepositoryFetcherConfig.MaxFileSizeKb)*1000)
 	searchFunc, handleStatus, newRoutines, ctagsBinary, err := setup(observationCtx, db, gitserverClient, repositoryFetcher)
 	if err != nil {

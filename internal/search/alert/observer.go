@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 
@@ -27,6 +28,7 @@ import (
 type Observer struct {
 	Logger   log.Logger
 	Db       database.DB
+	Metrics  *grpc_prometheus.ClientMetrics
 	Zoekt    zoekt.Streamer
 	Searcher *endpoint.Map
 
@@ -47,7 +49,7 @@ type Observer struct {
 // raising NoResolvedRepos alerts with suggestions when we know the original
 // query does not contain any repos to search.
 func (o *Observer) reposExist(ctx context.Context, options search.RepoOptions) bool {
-	repositoryResolver := searchrepos.NewResolver(o.Logger, o.Db, gitserver.NewClient(), o.Searcher, o.Zoekt)
+	repositoryResolver := searchrepos.NewResolver(o.Logger, o.Db, gitserver.NewClient(o.Metrics), o.Searcher, o.Zoekt)
 	resolved, err := repositoryResolver.Resolve(ctx, options)
 	return err == nil && len(resolved.RepoRevs) > 0
 }

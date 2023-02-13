@@ -11,6 +11,7 @@ import (
 
 	"github.com/gobwas/glob"
 	"github.com/grafana/regexp"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 
 	"github.com/sourcegraph/log"
 
@@ -72,11 +73,11 @@ type WorkspaceResolver interface {
 
 type WorkspaceResolverBuilder func(tx *store.Store) WorkspaceResolver
 
-func NewWorkspaceResolver(s *store.Store) WorkspaceResolver {
+func NewWorkspaceResolver(s *store.Store, metrics *grpc_prometheus.ClientMetrics) WorkspaceResolver {
 	return &workspaceResolver{
 		store:               s,
 		logger:              log.Scoped("batches.workspaceResolver", "The batch changes execution workspace resolver"),
-		gitserverClient:     gitserver.NewClient(),
+		gitserverClient:     gitserver.NewClient(metrics),
 		frontendInternalURL: internalapi.Client.URL + "/.internal",
 	}
 }

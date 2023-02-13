@@ -4,6 +4,7 @@ import (
 	"context"
 	"sort"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
@@ -26,6 +27,7 @@ import (
 type SymbolSearchJob struct {
 	PatternInfo *search.TextPatternInfo
 	Repos       []*search.RepositoryRevisions // the set of repositories to search with searcher.
+	Metrics     *grpc_prometheus.ClientMetrics
 	Limit       int
 }
 
@@ -51,7 +53,7 @@ func (s *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, s
 		goroutine.Go(func() {
 			defer run.Release()
 
-			matches, err := searchInRepo(ctx, repoRevs, s.PatternInfo, s.Limit)
+			matches, err := searchInRepo(ctx, s.Metrics, repoRevs, s.PatternInfo, s.Limit)
 			status, limitHit, err := search.HandleRepoSearchResult(repoRevs.Repo.ID, repoRevs.Revs, len(matches) > s.Limit, false, err)
 			stream.Send(streaming.SearchEvent{
 				Results: matches,
@@ -95,7 +97,7 @@ func (s *SymbolSearchJob) Fields(v job.Verbosity) (res []log.Field) {
 func (s *SymbolSearchJob) Children() []job.Describer       { return nil }
 func (s *SymbolSearchJob) MapChildren(job.MapFunc) job.Job { return s }
 
-func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
+func searchInRepo(ctx context.Context, metrics *grpc_prometheus.ClientMetrics, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo") //nolint:staticcheck // OT is deprecated
 	defer func() {
 		if err != nil {
@@ -112,13 +114,13 @@ func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, pat
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commitID, err := gitserver.NewClient().ResolveRevision(ctx, repoRevs.GitserverRepo(), inputRev, gitserver.ResolveRevisionOptions{})
+	commitID, err := gitserver.NewClient(metrics).ResolveRevision(ctx, repoRevs.GitserverRepo(), inputRev, gitserver.ResolveRevisionOptions{})
 	if err != nil {
 		return nil, err
 	}
 	span.SetTag("commit", string(commitID))
 
-	symbols, err := backend.Symbols.ListTags(ctx, search.SymbolsParameters{
+	symbols, err := backend.Symbols.ListTags(ctx, metrics, search.SymbolsParameters{
 		Repo:            repoRevs.Repo.Name,
 		CommitID:        commitID,
 		Query:           patternInfo.Pattern,

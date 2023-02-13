@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"cloud.google.com/go/storage"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"github.com/sourcegraph/log"
 	"google.golang.org/api/option"
 
@@ -21,6 +22,7 @@ import (
 func NewService(
 	observationCtx *observation.Context,
 	db database.DB,
+	metrics *grpc_prometheus.ClientMetrics,
 	uploadSvc *uploads.Service,
 	gitserverClient GitserverClient,
 ) *Service {
@@ -53,7 +55,7 @@ func NewService(
 		store.New(scopedContext("store", observationCtx), db),
 		uploadSvc,
 		gitserverClient,
-		symbols.DefaultClient,
+		symbols.DefaultClient(metrics),
 		conf.DefaultClient(),
 		resultsBucket,
 	)

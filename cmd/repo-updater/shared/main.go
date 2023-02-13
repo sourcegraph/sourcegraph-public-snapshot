@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go/relay"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
@@ -35,6 +36,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
@@ -52,6 +54,10 @@ const port = "3182"
 //go:embed state.html.tmpl
 var stateHTMLTemplate string
 
+var (
+	grpcClientMetrics = defaults.RegisteredClientMetrics("repo-updater")
+)
+
 // EnterpriseInit is a function that allows enterprise code to be triggered when dependencies
 // created in Main are ready for use.
 //
@@ -60,6 +66,7 @@ var stateHTMLTemplate string
 type EnterpriseInit func(
 	observationCtx *observation.Context,
 	db database.DB,
+	metrics *grpc_prometheus.ClientMetrics,
 	store repos.Store,
 	keyring keyring.Ring,
 	cf *httpcli.Factory,
@@ -74,7 +81,7 @@ type LazyDebugserverEndpoint struct {
 	manualPurgeEndpoint          http.HandlerFunc
 }
 
-func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, debugserverEndpoints *LazyDebugserverEndpoint, enterpriseInit EnterpriseInit) error {
+func Main(ctx context.Context, observationCtx *observation.Context, metrics *grpc_prometheus.ClientMetrics, ready service.ReadyFunc, debugserverEndpoints *LazyDebugserverEndpoint, enterpriseInit EnterpriseInit) error {
 	// NOTE: Internal actor is required to have full visibility of the repo table
 	// 	(i.e. bypass repository authorization).
 	ctx = actor.WithInternalActor(ctx)
@@ -123,7 +130,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		src = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependencies.NewService(observationCtx, db)), repos.ObservedSource(sourcerLogger, m))
 	}
 
-	updateScheduler := repos.NewUpdateScheduler(logger, db)
+	updateScheduler := repos.NewUpdateScheduler(logger, db, grpcClientMetrics)
 	server := &repoupdater.Server{
 		Logger:                logger,
 		ObservationCtx:        observationCtx,
@@ -147,7 +154,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	debugDumpers := make(map[string]debugserver.Dumper)
 	var enqueueRepoPerms func(context.Context, api.RepoID, database.PermissionSyncJobReason) error
 	if enterpriseInit != nil {
-		debugDumpers, enqueueRepoPerms = enterpriseInit(observationCtx, db, store, keyring.Default(), cf, server)
+		debugDumpers, enqueueRepoPerms = enterpriseInit(observationCtx, db, metrics, store, keyring.Default(), cf, server)
 	}
 
 	syncer := &repos.Syncer{
@@ -184,6 +191,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	// git-server repos purging thread
 	go repos.RunRepositoryPurgeWorker(ctx, log.Scoped("repoPurgeWorker", "remove deleted repositories"),
+		grpcClientMetrics,
 		db, conf.DefaultClient())
 
 	// Git fetches scheduler
@@ -343,7 +351,7 @@ func manualPurgeHandler(db database.DB) http.HandlerFunc {
 				return
 			}
 		}
-		err = repos.PurgeOldestRepos(log.Scoped("PurgeOldestRepos", ""), db, limit, perSecond)
+		err = repos.PurgeOldestRepos(log.Scoped("PurgeOldestRepos", ""), grpcClientMetrics, db, limit, perSecond)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("starting manual purge: %v", err), http.StatusInternalServerError)
 			return

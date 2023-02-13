@@ -8,16 +8,21 @@
     "outDir": "./out",
     "baseUrl": "./src",
     "paths": {
-      "*": ["../common/src/types/*"],
-    },
+      "*": [
+        "../common/src/types/*"
+      ]
+    }
   },
   "references": [
     {
-      "path": "../extension-api-types",
+      "path": "../extension-api-types"
     },
     {
-      "path": "../template-parser",
-    },
+      "path": "../template-parser"
+    }
   ],
-  "include": ["./src/**/*", "./*.ts"],
+  "include": [
+    "./src/**/*",
+    "./*.ts"
+  ]
 }

@@ -6,40 +6,52 @@
     "sourceRoot": "src",
     "baseUrl": ".",
     "paths": {
-      "*": ["src/types/*", "*"],
+      "*": [
+        "src/types/*",
+        "*"
+      ]
     },
     "rootDir": ".",
-    "outDir": "./out",
+    "outDir": "./out"
   },
   "references": [
     {
-      "path": "../build-config",
+      "path": "../build-config"
     },
     {
-      "path": "../client-api",
+      "path": "../client-api"
     },
     {
-      "path": "../codeintellify",
+      "path": "../codeintellify"
     },
     {
-      "path": "../common",
+      "path": "../common"
     },
     {
-      "path": "../extension-api-types",
+      "path": "../extension-api-types"
     },
     {
-      "path": "../http-client",
+      "path": "../http-client"
     },
     {
-      "path": "../template-parser",
+      "path": "../template-parser"
     },
     {
-      "path": "../testing",
+      "path": "../testing"
     },
     {
-      "path": "../wildcard",
-    },
+      "path": "../wildcard"
+    }
   ],
-  "include": ["**/*", ".*", "./src/**/*.json"],
-  "exclude": ["../../node_modules", "./node_modules", "./out", "./src/end-to-end"],
+  "include": [
+    "**/*",
+    ".*",
+    "./src/**/*.json"
+  ],
+  "exclude": [
+    "../../node_modules",
+    "./node_modules",
+    "./out",
+    "./src/end-to-end"
+  ]
 }

@@ -9,6 +9,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -34,6 +35,7 @@ import (
 
 type RepositoryResolver struct {
 	logger    log.Logger
+	metrics   *grpc_prometheus.ClientMetrics
 	hydration sync.Once
 	err       error
 
@@ -55,7 +57,7 @@ type RepositoryResolver struct {
 	defaultBranchErr  error
 }
 
-func NewRepositoryResolver(db database.DB, client gitserver.Client, repo *types.Repo) *RepositoryResolver {
+func NewRepositoryResolver(db database.DB, metrics *grpc_prometheus.ClientMetrics, client gitserver.Client, repo *types.Repo) *RepositoryResolver {
 	// Protect against a nil repo
 	var name api.RepoName
 	var id api.RepoID
@@ -67,6 +69,7 @@ func NewRepositoryResolver(db database.DB, client gitserver.Client, repo *types.
 	return &RepositoryResolver{
 		db:              db,
 		innerRepo:       repo,
+		metrics:         metrics,
 		gitserverClient: client,
 		RepoMatch: result.RepoMatch{
 			Name: name,
@@ -494,7 +497,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		if err != nil {
 			return nil, err
 		}
-		r := NewRepositoryResolver(db, r.gitserverClient, repo)
+		r := NewRepositoryResolver(db, r.metrics, r.gitserverClient, repo)
 		return r.Commit(ctx, &RepositoryCommitArgs{Rev: targetRef})
 	}
 

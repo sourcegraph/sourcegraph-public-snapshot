@@ -3,6 +3,7 @@ package sharedresolvers
 import (
 	"context"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"github.com/opentracing/opentracing-go/log"
 
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -11,6 +12,7 @@ import (
 )
 
 type IndexConnectionResolver struct {
+	metrics          *grpc_prometheus.ClientMetrics
 	uploadsSvc       UploadsService
 	autoindexingSvc  AutoIndexingService
 	policySvc        PolicyService
@@ -20,15 +22,16 @@ type IndexConnectionResolver struct {
 	errTracer        *observation.ErrCollector
 }
 
-func NewIndexConnectionResolver(autoindexingSvc AutoIndexingService, uploadsSvc UploadsService, policySvc PolicyService, indexesResolver *IndexesResolver, prefetcher *Prefetcher, errTracer *observation.ErrCollector) resolverstubs.LSIFIndexConnectionResolver {
+func NewIndexConnectionResolver(metrics *grpc_prometheus.ClientMetrics, autoindexingSvc AutoIndexingService, uploadsSvc UploadsService, policySvc PolicyService, indexesResolver *IndexesResolver, prefetcher *Prefetcher, errTracer *observation.ErrCollector) resolverstubs.LSIFIndexConnectionResolver {
 	db := autoindexingSvc.GetUnsafeDB()
 	return &IndexConnectionResolver{
+		metrics:          metrics,
 		uploadsSvc:       uploadsSvc,
 		autoindexingSvc:  autoindexingSvc,
 		policySvc:        policySvc,
 		indexesResolver:  indexesResolver,
 		prefetcher:       prefetcher,
-		locationResolver: NewCachedLocationResolver(db, gitserver.NewClient()),
+		locationResolver: NewCachedLocationResolver(db, gitserver.NewClient(metrics)),
 		errTracer:        errTracer,
 	}
 }

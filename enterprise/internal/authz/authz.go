@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/bitbucketcloud"
@@ -40,6 +41,7 @@ func ProvidersFromConfig(
 	cfg conftypes.SiteConfigQuerier,
 	store database.ExternalServiceStore,
 	db database.DB,
+	metrics *grpc_prometheus.ClientMetrics,
 ) (
 	allowAccessByDefault bool,
 	providers []authz.Provider,
@@ -157,7 +159,7 @@ func ProvidersFromConfig(
 	initResult := github.NewAuthzProviders(db, gitHubConns, cfg.SiteConfig().AuthProviders, enableGithubInternalRepoVisibility)
 	initResult.Append(gitlab.NewAuthzProviders(db, cfg.SiteConfig(), gitLabConns))
 	initResult.Append(bitbucketserver.NewAuthzProviders(bitbucketServerConns))
-	initResult.Append(perforce.NewAuthzProviders(perforceConns))
+	initResult.Append(perforce.NewAuthzProviders(metrics, perforceConns))
 	initResult.Append(bitbucketcloud.NewAuthzProviders(db, bitbucketCloudConns, cfg.SiteConfig().AuthProviders))
 	initResult.Append(gerrit.NewAuthzProviders(gerritConns, cfg.SiteConfig().AuthProviders))
 

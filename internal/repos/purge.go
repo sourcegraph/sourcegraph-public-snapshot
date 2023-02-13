@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
@@ -23,7 +24,7 @@ import (
 // RunRepositoryPurgeWorker is a worker which deletes repos which are present on
 // gitserver, but not enabled/present in our repos table. ttl, should be >= 0 and
 // specifies how long ago a repo must be deleted before it is purged.
-func RunRepositoryPurgeWorker(ctx context.Context, logger log.Logger, db database.DB, conf conftypes.SiteConfigQuerier) {
+func RunRepositoryPurgeWorker(ctx context.Context, logger log.Logger, metrics *grpc_prometheus.ClientMetrics, db database.DB, conf conftypes.SiteConfigQuerier) {
 	limiter := ratelimit.NewInstrumentedLimiter("PurgeRepoWorker", rate.NewLimiter(10, 1))
 
 	// Temporary escape hatch if this feature proves to be dangerous
@@ -53,7 +54,7 @@ func RunRepositoryPurgeWorker(ctx context.Context, logger log.Logger, db databas
 		timeToNextPurge := time.Duration(purgeConfig.IntervalMinutes) * time.Minute
 		purgeLogger.Debug("running repository purge",
 			log.Duration("timeToNextPurge", timeToNextPurge))
-		if err := purge(ctx, purgeLogger, db, database.IteratePurgableReposOptions{
+		if err := purge(ctx, purgeLogger, metrics, db, database.IteratePurgableReposOptions{
 			Limit:         5000,
 			Limiter:       limiter,
 			DeletedBefore: deletedBefore,
@@ -68,7 +69,7 @@ func RunRepositoryPurgeWorker(ctx context.Context, logger log.Logger, db databas
 // PurgeOldestRepos will start a go routine to purge the oldest repos limited by
 // limit. The repos are ordered by when they were deleted. limit must be greater
 // than zero.
-func PurgeOldestRepos(logger log.Logger, db database.DB, limit int, perSecond float64) error {
+func PurgeOldestRepos(logger log.Logger, metrics *grpc_prometheus.ClientMetrics, db database.DB, limit int, perSecond float64) error {
 	if limit <= 0 {
 		return errors.Errorf("limit must be greater than zero, got %d", limit)
 	}
@@ -77,7 +78,7 @@ func PurgeOldestRepos(logger log.Logger, db database.DB, limit int, perSecond fl
 	go func() {
 		limiter := ratelimit.NewInstrumentedLimiter("PurgeOldestRepos", rate.NewLimiter(rate.Limit(perSecond), 1))
 		// Use a background routine so that we don't time out based on the http context.
-		if err := purge(context.Background(), logger, db, database.IteratePurgableReposOptions{
+		if err := purge(context.Background(), logger, metrics, db, database.IteratePurgableReposOptions{
 			Limit:   limit,
 			Limiter: limiter,
 		}); err != nil {
@@ -88,9 +89,9 @@ func PurgeOldestRepos(logger log.Logger, db database.DB, limit int, perSecond fl
 }
 
 // purge purges repos, returning the number of repos that were successfully purged
-func purge(ctx context.Context, logger log.Logger, db database.DB, options database.IteratePurgableReposOptions) error {
+func purge(ctx context.Context, logger log.Logger, metrics *grpc_prometheus.ClientMetrics, db database.DB, options database.IteratePurgableReposOptions) error {
 	start := time.Now()
-	gitserverClient := gitserver.NewClient()
+	gitserverClient := gitserver.NewClient(metrics)
 	var (
 		total   int
 		success int

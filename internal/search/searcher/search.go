@@ -6,6 +6,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/grafana/regexp"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
@@ -51,6 +52,8 @@ type TextSearchJob struct {
 	UseFullDeadline bool
 
 	Features search.Features
+
+	Metrics *grpc_prometheus.ClientMetrics
 }
 
 // Run calls the searcher service on a set of repositories.
@@ -110,7 +113,7 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 					ctx, done := limitCtx, limitDone
 					defer done()
 
-					repoLimitHit, err := s.searchFilesInRepo(ctx, clients.SearcherURLs, repo, repo.Name, rev, s.Indexed, s.PatternInfo, fetchTimeout, stream)
+					repoLimitHit, err := s.searchFilesInRepo(ctx, s.Metrics, clients.SearcherURLs, repo, repo.Name, rev, s.Indexed, s.PatternInfo, fetchTimeout, stream)
 					if err != nil {
 						tr.SetAttributes(
 							attribute.String("repo", string(repo.Name)),
@@ -175,6 +178,7 @@ var MockSearchFilesInRepo func(
 
 func (s *TextSearchJob) searchFilesInRepo(
 	ctx context.Context,
+	metrics *grpc_prometheus.ClientMetrics,
 	searcherURLs *endpoint.Map,
 	repo types.MinimalRepo,
 	gitserverRepo api.RepoName,
@@ -192,7 +196,7 @@ func (s *TextSearchJob) searchFilesInRepo(
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commit, err := gitserver.NewClient().ResolveRevision(ctx, gitserverRepo, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+	commit, err := gitserver.NewClient(metrics).ResolveRevision(ctx, gitserverRepo, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
 		return false, err
 	}
@@ -204,7 +208,7 @@ func (s *TextSearchJob) searchFilesInRepo(
 			})
 		}
 
-		return SearchGRPC(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Features, onMatches)
+		return SearchGRPC(ctx, metrics, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Features, onMatches)
 	}
 
 	onMatches := func(searcherMatches []*protocol.FileMatch) {
@@ -220,7 +224,7 @@ func (s *TextSearchJob) searchFilesInRepo(
 	}
 
 	if featureflag.FromContext(ctx).GetBoolOr("grpc", false) {
-		return SearchGRPC(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Features, onMatchGRPC)
+		return SearchGRPC(ctx, metrics, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Features, onMatchGRPC)
 	} else {
 		return Search(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Features, onMatches)
 	}

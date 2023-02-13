@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/grafana/regexp"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -49,10 +50,11 @@ type SearchClient interface {
 	JobClients() job.RuntimeClients
 }
 
-func NewSearchClient(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer, searcherURLs *endpoint.Map) SearchClient {
+func NewSearchClient(logger log.Logger, db database.DB, metrics *grpc_prometheus.ClientMetrics, zoektStreamer zoekt.Streamer, searcherURLs *endpoint.Map) SearchClient {
 	return &searchClient{
 		logger:       logger,
 		db:           db,
+		metrics:      metrics,
 		zoekt:        zoektStreamer,
 		searcherURLs: searcherURLs,
 	}
@@ -60,6 +62,7 @@ func NewSearchClient(logger log.Logger, db database.DB, zoektStreamer zoekt.Stre
 
 type searchClient struct {
 	logger       log.Logger
+	metrics      *grpc_prometheus.ClientMetrics
 	db           database.DB
 	zoekt        zoekt.Streamer
 	searcherURLs *endpoint.Map
@@ -155,7 +158,7 @@ func (s *searchClient) JobClients() job.RuntimeClients {
 		DB:           s.db,
 		Zoekt:        s.zoekt,
 		SearcherURLs: s.searcherURLs,
-		Gitserver:    gitserver.NewClient(),
+		Gitserver:    gitserver.NewClient(s.metrics),
 	}
 }
 

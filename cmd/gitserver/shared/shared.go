@@ -72,6 +72,9 @@ var (
 
 	// 80 per second (4800 per minute) is well below our alert threshold of 30k per minute.
 	rateLimitSyncerLimitPerSecond = env.MustGetInt("SRC_REPOS_SYNC_RATE_LIMIT_RATE_PER_SECOND", 80, "Rate limit applied to rate limit syncing")
+
+	grpcServerMetrics = defaults.RegisteredServerMetrics("gitserver")
+	grpcClientMetrics = defaults.RegisteredClientMetrics("gitserver")
 )
 
 type EnterpriseInit func(db database.DB)
@@ -147,7 +150,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(batchLogGlobalConcurrencyLimit)),
 	}
 
-	grpcServer := grpc.NewServer(defaults.ServerOptions(logger)...)
+	grpcServer := grpc.NewServer(defaults.ServerOptions(logger, grpcServerMetrics)...)
 	grpcServer.RegisterService(&proto.GitserverService_ServiceDesc, &server.GRPCServer{
 		Server: &gitserver,
 	})

@@ -34,7 +34,7 @@ func (s *svc) Start(ctx context.Context, observationCtx *observation.Context, si
 		signalReadyToParent()
 	})
 
-	return Main(ctx, observationCtx, ready, &s.debugserverEndpoints, s.enterpriseInit)
+	return Main(ctx, observationCtx, grpcClientMetrics, ready, &s.debugserverEndpoints, s.enterpriseInit)
 }
 
 var Service service.Service = NewServiceWithEnterpriseInit(nil)

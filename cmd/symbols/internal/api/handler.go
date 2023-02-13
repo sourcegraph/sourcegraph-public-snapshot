@@ -24,6 +24,8 @@ import (
 
 const maxNumSymbolResults = 500
 
+var grpcServerMetrics = defaults.RegisteredServerMetrics("symbols")
+
 type grpcService struct {
 	searchFunc   types.SearchFunc
 	readFileFunc func(context.Context, internaltypes.RepoCommitPath) ([]byte, error)
@@ -96,7 +98,7 @@ func NewHandler(
 
 	// Initialize the gRPC server
 	grpcServer := grpc.NewServer(
-		defaults.ServerOptions(rootLogger)...,
+		defaults.ServerOptions(rootLogger, grpcServerMetrics)...,
 	)
 	grpcServer.RegisterService(&proto.SymbolsService_ServiceDesc, &grpcService{
 		searchFunc:   searchFuncWrapper,

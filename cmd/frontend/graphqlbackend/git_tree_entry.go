@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -34,6 +35,7 @@ import (
 //
 // Prefer using the constructor, NewGitTreeEntryResolver.
 type GitTreeEntryResolver struct {
+	metrics         *grpc_prometheus.ClientMetrics
 	db              database.DB
 	gitserverClient gitserver.Client
 	commit          *GitCommitResolver
@@ -342,7 +344,7 @@ func (r *GitTreeEntryResolver) LocalCodeIntel(ctx context.Context) (*JSONValue, 
 		return nil, err
 	}
 
-	payload, err := symbols.DefaultClient.LocalCodeIntel(ctx, types.RepoCommitPath{
+	payload, err := symbols.DefaultClient(r.metrics).LocalCodeIntel(ctx, types.RepoCommitPath{
 		Repo:   string(repo.Name),
 		Commit: string(r.commit.oid),
 		Path:   r.Path(),
@@ -381,7 +383,7 @@ func (r *GitTreeEntryResolver) SymbolInfo(ctx context.Context, args *symbolInfoA
 		},
 	}
 
-	result, err := symbols.DefaultClient.SymbolInfo(ctx, start)
+	result, err := symbols.DefaultClient(r.metrics).SymbolInfo(ctx, start)
 	if err != nil {
 		return nil, err
 	}

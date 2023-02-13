@@ -6,6 +6,7 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/derision-test/glock"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"google.golang.org/api/option"
 
 	"github.com/sourcegraph/log"
@@ -30,12 +31,13 @@ import (
 
 func NewService(
 	observationCtx *observation.Context,
+	metrics *grpc_prometheus.ClientMetrics,
 	db database.DB,
 	codeIntelDB codeintelshared.CodeIntelDB,
 	gsc GitserverClient,
 ) *Service {
 	store := uploadsstore.New(scopedContext("uploadsstore", observationCtx), db)
-	repoStore := backend.NewRepos(scopedContext("repos", observationCtx).Logger, db, gitserver.NewClient())
+	repoStore := backend.NewRepos(scopedContext("repos", observationCtx).Logger, db, gitserver.NewClient(metrics))
 	lsifStore := lsifstore.New(scopedContext("lsifstore", observationCtx), codeIntelDB)
 	policyMatcher := policiesEnterprise.NewMatcher(gsc, policiesEnterprise.RetentionExtractor, true, false)
 	ciLocker := locker.NewWith(db, "codeintel")

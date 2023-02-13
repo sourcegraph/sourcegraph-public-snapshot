@@ -5,6 +5,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -51,13 +52,14 @@ func (r *schemaResolver) PackageRepoReferences(ctx context.Context, args *Packag
 		return nil, err
 	}
 
-	return &packageRepoReferenceConnectionResolver{r.db, deps, total}, err
+	return &packageRepoReferenceConnectionResolver{r.db, r.metrics, deps, total}, err
 }
 
 type packageRepoReferenceConnectionResolver struct {
-	db    database.DB
-	deps  []dependencies.PackageRepoReference
-	total int
+	db      database.DB
+	metrics *grpc_prometheus.ClientMetrics
+	deps    []dependencies.PackageRepoReference
+	total   int
 }
 
 func (r *packageRepoReferenceConnectionResolver) Nodes(ctx context.Context) ([]*packageRepoReferenceResolver, error) {
@@ -87,7 +89,7 @@ func (r *packageRepoReferenceConnectionResolver) Nodes(ctx context.Context) ([]*
 
 	resolvers := make([]*packageRepoReferenceResolver, 0, len(r.deps))
 	for _, dep := range r.deps {
-		resolvers = append(resolvers, &packageRepoReferenceResolver{r.db, dep, once})
+		resolvers = append(resolvers, &packageRepoReferenceResolver{r.db, r.metrics, dep, once})
 	}
 
 	return resolvers, nil
@@ -108,6 +110,7 @@ func (r *packageRepoReferenceConnectionResolver) PageInfo(ctx context.Context) (
 
 type packageRepoReferenceResolver struct {
 	db       database.DB
+	metrics  *grpc_prometheus.ClientMetrics
 	dep      dependencies.PackageRepoReference
 	allRepos func() (map[api.RepoName]*types.Repo, error)
 }
@@ -144,7 +147,7 @@ func (r *packageRepoReferenceResolver) Repository(ctx context.Context) (*Reposit
 	}
 
 	if repo, ok := repos[repoName]; ok {
-		return NewRepositoryResolver(r.db, gitserver.NewClient(), repo), nil
+		return NewRepositoryResolver(r.db, r.metrics, gitserver.NewClient(r.metrics), repo), nil
 	}
 
 	return nil, nil

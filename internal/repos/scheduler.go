@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/grafana/regexp"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 
 	"github.com/sourcegraph/log"
 
@@ -113,6 +114,7 @@ type UpdateScheduler struct {
 	updateQueue *updateQueue
 	schedule    *schedule
 	logger      log.Logger
+	metrics     *grpc_prometheus.ClientMetrics
 }
 
 // A configuredRepo represents the configuration data for a given repo from
@@ -129,7 +131,7 @@ type configuredRepo struct {
 const notifyChanBuffer = 1
 
 // NewUpdateScheduler returns a new scheduler.
-func NewUpdateScheduler(logger log.Logger, db database.DB) *UpdateScheduler {
+func NewUpdateScheduler(logger log.Logger, db database.DB, metrics *grpc_prometheus.ClientMetrics) *UpdateScheduler {
 	updateSchedLogger := logger.Scoped("UpdateScheduler", "repo update scheduler")
 
 	return &UpdateScheduler{
@@ -144,7 +146,8 @@ func NewUpdateScheduler(logger log.Logger, db database.DB) *UpdateScheduler {
 			randGenerator: rand.New(rand.NewSource(time.Now().UnixNano())),
 			logger:        updateSchedLogger.Scoped("Schedule", ""),
 		},
-		logger: updateSchedLogger,
+		logger:  updateSchedLogger,
+		metrics: metrics,
 	}
 }
 
@@ -216,7 +219,7 @@ func (s *UpdateScheduler) runUpdateLoop(ctx context.Context) {
 				// if it doesn't exist or update it if it does. The timeout of this request depends
 				// on the value of conf.GitLongCommandTimeout() or if the passed context has a set
 				// deadline shorter than the value of this config.
-				resp, err := requestRepoUpdate(ctx, repo, 1*time.Second)
+				resp, err := requestRepoUpdate(ctx, s.metrics, repo, 1*time.Second)
 				if err != nil {
 					schedError.WithLabelValues("requestRepoUpdate").Inc()
 					subLogger.Error("error requesting repo update", log.Error(err), log.String("uri", string(repo.Name)))
@@ -269,8 +272,8 @@ func getCustomInterval(logger log.Logger, c *conf.Unified, repoName string) time
 }
 
 // requestRepoUpdate sends a request to gitserver to request an update.
-var requestRepoUpdate = func(ctx context.Context, repo configuredRepo, since time.Duration) (*gitserverprotocol.RepoUpdateResponse, error) {
-	return gitserver.NewClient().RequestRepoUpdate(ctx, repo.Name, since)
+var requestRepoUpdate = func(ctx context.Context, metrics *grpc_prometheus.ClientMetrics, repo configuredRepo, since time.Duration) (*gitserverprotocol.RepoUpdateResponse, error) {
+	return gitserver.NewClient(metrics).RequestRepoUpdate(ctx, repo.Name, since)
 }
 
 // configuredLimiter returns a mutable limiter that is

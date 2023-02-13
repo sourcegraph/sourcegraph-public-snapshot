@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
@@ -36,9 +37,10 @@ func (e unknownJobTypeErr) NonRetryable() bool {
 
 var changesetIsProcessingErr = errors.New("cannot update a changeset that is currently being processed; will retry")
 
-func New(logger log.Logger, tx *store.Store, sourcer sources.Sourcer) BulkProcessor {
+func New(logger log.Logger, metrics *grpc_prometheus.ClientMetrics, tx *store.Store, sourcer sources.Sourcer) BulkProcessor {
 	return &bulkProcessor{
 		tx:      tx,
+		metrics: metrics,
 		sourcer: sourcer,
 		logger:  logger,
 	}
@@ -52,6 +54,7 @@ type bulkProcessor struct {
 	tx      *store.Store
 	sourcer sources.Sourcer
 	logger  log.Logger
+	metrics *grpc_prometheus.ClientMetrics
 
 	css  sources.ChangesetSource
 	repo *types.Repo

@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"sync"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -22,7 +23,7 @@ var (
 	handlerOnce     sync.Once
 )
 
-func GetHandler(svc *uploads.Service, db database.DB, uploadStore uploadstore.Store, withCodeHostAuthAuth bool) http.Handler {
+func GetHandler(svc *uploads.Service, db database.DB, metrics *grpc_prometheus.ClientMetrics, uploadStore uploadstore.Store, withCodeHostAuthAuth bool) http.Handler {
 	handlerOnce.Do(func() {
 		logger := log.Scoped(
 			"uploads.handler",
@@ -35,7 +36,7 @@ func GetHandler(svc *uploads.Service, db database.DB, uploadStore uploadstore.St
 		uploadHandlerOperations := uploadhandler.NewOperations(observationCtx, "codeintel")
 
 		userStore := db.Users()
-		repoStore := backend.NewRepos(logger, db, gitserver.NewClient())
+		repoStore := backend.NewRepos(logger, db, gitserver.NewClient(metrics))
 
 		// Construct base handler, used in internal routes and as internal handler wrapped
 		// in the auth middleware defined on the next few lines

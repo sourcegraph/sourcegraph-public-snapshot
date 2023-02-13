@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -26,8 +27,9 @@ import (
 //
 // Prefer using the constructor, NewGitTreeEntryResolver.
 type GitTreeEntryResolver struct {
-	db     database.DB
-	commit *GitCommitResolver
+	metrics *grpc_prometheus.ClientMetrics
+	db      database.DB
+	commit  *GitCommitResolver
 
 	contentOnce sync.Once
 	content     []byte
@@ -68,8 +70,7 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context, args *resolverstubs.
 	r.contentOnce.Do(func() {
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
-
-		r.content, r.contentErr = gitserver.NewClient().ReadFile(
+		r.content, r.contentErr = gitserver.NewClient(r.metrics).ReadFile(
 			ctx,
 			authz.DefaultSubRepoPermsChecker,
 			api.RepoName(r.commit.Repository().Name()),

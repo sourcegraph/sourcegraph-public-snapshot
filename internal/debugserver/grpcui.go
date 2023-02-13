@@ -5,19 +5,21 @@ import (
 	"net/http"
 
 	"github.com/fullstorydev/grpcui/standalone"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
+	"google.golang.org/grpc"
+
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"google.golang.org/grpc"
 )
 
 const gRPCWebUIPath = "/debug/grpcui"
 
 // NewGRPCWebUIEndpoint returns a new Endpoint that serves a gRPC Web UI instance
 // that targets the gRPC server specified by target.
-func NewGRPCWebUIEndpoint(target string) Endpoint {
+func NewGRPCWebUIEndpoint(target string, metrics *grpc_prometheus.ClientMetrics) Endpoint {
 	var handler http.Handler = &grpcHandler{
 		target:   target,
-		dialOpts: defaults.DialOptions(),
+		dialOpts: defaults.DialOptions(metrics),
 	}
 
 	// gRPC Web UI expects to serve all of its resources

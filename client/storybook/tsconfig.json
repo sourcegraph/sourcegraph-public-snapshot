@@ -6,24 +6,27 @@
     "rootDir": ".",
     "outDir": "./out",
     "baseUrl": "./src",
-    "jsx": "react-jsx",
+    "jsx": "react-jsx"
   },
   "references": [
     {
-      "path": "../build-config",
+      "path": "../build-config"
     },
     {
-      "path": "../common",
+      "path": "../common"
     },
     {
-      "path": "../http-client",
+      "path": "../http-client"
     },
     {
-      "path": "../shared",
+      "path": "../shared"
     },
     {
-      "path": "../wildcard",
-    },
+      "path": "../wildcard"
+    }
   ],
-  "include": ["./src/**/*", "./*.ts"],
+  "include": [
+    "./src/**/*",
+    "./*.ts"
+  ]
 }

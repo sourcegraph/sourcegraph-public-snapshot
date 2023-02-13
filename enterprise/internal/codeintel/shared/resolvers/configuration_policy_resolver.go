@@ -6,6 +6,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"github.com/opentracing/opentracing-go/log"
 	sglog "github.com/sourcegraph/log"
 
@@ -19,6 +20,7 @@ import (
 )
 
 type configurationPolicyResolver struct {
+	metrics             *grpc_prometheus.ClientMetrics
 	svc                 AutoIndexingService
 	logger              sglog.Logger
 	configurationPolicy types.ConfigurationPolicy
@@ -54,7 +56,7 @@ func (r *configurationPolicyResolver) Repository(ctx context.Context) (_ resolve
 	)
 
 	db := r.svc.GetUnsafeDB()
-	repo, err := backend.NewRepos(r.logger, db, gitserver.NewClient()).Get(ctx, api.RepoID(*r.configurationPolicy.RepositoryID))
+	repo, err := backend.NewRepos(r.logger, db, gitserver.NewClient(r.metrics)).Get(ctx, api.RepoID(*r.configurationPolicy.RepositoryID))
 	if err != nil {
 		return nil, err
 	}

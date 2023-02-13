@@ -15,9 +15,11 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/grafana/regexp"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
@@ -75,15 +77,16 @@ func ResetClientMocks() {
 var _ Client = &clientImplementor{}
 
 // NewClient returns a new gitserver.Client.
-func NewClient() Client {
+func NewClient(metrics *grpc_prometheus.ClientMetrics) Client {
 	return &clientImplementor{
 		logger: sglog.Scoped("NewClient", "returns a new gitserver.Client"),
 		addrs: func() []string {
 			return conf.Get().ServiceConnections().GitServers
 		},
-		pinned:      pinnedReposFromConfig,
-		httpClient:  defaultDoer,
-		HTTPLimiter: defaultLimiter,
+		clientMetrics: metrics,
+		pinned:        pinnedReposFromConfig,
+		httpClient:    defaultDoer,
+		HTTPLimiter:   defaultLimiter,
 		// Use the binary name for userAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
@@ -94,16 +97,18 @@ func NewClient() Client {
 
 // NewTestClient returns a test client that will use the given hard coded list of
 // addresses instead of reading them from config.
-func NewTestClient(cli httpcli.Doer, addrs []string) Client {
+func NewTestClient(t *testing.T, cli httpcli.Doer, addrs []string) Client {
 	logger := sglog.Scoped("NewTestClient", "Test New client")
+	metrics := defaults.RegisteredClientMetrics(t.Name())
 	return &clientImplementor{
 		logger: logger,
 		addrs: func() []string {
 			return addrs
 		},
-		pinned:      pinnedReposFromConfig,
-		httpClient:  cli,
-		HTTPLimiter: parallel.NewRun(500),
+		clientMetrics: metrics,
+		pinned:        pinnedReposFromConfig,
+		httpClient:    cli,
+		HTTPLimiter:   parallel.NewRun(500),
 		// Use the binary name for userAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
@@ -210,6 +215,9 @@ type clientImplementor struct {
 
 	// operations are used for internal observability
 	operations *operations
+
+	// clientMetrics is the set of Prometheus metrics to use for this client
+	clientMetrics *grpc_prometheus.ClientMetrics
 }
 
 type RawBatchLogResult struct {
@@ -576,7 +584,9 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 	}()
 	span.SetTag("request", "Exec")
 	span.SetTag("repo", c.repo)
-	span.SetTag("args", c.args[1:])
+
+	parameters := c.args[1:] // skip the "git" prefix
+	span.SetTag("args", parameters)
 
 	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {
@@ -584,71 +594,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 		return nil, err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("grpc", false) {
-		req := &proto.ExecRequest{
-			Repo:           string(repoName),
-			EnsureRevision: c.EnsureRevision(),
-			Args:           c.args[1:],
-			Stdin:          c.stdin,
-			NoTimeout:      c.noTimeout,
-		}
-		addr, err := c.execer.AddrForRepo(ctx, repoName)
-		if err != nil {
-			return nil, err
-		}
-
-		conn, err := grpc.DialContext(ctx, addr, defaults.DialOptions()...)
-		if err != nil {
-			return nil, err
-		}
-
-		client := proto.NewGitserverServiceClient(conn)
-		stream, err := client.Exec(ctx, req)
-		if err != nil {
-			return nil, err
-		}
-		r := streamio.NewReader(func() ([]byte, error) {
-			msg, err := stream.Recv()
-			if err != nil {
-
-				return nil, err
-			}
-			return msg.GetData(), nil
-		})
-
-		return &readCloseWrapper{r: r, closeFn: conn.Close}, err
-
-	} else {
-		req := &protocol.ExecRequest{
-			Repo:           repoName,
-			EnsureRevision: c.EnsureRevision(),
-			Args:           c.args[1:],
-			Stdin:          c.stdin,
-			NoTimeout:      c.noTimeout,
-		}
-		resp, err := c.execer.httpPost(ctx, repoName, "exec", req)
-		if err != nil {
-			return nil, err
-		}
-
-		switch resp.StatusCode {
-		case http.StatusOK:
-			return &cmdReader{rc: resp.Body, trailer: resp.Trailer}, nil
-
-		case http.StatusNotFound:
-			var payload protocol.NotFoundPayload
-			if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
-				resp.Body.Close()
-				return nil, err
-			}
-			resp.Body.Close()
-			return nil, &gitdomain.RepoNotExistError{Repo: repoName, CloneInProgress: payload.CloneInProgress, CloneProgress: payload.CloneProgress}
-
-		default:
-			resp.Body.Close()
-			return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
-		}
-	}
+	return c.execer(ctx, repoName, c.EnsureRevision(), parameters, c.stdin, c.noTimeout)
 }
 
 type readCloseWrapper struct {
@@ -768,6 +714,74 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 	}
 
 	return eventDone.LimitHit, eventDone.Err()
+}
+
+func (c *clientImplementor) execGRPC(ctx context.Context, repoName api.RepoName, ensureRevision string, args []string, stdin []byte, noTimeout bool) (io.ReadCloser, error) {
+	req := &proto.ExecRequest{
+		Repo:           string(repoName),
+		EnsureRevision: ensureRevision,
+		Args:           args,
+		Stdin:          stdin,
+		NoTimeout:      noTimeout,
+	}
+	addr, err := c.AddrForRepo(ctx, repoName)
+	if err != nil {
+		return nil, err
+	}
+
+	conn, err := grpc.DialContext(ctx, addr, defaults.DialOptions(c.clientMetrics)...)
+	if err != nil {
+		return nil, err
+	}
+
+	client := proto.NewGitserverServiceClient(conn)
+	stream, err := client.Exec(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	r := streamio.NewReader(func() ([]byte, error) {
+		msg, err := stream.Recv()
+		if err != nil {
+
+			return nil, err
+		}
+		return msg.GetData(), nil
+	})
+
+	return &readCloseWrapper{r: r, closeFn: conn.Close}, err
+}
+
+func (c *clientImplementor) execHTTP(ctx context.Context, repoName api.RepoName, ensureRevision string, args []string, stdin []byte, noTimeout bool) (io.ReadCloser, error) {
+	req := &protocol.ExecRequest{
+		Repo:           repoName,
+		EnsureRevision: ensureRevision,
+		Args:           args,
+		Stdin:          stdin,
+		NoTimeout:      noTimeout,
+	}
+	resp, err := c.httpPost(ctx, repoName, "exec", req)
+	if err != nil {
+		return nil, err
+	}
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return &cmdReader{rc: resp.Body, trailer: resp.Trailer}, nil
+
+	case http.StatusNotFound:
+		var payload protocol.NotFoundPayload
+		if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+			resp.Body.Close()
+			return nil, err
+		}
+		resp.Body.Close()
+		return nil, &gitdomain.RepoNotExistError{Repo: repoName, CloneInProgress: payload.CloneInProgress, CloneProgress: payload.CloneProgress}
+
+	default:
+		resp.Body.Close()
+		return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
 }
 
 func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password string, args ...string) (_ io.ReadCloser, _ http.Header, errRes error) {
@@ -975,10 +989,17 @@ func (c *clientImplementor) gitCommand(repo api.RepoName, arg ...string) GitComm
 		}
 		return cmd
 	}
+
 	return &RemoteGitCommand{
-		repo:   repo,
-		execer: c,
-		args:   append([]string{git}, arg...),
+		repo: repo,
+		execer: func(ctx context.Context, repoName api.RepoName, ensureRevision string, args []string, stdin []byte, noTimeout bool) (io.ReadCloser, error) {
+			if featureflag.FromContext(ctx).GetBoolOr("grpc", false) {
+				return c.execGRPC(ctx, repoName, ensureRevision, args, stdin, noTimeout)
+			}
+
+			return c.execHTTP(ctx, repoName, ensureRevision, args, stdin, noTimeout)
+		},
+		args: append([]string{git}, arg...),
 	}
 }
 

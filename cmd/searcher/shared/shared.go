@@ -44,6 +44,8 @@ var (
 	cacheSizeMB = env.Get("SEARCHER_CACHE_SIZE_MB", "100000", "maximum size of the on disk cache in megabytes")
 
 	maxTotalPathsLengthRaw = env.Get("MAX_TOTAL_PATHS_LENGTH", "100000", "maximum sum of lengths of all paths in a single call to git archive")
+	grpcServerMetrics      = grpcdefaults.RegisteredServerMetrics("symbols")
+	grpcClientMetrics      = grpcdefaults.RegisteredClientMetrics("symbols")
 )
 
 const port = "3181"
@@ -123,7 +125,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	// Explicitly don't scope Store logger under the parent logger
 	storeObservationCtx := observation.NewContext(log.Scoped("Store", "searcher archives store"))
 
-	git := gitserver.NewClient()
+	git := gitserver.NewClient(grpcClientMetrics)
 
 	sService := &search.Service{
 		Store: &search.Store{
@@ -154,6 +156,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 			Path:              filepath.Join(cacheDir, "searcher-archives"),
 			MaxCacheSizeBytes: cacheSizeBytes,
 			Log:               storeObservationCtx.Logger,
+			Metrics:           grpcClientMetrics,
 			ObservationCtx:    storeObservationCtx,
 		},
 
@@ -178,7 +181,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	grpcServer := grpc.NewServer(grpcdefaults.ServerOptions(logger)...)
+	grpcServer := grpc.NewServer(grpcdefaults.ServerOptions(logger, grpcServerMetrics)...)
 	reflection.Register(grpcServer)
 	grpcServer.RegisterService(&proto.SearcherService_ServiceDesc, &search.Server{
 		Service: sService,

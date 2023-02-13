@@ -1,6 +1,8 @@
 package sharedresolvers
 
 import (
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
+
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -25,6 +27,7 @@ type repositorySummaryResolver struct {
 }
 
 func NewRepositorySummaryResolver(
+	metrics *grpc_prometheus.ClientMetrics,
 	autoindexingSvc AutoIndexingService,
 	uploadsSvc UploadsService,
 	policySvc PolicyService,
@@ -41,7 +44,7 @@ func NewRepositorySummaryResolver(
 		summary:           summary,
 		availableIndexers: availableIndexers,
 		prefetcher:        prefetcher,
-		locationResolver:  NewCachedLocationResolver(db, gitserver.NewClient()),
+		locationResolver:  NewCachedLocationResolver(db, gitserver.NewClient(metrics)),
 		errTracer:         errTracer,
 	}
 }

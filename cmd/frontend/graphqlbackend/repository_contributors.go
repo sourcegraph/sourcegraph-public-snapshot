@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"sync"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -24,9 +26,10 @@ func (r *RepositoryResolver) Contributors(args *struct {
 	graphqlutil.ConnectionResolverArgs
 }) (*graphqlutil.ConnectionResolver[*repositoryContributorResolver], error) {
 	connectionStore := &repositoryContributorConnectionStore{
-		db:   r.db,
-		args: &args.repositoryContributorsArgs,
-		repo: r,
+		db:      r.db,
+		metrics: r.metrics,
+		args:    &args.repositoryContributorsArgs,
+		repo:    r,
 	}
 	reverse := false
 	connectionOptions := graphqlutil.ConnectionResolverOptions{
@@ -36,8 +39,9 @@ func (r *RepositoryResolver) Contributors(args *struct {
 }
 
 type repositoryContributorConnectionStore struct {
-	db   database.DB
-	args *repositoryContributorsArgs
+	db      database.DB
+	metrics *grpc_prometheus.ClientMetrics
+	args    *repositoryContributorsArgs
 
 	repo *RepositoryResolver
 
@@ -92,7 +96,7 @@ func (s *repositoryContributorConnectionStore) ComputeNodes(ctx context.Context,
 
 func (s *repositoryContributorConnectionStore) compute(ctx context.Context) ([]*gitdomain.ContributorCount, error) {
 	s.once.Do(func() {
-		client := gitserver.NewClient()
+		client := gitserver.NewClient(s.metrics)
 		var opt gitserver.ContributorOptions
 		if s.args.RevisionRange != nil {
 			opt.Range = *s.args.RevisionRange

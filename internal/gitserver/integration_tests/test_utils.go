@@ -34,6 +34,7 @@ var root string
 var (
 	testGitserverClient gitserver.Client
 	GitserverAddresses  []string
+	grpcServerMetrics   = defaults.RegisteredServerMetrics("gitserver")
 )
 
 func InitGitserver() {
@@ -70,7 +71,7 @@ func InitGitserver() {
 		DB:                      db,
 	}
 
-	grpcServer := grpc.NewServer(defaults.ServerOptions(logger)...)
+	grpcServer := grpc.NewServer(defaults.ServerOptions(logger, grpcServerMetrics)...)
 	grpcServer.RegisterService(&proto.GitserverService_ServiceDesc, &server.GRPCServer{Server: &s})
 	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
 

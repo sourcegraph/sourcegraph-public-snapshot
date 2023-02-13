@@ -4,58 +4,74 @@
     "module": "esnext",
     "baseUrl": ".",
     "paths": {
-      "*": ["src/types/*", "../shared/src/types/*", "../common/src/types/*", "*"],
+      "*": [
+        "src/types/*",
+        "../shared/src/types/*",
+        "../common/src/types/*",
+        "*"
+      ]
     },
     "jsx": "react-jsx",
     "rootDir": ".",
-    "outDir": "out",
+    "outDir": "out"
   },
   "references": [
     {
-      "path": "../../schema",
+      "path": "../../schema"
     },
     {
-      "path": "../branded",
+      "path": "../branded"
     },
     {
-      "path": "../build-config",
+      "path": "../build-config"
     },
     {
-      "path": "../client-api",
+      "path": "../client-api"
     },
     {
-      "path": "../codeintellify",
+      "path": "../codeintellify"
     },
     {
-      "path": "../common",
+      "path": "../common"
     },
     {
-      "path": "../extension-api-types",
+      "path": "../extension-api-types"
     },
     {
-      "path": "../http-client",
+      "path": "../http-client"
     },
     {
-      "path": "../observability-client",
+      "path": "../observability-client"
     },
     {
-      "path": "../shared",
+      "path": "../shared"
     },
     {
-      "path": "../storybook",
+      "path": "../storybook"
     },
     {
-      "path": "../testing",
+      "path": "../testing"
     },
     {
-      "path": "../wildcard",
-    },
+      "path": "../wildcard"
+    }
   ],
-  "include": ["**/*", ".*", "./src/**/*.json"],
-  "exclude": ["../../node_modules", "./node_modules", "./out", "src/end-to-end", "src/regression", "src/integration"],
+  "include": [
+    "**/*",
+    ".*",
+    "./src/**/*.json"
+  ],
+  "exclude": [
+    "../../node_modules",
+    "./node_modules",
+    "./out",
+    "src/end-to-end",
+    "src/regression",
+    "src/integration"
+  ],
   "ts-node": {
     "moduleTypes": {
-      "scripts/**/*": "cjs",
-    },
-  },
+      "scripts/**/*": "cjs"
+    }
+  }
 }

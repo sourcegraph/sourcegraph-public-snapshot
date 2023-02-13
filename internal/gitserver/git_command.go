@@ -168,12 +168,7 @@ type RemoteGitCommand struct {
 	stdin          []byte
 	noTimeout      bool
 	exitStatus     int
-	execer         execer
-}
-
-type execer interface {
-	httpPost(ctx context.Context, repo api.RepoName, op string, payload any) (resp *http.Response, err error)
-	AddrForRepo(ctx context.Context, repo api.RepoName) (string, error)
+	execer         func(ctx context.Context, repoName api.RepoName, ensureRevision string, args []string, stdin []byte, noTimeout bool) (io.ReadCloser, error)
 }
 
 // DividedOutput runs the command and returns its standard output and standard error.

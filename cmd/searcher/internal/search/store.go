@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
@@ -83,6 +84,10 @@ type Store struct {
 
 	// ObservationCtx is used to configure observability in diskcache.
 	ObservationCtx *observation.Context
+
+	// Metrics is the set of Prometheus metrics that are used to instrument
+	// the GRPC gitserver client.
+	Metrics *grpc_prometheus.ClientMetrics
 
 	// once protects Start
 	once sync.Once
@@ -276,7 +281,7 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 
 	filter.CommitIgnore = func(hdr *tar.Header) bool { return false } // default: don't filter
 	if s.FilterTar != nil {
-		filter.CommitIgnore, err = s.FilterTar(ctx, gitserver.NewClient(), repo, commit)
+		filter.CommitIgnore, err = s.FilterTar(ctx, gitserver.NewClient(s.Metrics), repo, commit)
 		if err != nil {
 			return nil, errors.Errorf("error while calling FilterTar: %w", err)
 		}
@@ -434,7 +439,7 @@ func (s *Store) watchAndEvict() {
 func (s *Store) watchConfig() {
 	for {
 		// Allow roughly 10 fetches per gitserver
-		limit := 10 * len(gitserver.NewClient().Addrs())
+		limit := 10 * len(gitserver.NewClient(s.Metrics).Addrs())
 		if limit == 0 {
 			limit = 15
 		}

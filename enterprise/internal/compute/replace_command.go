@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -49,10 +51,10 @@ func replace(ctx context.Context, content []byte, matchPattern MatchPattern, rep
 	return &Text{Value: newContent, Kind: "replace-in-place"}, nil
 }
 
-func (c *Replace) Run(ctx context.Context, r result.Match) (Result, error) {
+func (c *Replace) Run(ctx context.Context, metrics *grpc_prometheus.ClientMetrics, r result.Match) (Result, error) {
 	switch m := r.(type) {
 	case *result.FileMatch:
-		content, err := gitserver.NewClient().ReadFile(ctx, authz.DefaultSubRepoPermsChecker, m.Repo.Name, m.CommitID, m.Path)
+		content, err := gitserver.NewClient(metrics).ReadFile(ctx, authz.DefaultSubRepoPermsChecker, m.Repo.Name, m.CommitID, m.Path)
 		if err != nil {
 			return nil, err
 		}

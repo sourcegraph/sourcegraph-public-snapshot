@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
@@ -62,7 +63,7 @@ type p4Execer interface {
 // host, user and password to talk to a Perforce Server that is the source of
 // truth for permissions. It assumes emails of Sourcegraph accounts match 1-1
 // with emails of Perforce Server users.
-func NewProvider(logger log.Logger, urn, host, user, password string, depots []extsvc.RepoID) *Provider {
+func NewProvider(logger log.Logger, metrics *grpc_prometheus.ClientMetrics, urn, host, user, password string, depots []extsvc.RepoID) *Provider {
 	baseURL, _ := url.Parse(host)
 	return &Provider{
 		logger:             logger,
@@ -72,7 +73,7 @@ func NewProvider(logger log.Logger, urn, host, user, password string, depots []e
 		host:               host,
 		user:               user,
 		password:           password,
-		p4Execer:           gitserver.NewClient(),
+		p4Execer:           gitserver.NewClient(metrics),
 		cachedGroupMembers: make(map[string][]string),
 	}
 }

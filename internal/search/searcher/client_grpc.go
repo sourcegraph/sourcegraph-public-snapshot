@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"time"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
@@ -23,6 +24,7 @@ import (
 // Search searches repo@commit with p.
 func SearchGRPC(
 	ctx context.Context,
+	metrics *grpc_prometheus.ClientMetrics,
 	searcherURLs *endpoint.Map,
 	repo api.RepoName,
 	repoID api.RepoID,
@@ -82,7 +84,7 @@ func SearchGRPC(
 			return false, errors.Wrap(err, "failed to parse URL")
 		}
 
-		clientConn, err := grpc.DialContext(ctx, parsed.Host, defaults.DialOptions()...)
+		clientConn, err := grpc.DialContext(ctx, parsed.Host, defaults.DialOptions(metrics)...)
 		if err != nil {
 			return false, err
 		}

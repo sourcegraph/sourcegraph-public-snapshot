@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
@@ -41,6 +42,7 @@ import (
 // SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
 type SearchResultsResolver struct {
 	db          database.DB
+	metrics     *grpc_prometheus.ClientMetrics
 	Matches     result.Matches
 	Stats       streaming.Stats
 	SearchAlert *search.Alert
@@ -81,7 +83,7 @@ func (c *SearchResultsResolver) repositoryResolvers(ctx context.Context, ids []a
 		return nil, nil
 	}
 
-	gsClient := gitserver.NewClient()
+	gsClient := gitserver.NewClient(c.metrics)
 	resolvers := make([]*RepositoryResolver, 0, len(ids))
 	err := c.db.Repos().StreamMinimalRepos(ctx, database.ReposListOptions{
 		IDs: ids,
@@ -127,16 +129,16 @@ func (c *SearchResultsResolver) IndexUnavailable() bool {
 // Results are the results found by the search. It respects the limits set. To
 // access all results directly access the SearchResults field.
 func (sr *SearchResultsResolver) Results() []SearchResultResolver {
-	return matchesToResolvers(sr.db, sr.Matches)
+	return matchesToResolvers(sr.db, sr.metrics, sr.Matches)
 }
 
-func matchesToResolvers(db database.DB, matches []result.Match) []SearchResultResolver {
+func matchesToResolvers(db database.DB, metrics *grpc_prometheus.ClientMetrics, matches []result.Match) []SearchResultResolver {
 	type repoKey struct {
 		Name types.MinimalRepo
 		Rev  string
 	}
 	repoResolvers := make(map[repoKey]*RepositoryResolver, 10)
-	gsClient := gitserver.NewClient()
+	gsClient := gitserver.NewClient(metrics)
 	getRepoResolver := func(repoName types.MinimalRepo, rev string) *RepositoryResolver {
 		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
 			return existing
@@ -161,6 +163,7 @@ func matchesToResolvers(db database.DB, matches []result.Match) []SearchResultRe
 		case *result.CommitMatch:
 			resolvers = append(resolvers, &CommitSearchResultResolver{
 				db:          db,
+				metrics:     metrics,
 				CommitMatch: *v,
 			})
 		}
@@ -184,7 +187,7 @@ func (sr *SearchResultsResolver) ApproximateResultCount() string {
 }
 
 func (sr *SearchResultsResolver) Alert() *searchAlertResolver {
-	return NewSearchAlertResolver(sr.SearchAlert)
+	return NewSearchAlertResolver(sr.SearchAlert, sr.metrics)
 }
 
 func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
@@ -250,7 +253,7 @@ func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.
 		return time.Time{}, nil
 	}
 	hm := fm.ChunkMatches[0]
-	hunks, err := gitserver.NewClient().BlameFile(ctx, authz.DefaultSubRepoPermsChecker, fm.Repo.Name, fm.Path, &gitserver.BlameOptions{
+	hunks, err := gitserver.NewClient(sr.metrics).BlameFile(ctx, authz.DefaultSubRepoPermsChecker, fm.Repo.Name, fm.Path, &gitserver.BlameOptions{
 		NewestCommit: fm.CommitID,
 		StartLine:    hm.Ranges[0].Start.Line,
 		EndLine:      hm.Ranges[0].Start.Line,

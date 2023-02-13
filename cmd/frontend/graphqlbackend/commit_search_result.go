@@ -3,6 +3,8 @@ package graphqlbackend
 import (
 	"sync"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -12,7 +14,8 @@ import (
 type CommitSearchResultResolver struct {
 	result.CommitMatch
 
-	db database.DB
+	db      database.DB
+	metrics *grpc_prometheus.ClientMetrics
 
 	// gitCommitResolver should not be used directly since it may be uninitialized.
 	// Use Commit() instead.
@@ -25,7 +28,7 @@ func (r *CommitSearchResultResolver) Commit() *GitCommitResolver {
 		if r.gitCommitResolver != nil {
 			return
 		}
-		gitserverClient := gitserver.NewClient()
+		gitserverClient := gitserver.NewClient(r.metrics)
 		repoResolver := NewRepositoryResolver(r.db, gitserverClient, r.Repo.ToRepo())
 		r.gitCommitResolver = NewGitCommitResolver(r.db, gitserverClient, repoResolver, r.CommitMatch.Commit.ID, &r.CommitMatch.Commit)
 	})

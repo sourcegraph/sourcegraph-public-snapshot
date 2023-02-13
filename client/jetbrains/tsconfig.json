@@ -3,41 +3,63 @@
   "compilerOptions": {
     "module": "commonjs",
     "target": "es2020",
-    "lib": ["esnext", "DOM", "DOM.Iterable"],
+    "lib": [
+      "esnext",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "sourceMap": true,
     "sourceRoot": "src",
     "baseUrl": "./src",
     "paths": {
-      "*": ["types/*", "../../shared/src/types/*", "../../common/src/types/*", "*"],
+      "*": [
+        "types/*",
+        "../../shared/src/types/*",
+        "../../common/src/types/*",
+        "*"
+      ]
     },
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "strict": true,
-    "jsx": "react-jsx",
+    "jsx": "react-jsx"
   },
   "references": [
     {
-      "path": "../branded",
+      "path": "../branded"
     },
     {
-      "path": "../build-config",
+      "path": "../build-config"
     },
     {
-      "path": "../common",
+      "path": "../common"
     },
     {
-      "path": "../http-client",
+      "path": "../http-client"
     },
     {
-      "path": "../shared",
+      "path": "../shared"
     },
     {
-      "path": "../storybook",
+      "path": "../storybook"
     },
     {
-      "path": "../wildcard",
-    },
+      "path": "../wildcard"
+    }
   ],
-  "include": ["./package.json", "**/*", ".*", "**/*.d.ts"],
-  "exclude": ["node_modules", "../../node_modules", ".vscode-test", "out", "dist", "src", "gradle"],
+  "include": [
+    "./package.json",
+    "**/*",
+    ".*",
+    "**/*.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "../../node_modules",
+    ".vscode-test",
+    "out",
+    "dist",
+    "src",
+    "gradle"
+  ]
 }

@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"github.com/sourcegraph/log"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -255,9 +256,10 @@ func (s *SyncRegistry) syncCodeHosts(ctx context.Context) error {
 // A changesetSyncer periodically syncs metadata of changesets
 // saved in the database.
 type changesetSyncer struct {
-	logger      log.Logger
-	syncStore   SyncStore
-	httpFactory *httpcli.Factory
+	logger           log.Logger
+	grpcClientMerics *grpc_prometheus.ClientMetrics
+	syncStore        SyncStore
+	httpFactory      *httpcli.Factory
 
 	metrics *syncerMetrics
 
@@ -495,7 +497,7 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 		return err
 	}
 
-	return SyncChangeset(ctx, s.syncStore, gitserver.NewClient(), source, repo, cs)
+	return SyncChangeset(ctx, s.syncStore, gitserver.NewClient(s.grpcClientMerics), source, repo, cs)
 }
 
 // SyncChangeset refreshes the metadata of the given changeset and

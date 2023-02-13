@@ -4,14 +4,25 @@
     "module": "commonjs",
     "baseUrl": ".",
     "paths": {
-      "*": ["src/types/*", "../shared/src/types/*", "../common/src/types/*", "*"],
+      "*": [
+        "src/types/*",
+        "../shared/src/types/*",
+        "../common/src/types/*",
+        "*"
+      ]
     },
     "jsx": "react-jsx",
     "resolveJsonModule": true,
     "rootDir": ".",
-    "outDir": "out",
+    "outDir": "out"
   },
-  "include": ["**/*", ".*", "src/**/*.json", "src/types/**/*.d.ts", "./code-intel-extensions.json"],
+  "include": [
+    "**/*",
+    ".*",
+    "src/**/*.json",
+    "src/types/**/*.d.ts",
+    "./code-intel-extensions.json"
+  ],
   "exclude": [
     "out",
     "node_modules",
@@ -19,35 +30,35 @@
     "./build/**/*",
     "coverage",
     "stories", // TODO fix type errors and include
-    "src/end-to-end",
+    "src/end-to-end"
   ],
   "references": [
     {
-      "path": "../branded",
+      "path": "../branded"
     },
     {
-      "path": "../build-config",
+      "path": "../build-config"
     },
     {
-      "path": "../client-api",
+      "path": "../client-api"
     },
     {
-      "path": "../codeintellify",
+      "path": "../codeintellify"
     },
     {
-      "path": "../common",
+      "path": "../common"
     },
     {
-      "path": "../extension-api-types",
+      "path": "../extension-api-types"
     },
     {
-      "path": "../http-client",
+      "path": "../http-client"
     },
     {
-      "path": "../shared",
+      "path": "../shared"
     },
     {
-      "path": "../wildcard",
-    },
-  ],
+      "path": "../wildcard"
+    }
+  ]
 }

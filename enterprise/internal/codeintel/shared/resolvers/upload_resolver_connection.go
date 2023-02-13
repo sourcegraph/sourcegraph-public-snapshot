@@ -3,6 +3,7 @@ package sharedresolvers
 import (
 	"context"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"github.com/opentracing/opentracing-go/log"
 
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -20,7 +21,7 @@ type UploadConnectionResolver struct {
 	traceErrs        *observation.ErrCollector
 }
 
-func NewUploadConnectionResolver(uploadsSvc UploadsService, autoindexingSvc AutoIndexingService, policySvc PolicyService, uploadsResolver *UploadsResolver, prefetcher *Prefetcher, traceErrs *observation.ErrCollector) resolverstubs.LSIFUploadConnectionResolver {
+func NewUploadConnectionResolver(metrics *grpc_prometheus.ClientMetrics, uploadsSvc UploadsService, autoindexingSvc AutoIndexingService, policySvc PolicyService, uploadsResolver *UploadsResolver, prefetcher *Prefetcher, traceErrs *observation.ErrCollector) resolverstubs.LSIFUploadConnectionResolver {
 	db := autoindexingSvc.GetUnsafeDB()
 	return &UploadConnectionResolver{
 		uploadsSvc:       uploadsSvc,
@@ -28,7 +29,7 @@ func NewUploadConnectionResolver(uploadsSvc UploadsService, autoindexingSvc Auto
 		policySvc:        policySvc,
 		uploadsResolver:  uploadsResolver,
 		prefetcher:       prefetcher,
-		locationResolver: NewCachedLocationResolver(db, gitserver.NewClient()),
+		locationResolver: NewCachedLocationResolver(db, gitserver.NewClient(metrics)),
 		traceErrs:        traceErrs,
 	}
 }

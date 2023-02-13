@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -22,13 +23,13 @@ import (
 )
 
 func (r *RepositoryResolver) MirrorInfo() *repositoryMirrorInfoResolver {
-	return &repositoryMirrorInfoResolver{repository: r, db: r.db}
+	return &repositoryMirrorInfoResolver{repository: r, db: r.db, metrics: r.metrics}
 }
 
 type repositoryMirrorInfoResolver struct {
 	repository *RepositoryResolver
 	db         database.DB
-
+	metrics    *grpc_prometheus.ClientMetrics
 	// memoize the repo-updater RepoUpdateSchedulerInfo call
 	repoUpdateSchedulerInfoOnce   sync.Once
 	repoUpdateSchedulerInfoResult *repoupdaterprotocol.RepoUpdateSchedulerInfoResult
@@ -125,7 +126,7 @@ func (r *repositoryMirrorInfoResolver) CloneInProgress(ctx context.Context) (boo
 }
 
 func (r *repositoryMirrorInfoResolver) CloneProgress(ctx context.Context) (*string, error) {
-	progress, err := gitserver.NewClient().RepoCloneProgress(ctx, r.repository.RepoName())
+	progress, err := gitserver.NewClient(r.metrics).RepoCloneProgress(ctx, r.repository.RepoName())
 	if err != nil {
 		return nil, err
 	}
@@ -298,7 +299,7 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 		return nil, errors.New("exactly one of the repository and name arguments must be set")
 	}
 
-	gsClient := gitserver.NewClient()
+	gsClient := gitserver.NewClient(r.metr)
 	var repo *types.Repo
 	switch {
 	case args.Repository != nil:

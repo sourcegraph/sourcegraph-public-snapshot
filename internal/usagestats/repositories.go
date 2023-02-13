@@ -3,6 +3,8 @@ package usagestats
 import (
 	"context"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -34,11 +36,11 @@ type Repositories struct {
 	OtherBranchesNewLinesCount uint64
 }
 
-func GetRepositories(ctx context.Context, db database.DB) (*Repositories, error) {
+func GetRepositories(ctx context.Context, db database.DB, metrics *grpc_prometheus.ClientMetrics) (*Repositories, error) {
 	var total Repositories
 
 	// Since this hits gitserver, we should use an internal actor.
-	stats, err := gitserver.NewClient().ReposStats(actor.WithInternalActor(ctx))
+	stats, err := gitserver.NewClient(metrics).ReposStats(actor.WithInternalActor(ctx))
 	if err != nil {
 		return nil, err
 	}

@@ -5,6 +5,7 @@ import (
 	"context"
 	"io"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -47,9 +48,9 @@ type gitserverClient struct {
 	operations  *operations
 }
 
-func NewClient(observationCtx *observation.Context) GitserverClient {
+func NewClient(observationCtx *observation.Context, metrics *grpc_prometheus.ClientMetrics) GitserverClient {
 	return &gitserverClient{
-		innerClient: gitserver.NewClient(),
+		innerClient: gitserver.NewClient(metrics),
 		operations:  newOperations(observationCtx),
 	}
 }
