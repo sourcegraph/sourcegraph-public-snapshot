@@ -3,8 +3,7 @@ import React, { FC, Suspense, useEffect, useMemo, useState } from 'react'
 import { mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
-import { matchPath } from 'react-router'
-import { Location, useLocation, Route, Routes } from 'react-router-dom-v5-compat'
+import { matchPath, Location, useLocation, Route, Routes } from 'react-router-dom-v5-compat'
 import { NEVER, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
@@ -293,7 +292,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
             commitsPath,
         ]
 
-        return paths.some(path => matchPath(location.pathname, { path: repoMatchURL + path }))
+        return paths.some(path => matchPath(path, location.pathname))
     }, [repoContainerRoutes, repoMatchURL, location.pathname])
 
     const isError = isErrorLike(repoOrError) || isErrorLike(resolvedRevisionOrError)

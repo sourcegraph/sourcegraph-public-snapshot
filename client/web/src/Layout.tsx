@@ -121,7 +121,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     // TODO: Replace with useMatches once top-level <Router/> is V6
     const routeMatch = props.routes.find(
         route =>
-            matchPath(location.pathname, route.path) || matchPath(location.pathname, route.path.replace(/\/\*$/, ''))
+            matchPath(route.path, location.pathname) || matchPath(route.path.replace(/\/\*$/, ''), location.pathname)
     )?.path
 
     const isSearchRelatedPage = (routeMatch === PageRoutes.RepoContainer || routeMatch?.startsWith('/search')) ?? false
