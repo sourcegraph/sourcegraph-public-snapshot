@@ -12,7 +12,7 @@ import (
 	sgusers "github.com/sourcegraph/sourcegraph/internal/users"
 )
 
-func (s *siteResolver) Users(ctx context.Context, args *struct {
+func (r *siteResolver) Users(ctx context.Context, args *struct {
 	Query        *string
 	SiteAdmin    *bool
 	Username     *string
@@ -24,12 +24,12 @@ func (s *siteResolver) Users(ctx context.Context, args *struct {
 },
 ) (*siteUsersResolver, error) {
 	// 🚨 SECURITY: Only site admins can see users.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, s.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
 	return &siteUsersResolver{
-		&sgusers.UsersStats{DB: s.db, Filters: sgusers.UsersStatsFilters{
+		&sgusers.UsersStats{DB: r.db, Filters: sgusers.UsersStatsFilters{
 			Query:        args.Query,
 			SiteAdmin:    args.SiteAdmin,
 			Username:     args.Username,

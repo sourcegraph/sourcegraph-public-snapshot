@@ -13,8 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-
-	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/proto"
+	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 )
 
 type repoPath struct {

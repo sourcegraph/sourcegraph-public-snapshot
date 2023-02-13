@@ -2,7 +2,13 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "azuredevops",
-    srcs = ["client.go"],
+    srcs = [
+        "client.go",
+        "pull_requests.go",
+        "repositories.go",
+        "types.go",
+        "users.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops",
     visibility = ["//:__subpackages__"],
     deps = [
@@ -19,6 +25,9 @@ go_test(
     srcs = [
         "client_test.go",
         "main_test.go",
+        "pull_requests_test.go",
+        "repositories_test.go",
+        "users_test.go",
     ],
     data = glob(["testdata/**"]),
     embed = [":azuredevops"],

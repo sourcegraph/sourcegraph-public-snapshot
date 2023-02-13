@@ -151,8 +151,12 @@ const staticExtensions: Extension = [
             backgroundColor: 'var(--code-bg)',
             borderRight: 'initial',
         },
+        '.cm-content:focus-visible': {
+            outline: 'none',
+            boxShadow: 'none',
+        },
         '.cm-line': {
-            paddingLeft: '1rem',
+            paddingLeft: '0',
         },
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',
@@ -278,6 +282,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
                 enableSelectionDrivenCodeNavigation,
             }),
+            codeFoldingExtension(),
             enableSelectionDrivenCodeNavigation ? tokenSelectionExtension() : [],
             enableLinkDrivenCodeNavigation
                 ? tokensAsLinks({ navigate: navigateRef.current, blobInfo, preloadGoToDefinition })
@@ -304,7 +309,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 overrideBrowserFindInPageShortcut: useFileSearch,
                 onOverrideBrowserFindInPageToggle: setUseFileSearch,
             }),
-            codeFoldingExtension(),
         ],
         // A couple of values are not dependencies (blameDecorations, blobProps,
         // hasPin, position and settings) because those are updated in effects

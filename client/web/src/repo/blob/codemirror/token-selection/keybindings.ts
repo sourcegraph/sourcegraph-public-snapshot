@@ -277,13 +277,6 @@ function textSelectionExtension(): Extension {
             },
             '.cm-selectionLayer .cm-selectionBackground': {
                 background: 'var(--code-selection-bg-2)',
-
-                /**
-                 * [RectangleMarker.forRange](https://sourcegraph.com/github.com/codemirror/view@a0a0b9ef5a4deaf58842422ac080030042d83065/-/blob/src/layer.ts?L60-75)
-                 * returns absolutely positioned markers. Markers top position has extra 1px more in its `top` value breaking alignment wih the line.
-                 * We compensate this spacing by setting negative margin-top.
-                 */
-                marginTop: '-1px',
             },
         }),
     ]

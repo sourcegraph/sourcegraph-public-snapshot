@@ -78,6 +78,11 @@ type Store struct {
 	// MaxCacheSizeBytes.
 	MaxCacheSizeBytes int64
 
+	// BackgroundTimeout is the maximum time spent fetching a working copy
+	// from gitserver. If zero then we will respect the passed in context of a
+	// request.
+	BackgroundTimeout time.Duration
+
 	// Log is the Logger to use.
 	Log log.Logger
 
@@ -109,7 +114,7 @@ func (s *Store) Start() {
 	s.once.Do(func() {
 		s.fetchLimiter = mutablelimiter.New(15)
 		s.cache = diskcache.NewStore(s.Path, "store",
-			diskcache.WithBackgroundTimeout(10*time.Minute),
+			diskcache.WithBackgroundTimeout(s.BackgroundTimeout),
 			diskcache.WithBeforeEvict(s.zipCache.delete),
 			diskcache.WithobservationCtx(s.ObservationCtx),
 		)

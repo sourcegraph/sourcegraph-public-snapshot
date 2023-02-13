@@ -26,7 +26,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//cmd/frontend/graphqlbackend",
         "//enterprise/internal/batches/sources/bitbucketcloud",
         "//internal/api",
         "//internal/api/internalapi",
@@ -47,6 +46,7 @@ go_library(
         "//lib/batches/execution",
         "//lib/errors",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_graph_gophers_graphql_go//relay",
         "@com_github_inconshreveable_log15//:log15",
         "@com_github_sourcegraph_go_diff//diff",
     ],

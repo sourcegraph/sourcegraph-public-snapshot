@@ -164,7 +164,7 @@ func NewHandler(
 	// no-op anywhere other than dot-com).
 	m.Get(apirouter.SrcCliVersionCache).Handler(trace.Route(releasecache.NewHandler(logger)))
 
-	m.Get(apirouter.Registry).Handler(trace.Route(handler(registry.HandleRegistry(db))))
+	m.Get(apirouter.Registry).Handler(trace.Route(handler(registry.HandleRegistry)))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())

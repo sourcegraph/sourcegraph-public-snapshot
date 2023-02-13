@@ -73,7 +73,6 @@ import type { LayoutRouteProps } from './routes'
 import { EnterprisePageRoutes } from './routes.constants'
 import { parseSearchURL, getQueryStateFromLocation, SearchAggregationProps } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
-import { SetupWizard } from './setup-wizard'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import {
@@ -146,9 +145,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Whether globbing is enabled for filters.
      */
     globbing: boolean
-
-    /** Experimental feature flag */
-    isSetupWizardEnabled: boolean
 }
 
 const notificationStyles: BrandedNotificationItemStyleProps = {
@@ -191,7 +187,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: siteSubjectNoAdmin(),
             globbing: false,
-            isSetupWizardEnabled: false,
         }
     }
 
@@ -229,7 +224,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                         authenticatedUser,
                         globbing: globbingEnabledFromSettings(settingsCascade),
                         viewerSubject: viewerSubjectFromSettings(settingsCascade, authenticatedUser),
-                        isSetupWizardEnabled: !!getExperimentalFeatures().setupWizard,
                     })
                 },
                 () => this.setState({ authenticatedUser: null })
@@ -337,7 +331,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             return <HeroPage icon={ServerIcon} title={`${statusCode}: ${statusText}`} subtitle={subtitle} />
         }
 
-        const { authenticatedUser, graphqlClient, temporarySettingsStorage, isSetupWizardEnabled } = this.state
+        const { authenticatedUser, graphqlClient, temporarySettingsStorage } = this.state
 
         if (authenticatedUser === undefined || graphqlClient === undefined || temporarySettingsStorage === undefined) {
             return null
@@ -363,7 +357,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                 <Router history={globalHistory}>
                     <CompatRouter>
                         <Routes>
-                            {isSetupWizardEnabled ? <Route path="/setup" element={<SetupWizard />} /> : null}
                             <Route
                                 path="*"
                                 element={

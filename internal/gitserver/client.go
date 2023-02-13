@@ -27,6 +27,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
 
 	sglog "github.com/sourcegraph/log"
 
@@ -36,8 +38,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/proto"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -557,7 +563,7 @@ type badRequestError struct{ error }
 
 func (e badRequestError) BadRequest() bool { return true }
 
-func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, errRes error) {
+func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRes error) {
 	repoName := protocol.NormalizeRepo(c.repo)
 
 	span, ctx := ot.StartSpanFromContext(ctx, "Client.sendExec") //nolint:staticcheck // OT is deprecated
@@ -575,38 +581,131 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, _ htt
 	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {
 		deadlineExceededCounter.Inc()
-		return nil, nil, err
+		return nil, err
 	}
 
-	req := &protocol.ExecRequest{
-		Repo:           repoName,
-		EnsureRevision: c.EnsureRevision(),
-		Args:           c.args[1:],
-		Stdin:          c.stdin,
-		NoTimeout:      c.noTimeout,
-	}
-	resp, err := c.execFn(ctx, repoName, "exec", req)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	switch resp.StatusCode {
-	case http.StatusOK:
-		return resp.Body, resp.Trailer, nil
-
-	case http.StatusNotFound:
-		var payload protocol.NotFoundPayload
-		if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
-			resp.Body.Close()
-			return nil, nil, err
+	if featureflag.FromContext(ctx).GetBoolOr("grpc", false) {
+		req := &proto.ExecRequest{
+			Repo:           string(repoName),
+			EnsureRevision: c.EnsureRevision(),
+			Args:           c.args[1:],
+			Stdin:          c.stdin,
+			NoTimeout:      c.noTimeout,
 		}
-		resp.Body.Close()
-		return nil, nil, &gitdomain.RepoNotExistError{Repo: repoName, CloneInProgress: payload.CloneInProgress, CloneProgress: payload.CloneProgress}
+		addr, err := c.execer.AddrForRepo(ctx, repoName)
+		if err != nil {
+			return nil, err
+		}
 
-	default:
-		resp.Body.Close()
-		return nil, nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
+		conn, err := grpc.DialContext(ctx, addr, defaults.DialOptions()...)
+		if err != nil {
+			return nil, err
+		}
+
+		client := proto.NewGitserverServiceClient(conn)
+		stream, err := client.Exec(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+		r := streamio.NewReader(func() ([]byte, error) {
+			msg, err := stream.Recv()
+			if err != nil {
+
+				return nil, err
+			}
+			return msg.GetData(), nil
+		})
+
+		return &readCloseWrapper{r: r, closeFn: conn.Close}, err
+
+	} else {
+		req := &protocol.ExecRequest{
+			Repo:           repoName,
+			EnsureRevision: c.EnsureRevision(),
+			Args:           c.args[1:],
+			Stdin:          c.stdin,
+			NoTimeout:      c.noTimeout,
+		}
+		resp, err := c.execer.httpPost(ctx, repoName, "exec", req)
+		if err != nil {
+			return nil, err
+		}
+
+		switch resp.StatusCode {
+		case http.StatusOK:
+			return &cmdReader{rc: resp.Body, trailer: resp.Trailer}, nil
+
+		case http.StatusNotFound:
+			var payload protocol.NotFoundPayload
+			if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+				resp.Body.Close()
+				return nil, err
+			}
+			resp.Body.Close()
+			return nil, &gitdomain.RepoNotExistError{Repo: repoName, CloneInProgress: payload.CloneInProgress, CloneProgress: payload.CloneProgress}
+
+		default:
+			resp.Body.Close()
+			return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
+		}
 	}
+}
+
+type readCloseWrapper struct {
+	r       io.Reader
+	closeFn func() error
+}
+
+func (r *readCloseWrapper) Read(p []byte) (int, error) {
+	n, err := r.r.Read(p)
+	if err != nil {
+		st, ok := status.FromError(err)
+		if !ok {
+			return n, err
+		}
+
+		for _, detail := range st.Details() {
+			switch payload := detail.(type) {
+			case *proto.ExecStatusPayload:
+				return n, &CommandStatusError{
+					Message:    st.Message(),
+					Stderr:     payload.Stderr,
+					StatusCode: payload.StatusCode,
+				}
+			case *proto.NotFoundPayload:
+				return n, &gitdomain.RepoNotExistError{
+					Repo:            api.RepoName(payload.Repo),
+					CloneInProgress: payload.CloneInProgress,
+					CloneProgress:   payload.CloneProgress,
+				}
+			}
+		}
+	}
+	return n, err
+}
+
+func (r *readCloseWrapper) Close() error {
+	return r.closeFn()
+}
+
+type CommandStatusError struct {
+	Message    string
+	StatusCode int32
+	Stderr     string
+}
+
+func (c *CommandStatusError) Error() string {
+	stderr := c.Stderr
+	if len(stderr) > 100 {
+		stderr = stderr[:100] + "... (truncated)"
+	}
+	if c.Message != "" {
+		return fmt.Sprintf("%s (stderr: %q)", c.Message, stderr)
+	}
+	if c.StatusCode != 0 {
+		return fmt.Sprintf("non-zero exit status: %d (stderr: %q)", c.StatusCode, stderr)
+	}
+	return stderr
 }
 
 func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, err error) {
@@ -878,7 +977,7 @@ func (c *clientImplementor) gitCommand(repo api.RepoName, arg ...string) GitComm
 	}
 	return &RemoteGitCommand{
 		repo:   repo,
-		execFn: c.httpPost,
+		execer: c,
 		args:   append([]string{git}, arg...),
 	}
 }
