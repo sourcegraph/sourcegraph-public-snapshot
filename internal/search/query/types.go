@@ -608,8 +608,9 @@ func (p Parameters) Visibility() RepoVisibility {
 type SymbolRelationship string
 
 const (
-	SymbolRelationshipReferences = "references"
-	SymbolRelationshipImplements = "implements"
+	SymbolRelationshipDefinitions = "definitions"
+	SymbolRelationshipReferences  = "references"
+	SymbolRelationshipImplements  = "implements"
 )
 
 type SymbolRelationshipSearch struct {

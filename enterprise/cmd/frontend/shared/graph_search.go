@@ -38,6 +38,18 @@ func newGraphSearchCodeIntelStore(db database.DB, codeIntelServices codeintel.Se
 	}, nil
 }
 
+func (s *graphSearchCodeIntelStore) GetDefinitions(ctx context.Context, repo sgtypes.MinimalRepo, args sgtypes.CodeIntelRequestArgs) (_ []sgtypes.CodeIntelLocation, err error) {
+	uploads, err := s.svc.CodenavService.GetClosestDumpsForBlob(ctx, args.RepositoryID, args.Commit, args.Path, true, "")
+	if err != nil || len(uploads) == 0 {
+		return nil, err
+	}
+
+	reqState := codenav.NewRequestState(uploads, authz.DefaultSubRepoPermsChecker, s.gs, repo.ToRepo(), args.Commit, args.Path, s.maxIndexes, s.hunkCache)
+
+	locs, err := s.svc.CodenavService.GetDefinitions(ctx, shared.RequestArgs(args), reqState)
+	return toCodeIntelLocations(locs), err
+}
+
 // TODO: Make this capable of cross-repo (phase?) and pagination
 func (s *graphSearchCodeIntelStore) GetReferences(ctx context.Context, repo sgtypes.MinimalRepo, args sgtypes.CodeIntelRequestArgs) (_ []sgtypes.CodeIntelLocation, err error) {
 	uploads, err := s.svc.CodenavService.GetClosestDumpsForBlob(ctx, args.RepositoryID, args.Commit, args.Path, true, "")

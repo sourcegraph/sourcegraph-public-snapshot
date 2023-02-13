@@ -89,6 +89,9 @@ func (s *CodeGraphSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 				}
 
 				switch s.Relationship {
+				case query.SymbolRelationshipDefinitions:
+					locations, err = s.CodeIntel.GetDefinitions(ctx, fm.Repo, req)
+
 				case query.SymbolRelationshipReferences:
 					locations, err = s.CodeIntel.GetReferences(ctx, fm.Repo, req)
 

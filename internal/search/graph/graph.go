@@ -10,6 +10,7 @@ import (
 // in code graph search. It must not use any enterprise types, and an implementation
 // should be registered during enterprise setup with RegisterStore.
 type CodeIntelStore interface {
+	GetDefinitions(context.Context, types.MinimalRepo, types.CodeIntelRequestArgs) ([]types.CodeIntelLocation, error)
 	GetReferences(context.Context, types.MinimalRepo, types.CodeIntelRequestArgs) ([]types.CodeIntelLocation, error)
 	GetImplementations(context.Context, types.MinimalRepo, types.CodeIntelRequestArgs) ([]types.CodeIntelLocation, error)
 }
