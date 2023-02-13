@@ -43,8 +43,8 @@ type BulkCreateForUserOpts struct {
 type UserRoleStore interface {
 	basestore.ShareableStore
 
-	// Create inserts the given user and role relationship into the database.
-	Create(ctx context.Context, opts CreateUserRoleOpts) (*types.UserRole, error)
+	// Assign is used to assign a role to a user.
+	Assign(ctx context.Context, opts CreateUserRoleOpts) (*types.UserRole, error)
 	// BulkCreateForUser assigns multiple roles to a single user. This is useful
 	// when we want to assign a user more than one role.
 	BulkCreateForUser(ctx context.Context, opts BulkCreateForUserOpts) ([]*types.UserRole, error)
