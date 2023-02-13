@@ -35,11 +35,12 @@ type JobTokenStore interface {
 
 // JobToken is the token for the specific Job.
 type JobToken struct {
-	Id    int64
-	Value []byte
-	JobID int64
-	Queue string
-	Repo  string
+	Id     int64
+	Value  []byte
+	JobID  int64
+	Queue  string
+	RepoID int64
+	Repo   string
 }
 
 type jobTokenStore struct {
@@ -83,7 +84,7 @@ func (s *jobTokenStore) Create(ctx context.Context, jobId int, queue string, rep
 		),
 	)
 	if err != nil {
-		if isUniqueConstraintViolation(err, "executor_job_tokens_job_id_queue_repo_key") {
+		if isUniqueConstraintViolation(err, "executor_job_tokens_job_id_queue_repo_id_key") {
 			return "", ErrJobTokenAlreadyCreated
 		}
 		return "", err
@@ -93,8 +94,8 @@ func (s *jobTokenStore) Create(ctx context.Context, jobId int, queue string, rep
 }
 
 const createExecutorJobTokenFmtstr = `
-INSERT INTO executor_job_tokens (value_sha256, job_id, queue, repo)
-VALUES (%s, %s, %s, %s)
+INSERT INTO executor_job_tokens (value_sha256, job_id, queue, repo_id)
+SELECT %s, %s, %s, id from repo r where r.name = %s;
 `
 
 func isUniqueConstraintViolation(err error, constraintName string) bool {
@@ -151,8 +152,8 @@ func (s *jobTokenStore) Get(ctx context.Context, jobId int, queue string) (JobTo
 }
 
 const getExecutorJobTokenFmtstr = `
-SELECT id, value_sha256, job_id, queue, repo
-FROM executor_job_tokens
+SELECT id, value_sha256, job_id, queue, repo_id, (select name from repo where id = t.repo_id) as repo
+FROM executor_job_tokens t
 WHERE job_id = %s AND queue = %s
 `
 
@@ -172,8 +173,8 @@ func (s *jobTokenStore) GetByToken(ctx context.Context, tokenHexEncoded string) 
 }
 
 const getByTokenExecutorJobTokenFmtstr = `
-SELECT id, value_sha256, job_id, queue, repo
-FROM executor_job_tokens
+SELECT id, value_sha256, job_id, queue, repo_id, (select name from repo where id = t.repo_id) as repo
+FROM executor_job_tokens t
 WHERE value_sha256 = %s
 `
 
@@ -184,6 +185,7 @@ func scanJobToken(row *sql.Row) (JobToken, error) {
 		&jobToken.Value,
 		&jobToken.JobID,
 		&jobToken.Queue,
+		&jobToken.RepoID,
 		&jobToken.Repo,
 	)
 	if err != nil {
