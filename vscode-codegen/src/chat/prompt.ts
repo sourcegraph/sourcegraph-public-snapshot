@@ -3,8 +3,8 @@ import path from 'path'
 import { Message } from '@sourcegraph/cody-common'
 
 import { EmbeddingsClient, EmbeddingSearchResult } from '../embeddings-client'
-import { getRecipeContextOptions, getRecipePrompt, RecipeInput } from './recipes'
 import { ContextSearchOptions } from './context-search-options'
+import { getRecipe } from './recipes/index'
 
 const MAX_PROMPT_TOKEN_LENGTH = 7000
 const SOLUTION_TOKEN_LENGTH = 1000
@@ -49,16 +49,6 @@ export class Prompt {
 					getContextMessageWithResponse(contextTemplateFn(text, groupedResults.filePath))
 				)
 			})
-	}
-
-	private truncateText(text: string, maxTokens: number): string {
-		const maxLength = maxTokens * CHARS_PER_TOKEN
-		return text.length <= maxLength ? text : text.slice(0, maxLength)
-	}
-
-	private truncateTextStart(text: string, maxTokens: number): string {
-		const maxLength = maxTokens * CHARS_PER_TOKEN
-		return text.length <= maxLength ? text : text.slice(-maxLength - 1)
 	}
 
 	private addInstructionsToHumanInput(humanInput: string): string {
@@ -117,7 +107,7 @@ export class Prompt {
 	}
 
 	async constructPromptForHumanInput(humanInput: string): Promise<Message[]> {
-		const truncatedHumanInput = this.truncateText(humanInput, MAX_HUMAN_INPUT_TOKENS)
+		const truncatedHumanInput = truncateText(humanInput, MAX_HUMAN_INPUT_TOKENS)
 
 		// TODO: Add context from currently active text editor if embeddingsClient is not available
 		const inputNeedsAdditionalContext = this.embeddingsClient
@@ -141,26 +131,31 @@ export class Prompt {
 		return this.getPromptForMessage(humanMessage, contextMessages)
 	}
 
-	async constructPromptForRecipe(
-		recipe: string,
-		recipeInput: RecipeInput,
-		recipeResponsePrefix: string
-	): Promise<Message[]> {
-		const truncatedSelectedText = this.truncateText(recipeInput.selectedText, MAX_RECIPE_INPUT_TOKENS)
-		const contextMessages = (
-			await this.getContextMessages(truncatedSelectedText, getRecipeContextOptions(recipe))
-		).concat(
-			[
-				this.truncateTextStart(recipeInput.precedingText, MAX_RECIPE_SURROUNDING_TOKENS),
-				this.truncateText(recipeInput.followingText, MAX_RECIPE_SURROUNDING_TOKENS),
-			].flatMap(text => getContextMessageWithResponse(populateCodeContextTemplate(text, recipeInput.fileName)))
-		)
-
-		const recipeMessage: Message = {
-			speaker: 'you',
-			text: getRecipePrompt(recipe, { ...recipeInput, selectedText: truncatedSelectedText }),
+	async getPromptForRecipe(recipeID: string): Promise<{
+		messages: Message[]
+		displayText: string
+		recipePrefix: string
+	} | null> {
+		const recipe = getRecipe(recipeID)
+		if (!recipe) {
+			return null
 		}
-		return this.getPromptForMessage(recipeMessage, contextMessages, recipeResponsePrefix)
+		const prompt = await recipe.getPrompt(
+			MAX_RECIPE_INPUT_TOKENS + MAX_RECIPE_SURROUNDING_TOKENS,
+			(query: string, options: ContextSearchOptions): Promise<Message[]> =>
+				this.getContextMessages(query, options)
+		)
+		if (!prompt) {
+			return null
+		}
+		const { displayText, contextMessages, promptMessage, botResponsePrefix } = prompt
+
+		const promptMessages = await this.getPromptForMessage(promptMessage, contextMessages, botResponsePrefix)
+		return {
+			messages: promptMessages,
+			recipePrefix: botResponsePrefix,
+			displayText,
+		}
 	}
 
 	addBotResponse(text: string): void {
@@ -175,6 +170,16 @@ export class Prompt {
 	reset(): void {
 		this.messages = []
 	}
+}
+
+export function truncateText(text: string, maxTokens: number): string {
+	const maxLength = maxTokens * CHARS_PER_TOKEN
+	return text.length <= maxLength ? text : text.slice(0, maxLength)
+}
+
+export function truncateTextStart(text: string, maxTokens: number): string {
+	const maxLength = maxTokens * CHARS_PER_TOKEN
+	return text.length <= maxLength ? text : text.slice(-maxLength - 1)
 }
 
 function estimateTokensUsage(message: Message): number {
@@ -235,18 +240,18 @@ const CODE_CONTEXT_TEMPLATE = `Add the following code snippet from file \`{fileP
 {text}
 \`\`\``
 
-function populateCodeContextTemplate(code: string, filePath: string): string {
+export function populateCodeContextTemplate(code: string, filePath: string): string {
 	const language = path.extname(filePath).slice(1)
 	return CODE_CONTEXT_TEMPLATE.replace('{filePath}', filePath).replace('{language}', language).replace('{text}', code)
 }
 
 const MARKDOWN_CONTEXT_TEMPLATE = `Add the following text from file \`{filePath}\` to your knowledge base:\n{text}`
 
-function populateMarkdownContextTemplate(md: string, filePath: string): string {
+export function populateMarkdownContextTemplate(md: string, filePath: string): string {
 	return MARKDOWN_CONTEXT_TEMPLATE.replace('{filePath}', filePath).replace('{text}', md)
 }
 
-function getContextMessageWithResponse(text: string): Message[] {
+export function getContextMessageWithResponse(text: string): Message[] {
 	return [
 		{ speaker: 'you', text: text },
 		{ speaker: 'bot', text: 'Ok, adding previous message to my knowledge base.' },

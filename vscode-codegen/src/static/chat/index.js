@@ -1,6 +1,7 @@
 const MAX_HEIGHT = 192
 
 let tabsController = null
+let debugLog = []
 
 // TODO: We need a design for the chat empty state.
 function onInitialize() {
@@ -63,6 +64,10 @@ function onMessage(event) {
 			if (tabsController) {
 				tabsController.setSelectedTab(event.data.tab)
 			}
+			break
+		case 'debug':
+			debugLog.push(event.data.message)
+			renderDebugLog(debugLog)
 			break
 	}
 }
@@ -130,6 +135,26 @@ function renderMessages(messages, messageInProgress) {
 			document.querySelector('.bubble-row:last-child')?.scrollIntoView()
 		}
 	}, 0)
+}
+
+const debugMessageTemplate = `
+<div class="debug-message">
+	<pre>{message6fc87d4}</pre>
+</div>
+`
+function renderDebugLog(debugMessages) {
+	const debugContainerElement = document.querySelector('.debug-container')
+	if (!debugContainerElement) {
+		return
+	}
+
+	const escapeEl = document.createElement('textarea')
+	debugContainerElement.innerHTML = debugMessages
+		.map(message => {
+			escapeEl.textContent = message
+			return debugMessageTemplate.replace('{message6fc87d4}', escapeEl.innerHTML)
+		})
+		.join('\n')
 }
 
 window.addEventListener('message', onMessage)

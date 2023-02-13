@@ -34,31 +34,39 @@
     "commands": [
       {
         "command": "cody.experimental.suggest",
-        "title": "Ask Cody: View Suggestions"
+        "title": "Ask Cody: View suggestions"
       },
       {
         "command": "cody.recipe.explain-code",
-        "title": "Ask Cody: Explain Selected Code (detailed)"
+        "title": "Ask Cody: Explain code in detail"
       },
       {
         "command": "cody.recipe.explain-code-high-level",
-        "title": "Ask Cody: Explain Selected Code (high-level)"
+        "title": "Ask Cody: Explain code at a high level"
       },
       {
         "command": "cody.recipe.generate-unit-test",
-        "title": "Ask Cody: Generate Unit Test"
+        "title": "Ask Cody: Generate unit test"
       },
       {
         "command": "cody.recipe.generate-docstring",
-        "title": "Ask Cody: Generate Docstring"
+        "title": "Ask Cody: Generate docstring"
+      },
+      {
+        "command": "cody.recipe.translate-to-language",
+        "title": "Ask Cody: Translate to language"
+      },
+      {
+        "command": "cody.recipe.git-history",
+        "title": "Cody: Recent history"
       },
       {
         "command": "cody.set-access-token",
-        "title": "Cody: Set Access Token"
+        "title": "Cody: Set access token"
       },
       {
         "command": "cody.delete-access-token",
-        "title": "Cody: Delete Access Token"
+        "title": "Cody: Delete access token"
       }
     ],
     "keybindings": [
@@ -93,6 +101,9 @@
         },
         {
           "command": "cody.recipe.generate-docstring"
+        },
+        {
+          "command": "cody.recipe.translate-to-language"
         }
       ]
     },

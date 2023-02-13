@@ -8,7 +8,6 @@ import { EmbeddingsClient } from '../embeddings-client'
 import { WSChatClient } from './ws'
 import { Prompt } from './prompt'
 import { renderMarkdown } from './markdown'
-import { getRecipeDisplayText, getRecipeInput, getRecipeResponsePrefix } from './recipes'
 
 export interface ChatMessage extends Omit<Message, 'text'> {
 	displayText: string
@@ -35,7 +34,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 	constructor(
 		private extensionPath: string,
 		private wsclient: Promise<WSChatClient | null>,
-		private embeddingsClient: EmbeddingsClient | null
+		private embeddingsClient: EmbeddingsClient | null,
+		private debug: boolean
 	) {
 		this.prompt = new Prompt(this.embeddingsClient)
 	}
@@ -79,14 +79,29 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 		}
 
 		await this.closeConnectionInProgress()
+		await this.logSendPrompt(promptMessages)
 
 		this.closeConnectionInProgressPromise = wsclient.chat(promptMessages, {
 			onChange: text => this.onBotMessageChange(this.reformatBotMessage(text, responsePrefix)),
-			onComplete: text => this.onBotMessageComplete(this.reformatBotMessage(text, responsePrefix)),
+			onComplete: text => {
+				const botMessage = this.reformatBotMessage(text, responsePrefix)
+				this.logReceivedBotResponse(botMessage)
+				this.onBotMessageComplete(botMessage)
+			},
 			onError: err => {
 				vscode.window.showErrorMessage(err)
 			},
 		})
+	}
+
+	private logReceivedBotResponse(response: string) {
+		this.webview?.postMessage({ type: 'debug', message: `RESPONSE (${response.length} characters):\n${response}` })
+	}
+
+	private async logSendPrompt(promptMessages: Message[]): Promise<void> {
+		let promptStr = promptMessages.map(msg => `${msg.speaker}: ${msg.text}`).join('\n\n')
+		let debugMessage = `REQUEST (${promptStr.length} characters):\n` + promptStr
+		this.webview?.postMessage({ type: 'debug', message: debugMessage })
 	}
 
 	private async closeConnectionInProgress(): Promise<void> {
@@ -132,7 +147,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 		return this.sendPrompt(promptMessages)
 	}
 
-	async executeRecipe(recipe: string): Promise<void> {
+	async executeRecipe(recipeID: string): Promise<void> {
 		if (this.messageInProgress) {
 			vscode.window.showErrorMessage(
 				'Cannot execute multiple recipes. Please wait for the current recipe to finish.'
@@ -140,18 +155,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 			return
 		}
 
-		const input = getRecipeInput(recipe)
-		if (!input) {
+		const recipePrompt = await this.prompt.getPromptForRecipe(recipeID)
+		if (!recipePrompt) {
+			console.error('unrecognized recipe prompt: ', recipePrompt)
 			return
 		}
+		const { displayText, messages, recipePrefix } = recipePrompt
 		this.showTab('chat')
-
-		const displayText = getRecipeDisplayText(recipe, input)
 		this.onNewMessageSubmitted(displayText)
-
-		const responsePrefix = getRecipeResponsePrefix(recipe, input)
-		const promptMessages = await this.prompt.constructPromptForRecipe(recipe, input, responsePrefix)
-		return this.sendPrompt(promptMessages, responsePrefix)
+		return this.sendPrompt(messages, recipePrefix)
 	}
 
 	private reformatBotMessage(text: string, prefix: string): string {
@@ -209,6 +221,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 			.replace('{nonce}', nonce)
 			.replace('{scripts}', this.staticFiles.js.map(file => this.getScriptTag(webview, file, nonce)).join(''))
 			.replace('{styles}', this.staticFiles.css.map(file => this.getStyleTag(webview, file)).join(''))
+			.replace('{debug-tab-class-hidden}', this.debug ? '' : 'debug-tab-hidden')
 	}
 
 	private getScriptTag(webview: vscode.Webview, filePath: string, nonce: string): string {

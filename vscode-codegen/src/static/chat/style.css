@@ -31,6 +31,7 @@ body {
 	min-height: 0;
 	display: none;
 	flex-direction: column;
+	overflow-x: scroll;
 }
 
 .inner-container.show {
@@ -259,4 +260,28 @@ body {
 	margin-top: 1rem;
 	margin-left: 1rem;
 	margin-right: 1rem;
+}
+
+.debug-container-placeholder {
+	padding: 1rem;
+}
+
+.debug-message {
+	padding: 1rem;
+	margin: 1rem;
+	background-color: var(--human-bubble-color);
+	border-radius: 1rem;
+}
+
+.debug-message > pre {
+	white-space: pre-wrap;
+	margin: 0;
+}
+
+.debug-message:last-child {
+	border-bottom: 0;
+}
+
+.debug-tab-hidden {
+	display: none;
 }

@@ -15,12 +15,15 @@
 		<ul class="tab-menu-container">
 			<li id="tab-menu-item-chat" class="tab-menu-item" data-tab="chat">Chat</li>
 			<li id="tab-menu-item-recipes" class="tab-menu-item" data-tab="recipes">Recipes</li>
+			<li id="tab-menu-item-recipes" class="tab-menu-item {debug-tab-class-hidden}" data-tab="debug">Debug</li>
 		</ul>
 		<div class="inner-container" data-tab-target="recipes">
 			<button class="btn-recipe" data-recipe="explainCode">Explain selected code (detailed)</button>
 			<button class="btn-recipe" data-recipe="explainCodeHighLevel">Explain selected code (high level)</button>
 			<button class="btn-recipe" data-recipe="generateUnitTest">Generate a unit test</button>
 			<button class="btn-recipe" data-recipe="generateDocstring">Generate a docstring</button>
+			<button class="btn-recipe" data-recipe="translateToLanguage">Translate to different language</button>
+			<button class="btn-recipe" data-recipe="gitHistory">Recent history</button>
 		</div>
 		<div class="inner-container" data-tab-target="chat">
 			<div class="header-container">
@@ -58,6 +61,13 @@
 						<path
 							d="m21.426 11.095-17-8A1 1 0 0 0 3.03 4.242l1.212 4.849L12 12l-7.758 2.909-1.212 4.849a.998.998 0 0 0 1.396 1.147l17-8a1 1 0 0 0 0-1.81z" />
 					</svg>
+				</div>
+			</div>
+		</div>
+		<div class="inner-container" data-tab-target="debug">
+			<div class="debug-container">
+				<div class="debug-container-placeholder">
+					(No data yet)
 				</div>
 			</div>
 		</div>

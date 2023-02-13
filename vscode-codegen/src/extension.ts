@@ -42,7 +42,12 @@ export async function activate(context: vscode.ExtensionContext) {
 	const wsChatClient = WSChatClient.new(`${serverUrl}/chat`, accessToken)
 	const embeddingsClient = codebaseId ? new EmbeddingsClient(embeddingsUrl, accessToken, codebaseId) : null
 
-	const chatProvider = new ChatViewProvider(context.extensionPath, wsChatClient, embeddingsClient)
+	const chatProvider = new ChatViewProvider(
+		context.extensionPath,
+		wsChatClient,
+		embeddingsClient,
+		settings.get('cody.debug') || false
+	)
 
 	const executeRecipe = async (recipe: string) => {
 		await vscode.commands.executeCommand('cody.chat.focus')
@@ -54,18 +59,19 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.languages.registerHoverProvider({ scheme: 'codegen' }, documentProvider),
 
 		vscode.commands.registerCommand('cody.recipe.explain-code', async () => executeRecipe('explainCode')),
-
 		vscode.commands.registerCommand('cody.recipe.explain-code-high-level', async () =>
 			executeRecipe('explainCodeHighLevel')
 		),
-
 		vscode.commands.registerCommand('cody.recipe.generate-unit-test', async () =>
 			executeRecipe('generateUnitTest')
 		),
-
 		vscode.commands.registerCommand('cody.recipe.generate-docstring', async () =>
 			executeRecipe('generateDocstring')
 		),
+		vscode.commands.registerCommand('cody.recipe.translate-to-language', async () =>
+			executeRecipe('translateToLanguage')
+		),
+		vscode.commands.registerCommand('cody.recipe.git-history', async => executeRecipe('gitHistory')),
 
 		vscode.window.registerWebviewViewProvider('cody.chat', chatProvider),
 
