@@ -95,6 +95,9 @@ func newExecutorQueuesHandler(
 		// Upload LSIF indexes without a sudo access token or github tokens.
 		lsifRouter := base.PathPrefix("/lsif").Name("executor-lsif").Subrouter()
 		lsifRouter.Path("/upload").Methods("POST").Handler(uploadHandler)
+		base.Path("/scip/upload").Methods("POST").Handler(uploadHandler)
+		base.Path("/lsif/upload").Methods("POST").Handler(uploadHandler)
+		base.Path("/scip/upload").Methods("HEAD").Handler(noopHandler)
 		// The lsif route are treated as an internal actor and require the executor access token to authenticate.
 		lsifRouter.Use(withInternalActor, executorAuth)
 
@@ -329,3 +332,7 @@ func parseJobIdHeader(r *http.Request) (int64, error) {
 	}
 	return int64(id), nil
 }
+
+var noopHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+})

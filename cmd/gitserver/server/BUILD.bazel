@@ -149,6 +149,7 @@ go_test(
         "@com_github_stretchr_testify//require",
         "@org_golang_x_crypto//ssh",
         "@org_golang_x_crypto//ssh/agent",
+        "@org_golang_x_exp//slices",
         "@org_golang_x_mod//module",
         "@org_golang_x_sync//semaphore",
         "@org_golang_x_time//rate",

@@ -6,11 +6,6 @@
   path: github.com/prometheus/client_golang/api/prometheus/v1
   interfaces:
     - API
-- filename: enterprise/cmd/frontend/internal/registry/stores/dbmocks/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry/stores
-  interfaces:
-    - ExtensionStore
-    - ReleaseStore
 - filename: enterprise/internal/database/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/database
   interfaces:

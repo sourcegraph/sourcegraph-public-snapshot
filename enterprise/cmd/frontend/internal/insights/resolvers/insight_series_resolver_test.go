@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -359,7 +360,7 @@ func Test_NumSamplesFiltering(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		numSamples int
+		numSamples int32
 	}{
 		{
 			name:       "one",
@@ -380,10 +381,10 @@ func Test_NumSamplesFiltering(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			points, err := fetchSeries(ctx, types.InsightViewSeries{SeriesID: series.SeriesID, InsightSeriesID: series.ID}, types.InsightViewFilters{}, types.SeriesDisplayOptions{NumSamples: test.numSamples}, &base)
+			points, err := fetchSeries(ctx, types.InsightViewSeries{SeriesID: series.SeriesID, InsightSeriesID: series.ID}, types.InsightViewFilters{}, types.SeriesDisplayOptions{NumSamples: &test.numSamples}, &base)
 			require.NoError(t, err)
 
-			assert.Equal(t, test.numSamples, len(points))
+			assert.Equal(t, int(test.numSamples), len(points))
 			t.Log(points)
 			for i := range points {
 				assert.Equal(t, times[len(points)-i-1].Timestamp, points[i].Time)

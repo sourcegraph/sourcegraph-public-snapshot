@@ -10,19 +10,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 )
 
+const loopDevPath = "/var/lib/firecracker/loop-devices"
+const mountpointsPath = "/var/lib/firecracker/mountpoints"
+
 // MakeTempFile defaults to makeTemporaryFile and can be replaced for testing
 // with determinstic workspace/scripts directories.
 var MakeTempFile = makeTemporaryFile
 
 func makeTemporaryFile(prefix string) (*os.File, error) {
-	if tempdir := os.Getenv("TMPDIR"); tempdir != "" {
-		if err := os.MkdirAll(tempdir, os.ModePerm); err != nil {
-			return nil, err
-		}
-		return os.CreateTemp(tempdir, prefix+"-*")
+	if err := os.MkdirAll(loopDevPath, os.ModePerm); err != nil {
+		return nil, err
 	}
-
-	return os.CreateTemp("", prefix+"-*")
+	return os.CreateTemp(loopDevPath, prefix+"-*")
 }
 
 // MakeTempDirectory defaults to makeTemporaryDirectory and can be replaced for testing
@@ -30,14 +29,11 @@ func makeTemporaryFile(prefix string) (*os.File, error) {
 var MakeTempDirectory = MakeTemporaryDirectory
 
 func MakeTemporaryDirectory(prefix string) (string, error) {
-	if tempdir := os.Getenv("TMPDIR"); tempdir != "" {
-		if err := os.MkdirAll(tempdir, os.ModePerm); err != nil {
-			return "", err
-		}
-		return os.MkdirTemp(tempdir, prefix+"-*")
+	if err := os.MkdirAll(mountpointsPath, os.ModePerm); err != nil {
+		return "", err
 	}
 
-	return os.MkdirTemp("", prefix+"-*")
+	return os.MkdirTemp(mountpointsPath, prefix+"-*")
 }
 
 // runs the given command with args and logs the invocation and output to the provided log entry handle.

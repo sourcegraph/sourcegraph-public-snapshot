@@ -13,10 +13,7 @@ const bazelRemoteCacheURL = "https://storage.googleapis.com/sourcegraph_bazel_ca
 func BazelOperations() *operations.Set {
 	ops := operations.NewSet()
 	ops.Append(bazelBuild(
-		"//dev/sg",
-		"//lib/...",
-		"//internal/...",
-		"//cmd/...",
+		"//...",
 	))
 	ops.Append(bazelTest("//monitoring/..."))
 	return ops

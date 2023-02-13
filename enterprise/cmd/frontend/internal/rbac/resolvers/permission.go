@@ -36,6 +36,10 @@ func (r *permissionResolver) Action() string {
 	return r.permission.Action
 }
 
+func (r *permissionResolver) DisplayName() string {
+	return r.permission.DisplayName()
+}
+
 func (r *permissionResolver) CreatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.permission.CreatedAt}
 }
