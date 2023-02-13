@@ -50,7 +50,6 @@ func (s *graphSearchCodeIntelStore) GetDefinitions(ctx context.Context, repo sgt
 	return toCodeIntelLocations(locs), err
 }
 
-// TODO: Make this capable of cross-repo (phase?) and pagination
 func (s *graphSearchCodeIntelStore) GetReferences(ctx context.Context, repo sgtypes.MinimalRepo, args sgtypes.CodeIntelRequestArgs) (_ []sgtypes.CodeIntelLocation, err error) {
 	uploads, err := s.svc.CodenavService.GetClosestDumpsForBlob(ctx, args.RepositoryID, args.Commit, args.Path, true, "")
 	if err != nil || len(uploads) == 0 {
@@ -59,13 +58,13 @@ func (s *graphSearchCodeIntelStore) GetReferences(ctx context.Context, repo sgty
 
 	reqState := codenav.NewRequestState(uploads, authz.DefaultSubRepoPermsChecker, s.gs, repo.ToRepo(), args.Commit, args.Path, s.maxIndexes, s.hunkCache)
 
+	// TODO: pagination, phases?
 	locs, _, err := s.svc.CodenavService.GetReferences(ctx, shared.RequestArgs(args), reqState, shared.ReferencesCursor{
 		Phase: "local",
 	})
 	return toCodeIntelLocations(locs), err
 }
 
-// TODO: Make this capable of cross-repo (phase?) and pagination
 func (s *graphSearchCodeIntelStore) GetImplementations(ctx context.Context, repo sgtypes.MinimalRepo, args sgtypes.CodeIntelRequestArgs) (_ []sgtypes.CodeIntelLocation, err error) {
 	uploads, err := s.svc.CodenavService.GetClosestDumpsForBlob(ctx, args.RepositoryID, args.Commit, args.Path, true, "")
 	if err != nil || len(uploads) == 0 {
@@ -74,6 +73,7 @@ func (s *graphSearchCodeIntelStore) GetImplementations(ctx context.Context, repo
 
 	reqState := codenav.NewRequestState(uploads, authz.DefaultSubRepoPermsChecker, s.gs, repo.ToRepo(), args.Commit, args.Path, s.maxIndexes, s.hunkCache)
 
+	// TODO: pagination, phases?
 	locs, _, err := s.svc.CodenavService.GetImplementations(ctx, shared.RequestArgs(args), reqState, shared.ImplementationsCursor{
 		Phase: "local",
 	})

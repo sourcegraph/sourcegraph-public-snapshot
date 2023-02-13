@@ -88,6 +88,9 @@ func (s *CodeGraphSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 					RawCursor: "",
 				}
 
+				// TODO: These relationship queries currently only search within the
+				// current repo. We'll probably need to do something in this job to expand
+				// the search to encompass more repositories.
 				switch s.Relationship {
 				case query.SymbolRelationshipDefinitions:
 					locations, err = s.CodeIntel.GetDefinitions(ctx, fm.Repo, req)
