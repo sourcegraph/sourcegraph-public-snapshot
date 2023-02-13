@@ -12,6 +12,7 @@ import { CodeHostCreation } from './components/code-hosts'
 import { CodeHostsNavigation } from './components/navigation'
 
 import styles from './RemoteRepositoriesStep.module.scss'
+import { CodeHostEdit } from './components/code-hosts/CodeHostEdit'
 
 interface RemoteRepositoriesStepProps extends HTMLAttributes<HTMLDivElement> {}
 
@@ -41,7 +42,7 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = props => 
                     <Routes>
                         <Route index={true} element={<CodeHostsPicker />} />
                         <Route path=":codeHostType/create" element={<CodeHostCreation />} />
-                        <Route path=":codehostId/edit" element={<span>Hello edit UI</span>} />
+                        <Route path=":codehostId/edit" element={<CodeHostEdit />} />
                     </Routes>
                 </Container>
             </section>

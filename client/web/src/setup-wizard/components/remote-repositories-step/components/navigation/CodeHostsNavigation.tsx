@@ -15,6 +15,7 @@ const GET_CODE_HOSTS = gql`
     query GetCodeHosts {
         externalServices {
             nodes {
+                __typename
                 id
                 kind
                 repoCount
@@ -41,7 +42,7 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
 
     if (error && !loading) {
         return (
-            <div className={classNames(className)}>
+            <div className={className}>
                 <ErrorAlert error={error} />
                 <Button variant="secondary" outline={true} size="sm" onClick={() => refetch()}>
                     Try fetch again

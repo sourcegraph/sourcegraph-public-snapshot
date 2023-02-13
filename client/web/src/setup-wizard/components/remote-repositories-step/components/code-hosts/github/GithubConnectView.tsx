@@ -33,6 +33,8 @@ const DEFAULT_FORM_VALUES: CodeHostConnectFormFields = {
 }
 
 interface GithubConnectViewProps {
+    initialValues?: CodeHostConnectFormFields
+
     /**
      * Render props that is connected to form state, usually is used to render
      * form actions UI, like save, cancel, clear fields. Action layout is the same
@@ -48,8 +50,8 @@ interface GithubConnectViewProps {
  * storage
  */
 export const GithubConnectView: FC<GithubConnectViewProps> = props => {
-    const { children, onSubmit } = props
-    const [initialValues, setInitialValues] = useLocalStorage('github-connection-form', DEFAULT_FORM_VALUES)
+    const { initialValues, children, onSubmit } = props
+    const [localValues, setInitialValues] = useLocalStorage('github-connection-form', DEFAULT_FORM_VALUES)
 
     const handleSubmit = useCallback(
         async (values: CodeHostConnectFormFields): Promise<void> => {
@@ -67,7 +69,11 @@ export const GithubConnectView: FC<GithubConnectViewProps> = props => {
     )
 
     return (
-        <GithubConnectForm initialValues={initialValues} onChange={setInitialValues} onSubmit={handleSubmit}>
+        <GithubConnectForm
+            initialValues={initialValues ?? localValues}
+            onChange={setInitialValues}
+            onSubmit={handleSubmit}
+        >
             {children}
         </GithubConnectForm>
     )

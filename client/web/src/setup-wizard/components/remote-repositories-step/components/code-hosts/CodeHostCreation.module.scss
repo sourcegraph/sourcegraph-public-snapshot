@@ -1,13 +1,8 @@
-.header {
+.loading-state {
     display: flex;
-    gap: 0.5rem;
     align-items: center;
-
-    &-icon {
-        width: 2rem;
-        height: 2rem;
-        flex-shrink: 0;
-    }
+    gap: 0.25rem;
+    color: var(--text-muted);
 }
 
 .footer {

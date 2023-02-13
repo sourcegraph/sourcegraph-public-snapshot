@@ -8,9 +8,8 @@ import { Alert, H4, Link, Button } from '@sourcegraph/wildcard'
 import { defaultExternalServices } from '../../../../../components/externalServices/externalServices'
 import { getCodeHostKindFromURLParam } from '../../helpers'
 
-import { CodeHostJSONForm } from './common'
+import { CodeHostJSONForm, CodeHostJSONFormState } from './common'
 import { GithubConnectView } from './github/GithubConnectView'
-import { CodeHostFormState } from './types'
 
 import styles from './CodeHostCreation.module.scss'
 
@@ -51,7 +50,7 @@ export const CodeHostCreation: FC = () => {
 
 interface CodeHostCreationFormProps {
     codeHostKind: ExternalServiceKind
-    children: (state: CodeHostFormState) => ReactNode
+    children: (state: CodeHostJSONFormState) => ReactNode
 }
 
 /**

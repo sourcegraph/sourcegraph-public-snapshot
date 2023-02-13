@@ -118,6 +118,7 @@ export function CodeHostJSONFormContent(props: CodeHostJSONFormContentProps): Re
                     height={400}
                     readOnly={false}
                     isLightTheme={true}
+                    blockNavigationIfDirty={false}
                     onChange={configurationField.input.onChange}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     className={styles.configurationGroupEditor}
