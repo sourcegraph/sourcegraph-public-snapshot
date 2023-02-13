@@ -10,7 +10,7 @@ type GetConfigurationPoliciesOptions struct {
 	Term string
 
 	// If supplied, filter the policies by their protected flag.
-	ProtectedOnly *bool
+	Protected *bool
 
 	// ForIndexing indicates that only configuration policies with data retention enabled
 	// should be returned.

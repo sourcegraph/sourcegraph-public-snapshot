@@ -76,13 +76,13 @@ func TestGetConfigurationPolicies(t *testing.T) {
 		term             string
 		forDataRetention bool
 		forIndexing      bool
-		protectedOnly    *bool
+		protected        *bool
 		expectedIDs      []int
 	}
 	testCases := []testCase{
-		{expectedIDs: []int{101, 102, 103, 104, 105, 106, 107, 108, 109}},                 // Any flags; all policies
-		{protectedOnly: boolPtr(true), expectedIDs: []int{101, 102, 103}},                 // Only protected
-		{protectedOnly: boolPtr(false), expectedIDs: []int{104, 105, 106, 107, 108, 109}}, // Only un-protected
+		{expectedIDs: []int{101, 102, 103, 104, 105, 106, 107, 108, 109}},             // Any flags; all policies
+		{protected: boolPtr(true), expectedIDs: []int{101, 102, 103}},                 // Only protected
+		{protected: boolPtr(false), expectedIDs: []int{104, 105, 106, 107, 108, 109}}, // Only un-protected
 
 		{repositoryID: 41, expectedIDs: []int{104, 105, 106, 107}},               // Any flags; matches repo by patterns
 		{repositoryID: 42, expectedIDs: []int{101, 102, 104, 105, 109}},          // Any flags; matches repo by assignment and pattern
@@ -120,7 +120,7 @@ func TestGetConfigurationPolicies(t *testing.T) {
 				Term:             testCase.term,
 				ForDataRetention: testCase.forDataRetention,
 				ForIndexing:      testCase.forIndexing,
-				ProtectedOnly:    testCase.protectedOnly,
+				Protected:        testCase.protected,
 				Limit:            3,
 				Offset:           lo,
 			})

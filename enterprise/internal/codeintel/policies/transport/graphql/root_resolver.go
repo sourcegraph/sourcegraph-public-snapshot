@@ -92,6 +92,9 @@ func (r *rootResolver) CodeIntelligenceConfigurationPolicies(ctx context.Context
 	if args.ForIndexing != nil {
 		opts.ForIndexing = *args.ForIndexing
 	}
+	if args.Protected != nil {
+		opts.Protected = args.Protected
+	}
 
 	configPolicies, totalCount, err := r.policySvc.GetConfigurationPolicies(ctx, opts)
 	if err != nil {
