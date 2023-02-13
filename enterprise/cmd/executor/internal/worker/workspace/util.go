@@ -13,11 +13,11 @@ import (
 const loopDevPath = "/var/lib/firecracker/loop-devices"
 const mountpointsPath = "/var/lib/firecracker/mountpoints"
 
-// MakeTempFile defaults to makeTemporaryFile and can be replaced for testing
-// with determinstic workspace/scripts directories.
-var MakeTempFile = makeTemporaryFile
+// MakeLoopFile defaults to makeTemporaryLoopFile and can be replaced for testing
+// with determinstic paths.
+var MakeLoopFile = makeTemporaryLoopFile
 
-func makeTemporaryFile(prefix string) (*os.File, error) {
+func makeTemporaryLoopFile(prefix string) (*os.File, error) {
 	if err := os.MkdirAll(loopDevPath, os.ModePerm); err != nil {
 		return nil, err
 	}
@@ -29,6 +29,21 @@ func makeTemporaryFile(prefix string) (*os.File, error) {
 var MakeTempDirectory = MakeTemporaryDirectory
 
 func MakeTemporaryDirectory(prefix string) (string, error) {
+	if tempdir := os.Getenv("TMPDIR"); tempdir != "" {
+		if err := os.MkdirAll(tempdir, os.ModePerm); err != nil {
+			return "", err
+		}
+		return os.MkdirTemp(tempdir, prefix+"-*")
+	}
+
+	return os.MkdirTemp("", prefix+"-*")
+}
+
+// MakeMountDirectory defaults to makeTemporaryMountDirectory and can be replaced for testing
+// with determinstic workspace/scripts directories.
+var MakeMountDirectory = MakeTemporaryMountDirectory
+
+func MakeTemporaryMountDirectory(prefix string) (string, error) {
 	if err := os.MkdirAll(mountpointsPath, os.ModePerm); err != nil {
 		return "", err
 	}
