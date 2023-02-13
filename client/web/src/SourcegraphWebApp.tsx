@@ -8,7 +8,6 @@ import { Router } from 'react-router'
 import { CompatRouter, Routes, Route } from 'react-router-dom-v5-compat'
 import { combineLatest, from, Subscription, fromEvent, of, Subject, Observable } from 'rxjs'
 import { first, startWith, switchMap } from 'rxjs/operators'
-import * as uuid from 'uuid'
 
 import { logger } from '@sourcegraph/common'
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
@@ -56,9 +55,7 @@ import { HeroPage } from './components/HeroPage'
 import { FeatureFlagsProvider } from './featureFlags/FeatureFlagsProvider'
 import type { CodeInsightsProps } from './insights/types'
 import { Layout, LayoutProps } from './Layout'
-import { BlockInput, NotebookProps } from './notebooks'
-import { createNotebook } from './notebooks/backend'
-import { blockToGQLInput } from './notebooks/serialize'
+import { NotebookProps } from './notebooks'
 import type { OrgAreaRoute } from './org/area/OrgArea'
 import type { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import type { OrgSettingsAreaRoute } from './org/settings/OrgSettingsArea'
@@ -70,7 +67,6 @@ import type { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import type { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import type { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import type { LayoutRouteProps } from './routes'
-import { EnterprisePageRoutes } from './routes.constants'
 import { parseSearchURL, getQueryStateFromLocation, SearchAggregationProps } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
@@ -390,7 +386,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                         isSearchContextSpecAvailable={isSearchContextSpecAvailable}
                                         globbing={this.state.globbing}
                                         streamSearch={aggregateStreamingSearch}
-                                        onCreateNotebookFromNotepad={this.onCreateNotebook}
                                     />
                                 }
                             />
@@ -477,24 +472,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         await extensionHostAPI.setSearchContext(spec)
     }
 
-    private onCreateNotebook = (blocks: BlockInput[]): void => {
-        if (!this.state.authenticatedUser) {
-            return
-        }
-
-        this.subscriptions.add(
-            createNotebook({
-                notebook: {
-                    title: 'New Notebook',
-                    blocks: blocks.map(block => blockToGQLInput({ id: uuid.v4(), ...block })),
-                    public: false,
-                    namespace: this.state.authenticatedUser.id,
-                },
-            }).subscribe(createdNotebook => {
-                globalHistory.push(EnterprisePageRoutes.Notebook.replace(':id', createdNotebook.id))
-            })
-        )
-    }
     private fetchHighlightedFileLineRanges = (
         parameters: FetchFileParameters,
         force?: boolean | undefined
