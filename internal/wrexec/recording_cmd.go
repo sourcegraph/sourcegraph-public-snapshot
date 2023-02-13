@@ -109,7 +109,8 @@ func (rc *RecordingCmd) after(ctx context.Context, logger log.Logger, cmd *exec.
 		return
 	}
 
-	rc.store.Insert(data)
+	// We ignore ctx since it may be cancelled.
+	rc.store.Insert(context.Background(), data)
 }
 
 // RecordingCommandFactory stores a ShouldRecord that will be used to create a new RecordingCommand

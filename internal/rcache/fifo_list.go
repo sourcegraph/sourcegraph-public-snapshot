@@ -33,29 +33,30 @@ func NewFIFOListDynamic(key string, size func() int) *FIFOList {
 }
 
 // Insert b in the cache and drops the oldest inserted item if the size exceeds the configured limit.
-func (l *FIFOList) Insert(b []byte) error {
+func (l *FIFOList) Insert(ctx context.Context, b []byte) error {
 	if !utf8.Valid(b) {
 		errors.Newf("rcache: keys must be valid utf8", "key", b)
 	}
 	key := l.globalPrefixKey()
+	kv := kv().WithContext(ctx)
 
 	// Special case maxSize 0 to mean keep the list empty. Used to handle
 	// disabling.
 	maxSize := l.MaxSize()
 	if maxSize == 0 {
-		if err := kv().LTrim(key, 0, 0); err != nil {
+		if err := kv.LTrim(key, 0, 0); err != nil {
 			return errors.Wrap(err, "failed to execute redis command LTRIM")
 		}
 		return nil
 	}
 
 	// O(1) because we're just adding a single element.
-	if err := kv().LPush(key, b); err != nil {
+	if err := kv.LPush(key, b); err != nil {
 		return errors.Wrap(err, "failed to execute redis command LPUSH")
 	}
 
 	// O(1) because the average case if just about dropping the last element.
-	if err := kv().LTrim(key, 0, maxSize-1); err != nil {
+	if err := kv.LTrim(key, 0, maxSize-1); err != nil {
 		return errors.Wrap(err, "failed to execute redis command LTRIM")
 	}
 	return nil

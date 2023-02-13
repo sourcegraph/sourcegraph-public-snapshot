@@ -54,7 +54,7 @@ func Test_FIFOList_All_OK(t *testing.T) {
 		r := NewFIFOList(c.key, c.size)
 		t.Run(fmt.Sprintf("size %d with %d entries", c.size, len(c.inserts)), func(t *testing.T) {
 			for _, b := range c.inserts {
-				if err := r.Insert(b); err != nil {
+				if err := r.Insert(context.Background(), b); err != nil {
 					t.Errorf("expected no error, got %q", err)
 				}
 			}
@@ -143,7 +143,7 @@ func Test_FIFOList_Slice_OK(t *testing.T) {
 		r := NewFIFOList(c.key, c.size)
 		t.Run(fmt.Sprintf("size %d with %d entries, [%d,%d]", c.size, len(c.inserts), c.from, c.to), func(t *testing.T) {
 			for _, b := range c.inserts {
-				if err := r.Insert(b); err != nil {
+				if err := r.Insert(context.Background(), b); err != nil {
 					t.Errorf("expected no error, got %q", err)
 				}
 			}
@@ -162,7 +162,7 @@ func Test_NewFIFOListDynamic(t *testing.T) {
 	maxSize := 3
 	r := NewFIFOListDynamic("a", func() int { return maxSize })
 	for i := 0; i < 10; i++ {
-		err := r.Insert([]byte("a"))
+		err := r.Insert(context.Background(), []byte("a"))
 		if err != nil {
 			t.Errorf("expected no error, got %q", err)
 		}
@@ -178,7 +178,7 @@ func Test_NewFIFOListDynamic(t *testing.T) {
 
 	maxSize = 2
 	for i := 0; i < 10; i++ {
-		err := r.Insert([]byte("b"))
+		err := r.Insert(context.Background(), []byte("b"))
 		if err != nil {
 			t.Errorf("expected no error, got %q", err)
 		}
@@ -195,7 +195,7 @@ func Test_NewFIFOListDynamic(t *testing.T) {
 
 func Test_FIOListContextCancellation(t *testing.T) {
 	r := NewFIFOList("a", 3)
-	err := r.Insert([]byte("a"))
+	err := r.Insert(context.Background(), []byte("a"))
 	if err != nil {
 		t.Errorf("expected no error, got %q", err)
 	}

@@ -1,6 +1,7 @@
 package recorder
 
 import (
+	"context"
 	"encoding/json"
 	"time"
 
@@ -173,7 +174,7 @@ func (m *Recorder) saveRun(jobName string, routineName string, hostName string, 
 	}
 
 	// Save run
-	err = getRecentRuns(m.rcache, jobName, routineName, hostName).Insert(runJson)
+	err = getRecentRuns(m.rcache, jobName, routineName, hostName).Insert(context.Background(), runJson)
 	if err != nil {
 		return errors.Wrap(err, "save run")
 	}

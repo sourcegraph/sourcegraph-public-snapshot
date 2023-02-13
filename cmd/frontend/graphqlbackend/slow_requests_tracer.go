@@ -35,7 +35,7 @@ func captureSlowRequest(logger log.Logger, req *types.SlowRequest) {
 		logger.Warn("failed to marshal slowRequest", log.Error(err))
 		return
 	}
-	if err := slowRequestRedisFIFOList.Insert(b); err != nil {
+	if err := slowRequestRedisFIFOList.Insert(context.Background(), b); err != nil {
 		logger.Warn("failed to capture slowRequest", log.Error(err))
 	}
 }

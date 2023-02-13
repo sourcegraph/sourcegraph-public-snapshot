@@ -109,7 +109,8 @@ func redisLoggerMiddleware() Middleware {
 			}
 
 			// Save new item
-			if err := outboundRequestsRedisFIFOList.Insert(logItemJson); err != nil {
+			recordCtx := context.Background() // the request context may have been canceled.
+			if err := outboundRequestsRedisFIFOList.Insert(recordCtx, logItemJson); err != nil {
 				middlewareErrors = errors.Append(middlewareErrors,
 					errors.Wrap(err, "insert log item"))
 			}
