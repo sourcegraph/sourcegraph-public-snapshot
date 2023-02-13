@@ -452,20 +452,18 @@ func (s *permsStore) SetUserRepoPermissions(ctx context.Context, p []authz.Permi
 	}
 	defer func() { err = txs.Done(err) }()
 
-	beforeTime := time.Now()
+	currentTime := time.Now()
 	if len(p) > 0 {
 		// Update the rows with new data
-		timestamps, err := txs.upsertUserRepoPermissions(ctx, p, source)
+		_, err := txs.upsertUserRepoPermissions(ctx, p, currentTime, source)
 		if err != nil {
 			return errors.Wrap(err, "upserting new user repo permissions")
 		}
-
-		beforeTime = timestamps[0]
 	}
 
 	// Now delete rows that were updated before. This will delete all rows, that were not updated on the last update
 	// which was tried above.
-	err = txs.deleteOldUserRepoPermissions(ctx, entity, beforeTime)
+	err = txs.deleteOldUserRepoPermissions(ctx, entity, currentTime)
 	if err != nil {
 		return errors.Wrap(err, "removing old user repo permissions")
 	}
@@ -475,7 +473,7 @@ func (s *permsStore) SetUserRepoPermissions(ctx context.Context, p []authz.Permi
 
 // upsertUserRepoPermissions upserts multiple rows of permissions. It also updates the updated_at and source
 // columns for all the rows that match the permissions input parameter
-func (s *permsStore) upsertUserRepoPermissions(ctx context.Context, permissions []authz.Permission, source string) (t []time.Time, err error) {
+func (s *permsStore) upsertUserRepoPermissions(ctx context.Context, permissions []authz.Permission, currentTime time.Time, source string) (t []time.Time, err error) {
 	const format = `
 INSERT INTO user_repo_permissions
 	(user_id, user_external_account_id, repo_id, created_at, updated_at, source)
@@ -490,10 +488,12 @@ RETURNING updated_at;
 
 	values := make([]*sqlf.Query, 0, len(permissions))
 	for _, p := range permissions {
-		values = append(values, sqlf.Sprintf("(%s::integer, %s::integer, %s::integer, NOW(), NOW(), %s::text)",
+		values = append(values, sqlf.Sprintf("(%s::integer, %s::integer, %s::integer, %s::timestamptz, %s::timestamptz, %s::text)",
 			p.UserID,
 			p.ExternalAccountID,
 			p.RepoID,
+			currentTime,
+			currentTime,
 			source,
 		))
 	}
@@ -512,15 +512,15 @@ RETURNING updated_at;
 
 // deleteOldUserRepoPermissions deletes multiple rows of permissions. It also updates the updated_at and source
 // columns for all the rows that match the permissions input parameter
-func (s *permsStore) deleteOldUserRepoPermissions(ctx context.Context, entity authz.PermissionEntity, before time.Time) error {
+func (s *permsStore) deleteOldUserRepoPermissions(ctx context.Context, entity authz.PermissionEntity, currentTime time.Time) error {
 	const format = `
 DELETE FROM user_repo_permissions
 WHERE
 	%s
 	AND
-	updated_at < %s
+	updated_at != %s
 	AND
-	source != 'api'
+	source != %s
 `
 	where := sqlf.Sprintf("FALSE")
 	if entity.UserID > 0 {
@@ -533,7 +533,7 @@ WHERE
 		where = sqlf.Sprintf("repo_id = %d", entity.RepoID)
 	}
 
-	return s.Exec(ctx, sqlf.Sprintf(format, where, before.UTC()))
+	return s.Exec(ctx, sqlf.Sprintf(format, where, currentTime, authz.SourceAPI))
 }
 
 func (s *permsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermissions) (_ *database.SetPermissionsResult, err error) {
