@@ -155,6 +155,8 @@ func (s *store) Done(err error) error {
 	return s.db.Done(err)
 }
 
+const batchNumber = 10000
+
 // TODO: Move it out of here and the ranking service
 func (s *store) SetGlobalRanks(ctx context.Context, ranks map[string]string) (err error) {
 	// payload, err := json.Marshal(ranks)
@@ -190,7 +192,7 @@ func (s *store) SetGlobalRanks(ctx context.Context, ranks map[string]string) (er
 				}
 
 				batchMap[repoRootPath] = count
-				if len(batchMap) == 10000 {
+				if len(batchMap) == batchNumber {
 					fmt.Println("inserting batch")
 					if err := insertRanks(ctx, batchMap, inserter); err != nil {
 						return err

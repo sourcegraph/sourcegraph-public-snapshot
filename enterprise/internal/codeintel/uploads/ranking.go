@@ -25,9 +25,10 @@ import (
 const (
 	rankingDefinitionHash = "graphDefs:dev"
 	rankingReferenceHash  = "graphRefs:dev"
+	batchNumber           = 1000
 )
 
-func (s *Service) ReduceRankingGraph(ctx context.Context, numRankingRoutines int) error {
+func (s *Service) MapperRankingGraph(ctx context.Context, numRankingRoutines int) error {
 	fmt.Println("RUNNING RUNNING RUNNING RUNNING well this is running RUNNING RUNNING RUNNING RUNNING")
 
 	// First time running. There are no uploads
@@ -75,7 +76,7 @@ func (s *Service) ReduceRankingGraph(ctx context.Context, numRankingRoutines int
 	for _, uid := range referencesByUploadID {
 		symbolNames := make([]string, 0)
 		start := 0
-		stop := 10000
+		stop := batchNumber
 		for {
 			key := fmt.Sprintf("graph:references:%s", uid)
 			references, err := redisStore.LRange(key, start, stop).Strings()
@@ -106,7 +107,7 @@ func (s *Service) ReduceRankingGraph(ctx context.Context, numRankingRoutines int
 				}
 			}
 
-			fields := make([]string, 0, 10000)
+			fields := make([]string, 0, batchNumber)
 			for k := range countMap {
 				fields = append(fields, k)
 			}
@@ -137,7 +138,7 @@ func (s *Service) ReduceRankingGraph(ctx context.Context, numRankingRoutines int
 			}
 
 			start = stop + 1
-			stop = stop + 10000
+			stop = stop + batchNumber
 		}
 	}
 
@@ -198,7 +199,7 @@ func (s *Service) SerializeRankingGraph(ctx context.Context, numRankingRoutines 
 				// 	return err
 				// }
 
-				if err := s.lsifstore.CreateDefinitionsAndReferencesForRanking(ctx, upload, s.setDefinitionsAndReferencesForUpload); err != nil {
+				if err := s.lsifstore.InsertDefinitionsAndReferencesForRanking(ctx, upload, s.setDefinitionsAndReferencesForUpload); err != nil {
 					s.logger.Error(
 						"Failed to process upload for ranking graph",
 						log.Int("id", upload.ID),

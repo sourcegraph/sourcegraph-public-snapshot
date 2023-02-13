@@ -14,6 +14,8 @@ type operations struct {
 	getUploadDocumentsForPath                *observation.Operation
 	scanDocuments                            *observation.Operation
 	createDefinitionsAndReferencesForRanking *observation.Operation
+	setDefinitionsForRanking                 *observation.Operation
+	setReferencesForRanking                  *observation.Operation
 	insertMetadata                           *observation.Operation
 	writeMeta                                *observation.Operation
 	writeDocuments                           *observation.Operation
@@ -51,6 +53,8 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getUploadDocumentsForPath:                op("GetUploadDocumentsForPath"),
 		scanDocuments:                            op("ScanDocuments"),
 		createDefinitionsAndReferencesForRanking: op("CreateDefinitionsAndReferencesForRanking"),
+		setDefinitionsForRanking:                 op("SetDefinitionsForRanking"),
+		setReferencesForRanking:                  op("SetReferencesForRanking"),
 		insertMetadata:                           op("InsertMetadata"),
 		writeMeta:                                op("WriteMeta"),
 		writeDocuments:                           op("WriteDocuments"),

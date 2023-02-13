@@ -206,7 +206,7 @@ func NewGraphExporters(observationCtx *observation.Context, uploadSvc *Service) 
 			ConfigExportInst.NumRankingRoutines,
 			ConfigExportInst.RankingInterval,
 		),
-		background.NewRankingGraphReducer(
+		background.NewRankingGraphMapper(
 			observationCtx,
 			uploadSvc,
 			ConfigExportInst.NumRankingRoutines,

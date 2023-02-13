@@ -922,6 +922,21 @@ Triggers:
 
 ```
 
+# Table "public.codeintel_ranking_definitions"
+```
+    Column     |  Type   | Collation | Nullable | Default 
+---------------+---------+-----------+----------+---------
+ upload_id     | integer |           | not null | 
+ symbol_name   | text    |           | not null | 
+ repository    | text    |           | not null | 
+ document_root | text    |           | not null | 
+ document_path | text    |           | not null | 
+Indexes:
+    "codeintel_ranking_definitions_symbol_name" btree (symbol_name)
+    "codeintel_ranking_definitions_upload_id" btree (upload_id)
+
+```
+
 # Table "public.codeintel_ranking_exports"
 ```
     Column     |           Type           | Collation | Nullable |                        Default                        
@@ -936,6 +951,15 @@ Indexes:
     "codeintel_ranking_exports_graph_key_upload_id" UNIQUE, btree (graph_key, upload_id)
 Foreign-key constraints:
     "codeintel_ranking_exports_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL
+
+```
+
+# Table "public.codeintel_ranking_references"
+```
+    Column    |  Type   | Collation | Nullable | Default 
+--------------+---------+-----------+----------+---------
+ upload_id    | integer |           | not null | 
+ symbol_names | text[]  |           | not null | 
 
 ```
 

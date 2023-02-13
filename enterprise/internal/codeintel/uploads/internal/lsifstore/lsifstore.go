@@ -36,7 +36,9 @@ type LsifStore interface {
 
 	// Stream
 	ScanDocuments(ctx context.Context, id int, f func(path string, document *scip.Document) error) (err error)
-	CreateDefinitionsAndReferencesForRanking(ctx context.Context, upload db.ExportedUpload, f func(ctx context.Context, upload db.ExportedUpload, path string, document *scip.Document) error) (err error)
+	InsertDefinitionsAndReferencesForRanking(ctx context.Context, upload db.ExportedUpload, f func(ctx context.Context, upload db.ExportedUpload, path string, document *scip.Document) error) (err error)
+	InsertDefintionsForRanking(ctx context.Context, defintions []RankingDefintions) (err error)
+	InsertReferencesForRanking(ctx context.Context, references []RankingReferences) (err error)
 }
 
 type SCIPWriter interface {

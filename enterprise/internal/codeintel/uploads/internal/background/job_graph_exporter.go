@@ -31,7 +31,7 @@ func NewRankingGraphExporter(
 		}))
 }
 
-func NewRankingGraphReducer(
+func NewRankingGraphMapper(
 	observationCtx *observation.Context,
 	uploadsService UploadService,
 	numRankingRoutines int,
@@ -42,7 +42,7 @@ func NewRankingGraphReducer(
 		"pagerank.graph-reducer", "reduces graph",
 		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			if err := uploadsService.ReduceRankingGraph(ctx, numRankingRoutines); err != nil {
+			if err := uploadsService.MapperRankingGraph(ctx, numRankingRoutines); err != nil {
 				return err
 			}
 			return nil

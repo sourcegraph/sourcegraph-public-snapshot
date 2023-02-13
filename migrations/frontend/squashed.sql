@@ -1675,6 +1675,14 @@ CREATE TABLE codeintel_path_ranks (
     graph_key text
 );
 
+CREATE TABLE codeintel_ranking_definitions (
+    upload_id integer NOT NULL,
+    symbol_name text NOT NULL,
+    repository text NOT NULL,
+    document_root text NOT NULL,
+    document_path text NOT NULL
+);
+
 CREATE TABLE codeintel_ranking_exports (
     upload_id integer,
     graph_key text NOT NULL,
@@ -1692,6 +1700,11 @@ CREATE SEQUENCE codeintel_ranking_exports_id_seq
     CACHE 1;
 
 ALTER SEQUENCE codeintel_ranking_exports_id_seq OWNED BY codeintel_ranking_exports.id;
+
+CREATE TABLE codeintel_ranking_references (
+    upload_id integer NOT NULL,
+    symbol_names text[] NOT NULL
+);
 
 CREATE TABLE configuration_policies_audit_logs (
     log_timestamp timestamp with time zone DEFAULT clock_timestamp(),
@@ -4780,6 +4793,10 @@ CREATE INDEX codeintel_path_rank_inputs_graph_key_repository_name_id_process ON 
 CREATE UNIQUE INDEX codeintel_path_ranks_repository_id_precision ON codeintel_path_ranks USING btree (repository_id, "precision");
 
 CREATE INDEX codeintel_path_ranks_updated_at ON codeintel_path_ranks USING btree (updated_at) INCLUDE (repository_id);
+
+CREATE INDEX codeintel_ranking_definitions_symbol_name ON codeintel_ranking_definitions USING btree (symbol_name);
+
+CREATE INDEX codeintel_ranking_definitions_upload_id ON codeintel_ranking_definitions USING btree (upload_id);
 
 CREATE UNIQUE INDEX codeintel_ranking_exports_graph_key_upload_id ON codeintel_ranking_exports USING btree (graph_key, upload_id);
 
