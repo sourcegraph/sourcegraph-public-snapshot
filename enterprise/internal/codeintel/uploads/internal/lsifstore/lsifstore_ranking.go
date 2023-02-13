@@ -146,7 +146,7 @@ func insertDefinitions(
 	return nil
 }
 
-func (s *store) InsertReferencesForRanking(ctx context.Context, references []shared.RankingReferences) (err error) {
+func (s *store) InsertReferencesForRanking(ctx context.Context, references shared.RankingReferences) (err error) {
 	ctx, _, endObservation := s.operations.setReferencesForRanking.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -157,22 +157,24 @@ func (s *store) InsertReferencesForRanking(ctx context.Context, references []sha
 	defer func() { err = tx.Done(err) }()
 
 	inserter := func(inserter *batch.Inserter) error {
-		batchReferences := make([]shared.RankingReferences, 0, batchNumber)
-		for _, ref := range references {
-			batchReferences = append(batchReferences, ref)
+		batchSymbolNames := make([]string, 0, batchNumber)
+		for _, ref := range references.SymbolName {
+			batchSymbolNames = append(batchSymbolNames, ref)
 
-			if len(batchReferences) == batchNumber {
+			if len(batchSymbolNames) == batchNumber {
 				fmt.Println("inserting ref batch")
-				if err := insertReferences(ctx, inserter, batchReferences); err != nil {
+
+				if err := inserter.Insert(ctx, references.UploadID, pq.Array(batchSymbolNames)); err != nil {
 					return err
 				}
-				batchReferences = make([]shared.RankingReferences, 0, batchNumber)
+				batchSymbolNames = make([]string, 0, batchNumber)
+
 				fmt.Println("finish inserting ref batch")
 			}
 		}
 
-		if len(batchReferences) > 0 {
-			if err := insertReferences(ctx, inserter, batchReferences); err != nil {
+		if len(batchSymbolNames) > 0 {
+			if err := inserter.Insert(ctx, references.UploadID, pq.Array(batchSymbolNames)); err != nil {
 				return err
 			}
 		}
@@ -193,14 +195,5 @@ func (s *store) InsertReferencesForRanking(ctx context.Context, references []sha
 
 	fmt.Println("finish inserting all ref batch")
 
-	return nil
-}
-
-func insertReferences(ctx context.Context, inserter *batch.Inserter, references []shared.RankingReferences) error {
-	for _, ref := range references {
-		if err := inserter.Insert(ctx, ref.UploadID, pq.Array(ref.SymbolName)); err != nil {
-			return err
-		}
-	}
 	return nil
 }

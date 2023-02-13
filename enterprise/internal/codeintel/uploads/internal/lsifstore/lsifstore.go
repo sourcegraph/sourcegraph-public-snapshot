@@ -39,7 +39,7 @@ type LsifStore interface {
 	ScanDocuments(ctx context.Context, id int, f func(path string, document *scip.Document) error) (err error)
 	InsertDefinitionsAndReferencesForRanking(ctx context.Context, upload db.ExportedUpload, f func(ctx context.Context, upload db.ExportedUpload, path string, document *scip.Document) error) (err error)
 	InsertDefintionsForRanking(ctx context.Context, defintions []shared.RankingDefintions) (err error)
-	InsertReferencesForRanking(ctx context.Context, references []shared.RankingReferences) (err error)
+	InsertReferencesForRanking(ctx context.Context, references shared.RankingReferences) (err error)
 }
 
 type SCIPWriter interface {

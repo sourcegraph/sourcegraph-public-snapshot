@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/redis"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/group"
@@ -235,43 +236,63 @@ func (s *Service) SerializeRankingGraph(ctx context.Context, numRankingRoutines 
 }
 
 func (s *Service) setDefinitionsAndReferencesForUpload(ctx context.Context, upload store.ExportedUpload, path string, document *scip.Document) error {
-	definitions := map[string]interface{}{}
+	seenDefinitions := map[string]struct{}{}
+	definitions := []shared.RankingDefintions{}
 	for _, occ := range document.Occurrences {
 		if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) {
 			continue
 		}
 
 		if scip.SymbolRole_Definition.Matches(occ) {
-			fullPath := fmt.Sprintf("%s@@%s@@%s", upload.Repo, upload.Root, path)
-			definitions[occ.Symbol] = fullPath
+			definitions = append(definitions, shared.RankingDefintions{
+				UploadID:     upload.ID,
+				SymbolName:   occ.Symbol,
+				Repository:   upload.Repo,
+				DocumentRoot: upload.Root,
+				DocumentPath: path,
+			})
+			// fullPath := fmt.Sprintf("%s@@%s@@%s", upload.Repo, upload.Root, path)
+			seenDefinitions[occ.Symbol] = struct{}{}
 		}
 	}
 
-	references := []interface{}{}
+	// references := []interface{}{}
+	references := []string{}
 	for _, occ := range document.Occurrences {
 		if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) {
 			continue
 		}
 
-		if _, ok := definitions[occ.Symbol]; ok {
+		if _, ok := seenDefinitions[occ.Symbol]; ok {
 			continue
 		}
 		if !scip.SymbolRole_Definition.Matches(occ) {
-			references = append(references, fmt.Sprintf("%s{!@@!}%s", path, occ.Symbol))
+			// references = append(references, fmt.Sprintf("%s{!@@!}%s", path, occ.Symbol))
+			references = append(references, occ.Symbol)
 		}
 	}
 
 	if len(definitions) > 0 {
-		_, err := redisStore.HMSet(rankingDefinitionHash, definitions).Int()
-		if err != nil {
+		// _, err := redisStore.HMSet(rankingDefinitionHash, definitions).Int()
+		// if err != nil {
+		// 	return err
+		// }
+		if err := s.lsifstore.InsertDefintionsForRanking(ctx, definitions); err != nil {
 			return err
 		}
 	}
 
 	if len(references) > 0 {
-		hashKey := fmt.Sprintf("graph:references:%d", upload.ID)
-		err := redisStore.LPush(hashKey, references...)
-		if err != nil {
+		// hashKey := fmt.Sprintf("graph:references:%d", upload.ID)
+		// err := redisStore.LPush(hashKey, references...)
+		// if err != nil {
+		// 	return err
+		// }
+
+		if err := s.lsifstore.InsertReferencesForRanking(ctx, shared.RankingReferences{
+			UploadID:   upload.ID,
+			SymbolName: references,
+		}); err != nil {
 			return err
 		}
 	}
