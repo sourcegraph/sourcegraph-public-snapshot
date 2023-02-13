@@ -113,6 +113,12 @@ regularly above 0 it is a sign for further investigation.`,
 				monitoring.ObservableOwnerSearchCore,
 			),
 
+			shared.NewGRPCServerMetricsGroup(
+				shared.GRPCServerMetricsOptions{
+					ServiceName:         "searcher",
+					MetricNamespace:     "searcher",
+					InstanceFilterRegex: `${instance:regex}`,
+				}, monitoring.ObservableOwnerSearchCore),
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerSearchCore, nil),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerSearchCore, nil),

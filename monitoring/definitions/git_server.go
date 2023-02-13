@@ -523,6 +523,13 @@ func GitServer() *monitoring.Dashboard {
 				monitoring.ObservableOwnerRepoManagement,
 			),
 
+			shared.NewGRPCServerMetricsGroup(
+				shared.GRPCServerMetricsOptions{
+					ServiceName:         "gitserver",
+					MetricNamespace:     "gitserver",
+					InstanceFilterRegex: `${shard:regex}`,
+				}, monitoring.ObservableOwnerSearchCore),
+
 			shared.CodeIntelligence.NewCoursierGroup(containerName),
 			shared.CodeIntelligence.NewNpmGroup(containerName),
 
