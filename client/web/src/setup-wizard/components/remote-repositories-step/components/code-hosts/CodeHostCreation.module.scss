@@ -1,0 +1,26 @@
+.header {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+
+    &-icon {
+        width: 2rem;
+        height: 2rem;
+        flex-shrink: 0;
+    }
+}
+
+.footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    position: sticky;
+    // Calculated value since we already have sticky footer element for
+    // the core wizard UI.
+    bottom: 51px;
+    margin-top: auto;
+    padding: 0.5rem 1rem;
+    background-color: var(--color-bg-1);
+    border-top: 1px solid var(--border-color);
+}
