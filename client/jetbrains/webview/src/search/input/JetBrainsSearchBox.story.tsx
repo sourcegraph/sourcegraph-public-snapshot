@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react'
 
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import { EMPTY, NEVER } from 'rxjs'
-import { useDarkMode } from 'storybook-dark-mode'
 import { BrowserRouter } from 'react-router-dom'
 import { CompatRouter } from 'react-router-dom-v5-compat'
+import { EMPTY, NEVER } from 'rxjs'
+import { useDarkMode } from 'storybook-dark-mode'
 
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
