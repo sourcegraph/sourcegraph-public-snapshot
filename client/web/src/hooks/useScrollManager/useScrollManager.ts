@@ -1,8 +1,7 @@
 import { useEffect } from 'react'
 
 import { debounce } from 'lodash'
-import { useHistory } from 'react-router'
-import { useLocation } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigationType } from 'react-router-dom-v5-compat'
 
 import { logger } from '@sourcegraph/common'
 
@@ -34,8 +33,8 @@ const SCROLL_RETRY_TIMEOUT = 3000
  * @param containerRef A React ref object of the container where scrolling will be managed.
  */
 export function useScrollManager(containerKey: string, containerRef: React.RefObject<HTMLElement>): void {
-    const history = useHistory()
     const location = useLocation()
+    const navigationType = useNavigationType()
 
     // Set up the maps for this containerKey if they haven't been created yet
     useEffect(() => {
@@ -75,7 +74,7 @@ export function useScrollManager(containerKey: string, containerRef: React.RefOb
 
         // Attempt a scroll if we have a saved position for the pathname; if the scroll doesn't work, set up an observer to
         // retry up until a given timeout
-        if (history.action === 'POP' && SAVED_SCROLL_POSITIONS[containerKey].has(pathname)) {
+        if (navigationType === 'POP' && SAVED_SCROLL_POSITIONS[containerKey].has(pathname)) {
             const scrollPosition = SAVED_SCROLL_POSITIONS[containerKey].get(pathname) ?? 0
 
             const attemptScroll = (): boolean => {
@@ -104,12 +103,12 @@ export function useScrollManager(containerKey: string, containerRef: React.RefOb
                         }
                     })
             }
-        } else if (history.action === 'PUSH') {
+        } else if (navigationType === 'PUSH') {
             // In the case of pushing new history (e.g. clicking a navigation link), make sure we always start at the top of the container
             containerRef.current?.scrollTo(0, 0)
         }
 
         // This should only run when `pathname`/`action` change; ignore changes to `containerKey` or `containerRef` as those should not trigger a scroll restoration
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [location.pathname, history.action])
+    }, [location.pathname, navigationType])
 }

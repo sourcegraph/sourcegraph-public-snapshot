@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo } from 'react'
 
 import classNames from 'classnames'
-import { History } from 'history'
 import { truncate } from 'lodash'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
+import { NavigateFunction } from 'react-router-dom-v5-compat'
 import { BehaviorSubject } from 'rxjs'
 
 import {
@@ -114,7 +114,7 @@ interface BlameDecorationProps {
     blameHunk?: BlameHunk
     firstCommitDate?: BlameHunkData['firstCommitDate']
     externalURLs?: BlameHunkData['externalURLs']
-    history: History
+    navigate: NavigateFunction
     onSelect?: (line: number) => void
     onDeselect?: (line: number) => void
     isLightTheme: boolean
@@ -130,7 +130,7 @@ export const BlameDecoration: React.FunctionComponent<BlameDecorationProps> = ({
     externalURLs,
     isLightTheme,
     hideRecency,
-    history,
+    navigate,
 }) => {
     const hunkStartLine = blameHunk?.startLine ?? line
     const id = hunkStartLine?.toString() || ''
@@ -152,7 +152,7 @@ export const BlameDecoration: React.FunctionComponent<BlameDecorationProps> = ({
     )
 
     // Prevent hitting the backend (full page reloads) for links that stay inside the app.
-    const handleParentCommitLinkClick = useMemo(() => createLinkClickHandler(history), [history])
+    const handleParentCommitLinkClick = useMemo(() => createLinkClickHandler(navigate), [navigate])
 
     const recencyColor = useBlameRecencyColor(blameHunk?.displayInfo.commitDate, firstCommitDate, isLightTheme)
 
