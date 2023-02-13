@@ -441,6 +441,7 @@ Referenced by:
  cancel                   | boolean                                      |           | not null | false
  detached_at              | timestamp with time zone                     |           |          | 
  computed_state           | text                                         |           | not null | 
+ external_fork_name       | citext                                       |           |          | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -3997,6 +3998,7 @@ Foreign-key constraints:
     c.worker_hostname,
     c.ui_publication_state,
     c.last_heartbeat_at,
+    c.external_fork_name,
     c.external_fork_namespace,
     c.detached_at
    FROM (changesets c
