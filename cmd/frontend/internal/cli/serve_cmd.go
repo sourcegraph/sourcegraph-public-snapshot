@@ -213,6 +213,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		enterprise.ComputeResolver,
 		enterprise.InsightsAggregationResolver,
 		enterprise.WebhooksResolver,
+		enterprise.EmbeddingsResolver,
 	)
 	if err != nil {
 		return err

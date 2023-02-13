@@ -37,6 +37,7 @@ env:
   REPO_UPDATER_URL: http://127.0.0.1:3182
   REDIS_ENDPOINT: 127.0.0.1:6379
   SYMBOLS_URL: http://localhost:3184
+  EMBEDDINGS_URL: http://localhost:9991
   SRC_SYNTECT_SERVER: http://localhost:9238
   SRC_FRONTEND_INTERNAL: localhost:3090
   GRAFANA_SERVER_URL: http://localhost:3370
@@ -96,6 +97,10 @@ env:
   # Required for codeintel uploadstore
   PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT: http://localhost:9000
   PRECISE_CODE_INTEL_UPLOAD_BACKEND: blobstore
+
+  # Required for embeddings uploadstore
+  EMBEDDINGS_UPLOAD_AWS_ENDPOINT: http://localhost:9000
+  EMBEDDINGS_UPLOAD_BACKEND: blobstore
 
   # Required for frontend and executor to communicate
   EXECUTOR_FRONTEND_URL: http://localhost:3080
@@ -370,6 +375,21 @@ commands:
       - cmd/symbols
       - enterprise/cmd/symbols
       - enterprise/internal/rockskip
+
+  embeddings:
+    cmd: .bin/embeddings
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+
+      go build -gcflags="$GCFLAGS" -o .bin/embeddings github.com/sourcegraph/sourcegraph/enterprise/cmd/embeddings
+    checkBinary: .bin/embeddings
+    watch:
+      - lib
+      - internal
+      - enterprise/cmd/embeddings
+      - enterprise/internal/embeddings
 
   searcher:
     cmd: .bin/searcher
@@ -910,6 +930,7 @@ commandsets:
       - postgres
       - git
     commands:
+      - embeddings
       - frontend
       - worker
       - repo-updater

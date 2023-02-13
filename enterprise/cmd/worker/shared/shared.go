@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
@@ -12,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codemonitors"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executors"
 	workerinsights "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/insights"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/permissions"
@@ -56,6 +58,9 @@ var additionalJobs = map[string]job.Job{
 
 	"auth-sourcegraph-operator-cleaner": auth.NewSourcegraphOperatorCleaner(),
 	"auth-permission-sync-job-cleaner":  auth.NewPermissionSyncJobCleaner(),
+
+	"embedding-janitor": embeddings.NewEmbeddingJanitorJob(),
+	"embedding-job":     embeddings.NewEmbeddingJob(),
 
 	// Note: experimental (not documented)
 	"codeintel-ranking-sourcer": codeintel.NewRankingSourcerJob(),

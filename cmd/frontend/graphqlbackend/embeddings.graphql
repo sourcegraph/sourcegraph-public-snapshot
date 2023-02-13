@@ -1,0 +1,21 @@
+extend type Query {
+    embeddingsSearch(
+        repository: ID!
+        query: String!
+        codeResultsCount: Int!
+        textResultsCount: Int!
+    ): EmbeddingsSearchResults!
+    # isContextRequiredForQuery(query: String!): Boolean!
+}
+
+type EmbeddingsSearchResult {
+    filePath: String!
+    startLine: Int!
+    endLine: Int!
+    content: String!
+}
+
+type EmbeddingsSearchResults {
+    codeResults: [EmbeddingsSearchResult!]!
+    textResults: [EmbeddingsSearchResult!]!
+}
