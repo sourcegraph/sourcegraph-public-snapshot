@@ -271,9 +271,11 @@ func (s *PermsSyncer) listPrivateRepoNamesBySpecs(ctx context.Context, repoSpecs
 }
 
 type fetchUserPermsViaExternalAccountsResults struct {
-	repoPerms    map[int32][]int32
+	// A map from external account ID to a list of repository IDs. This stores the repository IDs that the user has access to for each external account.
+	repoPerms map[int32][]int32
+	// A map from external repository spec to sub-repository permissions. This stores the permissions for sub-repositories of private repositories.
 	subRepoPerms map[api.ExternalRepoSpec]*authz.SubRepoPermissions
-
+	// A set of provider states. This stores the result of calling auth provider for each account.
 	providerStates providerStatesSet
 }
 
@@ -497,7 +499,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 		// Get corresponding internal database IDs
 		repoNames, err := s.listPrivateRepoNamesBySpecs(ctx, repoSpecs)
 		if err != nil {
-			return results, errors.Wrap(err, "list external repositories by exact matching")
+			return results, errors.Wrap(err, "list private repositories by exact matching")
 		}
 
 		// Record any sub-repository permissions
@@ -636,8 +638,11 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		IDs:    map[int32]struct{}{},
 	}
 
+	// Get the value of feature flag to store in the unified user_repo_permissions table
+	unifiedEnabled := UnifiedUserRepoPermsEnabled(ctx, s.db)
+
 	for acctID, repoIDs := range results.repoPerms {
-		if UserRepoPermsEnabled(ctx, s.db) {
+		if unifiedEnabled {
 			err = s.saveUserPermsForAccount(ctx, userID, acctID, repoIDs)
 			if err != nil {
 				return result, providerStates, errors.Wrapf(err, "set user repo permissions for user %q (id: %d, external_account_id: %d)", user.Username, user.ID, acctID)
@@ -691,7 +696,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 
 const userRepoPermsFlagName = "unified-user-repo-perms"
 
-func UserRepoPermsEnabled(ctx context.Context, db database.DB) bool {
+func UnifiedUserRepoPermsEnabled(ctx context.Context, db database.DB) bool {
 	featureFlag, err := db.FeatureFlags().GetFeatureFlag(ctx, userRepoPermsFlagName)
 	if featureFlag == nil || err != nil {
 		return false
@@ -851,7 +856,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	}
 	defer func() { err = txs.Done(err) }()
 
-	if UserRepoPermsEnabled(ctx, s.db) {
+	if UnifiedUserRepoPermsEnabled(ctx, s.db) {
 		if err = txs.SetRepoPerms(ctx, int32(repoID), maps.Values(accountIDsToUserIDs)); err != nil {
 			return result, providerStates, errors.Wrapf(err, "set user repo permissions for repository %q (id: %d)", repo.Name, repo.ID)
 		}

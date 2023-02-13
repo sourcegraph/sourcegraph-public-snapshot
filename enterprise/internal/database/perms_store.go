@@ -320,7 +320,7 @@ func (s *permsStore) LoadUserPermissions(ctx context.Context, p *authz.UserPermi
 	return nil
 }
 
-var ScanRepoIDs = basestore.NewSliceScanner(basestore.ScanAny[api.RepoID])
+var scanRepoIDs = basestore.NewSliceScanner(basestore.ScanAny[api.RepoID])
 
 func (s *permsStore) FetchReposByExternalAccount(ctx context.Context, accountID int32) (ids []api.RepoID, err error) {
 	const format = `
@@ -336,7 +336,7 @@ WHERE user_external_account_id = %s;
 		save(&err)
 	}()
 
-	repos, err := ScanRepoIDs(s.Query(ctx, q))
+	repos, err := scanRepoIDs(s.Query(ctx, q))
 	if err != nil {
 		return nil, errors.Wrap(err, "scanning repo ids")
 	}
@@ -369,7 +369,7 @@ WHERE external_service_id = %s
 		save(&err)
 	}()
 
-	repos, err := ScanRepoIDs(s.Query(ctx, q))
+	repos, err := scanRepoIDs(s.Query(ctx, q))
 	if err != nil {
 		return nil, errors.Wrap(err, "scanning repo ids")
 	}
@@ -507,11 +507,7 @@ RETURNING updated_at;
 		)
 	}()
 
-	rows, err := s.Query(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	return basestore.ScanTimes(rows, err)
+	return basestore.ScanTimes(s.Query(ctx, q))
 }
 
 // deleteOldUserRepoPermissions deletes multiple rows of permissions. It also updates the updated_at and source
@@ -1050,6 +1046,11 @@ func (s *permsStore) loadUserPendingPermissionsIDs(ctx context.Context, q *sqlf.
 	return basestore.ScanInt64s(rows, err)
 }
 
+var scanBindIDs = basestore.NewMapScanner(func(s dbutil.Scanner) (bindID string, id int64, _ error) {
+	err := s.Scan(&bindID, &id)
+	return bindID, id, err
+})
+
 func (s *permsStore) loadExistingUserPendingPermissionsBatch(ctx context.Context, q *sqlf.Query) (bindIDsToIDs map[string]int64, err error) {
 	ctx, save := s.observe(ctx, "loadExistingUserPendingPermissionsBatch", "")
 	defer func() {
@@ -1059,21 +1060,11 @@ func (s *permsStore) loadExistingUserPendingPermissionsBatch(ctx context.Context
 		)
 	}()
 
-	rows, err := s.Query(ctx, q)
+	bindIDsToIDs, err = scanBindIDs(s.Query(ctx, q))
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	bindIDsToIDs = make(map[string]int64)
-	for rows.Next() {
-		var bindID string
-		var id int64
-		if err = rows.Scan(&bindID, &id); err != nil {
-			return nil, err
-		}
-		bindIDsToIDs[bindID] = id
-	}
 	return bindIDsToIDs, nil
 }
 
@@ -1682,6 +1673,11 @@ AND permission = %s
 	return id, ids, updatedAt, syncedAt, nil
 }
 
+var scanUserIDsByExternalAccounts = basestore.NewMapScanner(func(s dbutil.Scanner) (accountID string, user authz.UserIDWithExternalAccountID, _ error) {
+	err := s.Scan(&user.ExternalAccountID, &user.UserID, &accountID)
+	return accountID, user, err
+})
+
 func (s *permsStore) GetUserIDsByExternalAccounts(ctx context.Context, accounts *extsvc.Accounts) (_ map[string]authz.UserIDWithExternalAccountID, err error) {
 	ctx, save := s.observe(ctx, "ListUsersByExternalAccounts", "")
 	defer func() { save(&err, accounts.TracingFields()...) }()
@@ -1700,25 +1696,8 @@ AND account_id IN (%s)
 AND deleted_at IS NULL
 AND expired_at IS NULL
 `, accounts.ServiceType, accounts.ServiceID, sqlf.Join(items, ","))
-	rows, err := s.Query(ctx, q)
+	userIDs, err := scanUserIDsByExternalAccounts(s.Query(ctx, q))
 	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = rows.Close() }()
-
-	userIDs := make(map[string]authz.UserIDWithExternalAccountID)
-	for rows.Next() {
-		var externalAccountID, userID int32
-		var accountID string
-		if err := rows.Scan(&externalAccountID, &userID, &accountID); err != nil {
-			return nil, err
-		}
-		userIDs[accountID] = authz.UserIDWithExternalAccountID{
-			UserID:            userID,
-			ExternalAccountID: externalAccountID,
-		}
-	}
-	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 
