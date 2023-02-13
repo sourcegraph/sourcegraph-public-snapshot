@@ -313,6 +313,8 @@ func (s *permsStore) LoadUserPermissions(ctx context.Context, p *authz.UserPermi
 	return nil
 }
 
+var ScanRepoIDs = basestore.NewSliceScanner(basestore.ScanAny[api.RepoID])
+
 func (s *permsStore) FetchReposByExternalAccount(ctx context.Context, accountID int32) (ids []api.RepoID, err error) {
 	const format = `
 SELECT repo_id
@@ -327,17 +329,12 @@ WHERE user_external_account_id = %s;
 		save(&err)
 	}()
 
-	repos, err := basestore.ScanInt32s(s.Query(ctx, q))
+	repos, err := ScanRepoIDs(s.Query(ctx, q))
 	if err != nil {
 		return nil, errors.Wrap(err, "scanning repo ids")
 	}
 
-	ids = make([]api.RepoID, 0, len(repos))
-	for _, id := range repos {
-		ids = append(ids, api.RepoID(id))
-	}
-
-	return ids, nil
+	return repos, nil
 }
 
 func (s *permsStore) FetchReposByUserAndExternalService(ctx context.Context, userID int32, serviceType, serviceID string) (ids []api.RepoID, err error) {
@@ -365,17 +362,12 @@ WHERE external_service_id = %s
 		save(&err)
 	}()
 
-	repos, err := basestore.ScanInt32s(s.Query(ctx, q))
+	repos, err := ScanRepoIDs(s.Query(ctx, q))
 	if err != nil {
 		return nil, errors.Wrap(err, "scanning repo ids")
 	}
 
-	ids = make([]api.RepoID, 0, len(repos))
-	for _, id := range repos {
-		ids = append(ids, api.RepoID(id))
-	}
-
-	return ids, nil
+	return repos, nil
 }
 
 func (s *permsStore) LoadRepoPermissions(ctx context.Context, p *authz.RepoPermissions) (err error) {
