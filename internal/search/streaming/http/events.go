@@ -223,6 +223,9 @@ const (
 	CommitMatchType
 	PathMatchType
 	OwnerMatchType
+	PersonMatchType
+	TeamMatchType
+	UnknownOwnerMatchType
 )
 
 func (t MatchType) MarshalJSON() ([]byte, error) {
@@ -239,6 +242,12 @@ func (t MatchType) MarshalJSON() ([]byte, error) {
 		return []byte(`"path"`), nil
 	case OwnerMatchType:
 		return []byte(`"owner"`), nil
+	case PersonMatchType:
+		return []byte(`"person"`), nil
+	case TeamMatchType:
+		return []byte(`"team"`), nil
+	case UnknownOwnerMatchType:
+		return []byte(`"unknownOwner"`), nil
 	default:
 		return nil, errors.Errorf("unknown MatchType: %d", t)
 	}
@@ -257,6 +266,12 @@ func (t *MatchType) UnmarshalJSON(b []byte) error {
 		*t = PathMatchType
 	} else if bytes.Equal(b, []byte(`"owner"`)) {
 		*t = OwnerMatchType
+	} else if bytes.Equal(b, []byte(`"person"`)) {
+		*t = PersonMatchType
+	} else if bytes.Equal(b, []byte(`"team"`)) {
+		*t = TeamMatchType
+	} else if bytes.Equal(b, []byte(`"unknownOwner"`)) {
+		*t = UnknownOwnerMatchType
 	} else {
 		return errors.Errorf("unknown MatchType: %s", b)
 	}
