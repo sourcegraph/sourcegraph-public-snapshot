@@ -7,7 +7,15 @@ import execa from 'execa'
 
 import * as batchChanges from './batchChanges'
 import * as changelog from './changelog'
-import { Config, releaseVersions } from './config'
+import {
+    addRelease,
+    Config,
+    loadReleaseConfig,
+    newRelease,
+    newReleaseFromInput,
+    releaseVersions, removeRelease,
+    saveReleaseConfig
+} from './config'
 import {
     getAuthenticatedGitHubClient,
     listIssues,
@@ -40,7 +48,7 @@ import {
     getLatestTag,
     getAllUpgradeGuides,
     updateUpgradeGuides,
-    verifyWithInput,
+    verifyWithInput, readLine,
 } from './util'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
@@ -63,6 +71,8 @@ export type StepID =
     | 'release:finalize'
     | 'release:announce'
     | 'release:close'
+    | 'release:prepare'
+    | 'release:remove'
     // util
     | 'util:clear-cache'
     // testing
@@ -894,6 +904,27 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         },
     },
     {
+        id: 'release:prepare',
+        description: 'Prepare a feature release',
+        run: async config => {
+            const rconfig = loadReleaseConfig()
+            const rel = await newReleaseFromInput()
+            addRelease(rconfig, rel)
+            saveReleaseConfig(rconfig)
+        },
+    },
+    {
+        id: 'release:remove',
+        description: 'Remove a release from the config',
+        argNames: ['version'],
+        run: async (config, version) => {
+            await verifyWithInput(`Confirm you want to remove release: ${version} from the release config?`)
+            const rconfig = loadReleaseConfig()
+            removeRelease(rconfig, version)
+            saveReleaseConfig(rconfig)
+        },
+    },
+    {
         id: 'util:clear-cache',
         description: 'Clear release tool cache',
         run: () => {
@@ -976,8 +1007,11 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
     {
         id: '_test:config',
         description: 'Test release configuration loading',
-        run: config => {
-            console.log(JSON.stringify(config, null, '  '))
+        run: async config => {
+           const rconfig = loadReleaseConfig()
+            const rel = await newReleaseFromInput()
+            rconfig.releases[rel.current] = rel
+            saveReleaseConfig(rconfig)
         },
     },
     {

@@ -1,6 +1,8 @@
-import { readFileSync, unlinkSync } from 'fs'
+import {readFileSync, unlinkSync, writeFileSync} from 'fs'
 
+import chalk from 'chalk'
 import { parse as parseJSONC } from 'jsonc-parser'
+import {DateTime} from 'luxon';
 import * as semver from 'semver'
 
 import { cacheFolder, readLine, getWeekNumber } from './util'
@@ -93,4 +95,103 @@ export async function releaseVersions(config: Config): Promise<{
     }
     console.log(`Using versions: { upcoming: ${versions.upcoming.format()}, previous: ${versions.previous.format()} }`)
     return versions
+}
+
+const releaseConfigPath = 'release-config-new.jsonc'
+
+export function loadReleaseConfig(): ReleaseConfig {
+    return parseJSONC(readFileSync(releaseConfigPath).toString()) as ReleaseConfig
+}
+
+export function saveReleaseConfig(config: ReleaseConfig): void {
+    writeFileSync(releaseConfigPath, JSON.stringify(config, null, 2))
+}
+
+export function newRelease(version: string, previous: string, releaseDate: DateTime, captainGithub: string, captainSlack: string): ReleaseDefinition {
+    return {
+        ...releaseDates(releaseDate),
+        current: version,
+        previous,
+        captainGitHubUsername: captainGithub,
+        captainSlackUsername:captainSlack
+    } as ReleaseDefinition
+}
+
+export async function newReleaseFromInput(): Promise<ReleaseDefinition> {
+
+    const version = await retryInput('Enter the next version number (ex. 5.4.0): ', val => !!semver.parse(val))
+    const previous = await retryInput('Enter the previous version number (ex. 5.4.0): ', val => !!semver.parse(val))
+
+    const releaseDate = await retryInput('Enter the release date (YYYY-MM-DD): ', val => /^\d{4}-\d{2}-\d{2}$/.test(val), 'invalid date, expected format YYYY-MM-DD')
+
+    const captainGithubUsername = await retryInput('Enter the github username of the release captain: ', val => !!val)
+    const captainSlackUsername = await retryInput('Enter the slack username of the release captain: ', val => !!val)
+
+    const rel = newRelease(version, previous, DateTime.fromISO(releaseDate, {zone: 'America/Los_Angeles'}), captainGithubUsername, captainSlackUsername)
+    console.log(chalk.green('Version created:'))
+    console.log(chalk.green(JSON.stringify(rel, null, 2)))
+    return rel
+}
+
+async function retryInput(prompt: string, delegate: (val: string) => boolean, errorMessage?: string): Promise<string> {
+    while (true) {
+        const val = await readLine(prompt)
+        if (delegate(val)) {
+            return val
+        }
+        if (errorMessage) {
+            console.log(chalk.red(errorMessage))
+        } else {
+            console.log(chalk.red('invalid input'))
+        }
+    }
+}
+function releaseDates(releaseDate: DateTime): ReleaseDates {
+    releaseDate = releaseDate.set({hour: 10})
+    return {
+        codeFreezeDate: releaseDate.plus({days:-7}).toString(),
+        securityApprovalDate: releaseDate.plus({days:-7}).toString(),
+        releaseDate: releaseDate.toString()
+    } as ReleaseDates
+}
+
+export function addRelease(config: ReleaseConfig, release: ReleaseDefinition): ReleaseConfig {
+    config.releases[release.current] = release
+    return config
+}
+
+export function removeRelease(config: ReleaseConfig, version: string): ReleaseConfig {
+    delete config.releases[version]
+    return config
+}
+
+interface ReleaseDates {
+    releaseDate: string
+    codeFreezeDate: string
+    securityApprovalDate: string
+}
+
+export interface ReleaseConfig {
+    metadata: {
+        teamEmail: string
+        slackAnnounceChannel: string
+    },
+    releases: {
+        [version: string]: ReleaseDefinition
+    }
+    dryRun: {
+        tags?: boolean
+        changesets?: boolean
+        trackingIssues?: boolean
+        slack?: boolean
+        calendar?: boolean
+    }
+}
+
+export interface ReleaseDefinition extends ReleaseDates {
+    current: string
+    previous: string
+
+    captainSlackUsername: string
+    captainGitHubUsername: string
 }

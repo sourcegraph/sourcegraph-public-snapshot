@@ -1,0 +1,14 @@
+{
+  "metadata": {
+    "teamEmail": "team@sourcegraph.com",
+    "slackAnnounceChannel": "announce-engineering"
+  },
+  "releases": {},
+  "dryRun": {
+    "tags": false,
+    "changesets": false,
+    "trackingIssues": false,
+    "calendar": false,
+    "slack": false
+  }
+}
