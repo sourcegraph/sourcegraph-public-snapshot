@@ -220,10 +220,20 @@ func (p *PersistentRepoIterator) MarkComplete(ctx context.Context, store *basest
 	return nil
 }
 
-// Restart reset the iterator to the initial state.
-func (p *PersistentRepoIterator) Restart(ctx context.Context, store *basestore.Store) error {
+// Restart the iterator to the initial state.
+func (p *PersistentRepoIterator) Restart(ctx context.Context, store *basestore.Store) (err error) {
+	tx, err := store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
 
-	err := store.Exec(ctx, sqlf.Sprintf("UPDATE repo_iterator SET percent_complete = 0, runtime_duration = 0, success_count = 0, repo_cursor = 0, completed_at = null, started_at = null, last_updated_at = null where id = %s", p.Id))
+	err = tx.Exec(ctx, sqlf.Sprintf("UPDATE repo_iterator SET percent_complete = 0, runtime_duration = 0, success_count = 0, repo_cursor = 0, completed_at = null, started_at = null, last_updated_at = null where id = %s", p.Id))
+	if err != nil {
+		return err
+	}
+
+	err = tx.Exec(ctx, sqlf.Sprintf("DELETE FROM repo_iterator_errors WHERE id = %s", p.Id))
 	if err != nil {
 		return err
 	}
