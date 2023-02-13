@@ -136,17 +136,17 @@ func tryGetUserThenTeam(ctx context.Context, identifier string, userGetter userG
 				if err != nil {
 					return nil, err
 				}
-				return codeowners.Team{Team: team, OwnerIdentifier: identifier}, nil
+				return &codeowners.Team{Team: team, OwnerIdentifier: identifier}, nil
 			}
 		}
 		return nil, err
 	}
-	return codeowners.Person{User: user, OwnerIdentifier: identifier}, nil
+	return &codeowners.Person{User: user, OwnerIdentifier: identifier}, nil
 }
 
-func unknownOwnerOrError(handle, email string, err error) (codeowners.UnknownOwner, error) {
+func unknownOwnerOrError(handle, email string, err error) (*codeowners.UnknownOwner, error) {
 	if errcode.IsNotFound(err) {
-		return codeowners.UnknownOwner{Handle: handle, Email: email}, nil
+		return &codeowners.UnknownOwner{Handle: handle, Email: email}, nil
 	}
-	return codeowners.UnknownOwner{}, err
+	return nil, err
 }
