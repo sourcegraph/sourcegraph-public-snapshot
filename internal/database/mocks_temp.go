@@ -35524,7 +35524,7 @@ func NewMockPermissionSyncJobStore() *MockPermissionSyncJobStore {
 			},
 		},
 		SaveSyncResultFunc: &PermissionSyncJobStoreSaveSyncResultFunc{
-			defaultHook: func(context.Context, int, *SetPermissionsResult) (r0 error) {
+			defaultHook: func(context.Context, int, *SetPermissionsResult, []PermissionSyncCodeHostState) (r0 error) {
 				return
 			},
 		},
@@ -35582,7 +35582,7 @@ func NewStrictMockPermissionSyncJobStore() *MockPermissionSyncJobStore {
 			},
 		},
 		SaveSyncResultFunc: &PermissionSyncJobStoreSaveSyncResultFunc{
-			defaultHook: func(context.Context, int, *SetPermissionsResult) error {
+			defaultHook: func(context.Context, int, *SetPermissionsResult, []PermissionSyncCodeHostState) error {
 				panic("unexpected invocation of MockPermissionSyncJobStore.SaveSyncResult")
 			},
 		},
@@ -36391,24 +36391,24 @@ func (c PermissionSyncJobStoreListFuncCall) Results() []interface{} {
 // SaveSyncResult method of the parent MockPermissionSyncJobStore instance
 // is invoked.
 type PermissionSyncJobStoreSaveSyncResultFunc struct {
-	defaultHook func(context.Context, int, *SetPermissionsResult) error
-	hooks       []func(context.Context, int, *SetPermissionsResult) error
+	defaultHook func(context.Context, int, *SetPermissionsResult, []PermissionSyncCodeHostState) error
+	hooks       []func(context.Context, int, *SetPermissionsResult, []PermissionSyncCodeHostState) error
 	history     []PermissionSyncJobStoreSaveSyncResultFuncCall
 	mutex       sync.Mutex
 }
 
 // SaveSyncResult delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockPermissionSyncJobStore) SaveSyncResult(v0 context.Context, v1 int, v2 *SetPermissionsResult) error {
-	r0 := m.SaveSyncResultFunc.nextHook()(v0, v1, v2)
-	m.SaveSyncResultFunc.appendCall(PermissionSyncJobStoreSaveSyncResultFuncCall{v0, v1, v2, r0})
+func (m *MockPermissionSyncJobStore) SaveSyncResult(v0 context.Context, v1 int, v2 *SetPermissionsResult, v3 []PermissionSyncCodeHostState) error {
+	r0 := m.SaveSyncResultFunc.nextHook()(v0, v1, v2, v3)
+	m.SaveSyncResultFunc.appendCall(PermissionSyncJobStoreSaveSyncResultFuncCall{v0, v1, v2, v3, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the SaveSyncResult
 // method of the parent MockPermissionSyncJobStore instance is invoked and
 // the hook queue is empty.
-func (f *PermissionSyncJobStoreSaveSyncResultFunc) SetDefaultHook(hook func(context.Context, int, *SetPermissionsResult) error) {
+func (f *PermissionSyncJobStoreSaveSyncResultFunc) SetDefaultHook(hook func(context.Context, int, *SetPermissionsResult, []PermissionSyncCodeHostState) error) {
 	f.defaultHook = hook
 }
 
@@ -36417,7 +36417,7 @@ func (f *PermissionSyncJobStoreSaveSyncResultFunc) SetDefaultHook(hook func(cont
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *PermissionSyncJobStoreSaveSyncResultFunc) PushHook(hook func(context.Context, int, *SetPermissionsResult) error) {
+func (f *PermissionSyncJobStoreSaveSyncResultFunc) PushHook(hook func(context.Context, int, *SetPermissionsResult, []PermissionSyncCodeHostState) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -36426,19 +36426,19 @@ func (f *PermissionSyncJobStoreSaveSyncResultFunc) PushHook(hook func(context.Co
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *PermissionSyncJobStoreSaveSyncResultFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, *SetPermissionsResult) error {
+	f.SetDefaultHook(func(context.Context, int, *SetPermissionsResult, []PermissionSyncCodeHostState) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *PermissionSyncJobStoreSaveSyncResultFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, *SetPermissionsResult) error {
+	f.PushHook(func(context.Context, int, *SetPermissionsResult, []PermissionSyncCodeHostState) error {
 		return r0
 	})
 }
 
-func (f *PermissionSyncJobStoreSaveSyncResultFunc) nextHook() func(context.Context, int, *SetPermissionsResult) error {
+func (f *PermissionSyncJobStoreSaveSyncResultFunc) nextHook() func(context.Context, int, *SetPermissionsResult, []PermissionSyncCodeHostState) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -36482,6 +36482,9 @@ type PermissionSyncJobStoreSaveSyncResultFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 *SetPermissionsResult
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 []PermissionSyncCodeHostState
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -36490,7 +36493,7 @@ type PermissionSyncJobStoreSaveSyncResultFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c PermissionSyncJobStoreSaveSyncResultFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this

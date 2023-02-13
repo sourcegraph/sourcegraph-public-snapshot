@@ -109,7 +109,7 @@ func (h *permsSyncerWorker) handlePermsSync(ctx context.Context, reqType request
 
 		// NOTE(naman): here we are saving permissions added, removed and found results to the job record
 		if result != nil {
-			err = h.jobsStore.SaveSyncResult(ctx, recordID, result)
+			err = h.jobsStore.SaveSyncResult(ctx, recordID, result, providerStates.ToPermissionSyncCodeHostState())
 			if err != nil {
 				h.logger.Error(fmt.Sprintf("failed to save permissions sync job(%d) results", recordID), log.Error(err))
 			}
