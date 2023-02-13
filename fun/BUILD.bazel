@@ -62,16 +62,26 @@ cmake(
 configure_make(
     name = "universal_ctags",
     lib_source = "@universal_ctags//:all",
-     env = select({
-         "@platforms//os:macos": dicts.add(
-             {"PATH": "/opt/homebrew/bin:$$PATH"},
-             {"AR": ""},
-         ),
-     }),
+    # configure_options = ["--includedir=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include"],
+    # includes = ["/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include"],
+    env = select({
+        "@platforms//os:macos": dicts.add(
+            # {"PATH": "/opt/homebrew/bin:$$PATH"},
+            # TODO explain this crap
+            {"AR": "/usr/bin/libtool"},
+            {"ARFLAGS": "-o"},
+            {"AR_FLAGS": "-o"},
+            {"CFLAGS": "-Dredacted='\\\"redacted\\\"'"},
+            {"CXXFLAGS": "-Dredacted='\\\"redacted\\\"'"},
+        ),
+    }),
     autogen = True,
     configure_in_place = True,
     deps = [":jansson", ":libyaml", ":libxml2"],
+    # TODO This is most probably causing some weird errors we're seeing when running the binary
     copts = ["-Wno-implicit-function-declaration"],
+    out_binaries = ["ctags"],
+    visibility = ["//visibility:public"],
 )
 
 # cc_binary(

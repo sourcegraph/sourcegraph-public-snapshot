@@ -15,3 +15,6 @@ import %workspace%/.aspect/bazelrc/javascript.bazelrc
 # this file. See https://bazel.build/configure/best-practices#bazelrc-file.
 try-import %workspace%/.aspect/bazelrc/user.bazelrc
 
+build:macos --cxxopt=-std=c++17 --host_cxxopt=-std=c++17
+build:macos --action_env=PATH=/opt/homebrew/bin:/opt/local/bin:/usr/local/bin:/usr/bin:/bin
+build:macos --host_action_env=PATH=/opt/homebrew/bin:/opt/local/bin:/usr/local/bin:/usr/bin:/bin
