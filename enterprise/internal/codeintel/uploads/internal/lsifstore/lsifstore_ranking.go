@@ -12,6 +12,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	db "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -69,15 +70,7 @@ ORDER BY sid.document_path
 `
 const batchNumber = 10000
 
-type RankingDefintions struct {
-	UploadID     int
-	SymbolName   string
-	Repository   string
-	DocumentRoot string
-	DocumentPath string
-}
-
-func (s *store) InsertDefintionsForRanking(ctx context.Context, defintions []RankingDefintions) (err error) {
+func (s *store) InsertDefintionsForRanking(ctx context.Context, defintions []shared.RankingDefintions) (err error) {
 	ctx, _, endObservation := s.operations.setDefinitionsForRanking.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -88,7 +81,7 @@ func (s *store) InsertDefintionsForRanking(ctx context.Context, defintions []Ran
 	defer func() { err = tx.Done(err) }()
 
 	inserter := func(inserter *batch.Inserter) error {
-		batchDefinitions := make([]RankingDefintions, 0, batchNumber)
+		batchDefinitions := make([]shared.RankingDefintions, 0, batchNumber)
 		for _, def := range defintions {
 			batchDefinitions = append(batchDefinitions, def)
 
@@ -97,7 +90,7 @@ func (s *store) InsertDefintionsForRanking(ctx context.Context, defintions []Ran
 				if err := insertDefinitions(ctx, inserter, batchDefinitions); err != nil {
 					return err
 				}
-				batchDefinitions = make([]RankingDefintions, 0, batchNumber)
+				batchDefinitions = make([]shared.RankingDefintions, 0, batchNumber)
 				fmt.Println("finish inserting def batch")
 			}
 		}
@@ -136,7 +129,7 @@ func (s *store) InsertDefintionsForRanking(ctx context.Context, defintions []Ran
 func insertDefinitions(
 	ctx context.Context,
 	inserter *batch.Inserter,
-	definitions []RankingDefintions,
+	definitions []shared.RankingDefintions,
 ) error {
 	for _, def := range definitions {
 		if err := inserter.Insert(
@@ -153,12 +146,7 @@ func insertDefinitions(
 	return nil
 }
 
-type RankingReferences struct {
-	UploadID   int
-	SymbolName []string
-}
-
-func (s *store) InsertReferencesForRanking(ctx context.Context, references []RankingReferences) (err error) {
+func (s *store) InsertReferencesForRanking(ctx context.Context, references []shared.RankingReferences) (err error) {
 	ctx, _, endObservation := s.operations.setReferencesForRanking.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -169,7 +157,7 @@ func (s *store) InsertReferencesForRanking(ctx context.Context, references []Ran
 	defer func() { err = tx.Done(err) }()
 
 	inserter := func(inserter *batch.Inserter) error {
-		batchReferences := make([]RankingReferences, 0, batchNumber)
+		batchReferences := make([]shared.RankingReferences, 0, batchNumber)
 		for _, ref := range references {
 			batchReferences = append(batchReferences, ref)
 
@@ -178,7 +166,7 @@ func (s *store) InsertReferencesForRanking(ctx context.Context, references []Ran
 				if err := insertReferences(ctx, inserter, batchReferences); err != nil {
 					return err
 				}
-				batchReferences = make([]RankingReferences, 0, batchNumber)
+				batchReferences = make([]shared.RankingReferences, 0, batchNumber)
 				fmt.Println("finish inserting ref batch")
 			}
 		}
@@ -208,7 +196,7 @@ func (s *store) InsertReferencesForRanking(ctx context.Context, references []Ran
 	return nil
 }
 
-func insertReferences(ctx context.Context, inserter *batch.Inserter, references []RankingReferences) error {
+func insertReferences(ctx context.Context, inserter *batch.Inserter, references []shared.RankingReferences) error {
 	for _, ref := range references {
 		if err := inserter.Insert(ctx, ref.UploadID, pq.Array(ref.SymbolName)); err != nil {
 			return err

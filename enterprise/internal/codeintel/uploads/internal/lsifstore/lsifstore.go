@@ -8,6 +8,7 @@ import (
 
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
 	db "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -37,8 +38,8 @@ type LsifStore interface {
 	// Stream
 	ScanDocuments(ctx context.Context, id int, f func(path string, document *scip.Document) error) (err error)
 	InsertDefinitionsAndReferencesForRanking(ctx context.Context, upload db.ExportedUpload, f func(ctx context.Context, upload db.ExportedUpload, path string, document *scip.Document) error) (err error)
-	InsertDefintionsForRanking(ctx context.Context, defintions []RankingDefintions) (err error)
-	InsertReferencesForRanking(ctx context.Context, references []RankingReferences) (err error)
+	InsertDefintionsForRanking(ctx context.Context, defintions []shared.RankingDefintions) (err error)
+	InsertReferencesForRanking(ctx context.Context, references []shared.RankingReferences) (err error)
 }
 
 type SCIPWriter interface {

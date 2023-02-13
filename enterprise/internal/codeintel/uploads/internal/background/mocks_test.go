@@ -10335,7 +10335,7 @@ func NewMockLsifStore() *MockLsifStore {
 			},
 		},
 		InsertDefintionsForRankingFunc: &LsifStoreInsertDefintionsForRankingFunc{
-			defaultHook: func(context.Context, []lsifstore.RankingDefintions) (r0 error) {
+			defaultHook: func(context.Context, []shared1.RankingDefintions) (r0 error) {
 				return
 			},
 		},
@@ -10345,7 +10345,7 @@ func NewMockLsifStore() *MockLsifStore {
 			},
 		},
 		InsertReferencesForRankingFunc: &LsifStoreInsertReferencesForRankingFunc{
-			defaultHook: func(context.Context, []lsifstore.RankingReferences) (r0 error) {
+			defaultHook: func(context.Context, []shared1.RankingReferences) (r0 error) {
 				return
 			},
 		},
@@ -10437,7 +10437,7 @@ func NewStrictMockLsifStore() *MockLsifStore {
 			},
 		},
 		InsertDefintionsForRankingFunc: &LsifStoreInsertDefintionsForRankingFunc{
-			defaultHook: func(context.Context, []lsifstore.RankingDefintions) error {
+			defaultHook: func(context.Context, []shared1.RankingDefintions) error {
 				panic("unexpected invocation of MockLsifStore.InsertDefintionsForRanking")
 			},
 		},
@@ -10447,7 +10447,7 @@ func NewStrictMockLsifStore() *MockLsifStore {
 			},
 		},
 		InsertReferencesForRankingFunc: &LsifStoreInsertReferencesForRankingFunc{
-			defaultHook: func(context.Context, []lsifstore.RankingReferences) error {
+			defaultHook: func(context.Context, []shared1.RankingReferences) error {
 				panic("unexpected invocation of MockLsifStore.InsertReferencesForRanking")
 			},
 		},
@@ -11244,15 +11244,15 @@ func (c LsifStoreInsertDefinitionsAndReferencesForRankingFuncCall) Results() []i
 // InsertDefintionsForRanking method of the parent MockLsifStore instance is
 // invoked.
 type LsifStoreInsertDefintionsForRankingFunc struct {
-	defaultHook func(context.Context, []lsifstore.RankingDefintions) error
-	hooks       []func(context.Context, []lsifstore.RankingDefintions) error
+	defaultHook func(context.Context, []shared1.RankingDefintions) error
+	hooks       []func(context.Context, []shared1.RankingDefintions) error
 	history     []LsifStoreInsertDefintionsForRankingFuncCall
 	mutex       sync.Mutex
 }
 
 // InsertDefintionsForRanking delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockLsifStore) InsertDefintionsForRanking(v0 context.Context, v1 []lsifstore.RankingDefintions) error {
+func (m *MockLsifStore) InsertDefintionsForRanking(v0 context.Context, v1 []shared1.RankingDefintions) error {
 	r0 := m.InsertDefintionsForRankingFunc.nextHook()(v0, v1)
 	m.InsertDefintionsForRankingFunc.appendCall(LsifStoreInsertDefintionsForRankingFuncCall{v0, v1, r0})
 	return r0
@@ -11261,7 +11261,7 @@ func (m *MockLsifStore) InsertDefintionsForRanking(v0 context.Context, v1 []lsif
 // SetDefaultHook sets function that is called when the
 // InsertDefintionsForRanking method of the parent MockLsifStore instance is
 // invoked and the hook queue is empty.
-func (f *LsifStoreInsertDefintionsForRankingFunc) SetDefaultHook(hook func(context.Context, []lsifstore.RankingDefintions) error) {
+func (f *LsifStoreInsertDefintionsForRankingFunc) SetDefaultHook(hook func(context.Context, []shared1.RankingDefintions) error) {
 	f.defaultHook = hook
 }
 
@@ -11270,7 +11270,7 @@ func (f *LsifStoreInsertDefintionsForRankingFunc) SetDefaultHook(hook func(conte
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *LsifStoreInsertDefintionsForRankingFunc) PushHook(hook func(context.Context, []lsifstore.RankingDefintions) error) {
+func (f *LsifStoreInsertDefintionsForRankingFunc) PushHook(hook func(context.Context, []shared1.RankingDefintions) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -11279,19 +11279,19 @@ func (f *LsifStoreInsertDefintionsForRankingFunc) PushHook(hook func(context.Con
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *LsifStoreInsertDefintionsForRankingFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, []lsifstore.RankingDefintions) error {
+	f.SetDefaultHook(func(context.Context, []shared1.RankingDefintions) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *LsifStoreInsertDefintionsForRankingFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, []lsifstore.RankingDefintions) error {
+	f.PushHook(func(context.Context, []shared1.RankingDefintions) error {
 		return r0
 	})
 }
 
-func (f *LsifStoreInsertDefintionsForRankingFunc) nextHook() func(context.Context, []lsifstore.RankingDefintions) error {
+func (f *LsifStoreInsertDefintionsForRankingFunc) nextHook() func(context.Context, []shared1.RankingDefintions) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -11330,7 +11330,7 @@ type LsifStoreInsertDefintionsForRankingFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 []lsifstore.RankingDefintions
+	Arg1 []shared1.RankingDefintions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -11460,15 +11460,15 @@ func (c LsifStoreInsertMetadataFuncCall) Results() []interface{} {
 // InsertReferencesForRanking method of the parent MockLsifStore instance is
 // invoked.
 type LsifStoreInsertReferencesForRankingFunc struct {
-	defaultHook func(context.Context, []lsifstore.RankingReferences) error
-	hooks       []func(context.Context, []lsifstore.RankingReferences) error
+	defaultHook func(context.Context, []shared1.RankingReferences) error
+	hooks       []func(context.Context, []shared1.RankingReferences) error
 	history     []LsifStoreInsertReferencesForRankingFuncCall
 	mutex       sync.Mutex
 }
 
 // InsertReferencesForRanking delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockLsifStore) InsertReferencesForRanking(v0 context.Context, v1 []lsifstore.RankingReferences) error {
+func (m *MockLsifStore) InsertReferencesForRanking(v0 context.Context, v1 []shared1.RankingReferences) error {
 	r0 := m.InsertReferencesForRankingFunc.nextHook()(v0, v1)
 	m.InsertReferencesForRankingFunc.appendCall(LsifStoreInsertReferencesForRankingFuncCall{v0, v1, r0})
 	return r0
@@ -11477,7 +11477,7 @@ func (m *MockLsifStore) InsertReferencesForRanking(v0 context.Context, v1 []lsif
 // SetDefaultHook sets function that is called when the
 // InsertReferencesForRanking method of the parent MockLsifStore instance is
 // invoked and the hook queue is empty.
-func (f *LsifStoreInsertReferencesForRankingFunc) SetDefaultHook(hook func(context.Context, []lsifstore.RankingReferences) error) {
+func (f *LsifStoreInsertReferencesForRankingFunc) SetDefaultHook(hook func(context.Context, []shared1.RankingReferences) error) {
 	f.defaultHook = hook
 }
 
@@ -11486,7 +11486,7 @@ func (f *LsifStoreInsertReferencesForRankingFunc) SetDefaultHook(hook func(conte
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *LsifStoreInsertReferencesForRankingFunc) PushHook(hook func(context.Context, []lsifstore.RankingReferences) error) {
+func (f *LsifStoreInsertReferencesForRankingFunc) PushHook(hook func(context.Context, []shared1.RankingReferences) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -11495,19 +11495,19 @@ func (f *LsifStoreInsertReferencesForRankingFunc) PushHook(hook func(context.Con
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *LsifStoreInsertReferencesForRankingFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, []lsifstore.RankingReferences) error {
+	f.SetDefaultHook(func(context.Context, []shared1.RankingReferences) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *LsifStoreInsertReferencesForRankingFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, []lsifstore.RankingReferences) error {
+	f.PushHook(func(context.Context, []shared1.RankingReferences) error {
 		return r0
 	})
 }
 
-func (f *LsifStoreInsertReferencesForRankingFunc) nextHook() func(context.Context, []lsifstore.RankingReferences) error {
+func (f *LsifStoreInsertReferencesForRankingFunc) nextHook() func(context.Context, []shared1.RankingReferences) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -11546,7 +11546,7 @@ type LsifStoreInsertReferencesForRankingFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 []lsifstore.RankingReferences
+	Arg1 []shared1.RankingReferences
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error

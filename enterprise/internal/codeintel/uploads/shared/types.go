@@ -199,3 +199,16 @@ type UploadLog struct {
 	Reason            *string
 	Operation         string
 }
+
+type RankingDefintions struct {
+	UploadID     int
+	SymbolName   string
+	Repository   string
+	DocumentRoot string
+	DocumentPath string
+}
+
+type RankingReferences struct {
+	UploadID   int
+	SymbolName []string
+}
