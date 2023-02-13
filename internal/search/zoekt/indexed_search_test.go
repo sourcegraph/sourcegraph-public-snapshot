@@ -437,67 +437,6 @@ func TestZoektIndexedRepos(t *testing.T) {
 	}
 }
 
-func TestZoektResultCountFactor(t *testing.T) {
-	cases := []struct {
-		name         string
-		numRepos     int
-		globalSearch bool
-		pattern      *search.TextPatternInfo
-		want         int
-	}{
-		{
-			name:     "One repo implies max scaling factor",
-			numRepos: 1,
-			pattern:  &search.TextPatternInfo{},
-			want:     100,
-		},
-		{
-			name:     "Eleven repos implies a scaling factor between min and max",
-			numRepos: 11,
-			pattern:  &search.TextPatternInfo{},
-			want:     8,
-		},
-		{
-			name:     "More than 500 repos implies a min scaling factor",
-			numRepos: 501,
-			pattern:  &search.TextPatternInfo{},
-			want:     1,
-		},
-		{
-			name:     "Setting a count greater than defautl max results (30) adapts scaling factor",
-			numRepos: 501,
-			pattern:  &search.TextPatternInfo{FileMatchLimit: 100},
-			want:     10,
-		},
-		{
-			name:         "for global searches, k should be 1",
-			numRepos:     0,
-			globalSearch: true,
-			pattern:      &search.TextPatternInfo{},
-			want:         1,
-		},
-		{
-			name:         "for global searches, k should be 1, adjusted by the FileMatchLimit",
-			numRepos:     0,
-			globalSearch: true,
-			pattern:      &search.TextPatternInfo{FileMatchLimit: 100},
-			want:         10,
-		},
-	}
-	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
-			got := (&Options{
-				NumRepos:       tt.numRepos,
-				FileMatchLimit: tt.pattern.FileMatchLimit,
-				GlobalSearch:   tt.globalSearch,
-			}).resultCountFactor()
-			if tt.want != got {
-				t.Fatalf("Want scaling factor %d but got %d", tt.want, got)
-			}
-		})
-	}
-}
-
 func TestZoektSearchOptions(t *testing.T) {
 	cases := []struct {
 		name        string
@@ -514,10 +453,10 @@ func TestZoektSearchOptions(t *testing.T) {
 				NumRepos:       3,
 			},
 			want: &zoekt.SearchOptions{
-				ShardMaxMatchCount: 500000,
-				TotalMaxMatchCount: 500000,
+				ShardMaxMatchCount: 10000,
+				TotalMaxMatchCount: 100000,
 				MaxWallTime:        20000000000,
-				MaxDocDisplayCount: 2500,
+				MaxDocDisplayCount: 500,
 				ChunkMatches:       true,
 			},
 		},
@@ -557,6 +496,21 @@ func TestZoektSearchOptions(t *testing.T) {
 				ShardRepoMaxMatchCount: 1,
 				MaxWallTime:            20000000000,
 				ChunkMatches:           true,
+			},
+		},
+		{
+			name:    "test large file match limit",
+			context: context.Background(),
+			options: &Options{
+				FileMatchLimit: 100_000,
+				NumRepos:       3,
+			},
+			want: &zoekt.SearchOptions{
+				ShardMaxMatchCount: 100_000,
+				TotalMaxMatchCount: 100_000,
+				MaxWallTime:        20000000000,
+				MaxDocDisplayCount: 100_000,
+				ChunkMatches:       true,
 			},
 		},
 		{

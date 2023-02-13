@@ -282,10 +282,7 @@ func (s *BackfillStore) GetBackfillQueueInfo(ctx context.Context, args BackfillQ
 	if args.PaginationArgs != nil {
 		pagination = *args.PaginationArgs
 	}
-	p, err := pagination.SQL()
-	if err != nil {
-		return nil, err
-	}
+	p := pagination.SQL()
 	// Add in pagination where clause
 	if p.Where != nil {
 		where = append(where, p.Where)

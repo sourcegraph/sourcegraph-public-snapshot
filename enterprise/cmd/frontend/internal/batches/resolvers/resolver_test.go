@@ -130,7 +130,9 @@ func TestCreateBatchSpec(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	licensingInfo := func(tags ...string) *licensing.Info { return &licensing.Info{Info: license.Info{Tags: tags}} }
+	licensingInfo := func(tags ...string) *licensing.Info {
+		return &licensing.Info{Info: license.Info{Tags: tags, ExpiresAt: time.Now().Add(1 * time.Hour)}}
+	}
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
@@ -1761,7 +1763,7 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationDeleteCredential)
 
 		if len(errs) != 1 {
-			t.Fatalf("expected single errors, but got none")
+			t.Fatalf("expected a single error, but got %d", len(errs))
 		}
 		if have, want := errs[0].Message, fmt.Sprintf("user credential not found: [%d]", userCred.ID); have != want {
 			t.Fatalf("wrong error code. want=%q, have=%q", want, have)

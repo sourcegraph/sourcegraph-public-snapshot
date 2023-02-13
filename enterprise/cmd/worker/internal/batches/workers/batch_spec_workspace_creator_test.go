@@ -9,10 +9,10 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -255,7 +255,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 				Description: batchSpec.Spec.Description,
 			},
 			batcheslib.Repository{
-				ID:          string(graphqlbackend.MarshalRepositoryID(workspace.Repo.ID)),
+				ID:          string(relay.MarshalID("Repository", workspace.Repo.ID)),
 				Name:        string(workspace.Repo.Name),
 				BaseRef:     workspace.Branch,
 				BaseRev:     string(workspace.Commit),

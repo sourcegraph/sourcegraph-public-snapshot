@@ -3,13 +3,11 @@ import 'focus-visible'
 import * as React from 'react'
 
 import { ApolloProvider } from '@apollo/client'
-import { createBrowserHistory } from 'history'
 import ServerIcon from 'mdi-react/ServerIcon'
 import { Router } from 'react-router'
 import { CompatRouter, Routes, Route } from 'react-router-dom-v5-compat'
 import { combineLatest, from, Subscription, fromEvent, of, Subject, Observable } from 'rxjs'
 import { first, startWith, switchMap } from 'rxjs/operators'
-import * as uuid from 'uuid'
 
 import { logger } from '@sourcegraph/common'
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
@@ -57,9 +55,7 @@ import { HeroPage } from './components/HeroPage'
 import { FeatureFlagsProvider } from './featureFlags/FeatureFlagsProvider'
 import type { CodeInsightsProps } from './insights/types'
 import { Layout, LayoutProps } from './Layout'
-import { BlockInput, NotebookProps } from './notebooks'
-import { createNotebook } from './notebooks/backend'
-import { blockToGQLInput } from './notebooks/serialize'
+import { NotebookProps } from './notebooks'
 import type { OrgAreaRoute } from './org/area/OrgArea'
 import type { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import type { OrgSettingsAreaRoute } from './org/settings/OrgSettingsArea'
@@ -71,10 +67,8 @@ import type { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import type { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import type { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import type { LayoutRouteProps } from './routes'
-import { EnterprisePageRoutes } from './routes.constants'
 import { parseSearchURL, getQueryStateFromLocation, SearchAggregationProps } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
-import { SetupWizard } from './setup-wizard'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import {
@@ -90,6 +84,7 @@ import type { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import type { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import type { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { UserSessionStores } from './UserSessionStores'
+import { globalHistory } from './util/globalHistory'
 import { observeLocation } from './util/location'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
 
@@ -146,9 +141,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Whether globbing is enabled for filters.
      */
     globbing: boolean
-
-    /** Experimental feature flag */
-    isSetupWizardEnabled: boolean
 }
 
 const notificationStyles: BrandedNotificationItemStyleProps = {
@@ -169,15 +161,10 @@ const GLOBAL_SEARCH_CONTEXT_SPEC = 'global'
 
 setLinkComponent(RouterLink)
 
-const history = createBrowserHistory()
-
 /**
  * The root component.
  */
-export class SourcegraphWebApp extends React.Component<
-    React.PropsWithChildren<SourcegraphWebAppProps>,
-    SourcegraphWebAppState
-> {
+export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
     private readonly subscriptions = new Subscription()
     private readonly userRepositoriesUpdates = new Subject<void>()
     private readonly platformContext: PlatformContext = createPlatformContext()
@@ -196,7 +183,6 @@ export class SourcegraphWebApp extends React.Component<
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: siteSubjectNoAdmin(),
             globbing: false,
-            isSetupWizardEnabled: false,
         }
     }
 
@@ -234,7 +220,6 @@ export class SourcegraphWebApp extends React.Component<
                         authenticatedUser,
                         globbing: globbingEnabledFromSettings(settingsCascade),
                         viewerSubject: viewerSubjectFromSettings(settingsCascade, authenticatedUser),
-                        isSetupWizardEnabled: !!getExperimentalFeatures().setupWizard,
                     })
                 },
                 () => this.setState({ authenticatedUser: null })
@@ -280,7 +265,7 @@ export class SourcegraphWebApp extends React.Component<
         // Update search query state whenever the URL changes
         this.subscriptions.add(
             getQueryStateFromLocation({
-                location: observeLocation(history).pipe(startWith(history.location)),
+                location: observeLocation(globalHistory).pipe(startWith(globalHistory.location)),
                 showSearchContext: this.props.searchContextsEnabled,
                 isSearchContextAvailable: (searchContext: string) =>
                     this.props.searchContextsEnabled
@@ -338,53 +323,15 @@ export class SourcegraphWebApp extends React.Component<
             } else {
                 subtitle = <div className={styles.error}>{subtitle}</div>
             }
+
             return <HeroPage icon={ServerIcon} title={`${statusCode}: ${statusText}`} subtitle={subtitle} />
         }
 
         const { authenticatedUser, graphqlClient, temporarySettingsStorage } = this.state
+
         if (authenticatedUser === undefined || graphqlClient === undefined || temporarySettingsStorage === undefined) {
             return null
         }
-
-        const { children, ...props } = this.props
-
-        const root = (
-            <Route
-                path="*"
-                element={
-                    <Layout
-                        {...props}
-                        authenticatedUser={authenticatedUser}
-                        viewerSubject={this.state.viewerSubject}
-                        settingsCascade={this.state.settingsCascade}
-                        batchChangesEnabled={this.props.batchChangesEnabled}
-                        batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(this.state.settingsCascade)}
-                        batchChangesWebhookLogsEnabled={window.context.batchChangesWebhookLogsEnabled}
-                        // Search query
-                        fetchHighlightedFileLineRanges={this.fetchHighlightedFileLineRanges}
-                        // Extensions
-                        platformContext={this.platformContext}
-                        extensionsController={this.extensionsController}
-                        telemetryService={eventLogger}
-                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                        searchContextsEnabled={this.props.searchContextsEnabled}
-                        selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
-                        setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
-                        getUserSearchContextNamespaces={getUserSearchContextNamespaces}
-                        fetchSearchContexts={fetchSearchContexts}
-                        fetchSearchContextBySpec={fetchSearchContextBySpec}
-                        fetchSearchContext={fetchSearchContext}
-                        createSearchContext={createSearchContext}
-                        updateSearchContext={updateSearchContext}
-                        deleteSearchContext={deleteSearchContext}
-                        isSearchContextSpecAvailable={isSearchContextSpecAvailable}
-                        globbing={this.state.globbing}
-                        streamSearch={aggregateStreamingSearch}
-                        onCreateNotebookFromNotepad={this.onCreateNotebook}
-                    />
-                }
-            />
-        )
 
         return (
             <ComponentsComposer
@@ -403,17 +350,45 @@ export class SourcegraphWebApp extends React.Component<
                     /* eslint-enable react/no-children-prop, react/jsx-key */
                 ]}
             >
-                <Router history={history} key={0}>
+                <Router history={globalHistory}>
                     <CompatRouter>
                         <Routes>
-                            {this.state.isSetupWizardEnabled ? (
-                                <>
-                                    <Route path="/setup" element={<SetupWizard />} />
-                                    {root}
-                                </>
-                            ) : (
-                                root
-                            )}
+                            <Route
+                                path="*"
+                                element={
+                                    <Layout
+                                        {...this.props}
+                                        authenticatedUser={authenticatedUser}
+                                        viewerSubject={this.state.viewerSubject}
+                                        settingsCascade={this.state.settingsCascade}
+                                        batchChangesEnabled={this.props.batchChangesEnabled}
+                                        batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(
+                                            this.state.settingsCascade
+                                        )}
+                                        batchChangesWebhookLogsEnabled={window.context.batchChangesWebhookLogsEnabled}
+                                        // Search query
+                                        fetchHighlightedFileLineRanges={this.fetchHighlightedFileLineRanges}
+                                        // Extensions
+                                        platformContext={this.platformContext}
+                                        extensionsController={this.extensionsController}
+                                        telemetryService={eventLogger}
+                                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                        searchContextsEnabled={this.props.searchContextsEnabled}
+                                        selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
+                                        setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
+                                        getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+                                        fetchSearchContexts={fetchSearchContexts}
+                                        fetchSearchContextBySpec={fetchSearchContextBySpec}
+                                        fetchSearchContext={fetchSearchContext}
+                                        createSearchContext={createSearchContext}
+                                        updateSearchContext={updateSearchContext}
+                                        deleteSearchContext={deleteSearchContext}
+                                        isSearchContextSpecAvailable={isSearchContextSpecAvailable}
+                                        globbing={this.state.globbing}
+                                        streamSearch={aggregateStreamingSearch}
+                                    />
+                                }
+                            />
                         </Routes>
                     </CompatRouter>
                 </Router>
@@ -497,24 +472,6 @@ export class SourcegraphWebApp extends React.Component<
         await extensionHostAPI.setSearchContext(spec)
     }
 
-    private onCreateNotebook = (blocks: BlockInput[]): void => {
-        if (!this.state.authenticatedUser) {
-            return
-        }
-
-        this.subscriptions.add(
-            createNotebook({
-                notebook: {
-                    title: 'New Notebook',
-                    blocks: blocks.map(block => blockToGQLInput({ id: uuid.v4(), ...block })),
-                    public: false,
-                    namespace: this.state.authenticatedUser.id,
-                },
-            }).subscribe(createdNotebook => {
-                history.push(EnterprisePageRoutes.Notebook.replace(':id', createdNotebook.id))
-            })
-        )
-    }
     private fetchHighlightedFileLineRanges = (
         parameters: FetchFileParameters,
         force?: boolean | undefined

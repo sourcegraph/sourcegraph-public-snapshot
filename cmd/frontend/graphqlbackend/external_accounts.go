@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/auth/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -158,13 +159,21 @@ func (r *schemaResolver) AddExternalAccount(ctx context.Context, args *struct {
 		return nil, auth.ErrNotAuthenticated
 	}
 
-	if args.ServiceType == "gerrit" {
+	switch args.ServiceType {
+	case extsvc.TypeGerrit:
 		err := gext.AddGerritExternalAccount(ctx, r.db, a.UID, args.ServiceID, args.AccountDetails)
 		if err != nil {
 			return nil, err
 		}
-	} else {
-		return nil, errors.New("unsupported service type")
+
+	case auth.SourcegraphOperatorProviderType:
+		err := sourcegraphoperator.AddSourcegraphOperatorExternalAccount(ctx, r.db, a.UID, args.ServiceID, args.AccountDetails)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to add Sourcegraph Operator external account")
+		}
+
+	default:
+		return nil, errors.Newf("unsupported service type %q", args.ServiceType)
 	}
 
 	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{

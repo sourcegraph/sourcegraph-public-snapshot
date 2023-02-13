@@ -159,18 +159,29 @@ func (s *Service) GetRetentionPolicyOverview(ctx context.Context, upload types.U
 	}
 
 	sort.Slice(potentialMatches, func(i, j int) bool {
+		// Sort implicit policy at the top
 		if potentialMatches[i].ConfigurationPolicy == nil {
 			return true
 		} else if potentialMatches[j].ConfigurationPolicy == nil {
 			return false
 		}
+
+		// Then sort matches first
+		if potentialMatches[i].Matched {
+			return !potentialMatches[j].Matched
+		}
+		if potentialMatches[j].Matched {
+			return false
+		}
+
+		// Then sort by ids
 		return potentialMatches[i].ID < potentialMatches[j].ID
 	})
 
 	return potentialMatches, len(potentialMatches), nil
 }
 
-func (s *Service) GetPreviewRepositoryFilter(ctx context.Context, patterns []string, limit int) (_ []int, totalCount int, repositoryMatchLimit *int, err error) {
+func (s *Service) GetPreviewRepositoryFilter(ctx context.Context, patterns []string, limit int) (_ []int, totalCount int, matchesAll bool, repositoryMatchLimit *int, err error) {
 	ctx, _, endObservation := s.operations.getPreviewRepositoryFilter.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -184,10 +195,14 @@ func (s *Service) GetPreviewRepositoryFilter(ctx context.Context, patterns []str
 
 	ids, totalCount, err := s.store.GetRepoIDsByGlobPatterns(ctx, patterns, limit, 0)
 	if err != nil {
-		return nil, 0, nil, err
+		return nil, 0, false, nil, err
+	}
+	totalRepoCount, err := s.store.RepoCount(ctx)
+	if err != nil {
+		return nil, 0, false, nil, err
 	}
 
-	return ids, totalCount, repositoryMatchLimit, nil
+	return ids, totalCount, totalCount == totalRepoCount, repositoryMatchLimit, nil
 }
 
 type GitObject struct {

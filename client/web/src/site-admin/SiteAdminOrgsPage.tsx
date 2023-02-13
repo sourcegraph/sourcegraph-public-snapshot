@@ -1,8 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiCog, mdiAccount, mdiDelete, mdiPlus } from '@mdi/js'
-import * as H from 'history'
-import { RouteComponentProps } from 'react-router'
 import { Subject } from 'rxjs'
 
 import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
@@ -26,7 +24,6 @@ interface OrgNodeProps {
      * Called when the org is updated by an action in this list item.
      */
     onDidUpdate?: () => void
-    history: H.History
 }
 
 const OrgNode: React.FunctionComponent<React.PropsWithChildren<OrgNodeProps>> = ({ node, onDidUpdate }) => {
@@ -94,16 +91,12 @@ const OrgNode: React.FunctionComponent<React.PropsWithChildren<OrgNodeProps>> = 
     )
 }
 
-interface Props extends RouteComponentProps<{}>, TelemetryProps {}
+interface Props extends TelemetryProps {}
 
 /**
  * A page displaying the orgs on this site.
  */
-export const SiteAdminOrgsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    telemetryService,
-    history,
-    location,
-}) => {
+export const SiteAdminOrgsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ telemetryService }) => {
     const orgUpdates = useMemo(() => new Subject<void>(), [])
     const onDidUpdateOrg = useCallback((): void => orgUpdates.next(), [orgUpdates])
 
@@ -133,11 +126,8 @@ export const SiteAdminOrgsPage: React.FunctionComponent<React.PropsWithChildren<
                 nodeComponent={OrgNode}
                 nodeComponentProps={{
                     onDidUpdate: onDidUpdateOrg,
-                    history,
                 }}
                 updates={orgUpdates}
-                history={history}
-                location={location}
             />
         </div>
     )

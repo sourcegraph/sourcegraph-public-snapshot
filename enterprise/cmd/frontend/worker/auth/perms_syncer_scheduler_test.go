@@ -63,12 +63,14 @@ func TestPermsSyncerScheduler_scheduleJobs(t *testing.T) {
 			RepositoryID: 0,
 			Reason:       database.ReasonUserNoPermissions,
 			Priority:     database.MediumPriorityPermissionSync,
+			NoPerms:      true,
 		},
 		{
 			UserID:       0,
 			RepositoryID: int(repo1.ID),
 			Reason:       database.ReasonRepoNoPermissions,
 			Priority:     database.MediumPriorityPermissionSync,
+			NoPerms:      true,
 		},
 	}
 	runJobsTest(t, ctx, logger, db, store, wantJobs)
@@ -100,12 +102,14 @@ func TestPermsSyncerScheduler_scheduleJobs(t *testing.T) {
 			RepositoryID: 0,
 			Reason:       database.ReasonUserNoPermissions,
 			Priority:     database.MediumPriorityPermissionSync,
+			NoPerms:      true,
 		},
 		{
 			UserID:       0,
 			RepositoryID: int(repo1.ID),
 			Reason:       database.ReasonRepoNoPermissions,
 			Priority:     database.MediumPriorityPermissionSync,
+			NoPerms:      true,
 		},
 		{
 			UserID:       int(user2.ID),
@@ -162,6 +166,7 @@ type testJob struct {
 	RepositoryID int
 	UserID       int
 	Priority     database.PermissionSyncJobPriority
+	NoPerms      bool
 }
 
 func runJobsTest(t *testing.T, ctx context.Context, logger log.Logger, db database.DB, store database.PermissionSyncJobStore, wantJobs []testJob) {
@@ -181,6 +186,7 @@ func runJobsTest(t *testing.T, ctx context.Context, logger log.Logger, db databa
 			RepositoryID: job.RepositoryID,
 			Reason:       job.Reason,
 			Priority:     job.Priority,
+			NoPerms:      job.NoPerms,
 		}
 		actualJobs = append(actualJobs, actualJob)
 	}

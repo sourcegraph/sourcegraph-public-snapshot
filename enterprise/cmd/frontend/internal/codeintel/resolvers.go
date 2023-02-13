@@ -63,6 +63,22 @@ func (r *Resolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ resol
 	return r.autoIndexingRootResolver.PreciseIndexByID(ctx, id)
 }
 
+func (r *Resolver) DeletePreciseIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*resolverstubs.EmptyResponse, error) {
+	return r.autoIndexingRootResolver.DeletePreciseIndex(ctx, args)
+}
+
+func (r *Resolver) DeletePreciseIndexes(ctx context.Context, args *resolverstubs.DeletePreciseIndexesArgs) (*resolverstubs.EmptyResponse, error) {
+	return r.autoIndexingRootResolver.DeletePreciseIndexes(ctx, args)
+}
+
+func (r *Resolver) ReindexPreciseIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*resolverstubs.EmptyResponse, error) {
+	return r.autoIndexingRootResolver.ReindexPreciseIndex(ctx, args)
+}
+
+func (r *Resolver) ReindexPreciseIndexes(ctx context.Context, args *resolverstubs.ReindexPreciseIndexesArgs) (*resolverstubs.EmptyResponse, error) {
+	return r.autoIndexingRootResolver.ReindexPreciseIndexes(ctx, args)
+}
+
 func (r *Resolver) LSIFUploadsByRepo(ctx context.Context, args *resolverstubs.LSIFRepositoryUploadsQueryArgs) (_ resolverstubs.LSIFUploadConnectionResolver, err error) {
 	return r.uploadsRootResolver.LSIFUploadsByRepo(ctx, args)
 }

@@ -36,8 +36,12 @@ type operations struct {
 	getSupportedByCtags  *observation.Operation
 	gitBlobCodeIntelInfo *observation.Operation
 
-	preciseIndexes   *observation.Operation
-	preciseIndexByID *observation.Operation
+	preciseIndexes        *observation.Operation
+	preciseIndexByID      *observation.Operation
+	deletePreciseIndex    *observation.Operation
+	deletePreciseIndexes  *observation.Operation
+	reindexPreciseIndex   *observation.Operation
+	reindexPreciseIndexes *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -85,7 +89,11 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getSupportedByCtags:  op("GetSupportedByCtags"),
 		gitBlobCodeIntelInfo: op("GitBlobCodeIntelInfo"),
 
-		preciseIndexes:   op("PreciseIndexes"),
-		preciseIndexByID: op("PreciseIndexByID"),
+		preciseIndexes:        op("PreciseIndexes"),
+		preciseIndexByID:      op("PreciseIndexByID"),
+		deletePreciseIndex:    op("DeletePreciseIndex"),
+		deletePreciseIndexes:  op("DeletePreciseIndexes"),
+		reindexPreciseIndex:   op("ReindexPreciseIndex"),
+		reindexPreciseIndexes: op("ReindexPreciseIndexes"),
 	}
 }

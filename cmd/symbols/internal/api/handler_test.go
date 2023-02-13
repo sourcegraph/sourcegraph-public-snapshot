@@ -8,8 +8,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/go-ctags"
-	"golang.org/x/sync/semaphore"
-
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
 	symbolsdatabase "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
@@ -24,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	symbolsclient "github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"golang.org/x/sync/semaphore"
 )
 
 func init() {

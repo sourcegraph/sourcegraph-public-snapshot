@@ -21,7 +21,7 @@ docker exec $CONTAINER ssh -p $PORT $USER@$HOSTNAME
 
 - $CONTAINER is the name or ID of your sourcegraph/server container
 - $PORT is the port on which your code host's git server is listening for connections
-- $USER is your user on your code host (Gerrit defaults to `admin`)
+- $USER is your user on your code host
 - $HOSTNAME is the hostname of your code host from within the sourcegraph/server container (e.g. `githost.example.com`)
 
 Here's an example:

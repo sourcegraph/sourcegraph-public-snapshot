@@ -22,6 +22,9 @@ import {
     queryIssues,
     IssueLabel,
     createLatestRelease,
+    cloneRepo,
+    getCandidateTags,
+    localSourcegraphRepo,
 } from './github'
 import { ensureEvent, getClient, EventOptions, calendarTime } from './google-calendar'
 import { postMessage, slackURL } from './slack'
@@ -37,6 +40,7 @@ import {
     getLatestTag,
     getAllUpgradeGuides,
     updateUpgradeGuides,
+    verifyWithInput,
 } from './util'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
@@ -52,6 +56,8 @@ export type StepID =
     // release
     | 'release:status'
     | 'release:create-candidate'
+    | 'release:promote-candidate'
+    | 'release:check-candidate'
     | 'release:stage'
     | 'release:add-to-batch-change'
     | 'release:finalize'
@@ -379,21 +385,35 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
     {
         id: 'release:create-candidate',
         description: 'Generate the Nth release candidate. Set <candidate> to "final" to generate a final release',
-        argNames: ['candidate'],
-        run: async (config, candidate) => {
-            if (!candidate) {
-                throw new Error('Candidate information is required (either "final" or a number)')
-            }
+        run: async config => {
             const { upcoming: release } = await releaseVersions(config)
             const branch = `${release.major}.${release.minor}`
-            const tag = `v${release.version}${candidate === 'final' ? '' : `-rc.${candidate}`}`
             ensureReleaseBranchUpToDate(branch)
+
+            const owner = 'sourcegraph'
+            const repo = 'sourcegraph'
+
             try {
+                const client = await getAuthenticatedGitHubClient()
+                const { workdir } = await cloneRepo(client, owner, repo, { revision: branch, revisionMustExist: true })
+
+                const tags = getCandidateTags(workdir, release.version)
+                let nextCandidate = 1
+                for (const tag of tags) {
+                    const num = parseInt(tag.slice(-1), 10)
+                    if (num >= nextCandidate) {
+                        nextCandidate = num + 1
+                    }
+                }
+                const tag = `v${release.version}-rc.${nextCandidate}`
+
+                console.log(`Detected next candidate: ${nextCandidate}, attempting to create tag: ${tag}`)
                 await createTag(
-                    await getAuthenticatedGitHubClient(),
+                    client,
+                    workdir,
                     {
-                        owner: 'sourcegraph',
-                        repo: 'sourcegraph',
+                        owner,
+                        repo,
                         branch,
                         tag,
                     },
@@ -401,8 +421,80 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 )
                 console.log(`To check the status of the build, run:\nsg ci status -branch ${tag} --wait\n`)
             } catch (error) {
-                console.error(`Failed to create tag: ${tag}`, error)
+                console.error('Failed to create tag', error)
             }
+        },
+    },
+    {
+        id: 'release:promote-candidate',
+        description:
+            'Promote a release candidate to release build. Specify the full candidate tag to promote the tagged commit to release.',
+        argNames: ['candidate'],
+        run: async (config, candidate) => {
+            const { upcoming: release } = await releaseVersions(config)
+            const releaseBranch = `${release.major}.${release.minor}`
+            ensureReleaseBranchUpToDate(releaseBranch)
+
+            const warnMsg =
+                'Verify the provided tag is correct to promote to release. Note: it is very unusual to require a non-standard tag to promote to release, proceed with caution.'
+            const exampleTag = `v${release.version}-rc.1`
+            if (!candidate) {
+                throw new Error(
+                    `Candidate tag is a required argument. This should be the git tag of the commit to promote to release (ex.${exampleTag}`
+                )
+            } else if (!candidate.match('v\\d\\.\\d(?:\\.\\d)?-rc\\.\\d')) {
+                await verifyWithInput(
+                    `Warning!\nCandidate tag: ${candidate} does not match the standard convention (ex. ${exampleTag}). ${warnMsg}`
+                )
+            } else if (!candidate.match(`${release.version}-rc\\.\\d`)) {
+                await verifyWithInput(
+                    `Warning!\nCandidate tag: ${candidate} does not match the expected version ${release.version} (ex. ${exampleTag}). ${warnMsg}`
+                )
+            }
+
+            const owner = 'sourcegraph'
+            const repo = 'sourcegraph'
+
+            const releaseTag = `v${release.version}`
+
+            try {
+                const client = await getAuthenticatedGitHubClient()
+                // passing the tag as branch so that only the specified tag is shallow cloned
+                const { workdir } = await cloneRepo(client, owner, repo, {
+                    revision: candidate,
+                    revisionMustExist: true,
+                })
+
+                execa.sync('git', ['fetch', '--tags'], { stdio: 'inherit', cwd: workdir })
+                await createTag(
+                    client,
+                    workdir,
+                    {
+                        owner,
+                        repo,
+                        branch: candidate,
+                        tag: releaseTag,
+                    },
+                    config.dryRun.tags || false
+                )
+                console.log(`To check the status of the build, run:\nsg ci status -branch ${releaseTag} --wait\n`)
+            } catch (error) {
+                console.error('Failed to create tag', error)
+            }
+        },
+    },
+    {
+        id: 'release:check-candidate',
+        description: 'Check release candidates.',
+        argNames: ['version'],
+        run: async (config, version) => {
+            if (!version) {
+                const { upcoming: release } = await releaseVersions(config)
+                version = release.version
+            }
+            const tags = getCandidateTags(localSourcegraphRepo, version)
+            console.log(`Release candidate tags for version: ${version}\n${tags}`)
+            console.log('To check the status of the build, run:\nsg ci status -branch tag\n')
         },
     },
     {
@@ -473,11 +565,6 @@ cc @${config.captainGitHubUsername}
                 }
             }
 
-            const [previousVersion, nextVersion] = [
-                `${previous.major}.${previous.minor}`,
-                `${release.major}.${release.minor}`,
-            ]
-
             // Render changes
             const createdChanges = await createChangesets({
                 requiredCommands: ['comby', sed, 'find', 'go', 'src', 'sg'],
@@ -515,7 +602,7 @@ cc @${config.captainGitHubUsername}
                             notPatchRelease
                                 ? `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version}"' enterprise/dev/ci/internal/ci/*.go`
                                 : 'echo "Skipping minimumUpgradeableVersion bump on patch release"',
-                            updateUpgradeGuides(previousVersion, nextVersion),
+                            updateUpgradeGuides(previous.version, release.version),
                         ],
                         ...prBodyAndDraftState(
                             ((): string[] => {
@@ -523,7 +610,7 @@ cc @${config.captainGitHubUsername}
                                 items.push(
                                     'Ensure all other pull requests in the batch change have been merged',
                                     'Run `pnpm run release release:finalize` to generate the tags required. CI will not pass until this command is run.',
-                                    'Re-run the build on this branch (using either `sg ci build --wait` or the Buildkite UI) and merge when the build passes.'
+                                    'Re-run the build on this branch (using either the command `sg ci build` or the Buildkite UI) and merge when the build passes.'
                                 )
                                 return items
                             })()
@@ -573,9 +660,7 @@ cc @${config.captainGitHubUsername}
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
                         edits: [`tools/update-docker-tags.sh ${release.version}`],
-                        ...prBodyAndDraftState([
-                            'Follow the [release guide](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/RELEASING.md#releasing-pure-docker) to complete this PR',
-                        ]),
+                        ...prBodyAndDraftState([]),
                     },
                     {
                         owner: 'sourcegraph',
@@ -691,6 +776,7 @@ Batch change: ${batchChangeURL}`,
             const { upcoming: release } = await releaseVersions(config)
             let failed = false
 
+            const owner = 'sourcegraph'
             // Push final tags
             const branch = `${release.major}.${release.minor}`
             const tag = `v${release.version}`
@@ -698,12 +784,19 @@ Batch change: ${batchChangeURL}`,
                 'deploy-sourcegraph',
                 'deploy-sourcegraph-docker',
                 'deploy-sourcegraph-docker-customer-replica-1',
+                'deploy-sourcegraph-k8s',
             ]) {
                 try {
+                    const client = await getAuthenticatedGitHubClient()
+                    const { workdir } = await cloneRepo(client, owner, repo, {
+                        revision: branch,
+                        revisionMustExist: true,
+                    })
                     await createTag(
-                        await getAuthenticatedGitHubClient(),
+                        client,
+                        workdir,
                         {
-                            owner: 'sourcegraph',
+                            owner,
                             repo,
                             branch,
                             tag,

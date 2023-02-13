@@ -1,8 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 
 import { mdiArrowLeft, mdiPlus } from '@mdi/js'
-import * as H from 'history'
-import { RouteComponentProps } from 'react-router'
+import { useNavigate, useParams } from 'react-router-dom-v5-compat'
 import { Observable, Subject, NEVER } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap, filter } from 'rxjs/operators'
 
@@ -46,19 +45,13 @@ import {
     SiteAdminProductLicenseNodeProps,
 } from './SiteAdminProductLicenseNode'
 
-interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {
+interface Props {
     /** For mocking in tests only. */
     _queryProductSubscription?: typeof queryProductSubscription
 
     /** For mocking in tests only. */
     _queryProductLicenses?: typeof queryProductLicenses
-    history: H.History
 }
-
-class FilteredSiteAdminProductLicenseConnection extends FilteredConnection<
-    ProductLicenseFields,
-    Pick<SiteAdminProductLicenseNodeProps, 'showSubscription'>
-> {}
 
 const LOADING = 'loading' as const
 
@@ -66,14 +59,11 @@ const LOADING = 'loading' as const
  * Displays a product subscription in the site admin area.
  */
 export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    history,
-    location,
-    match: {
-        params: { subscriptionUUID },
-    },
     _queryProductSubscription = queryProductSubscription,
     _queryProductLicenses = queryProductLicenses,
 }) => {
+    const navigate = useNavigate()
+    const { subscriptionUUID = '' } = useParams<{ subscriptionUUID: string }>()
     useEffect(() => eventLogger.logViewEvent('SiteAdminProductSubscription'), [])
 
     const [showGenerate, setShowGenerate] = useState<boolean>(false)
@@ -109,14 +99,14 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                     switchMap(() =>
                         archiveProductSubscription({ id: productSubscription.id }).pipe(
                             mapTo(undefined),
-                            tap(() => history.push('/site-admin/dotcom/product/subscriptions')),
+                            tap(() => navigate('/site-admin/dotcom/product/subscriptions')),
                             catchError(error => [asError(error)]),
                             startWith(LOADING)
                         )
                     )
                 )
             },
-            [history, productSubscription]
+            [navigate, productSubscription]
         )
     )
 
@@ -219,7 +209,10 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                                 />
                             </CardBody>
                         )}
-                        <FilteredSiteAdminProductLicenseConnection
+                        <FilteredConnection<
+                            ProductLicenseFields,
+                            Pick<SiteAdminProductLicenseNodeProps, 'showSubscription'>
+                        >
                             className="list-group list-group-flush"
                             noun="product license"
                             pluralNoun="product licenses"
@@ -230,8 +223,6 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                             hideSearch={true}
                             noSummaryIfAllNodesVisible={true}
                             updates={licenseUpdates}
-                            history={history}
-                            location={location}
                         />
                     </Card>
                 </>

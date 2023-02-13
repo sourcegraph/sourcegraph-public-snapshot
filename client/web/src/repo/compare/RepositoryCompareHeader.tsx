@@ -20,7 +20,7 @@ export const RepositoryCompareHeader: React.FunctionComponent<
     <div className={classNames(styles.repositoryCompareHeader, className)}>
         <PageHeader
             description={
-                <span className="mb-3">
+                <span className="d-block mb-3">
                     Select a revision or provide a{' '}
                     <Link
                         to="https://git-scm.com/docs/git-rev-parse.html#_specifying_revisions"

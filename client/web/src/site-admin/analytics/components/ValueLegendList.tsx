@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react'
 
 import classNames from 'classnames'
-import { useLocation } from 'react-router'
+import { useLocation } from 'react-router-dom-v5-compat'
 
 import { Link, Text, Tooltip } from '@sourcegraph/wildcard'
 

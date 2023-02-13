@@ -590,7 +590,7 @@ func TestDeleteIndexes(t *testing.T) {
 	insertIndexes(t, db, types.Index{ID: 2, State: "errored"})
 
 	if err := store.DeleteIndexes(context.Background(), shared.DeleteIndexesOptions{
-		State:        "errored",
+		States:       []string{"errored"},
 		Term:         "",
 		RepositoryID: 0,
 	}); err != nil {
@@ -671,7 +671,7 @@ func TestReindexIndexes(t *testing.T) {
 	insertIndexes(t, db, types.Index{ID: 2, State: "errored"})
 
 	if err := store.ReindexIndexes(context.Background(), shared.ReindexIndexesOptions{
-		State:        "errored",
+		States:       []string{"errored"},
 		Term:         "",
 		RepositoryID: 0,
 	}); err != nil {

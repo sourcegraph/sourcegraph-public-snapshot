@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Redirect } from 'react-router'
+import { Navigate } from 'react-router-dom-v5-compat'
 
 import { logger } from '@sourcegraph/common'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -68,7 +68,7 @@ export const SiteInitPage: React.FunctionComponent<React.PropsWithChildren<Props
     context,
 }) => {
     if (!needsSiteInit) {
-        return <Redirect to={PageRoutes.Search} />
+        return <Navigate to={PageRoutes.Search} replace={true} />
     }
 
     return (

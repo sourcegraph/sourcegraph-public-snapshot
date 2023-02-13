@@ -150,6 +150,66 @@ extend type Mutation {
     ): EmptyResponse
 
     """
+    Deletes a precise index.
+    """
+    deletePreciseIndex(id: ID!): EmptyResponse
+
+    """
+    Deletes precise indexes by filter criteria.
+    """
+    deletePreciseIndexes(
+        """
+        An (optional) search query that filters the state, repository name, commit, root, and indexer properties.
+        """
+        query: String
+
+        """
+        The index state.
+        """
+        states: [PreciseIndexState!]
+
+        """
+        When specified, only deletes indexes that are latest for the given repository.
+        """
+        isLatestForRepo: Boolean
+
+        """
+        The repository.
+        """
+        repository: ID
+    ): EmptyResponse
+
+    """
+    Marks a precise index as replaceable by auto-indexing.
+    """
+    reindexPreciseIndex(id: ID!): EmptyResponse
+
+    """
+    Marks precise indexes by filter criteria as replaceable by auto-indexing.
+    """
+    reindexPreciseIndexes(
+        """
+        An (optional) search query that filters the state, repository name, commit, root, and indexer properties.
+        """
+        query: String
+
+        """
+        The index state.
+        """
+        states: [PreciseIndexState!]
+
+        """
+        When specified, only modifies indexes that are latest for the given repository.
+        """
+        isLatestForRepo: Boolean
+
+        """
+        The repository.
+        """
+        repository: ID
+    ): EmptyResponse
+
+    """
     Request support for a particular language.
     """
     requestLanguageSupport(language: String!): EmptyResponse
@@ -188,6 +248,13 @@ extend type Query {
         If set to true, then only configuration policies with indexing enabled are returned.
         """
         forIndexing: Boolean
+
+        """
+        If set to true, then only protected configuration policies are returned.
+        If set to false, then only un-protected configuration policies are returned.
+        If unset, policies are returned regardless if they're protected or not.
+        """
+        protected: Boolean
 
         """
         When specified, indicates that this request should be paginated and
@@ -379,6 +446,11 @@ type RepositoryFilterPreview {
     The total number of repositories in this result set.
     """
     totalCount: Int!
+
+    """
+    If every repository currently on the instance is matched by this filter.
+    """
+    matchesAllRepos: Boolean!
 
     """
     The maximum number of repository matches a single policy can make.

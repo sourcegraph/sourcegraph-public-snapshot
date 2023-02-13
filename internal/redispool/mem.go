@@ -5,10 +5,6 @@ import (
 	"sync"
 )
 
-// MemoryKeyValue is the special URI which is recognized by NewKeyValue to
-// create an in memory key value.
-const MemoryKeyValueURI = "keyvalue:memory"
-
 // MemoryKeyValue returns an in memory KeyValue.
 func MemoryKeyValue() KeyValue {
 	var mu sync.Mutex

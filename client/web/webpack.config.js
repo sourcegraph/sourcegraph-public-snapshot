@@ -28,8 +28,7 @@ const {
   getStatoscopePlugin,
 } = require('@sourcegraph/build-config')
 
-const { IS_PRODUCTION, IS_DEVELOPMENT, ENVIRONMENT_CONFIG } = require('./dev/utils')
-const { getHTMLWebpackPlugins } = require('./dev/webpack/get-html-webpack-plugins')
+const { IS_PRODUCTION, IS_DEVELOPMENT, ENVIRONMENT_CONFIG, writeIndexHTMLPlugin } = require('./dev/utils')
 const { isHotReloadEnabled } = require('./src/integration/environment')
 
 const {
@@ -166,18 +165,17 @@ const config = {
           : 'styles/[name].bundle.css',
     }),
     getMonacoWebpackPlugin(),
-    !WEBPACK_SERVE_INDEX &&
-      new WebpackManifestPlugin({
-        writeToFileEmit: true,
-        fileName: 'webpack.manifest.json',
-        seed: {
-          environment: NODE_ENV,
-        },
-        // Only output files that are required to run the application.
-        filter: ({ isInitial, name }) =>
-          isInitial || Object.values(initialChunkNames).some(initialChunkName => name?.includes(initialChunkName)),
-      }),
-    ...(WEBPACK_SERVE_INDEX ? getHTMLWebpackPlugins() : []),
+    new WebpackManifestPlugin({
+      writeToFileEmit: true,
+      fileName: 'webpack.manifest.json',
+      seed: {
+        environment: NODE_ENV,
+      },
+      // Only output files that are required to run the application.
+      filter: ({ isInitial, name }) =>
+        isInitial || Object.values(initialChunkNames).some(initialChunkName => name?.includes(initialChunkName)),
+    }),
+    ...(WEBPACK_SERVE_INDEX && IS_PRODUCTION ? [writeIndexHTMLPlugin] : []),
     WEBPACK_BUNDLE_ANALYZER && getStatoscopePlugin(WEBPACK_STATS_NAME),
     isHotReloadEnabled && new ReactRefreshWebpackPlugin({ overlay: false }),
     IS_PRODUCTION &&

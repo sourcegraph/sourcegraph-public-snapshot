@@ -1,8 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import { mdiSourceBranch, mdiChartLineVariant, mdiFileDocument, mdiArchive, mdiMonitorStar } from '@mdi/js'
-import * as H from 'history'
-import { useHistory, useLocation } from 'react-router'
+import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
 
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -58,8 +57,6 @@ const getTabName = (tabIndex: number, shouldDisplayExecutionsTab: boolean): TabN
 
 /** `BatchChangeDetailsPage` and `BatchChangeDetailsTabs` share all these props */
 export interface BatchChangeDetailsProps extends ThemeProps, TelemetryProps {
-    history: H.History
-    location: H.Location
     /** The name of the tab that should be initially open */
     initialTab?: TabName
 
@@ -99,7 +96,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
 
     // We track the current tab in a URL parameter so that tabs are easy to navigate to
     // and share.
-    const history = useHistory()
+    const navigate = useNavigate()
     const location = useLocation()
     const initialURLTab = new URLSearchParams(location.search).get('tab')
     const defaultTabIndex = getTabIndex(initialURLTab || initialTab, shouldDisplayExecutionsTab) || 0
@@ -124,7 +121,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                 // Remember our current custom short path, so that it's easy to remove
                 // when we navigate to a different tab.
                 setCustomShortPath('/executions')
-                history.replace(location.pathname + '/executions')
+                navigate(location.pathname + '/executions', { replace: true })
             } else {
                 // The first tab is the default, so it's not necessary to set it in the URL.
                 if (index === 0) {
@@ -139,10 +136,10 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                     : location
                 setCustomShortPath(undefined)
 
-                history.replace({ ...newLocation, search: urlParameters.toString() })
+                navigate({ ...newLocation, search: urlParameters.toString() }, { replace: true })
             }
         },
-        [history, location, shouldDisplayExecutionsTab, customShortPath]
+        [navigate, location, shouldDisplayExecutionsTab, customShortPath]
     )
 
     const changesetCount = batchChange.changesetsStats.total - batchChange.changesetsStats.archived
@@ -228,8 +225,6 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                         batchChangeState={batchChange.state}
                         viewerCanAdminister={batchChange.viewerCanAdminister}
                         refetchBatchChange={refetchBatchChange}
-                        history={history}
-                        location={location}
                         queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                         queryAllChangesetIDs={queryAllChangesetIDs}
                         onlyArchived={false}
@@ -237,14 +232,12 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                     />
                 </TabPanel>
                 <TabPanel>
-                    <BatchChangeBurndownChart batchChangeID={batchChange.id} history={history} />
+                    <BatchChangeBurndownChart batchChangeID={batchChange.id} />
                 </TabPanel>
                 <TabPanel>
                     {shouldDisplayExecutionsTab ? (
                         <Container>
                             <BatchChangeBatchSpecList
-                                history={history}
-                                location={location}
                                 batchChangeID={batchChange.id}
                                 currentSpecID={batchChange.currentSpec.id}
                                 isLightTheme={isLightTheme}
@@ -282,8 +275,6 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                         batchChangeID={batchChange.id}
                         batchChangeState={batchChange.state}
                         viewerCanAdminister={batchChange.viewerCanAdminister}
-                        history={history}
-                        location={location}
                         queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                         onlyArchived={true}
                         refetchBatchChange={refetchBatchChange}

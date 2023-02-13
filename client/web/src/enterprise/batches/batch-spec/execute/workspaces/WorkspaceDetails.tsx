@@ -15,7 +15,6 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import indicator from 'ordinal/indicator'
-import { useHistory } from 'react-router'
 
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
@@ -374,8 +373,6 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
     node,
     queryChangesetSpecFileDiffs = _queryChangesetSpecFileDiffs,
 }) => {
-    const history = useHistory()
-
     // TODO: Under what conditions should this be auto-expanded?
     const [isExpanded, setIsExpanded] = useState(true)
     const [areChangesExpanded, setAreChangesExpanded] = useState(true)
@@ -454,8 +451,6 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
                             </CollapseHeader>
                             <CollapsePanel>
                                 <ChangesetSpecFileDiffConnection
-                                    history={history}
-                                    location={history.location}
                                     spec={node.id}
                                     queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                                 />
@@ -748,7 +743,6 @@ const WorkspaceStepFileDiffConnection: React.FunctionComponent<
             }),
         [workspaceID, step, queryBatchSpecWorkspaceStepFileDiffs]
     )
-    const history = useHistory()
     return (
         <FilteredConnection<FileDiffFields, Omit<FileDiffNodeProps, 'node'>>
             listClassName="list-group list-group-flush"
@@ -757,7 +751,6 @@ const WorkspaceStepFileDiffConnection: React.FunctionComponent<
             queryConnection={queryFileDiffs}
             nodeComponent={FileDiffNode}
             nodeComponentProps={{
-                location: history.location,
                 persistLines: true,
                 lineNumbers: true,
             }}
@@ -765,8 +758,6 @@ const WorkspaceStepFileDiffConnection: React.FunctionComponent<
             hideSearch={true}
             noSummaryIfAllNodesVisible={true}
             withCenteredSummary={true}
-            history={history}
-            location={history.location}
             useURLQuery={false}
             cursorPaging={true}
         />

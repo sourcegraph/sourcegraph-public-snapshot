@@ -126,7 +126,7 @@ func NewKeyedCollectionScanner[Map keyedMap[K, Vs], K comparable, V, Vs any](
 // a SQL rows object to scan a single map value.
 func NewMapScanner[K comparable, V any](f func(dbutil.Scanner) (K, V, error)) func(rows Rows, queryErr error) (map[K]V, error) {
 	return func(rows Rows, queryErr error) (map[K]V, error) {
-		m := &UnorderedMap[K, V]{m: make(map[K]V)}
+		m := NewUnorderedmap[K, V]()
 		err := NewKeyedCollectionScanner[*UnorderedMap[K, V], K, V, V](m, f, SingleValueReducer[V]{})(rows, queryErr)
 		return m.ToMap(), err
 	}
@@ -137,7 +137,7 @@ func NewMapScanner[K comparable, V any](f func(dbutil.Scanner) (K, V, error)) fu
 // multiple times with a SQL rows object to scan a single map key value.
 func NewMapSliceScanner[K comparable, V any](f func(dbutil.Scanner) (K, V, error)) func(rows Rows, queryErr error) (map[K][]V, error) {
 	return func(rows Rows, queryErr error) (map[K][]V, error) {
-		m := &UnorderedMap[K, []V]{m: make(map[K][]V)}
+		m := NewUnorderedmap[K, []V]()
 		err := NewKeyedCollectionScanner[*UnorderedMap[K, []V], K, V, []V](m, f, SliceReducer[V]{})(rows, queryErr)
 		return m.ToMap(), err
 	}
@@ -177,6 +177,10 @@ type UnorderedMap[K comparable, V any] struct {
 	m map[K]V
 }
 
+func NewUnorderedmap[K comparable, V any]() *UnorderedMap[K, V] {
+	return &UnorderedMap[K, V]{m: make(map[K]V)}
+}
+
 func (m UnorderedMap[K, V]) Get(key K) (V, bool) {
 	v, ok := m.m[key]
 	return v, ok
@@ -200,6 +204,10 @@ func (m *UnorderedMap[K, V]) ToMap() map[K]V {
 
 type OrderedMap[K comparable, V any] struct {
 	m *orderedmap.OrderedMap[K, V]
+}
+
+func NewOrderedMap[K comparable, V any]() *OrderedMap[K, V] {
+	return &OrderedMap[K, V]{m: orderedmap.New[K, V]()}
 }
 
 func (m OrderedMap[K, V]) Get(key K) (V, bool) {

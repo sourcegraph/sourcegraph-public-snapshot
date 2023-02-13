@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react'
 
 import { mdiSourceBranch, mdiFileDocument } from '@mdi/js'
-import { useHistory, useLocation } from 'react-router'
+import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -50,7 +50,7 @@ export const BatchChangePreviewTabs: React.FunctionComponent<React.PropsWithChil
 }) => {
     // We track the current tab in a URL parameter so that tabs are easy to navigate to
     // and share.
-    const history = useHistory()
+    const navigate = useNavigate()
     const location = useLocation()
     const initialTab = new URLSearchParams(location.search).get('tab')
 
@@ -66,9 +66,9 @@ export const BatchChangePreviewTabs: React.FunctionComponent<React.PropsWithChil
                 urlParameters.set('tab', SPEC_TAB_NAME)
             }
 
-            history.replace({ ...location, search: urlParameters.toString() })
+            navigate({ search: urlParameters.toString() })
         },
-        [history, location]
+        [navigate, location.search]
     )
 
     return (
@@ -98,8 +98,6 @@ export const BatchChangePreviewTabs: React.FunctionComponent<React.PropsWithChil
                 <TabPanel>
                     <PreviewList
                         batchSpecID={batchSpecID}
-                        history={history}
-                        location={location}
                         authenticatedUser={authenticatedUser}
                         queryChangesetApplyPreview={queryChangesetApplyPreview}
                         queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}

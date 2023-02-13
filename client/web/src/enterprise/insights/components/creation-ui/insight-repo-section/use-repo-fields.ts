@@ -9,7 +9,7 @@ import { useExperimentalFeatures } from '../../../../../stores'
 import { RepoMode } from '../../../pages/insights/creation/search-insight/types'
 import { AsyncValidator, useField, useFieldAPI, ValidationResult } from '../../form'
 import { FormAPI } from '../../form/hooks/useForm'
-import { insightRepositoriesAsyncValidator, insightRepositoriesValidator } from '../validators/validators'
+import { insightRepositoriesValidator } from '../validators/validators'
 
 interface RepositoriesFields {
     /**
@@ -26,7 +26,7 @@ interface RepositoriesFields {
     repoQuery: QueryState
 
     /** Repositories which to be used to get the info for code insights */
-    repositories: string
+    repositories: string[]
 }
 
 interface Input<Fields> {
@@ -36,7 +36,7 @@ interface Input<Fields> {
 interface Fields {
     repoMode: useFieldAPI<RepoMode>
     repoQuery: useFieldAPI<QueryState>
-    repositories: useFieldAPI<string>
+    repositories: useFieldAPI<string[]>
 }
 
 export function useRepoFields<FormFields extends RepositoriesFields>(props: Input<FormFields>): Fields {
@@ -86,7 +86,6 @@ export function useRepoFields<FormFields extends RepositoriesFields>(props: Inpu
         validators: {
             // Turn off any validations for the repositories' field in we are in all repos mode
             sync: isRepoURLsListRequired ? insightRepositoriesValidator : undefined,
-            async: isRepoURLsListRequired ? insightRepositoriesAsyncValidator : undefined,
         },
     })
 

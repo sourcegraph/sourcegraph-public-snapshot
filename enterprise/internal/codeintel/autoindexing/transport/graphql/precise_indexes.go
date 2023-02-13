@@ -14,6 +14,7 @@ import (
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -61,33 +62,9 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 
 	var uploadStates, indexStates []string
 	if args.States != nil {
-		for _, state := range *args.States {
-			switch state {
-			case "QUEUED_FOR_INDEXING":
-				indexStates = append(indexStates, "queued")
-			case "INDEXING":
-				indexStates = append(indexStates, "processing")
-			case "INDEXING_ERRORED":
-				indexStates = append(indexStates, "errored")
-
-			case "UPLOADING_INDEX":
-				uploadStates = append(uploadStates, "uploading")
-			case "QUEUED_FOR_PROCESSING":
-				uploadStates = append(uploadStates, "queued")
-			case "PROCESSING":
-				uploadStates = append(uploadStates, "processing")
-			case "PROCESSING_ERRORED":
-				uploadStates = append(uploadStates, "errored")
-			case "COMPLETED":
-				uploadStates = append(uploadStates, "completed")
-			case "DELETING":
-				uploadStates = append(uploadStates, "deleting")
-			case "DELETED":
-				uploadStates = append(uploadStates, "deleted")
-
-			default:
-				return nil, errors.Newf("filtering by state %q is unsupported", state)
-			}
+		uploadStates, indexStates, err = bifurcateStates(*args.States)
+		if err != nil {
+			return nil, err
 		}
 	}
 	skipUploads := len(uploadStates) == 0 && len(indexStates) != 0
@@ -103,7 +80,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 			return nil, errors.Newf("requested dependency of precise index record without data (indexid=%d)", v2)
 		}
 
-		dependencyOf = int(v)
+		dependencyOf = v
 		skipIndexes = true
 	}
 	var dependentOf int
@@ -116,7 +93,7 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 			return nil, errors.Newf("requested dependent of precise index record without data (indexid=%d)", v2)
 		}
 
-		dependentOf = int(v)
+		dependentOf = v
 		skipIndexes = true
 	}
 
@@ -231,6 +208,211 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 	return NewPreciseIndexConnectionResolver(resolvers, totalUploadCount+totalIndexCount, cursor), nil
 }
 
+func (r *rootResolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ resolverstubs.PreciseIndexResolver, err error) {
+	ctx, errTracer, endObservation := r.operations.preciseIndexes.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("id", string(id)),
+	}})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	uploadID, indexID, err := unmarshalPreciseIndexGQLID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a new prefetcher here as we only want to cache upload and index records in
+	// the same graphQL request, not across different request.
+	prefetcher := sharedresolvers.NewPrefetcher(r.autoindexSvc, r.uploadSvc)
+	db := r.autoindexSvc.GetUnsafeDB()
+	locationResolver := sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient())
+
+	if uploadID != 0 {
+		upload, ok, err := r.uploadSvc.GetUploadByID(ctx, uploadID)
+		if err != nil || !ok {
+			return nil, err
+		}
+
+		return NewPreciseIndexResolver(ctx, r.autoindexSvc, r.uploadSvc, r.policySvc, prefetcher, locationResolver, errTracer, &upload, nil)
+	}
+	if indexID != 0 {
+		index, ok, err := r.autoindexSvc.GetIndexByID(ctx, indexID)
+		if err != nil || !ok {
+			return nil, err
+		}
+
+		return NewPreciseIndexResolver(ctx, r.autoindexSvc, r.uploadSvc, r.policySvc, prefetcher, locationResolver, errTracer, nil, &index)
+	}
+
+	return nil, errors.New("invalid identifier")
+}
+
+// 🚨 SECURITY: Only site admins may modify code intelligence upload data
+func (r *rootResolver) DeletePreciseIndex(ctx context.Context, args *struct{ ID graphql.ID }) (_ *resolverstubs.EmptyResponse, err error) {
+	ctx, _, endObservation := r.operations.deletePreciseIndex.With(ctx, &err, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+		return nil, err
+	}
+
+	uploadID, indexID, err := unmarshalPreciseIndexGQLID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+	if uploadID != 0 {
+		if _, err := r.uploadSvc.DeleteUploadByID(ctx, uploadID); err != nil {
+			return nil, err
+		}
+	} else if indexID != 0 {
+		if _, err := r.autoindexSvc.DeleteIndexByID(ctx, indexID); err != nil {
+			return nil, err
+		}
+	}
+
+	return &resolverstubs.EmptyResponse{}, nil
+}
+
+// 🚨 SECURITY: Only site admins may modify code intelligence upload data
+func (r *rootResolver) DeletePreciseIndexes(ctx context.Context, args *resolverstubs.DeletePreciseIndexesArgs) (_ *resolverstubs.EmptyResponse, err error) {
+	ctx, _, endObservation := r.operations.deletePreciseIndexes.With(ctx, &err, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+		return nil, err
+	}
+
+	var uploadStates, indexStates []string
+	if args.States != nil {
+		uploadStates, indexStates, err = bifurcateStates(*args.States)
+		if err != nil {
+			return nil, err
+		}
+	}
+	skipUploads := len(uploadStates) == 0 && len(indexStates) != 0
+	skipIndexes := len(uploadStates) != 0 && len(indexStates) == 0
+
+	repositoryID := 0
+	if args.Repository != nil {
+		repositoryID, err = resolveRepositoryID(*args.Repository)
+		if err != nil {
+			return nil, err
+		}
+	}
+	term := derefString(args.Query, "")
+
+	visibleAtTip := false
+	if args.IsLatestForRepo != nil {
+		visibleAtTip = *args.IsLatestForRepo
+		skipIndexes = true
+	}
+
+	if !skipUploads {
+		if err := r.uploadSvc.DeleteUploads(ctx, uploadsshared.DeleteUploadsOptions{
+			RepositoryID: repositoryID,
+			States:       uploadStates,
+			Term:         term,
+			VisibleAtTip: visibleAtTip,
+		}); err != nil {
+			return nil, err
+		}
+	}
+	if !skipIndexes {
+		if err := r.autoindexSvc.DeleteIndexes(ctx, autoindexingshared.DeleteIndexesOptions{
+			RepositoryID:  repositoryID,
+			States:        indexStates,
+			Term:          term,
+			WithoutUpload: true,
+		}); err != nil {
+			return nil, err
+		}
+	}
+
+	return &resolverstubs.EmptyResponse{}, nil
+}
+
+// 🚨 SECURITY: Only site admins may modify code intelligence upload data
+func (r *rootResolver) ReindexPreciseIndex(ctx context.Context, args *struct{ ID graphql.ID }) (_ *resolverstubs.EmptyResponse, err error) {
+	ctx, _, endObservation := r.operations.reindexPreciseIndex.With(ctx, &err, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+		return nil, err
+	}
+
+	uploadID, indexID, err := unmarshalPreciseIndexGQLID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+	if uploadID != 0 {
+		if err := r.uploadSvc.ReindexUploadByID(ctx, uploadID); err != nil {
+			return nil, err
+		}
+	} else if indexID != 0 {
+		if err := r.autoindexSvc.ReindexIndexByID(ctx, indexID); err != nil {
+			return nil, err
+		}
+	}
+
+	return &resolverstubs.EmptyResponse{}, nil
+}
+
+// 🚨 SECURITY: Only site admins may modify code intelligence upload data
+func (r *rootResolver) ReindexPreciseIndexes(ctx context.Context, args *resolverstubs.ReindexPreciseIndexesArgs) (_ *resolverstubs.EmptyResponse, err error) {
+	ctx, _, endObservation := r.operations.reindexPreciseIndexes.With(ctx, &err, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+		return nil, err
+	}
+
+	var uploadStates, indexStates []string
+	if args.States != nil {
+		uploadStates, indexStates, err = bifurcateStates(*args.States)
+		if err != nil {
+			return nil, err
+		}
+	}
+	skipUploads := len(uploadStates) == 0 && len(indexStates) != 0
+	skipIndexes := len(uploadStates) != 0 && len(indexStates) == 0
+
+	repositoryID := 0
+	if args.Repository != nil {
+		repositoryID, err = resolveRepositoryID(*args.Repository)
+		if err != nil {
+			return nil, err
+		}
+	}
+	term := derefString(args.Query, "")
+
+	visibleAtTip := false
+	if args.IsLatestForRepo != nil {
+		visibleAtTip = *args.IsLatestForRepo
+		skipIndexes = true
+	}
+
+	if !skipUploads {
+		if err := r.uploadSvc.ReindexUploads(ctx, uploadsshared.ReindexUploadsOptions{
+			States:       uploadStates,
+			Term:         term,
+			RepositoryID: repositoryID,
+			VisibleAtTip: visibleAtTip,
+		}); err != nil {
+			return nil, err
+		}
+	}
+	if !skipIndexes {
+		if err := r.autoindexSvc.ReindexIndexes(ctx, autoindexingshared.ReindexIndexesOptions{
+			States:        indexStates,
+			Term:          term,
+			RepositoryID:  repositoryID,
+			WithoutUpload: true,
+		}); err != nil {
+			return nil, err
+		}
+	}
+
+	return &resolverstubs.EmptyResponse{}, nil
+}
+
 type preciseIndexConnectionResolver struct {
 	nodes      []resolverstubs.PreciseIndexResolver
 	totalCount int
@@ -247,52 +429,6 @@ func NewPreciseIndexConnectionResolver(
 		totalCount: totalCount,
 		cursor:     cursor,
 	}
-}
-
-func (r *rootResolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ resolverstubs.PreciseIndexResolver, err error) {
-	ctx, errTracer, endObservation := r.operations.preciseIndexes.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("id", string(id)),
-	}})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
-
-	var v string
-	if err := relay.UnmarshalSpec(id, &v); err != nil {
-		return nil, err
-	}
-	parts := strings.Split(v, ":")
-	if len(parts) != 2 {
-		return nil, errors.New("invalid identifier")
-	}
-	rawID, err := strconv.Atoi(parts[1])
-	if err != nil {
-		return nil, errors.New("invalid identifier")
-	}
-
-	// Create a new prefetcher here as we only want to cache upload and index records in
-	// the same graphQL request, not across different request.
-	prefetcher := sharedresolvers.NewPrefetcher(r.autoindexSvc, r.uploadSvc)
-	db := r.autoindexSvc.GetUnsafeDB()
-	locationResolver := sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient())
-
-	switch parts[0] {
-	case "U":
-		upload, ok, err := r.uploadSvc.GetUploadByID(ctx, rawID)
-		if err != nil || !ok {
-			return nil, err
-		}
-
-		return NewPreciseIndexResolver(ctx, r.autoindexSvc, r.uploadSvc, r.policySvc, prefetcher, locationResolver, errTracer, &upload, nil)
-
-	case "I":
-		index, ok, err := r.autoindexSvc.GetIndexByID(ctx, rawID)
-		if err != nil || !ok {
-			return nil, err
-		}
-
-		return NewPreciseIndexResolver(ctx, r.autoindexSvc, r.uploadSvc, r.policySvc, prefetcher, locationResolver, errTracer, nil, &index)
-	}
-
-	return nil, errors.New("invalid identifier")
 }
 
 func (r *preciseIndexConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.PreciseIndexResolver, error) {
@@ -330,6 +466,16 @@ func NewPreciseIndexResolver(
 	upload *types.Upload,
 	index *types.Index,
 ) (resolverstubs.PreciseIndexResolver, error) {
+	if index != nil && index.AssociatedUploadID != nil && upload == nil {
+		v, ok, err := prefetcher.GetUploadByID(ctx, *index.AssociatedUploadID)
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			upload = &v
+		}
+	}
+
 	var uploadResolver resolverstubs.LSIFUploadResolver
 	if upload != nil {
 		uploadResolver = sharedresolvers.NewUploadResolver(uploadsSvc, autoindexingSvc, policySvc, *upload, prefetcher, locationResolver, traceErrs)
@@ -359,11 +505,15 @@ func NewPreciseIndexResolver(
 }
 
 func (r *preciseIndexResolver) ID() graphql.ID {
+	var parts []string
 	if r.upload != nil {
-		return relay.MarshalID("PreciseIndex", fmt.Sprintf("U:%d", r.upload.ID))
+		parts = append(parts, fmt.Sprintf("U:%d", r.upload.ID))
+	}
+	if r.index != nil {
+		parts = append(parts, fmt.Sprintf("I:%d", r.index.ID))
 	}
 
-	return relay.MarshalID("PreciseIndex", fmt.Sprintf("I:%d", r.index.ID))
+	return relay.MarshalID("PreciseIndex", strings.Join(parts, ":"))
 }
 
 func (r *preciseIndexResolver) ProjectRoot(ctx context.Context) (resolverstubs.GitTreeEntryResolver, error) {
@@ -547,11 +697,17 @@ func (r *preciseIndexResolver) PlaceInQueue() *int32 {
 }
 
 func (r *preciseIndexResolver) ShouldReindex(ctx context.Context) bool {
-	if r.index == nil {
-		return false
-	}
+	if r.index != nil {
+		if r.upload != nil {
+			return r.upload.ShouldReindex && r.index.ShouldReindex
+		}
 
-	return r.index.ShouldReindex
+		return r.index.ShouldReindex
+	}
+	if r.upload != nil {
+		return r.upload.ShouldReindex
+	}
+	return false
 }
 
 func (r *preciseIndexResolver) IsLatestForRepo() bool {
@@ -578,27 +734,44 @@ func (r *preciseIndexResolver) AuditLogs(ctx context.Context) (*[]resolverstubs.
 	return r.uploadResolver.AuditLogs(ctx)
 }
 
-func unmarshalPreciseIndexGQLID(id graphql.ID) (uploadID int64, indexID int64, _ error) {
-	var payload string
-	if err := relay.UnmarshalSpec(id, &payload); err != nil {
-		return 0, 0, err
+func unmarshalPreciseIndexGQLID(id graphql.ID) (uploadID, indexID int, err error) {
+	uploadID, indexID, err = unmarshalRawPreciseIndexGQLID(id)
+	if err == nil && uploadID == 0 && indexID == 0 {
+		err = errors.New("no payload")
 	}
 
-	parts := strings.Split(payload, ":")
-	if len(parts) == 2 {
-		id, err := strconv.Atoi(parts[1])
+	return uploadID, indexID, errors.Wrap(err, "unexpected precise index ID")
+}
+
+var errExpectedPairs = errors.New("expected pairs of `U:<id>`, `I:<id>`")
+
+func unmarshalRawPreciseIndexGQLID(id graphql.ID) (uploadID, indexID int, err error) {
+	var rawPayload string
+	if err := relay.UnmarshalSpec(id, &rawPayload); err != nil {
+		return 0, 0, errors.Wrap(err, "unexpected precise index ID")
+	}
+
+	parts := strings.Split(rawPayload, ":")
+	if len(parts)%2 != 0 {
+		return 0, 0, errExpectedPairs
+	}
+	for i := 0; i < len(parts)-1; i += 2 {
+		id, err := strconv.Atoi(parts[i+1])
 		if err != nil {
-			return 0, 0, err
+			return 0, 0, errExpectedPairs
 		}
 
-		if parts[0] == "U" {
-			return int64(id), 0, nil
-		} else if parts[0] == "I" {
-			return 0, int64(id), nil
+		switch parts[i] {
+		case "U":
+			uploadID = id
+		case "I":
+			indexID = id
+		default:
+			return 0, 0, errExpectedPairs
 		}
 	}
 
-	return 0, 0, errors.New("unexpected precise index ID")
+	return uploadID, indexID, nil
 }
 
 type pageInfo struct {
@@ -608,3 +781,36 @@ type pageInfo struct {
 
 func (r *pageInfo) EndCursor() *string { return r.endCursor }
 func (r *pageInfo) HasNextPage() bool  { return r.hasNextPage }
+
+func bifurcateStates(states []string) (uploadStates, indexStates []string, _ error) {
+	for _, state := range states {
+		switch strings.ToUpper(state) {
+		case "QUEUED_FOR_INDEXING":
+			indexStates = append(indexStates, "queued")
+		case "INDEXING":
+			indexStates = append(indexStates, "processing")
+		case "INDEXING_ERRORED":
+			indexStates = append(indexStates, "errored")
+
+		case "UPLOADING_INDEX":
+			uploadStates = append(uploadStates, "uploading")
+		case "QUEUED_FOR_PROCESSING":
+			uploadStates = append(uploadStates, "queued")
+		case "PROCESSING":
+			uploadStates = append(uploadStates, "processing")
+		case "PROCESSING_ERRORED":
+			uploadStates = append(uploadStates, "errored")
+		case "COMPLETED":
+			uploadStates = append(uploadStates, "completed")
+		case "DELETING":
+			uploadStates = append(uploadStates, "deleting")
+		case "DELETED":
+			uploadStates = append(uploadStates, "deleted")
+
+		default:
+			return nil, nil, errors.Newf("filtering by state %q is unsupported", state)
+		}
+	}
+
+	return uploadStates, indexStates, nil
+}

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
-import * as H from 'history'
+import { useNavigate } from 'react-router-dom-v5-compat'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { Button, Container, PageHeader, LoadingSpinner, Link, Input, ErrorAlert, Form } from '@sourcegraph/wildcard'
@@ -13,11 +13,10 @@ import { createOrganization } from '../backend'
 
 import styles from './NewOrganizationPage.module.scss'
 
-interface Props {
-    history: H.History
-}
+interface Props {}
 
-export const NewOrganizationPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ history }) => {
+export const NewOrganizationPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
+    const navigate = useNavigate()
     useEffect(() => {
         eventLogger.logViewEvent('NewOrg')
     }, [])
@@ -45,12 +44,12 @@ export const NewOrganizationPage: React.FunctionComponent<React.PropsWithChildre
             try {
                 const org = await createOrganization({ name, displayName })
                 setLoading(false)
-                history.push(org.settingsURL!)
+                navigate(org.settingsURL!)
             } catch (error) {
                 setLoading(asError(error))
             }
         },
-        [displayName, history, name]
+        [displayName, navigate, name]
     )
 
     return (

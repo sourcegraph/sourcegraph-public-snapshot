@@ -3,7 +3,6 @@ package server
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"io/fs"
 	"net/url"
@@ -21,27 +20,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func assertPythonParsesPlaceholder() *reposource.PythonVersionedPackage {
-	placeholder, err := reposource.ParseVersionedPackage("sourcegraph.com/placeholder@v0.0.0")
-	if err != nil {
-		panic(fmt.Sprintf("expected placeholder dependency to parse but got %v", err))
-	}
-
-	return placeholder
-}
-
 func NewPythonPackagesSyncer(
 	connection *schema.PythonPackagesConnection,
 	svc *dependencies.Service,
 	client *pypi.Client,
 ) VCSSyncer {
-	placeholder := assertPythonParsesPlaceholder()
-
 	return &vcsPackagesSyncer{
 		logger:      log.Scoped("PythonPackagesSyncer", "sync Python packages"),
 		typ:         "python_packages",
 		scheme:      dependencies.PythonPackagesScheme,
-		placeholder: placeholder,
+		placeholder: reposource.ParseVersionedPackage("sourcegraph.com/placeholder@v0.0.0"),
 		svc:         svc,
 		configDeps:  connection.Dependencies,
 		source:      &pythonPackagesSyncer{client: client},
@@ -54,15 +42,15 @@ type pythonPackagesSyncer struct {
 }
 
 func (pythonPackagesSyncer) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
-	return reposource.ParseVersionedPackage(string(name) + "==" + version)
+	return reposource.ParseVersionedPackage(string(name) + "==" + version), nil
 }
 
 func (pythonPackagesSyncer) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
-	return reposource.ParseVersionedPackage(dep)
+	return reposource.ParseVersionedPackage(dep), nil
 }
 
 func (pythonPackagesSyncer) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
-	return reposource.ParsePythonPackageFromName(name)
+	return reposource.ParsePythonPackageFromName(name), nil
 }
 
 func (pythonPackagesSyncer) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {

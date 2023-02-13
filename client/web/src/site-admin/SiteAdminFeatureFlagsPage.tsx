@@ -2,7 +2,6 @@ import React, { useCallback, useMemo } from 'react'
 
 import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router'
 import { of, Observable, forkJoin } from 'rxjs'
 import { catchError, map, mergeMap } from 'rxjs/operators'
 
@@ -19,7 +18,7 @@ import { fetchFeatureFlags as defaultFetchFeatureFlags } from './backend'
 
 import styles from './SiteAdminFeatureFlagsPage.module.scss'
 
-interface SiteAdminFeatureFlagsPageProps extends RouteComponentProps<{}>, TelemetryProps {
+interface SiteAdminFeatureFlagsPageProps extends TelemetryProps {
     fetchFeatureFlags?: typeof defaultFetchFeatureFlags
     productVersion?: string
 }
@@ -122,7 +121,7 @@ const filters: FilteredConnectionFilter[] = [
 
 export const SiteAdminFeatureFlagsPage: React.FunctionComponent<
     React.PropsWithChildren<SiteAdminFeatureFlagsPageProps>
-> = ({ fetchFeatureFlags = defaultFetchFeatureFlags, productVersion = window.context.version, ...props }) => {
+> = ({ fetchFeatureFlags = defaultFetchFeatureFlags, productVersion = window.context.version }) => {
     // Try to parse out a git rev based on the product version, otherwise just fall back
     // to main.
     const productGitVersion = parseProductReference(productVersion)
@@ -216,8 +215,6 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<
                     pluralNoun="feature flags"
                     queryConnection={queryFeatureFlags}
                     nodeComponent={FeatureFlagNode}
-                    history={props.history}
-                    location={props.location}
                     filters={filters}
                 />
             </Container>

@@ -77,6 +77,7 @@ type UserStore interface {
 	InvalidateSessionsByIDs(context.Context, []int32) (err error)
 	IsPassword(ctx context.Context, id int32, password string) (bool, error)
 	List(context.Context, *UsersListOptions) (_ []*types.User, err error)
+	ListForSCIM(context.Context, *UsersListOptions) (_ []*types.UserForSCIM, err error)
 	ListDates(context.Context) ([]types.UserDates, error)
 	ListByOrg(ctx context.Context, orgID int32, paginationArgs *PaginationArgs, query *string) ([]*types.User, error)
 	RandomizePasswordAndClearPasswordResetRateLimit(context.Context, int32) error
@@ -207,6 +208,12 @@ type NewUser struct {
 
 	// TosAccepted is whether the user is created with the terms of service accepted already.
 	TosAccepted bool `json:"-"` // forbid this field being set by JSON, just in case
+}
+
+type NewUserForSCIM struct {
+	NewUser
+	AdditionalVerifiedEmails []string
+	SCIMExternalID           string
 }
 
 // Create creates a new user in the database.
@@ -545,13 +552,13 @@ func (u *userStore) DeleteList(ctx context.Context, ids []int32) (err error) {
 	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM names WHERE user_id IN (%s)", idsCond)); err != nil {
 		return err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE access_tokens SET deleted_at=now() WHERE subject_user_id IN (%s) OR creator_user_id IN (%s)", idsCond, idsCond)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE access_tokens SET deleted_at=now() WHERE deleted_at IS NULL AND (subject_user_id IN (%s) OR creator_user_id IN (%s))", idsCond, idsCond)); err != nil {
 		return err
 	}
 	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM user_emails WHERE user_id IN (%s)", idsCond)); err != nil {
 		return err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE user_external_accounts SET deleted_at=now() WHERE user_id IN (%s) AND deleted_at IS NULL", idsCond)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE user_external_accounts SET deleted_at=now() WHERE deleted_at IS NULL AND user_id IN (%s) AND deleted_at IS NULL", idsCond)); err != nil {
 		return err
 	}
 	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE org_invitations SET deleted_at=now() WHERE deleted_at IS NULL AND (sender_user_id IN (%s) OR recipient_user_id IN (%s))", idsCond, idsCond)); err != nil {
@@ -697,13 +704,26 @@ func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) (_ []int3
 	if err := tx.Exec(ctx, sqlf.Sprintf("INSERT INTO names(name, user_id) SELECT username, id FROM users WHERE id IN(%s)", idsCond)); err != nil {
 		return nil, err
 	}
+
+	const updateAccessTokensQuery = `
+	UPDATE access_tokens as a
+	SET deleted_at = null
+	FROM users as u
+	WHERE a.creator_user_id = u.id
+	AND a.deleted_at >= u.deleted_at
+	AND a.deleted_at <= u.deleted_at + interval '10 second'
+	AND (a.creator_user_id IN (%s) OR a.subject_user_id IN (%s))
+	`
+	if err := tx.Exec(ctx, sqlf.Sprintf(updateAccessTokensQuery, idsCond, idsCond)); err != nil {
+		return nil, err
+	}
+
 	const updateUserExtAccQuery = `
-	UPDATE user_external_accounts
-	SET deleted_at = NULL
-	FROM user_external_accounts a
-	INNER JOIN users u
-	on a.user_id = u.id
-	WHERE a.deleted_at >= u.deleted_at
+	UPDATE user_external_accounts AS a
+	SET deleted_at = NULL, updated_at = now()
+	FROM users AS u
+	WHERE a.user_id = u.id
+	AND a.deleted_at >= u.deleted_at
 	AND a.deleted_at <= u.deleted_at + interval '10 second'
 	AND a.user_id IN (%s)
 	`
@@ -711,13 +731,11 @@ func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) (_ []int3
 		return nil, err
 	}
 	const updateOrgInvQuery = `
-	UPDATE org_invitations
+	UPDATE org_invitations AS o
 	SET deleted_at = NULL
-	FROM org_invitations o
-	INNER JOIN users u
-	on o.recipient_user_id = u.id
-	or o.sender_user_id = u.id
-	WHERE o.deleted_at >= u.deleted_at
+	FROM users  AS u
+	WHERE o.recipient_user_id = u.id
+	AND o.deleted_at >= u.deleted_at
 	AND o.deleted_at <= u.deleted_at + interval '10 second'
 	AND (o.sender_user_id IN (%s) OR o.recipient_user_id IN (%s))
 	`
@@ -726,13 +744,12 @@ func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) (_ []int3
 		return nil, err
 	}
 	const updateRegistryExtQuery = `
-	update registry_extensions
-	set deleted_at = NULL
-	from registry_extensions r
-	inner join users b
-	on r.publisher_user_id = b.id
-	WHERE r.deleted_at >= b.deleted_at
-	AND r.deleted_at <= b.deleted_at + interval '10 second'
+	UPDATE registry_extensions AS r
+	SET deleted_at = NULL, updated_at = now()
+	FROM users AS u
+	WHERE r.publisher_user_id = u.id
+	AND r.deleted_at >= u.deleted_at
+	AND r.deleted_at <= u.deleted_at + interval '10 second'
 	AND r.publisher_user_id IN (%s)
 	`
 
@@ -916,6 +933,23 @@ func (u *userStore) List(ctx context.Context, opt *UsersListOptions) (_ []*types
 	return u.getBySQL(ctx, q)
 }
 
+// ListForSCIM lists users along with their email addresses and SCIM ExternalID.
+func (u *userStore) ListForSCIM(ctx context.Context, opt *UsersListOptions) (_ []*types.UserForSCIM, err error) {
+	tr, ctx := trace.New(ctx, "database.Users.ListForSCIM", fmt.Sprintf("%+v", opt))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if opt == nil {
+		opt = &UsersListOptions{}
+	}
+	conditions := u.listSQL(*opt)
+
+	q := sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conditions, "AND"), opt.LimitOffset.SQL())
+	return u.getBySQLForSCIM(ctx, q)
+}
+
 // ListDates lists all user's created and deleted dates, used by usage stats.
 func (u *userStore) ListDates(ctx context.Context) (dates []types.UserDates, _ error) {
 	rows, err := u.Query(ctx, sqlf.Sprintf(listDatesQuery))
@@ -952,10 +986,7 @@ func (u *userStore) ListByOrg(ctx context.Context, orgID int32, paginationArgs *
 		where = append(where, cond)
 	}
 
-	p, err := paginationArgs.SQL()
-	if err != nil {
-		return nil, err
-	}
+	p := paginationArgs.SQL()
 
 	if p.Where != nil {
 		where = append(where, p.Where)
@@ -1129,6 +1160,45 @@ func (u *userStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.U
 	return users, nil
 }
 
+const userForSCIMQueryFmtStr = `
+SELECT u.id,
+       u.username,
+       u.display_name,
+       u.avatar_url,
+       u.created_at,
+       u.updated_at,
+       u.site_admin,
+       u.passwd IS NOT NULL,
+       u.tags,
+       u.invalidated_sessions_at,
+       u.tos_accepted,
+       u.searchable,
+       ARRAY(SELECT email FROM user_emails WHERE user_id = u.id AND verified_at IS NOT NULL) AS emails,
+       (SELECT account_id FROM user_external_accounts WHERE user_id=u.id AND service_type = 'scim') AS scim_external_id
+  FROM users u %s`
+
+// getBySQLForSCIM returns users matching the SQL query, along with their email addresses and SCIM ExternalID.
+func (u *userStore) getBySQLForSCIM(ctx context.Context, query *sqlf.Query) ([]*types.UserForSCIM, error) {
+	// NOTE: We use a separate query here because we want to fetch the emails and SCIM ExternalID in a single query.
+	q := sqlf.Sprintf(userForSCIMQueryFmtStr, query)
+	scanUsersForSCIM := basestore.NewSliceScanner(scanUserForSCIM)
+	return scanUsersForSCIM(u.Query(ctx, q))
+}
+
+// scanUserForSCIM scans a UserForSCIM from the return of a *sql.Rows.
+func scanUserForSCIM(s dbutil.Scanner) (*types.UserForSCIM, error) {
+	var u types.UserForSCIM
+	var displayName, avatarURL, scimExternalID sql.NullString
+	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, pq.Array(&u.Emails), &scimExternalID)
+	if err != nil {
+		return nil, err
+	}
+	u.DisplayName = displayName.String
+	u.AvatarURL = avatarURL.String
+	u.SCIMExternalID = scimExternalID.String
+	return &u, nil
+}
+
 func (u *userStore) IsPassword(ctx context.Context, id int32, password string) (bool, error) {
 	var passwd sql.NullString
 	if err := u.QueryRow(ctx, sqlf.Sprintf("SELECT passwd FROM users WHERE deleted_at IS NULL AND id=%s", id)).Scan(&passwd); err != nil {
@@ -1237,8 +1307,7 @@ func (u *userStore) UpdatePassword(ctx context.Context, id int32, oldPassword, n
 	return nil
 }
 
-// CreatePassword creates a user's password iff don't have a password and they
-// don't have any valid login connections.
+// CreatePassword creates a user's password if they don't have a password.
 func (u *userStore) CreatePassword(ctx context.Context, id int32, password string) error {
 	// 🚨 SECURITY: Check min and max password length
 	if err := CheckPassword(password); err != nil {
@@ -1259,15 +1328,7 @@ WHERE id=%s
   AND passwd IS NULL
   AND passwd_reset_code IS NULL
   AND passwd_reset_time IS NULL
-  AND NOT EXISTS (
-    SELECT 1
-    FROM user_external_accounts
-    WHERE
-          user_id = %s
-      AND deleted_at IS NULL
-      AND expired_at IS NULL
-    )
-`, passwd, id, id))
+`, passwd, id))
 	if err != nil {
 		return errors.Wrap(err, "creating password")
 	}
@@ -1441,19 +1502,4 @@ func useFastPasswordMocks() {
 		_, _ = io.WriteString(h, password)
 		return hash == strconv.FormatUint(h.Sum64(), 16)
 	}
-}
-
-func missingUserIds(id, affectedIds []int32) []string {
-	maffectedIds := make(map[int32]struct{}, len(affectedIds))
-	for _, x := range affectedIds {
-		maffectedIds[x] = struct{}{}
-	}
-	var diff []string
-	for _, x := range id {
-		if _, found := maffectedIds[x]; !found {
-			strId := strconv.Itoa(int(x))
-			diff = append(diff, strId)
-		}
-	}
-	return diff
 }

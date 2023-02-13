@@ -24,5 +24,6 @@ go_library(
         "//internal/goroutine",
         "//internal/metrics",
         "//internal/observation",
+        "@com_github_opentracing_opentracing_go//log",
     ],
 )

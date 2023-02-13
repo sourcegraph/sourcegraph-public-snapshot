@@ -19,6 +19,9 @@ const (
 	// PlanEnterprise1 is the "Enterprise" plan for 4.0.
 	PlanEnterprise1 Plan = "enterprise-1"
 
+	// PlanEnterpriseExtension is for customers who require an extended trial on a new Sourcegraph 4.4.2 instance.
+	PlanEnterpriseExtension Plan = "enterprise-extension"
+
 	// PlanFree0 is the default plan if no license key is set.
 	PlanFree0 Plan = "free-0"
 )
@@ -31,6 +34,7 @@ var allPlans = []Plan{
 
 	PlanBusiness0,
 	PlanEnterprise1,
+	PlanEnterpriseExtension,
 	PlanFree0,
 }
 
@@ -96,74 +100,130 @@ func (f *FeatureBatchChanges) Check(info *Info) error {
 	}
 
 	// If the deprecated campaigns are enabled, use unrestricted batch changes
-	if FeatureCampaigns.Check(info) == nil {
+	if FeatureCampaigns.Check(info) == nil && !info.IsExpired() {
 		f.Unrestricted = true
 		return nil
 	}
 
 	// If the batch changes tag exists on the license, use unrestricted batch changes
-	if info.HasTag(f.FeatureName()) {
+	if info.HasTag(f.FeatureName()) && !info.IsExpired() {
 		f.Unrestricted = true
 		return nil
 	}
 
 	// Otherwise, check the default batch changes feature
-	if info.Plan().HasFeature(f) {
+	if info.Plan().HasFeature(f, info.IsExpired()) {
 		return nil
 	}
 
 	return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", f.FeatureName()))
 }
 
-// planFeatures defines the features that are enabled for each plan.
-var planFeatures = map[Plan][]Feature{
+type PlanDetails struct {
+	Features []Feature
+	// ExpiredFeatures are the features that still work after the plan is expired.
+	ExpiredFeatures []Feature
+}
+
+// planDetails defines the features that are enabled for each plan.
+var planDetails = map[Plan]PlanDetails{
 	PlanOldEnterpriseStarter: {
-		&FeatureBatchChanges{MaxNumChangesets: 10},
+		Features: []Feature{
+			&FeatureBatchChanges{MaxNumChangesets: 10},
+		},
+		ExpiredFeatures: []Feature{
+			FeatureACLs,
+			FeatureSSO,
+		},
 	},
 	PlanOldEnterprise: {
-		FeatureSSO,
-		FeatureACLs,
-		FeatureExplicitPermissionsAPI,
-		FeatureExtensionRegistry,
-		FeatureRemoteExtensionsAllowDisallow,
-		FeatureBranding,
-		FeatureCampaigns,
-		&FeatureBatchChanges{Unrestricted: true},
-		FeatureMonitoring,
-		FeatureBackupAndRestore,
-		FeatureCodeInsights,
+		Features: []Feature{
+			FeatureSSO,
+			FeatureACLs,
+			FeatureExplicitPermissionsAPI,
+			FeatureExtensionRegistry,
+			FeatureRemoteExtensionsAllowDisallow,
+			FeatureBranding,
+			FeatureCampaigns,
+			&FeatureBatchChanges{Unrestricted: true},
+			FeatureMonitoring,
+			FeatureBackupAndRestore,
+			FeatureCodeInsights,
+		},
+		ExpiredFeatures: []Feature{
+			FeatureACLs,
+			FeatureSSO,
+		},
 	},
 	PlanTeam0: {
-		FeatureACLs,
-		FeatureExplicitPermissionsAPI,
-		FeatureSSO,
-		&FeatureBatchChanges{MaxNumChangesets: 10},
+		Features: []Feature{
+			FeatureACLs,
+			FeatureExplicitPermissionsAPI,
+			FeatureSSO,
+			&FeatureBatchChanges{MaxNumChangesets: 10},
+		},
+		ExpiredFeatures: []Feature{
+			FeatureACLs,
+			FeatureSSO,
+		},
 	},
 	PlanEnterprise0: {
-		FeatureACLs,
-		FeatureExplicitPermissionsAPI,
-		FeatureSSO,
-		&FeatureBatchChanges{MaxNumChangesets: 10},
+		Features: []Feature{
+			FeatureACLs,
+			FeatureExplicitPermissionsAPI,
+			FeatureSSO,
+			&FeatureBatchChanges{MaxNumChangesets: 10},
+		},
+		ExpiredFeatures: []Feature{
+			FeatureACLs,
+			FeatureSSO,
+		},
 	},
 
 	PlanBusiness0: {
-		FeatureACLs,
-		FeatureCampaigns,
-		&FeatureBatchChanges{Unrestricted: true},
-		FeatureCodeInsights,
-		FeatureSSO,
+		Features: []Feature{
+			FeatureACLs,
+			FeatureCampaigns,
+			&FeatureBatchChanges{Unrestricted: true},
+			FeatureCodeInsights,
+			FeatureSSO,
+		},
+		ExpiredFeatures: []Feature{
+			FeatureACLs,
+			FeatureSSO,
+		},
 	},
 	PlanEnterprise1: {
-		FeatureACLs,
-		FeatureCampaigns,
-		FeatureCodeInsights,
-		&FeatureBatchChanges{Unrestricted: true},
-		FeatureExplicitPermissionsAPI,
-		FeatureSSO,
+		Features: []Feature{
+			FeatureACLs,
+			FeatureCampaigns,
+			FeatureCodeInsights,
+			&FeatureBatchChanges{Unrestricted: true},
+			FeatureExplicitPermissionsAPI,
+			FeatureSSO,
+		},
+		ExpiredFeatures: []Feature{
+			FeatureACLs,
+			FeatureSSO,
+		},
 	},
-	PlanFree0: {
+	PlanEnterpriseExtension: {
+		Features: []Feature{
+			FeatureACLs,
+			FeatureCampaigns,
+			FeatureCodeInsights,
+			&FeatureBatchChanges{Unrestricted: true},
+			FeatureExplicitPermissionsAPI,
+			FeatureSSO,
+		},
+		ExpiredFeatures: []Feature{
+			FeatureACLs,
+			FeatureSSO,
+		},
+	},
+	PlanFree0: {Features: []Feature{
 		FeatureSSO,
 		FeatureMonitoring,
 		&FeatureBatchChanges{MaxNumChangesets: 10},
-	},
+	}},
 }

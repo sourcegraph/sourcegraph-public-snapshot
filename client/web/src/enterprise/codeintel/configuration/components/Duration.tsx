@@ -11,7 +11,7 @@ export interface DurationProps {
 
 const MS_IN_HOURS = 1000 * 60 * 60
 
-export const Duration: FunctionComponent<React.PropsWithChildren<DurationProps>> = ({ hours }) => (
+export const Duration: FunctionComponent<DurationProps> = ({ hours }) => (
     <Tooltip content={`${hours} hours`}>
         <span className="timestamp">{formatDuration(intervalToDuration({ start: 0, end: hours * MS_IN_HOURS }))}</span>
     </Tooltip>
