@@ -53,7 +53,7 @@ abstract class BaseEntityProvider implements EntityProvider {
     async fullMutation() {
         // TODO(@burmudar): remove - only temporary
         console.log(`STARTING ${this.entityType} SEARCH ⌛`)
-        const results = await this.sourcegraph.SearchQuery(this.query)
+        const results = await this.sourcegraph.searchQuery(this.query)
         console.log(`${results.length} items matched query ${this.query}`)
         console.log(`END ${this.entityType} SEARCH ⌛`)
 

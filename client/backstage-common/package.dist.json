@@ -3,7 +3,7 @@
   "description": "Common functionalities for the Sourcegraph plugin. This differs from the base package.json since it lists internal packages which cannot be fetched and are bundled instead.",
   "version": "0.1.0",
   "main": "index.js",
-  "types": "index.d.ts",
+  "types": "types/index.d.ts",
   "license": "Apache-2.0",
   "private": true,
   "publishConfig": {
@@ -15,7 +15,6 @@
   "dependencies": {
     "@backstage/catalog-model": "^1.1.5",
     "@backstage/config": "^1.0.6",
-    "@backstage/plugin-catalog-backend": "^1.7.1",
-    "graphql-request": "*"
+    "@backstage/plugin-catalog-backend": "^1.7.1"
   }
 }

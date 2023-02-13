@@ -8,7 +8,7 @@ import { buildTimerPlugin } from '@sourcegraph/build-config'
 
 const distributionPath = path.resolve(__dirname, '..', 'dist')
 
-async function build(): Promise<void> {
+;(async function build(): Promise<void> {
     if (existsSync(distributionPath)) {
         rm('-rf', distributionPath)
     }
@@ -42,10 +42,4 @@ async function build(): Promise<void> {
         sourcemap: true,
         outdir: distributionPath,
     })
-}
-
-try {
-    build()
-} catch (error) {
-    console.log('build failed:', error)
-}
+})()

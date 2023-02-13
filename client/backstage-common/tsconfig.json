@@ -15,12 +15,15 @@
     "resolveJsonModule": true,
     "strict": true,
     "jsx": "react-jsx",
+    "declaration": true,
+    "outDir": "dist/types",
+    "rootDir": "./src",
   },
   "references": [
     {
       "path": "../shared",
     },
   ],
-  "include": ["./package.json", "**/*", ".*", "**/*.d.ts"],
-  "exclude": ["node_modules", "../../node_modules", "dist"],
+  "include": ["**/*", "**/*.d.ts"],
+  "exclude": ["node_modules", "../../node_modules", "dist", "**/*.test.ts", "scripts"],
 }

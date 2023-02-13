@@ -16,8 +16,9 @@
     "role": "common-library"
   },
   "scripts": {
-    "es": "ts-node --transpile-only ./scripts/esbuild.ts && cp package.dist.json dist/",
-    "format": "prettier -w true . ",
+    "es": "ts-node --transpile-only ./scripts/esbuild.ts && pnpm types && cp package.dist.json dist/package.json",
+    "types": "tsc -d -p tsconfig.json",
+    "format": "prettier -w true ./src ",
     "test": "jest"
   },
   "devDependencies": {
