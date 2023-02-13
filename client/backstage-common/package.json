@@ -25,15 +25,16 @@
     "@backstage/cli": "^0.22.1",
     "@jest/globals": "^29.4.0",
     "@sourcegraph/tsconfig": "^4.0.1",
-    "winston": "^3.8.2",
     "babel-jest": "^28.1.0",
-    "babel-loader": "^9.1.0"
+    "babel-loader": "^9.1.0",
+    "winston": "^3.8.2"
   },
   "dependencies": {
     "@backstage/backend-common": "^0.18.1",
     "@backstage/catalog-model": "^1.1.5",
     "@backstage/config": "^1.0.6",
     "@backstage/plugin-catalog-backend": "^1.7.1",
+    "@sourcegraph/http-client": "workspace:^0.0.1",
     "@sourcegraph/shared": "workspace:^1.0.0"
   },
   "files": [

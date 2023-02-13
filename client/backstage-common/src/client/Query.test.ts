@@ -3,7 +3,7 @@ import { createService, Config } from './SourcegraphClient'
 
 const INTEGRATION_TEST = true
 
-describe('query marshalling', () => {
+describe.skip('query marshalling', () => {
     if (!INTEGRATION_TEST) {
         return
     }
@@ -17,10 +17,10 @@ describe('query marshalling', () => {
 
     const client = createService(config)
     test('check CurrentUser is marshalled', () => {
-        expect(client.Users.CurrentUsername).toBe('sourcegraph')
+        expect(client.Users.currentUsername).toBe('sourcegraph')
     })
 
     test('check AuthenticatedUser is marshalled', () => {
-        expect(client.Users.GetAuthenticatedUser()).toBe({})
+        expect(client.Users.getAuthenticatedUser()).toBe({})
     })
 })

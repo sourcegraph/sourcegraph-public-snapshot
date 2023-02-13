@@ -21,6 +21,9 @@
   },
   "references": [
     {
+      "path": "../http-client",
+    },
+    {
       "path": "../shared",
     },
   ],
