@@ -7,14 +7,13 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/proto"
 )
 
 func New(child job.Job, includeOwners, excludeOwners []string) job.Job {

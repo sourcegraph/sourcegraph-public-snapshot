@@ -89,13 +89,17 @@ matchesLoop:
 			continue matchesLoop
 		}
 		owners := file.FindOwners(mm.File.Path)
-		for _, o := range owners {
+		resolvedOwners, err := rules.ownService.ResolveOwnersWithType(ctx, owners)
+		if err != nil {
+			return nil, err
+		}
+		for _, o := range resolvedOwners {
 			ownerMatches = append(ownerMatches, &result.OwnerMatch{
-				Owner:    o,
-				InputRev: mm.InputRev,
-				Repo:     mm.Repo,
-				CommitID: mm.CommitID,
-				Path:     mm.Path,
+				ResolvedOwner: o,
+				InputRev:      mm.InputRev,
+				Repo:          mm.Repo,
+				CommitID:      mm.CommitID,
+				Path:          mm.Path,
 			})
 		}
 	}

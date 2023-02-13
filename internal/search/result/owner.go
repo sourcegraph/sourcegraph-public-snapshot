@@ -2,13 +2,13 @@ package result
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/proto"
+	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type OwnerMatch struct {
-	*codeownerspb.Owner
+	ResolvedOwner codeowners.ResolvedOwner
 
 	// The following contain information about what search the owner was matched from.
 	InputRev *string           `json:"-"`
@@ -28,14 +28,14 @@ func (om *OwnerMatch) RepoName() types.MinimalRepo {
 
 func (om *OwnerMatch) ResultCount() int {
 	// just a safeguard
-	if om.Owner == nil {
+	if om.ResolvedOwner == nil {
 		return 0
 	}
 	return 1
 }
 
 func (om *OwnerMatch) Select(filter.SelectPath) Match {
-	// There is nothing to "select" from an owner as implemented currently so we return nil.
+	// There is nothing to "select" from an owner as implemented currently, so we return nil.
 	return nil
 }
 
@@ -54,8 +54,9 @@ func (om *OwnerMatch) Key() Key {
 		Commit:   om.CommitID,
 		Path:     om.Path,
 	}
-	if om.Owner != nil {
-		k.Metadata = om.Owner.Handle + om.Owner.Email
+	if om.ResolvedOwner != nil {
+		// todo give access to handle/email
+		k.Metadata = string(om.ResolvedOwner.Type())
 	}
 	if om.InputRev != nil {
 		k.Rev = *om.InputRev
