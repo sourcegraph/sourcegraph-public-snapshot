@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
-	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/proto"
+	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -22,9 +22,8 @@ type OwnService interface {
 	// In the case the file cannot be found, `nil` `*codeownerspb.File` and `nil` `error` is returned.
 	OwnersFile(context.Context, api.RepoName, api.CommitID) (*codeownerspb.File, error)
 
-	// todo maybe better name
-	// ResolveOwnersWithType takes a list of codeownerspb.Owner and attempts to retrieve more information about the owner
-	// from the users and teams databases.
+	// ResolveOwnersWithType takes a list of codeownerspb.Owner and attempts to retrieve more information about the
+	// owner from the users and teams databases.
 	ResolveOwnersWithType(context.Context, []*codeownerspb.Owner) ([]codeowners.ResolvedOwner, error)
 }
 
@@ -121,7 +120,7 @@ func (s ownService) ResolveOwnersWithType(ctx context.Context, protoOwners []*co
 		resolved = append(resolved, resolvedOwner)
 		s.ownerCache[ownerIdentifier] = resolvedOwner
 	}
-	return nil, nil
+	return resolved, nil
 }
 
 func NewPerson(user *types.User) codeowners.ResolvedOwner {
