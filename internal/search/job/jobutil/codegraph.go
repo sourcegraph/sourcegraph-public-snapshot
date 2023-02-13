@@ -55,8 +55,13 @@ func (s *CodeGraphSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 
 	alert, err = s.SymbolSearch.Run(ctx, clients, streaming.StreamFunc(func(se streaming.SearchEvent) {
 		if se.Results.Len() == 0 {
+			stream.Send(streaming.SearchEvent{
+				Results: nil,
+				Stats:   se.Stats,
+			})
 			return
 		}
+
 		for _, m := range se.Results {
 			// Symbol results are always FileMatch
 			fm, ok := m.(*result.FileMatch)
@@ -151,7 +156,10 @@ func (s *CodeGraphSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 			}
 
 			// Send aggregated matches
-			stream.Send(streaming.SearchEvent{Results: matches})
+			stream.Send(streaming.SearchEvent{
+				Results: matches,
+				Stats:   se.Stats,
+			})
 		}
 	}))
 	if err != nil {
