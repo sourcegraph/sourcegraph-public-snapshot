@@ -669,6 +669,7 @@ type CodeIntelligenceConfigurationPoliciesArgs struct {
 	Query            *string
 	ForDataRetention *bool
 	ForIndexing      *bool
+	Protected        *bool
 	After            *string
 }
 
