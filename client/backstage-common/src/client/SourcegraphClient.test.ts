@@ -1,3 +1,5 @@
 import { describe, expect, test } from '@jest/globals'
 
-describe.skip('placeholder for SourcegraphClient tests', () => {})
+describe('placeholder for SourcegraphClient tests', () => {
+  test('placeholder', () => expect('placeholder').toBeTruthy())
+})
