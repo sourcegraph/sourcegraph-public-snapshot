@@ -616,7 +616,7 @@ func isPaused(dir string) (string, bool) {
 	return string(b), true
 }
 
-// bestEffortWalk is a filepath.Walk which ignores errors that can be passed
+// bestEffortWalk is a filepath.WalkDir which ignores errors that can be passed
 // to walkFn. This is a common pattern used in gitserver for best effort work.
 //
 // Note: We still respect errors returned by walkFn.
@@ -624,18 +624,18 @@ func isPaused(dir string) (string, bool) {
 // filepath.Walk can return errors if we run into permission errors or a file
 // disappears between readdir and the stat of the file. In either case this
 // error can be ignored for best effort code.
-func bestEffortWalk(root string, walkFn func(path string, info fs.FileInfo) error) error {
-	logger := log.Scoped("bestEffortWalk", "bestEffortWalk is a filepath.Walk which ignores errors that can be passed to walkFn")
-	return filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
+func bestEffortWalk(root string, walkFn func(path string, entry fs.DirEntry) error) error {
+	if msg, ok := isPaused(root); ok {
+		logger := log.Scoped("bestEffortWalk", "bestEffortWalk is a filepath.Walk which ignores errors that can be passed to walkFn")
+		logger.Warn("bestEffortWalk paused", log.String("dir", root), log.String("reason", msg))
+		return filepath.SkipDir
+	}
+
+	return filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return nil
 		}
 
-		if msg, ok := isPaused(path); ok {
-			logger.Warn("bestEffortWalk paused", log.String("dir", path), log.String("reason", msg))
-			return filepath.SkipDir
-		}
-
-		return walkFn(path, info)
+		return walkFn(path, d)
 	})
 }
