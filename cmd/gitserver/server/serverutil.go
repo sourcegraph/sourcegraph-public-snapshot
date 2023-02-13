@@ -603,19 +603,6 @@ func mapToLoggerField(m map[string]any) []log.Field {
 	return LogFields
 }
 
-// isPaused returns true if a file "SG_PAUSE" is present in dir. If the file is
-// present, its first 40 bytes are returned as first argument.
-func isPaused(dir string) (string, bool) {
-	f, err := os.Open(filepath.Join(dir, "SG_PAUSE"))
-	if err != nil {
-		return "", false
-	}
-	defer f.Close()
-	b := make([]byte, 40)
-	io.ReadFull(f, b)
-	return string(b), true
-}
-
 // bestEffortWalk is a filepath.WalkDir which ignores errors that can be passed
 // to walkFn. This is a common pattern used in gitserver for best effort work.
 //
@@ -625,12 +612,6 @@ func isPaused(dir string) (string, bool) {
 // disappears between readdir and the stat of the file. In either case this
 // error can be ignored for best effort code.
 func bestEffortWalk(root string, walkFn func(path string, entry fs.DirEntry) error) error {
-	if msg, ok := isPaused(root); ok {
-		logger := log.Scoped("bestEffortWalk", "bestEffortWalk is a filepath.Walk which ignores errors that can be passed to walkFn")
-		logger.Warn("bestEffortWalk paused", log.String("dir", root), log.String("reason", msg))
-		return filepath.SkipDir
-	}
-
 	return filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return nil
