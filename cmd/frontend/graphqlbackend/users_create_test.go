@@ -29,7 +29,7 @@ func makeUsersCreateTestDB() (*database.MockDB, *database.MockAuthzStore, *datab
 	roles.GetFunc.SetDefaultReturn(&types.Role{ID: 1}, nil)
 
 	userRoles := database.NewMockUserRoleStore()
-	userRoles.CreateFunc.SetDefaultReturn(&types.UserRole{}, nil)
+	userRoles.AssignFunc.SetDefaultReturn(&types.UserRole{}, nil)
 
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
@@ -69,7 +69,7 @@ func TestCreateUser(t *testing.T) {
 
 	mockrequire.CalledOnce(t, authz.GrantPendingPermissionsFunc)
 	mockrequire.CalledOnce(t, roles.GetFunc)
-	mockrequire.CalledOnce(t, userRoles.CreateFunc)
+	mockrequire.CalledOnce(t, userRoles.AssignFunc)
 }
 
 func TestCreateUserResetPasswordURL(t *testing.T) {

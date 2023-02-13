@@ -198,13 +198,8 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 	}
 
 	{
-		firstParam := 2
 		systemRoles, err := db.Roles().List(r.Context(), database.RolesListOptions{
 			System: true,
-			// Since we only have two system roles, we can hardcode the first Param to 2.
-			PaginationArgs: &database.PaginationArgs{
-				First: &firstParam,
-			},
 		})
 		if err != nil {
 			logger.Error("Failed to fetch system roles", log.Error(err))

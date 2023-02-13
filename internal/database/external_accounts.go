@@ -262,13 +262,7 @@ func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUs
 		return nil, err
 	}
 
-	firstParam := 2
 	systemRoles, err := RolesWith(tx).List(ctx, RolesListOptions{
-		// Since we only have two system roles on every Sourcegraph instance, it's okay
-		// to hard-code a pagination parameter here.
-		PaginationArgs: &PaginationArgs{
-			First: &firstParam,
-		},
 		System: true,
 	})
 	if err != nil {

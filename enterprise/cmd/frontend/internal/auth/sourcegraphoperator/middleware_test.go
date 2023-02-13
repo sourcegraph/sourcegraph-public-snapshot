@@ -117,7 +117,15 @@ func newOIDCIDServer(t *testing.T, code string, providerConfig *cloud.SchemaAuth
 
 type doRequestFunc func(method, urlStr, body string, cookies []*http.Cookie, authed bool) *http.Response
 
-func newMockDBAndRequester(t *testing.T) (*database.MockUserStore, *database.MockUserExternalAccountsStore, *database.MockRoleStore, *database.MockUserRoleStore, doRequestFunc) {
+type mockDetails struct {
+	usersStore            *database.MockUserStore
+	externalAccountsStore *database.MockUserExternalAccountsStore
+	roleStore             *database.MockRoleStore
+	userRoleStore         *database.MockUserRoleStore
+	doRequest             doRequestFunc
+}
+
+func newMockDBAndRequester(t *testing.T) mockDetails {
 	usersStore := database.NewMockUserStore()
 	userExternalAccountsStore := database.NewMockUserExternalAccountsStore()
 	userExternalAccountsStore.ListFunc.SetDefaultReturn(
@@ -144,7 +152,7 @@ func newMockDBAndRequester(t *testing.T) (*database.MockUserStore, *database.Moc
 	})
 
 	userRoleStore := database.NewMockUserRoleStore()
-	userRoleStore.CreateFunc.SetDefaultHook(func(ctx context.Context, curo database.AssignUserRoleOpts) (*types.UserRole, error) {
+	userRoleStore.AssignFunc.SetDefaultHook(func(ctx context.Context, curo database.AssignUserRoleOpts) (*types.UserRole, error) {
 		if curo.RoleID != siteAdminRole.ID {
 			t.Fatalf("expected UserRoles().Assign to be called with roleID %d, got %d", siteAdminRole.ID, curo.RoleID)
 		}
@@ -179,7 +187,13 @@ func newMockDBAndRequester(t *testing.T) (*database.MockUserStore, *database.Moc
 		return resp.Result()
 	}
 
-	return usersStore, userExternalAccountsStore, roleStore, userRoleStore, doRequest
+	return mockDetails{
+		usersStore:            usersStore,
+		externalAccountsStore: userExternalAccountsStore,
+		roleStore:             roleStore,
+		userRoleStore:         userRoleStore,
+		doRequest:             doRequest,
+	}
 }
 
 func TestMiddleware(t *testing.T) {
@@ -206,17 +220,17 @@ func TestMiddleware(t *testing.T) {
 	})
 
 	t.Run("unauthenticated API request should pass through", func(t *testing.T) {
-		_, _, _, _, doRequest := newMockDBAndRequester(t)
+		mocks := newMockDBAndRequester(t)
 
-		resp := doRequest(http.MethodGet, "http://example.com/.api/foo", "", nil, false)
+		resp := mocks.doRequest(http.MethodGet, "http://example.com/.api/foo", "", nil, false)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 
 	t.Run("login triggers auth flow", func(t *testing.T) {
-		_, _, _, _, doRequest := newMockDBAndRequester(t)
+		mocks := newMockDBAndRequester(t)
 
 		urlStr := fmt.Sprintf("http://example.com%s/login?pc=%s", authPrefix, mockProvider.ConfigID().ID)
-		resp := doRequest(http.MethodGet, urlStr, "", nil, false)
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", nil, false)
 		assert.Equal(t, http.StatusFound, resp.StatusCode)
 
 		location := resp.Header.Get("Location")
@@ -232,7 +246,7 @@ func TestMiddleware(t *testing.T) {
 	})
 
 	t.Run("callback with bad CSRF should fail", func(t *testing.T) {
-		_, _, _, _, doRequest := newMockDBAndRequester(t)
+		mocks := newMockDBAndRequester(t)
 
 		badState := &openidconnect.AuthnState{
 			CSRFToken:  "bad",
@@ -240,12 +254,12 @@ func TestMiddleware(t *testing.T) {
 			ProviderID: mockProvider.ConfigID().ID,
 		}
 		urlStr := fmt.Sprintf("http://example.com/.auth/sourcegraph-operator/callback?code=%s&state=%s", testCode, badState.Encode())
-		resp := doRequest(http.MethodGet, urlStr, "", nil, false)
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", nil, false)
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
 
 	t.Run("callback with good CSRF should set auth cookie", func(t *testing.T) {
-		usersStore, userExternalAccountsStore, roleStore, userRoleStore, doRequest := newMockDBAndRequester(t)
+		mocks := newMockDBAndRequester(t)
 
 		state := &openidconnect.AuthnState{
 			CSRFToken:  "good",
@@ -263,13 +277,13 @@ func TestMiddleware(t *testing.T) {
 		}
 		defer func() { openidconnect.MockVerifyIDToken = nil }()
 
-		usersStore.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
+		mocks.usersStore.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
 			return &types.User{
 				ID:        id,
 				CreatedAt: time.Now(),
 			}, nil
 		})
-		userExternalAccountsStore.CreateUserAndSaveFunc.SetDefaultHook(func(_ context.Context, user database.NewUser, _ extsvc.AccountSpec, _ extsvc.AccountData) (*types.User, error) {
+		mocks.externalAccountsStore.CreateUserAndSaveFunc.SetDefaultHook(func(_ context.Context, user database.NewUser, _ extsvc.AccountSpec, _ extsvc.AccountData) (*types.User, error) {
 			assert.True(t, strings.HasPrefix(user.Username, usernamePrefix), "%q does not have prefix %q", user.Username, usernamePrefix)
 			return &types.User{ID: 1}, nil
 		})
@@ -281,16 +295,16 @@ func TestMiddleware(t *testing.T) {
 				Value: state.Encode(),
 			},
 		}
-		resp := doRequest(http.MethodGet, urlStr, "", cookies, false)
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false)
 		assert.Equal(t, http.StatusFound, resp.StatusCode)
 		assert.Equal(t, state.Redirect, resp.Header.Get("Location"))
-		mockrequire.CalledOnce(t, usersStore.SetIsSiteAdminFunc)
-		mockrequire.CalledOnce(t, roleStore.GetFunc)
-		mockrequire.CalledOnce(t, userRoleStore.CreateFunc)
+		mockrequire.CalledOnce(t, mocks.usersStore.SetIsSiteAdminFunc)
+		mockrequire.CalledOnce(t, mocks.roleStore.GetFunc)
+		mockrequire.CalledOnce(t, mocks.userRoleStore.AssignFunc)
 	})
 
 	t.Run("callback with bad email domain should fail", func(t *testing.T) {
-		_, _, _, _, doRequest := newMockDBAndRequester(t)
+		mocks := newMockDBAndRequester(t)
 
 		oldEmail := *emailPtr
 		*emailPtr = "alice@example.com" // Doesn't match requiredEmailDomain
@@ -319,12 +333,12 @@ func TestMiddleware(t *testing.T) {
 				Value: state.Encode(),
 			},
 		}
-		resp := doRequest(http.MethodGet, urlStr, "", cookies, false)
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false)
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 	})
 
 	t.Run("no open redirection", func(t *testing.T) {
-		usersStore, _, roleStore, userRoleStore, doRequest := newMockDBAndRequester(t)
+		mocks := newMockDBAndRequester(t)
 
 		state := &openidconnect.AuthnState{
 			CSRFToken:  "good",
@@ -342,7 +356,7 @@ func TestMiddleware(t *testing.T) {
 		}
 		defer func() { openidconnect.MockVerifyIDToken = nil }()
 
-		usersStore.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
+		mocks.usersStore.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
 			return &types.User{
 				ID:        id,
 				CreatedAt: time.Now(),
@@ -356,24 +370,24 @@ func TestMiddleware(t *testing.T) {
 				Value: state.Encode(),
 			},
 		}
-		resp := doRequest(http.MethodGet, urlStr, "", cookies, false)
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false)
 		assert.Equal(t, http.StatusFound, resp.StatusCode)
 		assert.Equal(t, "/", resp.Header.Get("Location"))
-		mockrequire.CalledOnce(t, usersStore.SetIsSiteAdminFunc)
-		mockrequire.CalledOnce(t, roleStore.GetFunc)
-		mockrequire.CalledOnce(t, userRoleStore.CreateFunc)
+		mockrequire.CalledOnce(t, mocks.usersStore.SetIsSiteAdminFunc)
+		mockrequire.CalledOnce(t, mocks.roleStore.GetFunc)
+		mockrequire.CalledOnce(t, mocks.userRoleStore.AssignFunc)
 	})
 
 	t.Run("lifetime expired", func(t *testing.T) {
-		usersStore, _, _, _, doRequest := newMockDBAndRequester(t)
+		mocks := newMockDBAndRequester(t)
 
-		usersStore.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
+		mocks.usersStore.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
 			return &types.User{
 				ID:        id,
 				CreatedAt: time.Now().Add(-61 * time.Minute),
 			}, nil
 		})
-		usersStore.HardDeleteFunc.SetDefaultHook(func(ctx context.Context, _ int32) error {
+		mocks.usersStore.HardDeleteFunc.SetDefaultHook(func(ctx context.Context, _ int32) error {
 			require.True(t, actor.FromContext(ctx).SourcegraphOperator, "the actor should be a Sourcegraph operator")
 			return nil
 		})
@@ -401,12 +415,12 @@ func TestMiddleware(t *testing.T) {
 				Value: state.Encode(),
 			},
 		}
-		resp := doRequest(http.MethodGet, urlStr, "", cookies, false)
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false)
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 
 		body, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 		assert.Contains(t, string(body), "The retrieved user account lifecycle has already expired")
-		mockrequire.Called(t, usersStore.HardDeleteFunc)
+		mockrequire.Called(t, mocks.usersStore.HardDeleteFunc)
 	})
 }

@@ -660,7 +660,7 @@ func TestSetIsSiteAdmin(t *testing.T) {
 		}, nil)
 
 		userRoles := database.NewMockUserRoleStore()
-		userRoles.CreateFunc.SetDefaultReturn(&types.UserRole{
+		userRoles.AssignFunc.SetDefaultReturn(&types.UserRole{
 			RoleID: 1,
 			UserID: 2,
 		}, nil)
@@ -698,7 +698,7 @@ func TestSetIsSiteAdmin(t *testing.T) {
 		mockrequire.CalledOnce(t, securityLogEvents.LogEventFunc)
 		mockrequire.CalledOnce(t, users.SetIsSiteAdminFunc)
 		mockrequire.CalledOnce(t, roles.GetFunc)
-		mockrequire.CalledOnce(t, userRoles.CreateFunc)
+		mockrequire.CalledOnce(t, userRoles.AssignFunc)
 	})
 
 	t.Run("authenticated as site-admin: demoting to site-admin", func(t *testing.T) {

@@ -101,7 +101,7 @@ type userStore struct {
 var _ UserStore = (*userStore)(nil)
 
 // Users instantiates and returns a new RepoStore with prepared statements.
-func Users(logger log.Logger, db dbutil.DB) UserStore {
+func Users(logger log.Logger) UserStore {
 	return &userStore{
 		logger: logger,
 		Store:  &basestore.Store{},
@@ -773,8 +773,41 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 		}
 	}
 
-	err := u.Store.Exec(ctx, sqlf.Sprintf("UPDATE users SET site_admin=%s WHERE id=%s", isSiteAdmin, id))
-	return err
+	db := NewDBWith(u.logger, u)
+	return db.WithTransact(ctx, func(tx DB) error {
+		userStore := tx.Users()
+		err := userStore.Exec(ctx, sqlf.Sprintf("UPDATE users SET site_admin=%s WHERE id=%s", isSiteAdmin, id))
+		if err != nil {
+			return err
+		}
+
+		// We fetch the site administrator role to be assigned to the user.
+		sr, err := tx.Roles().Get(ctx, GetRoleOpts{
+			Name: string(types.SiteAdministratorSystemRole),
+		})
+		if err != nil {
+			return err
+		}
+
+		userRoleStore := tx.UserRoles()
+
+		if isSiteAdmin {
+			_, err := userRoleStore.Assign(ctx, AssignUserRoleOpts{
+				UserID: id,
+				RoleID: sr.ID,
+			})
+
+			return err
+		}
+
+		// If revoking the site admin role for a user, we simply delete the `user <> role` relationship
+		// from the `UserRoles` table.
+		err = userRoleStore.Delete(ctx, DeleteUserRoleOpts{
+			UserID: id,
+			RoleID: sr.ID,
+		})
+		return err
+	})
 }
 
 // CheckAndDecrementInviteQuota should be called before the user (identified

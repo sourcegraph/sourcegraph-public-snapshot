@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	internalauth "github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -197,28 +196,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if !result.User.SiteAdmin {
-				err := db.WithTransact(ctx, func(tx database.DB) error {
-					err = tx.Users().SetIsSiteAdmin(ctx, result.User.ID, true)
-					if err != nil {
-						return err
-					}
-
-					sr, err := tx.Roles().Get(ctx, database.GetRoleOpts{
-						Name: string(types.SiteAdministratorSystemRole),
-					})
-					if err != nil {
-						return err
-					}
-
-					if _, err = tx.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
-						UserID: result.User.ID,
-						RoleID: sr.ID,
-					}); err != nil {
-						return err
-					}
-
-					return nil
-				})
+				err = db.Users().SetIsSiteAdmin(ctx, result.User.ID, true)
 				if err != nil {
 					logger.Error("failed to update Sourcegraph Operator as site admin", log.Error(err))
 					http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not set as site admin.", http.StatusInternalServerError)

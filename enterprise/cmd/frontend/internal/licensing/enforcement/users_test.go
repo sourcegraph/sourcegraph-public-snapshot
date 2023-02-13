@@ -180,7 +180,7 @@ func TestEnforcement_AfterCreateUser(t *testing.T) {
 			if test.setSiteAdmin {
 				mockrequire.CalledOnce(t, usersStore.SetIsSiteAdminFunc)
 				mockrequire.CalledOnce(t, roleStore.GetFunc)
-				mockrequire.CalledOnce(t, userRoleStore.CreateFunc)
+				mockrequire.CalledOnce(t, userRoleStore.AssignFunc)
 			}
 		})
 	}
@@ -249,7 +249,7 @@ func mockDBAndStores(t *testing.T) (*database.MockDB, *database.MockUserStore, *
 	})
 
 	userRoleStore := database.NewMockUserRoleStore()
-	userRoleStore.CreateFunc.SetDefaultHook(func(ctx context.Context, curo database.AssignUserRoleOpts) (*types.UserRole, error) {
+	userRoleStore.AssignFunc.SetDefaultHook(func(ctx context.Context, curo database.AssignUserRoleOpts) (*types.UserRole, error) {
 		if curo.RoleID != sr.ID {
 			t.Fatalf("expected UserRoles.Create() to be called with roleID: %d, got %d", sr.ID, curo.RoleID)
 		}

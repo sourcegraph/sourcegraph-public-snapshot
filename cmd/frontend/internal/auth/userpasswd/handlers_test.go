@@ -431,7 +431,7 @@ func TestHandleSignUp(t *testing.T) {
 		}, nil)
 
 		userRoles := database.NewMockUserRoleStore()
-		userRoles.BulkCreateForUserFunc.SetDefaultHook(func(_ context.Context, bcfuo database.BulkCreateForUserOpts) ([]*types.UserRole, error) {
+		userRoles.BulkAssignToUserFunc.SetDefaultHook(func(_ context.Context, bcfuo database.BulkAssignToUserOpts) ([]*types.UserRole, error) {
 			if len(bcfuo.RoleIDs) != 1 {
 				t.Fatalf("expected db.UserRoles().BulkCreateForUser to be called with one roleID, but got %d", len(bcfuo.RoleIDs))
 			}
@@ -477,7 +477,7 @@ func TestHandleSignUp(t *testing.T) {
 		mockrequire.CalledOnce(t, authz.GrantPendingPermissionsFunc)
 		mockrequire.CalledOnce(t, users.CreateFunc)
 		mockrequire.CalledOnce(t, roles.ListFunc)
-		mockrequire.CalledOnce(t, userRoles.BulkCreateForUserFunc)
+		mockrequire.CalledOnce(t, userRoles.BulkAssignToUserFunc)
 	})
 }
 
@@ -523,7 +523,7 @@ func TestHandleSiteInit(t *testing.T) {
 		}, nil)
 
 		userRoles := database.NewMockUserRoleStore()
-		userRoles.BulkCreateForUserFunc.SetDefaultHook(func(_ context.Context, bcfuo database.BulkCreateForUserOpts) ([]*types.UserRole, error) {
+		userRoles.BulkAssignToUserFunc.SetDefaultHook(func(_ context.Context, bcfuo database.BulkAssignToUserOpts) ([]*types.UserRole, error) {
 			if len(bcfuo.RoleIDs) != 2 {
 				t.Fatalf("expected db.UserRoles().BulkCreateForUser to be called with two roleIDs, but got %d", len(bcfuo.RoleIDs))
 			}
@@ -569,7 +569,7 @@ func TestHandleSiteInit(t *testing.T) {
 		mockrequire.CalledOnce(t, authz.GrantPendingPermissionsFunc)
 		mockrequire.CalledOnce(t, users.CreateFunc)
 		mockrequire.CalledOnce(t, roles.ListFunc)
-		mockrequire.CalledOnce(t, userRoles.BulkCreateForUserFunc)
+		mockrequire.CalledOnce(t, userRoles.BulkAssignToUserFunc)
 		mockrequire.CalledOnce(t, eventLogs.BulkInsertFunc)
 	})
 }
