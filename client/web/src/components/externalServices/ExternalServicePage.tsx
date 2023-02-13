@@ -133,7 +133,13 @@ export const ExternalServicePage: FC<Props> = props => {
     const checkConnectionNode = data?.node?.__typename === 'ExternalService' ? data.node.checkConnection : null
 
     let externalServiceAvailabilityStatus
-    if (!error && !loading) {
+    if (loading) {
+        externalServiceAvailabilityStatus = (
+            <Alert className="mt-2" variant="waiting">
+                Checking code host connection status...
+            </Alert>
+        )
+    } else if (!error) {
         if (checkConnectionNode?.__typename === 'ExternalServiceAvailable') {
             externalServiceAvailabilityStatus = (
                 <Alert className="mt-2" variant="success">
@@ -149,6 +155,14 @@ export const ExternalServicePage: FC<Props> = props => {
                 />
             )
         }
+    } else {
+        externalServiceAvailabilityStatus = (
+            <ErrorAlert
+                className="mt-2"
+                prefix="Unexpected error during code host connection check"
+                error={error.message}
+            />
+        )
     }
 
     return (
@@ -187,15 +201,17 @@ export const ExternalServicePage: FC<Props> = props => {
                                                 : 'Connection check unavailable'
                                         }
                                     >
-                                        <Button
+                                        <LoaderButton
                                             className="test-connection-external-service-button"
                                             variant="secondary"
                                             onClick={() => doCheckConnection()}
                                             disabled={!externalService.hasConnectionCheck || loading}
                                             size="sm"
-                                        >
-                                            <Icon aria-hidden={true} svgPath={mdiConnection} /> Test connection
-                                        </Button>
+                                            loading={loading}
+                                            alwaysShowLabel={true}
+                                            icon={<Icon aria-hidden={true} svgPath={mdiConnection} />}
+                                            label="Test connection"
+                                        />
                                     </Tooltip>
                                 </div>
                                 {editingEnabled && (
