@@ -47,6 +47,7 @@ go_library(
     deps = [
         "//dev/ci/runtype",
         "//dev/sg/adr",
+        "//dev/sg/buf",
         "//dev/sg/dependencies",
         "//dev/sg/internal/analytics",
         "//dev/sg/internal/background",
