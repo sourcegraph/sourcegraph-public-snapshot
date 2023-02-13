@@ -62,7 +62,7 @@ describe('SignInPage', () => {
             within(rendered.baseElement)
                 .queryByText(txt => txt.includes('Continue with Email'))
                 ?.closest('a')
-        ).toHaveAttribute('href', '/sign-in?email=1')
+        ).toHaveAttribute('href', '/sign-in?email=1&')
 
         expect(rendered.asFragment()).toMatchSnapshot()
     })

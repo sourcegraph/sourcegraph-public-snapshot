@@ -110,7 +110,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                     {builtInAuthProvider && !showBuiltInAuthForm && (
                         <div className="mb-2">
                             <Button
-                                to={`?email=1&${searchParams.toString()}`}
+                                to={`${location.pathname}?email=1&${searchParams.toString()}`}
                                 display="block"
                                 variant="secondary"
                                 as={Link}

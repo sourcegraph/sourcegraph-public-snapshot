@@ -82,7 +82,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
           >
             <a
               class="anchorLink btn btnSecondary btnBlock"
-              href="/sign-in?email=1"
+              href="/sign-in?email=1&"
             >
               <svg
                 aria-hidden="true"
@@ -192,7 +192,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
           >
             <a
               class="anchorLink btn btnSecondary btnBlock"
-              href="/sign-in?email=1"
+              href="/sign-in?email=1&"
             >
               <svg
                 aria-hidden="true"
@@ -618,7 +618,7 @@ exports[`SignInPage with Gerrit auth provider does not render the Gerrit provide
           >
             <a
               class="anchorLink btn btnSecondary btnBlock"
-              href="/sign-in?email=1"
+              href="/sign-in?email=1&"
             >
               <svg
                 aria-hidden="true"
@@ -728,7 +728,7 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 2 
           >
             <a
               class="anchorLink btn btnSecondary btnBlock"
-              href="/sign-in?email=1"
+              href="/sign-in?email=1&"
             >
               <svg
                 aria-hidden="true"
@@ -848,7 +848,7 @@ exports[`SignInPage with Sourcegraph operator auth provider renders page with 3 
           >
             <a
               class="anchorLink btn btnSecondary btnBlock"
-              href="/sign-in?sourcegraph-operator=&email=1"
+              href="/sign-in?email=1&sourcegraph-operator="
             >
               <svg
                 aria-hidden="true"
