@@ -201,6 +201,7 @@ type RepositoryFilterPreviewResolver interface {
 	TotalCount() int32
 	Limit() *int32
 	TotalMatches() int32
+	MatchesAllRepos() bool
 }
 
 type CodeIntelligenceCommitGraphResolver interface {

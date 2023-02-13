@@ -224,8 +224,6 @@ func (r *rootResolver) PreviewRepositoryFilter(ctx context.Context, args *resolv
 	if err != nil {
 		return nil, err
 	}
-	// TODO - expose
-	_ = matchesAll
 
 	resv := make([]resolverstubs.RepositoryResolver, 0, len(ids))
 	logger := sglog.Scoped("PreviewRepositoryFilter", "policies resolver")
