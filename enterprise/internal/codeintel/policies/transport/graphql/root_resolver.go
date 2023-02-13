@@ -244,7 +244,7 @@ func (r *rootResolver) PreviewRepositoryFilter(ctx context.Context, args *resolv
 		limitedCount = *repositoryMatchLimit
 	}
 
-	return NewRepositoryFilterPreviewResolver(resv, limitedCount, totalMatches, repositoryMatchLimit), nil
+	return NewRepositoryFilterPreviewResolver(resv, limitedCount, totalMatches, matchesAll, repositoryMatchLimit), nil
 }
 
 const DefaultGitObjectFilterPreviewPageSize = 15 // TEMP: 100
