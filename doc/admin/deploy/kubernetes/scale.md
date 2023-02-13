@@ -19,7 +19,7 @@ Here is a simplified list of the key parameters to tune when scaling Sourcegraph
 - `indexedSearch` replica count and CPU/memory resource allocations
 - `gitserver` replica count
 - `symbols` replica count and CPU/memory resource allocations
-- `gitMaxConcurrentClones`, because `git clone` and `git fetch` operations are IO- and CPU-intensive
+- `gitMaxConcurrentClones`, because `git clone` and `git fetch` operations are IO and CPU-intensive
 - `repoListUpdateInterval` (in minutes), because each interval triggers `git fetch` operations for all repositories
 
 Notes:
