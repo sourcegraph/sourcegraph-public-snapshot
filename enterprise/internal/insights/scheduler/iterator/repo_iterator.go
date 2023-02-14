@@ -228,7 +228,7 @@ func (p *PersistentRepoIterator) Restart(ctx context.Context, store *basestore.S
 	}
 	defer func() { err = tx.Done(err) }()
 
-	err = tx.Exec(ctx, sqlf.Sprintf("UPDATE repo_iterator SET percent_complete = 0, runtime_duration = 0, success_count = 0, repo_cursor = 0, completed_at = null, started_at = null, last_updated_at = '-infinity'::timestamp where id = %s", p.Id))
+	err = tx.Exec(ctx, sqlf.Sprintf("UPDATE repo_iterator SET percent_complete = 0, runtime_duration = 0, success_count = 0, repo_cursor = 0, completed_at = null, started_at = null, last_updated_at = now() where id = %s", p.Id))
 	if err != nil {
 		return err
 	}

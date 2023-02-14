@@ -296,7 +296,7 @@ func (h *inProgressHandler) disableBackfill(ctx context.Context, ex *backfillExe
 }
 
 func (h *inProgressHandler) load(ctx context.Context, logger log.Logger, backfillId int) (*backfillExecution, error) {
-	backfillJob, err := h.backfillStore.loadBackfill(ctx, backfillId)
+	backfillJob, err := h.backfillStore.LoadBackfill(ctx, backfillId)
 	if err != nil {
 		return nil, errors.Wrap(err, "loadBackfill")
 	}

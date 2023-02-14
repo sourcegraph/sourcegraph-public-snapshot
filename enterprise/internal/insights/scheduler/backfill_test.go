@@ -117,7 +117,7 @@ func Test_ResetBackfill(t *testing.T) {
 	require.NoError(t, err)
 	autogold.Want("initial repo iterator", `{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"0001-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":0,"TotalCount":4,"SuccessCount":0,"Cursor":0}`).Equal(t, string(jsonified))
 
-	err = backfill.RestBackfillAttempt(ctx, store)
+	err = backfill.RetryBackfillAttempt(ctx, store)
 	require.NoError(t, err)
 	autogold.Want("backfill after reset", SeriesBackfill{
 		Id: 1, SeriesId: 1, repoIteratorId: 1,

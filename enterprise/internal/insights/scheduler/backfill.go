@@ -64,7 +64,7 @@ func (s *BackfillStore) NewBackfill(ctx context.Context, series types.InsightSer
 	return scanBackfill(row)
 }
 
-func (s *BackfillStore) loadBackfill(ctx context.Context, id int) (*SeriesBackfill, error) {
+func (s *BackfillStore) LoadBackfill(ctx context.Context, id int) (*SeriesBackfill, error) {
 	q := "SELECT %s FROM insight_series_backfill WHERE id = %s"
 	row := s.QueryRow(ctx, sqlf.Sprintf(q, backfillColumnsJoin, id))
 	return scanBackfill(row)
@@ -152,7 +152,7 @@ func (b *SeriesBackfill) SetHighestPriority(ctx context.Context, store *Backfill
 	return b.setCost(ctx, tx, 0)
 }
 
-func (b *SeriesBackfill) RestBackfillAttempt(ctx context.Context, store *BackfillStore) (err error) {
+func (b *SeriesBackfill) RetryBackfillAttempt(ctx context.Context, store *BackfillStore) (err error) {
 	tx, err := store.Transact(ctx)
 	if err != nil {
 		return err
@@ -166,7 +166,16 @@ func (b *SeriesBackfill) RestBackfillAttempt(ctx context.Context, store *Backfil
 	if err != nil {
 		return err
 	}
-	return b.setState(ctx, tx, BackfillStateProcessing)
+	err = b.setState(ctx, tx, BackfillStateProcessing)
+	if err != nil {
+		return err
+	}
+	// enqueue backfill for next step in processing
+	err = enqueueBackfill(ctx, tx.Handle(), b)
+	if err != nil {
+		return errors.Wrap(err, "backfill.enqueueBackfill")
+	}
+	return nil
 }
 
 func (b *SeriesBackfill) setCost(ctx context.Context, storeTx *BackfillStore, newCost float64) (err error) {
@@ -296,6 +305,7 @@ type BackfillQueueArgs struct {
 	PaginationArgs *database.PaginationArgs
 	States         *[]string
 	TextSearch     *string
+	ID             *int
 }
 type BackfillQueueItem struct {
 	ID                  int
@@ -335,12 +345,21 @@ func backfillWhere(args BackfillQueueArgs) []*sqlf.Query {
 		}
 		where = append(where, sqlf.Sprintf(fmt.Sprintf("state.backfill_state in (%s)", strings.Join(states, ","))))
 	}
+
+	if args.ID != nil {
+		where = append(where, sqlf.Sprintf("isb.id = %s", *args.ID))
+	}
 	return where
 }
 
 func (s *BackfillStore) GetBackfillQueueInfo(ctx context.Context, args BackfillQueueArgs) (results []BackfillQueueItem, err error) {
 	where := backfillWhere(args)
-	pagination := database.PaginationArgs{}
+	pagination := database.PaginationArgs{
+		OrderBy: database.OrderBy{
+			{
+				Field: string(BackfillID),
+			},
+		}}
 	if args.PaginationArgs != nil {
 		pagination = *args.PaginationArgs
 	}

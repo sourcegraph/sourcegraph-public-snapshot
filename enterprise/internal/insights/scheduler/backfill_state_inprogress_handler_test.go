@@ -104,7 +104,7 @@ func Test_MovesBackfillFromProcessingToComplete(t *testing.T) {
 		t.Fatal(errors.New("found record that should not be visible to the new backfill store"))
 	}
 
-	completedBackfill, err := bfs.loadBackfill(ctx, backfill.Id)
+	completedBackfill, err := bfs.LoadBackfill(ctx, backfill.Id)
 	require.NoError(t, err)
 	if completedBackfill.State != BackfillStateCompleted {
 		t.Fatal(errors.New("backfill should be state COMPLETED after success"))
@@ -253,7 +253,7 @@ func Test_BackfillWithRetry(t *testing.T) {
 	err = handler.Handle(ctx, logger, dequeue)
 	require.NoError(t, err)
 
-	completedBackfill, err := bfs.loadBackfill(ctx, backfill.Id)
+	completedBackfill, err := bfs.LoadBackfill(ctx, backfill.Id)
 	require.NoError(t, err)
 	if completedBackfill.State != BackfillStateProcessing {
 		t.Fatal(errors.New("backfill should be state in progress"))
@@ -336,7 +336,7 @@ func Test_BackfillWithRetryAndComplete(t *testing.T) {
 	err = handler.Handle(ctx, logger, dequeue)
 	require.NoError(t, err)
 
-	completedBackfill, err := bfs.loadBackfill(ctx, backfill.Id)
+	completedBackfill, err := bfs.LoadBackfill(ctx, backfill.Id)
 	require.NoError(t, err)
 	if completedBackfill.State != BackfillStateCompleted {
 		t.Fatal(errors.New("backfill should be state completed"))
@@ -409,7 +409,7 @@ func Test_BackfillWithInterrupt(t *testing.T) {
 	require.NoError(t, err)
 
 	// we will check that it was interrupted by verifying the backfill has progress, but is not completed yet
-	reloaded, err := bfs.loadBackfill(ctx, backfill.Id)
+	reloaded, err := bfs.LoadBackfill(ctx, backfill.Id)
 	require.NoError(t, err)
 	require.Equal(t, BackfillStateProcessing, reloaded.State)
 	itr, err := iterator.LoadWithClock(ctx, basestore.NewWithHandle(insightsDB.Handle()), reloaded.repoIteratorId, clock)
@@ -420,7 +420,7 @@ func Test_BackfillWithInterrupt(t *testing.T) {
 	err = handler.Handle(ctx, logger, dequeue)
 	require.NoError(t, err)
 
-	completedBackfill, err := bfs.loadBackfill(ctx, backfill.Id)
+	completedBackfill, err := bfs.LoadBackfill(ctx, backfill.Id)
 	require.NoError(t, err)
 	if completedBackfill.State != BackfillStateCompleted {
 		t.Fatal(errors.New("backfill should be state completed"))
@@ -498,7 +498,7 @@ func Test_BackfillCrossingErrorThreshold(t *testing.T) {
 	require.NoError(t, err)
 
 	// we will check that it was interrupted by verifying the backfill has progress, but is not completed yet
-	reloaded, err := bfs.loadBackfill(ctx, backfill.Id)
+	reloaded, err := bfs.LoadBackfill(ctx, backfill.Id)
 	require.NoError(t, err)
 	require.Equal(t, BackfillStateFailed, reloaded.State)
 	itr, err := iterator.LoadWithClock(ctx, basestore.NewWithHandle(insightsDB.Handle()), reloaded.repoIteratorId, clock)
