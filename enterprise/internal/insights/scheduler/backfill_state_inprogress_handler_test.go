@@ -116,7 +116,7 @@ func Test_MovesBackfillFromProcessingToComplete(t *testing.T) {
 	}
 }
 
-func Test_PullsByPriorityGroupAge(t *testing.T) {
+func Test_PullsByEstimatedCostAge(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
@@ -163,7 +163,7 @@ func Test_PullsByPriorityGroupAge(t *testing.T) {
 		return backfill
 	}
 
-	bf1 := addBackfillToState(series, []int32{1, 2}, 5, BackfillStateProcessing)
+	bf1 := addBackfillToState(series, []int32{1, 2}, 3, BackfillStateProcessing)
 	bf2 := addBackfillToState(series, []int32{1, 2}, 3, BackfillStateProcessing)
 	bf3 := addBackfillToState(series, []int32{1, 2}, 40, BackfillStateProcessing)
 	bf4 := addBackfillToState(series, []int32{1, 2}, 10, BackfillStateProcessing)
@@ -173,9 +173,6 @@ func Test_PullsByPriorityGroupAge(t *testing.T) {
 	dequeue3, _, _ := monitor.inProgressStore.Dequeue(ctx, "test3", nil)
 	dequeue4, _, _ := monitor.inProgressStore.Dequeue(ctx, "test4", nil)
 
-	// cost split is in 4 equal buckets based on 0 - max(cost)
-
-	// 1st job is bf1 it has higher cost but it's grouped in same cost and is older
 	assert.Equal(t, bf1.Id, dequeue1.backfillId)
 	assert.Equal(t, bf2.Id, dequeue2.backfillId)
 	assert.Equal(t, bf4.Id, dequeue3.backfillId)
