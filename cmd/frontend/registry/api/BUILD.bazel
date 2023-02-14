@@ -4,7 +4,6 @@ go_library(
     name = "api",
     srcs = [
         "doc.go",
-        "extension_bundle.go",
         "extension_connection_graphql.go",
         "extension_graphql.go",
         "extension_manifest.go",
@@ -14,15 +13,12 @@ go_library(
         "gating.go",
         "http_api.go",
         "registry_graphql.go",
-        "urls.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api",
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/frontend/envvar",
-        "//cmd/frontend/globals",
         "//cmd/frontend/graphqlbackend",
-        "//cmd/frontend/internal/app/ui/router",
         "//cmd/frontend/registry/client",
         "//internal/conf",
         "//internal/database",
@@ -46,7 +42,6 @@ go_test(
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/registry/client",
         "//internal/conf",
-        "//internal/database",
         "//schema",
     ],
 )
