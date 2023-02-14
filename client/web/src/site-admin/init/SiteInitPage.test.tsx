@@ -26,7 +26,7 @@ describe('SiteInitPage', () => {
                     authMinPasswordLength: 12,
                 }}
             />,
-            { route: '/init', path: '/init' }
+            { route: '/init', path: '/init', extraRoutes: [{ path: '/search', element: null }] }
         )
 
         expect(result.locationRef.current?.pathname).toEqual('/search')

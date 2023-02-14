@@ -9,6 +9,8 @@ import {
     useLocation,
     NavigateFunction,
     useNavigate,
+    RouteObject,
+    Outlet,
 } from 'react-router-dom'
 
 import { WildcardThemeContext, WildcardTheme } from '../hooks/useWildcardTheme'
@@ -30,6 +32,8 @@ interface NavigateRef {
 interface RenderWithBrandedContextOptions {
     route?: InitialEntry
     path?: string
+    /** Required to test redirect URLs. Without the corresponding route react-router doesn't update the location. */
+    extraRoutes?: RouteObject[]
 }
 
 const wildcardTheme: WildcardTheme = {
@@ -40,7 +44,7 @@ export function renderWithBrandedContext(
     children: ReactNode,
     options: RenderWithBrandedContextOptions = {}
 ): RenderWithBrandedContextResult {
-    const { route = '/', path = '*' } = options
+    const { route = '/', path = '*', extraRoutes = [] } = options
 
     const locationRef: LocationRef = {
         current: undefined,
@@ -53,27 +57,29 @@ export function renderWithBrandedContext(
 
     const routes = [
         {
-            path,
             element: (
-                <>
-                    {children}
-                    <SyncRouterRefs
-                        onLocationChange={location => {
-                            locationRef.current = location
-                            locationRef.entries.push(location)
-                        }}
-                        onNavigateChange={navigate => {
-                            navigateRef.current = navigate
-                        }}
-                    />
-                </>
+                <SyncRouterRefs
+                    onLocationChange={location => {
+                        locationRef.current = location
+                        locationRef.entries.push(location)
+                    }}
+                    onNavigateChange={navigate => {
+                        navigateRef.current = navigate
+                    }}
+                />
             ),
+            children: [
+                {
+                    path,
+                    element: children,
+                },
+                ...extraRoutes,
+            ],
         },
-    ]
+    ] satisfies RouteObject[]
 
     const router = createMemoryRouter(routes, {
         initialEntries: [route],
-        initialIndex: 1,
     })
 
     return {
@@ -106,5 +112,5 @@ const SyncRouterRefs: FC<SyncRourterRefProps> = props => {
         onNavigateChange(navigate)
     }, [onNavigateChange, navigate])
 
-    return null
+    return <Outlet />
 }
