@@ -21,6 +21,58 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type CacheState int32
+
+const (
+	CacheState_UNKNOWN_CACHE_STATE CacheState = 0
+	CacheState_MISSING             CacheState = 1
+	CacheState_FETCHING            CacheState = 2
+	CacheState_CACHED              CacheState = 3
+)
+
+// Enum value maps for CacheState.
+var (
+	CacheState_name = map[int32]string{
+		0: "UNKNOWN_CACHE_STATE",
+		1: "MISSING",
+		2: "FETCHING",
+		3: "CACHED",
+	}
+	CacheState_value = map[string]int32{
+		"UNKNOWN_CACHE_STATE": 0,
+		"MISSING":             1,
+		"FETCHING":            2,
+		"CACHED":              3,
+	}
+)
+
+func (x CacheState) Enum() *CacheState {
+	p := new(CacheState)
+	*p = x
+	return p
+}
+
+func (x CacheState) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (CacheState) Descriptor() protoreflect.EnumDescriptor {
+	return file_searcher_proto_enumTypes[0].Descriptor()
+}
+
+func (CacheState) Type() protoreflect.EnumType {
+	return &file_searcher_proto_enumTypes[0]
+}
+
+func (x CacheState) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use CacheState.Descriptor instead.
+func (CacheState) EnumDescriptor() ([]byte, []int) {
+	return file_searcher_proto_rawDescGZIP(), []int{0}
+}
+
 // SearchRequest is set of parameters for a search.
 type SearchRequest struct {
 	state         protoimpl.MessageState
@@ -700,6 +752,111 @@ func (x *PatternInfo) GetSelect() string {
 	return ""
 }
 
+type CacheStateRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// repo is the name of the repo to search (e.g. "github.com/gorilla/mux")
+	Repo string `protobuf:"bytes,1,opt,name=repo,proto3" json:"repo,omitempty"`
+	// commit_oid is the 40-character commit hash for the commit to be searched.
+	// It is required to be resolved, not a ref like HEAD or master.
+	CommitOid string `protobuf:"bytes,2,opt,name=commit_oid,json=commitOid,proto3" json:"commit_oid,omitempty"`
+}
+
+func (x *CacheStateRequest) Reset() {
+	*x = CacheStateRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_searcher_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CacheStateRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CacheStateRequest) ProtoMessage() {}
+
+func (x *CacheStateRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_searcher_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CacheStateRequest.ProtoReflect.Descriptor instead.
+func (*CacheStateRequest) Descriptor() ([]byte, []int) {
+	return file_searcher_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *CacheStateRequest) GetRepo() string {
+	if x != nil {
+		return x.Repo
+	}
+	return ""
+}
+
+func (x *CacheStateRequest) GetCommitOid() string {
+	if x != nil {
+		return x.CommitOid
+	}
+	return ""
+}
+
+type CacheStateResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	CacheState CacheState `protobuf:"varint,1,opt,name=cache_state,json=cacheState,proto3,enum=searcher.v1.CacheState" json:"cache_state,omitempty"`
+}
+
+func (x *CacheStateResponse) Reset() {
+	*x = CacheStateResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_searcher_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CacheStateResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CacheStateResponse) ProtoMessage() {}
+
+func (x *CacheStateResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_searcher_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CacheStateResponse.ProtoReflect.Descriptor instead.
+func (*CacheStateResponse) Descriptor() ([]byte, []int) {
+	return file_searcher_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *CacheStateResponse) GetCacheState() CacheState {
+	if x != nil {
+		return x.CacheState
+	}
+	return CacheState_UNKNOWN_CACHE_STATE
+}
+
 // Done is the final SearchResponse message sent in the stream
 // of responses to Search.
 type SearchResponse_Done struct {
@@ -714,7 +871,7 @@ type SearchResponse_Done struct {
 func (x *SearchResponse_Done) Reset() {
 	*x = SearchResponse_Done{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_searcher_proto_msgTypes[7]
+		mi := &file_searcher_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -727,7 +884,7 @@ func (x *SearchResponse_Done) String() string {
 func (*SearchResponse_Done) ProtoMessage() {}
 
 func (x *SearchResponse_Done) ProtoReflect() protoreflect.Message {
-	mi := &file_searcher_proto_msgTypes[7]
+	mi := &file_searcher_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -862,17 +1019,36 @@ var file_searcher_proto_rawDesc = []byte{
 	0x79, 0x52, 0x75, 0x6c, 0x65, 0x12, 0x1c, 0x0a, 0x09, 0x6c, 0x61, 0x6e, 0x67, 0x75, 0x61, 0x67,
 	0x65, 0x73, 0x18, 0x0e, 0x20, 0x03, 0x28, 0x09, 0x52, 0x09, 0x6c, 0x61, 0x6e, 0x67, 0x75, 0x61,
 	0x67, 0x65, 0x73, 0x12, 0x16, 0x0a, 0x06, 0x73, 0x65, 0x6c, 0x65, 0x63, 0x74, 0x18, 0x0f, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x06, 0x73, 0x65, 0x6c, 0x65, 0x63, 0x74, 0x32, 0x58, 0x0a, 0x0f, 0x53,
-	0x65, 0x61, 0x72, 0x63, 0x68, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x45,
-	0x0a, 0x06, 0x53, 0x65, 0x61, 0x72, 0x63, 0x68, 0x12, 0x1a, 0x2e, 0x73, 0x65, 0x61, 0x72, 0x63,
-	0x68, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x61, 0x72, 0x63, 0x68, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x73, 0x65, 0x61, 0x72, 0x63, 0x68, 0x65, 0x72, 0x2e,
-	0x76, 0x31, 0x2e, 0x53, 0x65, 0x61, 0x72, 0x63, 0x68, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x22, 0x00, 0x30, 0x01, 0x42, 0x39, 0x5a, 0x37, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e,
-	0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x67, 0x72, 0x61, 0x70, 0x68, 0x2f,
-	0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x67, 0x72, 0x61, 0x70, 0x68, 0x2f, 0x69, 0x6e, 0x74, 0x65,
-	0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x73, 0x65, 0x61, 0x72, 0x63, 0x68, 0x65, 0x72, 0x2f, 0x76, 0x31,
-	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x01, 0x28, 0x09, 0x52, 0x06, 0x73, 0x65, 0x6c, 0x65, 0x63, 0x74, 0x22, 0x46, 0x0a, 0x11, 0x43,
+	0x61, 0x63, 0x68, 0x65, 0x53, 0x74, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x12, 0x12, 0x0a, 0x04, 0x72, 0x65, 0x70, 0x6f, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04,
+	0x72, 0x65, 0x70, 0x6f, 0x12, 0x1d, 0x0a, 0x0a, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x5f, 0x6f,
+	0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74,
+	0x4f, 0x69, 0x64, 0x22, 0x4e, 0x0a, 0x12, 0x43, 0x61, 0x63, 0x68, 0x65, 0x53, 0x74, 0x61, 0x74,
+	0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x38, 0x0a, 0x0b, 0x63, 0x61, 0x63,
+	0x68, 0x65, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x17,
+	0x2e, 0x73, 0x65, 0x61, 0x72, 0x63, 0x68, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x61, 0x63,
+	0x68, 0x65, 0x53, 0x74, 0x61, 0x74, 0x65, 0x52, 0x0a, 0x63, 0x61, 0x63, 0x68, 0x65, 0x53, 0x74,
+	0x61, 0x74, 0x65, 0x2a, 0x4c, 0x0a, 0x0a, 0x43, 0x61, 0x63, 0x68, 0x65, 0x53, 0x74, 0x61, 0x74,
+	0x65, 0x12, 0x17, 0x0a, 0x13, 0x55, 0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x5f, 0x43, 0x41, 0x43,
+	0x48, 0x45, 0x5f, 0x53, 0x54, 0x41, 0x54, 0x45, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07, 0x4d, 0x49,
+	0x53, 0x53, 0x49, 0x4e, 0x47, 0x10, 0x01, 0x12, 0x0c, 0x0a, 0x08, 0x46, 0x45, 0x54, 0x43, 0x48,
+	0x49, 0x4e, 0x47, 0x10, 0x02, 0x12, 0x0a, 0x0a, 0x06, 0x43, 0x41, 0x43, 0x48, 0x45, 0x44, 0x10,
+	0x03, 0x32, 0xa9, 0x01, 0x0a, 0x0f, 0x53, 0x65, 0x61, 0x72, 0x63, 0x68, 0x65, 0x72, 0x53, 0x65,
+	0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x45, 0x0a, 0x06, 0x53, 0x65, 0x61, 0x72, 0x63, 0x68, 0x12,
+	0x1a, 0x2e, 0x73, 0x65, 0x61, 0x72, 0x63, 0x68, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65,
+	0x61, 0x72, 0x63, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x73, 0x65,
+	0x61, 0x72, 0x63, 0x68, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x53, 0x65, 0x61, 0x72, 0x63, 0x68,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x30, 0x01, 0x12, 0x4f, 0x0a, 0x0a,
+	0x43, 0x61, 0x63, 0x68, 0x65, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x1e, 0x2e, 0x73, 0x65, 0x61,
+	0x72, 0x63, 0x68, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x61, 0x63, 0x68, 0x65, 0x53, 0x74,
+	0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1f, 0x2e, 0x73, 0x65, 0x61,
+	0x72, 0x63, 0x68, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x61, 0x63, 0x68, 0x65, 0x53, 0x74,
+	0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x39, 0x5a,
+	0x37, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x6f, 0x75, 0x72,
+	0x63, 0x65, 0x67, 0x72, 0x61, 0x70, 0x68, 0x2f, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x67, 0x72,
+	0x61, 0x70, 0x68, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x73, 0x65, 0x61,
+	0x72, 0x63, 0x68, 0x65, 0x72, 0x2f, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -887,35 +1063,42 @@ func file_searcher_proto_rawDescGZIP() []byte {
 	return file_searcher_proto_rawDescData
 }
 
-var file_searcher_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_searcher_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_searcher_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_searcher_proto_goTypes = []interface{}{
-	(*SearchRequest)(nil),       // 0: searcher.v1.SearchRequest
-	(*SearchResponse)(nil),      // 1: searcher.v1.SearchResponse
-	(*FileMatch)(nil),           // 2: searcher.v1.FileMatch
-	(*ChunkMatch)(nil),          // 3: searcher.v1.ChunkMatch
-	(*Range)(nil),               // 4: searcher.v1.Range
-	(*Location)(nil),            // 5: searcher.v1.Location
-	(*PatternInfo)(nil),         // 6: searcher.v1.PatternInfo
-	(*SearchResponse_Done)(nil), // 7: searcher.v1.SearchResponse.Done
-	(*durationpb.Duration)(nil), // 8: google.protobuf.Duration
+	(CacheState)(0),             // 0: searcher.v1.CacheState
+	(*SearchRequest)(nil),       // 1: searcher.v1.SearchRequest
+	(*SearchResponse)(nil),      // 2: searcher.v1.SearchResponse
+	(*FileMatch)(nil),           // 3: searcher.v1.FileMatch
+	(*ChunkMatch)(nil),          // 4: searcher.v1.ChunkMatch
+	(*Range)(nil),               // 5: searcher.v1.Range
+	(*Location)(nil),            // 6: searcher.v1.Location
+	(*PatternInfo)(nil),         // 7: searcher.v1.PatternInfo
+	(*CacheStateRequest)(nil),   // 8: searcher.v1.CacheStateRequest
+	(*CacheStateResponse)(nil),  // 9: searcher.v1.CacheStateResponse
+	(*SearchResponse_Done)(nil), // 10: searcher.v1.SearchResponse.Done
+	(*durationpb.Duration)(nil), // 11: google.protobuf.Duration
 }
 var file_searcher_proto_depIdxs = []int32{
-	6,  // 0: searcher.v1.SearchRequest.pattern_info:type_name -> searcher.v1.PatternInfo
-	8,  // 1: searcher.v1.SearchRequest.fetch_timeout:type_name -> google.protobuf.Duration
-	2,  // 2: searcher.v1.SearchResponse.file_match:type_name -> searcher.v1.FileMatch
-	7,  // 3: searcher.v1.SearchResponse.done_message:type_name -> searcher.v1.SearchResponse.Done
-	3,  // 4: searcher.v1.FileMatch.chunk_matches:type_name -> searcher.v1.ChunkMatch
-	5,  // 5: searcher.v1.ChunkMatch.content_start:type_name -> searcher.v1.Location
-	4,  // 6: searcher.v1.ChunkMatch.ranges:type_name -> searcher.v1.Range
-	5,  // 7: searcher.v1.Range.start:type_name -> searcher.v1.Location
-	5,  // 8: searcher.v1.Range.end:type_name -> searcher.v1.Location
-	0,  // 9: searcher.v1.SearcherService.Search:input_type -> searcher.v1.SearchRequest
-	1,  // 10: searcher.v1.SearcherService.Search:output_type -> searcher.v1.SearchResponse
-	10, // [10:11] is the sub-list for method output_type
-	9,  // [9:10] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	7,  // 0: searcher.v1.SearchRequest.pattern_info:type_name -> searcher.v1.PatternInfo
+	11, // 1: searcher.v1.SearchRequest.fetch_timeout:type_name -> google.protobuf.Duration
+	3,  // 2: searcher.v1.SearchResponse.file_match:type_name -> searcher.v1.FileMatch
+	10, // 3: searcher.v1.SearchResponse.done_message:type_name -> searcher.v1.SearchResponse.Done
+	4,  // 4: searcher.v1.FileMatch.chunk_matches:type_name -> searcher.v1.ChunkMatch
+	6,  // 5: searcher.v1.ChunkMatch.content_start:type_name -> searcher.v1.Location
+	5,  // 6: searcher.v1.ChunkMatch.ranges:type_name -> searcher.v1.Range
+	6,  // 7: searcher.v1.Range.start:type_name -> searcher.v1.Location
+	6,  // 8: searcher.v1.Range.end:type_name -> searcher.v1.Location
+	0,  // 9: searcher.v1.CacheStateResponse.cache_state:type_name -> searcher.v1.CacheState
+	1,  // 10: searcher.v1.SearcherService.Search:input_type -> searcher.v1.SearchRequest
+	8,  // 11: searcher.v1.SearcherService.CacheState:input_type -> searcher.v1.CacheStateRequest
+	2,  // 12: searcher.v1.SearcherService.Search:output_type -> searcher.v1.SearchResponse
+	9,  // 13: searcher.v1.SearcherService.CacheState:output_type -> searcher.v1.CacheStateResponse
+	12, // [12:14] is the sub-list for method output_type
+	10, // [10:12] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_searcher_proto_init() }
@@ -1009,6 +1192,30 @@ func file_searcher_proto_init() {
 			}
 		}
 		file_searcher_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CacheStateRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_searcher_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CacheStateResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_searcher_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*SearchResponse_Done); i {
 			case 0:
 				return &v.state
@@ -1030,13 +1237,14 @@ func file_searcher_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_searcher_proto_rawDesc,
-			NumEnums:      0,
-			NumMessages:   8,
+			NumEnums:      1,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_searcher_proto_goTypes,
 		DependencyIndexes: file_searcher_proto_depIdxs,
+		EnumInfos:         file_searcher_proto_enumTypes,
 		MessageInfos:      file_searcher_proto_msgTypes,
 	}.Build()
 	File_searcher_proto = out.File

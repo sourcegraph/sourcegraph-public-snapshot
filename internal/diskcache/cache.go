@@ -22,6 +22,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// State describes an item stored by Store.
+type State string
+
+const (
+	StateMissing  State = "missing"
+	StateFetching State = "fetching"
+	StateCached   State = "cached"
+)
+
 // Store is an on-disk cache, with items cached via calls to Open.
 type Store interface {
 	// Open will open a file from the local cache with key. If missing, fetcher
@@ -33,6 +42,11 @@ type Store interface {
 	// Evict will remove files from store.Dir until it is smaller than
 	// maxCacheSizeBytes. It evicts files with the oldest modification time first.
 	Evict(maxCacheSizeBytes int64) (stats EvictStats, err error)
+	// State describes in what state key is. Note: This should only be used to
+	// advise other processes. For example we do not have a state Error, so if
+	// a Fetcher continually fails you will see the state oscillate between
+	// fetching and missing.
+	State(key []string) State
 }
 
 type store struct {
@@ -377,6 +391,31 @@ func (s *store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 	)
 
 	return stats, nil
+}
+
+func (s *store) State(key []string) State {
+	path := s.path(key)
+
+	// Note: there is no perfect code path here without obtaining a lock. This
+	// is because without the lock we will always race with the FS. But taking
+	// the lock is blocking (and sync.Mutex.TryLock is not gaurenteed to
+	// succeed, even if the lock is not held). So instead we do a best effort
+	// state. Given the warnings around what State does this should be good.
+	// We expect the use case for State to mostly be for polling if we can
+	// initiate a search on a cached archive.
+
+	if urlMu(path).IsLocked() {
+		return StateFetching
+	}
+
+	// In the Open codepath any error state would lead to us fetching, so
+	// check if we are fetching. If we are not we treat it as missing.
+	_, err := os.Stat(path)
+	if err == nil {
+		return StateCached
+	} else {
+		return StateMissing
+	}
 }
 
 func copyAndClose(dst io.WriteCloser, src io.ReadCloser) error {

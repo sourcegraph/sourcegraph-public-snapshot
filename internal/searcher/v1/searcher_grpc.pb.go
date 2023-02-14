@@ -24,6 +24,11 @@ const _ = grpc.SupportPackageIsVersion7
 type SearcherServiceClient interface {
 	// Search executes a search, streaming back its results
 	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (SearcherService_SearchClient, error)
+	// CacheState describes in what state search cache for the request is. Note:
+	// This should only be used to advise other processes. For example we do not
+	// have a state Error, so if a Fetcher continually fails you will see the
+	// state oscillate between fetching and missing.
+	CacheState(ctx context.Context, in *CacheStateRequest, opts ...grpc.CallOption) (*CacheStateResponse, error)
 }
 
 type searcherServiceClient struct {
@@ -66,12 +71,26 @@ func (x *searcherServiceSearchClient) Recv() (*SearchResponse, error) {
 	return m, nil
 }
 
+func (c *searcherServiceClient) CacheState(ctx context.Context, in *CacheStateRequest, opts ...grpc.CallOption) (*CacheStateResponse, error) {
+	out := new(CacheStateResponse)
+	err := c.cc.Invoke(ctx, "/searcher.v1.SearcherService/CacheState", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SearcherServiceServer is the server API for SearcherService service.
 // All implementations must embed UnimplementedSearcherServiceServer
 // for forward compatibility
 type SearcherServiceServer interface {
 	// Search executes a search, streaming back its results
 	Search(*SearchRequest, SearcherService_SearchServer) error
+	// CacheState describes in what state search cache for the request is. Note:
+	// This should only be used to advise other processes. For example we do not
+	// have a state Error, so if a Fetcher continually fails you will see the
+	// state oscillate between fetching and missing.
+	CacheState(context.Context, *CacheStateRequest) (*CacheStateResponse, error)
 	mustEmbedUnimplementedSearcherServiceServer()
 }
 
@@ -81,6 +100,9 @@ type UnimplementedSearcherServiceServer struct {
 
 func (UnimplementedSearcherServiceServer) Search(*SearchRequest, SearcherService_SearchServer) error {
 	return status.Errorf(codes.Unimplemented, "method Search not implemented")
+}
+func (UnimplementedSearcherServiceServer) CacheState(context.Context, *CacheStateRequest) (*CacheStateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CacheState not implemented")
 }
 func (UnimplementedSearcherServiceServer) mustEmbedUnimplementedSearcherServiceServer() {}
 
@@ -116,13 +138,36 @@ func (x *searcherServiceSearchServer) Send(m *SearchResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _SearcherService_CacheState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CacheStateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SearcherServiceServer).CacheState(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/searcher.v1.SearcherService/CacheState",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SearcherServiceServer).CacheState(ctx, req.(*CacheStateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SearcherService_ServiceDesc is the grpc.ServiceDesc for SearcherService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var SearcherService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "searcher.v1.SearcherService",
 	HandlerType: (*SearcherServiceServer)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CacheState",
+			Handler:    _SearcherService_CacheState_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "Search",

@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -29,6 +30,15 @@ func TestPrepareZip(t *testing.T) {
 
 	wantRepo := api.RepoName("foo")
 	wantCommit := api.CommitID("deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
+
+	assertCacheState := func(want diskcache.State) {
+		t.Helper()
+		got := s.CacheState(wantRepo, wantCommit, nil)
+		if got != want {
+			t.Fatalf("store state unexpected. got %q, want %q", got, want)
+		}
+	}
+	assertCacheState(diskcache.StateMissing)
 
 	returnFetch := make(chan struct{})
 	var gotRepo api.RepoName
@@ -86,6 +96,8 @@ func TestPrepareZip(t *testing.T) {
 	if err != nil {
 		t.Fatal("expected PrepareZip to succeed:", err)
 	}
+
+	assertCacheState(diskcache.StateCached)
 }
 
 func TestPrepareZip_fetchTarFail(t *testing.T) {

@@ -130,6 +130,18 @@ func (s *Store) Start() {
 	})
 }
 
+// CacheState is used to query the status of the repo on disk. Only once
+// something is cached do we search it. See the documentation for
+// diskcache.State and diskcache.Store.State.
+func (s *Store) CacheState(repo api.RepoName, commit api.CommitID, paths []string) diskcache.State {
+	// Ensure we have initialized
+	s.Start()
+
+	filter := newSearchableFilter(&conf.Get().SiteConfiguration)
+	key := s.key(repo, commit, paths, filter)
+	return s.cache.State([]string{key})
+}
+
 // PrepareZip returns the path to a local zip archive of repo at commit.
 // It will first consult the local cache, otherwise will fetch from the network.
 func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.CommitID) (path string, err error) {
@@ -166,16 +178,7 @@ func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit a
 
 	filter := newSearchableFilter(&conf.Get().SiteConfiguration)
 
-	// key is a sha256 hash since we want to use it for the disk name
-	h := sha256.New()
-	_, _ = fmt.Fprintf(h, "%q %q", repo, commit)
-	filter.HashKey(h)
-	_, _ = io.WriteString(h, "\x00Paths")
-	for _, p := range paths {
-		_, _ = h.Write([]byte{0})
-		_, _ = io.WriteString(h, p)
-	}
-	key := hex.EncodeToString(h.Sum(nil))
+	key := s.key(repo, commit, paths, filter)
 	span.LogKV("key", key)
 
 	// Our fetch can take a long time, and the frontend aggressively cancels
@@ -220,6 +223,19 @@ func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit a
 		cacheHit = res.cacheHit
 		return res.path, nil
 	}
+}
+
+// key is a sha256 hash since we want to use it for the disk name
+func (s *Store) key(repo api.RepoName, commit api.CommitID, paths []string, filter *searchableFilter) string {
+	h := sha256.New()
+	_, _ = fmt.Fprintf(h, "%q %q", repo, commit)
+	filter.HashKey(h)
+	_, _ = io.WriteString(h, "\x00Paths")
+	for _, p := range paths {
+		_, _ = h.Write([]byte{0})
+		_, _ = io.WriteString(h, p)
+	}
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 // fetch fetches an archive from the network and stores it on disk. It does

@@ -10,6 +10,12 @@ option go_package = "github.com/sourcegraph/sourcegraph/internal/searcher/v1";
 service SearcherService {
   // Search executes a search, streaming back its results
   rpc Search(SearchRequest) returns (stream SearchResponse) {}
+
+  // CacheState describes in what state search cache for the request is. Note:
+  // This should only be used to advise other processes. For example we do not
+  // have a state Error, so if a Fetcher continually fails you will see the
+  // state oscillate between fetching and missing.
+  rpc CacheState(CacheStateRequest) returns (CacheStateResponse) {}
 }
 
 // SearchRequest is set of parameters for a search.
@@ -187,4 +193,24 @@ message PatternInfo {
   // use it since selection is done after the query completes, but exposing it can enable
   // optimizations.
   string select = 15;
+}
+
+message CacheStateRequest {
+  // repo is the name of the repo to search (e.g. "github.com/gorilla/mux")
+  string repo = 1;
+
+  // commit_oid is the 40-character commit hash for the commit to be searched.
+  // It is required to be resolved, not a ref like HEAD or master.
+  string commit_oid = 2;
+}
+
+message CacheStateResponse {
+  CacheState cache_state = 1;
+}
+
+enum CacheState {
+  UNKNOWN_CACHE_STATE = 0;
+  MISSING = 1;
+  FETCHING = 2;
+  CACHED = 3;
 }

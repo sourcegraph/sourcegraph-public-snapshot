@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -41,14 +42,23 @@ func TestOpen(t *testing.T) {
 		}
 		return f, !calledFetcher
 	}
+	assertState := func(want State) {
+		t.Helper()
+		got := store.State([]string{"key"})
+		if got != want {
+			t.Fatalf("store state unexpected. got %q, want %q", got, want)
+		}
+	}
 
 	// Cache should be empty
+	assertState(StateMissing)
 	_, usedCache := do()
 	if usedCache {
 		t.Fatal("Expected fetcher to be called on empty cache")
 	}
 
 	// Redo, now we should use the cache
+	assertState(StateCached)
 	f, usedCache := do()
 	if !usedCache {
 		t.Fatal("Expected fetcher to not be called when cached")
@@ -56,10 +66,51 @@ func TestOpen(t *testing.T) {
 
 	// Evict, then we should not use the cache
 	os.Remove(f.Path)
+	assertState(StateMissing)
 	_, usedCache = do()
 	if usedCache {
 		t.Fatal("Item was not properly evicted")
 	}
+	assertState(StateCached)
+}
+
+func TestState(t *testing.T) {
+	dir := t.TempDir()
+
+	store := &store{
+		dir:       dir,
+		component: "test",
+		observe:   newOperations(&observation.TestContext, "test"),
+	}
+
+	key := []string{"key"}
+	assertState := func(want State) {
+		t.Helper()
+		got := store.State(key)
+		if got != want {
+			t.Fatalf("store state unexpected. got %q, want %q", got, want)
+		}
+	}
+
+	assertState(StateMissing)
+	f, err := store.Open(context.Background(), key, func(ctx context.Context) (io.ReadCloser, error) {
+		// Technically we are in another goroutine so if this fatals the error
+		// reporting is all whack. But this is convenient so if you see a
+		// weird error this is intentional.
+		assertState(StateFetching)
+		return io.NopCloser(bytes.NewReader([]byte("horse"))), nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = f.Close()
+
+	// assertState could return StateFetching here, so we retry for upto 1s.
+	for i := 0; i < 100 && store.State(key) != StateCached; i++ {
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	assertState(StateCached)
 }
 
 func TestMultiKeyEviction(t *testing.T) {
