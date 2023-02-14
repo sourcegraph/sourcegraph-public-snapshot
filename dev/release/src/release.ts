@@ -923,12 +923,12 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                 changes: [
                     {
                         ...prConfig,
-                        base: 'test-mvu',
+                        base: 'main',
                         head: `${version}-update-multi-version-upgrade`,
                     },
                     {
                         ...prConfig,
-                        base: 'test-mvu2',
+                        base: releaseBranch,
                         head: `${version}-update-multi-version-upgrade-rb`,
                     },
                 ],
