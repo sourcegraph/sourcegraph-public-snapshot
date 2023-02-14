@@ -45,7 +45,7 @@ import { ThemePreferenceProps, useTheme } from './theme'
 import { getExperimentalFeatures } from './util/get-experimental-features'
 import { parseBrowserRepoURL } from './util/url'
 
-import styles from './LegacyLayout.module.scss'
+import styles from './Layout.module.scss'
 
 export interface LegacyLayoutProps
     extends SettingsCascadeProps<Settings>,
