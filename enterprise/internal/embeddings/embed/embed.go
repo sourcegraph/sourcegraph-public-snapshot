@@ -111,6 +111,10 @@ func EmbedRepo(ctx context.Context, repoName api.RepoName, revision api.CommitID
 }
 
 func embedFiles(ctx context.Context, fileNames []string, readFile readFile, maxEmbeddingVectors int) (*embeddings.EmbeddingIndex[embeddings.RepoEmbeddingRowMetadata], error) {
+	if len(fileNames) == 0 {
+		return nil, nil
+	}
+
 	fileEmbeddings := make([]float32, 0, len(fileNames)*COLUMN_DIMENSION)
 	rowMetadata := make([]embeddings.RepoEmbeddingRowMetadata, 0, len(fileNames))
 
