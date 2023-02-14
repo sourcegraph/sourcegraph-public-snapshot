@@ -1,7 +1,7 @@
 import React, { useLayoutEffect } from 'react'
 
 import ReactDOM from 'react-dom'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 import { ReplaySubject } from 'rxjs'
 
 import { BlameHunk } from '../blame/useBlameHunks'
@@ -64,8 +64,8 @@ export const BlameColumn = React.memo<BlameColumnProps>(
             }
 
             const subscription = codeViewElements.subscribe(codeView => {
-                if (codeView?.firstElementChild instanceof HTMLTableElement) {
-                    const table = codeView.firstElementChild
+                if (codeView?.firstElementChild) {
+                    const table = codeView.firstElementChild as HTMLTableElement
 
                     for (let index = 0; index < table.rows.length; index++) {
                         const row = table.rows[index]

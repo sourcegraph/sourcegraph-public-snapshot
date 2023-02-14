@@ -3,7 +3,7 @@ import React from 'react'
 import { mdiMenuDown, mdiMenuUp } from '@mdi/js'
 import classNames from 'classnames'
 import kebabCase from 'lodash/kebabCase'
-import { useRouteMatch } from 'react-router-dom'
+import { useMatch } from 'react-router-dom'
 
 import {
     AnchorLink,
@@ -26,13 +26,12 @@ export const SidebarNavItem: React.FunctionComponent<
     React.PropsWithChildren<{
         to: string
         className?: string
-        exact?: boolean
         source?: string
         onClick?: () => void
     }>
-> = ({ children, className, to, exact, source, onClick }) => {
+> = ({ children, className, to, source, onClick }) => {
+    const routeMatch = useMatch(to)
     const buttonClassNames = classNames('text-left d-flex', styles.linkInactive, className)
-    const routeMatch = useRouteMatch({ path: to, exact })
 
     if (source === 'server') {
         return (
@@ -43,12 +42,7 @@ export const SidebarNavItem: React.FunctionComponent<
     }
 
     return (
-        <ButtonLink
-            to={to}
-            className={buttonClassNames}
-            variant={routeMatch?.isExact ? 'primary' : undefined}
-            onClick={onClick}
-        >
+        <ButtonLink to={to} className={buttonClassNames} variant={routeMatch ? 'primary' : undefined} onClick={onClick}>
             {children}
         </ButtonLink>
     )

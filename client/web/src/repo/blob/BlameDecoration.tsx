@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo } from 'react'
 import classNames from 'classnames'
 import { truncate } from 'lodash'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
-import { NavigateFunction } from 'react-router-dom-v5-compat'
+import { NavigateFunction } from 'react-router-dom'
 import { BehaviorSubject } from 'rxjs'
 
 import {

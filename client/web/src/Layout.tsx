@@ -1,7 +1,7 @@
 import React, { Suspense, useCallback, useRef, useState } from 'react'
 
 import classNames from 'classnames'
-import { matchPath, useLocation, Route, Routes, Navigate } from 'react-router-dom-v5-compat'
+import { matchPath, useLocation, Route, Routes, Navigate } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
@@ -50,6 +50,7 @@ import type { LayoutRouteComponentProps, LayoutRouteProps } from './routes'
 import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
 import { parseSearchURLQuery, SearchAggregationProps, SearchStreamingProps } from './search'
 import { NotepadContainer } from './search/Notepad'
+import { SearchQueryStateObserver } from './SearchQueryStateObserver'
 import { SetupWizard } from './setup-wizard'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -316,6 +317,12 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                     userHistory={userHistory}
                 />
             )}
+            <SearchQueryStateObserver
+                platformContext={props.platformContext}
+                searchContextsEnabled={props.searchAggregationEnabled}
+                setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}
+                selectedSearchContextSpec={props.selectedSearchContextSpec}
+            />
         </div>
     )
 }

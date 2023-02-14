@@ -4,8 +4,7 @@ import { ReactElement } from 'react'
 import { MockedResponse } from '@apollo/client/testing'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router-dom'
-import { Routes, Route, CompatRouter } from 'react-router-dom-v5-compat'
+import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import sinon from 'sinon'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -87,11 +86,9 @@ const renderWithBrandedContext = (component: ReactElement, { route = '/', path =
         <MockedTestProvider mocks={mockedGQL}>
             <Wrapper api={api}>
                 <MemoryRouter initialEntries={[route]}>
-                    <CompatRouter>
-                        <Routes>
-                            <Route path={path} element={component} />
-                        </Routes>
-                    </CompatRouter>
+                    <Routes>
+                        <Route path={path} element={component} />
+                    </Routes>
                 </MemoryRouter>
             </Wrapper>
         </MockedTestProvider>

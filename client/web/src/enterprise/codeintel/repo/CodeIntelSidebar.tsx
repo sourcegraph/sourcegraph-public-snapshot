@@ -28,7 +28,7 @@ export const CodeIntelSidebar: React.FunctionComponent<React.PropsWithChildren<P
                         {items.map(
                             ({ label, to, exact, condition = () => true }) =>
                                 condition({}) && (
-                                    <SidebarNavItem to={`${repo.url}/-/code-graph${to}`} exact={exact} key={label}>
+                                    <SidebarNavItem to={`${repo.url}/-/code-graph${to}`} key={label}>
                                         {label}
                                     </SidebarNavItem>
                                 )

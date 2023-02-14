@@ -45,8 +45,8 @@ const SymbolNode: React.FunctionComponent<React.PropsWithChildren<SymbolNodeProp
     isActive,
     nestedRender,
 }) => {
-    const isActiveFunc = (): boolean => isActive
     const symbolKindTags = useExperimentalFeatures(features => features.symbolKindTags)
+
     return (
         <li className={styles.repoRevisionSidebarSymbolsNode}>
             {node.__typename === 'SymbolPlaceholder' ? (
@@ -57,10 +57,10 @@ const SymbolNode: React.FunctionComponent<React.PropsWithChildren<SymbolNodeProp
             ) : (
                 <NavLink
                     to={node.url}
-                    isActive={isActiveFunc}
-                    className={classNames('test-symbol-link', styles.link)}
-                    activeClassName={styles.linkActive}
                     onClick={onHandleClick}
+                    className={({ isActive }) =>
+                        classNames('test-symbol-link', styles.link, isActive && styles.linkActive)
+                    }
                 >
                     <SymbolKind kind={node.kind} className="mr-1" symbolKindTags={symbolKindTags} />
                     <span className={styles.name} data-testid="symbol-name">

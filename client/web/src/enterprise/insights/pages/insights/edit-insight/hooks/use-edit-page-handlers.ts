@@ -1,6 +1,6 @@
 import { useContext } from 'react'
 
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 
 import { eventLogger } from '../../../../../../tracking/eventLogger'
 import { SubmissionErrors } from '../../../../components'

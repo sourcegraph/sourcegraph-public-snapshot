@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 
-import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate } from 'react-router-dom'
 import shallow from 'zustand/shallow'
 
 import { SearchBox } from '@sourcegraph/branded'

@@ -1,6 +1,6 @@
 import { FC, useMemo, Suspense } from 'react'
 
-import { useParams, useLocation, Routes, Route } from 'react-router-dom-v5-compat'
+import { useParams, useLocation, Routes, Route } from 'react-router-dom'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'

@@ -60,7 +60,6 @@ export const SiteAdminSidebar: React.FunctionComponent<React.PropsWithChildren<S
                                                 condition(props) && (
                                                     <SidebarNavItem
                                                         to={to}
-                                                        exact={true}
                                                         key={label}
                                                         source={source}
                                                         className={styles.navItem}

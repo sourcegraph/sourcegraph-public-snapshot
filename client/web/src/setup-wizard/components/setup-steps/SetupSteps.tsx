@@ -14,7 +14,7 @@ import {
 import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import { createPortal } from 'react-dom'
-import { useLocation, useNavigate, Routes, Route, Navigate, matchPath } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate, Routes, Route, Navigate, matchPath } from 'react-router-dom'
 
 import { Button, Icon } from '@sourcegraph/wildcard'
 

@@ -4,7 +4,7 @@ import { ApolloError } from '@apollo/client'
 import { mdiDelete, mdiGraveStone } from '@mdi/js'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
-import { useNavigate, useParams, useLocation } from 'react-router-dom-v5-compat'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { useLazyQuery } from '@sourcegraph/http-client'

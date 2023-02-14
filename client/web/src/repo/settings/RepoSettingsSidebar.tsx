@@ -44,7 +44,6 @@ export const RepoSettingsSidebar: React.FunctionComponent<React.PropsWithChildre
                                 condition({}) && (
                                     <SidebarNavItem
                                         to={`${repo.url}/-/settings${to}`}
-                                        exact={exact}
                                         key={label}
                                         onClick={() => setIsMobileExpanded(false)}
                                     >

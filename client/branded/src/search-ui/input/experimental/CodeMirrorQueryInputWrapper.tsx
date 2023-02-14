@@ -6,7 +6,7 @@ import { EditorView, keymap, drawSelection } from '@codemirror/view'
 import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 import inRange from 'lodash/inRange'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 import useResizeObserver from 'use-resize-observer'
 import * as uuid from 'uuid'
 

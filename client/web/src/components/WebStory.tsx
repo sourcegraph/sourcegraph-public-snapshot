@@ -1,7 +1,6 @@
 import { FC } from 'react'
 
-import { MemoryRouter, MemoryRouterProps } from 'react-router'
-import { Routes, Route, CompatRouter } from 'react-router-dom-v5-compat'
+import { MemoryRouter, MemoryRouterProps, Routes, Route } from 'react-router-dom'
 
 import { MockedStoryProvider, MockedStoryProviderProps } from '@sourcegraph/shared/src/stories'
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -52,20 +51,18 @@ export const WebStory: FC<WebStoryProps> = ({
         <MockedStoryProvider mocks={mocks} useStrictMocking={useStrictMocking}>
             <WildcardThemeContext.Provider value={{ isBranded: true }}>
                 <MemoryRouter {...memoryRouterProps}>
-                    <CompatRouter>
-                        <Routes>
-                            <Route
-                                path={path}
-                                element={
-                                    <Children
-                                        {...breadcrumbSetters}
-                                        isLightTheme={isLightTheme}
-                                        telemetryService={NOOP_TELEMETRY_SERVICE}
-                                    />
-                                }
-                            />
-                        </Routes>
-                    </CompatRouter>
+                    <Routes>
+                        <Route
+                            path={path}
+                            element={
+                                <Children
+                                    {...breadcrumbSetters}
+                                    isLightTheme={isLightTheme}
+                                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                                />
+                            }
+                        />
+                    </Routes>
                 </MemoryRouter>
             </WildcardThemeContext.Provider>
         </MockedStoryProvider>

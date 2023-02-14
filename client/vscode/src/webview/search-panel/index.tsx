@@ -5,8 +5,7 @@ import React, { useMemo } from 'react'
 import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'
 import * as Comlink from 'comlink'
 import { createRoot } from 'react-dom/client'
-import { MemoryRouter } from 'react-router'
-import { CompatRouter } from 'react-router-dom-v5-compat'
+import { MemoryRouter } from 'react-router-dom'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
@@ -117,9 +116,7 @@ root.render(
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
             {/* Required for shared components that depend on `location`. */}
             <MemoryRouter>
-                <CompatRouter>
-                    <Main />
-                </CompatRouter>
+                <Main />
             </MemoryRouter>
         </WildcardThemeContext.Provider>
     </ShortcutProvider>
