@@ -4,12 +4,42 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
+
+func MarshalAccessRequestID(id int32) graphql.ID { return relay.MarshalID("AccessRequest", id) }
+
+func UnmarshalAccessRequestID(id graphql.ID) (userID int32, err error) {
+	err = relay.UnmarshalSpec(id, &userID)
+	return
+}
+
+func (r *schemaResolver) RejectAccessRequest(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins can see users.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	id, err := UnmarshalAccessRequestID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+	accessRequest, err := r.db.AccessRequests().GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	accessRequest.Status = types.AccessRequestStatusRejected
+	if err := r.db.AccessRequests().Update(ctx, database.AccessRequestUpdate{ID: accessRequest.ID, Status: &accessRequest.Status}); err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
 
 func (r *schemaResolver) AccessRequests(ctx context.Context, args *database.AccessRequestsFilterOptions) (*accessRequestsResolver, error) {
 	// 🚨 SECURITY: Only site admins can see users.
@@ -55,7 +85,7 @@ type accessRequestResolver struct {
 	accessRequest *types.AccessRequest
 }
 
-func (s *accessRequestResolver) ID() graphql.ID { return MarshalUserID(s.accessRequest.ID) }
+func (s *accessRequestResolver) ID() graphql.ID { return MarshalAccessRequestID(s.accessRequest.ID) }
 
 func (s *accessRequestResolver) Name(ctx context.Context) string { return s.accessRequest.Name }
 

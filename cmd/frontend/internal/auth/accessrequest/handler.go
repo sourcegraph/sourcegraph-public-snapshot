@@ -54,13 +54,13 @@ func handleRequestAccess(logger log.Logger, db database.DB, w http.ResponseWrite
 	}
 
 	// Create the access_request.
-	newAccessRequestData := database.NewAccessRequest{
+	accessRequestCreateData := database.AccessRequestCreate{
 		Name:           data.Name,
 		Email:          data.Email,
 		AdditionalInfo: data.AdditionalInfo,
 	}
 
-	_, err := db.AccessRequests().Create(r.Context(), newAccessRequestData)
+	_, err := db.AccessRequests().Create(r.Context(), accessRequestCreateData)
 	if err != nil {
 		var (
 			message    string
@@ -95,10 +95,10 @@ func handleRequestAccess(logger log.Logger, db database.DB, w http.ResponseWrite
 	}
 
 	// TODO: add email verification depending on the conf.EmailVerificationRequired()
-	// if conf.EmailVerificationRequired() && !newAccessRequestData.EmailIsVerified {
-	// 	if err := backend.SendUserEmailVerificationEmail(r.Context(), accessRequest.Username, data.Email, newAccessRequestData.EmailVerificationCode); err != nil {
+	// if conf.EmailVerificationRequired() && !accessRequestCreateData.EmailIsVerified {
+	// 	if err := backend.SendUserEmailVerificationEmail(r.Context(), accessRequest.Username, data.Email, accessRequestCreateData.EmailVerificationCode); err != nil {
 	// 		logger.Error("failed to send email verification (continuing, user's email will be unverified)", log.String("email", data.Email), log.Error(err))
-	// 	} else if err = db.UserEmails().SetLastVerification(r.Context(), accessRequest.ID, data.Email, newAccessRequestData.EmailVerificationCode, time.Now()); err != nil {
+	// 	} else if err = db.UserEmails().SetLastVerification(r.Context(), accessRequest.ID, data.Email, accessRequestCreateData.EmailVerificationCode, time.Now()); err != nil {
 	// 		logger.Error("failed to set email last verification sent at (user's email is verified)", log.String("email", data.Email), log.Error(err))
 	// 	}
 	// }

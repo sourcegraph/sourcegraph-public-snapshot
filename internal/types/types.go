@@ -1862,8 +1862,8 @@ type TeamMember struct {
 type AccessRequestStatus string
 
 const (
-	AccessRequestStatusApproved AccessRequestStatus = "Approved"
-	AccessRequestStatusRejected AccessRequestStatus = "Rejected"
+	AccessRequestStatusApproved AccessRequestStatus = "APPROVED"
+	AccessRequestStatusRejected AccessRequestStatus = "REJECTED"
 )
 
 type AccessRequest struct {

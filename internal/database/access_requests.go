@@ -114,13 +114,13 @@ func toAccessRequestsField(orderBy string) (string, error) {
 type AccessRequestStore interface {
 	basestore.ShareableStore
 	Count(context.Context, AccessRequestsFilterOptions) (int, error)
-	Create(context.Context, NewAccessRequest) (*types.AccessRequest, error)
+	Create(context.Context, AccessRequestCreate) (*types.AccessRequest, error)
 	Delete(context.Context, int32) error
 	GetByID(context.Context, int32) (*types.AccessRequest, error)
 	GetByEmail(context.Context, string) (*types.AccessRequest, error)
 	HardDelete(context.Context, int32) error
 	List(context.Context, AccessRequestsFilterAndListOptions) (_ []*types.AccessRequest, err error)
-	Update(context.Context, int32, UserUpdate) error
+	Update(context.Context, AccessRequestUpdate) error
 }
 
 type accessRequestStore struct {
@@ -128,10 +128,15 @@ type accessRequestStore struct {
 	logger log.Logger
 }
 
-type NewAccessRequest struct {
+type AccessRequestCreate struct {
 	Name           string
 	Email          string
 	AdditionalInfo string
+}
+
+type AccessRequestUpdate struct {
+	ID     int32
+	Status *types.AccessRequestStatus
 }
 
 // AccessRequestsWith instantiates and returns a new accessRequestStore using the other store handle.
@@ -157,10 +162,10 @@ const (
 		`
 )
 
-func (s *accessRequestStore) Create(ctx context.Context, newAccessRequest NewAccessRequest) (*types.AccessRequest, error) {
+func (s *accessRequestStore) Create(ctx context.Context, accessRequestCreate AccessRequestCreate) (*types.AccessRequest, error) {
 	// We don't allow adding a new request_access with an email address that has already been
 	// verified by another user.
-	exists, _, err := basestore.ScanFirstBool(s.Query(ctx, sqlf.Sprintf("SELECT TRUE WHERE EXISTS (SELECT FROM user_emails WHERE email = %s AND verified_at IS NOT NULL)", newAccessRequest.Email)))
+	exists, _, err := basestore.ScanFirstBool(s.Query(ctx, sqlf.Sprintf("SELECT TRUE WHERE EXISTS (SELECT FROM user_emails WHERE email = %s AND verified_at IS NOT NULL)", accessRequestCreate.Email)))
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +174,7 @@ func (s *accessRequestStore) Create(ctx context.Context, newAccessRequest NewAcc
 	}
 
 	// We don't allow adding a new request_access with an email address that has already been used
-	exists, _, err = basestore.ScanFirstBool(s.Query(ctx, sqlf.Sprintf("SELECT TRUE WHERE EXISTS (SELECT FROM access_requests WHERE email = %s)", newAccessRequest.Email)))
+	exists, _, err = basestore.ScanFirstBool(s.Query(ctx, sqlf.Sprintf("SELECT TRUE WHERE EXISTS (SELECT FROM access_requests WHERE email = %s)", accessRequestCreate.Email)))
 	if err != nil {
 		return nil, err
 	}
@@ -180,9 +185,9 @@ func (s *accessRequestStore) Create(ctx context.Context, newAccessRequest NewAcc
 	// Continue with creating the new access request.
 	q := sqlf.Sprintf(
 		accessRequestInsertQuery,
-		newAccessRequest.Name,
-		newAccessRequest.Email,
-		newAccessRequest.AdditionalInfo,
+		accessRequestCreate.Name,
+		accessRequestCreate.Email,
+		accessRequestCreate.AdditionalInfo,
 	)
 	var data types.AccessRequest
 
@@ -199,7 +204,14 @@ func (s *accessRequestStore) Delete(ctx context.Context, id int32) error {
 }
 
 func (s *accessRequestStore) GetByID(ctx context.Context, id int32) (*types.AccessRequest, error) {
-	panic("implement me")
+	row := s.QueryRow(ctx, sqlf.Sprintf("SELECT id, created_at, updated_at, deleted_at, name, email, status, additional_info FROM access_requests WHERE id = %s", id))
+	var node types.AccessRequest
+
+	if err := row.Scan(&node.ID, &node.CreatedAt, &node.UpdatedAt, &node.DeletedAt, &node.Name, &node.Email, &node.Status, &node.AdditionalInfo); err != nil {
+		return nil, err
+	}
+
+	return &node, nil
 }
 
 func (s *accessRequestStore) GetByEmail(ctx context.Context, email string) (*types.AccessRequest, error) {
@@ -210,8 +222,20 @@ func (s *accessRequestStore) HardDelete(ctx context.Context, id int32) error {
 	panic("implement me")
 }
 
-func (s *accessRequestStore) Update(ctx context.Context, id int32, update UserUpdate) error {
-	panic("implement me")
+func (s *accessRequestStore) Update(ctx context.Context, update AccessRequestUpdate) error {
+	res, err := s.ExecResult(ctx, sqlf.Sprintf("UPDATE access_requests SET status = %s WHERE id = %s", update.Status, update.ID))
+	if err != nil {
+		return err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows != 1 {
+		return errors.Errorf("expected 1 row to be affected, got %d", rows)
+	}
+
+	return nil
 }
 
 func (s *accessRequestStore) Count(ctx context.Context, opt AccessRequestsFilterOptions) (int, error) {
@@ -229,7 +253,6 @@ func (s *accessRequestStore) List(ctx context.Context, opt AccessRequestsFilterA
 		return nil, err
 	}
 
-	fmt.Println(sqlf.Join(opt.sqlConditions(), ") AND ("))
 	query := sqlf.Sprintf(accessRequestListQuery, sqlf.Join(opt.sqlConditions(), ") AND ("), orderBy, opt.sqlLimit())
 
 	rows, err := s.Query(ctx, query)

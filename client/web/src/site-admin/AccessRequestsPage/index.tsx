@@ -1,17 +1,22 @@
-import React, { Fragment, useEffect } from 'react'
+import React, { Fragment, useEffect, useCallback } from 'react'
 
 import { mdiAccount, mdiPlus } from '@mdi/js'
 import { formatDistanceToNowStrict } from 'date-fns'
 
-import { useQuery } from '@sourcegraph/http-client'
+import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { H1, Card, Text, Icon, Button, Link, Grid } from '@sourcegraph/wildcard'
 
-import { PendingAccessRequestsListResult, PendingAccessRequestsListVariables } from '../../graphql-operations'
+import {
+    PendingAccessRequestsListResult,
+    PendingAccessRequestsListVariables,
+    RejectAccessRequestResult,
+    RejectAccessRequestVariables,
+} from '../../graphql-operations'
 import { useURLSyncedState } from '../../hooks'
 import { eventLogger } from '../../tracking/eventLogger'
 import { DropdownPagination } from '../components/DropdownPagination'
 
-import { PENDING_ACCESS_REQUESTS_LIST } from './queries'
+import { PENDING_ACCESS_REQUESTS_LIST, REJECT_ACCESS_REQUEST } from './queries'
 
 import styles from './index.module.scss'
 
@@ -30,7 +35,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
     const offset = Number(filters.offset)
     const limit = Number(filters.limit)
 
-    const { data } = useQuery<PendingAccessRequestsListResult, PendingAccessRequestsListVariables>(
+    const { data, refetch } = useQuery<PendingAccessRequestsListResult, PendingAccessRequestsListVariables>(
         PENDING_ACCESS_REQUESTS_LIST,
         {
             variables: {
@@ -38,6 +43,26 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                 offset,
             },
         }
+    )
+
+    const [rejectAccessRequest] = useMutation<RejectAccessRequestResult, RejectAccessRequestVariables>(
+        REJECT_ACCESS_REQUEST
+    )
+
+    const handleReject = useCallback(
+        (id: string) => {
+            if (confirm('Are you sure you want to delete the selected access request?')) {
+                rejectAccessRequest({
+                    variables: {
+                        id,
+                    },
+                })
+                    .then(() => refetch())
+                    // eslint-disable-next-line no-console
+                    .catch(error => console.error(error))
+            }
+        },
+        [refetch, rejectAccessRequest]
     )
 
     return (
@@ -75,7 +100,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                             {value}
                         </Text>
                     ))}
-                    {data?.accessRequests?.nodes.map(({ email, name, createdAt, additionalInfo }) => (
+                    {data?.accessRequests?.nodes.map(({ id, email, name, createdAt, additionalInfo }) => (
                         <Fragment key={email}>
                             <Text className="mb-0 d-flex align-items-center">{email}</Text>
                             <Text className="mb-0 d-flex align-items-center">{name}</Text>
@@ -89,7 +114,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                                 <Button variant="success" size="sm" className="mr-2">
                                     Approve
                                 </Button>
-                                <Button variant="danger" size="sm">
+                                <Button variant="danger" size="sm" onClick={() => handleReject(id)}>
                                     Reject
                                 </Button>
                             </div>

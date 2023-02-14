@@ -1812,102 +1812,6 @@ type Query {
         """
         after: String
     ): SlowRequestConnection!
-
-    """
-    List access requests.
-    """
-    accessRequests(status: AccessRequestStatus): AccessRequests!
-}
-
-enum AccessRequestOrderBy {
-    EMAIL
-    NAME
-    CREATED_AT
-}
-
-"""
-A list of access requests
-"""
-type AccessRequests {
-    """
-    Total count of access requests
-    """
-    totalCount: Int!
-
-    """
-    A list of access requests
-    """
-    nodes(
-        """
-        Returns the "limit" number access_requests from the list.
-        """
-        limit: Int
-        """
-        Skips initial "offset" number of access_requests.
-        """
-        offset: Int
-        """
-        Returns access_requests ordered by a given column.
-        """
-        orderBy: AccessRequestOrderBy
-        """
-        Returns ordered access_requests in descending order provided by orderBy field.
-        """
-        descending: Boolean
-    ): [AccessRequest!]!
-}
-
-"""
-Access request status enum
-"""
-enum AccessRequestStatus {
-    """
-    Access request is submitted and waiting for actions
-    """
-    PENDING
-    """
-    Access request was approved
-    """
-    APPROVED
-    """
-    Access request was rejected
-    """
-    REJECTED
-}
-
-"""
-Access request
-"""
-type AccessRequest implements Node {
-    """
-    The unique identifier of the secret.
-    """
-    id: ID!
-
-    """
-    Name of a person requested access
-    """
-    name: String!
-
-    """
-    Email of a person requested access
-    """
-    email: String!
-
-    """
-    The date and time when request access was created
-    """
-    createdAt: DateTime!
-
-    """
-    Additional information submitted by person requested access
-    """
-    additionalInfo: String
-
-    """
-    Access request status
-    """
-    status: AccessRequestStatus!
 }
 
 """
@@ -9457,4 +9361,110 @@ extend type Mutation {
     Later, we will expand this to allow Persons as well.
     """
     removeTeamMembers(team: ID, teamName: String, members: [ID!]!): Team!
+}
+
+
+enum AccessRequestOrderBy {
+    EMAIL
+    NAME
+    CREATED_AT
+}
+
+"""
+A list of access requests
+"""
+type AccessRequests {
+    """
+    Total count of access requests
+    """
+    totalCount: Int!
+
+    """
+    A list of access requests
+    """
+    nodes(
+        """
+        Returns the "limit" number access_requests from the list.
+        """
+        limit: Int
+        """
+        Skips initial "offset" number of access_requests.
+        """
+        offset: Int
+        """
+        Returns access_requests ordered by a given column.
+        """
+        orderBy: AccessRequestOrderBy
+        """
+        Returns ordered access_requests in descending order provided by orderBy field.
+        """
+        descending: Boolean
+    ): [AccessRequest!]!
+}
+
+"""
+Access request status enum
+"""
+enum AccessRequestStatus {
+    """
+    Access request is submitted and waiting for actions
+    """
+    PENDING
+    """
+    Access request was approved
+    """
+    APPROVED
+    """
+    Access request was rejected
+    """
+    REJECTED
+}
+
+"""
+Access request
+"""
+type AccessRequest implements Node {
+    """
+    The unique identifier of the secret.
+    """
+    id: ID!
+
+    """
+    Name of a person requested access
+    """
+    name: String!
+
+    """
+    Email of a person requested access
+    """
+    email: String!
+
+    """
+    The date and time when request access was created
+    """
+    createdAt: DateTime!
+
+    """
+    Additional information submitted by person requested access
+    """
+    additionalInfo: String
+
+    """
+    Access request status
+    """
+    status: AccessRequestStatus!
+}
+
+extend type Query {
+    """
+    List access requests.
+    """
+    accessRequests(status: AccessRequestStatus): AccessRequests!
+}
+
+extend type Mutation {
+    """
+    Marks access_request as "rejected"
+    """
+    rejectAccessRequest(id: ID!): EmptyResponse
 }
