@@ -15,10 +15,10 @@ type RepoEmbeddingRowMetadata struct {
 }
 
 type RepoEmbeddingIndex struct {
-	RepoName  api.RepoName                             `json:"repoName"`
-	Revision  api.CommitID                             `json:"revision"`
-	CodeIndex EmbeddingIndex[RepoEmbeddingRowMetadata] `json:"codeIndex"`
-	TextIndex EmbeddingIndex[RepoEmbeddingRowMetadata] `json:"textIndex"`
+	RepoName  api.RepoName                              `json:"repoName"`
+	Revision  api.CommitID                              `json:"revision"`
+	CodeIndex *EmbeddingIndex[RepoEmbeddingRowMetadata] `json:"codeIndex"`
+	TextIndex *EmbeddingIndex[RepoEmbeddingRowMetadata] `json:"textIndex"`
 }
 
 type EmbeddingSearchResults struct {
