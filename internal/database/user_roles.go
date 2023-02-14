@@ -309,21 +309,9 @@ func (r *userRoleStore) RevokeSystemRole(ctx context.Context, opts RevokeSystemR
 		sqlf.Sprintf("user_id = %s AND role_id = (%s)", opts.UserID, roleQuery),
 	)
 
-	result, err := r.ExecResult(ctx, q)
+	_, err := r.ExecResult(ctx, q)
 	if err != nil {
 		return errors.Wrap(err, "running delete query")
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return errors.Wrap(err, "checking deleted rows")
-	}
-
-	if rowsAffected == 0 {
-		return errors.Wrap(&UserRoleNotFoundErr{
-			UserID: opts.UserID,
-			Role:   opts.Role,
-		}, "failed to delete user role")
 	}
 
 	return nil
