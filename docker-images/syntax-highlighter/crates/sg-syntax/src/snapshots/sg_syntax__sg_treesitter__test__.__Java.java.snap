@@ -7,6 +7,14 @@ expression: "dump_document(&document, &contents)"
 //        ^^^^^^^^^ Identifier 
 //                  ^^^^^ Identifier 
   
+  import java.util.concurrent.atomic.AtomicInteger;
+//^^^^^^ IdentifierKeyword 
+//       ^^^^ Identifier 
+//            ^^^^ Identifier 
+//                 ^^^^^^^^^^ Identifier 
+//                            ^^^^^^ Identifier 
+//                                   ^^^^^^^^^^^^^ Identifier 
+  
   @SuppressWarnings("all")
 //^ IdentifierOperator 
 // ^^^^^^^^^^^^^^^^ IdentifierAttribute 
@@ -38,6 +46,11 @@ expression: "dump_document(&document, &contents)"
 //        ^^^ IdentifierBuiltin 
 //            ^ Identifier 
 //                ^^ NumericLiteral 
+          new AtomicInteger(x).incrementAndGet();
+//        ^^^ IdentifierKeyword 
+//            ^^^^^^^^^^^^^ IdentifierType 
+//                          ^ Identifier 
+//                             ^^^^^^^^^^^^^^^ IdentifierFunction 
           // local variable declaration
 //        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
           int localVar = 0;
@@ -281,7 +294,7 @@ expression: "dump_document(&document, &contents)"
           String textBlock = """
 //        ^^^^^^ IdentifierType 
 //               ^^^^^^^^^ Identifier 
-//                           ^^^ StringLiteral 80:27..83:15 
+//                           ^^^ StringLiteral 83:27..86:15 
               This is a text block
               It can contain multiple lines
               """;
@@ -292,6 +305,7 @@ expression: "dump_document(&document, &contents)"
 //                           ^^^^^^^^^ Identifier 
       }
       record InnerRecord(int innerField) {
+//    ^^^^^^ IdentifierKeyword 
 //           ^^^^^^^^^^^ Identifier 
 //                       ^^^ IdentifierBuiltin 
 //                           ^^^^^^^^^^ Identifier 
@@ -310,5 +324,126 @@ expression: "dump_document(&document, &contents)"
 //            ^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction 
           }
       }
+  
+      public static void recordPattern() {
+//    ^^^^^^ IdentifierKeyword 
+//           ^^^^^^ IdentifierKeyword 
+//                  ^^^^ IdentifierBuiltin 
+//                       ^^^^^^^^^^^^^ IdentifierFunction 
+          InnerRecord record = new InnerRecord();
+//        ^^^^^^^^^^^ IdentifierType 
+//                    ^^^^^^ Identifier 
+//                             ^^^ IdentifierKeyword 
+//                                 ^^^^^^^^^^^ IdentifierType 
+          if (record instanceof InnerRecord (int innerField )){
+//        ^^ IdentifierKeyword 
+//            ^^^^^^ Identifier 
+//                   ^^^^^^^^^^ IdentifierKeyword 
+//                              ^^^^^^^^^^^ IdentifierType 
+//                                           ^^^ IdentifierBuiltin 
+//                                               ^^^^^^^^^^ Identifier 
+              System.out.println(innerField);
+//            ^^^^^^ IdentifierType 
+//                   ^^^ Identifier 
+//                       ^^^^^^^ IdentifierFunction 
+//                               ^^^^^^^^^^ Identifier 
+          }
+      }
+  
+      enum Weekend {
+//    ^^^^ IdentifierKeyword 
+//         ^^^^^^^ IdentifierType 
+          SATURDAY, SUNDAY
+//        ^^^^^^^^ IdentifierConstant 
+//                  ^^^^^^ IdentifierConstant 
+      }
+  
+      interface Interface {
+//    ^^^^^^^^^ IdentifierKeyword 
+//              ^^^^^^^^^ IdentifierType 
+          void abstract_func(int x,int y);
+//        ^^^^ IdentifierBuiltin 
+//             ^^^^^^^^^^^^^ IdentifierFunction 
+//                           ^^^ IdentifierBuiltin 
+//                               ^ Identifier 
+//                                 ^^^ IdentifierBuiltin 
+//                                     ^ Identifier 
+          default void default_Fun() {
+//        ^^^^^^^ IdentifierKeyword 
+//                ^^^^ IdentifierBuiltin 
+//                     ^^^^^^^^^^^ IdentifierFunction 
+              System.out.println("This is default method");
+//            ^^^^^^ IdentifierType 
+//                   ^^^ Identifier 
+//                       ^^^^^^^ IdentifierFunction 
+//                               ^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+          }
+      }
+  
+  
+      public static void lambdaExpression() {
+//    ^^^^^^ IdentifierKeyword 
+//           ^^^^^^ IdentifierKeyword 
+//                  ^^^^ IdentifierBuiltin 
+//                       ^^^^^^^^^^^^^^^^ IdentifierFunction 
+          Interface fobj = (int x, int y)->System.out.println(x+y);
+//        ^^^^^^^^^ IdentifierType 
+//                  ^^^^ Identifier 
+//                          ^^^ IdentifierBuiltin 
+//                              ^ Identifier 
+//                                 ^^^ IdentifierBuiltin 
+//                                     ^ Identifier 
+//                                         ^^^^^^ IdentifierType 
+//                                                ^^^ Identifier 
+//                                                    ^^^^^^^ IdentifierFunction 
+//                                                            ^ Identifier 
+//                                                              ^ Identifier 
+          fobj.abstract_func(5,5);
+//        ^^^^ Identifier 
+//             ^^^^^^^^^^^^^ IdentifierFunction 
+//                           ^ NumericLiteral 
+//                             ^ NumericLiteral 
+          fobj.default_Fun();
+//        ^^^^ Identifier 
+//             ^^^^^^^^^^^ IdentifierFunction 
+      }
+  
+      // Static initializer
+//    ^^^^^^^^^^^^^^^^^^^^^ Comment 
+      static {
+//    ^^^^^^ IdentifierKeyword 
+          var path = Java.class.getResource("/foobar.so").getPath();
+//        ^^^ IdentifierType 
+//            ^^^^ Identifier 
+//                   ^^^^ IdentifierType 
+//                        ^^^^^ IdentifierKeyword 
+//                              ^^^^^^^^^^^ IdentifierFunction 
+//                                          ^^^^^^^^^^^^ StringLiteral 
+//                                                        ^^^^^^^ IdentifierFunction 
+          System.load(path);
+//        ^^^^^^ IdentifierType 
+//               ^^^^ IdentifierFunction 
+//                    ^^^^ Identifier 
+      }
+  
+      sealed public class SealedClass permits ImplementedSealedClass, ImplementedSealedClass2 {}
+//    ^^^^^^ IdentifierKeyword 
+//           ^^^^^^ IdentifierKeyword 
+//                  ^^^^^ IdentifierKeyword 
+//                        ^^^^^^^^^^^ IdentifierType 
+//                                            ^^^^^^^^^^^^^^^^^^^^^^ IdentifierType 
+//                                                                    ^^^^^^^^^^^^^^^^^^^^^^^ IdentifierType 
+      final class ImplementedSealedClass extends SealedClass {}
+//    ^^^^^ IdentifierKeyword 
+//          ^^^^^ IdentifierKeyword 
+//                ^^^^^^^^^^^^^^^^^^^^^^ IdentifierType 
+//                                       ^^^^^^^ IdentifierKeyword 
+//                                               ^^^^^^^^^^^ IdentifierType 
+      final class ImplementedSealedClass2 extends SealedClass {}
+//    ^^^^^ IdentifierKeyword 
+//          ^^^^^ IdentifierKeyword 
+//                ^^^^^^^^^^^^^^^^^^^^^^^ IdentifierType 
+//                                        ^^^^^^^ IdentifierKeyword 
+//                                                ^^^^^^^^^^^ IdentifierType 
   }
 

@@ -1,5 +1,7 @@
 package snapshots.files;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 @SuppressWarnings("all")
 public class Java {
     private int x; // field declaration
@@ -8,6 +10,7 @@ public class Java {
     }
     public static void methodWithManyFeatures() {
         int x = 53;
+        new AtomicInteger(x).incrementAndGet();
         // local variable declaration
         int localVar = 0;
         // conditional logic - if/else
@@ -91,4 +94,39 @@ public class Java {
             methodWithManyFeatures();
         }
     }
+
+    public static void recordPattern() {
+        InnerRecord record = new InnerRecord();
+        if (record instanceof InnerRecord (int innerField )){
+            System.out.println(innerField);
+        }
+    }
+
+    enum Weekend {
+        SATURDAY, SUNDAY
+    }
+
+    interface Interface {
+        void abstract_func(int x,int y);
+        default void default_Fun() {
+            System.out.println("This is default method");
+        }
+    }
+
+
+    public static void lambdaExpression() {
+        Interface fobj = (int x, int y)->System.out.println(x+y);
+        fobj.abstract_func(5,5);
+        fobj.default_Fun();
+    }
+
+    // Static initializer
+    static {
+        var path = Java.class.getResource("/foobar.so").getPath();
+        System.load(path);
+    }
+
+    sealed public class SealedClass permits ImplementedSealedClass, ImplementedSealedClass2 {}
+    final class ImplementedSealedClass extends SealedClass {}
+    final class ImplementedSealedClass2 extends SealedClass {}
 }

@@ -96,6 +96,7 @@
   "case"
   "catch"
   "class"
+  "record"
   "continue"
   "default"
   "do"
