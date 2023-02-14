@@ -61,9 +61,9 @@ func NewCrateSyncer(
 	}
 
 	job := crateSyncerJob{
-		// average file size is ~8500bytes, 5000 files gives us an average (uncompressed) archive size of
-		// about 42MB. This will require ~21 gitserver archive calls
-		archiveWindowSize: 2000,
+		// average file size is ~10022bytes, 5000 files gives us an average (uncompressed) archive size of
+		// about ~48MB. This will require ~21 gitserver archive calls
+		archiveWindowSize: 5000,
 		autoindexingSvc:   autoindexingSvc,
 		dependenciesSvc:   dependenciesSvc,
 		gitClient:         gitClient,
@@ -175,8 +175,7 @@ func (j *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 				continue
 			}
 
-			backing := make([]byte, header.Size)
-			buf := bytes.NewBuffer(backing[:0])
+			buf := bytes.NewBuffer(make([]byte, 0, header.Size))
 			if _, err := io.CopyN(buf, tr, header.Size); err != nil {
 				cratesReadErr = errors.Append(cratesReadErr, err)
 				break
@@ -255,10 +254,8 @@ func (j *crateSyncerJob) readIndexArchiveBatch(ctx context.Context, repoName api
 	// important to read this into memory asap
 	defer reader.Close()
 
-	// read into mem to avoid holding connection open
-	var backing [50 * 1024 * 1024]byte
-	buf := bytes.NewBuffer(backing[:0])
-
+	// read into mem to avoid holding connection open, with a 50MB buffer
+	buf := bytes.NewBuffer(make([]byte, 0, 50*1024*1024))
 	if _, err := io.Copy(buf, reader); err != nil {
 		return nil, errors.Wrap(err, "failed to read git archive")
 	}
