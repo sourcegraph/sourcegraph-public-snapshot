@@ -2134,8 +2134,6 @@ type SettingsExperimentalFeatures struct {
 	FuzzyFinderSymbols *bool `json:"fuzzyFinderSymbols,omitempty"`
 	// GoCodeCheckerTemplates description: Shows a panel with code insights templates for go code checker results.
 	GoCodeCheckerTemplates *bool `json:"goCodeCheckerTemplates,omitempty"`
-	// HomepageUserInvitation description: Shows a panel to invite collaborators to Sourcegraph on home page.
-	HomepageUserInvitation *bool `json:"homepageUserInvitation,omitempty"`
 	// PreloadGoToDefinition description: Preload definitions for available tokens in the visible viewport.
 	PreloadGoToDefinition bool `json:"preloadGoToDefinition,omitempty"`
 	// ProactiveSearchResultsAggregations description: Search results aggregations are triggered automatically with a search.
@@ -2217,7 +2215,6 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "fuzzyFinderRepositories")
 	delete(m, "fuzzyFinderSymbols")
 	delete(m, "goCodeCheckerTemplates")
-	delete(m, "homepageUserInvitation")
 	delete(m, "preloadGoToDefinition")
 	delete(m, "proactiveSearchResultsAggregations")
 	delete(m, "searchContextsQuery")

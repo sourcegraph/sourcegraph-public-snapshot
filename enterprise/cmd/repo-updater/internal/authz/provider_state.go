@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/syncjobs"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -53,4 +54,22 @@ func (ps providerStatesSet) SummaryField() log.Field {
 	return log.Object("providers",
 		log.Object("state.error", errored...),
 		log.Object("state.success", succeeded...))
+}
+
+// ToPermissionSyncCodeHostState converts slice of syncjobs.ProviderStatus to
+// slice of database.PermissionSyncCodeHostState.
+//
+// TODO(sashaostrikov): remove it when all syncjobs.ProviderStatus usages are
+// changed to database.PermissionSyncCodeHostState.
+func (ps providerStatesSet) ToPermissionSyncCodeHostState() []database.PermissionSyncCodeHostState {
+	states := make([]database.PermissionSyncCodeHostState, 0, len(ps))
+	for _, p := range ps {
+		states = append(states, database.PermissionSyncCodeHostState{
+			ProviderID:   p.ProviderID,
+			ProviderType: p.ProviderType,
+			Status:       p.Status,
+			Message:      p.Message,
+		})
+	}
+	return states
 }
