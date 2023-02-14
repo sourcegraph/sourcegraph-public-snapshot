@@ -19,6 +19,7 @@ export type FeatureFlagName =
     | 'accessible-file-tree'
     | 'accessible-file-tree-always-load-ancestors'
     | 'cody'
+    | 'async-code-host-delete'
 
 interface OrgFlagOverride {
     orgID: string

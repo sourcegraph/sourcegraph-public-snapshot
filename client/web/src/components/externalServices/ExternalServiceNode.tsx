@@ -9,6 +9,7 @@ import { Button, Link, LoadingSpinner, Icon, Tooltip, Text, ErrorAlert } from '@
 
 import { ListExternalServiceFields } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 
 import { deleteExternalService } from './backend'
 import { defaultExternalServices, EXTERNAL_SERVICE_SYNC_RUNNING_STATUSES } from './externalServices'
@@ -22,13 +23,14 @@ export interface ExternalServiceNodeProps {
 
 export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editingDisabled }) => {
     const [isDeleting, setIsDeleting] = useState<boolean | Error>(false)
+    const [isDeleteAsync] = useFeatureFlag('async-code-host-delete')
     const onDelete = useCallback<React.MouseEventHandler>(async () => {
         if (!window.confirm(`Delete the external service ${node.displayName}?`)) {
             return
         }
         setIsDeleting(true)
         try {
-            await deleteExternalService(node.id)
+            await deleteExternalService(node.id, isDeleteAsync)
             setIsDeleting(false)
             // eslint-disable-next-line rxjs/no-ignored-subscription
             refreshSiteFlags().subscribe()
@@ -37,7 +39,7 @@ export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editin
         } finally {
             window.location.reload()
         }
-    }, [node])
+    }, [node, isDeleteAsync])
 
     const IconComponent = defaultExternalServices[node.kind].icon
 

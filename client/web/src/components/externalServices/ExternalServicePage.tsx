@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo, FC } from 'react'
+import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiCog, mdiConnection, mdiDelete } from '@mdi/js'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -18,12 +18,13 @@ import { HeroPage } from '../HeroPage'
 import { LoaderButton } from '../LoaderButton'
 import { PageTitle } from '../PageTitle'
 
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import {
-    useSyncExternalService,
-    queryExternalServiceSyncJobs as _queryExternalServiceSyncJobs,
-    FETCH_EXTERNAL_SERVICE,
     deleteExternalService,
+    FETCH_EXTERNAL_SERVICE,
+    queryExternalServiceSyncJobs as _queryExternalServiceSyncJobs,
     useExternalServiceCheckConnectionByIdLazyQuery,
+    useSyncExternalService,
 } from './backend'
 import { ExternalServiceInformation } from './ExternalServiceInformation'
 import { resolveExternalServiceCategory } from './externalServices'
@@ -105,6 +106,7 @@ export const ExternalServicePage: FC<Props> = props => {
     const editingEnabled = allowEditExternalServicesWithFile || !externalServicesFromFile
 
     const [isDeleting, setIsDeleting] = useState<boolean | Error>(false)
+    const [isDeleteAsync] = useFeatureFlag('async-code-host-delete')
     const onDelete = useCallback<React.MouseEventHandler>(async () => {
         if (!externalService) {
             return
@@ -114,7 +116,7 @@ export const ExternalServicePage: FC<Props> = props => {
         }
         setIsDeleting(true)
         try {
-            await deleteExternalService(externalService.id)
+            await deleteExternalService(externalService.id, isDeleteAsync)
             setIsDeleting(false)
             // eslint-disable-next-line rxjs/no-ignored-subscription
             refreshSiteFlags().subscribe()
@@ -122,7 +124,7 @@ export const ExternalServicePage: FC<Props> = props => {
         } catch (error) {
             setIsDeleting(asError(error))
         }
-    }, [afterDeleteRoute, navigate, externalService])
+    }, [afterDeleteRoute, navigate, externalService, isDeleteAsync])
 
     // If external service is undefined, we won't use doCheckConnection anyway,
     // that's why it's safe to pass an empty ID to useExternalServiceCheckConnectionByIdLazyQuery
@@ -239,6 +241,7 @@ export const ExternalServicePage: FC<Props> = props => {
                                             disabled={isDeleting === true}
                                             variant="danger"
                                             size="sm"
+                                            data-testid={`code-host.${externalService.id}.delete`}
                                         >
                                             <Icon aria-hidden={true} svgPath={mdiDelete} />
                                             {' Delete'}
