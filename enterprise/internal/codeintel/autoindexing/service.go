@@ -177,7 +177,6 @@ func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int,
 		}
 	}
 	trace.AddEvent("found", attribute.String("commit", commit))
-	ETURNING SOMETHING N
 
 	indexJobs, err := s.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, bypassLimit)
 	if err != nil {
