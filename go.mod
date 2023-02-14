@@ -254,6 +254,14 @@ require (
 
 replace (
 	github.com/fergusstrange/embedded-postgres => github.com/sourcegraph/embedded-postgres v1.19.1-0.20230113234230-bb62ad58a1e1
+
+	// As of https://github.com/grpc-ecosystem/go-grpc-middleware/blob/7ac0846398432dee083fd8bc4ad7abacf8147ff2/providers/openmetrics/go.mod#L7,
+	// the latest release of the gRPC Prometheus middleware depends on a version of go-grpc-middleware that is two years old, and
+	// is incompatible with the latest gRPC releases.
+	//
+	// The parent project is currently working around this by using a local replace directive in their go.mod file (which ensures
+	// that they always use the current version of go-grpc-middleware that they're developing). Until this issue is fixed,
+	// we'll need to ensure that we explicitly depend on the latest version of go-grpc-middleware (v2.0.0-rc.3) as of this writing.
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 => github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.3
 )
 
