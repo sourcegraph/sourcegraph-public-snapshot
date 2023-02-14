@@ -82,7 +82,6 @@ export function useRepoFields<FormFields extends RepositoriesFields>(props: Inpu
         formApi,
         name: 'repositories',
         disabled: !isURLsListMode,
-        required: isRepoURLsListRequired,
         validators: {
             // Turn off any validations for the repositories' field in we are in all repos mode
             sync: isRepoURLsListRequired ? insightRepositoriesValidator : undefined,
