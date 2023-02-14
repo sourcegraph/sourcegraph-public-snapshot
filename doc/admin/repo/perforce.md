@@ -30,21 +30,27 @@ To enable Perforce code host connections, a site admin must:
 
 1. Configure which depots are mirrored/synchronized as Git repositories to Sourcegraph:
 
-    - [`depots`](perforce.md#depots)<br>A list of depot paths that can be either a depot root or an arbitrary subdirectory. **Note**: Only `"local"` type depots are supported.
+    - [`depots`](perforce.md#depots)
+      
+      A list of depot paths that can be either a depot root or an arbitrary subdirectory. **Note**: Only `"local"` type depots are supported.
+
     - [`p4.user`](perforce.md#p4-user)
-       
-       The user to be authenticated for `p4` CLI, and should be capable of performing:
-           - `p4 ping`,
-           - `p4 login`,
-           - `p4 trust`
-           - and any p4 commands involved with `git p4 clone` and `git p4 sync` for listed `depots`.
+      
+      The user to be authenticated for `p4` CLI, and should be capable of performing:
+      - `p4 ping`
+      - `p4 login`
+      - `p4 trust`
+      - and any p4 commands involved with `git p4 clone` and `git p4 sync` for listed `depots`.
            
-       If repository permissions are mirrored, the user needs additional ability to perform the
-           - `p4 protects`, 
-           - `p4 groups`, 
-           - `p4 group`, 
-           -`p4 users` commands (aka. "super" access level).
-    - [`p4.passwd`](perforce.md#p4-passwd)<br>The ticket value to be used for authenticating the `p4.user`. It is recommended to create tickets of users in a group that never expire. Use the command `p4 -u <p4.user> login -p -a` to obtain a ticket value.
+      If repository permissions are mirrored, the user needs additional ability (aka. "super" access level) to perform the commands
+      - `p4 protects`
+      - `p4 groups`
+      - `p4 group` 
+      - `p4 users`
+    - [`p4.passwd`](perforce.md#p4-passwd)
+      
+      The ticket value to be used for authenticating the `p4.user`. It is recommended to create tickets of users in a group that never expire. Use the command `p4 -u <p4.user> login -p -a` to obtain a ticket value.
+      
     - See the [configuration documentation below](#configuration) for other fields you can configure.
 
 1. Configure `fusionClient`:
@@ -59,9 +65,9 @@ To enable Perforce code host connections, a site admin must:
     }
     ```
 
-    > NOTE: While the `fusionClient` configuration is otional, without it the code host connection uses `git p4`, which has performance issues so we strongly recommend `p4-fusion`.
+    > NOTE: While the `fusionClient` configuration is optional, without it the code host connection uses `git p4`, which has performance issues so we strongly recommend `p4-fusion`.
 
-    Details of all `p4-fusion` configuration fields can be seen [here](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@2a716bd70c294acf1b3679b790834c4dea9ea956/-/blob/schema/perforce.schema.json?L84).
+    Details of all `p4-fusion` configuration fields can be seen [here](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@2a716bd70c294acf1b3679b790834c4dea9ea956/-/blob/schema/perforce.schema.json?L84-147).
 
 1. Click **Add repositories**.
 
@@ -75,7 +81,7 @@ It's worthwhile to note some limitations of this process:
 
 ## Repository permissions
 
-To enforce repository-level permissions for Perforce depots using [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html), include [the `authorization` field](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@2a716bd70c294acf1b3679b790834c4dea9ea956/-/blob/schema/perforce.schema.json?L67) in the configuration of the Perforce code host connection you created [above](#add-a-perforce-code-host):
+To enforce repository-level permissions for Perforce depots using [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html), include [the `authorization` field](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@2a716bd70c294acf1b3679b790834c4dea9ea956/-/blob/schema/perforce.schema.json?L67-78) in the configuration of the Perforce code host connection you created [above](#add-a-perforce-code-host):
 
 ```json
 {
@@ -122,7 +128,7 @@ Since that would override the permissions for the `//depot/Talkhouse/rel1.0/back
 
 #### Wildcards
 
-In the default configuration Sourcegraph provides limited support for `*` and `...` paths ("wildcards") in [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html). For example, the following can be supported using [the workaround described in repository permissions](#repository-permissions):
+In the default configuration Sourcegraph provides limited support for `*` and `...` paths ("wildcards") in [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html). For example, the following can be supported using [the workaround described in repository permissions](#syncing-subdirectories-to-match-permission-boundaries):
 
 ```sh
 write user alice * //TestDepot/...
@@ -138,7 +144,7 @@ File-level permissions make the [syncing of subdirectories to match permission b
 
 To enable file-level permissions:
 
-1. Enable [the feature in the site config](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@2a716bd/-/blob/schema/site.schema.json?L227&subtree=true?L227):
+1. Enable [the feature in the site config](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@2a716bd/-/blob/schema/site.schema.json?L227-249):
 
     ```json
     {
@@ -164,6 +170,7 @@ To enable file-level permissions:
 1. Save the configuration. Permissions will be synced in the background based on your [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html).
 
 ### Notes about permissions
+
 - Sourcegraph users are mapped to Perforce users based on their verified e-mail addresses.
 - As long as a user has been granted at least `Read` permissions in Perforce they will be able to view content in Sourcegraph.
 - As a special case, commits in which a user does not have permissions to read any files are hidden. If a user can read a subset of files in a commit, only those files are shown.
@@ -171,7 +178,7 @@ To enable file-level permissions:
 
 ## Configuration
 
-<div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/perforce.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/perforce) to see rendered content.</div>
+<div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/perforce.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/perforce.schema.json) to see rendered content.</div>
 
 ## Known issues and limitations
 
