@@ -18,8 +18,8 @@ type OwnerType string
 
 const (
 	OwnerTypePerson  OwnerType = "person"
-	OwnerTypeTeam              = "team"
-	OwnerTypeUnknown           = "unknown"
+	OwnerTypeTeam    OwnerType = "team"
+	OwnerTypeUnknown OwnerType = "unknownOwner"
 )
 
 type Person struct {
