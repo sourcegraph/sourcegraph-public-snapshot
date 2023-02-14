@@ -903,6 +903,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
 
             const releaseBranch = `${upcoming.major}.${upcoming.minor}`
             const version = upcoming.version
+            ensureReleaseBranchUpToDate(releaseBranch)
 
             const prConfig = {
                 edits: [
