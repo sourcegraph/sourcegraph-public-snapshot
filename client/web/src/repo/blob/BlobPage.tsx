@@ -51,7 +51,6 @@ import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
 import { OpenInEditorActionItem } from '../../open-in-editor/OpenInEditorActionItem'
 import { SearchStreamingProps } from '../../search'
 import { useNotepad, useExperimentalFeatures } from '../../stores'
-import { globalHistory } from '../../util/globalHistory'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
 import { serviceKindDisplayNameAndIcon } from '../actions/GoToCodeHostAction'
@@ -69,7 +68,7 @@ import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
 import { fetchBlob, fetchStencil } from './backend'
 import { BlobLoadingSpinner } from './BlobLoadingSpinner'
-import { Blob as CodeMirrorBlob, type BlobInfo } from './CodeMirrorBlob'
+import { CodeMirrorBlob, type BlobInfo } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
 import { LegacyBlob } from './LegacyBlob'
 import { BlobPanel } from './panel/BlobPanel'
@@ -124,7 +123,7 @@ export const BlobPage: FC<BlobPageProps> = ({ className, ...props }) => {
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
     let renderMode = getModeFromURL(location)
     const { repoID, repoName, revision, commitID, filePath, isLightTheme, useBreadcrumb, mode } = props
-    const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
+    const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? true)
     const experimentalCodeNavigation = useExperimentalFeatures(features => features.codeNavigation)
     const enableLazyBlobSyntaxHighlighting = useExperimentalFeatures(
         features => features.enableLazyBlobSyntaxHighlighting ?? false
@@ -567,9 +566,6 @@ export const BlobPage: FC<BlobPageProps> = ({ className, ...props }) => {
                     }}
                 >
                     <BlobComponent
-                        navigate={navigate}
-                        location={location}
-                        history={globalHistory}
                         data-testid="repo-blob"
                         className={classNames(styles.blob, styles.border)}
                         blobInfo={{ ...blobInfoOrError, commitID, stencil }}

@@ -17,7 +17,6 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/go-ctags"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -522,14 +521,7 @@ func (c *Client) dialGRPC(ctx context.Context, repository api.RepoName) (*grpc.C
 		return nil, errors.Wrap(err, "parsing symbols service URL")
 	}
 
-	opts := []grpc.DialOption{
-		// 🚨 SECURITY: We use insecure connections to the symbols service. During the
-		// grpc prototyping phase - we're leaving TLS authentication out of scope.
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	}
-
-	opts = append(opts, defaults.DialOptions()...)
-	conn, err := grpc.DialContext(ctx, u.Host, opts...)
+	conn, err := grpc.DialContext(ctx, u.Host, defaults.DialOptions()...)
 	if err != nil {
 		return nil, errors.Wrap(err, "dialing symbols GRPC service")
 	}

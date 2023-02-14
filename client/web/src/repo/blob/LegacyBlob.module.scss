@@ -107,6 +107,6 @@
     background-color: var(--body-bg);
 }
 
-:global(.cm-editor:not(:focus-within) .focus-visible) {
+:global(.cm-editor:not(:focus-within) :focus-visible) {
     box-shadow: none;
 }

@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
-import { RouteComponentProps, useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom-v5-compat'
 
 import { pluralize } from '@sourcegraph/common'
 import { useMutation } from '@sourcegraph/http-client'
@@ -126,7 +126,7 @@ const UserNode: React.FunctionComponent<UserNodeProps> = ({
     )
 }
 
-interface Props extends OrgAreaRouteContext, RouteComponentProps<{}> {}
+interface Props extends OrgAreaRouteContext {}
 
 /**
  * The organizations members page
@@ -135,13 +135,12 @@ export const OrgSettingsMembersPage: React.FunctionComponent<Props> = ({
     org,
     authenticatedUser,
     onOrganizationUpdate,
-    location,
 }) => {
     React.useEffect(() => {
         eventLogger.logViewEvent('OrgMembers')
     }, [])
 
-    const history = useHistory()
+    const navigate = useNavigate()
     const [onlyMemberRemovalAttempted, setOnlyMemberRemovalAttempted] = React.useState(false)
     const [searchQuery, setSearchQuery] = React.useState<string>('')
     const debouncedSearchQuery = useDebounce<string>(searchQuery, 300)
@@ -191,12 +190,12 @@ export const OrgSettingsMembersPage: React.FunctionComponent<Props> = ({
     const onDidUpdate = React.useCallback(
         (didRemoveSelf: boolean) => {
             if (didRemoveSelf) {
-                history.push('/user/settings')
+                navigate('/user/settings')
             } else {
                 refetch()
             }
         },
-        [refetch, history]
+        [refetch, navigate]
     )
 
     const totalCount = connection?.totalCount || 0

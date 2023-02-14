@@ -1,6 +1,6 @@
 import { Extension, StateEffect, StateField } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import * as H from 'history'
+import { createPath } from 'react-router-dom-v5-compat'
 
 import { TextDocumentPositionParameters } from '@sourcegraph/client-api'
 import { Location } from '@sourcegraph/extension-api-types'
@@ -156,9 +156,9 @@ async function goToDefinition(
                     atTheDefinition: true,
                     handler: position => {
                         showTemporaryTooltip(view, 'You are at the definition', position, 2000, { arrow: true })
-                        const history = view.state.facet(blobPropsFacet).history
+                        const { navigate } = view.state.facet(blobPropsFacet)
                         if (refPanelURL) {
-                            history.replace(refPanelURL)
+                            navigate(refPanelURL, { replace: true })
                         }
                     },
                     locations: definition,
@@ -183,16 +183,19 @@ async function goToDefinition(
                         // "go to definition" twice in a row from the same location.
                         previousURL?: string
                     }
-                    const history = view.state.facet(blobPropsFacet).history as H.History<DefinitionState>
+
+                    const { location, navigate } = view.state.facet(blobPropsFacet)
+                    const locationState = location.state as DefinitionState
+
                     const hrefFrom = locationToURL(locationFrom)
                     // Don't push URLs into the history if the last goto-def
                     // action was from the same URL same as this action. This
                     // happens when the user repeatedly triggers goto-def, which
                     // is easy to do when the definition URL is close to
                     // where the action got triggered.
-                    const shouldPushHistory = history.location.state?.previousURL !== hrefFrom
-                    if (hrefFrom && shouldPushHistory && history.createHref(history.location) !== hrefFrom) {
-                        history.push(hrefFrom)
+                    const shouldPushHistory = locationState?.previousURL !== hrefFrom
+                    if (hrefFrom && shouldPushHistory && createPath(location) !== hrefFrom) {
+                        navigate(hrefFrom)
                     }
                     if (uri === params.textDocument.uri) {
                         const definitionOccurrence = occurrenceAtPosition(
@@ -204,7 +207,7 @@ async function goToDefinition(
                         }
                     }
                     if (shouldPushHistory) {
-                        history.push(hrefTo, { previousURL: hrefFrom })
+                        navigate(hrefTo, { state: { previousURL: hrefFrom } })
                     }
                 },
             }
@@ -220,8 +223,7 @@ async function goToDefinition(
         url: refPanelURL,
         handler: () => {
             if (refPanelURL) {
-                const history = view.state.facet(blobPropsFacet).history
-                history.push(refPanelURL)
+                view.state.facet(blobPropsFacet).navigate(refPanelURL)
             } else {
                 // Should not happen but we handle this case because
                 // `locationToURL` potentially returns undefined.

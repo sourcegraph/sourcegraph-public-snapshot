@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react'
 
 import { ApolloError, WatchQueryFetchPolicy } from '@apollo/client'
-import { useHistory, useLocation } from 'react-router'
+import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
 
 import { GraphQLResult, useQuery } from '@sourcegraph/http-client'
 
@@ -205,7 +205,7 @@ const useSyncPaginationArgsWithUrl = (
     setPaginationArgs: (args: PaginatedConnectionQueryArguments) => void
 ] => {
     const location = useLocation()
-    const history = useHistory()
+    const navigate = useNavigate()
 
     const initialPaginationArgs = useMemo(() => {
         if (enabled) {
@@ -221,10 +221,10 @@ const useSyncPaginationArgsWithUrl = (
         (paginationArgs: PaginatedConnectionQueryArguments): void => {
             if (enabled) {
                 const search = getSearchFromPaginationArgs(paginationArgs)
-                history.replace({ search })
+                navigate({ search }, { replace: true })
             }
         },
-        [enabled, history]
+        [enabled, navigate]
     )
     return [initialPaginationArgs, setPaginationArgs]
 }

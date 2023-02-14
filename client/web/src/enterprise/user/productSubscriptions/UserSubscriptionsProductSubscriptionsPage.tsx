@@ -1,6 +1,5 @@
 import React, { useEffect, useCallback } from 'react'
 
-import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -25,7 +24,7 @@ import {
     ProductSubscriptionNodeProps,
 } from '../../dotcom/productSubscriptions/ProductSubscriptionNode'
 
-interface Props extends RouteComponentProps<{}> {
+interface Props {
     user: UserAreaUserFields
 }
 

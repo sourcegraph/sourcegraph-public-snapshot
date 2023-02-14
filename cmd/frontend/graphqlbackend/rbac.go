@@ -20,18 +20,29 @@ type RoleResolver interface {
 type PermissionResolver interface {
 	ID() graphql.ID
 	Namespace() string
+	DisplayName() string
 	Action() string
 	CreatedAt() gqlutil.DateTime
 }
 
 type RBACResolver interface {
 	// MUTATIONS
+	DeleteRole(ctx context.Context, args *DeleteRoleArgs) (*EmptyResponse, error)
+	CreateRole(ctx context.Context, args *CreateRoleArgs) (RoleResolver, error)
 
 	// QUERIES
 	Roles(ctx context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error)
 	Permissions(ctx context.Context, args *ListPermissionArgs) (*graphqlutil.ConnectionResolver[PermissionResolver], error)
 
 	NodeResolvers() map[string]NodeByIDFunc
+}
+
+type DeleteRoleArgs struct {
+	Role graphql.ID
+}
+
+type CreateRoleArgs struct {
+	Name string
 }
 
 type ListRoleArgs struct {

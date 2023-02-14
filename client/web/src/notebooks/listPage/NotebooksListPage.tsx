@@ -2,8 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiBookOutline } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
-import { Redirect, useHistory, useLocation } from 'react-router'
+import { Location, Navigate, useNavigate, useLocation, NavigateFunction } from 'react-router-dom-v5-compat'
 import { Observable } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
 
@@ -44,11 +43,11 @@ function getSelectedTabFromLocation(locationSearch: string, authenticatedUser: A
     return authenticatedUser ? 'notebooks' : 'getting-started'
 }
 
-function setSelectedLocationTab(location: H.Location, history: H.History, selectedTab: NotebooksTab): void {
+function setSelectedLocationTab(location: Location, navigate: NavigateFunction, selectedTab: NotebooksTab): void {
     const urlParameters = new URLSearchParams(location.search)
     urlParameters.set('tab', selectedTab)
     if (location.search !== urlParameters.toString()) {
-        history.replace({ ...location, search: urlParameters.toString() })
+        navigate({ ...location, search: urlParameters.toString() }, { replace: true })
     }
 }
 
@@ -71,7 +70,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
     }, [telemetryService])
 
     const [importState, setImportState] = useState<typeof LOADING | ErrorLike | undefined>()
-    const history = useHistory()
+    const navigate = useNavigate()
     const location = useLocation()
 
     const [selectedTab, setSelectedTab] = useState<NotebooksTab>(
@@ -90,10 +89,10 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
     const onSelectTab = useCallback(
         (tab: NotebooksTab, logName: string) => {
             setSelectedTab(tab)
-            setSelectedLocationTab(location, history, tab)
+            setSelectedLocationTab(location, navigate, tab)
             telemetryService.log(logName)
         },
-        [history, location, setSelectedTab, telemetryService]
+        [navigate, location, setSelectedTab, telemetryService]
     )
 
     const orderOptions: FilteredConnectionFilter[] = [
@@ -235,7 +234,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
 
     if (importedNotebookOrError && importedNotebookOrError !== LOADING) {
         telemetryService.log('SearchNotebookImportedFromMarkdown')
-        return <Redirect to={EnterprisePageRoutes.Notebook.replace(':id', importedNotebookOrError.id)} />
+        return <Navigate to={EnterprisePageRoutes.Notebook.replace(':id', importedNotebookOrError.id)} replace={true} />
     }
 
     return (
