@@ -307,7 +307,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 					Name:        fmt.Sprintf("%s_p99_response_time_per_method_per_instance", opts.ServiceName),
 					Description: "99th percentile response time per method over 1m (per instance)",
 					Query:       fmt.Sprintf("histogram_quantile(0.99, sum by (le, name, grpc_method, instance)(rate(%s[1m])))", metric("grpc_server_handling_seconds_bucket", methodLabelFilter, instanceLabelFilter)),
-					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
+					Panel: monitoring.Panel().LegendFormat("{{instance}} {{grpc_method}}").
 						Unit(monitoring.Seconds).
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
