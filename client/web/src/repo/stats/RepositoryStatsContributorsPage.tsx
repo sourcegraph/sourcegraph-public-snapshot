@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
-import { RouteComponentProps } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { numberWithCommas, pluralize } from '@sourcegraph/common'
@@ -193,7 +193,7 @@ const BATCH_COUNT = 20
 
 const equalOrEmpty = (a: string | undefined, b: string | undefined): boolean => a === b || (!a && !b)
 
-interface Props extends RepositoryStatsAreaPageProps, RouteComponentProps<{}> {
+interface Props extends RepositoryStatsAreaPageProps {
     globbing: boolean
 }
 
@@ -215,12 +215,9 @@ const getUrlQuery = (spec: Partial<QuerySpec>): string => {
 }
 
 /** A page that shows a repository's contributors. */
-export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = ({
-    location,
-    history,
-    repo,
-    globbing,
-}) => {
+export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = ({ repo, globbing }) => {
+    const location = useLocation()
+    const navigate = useNavigate()
     const queryParameters = new URLSearchParams(location.search)
     const spec: QuerySpec = {
         revisionRange: queryParameters.get('revisionRange') ?? '',
@@ -293,7 +290,7 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
     // Update the URL to reflect buffer state
     const onSubmit: React.FormEventHandler<HTMLFormElement> = event => {
         event.preventDefault()
-        history.push({
+        navigate({
             search: getUrlQuery({ revisionRange, after, path }),
         })
     }
@@ -308,7 +305,7 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
 
     // Push new query param to history, state change will follow via `useEffect` on `location.search`
     const updateAfter = (after: string | undefined): void => {
-        history.push({ search: getUrlQuery({ ...spec, after }) })
+        navigate({ search: getUrlQuery({ ...spec, after }) })
     }
 
     // Whether the user has entered new option values that differ from what's in the URL query and has not yet

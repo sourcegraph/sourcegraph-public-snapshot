@@ -79,8 +79,9 @@ func EnterpriseInit(
 
 	repoWorkerStore := authz.MakeStore(observationCtx, db.Handle(), authz.SyncTypeRepo)
 	userWorkerStore := authz.MakeStore(observationCtx, db.Handle(), authz.SyncTypeUser)
-	repoSyncWorker := authz.MakeWorker(ctx, observationCtx, repoWorkerStore, permsSyncer, authz.SyncTypeRepo)
-	userSyncWorker := authz.MakeWorker(ctx, observationCtx, userWorkerStore, permsSyncer, authz.SyncTypeUser)
+	permissionSyncJobStore := ossDB.PermissionSyncJobsWith(observationCtx.Logger, db)
+	repoSyncWorker := authz.MakeWorker(ctx, observationCtx, repoWorkerStore, permsSyncer, authz.SyncTypeRepo, permissionSyncJobStore)
+	userSyncWorker := authz.MakeWorker(ctx, observationCtx, userWorkerStore, permsSyncer, authz.SyncTypeUser, permissionSyncJobStore)
 	// Type of store (repo/user) for resetter doesn't matter, because it has its
 	// separate name for logging and metrics.
 	resetter := authz.MakeResetter(observationCtx, repoWorkerStore)

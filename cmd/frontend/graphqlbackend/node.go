@@ -338,3 +338,13 @@ func (r *NodeResolver) ToTeam() (*teamResolver, bool) {
 	n, ok := r.Node.(*teamResolver)
 	return n, ok
 }
+
+func (r *NodeResolver) ToRole() (RoleResolver, bool) {
+	n, ok := r.Node.(RoleResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToPermission() (PermissionResolver, bool) {
+	n, ok := r.Node.(PermissionResolver)
+	return n, ok
+}

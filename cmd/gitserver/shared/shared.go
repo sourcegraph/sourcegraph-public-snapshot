@@ -19,6 +19,8 @@ import (
 	"github.com/tidwall/gjson"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -38,7 +40,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/rubygems"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/proto"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
@@ -136,11 +141,17 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
 			return getVCSSyncer(ctx, externalServiceStore, repoStore, dependenciesSvc, repo, config.ReposDir)
 		},
-		Hostname:                hostname.Get(),
+		Hostname:                externalAddress(),
 		DB:                      db,
 		CloneQueue:              server.NewCloneQueue(list.New()),
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(batchLogGlobalConcurrencyLimit)),
 	}
+
+	grpcServer := grpc.NewServer(defaults.ServerOptions(logger)...)
+	grpcServer.RegisterService(&proto.GitserverService_ServiceDesc, &server.GRPCServer{
+		Server: &gitserver,
+	})
+	reflection.Register(grpcServer)
 
 	gitserver.RegisterMetrics(observationCtx, db)
 
@@ -159,6 +170,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	handler = requestclient.HTTPMiddleware(handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
+	handler = internalgrpc.MultiplexHandlers(grpcServer, handler)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -178,15 +190,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	gitserver.StartClonePipeline(ctx)
 
-	addr := os.Getenv("GITSERVER_ADDR")
-	if addr == "" {
-		port := "3178"
-		host := ""
-		if env.InsecureDev {
-			host = "127.0.0.1"
-		}
-		addr = net.JoinHostPort(host, port)
-	}
+	addr := getAddr()
 	srv := &http.Server{
 		Addr:    addr,
 		Handler: handler,
@@ -570,4 +574,33 @@ func syncRateLimiters(ctx context.Context, logger log.Logger, store database.Ext
 		case <-ticker.C:
 		}
 	}
+}
+
+// externalAddress calculates the name of this gitserver as it would appear in
+// SRC_GIT_SERVERS.
+//
+// Note: we can't just rely on the listen address since more than likely
+// gitserver is behind a k8s service.
+func externalAddress() string {
+	// First we check for it being explicitly set. This should only be
+	// happening in environments were we run gitserver on localhost.
+	if addr := os.Getenv("GITSERVER_EXTERNAL_ADDR"); addr != "" {
+		return addr
+	}
+	// Otherwise we assume we can reach gitserver via its hostname / its
+	// hostname is a prefix of the reachable address (see hostnameMatch).
+	return hostname.Get()
+}
+
+func getAddr() string {
+	addr := os.Getenv("GITSERVER_ADDR")
+	if addr == "" {
+		port := "3178"
+		host := ""
+		if env.InsecureDev {
+			host = "127.0.0.1"
+		}
+		addr = net.JoinHostPort(host, port)
+	}
+	return addr
 }

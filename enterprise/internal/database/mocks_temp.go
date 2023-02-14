@@ -6862,6 +6862,9 @@ type MockEnterpriseDB struct {
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *EnterpriseDBHandleFunc
+	// NamespacePermissionsFunc is an instance of a mock function object
+	// controlling the behavior of the method NamespacePermissions.
+	NamespacePermissionsFunc *EnterpriseDBNamespacePermissionsFunc
 	// NamespacesFunc is an instance of a mock function object controlling
 	// the behavior of the method Namespaces.
 	NamespacesFunc *EnterpriseDBNamespacesFunc
@@ -6901,6 +6904,9 @@ type MockEnterpriseDB struct {
 	// QueryRowContextFunc is an instance of a mock function object
 	// controlling the behavior of the method QueryRowContext.
 	QueryRowContextFunc *EnterpriseDBQueryRowContextFunc
+	// RedisKeyValueFunc is an instance of a mock function object
+	// controlling the behavior of the method RedisKeyValue.
+	RedisKeyValueFunc *EnterpriseDBRedisKeyValueFunc
 	// RepoKVPsFunc is an instance of a mock function object controlling the
 	// behavior of the method RepoKVPs.
 	RepoKVPsFunc *EnterpriseDBRepoKVPsFunc
@@ -7050,6 +7056,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 				return
 			},
 		},
+		NamespacePermissionsFunc: &EnterpriseDBNamespacePermissionsFunc{
+			defaultHook: func() (r0 database.NamespacePermissionStore) {
+				return
+			},
+		},
 		NamespacesFunc: &EnterpriseDBNamespacesFunc{
 			defaultHook: func() (r0 database.NamespaceStore) {
 				return
@@ -7112,6 +7123,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		QueryRowContextFunc: &EnterpriseDBQueryRowContextFunc{
 			defaultHook: func(context.Context, string, ...interface{}) (r0 *sql.Row) {
+				return
+			},
+		},
+		RedisKeyValueFunc: &EnterpriseDBRedisKeyValueFunc{
+			defaultHook: func() (r0 database.RedisKeyValueStore) {
 				return
 			},
 		},
@@ -7307,6 +7323,11 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.Handle")
 			},
 		},
+		NamespacePermissionsFunc: &EnterpriseDBNamespacePermissionsFunc{
+			defaultHook: func() database.NamespacePermissionStore {
+				panic("unexpected invocation of MockEnterpriseDB.NamespacePermissions")
+			},
+		},
 		NamespacesFunc: &EnterpriseDBNamespacesFunc{
 			defaultHook: func() database.NamespaceStore {
 				panic("unexpected invocation of MockEnterpriseDB.Namespaces")
@@ -7370,6 +7391,11 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 		QueryRowContextFunc: &EnterpriseDBQueryRowContextFunc{
 			defaultHook: func(context.Context, string, ...interface{}) *sql.Row {
 				panic("unexpected invocation of MockEnterpriseDB.QueryRowContext")
+			},
+		},
+		RedisKeyValueFunc: &EnterpriseDBRedisKeyValueFunc{
+			defaultHook: func() database.RedisKeyValueStore {
+				panic("unexpected invocation of MockEnterpriseDB.RedisKeyValue")
 			},
 		},
 		RepoKVPsFunc: &EnterpriseDBRepoKVPsFunc{
@@ -7533,6 +7559,9 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		HandleFunc: &EnterpriseDBHandleFunc{
 			defaultHook: i.Handle,
 		},
+		NamespacePermissionsFunc: &EnterpriseDBNamespacePermissionsFunc{
+			defaultHook: i.NamespacePermissions,
+		},
 		NamespacesFunc: &EnterpriseDBNamespacesFunc{
 			defaultHook: i.Namespaces,
 		},
@@ -7571,6 +7600,9 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		},
 		QueryRowContextFunc: &EnterpriseDBQueryRowContextFunc{
 			defaultHook: i.QueryRowContext,
+		},
+		RedisKeyValueFunc: &EnterpriseDBRedisKeyValueFunc{
+			defaultHook: i.RedisKeyValue,
 		},
 		RepoKVPsFunc: &EnterpriseDBRepoKVPsFunc{
 			defaultHook: i.RepoKVPs,
@@ -9254,6 +9286,108 @@ func (c EnterpriseDBHandleFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// EnterpriseDBNamespacePermissionsFunc describes the behavior when the
+// NamespacePermissions method of the parent MockEnterpriseDB instance is
+// invoked.
+type EnterpriseDBNamespacePermissionsFunc struct {
+	defaultHook func() database.NamespacePermissionStore
+	hooks       []func() database.NamespacePermissionStore
+	history     []EnterpriseDBNamespacePermissionsFuncCall
+	mutex       sync.Mutex
+}
+
+// NamespacePermissions delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) NamespacePermissions() database.NamespacePermissionStore {
+	r0 := m.NamespacePermissionsFunc.nextHook()()
+	m.NamespacePermissionsFunc.appendCall(EnterpriseDBNamespacePermissionsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the NamespacePermissions
+// method of the parent MockEnterpriseDB instance is invoked and the hook
+// queue is empty.
+func (f *EnterpriseDBNamespacePermissionsFunc) SetDefaultHook(hook func() database.NamespacePermissionStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// NamespacePermissions method of the parent MockEnterpriseDB instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *EnterpriseDBNamespacePermissionsFunc) PushHook(hook func() database.NamespacePermissionStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBNamespacePermissionsFunc) SetDefaultReturn(r0 database.NamespacePermissionStore) {
+	f.SetDefaultHook(func() database.NamespacePermissionStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBNamespacePermissionsFunc) PushReturn(r0 database.NamespacePermissionStore) {
+	f.PushHook(func() database.NamespacePermissionStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBNamespacePermissionsFunc) nextHook() func() database.NamespacePermissionStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBNamespacePermissionsFunc) appendCall(r0 EnterpriseDBNamespacePermissionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBNamespacePermissionsFuncCall
+// objects describing the invocations of this function.
+func (f *EnterpriseDBNamespacePermissionsFunc) History() []EnterpriseDBNamespacePermissionsFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBNamespacePermissionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBNamespacePermissionsFuncCall is an object that describes an
+// invocation of method NamespacePermissions on an instance of
+// MockEnterpriseDB.
+type EnterpriseDBNamespacePermissionsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.NamespacePermissionStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBNamespacePermissionsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBNamespacePermissionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // EnterpriseDBNamespacesFunc describes the behavior when the Namespaces
 // method of the parent MockEnterpriseDB instance is invoked.
 type EnterpriseDBNamespacesFunc struct {
@@ -10590,6 +10724,105 @@ func (c EnterpriseDBQueryRowContextFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBQueryRowContextFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBRedisKeyValueFunc describes the behavior when the
+// RedisKeyValue method of the parent MockEnterpriseDB instance is invoked.
+type EnterpriseDBRedisKeyValueFunc struct {
+	defaultHook func() database.RedisKeyValueStore
+	hooks       []func() database.RedisKeyValueStore
+	history     []EnterpriseDBRedisKeyValueFuncCall
+	mutex       sync.Mutex
+}
+
+// RedisKeyValue delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) RedisKeyValue() database.RedisKeyValueStore {
+	r0 := m.RedisKeyValueFunc.nextHook()()
+	m.RedisKeyValueFunc.appendCall(EnterpriseDBRedisKeyValueFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RedisKeyValue method
+// of the parent MockEnterpriseDB instance is invoked and the hook queue is
+// empty.
+func (f *EnterpriseDBRedisKeyValueFunc) SetDefaultHook(hook func() database.RedisKeyValueStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RedisKeyValue method of the parent MockEnterpriseDB instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *EnterpriseDBRedisKeyValueFunc) PushHook(hook func() database.RedisKeyValueStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBRedisKeyValueFunc) SetDefaultReturn(r0 database.RedisKeyValueStore) {
+	f.SetDefaultHook(func() database.RedisKeyValueStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBRedisKeyValueFunc) PushReturn(r0 database.RedisKeyValueStore) {
+	f.PushHook(func() database.RedisKeyValueStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBRedisKeyValueFunc) nextHook() func() database.RedisKeyValueStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBRedisKeyValueFunc) appendCall(r0 EnterpriseDBRedisKeyValueFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBRedisKeyValueFuncCall objects
+// describing the invocations of this function.
+func (f *EnterpriseDBRedisKeyValueFunc) History() []EnterpriseDBRedisKeyValueFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBRedisKeyValueFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBRedisKeyValueFuncCall is an object that describes an
+// invocation of method RedisKeyValue on an instance of MockEnterpriseDB.
+type EnterpriseDBRedisKeyValueFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.RedisKeyValueStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBRedisKeyValueFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBRedisKeyValueFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -12865,7 +13098,7 @@ func NewMockPermsStore() *MockPermsStore {
 			},
 		},
 		SetRepoPermissionsFunc: &PermsStoreSetRepoPermissionsFunc{
-			defaultHook: func(context.Context, *authz.RepoPermissions) (r0 error) {
+			defaultHook: func(context.Context, *authz.RepoPermissions) (r0 *database.SetPermissionsResult, r1 error) {
 				return
 			},
 		},
@@ -12875,7 +13108,7 @@ func NewMockPermsStore() *MockPermsStore {
 			},
 		},
 		SetUserPermissionsFunc: &PermsStoreSetUserPermissionsFunc{
-			defaultHook: func(context.Context, *authz.UserPermissions) (r0 error) {
+			defaultHook: func(context.Context, *authz.UserPermissions) (r0 *database.SetPermissionsResult, r1 error) {
 				return
 			},
 		},
@@ -12997,7 +13230,7 @@ func NewStrictMockPermsStore() *MockPermsStore {
 			},
 		},
 		SetRepoPermissionsFunc: &PermsStoreSetRepoPermissionsFunc{
-			defaultHook: func(context.Context, *authz.RepoPermissions) error {
+			defaultHook: func(context.Context, *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
 				panic("unexpected invocation of MockPermsStore.SetRepoPermissions")
 			},
 		},
@@ -13007,7 +13240,7 @@ func NewStrictMockPermsStore() *MockPermsStore {
 			},
 		},
 		SetUserPermissionsFunc: &PermsStoreSetUserPermissionsFunc{
-			defaultHook: func(context.Context, *authz.UserPermissions) error {
+			defaultHook: func(context.Context, *authz.UserPermissions) (*database.SetPermissionsResult, error) {
 				panic("unexpected invocation of MockPermsStore.SetUserPermissions")
 			},
 		},
@@ -14871,24 +15104,24 @@ func (c PermsStoreSetRepoPendingPermissionsFuncCall) Results() []interface{} {
 // SetRepoPermissions method of the parent MockPermsStore instance is
 // invoked.
 type PermsStoreSetRepoPermissionsFunc struct {
-	defaultHook func(context.Context, *authz.RepoPermissions) error
-	hooks       []func(context.Context, *authz.RepoPermissions) error
+	defaultHook func(context.Context, *authz.RepoPermissions) (*database.SetPermissionsResult, error)
+	hooks       []func(context.Context, *authz.RepoPermissions) (*database.SetPermissionsResult, error)
 	history     []PermsStoreSetRepoPermissionsFuncCall
 	mutex       sync.Mutex
 }
 
 // SetRepoPermissions delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockPermsStore) SetRepoPermissions(v0 context.Context, v1 *authz.RepoPermissions) error {
-	r0 := m.SetRepoPermissionsFunc.nextHook()(v0, v1)
-	m.SetRepoPermissionsFunc.appendCall(PermsStoreSetRepoPermissionsFuncCall{v0, v1, r0})
-	return r0
+func (m *MockPermsStore) SetRepoPermissions(v0 context.Context, v1 *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
+	r0, r1 := m.SetRepoPermissionsFunc.nextHook()(v0, v1)
+	m.SetRepoPermissionsFunc.appendCall(PermsStoreSetRepoPermissionsFuncCall{v0, v1, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the SetRepoPermissions
 // method of the parent MockPermsStore instance is invoked and the hook
 // queue is empty.
-func (f *PermsStoreSetRepoPermissionsFunc) SetDefaultHook(hook func(context.Context, *authz.RepoPermissions) error) {
+func (f *PermsStoreSetRepoPermissionsFunc) SetDefaultHook(hook func(context.Context, *authz.RepoPermissions) (*database.SetPermissionsResult, error)) {
 	f.defaultHook = hook
 }
 
@@ -14896,7 +15129,7 @@ func (f *PermsStoreSetRepoPermissionsFunc) SetDefaultHook(hook func(context.Cont
 // SetRepoPermissions method of the parent MockPermsStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *PermsStoreSetRepoPermissionsFunc) PushHook(hook func(context.Context, *authz.RepoPermissions) error) {
+func (f *PermsStoreSetRepoPermissionsFunc) PushHook(hook func(context.Context, *authz.RepoPermissions) (*database.SetPermissionsResult, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -14904,20 +15137,20 @@ func (f *PermsStoreSetRepoPermissionsFunc) PushHook(hook func(context.Context, *
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *PermsStoreSetRepoPermissionsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, *authz.RepoPermissions) error {
-		return r0
+func (f *PermsStoreSetRepoPermissionsFunc) SetDefaultReturn(r0 *database.SetPermissionsResult, r1 error) {
+	f.SetDefaultHook(func(context.Context, *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *PermsStoreSetRepoPermissionsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, *authz.RepoPermissions) error {
-		return r0
+func (f *PermsStoreSetRepoPermissionsFunc) PushReturn(r0 *database.SetPermissionsResult, r1 error) {
+	f.PushHook(func(context.Context, *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
+		return r0, r1
 	})
 }
 
-func (f *PermsStoreSetRepoPermissionsFunc) nextHook() func(context.Context, *authz.RepoPermissions) error {
+func (f *PermsStoreSetRepoPermissionsFunc) nextHook() func(context.Context, *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -14958,7 +15191,10 @@ type PermsStoreSetRepoPermissionsFuncCall struct {
 	Arg1 *authz.RepoPermissions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 error
+	Result0 *database.SetPermissionsResult
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -14970,7 +15206,7 @@ func (c PermsStoreSetRepoPermissionsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c PermsStoreSetRepoPermissionsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // PermsStoreSetRepoPermissionsUnrestrictedFunc describes the behavior when
@@ -15089,24 +15325,24 @@ func (c PermsStoreSetRepoPermissionsUnrestrictedFuncCall) Results() []interface{
 // SetUserPermissions method of the parent MockPermsStore instance is
 // invoked.
 type PermsStoreSetUserPermissionsFunc struct {
-	defaultHook func(context.Context, *authz.UserPermissions) error
-	hooks       []func(context.Context, *authz.UserPermissions) error
+	defaultHook func(context.Context, *authz.UserPermissions) (*database.SetPermissionsResult, error)
+	hooks       []func(context.Context, *authz.UserPermissions) (*database.SetPermissionsResult, error)
 	history     []PermsStoreSetUserPermissionsFuncCall
 	mutex       sync.Mutex
 }
 
 // SetUserPermissions delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockPermsStore) SetUserPermissions(v0 context.Context, v1 *authz.UserPermissions) error {
-	r0 := m.SetUserPermissionsFunc.nextHook()(v0, v1)
-	m.SetUserPermissionsFunc.appendCall(PermsStoreSetUserPermissionsFuncCall{v0, v1, r0})
-	return r0
+func (m *MockPermsStore) SetUserPermissions(v0 context.Context, v1 *authz.UserPermissions) (*database.SetPermissionsResult, error) {
+	r0, r1 := m.SetUserPermissionsFunc.nextHook()(v0, v1)
+	m.SetUserPermissionsFunc.appendCall(PermsStoreSetUserPermissionsFuncCall{v0, v1, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the SetUserPermissions
 // method of the parent MockPermsStore instance is invoked and the hook
 // queue is empty.
-func (f *PermsStoreSetUserPermissionsFunc) SetDefaultHook(hook func(context.Context, *authz.UserPermissions) error) {
+func (f *PermsStoreSetUserPermissionsFunc) SetDefaultHook(hook func(context.Context, *authz.UserPermissions) (*database.SetPermissionsResult, error)) {
 	f.defaultHook = hook
 }
 
@@ -15114,7 +15350,7 @@ func (f *PermsStoreSetUserPermissionsFunc) SetDefaultHook(hook func(context.Cont
 // SetUserPermissions method of the parent MockPermsStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *PermsStoreSetUserPermissionsFunc) PushHook(hook func(context.Context, *authz.UserPermissions) error) {
+func (f *PermsStoreSetUserPermissionsFunc) PushHook(hook func(context.Context, *authz.UserPermissions) (*database.SetPermissionsResult, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -15122,20 +15358,20 @@ func (f *PermsStoreSetUserPermissionsFunc) PushHook(hook func(context.Context, *
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *PermsStoreSetUserPermissionsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, *authz.UserPermissions) error {
-		return r0
+func (f *PermsStoreSetUserPermissionsFunc) SetDefaultReturn(r0 *database.SetPermissionsResult, r1 error) {
+	f.SetDefaultHook(func(context.Context, *authz.UserPermissions) (*database.SetPermissionsResult, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *PermsStoreSetUserPermissionsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, *authz.UserPermissions) error {
-		return r0
+func (f *PermsStoreSetUserPermissionsFunc) PushReturn(r0 *database.SetPermissionsResult, r1 error) {
+	f.PushHook(func(context.Context, *authz.UserPermissions) (*database.SetPermissionsResult, error) {
+		return r0, r1
 	})
 }
 
-func (f *PermsStoreSetUserPermissionsFunc) nextHook() func(context.Context, *authz.UserPermissions) error {
+func (f *PermsStoreSetUserPermissionsFunc) nextHook() func(context.Context, *authz.UserPermissions) (*database.SetPermissionsResult, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -15176,7 +15412,10 @@ type PermsStoreSetUserPermissionsFuncCall struct {
 	Arg1 *authz.UserPermissions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 error
+	Result0 *database.SetPermissionsResult
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -15188,7 +15427,7 @@ func (c PermsStoreSetUserPermissionsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c PermsStoreSetUserPermissionsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // PermsStoreTouchRepoPermissionsFunc describes the behavior when the

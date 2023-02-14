@@ -85,7 +85,7 @@ export interface RepoHeaderContribution {
      * Render function called with RepoHeaderContext.
      * Use `actionType` to determine how to render the component.
      */
-    children: (context: RepoHeaderContext) => React.ReactElement
+    children: (context: RepoHeaderContext) => JSX.Element | null
 }
 
 /**
@@ -204,7 +204,6 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                 {/* Breadcrumb for the nav elements */}
                 <Breadcrumbs
                     breadcrumbs={props.breadcrumbs}
-                    location={location}
                     className={classNames('justify-content-start', !props.forceWrap ? styles.breadcrumbWrap : '')}
                 />
             </div>

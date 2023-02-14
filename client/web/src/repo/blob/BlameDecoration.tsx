@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo } from 'react'
 
 import classNames from 'classnames'
-import { History } from 'history'
 import { truncate } from 'lodash'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
+import { NavigateFunction } from 'react-router-dom-v5-compat'
 import { BehaviorSubject } from 'rxjs'
 
 import {
@@ -109,17 +109,29 @@ const usePopover = ({
     return { isOpen, open, close, openWithTimeout, closeWithTimeout }
 }
 
-export const BlameDecoration: React.FunctionComponent<{
+interface BlameDecorationProps {
     line: number // 1-based line number
     blameHunk?: BlameHunk
     firstCommitDate?: BlameHunkData['firstCommitDate']
     externalURLs?: BlameHunkData['externalURLs']
-    history: History
+    navigate: NavigateFunction
     onSelect?: (line: number) => void
     onDeselect?: (line: number) => void
     isLightTheme: boolean
     hideRecency: boolean
-}> = ({ line, blameHunk, history, onSelect, onDeselect, firstCommitDate, externalURLs, isLightTheme, hideRecency }) => {
+}
+
+export const BlameDecoration: React.FunctionComponent<BlameDecorationProps> = ({
+    line,
+    blameHunk,
+    onSelect,
+    onDeselect,
+    firstCommitDate,
+    externalURLs,
+    isLightTheme,
+    hideRecency,
+    navigate,
+}) => {
     const hunkStartLine = blameHunk?.startLine ?? line
     const id = hunkStartLine?.toString() || ''
     const onOpen = useCallback(() => {
@@ -140,7 +152,7 @@ export const BlameDecoration: React.FunctionComponent<{
     )
 
     // Prevent hitting the backend (full page reloads) for links that stay inside the app.
-    const handleParentCommitLinkClick = useMemo(() => createLinkClickHandler(history), [history])
+    const handleParentCommitLinkClick = useMemo(() => createLinkClickHandler(navigate), [navigate])
 
     const recencyColor = useBlameRecencyColor(blameHunk?.displayInfo.commitDate, firstCommitDate, isLightTheme)
 

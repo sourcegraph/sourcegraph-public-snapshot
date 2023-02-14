@@ -30,7 +30,7 @@ export function useSearchInsightInitialValues(): UseInitialValuesResult {
     // render creation UI form.
     // eslint-disable-next-line no-restricted-syntax
     const [localStorageFormValues, setLocalStorageFormValues] = useLocalStorage<CreateInsightFormFields | undefined>(
-        'insights.search-insight-creation-ui',
+        'insights.search-insight-creation-ui-v2',
         undefined
     )
 

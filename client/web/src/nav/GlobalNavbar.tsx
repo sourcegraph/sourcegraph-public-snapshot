@@ -287,7 +287,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                     {props.authenticatedUser && isSourcegraphDotCom && (
                         <ButtonLink
-                            className={styles.signUp}
+                            variant="secondary"
+                            outline={true}
                             to={buildCloudTrialURL(props.authenticatedUser)}
                             size="sm"
                             onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NavBarLoggedIn' })}
@@ -329,8 +330,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                         Sign in
                                     </Button>
                                     <ButtonLink
-                                        className={styles.signUp}
                                         to={buildGetStartedURL(isSourcegraphDotCom, props.authenticatedUser)}
+                                        variant="primary"
                                         size="sm"
                                         onClick={() => eventLogger.log('ClickedOnTopNavTrialButton')}
                                     >

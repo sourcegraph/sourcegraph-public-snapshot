@@ -46,6 +46,7 @@ const (
 	routeRepoCompare             = "repo-compare"
 	routeRepoStats               = "repo-stats"
 	routeInsights                = "insights"
+	routeSetup                   = "setup"
 	routeBatchChanges            = "batch-changes"
 	routeWelcome                 = "welcome"
 	routeCodeMonitoring          = "code-monitoring"
@@ -145,6 +146,7 @@ func newRouter() *mux.Router {
 	r.Path("/unlock-account/{token}").Methods("GET").Name(uirouter.RouteUnlockAccount)
 	r.Path("/welcome").Methods("GET").Name(routeWelcome)
 	r.PathPrefix("/insights").Methods("GET").Name(routeInsights)
+	r.PathPrefix("/setup").Methods("GET").Name(routeSetup)
 	r.PathPrefix("/batch-changes").Methods("GET").Name(routeBatchChanges)
 	r.PathPrefix("/code-monitoring").Methods("GET").Name(routeCodeMonitoring)
 	r.PathPrefix("/contexts").Methods("GET").Name(routeContexts)
@@ -241,6 +243,7 @@ func initRouter(db database.DB, router *mux.Router) {
 	router.Get(routeHome).Handler(handler(db, serveHome(db)))
 	router.Get(routeThreads).Handler(brandedNoIndex("Threads"))
 	router.Get(routeInsights).Handler(brandedIndex("Insights"))
+	router.Get(routeSetup).Handler(brandedIndex("Setup"))
 	router.Get(routeBatchChanges).Handler(brandedIndex("Batch Changes"))
 	router.Get(routeCodeMonitoring).Handler(brandedIndex("Code Monitoring"))
 	router.Get(routeContexts).Handler(brandedNoIndex("Search Contexts"))

@@ -1,8 +1,7 @@
 import React, { Suspense, useCallback, useRef, useState } from 'react'
 
 import classNames from 'classnames'
-import { matchPath } from 'react-router'
-import { useLocation, Route, Routes, Navigate } from 'react-router-dom-v5-compat'
+import { matchPath, useLocation, Route, Routes, Navigate } from 'react-router-dom-v5-compat'
 import { Observable } from 'rxjs'
 
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
@@ -37,12 +36,12 @@ import { GlobalAlerts } from './global/GlobalAlerts'
 import { useHandleSubmitFeedback } from './hooks'
 import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
-import type { BlockInput, NotebookProps } from './notebooks'
+import type { NotebookProps } from './notebooks'
 import { OrgAreaRoute } from './org/area/OrgArea'
 import type { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import type { OrgSettingsAreaRoute } from './org/settings/OrgSettingsArea'
 import type { OrgSettingsSidebarItems } from './org/settings/OrgSettingsSidebar'
-import type { RepoContainerRoute, RepoSettingsContainerRoute } from './repo/RepoContainer'
+import type { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import type { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import type { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
@@ -51,8 +50,10 @@ import type { LayoutRouteComponentProps, LayoutRouteProps } from './routes'
 import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
 import { parseSearchURLQuery, SearchAggregationProps, SearchStreamingProps } from './search'
 import { NotepadContainer } from './search/Notepad'
+import { SetupWizard } from './setup-wizard'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
+import { useExperimentalFeatures } from './stores'
 import { useTheme, useThemeProps } from './theme'
 import type { UserAreaRoute } from './user/area/UserArea'
 import type { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
@@ -87,7 +88,6 @@ export interface LayoutProps
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
     orgAreaRoutes: readonly OrgAreaRoute[]
     repoContainerRoutes: readonly RepoContainerRoute[]
-    repoSettingsContainerRoutes: readonly RepoSettingsContainerRoute[]
     repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -104,7 +104,6 @@ export interface LayoutProps
 
     // Search
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-    onCreateNotebookFromNotepad: (blocks: BlockInput[]) => void
 
     globbing: boolean
     isSourcegraphDotCom: boolean
@@ -122,8 +121,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     // TODO: Replace with useMatches once top-level <Router/> is V6
     const routeMatch = props.routes.find(
         route =>
-            matchPath(location.pathname, { path: route.path, exact: true }) ||
-            matchPath(location.pathname, { path: route.path.replace(/\/\*$/, ''), exact: true })
+            matchPath(route.path, location.pathname) || matchPath(route.path.replace(/\/\*$/, ''), location.pathname)
     )?.path
 
     const isSearchRelatedPage = (routeMatch === PageRoutes.RepoContainer || routeMatch?.startsWith('/search')) ?? false
@@ -132,6 +130,9 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     const isSearchNotebooksPage = routeMatch?.startsWith(EnterprisePageRoutes.Notebooks)
     const isSearchNotebookListPage = location.pathname === EnterprisePageRoutes.Notebooks
     const isRepositoryRelatedPage = routeMatch === PageRoutes.RepoContainer ?? false
+
+    const { setupWizard } = useExperimentalFeatures()
+    const isSetupWizardPage = setupWizard && location.pathname.startsWith(PageRoutes.SetupWizard)
 
     // enable fuzzy finder by default unless it's explicitly disabled in settings
     const fuzzyFinder = getExperimentalFeatures(props.settingsCascade.final).fuzzyFinder ?? true
@@ -193,6 +194,10 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         ...breadcrumbProps,
         isMacPlatform: isMacPlatform(),
     } satisfies Omit<LayoutRouteComponentProps, 'location' | 'history' | 'match' | 'staticContext'>
+
+    if (isSetupWizardPage) {
+        return <SetupWizard />
+    }
 
     return (
         <div
@@ -297,7 +302,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 platformContext={props.platformContext}
             />
             {(isSearchNotebookListPage || (isSearchRelatedPage && !isSearchHomepage)) && (
-                <NotepadContainer onCreateNotebook={props.onCreateNotebookFromNotepad} />
+                <NotepadContainer userId={props.authenticatedUser?.id} />
             )}
             {fuzzyFinder && (
                 <LazyFuzzyFinder

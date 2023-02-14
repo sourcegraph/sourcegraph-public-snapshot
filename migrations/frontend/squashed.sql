@@ -293,6 +293,17 @@ BEGIN
 END;
 $$;
 
+CREATE FUNCTION func_lsif_dependency_repos_backfill() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+    BEGIN
+        INSERT INTO package_repo_versions (package_id, version)
+        VALUES (NEW.id, NEW.version);
+
+        RETURN NULL;
+    END;
+$$;
+
 CREATE FUNCTION func_lsif_uploads_delete() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -1139,6 +1150,7 @@ CREATE TABLE changesets (
     cancel boolean DEFAULT false NOT NULL,
     detached_at timestamp with time zone,
     computed_state text NOT NULL,
+    external_fork_name citext,
     CONSTRAINT changesets_batch_change_ids_check CHECK ((jsonb_typeof(batch_change_ids) = 'object'::text)),
     CONSTRAINT changesets_external_id_check CHECK ((external_id <> ''::text)),
     CONSTRAINT changesets_external_service_type_not_blank CHECK ((external_service_type <> ''::text)),
@@ -3285,6 +3297,21 @@ CREATE VIEW outbound_webhooks_with_event_types AS
           WHERE (outbound_webhook_event_types.outbound_webhook_id = outbound_webhooks.id))) AS event_types
    FROM outbound_webhooks;
 
+CREATE TABLE package_repo_versions (
+    id bigint NOT NULL,
+    package_id bigint NOT NULL,
+    version text NOT NULL
+);
+
+CREATE SEQUENCE package_repo_versions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE package_repo_versions_id_seq OWNED BY package_repo_versions.id;
+
 CREATE TABLE permission_sync_jobs (
     id integer NOT NULL,
     state text DEFAULT 'queued'::text,
@@ -3307,6 +3334,10 @@ CREATE TABLE permission_sync_jobs (
     invalidate_caches boolean DEFAULT false NOT NULL,
     cancellation_reason text,
     no_perms boolean DEFAULT false NOT NULL,
+    permissions_added integer DEFAULT 0 NOT NULL,
+    permissions_removed integer DEFAULT 0 NOT NULL,
+    permissions_found integer DEFAULT 0 NOT NULL,
+    code_host_states json[],
     CONSTRAINT permission_sync_jobs_for_repo_or_user CHECK (((user_id IS NULL) <> (repository_id IS NULL)))
 );
 
@@ -3458,6 +3489,7 @@ CREATE VIEW reconciler_changesets AS
     c.worker_hostname,
     c.ui_publication_state,
     c.last_heartbeat_at,
+    c.external_fork_name,
     c.external_fork_namespace,
     c.detached_at
    FROM (changesets c
@@ -3467,6 +3499,12 @@ CREATE VIEW reconciler_changesets AS
              LEFT JOIN users namespace_user ON ((batch_changes.namespace_user_id = namespace_user.id)))
              LEFT JOIN orgs namespace_org ON ((batch_changes.namespace_org_id = namespace_org.id)))
           WHERE ((c.batch_change_ids ? (batch_changes.id)::text) AND (namespace_user.deleted_at IS NULL) AND (namespace_org.deleted_at IS NULL)))));
+
+CREATE TABLE redis_key_value (
+    namespace text NOT NULL,
+    key text NOT NULL,
+    value bytea NOT NULL
+);
 
 CREATE TABLE registry_extension_releases (
     id bigint NOT NULL,
@@ -3579,7 +3617,6 @@ CREATE TABLE roles (
     id integer NOT NULL,
     name text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    deleted_at timestamp with time zone,
     system boolean DEFAULT false NOT NULL,
     CONSTRAINT name_not_blank CHECK ((name <> ''::text))
 );
@@ -3932,6 +3969,26 @@ CREATE TABLE user_public_repos (
     repo_id integer NOT NULL
 );
 
+CREATE TABLE user_repo_permissions (
+    id integer NOT NULL,
+    user_id integer,
+    repo_id integer NOT NULL,
+    user_external_account_id integer,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    source text DEFAULT 'sync'::text NOT NULL
+);
+
+CREATE SEQUENCE user_repo_permissions_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE user_repo_permissions_id_seq OWNED BY user_repo_permissions.id;
+
 CREATE TABLE user_roles (
     user_id integer NOT NULL,
     role_id integer NOT NULL,
@@ -4152,6 +4209,8 @@ ALTER TABLE ONLY outbound_webhook_logs ALTER COLUMN id SET DEFAULT nextval('outb
 
 ALTER TABLE ONLY outbound_webhooks ALTER COLUMN id SET DEFAULT nextval('outbound_webhooks_id_seq'::regclass);
 
+ALTER TABLE ONLY package_repo_versions ALTER COLUMN id SET DEFAULT nextval('package_repo_versions_id_seq'::regclass);
+
 ALTER TABLE ONLY permission_sync_jobs ALTER COLUMN id SET DEFAULT nextval('permission_sync_jobs_id_seq'::regclass);
 
 ALTER TABLE ONLY permissions ALTER COLUMN id SET DEFAULT nextval('permissions_id_seq'::regclass);
@@ -4185,6 +4244,8 @@ ALTER TABLE ONLY user_credentials ALTER COLUMN id SET DEFAULT nextval('user_cred
 ALTER TABLE ONLY user_external_accounts ALTER COLUMN id SET DEFAULT nextval('user_external_accounts_id_seq'::regclass);
 
 ALTER TABLE ONLY user_pending_permissions ALTER COLUMN id SET DEFAULT nextval('user_pending_permissions_id_seq'::regclass);
+
+ALTER TABLE ONLY user_repo_permissions ALTER COLUMN id SET DEFAULT nextval('user_repo_permissions_id_seq'::regclass);
 
 ALTER TABLE ONLY users ALTER COLUMN id SET DEFAULT nextval('users_id_seq'::regclass);
 
@@ -4477,6 +4538,9 @@ ALTER TABLE ONLY outbound_webhook_logs
 ALTER TABLE ONLY outbound_webhooks
     ADD CONSTRAINT outbound_webhooks_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY package_repo_versions
+    ADD CONSTRAINT package_repo_versions_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY permission_sync_jobs
     ADD CONSTRAINT permission_sync_jobs_pkey PRIMARY KEY (id);
 
@@ -4494,6 +4558,9 @@ ALTER TABLE ONLY product_licenses
 
 ALTER TABLE ONLY product_subscriptions
     ADD CONSTRAINT product_subscriptions_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY redis_key_value
+    ADD CONSTRAINT redis_key_value_pkey PRIMARY KEY (namespace, key) INCLUDE (value);
 
 ALTER TABLE ONLY registry_extension_releases
     ADD CONSTRAINT registry_extension_releases_pkey PRIMARY KEY (id);
@@ -4587,6 +4654,9 @@ ALTER TABLE ONLY user_permissions
 
 ALTER TABLE ONLY user_public_repos
     ADD CONSTRAINT user_public_repos_user_id_repo_id_key UNIQUE (user_id, repo_id);
+
+ALTER TABLE ONLY user_repo_permissions
+    ADD CONSTRAINT user_repo_permissions_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY user_roles
     ADD CONSTRAINT user_roles_pkey PRIMARY KEY (user_id, role_id);
@@ -4827,6 +4897,8 @@ CREATE INDEX lsif_dependency_indexing_jobs_state ON lsif_dependency_indexing_job
 
 CREATE INDEX lsif_dependency_indexing_jobs_upload_id ON lsif_dependency_syncing_jobs USING btree (upload_id);
 
+CREATE INDEX lsif_dependency_repos_name_idx ON lsif_dependency_repos USING btree (name);
+
 CREATE INDEX lsif_dependency_syncing_jobs_state ON lsif_dependency_syncing_jobs USING btree (state);
 
 CREATE INDEX lsif_indexes_commit_last_checked_at ON lsif_indexes USING btree (commit_last_checked_at) WHERE (state <> 'deleted'::text);
@@ -4902,6 +4974,10 @@ CREATE INDEX outbound_webhook_logs_outbound_webhook_id_idx ON outbound_webhook_l
 CREATE INDEX outbound_webhook_payload_process_after_idx ON outbound_webhook_jobs USING btree (process_after);
 
 CREATE INDEX outbound_webhooks_logs_status_code_idx ON outbound_webhook_logs USING btree (status_code);
+
+CREATE INDEX package_repo_versions_fk_idx ON package_repo_versions USING btree (package_id);
+
+CREATE UNIQUE INDEX package_repo_versions_unique_version_per_package ON package_repo_versions USING btree (package_id, version);
 
 CREATE INDEX permission_sync_jobs_process_after ON permission_sync_jobs USING btree (process_after);
 
@@ -4995,6 +5071,18 @@ CREATE UNIQUE INDEX user_external_accounts_account ON user_external_accounts USI
 
 CREATE INDEX user_external_accounts_user_id ON user_external_accounts USING btree (user_id) WHERE (deleted_at IS NULL);
 
+CREATE UNIQUE INDEX user_repo_permissions_perms_unique_idx ON user_repo_permissions USING btree (user_id, user_external_account_id, repo_id);
+
+CREATE INDEX user_repo_permissions_repo_id_idx ON user_repo_permissions USING btree (repo_id);
+
+CREATE INDEX user_repo_permissions_source_idx ON user_repo_permissions USING btree (source);
+
+CREATE INDEX user_repo_permissions_updated_at_idx ON user_repo_permissions USING btree (updated_at);
+
+CREATE INDEX user_repo_permissions_user_external_account_id_idx ON user_repo_permissions USING btree (user_external_account_id);
+
+CREATE INDEX user_repo_permissions_user_id_idx ON user_repo_permissions USING btree (user_id);
+
 CREATE UNIQUE INDEX users_billing_customer_id ON users USING btree (billing_customer_id) WHERE (deleted_at IS NULL);
 
 CREATE INDEX users_created_at_idx ON users USING btree (created_at);
@@ -5014,6 +5102,8 @@ CREATE TRIGGER batch_spec_workspace_execution_last_dequeues_insert AFTER INSERT 
 CREATE TRIGGER batch_spec_workspace_execution_last_dequeues_update AFTER UPDATE ON batch_spec_workspace_execution_jobs REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert();
 
 CREATE TRIGGER changesets_update_computed_state BEFORE INSERT OR UPDATE ON changesets FOR EACH ROW EXECUTE FUNCTION changesets_computed_state_ensure();
+
+CREATE TRIGGER lsif_dependency_repos_backfill AFTER INSERT ON lsif_dependency_repos FOR EACH ROW WHEN ((new.version <> '👁️temporary_sentinel_value👁️'::text)) EXECUTE FUNCTION func_lsif_dependency_repos_backfill();
 
 CREATE TRIGGER trig_create_zoekt_repo_on_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_zoekt_repo();
 
@@ -5385,6 +5475,9 @@ ALTER TABLE ONLY outbound_webhooks
 ALTER TABLE ONLY outbound_webhooks
     ADD CONSTRAINT outbound_webhooks_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL;
 
+ALTER TABLE ONLY package_repo_versions
+    ADD CONSTRAINT package_id_fk FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos(id) ON DELETE CASCADE;
+
 ALTER TABLE ONLY permission_sync_jobs
     ADD CONSTRAINT permission_sync_jobs_repository_id_fkey FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE;
 
@@ -5499,6 +5592,15 @@ ALTER TABLE ONLY user_public_repos
 ALTER TABLE ONLY user_public_repos
     ADD CONSTRAINT user_public_repos_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
+ALTER TABLE ONLY user_repo_permissions
+    ADD CONSTRAINT user_repo_permissions_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY user_repo_permissions
+    ADD CONSTRAINT user_repo_permissions_user_external_account_id_fkey FOREIGN KEY (user_external_account_id) REFERENCES user_external_accounts(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY user_repo_permissions
+    ADD CONSTRAINT user_repo_permissions_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
 ALTER TABLE ONLY user_roles
     ADD CONSTRAINT user_roles_role_id_fkey FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE DEFERRABLE;
 
@@ -5526,7 +5628,7 @@ INSERT INTO lsif_configuration_policies VALUES (3, NULL, 'Default commit retenti
 
 SELECT pg_catalog.setval('lsif_configuration_policies_id_seq', 3, true);
 
-INSERT INTO roles VALUES (1, 'USER', '2023-01-04 16:29:41.195966+00', NULL, true);
-INSERT INTO roles VALUES (2, 'SITE_ADMINISTRATOR', '2023-01-04 16:29:41.195966+00', NULL, true);
+INSERT INTO roles VALUES (1, 'USER', '2023-01-04 16:29:41.195966+00', true);
+INSERT INTO roles VALUES (2, 'SITE_ADMINISTRATOR', '2023-01-04 16:29:41.195966+00', true);
 
 SELECT pg_catalog.setval('roles_id_seq', 3, true);

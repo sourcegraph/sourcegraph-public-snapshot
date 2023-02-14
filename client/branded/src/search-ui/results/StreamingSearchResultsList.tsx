@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
-import { useLocation } from 'react-router'
+import { useLocation } from 'react-router-dom-v5-compat'
 import { Observable } from 'rxjs'
 
 import { TraceSpanProvider } from '@sourcegraph/observability-client'

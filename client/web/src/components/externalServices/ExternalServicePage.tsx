@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback, useMemo, FC } from 'react'
 
 import { mdiCog, mdiConnection, mdiDelete } from '@mdi/js'
-import * as H from 'history'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import { useNavigate, useParams } from 'react-router-dom-v5-compat'
 import { Subject } from 'rxjs'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
@@ -10,7 +10,7 @@ import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Button, Container, ErrorAlert, H2, Icon, Link, PageHeader, Tooltip } from '@sourcegraph/wildcard'
 
-import { Scalars, ExternalServiceResult, ExternalServiceVariables } from '../../graphql-operations'
+import { ExternalServiceResult, ExternalServiceVariables } from '../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
 import { refreshSiteFlags } from '../../site/backend'
 import { CreatedByAndUpdatedByInfoByline } from '../Byline/CreatedByAndUpdatedByInfoByline'
@@ -31,10 +31,7 @@ import { ExternalServiceSyncJobsList } from './ExternalServiceSyncJobsList'
 import { ExternalServiceWebhook } from './ExternalServiceWebhook'
 
 interface Props extends TelemetryProps {
-    externalServiceID: Scalars['ID']
     isLightTheme: boolean
-    history: H.History
-    routingPrefix: string
     afterDeleteRoute: string
 
     externalServicesFromFile: boolean
@@ -44,22 +41,22 @@ interface Props extends TelemetryProps {
     queryExternalServiceSyncJobs?: typeof _queryExternalServiceSyncJobs
 }
 
-const NotFoundPage: FC<React.PropsWithChildren<unknown>> = () => (
+const NotFoundPage: FC = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested code host was not found." />
 )
 
-export const ExternalServicePage: FC<React.PropsWithChildren<Props>> = props => {
+export const ExternalServicePage: FC<Props> = props => {
     const {
-        externalServiceID,
         isLightTheme,
-        history,
-        routingPrefix,
         telemetryService,
         afterDeleteRoute,
         externalServicesFromFile,
         allowEditExternalServicesWithFile,
         queryExternalServiceSyncJobs = _queryExternalServiceSyncJobs,
     } = props
+
+    const { externalServiceID } = useParams()
+    const navigate = useNavigate()
 
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminExternalService')
@@ -76,7 +73,7 @@ export const ExternalServicePage: FC<React.PropsWithChildren<Props>> = props => 
         error: fetchError,
         loading: fetchLoading,
     } = useQuery<ExternalServiceResult, ExternalServiceVariables>(FETCH_EXTERNAL_SERVICE, {
-        variables: { id: externalServiceID },
+        variables: { id: externalServiceID! },
         notifyOnNetworkStatusChange: false,
         fetchPolicy: 'no-cache',
     })
@@ -121,11 +118,11 @@ export const ExternalServicePage: FC<React.PropsWithChildren<Props>> = props => 
             setIsDeleting(false)
             // eslint-disable-next-line rxjs/no-ignored-subscription
             refreshSiteFlags().subscribe()
-            history.push(afterDeleteRoute)
+            navigate(afterDeleteRoute)
         } catch (error) {
             setIsDeleting(asError(error))
         }
-    }, [afterDeleteRoute, history, externalService])
+    }, [afterDeleteRoute, navigate, externalService])
 
     // If external service is undefined, we won't use doCheckConnection anyway,
     // that's why it's safe to pass an empty ID to useExternalServiceCheckConnectionByIdLazyQuery
@@ -136,7 +133,13 @@ export const ExternalServicePage: FC<React.PropsWithChildren<Props>> = props => 
     const checkConnectionNode = data?.node?.__typename === 'ExternalService' ? data.node.checkConnection : null
 
     let externalServiceAvailabilityStatus
-    if (!error && !loading) {
+    if (loading) {
+        externalServiceAvailabilityStatus = (
+            <Alert className="mt-2" variant="waiting">
+                Checking code host connection status...
+            </Alert>
+        )
+    } else if (!error) {
         if (checkConnectionNode?.__typename === 'ExternalServiceAvailable') {
             externalServiceAvailabilityStatus = (
                 <Alert className="mt-2" variant="success">
@@ -152,6 +155,14 @@ export const ExternalServicePage: FC<React.PropsWithChildren<Props>> = props => 
                 />
             )
         }
+    } else {
+        externalServiceAvailabilityStatus = (
+            <ErrorAlert
+                className="mt-2"
+                prefix="Unexpected error during code host connection check"
+                error={error.message}
+            />
+        )
     }
 
     return (
@@ -190,15 +201,17 @@ export const ExternalServicePage: FC<React.PropsWithChildren<Props>> = props => 
                                                 : 'Connection check unavailable'
                                         }
                                     >
-                                        <Button
+                                        <LoaderButton
                                             className="test-connection-external-service-button"
                                             variant="secondary"
                                             onClick={() => doCheckConnection()}
                                             disabled={!externalService.hasConnectionCheck || loading}
                                             size="sm"
-                                        >
-                                            <Icon aria-hidden={true} svgPath={mdiConnection} /> Test connection
-                                        </Button>
+                                            loading={loading}
+                                            alwaysShowLabel={true}
+                                            icon={<Icon aria-hidden={true} svgPath={mdiConnection} />}
+                                            label="Test connection"
+                                        />
                                     </Tooltip>
                                 </div>
                                 {editingEnabled && (
@@ -206,7 +219,7 @@ export const ExternalServicePage: FC<React.PropsWithChildren<Props>> = props => 
                                         <Tooltip content="Edit code host connection settings">
                                             <Button
                                                 className="test-edit-external-service-button"
-                                                to={`${routingPrefix}/external-services/${externalService.id}/edit`}
+                                                to={`/site-admin/external-services/${externalService.id}/edit`}
                                                 variant="primary"
                                                 size="sm"
                                                 as={Link}
@@ -257,7 +270,6 @@ export const ExternalServicePage: FC<React.PropsWithChildren<Props>> = props => 
                             height={350}
                             readOnly={true}
                             isLightTheme={isLightTheme}
-                            history={history}
                             className="test-external-service-editor"
                             telemetryService={telemetryService}
                         />

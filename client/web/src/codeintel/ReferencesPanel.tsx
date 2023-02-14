@@ -60,8 +60,8 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
-import { Blob } from '../repo/blob/Blob'
-import { Blob as CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
+import { CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
+import { LegacyBlob } from '../repo/blob/LegacyBlob'
 import * as BlobAPI from '../repo/blob/use-blob-store'
 import { HoverThresholdProps } from '../repo/RepoContainer'
 import { useExperimentalFeatures } from '../stores'
@@ -143,10 +143,8 @@ function createStateFromLocation(location: H.Location): null | State {
 }
 
 export const ReferencesPanel: React.FunctionComponent<React.PropsWithChildren<ReferencesPanelProps>> = props => {
-    // We store the state in a React state so that we do not update it when the
-    // URL changes.
     const location = useLocation()
-    const [state] = useState(createStateFromLocation(location))
+    const state = useMemo(() => createStateFromLocation(location), [location])
 
     if (state === null) {
         return null
@@ -632,7 +630,7 @@ const CollapsibleLocationList: React.FunctionComponent<
                             fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
                         />
                     ) : (
-                        <Text className="text-muted pl-2">
+                        <Text className="text-muted pl-4 pb-0">
                             {props.filter ? (
                                 <i>
                                     No {props.name} matching <strong>{props.filter}</strong> found
@@ -696,7 +694,7 @@ function parseSideBlobProps(
 
 const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> = props => {
     const useCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
-    const BlobComponent = useCodeMirror ? CodeMirrorBlob : Blob
+    const BlobComponent = useCodeMirror ? CodeMirrorBlob : LegacyBlob
 
     const highlightFormat = useCodeMirror ? HighlightResponseFormat.JSON_SCIP : HighlightResponseFormat.HTML_HIGHLIGHT
     const { data, error, loading } = useQuery<
@@ -715,12 +713,6 @@ const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> 
         fetchPolicy: 'cache-and-network',
         nextFetchPolicy: 'network-only',
     })
-
-    const history = useMemo(() => H.createMemoryHistory(), [])
-    const location = useMemo(() => {
-        history.replace(props.activeURL)
-        return history.location
-    }, [history, props.activeURL])
 
     // If we're loading and haven't received any data yet
     if (loading && !data) {
@@ -761,8 +753,6 @@ const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> 
         <BlobComponent
             {...props}
             nav={props.blobNav}
-            history={history}
-            location={location}
             wrapCode={true}
             className={styles.sideBlobCode}
             navigateToLineOnAnyClick={true}

@@ -23,7 +23,6 @@ go_library(
         "//internal/authz/permssync",
         "//internal/conf",
         "//internal/database",
-        "//internal/database/basestore",
         "//internal/env",
         "//internal/errcode",
         "//internal/goroutine",
@@ -45,6 +44,7 @@ go_test(
     ],
     embed = [":auth"],
     deps = [
+        "//enterprise/cmd/frontend/internal/auth/sourcegraphoperator",
         "//enterprise/internal/cloud",
         "//enterprise/internal/database",
         "//internal/auth",

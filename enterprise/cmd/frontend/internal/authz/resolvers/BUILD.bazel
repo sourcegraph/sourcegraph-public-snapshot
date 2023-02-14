@@ -4,6 +4,7 @@ go_library(
     name = "resolvers",
     srcs = [
         "bitbucket_projects_permission_jobs.go",
+        "permission_sync_jobs.go",
         "permissions_sync_jobs.go",
         "repositories.go",
         "resolver.go",
@@ -26,6 +27,7 @@ go_library(
         "//internal/authz/permssync",
         "//internal/database",
         "//internal/errcode",
+        "//internal/executor",
         "//internal/extsvc",
         "//internal/gitserver",
         "//internal/gqlutil",
@@ -41,12 +43,16 @@ go_library(
 
 go_test(
     name = "resolvers_test",
-    srcs = ["resolver_test.go"],
+    srcs = [
+        "permission_sync_jobs_test.go",
+        "resolver_test.go",
+    ],
     embed = [":resolvers"],
     deps = [
         "//cmd/frontend/envvar",
         "//cmd/frontend/globals",
         "//cmd/frontend/graphqlbackend",
+        "//cmd/frontend/graphqlbackend/graphqlutil",
         "//enterprise/internal/authz/github",
         "//enterprise/internal/authz/syncjobs",
         "//enterprise/internal/database",
