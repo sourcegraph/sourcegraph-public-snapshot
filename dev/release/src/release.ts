@@ -63,6 +63,7 @@ export type StepID =
     | 'release:finalize'
     | 'release:announce'
     | 'release:close'
+    | 'release:multi-version-bake'
     // util
     | 'util:clear-cache'
     // testing
@@ -895,6 +896,51 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         },
     },
     {
+        id: 'release:multi-version-bake',
+        description: 'Bake stitched migration files into the build for a release version. Only required for minor / major versions.',
+        run: async config => {
+            const { upcoming } = await releaseVersions(config)
+
+            const releaseBranch = `${upcoming.major}.${upcoming.minor}`
+            const version = upcoming.version
+
+            const prConfig = {
+                edits: [
+                    `git remote set-branches --add origin '${releaseBranch}'`,
+                    `git fetch --depth 1 origin ${releaseBranch}`,
+                    `comby -in-place 'const maxVersionString = ":[1]"' "const maxVersionString = \\"${version}\\"" internal/database/migration/shared/data/cmd/generator/consts.go`,
+                    'cd internal/database/migration/shared && go run ./data/cmd/generator --write-frozen=false',
+                ],
+                repo: 'sourcegraph',
+                owner: 'sourcegraph',
+                body: 'Update the multi version upgrade constants',
+                title: `${version} multi version upgrade constants`,
+                commitMessage: `baking multi version upgrade files for version ${version}`,
+            }
+
+            const sets = await createChangesets({
+                requiredCommands: ['comby', 'go'],
+                changes: [
+                    {
+                        ...prConfig,
+                        base: 'test-mvu',
+                        head: `${version}-update-multi-version-upgrade`,
+                    },
+                    {
+                        ...prConfig,
+                        base: 'test-mvu2',
+                        head: `${version}-update-multi-version-upgrade-rb`,
+                    },
+                ],
+                dryRun: false,
+            })
+            console.log('Merge the following pull requests:\n')
+            for (const set of sets) {
+                console.log(set.pullRequestURL)
+            }
+        },
+    },
+    {
         id: 'util:clear-cache',
         description: 'Clear release tool cache',
         run: () => {
@@ -1000,52 +1046,6 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         run: async () => {
             ensureSrcCliEndpoint()
             await ensureSrcCliUpToDate()
-        },
-    },
-    {
-        id: '_test:mvu',
-        description: 'mvu',
-        argNames: ['version'],
-        run: async config => {
-            const { upcoming } = await releaseVersions(config)
-
-            const releaseBranch = `${upcoming.major}.${upcoming.minor}`
-            const version = upcoming.version
-
-            const prConfig = {
-                edits: [
-                    `git remote set-branches --add origin '${releaseBranch}'`,
-                    `git fetch --depth 1 origin ${releaseBranch}`,
-                    `comby -in-place 'const maxVersionString = ":[1]"' "const maxVersionString = \\"${version}\\"" internal/database/migration/shared/data/cmd/generator/consts.go`,
-                    'cd internal/database/migration/shared && go run ./data/cmd/generator --write-frozen=false',
-                ],
-                repo: 'sourcegraph',
-                owner: 'sourcegraph',
-                body: 'Update the multi version upgrade constants',
-                title: `${version} multi version upgrade constants`,
-                commitMessage: `baking multi version upgrade files for version ${version}`,
-            }
-
-            const sets = await createChangesets({
-                requiredCommands: ['comby', 'go'],
-                changes: [
-                    {
-                        ...prConfig,
-                        base: 'test-mvu',
-                        head: `${version}-update-multi-version-upgrade`,
-                    },
-                    {
-                        ...prConfig,
-                        base: 'test-mvu2',
-                        head: `${version}-update-multi-version-upgrade-rb`,
-                    },
-                ],
-                dryRun: false,
-            })
-            console.log('Merge the following pull requests:\n')
-            for (const set of sets) {
-                console.log(set.pullRequestURL)
-            }
         },
     },
 ]
