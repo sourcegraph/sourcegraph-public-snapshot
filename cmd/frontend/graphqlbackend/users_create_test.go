@@ -26,14 +26,13 @@ type mockFuncs struct {
 
 func makeUsersCreateTestDB(t *testing.T) mockFuncs {
 	users := database.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+	// This is the created user that is returned via the GraphQL API.
 	users.CreateFunc.SetDefaultReturn(&types.User{ID: 1, Username: "alice"}, nil)
+	// This refers to the user executing this API request.
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, SiteAdmin: true}, nil)
 
 	authz := database.NewMockAuthzStore()
 	authz.GrantPendingPermissionsFunc.SetDefaultReturn(nil)
-
-	roles := database.NewMockRoleStore()
-	roles.GetFunc.SetDefaultReturn(&types.Role{ID: 1}, nil)
 
 	userRoles := database.NewMockUserRoleStore()
 	userRoles.BulkAssignSystemRolesToUserFunc.SetDefaultReturn([]*types.UserRole{}, nil)
@@ -41,6 +40,9 @@ func makeUsersCreateTestDB(t *testing.T) mockFuncs {
 	userEmails := database.NewMockUserEmailsStore()
 
 	db := database.NewMockDB()
+	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+		return f(db)
+	})
 	db.UsersFunc.SetDefaultReturn(users)
 	db.AuthzFunc.SetDefaultReturn(authz)
 	db.UserRolesFunc.SetDefaultReturn(userRoles)
