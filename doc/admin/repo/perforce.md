@@ -58,7 +58,7 @@ It's worthwhile to note some limitations of this process:
 
 ## Repository permissions
 
-To enable permissions syncing for Perforce depots using [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html), include [the `authorization` field](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@2a716bd70c294acf1b3679b790834c4dea9ea956/-/blob/schema/perforce.schema.json?L67) to the configuration of the Perforce code host connection you created [above](#add-a-perforce-code-host):
+To enforce repository-level permissions for Perforce depots using [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html), include [the `authorization` field](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@2a716bd70c294acf1b3679b790834c4dea9ea956/-/blob/schema/perforce.schema.json?L67) to the configuration of the Perforce code host connection you created [above](#add-a-perforce-code-host):
 
 ```json
 {
@@ -67,7 +67,13 @@ To enable permissions syncing for Perforce depots using [Perforce permissions ta
 }
 ```
 
-Adding the `authorization` field to the code host connection configugation will enable partial parsing of the permissions tables. If this is the extent of your configuring, then you should sync subdirectories of a depot using the `depots` configuration that best describes the most concrete path of your permissions boundary.
+Adding the `authorization` field to the code host connection configuration will enable partial parsing of the permissions tables.
+
+### Syncing subdirectories to match permission boundaries
+
+By default Sourcegraph only supports repository-level permissions and does not match the granularity of [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html).
+
+If you don't [activate file-level permissions](#file-level-permissions) you should sync subdirectories of a depot using the `depots` configuration that best describes the most concrete path of your permissions boundary.
 
 For example, if your Perforce depot `//depot/Talkhouse` has different permissions for `//depot/Talkhouse/main-dev` and some subdirectories of `//depot/Talkhouse/rel1.0`, we recommend setting the following `depots`:
 
@@ -97,9 +103,21 @@ By configuring each subdirectory that has unique permissions, Sourcegraph is abl
 
 Since that would override the permissions for the `//depot/Talkhouse/rel1.0/back` depot.
 
+#### Wildcards 
+
+In the default configuration Sourcegraph provides limited support for `*` and `...` paths ("wildcards") in [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html). For example, the following can be supported using [the workaround described in repository permissions](#repository-permissions):
+
+```sh
+write user alice * //TestDepot/...
+write user alice * //TestDepot/*/spec/...
+write user alice * //TestDepot/.../spec/...
+```
+
+But permissions are only enforced per repository, **not per file**. For that you need to configure [file-level permissions](#file-level-permissions).
+
 ### File-level permissions
 
-File-level permissions make the splitting of depots by sub-directory unnecessary.
+File-level permissions make the [syncing of subdirectories to match permission boundaries](#syncing-subdirectories-to-match-permission-boundaries) unnecessary.
 
 To enable file-level permissions:
 
