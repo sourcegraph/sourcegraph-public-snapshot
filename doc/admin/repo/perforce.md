@@ -108,7 +108,7 @@ By configuring each subdirectory that has unique permissions, Sourcegraph is abl
 
 Since that would override the permissions for the `//depot/Talkhouse/rel1.0/back` depot.
 
-#### Wildcards 
+#### Wildcards
 
 In the default configuration Sourcegraph provides limited support for `*` and `...` paths ("wildcards") in [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html). For example, the following can be supported using [the workaround described in repository permissions](#repository-permissions):
 
