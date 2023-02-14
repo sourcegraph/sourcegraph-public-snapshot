@@ -75,7 +75,6 @@ export type StepID =
     | '_test:srccliensure'
     | '_test:release-guide-content'
     | '_test:release-guide-update'
-    | '_test:mvu'
 
 /**
  * Runs given release step with the provided configuration and arguments.

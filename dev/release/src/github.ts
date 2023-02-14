@@ -585,7 +585,7 @@ async function createBranchWithChanges(
     }: CreateBranchWithChangesOptions
 ): Promise<void> {
     // Set up repository if the working directory override has not been provided.
-    const {workdir} = await cloneRepo(octokit, owner, repo, { revision: baseRevision })
+    const { workdir } = await cloneRepo(octokit, owner, repo, { revision: baseRevision })
 
     // Apply edits
     for (const edit of edits) {
