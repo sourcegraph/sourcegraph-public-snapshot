@@ -1,6 +1,8 @@
-import React from 'react'
+import React, { Suspense } from 'react'
 
 import '../SourcegraphWebApp.scss'
+
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { LegacySourcegraphWebApp } from '../LegacySourcegraphWebApp'
 
@@ -25,34 +27,74 @@ import { enterpriseUserAreaRoutes } from './user/routes'
 import { enterpriseUserSettingsAreaRoutes } from './user/settings/routes'
 import { enterpriseUserSettingsSideBarItems } from './user/settings/sidebaritems'
 
-export const LegacyEnterpriseWebApp: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <LegacySourcegraphWebApp
-        siteAdminAreaRoutes={enterpriseSiteAdminAreaRoutes}
-        siteAdminSideBarGroups={enterpriseSiteAdminSidebarGroups}
-        siteAdminOverviewComponents={enterpriseSiteAdminOverviewComponents}
-        userAreaHeaderNavItems={enterpriseUserAreaHeaderNavItems}
-        userAreaRoutes={enterpriseUserAreaRoutes}
-        userSettingsSideBarItems={enterpriseUserSettingsSideBarItems}
-        userSettingsAreaRoutes={enterpriseUserSettingsAreaRoutes}
-        orgSettingsSideBarItems={enterpriseOrgSettingsSideBarItems}
-        orgSettingsAreaRoutes={enterpriseOrgSettingsAreaRoutes}
-        orgAreaRoutes={enterpriseOrganizationAreaRoutes}
-        orgAreaHeaderNavItems={enterpriseOrgAreaHeaderNavItems}
-        repoContainerRoutes={enterpriseRepoContainerRoutes}
-        repoRevisionContainerRoutes={enterpriseRepoRevisionContainerRoutes}
-        repoHeaderActionButtons={enterpriseRepoHeaderActionButtons}
-        repoSettingsAreaRoutes={enterpriseRepoSettingsAreaRoutes}
-        repoSettingsSidebarGroups={enterpriseRepoSettingsSidebarGroups}
-        routes={enterpriseRoutes}
-        codeIntelligenceEnabled={true}
-        codeIntelligenceBadgeMenu={CodeIntelligenceBadgeMenu}
-        codeIntelligenceBadgeContent={CodeIntelligenceBadgeContent}
-        useCodeIntel={useCodeIntel}
-        codeInsightsEnabled={true}
-        batchChangesEnabled={window.context.batchChangesEnabled}
-        searchContextsEnabled={true}
-        notebooksEnabled={true}
-        codeMonitoringEnabled={true}
-        searchAggregationEnabled={true}
-    />
-)
+const SourcegraphWebApp = lazyComponent(() => import('../SourcegraphWebApp'), 'SourcegraphWebApp')
+
+export const LegacyEnterpriseWebApp: React.FC = () => {
+    if (window.context.experimentalFeatures.enableStorm) {
+        return (
+            <Suspense fallback={null}>
+                <SourcegraphWebApp
+                    siteAdminAreaRoutes={enterpriseSiteAdminAreaRoutes}
+                    siteAdminSideBarGroups={enterpriseSiteAdminSidebarGroups}
+                    siteAdminOverviewComponents={enterpriseSiteAdminOverviewComponents}
+                    userAreaHeaderNavItems={enterpriseUserAreaHeaderNavItems}
+                    userAreaRoutes={enterpriseUserAreaRoutes}
+                    userSettingsSideBarItems={enterpriseUserSettingsSideBarItems}
+                    userSettingsAreaRoutes={enterpriseUserSettingsAreaRoutes}
+                    orgSettingsSideBarItems={enterpriseOrgSettingsSideBarItems}
+                    orgSettingsAreaRoutes={enterpriseOrgSettingsAreaRoutes}
+                    orgAreaRoutes={enterpriseOrganizationAreaRoutes}
+                    orgAreaHeaderNavItems={enterpriseOrgAreaHeaderNavItems}
+                    repoContainerRoutes={enterpriseRepoContainerRoutes}
+                    repoRevisionContainerRoutes={enterpriseRepoRevisionContainerRoutes}
+                    repoHeaderActionButtons={enterpriseRepoHeaderActionButtons}
+                    repoSettingsAreaRoutes={enterpriseRepoSettingsAreaRoutes}
+                    repoSettingsSidebarGroups={enterpriseRepoSettingsSidebarGroups}
+                    routes={enterpriseRoutes}
+                    codeIntelligenceEnabled={true}
+                    codeIntelligenceBadgeMenu={CodeIntelligenceBadgeMenu}
+                    codeIntelligenceBadgeContent={CodeIntelligenceBadgeContent}
+                    useCodeIntel={useCodeIntel}
+                    codeInsightsEnabled={true}
+                    batchChangesEnabled={window.context.batchChangesEnabled}
+                    searchContextsEnabled={true}
+                    notebooksEnabled={true}
+                    codeMonitoringEnabled={true}
+                    searchAggregationEnabled={true}
+                />
+            </Suspense>
+        )
+    }
+
+    return (
+        <LegacySourcegraphWebApp
+            siteAdminAreaRoutes={enterpriseSiteAdminAreaRoutes}
+            siteAdminSideBarGroups={enterpriseSiteAdminSidebarGroups}
+            siteAdminOverviewComponents={enterpriseSiteAdminOverviewComponents}
+            userAreaHeaderNavItems={enterpriseUserAreaHeaderNavItems}
+            userAreaRoutes={enterpriseUserAreaRoutes}
+            userSettingsSideBarItems={enterpriseUserSettingsSideBarItems}
+            userSettingsAreaRoutes={enterpriseUserSettingsAreaRoutes}
+            orgSettingsSideBarItems={enterpriseOrgSettingsSideBarItems}
+            orgSettingsAreaRoutes={enterpriseOrgSettingsAreaRoutes}
+            orgAreaRoutes={enterpriseOrganizationAreaRoutes}
+            orgAreaHeaderNavItems={enterpriseOrgAreaHeaderNavItems}
+            repoContainerRoutes={enterpriseRepoContainerRoutes}
+            repoRevisionContainerRoutes={enterpriseRepoRevisionContainerRoutes}
+            repoHeaderActionButtons={enterpriseRepoHeaderActionButtons}
+            repoSettingsAreaRoutes={enterpriseRepoSettingsAreaRoutes}
+            repoSettingsSidebarGroups={enterpriseRepoSettingsSidebarGroups}
+            routes={enterpriseRoutes}
+            codeIntelligenceEnabled={true}
+            codeIntelligenceBadgeMenu={CodeIntelligenceBadgeMenu}
+            codeIntelligenceBadgeContent={CodeIntelligenceBadgeContent}
+            useCodeIntel={useCodeIntel}
+            codeInsightsEnabled={true}
+            batchChangesEnabled={window.context.batchChangesEnabled}
+            searchContextsEnabled={true}
+            notebooksEnabled={true}
+            codeMonitoringEnabled={true}
+            searchAggregationEnabled={true}
+        />
+    )
+}
