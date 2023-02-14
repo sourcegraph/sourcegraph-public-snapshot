@@ -72,7 +72,7 @@ To enforce repository-level permissions for Perforce depots using [Perforce perm
 }
 ```
 
-Adding the `authorization` field to the code host connection configuration will enable partial parsing of the permissions tables.
+Adding the `authorization` field to the code host connection configuration will enable partial parsing of the permissions tables. [Learn more about the partial support of permission table parsing](#known-issues-and-limitations).
 
 ### Syncing subdirectories to match permission boundaries
 
