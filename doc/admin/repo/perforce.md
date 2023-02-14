@@ -22,9 +22,15 @@ Perforce depots can be added to a Sourcegraph instance by adding the appropriate
     ```
 1. Go to **Site admin > Manage code hosts > Add code host**
 1. Select **Perforce**.
-1. Configure the connection to Perforce using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
+1. Configure which depots are mirrored/synchronized as Git repositories to Sourcegraph:
 
-   Be sure to enable `p4-fusion` in the `fusionClient` setting in your code host [config](#configuration). For example:
+    - [`depots`](perforce.md#depots)<br>A list of depot paths that can be either a depot root or an arbitrary subdirectory. **Note**: Only `"local"` type depots are supported.
+    - [`p4.user`](perforce.md#p4-user)<br>The user to be authenticated for p4 CLI, and should be capable of performing `p4 ping`, `p4 login`, `p4 trust` and any p4 commands involved with `git p4 clone` and `git p4 sync` for listed `depots`. If repository permissions are mirrored, the user needs additional ability to perform the `p4 protects`, `p4 groups`, `p4 group`, `p4 users` commands (aka. "super" access level).
+    - [`p4.passwd`](perforce.md#p4-passwd)<br>The ticket value to be used for authenticating the `p4.user`. It is recommended to create tickets of users in a group that never expire. Use the command `p4 -u <p4.user> login -p -a` to obtain a ticket value.
+
+    See the [configuration documentation below](#configuration) for other fields you can configure.
+
+1. **Optional, but recommended**: use the [`p4-fusion`](https://github.com/salesforce/p4-fusion) client by configuring `fusionClient` for better performance:
 
     ```json
     {
@@ -39,21 +45,14 @@ Perforce depots can be added to a Sourcegraph instance by adding the appropriate
     Details of all `p4-fusion` configuration fields can be seen [here](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@2a716bd70c294acf1b3679b790834c4dea9ea956/-/blob/schema/perforce.schema.json?L84).
 
     Without the `fusionClient` configuration, the code host connection uses `git p4`, but we recommend `p4-fusion` for better performance.
+
 1. Click **Add repositories**.
 
-### Depot syncing
+Sourcegraph will now talk to the Perforce host and sync the configured `depots` to the Sourcegraph instance.
 
-> NOTE: Only "local" type depots are supported.
+It's worthwhile to note some limitations of this process:
 
-Use the `depots` field to configure which depots are mirrored/synchronized as Git repositories to Sourcegraph:
-
-- [`depots`](perforce.md#depots)<br>A list of depot paths that can be either a depot root or an arbitrary subdirectory.
-- [`p4.user`](perforce.md#p4-user)<br>The user to be authenticated for p4 CLI, and should be capable of performing `p4 ping`, `p4 login`, `p4 trust` and any p4 commands involved with `git p4 clone` and `git p4 sync` for listed `depots`. If repository permissions are mirrored, the user needs additional ability to perform the `p4 protects`, `p4 groups`, `p4 group`, `p4 users` commands (aka. "super" access level).
-- [`p4.passwd`](perforce.md#p4-passwd)<br>The ticket value to be used for authenticating the `p4.user`. It is recommended to create tickets of users in a group that never expire. Use the command `p4 -u <p4.user> login -p -a` to obtain a ticket value.
-
-Notable things about depot syncing:
-
-- Depot syncing uses [p4-fusion](https://github.com/salesforce/p4-fusion) to convert Perforce depots into git repositories so that Sourcegraph can index them.
+- When syncing depots either [git p4](https://git-scm.com/docs/git-p4) or [p4-fusion](https://github.com/salesforce/p4-fusion) (recommended) are used to convert Perforce depots into git repositories so that Sourcegraph can index them.
 - Rename of a Perforce depot, including changing the depot on the Perforce server or the `repositoryPathPattern` config option, will cause a re-import of the depot.
 - Unless [permissions syncing](#repository-permissions) is enabled, Sourcegraph knows nothing of the permissions on the depots, so it can't enforce access restrictions.
 
