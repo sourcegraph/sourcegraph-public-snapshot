@@ -62,20 +62,21 @@ export const RepoDashboardPage: FunctionComponent<RepoDashboardPageProps> = ({
 
     const availableIndexersByRoot = groupBy(
         // Flatten nested lists of roots grouped by indexers
-        (data?.availableIndexers || []).flatMap(({ roots, ...rest }) => roots.map(root => ({ root, ...rest }))),
+        (data?.availableIndexers || []).flatMap(({ roots, ...rest }) =>
+            roots
+                // Filter out suggestions for which there already exists a record
+                .filter(root => (indexesByIndexerNameByRoot.get(sanitize(root))?.get(rest.index) || []).length === 0)
+                .map(root => ({ root, ...rest }))
+        ),
         // Then re-group by root
         index => sanitize(index.root)
     )
 
     // Aggregates
-    const indexerNames = [
-        ...new Set([
-            ...[...indexesByIndexerNameByRoot.values()].flatMap(indexesByIndexerName => [
-                ...indexesByIndexerName.keys(),
-            ]),
-            ...[...availableIndexersByRoot.values()].flatMap(availableIndexers => availableIndexers.map(v => v.index)),
-        ]),
-    ].sort()
+    const namesFromRecords = [...indexesByIndexerNameByRoot.values()].flatMap(im => [...im.keys()])
+    const namesFromInference = [...availableIndexersByRoot.values()].flatMap(is => is.map(i => i.index))
+    const indexerNames = [...new Set([...namesFromRecords, ...namesFromInference])].sort()
+
     // count the number of unique indexes matching the given predicate
     const count = (f: (index: PreciseIndexFields) => boolean): number =>
         [...indexesByIndexerNameByRoot.values()].flatMap(indexesByIndexerName =>
@@ -274,7 +275,6 @@ export const RepoDashboardPage: FunctionComponent<RepoDashboardPageProps> = ({
 
                                     // Calculate the number of failed + configurable roots _under_ this key.
                                     const descendentRoots = descendentNames(filteredTreeData, id)
-                                    console.log({ id, displayName, descendentRoots })
                                     const numDescendentErrors = descendentRoots
                                         .flatMap(root =>
                                             [...(indexesByIndexerNameByRoot.get(root)?.values() || [])].flatMap(
