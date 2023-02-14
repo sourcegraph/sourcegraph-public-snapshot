@@ -293,3 +293,7 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store
   interfaces:
     - InsightPermissionStore
+- filename: internal/database/dbconn/rds/mocks_rds.go
+  path: github.com/sourcegraph/sourcegraph/internal/database/dbconn/rds
+  interfaces:
+    - AuthProvider
