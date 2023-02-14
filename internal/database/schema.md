@@ -1199,12 +1199,12 @@ Tracks the most recent activity of executors attached to this Sourcegraph instan
  value_sha256 | bytea                    |           | not null | 
  job_id       | bigint                   |           | not null | 
  queue        | text                     |           | not null | 
- repo         | text                     |           | not null | 
+ repo_id      | bigint                   |           | not null | 
  created_at   | timestamp with time zone |           | not null | now()
  updated_at   | timestamp with time zone |           | not null | now()
 Indexes:
     "executor_job_tokens_pkey" PRIMARY KEY, btree (id)
-    "executor_job_tokens_job_id_queue_repo_key" UNIQUE CONSTRAINT, btree (job_id, queue, repo)
+    "executor_job_tokens_job_id_queue_repo_id_key" UNIQUE CONSTRAINT, btree (job_id, queue, repo_id)
     "executor_job_tokens_value_sha256_key" UNIQUE CONSTRAINT, btree (value_sha256)
 
 ```
