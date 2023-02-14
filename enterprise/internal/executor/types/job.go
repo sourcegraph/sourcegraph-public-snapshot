@@ -67,8 +67,6 @@ type Job struct {
 	// takes precedence over a potentially configured EXECUTOR_DOCKER_AUTH_CONFIG environment
 	// variable.
 	DockerAuthConfig DockerAuthConfig `json:"dockerAuthConfig,omitempty"`
-
-	RuntimeMode RuntimeMode `json:"runtimeMode"`
 }
 
 func (j Job) MarshalJSON() ([]byte, error) {
@@ -87,7 +85,6 @@ func (j Job) MarshalJSON() ([]byte, error) {
 			CliSteps:            j.CliSteps,
 			RedactedValues:      j.RedactedValues,
 			DockerAuthConfig:    j.DockerAuthConfig,
-			RuntimeMode:         j.RuntimeMode,
 		}
 		v2.VirtualMachineFiles = make(map[string]v2VirtualMachineFile, len(j.VirtualMachineFiles))
 		for k, v := range j.VirtualMachineFiles {
@@ -107,7 +104,6 @@ func (j Job) MarshalJSON() ([]byte, error) {
 		DockerSteps:         j.DockerSteps,
 		CliSteps:            j.CliSteps,
 		RedactedValues:      j.RedactedValues,
-		RuntimeMode:         j.RuntimeMode,
 	}
 	v1.VirtualMachineFiles = make(map[string]v1VirtualMachineFile, len(j.VirtualMachineFiles))
 	for k, v := range j.VirtualMachineFiles {
@@ -148,7 +144,6 @@ func (j *Job) UnmarshalJSON(data []byte) error {
 		j.CliSteps = v2.CliSteps
 		j.RedactedValues = v2.RedactedValues
 		j.DockerAuthConfig = v2.DockerAuthConfig
-		j.RuntimeMode = v2.RuntimeMode
 		return nil
 	}
 	var v1 v1Job
@@ -175,7 +170,6 @@ func (j *Job) UnmarshalJSON(data []byte) error {
 	j.DockerSteps = v1.DockerSteps
 	j.CliSteps = v1.CliSteps
 	j.RedactedValues = v1.RedactedValues
-	j.RuntimeMode = v1.RuntimeMode
 	return nil
 }
 
@@ -198,7 +192,6 @@ type v2Job struct {
 	CliSteps            []CliStep                       `json:"cliSteps"`
 	RedactedValues      map[string]string               `json:"redactedValues"`
 	DockerAuthConfig    DockerAuthConfig                `json:"dockerAuthConfig,omitempty"`
-	RuntimeMode         RuntimeMode                     `json:"runtimeMode"`
 }
 
 type v1Job struct {
@@ -214,7 +207,6 @@ type v1Job struct {
 	DockerSteps         []DockerStep                    `json:"dockerSteps"`
 	CliSteps            []CliStep                       `json:"cliSteps"`
 	RedactedValues      map[string]string               `json:"redactedValues"`
-	RuntimeMode         RuntimeMode                     `json:"runtimeMode"`
 }
 
 // VirtualMachineFile is a file that will be written to the VM. A file can contain the raw content of the file or
@@ -301,11 +293,3 @@ type DockerAuthConfigAuth struct {
 	// Auth is the base64 encoded credential in the format user:password.
 	Auth []byte `json:"auth"`
 }
-
-type RuntimeMode string
-
-const (
-	RuntimeModeDocker      RuntimeMode = "docker"
-	RuntimeModeFirecracker RuntimeMode = "firecracker"
-	RuntimeModeK8s         RuntimeMode = "k8s"
-)
