@@ -51,6 +51,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 	methodLabelFilter := fmt.Sprintf("grpc_method=~`%s`", opts.MethodFilterRegex)
 	instanceLabelFilter := fmt.Sprintf("instance=~`%s`", opts.InstanceFilterRegex)
 	failingCodeFilter := fmt.Sprintf("grpc_code!=%q", "OK")
+	grpcStreamTypeFilter := fmt.Sprintf("grpc_type=%q", "server_stream")
 
 	percentageQuery := func(numerator, denominator string) string {
 		return fmt.Sprintf("(100.0 * ( (%s) / (%s) ))", numerator, denominator)
@@ -60,6 +61,8 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 		Title:  "GRPC server metrics",
 		Hidden: true,
 		Rows: []monitoring.Row{
+
+			// Track aggregate QPS
 			{
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_grpc_request_rate_all_methods_aggregate", opts.ServiceName),
@@ -85,6 +88,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 				},
 			},
 
+			// Track per-instance QPS
 			{
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_grpc_request_rate_overall_per_instance", opts.ServiceName),
@@ -111,6 +115,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 				},
 			},
 
+			// Track aggregate error percentage
 			{
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_error_percentage_all_methods_aggregate", opts.ServiceName),
@@ -144,6 +149,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 				},
 			},
 
+			// Track per-instance error percentage
 			{
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_error_percentage_all_methods_per_instance", opts.ServiceName),
@@ -176,6 +182,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 				},
 			},
 
+			// Track aggregate response time
 			{
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_p99_response_time_all_methods_aggregate", opts.ServiceName),
@@ -214,6 +221,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 				},
 			},
 
+			// Track aggregate response time per method
 			{
 
 				monitoring.Observable{
@@ -252,6 +260,8 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 					Interpretation: "The 75th percentile response time per method, aggregated across all instances.",
 				},
 			},
+
+			// Track per-instance response time
 			{
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_p99_response_time_all_methods_per_instance", opts.ServiceName),
@@ -290,6 +300,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 				},
 			},
 
+			// Track percentile response times per-instance per-method
 			{
 
 				monitoring.Observable{
@@ -329,6 +340,40 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 				},
 			},
 
+			// Track average response stream size per-method
+			{
+				monitoring.Observable{
+					Name:        fmt.Sprintf("%s_grpc_response_stream_size_per_method_aggregate", opts.ServiceName),
+					Description: "average response stream size per-method over 1m (aggregate)",
+					Query: fmt.Sprintf(`((%s)/(%s))`,
+						fmt.Sprintf("sum(rate(%s[1m])) by (grpc_method)", metric("grpc_server_msg_sent_total", grpcStreamTypeFilter)),
+						fmt.Sprintf("sum(rate(%s[1m])) by (grpc_method)", metric("grpc_server_started_total", grpcStreamTypeFilter)),
+					),
+					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
+						Unit(monitoring.Number).
+						With(monitoring.PanelOptions.LegendOnRight()),
+					Owner:          owner,
+					NoAlert:        true,
+					Interpretation: "The average number of response messages sent during a streaming RPC method, broken out per method, aggregated across all instances.",
+				},
+
+				monitoring.Observable{
+					Name:        fmt.Sprintf("%s_grpc_response_stream_size_per_method_per_instance", opts.ServiceName),
+					Description: "average response stream size per-method over 1m (per instance)",
+					Query: fmt.Sprintf(`((%s)/(%s))`,
+						fmt.Sprintf("sum(rate(%s[1m])) by (grpc_method, instance)", metric("grpc_server_msg_sent_total", grpcStreamTypeFilter, instanceLabelFilter)),
+						fmt.Sprintf("sum(rate(%s[1m])) by (grpc_method, instance)", metric("grpc_server_started_total", grpcStreamTypeFilter, instanceLabelFilter)),
+					),
+					Panel: monitoring.Panel().LegendFormat("{{instance}} {{grpc_method}}").
+						Unit(monitoring.Number).
+						With(monitoring.PanelOptions.LegendOnRight()),
+					Owner:          owner,
+					NoAlert:        true,
+					Interpretation: "The average number of response messages sent during a streaming RPC method, broken out per method, broken out per instance.",
+				},
+			},
+
+			// Track rate across all gRPC response codes
 			{
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_grpc_all_codes_per_method_aggregate", opts.ServiceName),

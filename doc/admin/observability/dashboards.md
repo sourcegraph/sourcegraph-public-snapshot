@@ -6291,6 +6291,48 @@ Query: `histogram_quantile(0.75, sum by (le, name, grpc_method, instance)(rate(g
 
 <br />
 
+#### gitserver: gitserver_grpc_response_stream_size_per_method_aggregate
+
+<p class="subtitle">Average response stream size per-method over 1m (aggregate)</p>
+
+The average number of response messages sent during a streaming RPC method, broken out per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100780` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `((sum(rate(gitserver_grpc_server_msg_sent_total{grpc_type="server_stream"}[1m])) by (grpc_method))/(sum(rate(gitserver_grpc_server_started_total{grpc_type="server_stream"}[1m])) by (grpc_method)))`
+
+</details>
+
+<br />
+
+#### gitserver: gitserver_grpc_response_stream_size_per_method_per_instance
+
+<p class="subtitle">Average response stream size per-method over 1m (per instance)</p>
+
+The average number of response messages sent during a streaming RPC method, broken out per method, broken out per instance.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100781` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `((sum(rate(gitserver_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${shard:regex}`}[1m])) by (grpc_method, instance))/(sum(rate(gitserver_grpc_server_started_total{grpc_type="server_stream",instance=~`${shard:regex}`}[1m])) by (grpc_method, instance)))`
+
+</details>
+
+<br />
+
 #### gitserver: gitserver_grpc_all_codes_per_method_aggregate
 
 <p class="subtitle">Response codes rate per-method over 1m (aggregate)</p>
@@ -6299,7 +6341,7 @@ The rate of all generated gRPC response codes per method, aggregated across all 
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100780` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100790` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -6320,7 +6362,7 @@ The rate of all generated gRPC response codes per method, broken down by instanc
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100781` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100791` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -15493,6 +15535,48 @@ Query: `histogram_quantile(0.75, sum by (le, name, grpc_method, instance)(rate(s
 
 <br />
 
+#### searcher: searcher_grpc_response_stream_size_per_method_aggregate
+
+<p class="subtitle">Average response stream size per-method over 1m (aggregate)</p>
+
+The average number of response messages sent during a streaming RPC method, broken out per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100380` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `((sum(rate(searcher_grpc_server_msg_sent_total{grpc_type="server_stream"}[1m])) by (grpc_method))/(sum(rate(searcher_grpc_server_started_total{grpc_type="server_stream"}[1m])) by (grpc_method)))`
+
+</details>
+
+<br />
+
+#### searcher: searcher_grpc_response_stream_size_per_method_per_instance
+
+<p class="subtitle">Average response stream size per-method over 1m (per instance)</p>
+
+The average number of response messages sent during a streaming RPC method, broken out per method, broken out per instance.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100381` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `((sum(rate(searcher_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${instance:regex}`}[1m])) by (grpc_method, instance))/(sum(rate(searcher_grpc_server_started_total{grpc_type="server_stream",instance=~`${instance:regex}`}[1m])) by (grpc_method, instance)))`
+
+</details>
+
+<br />
+
 #### searcher: searcher_grpc_all_codes_per_method_aggregate
 
 <p class="subtitle">Response codes rate per-method over 1m (aggregate)</p>
@@ -15501,7 +15585,7 @@ The rate of all generated gRPC response codes per method, aggregated across all 
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100380` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100390` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -15522,7 +15606,7 @@ The rate of all generated gRPC response codes per method, broken down by instanc
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100381` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100391` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -17187,6 +17271,48 @@ Query: `histogram_quantile(0.75, sum by (le, name, grpc_method, instance)(rate(s
 
 <br />
 
+#### symbols: symbols_grpc_response_stream_size_per_method_aggregate
+
+<p class="subtitle">Average response stream size per-method over 1m (aggregate)</p>
+
+The average number of response messages sent during a streaming RPC method, broken out per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100580` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `((sum(rate(symbols_grpc_server_msg_sent_total{grpc_type="server_stream"}[1m])) by (grpc_method))/(sum(rate(symbols_grpc_server_started_total{grpc_type="server_stream"}[1m])) by (grpc_method)))`
+
+</details>
+
+<br />
+
+#### symbols: symbols_grpc_response_stream_size_per_method_per_instance
+
+<p class="subtitle">Average response stream size per-method over 1m (per instance)</p>
+
+The average number of response messages sent during a streaming RPC method, broken out per method, broken out per instance.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100581` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `((sum(rate(symbols_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${instance:regex}`}[1m])) by (grpc_method, instance))/(sum(rate(symbols_grpc_server_started_total{grpc_type="server_stream",instance=~`${instance:regex}`}[1m])) by (grpc_method, instance)))`
+
+</details>
+
+<br />
+
 #### symbols: symbols_grpc_all_codes_per_method_aggregate
 
 <p class="subtitle">Response codes rate per-method over 1m (aggregate)</p>
@@ -17195,7 +17321,7 @@ The rate of all generated gRPC response codes per method, aggregated across all 
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100580` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100590` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -17216,7 +17342,7 @@ The rate of all generated gRPC response codes per method, broken down by instanc
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100581` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100591` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
