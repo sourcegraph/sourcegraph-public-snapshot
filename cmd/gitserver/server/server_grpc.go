@@ -69,3 +69,21 @@ func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 
 	return nil
 }
+
+func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService_SearchServer) error {
+	args, err := protocol.SearchRequestFromProto(req)
+	if err != nil {
+		return status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	onMatch := func(match *protocol.CommitMatch) error {
+		return ss.Send(&proto.SearchResponse{
+			Matches: []*proto.CommitMatch{match.ToProto()},
+		})
+	}
+
+	// TODO use limithit
+	// TODO convert errors
+	_, err = gs.Server.search(ss.Context(), args, onMatch)
+	return err
+}
