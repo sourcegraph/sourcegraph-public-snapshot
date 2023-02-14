@@ -385,7 +385,7 @@ commands:
 
   caddy:
     ignoreStdout: true
-    ignoreStderr: true
+    ignoreStderr: false
     cmd: .bin/caddy_${CADDY_VERSION} run --watch --config=dev/Caddyfile
     install_func: installCaddy
     env:
