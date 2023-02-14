@@ -86,7 +86,7 @@ func NewNotificationClient(logger log.Logger, slackToken, githubToken, channel s
 
 func (c *NotificationClient) getTeammateForBuild(build *Build) (*team.Teammate, error) {
 	// first check if we already have the details for this teammate
-	c.logger.Debug("determining teammate", log.String("author", stringp(build.authorName)), log.String("commit", build.commit()))
+	c.logger.Debug("determining teammate", log.String("author", build.authorName()), log.String("commit", build.commit()))
 	cached, ok := c.commitTeammateCache[build.commit()]
 
 	// we have the details for this member already!
