@@ -332,7 +332,10 @@ func (s *GitHubSource) fetchReposAffiliated(ctx context.Context, first int, excl
 
 	// request larger page of results to account for exclusion taking effect afterwards
 	bufferedFirst := first + len(excludedRepos)
-	s.listAffiliated(ctx, bufferedFirst, unfiltered)
+	go func() {
+		s.listAffiliated(ctx, bufferedFirst, unfiltered)
+		close(unfiltered)
+	}()
 
 	var eb excludeBuilder
 	// Only exclude on exact nameWithOwner match
