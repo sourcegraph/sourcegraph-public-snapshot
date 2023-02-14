@@ -4,28 +4,86 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
+	"encoding/json"
 	"io"
 	"io/fs"
 	"path"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/derision-test/glock"
+	"golang.org/x/exp/slices"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestCrateSyncer(t *testing.T) {
+	clock := glock.NewMockClock()
+	rawConfig, _ := json.Marshal(schema.RustPackagesConnection{
+		IndexRepositoryName:         "github.com/rust-lang/crates.io-index",
+		IndexRepositorySyncInterval: "1m",
+	})
+
+	// dont need any functionality for this
 	autoindexSvc := NewMockAutoIndexingService()
+
+	refs := make(map[reposource.PackageName][]string)
 	dependenciesSvc := NewMockDependenciesService()
+	dependenciesSvc.InsertPackageRepoRefsFunc.SetDefaultHook(func(ctx context.Context, refList []shared.MinimalPackageRepoRef) (newRef []shared.PackageRepoReference, newV []shared.PackageRepoRefVersion, err error) {
+		for _, r := range refList {
+			if versions, ok := refs[r.Name]; ok {
+				refs[r.Name] = append(versions, r.Versions...)
+				for _, v := range r.Versions {
+					if slices.Contains(versions, v) {
+						newV = append(newV, shared.PackageRepoRefVersion{Version: v})
+					}
+				}
+			} else {
+				newRef = append(newRef, shared.PackageRepoReference{Name: r.Name})
+				for _, v := range r.Versions {
+					newV = append(newV, shared.PackageRepoRefVersion{Version: v})
+				}
+				refs[r.Name] = r.Versions
+			}
+		}
+		return
+	})
+
 	gitclient := NewMockGitserverClient()
 	gitclient.LsFilesFunc.SetDefaultReturn([]string{"petgraph", "percent"}, nil)
 	gitclient.ArchiveReaderFunc.SetDefaultHook(func(ctx context.Context, sub authz.SubRepoPermissionChecker, name api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
-		return createArchive(t, string(opts.Pathspecs[0])), nil
+		var archive io.ReadCloser
+		switch opts.Pathspecs[0] {
+		case "petgraph":
+			archive = createArchive(t, fileInfo{"petgraph", []byte(petgraphJSON)})
+		case "percent":
+			archive = createArchive(t, fileInfo{"percent", []byte(percentEncJSON)})
+		}
+		return archive, nil
 	})
+
 	extsvcStore := NewMockExternalServiceStore()
+	extsvcStore.ListFunc.SetDefaultReturn([]*types.ExternalService{{
+		ID:     1,
+		Config: encryption.NewUnencrypted(string(rawConfig)),
+	}}, nil)
+	extsvcStore.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int64) (*types.ExternalService, error) {
+		clock.Advance(time.Second)
+		return &types.ExternalService{
+			ID:         id,
+			LastSyncAt: clock.Now(),
+		}, nil
+	})
 
 	job := crateSyncerJob{
 		archiveWindowSize: 1,
@@ -33,24 +91,106 @@ func TestCrateSyncer(t *testing.T) {
 		dependenciesSvc:   dependenciesSvc,
 		gitClient:         gitclient,
 		extSvcStore:       extsvcStore,
+		clock:             clock,
 		operations:        newOperations(&observation.TestContext),
 	}
 
-	job.handleCrateSyncer(context.Background(), time.Second)
+	t.Run("Success", func(t *testing.T) {
+		if err := job.handleCrateSyncer(context.Background(), time.Second); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if len(dependenciesSvc.InsertPackageRepoRefsFunc.History()) != 2 {
+			t.Errorf("unexpected number of calls to InsertPackageRepoRefs (want=%d, got=%d)", 2, len(dependenciesSvc.InsertPackageRepoRefsFunc.History()))
+		}
+
+		if len(extsvcStore.GetByIDFunc.History()) != 1 {
+			t.Errorf("unexpected number of calls to GetByID (want=%d, got=%d)", 1, len(extsvcStore.GetByIDFunc.History()))
+		}
+
+		if len(autoindexSvc.QueueIndexesForPackageFunc.History()) != 6 {
+			t.Errorf("unexpected number of calls to QueueIndexesForPackageFunc (want=%d, got=%d)", 6, len(autoindexSvc.QueueIndexesForPackageFunc.History()))
+		}
+	})
+
+	t.Run("Fetch arhive err", func(t *testing.T) {
+		dependenciesSvc.InsertPackageRepoRefsFunc.history = dependenciesSvc.InsertPackageRepoRefsFunc.history[:0]
+		extsvcStore.GetByIDFunc.history = extsvcStore.GetByIDFunc.history[:0]
+		autoindexSvc.QueueIndexesForPackageFunc.history = autoindexSvc.QueueIndexesForPackageFunc.history[:0]
+
+		gitclient.ArchiveReaderFunc.SetDefaultHook(func(ctx context.Context, sub authz.SubRepoPermissionChecker, name api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
+			if slices.Contains(opts.Pathspecs, "petgraph") {
+				return createArchive(t, fileInfo{"petgraph", []byte(petgraphJSON)}), nil
+			}
+			return nil, errors.New("expected err")
+		})
+
+		const expectedErrString = `failed to git archive repo "github.com/rust-lang/crates.io-index": expected err`
+		if err := job.handleCrateSyncer(context.Background(), time.Second); err == nil {
+			t.Fatalf("unexpected nil error: %v", err)
+		} else if err.Error() != expectedErrString {
+			t.Fatalf("unexpected error (want=%q, got=%q)", expectedErrString, err)
+		}
+
+		if len(dependenciesSvc.InsertPackageRepoRefsFunc.History()) != 1 {
+			t.Errorf("unexpected number of calls to InsertPackageRepoRefs (want=%d, got=%d)", 1, len(dependenciesSvc.InsertPackageRepoRefsFunc.History()))
+		}
+
+		if len(extsvcStore.GetByIDFunc.History()) != 0 {
+			t.Errorf("unexpected number of calls to GetByID (want=%d, got=%d)", 0, len(extsvcStore.GetByIDFunc.History()))
+		}
+
+		if len(autoindexSvc.QueueIndexesForPackageFunc.History()) != 0 {
+			t.Errorf("unexpected number of calls to QueueIndexesForPackageFunc (want=%d, got=%d)", 0, len(autoindexSvc.QueueIndexesForPackageFunc.History()))
+		}
+	})
+
+	t.Run("Crate info JSON error", func(t *testing.T) {
+		dependenciesSvc.InsertPackageRepoRefsFunc.history = dependenciesSvc.InsertPackageRepoRefsFunc.history[:0]
+		extsvcStore.GetByIDFunc.history = extsvcStore.GetByIDFunc.history[:0]
+		autoindexSvc.QueueIndexesForPackageFunc.history = autoindexSvc.QueueIndexesForPackageFunc.history[:0]
+
+		gitclient.ArchiveReaderFunc.SetDefaultHook(func(ctx context.Context, sub authz.SubRepoPermissionChecker, name api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
+			if slices.Contains(opts.Pathspecs, "petgraph") {
+				return createArchive(t, fileInfo{"petgraph", []byte(petgraphJSON[:len(petgraphJSON)-5])}), nil
+			}
+			return createArchive(t, fileInfo{"percent", []byte(percentEncJSON)}), nil
+		})
+
+		const expectedErrString = `malformed crate info`
+		if err := job.handleCrateSyncer(context.Background(), time.Second); err == nil {
+			t.Fatalf("unexpected nil error: %v", err)
+		} else if !strings.Contains(err.Error(), expectedErrString) {
+			t.Fatalf("unexpected error (want contains=%q, got=%q)", expectedErrString, err)
+		}
+
+		if len(dependenciesSvc.InsertPackageRepoRefsFunc.History()) != 1 {
+			t.Errorf("unexpected number of calls to InsertPackageRepoRefs (want=%d, got=%d)", 1, len(dependenciesSvc.InsertPackageRepoRefsFunc.History()))
+		}
+
+		if len(extsvcStore.GetByIDFunc.History()) != 1 {
+			t.Errorf("unexpected number of calls to GetByID (want=%d, got=%d)", 0, len(extsvcStore.GetByIDFunc.History()))
+		}
+
+		if len(autoindexSvc.QueueIndexesForPackageFunc.History()) != 2 {
+			t.Errorf("unexpected number of calls to QueueIndexesForPackageFunc (want=%d, got=%d)", 2, len(autoindexSvc.QueueIndexesForPackageFunc.History()))
+		}
+	})
 }
 
-func createArchive(t *testing.T, path string) io.ReadCloser {
+func createArchive(t *testing.T, info fileInfo) io.ReadCloser {
 	t.Helper()
 
 	var buf bytes.Buffer
 	tarWriter := tar.NewWriter(&buf)
 
-	switch path {
-	case "petgraph":
-		addFileToTarball(t, tarWriter, fileInfo{"petgraph", []byte(petgraphJSON)})
-	case "percent":
-		addFileToTarball(t, tarWriter, fileInfo{"percent", []byte(percentEncJSON)})
-	}
+	// switch path {
+	// case "petgraph":
+	// 	addFileToTarball(t, tarWriter, fileInfo{"petgraph", []byte(petgraphJSON)})
+	// case "percent":
+	//  addFileToTarball(t, tarWriter, fileInfo{"percent", []byte(percentEncJSON)})
+	addFileToTarball(t, tarWriter, info)
+	// }
 
 	return io.NopCloser(&buf)
 }

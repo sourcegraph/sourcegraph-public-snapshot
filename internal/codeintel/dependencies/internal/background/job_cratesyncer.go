@@ -10,6 +10,7 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/derision-test/glock"
 	jsoniter "github.com/json-iterator/go"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -34,6 +35,7 @@ type crateSyncerJob struct {
 	dependenciesSvc   DependenciesService
 	gitClient         GitserverClient
 	extSvcStore       ExternalServiceStore
+	clock             glock.Clock
 	operations        *operations
 }
 
@@ -66,6 +68,7 @@ func NewCrateSyncer(
 		dependenciesSvc:   dependenciesSvc,
 		gitClient:         gitClient,
 		extSvcStore:       extSvcStore,
+		clock:             glock.NewRealClock(),
 		operations:        newOperations(observationCtx),
 	}
 
@@ -116,6 +119,7 @@ func (j *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 	if err != nil {
 		return err
 	}
+	// safe according to rule #1 of pkg/unsafe
 	allFiles := *(*[]gitdomain.Pathspec)(unsafe.Pointer(&allFilesStr))
 
 	var (
@@ -126,7 +130,6 @@ func (j *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 		cratesReadErr error
 	)
 
-	// batchLabel:
 	for len(allFiles) > 0 {
 		var batch []gitdomain.Pathspec
 		if len(allFiles) <= j.archiveWindowSize {
@@ -150,9 +153,9 @@ func (j *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 			if err != nil {
 				if err != io.EOF {
 					cratesReadErr = errors.Append(cratesReadErr, err)
-					break /* batchLabel */
+					break
 				}
-				break /* batchLabel */
+				break
 			}
 
 			// Skip directory entries
@@ -176,13 +179,12 @@ func (j *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 			buf := bytes.NewBuffer(backing[:0])
 			if _, err := io.CopyN(buf, tr, header.Size); err != nil {
 				cratesReadErr = errors.Append(cratesReadErr, err)
-				break /* batchLabel */
+				break
 			}
 
 			pkgs, err := parseCrateInformation(buf.Bytes())
 			if err != nil {
 				cratesReadErr = errors.Append(cratesReadErr, err)
-				// attempt next crate's info
 				break
 			}
 
@@ -190,13 +192,13 @@ func (j *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 
 			newCrates, newVersions, err := j.dependenciesSvc.InsertPackageRepoRefs(ctx, pkgs)
 			if err != nil {
-				return errors.Wrapf(err, "failed to insert Rust crate")
+				return errors.Wrapf(err, "failed to insert rust crate")
 			}
 			didInsertNewCrates = didInsertNewCrates || len(newCrates) != 0 || len(newVersions) != 0
 		}
 	}
 
-	nextSync := time.Now()
+	nextSync := j.clock.Now()
 	if didInsertNewCrates {
 		// We picked up new crates so we trigger a new sync for the RUSTPACKAGES code host.
 		externalService.NextSyncAt = nextSync
@@ -208,9 +210,9 @@ func (j *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 			externalService, err = j.extSvcStore.GetByID(ctx, externalService.ID)
 			if err != nil && attemptsRemaining == 0 {
 				return errors.Append(cratesReadErr, err)
-			} else if err != nil || externalService.LastSyncAt.After(nextSync) {
+			} else if err != nil || !externalService.LastSyncAt.After(nextSync) {
 				// mirrors backoff in job_dependency_indexing_scheduler.go
-				time.Sleep(time.Second * 30)
+				j.clock.Sleep(time.Second * 30)
 				continue
 			}
 
@@ -248,8 +250,9 @@ func (j *crateSyncerJob) readIndexArchiveBatch(ctx context.Context, repoName api
 		},
 	)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to git archive repo %s", repoName)
+		return nil, errors.Wrapf(err, "failed to git archive repo %q", repoName)
 	}
+	// important to read this into memory asap
 	defer reader.Close()
 
 	// read into mem to avoid holding connection open
@@ -273,11 +276,11 @@ func rustPackagesConfig(ctx context.Context, externalService *dbtypes.ExternalSe
 	config := &schema.RustPackagesConnection{}
 	normalized, err := jsonc.Parse(rawConfig)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to parse JSON config for Rust external service %s", rawConfig)
+		return nil, errors.Wrapf(err, "failed to parse JSON config for rust external service %s", rawConfig)
 	}
 
 	if err = jsoniter.Unmarshal(normalized, config); err != nil {
-		return nil, errors.Wrapf(err, "failed to unmarshal Rust external service config %s", rawConfig)
+		return nil, errors.Wrapf(err, "failed to unmarshal rust external service config %s", rawConfig)
 	}
 	return config, nil
 }
@@ -293,7 +296,7 @@ func singleRustExternalService(ctx context.Context, store ExternalServiceStore) 
 		Kinds: []string{kind},
 	})
 	if err != nil {
-		return false, nil, errors.Wrapf(err, "failed to list Rust external service types")
+		return false, nil, errors.Wrapf(err, "failed to list rust external service types")
 	}
 
 	//  Skip if RUSTPACKAGES not enabled
