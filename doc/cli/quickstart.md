@@ -51,6 +51,8 @@ For other options, please refer to [the Windows specific `src` documentation](ex
 
 Once complete, you should have two new environment variables set: `SRC_ENDPOINT` and `SRC_ACCESS_TOKEN`.
 
+> NOTE: If you are running `src login` through a proxy, you may have further requirements. Contact support at support@sourcegraph.com
+
 ## Run a code search
 
 Searching is performed using the [`src search`](references/search.md) command. For example, to search for `ResolveRepositories` in the `src` repository, you can run:
