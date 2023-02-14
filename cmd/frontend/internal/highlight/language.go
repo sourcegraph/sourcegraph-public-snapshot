@@ -108,6 +108,7 @@ var baseEngineConfig = syntaxEngineConfig{
 		"jsx":        EngineTreeSitter,
 		"typescript": EngineTreeSitter,
 		"tsx":        EngineTreeSitter,
+		"java":       EngineTreeSitter,
 		"scala":      EngineTreeSitter,
 		"c#":         EngineTreeSitter,
 		"jsonnet":    EngineTreeSitter,

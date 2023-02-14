@@ -1,0 +1,314 @@
+---
+source: crates/sg-syntax/src/sg_treesitter.rs
+expression: "dump_document(&document, &contents)"
+---
+  package snapshots.files;
+//^^^^^^^ IdentifierKeyword 
+//        ^^^^^^^^^ Identifier 
+//                  ^^^^^ Identifier 
+  
+  @SuppressWarnings("all")
+//^ IdentifierOperator 
+// ^^^^^^^^^^^^^^^^ IdentifierAttribute 
+//                  ^^^^^ StringLiteral 
+  public class Java {
+//^^^^^^ IdentifierKeyword 
+//       ^^^^^ IdentifierKeyword 
+//             ^^^^ IdentifierType 
+      private int x; // field declaration
+//    ^^^^^^^ IdentifierKeyword 
+//            ^^^ IdentifierBuiltin 
+//                ^ Identifier 
+//                   ^^^^^^^^^^^^^^^^^^^^ Comment 
+      public Java() { // constructor
+//    ^^^^^^ IdentifierKeyword 
+//           ^^^^ IdentifierType 
+//                    ^^^^^^^^^^^^^^ Comment 
+          x = 5; // field access
+//        ^ Identifier 
+//            ^ NumericLiteral 
+//               ^^^^^^^^^^^^^^^ Comment 
+      }
+      public static void methodWithManyFeatures() {
+//    ^^^^^^ IdentifierKeyword 
+//           ^^^^^^ IdentifierKeyword 
+//                  ^^^^ IdentifierBuiltin 
+//                       ^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction 
+          int x = 53;
+//        ^^^ IdentifierBuiltin 
+//            ^ Identifier 
+//                ^^ NumericLiteral 
+          // local variable declaration
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+          int localVar = 0;
+//        ^^^ IdentifierBuiltin 
+//            ^^^^^^^^ Identifier 
+//                       ^ NumericLiteral 
+          // conditional logic - if/else
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+          if (x > 10) {
+//        ^^ IdentifierKeyword 
+//            ^ Identifier 
+//                ^^ NumericLiteral 
+              System.out.println("x is greater than 10");
+//            ^^^^^^ IdentifierType 
+//                   ^^^ Identifier 
+//                       ^^^^^^^ IdentifierFunction 
+//                               ^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+          } else {
+//          ^^^^ IdentifierKeyword 
+              System.out.println("x is less than or equal to 10");
+//            ^^^^^^ IdentifierType 
+//                   ^^^ Identifier 
+//                       ^^^^^^^ IdentifierFunction 
+//                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+          }
+          // switch statement
+//        ^^^^^^^^^^^^^^^^^^^ Comment 
+          switch (x) {
+//        ^^^^^^ IdentifierKeyword 
+//                ^ Identifier 
+              case 5:
+//            ^^^^ IdentifierKeyword 
+//                 ^ NumericLiteral 
+                  System.out.println("x equals 5");
+//                ^^^^^^ IdentifierType 
+//                       ^^^ Identifier 
+//                           ^^^^^^^ IdentifierFunction 
+//                                   ^^^^^^^^^^^^ StringLiteral 
+                  break;
+//                ^^^^^ IdentifierKeyword 
+              case 10:
+//            ^^^^ IdentifierKeyword 
+//                 ^^ NumericLiteral 
+                  System.out.println("x equals 10");
+//                ^^^^^^ IdentifierType 
+//                       ^^^ Identifier 
+//                           ^^^^^^^ IdentifierFunction 
+//                                   ^^^^^^^^^^^^^ StringLiteral 
+                  break;
+//                ^^^^^ IdentifierKeyword 
+              default:
+//            ^^^^^^^ IdentifierKeyword 
+                  System.out.println("x does not equal 5 or 10");
+//                ^^^^^^ IdentifierType 
+//                       ^^^ Identifier 
+//                           ^^^^^^^ IdentifierFunction 
+//                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+          }
+          // loop - for
+//        ^^^^^^^^^^^^^ Comment 
+          for (int i = 0; i < 5; i++) {
+//        ^^^ IdentifierKeyword 
+//             ^^^ IdentifierBuiltin 
+//                 ^ Identifier 
+//                     ^ NumericLiteral 
+//                        ^ Identifier 
+//                            ^ NumericLiteral 
+//                               ^ Identifier 
+              System.out.println(i);
+//            ^^^^^^ IdentifierType 
+//                   ^^^ Identifier 
+//                       ^^^^^^^ IdentifierFunction 
+//                               ^ Identifier 
+          }
+          // loop - while
+//        ^^^^^^^^^^^^^^^ Comment 
+          while (x < 10) {
+//        ^^^^^ IdentifierKeyword 
+//               ^ Identifier 
+//                   ^^ NumericLiteral 
+              x++;
+//            ^ Identifier 
+          }
+          switch (x) {
+//        ^^^^^^ IdentifierKeyword 
+//                ^ Identifier 
+              case 5 -> System.out.println("x equals 5");
+//            ^^^^ IdentifierKeyword 
+//                 ^ NumericLiteral 
+//                      ^^^^^^ IdentifierType 
+//                             ^^^ Identifier 
+//                                 ^^^^^^^ IdentifierFunction 
+//                                         ^^^^^^^^^^^^ StringLiteral 
+              case 10 -> System.out.println("x equals 10");
+//            ^^^^ IdentifierKeyword 
+//                 ^^ NumericLiteral 
+//                       ^^^^^^ IdentifierType 
+//                              ^^^ Identifier 
+//                                  ^^^^^^^ IdentifierFunction 
+//                                          ^^^^^^^^^^^^^ StringLiteral 
+              default -> System.out.println("x does not equal 5 or 10");
+//            ^^^^^^^ IdentifierKeyword 
+//                       ^^^^^^ IdentifierType 
+//                              ^^^ Identifier 
+//                                  ^^^^^^^ IdentifierFunction 
+//                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+          }
+          // try/catch for exception handling
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+          try {
+//        ^^^ IdentifierKeyword 
+              int y = 5 / 0; // will cause ArithmeticException
+//            ^^^ IdentifierBuiltin 
+//                ^ Identifier 
+//                    ^ NumericLiteral 
+//                        ^ NumericLiteral 
+//                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+          } catch (ArithmeticException e) {
+//          ^^^^^ IdentifierKeyword 
+//                 ^^^^^^^^^^^^^^^^^^^ IdentifierType 
+//                                     ^ Identifier 
+              System.out.println("Arithmetic exception occurred: " + e.getMessage());
+//            ^^^^^^ IdentifierType 
+//                   ^^^ Identifier 
+//                       ^^^^^^^ IdentifierFunction 
+//                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//                                                                   ^ Identifier 
+//                                                                     ^^^^^^^^^^ IdentifierFunction 
+          }
+          // nested class
+//        ^^^^^^^^^^^^^^^ Comment 
+          class InnerClass {
+//        ^^^^^ IdentifierKeyword 
+//              ^^^^^^^^^^ IdentifierType 
+              int innerField;
+//            ^^^ IdentifierBuiltin 
+//                ^^^^^^^^^^ Identifier 
+              InnerClass() {
+//            ^^^^^^^^^^ IdentifierType 
+                  // access outer class field and method
+//                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+                  System.out.println(x);
+//                ^^^^^^ IdentifierType 
+//                       ^^^ Identifier 
+//                           ^^^^^^^ IdentifierFunction 
+//                                   ^ Identifier 
+                  methodWithManyFeatures();
+//                ^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction 
+              }
+          }
+          new InnerClass(); // instantiate nested class
+//        ^^^ IdentifierKeyword 
+//            ^^^^^^^^^^ IdentifierType 
+//                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+          // array declaration and access
+//        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+          int[] array = new int[3];
+//        ^^^ IdentifierBuiltin 
+//              ^^^^^ Identifier 
+//                      ^^^ IdentifierKeyword 
+//                          ^^^ IdentifierBuiltin 
+//                              ^ NumericLiteral 
+          array[0] = 5;
+//        ^^^^^ Identifier 
+//              ^ NumericLiteral 
+//                   ^ NumericLiteral 
+          System.out.println(array[0]);
+//        ^^^^^^ IdentifierType 
+//               ^^^ Identifier 
+//                   ^^^^^^^ IdentifierFunction 
+//                           ^^^^^ Identifier 
+//                                 ^ NumericLiteral 
+          // varargs
+//        ^^^^^^^^^^ Comment 
+          mathOperation(1, 2, 3, 4, 5);
+//        ^^^^^^^^^^^^^ IdentifierFunction 
+//                      ^ NumericLiteral 
+//                         ^ NumericLiteral 
+//                            ^ NumericLiteral 
+//                               ^ NumericLiteral 
+//                                  ^ NumericLiteral 
+      }
+      // method with varargs parameter
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+      public static void mathOperation(int... nums) {
+//    ^^^^^^ IdentifierKeyword 
+//           ^^^^^^ IdentifierKeyword 
+//                  ^^^^ IdentifierBuiltin 
+//                       ^^^^^^^^^^^^^ IdentifierFunction 
+//                                     ^^^ IdentifierBuiltin 
+//                                            ^^^^ Identifier 
+          int sum = 0;
+//        ^^^ IdentifierBuiltin 
+//            ^^^ Identifier 
+//                  ^ NumericLiteral 
+          for (int n : nums) {
+//        ^^^ IdentifierKeyword 
+//             ^^^ IdentifierBuiltin 
+//                 ^ Identifier 
+//                     ^^^^ Identifier 
+              sum += n;
+//            ^^^ Identifier 
+//                   ^ Identifier 
+          }
+          System.out.println("sum = " + sum);
+//        ^^^^^^ IdentifierType 
+//               ^^^ Identifier 
+//                   ^^^^^^^ IdentifierFunction 
+//                           ^^^^^^^^ StringLiteral 
+//                                      ^^^ Identifier 
+      }
+      public static void instancePattern() {
+//    ^^^^^^ IdentifierKeyword 
+//           ^^^^^^ IdentifierKeyword 
+//                  ^^^^ IdentifierBuiltin 
+//                       ^^^^^^^^^^^^^^^ IdentifierFunction 
+          Object obj = new Integer(42);
+//        ^^^^^^ IdentifierType 
+//               ^^^ Identifier 
+//                     ^^^ IdentifierKeyword 
+//                         ^^^^^^^ IdentifierType 
+//                                 ^^ NumericLiteral 
+          if (obj instanceof Integer i) {
+//        ^^ IdentifierKeyword 
+//            ^^^ Identifier 
+//                ^^^^^^^^^^ IdentifierKeyword 
+//                           ^^^^^^^ IdentifierType 
+//                                   ^ Identifier 
+              int x = i; // access Integer fields/methods
+//            ^^^ IdentifierBuiltin 
+//                ^ Identifier 
+//                    ^ Identifier 
+//                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+          }
+      }
+      public static void textBlock() {
+//    ^^^^^^ IdentifierKeyword 
+//           ^^^^^^ IdentifierKeyword 
+//                  ^^^^ IdentifierBuiltin 
+//                       ^^^^^^^^^ IdentifierFunction 
+          String textBlock = """
+//        ^^^^^^ IdentifierType 
+//               ^^^^^^^^^ Identifier 
+//                           ^^^ StringLiteral 80:27..83:15 
+              This is a text block
+              It can contain multiple lines
+              """;
+          System.out.println(textBlock);
+//        ^^^^^^ IdentifierType 
+//               ^^^ Identifier 
+//                   ^^^^^^^ IdentifierFunction 
+//                           ^^^^^^^^^ Identifier 
+      }
+      record InnerRecord(int innerField) {
+//           ^^^^^^^^^^^ Identifier 
+//                       ^^^ IdentifierBuiltin 
+//                           ^^^^^^^^^^ Identifier 
+           public InnerRecord() {
+//         ^^^^^^ IdentifierKeyword 
+//                ^^^^^^^^^^^ IdentifierType 
+              this(42);
+//            ^^^^ IdentifierBuiltin 
+//                 ^^ NumericLiteral 
+              System.out.println(42);
+//            ^^^^^^ IdentifierType 
+//                   ^^^ Identifier 
+//                       ^^^^^^^ IdentifierFunction 
+//                               ^^ NumericLiteral 
+              methodWithManyFeatures();
+//            ^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction 
+          }
+      }
+  }
+

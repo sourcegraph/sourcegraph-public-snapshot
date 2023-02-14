@@ -1709,6 +1709,7 @@ dependencies = [
  "tree-sitter-c-sharp",
  "tree-sitter-go",
  "tree-sitter-highlight",
+ "tree-sitter-java",
  "tree-sitter-javascript",
  "tree-sitter-jsonnet",
  "tree-sitter-scala",
@@ -2220,6 +2221,16 @@ checksum = "042342584c5a7a0b833d9fc4e2bdab3f9868ddc6c4b339a1e01451c6720868bc"
 dependencies = [
  "regex",
  "thiserror",
+ "tree-sitter",
+]
+
+[[package]]
+name = "tree-sitter-java"
+version = "0.20.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f0bf5d3f508cbffcbfe1805834101c0d24297a8b6c2184ad9c595556c46d2420"
+dependencies = [
+ "cc",
  "tree-sitter",
 ]
 

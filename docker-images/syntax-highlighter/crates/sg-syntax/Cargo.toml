@@ -51,6 +51,7 @@ tree-sitter-xlsg = { git = "https://github.com/sourcegraph/tree-sitter-xlsg" }
 
 tree-sitter-javascript = "0.20.0"
 tree-sitter-typescript = "0.20.2"
+tree-sitter-java = "0.20.0"
 
 [dev-dependencies]
 insta = "1.11.0"

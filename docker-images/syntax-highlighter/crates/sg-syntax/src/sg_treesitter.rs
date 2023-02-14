@@ -58,6 +58,7 @@ const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
     ("string.escape",           SyntaxKind::StringLiteralEscape),
     ("tag",                     SyntaxKind::UnspecifiedSyntaxKind),
     ("type",                    SyntaxKind::IdentifierType),
+    ("identifier.type",         SyntaxKind::IdentifierType),
     ("type.builtin",            SyntaxKind::IdentifierType),
     ("identifier",              SyntaxKind::Identifier),
     ("variable",                SyntaxKind::Identifier),
@@ -140,7 +141,7 @@ macro_rules! create_configurations {
 
 lazy_static::lazy_static! {
     static ref CONFIGURATIONS: HashMap<&'static str, HighlightConfiguration> = {
-        create_configurations!( go, sql, c_sharp, jsonnet, scala, xlsg, javascript )
+        create_configurations!( go, sql, c_sharp, jsonnet, java, scala, xlsg, javascript )
     };
 }
 
