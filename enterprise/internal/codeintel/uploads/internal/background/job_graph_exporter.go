@@ -39,10 +39,28 @@ func NewRankingGraphMapper(
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		context.Background(),
+		"pagerank.graph-mapper", "maps graph",
+		interval,
+		goroutine.HandlerFunc(func(ctx context.Context) error {
+			if err := uploadsService.MapRankingGraph(ctx, numRankingRoutines); err != nil {
+				return err
+			}
+			return nil
+		}))
+}
+
+func NewRankingGraphReducer(
+	observationCtx *observation.Context,
+	uploadsService UploadService,
+	numRankingRoutines int,
+	interval time.Duration,
+) goroutine.BackgroundRoutine {
+	return goroutine.NewPeriodicGoroutine(
+		context.Background(),
 		"pagerank.graph-reducer", "reduces graph",
 		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			if err := uploadsService.MapperRankingGraph(ctx, numRankingRoutines); err != nil {
+			if err := uploadsService.ReduceRankingGraph(ctx, numRankingRoutines); err != nil {
 				return err
 			}
 			return nil

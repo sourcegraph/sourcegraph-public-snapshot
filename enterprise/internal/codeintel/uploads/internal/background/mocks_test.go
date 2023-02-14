@@ -10246,6 +10246,10 @@ type MockLsifStore struct {
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *LsifStoreDoneFunc
+	// GetRankingReferencesByUploadIDFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// GetRankingReferencesByUploadID.
+	GetRankingReferencesByUploadIDFunc *LsifStoreGetRankingReferencesByUploadIDFunc
 	// GetUploadDocumentsForPathFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// GetUploadDocumentsForPath.
@@ -10264,6 +10268,12 @@ type MockLsifStore struct {
 	// InsertMetadataFunc is an instance of a mock function object
 	// controlling the behavior of the method InsertMetadata.
 	InsertMetadataFunc *LsifStoreInsertMetadataFunc
+	// InsertPathCountInputsFunc is an instance of a mock function object
+	// controlling the behavior of the method InsertPathCountInputs.
+	InsertPathCountInputsFunc *LsifStoreInsertPathCountInputsFunc
+	// InsertPathRanksFunc is an instance of a mock function object
+	// controlling the behavior of the method InsertPathRanks.
+	InsertPathRanksFunc *LsifStoreInsertPathRanksFunc
 	// InsertReferencesForRankingFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// InsertReferencesForRanking.
@@ -10319,6 +10329,11 @@ func NewMockLsifStore() *MockLsifStore {
 				return
 			},
 		},
+		GetRankingReferencesByUploadIDFunc: &LsifStoreGetRankingReferencesByUploadIDFunc{
+			defaultHook: func(context.Context, int, int, int) (r0 []shared1.RankingReferences, r1 error) {
+				return
+			},
+		},
 		GetUploadDocumentsForPathFunc: &LsifStoreGetUploadDocumentsForPathFunc{
 			defaultHook: func(context.Context, int, string) (r0 []string, r1 int, r2 error) {
 				return
@@ -10341,6 +10356,16 @@ func NewMockLsifStore() *MockLsifStore {
 		},
 		InsertMetadataFunc: &LsifStoreInsertMetadataFunc{
 			defaultHook: func(context.Context, int, lsifstore.ProcessedMetadata) (r0 error) {
+				return
+			},
+		},
+		InsertPathCountInputsFunc: &LsifStoreInsertPathCountInputsFunc{
+			defaultHook: func(context.Context, int) (r0 error) {
+				return
+			},
+		},
+		InsertPathRanksFunc: &LsifStoreInsertPathRanksFunc{
+			defaultHook: func(context.Context, string, int) (r0 error) {
 				return
 			},
 		},
@@ -10421,6 +10446,11 @@ func NewStrictMockLsifStore() *MockLsifStore {
 				panic("unexpected invocation of MockLsifStore.Done")
 			},
 		},
+		GetRankingReferencesByUploadIDFunc: &LsifStoreGetRankingReferencesByUploadIDFunc{
+			defaultHook: func(context.Context, int, int, int) ([]shared1.RankingReferences, error) {
+				panic("unexpected invocation of MockLsifStore.GetRankingReferencesByUploadID")
+			},
+		},
 		GetUploadDocumentsForPathFunc: &LsifStoreGetUploadDocumentsForPathFunc{
 			defaultHook: func(context.Context, int, string) ([]string, int, error) {
 				panic("unexpected invocation of MockLsifStore.GetUploadDocumentsForPath")
@@ -10444,6 +10474,16 @@ func NewStrictMockLsifStore() *MockLsifStore {
 		InsertMetadataFunc: &LsifStoreInsertMetadataFunc{
 			defaultHook: func(context.Context, int, lsifstore.ProcessedMetadata) error {
 				panic("unexpected invocation of MockLsifStore.InsertMetadata")
+			},
+		},
+		InsertPathCountInputsFunc: &LsifStoreInsertPathCountInputsFunc{
+			defaultHook: func(context.Context, int) error {
+				panic("unexpected invocation of MockLsifStore.InsertPathCountInputs")
+			},
+		},
+		InsertPathRanksFunc: &LsifStoreInsertPathRanksFunc{
+			defaultHook: func(context.Context, string, int) error {
+				panic("unexpected invocation of MockLsifStore.InsertPathRanks")
 			},
 		},
 		InsertReferencesForRankingFunc: &LsifStoreInsertReferencesForRankingFunc{
@@ -10517,6 +10557,9 @@ func NewMockLsifStoreFrom(i lsifstore.LsifStore) *MockLsifStore {
 		DoneFunc: &LsifStoreDoneFunc{
 			defaultHook: i.Done,
 		},
+		GetRankingReferencesByUploadIDFunc: &LsifStoreGetRankingReferencesByUploadIDFunc{
+			defaultHook: i.GetRankingReferencesByUploadID,
+		},
 		GetUploadDocumentsForPathFunc: &LsifStoreGetUploadDocumentsForPathFunc{
 			defaultHook: i.GetUploadDocumentsForPath,
 		},
@@ -10531,6 +10574,12 @@ func NewMockLsifStoreFrom(i lsifstore.LsifStore) *MockLsifStore {
 		},
 		InsertMetadataFunc: &LsifStoreInsertMetadataFunc{
 			defaultHook: i.InsertMetadata,
+		},
+		InsertPathCountInputsFunc: &LsifStoreInsertPathCountInputsFunc{
+			defaultHook: i.InsertPathCountInputs,
+		},
+		InsertPathRanksFunc: &LsifStoreInsertPathRanksFunc{
+			defaultHook: i.InsertPathRanks,
 		},
 		InsertReferencesForRankingFunc: &LsifStoreInsertReferencesForRankingFunc{
 			defaultHook: i.InsertReferencesForRanking,
@@ -10900,6 +10949,124 @@ func (c LsifStoreDoneFuncCall) Args() []interface{} {
 // invocation.
 func (c LsifStoreDoneFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// LsifStoreGetRankingReferencesByUploadIDFunc describes the behavior when
+// the GetRankingReferencesByUploadID method of the parent MockLsifStore
+// instance is invoked.
+type LsifStoreGetRankingReferencesByUploadIDFunc struct {
+	defaultHook func(context.Context, int, int, int) ([]shared1.RankingReferences, error)
+	hooks       []func(context.Context, int, int, int) ([]shared1.RankingReferences, error)
+	history     []LsifStoreGetRankingReferencesByUploadIDFuncCall
+	mutex       sync.Mutex
+}
+
+// GetRankingReferencesByUploadID delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockLsifStore) GetRankingReferencesByUploadID(v0 context.Context, v1 int, v2 int, v3 int) ([]shared1.RankingReferences, error) {
+	r0, r1 := m.GetRankingReferencesByUploadIDFunc.nextHook()(v0, v1, v2, v3)
+	m.GetRankingReferencesByUploadIDFunc.appendCall(LsifStoreGetRankingReferencesByUploadIDFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetRankingReferencesByUploadID method of the parent MockLsifStore
+// instance is invoked and the hook queue is empty.
+func (f *LsifStoreGetRankingReferencesByUploadIDFunc) SetDefaultHook(hook func(context.Context, int, int, int) ([]shared1.RankingReferences, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetRankingReferencesByUploadID method of the parent MockLsifStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *LsifStoreGetRankingReferencesByUploadIDFunc) PushHook(hook func(context.Context, int, int, int) ([]shared1.RankingReferences, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *LsifStoreGetRankingReferencesByUploadIDFunc) SetDefaultReturn(r0 []shared1.RankingReferences, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, int, int) ([]shared1.RankingReferences, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *LsifStoreGetRankingReferencesByUploadIDFunc) PushReturn(r0 []shared1.RankingReferences, r1 error) {
+	f.PushHook(func(context.Context, int, int, int) ([]shared1.RankingReferences, error) {
+		return r0, r1
+	})
+}
+
+func (f *LsifStoreGetRankingReferencesByUploadIDFunc) nextHook() func(context.Context, int, int, int) ([]shared1.RankingReferences, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LsifStoreGetRankingReferencesByUploadIDFunc) appendCall(r0 LsifStoreGetRankingReferencesByUploadIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// LsifStoreGetRankingReferencesByUploadIDFuncCall objects describing the
+// invocations of this function.
+func (f *LsifStoreGetRankingReferencesByUploadIDFunc) History() []LsifStoreGetRankingReferencesByUploadIDFuncCall {
+	f.mutex.Lock()
+	history := make([]LsifStoreGetRankingReferencesByUploadIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LsifStoreGetRankingReferencesByUploadIDFuncCall is an object that
+// describes an invocation of method GetRankingReferencesByUploadID on an
+// instance of MockLsifStore.
+type LsifStoreGetRankingReferencesByUploadIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared1.RankingReferences
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LsifStoreGetRankingReferencesByUploadIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LsifStoreGetRankingReferencesByUploadIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // LsifStoreGetUploadDocumentsForPathFunc describes the behavior when the
@@ -11453,6 +11620,221 @@ func (c LsifStoreInsertMetadataFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c LsifStoreInsertMetadataFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// LsifStoreInsertPathCountInputsFunc describes the behavior when the
+// InsertPathCountInputs method of the parent MockLsifStore instance is
+// invoked.
+type LsifStoreInsertPathCountInputsFunc struct {
+	defaultHook func(context.Context, int) error
+	hooks       []func(context.Context, int) error
+	history     []LsifStoreInsertPathCountInputsFuncCall
+	mutex       sync.Mutex
+}
+
+// InsertPathCountInputs delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockLsifStore) InsertPathCountInputs(v0 context.Context, v1 int) error {
+	r0 := m.InsertPathCountInputsFunc.nextHook()(v0, v1)
+	m.InsertPathCountInputsFunc.appendCall(LsifStoreInsertPathCountInputsFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// InsertPathCountInputs method of the parent MockLsifStore instance is
+// invoked and the hook queue is empty.
+func (f *LsifStoreInsertPathCountInputsFunc) SetDefaultHook(hook func(context.Context, int) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// InsertPathCountInputs method of the parent MockLsifStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *LsifStoreInsertPathCountInputsFunc) PushHook(hook func(context.Context, int) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *LsifStoreInsertPathCountInputsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *LsifStoreInsertPathCountInputsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+func (f *LsifStoreInsertPathCountInputsFunc) nextHook() func(context.Context, int) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LsifStoreInsertPathCountInputsFunc) appendCall(r0 LsifStoreInsertPathCountInputsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LsifStoreInsertPathCountInputsFuncCall
+// objects describing the invocations of this function.
+func (f *LsifStoreInsertPathCountInputsFunc) History() []LsifStoreInsertPathCountInputsFuncCall {
+	f.mutex.Lock()
+	history := make([]LsifStoreInsertPathCountInputsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LsifStoreInsertPathCountInputsFuncCall is an object that describes an
+// invocation of method InsertPathCountInputs on an instance of
+// MockLsifStore.
+type LsifStoreInsertPathCountInputsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LsifStoreInsertPathCountInputsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LsifStoreInsertPathCountInputsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// LsifStoreInsertPathRanksFunc describes the behavior when the
+// InsertPathRanks method of the parent MockLsifStore instance is invoked.
+type LsifStoreInsertPathRanksFunc struct {
+	defaultHook func(context.Context, string, int) error
+	hooks       []func(context.Context, string, int) error
+	history     []LsifStoreInsertPathRanksFuncCall
+	mutex       sync.Mutex
+}
+
+// InsertPathRanks delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockLsifStore) InsertPathRanks(v0 context.Context, v1 string, v2 int) error {
+	r0 := m.InsertPathRanksFunc.nextHook()(v0, v1, v2)
+	m.InsertPathRanksFunc.appendCall(LsifStoreInsertPathRanksFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the InsertPathRanks
+// method of the parent MockLsifStore instance is invoked and the hook queue
+// is empty.
+func (f *LsifStoreInsertPathRanksFunc) SetDefaultHook(hook func(context.Context, string, int) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// InsertPathRanks method of the parent MockLsifStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *LsifStoreInsertPathRanksFunc) PushHook(hook func(context.Context, string, int) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *LsifStoreInsertPathRanksFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, string, int) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *LsifStoreInsertPathRanksFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, string, int) error {
+		return r0
+	})
+}
+
+func (f *LsifStoreInsertPathRanksFunc) nextHook() func(context.Context, string, int) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LsifStoreInsertPathRanksFunc) appendCall(r0 LsifStoreInsertPathRanksFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LsifStoreInsertPathRanksFuncCall objects
+// describing the invocations of this function.
+func (f *LsifStoreInsertPathRanksFunc) History() []LsifStoreInsertPathRanksFuncCall {
+	f.mutex.Lock()
+	history := make([]LsifStoreInsertPathRanksFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LsifStoreInsertPathRanksFuncCall is an object that describes an
+// invocation of method InsertPathRanks on an instance of MockLsifStore.
+type LsifStoreInsertPathRanksFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LsifStoreInsertPathRanksFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LsifStoreInsertPathRanksFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

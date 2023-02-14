@@ -21,7 +21,8 @@ import (
 
 type UploadService interface {
 	SerializeRankingGraph(ctx context.Context, numRankingRoutines int) error
-	MapperRankingGraph(ctx context.Context, numRankingRoutines int) error
+	MapRankingGraph(ctx context.Context, numRankingRoutines int) error
+	ReduceRankingGraph(ctx context.Context, numRankingRoutines int) error
 	VacuumRankingGraph(ctx context.Context) error
 }
 

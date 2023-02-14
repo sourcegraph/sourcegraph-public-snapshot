@@ -954,6 +954,19 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.codeintel_ranking_path_counts_inputs"
+```
+    Column     |  Type   | Collation | Nullable | Default 
+---------------+---------+-----------+----------+---------
+ repository    | text    |           | not null | 
+ document_root | text    |           | not null | 
+ document_path | text    |           | not null | 
+ count         | integer |           | not null | 
+ graph_key     | text    |           | not null | 
+ processed     | boolean |           | not null | false
+
+```
+
 # Table "public.codeintel_ranking_references"
 ```
     Column    |  Type   | Collation | Nullable | Default 

@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/redis"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/group"
@@ -29,7 +30,10 @@ const (
 	batchNumber           = 1000
 )
 
-func (s *Service) MapperRankingGraph(ctx context.Context, numRankingRoutines int) error {
+func (s *Service) MapRankingGraph(ctx context.Context, numRankingRoutines int) (err error) {
+	ctx, _, endObservation := s.operations.mapRankingGraph.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	fmt.Println("RUNNING RUNNING RUNNING RUNNING well this is running RUNNING RUNNING RUNNING RUNNING")
 
 	// First time running. There are no uploads
@@ -69,98 +73,33 @@ func (s *Service) MapperRankingGraph(ctx context.Context, numRankingRoutines int
 		return nil
 	}
 
+	//? TODO: Move this to postgres
 	referencesByUploadID, err := redisStore.LRange("ranking:references:gold", 0, -1).Strings()
 	if err != nil {
 		return err
 	}
 
 	for _, uid := range referencesByUploadID {
-		symbolNames := make([]string, 0)
-		start := 0
-		stop := batchNumber
-		for {
-			key := fmt.Sprintf("graph:references:%s", uid)
-			references, err := redisStore.LRange(key, start, stop).Strings()
-			if err != nil {
-				return err
-			}
-			if len(references) == 0 {
-				break
-			}
-
-			for _, r := range references {
-				s := strings.Split(r, "{!@@!}")
-				symbolNames = append(symbolNames, s[1])
-			}
-
-			fmt.Printf("DEBUG: batching: %d \n", len(symbolNames))
-
-			definitionPath, err := redisStore.HMGet(rankingDefinitionHash, symbolNames...).Strings()
-			if err != nil {
-				return err
-			}
-
-			countMap := make(map[string]int)
-
-			for _, d := range definitionPath {
-				if d != "" {
-					countMap[d] = countMap[d] + 1
-				}
-			}
-
-			fields := make([]string, 0, batchNumber)
-			for k := range countMap {
-				fields = append(fields, k)
-			}
-			f, err := redisStore.HMGet("graph:globalfiles:counts", fields...).Strings()
-			if err != nil {
-				return err
-			}
-
-			for i, v := range fields {
-				value := f[i]
-				if value != "" {
-					vx, err := strconv.Atoi(value)
-					if err != nil {
-						return nil
-					}
-					countMap[v] = countMap[v] + vx
-				}
-			}
-
-			redisCountMap := make(map[string]interface{})
-			for k, v := range countMap {
-				redisCountMap[k] = v
-			}
-
-			err = redisStore.HMSet("graph:globalfiles:counts", redisCountMap).Err()
-			if err != nil {
-				return err
-			}
-
-			start = stop + 1
-			stop = stop + batchNumber
+		// for {
+		uploadID, err := strconv.Atoi(uid)
+		if err != nil {
+			return err
 		}
+
+		if err := s.lsifstore.InsertPathCountInputs(ctx, uploadID); err != nil {
+			return err
+		}
+		// }
 	}
 
-	countMap, err := redisStore.HGetAll("graph:globalfiles:counts").StringMap()
-	if err != nil {
-		return err
-	}
+	return nil
+}
 
-	err = redisStore.Del("graph:globalfiles:counts")
-	if err != nil {
-		return err
-	}
+func (s *Service) ReduceRankingGraph(ctx context.Context, numRankingRoutines int) (err error) {
+	ctx, _, endObservation := s.operations.reduceRankingGraph.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
 
-	for k, v := range countMap {
-		fmt.Printf("OHBOY OHBOY OHBOY %s: %s \n", k, v)
-	}
-
-	redisStore.Incr("ranking:graph:processed")
-
-	err = s.store.SetGlobalRanks(ctx, countMap)
-	if err != nil {
+	if err := s.lsifstore.InsertPathRanks(ctx, "dev", 1000); err != nil {
 		return err
 	}
 
@@ -210,8 +149,10 @@ func (s *Service) SerializeRankingGraph(ctx context.Context, numRankingRoutines 
 					)
 				}
 
+				// TODO: Move this to postgres
 				redisStore.LPush("ranking:references:gold", upload.ID)
 
+				// TODO: Move this to postgres
 				// increment the number of processed uploads
 				redisStore.Incr("ranking:uploads:processed")
 

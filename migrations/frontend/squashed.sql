@@ -1701,6 +1701,15 @@ CREATE SEQUENCE codeintel_ranking_exports_id_seq
 
 ALTER SEQUENCE codeintel_ranking_exports_id_seq OWNED BY codeintel_ranking_exports.id;
 
+CREATE TABLE codeintel_ranking_path_counts_inputs (
+    repository text NOT NULL,
+    document_root text NOT NULL,
+    document_path text NOT NULL,
+    count integer NOT NULL,
+    graph_key text NOT NULL,
+    processed boolean DEFAULT false NOT NULL
+);
+
 CREATE TABLE codeintel_ranking_references (
     upload_id integer NOT NULL,
     symbol_names text[] NOT NULL
