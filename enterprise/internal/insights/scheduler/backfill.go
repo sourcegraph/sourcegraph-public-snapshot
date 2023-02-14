@@ -136,20 +136,34 @@ func (b *SeriesBackfill) SetLowestPriority(ctx context.Context, store *BackfillS
 	if err != nil {
 		return err
 	}
-	newCost := 1000.0 // default lowest cost as there needs to be room below it
+	newCost := 10000.0 // default lowest cost as there needs to be room below it
 	if found && (currentMax*2 > newCost) {
 		newCost = currentMax * 2
 	}
 
-	return b.setCost(ctx, tx, newCost)
+	defer func(ic float64) {
+		err = store.Done(err)
+		if err != nil {
+			b.EstimatedCost = ic
+		}
+	}(b.EstimatedCost)
+	err = b.setCost(ctx, tx, newCost)
+	return err
 }
 
-func (b *SeriesBackfill) SetHighestPriority(ctx context.Context, store *BackfillStore) error {
+func (b *SeriesBackfill) SetHighestPriority(ctx context.Context, store *BackfillStore) (err error) {
 	tx, err := store.Transact(ctx)
 	if err != nil {
 		return err
 	}
-	return b.setCost(ctx, tx, 0)
+	defer func(ic float64) {
+		err = store.Done(err)
+		if err != nil {
+			b.EstimatedCost = ic
+		}
+	}(b.EstimatedCost)
+	err = b.setCost(ctx, tx, 0)
+	return err
 }
 
 func (b *SeriesBackfill) RetryBackfillAttempt(ctx context.Context, store *BackfillStore) (err error) {
@@ -178,14 +192,8 @@ func (b *SeriesBackfill) RetryBackfillAttempt(ctx context.Context, store *Backfi
 	return nil
 }
 
-func (b *SeriesBackfill) setCost(ctx context.Context, storeTx *BackfillStore, newCost float64) (err error) {
-	defer func(ic float64) {
-		err = storeTx.Done(err)
-		if err != nil {
-			b.EstimatedCost = ic
-		}
-	}(b.EstimatedCost)
-	err = storeTx.Exec(ctx, sqlf.Sprintf("update insight_series_backfill set estimated_cost = %s where id = %s;", newCost, b.Id))
+func (b *SeriesBackfill) setCost(ctx context.Context, store *BackfillStore, newCost float64) (err error) {
+	err = store.Exec(ctx, sqlf.Sprintf("update insight_series_backfill set estimated_cost = %s where id = %s;", newCost, b.Id))
 	if err != nil {
 		return err
 	}
