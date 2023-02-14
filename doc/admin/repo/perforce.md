@@ -1,48 +1,45 @@
 # Using Perforce depots with Sourcegraph
 
-Sourcegraph supports [Perforce Helix](https://www.perforce.com/solutions/version-control) depots using [p4-fusion](https://github.com/salesforce/p4-fusion). This creates an equivalent Git repository from a Perforce depot, which can then be indexed by Sourcegraph. An experimental feature can be enabled to [configure Perforce depots through the Sourcegraph UI](#add-a-perforce-code-host).
+> NOTE: <span class="badge badge-experimental">Experimental</span> Perforce support is a work in progress—see [known issues and limitations](#known-issues-and-limitations).
 
-Screenshot of using Sourcegraph for code navigation in a Perforce depot:
+Sourcegraph supports [Perforce Helix](https://www.perforce.com/solutions/version-control) depots using [p4-fusion](https://github.com/salesforce/p4-fusion). This creates an equivalent Git repository from a Perforce depot, which can then be indexed by Sourcegraph.
 
-![Viewing a Perforce repository on Sourcegraph](https://sourcegraphstatic.com/git-p4-example.png)
+![Screenshot of a Perforce repository in a Sourcegraph](https://sourcegraphstatic.com/git-p4-example.png)
 
-> NOTE: Perforce support is a work in progress—see [known issues and limitations](#known-issues-and-limitations).
+## Add a Perforce code host connection
 
-## Add a Perforce code host
+Perforce depots can be added to a Sourcegraph instance by adding the appropriate [code host connection](../external_service/index.md).
 
-<span class="badge badge-experimental">Experimental</span>
+1. Perforce code host connections are still an experimental feature. To access this functionality, a site admin must enable the experimental feature in the [site configuration](../config/site_config.md):
 
-Adding Perforce depots as an [external code host](../external_service/index.md) through the UI is an experimental feature. To access this functionality, a site admin must enable the experimental feature in the [site configuration](../config/site_config.md):
-
-```json
-{
-	"experimentalFeatures": {
-		"perforce": "enabled"
-  }
-  ...
-}
-```
-
-Be sure to enable `p4-fusion` in the `fusionClient` setting in your code host [config](#configuration). For example:
-
-```json
-{
-    ...
-    "fusionClient": {
-      "enabled": true,
-      "lookAhead": 2000
+    ```json
+    {
+      "experimentalFeatures": {
+        "perforce": "enabled"
+      }
+      // ...
     }
-}
-```
-
-Details of all `p4-fusion` configuration fields can be seen [here](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@2a716bd70c294acf1b3679b790834c4dea9ea956/-/blob/schema/perforce.schema.json?L84)
-
-To connect Perforce to Sourcegraph:
-
+    ```
 1. Go to **Site admin > Manage code hosts > Add code host**
-2. Select **Perforce**.
-3. Configure the connection to Perforce using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
-4. Click **Add repositories**.
+1. Select **Perforce**.
+1. Configure the connection to Perforce using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
+
+   Be sure to enable `p4-fusion` in the `fusionClient` setting in your code host [config](#configuration). For example:
+
+    ```json
+    {
+        // ...
+        "fusionClient": {
+          "enabled": true,
+          "lookAhead": 2000
+        }
+    }
+    ```
+
+    Details of all `p4-fusion` configuration fields can be seen [here](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@2a716bd70c294acf1b3679b790834c4dea9ea956/-/blob/schema/perforce.schema.json?L84).
+
+    Without the `fusionClient` configuration, the code host connection uses `git p4`, but we recommend `p4-fusion` for better performance.
+1. Click **Add repositories**.
 
 ### Depot syncing
 
@@ -60,26 +57,24 @@ Notable things about depot syncing:
 - Rename of a Perforce depot, including changing the depot on the Perforce server or the `repositoryPathPattern` config option, will cause a re-import of the depot.
 - Unless [permissions syncing](#repository-permissions) is enabled, Sourcegraph knows nothing of the permissions on the depots, so it can't enforce access restrictions.
 
-### Repository permissions
+## Repository permissions
 
-<span class="badge badge-experimental">Experimental</span>
-
-To enable permissions syncing for Perforce depots using [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html), include [the `authorization` field](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@2a716bd70c294acf1b3679b790834c4dea9ea956/-/blob/schema/perforce.schema.json?L67) of the repo config:
+To enable permissions syncing for Perforce depots using [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html), include [the `authorization` field](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@2a716bd70c294acf1b3679b790834c4dea9ea956/-/blob/schema/perforce.schema.json?L67) to the configuration of the Perforce code host connection you created [above](#add-a-perforce-code-host):
 
 ```json
 {
-  ...
+  // ...
   "authorization": {}
 }
 ```
 
-Adding the `authorization` field to the repo config will enable partial parsing of the permissions tables. If this is the extent of your configuring, then you should sync subdirectories of a depot using the `depots` configuration that best describes the most concrete path of your permissions boundary.
+Adding the `authorization` field to the code host connection configugation will enable partial parsing of the permissions tables. If this is the extent of your configuring, then you should sync subdirectories of a depot using the `depots` configuration that best describes the most concrete path of your permissions boundary.
 
 For example, if your Perforce depot `//depot/Talkhouse` has different permissions for `//depot/Talkhouse/main-dev` and some subdirectories of `//depot/Talkhouse/rel1.0`, we recommend setting the following `depots`:
 
 ```json
 {
-  ...
+  // ...
   "depots": [
     "//depot/Talkhouse/main-dev",
     "//depot/Talkhouse/rel1.0/front",
@@ -88,11 +83,11 @@ For example, if your Perforce depot `//depot/Talkhouse` has different permission
 }
 ```
 
-By configuring each subdirectory that has unique permissions, Sourcegraph is able to recognize and enforce permissions for the sub-directories. You *cannot* define these permissions as:
+By configuring each subdirectory that has unique permissions, Sourcegraph is able to recognize and enforce permissions for the sub-directories. You can **NOT** define these permissions as:
 
 ```json
 {
-  ...
+  // ...
   "depots": [
     "//depot/Talkhouse/main-dev",
     "//depot/Talkhouse/rel1.0",
@@ -101,45 +96,49 @@ By configuring each subdirectory that has unique permissions, Sourcegraph is abl
 }
 ```
 
-as this will override the permissions for the `//depot/Talkhouse/rel1.0/back` depot.
+Since that would override the permissions for the `//depot/Talkhouse/rel1.0/back` depot.
 
-#### File-level permissions
+### File-level permissions
 
 File-level permissions make the splitting of depots by sub-directory unnecessary.
 
-File-level permissions are experimental. They take two steps to enable.
+To enable file-level permissions:
 
-First, enable [the feature in the site config](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@2a716bd/-/blob/schema/site.schema.json?L227&subtree=true?L227)
+1. Enable [the feature in the site config](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@2a716bd/-/blob/schema/site.schema.json?L227&subtree=true?L227):
 
-```json
-{
-	"experimentalFeatures": {
-    "perforce": "enabled",
-    "subRepoPermissions": { "enabled": true }
-  }
-}
-```
+    ```json
+    {
+      // ...
+      "experimentalFeatures": {
+        "perforce": "enabled",
+        "subRepoPermissions": { "enabled": true }
+      }
+    }
+    ```
+1. Enable the feature in the code host configuration by adding `subRepoPermissions` to the `authorization` object:
 
-Second, enable the feature in the depot config by adding `subRepoPermissions` to `authorization`:
+    ```json
+    {
+      // ...
+      "authorization": {
+        "subRepoPermissions": true
+      }
+    }
+    ```
 
-```json
-  ...
-  "authorization": {
-    "subRepoPermissions": true
-  }
-```
+2. Save the configuration. Permissions will be synced in the background based on your [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html).
 
-Permissions will be synced in the background based on your [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html). The mapping between Sourcegraph users and Perforce users are based on matching verified e-mail addresses.
+Sourcegraph users are mapped to Perforce users based on their verified e-mail addresses.
 
 As long as a user has been granted at least `Read` permissions in Perforce they will be able to view content in Sourcegraph.
 
 As a special case, commits in which a user does not have permissions to read any files are hidden. If a user can read a subset of files in a commit, only those files are shown.
 
-#### Caveats about permissions
+### Caveats about permissions
 
 - [the host field from protections are not supported](#known-issues-and-limitations).
 
-### Configuration
+## Configuration
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/perforce.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/perforce) to see rendered content.</div>
 
