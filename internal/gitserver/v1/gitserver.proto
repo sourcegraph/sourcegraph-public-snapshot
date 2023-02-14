@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package gitserver;
+package gitserver.v1;
 
-option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/proto";
+option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
 
 service GitserverService {
   rpc Exec(ExecRequest) returns (stream ExecResponse) {}
