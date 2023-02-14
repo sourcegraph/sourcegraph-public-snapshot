@@ -21,9 +21,10 @@ import { gql } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { regexInsertText } from '@sourcegraph/shared/src/search/query/completion-utils'
-import { FILTERS, FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
+import { FILTERS, FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Node, OperatorKind } from '@sourcegraph/shared/src/search/query/parser'
 import { CharacterRange, Filter, PatternKind, Token } from '@sourcegraph/shared/src/search/query/token'
+import { isFilterOfType, resolveFilterMemoized } from '@sourcegraph/shared/src/search/query/utils'
 import { getSymbolIconSVGPath } from '@sourcegraph/shared/src/symbols/symbolIcons'
 
 import { AuthenticatedUser } from '../../auth'
@@ -319,12 +320,16 @@ const filterSuggestions: InternalSource = ({ tokens, token, position }) => {
         const filters = DEFAULT_FILTERS
             // Add related filters
             .concat(
-                tokens.flatMap(token =>
-                    token.type === 'filter' ? RELATED_FILTERS[token.field.value as FilterType]?.(token) ?? none : none
-                )
+                tokens.flatMap(token => {
+                    if (token.type !== 'filter') {
+                        return none
+                    }
+                    const resolvedFilter = resolveFilterMemoized(token.field.value)
+                    return resolvedFilter ? RELATED_FILTERS[resolvedFilter.type]?.(token) ?? none : none
+                })
             )
             // Remove existing filters
-            .filter(filter => !tokens.some(token => token.type === 'filter' && token.field.value === filter))
+            .filter(filterType => !tokens.some(token => token.type === 'filter' && isFilterOfType(token, filterType)))
 
         options = filters.map(filter => toFilterCompletion(filter, position))
     } else if (token?.type === 'pattern') {
@@ -362,7 +367,7 @@ function filterValueSuggestions(caches: Caches): InternalSource {
         if (token?.type !== 'filter') {
             return null
         }
-        const resolvedFilter = resolveFilter(token.field.value)
+        const resolvedFilter = resolveFilterMemoized(token.field.value)
         const value = token.value?.value ?? ''
         const from = token.value?.range.start ?? token.range.end
         const to = token.value?.range.end
@@ -428,7 +433,7 @@ function staticFilterValueSuggestions(token?: Token): Group | null {
         return null
     }
 
-    const resolvedFilter = resolveFilter(token.field.value)
+    const resolvedFilter = resolveFilterMemoized(token.field.value)
     if (!resolvedFilter?.definition.discreteValues) {
         return null
     }
@@ -460,7 +465,8 @@ function staticFilterValueSuggestions(token?: Token): Group | null {
 function repoSuggestions(cache: Caches['repo']): InternalSource {
     return ({ token, tokens, parsedQuery, position }) => {
         const showRepoSuggestions =
-            token?.type === 'pattern' && !tokens.some(token => token.type === 'filter' && token.field.value === 'repo')
+            token?.type === 'pattern' &&
+            !tokens.some(token => token.type === 'filter' && isFilterOfType(token, FilterType.repo))
         if (!showRepoSuggestions) {
             return null
         }
@@ -491,12 +497,15 @@ function fileSuggestions(cache: Caches['file'], isSourcegraphDotCom?: boolean): 
         const showFileSuggestions =
             token?.type === 'pattern' &&
             (!isSourcegraphDotCom ||
-                tokens.some(
-                    token =>
-                        token.type === 'filter' &&
-                        ((token.field.value === 'context' && token.value?.value !== 'global') ||
-                            token.field.value === 'repo')
-                ))
+                tokens.some(token => {
+                    if (token.type !== 'filter') {
+                        return false
+                    }
+                    return (
+                        (isFilterOfType(token, FilterType.context) && token.value?.value !== 'global') ||
+                        isFilterOfType(token, FilterType.repo)
+                    )
+                }))
 
         if (!showFileSuggestions) {
             return null
@@ -532,13 +541,17 @@ function symbolSuggestions(cache: Caches['symbol'], isSourcegraphDotCom?: boolea
         // "global".
 
         if (
-            !tokens.some(
-                token =>
-                    token.type === 'filter' &&
-                    ((token.field.value === 'context' && (!isSourcegraphDotCom || token.value?.value !== 'global')) ||
-                        token.field.value === 'repo' ||
-                        token.field.value === 'file')
-            )
+            !tokens.some(token => {
+                if (token.type !== 'filter') {
+                    return false
+                }
+                return (
+                    (isFilterOfType(token, FilterType.context) &&
+                        (!isSourcegraphDotCom || token.value?.value !== 'global')) ||
+                    isFilterOfType(token, FilterType.repo) ||
+                    isFilterOfType(token, FilterType.file)
+                )
+            })
         ) {
             return null
         }
@@ -625,7 +638,10 @@ export const createSuggestionsSource = ({
                     ? buildSuggestionQuery(
                           parsedQuery,
                           { start: position, end: position },
-                          token => token.type === 'parameter' && !!token.value && token.field === 'context'
+                          token =>
+                              token.type === 'parameter' &&
+                              !!token.value &&
+                              resolveFilterMemoized(token.field)?.type === FilterType.context
                       )
                     : '',
             queryKey: (value, dataCacheKey = '') => `${dataCacheKey} type:repo count:50 repo:${value}`,
@@ -691,7 +707,9 @@ export const createSuggestionsSource = ({
                           parsedQuery,
                           { start: position, end: position },
                           token =>
-                              token.type === 'parameter' && !!token.value && fileFilters.has(token.field as FilterType)
+                              token.type === 'parameter' &&
+                              !!token.value &&
+                              containsFilterType(fileFilters, token.field)
                       )
                     : '',
             queryKey: (value, dataCacheKey = '') => `${dataCacheKey} type:file count:50 file:${value}`,
@@ -734,7 +752,7 @@ export const createSuggestionsSource = ({
                           token =>
                               token.type === 'parameter' &&
                               !!token.value &&
-                              symbolFilters.has(token.field as FilterType)
+                              containsFilterType(symbolFilters, token.field)
                       )
                     : '',
             queryKey: (value, dataCacheKey = '') => `${dataCacheKey} type:symbol count:50 ${value}`,
@@ -976,9 +994,6 @@ function printParsedQuery(node: Node, buffer: string[] = []): string[] {
                     return buffer
             }
         case 'parameter': {
-            if (node.negated) {
-                buffer.push('-')
-            }
             buffer.push(node.field, ':', node.value)
             return buffer
         }
@@ -1071,4 +1086,12 @@ function collapseOpenFilterValues(tokens: Token[], input: string): Token[] {
     }
 
     return result
+}
+
+function containsFilterType(filterTypes: Set<FilterType>, filterType: string): boolean {
+    const resolvedFilter = resolveFilterMemoized(filterType)
+    if (!resolvedFilter) {
+        return false
+    }
+    return filterTypes.has(resolvedFilter.type)
 }
