@@ -445,6 +445,9 @@ func TestHandleSignUp(t *testing.T) {
 		eventLogs.BulkInsertFunc.SetDefaultReturn(nil)
 
 		db := database.NewMockDB()
+		db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+			return f(db)
+		})
 		db.UsersFunc.SetDefaultReturn(users)
 		db.UserRolesFunc.SetDefaultReturn(userRoles)
 		db.AuthzFunc.SetDefaultReturn(authz)
@@ -535,6 +538,9 @@ func TestHandleSiteInit(t *testing.T) {
 		eventLogs.BulkInsertFunc.SetDefaultReturn(nil)
 
 		db := database.NewMockDB()
+		db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+			return f(db)
+		})
 		db.UsersFunc.SetDefaultReturn(users)
 		db.UserRolesFunc.SetDefaultReturn(userRoles)
 		db.AuthzFunc.SetDefaultReturn(authz)
