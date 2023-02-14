@@ -59,7 +59,7 @@ It's worthwhile to note some limitations of this process:
 
 - When syncing depots either [git p4](https://git-scm.com/docs/git-p4) or [p4-fusion](https://github.com/salesforce/p4-fusion) (recommended) are used to convert Perforce depots into git repositories so that Sourcegraph can index them.
 - Rename of a Perforce depot, including changing the depot on the Perforce server or the `repositoryPathPattern` config option, will cause a re-import of the depot.
-- Unless [permissions syncing](#repository-permissions) is enabled, Sourcegraph knows nothing of the permissions on the depots, so it can't enforce access restrictions.
+- Unless [permissions syncing](#repository-permissions) is enabled, Sourcegraph is not aware of the depot permissions, so it can't enforce access restrictions.
 
 ## Repository permissions
 
