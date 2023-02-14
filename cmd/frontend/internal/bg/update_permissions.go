@@ -49,7 +49,7 @@ func UpdatePermissions(ctx context.Context, logger log.Logger, db database.DB) {
 
 			for _, permission := range permissions {
 				// Assign the permission to both SITE_ADMINISTRATOR and USER roles.
-				if _, err := rolePermissionStore.BulkAssignToSystemRoles(ctx, database.BulkAssignToSystemRolesOpts{
+				if _, err := rolePermissionStore.BulkAssignPermissionsToSystemRoles(ctx, database.BulkAssignPermissionsToSystemRolesOpts{
 					Roles:        []types.SystemRole{types.SiteAdministratorSystemRole, types.UserSystemRole},
 					PermissionID: permission.ID,
 				}); err != nil {

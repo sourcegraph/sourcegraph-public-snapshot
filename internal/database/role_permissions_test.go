@@ -89,7 +89,7 @@ func TestRolePermissionAssignToSystemRole(t *testing.T) {
 	})
 }
 
-func TestRolePermissionBulkAssignToSystemRoles(t *testing.T) {
+func TestRolePermissionBulkAssignPermissionsToSystemRoles(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
@@ -100,13 +100,13 @@ func TestRolePermissionBulkAssignToSystemRoles(t *testing.T) {
 	_, p := createRoleAndPermission(ctx, t, db)
 
 	t.Run("without permission id", func(t *testing.T) {
-		rp, err := store.BulkAssignToSystemRoles(ctx, BulkAssignToSystemRolesOpts{})
+		rp, err := store.BulkAssignPermissionsToSystemRoles(ctx, BulkAssignPermissionsToSystemRolesOpts{})
 		require.Nil(t, rp)
 		require.ErrorContains(t, err, "permission id is required")
 	})
 
 	t.Run("without roles", func(t *testing.T) {
-		rp, err := store.BulkAssignToSystemRoles(ctx, BulkAssignToSystemRolesOpts{
+		rp, err := store.BulkAssignPermissionsToSystemRoles(ctx, BulkAssignPermissionsToSystemRolesOpts{
 			PermissionID: p.ID,
 		})
 		require.Nil(t, rp)
@@ -115,7 +115,7 @@ func TestRolePermissionBulkAssignToSystemRoles(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		systemRoles := []types.SystemRole{types.SiteAdministratorSystemRole, types.UserSystemRole}
-		rp, err := store.BulkAssignToSystemRoles(ctx, BulkAssignToSystemRolesOpts{
+		rp, err := store.BulkAssignPermissionsToSystemRoles(ctx, BulkAssignPermissionsToSystemRolesOpts{
 			PermissionID: p.ID,
 			Roles:        systemRoles,
 		})

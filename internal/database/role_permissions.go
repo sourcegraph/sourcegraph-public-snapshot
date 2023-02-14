@@ -40,7 +40,7 @@ type AssignToSystemRoleOpts struct {
 	PermissionID int32
 }
 
-type BulkAssignToSystemRolesOpts struct {
+type BulkAssignPermissionsToSystemRolesOpts struct {
 	Roles        []types.SystemRole
 	PermissionID int32
 }
@@ -53,7 +53,7 @@ type RolePermissionStore interface {
 	// AssignToSystemRole is used to assign a permission to a system role.
 	AssignToSystemRole(ctx context.Context, opts AssignToSystemRoleOpts) (*types.RolePermission, error)
 	// BulkAssignToSystemRole is used to assign a permission to multiple system roles.
-	BulkAssignToSystemRoles(ctx context.Context, opts BulkAssignToSystemRolesOpts) ([]*types.RolePermission, error)
+	BulkAssignPermissionsToSystemRoles(ctx context.Context, opts BulkAssignPermissionsToSystemRolesOpts) ([]*types.RolePermission, error)
 	// GetByRoleIDAndPermissionID returns one RolePermission associated with the provided role and permission.
 	GetByRoleIDAndPermissionID(ctx context.Context, opts GetRolePermissionOpts) (*types.RolePermission, error)
 	// GetByRoleID returns all RolePermission associated with the provided role ID
@@ -287,7 +287,7 @@ func (rp *rolePermissionStore) AssignToSystemRole(ctx context.Context, opts Assi
 	return rolePermission, nil
 }
 
-func (rp *rolePermissionStore) BulkAssignToSystemRoles(ctx context.Context, opts BulkAssignToSystemRolesOpts) ([]*types.RolePermission, error) {
+func (rp *rolePermissionStore) BulkAssignPermissionsToSystemRoles(ctx context.Context, opts BulkAssignPermissionsToSystemRolesOpts) ([]*types.RolePermission, error) {
 	if opts.PermissionID == 0 {
 		return nil, errors.New("permission id is required")
 	}
