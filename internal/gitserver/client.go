@@ -746,23 +746,8 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 		limitHit := false
 		for {
 			msg, err := cs.Recv()
-			if errors.Is(err, io.EOF) {
-				return limitHit, nil
-			} else if err != nil {
-				st := status.Convert(err)
-				if st.Code() == codes.Canceled {
-					return false, context.Canceled
-				}
-				for _, detail := range st.Details() {
-					if notFound, ok := detail.(*proto.NotFoundPayload); ok {
-						return false, &gitdomain.RepoNotExistError{
-							Repo:            api.RepoName(notFound.GetRepo()),
-							CloneProgress:   notFound.GetCloneProgress(),
-							CloneInProgress: notFound.GetCloneInProgress(),
-						}
-					}
-				}
-				return false, err
+			if err != nil {
+				return limitHit, convertGitserverError(err)
 			}
 
 			switch m := msg.Message.(type) {
@@ -770,6 +755,8 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 				limitHit = limitHit || m.LimitHit
 			case *proto.SearchResponse_Match:
 				onMatches([]protocol.CommitMatch{protocol.CommitMatchFromProto(m.Match)})
+			default:
+				return false, errors.Newf("unknown message type %T", m)
 			}
 		}
 	}
@@ -813,6 +800,37 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 	}
 
 	return eventDone.LimitHit, eventDone.Err()
+}
+
+func convertGitserverError(err error) error {
+	if errors.Is(err, io.EOF) {
+		return nil
+	}
+
+	st, ok := status.FromError(err)
+	if !ok {
+		return err
+	}
+
+	if st.Code() == codes.Canceled {
+		return context.Canceled
+	}
+
+	if st.Code() == codes.DeadlineExceeded {
+		return context.DeadlineExceeded
+	}
+
+	for _, detail := range st.Details() {
+		if notFound, ok := detail.(*proto.NotFoundPayload); ok {
+			return &gitdomain.RepoNotExistError{
+				Repo:            api.RepoName(notFound.GetRepo()),
+				CloneProgress:   notFound.GetCloneProgress(),
+				CloneInProgress: notFound.GetCloneInProgress(),
+			}
+		}
+	}
+
+	return err
 }
 
 func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password string, args ...string) (_ io.ReadCloser, _ http.Header, errRes error) {
