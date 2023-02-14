@@ -43,9 +43,7 @@ type AccessRequestsFilterOptions struct {
 }
 
 func (o AccessRequestsFilterOptions) sqlConditions() []*sqlf.Query {
-	conds := []*sqlf.Query{
-		sqlf.Sprintf("deleted_at IS NULL"),
-	}
+	conds := []*sqlf.Query{}
 	if o.Status != nil {
 		conds = append(conds, sqlf.Sprintf("status = %v", *o.Status))
 	}
@@ -149,11 +147,11 @@ const (
 		INSERT INTO
 			access_requests (name, email, additional_info)
 		VALUES ( %s, %s, %s )
-		RETURNING id, created_at, updated_at, deleted_at, name, email, status, additional_info
+		RETURNING id, created_at, updated_at, name, email, status, additional_info
 		`
 	accessRequestListQuery = `
 		SELECT
-			id, created_at, updated_at, deleted_at, name, email, status, additional_info
+			id, created_at, updated_at, name, email, status, additional_info
 		FROM
 			access_requests
 		WHERE (%s)
@@ -191,7 +189,7 @@ func (s *accessRequestStore) Create(ctx context.Context, accessRequestCreate Acc
 	)
 	var data types.AccessRequest
 
-	if err := s.QueryRow(ctx, q).Scan(&data.ID, &data.CreatedAt, &data.UpdatedAt, &data.DeletedAt, &data.Name, &data.Email, &data.Status, &data.AdditionalInfo); err != nil {
+	if err := s.QueryRow(ctx, q).Scan(&data.ID, &data.CreatedAt, &data.UpdatedAt, &data.Name, &data.Email, &data.Status, &data.AdditionalInfo); err != nil {
 		return nil, errors.Wrap(err, "scanning access_request")
 	}
 
@@ -204,10 +202,10 @@ func (s *accessRequestStore) Delete(ctx context.Context, id int32) error {
 }
 
 func (s *accessRequestStore) GetByID(ctx context.Context, id int32) (*types.AccessRequest, error) {
-	row := s.QueryRow(ctx, sqlf.Sprintf("SELECT id, created_at, updated_at, deleted_at, name, email, status, additional_info FROM access_requests WHERE id = %s", id))
+	row := s.QueryRow(ctx, sqlf.Sprintf("SELECT id, created_at, updated_at, name, email, status, additional_info FROM access_requests WHERE id = %s", id))
 	var node types.AccessRequest
 
-	if err := row.Scan(&node.ID, &node.CreatedAt, &node.UpdatedAt, &node.DeletedAt, &node.Name, &node.Email, &node.Status, &node.AdditionalInfo); err != nil {
+	if err := row.Scan(&node.ID, &node.CreatedAt, &node.UpdatedAt, &node.Name, &node.Email, &node.Status, &node.AdditionalInfo); err != nil {
 		return nil, err
 	}
 
@@ -266,7 +264,7 @@ func (s *accessRequestStore) List(ctx context.Context, opt AccessRequestsFilterA
 	for rows.Next() {
 		var node types.AccessRequest
 
-		if err := rows.Scan(&node.ID, &node.CreatedAt, &node.UpdatedAt, &node.DeletedAt, &node.Name, &node.Email, &node.Status, &node.AdditionalInfo); err != nil {
+		if err := rows.Scan(&node.ID, &node.CreatedAt, &node.UpdatedAt, &node.Name, &node.Email, &node.Status, &node.AdditionalInfo); err != nil {
 			return nil, err
 		}
 

@@ -10,7 +10,6 @@ CREATE TABLE
         id SERIAL NOT NULL PRIMARY KEY,
         created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
         updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-        deleted_at TIMESTAMP WITH TIME ZONE,
         name TEXT NOT NULL,
         email TEXT NOT NULL UNIQUE,
         additional_info TEXT,
