@@ -10,43 +10,48 @@ Sourcegraph supports [Perforce Helix](https://www.perforce.com/solutions/version
 
 Perforce depots can be added to a Sourcegraph instance by adding the appropriate [code host connection](../external_service/index.md).
 
-1. Perforce code host connections are still an experimental feature. To access this functionality, a site admin must enable the experimental feature in the [site configuration](../config/site_config.md):
+Perforce code host connections are still an experimental feature.
+To enable Perforce code host connections, a site admin must:
 
-    ```json
-    {
-      "experimentalFeatures": {
-        "perforce": "enabled"
-      }
-      // ...
-    }
-    ```
-1. Go to **Site admin > Manage code hosts > Add code host**
-1. Select **Perforce**.
-1. Configure which depots are mirrored/synchronized as Git repositories to Sourcegraph:
+**1.** Enable the experimental feature in the [site configuration](../config/site_config.md):
 
-    - [`depots`](perforce.md#depots)<br>A list of depot paths that can be either a depot root or an arbitrary subdirectory. **Note**: Only `"local"` type depots are supported.
-    - [`p4.user`](perforce.md#p4-user)<br>The user to be authenticated for p4 CLI, and should be capable of performing `p4 ping`, `p4 login`, `p4 trust` and any p4 commands involved with `git p4 clone` and `git p4 sync` for listed `depots`. If repository permissions are mirrored, the user needs additional ability to perform the `p4 protects`, `p4 groups`, `p4 group`, `p4 users` commands (aka. "super" access level).
-    - [`p4.passwd`](perforce.md#p4-passwd)<br>The ticket value to be used for authenticating the `p4.user`. It is recommended to create tickets of users in a group that never expire. Use the command `p4 -u <p4.user> login -p -a` to obtain a ticket value.
+```json
+{
+  "experimentalFeatures": {
+    "perforce": "enabled"
+  }
+  // ...
+}
+```
 
-    See the [configuration documentation below](#configuration) for other fields you can configure.
+**2.** Go to **Site admin > Manage code hosts > Add code host**
 
-1. **Optional, but recommended**: use the [`p4-fusion`](https://github.com/salesforce/p4-fusion) client by configuring `fusionClient` for better performance:
+**3.** Select **Perforce**.
 
-    ```json
-    {
-        // ...
-        "fusionClient": {
-          "enabled": true,
-          "lookAhead": 2000
-        }
-    }
-    ```
+**4.** Configure which depots are mirrored/synchronized as Git repositories to Sourcegraph:
 
-    Details of all `p4-fusion` configuration fields can be seen [here](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@2a716bd70c294acf1b3679b790834c4dea9ea956/-/blob/schema/perforce.schema.json?L84).
+- [`depots`](perforce.md#depots)<br>A list of depot paths that can be either a depot root or an arbitrary subdirectory. **Note**: Only `"local"` type depots are supported.
+- [`p4.user`](perforce.md#p4-user)<br>The user to be authenticated for p4 CLI, and should be capable of performing `p4 ping`, `p4 login`, `p4 trust` and any p4 commands involved with `git p4 clone` and `git p4 sync` for listed `depots`. If repository permissions are mirrored, the user needs additional ability to perform the `p4 protects`, `p4 groups`, `p4 group`, `p4 users` commands (aka. "super" access level).
+- [`p4.passwd`](perforce.md#p4-passwd)<br>The ticket value to be used for authenticating the `p4.user`. It is recommended to create tickets of users in a group that never expire. Use the command `p4 -u <p4.user> login -p -a` to obtain a ticket value.
+- See the [configuration documentation below](#configuration) for other fields you can configure.
 
-    Without the `fusionClient` configuration, the code host connection uses `git p4`, but we recommend `p4-fusion` for better performance.
+**5.** Configure `fusionClient`:
 
-1. Click **Add repositories**.
+```json
+{
+  // ...
+  "fusionClient": {
+    "enabled": true,
+    "lookAhead": 2000
+  }
+}
+```
+
+> NOTE: While the `fusionClient` configuration is otional, without it the code host connection uses `git p4`, which has performance issues so we strongly recommend `p4-fusion`.
+
+Details of all `p4-fusion` configuration fields can be seen [here](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@2a716bd70c294acf1b3679b790834c4dea9ea956/-/blob/schema/perforce.schema.json?L84).
+
+**6.** Click **Add repositories**.
 
 Sourcegraph will now talk to the Perforce host and sync the configured `depots` to the Sourcegraph instance.
 
@@ -58,7 +63,7 @@ It's worthwhile to note some limitations of this process:
 
 ## Repository permissions
 
-To enforce repository-level permissions for Perforce depots using [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html), include [the `authorization` field](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@2a716bd70c294acf1b3679b790834c4dea9ea956/-/blob/schema/perforce.schema.json?L67) to the configuration of the Perforce code host connection you created [above](#add-a-perforce-code-host):
+To enforce repository-level permissions for Perforce depots using [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html), include [the `authorization` field](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@2a716bd70c294acf1b3679b790834c4dea9ea956/-/blob/schema/perforce.schema.json?L67) in the configuration of the Perforce code host connection you created [above](#add-a-perforce-code-host):
 
 ```json
 {
@@ -121,29 +126,30 @@ File-level permissions make the [syncing of subdirectories to match permission b
 
 To enable file-level permissions:
 
-1. Enable [the feature in the site config](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@2a716bd/-/blob/schema/site.schema.json?L227&subtree=true?L227):
+**1.** Enable [the feature in the site config](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@2a716bd/-/blob/schema/site.schema.json?L227&subtree=true?L227):
 
-    ```json
-    {
-      // ...
-      "experimentalFeatures": {
-        "perforce": "enabled",
-        "subRepoPermissions": { "enabled": true }
-      }
-    }
-    ```
-1. Enable the feature in the code host configuration by adding `subRepoPermissions` to the `authorization` object:
+```json
+{
+  // ...
+  "experimentalFeatures": {
+    "perforce": "enabled",
+    "subRepoPermissions": { "enabled": true }
+  }
+}
+```
 
-    ```json
-    {
-      // ...
-      "authorization": {
-        "subRepoPermissions": true
-      }
-    }
-    ```
+**2.** Enable the feature in the code host configuration by adding `subRepoPermissions` to the `authorization` object:
 
-2. Save the configuration. Permissions will be synced in the background based on your [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html).
+```json
+{
+  // ...
+  "authorization": {
+    "subRepoPermissions": true
+  }
+}
+```
+
+**3.** Save the configuration. Permissions will be synced in the background based on your [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html).
 
 Sourcegraph users are mapped to Perforce users based on their verified e-mail addresses.
 
