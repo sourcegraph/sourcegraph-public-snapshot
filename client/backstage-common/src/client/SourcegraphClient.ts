@@ -1,5 +1,5 @@
-import { dataOrThrowErrors, requestGraphQLCommon } from '@sourcegraph/http-client'
-import { map } from 'rxjs/operators'
+import { getGraphQLClient, GraphQLClient } from '@sourcegraph/http-client'
+import { generateCache } from '@sourcegraph/shared/src/backend/apolloCache'
 import { UserQuery, Query, AuthenticatedUser, AuthenticatedUserQuery, SearchQuery, SearchResult } from './Query'
 
 export interface Config {
@@ -67,30 +67,38 @@ class SourcegraphClient implements SourcegraphService, UserService, SearchServic
     }
 }
 
-type Headers = { [header: string]: string }
-
 class BaseClient {
-    private baseUrl: string
-    private headers: Headers
-
+    private static client: GraphQLClient
     constructor(baseUrl: string, token: string, sudoUsername: string) {
         const authz =
-            sudoUsername?.length > 0 ? `token - sudo user = "${sudoUsername}", token = "${token}"` : `token ${token} `
-        this.baseUrl = baseUrl
-        this.headers = {
+            sudoUsername?.length > 0 ? `token - sudo user = "${sudoUsername}", token = "${token}"` : `token ${token}`
+        const headers: RequestInit['headers'] = {
             'X-Requested-With': `Sourcegraph - Backstage plugin DEV`,
             Authorization: authz,
+        }
+        if (!BaseClient.client) {
+            getGraphQLClient({
+                baseUrl: baseUrl,
+                headers: headers,
+                isAuthenticated: true,
+                cache: generateCache(),
+            }).then(client => {
+                BaseClient.client = client
+            })
         }
     }
 
     async fetch<T>(query: Query<T>): Promise<T> {
-        return requestGraphQLCommon<T, string>({
-            request: query.gql(),
-            baseUrl: this.baseUrl,
+        const client = BaseClient.client
+        // for now the variables are of string type but ideally it should be a type inferred from Query
+        // TODO (@burmudar): Add generic parameter for variables
+        const { data } = await client.query({
+            query: query.gql(),
             variables: query.vars(),
-            headers: this.headers,
         })
-            .pipe(map(dataOrThrowErrors), map(query.marshal))
-            .toPromise()
+        if (!data) {
+            throw new Error('grapql request failed: no data')
+        }
+        return query.marshal(data)
     }
 }

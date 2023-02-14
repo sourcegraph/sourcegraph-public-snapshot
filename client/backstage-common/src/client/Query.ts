@@ -1,9 +1,10 @@
-import { gql } from 'graphql-request'
+import { gql } from '@apollo/client'
+import type { DocumentNode } from '@apollo/client'
 import type { AuthenticatedUser } from '../../../shared/src/auth'
 import { currentAuthStateQuery } from '../../../shared/src/auth'
 
 export interface Query<T> {
-    gql(): string
+    gql(): DocumentNode
     vars(): string
     marshal(data: any): T
 }
@@ -33,7 +34,8 @@ export class SearchQuery implements Query<SearchResult[]> {
         console.log('raw', data)
 
         for (const v of data.search.results.results) {
-            results.push({ repository: v.repository.name, filename: v.file.name, fileContent: v.file.content })
+            const { repository, file } = v
+            results.push({ repository: repository.name, filename: file.name, fileContent: file.content })
         }
 
         return results
@@ -43,8 +45,8 @@ export class SearchQuery implements Query<SearchResult[]> {
         return { search: this.query }
     }
 
-    gql(): string {
-        return gql`
+    gql(): DocumentNode {
+        return gql(`
             query ($search: String!) {
                 search(query: $search) {
                     results {
@@ -63,30 +65,31 @@ export class SearchQuery implements Query<SearchResult[]> {
                     }
                 }
             }
-        `
+        `)
     }
 }
 
 // UserQuery is purely used as a sanity check and will be removed in the future
 // TODO(@burmudar): remove
 export class UserQuery implements Query<string> {
-    vars(): string {
-        return ''
+    vars(): any {
+        return {}
     }
 
-    gql(): string {
-        return gql`
+    gql(): DocumentNode {
+        return gql(`
             query {
                 currentUser {
                     username
                 }
             }
-        `
+        `)
     }
 
     marshal(data: any): string {
         if ('currentUser' in data) {
-            return data.currentUser.username
+            const { currentUser } = data
+            return currentUser.username
         }
         throw new Error('username not found')
     }
@@ -94,8 +97,8 @@ export class UserQuery implements Query<string> {
 
 export type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 export class AuthenticatedUserQuery implements Query<AuthenticatedUser> {
-    gql(): string {
-        return currentAuthStateQuery
+    gql(): DocumentNode {
+        return gql(currentAuthStateQuery)
     }
 
     vars(): string {

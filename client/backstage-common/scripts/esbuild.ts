@@ -23,6 +23,8 @@ const distributionPath = path.resolve(__dirname, '..', 'dist')
             '@backstage/backend-common',
             '@backstage/plugin-catalog-backend',
             'graphql-request',
+            'react',
+            'react-dom',
             'lodash',
             'apollo',
             'winston',
