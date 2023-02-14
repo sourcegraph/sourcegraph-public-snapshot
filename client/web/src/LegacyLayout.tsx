@@ -46,7 +46,7 @@ import { RepoHeaderActionButton } from './repo/RepoHeader'
 import type { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import type { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import type { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
-import type { LayoutRouteComponentProps, LayoutRouteProps } from './routes'
+import type { LegacyLayoutRouteComponentProps, LayoutRouteProps } from './routes'
 import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
 import { parseSearchURLQuery, SearchAggregationProps, SearchStreamingProps } from './search'
 import { NotepadContainer } from './search/Notepad'
@@ -62,9 +62,9 @@ import type { UserSettingsSidebarItems } from './user/settings/UserSettingsSideb
 import { getExperimentalFeatures } from './util/get-experimental-features'
 import { parseBrowserRepoURL } from './util/url'
 
-import styles from './Layout.module.scss'
+import styles from './LegacyLayout.module.scss'
 
-export interface LayoutProps
+export interface LegacyLayoutProps
     extends SettingsCascadeProps<Settings>,
         PlatformContextProps,
         ExtensionsControllerProps,
@@ -115,7 +115,7 @@ export interface LayoutProps
  */
 const CONTRAST_COMPLIANT_CLASSNAME = 'theme-contrast-compliant-syntax-highlighting'
 
-export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps>> = props => {
+export const LegacyLayout: React.FunctionComponent<React.PropsWithChildren<LegacyLayoutProps>> = props => {
     const location = useLocation()
 
     // TODO: Replace with useMatches once top-level <Router/> is V6
@@ -193,7 +193,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         ...themeProps,
         ...breadcrumbProps,
         isMacPlatform: isMacPlatform(),
-    } satisfies Omit<LayoutRouteComponentProps, 'location' | 'history' | 'match' | 'staticContext'>
+    } satisfies Omit<LegacyLayoutRouteComponentProps, 'location' | 'history' | 'match' | 'staticContext'>
 
     if (isSetupWizardPage) {
         return <SetupWizard />

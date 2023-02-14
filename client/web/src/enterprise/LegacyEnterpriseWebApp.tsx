@@ -2,7 +2,7 @@ import React from 'react'
 
 import '../SourcegraphWebApp.scss'
 
-import { SourcegraphWebApp } from '../SourcegraphWebApp'
+import { LegacySourcegraphWebApp } from '../LegacySourcegraphWebApp'
 
 import { CodeIntelligenceBadgeContent } from './codeintel/badge/components/CodeIntelligenceBadgeContent'
 import { CodeIntelligenceBadgeMenu } from './codeintel/badge/components/CodeIntelligenceBadgeMenu'
@@ -25,8 +25,8 @@ import { enterpriseUserAreaRoutes } from './user/routes'
 import { enterpriseUserSettingsAreaRoutes } from './user/settings/routes'
 import { enterpriseUserSettingsSideBarItems } from './user/settings/sidebaritems'
 
-export const EnterpriseWebApp: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <SourcegraphWebApp
+export const LegacyEnterpriseWebApp: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
+    <LegacySourcegraphWebApp
         siteAdminAreaRoutes={enterpriseSiteAdminAreaRoutes}
         siteAdminSideBarGroups={enterpriseSiteAdminSidebarGroups}
         siteAdminOverviewComponents={enterpriseSiteAdminOverviewComponents}

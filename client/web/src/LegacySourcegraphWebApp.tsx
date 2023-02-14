@@ -54,7 +54,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { HeroPage } from './components/HeroPage'
 import { FeatureFlagsProvider } from './featureFlags/FeatureFlagsProvider'
 import type { CodeInsightsProps } from './insights/types'
-import { Layout, LayoutProps } from './Layout'
+import { LegacyLayout, LegacyLayoutProps } from './LegacyLayout'
 import { NotebookProps } from './notebooks'
 import type { OrgAreaRoute } from './org/area/OrgArea'
 import type { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
@@ -88,9 +88,9 @@ import { globalHistory } from './util/globalHistory'
 import { observeLocation } from './util/location'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
 
-import styles from './SourcegraphWebApp.module.scss'
+import styles from './LegacySourcegraphWebApp.module.scss'
 
-export interface SourcegraphWebAppProps
+export interface LegacySourcegraphWebAppProps
     extends CodeIntelligenceProps,
         CodeInsightsProps,
         Pick<BatchChangesProps, 'batchChangesEnabled'>,
@@ -117,7 +117,7 @@ export interface SourcegraphWebAppProps
     routes: readonly LayoutRouteProps[]
 }
 
-interface SourcegraphWebAppState extends SettingsCascadeProps {
+interface LegacySourcegraphWebAppState extends SettingsCascadeProps {
     error?: Error
 
     /**
@@ -133,7 +133,7 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
 
     temporarySettingsStorage?: TemporarySettingsStorage
 
-    viewerSubject: LayoutProps['viewerSubject']
+    viewerSubject: LegacyLayoutProps['viewerSubject']
 
     selectedSearchContextSpec?: string
 
@@ -164,7 +164,10 @@ setLinkComponent(RouterLink)
 /**
  * The root component.
  */
-export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
+export class LegacySourcegraphWebApp extends React.Component<
+    LegacySourcegraphWebAppProps,
+    LegacySourcegraphWebAppState
+> {
     private readonly subscriptions = new Subscription()
     private readonly userRepositoriesUpdates = new Subject<void>()
     private readonly platformContext: PlatformContext = createPlatformContext()
@@ -172,7 +175,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         ? createExtensionsController(this.platformContext)
         : createNoopController(this.platformContext)
 
-    constructor(props: SourcegraphWebAppProps) {
+    constructor(props: LegacySourcegraphWebAppProps) {
         super(props)
 
         if (this.extensionsController !== null) {
@@ -356,7 +359,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                             <Route
                                 path="*"
                                 element={
-                                    <Layout
+                                    <LegacyLayout
                                         {...this.props}
                                         authenticatedUser={authenticatedUser}
                                         viewerSubject={this.state.viewerSubject}
