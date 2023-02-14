@@ -35,7 +35,7 @@ func GitServer() *monitoring.Dashboard {
 					LabelName:     "instance",
 					ExampleOption: "gitserver-0:6060",
 				},
-				Multi: false,
+				Multi: true,
 			},
 			grpcMethodVariable,
 		},
