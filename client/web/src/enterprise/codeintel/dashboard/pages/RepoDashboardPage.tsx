@@ -40,6 +40,14 @@ interface FilterState {
 
 const failureStates = new Set<string>([PreciseIndexState.INDEXING_ERRORED, PreciseIndexState.PROCESSING_ERRORED])
 
+const terminalStates = new Set<string>([
+    PreciseIndexState.COMPLETED,
+    PreciseIndexState.DELETED,
+    PreciseIndexState.DELETING,
+    PreciseIndexState.INDEXING_ERRORED,
+    PreciseIndexState.PROCESSING_ERRORED,
+])
+
 export const RepoDashboardPage: FunctionComponent<RepoDashboardPageProps> = ({
     authenticatedUser,
     repo,
@@ -352,7 +360,6 @@ const TreeNode: FunctionComponent<TreeNodeProps> = ({
     displayName,
     isBranch,
     isExpanded,
-    filterState,
     indexesByIndexerNameForRoot,
     availableIndexersForRoot,
     numDescendentErrors,
@@ -397,19 +404,28 @@ interface IndexStateBadgeProps {
     indexes: PreciseIndexFields[]
 }
 
-const IndexStateBadge: FunctionComponent<IndexStateBadgeProps> = ({ indexes }) =>
-    indexes && indexes.length > 0 ? (
-        <Link to={`./indexes/${indexes[0].id}`}>
+const IndexStateBadge: FunctionComponent<IndexStateBadgeProps> = ({ indexes }) => {
+    const foo = indexes.filter(index => terminalStates.has(index.state))
+    const bar = indexes
+        .filter(index => !terminalStates.has(index.state))
+        .sort((a, b) => new Date(a.uploadedAt ?? '').getDate() - new Date(b.uploadedAt ?? '').getDate())
+        .slice(0, 1)
+
+    const collapsedIndexes = [...foo, ...bar]
+
+    return collapsedIndexes.length > 0 ? (
+        <Link to={`./indexes/${collapsedIndexes[0].id}`}>
             <small className={classNames('float-right', 'ml-2', styles.hint)}>
-                {indexes.map(index => (
+                {collapsedIndexes.map(index => (
                     <IndexStateBadgeIcon index={index} />
                 ))}
-                {indexes[0].indexer ? indexes[0].indexer.name : indexes[0].inputIndexer}
+                {collapsedIndexes[0].indexer ? collapsedIndexes[0].indexer.name : collapsedIndexes[0].inputIndexer}
             </small>
         </Link>
     ) : (
         <></>
     )
+}
 
 interface IndexStateBadgeIconProps {
     index: PreciseIndexFields
