@@ -39,9 +39,8 @@ func IsAccessRequestWithEmailExists(err error) bool {
 }
 
 type AccessRequestsFilterOptions struct {
-	Status     *types.AccessRequestStatus
+	Status *types.AccessRequestStatus
 }
-
 
 func (o AccessRequestsFilterOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{
@@ -52,7 +51,6 @@ func (o AccessRequestsFilterOptions) sqlConditions() []*sqlf.Query {
 	}
 	return conds
 }
-
 
 type AccessRequestsListOptions struct {
 	OrderBy    *string
@@ -131,8 +129,8 @@ type accessRequestStore struct {
 }
 
 type NewAccessRequest struct {
-	Name string
-	Email string
+	Name           string
+	Email          string
 	AdditionalInfo string
 }
 
@@ -188,7 +186,7 @@ func (s *accessRequestStore) Create(ctx context.Context, newAccessRequest NewAcc
 	)
 	var data types.AccessRequest
 
-	if err := s.QueryRow(ctx, q).Scan( &data.ID, &data.CreatedAt, &data.UpdatedAt, &data.DeletedAt, &data.Name, &data.Email, &data.Status, &data.AdditionalInfo ); err != nil {
+	if err := s.QueryRow(ctx, q).Scan(&data.ID, &data.CreatedAt, &data.UpdatedAt, &data.DeletedAt, &data.Name, &data.Email, &data.Status, &data.AdditionalInfo); err != nil {
 		return nil, errors.Wrap(err, "scanning access_request")
 	}
 

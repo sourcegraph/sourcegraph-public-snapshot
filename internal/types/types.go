@@ -1863,17 +1863,17 @@ type AccessRequestStatus string
 
 const (
 	AccessRequestStatusApproved AccessRequestStatus = "Approved"
-	AccessRequestStatusRejected  AccessRequestStatus = "Rejected"
+	AccessRequestStatusRejected AccessRequestStatus = "Rejected"
 )
 
 type AccessRequest struct {
 	// ID is the unique ID of the access request.
-	ID int32
-	Name string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt *time.Time
-	Email string
+	ID             int32
+	Name           string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	DeletedAt      *time.Time
+	Email          string
 	AdditionalInfo string
-	Status AccessRequestStatus
+	Status         AccessRequestStatus
 }

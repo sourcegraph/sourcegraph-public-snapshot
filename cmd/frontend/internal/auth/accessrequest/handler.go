@@ -29,8 +29,8 @@ func HandleRequestAccess(logger log.Logger, db database.DB) http.HandlerFunc {
 }
 
 type requestAccessData struct {
-	Name    string `json:"name"`
-	Email   string `json:"email"`
+	Name           string `json:"name"`
+	Email          string `json:"email"`
 	AdditionalInfo string `json:"additionalInfo"`
 }
 
@@ -55,9 +55,9 @@ func handleRequestAccess(logger log.Logger, db database.DB, w http.ResponseWrite
 
 	// Create the access_request.
 	newAccessRequestData := database.NewAccessRequest{
-		Name:                  data.Name,
-		Email:                 data.Email,
-		AdditionalInfo:        data.AdditionalInfo,
+		Name:           data.Name,
+		Email:          data.Email,
+		AdditionalInfo: data.AdditionalInfo,
 	}
 
 	_, err := db.AccessRequests().Create(r.Context(), newAccessRequestData)
