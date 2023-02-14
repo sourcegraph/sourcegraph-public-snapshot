@@ -40,4 +40,6 @@ jobs:
       run: gem install license_finder:7.1.0 # sync with licenses-update.yml
 
     - name: Check dependencies
+      env:
+        NODE_OPTIONS="--max-old-space-size=4096"
       run: LICENSE_CHECK=true ./dev/licenses.sh
