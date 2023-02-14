@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -1000,8 +1002,8 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 			sort.Slice(tc.wantRepos, newSortFunc(tc.wantRepos))
 			sort.Slice(repos, newSortFunc(repos))
 
-			if !repoListsAreEqual(repos, tc.wantRepos) {
-				t.Errorf("got repositories:\n%s\nwant:\n%s", stringForRepoList(repos), stringForRepoList(tc.wantRepos))
+			if diff := cmp.Diff(repos, tc.wantRepos, cmpopts.EquateEmpty()); diff != "" {
+				t.Errorf("got repositories:\n%s", diff)
 			}
 		})
 	}
