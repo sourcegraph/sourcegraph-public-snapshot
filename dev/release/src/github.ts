@@ -435,14 +435,12 @@ export interface CreateBranchWithChangesOptions {
     commitMessage: string
     edits: Edit[]
     dryRun?: boolean
-    workdir?: string
 }
 
 export interface ChangesetsOptions {
     requiredCommands: string[]
     changes: (Octokit.PullsCreateParams & CreateBranchWithChangesOptions)[]
     dryRun?: boolean
-    workdir?: string
 }
 
 export interface CreatedChangeset {
@@ -477,7 +475,7 @@ export async function createChangesets(options: ChangesetsOptions): Promise<Crea
     for (const change of options.changes) {
         const repository = `${change.owner}/${change.repo}`
         console.log(`${repository}: Preparing change for on '${change.base}' to '${change.head}'`)
-        await createBranchWithChanges(octokit, { ...change, dryRun: options.dryRun, workdir: options.workdir })
+        await createBranchWithChanges(octokit, { ...change, dryRun: options.dryRun })
     }
 
     // Publish changes as pull requests only if all changes are successfully created. We
