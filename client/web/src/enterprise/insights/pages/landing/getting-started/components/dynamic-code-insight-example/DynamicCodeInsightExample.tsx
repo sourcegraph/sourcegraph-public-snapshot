@@ -107,6 +107,7 @@ export const DynamicCodeInsightExample: FC<DynamicCodeInsightExampleProps> = pro
                     label="Data series search query"
                     required={true}
                     as={InsightQueryInput}
+                    repoQuery={null}
                     repositories={repositories.input.value}
                     patternType={getQueryPatternTypeFilter(query.input.value)}
                     placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"

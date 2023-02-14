@@ -96,7 +96,7 @@ func TestRepos_Add(t *testing.T) {
 		logger:          logtest.Scoped(t),
 		gitserverClient: gsClient,
 	}
-	addedName, err := s.Add(ctx, repoName)
+	addedName, err := s.add(ctx, repoName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,7 +127,7 @@ func TestRepos_Add_NonPublicCodehosts(t *testing.T) {
 	defer func() { gitserver.MockIsRepoCloneable = nil }()
 
 	// The repoName could change if it has been renamed on the code host
-	_, err := s.Add(ctx, repoName)
+	_, err := s.add(ctx, repoName)
 	if !errcode.IsNotFound(err) {
 		t.Fatalf("expected a not found error, got: %v", err)
 	}

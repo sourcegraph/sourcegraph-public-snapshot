@@ -12,7 +12,7 @@ go_library(
         "//cmd/frontend/backend",
         "//internal/api",
         "//internal/gitserver",
-        "//internal/own/codeowners/proto",
+        "//internal/own/codeowners/v1:codeowners",
         "//internal/search",
         "//internal/search/job",
         "//internal/search/result",
@@ -32,7 +32,6 @@ go_test(
         "//internal/authz",
         "//internal/gitserver",
         "//internal/search/result",
-        "//lib/errors",
         "@com_github_hexops_autogold//:autogold",
     ],
 )

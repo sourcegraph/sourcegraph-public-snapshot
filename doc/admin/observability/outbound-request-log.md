@@ -41,3 +41,8 @@ To recreate a request for debugging, you can copy the cURL command for any reque
 Keep in mind that some headers might be redacted (you'll see the word "REDACTED" in their place), in which case you'll need to add the missing pieces manually.
 
 Note: You can set the `redactOutboundRequestHeaders` [site config](../config/site_config#redactOutboundRequestHeaders) option to `false` to disable the redaction of headers and make the "Copy curl" function more convenient. But for security reasons, this setting is only respected in development environments. 
+
+## Trouble Shooting
+
+### Page failing to load, or loading slowly
+If the Outbound Request Log page is failing to load, or loading slowly, you may need to allocate more resources to Redis. To confirm, please check the charts for Redis under the `provisioning indicators` dropdown in grafana. If these charts show that your CPU usage is consistently over the threshold,  allocate more resources to Redis. You can use our [resource estimator](https://docs.sourcegraph.com/admin/deploy/resource_estimator) as a guide.

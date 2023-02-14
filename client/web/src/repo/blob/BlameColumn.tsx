@@ -1,7 +1,7 @@
 import React, { useLayoutEffect } from 'react'
 
-import { History } from 'history'
 import ReactDOM from 'react-dom'
+import { useNavigate } from 'react-router-dom-v5-compat'
 import { ReplaySubject } from 'rxjs'
 
 import { BlameHunk } from '../blame/useBlameHunks'
@@ -15,7 +15,6 @@ interface BlameColumnProps {
     blameHunks?: { current: BlameHunk[] | undefined; firstCommitDate: Date | undefined }
     isLightTheme: boolean
     codeViewElements: ReplaySubject<HTMLElement | null>
-    history: History
 }
 
 const getRowByLine = (line: number): HTMLTableRowElement | null | undefined =>
@@ -27,7 +26,8 @@ const selectRow = (line: number): void => getRowByLine(line)?.classList.add('hig
 const deselectRow = (line: number): void => getRowByLine(line)?.classList.remove('highlighted')
 
 export const BlameColumn = React.memo<BlameColumnProps>(
-    ({ isBlameVisible, codeViewElements, blameHunks, history, isLightTheme }) => {
+    ({ isBlameVisible, codeViewElements, blameHunks, isLightTheme }) => {
+        const navigate = useNavigate()
         /**
          * Array to store the DOM element and the blame hunk to render in it.
          * As blame decorations are displayed in the column view, we need to add a corresponding
@@ -64,8 +64,8 @@ export const BlameColumn = React.memo<BlameColumnProps>(
             }
 
             const subscription = codeViewElements.subscribe(codeView => {
-                if (codeView) {
-                    const table = codeView.firstElementChild as HTMLTableElement
+                if (codeView?.firstElementChild instanceof HTMLTableElement) {
+                    const table = codeView.firstElementChild
 
                     for (let index = 0; index < table.rows.length; index++) {
                         const row = table.rows[index]
@@ -126,7 +126,7 @@ export const BlameColumn = React.memo<BlameColumnProps>(
                         <BlameDecoration
                             line={index + 1}
                             blameHunk={blameHunk}
-                            history={history}
+                            navigate={navigate}
                             onSelect={selectRow}
                             onDeselect={deselectRow}
                             firstCommitDate={blameHunks?.firstCommitDate}

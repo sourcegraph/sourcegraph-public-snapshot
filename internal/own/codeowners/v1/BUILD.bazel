@@ -6,19 +6,26 @@ load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
 exports_files(["buf.gen.yaml"])
 
 proto_library(
-    name = "proto_proto",
+    name = "v1_proto",
     srcs = ["codeowners.proto"],
     visibility = ["//:__subpackages__"],
 )
 
+go_proto_library(
+    name = "v1_go_proto",
+    importpath = "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1",
+    proto = ":v1_proto",
+    visibility = ["//:__subpackages__"],
+)
+
 go_library(
-    name = "proto",
+    name = "codeowners",
     srcs = [
         "find_owners.go",
         "repr.go",
     ],
-    embed = [":proto_go_proto"],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/own/codeowners/proto",
+    embed = [":v1_go_proto"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1",
     visibility = ["//:__subpackages__"],
     deps = [
         "//lib/errors",
@@ -27,22 +34,15 @@ go_library(
 )
 
 go_test(
-    name = "proto_test",
+    name = "codeowners_test",
     srcs = ["find_owners_test.go"],
     deps = [
-        ":proto",
+        ":codeowners",
         "@com_github_stretchr_testify//assert",
     ],
 )
 
-go_proto_library(
-    name = "proto_go_proto",
-    importpath = "github.com/sourcegraph/sourcegraph/internal/own/codeowners/proto",
-    proto = ":proto_proto",
-    visibility = ["//:__subpackages__"],
-)
-
 buf_lint_test(
-    name = "proto_proto_lint",
-    targets = [":proto_proto"],
+    name = "v1_proto_lint",
+    targets = [":v1_proto"],
 )
