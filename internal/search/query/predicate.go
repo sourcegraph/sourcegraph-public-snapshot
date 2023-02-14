@@ -356,7 +356,7 @@ func (p *RepoHasKVPPredicate) Unmarshal(params string, negated bool) (err error)
 	// that means someone tried to use a quoted string with data outside
 	// the quotes.
 	if len(params) != 0 {
-		return errors.New("unexpected content outside of quoted value")
+		return errors.New("unexpected extra content")
 	}
 
 	if len(key) == 0 {

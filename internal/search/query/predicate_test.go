@@ -164,6 +164,7 @@ func TestRepoHasKVPPredicate(t *testing.T) {
 			{`no key or value`, `:`, nil},
 			{`invalid syntax`, `key-value`, nil},
 			{`content outside of qutoes`, `key:"quoted value" abc`, nil},
+			{`bonus colons`, `key:value:other`, nil},
 		}
 
 		for _, tc := range invalid {
