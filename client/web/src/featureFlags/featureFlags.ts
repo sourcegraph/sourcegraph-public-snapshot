@@ -18,6 +18,7 @@ export type FeatureFlagName =
     | 'enable-rbac'
     | 'accessible-file-tree'
     | 'accessible-file-tree-always-load-ancestors'
+    | 'cody'
 
 interface OrgFlagOverride {
     orgID: string
