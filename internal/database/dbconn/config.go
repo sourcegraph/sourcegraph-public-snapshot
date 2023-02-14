@@ -1,12 +1,14 @@
 package dbconn
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/jackc/pgx/v4"
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn/rds"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -19,9 +21,13 @@ var (
 	_ = env.Ensure("TZ", "UTC", "timezone used by time instances")
 )
 
+const (
+	pgAWSUseEC2RoleCredentialsEnvKey = "PG_AWS_USE_EC2_ROLE_CREDENTIALS"
+)
+
 // buildConfig takes either a Postgres connection string or connection URI,
 // parses it, and returns a config with additional parameters.
-func buildConfig(logger log.Logger, dataSource, app string) (*pgx.ConnConfig, error) {
+func buildConfig(logger log.Logger, dataSource, app string, rdsAuthProvider rds.AuthProvider) (*pgx.ConnConfig, error) {
 	if dataSource == "" {
 		dataSource = defaultDataSource
 	}
@@ -72,6 +78,20 @@ func buildConfig(logger log.Logger, dataSource, app string) (*pgx.ConnConfig, er
 		if err := os.Setenv("TZ", ""); err != nil {
 			return nil, errors.Wrap(err, "Error setting TZ=''")
 		}
+	}
+
+	if v, ok := os.LookupEnv(pgAWSUseEC2RoleCredentialsEnvKey); ok && v == "true" {
+		logger.Debug(fmt.Sprintf("%s is 'true', using RDS IAM auth.", pgAWSUseEC2RoleCredentialsEnvKey))
+
+		if cfg.Password != "" {
+			logger.Warn(fmt.Sprintf("%s is 'true', but PGPASSWORD is also set. Ignoring PGPASSWORD.", pgAWSUseEC2RoleCredentialsEnvKey))
+		}
+
+		authToken, err := rdsAuthProvider.AuthToken(cfg.Host, cfg.Port, cfg.User)
+		if err != nil {
+			return nil, errors.Wrap(err, "Error retrieving auth token for RDS IAM auth")
+		}
+		cfg.Password = authToken
 	}
 
 	return cfg, nil
