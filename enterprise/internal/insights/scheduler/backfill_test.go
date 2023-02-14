@@ -155,17 +155,17 @@ func Test_ChangeBackfillPriority(t *testing.T) {
 	t.Run("Make lowest priority", func(t *testing.T) {
 		backfill1, err := store.NewBackfill(ctx, series)
 		require.NoError(t, err)
-		_, err = backfill1.SetScope(ctx, store, []int32{1, 3, 6, 8}, 100)
+		_, err = backfill1.SetScope(ctx, store, []int32{1, 3, 6, 8}, 1000)
 		require.NoError(t, err)
 
 		backfill2, err := store.NewBackfill(ctx, series)
 		require.NoError(t, err)
-		_, err = backfill2.SetScope(ctx, store, []int32{1, 3, 6, 8}, 200)
+		_, err = backfill2.SetScope(ctx, store, []int32{1, 3, 6, 8}, 2000)
 		require.NoError(t, err)
 
 		backfill3, err := store.NewBackfill(ctx, series)
 		require.NoError(t, err)
-		_, err = backfill3.SetScope(ctx, store, []int32{1, 3, 6, 8}, 300)
+		_, err = backfill3.SetScope(ctx, store, []int32{1, 3, 6, 8}, 3000)
 		require.NoError(t, err)
 
 		err = backfill1.SetLowestPriority(ctx, store)
@@ -175,7 +175,7 @@ func Test_ChangeBackfillPriority(t *testing.T) {
 		require.NoError(t, err)
 		expected := backfill1.Id
 		got := -1
-		highest := 300.0
+		highest := 3000.0
 		for _, bf := range allBackfills {
 			if bf.EstimatedCost > highest {
 				got = bf.Id
@@ -188,17 +188,17 @@ func Test_ChangeBackfillPriority(t *testing.T) {
 	t.Run("Make highest priority", func(t *testing.T) {
 		backfill1, err := store.NewBackfill(ctx, series)
 		require.NoError(t, err)
-		_, err = backfill1.SetScope(ctx, store, []int32{1, 3, 6, 8}, 100)
+		_, err = backfill1.SetScope(ctx, store, []int32{1, 3, 6, 8}, 1000)
 		require.NoError(t, err)
 
 		backfill2, err := store.NewBackfill(ctx, series)
 		require.NoError(t, err)
-		_, err = backfill2.SetScope(ctx, store, []int32{1, 3, 6, 8}, 200)
+		_, err = backfill2.SetScope(ctx, store, []int32{1, 3, 6, 8}, 2000)
 		require.NoError(t, err)
 
 		backfill3, err := store.NewBackfill(ctx, series)
 		require.NoError(t, err)
-		_, err = backfill3.SetScope(ctx, store, []int32{1, 3, 6, 8}, 300)
+		_, err = backfill3.SetScope(ctx, store, []int32{1, 3, 6, 8}, 3000)
 		require.NoError(t, err)
 
 		err = backfill3.SetHighestPriority(ctx, store)
@@ -208,7 +208,7 @@ func Test_ChangeBackfillPriority(t *testing.T) {
 		require.NoError(t, err)
 		expected := backfill3.Id
 		got := -1
-		lowest := 100.0
+		lowest := 1000.0
 		for _, bf := range allBackfills {
 			if bf.EstimatedCost < lowest {
 				got = bf.Id
