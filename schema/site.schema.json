@@ -368,6 +368,12 @@
           "default": false,
           "!go": { "pointer": false }
         },
+        "enableStorm": {
+          "description": "Enables the Storm frontend architecture changes.",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": false }
+        },
         "ranking": {
           "description": "Experimental search result ranking options.",
           "type": "object",
