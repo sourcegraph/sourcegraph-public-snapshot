@@ -78,9 +78,6 @@ type Key struct {
 
 	// TypeRank is the sorting rank of the type this key belongs to.
 	TypeRank int
-
-	// Adding metadata to be able to add distinctive information for an owner match
-	Metadata string
 }
 
 // Less compares one key to another for sorting
