@@ -31,6 +31,7 @@ func (s *selectOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, s
 		mu   sync.Mutex
 		errs error
 	)
+	dedup := result.NewDeduper()
 
 	rules := NewRulesCache(clients.Gitserver, clients.DB)
 
@@ -41,6 +42,16 @@ func (s *selectOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, s
 			errs = errors.Append(errs, err)
 			mu.Unlock()
 		}
+		mu.Lock()
+		results := event.Results[:0]
+		for _, m := range event.Results {
+			if !dedup.Seen(m) {
+				dedup.Add(m)
+				results = append(results, m)
+			}
+		}
+		event.Results = results
+		mu.Unlock()
 		stream.Send(event)
 	})
 
@@ -95,13 +106,14 @@ matchesLoop:
 			continue matchesLoop
 		}
 		for _, o := range resolvedOwners {
-			ownerMatches = append(ownerMatches, &result.OwnerMatch{
+			ownerMatch := &result.OwnerMatch{
 				ResolvedOwner: o,
 				InputRev:      mm.InputRev,
 				Repo:          mm.Repo,
 				CommitID:      mm.CommitID,
 				Path:          mm.Path,
-			})
+			}
+			ownerMatches = append(ownerMatches, ownerMatch)
 		}
 	}
 	return ownerMatches, errs
