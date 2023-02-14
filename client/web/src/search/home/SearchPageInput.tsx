@@ -186,6 +186,8 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                 setSearchMode={setSearchMode}
                 settingsCascade={props.settingsCascade}
                 navbarSearchQuery={props.queryState.query}
+                showCopyQueryButton={false}
+                showSmartSearchButton={false}
             />
         </LazyCodeMirrorQueryInput>
     ) : (
