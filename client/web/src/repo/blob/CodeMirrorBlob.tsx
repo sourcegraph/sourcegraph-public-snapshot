@@ -87,6 +87,8 @@ export interface BlobProps
 
     isBlameVisible?: boolean
     blameHunks?: BlameHunkData
+
+    activeURL?: string
 }
 
 export interface BlobPropsFacet extends BlobProps {
@@ -200,7 +202,17 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     // This is used to avoid reinitializing the editor when new locations in the
     // same file are opened inside the reference panel.
     const blobInfo = useDistinctBlob(props.blobInfo)
-    const position = useMemo(() => parseQueryAndHash(location.search, location.hash), [location.search, location.hash])
+    const position = useMemo(() => {
+        // When an activeURL is passed, it takes presedence over the react
+        // router location API.
+        //
+        // This is needed to support the reference panel
+        if (props.activeURL) {
+            const url = new URL(props.activeURL, window.location.href)
+            return parseQueryAndHash(url.search, url.hash)
+        }
+        return parseQueryAndHash(location.search, location.hash)
+    }, [props.activeURL, location.search, location.hash])
     const hasPin = useMemo(() => urlIsPinned(location.search), [location.search])
 
     const blobProps = useMemo(
