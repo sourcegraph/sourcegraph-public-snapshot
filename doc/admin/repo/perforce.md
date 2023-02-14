@@ -118,7 +118,7 @@ write user alice * //TestDepot/*/spec/...
 write user alice * //TestDepot/.../spec/...
 ```
 
-But permissions are only enforced per repository, **not per file**. For that you need to configure [file-level permissions](#file-level-permissions).
+But permissions are only enforced per repository and **not per file**. For that you need to configure [file-level permissions](#file-level-permissions).
 
 ### File-level permissions
 
