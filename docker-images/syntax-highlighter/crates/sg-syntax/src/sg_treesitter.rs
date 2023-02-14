@@ -49,6 +49,7 @@ const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
     ("method",                  SyntaxKind::IdentifierFunction),
     ("number",                  SyntaxKind::NumericLiteral),
     ("operator",                SyntaxKind::IdentifierOperator),
+    ("identifier.operator",     SyntaxKind::IdentifierOperator),
     ("property",                SyntaxKind::Identifier),
     ("punctuation",             SyntaxKind::UnspecifiedSyntaxKind),
     ("punctuation.bracket",     SyntaxKind::UnspecifiedSyntaxKind),
@@ -141,7 +142,7 @@ macro_rules! create_configurations {
 
 lazy_static::lazy_static! {
     static ref CONFIGURATIONS: HashMap<&'static str, HighlightConfiguration> = {
-        create_configurations!( go, sql, c_sharp, jsonnet, java, scala, xlsg, javascript )
+        create_configurations!( go, sql, c_sharp, jsonnet, python, java, scala, xlsg, javascript )
     };
 }
 
