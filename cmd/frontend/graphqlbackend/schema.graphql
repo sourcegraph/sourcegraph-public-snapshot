@@ -930,15 +930,15 @@ input ExternalServiceRepositoriesInput {
     """
     url: String!
     """
-    TODO
+    Repository query string.
     """
     query: String!
     """
-    TODO
+    A list of repository names to exclude from results (in the form of owner/name).
     """
     excludeRepos: [String!]!
     """
-    TODO
+    The result count limit.
     """
     limit: Int
 }

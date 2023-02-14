@@ -441,7 +441,8 @@ func (r *externalServiceSyncJobResolver) ReposUnmodified() int32 { return r.job.
 func (r *externalServiceSourceRepositoryConnectionResolver) compute(ctx context.Context) ([]*types.ExternalServiceSourceRepo, int32, error) {
 	r.once.Do(func() {
 		connection, err := NewSourceConnection(r.args.Input)
-		limit := int32(2)
+		// TODO Default page size ?
+		limit := int32(100)
 		if r.args.Input.Limit != nil {
 			limit = *r.args.Input.Limit
 		}
