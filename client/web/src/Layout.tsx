@@ -85,7 +85,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     const location = useLocation()
 
     // TODO: Replace with useMatches once top-level <Router/> is V6
-    const routeMatch = '' /* props.routes.find(
+    const routeMatch: any = '' /* props.routes.find(
         route =>
             matchPath(route.path, location.pathname) || matchPath(route.path.replace(/\/\*$/, ''), location.pathname)
     )?.path*/
