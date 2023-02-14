@@ -55,7 +55,7 @@ func (om *OwnerMatch) Key() Key {
 		Path:     om.Path, // TODO: we should decide whether to omit this. If we leave it in then we will get duplicate owners if we match different paths.
 	}
 	if om.ResolvedOwner != nil {
-		k.Metadata = string(om.ResolvedOwner.Type()) + om.ResolvedOwner.Identifier()
+		k.OwnerMetadata = string(om.ResolvedOwner.Type()) + om.ResolvedOwner.Identifier()
 	}
 	if om.InputRev != nil {
 		k.Rev = *om.InputRev

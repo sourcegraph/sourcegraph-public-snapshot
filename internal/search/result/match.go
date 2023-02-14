@@ -76,6 +76,10 @@ type Key struct {
 	// Empty if there is no file associated with the match (e.g. RepoMatch or CommitMatch)
 	Path string
 
+	// OwnerMetadata gives uniquely identifying information about an owner.
+	// Empty if this is not a Key for an OwnerMatch.
+	OwnerMetadata string
+
 	// TypeRank is the sorting rank of the type this key belongs to.
 	TypeRank int
 }
