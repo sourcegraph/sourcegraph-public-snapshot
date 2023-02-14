@@ -7,23 +7,35 @@ import { useQuery } from '@sourcegraph/http-client'
 import { H1, Card, Text, Icon, Button, Link, Grid } from '@sourcegraph/wildcard'
 
 import { PendingAccessRequestsListResult, PendingAccessRequestsListVariables } from '../../graphql-operations'
+import { useURLSyncedState } from '../../hooks'
 import { eventLogger } from '../../tracking/eventLogger'
+import { DropdownPagination } from '../components/DropdownPagination'
 
 import { PENDING_ACCESS_REQUESTS_LIST } from './queries'
 
 import styles from './index.module.scss'
+
+const DEFAULT_FILTERS = {
+    offset: '0',
+    limit: '25',
+}
 
 export const AccessRequestsPage: React.FunctionComponent = () => {
     useEffect(() => {
         eventLogger.logPageView('AccessRequestsPage')
     }, [])
 
+    const [filters, setFilters] = useURLSyncedState(DEFAULT_FILTERS)
+
+    const offset = Number(filters.offset)
+    const limit = Number(filters.limit)
+
     const { data } = useQuery<PendingAccessRequestsListResult, PendingAccessRequestsListVariables>(
         PENDING_ACCESS_REQUESTS_LIST,
         {
             variables: {
-                limit: 10,
-                offset: 0,
+                limit,
+                offset,
             },
         }
     )
@@ -47,20 +59,28 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                     </Button>
                 </div>
             </div>
+            <DropdownPagination
+                limit={limit}
+                offset={offset}
+                total={data?.accessRequests?.totalCount ?? 0}
+                onLimitChange={limit => setFilters({ limit: limit.toString() })}
+                onOffsetChange={offset => setFilters({ offset: offset.toString() })}
+                options={[4, 8, 16]}
+            />
             <Card className="p-3">
                 <Grid columnCount={5}>
                     {['Email', 'Name', 'Last requested at', 'Extra Details', ''].map((value, index) => (
+                        // eslint-disable-next-line react/no-array-index-key
                         <Text weight="medium" key={index} className="mb-1">
                             {value}
                         </Text>
                     ))}
-                    {data?.accessRequests?.nodes.map(({ email, name, createdAt, additionalInfo }, index) => (
-                        <Fragment key={index}>
+                    {data?.accessRequests?.nodes.map(({ email, name, createdAt, additionalInfo }) => (
+                        <Fragment key={email}>
                             <Text className="mb-0 d-flex align-items-center">{email}</Text>
                             <Text className="mb-0 d-flex align-items-center">{name}</Text>
                             <Text className="mb-0 d-flex align-items-center">
                                 {formatDistanceToNowStrict(new Date(createdAt), { addSuffix: true })}
-                                {/* {format(new Date(createdAt), TimestampFormat.FULL_DATE_TIME)} */}
                             </Text>
                             <Text className="text-muted mb-0 d-flex align-items-center" size="small">
                                 {additionalInfo}
