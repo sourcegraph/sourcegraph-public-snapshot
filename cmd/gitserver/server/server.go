@@ -1248,21 +1248,6 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	tr.SetAttributes(
-		attribute.String("repo", string(args.Repo)),
-		attribute.Bool("include_diff", args.IncludeDiff),
-		attribute.String("query", args.Query.String()),
-		attribute.Int("limit", args.Limit),
-		attribute.Bool("include_modified_files", args.IncludeModifiedFiles),
-	)
-
-	searchStart := time.Now()
-	searchRunning.Inc()
-	defer searchRunning.Dec()
-
-	observeLatency := syncx.OnceFunc(func() {
-		searchLatency.Observe(time.Since(searchStart).Seconds())
-	})
 
 	eventWriter, err := streamhttp.NewWriter(w)
 	if err != nil {
@@ -1274,7 +1259,6 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	var matchesBufMux sync.Mutex
 	matchesBuf := streamhttp.NewJSONArrayBuf(8*1024, func(data []byte) error {
 		tr.AddEvent("flushing data", attribute.Int("data.len", len(data)))
-		observeLatency()
 		return eventWriter.EventBytes("matches", data)
 	})
 
@@ -1319,7 +1303,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Run the search
-	limitHit, searchErr := s.search(ctx, &args, onMatch)
+	limitHit, searchErr := s.searchWithObservability(ctx, tr, &args, onMatch)
 	if writeErr := eventWriter.Event("done", protocol.NewSearchEventDone(limitHit, searchErr)); writeErr != nil {
 		if !errors.Is(writeErr, syscall.EPIPE) {
 			logger.Error("failed to send done event", log.Error(writeErr))
@@ -1330,39 +1314,66 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	flusherCancel()
 	flusherWg.Wait()
 	matchesBuf.Flush()
+}
 
-	tr.AddEvent("done", attribute.Bool("limit_hit", limitHit))
-	tr.SetError(searchErr)
-	searchDuration.
-		WithLabelValues(strconv.FormatBool(searchErr != nil)).
-		Observe(time.Since(searchStart).Seconds())
+func (s *Server) searchWithObservability(ctx context.Context, tr *trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
+	searchStart := time.Now()
 
-	if honey.Enabled() || traceLogs {
-		act := actor.FromContext(ctx)
-		ev := honey.NewEvent("gitserver-search")
-		ev.SetSampleRate(honeySampleRate("", act))
-		ev.AddField("repo", args.Repo)
-		ev.AddField("revisions", args.Revisions)
-		ev.AddField("include_diff", args.IncludeDiff)
-		ev.AddField("include_modified_files", args.IncludeModifiedFiles)
-		ev.AddField("actor", act.UIDString())
-		ev.AddField("query", args.Query.String())
-		ev.AddField("limit", args.Limit)
-		ev.AddField("duration_ms", time.Since(searchStart).Milliseconds())
-		if searchErr != nil {
-			ev.AddField("error", searchErr.Error())
+	searchRunning.Inc()
+	defer searchRunning.Dec()
+
+	tr.SetAttributes(
+		attribute.String("repo", string(args.Repo)),
+		attribute.Bool("include_diff", args.IncludeDiff),
+		attribute.String("query", args.Query.String()),
+		attribute.Int("limit", args.Limit),
+		attribute.Bool("include_modified_files", args.IncludeModifiedFiles),
+	)
+	defer func() {
+		tr.AddEvent("done", attribute.Bool("limit_hit", limitHit))
+		tr.SetError(err)
+		searchDuration.
+			WithLabelValues(strconv.FormatBool(err != nil)).
+			Observe(time.Since(searchStart).Seconds())
+
+		if honey.Enabled() || traceLogs {
+			act := actor.FromContext(ctx)
+			ev := honey.NewEvent("gitserver-search")
+			ev.SetSampleRate(honeySampleRate("", act))
+			ev.AddField("repo", args.Repo)
+			ev.AddField("revisions", args.Revisions)
+			ev.AddField("include_diff", args.IncludeDiff)
+			ev.AddField("include_modified_files", args.IncludeModifiedFiles)
+			ev.AddField("actor", act.UIDString())
+			ev.AddField("query", args.Query.String())
+			ev.AddField("limit", args.Limit)
+			ev.AddField("duration_ms", time.Since(searchStart).Milliseconds())
+			if err != nil {
+				ev.AddField("error", err.Error())
+			}
+			if traceID := trace.ID(ctx); traceID != "" {
+				ev.AddField("traceID", traceID)
+				ev.AddField("trace", trace.URL(traceID, conf.DefaultClient()))
+			}
+			if honey.Enabled() {
+				_ = ev.Send()
+			}
+			if traceLogs {
+				s.Logger.Debug("TRACE gitserver search", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
+			}
 		}
-		if traceID := trace.ID(ctx); traceID != "" {
-			ev.AddField("traceID", traceID)
-			ev.AddField("trace", trace.URL(traceID, conf.DefaultClient()))
-		}
-		if honey.Enabled() {
-			_ = ev.Send()
-		}
-		if traceLogs {
-			logger.Debug("TRACE gitserver search", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
-		}
+	}()
+
+	observeLatency := syncx.OnceFunc(func() {
+		searchLatency.Observe(time.Since(searchStart).Seconds())
+	})
+
+	onMatchWithLatency := func(cm *protocol.CommitMatch) error {
+		observeLatency()
+		return onMatch(cm)
 	}
+
+	return s.search(ctx, args, onMatchWithLatency)
 }
 
 // search handles the core logic of the search. It is passed a matchesBuf so it doesn't need to
