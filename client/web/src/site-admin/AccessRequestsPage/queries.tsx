@@ -17,7 +17,7 @@ export const PENDING_ACCESS_REQUESTS_LIST = gql`
 `
 
 export const REJECT_ACCESS_REQUEST = gql`
-    mutation RejectAccessRequests($id: ID!) {
+    mutation RejectAccessRequest($id: ID!) {
         rejectAccessRequest(id: $id) {
             alwaysNil
         }
