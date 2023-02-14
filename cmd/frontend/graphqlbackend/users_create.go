@@ -77,11 +77,13 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 	logger = logger.With(log.Int32("userID", user.ID))
 	logger.Debug("user created")
 
-	// This resolver is used to created non-site admin users via the GraphQL endpoint. We only
-	// need to assign these users the USER role on creation.
-	opts := database.AssignSystemRoleOpts{UserID: user.ID, Role: types.UserSystemRole}
-	if _, err = r.db.UserRoles().AssignSystemRole(ctx, opts); err != nil {
-		r.logger.Error("failed to assign user role to user",
+	roles := []types.SystemRole{types.UserSystemRole}
+	if user.SiteAdmin {
+		roles = append(roles, types.SiteAdministratorSystemRole)
+	}
+	opts := database.BulkAssignSystemRolesToUserOpts{UserID: user.ID, Roles: roles}
+	if _, err = r.db.UserRoles().BulkAssignSystemRolesToUser(ctx, opts); err != nil {
+		r.logger.Error("failed to assign system roles to user",
 			log.Error(err))
 	}
 

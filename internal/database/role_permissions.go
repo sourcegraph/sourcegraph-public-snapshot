@@ -289,7 +289,7 @@ func (rp *rolePermissionStore) AssignToSystemRole(ctx context.Context, opts Assi
 
 func (rp *rolePermissionStore) BulkAssignToSystemRoles(ctx context.Context, opts BulkAssignToSystemRolesOpts) ([]*types.RolePermission, error) {
 	if opts.PermissionID == 0 {
-		return nil, errors.New("user id is required")
+		return nil, errors.New("permission id is required")
 	}
 
 	if len(opts.Roles) == 0 {

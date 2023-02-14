@@ -53,7 +53,7 @@ func UpdatePermissions(ctx context.Context, logger log.Logger, db database.DB) {
 					Roles:        []types.SystemRole{types.SiteAdministratorSystemRole, types.UserSystemRole},
 					PermissionID: permission.ID,
 				}); err != nil {
-					return errors.Wrap(err, "assigning permission to roles")
+					return errors.Wrap(err, "assigning permission to system roles")
 				}
 			}
 		}

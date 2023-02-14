@@ -171,7 +171,7 @@ func dbAddUserAction(cmd *cli.Context) error {
 	}
 
 	db := database.NewDB(logger, conn)
-	err = db.WithTransact(ctx, func(tx database.DB) error {
+	return db.WithTransact(ctx, func(tx database.DB) error {
 		username := cmd.String("username")
 		password := cmd.String("password")
 
@@ -219,8 +219,6 @@ func dbAddUserAction(cmd *cli.Context) error {
 
 		return nil
 	})
-
-	return err
 }
 
 func dbUpdateUserExternalAccount(cmd *cli.Context) error {

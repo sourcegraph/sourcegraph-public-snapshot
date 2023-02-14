@@ -262,11 +262,8 @@ func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUs
 		return nil, err
 	}
 
-	fmt.Println(createdUser.SiteAdmin, "<====")
-
 	// Every user on a Sourcegraph instance is assigned the `USER` role.
 	roles := []types.SystemRole{types.UserSystemRole}
-
 	if createdUser.SiteAdmin {
 		// if the created user is a site admin, assign them the SITE_ADMINISTRATOR role.
 		roles = append(roles, types.SiteAdministratorSystemRole)

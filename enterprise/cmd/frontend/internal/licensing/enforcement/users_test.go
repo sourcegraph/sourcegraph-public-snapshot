@@ -236,9 +236,6 @@ func mockDBAndStores(t *testing.T) (*database.MockDB, *database.MockUserStore) {
 	usersStore.SetIsSiteAdminFunc.SetDefaultReturn(nil)
 
 	db := database.NewMockDB()
-	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
-		return f(db)
-	})
 	db.UsersFunc.SetDefaultReturn(usersStore)
 
 	return db, usersStore

@@ -153,6 +153,7 @@ func TestExternalAccounts_CreateUserAndSave(t *testing.T) {
 		UserID: user.ID,
 	})
 	require.NoError(t, err)
+	// Both USER and SITE_ADMINISTRATOR role have been assigned.
 	require.Len(t, userRoles, 2)
 }
 

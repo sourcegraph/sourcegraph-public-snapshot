@@ -7,7 +7,6 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
@@ -37,10 +36,7 @@ func makeUsersCreateTestDB(t *testing.T) mockFuncs {
 	roles.GetFunc.SetDefaultReturn(&types.Role{ID: 1}, nil)
 
 	userRoles := database.NewMockUserRoleStore()
-	userRoles.AssignSystemRoleFunc.SetDefaultHook(func(ctx context.Context, opts database.AssignSystemRoleOpts) (*types.UserRole, error) {
-		require.Equal(t, opts.Role, types.UserSystemRole, "expected AssignSystemRole to be called with USER role, but got %s", opts.Role)
-		return &types.UserRole{}, nil
-	})
+	userRoles.BulkAssignSystemRolesToUserFunc.SetDefaultReturn([]*types.UserRole{}, nil)
 
 	userEmails := database.NewMockUserEmailsStore()
 
@@ -86,7 +82,7 @@ func TestCreateUser(t *testing.T) {
 	})
 
 	mockrequire.CalledOnce(t, mocks.authzStore.GrantPendingPermissionsFunc)
-	mockrequire.CalledOnce(t, mocks.userRoleStore.AssignSystemRoleFunc)
+	mockrequire.CalledOnce(t, mocks.userRoleStore.BulkAssignSystemRolesToUserFunc)
 }
 
 func TestCreateUserResetPasswordURL(t *testing.T) {
