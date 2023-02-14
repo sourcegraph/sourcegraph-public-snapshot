@@ -154,8 +154,8 @@ func (cm *CommitMatch) ToProto() *proto.CommitMatch {
 }
 
 func CommitMatchFromProto(p *proto.CommitMatch) CommitMatch {
-	parents := make([]api.CommitID, 0, len(p.Parents))
-	for _, parent := range p.Parents {
+	parents := make([]api.CommitID, 0, len(p.GetParents()))
+	for _, parent := range p.GetParents() {
 		parents = append(parents, api.CommitID(parent))
 	}
 	return CommitMatch{

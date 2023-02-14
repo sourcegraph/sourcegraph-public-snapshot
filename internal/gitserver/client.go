@@ -28,6 +28,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	sglog "github.com/sourcegraph/log"
@@ -749,6 +750,9 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 				return limitHit, nil
 			} else if err != nil {
 				st := status.Convert(err)
+				if st.Code() == codes.Canceled {
+					return false, context.Canceled
+				}
 				for _, detail := range st.Details() {
 					if notFound, ok := detail.(*proto.NotFoundPayload); ok {
 						return false, &gitdomain.RepoNotExistError{
@@ -761,8 +765,12 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 				return false, err
 			}
 
-			limitHit = limitHit || msg.GetLimitHit()
-			onMatches([]protocol.CommitMatch{protocol.CommitMatchFromProto(msg.GetMatch())})
+			switch m := msg.Message.(type) {
+			case *proto.SearchResponse_LimitHit:
+				limitHit = limitHit || m.LimitHit
+			case *proto.SearchResponse_Match:
+				onMatches([]protocol.CommitMatch{protocol.CommitMatchFromProto(m.Match)})
+			}
 		}
 	}
 

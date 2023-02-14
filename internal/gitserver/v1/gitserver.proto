@@ -126,8 +126,10 @@ message QueryNode {
 }
 
 message SearchResponse {
-  CommitMatch match = 1;
-  bool limit_hit = 2;
+  oneof message {
+      CommitMatch match = 1;
+      bool limit_hit = 2;
+  }
 }
 
 message CommitMatch {

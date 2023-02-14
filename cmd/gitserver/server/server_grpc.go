@@ -79,7 +79,7 @@ func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 
 	onMatch := func(match *protocol.CommitMatch) error {
 		return ss.Send(&proto.SearchResponse{
-			Match: match.ToProto(),
+			Message: &proto.SearchResponse_Match{Match: match.ToProto()},
 		})
 	}
 
@@ -95,5 +95,9 @@ func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 		}
 		return err
 	}
-	return ss.Send(&proto.SearchResponse{LimitHit: limitHit})
+	return ss.Send(&proto.SearchResponse{
+		Message: &proto.SearchResponse_LimitHit{
+			LimitHit: limitHit,
+		},
+	})
 }
