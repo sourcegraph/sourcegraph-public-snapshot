@@ -983,7 +983,7 @@ func testPermsStore_FetchReposByExternalAccount(db database.DB) func(*testing.T)
 
 				if test.origPermissions != nil && len(test.origPermissions) > 0 {
 					setupPermsForeignKeys(t, s, test.origPermissions)
-					err := s.SetUserRepoPermissions(ctx, test.origPermissions, authz.PermissionEntity{}, source)
+					err := s.SetUserRepoPermissions(ctx, test.origPermissions, authz.PermissionEntity{UserID: 42}, source)
 					if err != nil {
 						t.Fatal("setup test permissions before actual test", err)
 					}

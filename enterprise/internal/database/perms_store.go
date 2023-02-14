@@ -528,9 +528,10 @@ WHERE
 		if entity.ExternalAccountID > 0 {
 			where = sqlf.Sprintf("%s AND user_external_account_id = %d", where, entity.ExternalAccountID)
 		}
-	}
-	if entity.RepoID > 0 {
+	} else if entity.RepoID > 0 {
 		where = sqlf.Sprintf("repo_id = %d", entity.RepoID)
+	} else {
+		return errors.New("invalid entity for which to delete old permissions, need at least RepoID or UserID specified")
 	}
 
 	return s.Exec(ctx, sqlf.Sprintf(format, where, currentTime, authz.SourceAPI))
