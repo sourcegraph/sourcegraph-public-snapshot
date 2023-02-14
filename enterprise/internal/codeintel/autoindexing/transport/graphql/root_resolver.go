@@ -389,6 +389,23 @@ func (r *rootResolver) InferedIndexConfigurationHints(ctx context.Context, repos
 	return hints, nil
 }
 
+func (r *rootResolver) CodeIntelSummary(ctx context.Context) (_ resolverstubs.CodeIntelSummaryResolver, err error) {
+	ctx, _, endObservation := r.operations.summary.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	summary, err := r.autoindexSvc.Summary(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a new prefetcher here as we only want to cache repositories in the same graphQL request,
+	// not across different request
+	db := r.autoindexSvc.GetUnsafeDB()
+	locationResolver := sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient())
+
+	return sharedresolvers.NewSummaryResolver(summary, locationResolver), nil
+}
+
 func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ resolverstubs.CodeIntelRepositorySummaryResolver, err error) {
 	ctx, errTracer, endObservation := r.operations.repositorySummary.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repoID", string(id)),
@@ -424,7 +441,11 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 	// Create blocklist for indexes that have already been uploaded.
 	blocklist := map[string]struct{}{}
 	for _, u := range recentUploads {
-		key := getKeyForLookup(u.Indexer, u.Root)
+		key := shared.GetKeyForLookup(u.Indexer, u.Root)
+		blocklist[key] = struct{}{}
+	}
+	for _, u := range recentIndexes {
+		key := shared.GetKeyForLookup(u.Indexer, u.Root)
 		blocklist[key] = struct{}{}
 	}
 
@@ -433,15 +454,14 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 	if err != nil {
 		return nil, err
 	}
-
-	availableIndexersMap := map[string]availableIndexer{}
-	inferredAvailableIndexers := populateInferredAvailableIndexers(indexJobs, blocklist, availableIndexersMap)
-
 	indexJobHints, err := r.autoindexSvc.InferIndexJobHintsFromRepositoryStructure(ctx, repoID, commit)
 	if err != nil {
 		return nil, err
 	}
-	inferredAvailableIndexers = populateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
+
+	inferredAvailableIndexers := map[string]shared.AvailableIndexer{}
+	inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobs, blocklist, inferredAvailableIndexers)
+	inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
 
 	inferredAvailableIndexersResolver := make([]sharedresolvers.InferredAvailableIndexers, 0, len(inferredAvailableIndexers))
 	for indexName, indexer := range inferredAvailableIndexers {

@@ -1,0 +1,16 @@
+.icon {
+    flex-shrink: 0;
+    width: 1rem;
+    height: 1rem;
+}
+
+.hint {
+    padding: 0.25em;
+    border-radius: 0.5em;
+    border: 1px solid var(--gray-04);
+}
+
+.spacer {
+    // yo lol what
+    margin-left: .25em;
+}

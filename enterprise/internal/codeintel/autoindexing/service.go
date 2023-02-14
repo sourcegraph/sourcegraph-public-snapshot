@@ -297,3 +297,7 @@ func (s *Service) InferIndexJobsFromRepositoryStructure(ctx context.Context, rep
 func (s *Service) InferIndexJobHintsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error) {
 	return s.jobSelector.InferIndexJobHintsFromRepositoryStructure(ctx, repositoryID, commit)
 }
+
+func (s *Service) Summary(ctx context.Context) (shared.Summary, error) {
+	return s.store.Summary(ctx)
+}

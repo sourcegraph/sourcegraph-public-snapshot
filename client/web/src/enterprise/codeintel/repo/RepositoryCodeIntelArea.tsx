@@ -20,6 +20,7 @@ import { CodeIntelPreciseIndexesPageProps } from '../indexes/pages/CodeIntelPrec
 import { CodeIntelPreciseIndexPageProps } from '../indexes/pages/CodeIntelPreciseIndexPage'
 
 import { CodeIntelSidebar, CodeIntelSideBarGroups } from './CodeIntelSidebar'
+import { RepoDashboardPageProps } from '../dashboard/pages/RepoDashboardPage'
 
 export interface CodeIntelAreaRouteContext extends ThemeProps, TelemetryProps {
     repo: { id: string; name: string }
@@ -27,6 +28,11 @@ export interface CodeIntelAreaRouteContext extends ThemeProps, TelemetryProps {
 }
 
 export interface CodeIntelAreaRoute extends RouteV6Descriptor<CodeIntelAreaRouteContext> {}
+
+const RepoDashboardPage = lazyComponent<RepoDashboardPageProps, 'RepoDashboardPage'>(
+    () => import('../dashboard/pages/RepoDashboardPage'),
+    'RepoDashboardPage'
+)
 
 const CodeIntelPreciseIndexesPage = lazyComponent<CodeIntelPreciseIndexesPageProps, 'CodeIntelPreciseIndexesPage'>(
     () => import('../indexes/pages/CodeIntelPreciseIndexesPage'),
@@ -63,7 +69,11 @@ const CodeIntelConfigurationPolicyPage = lazyComponent<
 export const codeIntelAreaRoutes: readonly CodeIntelAreaRoute[] = [
     {
         path: '/',
-        render: () => <Navigate to="./indexes" replace={true} />,
+        render: () => <Navigate to="./dashboard" replace={true} />,
+    },
+    {
+        path: '/dashboard',
+        render: props => <RepoDashboardPage {...props} />,
     },
     {
         path: '/indexes',
@@ -114,6 +124,10 @@ const sidebarRoutes: CodeIntelSideBarGroups = [
     {
         header: { label: 'Code graph data' },
         items: [
+            {
+                to: '/dashboard',
+                label: 'Dashboard',
+            },
             {
                 to: '/indexes',
                 label: 'Precise indexes',

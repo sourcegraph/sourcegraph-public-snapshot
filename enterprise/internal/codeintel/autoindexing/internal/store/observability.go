@@ -44,7 +44,9 @@ type operations struct {
 	insertDependencyIndexingJob *observation.Operation
 	expireFailedRecords         *observation.Operation
 
-	getRepoName *observation.Operation
+	getRepoName                *observation.Operation
+	topRepositoriesToConfigure *observation.Operation
+	setConfigurationSummary    *observation.Operation
 }
 
 var (
@@ -114,6 +116,8 @@ func newOperations(observationCtx *observation.Context) *operations {
 		insertDependencyIndexingJob: op("InsertDependencyIndexingJob"),
 		expireFailedRecords:         op("ExpireFailedRecords"),
 
-		getRepoName: op("GetRepoName"),
+		getRepoName:                op("GetRepoName"),
+		topRepositoriesToConfigure: op("TopRepositoriesToConfigure"),
+		setConfigurationSummary:    op("SetConfigurationSummary"),
 	}
 }

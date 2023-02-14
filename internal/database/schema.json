@@ -288,6 +288,15 @@
       "CycleOption": "NO"
     },
     {
+      "Name": "cached_available_indexers_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
       "Name": "changeset_events_id_seq",
       "TypeName": "bigint",
       "StartValue": 1,
@@ -3158,6 +3167,75 @@
           "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE"
         }
       ],
+      "Triggers": []
+    },
+    {
+      "Name": "cached_available_indexers",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "available_indexers",
+          "Index": 3,
+          "TypeName": "jsonb",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('cached_available_indexers_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "repository_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "cached_available_indexers_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX cached_available_indexers_pkey ON cached_available_indexers USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "cached_available_indexers_repository_id",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX cached_available_indexers_repository_id ON cached_available_indexers USING btree (repository_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
       "Triggers": []
     },
     {

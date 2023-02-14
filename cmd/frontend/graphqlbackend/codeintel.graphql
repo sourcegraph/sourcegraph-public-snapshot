@@ -320,6 +320,11 @@ extend type Query {
     ): PreciseIndexConnection!
 
     """
+    Provides a summary of code intelligence on the instance.
+    """
+    codeIntelSummary: CodeIntelSummary!
+
+    """
     The repository's LSIF uploads.
     """
     lsifUploads(
@@ -693,7 +698,7 @@ extend type Repository {
     ): LSIFIndexConnection!
 
     """
-    Provides a summary of the most reecent upload and index status.
+    Provides a summary of the most recent upload and index status.
     """
     codeIntelSummary: CodeIntelRepositorySummary!
 
@@ -864,7 +869,32 @@ type LineRange {
 }
 
 """
-A summary of the most reecent upload and index status.
+A summary of code intelligence on the instance.
+"""
+type CodeIntelSummary {
+    numRepositoriesWithCodeIntelligence: Int!
+    repositoriesWithErrors: [CodeIntelRepositoryWithError!]! # TODO - additional metadata, paginate
+    repositoriesWithConfiguration: [CodeIntelRepositoryWithConfiguration!]! # TODO - additional metadata, paginate
+    # TODO - add reporting of stale intelligence
+}
+
+type CodeIntelRepositoryWithError {
+    repository: CodeIntelRepository!
+    count: Int!
+}
+
+type CodeIntelRepositoryWithConfiguration {
+    repository: CodeIntelRepository!
+    indexers: [IndexerWithCount!]!
+}
+
+type IndexerWithCount {
+    indexer: CodeIntelIndexer
+    count: Int!
+}
+
+"""
+A summary of the most recent upload and index status.
 """
 type CodeIntelRepositorySummary {
     """
@@ -880,6 +910,13 @@ type CodeIntelRepositorySummary {
     and root.
     """
     recentIndexes: [LSIFIndexesWithRepositoryNamespace!]!
+
+    """
+    A list of recent precise indexes for a specific repository. This list contains processing,
+    recently queued, and the most recently processed precise indexes for each distinct indexer
+    and root.
+    """
+    recentActivity: [PreciseIndex!]!
 
     """
     The last time uploads of this repository were checked against data retention policies.

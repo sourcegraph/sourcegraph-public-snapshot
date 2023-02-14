@@ -287,6 +287,19 @@ Referenced by:
 
 ```
 
+# Table "public.cached_available_indexers"
+```
+       Column       |  Type   | Collation | Nullable |                        Default                        
+--------------------+---------+-----------+----------+-------------------------------------------------------
+ id                 | integer |           | not null | nextval('cached_available_indexers_id_seq'::regclass)
+ repository_id      | integer |           | not null | 
+ available_indexers | jsonb   |           | not null | 
+Indexes:
+    "cached_available_indexers_pkey" PRIMARY KEY, btree (id)
+    "cached_available_indexers_repository_id" UNIQUE, btree (repository_id)
+
+```
+
 # Table "public.changeset_events"
 ```
     Column    |           Type           | Collation | Nullable |                   Default                    

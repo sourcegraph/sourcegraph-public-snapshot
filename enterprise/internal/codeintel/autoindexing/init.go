@@ -129,3 +129,19 @@ func NewDependencyIndexSchedulers(
 		),
 	}
 }
+
+func NewSummaryBuilder(
+	observationCtx *observation.Context,
+	autoindexingSvc *Service,
+	uploadSvc UploadService,
+) []goroutine.BackgroundRoutine {
+	return []goroutine.BackgroundRoutine{
+		background.NewSummaryBuilder(
+			observationCtx,
+			autoindexingSvc.store,
+			autoindexingSvc.jobSelector,
+			uploadSvc,
+			SummaryBuilderConfigInst.Interval,
+		),
+	}
+}

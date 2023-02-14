@@ -138,6 +138,21 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
             render: () => <NavigateToCodeGraph />,
         },
 
+        // Code intelligence dashboard routes
+        {
+            path: '/code-graph',
+            exact: true,
+            render: () => <Navigate to="./code-graph/dashboard" replace={true} />,
+        },
+        {
+            path: '/code-graph/dashboard',
+            render: lazyComponent(
+                () => import('../codeintel/dashboard/pages/GlobalDashboardPage'),
+                'GlobalDashboardPage'
+            ),
+            exact: true,
+        },
+
         // Precise index routes
         {
             path: '/code-graph/indexes',

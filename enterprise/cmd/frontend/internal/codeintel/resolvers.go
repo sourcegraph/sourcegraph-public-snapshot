@@ -167,6 +167,10 @@ func (r *Resolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context
 	return r.policiesRootResolver.DeleteCodeIntelligenceConfigurationPolicy(ctx, args)
 }
 
+func (r *Resolver) CodeIntelSummary(ctx context.Context) (_ resolverstubs.CodeIntelSummaryResolver, err error) {
+	return r.autoIndexingRootResolver.CodeIntelSummary(ctx)
+}
+
 func (r *Resolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ resolverstubs.CodeIntelRepositorySummaryResolver, err error) {
 	return r.autoIndexingRootResolver.RepositorySummary(ctx, id)
 }

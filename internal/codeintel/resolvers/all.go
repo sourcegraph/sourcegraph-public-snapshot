@@ -40,6 +40,7 @@ type AutoindexingServiceResolver interface {
 	LSIFIndexesByRepo(ctx context.Context, args *LSIFRepositoryIndexesQueryArgs) (LSIFIndexConnectionResolver, error)
 	QueueAutoIndexJobsForRepo(ctx context.Context, args *QueueAutoIndexJobsForRepoArgs) ([]LSIFIndexResolver, error)
 	UpdateRepositoryIndexConfiguration(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*EmptyResponse, error)
+	CodeIntelSummary(ctx context.Context) (CodeIntelSummaryResolver, error)
 	RepositorySummary(ctx context.Context, id graphql.ID) (CodeIntelRepositorySummaryResolver, error)
 	CodeIntelligenceInferenceScript(ctx context.Context) (string, error)
 	UpdateCodeIntelligenceInferenceScript(ctx context.Context, args *UpdateCodeIntelligenceInferenceScriptArgs) (*EmptyResponse, error)
@@ -71,9 +72,31 @@ type PoliciesServiceResolver interface {
 	UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *UpdateCodeIntelligenceConfigurationPolicyArgs) (*EmptyResponse, error)
 }
 
+type CodeIntelSummaryResolver interface {
+	NumRepositoriesWithCodeIntelligence(ctx context.Context) (int32, error)
+	RepositoriesWithErrors(ctx context.Context) ([]CodeIntelRepositoryWithErrorResolver, error)
+	RepositoriesWithConfiguration(ctx context.Context) ([]CodeIntelRepositoryWithConfigurationResolver, error)
+}
+
+type CodeIntelRepositoryWithErrorResolver interface {
+	Repository() RepositoryResolver
+	Count() int32
+}
+
+type CodeIntelRepositoryWithConfigurationResolver interface {
+	Repository() RepositoryResolver
+	Indexers() []IndexerWithCountResolver
+}
+
+type IndexerWithCountResolver interface {
+	Indexer() CodeIntelIndexerResolver
+	Count() int32
+}
+
 type CodeIntelRepositorySummaryResolver interface {
 	RecentUploads() []LSIFUploadsWithRepositoryNamespaceResolver
 	RecentIndexes() []LSIFIndexesWithRepositoryNamespaceResolver
+	RecentActivity(ctx context.Context) ([]PreciseIndexResolver, error)
 	LastUploadRetentionScan() *gqlutil.DateTime
 	LastIndexScan() *gqlutil.DateTime
 	AvailableIndexers() []InferredAvailableIndexersResolver

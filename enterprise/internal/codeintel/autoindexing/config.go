@@ -76,3 +76,16 @@ func (c *indexJobsConfig) Load() {
 	c.OnDemandSchedulerInterval = c.GetInterval("CODEINTEL_AUTOINDEXING_ON_DEMAND_SCHEDULER_INTERVAL", "30s", "How frequently to run the on-demand auto-indexing scheduling routine.")
 	c.OnDemandBatchsize = c.GetInt("CODEINTEL_AUTOINDEXING_ON_DEMAND_SCHEDULER_BATCH_SIZE", "100", "The number of repo/rev pairs to consider for on-demand auto-indexing scheduling at a time.")
 }
+
+type summaryBuilderConfig struct {
+	env.BaseConfig
+
+	Interval time.Duration
+}
+
+var SummaryBuilderConfigInst = &summaryBuilderConfig{}
+
+func (c *summaryBuilderConfig) Load() {
+	// TODO - lower this pre-merge.
+	c.Interval = c.GetInterval("CODEINTEL_AUTOINDEXING_SUMMARY_BUILDER_INTERVAL", "1s", "How frequently to run the auto-indexing summary builder routine.")
+}

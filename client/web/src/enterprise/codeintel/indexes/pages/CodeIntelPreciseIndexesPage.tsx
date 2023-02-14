@@ -3,17 +3,15 @@ import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 're
 import { useApolloClient } from '@apollo/client'
 import { mdiDelete, mdiMapSearch, mdiRedo } from '@mdi/js'
 import classNames from 'classnames'
-import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
-import { of, Subject } from 'rxjs'
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { Subject } from 'rxjs'
 import { tap } from 'rxjs/operators'
 
-import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { isErrorLike } from '@sourcegraph/common'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
-    Alert,
     Button,
     Checkbox,
     Container,
@@ -24,7 +22,6 @@ import {
     PageHeader,
     Text,
     Tooltip,
-    useObservable,
 } from '@sourcegraph/wildcard'
 
 import {
@@ -40,7 +37,6 @@ import { CodeIntelStateIcon } from '../components/CodeIntelStateIcon'
 import { CodeIntelStateLabel } from '../components/CodeIntelStateLabel'
 import { EnqueueForm } from '../components/EnqueueForm'
 import { ProjectDescription } from '../components/ProjectDescription'
-import { queryCommitGraph as defaultQueryCommitGraph } from '../hooks/queryCommitGraph'
 import { queryPreciseIndexes as defaultQueryPreciseIndexes, statesFromString } from '../hooks/queryPreciseIndexes'
 import { useDeletePreciseIndex as defaultUseDeletePreciseIndex } from '../hooks/useDeletePreciseIndex'
 import { useDeletePreciseIndexes as defaultUseDeletePreciseIndexes } from '../hooks/useDeletePreciseIndexes'
@@ -52,8 +48,6 @@ import styles from './CodeIntelPreciseIndexesPage.module.scss'
 export interface CodeIntelPreciseIndexesPageProps extends ThemeProps, TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     repo?: { id: string }
-    now?: () => Date
-    queryCommitGraph?: typeof defaultQueryCommitGraph
     queryPreciseIndexes?: typeof defaultQueryPreciseIndexes
     useDeletePreciseIndex?: typeof defaultUseDeletePreciseIndex
     useDeletePreciseIndexes?: typeof defaultUseDeletePreciseIndexes
@@ -111,8 +105,6 @@ const filters: FilteredConnectionFilter[] = [
 export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseIndexesPageProps> = ({
     authenticatedUser,
     repo,
-    now,
-    queryCommitGraph = defaultQueryCommitGraph,
     queryPreciseIndexes = defaultQueryPreciseIndexes,
     useDeletePreciseIndex = defaultUseDeletePreciseIndex,
     useDeletePreciseIndexes = defaultUseDeletePreciseIndexes,
@@ -128,12 +120,6 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
     const { handleDeletePreciseIndexes, deletesError } = useDeletePreciseIndexes()
     const { handleReindexPreciseIndex, reindexError } = useReindexPreciseIndex()
     const { handleReindexPreciseIndexes, reindexesError } = useReindexPreciseIndexes()
-    const commitGraphMetadata = useObservable(
-        useMemo(
-            () => (repo ? queryCommitGraph(repo?.id, apolloClient) : of(undefined)),
-            [repo, queryCommitGraph, apolloClient]
-        )
-    )
 
     // Poke filtered connection to refresh
     const refresh = useMemo(() => new Subject<undefined>(), [])
@@ -260,22 +246,11 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
 
             {!!location.state && <FlashMessage state={location.state.modal} message={location.state.message} />}
 
-            {repo && commitGraphMetadata && (
-                <Alert variant={commitGraphMetadata.stale ? 'primary' : 'success'} aria-live="off">
-                    {commitGraphMetadata.stale ? (
-                        <>
-                            Repository commit graph is currently stale and is queued to be refreshed. Refreshing the
-                            commit graph updates which uploads are visible from which commits.
-                        </>
-                    ) : (
-                        <>Repository commit graph is currently up to date.</>
-                    )}{' '}
-                    {commitGraphMetadata.updatedAt && (
-                        <>
-                            Last refreshed <Timestamp date={commitGraphMetadata.updatedAt} now={now} />.
-                        </>
-                    )}
-                </Alert>
+            {authenticatedUser?.siteAdmin && repo && (
+                <Container className="mb-2">
+                    View <Link to="/site-admin/code-graph/indexes">additional precise indexes</Link> for other
+                    repositories.
+                </Container>
             )}
 
             {repo && authenticatedUser?.siteAdmin && (

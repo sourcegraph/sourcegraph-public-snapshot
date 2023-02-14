@@ -16,6 +16,7 @@ import (
 )
 
 type AutoIndexingService interface {
+	Summary(ctx context.Context) (shared.Summary, error)
 	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ shared.IndexConfiguration, _ bool, err error)
 	GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []types.Index, _ int, err error)
 	GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool, err error)
