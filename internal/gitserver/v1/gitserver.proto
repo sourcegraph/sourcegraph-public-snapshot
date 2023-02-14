@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package gitserver.v1;
 
-option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
-
 import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
 
 service GitserverService {
   rpc Exec(ExecRequest) returns (stream ExecResponse) {}
@@ -112,23 +112,23 @@ message Operator {
 }
 
 message QueryNode {
-    oneof value {
-      AuthorMatches author_matches = 1;
-      CommitterMatches committer_matches = 2;
-      CommitBefore commit_before = 3;
-      CommitAfter commit_after = 4;
-      MessageMatches message_matches = 5;
-      DiffMatches diff_matches = 6;
-      DiffModifiesFile diff_modifies_file = 7;
-      Boolean boolean = 8;
-      Operator operator = 9;
-    }
+  oneof value {
+    AuthorMatches author_matches = 1;
+    CommitterMatches committer_matches = 2;
+    CommitBefore commit_before = 3;
+    CommitAfter commit_after = 4;
+    MessageMatches message_matches = 5;
+    DiffMatches diff_matches = 6;
+    DiffModifiesFile diff_modifies_file = 7;
+    Boolean boolean = 8;
+    Operator operator = 9;
+  }
 }
 
 message SearchResponse {
   oneof message {
-      CommitMatch match = 1;
-      bool limit_hit = 2;
+    CommitMatch match = 1;
+    bool limit_hit = 2;
   }
 }
 
