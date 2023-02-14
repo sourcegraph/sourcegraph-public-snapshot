@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
@@ -78,12 +79,21 @@ func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 
 	onMatch := func(match *protocol.CommitMatch) error {
 		return ss.Send(&proto.SearchResponse{
-			Matches: []*proto.CommitMatch{match.ToProto()},
+			Match: match.ToProto(),
 		})
 	}
 
-	// TODO use limithit
-	// TODO convert errors
-	_, err = gs.Server.search(ss.Context(), args, onMatch)
-	return err
+	limitHit, err := gs.Server.search(ss.Context(), args, onMatch)
+	if err != nil {
+		if notExistError := new(gitdomain.RepoNotExistError); errors.As(err, &notExistError) {
+			st, _ := status.New(codes.NotFound, err.Error()).WithDetails(&proto.NotFoundPayload{
+				Repo:            string(notExistError.Repo),
+				CloneInProgress: notExistError.CloneInProgress,
+				CloneProgress:   notExistError.CloneProgress,
+			})
+			return st.Err()
+		}
+		return err
+	}
+	return ss.Send(&proto.SearchResponse{LimitHit: limitHit})
 }

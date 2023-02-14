@@ -741,20 +741,28 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 		if err != nil {
 			return false, err
 		}
+
+		limitHit := false
 		for {
 			msg, err := cs.Recv()
 			if errors.Is(err, io.EOF) {
-				return false, nil
+				return limitHit, nil
 			} else if err != nil {
-				// TODO translate errors
+				st := status.Convert(err)
+				for _, detail := range st.Details() {
+					if notFound, ok := detail.(*proto.NotFoundPayload); ok {
+						return false, &gitdomain.RepoNotExistError{
+							Repo:            api.RepoName(notFound.GetRepo()),
+							CloneProgress:   notFound.GetCloneProgress(),
+							CloneInProgress: notFound.GetCloneInProgress(),
+						}
+					}
+				}
 				return false, err
 			}
 
-			matches := make([]protocol.CommitMatch, 0, len(msg.Matches))
-			for _, match := range msg.Matches {
-				matches = append(matches, protocol.CommitMatchFromProto(match))
-			}
-			onMatches(matches)
+			limitHit = limitHit || msg.GetLimitHit()
+			onMatches([]protocol.CommitMatch{protocol.CommitMatchFromProto(msg.GetMatch())})
 		}
 	}
 
