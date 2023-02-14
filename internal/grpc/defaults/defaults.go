@@ -38,7 +38,14 @@ var (
 
 	// processName is the name of the current binary (e.g. "frontend", "gitserver", "github_proxy"), with some
 	// additional normalization so that it can be used as a Prometheus namespace.
-	processName = strings.ReplaceAll(env.MyName, "-", "_")
+	processName = strings.ReplaceAll(
+		strings.ReplaceAll(
+			env.MyName,
+			"-",
+			"_",
+		),
+		".",
+		"_")
 
 	// prometheus option to set the namespace for counter metrics to the process name
 	setCounterNamespace = func(opts *prometheus.CounterOpts) {
