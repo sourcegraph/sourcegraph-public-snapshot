@@ -6,6 +6,7 @@ package defaults
 
 import (
 	"strings"
+	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
@@ -21,31 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
 
-var (
-	// clientMetrics is set of metrics that are used to instrument all gRPC clients that this binary uses.
-	clientMetrics = grpc_prometheus.NewRegisteredClientMetrics(prometheus.DefaultRegisterer,
-		grpc_prometheus.WithClientCounterOptions(setCounterNamespace),
-		grpc_prometheus.WithClientHandlingTimeHistogram(setHistogramNamespace), // record the overall request latency for a gRPC request
-		grpc_prometheus.WithClientStreamRecvHistogram(setHistogramNamespace),   // record how long it takes for a client to receive a message during a streaming RPC
-		grpc_prometheus.WithClientStreamSendHistogram(setHistogramNamespace),   // record how long it takes for a client to send a message during a streaming RPC
-	)
-
-	// serverMetrics is a set of metrics that are used to instrument all gRPC servers that this binary creates.
-	serverMetrics = grpc_prometheus.NewRegisteredServerMetrics(prometheus.DefaultRegisterer,
-		grpc_prometheus.WithServerCounterOptions(setCounterNamespace),
-		grpc_prometheus.WithServerHandlingTimeHistogram(setHistogramNamespace), // record the overall response latency for a gRPC request
-	)
-
-	// prometheus option to set the namespace for counter metrics to the process name
-	setCounterNamespace = func(opts *prometheus.CounterOpts) {
-		opts.Namespace = processNamePrometheus()
-	}
-	// prometheus option to set the namespace for histogram to the process name
-	setHistogramNamespace = func(opts *prometheus.HistogramOpts) {
-		opts.Namespace = processNamePrometheus()
-	}
-)
-
 // DialOptions is a set of default dial options that should be used for all
 // gRPC clients in Sourcegraph. The options can be extended with
 // service-specific options.
@@ -53,16 +29,19 @@ func DialOptions() []grpc.DialOption {
 	// Generate the options dynamically rather than using a static slice
 	// because these options depend on some globals (tracer, trace sampling)
 	// that are not initialized during init time.
+
+	metrics := mustGetClientMetrics()
+
 	return []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithChainStreamInterceptor(
-			grpc_prometheus.StreamClientInterceptor(clientMetrics),
+			grpc_prometheus.StreamClientInterceptor(metrics),
 			internalgrpc.StreamClientPropagator(actor.ActorPropagator{}),
 			internalgrpc.StreamClientPropagator(policy.ShouldTracePropagator{}),
 			otelgrpc.StreamClientInterceptor(),
 		),
 		grpc.WithChainUnaryInterceptor(
-			grpc_prometheus.UnaryClientInterceptor(clientMetrics),
+			grpc_prometheus.UnaryClientInterceptor(metrics),
 			internalgrpc.UnaryClientPropagator(actor.ActorPropagator{}),
 			internalgrpc.UnaryClientPropagator(policy.ShouldTracePropagator{}),
 			otelgrpc.UnaryClientInterceptor(),
@@ -77,22 +56,79 @@ func ServerOptions(logger log.Logger) []grpc.ServerOption {
 	// Generate the options dynamically rather than using a static slice
 	// because these options depend on some globals (tracer, trace sampling)
 	// that are not initialized during init time.
+
+	metrics := mustGetServerMetrics()
+
 	return []grpc.ServerOption{
 		grpc.ChainStreamInterceptor(
 			internalgrpc.NewStreamPanicCatcher(logger),
-			grpc_prometheus.StreamServerInterceptor(serverMetrics),
+			grpc_prometheus.StreamServerInterceptor(metrics),
 			internalgrpc.StreamServerPropagator(actor.ActorPropagator{}),
 			internalgrpc.StreamServerPropagator(policy.ShouldTracePropagator{}),
 			otelgrpc.StreamServerInterceptor(),
 		),
 		grpc.ChainUnaryInterceptor(
 			internalgrpc.NewUnaryPanicCatcher(logger),
-			grpc_prometheus.UnaryServerInterceptor(serverMetrics),
+			grpc_prometheus.UnaryServerInterceptor(metrics),
 			internalgrpc.UnaryServerPropagator(actor.ActorPropagator{}),
 			internalgrpc.UnaryServerPropagator(policy.ShouldTracePropagator{}),
 			otelgrpc.UnaryServerInterceptor(),
 		),
 	}
+}
+
+var (
+	clientMetricsOnce sync.Once
+	clientMetrics     *grpc_prometheus.ClientMetrics
+
+	serverMetricsOnce sync.Once
+	serverMetrics     *grpc_prometheus.ServerMetrics
+)
+
+// mustGetClientMetrics returns a singleton instance of the client metrics
+// that are shared across all gRPC clients that this process creates.
+//
+// This function panics if the metrics cannot be registered with the default
+// Prometheus registry.
+func mustGetClientMetrics() *grpc_prometheus.ClientMetrics {
+	clientMetricsOnce.Do(func() {
+		clientMetrics = grpc_prometheus.NewRegisteredClientMetrics(prometheus.DefaultRegisterer,
+			grpc_prometheus.WithClientCounterOptions(setCounterNamespace),
+			grpc_prometheus.WithClientHandlingTimeHistogram(setHistogramNamespace), // record the overall request latency for a gRPC request
+			grpc_prometheus.WithClientStreamRecvHistogram(setHistogramNamespace),   // record how long it takes for a client to receive a message during a streaming RPC
+			grpc_prometheus.WithClientStreamSendHistogram(setHistogramNamespace),   // record how long it takes for a client to send a message during a streaming RPC
+		)
+	})
+
+	return clientMetrics
+}
+
+// mustGetServerMetrics returns a singleton instance of the server metrics
+// that are shared across all gRPC servers that this process creates.
+//
+// This function panics if the metrics cannot be registered with the default
+// Prometheus registry.
+func mustGetServerMetrics() *grpc_prometheus.ServerMetrics {
+	serverMetricsOnce.Do(func() {
+		serverMetrics = grpc_prometheus.NewRegisteredServerMetrics(prometheus.DefaultRegisterer,
+			grpc_prometheus.WithServerCounterOptions(setCounterNamespace),
+			grpc_prometheus.WithServerHandlingTimeHistogram(setHistogramNamespace), // record the overall response latency for a gRPC request)
+		)
+	})
+
+	return serverMetrics
+}
+
+// setCounterNamespace is prometheus option that sets the namespace for counter
+// metrics to the current process name.
+func setCounterNamespace(opts *prometheus.CounterOpts) {
+	opts.Namespace = processNamePrometheus()
+}
+
+// setHistogramNamespace is prometheus option that sets the namespace for histogram
+// metrics to the current process name.
+func setHistogramNamespace(opts *prometheus.HistogramOpts) {
+	opts.Namespace = processNamePrometheus()
 }
 
 // processNamePrometheus returns the name of the current binary (e.g. "frontend", "gitserver", "github_proxy"), with some
