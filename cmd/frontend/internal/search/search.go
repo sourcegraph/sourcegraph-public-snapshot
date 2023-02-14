@@ -521,20 +521,20 @@ func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.Sear
 
 func fromOwner(owner *result.OwnerMatch) streamhttp.EventMatch {
 	switch v := owner.ResolvedOwner.(type) {
-	case codeowners.Person:
+	case *codeowners.Person:
 		return &streamhttp.EventPersonMatch{
 			Type:        streamhttp.PersonMatchType,
 			Username:    v.User.Username,
 			DisplayName: v.User.DisplayName,
 			AvatarURL:   v.User.AvatarURL,
 		}
-	case codeowners.Team:
+	case *codeowners.Team:
 		return &streamhttp.EventTeamMatch{
 			Type:        streamhttp.TeamMatchType,
 			Name:        v.Team.Name,
 			DisplayName: v.Team.DisplayName,
 		}
-	case codeowners.UnknownOwner:
+	case *codeowners.UnknownOwner:
 		return &streamhttp.EventUnknownOwnerMatch{
 			Type:   streamhttp.UnknownOwnerMatchType,
 			Handle: v.Handle,
@@ -543,7 +543,8 @@ func fromOwner(owner *result.OwnerMatch) streamhttp.EventMatch {
 	}
 	// We shouldn't reach this.
 	return &streamhttp.EventUnknownOwnerMatch{
-		Type: streamhttp.UnknownOwnerMatchType,
+		Type:   streamhttp.UnknownOwnerMatchType,
+		Handle: owner.ResolvedOwner.Identifier(),
 	}
 }
 

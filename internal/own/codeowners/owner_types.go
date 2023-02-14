@@ -23,7 +23,7 @@ const (
 )
 
 type Person struct {
-	User *types.User // todo(leo): extend to types.UserForSCIM. right now types.User does not hold email information.
+	User *types.User // todo(leo): extend to hold email.
 
 	OwnerIdentifier string // Handle OR email from the proto.
 }
