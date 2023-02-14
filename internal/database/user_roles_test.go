@@ -133,6 +133,42 @@ func TestUserRoleAssignSysemRole(t *testing.T) {
 	})
 }
 
+func TestUserRoleBulkAssignSystemRolesToUsers(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := db.UserRoles()
+
+	user, _ := createUserAndRole(ctx, t, db)
+
+	t.Run("without user id", func(t *testing.T) {
+		urs, err := store.BulkAssignSystemRolesToUser(ctx, BulkAssignSystemRolesToUserOpts{})
+		require.ErrorContains(t, err, "user id is required")
+		require.Nil(t, urs)
+	})
+
+	t.Run("without roles", func(t *testing.T) {
+		urs, err := store.BulkAssignSystemRolesToUser(ctx, BulkAssignSystemRolesToUserOpts{
+			UserID: user.ID,
+		})
+		require.ErrorContains(t, err, "roles are required")
+		require.Nil(t, urs)
+	})
+
+	t.Run("success", func(t *testing.T) {
+		systemRoles := []types.SystemRole{types.SiteAdministratorSystemRole, types.UserSystemRole}
+		urs, err := store.BulkAssignSystemRolesToUser(ctx, BulkAssignSystemRolesToUserOpts{
+			UserID: user.ID,
+			Roles:  systemRoles,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, urs)
+		require.Len(t, urs, len(systemRoles))
+	})
+}
+
 func TestUserRoleDelete(t *testing.T) {
 	t.Parallel()
 

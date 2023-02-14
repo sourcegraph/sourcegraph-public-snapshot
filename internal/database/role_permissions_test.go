@@ -114,13 +114,14 @@ func TestRolePermissionBulkAssignToSystemRoles(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
+		systemRoles := []types.SystemRole{types.SiteAdministratorSystemRole, types.UserSystemRole}
 		rp, err := store.BulkAssignToSystemRoles(ctx, BulkAssignToSystemRolesOpts{
 			PermissionID: p.ID,
-			Roles:        []types.SystemRole{types.UserSystemRole},
+			Roles:        systemRoles,
 		})
 		require.NoError(t, err)
 		require.NotNil(t, rp)
-		require.Len(t, rp, 1)
+		require.Len(t, rp, len(systemRoles))
 	})
 }
 
