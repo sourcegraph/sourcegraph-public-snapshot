@@ -80,7 +80,7 @@ By default Sourcegraph only supports repository-level permissions and does not m
 
 If you don't [activate file-level permissions](#file-level-permissions) you should sync subdirectories of a depot using the `depots` configuration that best describes the most concrete path of your permissions boundary.
 
-For example, if your Perforce depot `//depot/Talkhouse` has different permissions for `//depot/Talkhouse/main-dev` and some subdirectories of `//depot/Talkhouse/rel1.0`, we recommend setting the following `depots`:
+For example, if your Perforce depot `//depot/Talkhouse` has different permissions for `//depot/Talkhouse/main-dev` and subdirectories `//depot/Talkhouse/rel1.0/front`, `//depot/Talkhouse/rel1.0/back` we recommend setting the following `depots`:
 
 ```json
 {
