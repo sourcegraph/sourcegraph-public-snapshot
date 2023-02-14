@@ -1746,16 +1746,17 @@ func (r *Repository) Name() (string, error) {
 
 // Repository is a GitHub repository.
 type Repository struct {
-	ID            string // ID of repository (GitHub GraphQL ID, not GitHub database ID)
-	DatabaseID    int64  // The integer database id
-	NameWithOwner string // full name of repository ("owner/name")
-	Description   string // description of repository
-	URL           string // the web URL of this repository ("https://github.com/foo/bar")
-	IsPrivate     bool   // whether the repository is private
-	IsFork        bool   // whether the repository is a fork of another repository
-	IsArchived    bool   // whether the repository is archived on the code host
-	IsLocked      bool   // whether the repository is locked on the code host
-	IsDisabled    bool   // whether the repository is disabled on the code host
+	ID            string   // ID of repository (GitHub GraphQL ID, not GitHub database ID)
+	DatabaseID    int64    // The integer database id
+	NameWithOwner string   // full name of repository ("owner/name")
+	Description   string   // description of repository
+	URL           string   // the web URL of this repository ("https://github.com/foo/bar")
+	IsPrivate     bool     // whether the repository is private
+	IsFork        bool     // whether the repository is a fork of another repository
+	IsArchived    bool     // whether the repository is archived on the code host
+	IsLocked      bool     // whether the repository is locked on the code host
+	IsDisabled    bool     // whether the repository is disabled on the code host
+	Topics        []string `json:",omitempty"` // a list of topics the repository is tagged with
 	// This field will always be blank on repos stored in our database because the value will be different
 	// depending on which token was used to fetch it
 	ViewerPermission string // ADMIN, WRITE, READ, or empty if unknown. Only the graphql api populates this. https://developer.github.com/v4/enum/repositorypermission/
@@ -1791,6 +1792,7 @@ type restRepository struct {
 	Stars       int                       `json:"stargazers_count"`
 	Forks       int                       `json:"forks_count"`
 	Visibility  string                    `json:"visibility"`
+	Topics      []string                  `json:"topics"`
 }
 
 // getRepositoryFromAPI attempts to fetch a repository from the GitHub API without use of the redis cache.
@@ -1826,6 +1828,7 @@ func convertRestRepo(restRepo restRepository) *Repository {
 		ViewerPermission: convertRestRepoPermissions(restRepo.Permissions),
 		StargazerCount:   restRepo.Stars,
 		ForkCount:        restRepo.Forks,
+		Topics:           restRepo.Topics,
 	}
 
 	if conf.ExperimentalFeatures().EnableGithubInternalRepoVisibility {
