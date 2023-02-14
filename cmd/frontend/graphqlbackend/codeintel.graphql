@@ -939,17 +939,14 @@ The additionally available indexers that have been inferred from jobs and job hi
 """
 type InferredAvailableIndexers {
     """
-    The indexer name.
+    TODO
     """
-    index: String!
+    indexer: CodeIntelIndexer!
+
     """
     The list of roots that could be indexed.
     """
     roots: [String!]!
-    """
-    The url of the index repository.
-    """
-    url: String!
 }
 
 """
@@ -1978,9 +1975,15 @@ Describes a precise code-intel indexer.
 """
 type CodeIntelIndexer {
     """
+    TODO
+    """
+    key: String!
+
+    """
     Name of the precise code-intel indexer.
     """
     name: String!
+
     """
     URL to the source of the indexer e.g. https://github.com/sourcegraph/lsif-go
     """

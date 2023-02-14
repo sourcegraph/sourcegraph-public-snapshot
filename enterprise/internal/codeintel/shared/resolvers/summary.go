@@ -14,9 +14,8 @@ import (
 )
 
 type InferredAvailableIndexers struct {
-	Index string
-	Roots []string
-	URL   string
+	Indexer types.CodeIntelIndexer
+	Roots   []string
 }
 
 type summaryResolver struct {
@@ -160,7 +159,7 @@ func (r *repositorySummaryResolver) RecentUploads() []resolverstubs.LSIFUploadsW
 func (r *repositorySummaryResolver) AvailableIndexers() []resolverstubs.InferredAvailableIndexersResolver {
 	resolvers := make([]resolverstubs.InferredAvailableIndexersResolver, 0, len(r.availableIndexers))
 	for _, indexer := range r.availableIndexers {
-		resolvers = append(resolvers, resolverstubs.NewInferredAvailableIndexersResolver(indexer.Index, indexer.Roots, indexer.URL))
+		resolvers = append(resolvers, resolverstubs.NewInferredAvailableIndexersResolver(types.NewCodeIntelIndexerResolver(indexer.Indexer.Name), indexer.Roots))
 	}
 	return resolvers
 }

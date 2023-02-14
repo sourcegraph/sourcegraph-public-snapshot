@@ -260,6 +260,7 @@ type PreciseSupportResolver interface {
 }
 
 type CodeIntelIndexerResolver interface {
+	Key() string
 	Name() string
 	URL() string
 }
@@ -739,33 +740,26 @@ type PreviewRepositoryFilterArgs struct {
 }
 
 type InferredAvailableIndexersResolver interface {
+	Indexer() CodeIntelIndexerResolver
 	Roots() []string
-	Index() string
-	URL() string
 }
 
 type inferredAvailableIndexersResolver struct {
-	roots []string
-	index string
-	url   string
+	indexer CodeIntelIndexerResolver
+	roots   []string
 }
 
-func NewInferredAvailableIndexersResolver(index string, roots []string, url string) InferredAvailableIndexersResolver {
+func NewInferredAvailableIndexersResolver(indexer CodeIntelIndexerResolver, roots []string) InferredAvailableIndexersResolver {
 	return &inferredAvailableIndexersResolver{
-		index: index,
-		roots: roots,
-		url:   url,
+		indexer: indexer,
+		roots:   roots,
 	}
+}
+
+func (r *inferredAvailableIndexersResolver) Indexer() CodeIntelIndexerResolver {
+	return r.indexer
 }
 
 func (r *inferredAvailableIndexersResolver) Roots() []string {
 	return r.roots
-}
-
-func (r *inferredAvailableIndexersResolver) Index() string {
-	return r.index
-}
-
-func (r *inferredAvailableIndexersResolver) URL() string {
-	return r.url
 }

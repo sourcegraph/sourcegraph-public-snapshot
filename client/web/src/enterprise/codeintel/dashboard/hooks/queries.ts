@@ -22,6 +22,7 @@ export const preciseIndexFieldsFragment = gql`
         inputRoot
         inputIndexer
         indexer {
+            key
             name
             url
         }
@@ -128,6 +129,7 @@ export const globalCodeIntelStatusQuery = gql`
     }
 
     fragment CodeIntelIndexerFields on CodeIntelIndexer {
+        key
         name
         url
     }
@@ -159,9 +161,10 @@ export const repoCodeIntelStatusQuery = gql`
     }
 
     fragment InferredAvailableIndexersFields on InferredAvailableIndexers {
+        indexer {
+            ...CodeIntelIndexerFields
+        }
         roots
-        index
-        url
     }
 
     fragment GitTreeCodeIntelInfoFields on GitTreeCodeIntelInfo {
@@ -191,6 +194,7 @@ export const repoCodeIntelStatusQuery = gql`
     }
 
     fragment CodeIntelIndexerFields on CodeIntelIndexer {
+        key
         name
         url
     }

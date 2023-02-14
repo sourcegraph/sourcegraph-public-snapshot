@@ -1,172 +1,138 @@
 package types
 
+import "fmt"
+
 type CodeIntelIndexer struct {
-	Name string
-	URN  string
+	LanguageKey  string
+	Name         string
+	URN          string
+	DockerImages []string
 }
 
-var (
-	lsifNode = CodeIntelIndexer{
-		Name: "lsif-tsc",
-		URN:  "github.com/sourcegraph/lsif-node",
-	}
-	msftNode = CodeIntelIndexer{
-		Name: "msft/lsif-node",
-		URN:  "github.com/Microsoft/lsif-node",
-	}
-	scipTypescript = CodeIntelIndexer{
-		Name: "scip-typescript",
-		URN:  "github.com/sourcegraph/scip-typescript",
-	}
-	scipJava = CodeIntelIndexer{
-		Name: "scip-java",
-		URN:  "github.com/sourcegraph/scip-java",
-	}
-	msftJava = CodeIntelIndexer{
-		Name: "msft/lsif-java",
-		URN:  "github.com/Microsoft/lsif-java",
-	}
-	lsifGo = CodeIntelIndexer{
-		Name: "lsif-go",
-		URN:  "github.com/sourcegraph/lsif-go",
-	}
-	lsifClang = CodeIntelIndexer{
-		Name: "lsif-clang",
-		URN:  "github.com/sourcegraph/lsif-clang",
-	}
-	lsifCPP = CodeIntelIndexer{
-		Name: "lsif-cpp",
-		URN:  "github.com/sourcegraph/lsif-cpp",
-	}
-	lsifDart = CodeIntelIndexer{
-		Name: "lsif-dart",
-		URN:  "github.com/sourcegraph/lsif-dart",
-	}
-	workivaDart = CodeIntelIndexer{
-		Name: "lsif_indexer",
-		URN:  "github.com/Workiva/lsif_indexer",
-	}
-	hieLSIF = CodeIntelIndexer{
-		Name: "hie-lsif",
-		URN:  "github.com/mpickering/hie-lsif",
-	}
-	lsifJsonnet = CodeIntelIndexer{
-		Name: "lsif-jsonnet",
-		URN:  "github.com/sourcegraph/lsif-jsonnet",
-	}
-	lsifOcaml = CodeIntelIndexer{
-		Name: "lsif-ocaml",
-		URN:  "github.com/rvantonder/lsif-ocaml",
-	}
-	scipPython = CodeIntelIndexer{
-		Name: "scip-python",
-		URN:  "github.com/sourcegraph/scip-python",
-	}
-	rustAnalyzer = CodeIntelIndexer{
-		Name: "rust-analyzer",
-		URN:  "github.com/rust-analyzer/rust-analyzer",
-	}
-	lsifPHP = CodeIntelIndexer{
-		Name: "lsif-php",
-		URN:  "github.com/davidrjenni/lsif-php",
-	}
-	lsifTerraform = CodeIntelIndexer{
-		Name: "lsif-terraform",
-		URN:  "github.com/juliosueiras/lsif-terraform",
-	}
-	lsifDotnet = CodeIntelIndexer{
-		Name: "lsif-dotnet",
-		URN:  "github.com/tcz717/LsifDotnet",
-	}
-	scipRuby = CodeIntelIndexer{
-		Name: "scip-ruby",
-		URN:  "github.com/sourcegraph/scip-ruby",
-	}
-)
-
+// AllIndexers is a list of all detectable/suggested indexers known to Sourcegraph.
+// Two indexers with the same language key will be preferred according to the given order.
 var AllIndexers = []CodeIntelIndexer{
-	lsifNode,
-	msftNode,
-	scipTypescript,
-	scipJava,
-	msftJava,
-	lsifGo,
-	lsifClang,
-	lsifCPP,
-	lsifDart,
-	workivaDart,
-	hieLSIF,
-	lsifJsonnet,
-	lsifOcaml,
-	scipPython,
-	rustAnalyzer,
-	lsifPHP,
-	lsifTerraform,
-	lsifDotnet,
-	scipRuby,
+	// C/C++
+	makeInternalIndexer("C++", "scip-clang"),
+	makeInternalIndexer("C++", "lsif-clang"),
+	makeInternalIndexer("C++", "lsif-cpp"),
+
+	// Dart
+	makeInternalIndexer("Dart", "lsif-dart"),
+	makeIndexer("Dart", "lsif_indexer", "github.com/Workiva/lsif_indexer"),
+
+	// C#, F# (.xls wtf :screamcat:)
+	makeInternalIndexer("DotNet", "scip-dotnet"),
+	makeIndexer("DotNet", "lsif-dotnet", "github.com/tcz717/LsifDotnet"),
+
+	// Go
+	makeInternalIndexer("Go", "scip-go"),
+	makeInternalIndexer("Go", "lsif-go"),
+
+	// HIE
+	makeIndexer("HIE", "hie-lsif", " github.com/mpickering/hie-lsif"),
+
+	// Jsonnet
+	makeInternalIndexer("Jsonnet", "lsif-jsonnet"),
+
+	// Java/Kotlin/Scala
+	makeInternalIndexer("JVM", "scip-java"),
+	makeInternalIndexer("JVM", "lsif-java"),
+
+	// OCaml
+	makeIndexer("OCaml", "lsif-ocaml", "github.com/rvantonder/lsif-ocaml"),
+
+	// PHP
+	makeIndexer("PHP", "lsif-php", "github.com/davidrjenni/lsif-php", "davidrjenni/lsif-php"),
+
+	// Python
+	makeInternalIndexer("Python", "scip-python"),
+
+	// Ruby
+	makeInternalIndexer("Ruby", "scip-ruby"),
+
+	// Rust
+	makeInternalIndexer("Rust", "scip-rust"),
+	makeIndexer("Rust", "rust-analyzer", "github.com/rust-lang/rust-analyzer"),
+
+	// Terraform
+	makeIndexer("Terraform", "lsif-terraform", "github.com/juliosueiras/lsif-terraform"),
+
+	// TypeScript/JavaScript
+	makeInternalIndexer("TypeScript", "scip-typescript"),
+	makeInternalIndexer("TypeScript", "lsif-node"),
 }
 
-// A map of file extension to a list of indexers in order of recommendation
-// from most to least.
-var LanguageToIndexer = map[string][]CodeIntelIndexer{
-	".go":      {lsifGo},
-	".java":    {scipJava, msftJava},
-	".kt":      {scipJava},
-	".scala":   {scipJava},
-	".js":      {scipTypescript, lsifNode, msftNode},
-	".jsx":     {scipTypescript, lsifNode, msftNode},
-	".ts":      {scipTypescript, lsifNode, msftNode},
-	".tsx":     {scipTypescript, lsifNode, msftNode},
-	".dart":    {workivaDart, lsifDart},
-	".c":       {lsifClang, lsifCPP},
-	".cc":      {lsifClang, lsifCPP},
-	".cpp":     {lsifClang, lsifCPP},
-	".cxx":     {lsifClang, lsifCPP},
-	".h":       {lsifClang, lsifCPP},
-	".hpp":     {lsifClang, lsifCPP},
-	".hs":      {hieLSIF},
-	".jsonnet": {lsifJsonnet},
-	".py":      {scipPython},
-	".ml":      {lsifOcaml},
-	".rs":      {rustAnalyzer},
-	".php":     {lsifPHP},
-	".tf":      {lsifTerraform},
-	".cs":      {lsifDotnet},
-	".rb":      {scipRuby},
+func makeInternalIndexer(key, name string) CodeIntelIndexer {
+	return makeIndexer(
+		key,
+		name,
+		fmt.Sprintf("github.com/sourcegraph/%s", name),
+		fmt.Sprintf("sourcegraph/%s", name),
+	)
 }
 
-var ImageToIndexer = map[string]CodeIntelIndexer{
-	"sourcegraph/scip-java":       scipJava,
-	"sourcegraph/lsif-go":         lsifGo,
-	"sourcegraph/scip-typescript": scipTypescript,
-	"sourcegraph/lsif-node":       lsifNode,
-	"sourcegraph/lsif-clang":      lsifClang,
-	"davidrjenni/lsif-php":        lsifPHP,
-	"sourcegraph/lsif-rust":       rustAnalyzer,
-	"sourcegraph/scip-rust":       rustAnalyzer,
-	"sourcegraph/scip-python":     scipPython,
-	"sourcegraph/scip-ruby":       scipRuby,
+func makeIndexer(key, name, urn string, dockerImages ...string) CodeIntelIndexer {
+	return CodeIntelIndexer{
+		LanguageKey:  key,
+		Name:         name,
+		URN:          urn,
+		DockerImages: dockerImages,
+	}
 }
 
-var PreferredIndexers = map[string]CodeIntelIndexer{
-	"lsif-node":       scipTypescript,
-	"lsif-tsc":        scipTypescript,
-	"scip-typescript": scipTypescript,
-	"scip-java":       scipJava,
-	"lsif-java":       scipJava,
-	"lsif-go":         lsifGo,
-	"lsif-clang":      lsifClang,
-	"lsif-cpp":        lsifCPP,
-	"lsif-dart":       lsifDart,
-	"hie-lsif":        hieLSIF,
-	"lsif-jsonnet":    lsifJsonnet,
-	"lsif-ocaml":      lsifOcaml,
-	"scip-python":     scipPython,
-	"lsif-rust":       rustAnalyzer,
-	"scip-rust":       rustAnalyzer,
-	"rust-analyzer":   rustAnalyzer,
-	"lsif-php":        lsifPHP,
-	"lsif-terraform":  lsifTerraform,
-	"lsif-dotnet":     lsifDotnet,
-	"scip-ruby":       scipRuby,
+var ImageToIndexer = func() map[string]CodeIntelIndexer {
+	m := map[string]CodeIntelIndexer{}
+	for _, indexer := range AllIndexers {
+		for _, dockerImage := range indexer.DockerImages {
+			m[dockerImage] = indexer
+		}
+	}
+
+	return m
+}()
+
+var PreferredIndexers = func() map[string]CodeIntelIndexer {
+	preferred := map[string]CodeIntelIndexer{}
+
+	m := map[string]CodeIntelIndexer{}
+	for _, indexer := range AllIndexers {
+		if p, ok := preferred[indexer.LanguageKey]; ok {
+			m[indexer.Name] = p
+		} else {
+			m[indexer.Name] = indexer
+			preferred[indexer.LanguageKey] = indexer
+		}
+	}
+
+	return m
+}()
+
+var extensions = map[string][]string{
+	"C++":        {".c", ".cp", ".cpp", ".cxx", ".h", ".hpp"},
+	"Dart":       {".dart"},
+	"DotNet":     {".cs", ".fs"},
+	"Go":         {".go"},
+	"HIE":        {".hs"},
+	"Jsonnet":    {".jsonnet"},
+	"JVM":        {".java", ".kt", ".scala"},
+	"OCaml":      {".ml"},
+	"PHP":        {".php"},
+	"Python":     {".py"},
+	"Ruby":       {".rb"},
+	"Rust":       {".rs"},
+	"Terraform":  {".tf"},
+	"TypeScript": {".js", ".jsx", ".ts", ".tsx"},
 }
+
+// A map of file extension to a list of indexers in order of recommendation from most to least.
+var LanguageToIndexer = func() map[string][]CodeIntelIndexer {
+	m := map[string][]CodeIntelIndexer{}
+	for _, indexer := range AllIndexers {
+		for _, extension := range extensions[indexer.LanguageKey] {
+			m[extension] = append(m[extension], indexer)
+		}
+	}
+
+	return m
+}()

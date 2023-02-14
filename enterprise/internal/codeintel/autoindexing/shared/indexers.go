@@ -8,8 +8,8 @@ import (
 )
 
 type AvailableIndexer struct {
-	Roots []string
-	URL   string
+	Roots   []string
+	Indexer types.CodeIntelIndexer
 }
 
 type JobsOrHints interface {
@@ -28,7 +28,7 @@ func PopulateInferredAvailableIndexers[J JobsOrHints](jobsOrHints []J, blocklist
 			ai := inferredAvailableIndexers[key]
 			ai.Roots = append(ai.Roots, job.GetRoot())
 			if p, ok := types.PreferredIndexers[indexer]; ok {
-				ai.URL = fmt.Sprintf("https://%s", p.URN)
+				ai.Indexer = p
 			}
 
 			inferredAvailableIndexers[indexer] = ai

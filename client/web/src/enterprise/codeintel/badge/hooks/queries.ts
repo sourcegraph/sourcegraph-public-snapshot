@@ -262,9 +262,10 @@ export const codeIntelStatusQuery = gql`
     }
 
     fragment InferredAvailableIndexersFields on InferredAvailableIndexers {
-        roots
-        index
+        key
+        name
         url
+        roots
     }
 
     ${lsifUploadFieldsFragment}

@@ -80,10 +80,10 @@ WITH candidate_repositories AS (
 	ORDER BY count DESC
 	LIMIT %s
 )
-SELECT id
-FROM repo
+SELECT r.id, cr.count
+FROM repo r
+JOIN candidate_repositories cr ON cr.repository_id = r.id
 WHERE
-	id IN (SELECT repository_id FROM candidate_repositories) AND
 	deleted_at IS NULL AND
 	blocked IS NULL
 `
