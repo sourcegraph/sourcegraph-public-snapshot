@@ -70,7 +70,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The number of gRPC requests received per second across all methods, aggregated across all instances."),
+					Interpretation: "The number of gRPC requests received per second across all methods, aggregated across all instances.",
 				},
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_grpc_request_rate_per_method_aggregate", opts.ServiceName),
@@ -81,7 +81,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The number of gRPC requests received per second broken out per method, aggreagated across all instances."),
+					Interpretation: "The number of gRPC requests received per second broken out per method, aggreagated across all instances.",
 				},
 			},
 
@@ -95,7 +95,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The number of gRPC requests received per second, aggregated across all methods, broken out per instance."),
+					Interpretation: "The number of gRPC requests received per second, aggregated across all methods, broken out per instance.",
 				},
 
 				monitoring.Observable{
@@ -107,7 +107,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The number of gRPC requests received per second, broken out per method, broken out per instance."),
+					Interpretation: "The number of gRPC requests received per second, broken out per method, broken out per instance.",
 				},
 			},
 
@@ -124,7 +124,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The percentage of gRPC requests that fail across all methods, aggregated across all instances."),
+					Interpretation: "The percentage of gRPC requests that fail across all methods, aggregated across all instances.",
 				},
 
 				monitoring.Observable{
@@ -140,7 +140,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The percentage of gRPC requests that fail per method, aggreagated across all instances."),
+					Interpretation: "The percentage of gRPC requests that fail per method, aggreagated across all instances.",
 				},
 			},
 
@@ -157,7 +157,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The percentage of gRPC requests that fail across all methods, broken out per instance."),
+					Interpretation: "The percentage of gRPC requests that fail across all methods, broken out per instance.",
 				},
 
 				monitoring.Observable{
@@ -172,7 +172,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The percentage of gRPC requests that fail broken out per method, broken out per instance."),
+					Interpretation: "The percentage of gRPC requests that fail broken out per method, broken out per instance.",
 				},
 			},
 
@@ -186,7 +186,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The 99th percentile response time across all methods, aggregated across all instances."),
+					Interpretation: "The 99th percentile response time across all methods, aggregated across all instances.",
 				},
 
 				monitoring.Observable{
@@ -198,7 +198,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The 90th percentile response time across all methods, aggregated across all instances."),
+					Interpretation: "The 90th percentile response time across all methods, aggregated across all instances.",
 				},
 
 				monitoring.Observable{
@@ -210,7 +210,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The 75th percentile response time across all methods, aggregated across all instances."),
+					Interpretation: "The 75th percentile response time across all methods, aggregated across all instances.",
 				},
 			},
 
@@ -225,7 +225,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The 99th percentile response time per method, aggregated across all instances."),
+					Interpretation: "The 99th percentile response time per method, aggregated across all instances.",
 				},
 
 				monitoring.Observable{
@@ -237,7 +237,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The 90th percentile response time per method, aggregated across all instances."),
+					Interpretation: "The 90th percentile response time per method, aggregated across all instances.",
 				},
 
 				monitoring.Observable{
@@ -249,7 +249,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The 75th percentile response time per method, aggregated across all instances."),
+					Interpretation: "The 75th percentile response time per method, aggregated across all instances.",
 				},
 			},
 			{
@@ -262,7 +262,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The 99th percentile response time across all methods, broken down by instance."),
+					Interpretation: "The 99th percentile response time across all methods, broken down by instance.",
 				},
 
 				monitoring.Observable{
@@ -274,7 +274,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The 90th percentile response time across all methods, broken down by instance."),
+					Interpretation: "The 90th percentile response time across all methods, broken down by instance.",
 				},
 
 				monitoring.Observable{
@@ -286,7 +286,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The 75th percentile response time across all methods, broken down by instance."),
+					Interpretation: "The 75th percentile response time across all methods, broken down by instance.",
 				},
 			},
 
@@ -301,7 +301,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The 99th percentile response time per method, broken down by instance."),
+					Interpretation: "The 99th percentile response time per method, broken down by instance.",
 				},
 
 				monitoring.Observable{
@@ -313,7 +313,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The 90th percentile response time per method, broken down by instance."),
+					Interpretation: "The 90th percentile response time per method, broken down by instance.",
 				},
 
 				monitoring.Observable{
@@ -325,7 +325,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The 75th percentile response time per method, broken down by instance."),
+					Interpretation: "The 75th percentile response time per method, broken down by instance.",
 				},
 			},
 
@@ -339,7 +339,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The rate of all generated gRPC response codes per method, aggregated across all instances."),
+					Interpretation: "The rate of all generated gRPC response codes per method, aggregated across all instances.",
 				},
 
 				monitoring.Observable{
@@ -351,7 +351,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The rate of all generated gRPC response codes per method, broken down by instance."),
+					Interpretation: "The rate of all generated gRPC response codes per method, broken down by instance.",
 				},
 			},
 		},
