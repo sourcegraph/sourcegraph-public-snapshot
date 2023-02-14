@@ -89,7 +89,14 @@
       interfaces:
         - Store
       prefix: Worker
-
+- filename: internal/codeintel/dependencies/internal/background/mocks_test.go
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/background
+      interfaces:
+        - GitserverClient
+        - ExternalServiceStore
+        - AutoIndexingService
+        - DependenciesService
 - filename: enterprise/internal/codeintel/autoindexing/mocks_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store

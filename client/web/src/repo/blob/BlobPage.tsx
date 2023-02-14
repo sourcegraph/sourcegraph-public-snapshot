@@ -123,7 +123,7 @@ export const BlobPage: FC<BlobPageProps> = ({ className, ...props }) => {
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
     let renderMode = getModeFromURL(location)
     const { repoID, repoName, revision, commitID, filePath, isLightTheme, useBreadcrumb, mode } = props
-    const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
+    const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? true)
     const experimentalCodeNavigation = useExperimentalFeatures(features => features.codeNavigation)
     const enableLazyBlobSyntaxHighlighting = useExperimentalFeatures(
         features => features.enableLazyBlobSyntaxHighlighting ?? false

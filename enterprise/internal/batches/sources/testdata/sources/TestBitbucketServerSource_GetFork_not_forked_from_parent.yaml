@@ -7,82 +7,6 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: https://bitbucket.sgdev.org/rest/api/1.0/users?limit=1
-    method: GET
-  response:
-    body: '{"size":1,"limit":1,"isLastPage":false,"values":[{"name":"aharvey","emailAddress":"aharvey@sourcegraph.com","id":203,"displayName":"Adam
-      Harvey","active":true,"slug":"aharvey","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/aharvey"}]}}],"start":0,"nextPageStart":1}'
-    headers:
-      Cache-Control:
-      - private, no-cache
-      - no-cache, no-transform
-      Content-Type:
-      - application/json;charset=UTF-8
-      Date:
-      - Tue, 24 Jan 2023 12:39:52 GMT
-      Pragma:
-      - no-cache
-      Server:
-      - Caddy
-      Vary:
-      - x-ausername,x-auserid,cookie,accept-encoding
-      X-Arequestid:
-      - '@TCJ96Jx759x12219485x3'
-      X-Asessionid:
-      - 12yp3xp
-      X-Auserid:
-      - "1"
-      X-Ausername:
-      - milton
-      X-Content-Type-Options:
-      - nosniff
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://bitbucket.sgdev.org/rest/api/1.0/users?limit=1
-    method: GET
-  response:
-    body: '{"size":1,"limit":1,"isLastPage":false,"values":[{"name":"aharvey","emailAddress":"aharvey@sourcegraph.com","id":203,"displayName":"Adam
-      Harvey","active":true,"slug":"aharvey","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/aharvey"}]}}],"start":0,"nextPageStart":1}'
-    headers:
-      Cache-Control:
-      - private, no-cache
-      - no-cache, no-transform
-      Content-Type:
-      - application/json;charset=UTF-8
-      Date:
-      - Tue, 24 Jan 2023 12:39:53 GMT
-      Pragma:
-      - no-cache
-      Server:
-      - Caddy
-      Vary:
-      - x-ausername,x-auserid,cookie,accept-encoding
-      X-Arequestid:
-      - '@TCJ96Jx759x12219556x1'
-      X-Asessionid:
-      - 2r5pg6
-      X-Auserid:
-      - "1"
-      X-Ausername:
-      - milton
-      X-Content-Type-Options:
-      - nosniff
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Content-Type:
-      - application/json; charset=utf-8
     url: https://bitbucket.sgdev.org/rest/api/1.0/projects/~milton/repos/BAT-vcr-fork-test-repo-already-forked
     method: GET
   response:
@@ -98,7 +22,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Tue, 24 Jan 2023 12:39:53 GMT
+      - Fri, 03 Feb 2023 19:48:28 GMT
       Pragma:
       - no-cache
       Server:
@@ -106,9 +30,9 @@ interactions:
       Vary:
       - x-ausername,x-auserid,cookie,accept-encoding
       X-Arequestid:
-      - '@TCJ96Jx759x12219662x8'
+      - '@ILDZGBx1188x13024909x1'
       X-Asessionid:
-      - a9iuyw
+      - 819tx
       X-Auserid:
       - "1"
       X-Ausername:

@@ -32,6 +32,7 @@ type MergeRequest struct {
 	ProjectID              ID `json:"project_id"`
 	SourceProjectID        ID `json:"source_project_id"`
 	SourceProjectNamespace string
+	SourceProjectName      string
 	Title                  string            `json:"title"`
 	Description            string            `json:"description"`
 	State                  MergeRequestState `json:"state"`
