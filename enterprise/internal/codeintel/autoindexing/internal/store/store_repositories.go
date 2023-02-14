@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -41,18 +42,21 @@ SELECT name FROM repo WHERE id = %s
 `
 
 // TODO - test
-func (s *store) TopRepositoriesToConfigure(ctx context.Context, limit int) (_ []int, err error) {
+func (s *store) TopRepositoriesToConfigure(ctx context.Context, limit int) (_ []shared.RepositoryWithCount, err error) {
 	ctx, _, endObservation := s.operations.topRepositoriesToConfigure.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("limit", limit),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	ids, err := basestore.ScanInts(s.db.Query(ctx, sqlf.Sprintf(topRepositoriesToConfigureQuery, pq.Array(eventNames), 24*30, limit)))
+	repositories, err := basestore.NewSliceScanner(func(s dbutil.Scanner) (rc shared.RepositoryWithCount, _ error) {
+		err := s.Scan(&rc.RepositoryID, &rc.Count)
+		return rc, err
+	})(s.db.Query(ctx, sqlf.Sprintf(topRepositoriesToConfigureQuery, pq.Array(eventNames), 24*30, limit)))
 	if err != nil {
 		return nil, err
 	}
 
-	return ids, nil
+	return repositories, nil
 }
 
 var eventNames = []string{
@@ -85,7 +89,7 @@ WHERE
 `
 
 // TODO - test
-func (s *store) SetConfigurationSummary(ctx context.Context, repositoryID int, availableIndexers map[string]shared.AvailableIndexer) (err error) {
+func (s *store) SetConfigurationSummary(ctx context.Context, repositoryID int, numEvents int, availableIndexers map[string]shared.AvailableIndexer) (err error) {
 	ctx, _, endObservation := s.operations.setConfigurationSummary.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})

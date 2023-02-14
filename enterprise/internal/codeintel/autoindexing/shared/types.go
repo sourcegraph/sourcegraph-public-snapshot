@@ -49,6 +49,16 @@ type ReindexIndexesOptions struct {
 
 type Summary struct {
 	NumRepositoriesWithCodeIntelligence int
-	RepositoryIDsWithErrors             map[int]int
-	RepositoryIDsWithConfiguration      map[int]map[string]AvailableIndexer
+	RepositoryIDsWithErrors             []RepositoryWithCount
+	RepositoryIDsWithConfiguration      []RepositoryWithAvailableIndexers
+}
+
+type RepositoryWithCount struct {
+	RepositoryID int
+	Count        int
+}
+
+type RepositoryWithAvailableIndexers struct {
+	RepositoryID      int
+	AvailableIndexers map[string]AvailableIndexer
 }

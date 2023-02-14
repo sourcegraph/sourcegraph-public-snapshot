@@ -64,8 +64,8 @@ type Store interface {
 	GetUnsafeDB() database.DB
 
 	GetRepoName(ctx context.Context, repositoryID int) (_ string, err error)
-	TopRepositoriesToConfigure(ctx context.Context, limit int) (_ []int, err error)
-	SetConfigurationSummary(ctx context.Context, repositoryID int, availableIndexers map[string]shared.AvailableIndexer) (err error)
+	TopRepositoriesToConfigure(ctx context.Context, limit int) ([]shared.RepositoryWithCount, error)
+	SetConfigurationSummary(ctx context.Context, repositoryID int, numEvents int, availableIndexers map[string]shared.AvailableIndexer) (err error)
 
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error)
 	ExpireFailedRecords(ctx context.Context, batchSize int, failedIndexMaxAge time.Duration, now time.Time) error
@@ -129,13 +129,9 @@ func (s *store) Summary(ctx context.Context) (shared.Summary, error) {
 		return shared.Summary{}, err
 	}
 
-	// TODO - combine to get count?
-	repositoriesWithErrors, err := basestore.NewMapScanner(func(s dbutil.Scanner) (repositoryID int, count int, _ error) {
-		if err := s.Scan(&repositoryID, &count); err != nil {
-			return 0, 0, err
-		}
-
-		return repositoryID, count, nil
+	repositoriesWithErrors, err := basestore.NewSliceScanner(func(s dbutil.Scanner) (rc shared.RepositoryWithCount, _ error) {
+		err := s.Scan(&rc.RepositoryID, &rc.Count)
+		return rc, err
 	})(s.db.Query(ctx, sqlf.Sprintf(`
 		WITH
 		ranked_completed_indexes AS (
@@ -168,28 +164,27 @@ func (s *store) Summary(ctx context.Context) (shared.Summary, error) {
 			r.deleted_at IS NULL AND
 			r.blocked IS NULL
 		GROUP BY r.id
+		ORDER BY count DESC
 	`)))
 	if err != nil {
 		return shared.Summary{}, err
 	}
 
-	repositoryIDsWithConfiguration, err := basestore.NewMapScanner(func(s dbutil.Scanner) (
-		repositoryID int,
-		availableIndexers map[string]shared.AvailableIndexer,
-		_ error,
-	) {
+	repositoryIDsWithConfiguration, err := basestore.NewSliceScanner(func(s dbutil.Scanner) (rai shared.RepositoryWithAvailableIndexers, _ error) {
 		var payload string
-		if err := s.Scan(&repositoryID, &payload); err != nil {
-			return 0, nil, err
+		if err := s.Scan(&rai.RepositoryID, &payload); err != nil {
+			return rai, err
+		}
+		if err := json.Unmarshal([]byte(payload), &rai.AvailableIndexers); err != nil {
+			return rai, err
 		}
 
-		if err := json.Unmarshal([]byte(payload), &availableIndexers); err != nil {
-			return 0, nil, err
-		}
-
-		return repositoryID, availableIndexers, nil
+		return rai, nil
 	})(s.db.Query(ctx, sqlf.Sprintf(`
-		SELECT repository_id, available_indexers FROM cached_available_indexers
+		SELECT repository_id, available_indexers
+		FROM cached_available_indexers
+		WHERE available_indexers != '{}'::jsonb
+		ORDER BY length(available_indexers::text) DESC
 	`)))
 	if err != nil {
 		return shared.Summary{}, err

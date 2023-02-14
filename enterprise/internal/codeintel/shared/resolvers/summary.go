@@ -37,15 +37,15 @@ func (r *summaryResolver) NumRepositoriesWithCodeIntelligence(ctx context.Contex
 
 func (r *summaryResolver) RepositoriesWithErrors(ctx context.Context) ([]resolverstubs.CodeIntelRepositoryWithErrorResolver, error) {
 	var resolvers []resolverstubs.CodeIntelRepositoryWithErrorResolver
-	for repositoryID, count := range r.summary.RepositoryIDsWithErrors {
-		resolver, err := r.locationResolver.Repository(ctx, api.RepoID(repositoryID))
+	for _, repositoryWithCount := range r.summary.RepositoryIDsWithErrors {
+		resolver, err := r.locationResolver.Repository(ctx, api.RepoID(repositoryWithCount.RepositoryID))
 		if err != nil {
 			return nil, err
 		}
 
 		resolvers = append(resolvers, &codeIntelRepositoryWithErrorResolver{
 			repositoryResolver: resolver,
-			count:              count,
+			count:              repositoryWithCount.Count,
 		})
 	}
 
@@ -54,15 +54,15 @@ func (r *summaryResolver) RepositoriesWithErrors(ctx context.Context) ([]resolve
 
 func (r *summaryResolver) RepositoriesWithConfiguration(ctx context.Context) ([]resolverstubs.CodeIntelRepositoryWithConfigurationResolver, error) {
 	var resolvers []resolverstubs.CodeIntelRepositoryWithConfigurationResolver
-	for repositoryID, availableIndexers := range r.summary.RepositoryIDsWithConfiguration {
-		resolver, err := r.locationResolver.Repository(ctx, api.RepoID(repositoryID))
+	for _, repositoryWithAvailableIndexers := range r.summary.RepositoryIDsWithConfiguration {
+		resolver, err := r.locationResolver.Repository(ctx, api.RepoID(repositoryWithAvailableIndexers.RepositoryID))
 		if err != nil {
 			return nil, err
 		}
 
 		resolvers = append(resolvers, &codeIntelRepositoryWithConfigurationResolver{
 			repositoryResolver: resolver,
-			availableIndexers:  availableIndexers,
+			availableIndexers:  repositoryWithAvailableIndexers.AvailableIndexers,
 		})
 	}
 

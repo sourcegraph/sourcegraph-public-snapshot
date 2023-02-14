@@ -28,17 +28,17 @@ func NewSummaryBuilder(
 		"codeintel.autoindexing-summary-builder", "build an auto-indexing summary over repositories with high search activity",
 		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			ids, err := store.TopRepositoriesToConfigure(ctx, 100)
+			repositoryWithCounts, err := store.TopRepositoriesToConfigure(ctx, 100)
 			if err != nil {
 				return err
 			}
 
-			for _, repoID := range ids {
-				recentUploads, err := uploadSvc.GetRecentUploadsSummary(ctx, repoID)
+			for _, repositoryWithCount := range repositoryWithCounts {
+				recentUploads, err := uploadSvc.GetRecentUploadsSummary(ctx, repositoryWithCount.RepositoryID)
 				if err != nil {
 					return err
 				}
-				recentIndexes, err := store.GetRecentIndexesSummary(ctx, repoID)
+				recentIndexes, err := store.GetRecentIndexesSummary(ctx, repositoryWithCount.RepositoryID)
 				if err != nil {
 					return err
 				}
@@ -55,7 +55,7 @@ func NewSummaryBuilder(
 				}
 
 				commit := "HEAD"
-				indexJobs, err := jobSelector.InferIndexJobsFromRepositoryStructure(ctx, repoID, commit, false)
+				indexJobs, err := jobSelector.InferIndexJobsFromRepositoryStructure(ctx, repositoryWithCount.RepositoryID, commit, false)
 				if err != nil {
 					if errors.As(err, &inference.LimitError{}) {
 						continue
@@ -63,7 +63,7 @@ func NewSummaryBuilder(
 
 					return err
 				}
-				indexJobHints, err := jobSelector.InferIndexJobHintsFromRepositoryStructure(ctx, repoID, commit)
+				indexJobHints, err := jobSelector.InferIndexJobHintsFromRepositoryStructure(ctx, repositoryWithCount.RepositoryID, commit)
 				if err != nil {
 					if errors.As(err, &inference.LimitError{}) {
 						continue
@@ -76,7 +76,7 @@ func NewSummaryBuilder(
 				inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobs, blocklist, inferredAvailableIndexers)
 				inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
 
-				if err := store.SetConfigurationSummary(ctx, repoID, inferredAvailableIndexers); err != nil {
+				if err := store.SetConfigurationSummary(ctx, repositoryWithCount.RepositoryID, repositoryWithCount.Count, inferredAvailableIndexers); err != nil {
 					return err
 				}
 			}

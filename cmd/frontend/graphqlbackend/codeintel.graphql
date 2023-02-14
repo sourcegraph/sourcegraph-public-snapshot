@@ -873,8 +873,8 @@ A summary of code intelligence on the instance.
 """
 type CodeIntelSummary {
     numRepositoriesWithCodeIntelligence: Int!
-    repositoriesWithErrors: [CodeIntelRepositoryWithError!]! # TODO - additional metadata, paginate
-    repositoriesWithConfiguration: [CodeIntelRepositoryWithConfiguration!]! # TODO - additional metadata, paginate
+    repositoriesWithErrors: [CodeIntelRepositoryWithError!]! # TODO - paginate
+    repositoriesWithConfiguration: [CodeIntelRepositoryWithConfiguration!]! # TODO - paginate
     # TODO - add reporting of stale intelligence
 }
 

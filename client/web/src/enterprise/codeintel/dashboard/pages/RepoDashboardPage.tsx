@@ -405,13 +405,14 @@ interface IndexStateBadgeProps {
 }
 
 const IndexStateBadge: FunctionComponent<IndexStateBadgeProps> = ({ indexes }) => {
-    const foo = indexes.filter(index => terminalStates.has(index.state))
-    const bar = indexes
+    const terminalIndexes = indexes.filter(index => terminalStates.has(index.state))
+    const firstNonTerminalIndexes = indexes
         .filter(index => !terminalStates.has(index.state))
         .sort((a, b) => new Date(a.uploadedAt ?? '').getDate() - new Date(b.uploadedAt ?? '').getDate())
         .slice(0, 1)
 
-    const collapsedIndexes = [...foo, ...bar]
+    // Only show one relevant terminal (assumed) index and one relevant non-terminal (explicit) index
+    const collapsedIndexes = [...terminalIndexes, ...firstNonTerminalIndexes]
 
     return collapsedIndexes.length > 0 ? (
         <Link to={`./indexes/${collapsedIndexes[0].id}`}>

@@ -42,7 +42,7 @@ export const GlobalDashboardPage: FunctionComponent<GlobalDashboardPageProps> = 
                         <span className="text-muted ml-1">Repositories with problems</span>
                     </div>
                     <div className="d-inline p-2 m-2 b-2">
-                        <span className="d-inline text-danger">
+                        <span className="d-inline text-muted">
                             {data.codeIntelSummary.repositoriesWithConfiguration.length}
                         </span>
                         <span className="text-muted ml-1">Configurable repositories</span>
@@ -92,7 +92,7 @@ export const GlobalDashboardPage: FunctionComponent<GlobalDashboardPageProps> = 
                                         {indexers.map(indexer => (
                                             <span className="ml-2">
                                                 {indexer.indexer?.name}
-                                                <Badge variant="danger" className="ml-2" small={true} pill={true}>
+                                                <Badge variant="info" className="ml-2" small={true} pill={true}>
                                                     {indexer.count}
                                                 </Badge>
                                             </span>
