@@ -1,6 +1,7 @@
 package definitions
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
@@ -19,6 +20,8 @@ func GitServer() *monitoring.Dashboard {
 		ShortTermMemoryUsage: gitserverHighMemoryNoAlertTransformer,
 	}
 
+	grpcMethodVariable := shared.GRPCMethodVariable(containerName)
+
 	return &monitoring.Dashboard{
 		Name:        "gitserver",
 		Title:       "Git Server",
@@ -32,8 +35,9 @@ func GitServer() *monitoring.Dashboard {
 					LabelName:     "instance",
 					ExampleOption: "gitserver-0:6060",
 				},
-				Multi: true,
+				Multi: false,
 			},
+			grpcMethodVariable,
 		},
 		Groups: []monitoring.Group{
 			{
@@ -464,6 +468,7 @@ func GitServer() *monitoring.Dashboard {
 					},
 				},
 			},
+
 			{
 				Title:  "Search",
 				Hidden: true,
@@ -525,8 +530,10 @@ func GitServer() *monitoring.Dashboard {
 
 			shared.NewGRPCServerMetricsGroup(
 				shared.GRPCServerMetricsOptions{
-					ServiceName:         "gitserver",
-					MetricNamespace:     "gitserver",
+					ServiceName:     "gitserver",
+					MetricNamespace: "gitserver",
+
+					MethodFilterRegex:   fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 					InstanceFilterRegex: `${shard:regex}`,
 				}, monitoring.ObservableOwnerSearchCore),
 
