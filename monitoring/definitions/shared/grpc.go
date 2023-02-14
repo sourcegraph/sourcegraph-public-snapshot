@@ -52,8 +52,8 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 	instanceLabelFilter := fmt.Sprintf("instance=~`%s`", opts.InstanceFilterRegex)
 	failingCodeFilter := fmt.Sprintf("grpc_code!=%q", "OK")
 
-	perecentageQuery := func(numerator, denominator string) string {
-		return fmt.Sprintf("100.0 * ( (%s) / (%s) )", numerator, denominator)
+	percentageQuery := func(numerator, denominator string) string {
+		return fmt.Sprintf("(100.0 * ( (%s) / (%s) ))", numerator, denominator)
 	}
 
 	return monitoring.Group{
@@ -115,7 +115,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_error_percentage_all_methods_aggregate", opts.ServiceName),
 					Description: "error percentage across all methods over 1m (aggregate)",
-					Query: perecentageQuery(
+					Query: percentageQuery(
 						fmt.Sprintf("sum(rate(%s[1m]))", metric("grpc_server_handled_total", failingCodeFilter)),
 						fmt.Sprintf("sum(rate(%s[1m]))", metric("grpc_server_handled_total")),
 					),
@@ -130,7 +130,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_grpc_error_percentage_per_method_aggregate", opts.ServiceName),
 					Description: "error percentage per-method over 1m (aggregate)",
-					Query: perecentageQuery(
+					Query: percentageQuery(
 						fmt.Sprintf("sum(rate(%s[1m])) by (grpc_method)", metric("grpc_server_handled_total", methodLabelFilter, failingCodeFilter)),
 						fmt.Sprintf("sum(rate(%s[1m])) by (grpc_method)", metric("grpc_server_handled_total", methodLabelFilter)),
 					),
@@ -148,7 +148,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_error_percentage_all_methods_per_instance", opts.ServiceName),
 					Description: "error percentage across all methods over 1m (per instance)",
-					Query: perecentageQuery(
+					Query: percentageQuery(
 						fmt.Sprintf("sum(rate(%s[1m])) by (instance)", metric("grpc_server_handled_total", failingCodeFilter, instanceLabelFilter)),
 						fmt.Sprintf("sum(rate(%s[1m])) by (instance)", metric("grpc_server_handled_total", instanceLabelFilter)),
 					),
@@ -163,7 +163,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_grpc_error_rate_per_method_per_instance", opts.ServiceName),
 					Description: "error rate per-method over 1m (per instance)",
-					Query: perecentageQuery(
+					Query: percentageQuery(
 						fmt.Sprintf(`sum(rate(%s[1m])) by (grpc_method, instance)`, metric("grpc_server_handled_total", failingCodeFilter, methodLabelFilter, instanceLabelFilter)),
 						fmt.Sprintf(`sum(rate(%s[1m])) by (grpc_method, instance)`, metric("grpc_server_handled_total", methodLabelFilter, instanceLabelFilter)),
 					),

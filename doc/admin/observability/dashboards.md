@@ -5970,7 +5970,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10072
 <details>
 <summary>Technical details</summary>
 
-Query: `100.0 * ( (sum(rate(gitserver_grpc_server_handled_total{grpc_code!="OK"}[1m]))) / (sum(rate(gitserver_grpc_server_handled_total[1m]))) )`
+Query: `(100.0 * ( (sum(rate(gitserver_grpc_server_handled_total{grpc_code!="OK"}[1m]))) / (sum(rate(gitserver_grpc_server_handled_total[1m]))) ))`
 
 </details>
 
@@ -5991,7 +5991,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10072
 <details>
 <summary>Technical details</summary>
 
-Query: `100.0 * ( (sum(rate(gitserver_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK"}[1m])) by (grpc_method)) / (sum(rate(gitserver_grpc_server_handled_total{grpc_method=~`${method:regex}`}[1m])) by (grpc_method)) )`
+Query: `(100.0 * ( (sum(rate(gitserver_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK"}[1m])) by (grpc_method)) / (sum(rate(gitserver_grpc_server_handled_total{grpc_method=~`${method:regex}`}[1m])) by (grpc_method)) ))`
 
 </details>
 
@@ -6012,7 +6012,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10073
 <details>
 <summary>Technical details</summary>
 
-Query: `100.0 * ( (sum(rate(gitserver_grpc_server_handled_total{grpc_code!="OK",instance=~`${shard:regex}`}[1m])) by (instance)) / (sum(rate(gitserver_grpc_server_handled_total{instance=~`${shard:regex}`}[1m])) by (instance)) )`
+Query: `(100.0 * ( (sum(rate(gitserver_grpc_server_handled_total{grpc_code!="OK",instance=~`${shard:regex}`}[1m])) by (instance)) / (sum(rate(gitserver_grpc_server_handled_total{instance=~`${shard:regex}`}[1m])) by (instance)) ))`
 
 </details>
 
@@ -6033,7 +6033,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10073
 <details>
 <summary>Technical details</summary>
 
-Query: `100.0 * ( (sum(rate(gitserver_grpc_server_handled_total{grpc_code!="OK",grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[1m])) by (grpc_method, instance)) / (sum(rate(gitserver_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[1m])) by (grpc_method, instance)) )`
+Query: `(100.0 * ( (sum(rate(gitserver_grpc_server_handled_total{grpc_code!="OK",grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[1m])) by (grpc_method, instance)) / (sum(rate(gitserver_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[1m])) by (grpc_method, instance)) ))`
 
 </details>
 
@@ -15172,7 +15172,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100320`
 <details>
 <summary>Technical details</summary>
 
-Query: `100.0 * ( (sum(rate(searcher_grpc_server_handled_total{grpc_code!="OK"}[1m]))) / (sum(rate(searcher_grpc_server_handled_total[1m]))) )`
+Query: `(100.0 * ( (sum(rate(searcher_grpc_server_handled_total{grpc_code!="OK"}[1m]))) / (sum(rate(searcher_grpc_server_handled_total[1m]))) ))`
 
 </details>
 
@@ -15193,7 +15193,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100321`
 <details>
 <summary>Technical details</summary>
 
-Query: `100.0 * ( (sum(rate(searcher_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK"}[1m])) by (grpc_method)) / (sum(rate(searcher_grpc_server_handled_total{grpc_method=~`${method:regex}`}[1m])) by (grpc_method)) )`
+Query: `(100.0 * ( (sum(rate(searcher_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK"}[1m])) by (grpc_method)) / (sum(rate(searcher_grpc_server_handled_total{grpc_method=~`${method:regex}`}[1m])) by (grpc_method)) ))`
 
 </details>
 
@@ -15214,7 +15214,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100330`
 <details>
 <summary>Technical details</summary>
 
-Query: `100.0 * ( (sum(rate(searcher_grpc_server_handled_total{grpc_code!="OK",instance=~`${instance:regex}`}[1m])) by (instance)) / (sum(rate(searcher_grpc_server_handled_total{instance=~`${instance:regex}`}[1m])) by (instance)) )`
+Query: `(100.0 * ( (sum(rate(searcher_grpc_server_handled_total{grpc_code!="OK",instance=~`${instance:regex}`}[1m])) by (instance)) / (sum(rate(searcher_grpc_server_handled_total{instance=~`${instance:regex}`}[1m])) by (instance)) ))`
 
 </details>
 
@@ -15235,7 +15235,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100331`
 <details>
 <summary>Technical details</summary>
 
-Query: `100.0 * ( (sum(rate(searcher_grpc_server_handled_total{grpc_code!="OK",grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method, instance)) / (sum(rate(searcher_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method, instance)) )`
+Query: `(100.0 * ( (sum(rate(searcher_grpc_server_handled_total{grpc_code!="OK",grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method, instance)) / (sum(rate(searcher_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method, instance)) ))`
 
 </details>
 
@@ -16866,7 +16866,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100520` o
 <details>
 <summary>Technical details</summary>
 
-Query: `100.0 * ( (sum(rate(symbols_grpc_server_handled_total{grpc_code!="OK"}[1m]))) / (sum(rate(symbols_grpc_server_handled_total[1m]))) )`
+Query: `(100.0 * ( (sum(rate(symbols_grpc_server_handled_total{grpc_code!="OK"}[1m]))) / (sum(rate(symbols_grpc_server_handled_total[1m]))) ))`
 
 </details>
 
@@ -16887,7 +16887,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100521` o
 <details>
 <summary>Technical details</summary>
 
-Query: `100.0 * ( (sum(rate(symbols_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK"}[1m])) by (grpc_method)) / (sum(rate(symbols_grpc_server_handled_total{grpc_method=~`${method:regex}`}[1m])) by (grpc_method)) )`
+Query: `(100.0 * ( (sum(rate(symbols_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK"}[1m])) by (grpc_method)) / (sum(rate(symbols_grpc_server_handled_total{grpc_method=~`${method:regex}`}[1m])) by (grpc_method)) ))`
 
 </details>
 
@@ -16908,7 +16908,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100530` o
 <details>
 <summary>Technical details</summary>
 
-Query: `100.0 * ( (sum(rate(symbols_grpc_server_handled_total{grpc_code!="OK",instance=~`${instance:regex}`}[1m])) by (instance)) / (sum(rate(symbols_grpc_server_handled_total{instance=~`${instance:regex}`}[1m])) by (instance)) )`
+Query: `(100.0 * ( (sum(rate(symbols_grpc_server_handled_total{grpc_code!="OK",instance=~`${instance:regex}`}[1m])) by (instance)) / (sum(rate(symbols_grpc_server_handled_total{instance=~`${instance:regex}`}[1m])) by (instance)) ))`
 
 </details>
 
@@ -16929,7 +16929,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100531` o
 <details>
 <summary>Technical details</summary>
 
-Query: `100.0 * ( (sum(rate(symbols_grpc_server_handled_total{grpc_code!="OK",grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method, instance)) / (sum(rate(symbols_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method, instance)) )`
+Query: `(100.0 * ( (sum(rate(symbols_grpc_server_handled_total{grpc_code!="OK",grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method, instance)) / (sum(rate(symbols_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method, instance)) ))`
 
 </details>
 
