@@ -142,7 +142,7 @@ func (b *SeriesBackfill) SetLowestPriority(ctx context.Context, store *BackfillS
 	}
 
 	defer func(ic float64) {
-		err = store.Done(err)
+		err = tx.Done(err)
 		if err != nil {
 			b.EstimatedCost = ic
 		}
@@ -157,7 +157,7 @@ func (b *SeriesBackfill) SetHighestPriority(ctx context.Context, store *Backfill
 		return err
 	}
 	defer func(ic float64) {
-		err = store.Done(err)
+		err = tx.Done(err)
 		if err != nil {
 			b.EstimatedCost = ic
 		}
