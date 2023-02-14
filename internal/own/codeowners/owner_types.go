@@ -25,6 +25,7 @@ const (
 type Person struct {
 	User *types.User // todo(leo): extend to hold email.
 
+	// todo maybe attach original handle/email to all owner types instead.
 	OwnerIdentifier string // Handle OR email from the proto.
 }
 
