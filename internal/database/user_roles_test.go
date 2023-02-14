@@ -169,7 +169,7 @@ func TestUserRoleBulkAssignSystemRolesToUsers(t *testing.T) {
 	})
 }
 
-func TestUserRoleDelete(t *testing.T) {
+func TestUserRoleRevoke(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
@@ -232,7 +232,7 @@ func TestUserRoleDelete(t *testing.T) {
 			UserID: userID,
 		})
 		require.Error(t, err)
-		require.ErrorContains(t, err, "failed to delete user role")
+		require.ErrorContains(t, err, "failed to revoke user role")
 	})
 }
 
@@ -262,7 +262,7 @@ func TestUserRoleGetByRoleID(t *testing.T) {
 		urs, err := store.GetByRoleID(ctx, GetUserRoleOpts{})
 		require.Error(t, err)
 		require.Nil(t, urs)
-		require.Equal(t, err.Error(), "missing id or name")
+		require.Equal(t, err.Error(), "missing role id")
 	})
 
 	t.Run("with provided role id", func(t *testing.T) {

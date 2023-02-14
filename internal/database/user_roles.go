@@ -182,22 +182,8 @@ func (r *userRoleStore) BulkAssignToUser(ctx context.Context, opts BulkAssignToU
 		sqlf.Join(userRoleColumns, ", "),
 	)
 
-	rows, err := r.Query(ctx, q)
-	if err != nil {
-		return nil, errors.Wrap(err, "error running query")
-	}
-	defer rows.Close()
-
-	var userRoles []*types.UserRole
-	for rows.Next() {
-		ur, err := scanUserRole(rows)
-		if err != nil {
-			return userRoles, err
-		}
-		userRoles = append(userRoles, ur)
-	}
-
-	return userRoles, nil
+	var scanUserRoles = basestore.NewSliceScanner(scanUserRole)
+	return scanUserRoles(r.Query(ctx, q))
 }
 
 func (r *userRoleStore) BulkAssignSystemRolesToUser(ctx context.Context, opts BulkAssignSystemRolesToUserOpts) ([]*types.UserRole, error) {
@@ -222,22 +208,8 @@ func (r *userRoleStore) BulkAssignSystemRolesToUser(ctx context.Context, opts Bu
 		sqlf.Join(userRoleColumns, ", "),
 	)
 
-	rows, err := r.Query(ctx, q)
-	if err != nil {
-		return nil, errors.Wrap(err, "error running query")
-	}
-	defer rows.Close()
-
-	var userRoles []*types.UserRole
-	for rows.Next() {
-		ur, err := scanUserRole(rows)
-		if err != nil {
-			return userRoles, err
-		}
-		userRoles = append(userRoles, ur)
-	}
-
-	return userRoles, nil
+	var scanUserRoles = basestore.NewSliceScanner(scanUserRole)
+	return scanUserRoles(r.Query(ctx, q))
 }
 
 type UserRoleNotFoundErr struct {
@@ -287,7 +259,7 @@ func (r *userRoleStore) Revoke(ctx context.Context, opts RevokeUserRoleOpts) err
 		return errors.Wrap(&UserRoleNotFoundErr{
 			UserID: opts.UserID,
 			RoleID: opts.RoleID,
-		}, "failed to delete user role")
+		}, "failed to revoke user role")
 	}
 
 	return nil
@@ -321,42 +293,14 @@ func (r *userRoleStore) GetByUserID(ctx context.Context, opts GetUserRoleOpts) (
 	if opts.UserID == 0 {
 		return nil, errors.New("missing user id")
 	}
-	var urs []*types.UserRole
-
-	scanFunc := func(rows *sql.Rows) error {
-		ur, err := scanUserRole(rows)
-		if err != nil {
-			return err
-		}
-		urs = append(urs, ur)
-		return nil
-	}
-
-	err := r.get(ctx, sqlf.Sprintf("user_id = %s", opts.UserID), scanFunc)
-	return urs, err
+	return r.get(ctx, sqlf.Sprintf("user_id = %s", opts.UserID))
 }
 
 func (r *userRoleStore) GetByRoleID(ctx context.Context, opts GetUserRoleOpts) ([]*types.UserRole, error) {
-	role, err := RolesWith(r).Get(ctx, GetRoleOpts{
-		ID: opts.RoleID,
-	})
-	if err != nil {
-		return nil, err
+	if opts.RoleID == 0 {
+		return nil, errors.New("missing role id")
 	}
-
-	urs := make([]*types.UserRole, 0, 20)
-
-	scanFunc := func(rows *sql.Rows) error {
-		ur, err := scanUserRole(rows)
-		if err != nil {
-			return err
-		}
-		urs = append(urs, ur)
-		return nil
-	}
-
-	err = r.get(ctx, sqlf.Sprintf("role_id = %s", role.ID), scanFunc)
-	return urs, err
+	return r.get(ctx, sqlf.Sprintf("role_id = %s", opts.RoleID))
 }
 
 func (r *userRoleStore) GetByRoleIDAndUserID(ctx context.Context, opts GetUserRoleOpts) (*types.UserRole, error) {
@@ -408,8 +352,8 @@ FROM user_roles
 WHERE %s
 `
 
-func (r *userRoleStore) get(ctx context.Context, w *sqlf.Query, scanFunc func(rows *sql.Rows) error) error {
-	conds := sqlf.Sprintf("%s AND users.deleted_at IS NULL", w)
+func (r *userRoleStore) get(ctx context.Context, cond *sqlf.Query) ([]*types.UserRole, error) {
+	conds := sqlf.Sprintf("%s AND users.deleted_at IS NULL", cond)
 	q := sqlf.Sprintf(
 		getUserRoleQueryFmtStr,
 		sqlf.Join(userRoleColumns, ", "),
@@ -417,16 +361,6 @@ func (r *userRoleStore) get(ctx context.Context, w *sqlf.Query, scanFunc func(ro
 		conds,
 	)
 
-	rows, err := r.Query(ctx, q)
-	if err != nil {
-		return errors.Wrap(err, "error running query")
-	}
-	defer rows.Close()
-	for rows.Next() {
-		if err := scanFunc(rows); err != nil {
-			return err
-		}
-	}
-
-	return rows.Err()
+	var scanUserRoles = basestore.NewSliceScanner(scanUserRole)
+	return scanUserRoles(r.Query(ctx, q))
 }

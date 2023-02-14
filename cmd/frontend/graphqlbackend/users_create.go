@@ -58,9 +58,9 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 		}
 	}
 
-	var createdUser *types.User
-	err := r.db.WithTransact(ctx, func(tx database.DB) error {
-		user, err := tx.Users().Create(ctx, database.NewUser{
+	var user *types.User
+	err := r.db.WithTransact(ctx, func(tx database.DB) (err error) {
+		user, err = tx.Users().Create(ctx, database.NewUser{
 			Username: args.Username,
 			Password: backend.MakeRandomHardToGuessPassword(),
 
@@ -99,7 +99,6 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 				log.Error(err))
 		}
 
-		createdUser = user
 		return nil
 	})
 
@@ -110,7 +109,7 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 	return &createUserResult{
 		logger:        logger,
 		db:            r.db,
-		user:          createdUser,
+		user:          user,
 		email:         email,
 		emailVerified: !needsEmailVerification,
 	}, nil

@@ -312,7 +312,7 @@ func TestRolePermissionDelete(t *testing.T) {
 			PermissionID: permissionID,
 		})
 		require.Error(t, err)
-		require.ErrorContains(t, err, "failed to delete role permission")
+		require.ErrorContains(t, err, "failed to revoke role permission")
 	})
 
 	t.Run("with existing role permission", func(t *testing.T) {

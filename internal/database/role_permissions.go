@@ -118,7 +118,7 @@ func (rp *rolePermissionStore) Revoke(ctx context.Context, opts RevokeRolePermis
 	}
 
 	if rowsAffected == 0 {
-		return errors.Wrap(&RolePermissionNotFoundErr{opts.PermissionID, opts.RoleID}, "failed to delete role permission")
+		return errors.Wrap(&RolePermissionNotFoundErr{opts.PermissionID, opts.RoleID}, "failed to revoke role permission")
 	}
 
 	return nil
@@ -144,25 +144,15 @@ FROM role_permissions
 WHERE %s
 `
 
-func (rp *rolePermissionStore) get(ctx context.Context, w *sqlf.Query, scanFunc func(rows *sql.Rows) error) error {
+func (rp *rolePermissionStore) get(ctx context.Context, w *sqlf.Query) ([]*types.RolePermission, error) {
 	q := sqlf.Sprintf(
 		getRolePermissionQueryFmtStr,
 		sqlf.Join(rolePermissionColumns, ", "),
 		w,
 	)
 
-	rows, err := rp.Query(ctx, q)
-	if err != nil {
-		return errors.Wrap(err, "error running query")
-	}
-	defer rows.Close()
-	for rows.Next() {
-		if err := scanFunc(rows); err != nil {
-			return err
-		}
-	}
-
-	return rows.Err()
+	var scanRolePermissions = basestore.NewSliceScanner(scanRolePermission)
+	return scanRolePermissions(rp.Query(ctx, q))
 }
 
 func (rp *rolePermissionStore) GetByPermissionID(ctx context.Context, opts GetRolePermissionOpts) ([]*types.RolePermission, error) {
@@ -170,19 +160,7 @@ func (rp *rolePermissionStore) GetByPermissionID(ctx context.Context, opts GetRo
 		return nil, errors.New("missing permission id")
 	}
 
-	var rps []*types.RolePermission
-
-	scanFunc := func(rows *sql.Rows) error {
-		rp, err := scanRolePermission(rows)
-		if err != nil {
-			return err
-		}
-		rps = append(rps, rp)
-		return nil
-	}
-
-	err := rp.get(ctx, sqlf.Sprintf("permission_id = %s", opts.PermissionID), scanFunc)
-	return rps, err
+	return rp.get(ctx, sqlf.Sprintf("permission_id = %s", opts.PermissionID))
 }
 
 func (rp *rolePermissionStore) GetByRoleID(ctx context.Context, opts GetRolePermissionOpts) ([]*types.RolePermission, error) {
@@ -190,19 +168,7 @@ func (rp *rolePermissionStore) GetByRoleID(ctx context.Context, opts GetRolePerm
 		return nil, errors.New("missing role id")
 	}
 
-	var rps []*types.RolePermission
-
-	scanFunc := func(rows *sql.Rows) error {
-		rp, err := scanRolePermission(rows)
-		if err != nil {
-			return err
-		}
-		rps = append(rps, rp)
-		return nil
-	}
-
-	err := rp.get(ctx, sqlf.Sprintf("role_id = %s", opts.RoleID), scanFunc)
-	return rps, err
+	return rp.get(ctx, sqlf.Sprintf("role_id = %s", opts.RoleID))
 }
 
 func (rp *rolePermissionStore) GetByRoleIDAndPermissionID(ctx context.Context, opts GetRolePermissionOpts) (*types.RolePermission, error) {
@@ -309,22 +275,8 @@ func (rp *rolePermissionStore) BulkAssignPermissionsToSystemRoles(ctx context.Co
 		sqlf.Join(rolePermissionColumns, ", "),
 	)
 
-	rows, err := rp.Query(ctx, q)
-	if err != nil {
-		return nil, errors.Wrap(err, "error running query")
-	}
-	defer rows.Close()
-
-	var rolePermissions []*types.RolePermission
-	for rows.Next() {
-		rp, err := scanRolePermission(rows)
-		if err != nil {
-			return nil, err
-		}
-		rolePermissions = append(rolePermissions, rp)
-	}
-
-	return rolePermissions, nil
+	var scanRolePermissions = basestore.NewSliceScanner(scanRolePermission)
+	return scanRolePermissions(rp.Query(ctx, q))
 }
 
 type RolePermissionNotFoundErr struct {
