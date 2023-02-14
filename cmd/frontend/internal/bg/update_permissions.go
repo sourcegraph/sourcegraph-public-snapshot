@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/rbac"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -19,7 +20,6 @@ func UpdatePermissions(ctx context.Context, logger log.Logger, db database.DB) {
 	scopedLog := logger.Scoped("permission_update", "Updates the permission in the database based on the rbac schema configuration.")
 	err := db.WithTransact(ctx, func(tx database.DB) error {
 		permissionStore := tx.Permissions()
-		roleStore := tx.Roles()
 		rolePermissionStore := tx.RolePermissions()
 
 		dbPerms, err := permissionStore.FetchAll(ctx)
@@ -47,22 +47,13 @@ func UpdatePermissions(ctx context.Context, logger log.Logger, db database.DB) {
 				return errors.Wrap(err, "creating new permissions")
 			}
 
-			systemRoles, err := roleStore.List(ctx, database.RolesListOptions{
-				System: true,
-			})
-			if err != nil {
-				return errors.Wrap(err, "fetching system roles")
-			}
-
 			for _, permission := range permissions {
-				for _, role := range systemRoles {
-					_, err := rolePermissionStore.Assign(ctx, database.AssignRolePermissionOpts{
-						PermissionID: permission.ID,
-						RoleID:       role.ID,
-					})
-					if err != nil {
-						return errors.Wrapf(err, "assigning permission to role: %s", role.Name)
-					}
+				// Assign the permission to both SITE_ADMINISTRATOR and USER roles.
+				if _, err := rolePermissionStore.BulkAssignToSystemRoles(ctx, database.BulkAssignToSystemRolesOpts{
+					Roles:        []types.SystemRole{types.SiteAdministratorSystemRole, types.UserSystemRole},
+					PermissionID: permission.ID,
+				}); err != nil {
+					return errors.Wrap(err, "assigning permission to roles")
 				}
 			}
 		}

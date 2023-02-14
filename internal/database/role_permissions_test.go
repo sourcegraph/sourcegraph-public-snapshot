@@ -215,14 +215,14 @@ func TestRolePermissionDelete(t *testing.T) {
 	}
 
 	t.Run("missing permission id", func(t *testing.T) {
-		err := store.Delete(ctx, DeleteRolePermissionOpts{})
+		err := store.Revoke(ctx, RevokeRolePermissionOpts{})
 
 		assert.Error(t, err)
 		assert.Equal(t, err.Error(), "missing permission id")
 	})
 
 	t.Run("missing role id", func(t *testing.T) {
-		err := store.Delete(ctx, DeleteRolePermissionOpts{
+		err := store.Revoke(ctx, RevokeRolePermissionOpts{
 			PermissionID: p.ID,
 		})
 
@@ -234,7 +234,7 @@ func TestRolePermissionDelete(t *testing.T) {
 		roleID := int32(1234)
 		permissionID := int32(4321)
 
-		err := store.Delete(ctx, DeleteRolePermissionOpts{
+		err := store.Revoke(ctx, RevokeRolePermissionOpts{
 			RoleID:       roleID,
 			PermissionID: permissionID,
 		})
@@ -243,7 +243,7 @@ func TestRolePermissionDelete(t *testing.T) {
 	})
 
 	t.Run("with existing role permission", func(t *testing.T) {
-		err := store.Delete(ctx, DeleteRolePermissionOpts{
+		err := store.Revoke(ctx, RevokeRolePermissionOpts{
 			RoleID:       r.ID,
 			PermissionID: p.ID,
 		})

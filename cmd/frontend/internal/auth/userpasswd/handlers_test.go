@@ -10,6 +10,7 @@ import (
 	"time"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -424,19 +425,17 @@ func TestHandleSignUp(t *testing.T) {
 			return &types.User{ID: 1, SiteAdmin: false, CreatedAt: time.Now()}, nil
 		})
 
-		roles := database.NewMockRoleStore()
-		roles.ListFunc.SetDefaultReturn([]*types.Role{
-			{ID: 1, Name: string(types.UserSystemRole)},
-			{ID: 2, Name: string(types.SiteAdministratorSystemRole)},
-		}, nil)
-
 		userRoles := database.NewMockUserRoleStore()
-		userRoles.BulkAssignToUserFunc.SetDefaultHook(func(_ context.Context, bcfuo database.BulkAssignToUserOpts) ([]*types.UserRole, error) {
-			if len(bcfuo.RoleIDs) != 1 {
-				t.Fatalf("expected db.UserRoles().BulkCreateForUser to be called with one roleID, but got %d", len(bcfuo.RoleIDs))
+		userRoles.BulkAssignSystemRolesToUserFunc.SetDefaultHook(func(ctx context.Context, basrtuo database.BulkAssignSystemRolesToUserOpts) ([]*types.UserRole, error) {
+			if len(basrtuo.Roles) != 1 {
+				t.Fatalf("expected UserRoles().BulkAssignSystemRolesToUser to be called with one role, got %d", len(basrtuo.Roles))
 			}
 
-			return nil, nil
+			if basrtuo.Roles[0] != types.UserSystemRole {
+				t.Fatalf("expected UserRoles().BulkAssignSystemRolesToUser to be called with %s role, got %s", types.UserSystemRole, basrtuo.Roles[0])
+			}
+
+			return []*types.UserRole{}, nil
 		})
 
 		authz := database.NewMockAuthzStore()
@@ -447,7 +446,6 @@ func TestHandleSignUp(t *testing.T) {
 
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
-		db.RolesFunc.SetDefaultReturn(roles)
 		db.UserRolesFunc.SetDefaultReturn(userRoles)
 		db.AuthzFunc.SetDefaultReturn(authz)
 		db.EventLogsFunc.SetDefaultReturn(eventLogs)
@@ -476,8 +474,7 @@ func TestHandleSignUp(t *testing.T) {
 
 		mockrequire.CalledOnce(t, authz.GrantPendingPermissionsFunc)
 		mockrequire.CalledOnce(t, users.CreateFunc)
-		mockrequire.CalledOnce(t, roles.ListFunc)
-		mockrequire.CalledOnce(t, userRoles.BulkAssignToUserFunc)
+		mockrequire.CalledOnce(t, userRoles.BulkAssignSystemRolesToUserFunc)
 	})
 }
 
@@ -516,19 +513,19 @@ func TestHandleSiteInit(t *testing.T) {
 			return &types.User{ID: 1, SiteAdmin: true, CreatedAt: time.Now()}, nil
 		})
 
-		roles := database.NewMockRoleStore()
-		roles.ListFunc.SetDefaultReturn([]*types.Role{
-			{ID: 1, Name: string(types.UserSystemRole)},
-			{ID: 2, Name: string(types.SiteAdministratorSystemRole)},
-		}, nil)
-
 		userRoles := database.NewMockUserRoleStore()
-		userRoles.BulkAssignToUserFunc.SetDefaultHook(func(_ context.Context, bcfuo database.BulkAssignToUserOpts) ([]*types.UserRole, error) {
-			if len(bcfuo.RoleIDs) != 2 {
-				t.Fatalf("expected db.UserRoles().BulkCreateForUser to be called with two roleIDs, but got %d", len(bcfuo.RoleIDs))
+		userRoles.BulkAssignSystemRolesToUserFunc.SetDefaultHook(func(ctx context.Context, opts database.BulkAssignSystemRolesToUserOpts) ([]*types.UserRole, error) {
+			if len(opts.Roles) != 2 {
+				t.Fatalf("expected UserRoles().BulkAssignSystemRolesToUser to be called with two system roles, got %d", len(opts.Roles))
 			}
 
-			return nil, nil
+			want := []types.SystemRole{types.UserSystemRole, types.SiteAdministratorSystemRole}
+			have := opts.Roles
+			if diff := cmp.Diff(want, have); diff != "" {
+				t.Fatalf("Mismatch (-want +got):\n%s", diff)
+			}
+
+			return []*types.UserRole{}, nil
 		})
 
 		authz := database.NewMockAuthzStore()
@@ -539,7 +536,6 @@ func TestHandleSiteInit(t *testing.T) {
 
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
-		db.RolesFunc.SetDefaultReturn(roles)
 		db.UserRolesFunc.SetDefaultReturn(userRoles)
 		db.AuthzFunc.SetDefaultReturn(authz)
 		db.EventLogsFunc.SetDefaultReturn(eventLogs)
@@ -568,8 +564,7 @@ func TestHandleSiteInit(t *testing.T) {
 
 		mockrequire.CalledOnce(t, authz.GrantPendingPermissionsFunc)
 		mockrequire.CalledOnce(t, users.CreateFunc)
-		mockrequire.CalledOnce(t, roles.ListFunc)
-		mockrequire.CalledOnce(t, userRoles.BulkAssignToUserFunc)
+		mockrequire.CalledOnce(t, userRoles.BulkAssignSystemRolesToUserFunc)
 		mockrequire.CalledOnce(t, eventLogs.BulkInsertFunc)
 	})
 }

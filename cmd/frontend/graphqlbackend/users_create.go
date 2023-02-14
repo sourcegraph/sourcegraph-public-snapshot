@@ -77,7 +77,7 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 	logger = logger.With(log.Int32("userID", user.ID))
 	logger.Debug("user created")
 
-	opts := database.AssignSystemRoleOpts{UserID: user.ID, RoleName: types.UserSystemRole}
+	opts := database.AssignSystemRoleOpts{UserID: user.ID, Role: types.UserSystemRole}
 	if _, err = r.db.UserRoles().AssignSystemRole(ctx, opts); err != nil {
 		r.logger.Error("failed to assign user role to user",
 			log.Error(err))

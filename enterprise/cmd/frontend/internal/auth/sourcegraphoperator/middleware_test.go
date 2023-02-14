@@ -120,8 +120,6 @@ type doRequestFunc func(method, urlStr, body string, cookies []*http.Cookie, aut
 type mockDetails struct {
 	usersStore            *database.MockUserStore
 	externalAccountsStore *database.MockUserExternalAccountsStore
-	roleStore             *database.MockRoleStore
-	userRoleStore         *database.MockUserRoleStore
 	doRequest             doRequestFunc
 }
 
@@ -138,36 +136,12 @@ func newMockDBAndRequester(t *testing.T) mockDetails {
 		},
 		nil,
 	)
-
-	siteAdminRole := &types.Role{
-		ID:   1,
-		Name: string(types.SiteAdministratorSystemRole),
-	}
-	roleStore := database.NewMockRoleStore()
-	roleStore.GetFunc.SetDefaultHook(func(ctx context.Context, gro database.GetRoleOpts) (*types.Role, error) {
-		if gro.Name != string(types.SiteAdministratorSystemRole) {
-			t.Fatalf("expected RoleStore.Get to be called with SITE_ADMINISTRATOR name, got %s", gro.Name)
-		}
-		return siteAdminRole, nil
-	})
-
-	userRoleStore := database.NewMockUserRoleStore()
-	userRoleStore.AssignFunc.SetDefaultHook(func(ctx context.Context, curo database.AssignUserRoleOpts) (*types.UserRole, error) {
-		if curo.RoleID != siteAdminRole.ID {
-			t.Fatalf("expected UserRoles().Assign to be called with roleID %d, got %d", siteAdminRole.ID, curo.RoleID)
-		}
-		return &types.UserRole{}, nil
-	})
+	usersStore.SetIsSiteAdminFunc.SetDefaultReturn(nil)
 
 	db := database.NewMockDB()
-	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
-		return f(db)
-	})
 	db.UsersFunc.SetDefaultReturn(usersStore)
 	db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccountsStore)
 	db.SecurityEventLogsFunc.SetDefaultReturn(database.NewMockSecurityEventLogsStore())
-	db.RolesFunc.SetDefaultReturn(roleStore)
-	db.UserRolesFunc.SetDefaultReturn(userRoleStore)
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	authedHandler := http.NewServeMux()
@@ -190,8 +164,6 @@ func newMockDBAndRequester(t *testing.T) mockDetails {
 	return mockDetails{
 		usersStore:            usersStore,
 		externalAccountsStore: userExternalAccountsStore,
-		roleStore:             roleStore,
-		userRoleStore:         userRoleStore,
 		doRequest:             doRequest,
 	}
 }
@@ -299,8 +271,6 @@ func TestMiddleware(t *testing.T) {
 		assert.Equal(t, http.StatusFound, resp.StatusCode)
 		assert.Equal(t, state.Redirect, resp.Header.Get("Location"))
 		mockrequire.CalledOnce(t, mocks.usersStore.SetIsSiteAdminFunc)
-		mockrequire.CalledOnce(t, mocks.roleStore.GetFunc)
-		mockrequire.CalledOnce(t, mocks.userRoleStore.AssignFunc)
 	})
 
 	t.Run("callback with bad email domain should fail", func(t *testing.T) {
@@ -374,8 +344,6 @@ func TestMiddleware(t *testing.T) {
 		assert.Equal(t, http.StatusFound, resp.StatusCode)
 		assert.Equal(t, "/", resp.Header.Get("Location"))
 		mockrequire.CalledOnce(t, mocks.usersStore.SetIsSiteAdminFunc)
-		mockrequire.CalledOnce(t, mocks.roleStore.GetFunc)
-		mockrequire.CalledOnce(t, mocks.userRoleStore.AssignFunc)
 	})
 
 	t.Run("lifetime expired", func(t *testing.T) {

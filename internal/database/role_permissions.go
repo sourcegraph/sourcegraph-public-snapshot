@@ -31,23 +31,37 @@ type RolePermissionOpts struct {
 
 type (
 	AssignRolePermissionOpts RolePermissionOpts
-	DeleteRolePermissionOpts RolePermissionOpts
+	RevokeRolePermissionOpts RolePermissionOpts
 	GetRolePermissionOpts    RolePermissionOpts
 )
+
+type AssignToSystemRoleOpts struct {
+	Role         types.SystemRole
+	PermissionID int32
+}
+
+type BulkAssignToSystemRolesOpts struct {
+	Roles        []types.SystemRole
+	PermissionID int32
+}
 
 type RolePermissionStore interface {
 	basestore.ShareableStore
 
 	// Assign is used to assign a permission to a role.
 	Assign(ctx context.Context, opts AssignRolePermissionOpts) (*types.RolePermission, error)
+	// AssignToSystemRole is used to assign a permission to a system role.
+	AssignToSystemRole(ctx context.Context, opts AssignToSystemRoleOpts) (*types.RolePermission, error)
+	// BulkAssignToSystemRole is used to assign a permission to multiple system roles.
+	BulkAssignToSystemRoles(ctx context.Context, opts BulkAssignToSystemRolesOpts) ([]*types.RolePermission, error)
 	// GetByRoleIDAndPermissionID returns one RolePermission associated with the provided role and permission.
 	GetByRoleIDAndPermissionID(ctx context.Context, opts GetRolePermissionOpts) (*types.RolePermission, error)
 	// GetByRoleID returns all RolePermission associated with the provided role ID
 	GetByRoleID(ctx context.Context, opts GetRolePermissionOpts) ([]*types.RolePermission, error)
 	// GetByPermissionID returns all RolePermission associated with the provided permission ID
 	GetByPermissionID(ctx context.Context, opts GetRolePermissionOpts) ([]*types.RolePermission, error)
-	// Delete deletes the permission and role relationship from the database.
-	Delete(ctx context.Context, opts DeleteRolePermissionOpts) error
+	// Revoke deletes the permission and role relationship from the database.
+	Revoke(ctx context.Context, opts RevokeRolePermissionOpts) error
 	// WithTransact creates a transaction for the RolePermissionStore.
 	WithTransact(context.Context, func(RolePermissionStore) error) error
 	// With is used to merge the store with another to pull data via other stores.
@@ -79,7 +93,7 @@ DELETE FROM role_permissions
 WHERE %s
 `
 
-func (rp *rolePermissionStore) Delete(ctx context.Context, opts DeleteRolePermissionOpts) error {
+func (rp *rolePermissionStore) Revoke(ctx context.Context, opts RevokeRolePermissionOpts) error {
 	if opts.PermissionID == 0 {
 		return errors.New("missing permission id")
 	}
@@ -136,8 +150,6 @@ func (rp *rolePermissionStore) get(ctx context.Context, w *sqlf.Query, scanFunc 
 		sqlf.Join(rolePermissionColumns, ", "),
 		w,
 	)
-
-	fmt.Println(q.Query(sqlf.PostgresBindVar))
 
 	rows, err := rp.Query(ctx, q)
 	if err != nil {
@@ -222,10 +234,7 @@ func (rp *rolePermissionStore) GetByRoleIDAndPermissionID(ctx context.Context, o
 const rolePermissionAssignQueryFmtStr = `
 INSERT INTO
 	role_permissions (%s)
-VALUES (
-	%s,
-	%s
-)
+VALUES %s
 ON CONFLICT DO NOTHING
 RETURNING %s
 `
@@ -242,16 +251,80 @@ func (rp *rolePermissionStore) Assign(ctx context.Context, opts AssignRolePermis
 	q := sqlf.Sprintf(
 		rolePermissionAssignQueryFmtStr,
 		sqlf.Join(rolePermissionInsertColumns, ", "),
-		opts.RoleID,
-		opts.PermissionID,
+		sqlf.Sprintf("( %s, %s )", opts.RoleID, opts.PermissionID),
 		sqlf.Join(rolePermissionColumns, ", "),
 	)
 
 	rolePermission, err := scanRolePermission(rp.QueryRow(ctx, q))
 	if err != nil {
-		return nil, errors.Wrap(err, "scanning user role")
+		return nil, errors.Wrap(err, "scanning role permission")
 	}
 	return rolePermission, nil
+}
+
+func (rp *rolePermissionStore) AssignToSystemRole(ctx context.Context, opts AssignToSystemRoleOpts) (*types.RolePermission, error) {
+	if opts.PermissionID == 0 {
+		return nil, errors.New("permission id is required")
+	}
+
+	if opts.Role == "" {
+		return nil, errors.New("role is required")
+	}
+
+	roleQuery := sqlf.Sprintf("SELECT id FROM roles WHERE name = %s", opts.Role)
+
+	q := sqlf.Sprintf(
+		rolePermissionAssignQueryFmtStr,
+		sqlf.Join(rolePermissionInsertColumns, ", "),
+		sqlf.Sprintf("((%s), %s)", roleQuery, opts.PermissionID),
+		sqlf.Join(rolePermissionColumns, ", "),
+	)
+
+	rolePermission, err := scanRolePermission(rp.QueryRow(ctx, q))
+	if err != nil {
+		return nil, errors.Wrap(err, "scanning role permission")
+	}
+	return rolePermission, nil
+}
+
+func (rp *rolePermissionStore) BulkAssignToSystemRoles(ctx context.Context, opts BulkAssignToSystemRolesOpts) ([]*types.RolePermission, error) {
+	if opts.PermissionID == 0 {
+		return nil, errors.New("user id is required")
+	}
+
+	if len(opts.Roles) == 0 {
+		return nil, errors.New("roles are required")
+	}
+
+	var rps []*sqlf.Query
+	for _, role := range opts.Roles {
+		roleQuery := sqlf.Sprintf("SELECT id FROM roles WHERE name = %s", role)
+		rps = append(rps, sqlf.Sprintf("((%s), %s)", roleQuery, opts.PermissionID))
+	}
+
+	q := sqlf.Sprintf(
+		rolePermissionAssignQueryFmtStr,
+		sqlf.Join(rolePermissionInsertColumns, ", "),
+		sqlf.Join(rps, ", "),
+		sqlf.Join(rolePermissionColumns, ", "),
+	)
+
+	rows, err := rp.Query(ctx, q)
+	if err != nil {
+		return nil, errors.Wrap(err, "error running query")
+	}
+	defer rows.Close()
+
+	var rolePermissions []*types.RolePermission
+	for rows.Next() {
+		rp, err := scanRolePermission(rows)
+		if err != nil {
+			return nil, err
+		}
+		rolePermissions = append(rolePermissions, rp)
+	}
+
+	return rolePermissions, nil
 }
 
 type RolePermissionNotFoundErr struct {

@@ -7,6 +7,7 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
@@ -20,14 +21,13 @@ import (
 type mockFuncs struct {
 	dB             *database.MockDB
 	authzStore     *database.MockAuthzStore
-	roleStore      *database.MockRoleStore
 	userRoleStore  *database.MockUserRoleStore
 	userEmailStore *database.MockUserEmailsStore
 }
 
-func makeUsersCreateTestDB() mockFuncs {
+func makeUsersCreateTestDB(t *testing.T) mockFuncs {
 	users := database.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 	users.CreateFunc.SetDefaultReturn(&types.User{ID: 1, Username: "alice"}, nil)
 
 	authz := database.NewMockAuthzStore()
@@ -37,32 +37,33 @@ func makeUsersCreateTestDB() mockFuncs {
 	roles.GetFunc.SetDefaultReturn(&types.Role{ID: 1}, nil)
 
 	userRoles := database.NewMockUserRoleStore()
-	userRoles.AssignFunc.SetDefaultReturn(&types.UserRole{}, nil)
+	userRoles.AssignSystemRoleFunc.SetDefaultHook(func(ctx context.Context, opts database.AssignSystemRoleOpts) (*types.UserRole, error) {
+		require.Equal(t, opts.Role, types.UserSystemRole, "expected AssignSystemRole to be called with USER role, but got %s", opts.Role)
+		return &types.UserRole{}, nil
+	})
 
 	userEmails := database.NewMockUserEmailsStore()
 
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.AuthzFunc.SetDefaultReturn(authz)
-	db.RolesFunc.SetDefaultReturn(roles)
 	db.UserRolesFunc.SetDefaultReturn(userRoles)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
 	return mockFuncs{
 		dB:             db,
 		authzStore:     authz,
-		roleStore:      roles,
 		userRoleStore:  userRoles,
 		userEmailStore: userEmails,
 	}
 }
 
 func TestCreateUser(t *testing.T) {
-	mocks := makeUsersCreateTestDB()
+	mocks := makeUsersCreateTestDB(t)
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schema: mustParseGraphQLSchema(t, mocks.dB),
 			Query: `
 				mutation {
 					createUser(username: "alice") {
@@ -85,8 +86,7 @@ func TestCreateUser(t *testing.T) {
 	})
 
 	mockrequire.CalledOnce(t, mocks.authzStore.GrantPendingPermissionsFunc)
-	mockrequire.CalledOnce(t, mocks.roleStore.GetFunc)
-	mockrequire.CalledOnce(t, mocks.userRoleStore.AssignFunc)
+	mockrequire.CalledOnce(t, mocks.userRoleStore.AssignSystemRoleFunc)
 }
 
 func TestCreateUserResetPasswordURL(t *testing.T) {
@@ -100,7 +100,7 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 	})
 
 	t.Run("with SMTP disabled", func(t *testing.T) {
-		mocks := makeUsersCreateTestDB()
+		mocks := makeUsersCreateTestDB(t)
 
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
@@ -111,7 +111,7 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schema: mustParseGraphQLSchema(t, mocks.dB),
 				Query: `
 					mutation {
 						createUser(username: "alice",email:"alice@sourcegraph.com",verifiedEmail:false) {
@@ -155,11 +155,11 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 			txemail.MockSend = nil
 		})
 
-		mocks := makeUsersCreateTestDB()
+		mocks := makeUsersCreateTestDB(t)
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schema: mustParseGraphQLSchema(t, mocks.dB),
 				Query: `
 					mutation {
 						createUser(username: "alice",email:"alice@sourcegraph.com",verifiedEmail:false) {
@@ -209,13 +209,11 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 			txemail.MockSend = nil
 		})
 
-		mocks := makeUsersCreateTestDB()
-		userEmails := database.NewMockUserEmailsStore()
-		db.UserEmailsFunc.SetDefaultReturn(userEmails)
+		mocks := makeUsersCreateTestDB(t)
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schema: mustParseGraphQLSchema(t, mocks.dB),
 				Query: `
 					mutation {
 						createUser(username: "alice",email:"alice@sourcegraph.com") {
@@ -246,6 +244,6 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 		assert.NotContains(t, data.URL, "&email=")
 
 		mockrequire.Called(t, mocks.authzStore.GrantPendingPermissionsFunc)
-		mockrequire.NotCalled(t, userEmails.SetLastVerificationFunc)
+		mockrequire.NotCalled(t, mocks.userEmailStore.SetLastVerificationFunc)
 	})
 }

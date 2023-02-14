@@ -765,7 +765,8 @@ func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) (_ []int3
 	return updateIds, nil
 }
 
-// SetIsSiteAdmin sets the user with the given ID to be or not to be the site admin.
+// SetIsSiteAdmin sets the user with the given ID to be or not to be the site admin. It also assigns the role `SITE_ADMINISTRATOR`
+// to the user when `isSiteAdmin` is true and revokes the role when false.
 func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error {
 	if BeforeSetUserIsSiteAdmin != nil {
 		if err := BeforeSetUserIsSiteAdmin(isSiteAdmin); err != nil {
@@ -784,16 +785,15 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 		userRoleStore := tx.UserRoles()
 		if isSiteAdmin {
 			_, err := userRoleStore.AssignSystemRole(ctx, AssignSystemRoleOpts{
-				UserID:   id,
-				RoleName: types.SiteAdministratorSystemRole,
+				UserID: id,
+				Role:   types.SiteAdministratorSystemRole,
 			})
-
 			return err
 		}
 
 		err = userRoleStore.RevokeSystemRole(ctx, RevokeSystemRoleOpts{
-			UserID:   id,
-			RoleName: types.SiteAdministratorSystemRole,
+			UserID: id,
+			Role:   types.SiteAdministratorSystemRole,
 		})
 		return err
 	})

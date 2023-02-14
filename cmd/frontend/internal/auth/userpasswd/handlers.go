@@ -198,22 +198,16 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 	}
 
 	{
-		_, err = db.UserRoles().AssignSystemRole(r.Context(), database.AssignSystemRoleOpts{
-			UserID:   usr.ID,
-			RoleName: types.UserSystemRole,
-		})
-		if err != nil {
-			logger.Error("Failed to assign USER role to user", log.Error(err))
+		roles := []types.SystemRole{types.UserSystemRole}
+		if usr.SiteAdmin {
+			roles = append(roles, types.SiteAdministratorSystemRole)
 		}
 
-		if usr.SiteAdmin {
-			_, err = db.UserRoles().AssignSystemRole(r.Context(), database.AssignSystemRoleOpts{
-				UserID:   usr.ID,
-				RoleName: types.SiteAdministratorSystemRole,
-			})
-			if err != nil {
-				logger.Error("Failed to assign SITE_ADMINISTRATOR role to user", log.Error(err))
-			}
+		if _, err = db.UserRoles().BulkAssignSystemRolesToUser(r.Context(), database.BulkAssignSystemRolesToUserOpts{
+			UserID: usr.ID,
+			Roles:  roles,
+		}); err != nil {
+			logger.Error("failed to assign system roles to user")
 		}
 	}
 

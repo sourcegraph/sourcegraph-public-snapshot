@@ -262,23 +262,23 @@ func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUs
 		return nil, err
 	}
 
+	fmt.Println(createdUser.SiteAdmin, "<====")
+
 	// Every user on a Sourcegraph instance is assigned the `USER` role.
-	if _, err := UserRolesWith(tx).AssignSystemRole(ctx, AssignSystemRoleOpts{
-		UserID:   createdUser.ID,
-		RoleName: types.UserSystemRole,
-	}); err != nil {
-		s.logger.Error("failed to assign user role to user", log.Error(err))
-	}
+	roles := []types.SystemRole{types.UserSystemRole}
 
 	if createdUser.SiteAdmin {
-		// If the created user is a site admin, we also want to assign them the SITE_ADMINISTRATOR role.
-		_, err := UserRolesWith(tx).AssignSystemRole(ctx, AssignSystemRoleOpts{
-			UserID:   createdUser.ID,
-			RoleName: types.SiteAdministratorSystemRole,
-		})
-		if err != nil {
-			s.logger.Error("failed to assign site administrator role to user", log.Error(err))
-		}
+		// if the created user is a site admin, assign them the SITE_ADMINISTRATOR role.
+		roles = append(roles, types.SiteAdministratorSystemRole)
+	}
+
+	// We use the BulkAssignSystemRolesToUser method here because in cases where the created
+	// user is also a site admin, we want to assign them both USER and SITE_ADMINISTRATOR roles.
+	if _, err := UserRolesWith(tx).BulkAssignSystemRolesToUser(ctx, BulkAssignSystemRolesToUserOpts{
+		UserID: createdUser.ID,
+		Roles:  roles,
+	}); err != nil {
+		s.logger.Error("failed to assign system role to user", log.Error(err))
 	}
 
 	err = tx.Insert(ctx, createdUser.ID, spec, data)

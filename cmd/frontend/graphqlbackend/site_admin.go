@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -271,6 +270,8 @@ type roleChangeEventArgs struct {
 	Reason string `json:"reason"`
 }
 
+var ErrRefuseToSetCurrentUserSiteAdmin = errors.New("refusing to set current user site admin status")
+
 func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 	UserID    graphql.ID
 	SiteAdmin bool
@@ -320,34 +321,14 @@ func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 	}
 
 	if userResolver.ID() == args.UserID {
-		return nil, errors.New("refusing to set current user site admin status")
+		return nil, ErrRefuseToSetCurrentUserSiteAdmin
 	}
 
-	err = r.db.WithTransact(ctx, func(tx database.DB) error {
-		if err = tx.Users().SetIsSiteAdmin(ctx, affectedUserID, args.SiteAdmin); err != nil {
-			return err
-		}
+	if err = r.db.Users().SetIsSiteAdmin(ctx, affectedUserID, args.SiteAdmin); err != nil {
+		return nil, err
+	}
 
-		if args.SiteAdmin {
-			if _, err = tx.UserRoles().AssignSystemRole(ctx, database.AssignSystemRoleOpts{
-				UserID:   affectedUserID,
-				RoleName: types.SiteAdministratorSystemRole,
-			}); err != nil {
-				return err
-			}
-		} else {
-			if err = tx.UserRoles().RevokeSystemRole(ctx, database.RevokeSystemRoleOpts{
-				UserID:   affectedUserID,
-				RoleName: types.SiteAdministratorSystemRole,
-			}); err != nil {
-				return err
-			}
-		}
-
-		eventName = database.SecurityEventNameRoleChangeGranted
-		return nil
-	})
-
+	eventName = database.SecurityEventNameRoleChangeGranted
 	return &EmptyResponse{}, err
 }
 

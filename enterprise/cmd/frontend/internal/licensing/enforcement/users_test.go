@@ -166,7 +166,7 @@ func TestEnforcement_AfterCreateUser(t *testing.T) {
 			}
 			defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 
-			db, usersStore, roleStore, userRoleStore := mockDBAndStores(t)
+			db, usersStore := mockDBAndStores(t)
 			user := new(types.User)
 
 			hook := NewAfterCreateUserHook()
@@ -179,8 +179,6 @@ func TestEnforcement_AfterCreateUser(t *testing.T) {
 
 			if test.setSiteAdmin {
 				mockrequire.CalledOnce(t, usersStore.SetIsSiteAdminFunc)
-				mockrequire.CalledOnce(t, roleStore.GetFunc)
-				mockrequire.CalledOnce(t, userRoleStore.AssignFunc)
 			}
 		})
 	}
@@ -231,38 +229,17 @@ func TestEnforcement_PreSetUserIsSiteAdmin(t *testing.T) {
 	}
 }
 
-func mockDBAndStores(t *testing.T) (*database.MockDB, *database.MockUserStore, *database.MockRoleStore, *database.MockUserRoleStore) {
+func mockDBAndStores(t *testing.T) (*database.MockDB, *database.MockUserStore) {
 	t.Helper()
 
 	usersStore := database.NewMockUserStore()
 	usersStore.SetIsSiteAdminFunc.SetDefaultReturn(nil)
-
-	sr := &types.Role{ID: 1}
-
-	roleStore := database.NewMockRoleStore()
-	roleStore.GetFunc.SetDefaultHook(func(ctx context.Context, gro database.GetRoleOpts) (*types.Role, error) {
-		if gro.Name != string(types.SiteAdministratorSystemRole) {
-			t.Fatalf("expected Roles.Get to be called with SITE_ADMINISTRATOR name, got %s", gro.Name)
-		}
-
-		return sr, nil
-	})
-
-	userRoleStore := database.NewMockUserRoleStore()
-	userRoleStore.AssignFunc.SetDefaultHook(func(ctx context.Context, curo database.AssignUserRoleOpts) (*types.UserRole, error) {
-		if curo.RoleID != sr.ID {
-			t.Fatalf("expected UserRoles.Create() to be called with roleID: %d, got %d", sr.ID, curo.RoleID)
-		}
-		return &types.UserRole{}, nil
-	})
 
 	db := database.NewMockDB()
 	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
 		return f(db)
 	})
 	db.UsersFunc.SetDefaultReturn(usersStore)
-	db.RolesFunc.SetDefaultReturn(roleStore)
-	db.UserRolesFunc.SetDefaultReturn(userRoleStore)
 
-	return db, usersStore, roleStore, userRoleStore
+	return db, usersStore
 }

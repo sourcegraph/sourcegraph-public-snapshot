@@ -36,18 +36,23 @@ type (
 )
 
 type AssignSystemRoleOpts struct {
-	UserID   int32
-	RoleName types.SystemRole
+	UserID int32
+	Role   types.SystemRole
 }
 
 type RevokeSystemRoleOpts struct {
-	UserID   int32
-	RoleName types.SystemRole
+	UserID int32
+	Role   types.SystemRole
 }
 
 type BulkAssignToUserOpts struct {
 	UserID  int32
 	RoleIDs []int32
+}
+
+type BulkAssignSystemRolesToUserOpts struct {
+	UserID int32
+	Roles  []types.SystemRole
 }
 
 type UserRoleStore interface {
@@ -60,6 +65,9 @@ type UserRoleStore interface {
 	// BulkAssignToUser assigns multiple roles to a single user. This is useful
 	// when we want to assign a user more than one role.
 	BulkAssignToUser(ctx context.Context, opts BulkAssignToUserOpts) ([]*types.UserRole, error)
+	// BulkAssignToUser assigns multiple system roles to a single user. This is useful
+	// when we want to assign a user more than one system role.
+	BulkAssignSystemRolesToUser(ctx context.Context, opts BulkAssignSystemRolesToUserOpts) ([]*types.UserRole, error)
 	// GetByRoleID returns all UserRole associated with the provided role ID
 	GetByRoleID(ctx context.Context, opts GetUserRoleOpts) ([]*types.UserRole, error)
 	// GetByRoleIDAndUserID returns one UserRole associated with the provided role and user.
@@ -127,6 +135,31 @@ func (r *userRoleStore) Assign(ctx context.Context, opts AssignUserRoleOpts) (*t
 	return rm, nil
 }
 
+func (r *userRoleStore) AssignSystemRole(ctx context.Context, opts AssignSystemRoleOpts) (*types.UserRole, error) {
+	if opts.UserID == 0 {
+		return nil, errors.New("userID is required")
+	}
+
+	if opts.Role == "" {
+		return nil, errors.New("role is required")
+	}
+
+	roleQuery := sqlf.Sprintf("SELECT id FROM roles WHERE name = %s", opts.Role)
+
+	q := sqlf.Sprintf(
+		userRoleAssignQueryFmtStr,
+		sqlf.Join(userRoleInsertColumns, ", "),
+		sqlf.Sprintf("( %s, (%s) )", opts.UserID, roleQuery),
+		sqlf.Join(userRoleColumns, ", "),
+	)
+
+	ur, err := scanUserRole(r.QueryRow(ctx, q))
+	if err != nil {
+		return nil, errors.Wrap(err, "scanning user role")
+	}
+	return ur, nil
+}
+
 func (r *userRoleStore) BulkAssignToUser(ctx context.Context, opts BulkAssignToUserOpts) ([]*types.UserRole, error) {
 	if opts.UserID == 0 {
 		return nil, errors.New("missing user id")
@@ -167,35 +200,50 @@ func (r *userRoleStore) BulkAssignToUser(ctx context.Context, opts BulkAssignToU
 	return userRoles, nil
 }
 
-func (r *userRoleStore) AssignSystemRole(ctx context.Context, opts AssignSystemRoleOpts) (*types.UserRole, error) {
+func (r *userRoleStore) BulkAssignSystemRolesToUser(ctx context.Context, opts BulkAssignSystemRolesToUserOpts) ([]*types.UserRole, error) {
 	if opts.UserID == 0 {
-		return nil, errors.New("userID is required")
+		return nil, errors.New("user id is required")
 	}
 
-	if opts.RoleName == "" {
-		return nil, errors.New("roleName is required")
+	if len(opts.Roles) == 0 {
+		return nil, errors.New("roles are required")
 	}
 
-	roleQuery := sqlf.Sprintf("SELECT id FROM roles WHERE name = %s", opts.RoleName)
+	var urs []*sqlf.Query
+	for _, role := range opts.Roles {
+		roleQuery := sqlf.Sprintf("SELECT id FROM roles WHERE name = %s", role)
+		urs = append(urs, sqlf.Sprintf("(%s, (%s))", opts.UserID, roleQuery))
+	}
 
 	q := sqlf.Sprintf(
 		userRoleAssignQueryFmtStr,
 		sqlf.Join(userRoleInsertColumns, ", "),
-		sqlf.Sprintf("( %s, (%s) )", opts.UserID, roleQuery),
+		sqlf.Join(urs, ", "),
 		sqlf.Join(userRoleColumns, ", "),
 	)
 
-	rm, err := scanUserRole(r.QueryRow(ctx, q))
+	rows, err := r.Query(ctx, q)
 	if err != nil {
-		return nil, errors.Wrap(err, "scanning user role")
+		return nil, errors.Wrap(err, "error running query")
 	}
-	return rm, nil
+	defer rows.Close()
+
+	var userRoles []*types.UserRole
+	for rows.Next() {
+		ur, err := scanUserRole(rows)
+		if err != nil {
+			return userRoles, err
+		}
+		userRoles = append(userRoles, ur)
+	}
+
+	return userRoles, nil
 }
 
 type UserRoleNotFoundErr struct {
-	UserID   int32
-	RoleID   int32
-	RoleName types.SystemRole
+	UserID int32
+	RoleID int32
+	Role   types.SystemRole
 }
 
 func (e *UserRoleNotFoundErr) Error() string {
@@ -250,11 +298,11 @@ func (r *userRoleStore) RevokeSystemRole(ctx context.Context, opts RevokeSystemR
 		return errors.New("userID is required")
 	}
 
-	if opts.RoleName == "" {
-		return errors.New("roleName is required")
+	if opts.Role == "" {
+		return errors.New("role is required")
 	}
 
-	roleQuery := sqlf.Sprintf("SELECT id FROM roles WHERE name = %s", opts.RoleName)
+	roleQuery := sqlf.Sprintf("SELECT id FROM roles WHERE name = %s", opts.Role)
 
 	q := sqlf.Sprintf(
 		revokeUserRoleQueryFmtStr,
@@ -273,8 +321,8 @@ func (r *userRoleStore) RevokeSystemRole(ctx context.Context, opts RevokeSystemR
 
 	if rowsAffected == 0 {
 		return errors.Wrap(&UserRoleNotFoundErr{
-			UserID:   opts.UserID,
-			RoleName: opts.RoleName,
+			UserID: opts.UserID,
+			Role:   opts.Role,
 		}, "failed to delete user role")
 	}
 

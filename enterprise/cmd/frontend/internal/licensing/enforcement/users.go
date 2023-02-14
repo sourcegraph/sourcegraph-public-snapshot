@@ -88,8 +88,7 @@ func NewAfterCreateUserHook() func(context.Context, database.DB, *types.User) er
 			return err
 		}
 
-		// We only want to force the site administrator role if the created user isn't an admin on a free plan.
-		if !user.SiteAdmin && info.Plan() == licensing.PlanFree0 {
+		if info.Plan() == licensing.PlanFree0 {
 			store := tx.Users()
 			user.SiteAdmin = true
 			if err := store.SetIsSiteAdmin(ctx, user.ID, user.SiteAdmin); err != nil {

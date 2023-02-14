@@ -106,7 +106,6 @@ func TestRoleResolver(t *testing.T) {
 		assert.Len(t, errs, 1)
 		assert.Equal(t, errs[0].Message, "must be site admin")
 	})
-
 }
 
 const queryRoleNode = `
