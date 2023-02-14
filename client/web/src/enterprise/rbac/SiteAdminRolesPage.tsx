@@ -83,13 +83,11 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
                 }
             />
 
-            <Container>
-                <ul className={styles.rolesList}>
-                    {sampleRoles.map(role => (
-                        <RoleNode node={role} key={role.id} permissions={allPermsMap} />
-                    ))}
-                </ul>
-            </Container>
+            <ul className={styles.rolesList}>
+                {sampleRoles.map(role => (
+                    <RoleNode node={role} key={role.id} permissions={allPermsMap} />
+                ))}
+            </ul>
         </div>
     )
 }

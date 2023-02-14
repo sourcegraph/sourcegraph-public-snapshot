@@ -23,7 +23,6 @@ export interface SiteAdminSidebarProps extends BatchChangesProps {
     isSourcegraphDotCom: boolean
     /** The items for the side bar, by group */
     groups: SiteAdminSideBarGroups
-    isRbacEnabled: boolean
     className?: string
 }
 
