@@ -31,7 +31,5 @@ cmd/symbols/squirrel/test_repos/starlark
 cmd/sitemap
 docker-images/syntax-highlighter/crates/sg-syntax/src/snapshots/
 
-lib/codeintel/precise/diff/testdata/
-
 # temporary ignores
 internal/cmd/progress-bot
