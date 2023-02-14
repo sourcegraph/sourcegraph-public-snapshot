@@ -201,14 +201,6 @@
             "pointer": true
           }
         },
-        "homepageUserInvitation": {
-          "description": "Shows a panel to invite collaborators to Sourcegraph on home page.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "goCodeCheckerTemplates": {
           "description": "Shows a panel with code insights templates for go code checker results.",
           "type": "boolean",
@@ -443,11 +435,6 @@
         "$ref": "#/definitions/SearchScope"
       }
     },
-    "codeIntel.referencesPanel": {
-      "description": "What kind of references panel to use for exploring definitions and references. The tabbed panel is deprecated.",
-      "type": "string",
-      "enum": ["tree-view", "tabbed"]
-    },
     "codeIntel.disableSearchBased": {
       "description": "Never fall back to search-based code intelligence.",
       "type": "boolean"
@@ -489,10 +476,6 @@
       "type": "integer",
       "minimum": 0,
       "default": 0
-    },
-    "codeIntelligence.maxPanelResults": {
-      "description": "Maximum number of references/definitions (or other code intelligence results provided by extensions) shown in the panel. If not set a default value will be used to ensure best performance.",
-      "type": "integer"
     },
     "codeIntelligence.clickToGoToDefinition": {
       "description": "Enable click to go to definition.",

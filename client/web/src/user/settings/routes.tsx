@@ -1,4 +1,4 @@
-import { Redirect } from 'react-router-dom'
+import { Navigate } from 'react-router-dom-v5-compat'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Text } from '@sourcegraph/wildcard'
@@ -50,7 +50,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     },
     {
         path: 'password',
-        render: () => <Redirect to="./security" />,
+        render: () => <Navigate to="../security" replace={true} />,
     },
     {
         path: 'emails',

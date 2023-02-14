@@ -134,10 +134,6 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
 
         // Code intelligence redirect
         {
-            path: '/code-intelligence',
-            render: () => <NavigateToCodeGraph />,
-        },
-        {
             path: '/code-intelligence/*',
             render: () => <NavigateToCodeGraph />,
         },
@@ -177,11 +173,6 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
         },
 
         // Executor routes
-        {
-            path: '/executors',
-            render: () => <ExecutorsSiteAdminArea />,
-            condition: () => Boolean(window.context?.executorsEnabled),
-        },
         {
             path: '/executors/*',
             render: () => <ExecutorsSiteAdminArea />,

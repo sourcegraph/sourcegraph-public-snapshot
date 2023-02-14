@@ -472,8 +472,72 @@ type TeamMembersArgs struct {
 	Members  []graphql.ID
 }
 
-func (r *schemaResolver) AddTeamMembers(args *TeamMembersArgs) *teamResolver {
-	return &teamResolver{}
+func (a *TeamMembersArgs) membersIDs() (map[int32]bool, error) {
+	ids := map[int32]bool{}
+	for i, memberID := range a.Members {
+		if got, want := relay.UnmarshalKind(memberID), "TeamMember"; got != want {
+			return nil, errors.Newf("Members[%d]=%q unexpected kind, got %q want %q", i, memberID, got, want)
+		}
+		var id int32
+		if err := relay.UnmarshalSpec(memberID, &id); err != nil {
+			return nil, errors.Wrapf(err, "Members[%d]=%q ID malformed", i, memberID)
+		}
+		ids[id] = true
+	}
+	return ids, nil
+}
+
+func (r *schemaResolver) AddTeamMembers(ctx context.Context, args *TeamMembersArgs) (*teamResolver, error) {
+	// 🚨 SECURITY: For now we only allow site admins to use teams.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, errors.New("only site admins can modify team members")
+	}
+	if args.Team == nil && args.TeamName == nil {
+		return nil, errors.New("team must be identified by either id (team parameter) or name (teamName parameter), none specified")
+	}
+	if args.Team != nil && args.TeamName != nil {
+		return nil, errors.New("team must be identified by either id (team parameter) or name (teamName parameter), both specified")
+	}
+	memberIDs, err := args.membersIDs()
+	if err != nil {
+		return nil, err
+	}
+	team, err := findTeam(ctx, r.db.Teams(), args.Team, args.TeamName)
+	if err != nil {
+		return nil, err
+	}
+	listOpts := database.ListTeamMembersOpts{
+		TeamID: team.ID,
+	}
+	for {
+		existingMembers, cursor, err := r.db.Teams().ListTeamMembers(ctx, listOpts)
+		if err != nil {
+			return nil, err
+		}
+		for _, m := range existingMembers {
+			delete(memberIDs, m.UserID)
+		}
+		if cursor == nil {
+			break
+		}
+		listOpts.Cursor = *cursor
+	}
+	var membersToAdd []*types.TeamMember
+	for userID := range memberIDs {
+		membersToAdd = append(membersToAdd, &types.TeamMember{
+			TeamID: team.ID,
+			UserID: userID,
+		})
+	}
+	if len(membersToAdd) > 0 {
+		if err := r.db.Teams().CreateTeamMember(ctx, membersToAdd...); err != nil {
+			return nil, err
+		}
+	}
+	return &teamResolver{
+		db:   r.db,
+		team: team,
+	}, nil
 }
 
 func (r *schemaResolver) SetTeamMembers(args *TeamMembersArgs) *teamResolver {

@@ -593,6 +593,12 @@ fragment RepositoryFields on Repository {
 	`, strings.Join(conditionalGHEFields, "\n	"))
 }
 
+func (c *V4Client) GetRepo(ctx context.Context, owner, repo string) (*Repository, error) {
+	logger := c.log.Scoped("GetRepo", "temporary client for getting GitHub repository")
+	// We technically don't need to use the REST API for this but it's just a bit easier.
+	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).GetRepo(ctx, owner, repo)
+}
+
 // Fork forks the given repository. If org is given, then the repository will
 // be forked into that organisation, otherwise the repository is forked into
 // the authenticated user's account.

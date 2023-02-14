@@ -1,8 +1,7 @@
 import React, { Suspense, useCallback, useRef, useState } from 'react'
 
 import classNames from 'classnames'
-import { matchPath } from 'react-router'
-import { useLocation, Route, Routes, Navigate } from 'react-router-dom-v5-compat'
+import { matchPath, useLocation, Route, Routes, Navigate } from 'react-router-dom-v5-compat'
 import { Observable } from 'rxjs'
 
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
@@ -37,7 +36,7 @@ import { GlobalAlerts } from './global/GlobalAlerts'
 import { useHandleSubmitFeedback } from './hooks'
 import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
-import type { BlockInput, NotebookProps } from './notebooks'
+import type { NotebookProps } from './notebooks'
 import { OrgAreaRoute } from './org/area/OrgArea'
 import type { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import type { OrgSettingsAreaRoute } from './org/settings/OrgSettingsArea'
@@ -105,7 +104,6 @@ export interface LayoutProps
 
     // Search
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-    onCreateNotebookFromNotepad: (blocks: BlockInput[]) => void
 
     globbing: boolean
     isSourcegraphDotCom: boolean
@@ -123,8 +121,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     // TODO: Replace with useMatches once top-level <Router/> is V6
     const routeMatch = props.routes.find(
         route =>
-            matchPath(location.pathname, { path: route.path, exact: true }) ||
-            matchPath(location.pathname, { path: route.path.replace(/\/\*$/, ''), exact: true })
+            matchPath(route.path, location.pathname) || matchPath(route.path.replace(/\/\*$/, ''), location.pathname)
     )?.path
 
     const isSearchRelatedPage = (routeMatch === PageRoutes.RepoContainer || routeMatch?.startsWith('/search')) ?? false
@@ -305,7 +302,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 platformContext={props.platformContext}
             />
             {(isSearchNotebookListPage || (isSearchRelatedPage && !isSearchHomepage)) && (
-                <NotepadContainer onCreateNotebook={props.onCreateNotebookFromNotepad} />
+                <NotepadContainer userId={props.authenticatedUser?.id} />
             )}
             {fuzzyFinder && (
                 <LazyFuzzyFinder

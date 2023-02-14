@@ -1,4 +1,3 @@
-import { Redirect } from 'react-router'
 import { Navigate } from 'react-router-dom-v5-compat'
 
 import { isErrorLike } from '@sourcegraph/common'
@@ -38,6 +37,7 @@ const EditSearchContextPage = lazyComponent(
     'EditSearchContextPage'
 )
 const SearchContextPage = lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage')
+const GlobalCodyArea = lazyComponent(() => import('./cody/GlobalCodyArea'), 'GlobalCodyArea')
 
 const isSearchContextsManagementEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
     !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.showSearchContext !== false
@@ -98,7 +98,7 @@ export const enterpriseRoutes: readonly LayoutRouteProps[] = [
         render: props => {
             const { showSearchNotebook } = useExperimentalFeatures.getState()
 
-            return showSearchNotebook ? <NotebookPage {...props} /> : <Redirect to={PageRoutes.Search} />
+            return showSearchNotebook ? <NotebookPage {...props} /> : <Navigate to={PageRoutes.Search} replace={true} />
         },
     },
     {
@@ -109,6 +109,10 @@ export const enterpriseRoutes: readonly LayoutRouteProps[] = [
             ) : (
                 <Navigate to={PageRoutes.Search} replace={true} />
             ),
+    },
+    {
+        path: EnterprisePageRoutes.Cody,
+        render: props => <GlobalCodyArea {...props} />,
     },
     ...routes,
 ]

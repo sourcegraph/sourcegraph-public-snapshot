@@ -111,14 +111,14 @@ const keybindings: KeyBinding[] = [
     {
         key: 'Mod-ArrowRight',
         run(view) {
-            view.state.facet(blobPropsFacet).history.goForward()
+            view.state.facet(blobPropsFacet).navigate(1)
             return true
         },
     },
     {
         key: 'Mod-ArrowLeft',
         run(view) {
-            view.state.facet(blobPropsFacet).history.goBack()
+            view.state.facet(blobPropsFacet).navigate(-1)
             return true
         },
     },

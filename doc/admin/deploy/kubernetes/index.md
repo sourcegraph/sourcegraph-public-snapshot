@@ -40,7 +40,7 @@ Before starting, we recommend reading the [configuration guide](configure.md#get
 - [Storage class](./configure.md#configure-a-storage-class)
 - [Network Access](./configure.md#configure-network-access)
 - [PostgreSQL Database](./configure.md#configure-external-databases)
-- [Scaling services](./scale.md#tuning-replica-counts-for-horizontal-scalability)
+- [Scaling services](./scale.md)
 - [Cluster role administrator access](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
 
 > WARNING: If you are deploying on Azure, you **must** ensure that [your cluster is created with support for CSI storage drivers](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers). This **can not** be enabled after the fact.
