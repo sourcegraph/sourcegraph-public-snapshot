@@ -1423,7 +1423,7 @@ type InsightBackfillQueueItem {
     # """
     # The user that originally created the insight view
     # """
-    # creator: User
+    creator: User
     """
     The name of the series on the associated insight view
     """
