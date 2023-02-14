@@ -459,6 +459,7 @@
     "react-router-dom-v5-compat": "^6.7.0",
     "react-spring": "^9.4.2",
     "react-sticky-box": "1.0.2",
+    "react-use-websocket": "^4.3.1",
     "react-visibility-sensor": "^5.1.1",
     "recharts": "^1.8.5",
     "regexpp": "^3.1.0",
