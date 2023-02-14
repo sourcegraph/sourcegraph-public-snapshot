@@ -137,7 +137,7 @@ func (r *userRoleStore) Assign(ctx context.Context, opts AssignUserRoleOpts) (*t
 
 func (r *userRoleStore) AssignSystemRole(ctx context.Context, opts AssignSystemRoleOpts) (*types.UserRole, error) {
 	if opts.UserID == 0 {
-		return nil, errors.New("userID is required")
+		return nil, errors.New("user id is required")
 	}
 
 	if opts.Role == "" {

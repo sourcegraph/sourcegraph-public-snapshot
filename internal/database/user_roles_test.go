@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestUserRoleCreate(t *testing.T) {
+func TestUserRoleAssign(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
@@ -52,7 +52,7 @@ func TestUserRoleCreate(t *testing.T) {
 	})
 }
 
-func TestUserRoleBulkCreateForUser(t *testing.T) {
+func TestUserRoleBulkAssignForUser(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
@@ -95,6 +95,41 @@ func TestUserRoleBulkCreateForUser(t *testing.T) {
 			require.Equal(t, ur.UserID, user.ID)
 			require.Equal(t, ur.RoleID, roleIDs[i])
 		}
+	})
+}
+
+func TestUserRoleAssignSysemRole(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := db.UserRoles()
+
+	user, _ := createUserAndRole(ctx, t, db)
+
+	t.Run("without user id", func(t *testing.T) {
+		ur, err := store.AssignSystemRole(ctx, AssignSystemRoleOpts{})
+		require.Nil(t, ur)
+		require.ErrorContains(t, err, "user id is required")
+	})
+
+	t.Run("without role", func(t *testing.T) {
+		ur, err := store.AssignSystemRole(ctx, AssignSystemRoleOpts{
+			UserID: user.ID,
+		})
+		require.Nil(t, ur)
+		require.ErrorContains(t, err, "role is required")
+	})
+
+	t.Run("success", func(t *testing.T) {
+		ur, err := store.AssignSystemRole(ctx, AssignSystemRoleOpts{
+			UserID: user.ID,
+			Role:   types.UserSystemRole,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, ur)
+		require.Equal(t, ur.UserID, user.ID)
 	})
 }
 
