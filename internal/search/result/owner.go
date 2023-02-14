@@ -52,7 +52,7 @@ func (om *OwnerMatch) Key() Key {
 		TypeRank: rankOwnerMatch,
 		Repo:     om.Repo.Name,
 		Commit:   om.CommitID,
-		Path:     om.Path,
+		Path:     om.Path, // TODO: we should decide whether to omit this. If we leave it in then we will get duplicate owners if we match different paths.
 	}
 	if om.ResolvedOwner != nil {
 		k.Metadata = string(om.ResolvedOwner.Type()) + om.ResolvedOwner.Identifier()
