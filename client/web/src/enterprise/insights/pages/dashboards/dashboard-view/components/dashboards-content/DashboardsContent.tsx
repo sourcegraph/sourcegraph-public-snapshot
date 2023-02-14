@@ -3,7 +3,7 @@ import { FC, useEffect, useState } from 'react'
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import ViewDashboardOutlineIcon from 'mdi-react/ViewDashboardOutlineIcon'
-import { useHistory } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom-v5-compat'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -31,7 +31,7 @@ export interface DashboardsContentProps extends TelemetryProps {
 export const DashboardsContent: FC<DashboardsContentProps> = props => {
     const { currentDashboard, dashboards, telemetryService } = props
 
-    const history = useHistory()
+    const navigate = useNavigate()
     const [, setLasVisitedDashboard] = useTemporarySetting('insights.lastVisitedDashboardId', null)
     const { dashboard: dashboardPermission, licensed } = useUiFeatures()
 
@@ -43,13 +43,13 @@ export const DashboardsContent: FC<DashboardsContentProps> = props => {
     useEffect(() => setLasVisitedDashboard(currentDashboard?.id ?? null), [currentDashboard, setLasVisitedDashboard])
 
     const handleDashboardSelect = (dashboard: CustomInsightDashboard): void =>
-        history.push(`/insights/dashboards/${dashboard.id}`)
+        navigate(`/insights/dashboards/${dashboard.id}`)
 
     const handleSelect = (action: DashboardMenuAction): void => {
         switch (action) {
             case DashboardMenuAction.Configure: {
                 if (currentDashboard) {
-                    history.push(`/insights/dashboards/${currentDashboard.id}/edit`)
+                    navigate(`/insights/dashboards/${currentDashboard.id}/edit`)
                 }
                 return
             }

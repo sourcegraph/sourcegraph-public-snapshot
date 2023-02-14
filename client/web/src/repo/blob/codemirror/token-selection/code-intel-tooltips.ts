@@ -67,7 +67,21 @@ export const codeIntelTooltipsState = StateField.define<Record<CodeIntelTooltipT
     },
     provide(field) {
         return [
-            showTooltip.computeN([field], state => Object.values(state.field(field)).map(val => val?.tooltip ?? null)),
+            showTooltip.computeN([field], state => {
+                const { hover, focus, pin } = state.field(field)
+
+                // Only show one tooltip for the occurrence at a time
+                const uniqueTooltips = [pin, focus, hover]
+                    .reduce((acc, current) => {
+                        if (current?.tooltip && acc.every(({ occurrence }) => occurrence !== current.occurrence)) {
+                            acc.push(current)
+                        }
+                        return acc
+                    }, [] as NonNullable<CodeIntelTooltipState>[])
+                    .map(({ tooltip }) => tooltip)
+
+                return uniqueTooltips
+            }),
 
             /**
              * If there is a focused occurrence set editor's tabindex to -1, so that pressing Shift+Tab moves the focus
@@ -437,14 +451,14 @@ const pinManager = ViewPlugin.fromClass(
 
             if (update.selectionSet && update.state.field(pin)) {
                 // Remove `popover=pinned` from the URL when the user updates the selection.
-                const history = update.state.facet(blobPropsFacet).history
-                const params = new URLSearchParams(history.location.search)
+                const { navigate, location } = update.state.facet(blobPropsFacet)
+                const params = new URLSearchParams(location.search)
                 params.delete('popover')
                 window.requestAnimationFrame(() =>
-                    // Use `history.push` instead of `history.replace` in case
+                    // Use `navigate(to)` instead of `navigate(to, { replace: true })` in case
                     // the user accidentally clicked somewhere without intending to
                     // dismiss the popover.
-                    history.push({ ...history.location, search: formatSearchParameters(params) })
+                    navigate({ search: formatSearchParameters(params) })
                 )
             }
         }

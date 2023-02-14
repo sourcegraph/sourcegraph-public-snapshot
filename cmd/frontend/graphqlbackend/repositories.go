@@ -198,10 +198,10 @@ func (s *repositoriesConnectionStore) UnmarshalCursor(cursor string, orderBy dat
 
 func i32ptr(v int32) *int32 { return &v }
 
-func (r *repositoriesConnectionStore) ComputeTotal(ctx context.Context) (countptr *int32, err error) {
+func (s *repositoriesConnectionStore) ComputeTotal(ctx context.Context) (countptr *int32, err error) {
 	// 🚨 SECURITY: Only site admins can list all repos, because a total repository
 	// count does not respect repository permissions.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, s.db); err != nil {
 		return i32ptr(int32(0)), nil
 	}
 
@@ -210,23 +210,23 @@ func (r *repositoriesConnectionStore) ComputeTotal(ctx context.Context) (countpt
 		return i32ptr(int32(0)), nil
 	}
 
-	count, err := r.db.Repos().Count(ctx, r.opt)
+	count, err := s.db.Repos().Count(ctx, s.opt)
 	return i32ptr(int32(count)), err
 }
 
-func (r *repositoriesConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*RepositoryResolver, error) {
-	opt := r.opt
+func (s *repositoriesConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*RepositoryResolver, error) {
+	opt := s.opt
 	opt.PaginationArgs = args
 
 	client := gitserver.NewClient()
-	repos, err := backend.NewRepos(r.logger, r.db, client).List(ctx, opt)
+	repos, err := backend.NewRepos(s.logger, s.db, client).List(ctx, opt)
 	if err != nil {
 		return nil, err
 	}
 
 	resolvers := make([]*RepositoryResolver, 0, len(repos))
 	for _, repo := range repos {
-		resolvers = append(resolvers, NewRepositoryResolver(r.db, client, repo))
+		resolvers = append(resolvers, NewRepositoryResolver(s.db, client, repo))
 	}
 
 	return resolvers, nil

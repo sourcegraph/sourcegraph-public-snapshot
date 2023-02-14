@@ -2,6 +2,7 @@ import { readdirSync, readFileSync, writeFileSync } from 'fs'
 import * as path from 'path'
 import * as readline from 'readline'
 
+import chalk from 'chalk'
 import execa from 'execa'
 import { readFile, writeFile, mkdir } from 'mz/fs'
 import fetch from 'node-fetch'
@@ -58,6 +59,14 @@ async function readLineNoCache(prompt: string): Promise<string> {
     const userInput = await new Promise<string>(resolve => readlineInterface.question(prompt, resolve))
     readlineInterface.close()
     return userInput
+}
+
+export async function verifyWithInput(prompt: string): Promise<void> {
+    await readLineNoCache(chalk.yellow(`${prompt}\nInput yes to confirm: `)).then(val => {
+        if (val !== 'yes') {
+            throw new Error()
+        }
+    })
 }
 
 export function getWeekNumber(date: Date): number {

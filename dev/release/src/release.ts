@@ -23,6 +23,8 @@ import {
     IssueLabel,
     createLatestRelease,
     cloneRepo,
+    getCandidateTags,
+    localSourcegraphRepo,
 } from './github'
 import { ensureEvent, getClient, EventOptions, calendarTime } from './google-calendar'
 import { postMessage, slackURL } from './slack'
@@ -38,6 +40,7 @@ import {
     getLatestTag,
     getAllUpgradeGuides,
     updateUpgradeGuides,
+    verifyWithInput,
 } from './util'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
@@ -53,6 +56,8 @@ export type StepID =
     // release
     | 'release:status'
     | 'release:create-candidate'
+    | 'release:promote-candidate'
+    | 'release:check-candidate'
     | 'release:stage'
     | 'release:add-to-batch-change'
     | 'release:finalize'
@@ -380,8 +385,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
     {
         id: 'release:create-candidate',
         description: 'Generate the Nth release candidate. Set <candidate> to "final" to generate a final release',
-        argNames: ['arg'],
-        run: async (config, arg) => {
+        run: async config => {
             const { upcoming: release } = await releaseVersions(config)
             const branch = `${release.major}.${release.minor}`
             ensureReleaseBranchUpToDate(branch)
@@ -393,11 +397,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 const client = await getAuthenticatedGitHubClient()
                 const { workdir } = await cloneRepo(client, owner, repo, { revision: branch, revisionMustExist: true })
 
-                execa.sync('git', ['fetch', '--tags'], { cwd: workdir })
-                const tags = execa
-                    .sync('git', ['--no-pager', 'tag', '-l', `v${release.version}-rc*`], { cwd: workdir })
-                    .stdout.split('\t')
-
+                const tags = getCandidateTags(workdir, release.version)
                 let nextCandidate = 1
                 for (const tag of tags) {
                     const num = parseInt(tag.slice(-1), 10)
@@ -405,7 +405,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                         nextCandidate = num + 1
                     }
                 }
-                const tag = `v${release.version}${arg === 'final' ? '' : `-rc.${nextCandidate}`}`
+                const tag = `v${release.version}-rc.${nextCandidate}`
 
                 console.log(`Detected next candidate: ${nextCandidate}, attempting to create tag: ${tag}`)
                 await createTag(
@@ -423,6 +423,78 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             } catch (error) {
                 console.error('Failed to create tag', error)
             }
+        },
+    },
+    {
+        id: 'release:promote-candidate',
+        description:
+            'Promote a release candidate to release build. Specify the full candidate tag to promote the tagged commit to release.',
+        argNames: ['candidate'],
+        run: async (config, candidate) => {
+            const { upcoming: release } = await releaseVersions(config)
+            const releaseBranch = `${release.major}.${release.minor}`
+            ensureReleaseBranchUpToDate(releaseBranch)
+
+            const warnMsg =
+                'Verify the provided tag is correct to promote to release. Note: it is very unusual to require a non-standard tag to promote to release, proceed with caution.'
+            const exampleTag = `v${release.version}-rc.1`
+            if (!candidate) {
+                throw new Error(
+                    `Candidate tag is a required argument. This should be the git tag of the commit to promote to release (ex.${exampleTag}`
+                )
+            } else if (!candidate.match('v\\d\\.\\d(?:\\.\\d)?-rc\\.\\d')) {
+                await verifyWithInput(
+                    `Warning!\nCandidate tag: ${candidate} does not match the standard convention (ex. ${exampleTag}). ${warnMsg}`
+                )
+            } else if (!candidate.match(`${release.version}-rc\\.\\d`)) {
+                await verifyWithInput(
+                    `Warning!\nCandidate tag: ${candidate} does not match the expected version ${release.version} (ex. ${exampleTag}). ${warnMsg}`
+                )
+            }
+
+            const owner = 'sourcegraph'
+            const repo = 'sourcegraph'
+
+            const releaseTag = `v${release.version}`
+
+            try {
+                const client = await getAuthenticatedGitHubClient()
+                // passing the tag as branch so that only the specified tag is shallow cloned
+                const { workdir } = await cloneRepo(client, owner, repo, {
+                    revision: candidate,
+                    revisionMustExist: true,
+                })
+
+                execa.sync('git', ['fetch', '--tags'], { stdio: 'inherit', cwd: workdir })
+                await createTag(
+                    client,
+                    workdir,
+                    {
+                        owner,
+                        repo,
+                        branch: candidate,
+                        tag: releaseTag,
+                    },
+                    config.dryRun.tags || false
+                )
+                console.log(`To check the status of the build, run:\nsg ci status -branch ${releaseTag} --wait\n`)
+            } catch (error) {
+                console.error('Failed to create tag', error)
+            }
+        },
+    },
+    {
+        id: 'release:check-candidate',
+        description: 'Check release candidates.',
+        argNames: ['version'],
+        run: async (config, version) => {
+            if (!version) {
+                const { upcoming: release } = await releaseVersions(config)
+                version = release.version
+            }
+            const tags = getCandidateTags(localSourcegraphRepo, version)
+            console.log(`Release candidate tags for version: ${version}\n${tags}`)
+            console.log('To check the status of the build, run:\nsg ci status -branch tag\n')
         },
     },
     {

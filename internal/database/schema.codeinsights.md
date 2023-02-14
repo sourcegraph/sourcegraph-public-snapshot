@@ -269,6 +269,7 @@ Foreign-key constraints:
  series_sort_mode                  | series_sort_mode_enum      |           |          | 
  series_sort_direction             | series_sort_direction_enum |           |          | 
  series_limit                      | integer                    |           |          | 
+ series_num_samples                | integer                    |           |          | 
 Indexes:
     "insight_view_pkey" PRIMARY KEY, btree (id)
     "insight_view_unique_id_unique_idx" UNIQUE, btree (unique_id)

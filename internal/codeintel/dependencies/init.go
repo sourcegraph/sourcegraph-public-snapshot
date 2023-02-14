@@ -23,8 +23,14 @@ func scopedContext(component string, parent *observation.Context) *observation.C
 	return observation.ScopedContext("codeintel", "dependencies", component, parent)
 }
 
-func CrateSyncerJob(observationCtx *observation.Context, dependenciesSvc background.DependenciesService, gitserverClient background.GitserverClient, extSvcStore background.ExternalServiceStore) []goroutine.BackgroundRoutine {
+func CrateSyncerJob(
+	observationCtx *observation.Context,
+	autoindexingSvc background.AutoIndexingService,
+	dependenciesSvc background.DependenciesService,
+	gitserverClient background.GitserverClient,
+	extSvcStore background.ExternalServiceStore,
+) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		background.NewCrateSyncer(observationCtx, dependenciesSvc, gitserverClient, extSvcStore),
+		background.NewCrateSyncer(observationCtx, autoindexingSvc, dependenciesSvc, gitserverClient, extSvcStore),
 	}
 }

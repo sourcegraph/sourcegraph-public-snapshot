@@ -19,6 +19,7 @@ export const PREVIEW_GIT_OBJECT_FILTER = gql`
         $type: GitObjectType!
         $pattern: String!
         $countObjectsYoungerThanHours: Int
+        $first: Int
     ) {
         node(id: $id) {
             ...RepositoryPreviewGitObjectFilter
@@ -31,6 +32,7 @@ export const PREVIEW_GIT_OBJECT_FILTER = gql`
             type: $type
             pattern: $pattern
             countObjectsYoungerThanHours: $countObjectsYoungerThanHours
+            first: $first
         ) {
             nodes {
                 name
