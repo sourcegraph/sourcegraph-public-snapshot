@@ -14,6 +14,7 @@ fi
 
 if [ -z "${GITHUB_TOKEN-}" ]; then
   echo "Warning: GITHUB_TOKEN must be set for releases. Disregard this message for local snapshot builds."
+  GITHUB_TOKEN=
 fi
 
 if [ ! -f "$GCLOUD_APP_CREDENTIALS_FILE" ]; then
@@ -24,6 +25,7 @@ if [ ! -f "$GCLOUD_APP_CREDENTIALS_FILE" ]; then
   echo "Or set GCLOUD_APP_CREDENTIALS_FILE to a file containing the credentials."
   echo
   echo "Disregard this message for local snapshot builds."
+  GCLOUD_APP_CREDENTIALS_FILE=''
 fi
 
 if [ -z "${VERSION-}" ]; then
