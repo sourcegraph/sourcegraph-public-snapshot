@@ -9,16 +9,14 @@ Deploying on Kubernetes is for organizations that need highly scalable and avail
   <a class="btn text-center" href="operations">Maintenance</a>
 </div>
 
-Below is an overview of installing Sourcegraph using Kustomize.
+Below is an overview of installing Sourcegraph on Kubernetes using Kustomize.
 
->WARNING: If you are currently on Sourcegraph version 4.5.0 or below, please refer to the [deprecated deployment docs for Kubernetes](deprecated/index.md).
+>WARNING: **If your Sourcegraph version is older than `4.5.0`, please refer to the [old deployment docs for Kubernetes](https://docs.sourcegraph.com/@v4.4.2/admin/deploy/kubernetes).**
 
 ### Prerequisites
 
-* [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.19 or later
-   - [Kustomize](https://kustomize.io/) (built into `kubectl` in version >= 1.14)
-* A [Kubernetes](https://kubernetes.io/) cluster
-   - Minimum Kubernetes version: [v1.19](https://kubernetes.io/blog/2020/08/26/kubernetes-release-1.19-accentuate-the-paw-sitive/)
+* [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) (v1.19 or later) with [Kustomize](https://kustomize.io/) (built into [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) in version >= 1.14)
+* A [Kubernetes](https://kubernetes.io/) cluster ([v1.19 or later](https://kubernetes.io/blog/2020/08/26/kubernetes-release-1.19-accentuate-the-paw-sitive/))
    - Support for Persistent Volumes with SSDs
    - You can optionally refer to our [terraform configurations](https://github.com/sourcegraph/tf-k8s-configs) for setting up clusters on:
      - [Amazon Web Services EKS](https://github.com/sourcegraph/tf-k8s-configs/tree/main/aws)

@@ -218,6 +218,6 @@ The previous Kustomize structure we built for our Kubernetes deployments depends
 
 With the new Kustomize we have introduced in this documentation, these issues can now be avoided. The previous version of the Sourcegraph Kustomize Overlays are still available, but they should not be used for any new Kubernetes deployment.
 
-> NOTE: The latest version of our Kustomize overlays does not work on instances that are v4.5.0 or older.
+See the [old deployment docs for deploying Sourcegraph on Kubernetes](https://docs.sourcegraph.com/@v4.4.2/admin/deploy/kubernetes).
 
-See the [docs for the deprecated version of Kustomize for Sourcegraph](../deprecated/index.md).
+> NOTE: The latest version of our Kustomize overlays does not work on instances that are older than v4.5.0.

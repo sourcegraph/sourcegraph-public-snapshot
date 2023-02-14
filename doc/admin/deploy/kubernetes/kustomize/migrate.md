@@ -1,6 +1,6 @@
 # Migration Docs for Kustomize
 
-The old method of deploying Sourcegraph with custom scripts is now [outdated and deprecated](../deprecated/index.md). Instead, the new setup uses Kustomize, a Kubernetes-native tool, for configurations. This guide explains how to migrate from the old setup to the new one.
+The old method of deploying Sourcegraph with custom scripts has been deprecated. Instead, the new setup uses Kustomize, a Kubernetes-native tool, for configurations. This guide explains how to migrate from the old setup to the new one.
 
 >NOTE: Both the old custom scripts and Kustomize only create manifests for deployment and don’t change any existing resources in an active cluster.
 

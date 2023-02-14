@@ -35,7 +35,7 @@ Update the environment variables in the command below before running it in your 
 export SG_DEPLOY_GITHUB_USERNAME="YOUR_USERNAME"
 export SG_DEPLOY_REPO_NAME="deploy-sourcegraph-k8s"
 export SG_PRIVATE_DEPLOY_REPO_NAME="$SG_DEPLOY_REPO_NAME"
-export SG_DEPLOY_VERSION="v4.3.1"
+export SG_DEPLOY_VERSION="v4.5.0"
 ```
 
 ### Step 3: Create remote and local copies
@@ -66,7 +66,7 @@ You can now deploy using your private copy of the repository you've just created
 
 Before you can upgrade Sourcegraph, you will first update your private copy with the upstream branch, and then merge the upstream release tag for the next minor version into your release branch. 
 
-In the following example, the release branch is being upgraded to v4.3.1.
+In the following example, the release branch is being upgraded to v4.5.1.
 
 ```bash
 export YOUR_RELEASE_BRANCH=release-$SG_DEPLOY_VERSION
@@ -76,7 +76,7 @@ git checkout $YOUR_RELEASE_BRANCH
 git fetch upstream
 # merge the upstream release tag into your release branch
 git checkout $YOUR_RELEASE_BRANCH
-git merge v4.3.1
+git merge v4.5.1
 ```
 
 A [standard upgrade](../updates.md#standard-upgrades) occurs between two minor versions of Sourcegraph. If you are looking to jump forward several versions, you must perform a [multi-version upgrade](../updates.md#multi-version-upgrades) instead.

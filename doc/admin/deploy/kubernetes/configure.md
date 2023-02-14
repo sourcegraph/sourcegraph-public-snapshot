@@ -28,11 +28,11 @@ The base resources also include a set of services that are responsible for provi
 
 ### RBAC
 
-Sourcegraph has removed all the Role-Based Access Control (RBAC) resources from the default base cluster. This means service discovery is not available by default, and the endpoints for each service replica must be manually input into the frontend ConfigMap, which is automatically done by one of the component defined in the [kustomization file](index.md#kustomization-yaml) built for Sourcegraph.
+Sourcegraph has removed all the Role-Based Access Control (RBAC) resources from the default base cluster. This means service discovery is not available by default, and the endpoints for each service replica must be manually input into the frontend ConfigMap, which is automatically done by one of the component defined in the [kustomization file](kustomize/index.md#kustomization-yaml) built for Sourcegraph.
 
 ### Non-Privileged
 
-By default, all Sourcegraph services are deployed in a non-root and non-privileged mode, as defined in the [base](index.md#base) cluster.
+By default, all Sourcegraph services are deployed in a non-root and non-privileged mode, as defined in the [base](kustomize/index.md#base) cluster.
 
 ### Privileged
 
@@ -137,11 +137,11 @@ components:
 
 ## Resources
 
-Properly allocating resources is crucial for ensuring optimal performance of your Sourcegraph instance. To ensure this, it is recommended to use one of the provided [sizes components](#instance-size-based-resources) for resource allocation, specifically designed for your [instance size](../../instance-size.md). These components have been tested and optimized based on load test results, and are designed to work seamlessly with Sourcegraph's design and functionality.
+Properly allocating resources is crucial for ensuring optimal performance of your Sourcegraph instance. To ensure this, it is recommended to use one of the provided [sizes components](#instance-size-based-resources) for resource allocation, specifically designed for your [instance size](../instance-size.md). These components have been tested and optimized based on load test results, and are designed to work seamlessly with Sourcegraph's design and functionality.
 
 ### Instance-size-based resources
 
-To allocate resources based on your [instance size](../../instance-size.md):
+To allocate resources based on your [instance size](../instance-size.md):
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
@@ -220,9 +220,9 @@ See [the official documentation](https://kubernetes.io/docs/tasks/administer-clu
 
 ### Google Cloud Platform
 
-1. Read and follow the [official documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver) for enabling the persistent disk CSI driver on a [new](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver#enabling_the_on_a_new_cluster) or [existing](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver#enabling_the_on_an_existing_cluster) cluster.
+**Step 1**: Read and follow the [official documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver) for enabling the persistent disk CSI driver on a [new](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver#enabling_the_on_a_new_cluster) or [existing](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver#enabling_the_on_an_existing_cluster) cluster.
 
-2. Include the GCP storage class component to the `kustomization.yaml` file for your Kustomize overlay:
+**Step 2**: Include the GCP storage class component to the `kustomization.yaml` file for your Kustomize overlay:
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
@@ -241,9 +241,10 @@ It also update the storage class name for all resources to `sourcegraph`.
 
 ### Amazon Web Services
 
-1. Follow the [official instructions](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html) to deploy the [Amazon Elastic Block Store (Amazon EBS) Container Storage Interface (CSI) driver](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html).
+**Step 1**: Follow the [official instructions](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html) to deploy the [Amazon Elastic Block Store (Amazon EBS) Container Storage Interface (CSI) driver](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html).
 
-2. Include one of the AWS storage class components in your overlay: [storage-class/aws/eks](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph-k8s/-/tree/components/storage-class/aws/eks) or [storage-class/aws/ebs](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph-k8s/-/tree/components/storage-class/aws/ebs)
+**Step 2**: Include one of the AWS storage class components in your overlay: [storage-class/aws/eks](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph-k8s/-/tree/components/storage-class/aws/eks) or [storage-class/aws/ebs](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph-k8s/-/tree/components/storage-class/aws/ebs)
+
    * The [storage-class/aws/eks](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph-k8s/-/tree/components/storage-class/aws/eks) component is configured with the `ebs.csi.aws.com` storage class provisioner for clusters with self-managed Amazon EBS Container Storage Interface driver installed
    * The [storage-class/aws/ebs](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph-k8s/-/tree/components/storage-class/aws/ebs) component is configured with the `kubernetes.io/aws-ebs` storage class provisioner for clusters with the [AWS EBS CSI driver installed as Amazon EKS add-on](https://docs.aws.amazon.com/eks/latest/userguide/managing-ebs-csi.html)
 
@@ -261,15 +262,22 @@ components:
 
 > WARNING: If you are deploying on Azure, you **must** ensure that your cluster is created with support for CSI storage drivers [(link)](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers)). This **can not** be enabled after the fact
 
-1. Follow the [official instructions](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers) to deploy the [Container Storage Interface (CSI) drivers](https://learn.microsoft.com/en-us/azure/aks/csi-storage-drivers).
+**Step 1**: Follow the [official instructions](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers) to deploy the [Container Storage Interface (CSI) drivers](https://learn.microsoft.com/en-us/azure/aks/csi-storage-drivers).
 
-2. Include the azure storage class component to the `kustomization.yaml` file for your Kustomize overlay:
+**Step 2**: Include the azure storage class component to the `kustomization.yaml` file for your Kustomize overlay:
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
 components:
 - ../../components/storage-class/azure
 ```
+
+This component creates a new storage class named `sourcegraph` in your cluster with the following configurations:
+
+- provisioner: disk.csi.azure.com
+- parameters.storageaccounttype: Premium_LRS
+  - This configures SSDs and is highly recommended.
+  - **A Premium VM is required.**
 
 [Additional documentation](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers) for more information.
 
@@ -302,13 +310,17 @@ components:
 
 ### Other cloud providers
 
-To use an existing storage class provided by other cloud providers:
+To use an **existing** storage class provided by other cloud providers:
 
-1. Include the `storage-class/update-class-name` component to your overlay:
+**Step 1**: Include the `storage-class/update-class-name` component to your overlay:
 
-2. Enter the value for the existing storage class under the **literals** list in the *configMapGenerator* section using the `STORAGECLASS_NAME` config key
+  ```yaml
+  # instances/$INSTANCE_NAME/kustomization.yaml
+  components:
+    - ../../components/storage-class/update-class-name
+  ```
 
-The `storage-class/update-class-name` component updates the `storageClassName` field for all associated resources to the `STORAGECLASS_NAME` value set in step 2.
+**Step 2**: Enter the value for the existing storage class under the **literals** list for [BUILD CONFIGURATIONS](kustomize/index.md#build-configurations) within the *configMapGenerator* section using the `STORAGECLASS_NAME` config key
 
 Example, add `STORAGECLASS_NAME=sourcegraph` if `sourcegraph` is the name for the existing storage class:
 
@@ -317,7 +329,7 @@ Example, add `STORAGECLASS_NAME=sourcegraph` if `sourcegraph` is the name for th
   components:
     # Update storageClassName to the STORAGECLASS_NAME value set below
     - ../../components/storage-class/update-class-name
-    
+  ...
   configMapGenerator:
   - name: sourcegraph-kustomize-env
     behavior: merge
@@ -325,12 +337,44 @@ Example, add `STORAGECLASS_NAME=sourcegraph` if `sourcegraph` is the name for th
       - STORAGECLASS_NAME=sourcegraph # -- [ACTION] Set storage class name here
   ```
 
+  The `storage-class/update-class-name` component updates the `storageClassName` field for all associated resources to the `STORAGECLASS_NAME` value set in step 2.
+
+### Update storageClassName
+
+To updates the `storageClassName` field for all associated resources:
+
+**Step 1**: Include the `storage-class/update-class-name` component to your overlay:
+
+  ```yaml
+  # instances/$INSTANCE_NAME/kustomization.yaml
+  components:
+    - ../../components/storage-class/update-class-name
+  ```
+
+**Step 2**: Enter the value for the existing storage class under the **literals** list for [BUILD CONFIGURATIONS](kustomize/index.md#build-configurations) within the *configMapGenerator* section using the `STORAGECLASS_NAME` config key
+
+Example, add `STORAGECLASS_NAME=sourcegraph` if `sourcegraph` is the name for the existing storage class:
+
+  ```yaml
+  # instances/$INSTANCE_NAME/kustomization.yaml
+  components:
+    # Update storageClassName to the STORAGECLASS_NAME value set below
+    - ../../components/storage-class/update-class-name
+  ...
+  configMapGenerator:
+  - name: sourcegraph-kustomize-env
+    behavior: merge
+    literals:
+      - STORAGECLASS_NAME=sourcegraph # -- [ACTION] Set storage class name here
+  ```
+
+  The `storage-class/update-class-name` component updates the `storageClassName` field for all associated resources to the `STORAGECLASS_NAME` value set in step 2.
 
 ### Create a custom storage class
 
 To create a custom storage class:
 
-1. Include the `storage-class/cloud` component to your overlay:
+**Step 1**: Include the `storage-class/cloud` component to your overlay:
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
@@ -338,7 +382,7 @@ components:
 - ../../components/storage-class/cloud
 ```
 
-Update the following variables under the [BUILD CONFIGURATIONS](index.md#build-configurations) section in your overlay. Replace them with the correct values according to the instructions provided by your cloud provider:
+Update the following variables under the [BUILD CONFIGURATIONS](kustomize/index.md#build-configurations) section in your overlay. Replace them with the correct values according to the instructions provided by your cloud provider:
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml > [BUILD CONFIGURATIONS]
@@ -431,7 +475,7 @@ data:
 # the data is abbreviated in this example
 ```
 
-**Step 3**: Configure the TLS settings on your Ingress by adding the following variables under the [BUILD CONFIGURATIONS](index.md#build-configurations) section:
+**Step 3**: Configure the TLS settings on your Ingress by adding the following variables under the [BUILD CONFIGURATIONS](kustomize/index.md#build-configurations) section:
 
 - **TLS_HOST**: your domain name
 - **TLS_INGRESS_CLASS_NAME**: ingress class name required by your cluster-issuer
@@ -504,7 +548,7 @@ components:
 
 To configure the hostname for your Sourcegraph ingress, follow these steps:
 
-**Step 1**: Under the [BUILD CONFIGURATIONS](index.md#build-configurations) section, include the `HOST_DOMAIN` variable and set it to your desired hostname, for example:
+**Step 1**: Under the [BUILD CONFIGURATIONS](kustomize/index.md#build-configurations) section, include the `HOST_DOMAIN` variable and set it to your desired hostname, for example:
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml > [BUILD CONFIGURATIONS]
@@ -560,7 +604,7 @@ To configure ingress-nginx annotations for the Sourcegraph frontend ingress:
 $ mkdir -p instances/$INSTANCE_NAME/patches
 ```
 
-**Step 2**: Copy the `frontend-ingress-annotations.yaml` patch file from the components/patches directory to the new [patches subdirectory](index.md#patches-directory)
+**Step 2**: Copy the `frontend-ingress-annotations.yaml` patch file from the components/patches directory to the new [patches subdirectory](kustomize/index.md#patches-directory)
 
 ```bash
 $ cp components/patches/frontend-ingress-annotations.yaml instances/$INSTANCE_NAME/patches/frontend-ingress-annotations.yaml
@@ -672,17 +716,17 @@ components:
 
 ## Environment variables
 
-To update the environment variables for the **sourcegraph-frontend** service, edit the [FRONTEND ENV VARS](index.md#frontend-env-vars) section at the bottom of your [kustomization file](index.md#kustomizationyaml). For example:
+To update the environment variables for the **sourcegraph-frontend** service, add the new environment variables to the end of the *FRONTEND ENV VARS* section on the bottom of your [kustomization file](kustomize/index.md#kustomizationyaml). For example:
 
 ```yaml
-# instances/$INSTANCE_NAME/patches/frontend-vars.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: sourcegraph-frontend-env
-data:
-  DEPLOY_TYPE: kustomize
-  NEW_ENV_VAR: NEW_VALUE
+# instances/$INSTANCE_NAME/kustomization.yaml
+...
+configMapGenerator:
+  - name: sourcegraph-frontend-env
+    behavior: merge
+    literals:
+      - DEPLOY_TYPE=kustomize
+      - NEW_ENV_VAR=NEW_VALUE
 ```
 
 These values will be automatically merged with the environment variables currently listed in the ConfigMap for frontend.
@@ -691,40 +735,24 @@ These values will be automatically merged with the environment variables current
 
 ## External services
 
-You can use an external or managed version of PostgreSQL and Redis with your Sourcegraph instance. For detailed information as well as the requirements for each service, please see our docs on [using external services with Sourcegraph](../../../external_service/index.md).
+You can use an external or managed version of PostgreSQL and Redis with your Sourcegraph instance. For detailed information as well as the requirements for each service, please see our docs on [using external services with Sourcegraph](../../external_services/index.md).
 
 ### External Postgres
 
 For optimal performance and resilience, it is recommended to use an external database when deploying Sourcegraph. For more information on database requirements, please refer to the [Postgres guide](../../postgres.md).
 
-To connect Sourcegraph to an existing PostgreSQL instance, add the relevant environment variables ([such as PGHOST, PGPORT, PGUSER, etc.](http://www.postgresql.org/docs/current/static/libpq-envars.html)) to the frontend ConfigMap with the following steps:
-
-**Step 1**: Copy the `frontend-vars.yaml` patch file from the `components/patches` directory to the [patches subdirectory](index.md#patches-directory) in your overlay
-
-```bash
-$ cp components/patches/frontend-vars.yaml instances/$INSTANCE_NAME/patches/frontend-vars.yaml
-```
-
-**Step 2**: Add environment variables at the end of the new patch file `frontend-vars.yaml`. For example:
-
-```yaml
-# instances/$INSTANCE_NAME/patches/frontend-vars.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: sourcegraph-frontend-env
-data:
-  DEPLOY_TYPE: kustomize
-  PGHOST: NEW_PGHOST
-  PGPORT: NEW_PGPORT
-```
-
-**Step 3**: Include the patch file in your overlay under `patchesStrategicMerge`:
+To connect Sourcegraph to an existing PostgreSQL instance, add the relevant environment variables ([such as PGHOST, PGPORT, PGUSER, etc.](http://www.postgresql.org/docs/current/static/libpq-envars.html)) to the frontend ConfigMap by adding the new environment variables to the end of the *FRONTEND ENV VARS* section on the bottom of your [kustomization file](kustomize/index.md#kustomizationyaml). For example:
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
-patchesStrategicMerge:
-  - patches/frontend-vars.yaml
+...
+configMapGenerator:
+  - name: sourcegraph-frontend-env
+    behavior: merge
+    literals:
+      - DEPLOY_TYPE=kustomize
+      - PGHOST=NEW_PGHOST
+      - PGPORT=NEW_PGPORT
 ```
 
 > WARNING: You must restart frontend for the updated values to be activiated
@@ -757,33 +785,21 @@ components:
 - ../../components/services/redis
 ```
 
-**Step 2**: Copy the `frontend-vars.yaml` patch file from the `components/patches` directory to the [patches subdirectory](index.md#patches-directory) in your overlay
-
-```bash
-$ cp components/patches/frontend-vars.yaml instances/$INSTANCE_NAME/patches/frontend-vars.yaml
-```
-
-**Step 3**: Add the additional annotations at the end of the new patch file `frontend-vars.yaml`. For example:
-
-```yaml
-# instances/$INSTANCE_NAME/patches/frontend-vars.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: sourcegraph-frontend-env
-data:
-  DEPLOY_TYPE: kustomize
-  REDIS_CACHE_ENDPOINT: REDIS_CACHE_DSN
-  REDIS_STORE_ENDPOINT: REDIS_STORE_DSN
-```
-
-**Step 4**: Include the patch file in your overlay under `patchesStrategicMerge`:
+**Step 2**: Add add the new environment variables to the end of the *FRONTEND ENV VARS* section on the bottom of your [kustomization file](kustomize/index.md#kustomizationyaml). For example:
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
-patchesStrategicMerge:
-  - patches/frontend-vars.yaml
+...
+configMapGenerator:
+  - name: sourcegraph-frontend-env
+    behavior: merge
+    literals: 
+      - DEPLOY_TYPE=kustomize
+      - REDIS_CACHE_ENDPOINT=REDIS_CACHE_DSN
+      - REDIS_STORE_ENDPOINT=REDIS_STORE_DSN
 ```
+
+> WARNING: You must restart frontend for the updated values to be activiated
 
 ## SSH for cloning
 
@@ -847,7 +863,7 @@ Sourcegraph currently supports exporting tracing data to several backends. Refer
 By default, the collector is [configured to export trace data by logging](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/opentelemetry-collector/configs/logging.yaml). Follow these steps to add a config for a different backend:
 
 1. Create a subdirectory called 'patches' within the directory of your overlay
-2. Copy and paste the [base/otel-collector/otel-collector.ConfigMap.yaml file](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph-k8s@master/-/tree/base/otel-collector/otel-collector.ConfigMap.yaml) to the new [patches subdirectory](index.md#patches-directory)
+2. Copy and paste the [base/otel-collector/otel-collector.ConfigMap.yaml file](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph-k8s@master/-/tree/base/otel-collector/otel-collector.ConfigMap.yaml) to the new [patches subdirectory](kustomize/index.md#patches-directory)
 3. In the copied file, make the necessary changes to the `exporters` and `service` blocks to connect to your backend based on the documentation linked above
 4. Include the following in your overlay:
 
@@ -874,7 +890,7 @@ cAdvisor can pick up metrics for services unrelated to the Sourcegraph deploymen
 ([Learn more](../../../dev/background-information/observability/cadvisor.md#identifying-containers)). To work around this:
 
 1. Create a subdirectory called 'patches' within the directory of your overlay
-2. Copy and paste the `base/prometheus/prometheus.ConfigMap.yaml` file to the new [patches subdirectory](index.md#patches-directory)
+2. Copy and paste the `base/prometheus/prometheus.ConfigMap.yaml` file to the new [patches subdirectory](kustomize/index.md#patches-directory)
 2. In the copied file, include the lines highlighted [here](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@v4.3.1/-/blob/base/prometheus/prometheus.ConfigMap.yaml?L262-264).
 3. Replace [ns-sourcegraph](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@v4.3.1/-/blob/base/prometheus/prometheus.ConfigMap.yaml?L263) with your namespace
 4. Include the following in your overlay:
@@ -897,7 +913,7 @@ components:
 - ../../components/enable/private-registry
 ```
 
-Set the `PRIVATE_REGISTRY` variable under the [BUILD CONFIGURATIONS](index.md#build-configurations) section:
+Set the `PRIVATE_REGISTRY` variable under the [BUILD CONFIGURATIONS](kustomize/index.md#build-configurations) section:
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml > [BUILD CONFIGURATIONS]

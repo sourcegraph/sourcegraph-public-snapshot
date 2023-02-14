@@ -8,7 +8,7 @@ This guide will take you through how to set up a Sourcegraph deployment locally 
 
 ## Sourcegraph minikube overlay
 
-The [Sourcegraph minikube overlay](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tree/main/examples/minikube) deletes resource declarations and storage classnames to enable running Sourcegraph on minikube locally with less resources, as it normally takes a lot more of resources to run Sourcegraph at a production level. See our docs on creating [custom overlays](../kubernetes) if you would like to customize the overlay.
+The [Sourcegraph minikube overlay](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tree/main/examples/minikube) deletes resource declarations and storage classnames to enable running Sourcegraph on minikube locally with less resources, as it normally takes a lot more of resources to run Sourcegraph at a production level. See our docs on creating [kustomize overlays](../kubernetes/kustomize) if you would like to customize the overlay.
 
 ## Prerequisites
 

@@ -47,12 +47,7 @@ Connect to the cluster for future `kubectl` commands:
 az aks get-credentials --resource-group sourcegraphResourceGroup --name sourcegraphCluster
 ```
 
-Follow the [Sourcegraph cluster installation instructions](configure.md#configure-a-storage-class) with `storageClass` set to `managed-premium` in `config.json`:
-
-```diff
--    "storageClass": "default"
-+    "storageClass": "managed-premium"
-```
+Follow the [instructions on deploying Sourcegraph with Kubernetes](configure.md#azure) to configure the `storageClass` for Azure.
 
 You can see if the pods are ready and check for installation problems through the Kubernetes dashboard:
 

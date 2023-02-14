@@ -18,7 +18,7 @@ Reference Materials
 
 
 
-* [Docs: Configure custom Redis](../deploy/kubernetes/configure.md#configure-custom-redis)
+* [Docs: Configure custom Redis](../deploy/kubernetes/configure.md#external-redis)
 * [Docs: Using your own Redis server](../external_services/redis.md)
 
 

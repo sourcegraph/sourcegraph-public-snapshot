@@ -420,6 +420,45 @@ and i.indisready AND i.indisvalid;
 
 H. Start the remaining Sourcegraph services by following the steps in [applying manifests](#applying-manifests).
 
+## List of ports
+
+To see a list of ports that are currently being used by your Sourcegraph instance:
+
+```bash
+kubectl get services
+```
+
+Example output:
+
+```bash
+NAME                            TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)                      AGE
+blobstore                       ClusterIP   10.72.3.144    <none>        9000/TCP                     25h
+cadvisor                        ClusterIP   10.72.14.130   <none>        48080/TCP                    23h
+codeinsights-db                 ClusterIP   10.72.6.240    <none>        5432/TCP,9187/TCP            25h
+codeintel-db                    ClusterIP   10.72.5.10     <none>        5432/TCP,9187/TCP            25h
+github-proxy                    ClusterIP   10.72.10.117   <none>        80/TCP,6060/TCP              25h
+gitserver                       ClusterIP   None           <none>        10811/TCP                    25h
+grafana                         ClusterIP   10.72.6.245    <none>        30070/TCP                    25h
+indexed-search                  ClusterIP   None           <none>        6070/TCP                     25h
+indexed-search-indexer          ClusterIP   None           <none>        6072/TCP                     25h
+kubernetes                      ClusterIP   10.72.0.1      <none>        443/TCP                      25h
+node-exporter                   ClusterIP   10.72.5.60     <none>        9100/TCP                     25h
+otel-collector                  ClusterIP   10.72.9.221    <none>        4317/TCP,4318/TCP,8888/TCP   25h
+pgsql                           ClusterIP   10.72.6.23     <none>        5432/TCP,9187/TCP            25h
+precise-code-intel-worker       ClusterIP   10.72.11.102   <none>        3188/TCP,6060/TCP            25h
+prometheus                      ClusterIP   10.72.12.201   <none>        30090/TCP                    25h
+redis-cache                     ClusterIP   10.72.15.138   <none>        6379/TCP,9121/TCP            25h
+redis-store                     ClusterIP   10.72.4.162    <none>        6379/TCP,9121/TCP            25h
+repo-updater                    ClusterIP   10.72.11.176   <none>        3182/TCP,6060/TCP            25h
+searcher                        ClusterIP   None           <none>        3181/TCP,6060/TCP            23h
+sourcegraph-frontend            ClusterIP   10.72.12.103   <none>        30080/TCP,6060/TCP           25h
+sourcegraph-frontend-internal   ClusterIP   10.72.9.155    <none>        80/TCP                       25h
+symbols                         ClusterIP   None           <none>        3184/TCP,6060/TCP            23h
+syntect-server                  ClusterIP   10.72.14.49    <none>        9238/TCP,6060/TCP            25h
+worker                          ClusterIP   10.72.7.72     <none>        3189/TCP,6060/TCP            25h
+```
+
+
 ## Upgrade
 
 - See the [Updating Sourcegraph docs](update.md) on how to upgrade.<br/>
