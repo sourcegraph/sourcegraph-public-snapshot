@@ -7,7 +7,7 @@ import { gql, useQuery } from '@sourcegraph/http-client'
 
 import { FetchOwnershipResult, FetchOwnershipVariables } from '../../../graphql-operations'
 
-import { FileOwnershipReasons } from './FileOwnershipReasons'
+import { FileOwnershipEntry } from './FileOwnershipEntry'
 
 import styles from './FileOwnershipPanel.module.scss'
 
@@ -46,7 +46,7 @@ export const FileOwnershipPanel: React.FunctionComponent<
                     </tr>
                 </thead>
                 {data.node.commit.blob?.ownership.map(own => (
-                    <FileOwnershipReasons key={own.handle} person={own.person} reasons={own.reasons} />
+                    <FileOwnershipEntry key={own.handle} person={own.person} reasons={own.reasons} />
                 ))}
             </Accordion>
         )

@@ -491,14 +491,14 @@ type CodeownersFileEntry struct{}
 
 func (r *CodeownersFileEntry) ToCodeownersFileEntry() (*CodeownersFileEntry, bool) { return r, true }
 func (r *CodeownersFileEntry) ToRecentContributor() (*RecentContributor, bool)     { return nil, false }
-func (r *CodeownersFileEntry) Title() string                                       { return "CODEOWNERS" }
+func (r *CodeownersFileEntry) Title() string                                       { return "CodeOwners" }
 func (r *CodeownersFileEntry) Description() string                                 { return "Matches the foo/bar/baz/ rule." }
 
 type RecentContributor struct{}
 
 func (r *RecentContributor) ToCodeownersFileEntry() (*CodeownersFileEntry, bool) { return nil, false }
 func (r *RecentContributor) ToRecentContributor() (*RecentContributor, bool)     { return r, true }
-func (r *RecentContributor) Title() string                                       { return "CONTRIBUTOR" }
+func (r *RecentContributor) Title() string                                       { return "Contributor" }
 func (r *RecentContributor) Description() string {
 	return "Made 6 changes to this file in the last 3 months"
 }

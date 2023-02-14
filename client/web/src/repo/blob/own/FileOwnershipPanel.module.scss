@@ -1,6 +1,10 @@
 .table {
     width: 100%;
-    margin: 0.75rem 0;
+    margin: 0.75rem 1rem;
+
+    td {
+        padding-bottom: 0.5rem;
+    }
 
     td:nth-child(1),
     td:nth-child(2) {

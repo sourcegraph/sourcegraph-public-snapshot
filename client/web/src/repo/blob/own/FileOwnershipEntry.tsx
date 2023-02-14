@@ -1,13 +1,15 @@
 import React, { useCallback, useState } from 'react'
 
-import { mdiChat, mdiChevronDown, mdiChevronUp, mdiEmail } from '@mdi/js'
+import { mdiChevronDown, mdiChevronUp, mdiEmail } from '@mdi/js'
 import { AccordionButton, AccordionItem, AccordionPanel } from '@reach/accordion'
 
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
-import { Badge, Button, Icon } from '@sourcegraph/wildcard'
+import { Badge, Button, ButtonLink, Icon } from '@sourcegraph/wildcard'
 
 import { PersonLink } from '../../../person/PersonLink'
 import { UserAvatar } from '../../../user/UserAvatar'
+
+import styles from './FileOwnershipEntry.module.scss'
 
 interface OwnerPerson {
     email: string
@@ -30,7 +32,7 @@ interface OwnershipReasonDetails {
     description: string
 }
 
-export const FileOwnershipReasons: React.FunctionComponent<Props> = ({ person, reasons }) => {
+export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ person, reasons }) => {
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
     const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(() => {
         setIsExpanded(!isExpanded)
@@ -51,12 +53,14 @@ export const FileOwnershipReasons: React.FunctionComponent<Props> = ({ person, r
                 </td>
                 <td>
                     <div className="d-flex">
-                        <Button variant="icon" className="mr-2">
+                        <ButtonLink
+                            variant="icon"
+                            className="mr-2"
+                            disabled={!person.email}
+                            to={person.email ? `mailto:${person.email}` : undefined}
+                        >
                             <Icon svgPath={mdiEmail} aria-label="email" />
-                        </Button>
-                        <Button variant="icon">
-                            <Icon svgPath={mdiChat} aria-label="chat" />
-                        </Button>
+                        </ButtonLink>
                     </div>
                 </td>
                 <td>
@@ -65,7 +69,7 @@ export const FileOwnershipReasons: React.FunctionComponent<Props> = ({ person, r
                 </td>
                 <td>
                     {reasons.map(reason => (
-                        <Badge key={reason.title} tooltip={reason.description}>
+                        <Badge key={reason.title} tooltip={reason.description} className={styles.badge}>
                             {reason.title}
                         </Badge>
                     ))}
@@ -73,10 +77,10 @@ export const FileOwnershipReasons: React.FunctionComponent<Props> = ({ person, r
             </tr>
             <AccordionPanel as="tr">
                 <td colSpan={4}>
-                    <ul>
+                    <ul className={styles.reasons}>
                         {reasons.map(reason => (
                             <li key={reason.title}>
-                                <Badge>{reason.title}</Badge> {reason.description}
+                                <Badge className={styles.badge}>{reason.title}</Badge> {reason.description}
                             </li>
                         ))}
                     </ul>

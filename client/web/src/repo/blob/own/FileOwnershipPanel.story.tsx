@@ -42,7 +42,7 @@ const response: FetchOwnershipResult = {
                         handle: 'bob',
                         person: {
                             __typename: 'Person',
-                            email: 'bob@example.com',
+                            email: '',
                             avatarURL: null,
                             displayName: 'Bob',
                             user: null,
