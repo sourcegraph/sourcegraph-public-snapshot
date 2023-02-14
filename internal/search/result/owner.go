@@ -20,7 +20,7 @@ type OwnerMatch struct {
 }
 
 func (om *OwnerMatch) RepoName() types.MinimalRepo {
-	// todo(own): this might not make sense forever. right now we derive ownership from files within a repo but if we
+	// todo(own): this might not make sense forever. Right now we derive ownership from files within a repo but if we
 	// extend this with external sources then it might not be mandatory to attach an owner to repo.
 	// as an alternative we can also conduct a check that nothing expects RepoName to always exist.
 	return om.Repo
@@ -35,7 +35,7 @@ func (om *OwnerMatch) ResultCount() int {
 }
 
 func (om *OwnerMatch) Select(filter.SelectPath) Match {
-	// There is nothing to "select" from an owner as implemented currently, so we return nil.
+	// There is nothing to "select" from an owner, so we return nil.
 	return nil
 }
 

@@ -542,7 +542,9 @@ func fromOwner(owner *result.OwnerMatch) streamhttp.EventMatch {
 		}
 	}
 	// We shouldn't reach this.
-	return nil
+	return &streamhttp.EventUnknownOwnerMatch{
+		Type: streamhttp.UnknownOwnerMatchType,
+	}
 }
 
 // eventStreamOTHook returns a StatHook which logs to log.

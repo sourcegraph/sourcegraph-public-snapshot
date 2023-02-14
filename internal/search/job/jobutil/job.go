@@ -196,7 +196,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 			sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
 			basicJob = NewSelectJob(sp, basicJob)
 			// the select owners job is ran separately as it requires state and can return multiple owners from one match.
-			if sp.Root() == filter.File && strings.Contains(sp.String(), "owners") { // todo neater fetch
+			if sp.Root() == filter.File && len(sp) == 2 && sp[1] == "owners" {
 				basicJob = codeownershipjob.NewSelectOwnersSearch(basicJob)
 			}
 		}

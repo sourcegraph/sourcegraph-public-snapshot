@@ -91,7 +91,8 @@ matchesLoop:
 		owners := file.FindOwners(mm.File.Path)
 		resolvedOwners, err := rules.ownService.ResolveOwnersWithType(ctx, owners)
 		if err != nil {
-			return nil, err
+			errs = errors.Append(errs, err)
+			continue matchesLoop
 		}
 		for _, o := range resolvedOwners {
 			ownerMatches = append(ownerMatches, &result.OwnerMatch{
