@@ -136,7 +136,7 @@ func (b *SeriesBackfill) SetLowestPriority(ctx context.Context, store *BackfillS
 	if err != nil {
 		return err
 	}
-	newCost := 10000.0 //default lowest cost
+	newCost := 1000.0 // default lowest cost as there needs to be room below it
 	if found && (currentMax*2 > newCost) {
 		newCost = currentMax * 2
 	}
