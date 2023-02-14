@@ -78,7 +78,7 @@ func NewNotificationClient(logger log.Logger, slackToken, githubToken, channel s
 		logger:              logger.Scoped("notificationClient", "client which interacts with Slack and Github to send notifications"),
 		slack:               *slackClient,
 		team:                teamResolver,
-		commitTeammateCache: map[string]cacheItem[*team.Teammate]{},
+		commitTeammateCache: map[string]*cacheItem[*team.Teammate]{},
 		channel:             channel,
 	}
 
