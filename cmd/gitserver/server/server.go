@@ -34,6 +34,7 @@ import (
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/conc"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/internal/accesslog"
@@ -1270,19 +1271,66 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var matchesBufMux sync.Mutex
 	matchesBuf := streamhttp.NewJSONArrayBuf(8*1024, func(data []byte) error {
 		tr.AddEvent("flushing data", attribute.Int("data.len", len(data)))
 		observeLatency()
 		return eventWriter.EventBytes("matches", data)
 	})
 
+	// Start a goroutine that periodically flushes the buffer
+	var flusherWg conc.WaitGroup
+	flusherCtx, flusherCancel := context.WithCancel(context.Background())
+	defer flusherCancel()
+	flusherWg.Go(func() {
+		flushTicker := time.NewTicker(50 * time.Millisecond)
+		defer flushTicker.Stop()
+
+		for {
+			select {
+			case <-flushTicker.C:
+				matchesBufMux.Lock()
+				matchesBuf.Flush()
+				matchesBufMux.Unlock()
+			case <-flusherCtx.Done():
+				return
+			}
+		}
+	})
+
+	// Create a callback that appends the match to the buffer
+	var haveFlushed atomic.Bool
+	onMatch := func(match *protocol.CommitMatch) error {
+		matchesBufMux.Lock()
+		defer matchesBufMux.Unlock()
+
+		err := matchesBuf.Append(match)
+		if err != nil {
+			return err
+		}
+
+		// If we haven't sent any results yet, flush immediately
+		if !haveFlushed.Load() {
+			haveFlushed.Store(true)
+			return matchesBuf.Flush()
+		}
+
+		return nil
+	}
+
 	// Run the search
-	limitHit, searchErr := s.search(ctx, &args, matchesBuf)
+	limitHit, searchErr := s.search(ctx, &args, onMatch)
 	if writeErr := eventWriter.Event("done", protocol.NewSearchEventDone(limitHit, searchErr)); writeErr != nil {
 		if !errors.Is(writeErr, syscall.EPIPE) {
 			logger.Error("failed to send done event", log.Error(writeErr))
 		}
 	}
+
+	// Clean up the flusher goroutine, then do one final flush
+	flusherCancel()
+	flusherWg.Wait()
+	matchesBuf.Flush()
+
 	tr.AddEvent("done", attribute.Bool("limit_hit", limitHit))
 	tr.SetError(searchErr)
 	searchDuration.
@@ -1319,7 +1367,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 
 // search handles the core logic of the search. It is passed a matchesBuf so it doesn't need to
 // concern itself with event types, and all instrumentation is handled in the calling function.
-func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, matchesBuf *streamhttp.JSONArrayBuf) (limitHit bool, err error) {
+func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
 	args.Repo = protocol.NormalizeRepo(args.Repo)
 	if args.Limit == 0 {
 		args.Limit = math.MaxInt32
@@ -1368,86 +1416,47 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, match
 		}
 	}
 
-	g, ctx := errgroup.WithContext(ctx)
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	mt, err := search.ToMatchTree(args.Query)
+	if err != nil {
+		return false, err
+	}
 
-	// Search all commits, sending matching commits down resultChan
-	resultChan := make(chan *protocol.CommitMatch, 128)
-	g.Go(func() error {
-		defer close(resultChan)
-		done := ctx.Done()
-
-		mt, err := search.ToMatchTree(args.Query)
-		if err != nil {
-			return err
-		}
-
-		// Ensure that we populate ModifiedFiles when we have a DiffModifiesFile filter.
-		// --name-status is not zero cost, so we don't do it on every search.
-		hasDiffModifiesFile := false
-		search.Visit(mt, func(mt search.MatchTree) {
-			switch mt.(type) {
-			case *search.DiffModifiesFile:
-				hasDiffModifiesFile = true
-			}
-		})
-
-		searcher := &search.CommitSearcher{
-			Logger:               s.Logger,
-			RepoName:             args.Repo,
-			RepoDir:              dir.Path(),
-			Revisions:            args.Revisions,
-			Query:                mt,
-			IncludeDiff:          args.IncludeDiff,
-			IncludeModifiedFiles: args.IncludeModifiedFiles || hasDiffModifiesFile,
-		}
-
-		return searcher.Search(ctx, func(match *protocol.CommitMatch) {
-			select {
-			case <-done:
-			case resultChan <- match:
-			}
-		})
-	})
-
-	// Write matching commits to the stream, flushing occasionally
-	g.Go(func() error {
-		defer cancel()
-		defer matchesBuf.Flush()
-
-		flushTicker := time.NewTicker(50 * time.Millisecond)
-		defer flushTicker.Stop()
-
-		sentCount := 0
-		firstMatch := true
-		for {
-			select {
-			case result, ok := <-resultChan:
-				if !ok {
-					return nil
-				}
-
-				if sentCount >= args.Limit {
-					limitHit = true
-					return nil
-				}
-				sentCount += matchCount(result)
-
-				_ = matchesBuf.Append(result) // EOF only
-
-				// Send immediately if this if the first result we've seen
-				if firstMatch {
-					_ = matchesBuf.Flush() // EOF only
-					firstMatch = false
-				}
-			case <-flushTicker.C:
-				_ = matchesBuf.Flush() // EOF only
-			}
+	// Ensure that we populate ModifiedFiles when we have a DiffModifiesFile filter.
+	// --name-status is not zero cost, so we don't do it on every search.
+	hasDiffModifiesFile := false
+	search.Visit(mt, func(mt search.MatchTree) {
+		switch mt.(type) {
+		case *search.DiffModifiesFile:
+			hasDiffModifiesFile = true
 		}
 	})
 
-	return limitHit, g.Wait()
+	// Create a callback that detects whether we've hit a limit
+	// and stops sending when we have.
+	var sentCount atomic.Int64
+	var hitLimit atomic.Bool
+	limitedOnMatch := func(match *protocol.CommitMatch) {
+		// Avoid sending if we've already hit the limit
+		if int(sentCount.Load()) >= args.Limit {
+			hitLimit.Store(true)
+			return
+		}
+
+		sentCount.Add(int64(matchCount(match)))
+		onMatch(match)
+	}
+
+	searcher := &search.CommitSearcher{
+		Logger:               s.Logger,
+		RepoName:             args.Repo,
+		RepoDir:              dir.Path(),
+		Revisions:            args.Revisions,
+		Query:                mt,
+		IncludeDiff:          args.IncludeDiff,
+		IncludeModifiedFiles: args.IncludeModifiedFiles || hasDiffModifiesFile,
+	}
+
+	return hitLimit.Load(), searcher.Search(ctx, limitedOnMatch)
 }
 
 // matchCount returns either:
