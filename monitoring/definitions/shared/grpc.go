@@ -81,7 +81,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: "The number of gRPC requests received per second broken out per method, aggreagated across all instances.",
+					Interpretation: "The number of gRPC requests received per second broken out per method, aggregated across all instances.",
 				},
 			},
 
@@ -140,7 +140,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: "The percentage of gRPC requests that fail per method, aggreagated across all instances.",
+					Interpretation: "The percentage of gRPC requests that fail per method, aggregated across all instances.",
 				},
 			},
 

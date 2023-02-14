@@ -5896,7 +5896,7 @@ Query: `sum(rate(gitserver_grpc_server_started_total[1m]))`
 
 <p class="subtitle">Request rate per-method over 1m (aggregate)</p>
 
-The number of gRPC requests received per second broken out per method, aggreagated across all instances.
+The number of gRPC requests received per second broken out per method, aggregated across all instances.
 
 This panel has no related alerts.
 
@@ -5980,7 +5980,7 @@ Query: `100.0 * ( (sum(rate(gitserver_grpc_server_handled_total{grpc_code!="OK"}
 
 <p class="subtitle">Error percentage per-method over 1m (aggregate)</p>
 
-The percentage of gRPC requests that fail per method, aggreagated across all instances.
+The percentage of gRPC requests that fail per method, aggregated across all instances.
 
 This panel has no related alerts.
 
@@ -15098,7 +15098,7 @@ Query: `sum(rate(searcher_grpc_server_started_total[1m]))`
 
 <p class="subtitle">Request rate per-method over 1m (aggregate)</p>
 
-The number of gRPC requests received per second broken out per method, aggreagated across all instances.
+The number of gRPC requests received per second broken out per method, aggregated across all instances.
 
 This panel has no related alerts.
 
@@ -15182,7 +15182,7 @@ Query: `100.0 * ( (sum(rate(searcher_grpc_server_handled_total{grpc_code!="OK"}[
 
 <p class="subtitle">Error percentage per-method over 1m (aggregate)</p>
 
-The percentage of gRPC requests that fail per method, aggreagated across all instances.
+The percentage of gRPC requests that fail per method, aggregated across all instances.
 
 This panel has no related alerts.
 
@@ -16792,7 +16792,7 @@ Query: `sum(rate(symbols_grpc_server_started_total[1m]))`
 
 <p class="subtitle">Request rate per-method over 1m (aggregate)</p>
 
-The number of gRPC requests received per second broken out per method, aggreagated across all instances.
+The number of gRPC requests received per second broken out per method, aggregated across all instances.
 
 This panel has no related alerts.
 
@@ -16876,7 +16876,7 @@ Query: `100.0 * ( (sum(rate(symbols_grpc_server_handled_total{grpc_code!="OK"}[1
 
 <p class="subtitle">Error percentage per-method over 1m (aggregate)</p>
 
-The percentage of gRPC requests that fail per method, aggreagated across all instances.
+The percentage of gRPC requests that fail per method, aggregated across all instances.
 
 This panel has no related alerts.
 
