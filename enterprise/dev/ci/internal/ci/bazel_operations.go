@@ -10,16 +10,14 @@ import (
 
 const bazelRemoteCacheURL = "https://storage.googleapis.com/sourcegraph_bazel_cache"
 
-func BazelOperations() *operations.Set {
+func BazelOperations(optional bool) *operations.Set {
 	ops := operations.NewSet()
-	ops.Append(bazelBuild(
-		"//...",
-	))
-	ops.Append(bazelTest("//monitoring/..."))
+	ops.Append(bazelBuild(optional, "//..."))
+	ops.Append(bazelTest(optional, "//monitoring/..."))
 	return ops
 }
 
-func bazelTest(targets ...string) func(*bk.Pipeline) {
+func bazelTest(optional bool, targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
 		bk.Env("CI_BAZEL_REMOTE_CACHE", bazelRemoteCacheURL),
 		bk.Agent("queue", "bazel"),
@@ -38,12 +36,17 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 	}
 
 	return func(pipeline *bk.Pipeline) {
+		if optional {
+			cmds = append(cmds, bk.SoftFail())
+		}
+
 		pipeline.AddStep(":bazel: Tests",
 			cmds...,
 		)
 	}
 }
-func bazelBuild(targets ...string) func(*bk.Pipeline) {
+
+func bazelBuild(optional bool, targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
 		bk.Env("CI_BAZEL_REMOTE_CACHE", bazelRemoteCacheURL),
 		bk.Agent("queue", "bazel"),
@@ -62,6 +65,9 @@ func bazelBuild(targets ...string) func(*bk.Pipeline) {
 	}
 
 	return func(pipeline *bk.Pipeline) {
+		if optional {
+			cmds = append(cmds, bk.SoftFail())
+		}
 		pipeline.AddStep(":bazel: Build ...",
 			cmds...,
 		)
