@@ -22,7 +22,7 @@ For new Sourcegraph installations running Sourcegraph 4.5 or later, the new free
 
 For existing Sourcegraph installations running Sourcegraph 4.4 or older, the old free plan will stay in place.
 
-Any Sourcegraph instances without a license key that are upgraded to 4.5 or later will automatically move to the new free plan. Synced private repositories (in excess of the 1 repository limit) will no longer sync to the instance. *Please take note of this before upgrading your instance to Sourcegraph 4.5.*
+Any Sourcegraph instances without a license key that are upgraded to 4.5 or later will automatically move to the new free plan. Synced private repositories (in excess of the 1 repository limit) will no longer sync to the instance. **Please take note of this before upgrading your instance to Sourcegraph 4.5**.
 
 ## Contacting Sourcegraph
 
