@@ -15,7 +15,7 @@ import { CodyPage } from './CodyPage'
  */
 export const GlobalCodyArea: React.FunctionComponent = ({ ...outerProps }) => {
     const [codyEnabled] = useFeatureFlag('cody')
-    if (codyEnabled) {
+    if (!codyEnabled) {
         return <Page>Cody is not enabled.</Page>
     }
 
