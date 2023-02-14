@@ -329,7 +329,7 @@ func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 	}
 
 	eventName = database.SecurityEventNameRoleChangeGranted
-	return &EmptyResponse{}, err
+	return &EmptyResponse{}, nil
 }
 
 func (r *schemaResolver) InvalidateSessionsByID(ctx context.Context, args *struct {
