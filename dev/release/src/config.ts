@@ -53,10 +53,7 @@ export function loadConfig(): Config {
  *
  * It prompts for a confirmation of the `upcomingRelease` that is cached for a week.
  */
-export async function releaseVersions(config: Config): Promise<{
-    previous: semver.SemVer
-    upcoming: semver.SemVer
-}> {
+export async function releaseVersions(config: ReleaseConfig): Promise<ReleaseDefinition> {
     const parseOptions: semver.Options = { loose: false }
     const parsedPrevious = semver.parse(config.previousRelease, parseOptions)
     if (!parsedPrevious) {

@@ -9,10 +9,8 @@ import * as batchChanges from './batchChanges'
 import * as changelog from './changelog'
 import {
     addRelease,
-    Config,
     loadReleaseConfig,
-    newRelease,
-    newReleaseFromInput,
+    newReleaseFromInput, ReleaseConfig,
     releaseVersions, removeRelease,
     saveReleaseConfig
 } from './config'
@@ -48,7 +46,7 @@ import {
     getLatestTag,
     getAllUpgradeGuides,
     updateUpgradeGuides,
-    verifyWithInput, readLine,
+    verifyWithInput,
 } from './util'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
@@ -88,7 +86,7 @@ export type StepID =
 /**
  * Runs given release step with the provided configuration and arguments.
  */
-export async function runStep(config: Config, step: StepID, ...args: string[]): Promise<void> {
+export async function runStep(config: ReleaseConfig, step: StepID, ...args: string[]): Promise<void> {
     if (!steps.map(({ id }) => id as string).includes(step)) {
         throw new Error(`Unrecognized step ${JSON.stringify(step)}`)
     }
@@ -106,7 +104,7 @@ export async function runStep(config: Config, step: StepID, ...args: string[]): 
 interface Step {
     id: StepID
     description: string
-    run?: ((config: Config, ...args: string[]) => Promise<void>) | ((config: Config, ...args: string[]) => void)
+    run?: ((config: ReleaseConfig, ...args: string[]) => Promise<void>) | ((config: ReleaseConfig, ...args: string[]) => void)
     argNames?: string[]
 }
 
@@ -148,7 +146,7 @@ const steps: Step[] = [
                     title: `Security Team to Review Release Container Image Scans ${name}`,
                     description: '(This is not an actual event to attend, just a calendar marker.)',
                     anyoneCanAddSelf: true,
-                    attendees: [config.teamEmail],
+                    attendees: [config.metadata.teamEmail],
                     transparency: 'transparent',
                     ...calendarTime(config.oneWorkingWeekBeforeRelease),
                 },
@@ -156,7 +154,7 @@ const steps: Step[] = [
                     title: `Cut Sourcegraph ${name}`,
                     description: '(This is not an actual event to attend, just a calendar marker.)',
                     anyoneCanAddSelf: true,
-                    attendees: [config.teamEmail],
+                    attendees: [config.metadata.teamEmail],
                     transparency: 'transparent',
                     ...calendarTime(config.threeWorkingDaysBeforeRelease),
                 },
@@ -164,25 +162,9 @@ const steps: Step[] = [
                     title: `Release Sourcegraph ${name}`,
                     description: '(This is not an actual event to attend, just a calendar marker.)',
                     anyoneCanAddSelf: true,
-                    attendees: [config.teamEmail],
+                    attendees: [config.metadata.teamEmail],
                     transparency: 'transparent',
                     ...calendarTime(config.releaseDate),
-                },
-                {
-                    title: `Start deploying Sourcegraph ${name} to Cloud instances`,
-                    description: '(This is not an actual event to attend, just a calendar marker.)',
-                    anyoneCanAddSelf: true,
-                    attendees: [config.teamEmail],
-                    transparency: 'transparent',
-                    ...calendarTime(config.oneWorkingDayAfterRelease),
-                },
-                {
-                    title: `All Cloud instances upgraded to Sourcegraph ${name}`,
-                    description: '(This is not an actual event to attend, just a calendar marker.)',
-                    anyoneCanAddSelf: true,
-                    attendees: [config.teamEmail],
-                    transparency: 'transparent',
-                    ...calendarTime(config.oneWorkingWeekAfterRelease),
                 },
             ]
 
@@ -200,7 +182,7 @@ const steps: Step[] = [
     {
         id: 'tracking:issues',
         description: 'Generate GitHub tracking issue for the configured release',
-        run: async (config: Config) => {
+        run: async (config: ReleaseConfig) => {
             const {
                 releaseDate,
                 captainGitHubUsername,
@@ -349,7 +331,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 // Create and push new release branch from changelog commit
                 await execa('git', ['branch', branch])
                 await execa('git', ['push', 'origin', branch])
-                await postMessage(message, config.slackAnnounceChannel)
+                await postMessage(message, config.metadata.slackAnnounceChannel)
                 console.log(`To check the status of the branch, run:\nsg ci status -branch ${release.version} --wait\n`)
             } catch (error) {
                 console.error('Failed to create release branch', error)
@@ -388,7 +370,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
 * ${blockingMessage}: ${blockingIssuesURL}
 * ${latestBuildMessage}`
             if (!config.dryRun.slack) {
-                await postMessage(message, config.slackAnnounceChannel)
+                await postMessage(message, config.metadata.slackAnnounceChannel)
             }
         },
     },
@@ -511,7 +493,6 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         id: 'release:stage',
         description: 'Open pull requests and a batch change staging a release',
         run: async config => {
-            const { slackAnnounceChannel, dryRun } = config
             const { upcoming: release, previous } = await releaseVersions(config)
             // ensure docker is running for 'batch changes'
             try {
@@ -722,11 +703,11 @@ cc @${config.captainGitHubUsername}
                         ...prBodyAndDraftState([]),
                     },
                 ],
-                dryRun: dryRun.changesets,
+                dryRun: config.dryRun.changesets,
             })
 
             // if changesets were actually published, set up a batch change and post in Slack
-            if (!dryRun.changesets) {
+            if (!config.dryRun.changesets) {
                 // Create batch change to track changes
                 try {
                     console.log(`Creating batch change in ${batchChange.cliConfig.SRC_ENDPOINT}`)
@@ -741,12 +722,12 @@ cc @${config.captainGitHubUsername}
                 }
 
                 // Announce release update in Slack
-                if (!dryRun.slack) {
+                if (!config.dryRun.slack) {
                     await postMessage(
                         `:captain: *Sourcegraph ${release.version} has been staged.*
 
 Batch change: ${batchChangeURL}`,
-                        slackAnnounceChannel
+                        config.metadata.slackAnnounceChannel
                     )
                 }
             }
