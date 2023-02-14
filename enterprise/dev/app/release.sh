@@ -3,7 +3,7 @@
 set -eu
 
 ROOTDIR="$(realpath "$(dirname "${BASH_SOURCE[0]}")"/../../..)"
-GORELEASER_CROSS_VERSION=v1.19.5
+GORELEASER_CROSS_VERSION=v1.20.0
 GCLOUD_APP_CREDENTIALS_FILE=${GCLOUD_APP_CREDENTIALS_FILE-$HOME/.config/gcloud/application_default_credentials.json}
 
 if [ -z "${SKIP_BUILD_WEB-}" ]; then
@@ -86,5 +86,5 @@ exec docker run --rm \
        -v "$GCLOUD_APP_CREDENTIALS_FILE":/root/.config/gcloud/application_default_credentials.json \
        -e "GITHUB_TOKEN=$GITHUB_TOKEN" \
        -e "GORELEASER_CURRENT_TAG=$GORELEASER_CURRENT_TAG" \
-       goreleaser/goreleaser-cross:$GORELEASER_CROSS_VERSION \
+       ghcr.io/goreleaser/goreleaser-cross:$GORELEASER_CROSS_VERSION \
        --config enterprise/dev/app/goreleaser.yaml --parallelism 1 --debug --rm-dist ${GORELEASER_ARGS[*]} "$@"
