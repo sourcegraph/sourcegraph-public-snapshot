@@ -8,6 +8,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -369,6 +370,11 @@ func (r *rootResolver) InferedIndexConfiguration(ctx context.Context, repository
 
 	maybeConfig, _, err := r.autoindexSvc.InferIndexConfiguration(ctx, repositoryID, commit, true)
 	if err != nil || maybeConfig == nil {
+		// TODO - surface
+		if errors.As(err, &inference.LimitError{}) {
+			err = nil
+		}
+
 		return nil, false, err
 	}
 
@@ -383,6 +389,11 @@ func (r *rootResolver) InferedIndexConfigurationHints(ctx context.Context, repos
 
 	_, hints, err := r.autoindexSvc.InferIndexConfiguration(ctx, repositoryID, commit, true)
 	if err != nil {
+		// TODO - surface
+		if errors.As(err, &inference.LimitError{}) {
+			err = nil
+		}
+
 		return nil, err
 	}
 
@@ -452,11 +463,16 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 	commit := "HEAD"
 	indexJobs, err := r.autoindexSvc.InferIndexJobsFromRepositoryStructure(ctx, repoID, commit, false)
 	if err != nil {
-		return nil, err
+		// TODO - surface error
+		if !errors.As(err, &inference.LimitError{}) {
+			return nil, err
+		}
 	}
 	indexJobHints, err := r.autoindexSvc.InferIndexJobHintsFromRepositoryStructure(ctx, repoID, commit)
 	if err != nil {
-		return nil, err
+		if !errors.As(err, &inference.LimitError{}) {
+			return nil, err
+		}
 	}
 
 	inferredAvailableIndexers := map[string]shared.AvailableIndexer{}

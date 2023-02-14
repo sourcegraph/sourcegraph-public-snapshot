@@ -4,11 +4,13 @@ import (
 	"context"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type preciseSupportInferenceConfidence string
@@ -64,8 +66,13 @@ func (r *codeIntelTreeInfoResolver) SearchBasedSupport(ctx context.Context) (*[]
 }
 
 func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) (*[]resolverstubs.GitTreePreciseCoverage, error) {
-	configurations, _, err := r.autoindexSvc.InferIndexConfiguration(ctx, int(r.repo.ID), r.commit, true)
+	configurations, hints, err := r.autoindexSvc.InferIndexConfiguration(ctx, int(r.repo.ID), r.commit, true)
 	if err != nil {
+		// TODO - surface
+		if errors.As(err, &inference.LimitError{}) {
+			err = nil
+		}
+
 		return nil, err
 	}
 
@@ -81,11 +88,6 @@ func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) (*[]reso
 				})
 			}
 		}
-	}
-
-	_, hints, err := r.autoindexSvc.InferIndexConfiguration(ctx, int(r.repo.ID), r.commit, true)
-	if err != nil {
-		return nil, err
 	}
 
 	for _, hint := range hints {

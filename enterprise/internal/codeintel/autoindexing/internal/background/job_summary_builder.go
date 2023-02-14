@@ -4,10 +4,12 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/jobselector"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -55,10 +57,18 @@ func NewSummaryBuilder(
 				commit := "HEAD"
 				indexJobs, err := jobSelector.InferIndexJobsFromRepositoryStructure(ctx, repoID, commit, false)
 				if err != nil {
+					if errors.As(err, &inference.LimitError{}) {
+						continue
+					}
+
 					return err
 				}
 				indexJobHints, err := jobSelector.InferIndexJobHintsFromRepositoryStructure(ctx, repoID, commit)
 				if err != nil {
+					if errors.As(err, &inference.LimitError{}) {
+						continue
+					}
+
 					return err
 				}
 

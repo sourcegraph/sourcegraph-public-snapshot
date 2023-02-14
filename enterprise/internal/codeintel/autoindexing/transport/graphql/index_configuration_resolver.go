@@ -7,9 +7,11 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type indexConfigurationResolver struct {
@@ -43,6 +45,11 @@ func (r *indexConfigurationResolver) InferredConfiguration(ctx context.Context) 
 	defer r.errTracer.Collect(&err, log.String("indexConfigResolver.field", "inferredConfiguration"))
 	configuration, _, err := r.autoindexSvc.InferIndexConfiguration(ctx, r.repositoryID, "", true)
 	if err != nil {
+		// TODO - surface
+		if errors.As(err, &inference.LimitError{}) {
+			err = nil
+		}
+
 		return nil, err
 	}
 	if configuration == nil {
