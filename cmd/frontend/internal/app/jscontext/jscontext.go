@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -127,7 +127,7 @@ type JSContext struct {
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
 // request.
 func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
-	actor := actor.FromContext(req.Context())
+	actor := sgactor.FromContext(req.Context())
 
 	headers := make(map[string]string)
 	headers["x-sourcegraph-client"] = globals.ExternalURL().String()

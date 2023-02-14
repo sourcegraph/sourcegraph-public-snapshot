@@ -19,6 +19,7 @@ Deploying Sourcegraph on Kubernetes is for organizations that need highly scalab
 Our Kubernetes support has the following requirements:
 
 - [Sourcegraph Enterprise license](configure.md#add-license-key). _You can run through these instructions without one, but you must obtain a license for instances of more than 10 users_
+- A deployed kubernetes cluster. You can do this yourself, or use [our terraform configs](https://github.com/sourcegraph/tf-k8s-configs) to quickly deploy a cluster that will support a standard Sourcegraph instance on Google Cloud Platform (GKE) or Amazon Web Services (EKS).
 - Minimum Kubernetes version: [v1.19](https://kubernetes.io/blog/2020/08/26/kubernetes-release-1.19-accentuate-the-paw-sitive/) and [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.19 or later (check kubectl docs for backward and forward compatibility with Kubernetes versions)
 - Support for Persistent Volumes (SSDs recommended)
 
@@ -39,7 +40,7 @@ Before starting, we recommend reading the [configuration guide](configure.md#get
 - [Storage class](./configure.md#configure-a-storage-class)
 - [Network Access](./configure.md#configure-network-access)
 - [PostgreSQL Database](./configure.md#configure-external-databases)
-- [Scaling services](./scale.md#tuning-replica-counts-for-horizontal-scalability)
+- [Scaling services](./scale.md)
 - [Cluster role administrator access](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
 
 > WARNING: If you are deploying on Azure, you **must** ensure that [your cluster is created with support for CSI storage drivers](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers). This **can not** be enabled after the fact.

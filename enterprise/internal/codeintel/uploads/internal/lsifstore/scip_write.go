@@ -227,8 +227,13 @@ func (s *scipWriter) flush(ctx context.Context) error {
 	}
 	if len(documentIDs) != len(documents) {
 		hashes := make([][]byte, 0, len(documents))
+		hashSet := make(map[string]struct{}, len(documents))
 		for _, document := range documents {
-			hashes = append(hashes, document.payloadHash)
+			key := hex.EncodeToString(document.payloadHash)
+			if _, ok := hashSet[key]; !ok {
+				hashSet[key] = struct{}{}
+				hashes = append(hashes, document.payloadHash)
+			}
 		}
 		idsByHash, err := scanIDsByHash(s.db.Query(ctx, sqlf.Sprintf(scipWriterWriteFetchDocumentsQuery, pq.Array(hashes))))
 		if err != nil {
@@ -238,7 +243,7 @@ func (s *scipWriter) flush(ctx context.Context) error {
 		for _, document := range documents {
 			documentIDs = append(documentIDs, idsByHash[hex.EncodeToString(document.payloadHash)])
 		}
-		if len(idsByHash) != len(documents) {
+		if len(idsByHash) != len(hashes) {
 			return errors.New("unexpected number of document records inserted/retrieved")
 		}
 	}

@@ -1,15 +1,16 @@
 import * as React from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { mdiApplicationEditOutline } from '@mdi/js'
 import { from } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
 import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
-import { OpenInEditorIcon } from '@sourcegraph/shared/src/components/icons'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { isSettingsValid, Settings } from '@sourcegraph/shared/src/settings/settings'
 import {
     Button,
+    Icon,
     Popover,
     PopoverContent,
     PopoverTrigger,
@@ -136,7 +137,7 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
                     isActive={popoverOpen}
                     icon={
                         props.source === 'repoHeader' ? (
-                            <OpenInEditorIcon className={styles.icon} />
+                            <Icon aria-hidden={true} className={styles.icon} svgPath={mdiApplicationEditOutline} />
                         ) : (
                             <img
                                 src={`${assetsRoot}/img/open-in-editor.svg`}

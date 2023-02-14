@@ -42,9 +42,9 @@ func enforceAuthViaGitLab(ctx context.Context, query url.Values, repoName string
 	values.Set("sort", "asc")
 
 	// Build url of initial page of results
-	url := *gitlabURL
-	url.RawQuery = values.Encode()
-	nextURL := url.String()
+	urlCopy := *gitlabURL
+	urlCopy.RawQuery = values.Encode()
+	nextURL := urlCopy.String()
 
 	for nextURL != "" {
 		// Get current page of results, and prep the loop for the next iteration. If after

@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "logs",
+    srcs = ["logs.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = ["//internal/conf"],
+)

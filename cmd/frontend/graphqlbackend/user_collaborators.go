@@ -29,7 +29,7 @@ func (r *UserResolver) InvitableCollaborators(ctx context.Context) ([]*invitable
 	// We'll search for collaborators in 25 of the user's most-starred repositories.
 	const maxReposToScan = 25
 	db := r.db
-	gsClient := gitserver.NewClient(db)
+	gsClient := gitserver.NewClient()
 	pickedRepos, err := backend.NewRepos(r.logger, db, gsClient).List(ctx, database.ReposListOptions{
 		// SECURITY: This must be the authenticated user's ID.
 		UserID:     a.UID,

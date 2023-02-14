@@ -62,6 +62,10 @@ type ReenqueueChangesetArgs struct {
 	Changeset graphql.ID
 }
 
+type CreateChangesetSpecsArgs struct {
+	ChangesetSpecs []string
+}
+
 type CreateChangesetSpecArgs struct {
 	ChangesetSpec string
 }
@@ -271,6 +275,7 @@ type BatchChangesResolver interface {
 	DeleteBatchChangesCredential(ctx context.Context, args *DeleteBatchChangesCredentialArgs) (*EmptyResponse, error)
 
 	CreateChangesetSpec(ctx context.Context, args *CreateChangesetSpecArgs) (ChangesetSpecResolver, error)
+	CreateChangesetSpecs(ctx context.Context, args *CreateChangesetSpecsArgs) ([]ChangesetSpecResolver, error)
 	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
 	ReenqueueChangeset(ctx context.Context, args *ReenqueueChangesetArgs) (ChangesetResolver, error)
 	DetachChangesets(ctx context.Context, args *DetachChangesetsArgs) (BulkOperationResolver, error)
@@ -633,7 +638,7 @@ type ListRecentlyErroredWorkspacesArgs struct {
 
 type BatchSpecWorkspaceStepOutputLinesArgs struct {
 	First int32
-	After *int32
+	After *string
 }
 
 type BatchChangeResolver interface {
@@ -902,6 +907,12 @@ type BatchSpecWorkspaceStagesResolver interface {
 	Teardown() []ExecutionLogEntryResolver
 }
 
+type BatchSpecWorkspaceStepOutputLineConnectionResolver interface {
+	TotalCount() (int32, error)
+	PageInfo() (*graphqlutil.PageInfo, error)
+	Nodes() ([]string, error)
+}
+
 type BatchSpecWorkspaceStepResolver interface {
 	Number() int32
 	Run() string
@@ -909,7 +920,7 @@ type BatchSpecWorkspaceStepResolver interface {
 	IfCondition() *string
 	CachedResultFound() bool
 	Skipped() bool
-	OutputLines(ctx context.Context, args *BatchSpecWorkspaceStepOutputLinesArgs) (*[]string, error)
+	OutputLines(ctx context.Context, args *BatchSpecWorkspaceStepOutputLinesArgs) BatchSpecWorkspaceStepOutputLineConnectionResolver
 
 	StartedAt() *gqlutil.DateTime
 	FinishedAt() *gqlutil.DateTime

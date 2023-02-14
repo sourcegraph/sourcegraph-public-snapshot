@@ -15,7 +15,7 @@ Site admins can view the Grafana monitoring dashboards on a Sourcegraph instance
 
 A complete [dashboard reference](dashboards.md) is available for more context on our available service dashboards and panels.
 
-Additional dashboards can also be set up - see [Grafana configuration](#grafana-configuration) for more details.
+Additional dashboards can also be set up—see [Grafana configuration](#grafana-configuration) for more details.
 
 #### View documentation
 

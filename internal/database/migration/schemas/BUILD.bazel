@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "schemas",
+    srcs = [
+        "description.go",
+        "formatter.go",
+        "formatter_json.go",
+        "formatter_psql.go",
+        "names.go",
+        "schema.go",
+        "schemas.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/database/migration/schemas",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database/migration/definition",
+        "//internal/database/migration/shared",
+        "//internal/lazyregexp",
+        "//lib/errors",
+        "//migrations",
+    ],
+)

@@ -48,14 +48,16 @@ func TestLoggerAndReaderHappyPaths(t *testing.T) {
 	assertRoutineStats(t, jobInfos[0].Routines[1], "routine-2", false, false, 0, 0, 0, 0, 0, 0)
 	assertRoutineStats(t, jobInfos[1].Routines[0], "routine-3", false, false, 0, 0, 0, 0, 0, 0)
 
-	// Log some runs: 3x routine-1 (1x with error), 1x routine-2, 0x routine-3 (and stops)
+	// Log some runs: 3x routine-1 (1x with error), 200x routine-2, 0x routine-3 (and stops)
 	recorder.LogStart(routine1)
 	recorder.LogStart(routine2)
 	recorder.LogStart(routine3)
 	recorder.LogRun(routine1, 10*time.Millisecond, nil)
-	recorder.LogRun(routine1, 15*time.Millisecond, nil)
 	recorder.LogRun(routine1, 20*time.Millisecond, errors.New("test error"))
-	recorder.LogRun(routine2, 2*time.Second, nil)
+	for i := 0; i < 100; i++ { // Make sure int32 overflow doesn't happen
+		recorder.LogRun(routine2, 10*time.Hour, nil)
+		recorder.LogRun(routine2, 20*time.Hour, nil)
+	}
 	recorder.LogStop(routine3)
 
 	// Get infos again
@@ -64,8 +66,8 @@ func TestLoggerAndReaderHappyPaths(t *testing.T) {
 	// Assert
 	assert.NoError(t, err)
 	assert.Len(t, jobInfos, 2)
-	assertRoutineStats(t, jobInfos[0].Routines[0], "routine-1", true, false, 3, 3, 1, 10, 15, 20)
-	assertRoutineStats(t, jobInfos[0].Routines[1], "routine-2", true, false, 1, 1, 0, 2000, 2000, 2000)
+	assertRoutineStats(t, jobInfos[0].Routines[0], "routine-1", true, false, 2, 2, 1, 10, 15, 20)
+	assertRoutineStats(t, jobInfos[0].Routines[1], "routine-2", true, false, 5, 200, 0, 1000*60*60*10, 1500*60*60*10, 2000*60*60*10)
 	assertRoutineStats(t, jobInfos[1].Routines[0], "routine-3", true, true, 0, 0, 0, 0, 0, 0)
 }
 

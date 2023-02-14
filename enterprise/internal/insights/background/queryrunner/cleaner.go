@@ -19,14 +19,14 @@ import (
 // num_series*num_repos*num_timeframes jobs (example: 20*40,000*6 in an average case) which
 // can quickly add up to be millions of jobs left in a "completed" state in the DB.
 func NewCleaner(ctx context.Context, observationCtx *observation.Context, workerBaseStore *basestore.Store) goroutine.BackgroundRoutine {
-	metrics := metrics.NewREDMetrics(
+	redMetrics := metrics.NewREDMetrics(
 		observationCtx.Registerer,
 		"insights_query_runner_cleaner",
 		metrics.WithCountHelp("Total number of insights queryrunner cleaner executions"),
 	)
 	operation := observationCtx.Operation(observation.Op{
 		Name:    "QueryRunner.Cleaner.Run",
-		Metrics: metrics,
+		Metrics: redMetrics,
 	})
 
 	// We look for jobs to clean up every hour.

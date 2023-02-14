@@ -371,7 +371,7 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 				changeset.PublicationState = btypes.ChangesetPublicationStatePublished
 				changeset.ExternalID = "12345"
 				changeset.ExternalState = btypes.ChangesetExternalStateOpen
-				require.Nil(t, bstore.UpsertChangeset(ctx, changeset))
+				require.Nil(t, bstore.UpdateChangeset(ctx, changeset))
 				break
 			}
 		}

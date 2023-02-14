@@ -6,21 +6,30 @@ import (
 	"unicode/utf8"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"go.uber.org/atomic"
 )
 
 // FIFOList holds the most recently inserted items, discarding older ones if the total item count goes over the configured size.
 type FIFOList struct {
 	key     string
-	maxSize *atomic.Int64
+	maxSize func() int
 }
 
 // NewFIFOList returns a FIFOList, storing only a fixed amount of elements, discarding old ones if needed.
 func NewFIFOList(key string, size int) *FIFOList {
 	return &FIFOList{
 		key:     key,
-		maxSize: atomic.NewInt64(int64(size)),
+		maxSize: func() int { return size },
 	}
+}
+
+// NewFIFOListDynamic is like NewFIFOList except size will be called each time
+// we enforce list size invariants.
+func NewFIFOListDynamic(key string, size func() int) *FIFOList {
+	l := &FIFOList{
+		key:     key,
+		maxSize: size,
+	}
+	return l
 }
 
 // Insert b in the cache and drops the oldest inserted item if the size exceeds the configured limit.
@@ -34,19 +43,19 @@ func (l *FIFOList) Insert(b []byte) error {
 	// disabling.
 	maxSize := l.MaxSize()
 	if maxSize == 0 {
-		if err := pool.LTrim(key, 0, 0); err != nil {
+		if err := kv().LTrim(key, 0, 0); err != nil {
 			return errors.Wrap(err, "failed to execute redis command LTRIM")
 		}
 		return nil
 	}
 
 	// O(1) because we're just adding a single element.
-	if err := pool.LPush(key, b); err != nil {
+	if err := kv().LPush(key, b); err != nil {
 		return errors.Wrap(err, "failed to execute redis command LPUSH")
 	}
 
 	// O(1) because the average case if just about dropping the last element.
-	if err := pool.LTrim(key, 0, maxSize-1); err != nil {
+	if err := kv().LTrim(key, 0, maxSize-1); err != nil {
 		return errors.Wrap(err, "failed to execute redis command LTRIM")
 	}
 	return nil
@@ -54,7 +63,7 @@ func (l *FIFOList) Insert(b []byte) error {
 
 func (l *FIFOList) Size() (int, error) {
 	key := l.globalPrefixKey()
-	n, err := pool.LLen(key)
+	n, err := kv().LLen(key)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to execute redis command LLEN")
 	}
@@ -62,15 +71,11 @@ func (l *FIFOList) Size() (int, error) {
 }
 
 func (l *FIFOList) MaxSize() int {
-	return int(l.maxSize.Load())
-}
-
-// SetMaxSize will change the size we truncate at.
-//
-// Note: this won't cause truncation to happen, instead truncation is done on
-// the next insert.
-func (l *FIFOList) SetMaxSize(maxSize int) {
-	l.maxSize.Store(int64(maxSize))
+	maxSize := l.maxSize()
+	if maxSize < 0 {
+		return 0
+	}
+	return maxSize
 }
 
 // All return all items stored in the FIFOList.
@@ -90,7 +95,7 @@ func (l *FIFOList) Slice(ctx context.Context, from, to int) ([][]byte, error) {
 	}
 
 	key := l.globalPrefixKey()
-	bs, err := pool.WithContext(ctx).LRange(key, from, to).ByteSlices()
+	bs, err := kv().WithContext(ctx).LRange(key, from, to).ByteSlices()
 	if err != nil {
 		// Return ctx error if it expired
 		if ctx.Err() != nil {

@@ -159,7 +159,7 @@ var app = &cli.App{
 							// The total we get from Github is not correct (ie. 50k when we know the org as 200k)
 							// So when done reaches the total, we attempt to get the total again and double the Max
 							// of the bar
-							if atomic.LoadInt64(&done) == int64(total) {
+							if atomic.LoadInt64(&done) == total {
 								t, err := getTotalPublicRepos(ctx, gh, org)
 								if err != nil {
 									logger.Fatal("failed to get updated public repos count", log.Error(err))

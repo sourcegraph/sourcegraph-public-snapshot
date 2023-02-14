@@ -30,7 +30,7 @@ func (j *autoindexingScheduler) Config() []env.Config {
 	}
 }
 
-func (j *autoindexingScheduler) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *autoindexingScheduler) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	services, err := codeintel.InitServices(observationCtx)
 	if err != nil {
 		return nil, err

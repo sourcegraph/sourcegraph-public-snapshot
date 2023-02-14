@@ -21,7 +21,7 @@ import (
 func init() {
 	deployType := deploy.Type()
 	if !deploy.IsValidDeployType(deployType) {
-		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q, %q, %q, %q. Got: %q", deploy.Kubernetes, deploy.DockerCompose, deploy.PureDocker, deploy.SingleDocker, deploy.Dev, deploy.Helm, deployType)
+		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q, %q, %q, %q, %q. Got: %q", deploy.Kubernetes, deploy.DockerCompose, deploy.PureDocker, deploy.SingleDocker, deploy.Dev, deploy.Helm, deploy.SingleProgram, deployType)
 	}
 
 	confdefaults.Default = defaultConfigForDeployment()
@@ -36,9 +36,19 @@ func defaultConfigForDeployment() conftypes.RawUnified {
 		return confdefaults.DockerContainer
 	case deploy.IsDeployTypeKubernetes(deployType), deploy.IsDeployTypeDockerCompose(deployType), deploy.IsDeployTypePureDocker(deployType):
 		return confdefaults.KubernetesOrDockerComposeOrPureDocker
+	case deploy.IsDeployTypeSingleProgram(deployType):
+		return confdefaults.SingleProgram
 	default:
 		panic("deploy type did not register default configuration")
 	}
+}
+
+func ExecutorsAccessToken() string {
+	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
+	if isSingleProgram {
+		return confdefaults.SingleProgramInMemoryExecutorPassword
+	}
+	return Get().ExecutorsAccessToken
 }
 
 func BitbucketServerConfigs(ctx context.Context) ([]*schema.BitbucketServerConnection, error) {
@@ -315,6 +325,19 @@ func StructuralSearchEnabled() bool {
 		return true
 	}
 	return val == "enabled"
+}
+
+// SearchDocumentRanksWeight controls the impact of document ranks on the final ranking when
+// SearchOptions.UseDocumentRanks is enabled. The default is 0.5 * 9000 (half the zoekt default),
+// to match existing behavior where ranks are given half the priority as existing scoring signals.
+// We plan to eventually remove this, once we experiment on real data to find a good default.
+func SearchDocumentRanksWeight() float64 {
+	ranking := ExperimentalFeatures().Ranking
+	if ranking != nil && ranking.DocumentRanksWeight != nil {
+		return *ranking.DocumentRanksWeight
+	} else {
+		return 4500
+	}
 }
 
 func ExperimentalFeatures() schema.ExperimentalFeatures {

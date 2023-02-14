@@ -71,7 +71,13 @@ describe('Backend insight drill down filters', () => {
                 GetSearchContextByName: () => ({
                     searchContexts: {
                         __typename: 'SearchContextConnection',
-                        nodes: [{ __typename: 'SearchContext', spec: '@sourcegraph/sourcegraph' }],
+                        nodes: [
+                            {
+                                __typename: 'SearchContext',
+                                spec: '@sourcegraph/sourcegraph',
+                                query: 'repo:github.com/sourcegraph/sourcegraph',
+                            },
+                        ],
                     },
                 }),
 
@@ -125,6 +131,7 @@ describe('Backend insight drill down filters', () => {
             },
             seriesDisplayOptions: {
                 limit: 20,
+                numSamples: null,
                 sortOptions: {
                     direction: 'DESC',
                     mode: 'RESULT_COUNT',
@@ -136,7 +143,7 @@ describe('Backend insight drill down filters', () => {
     it('should create a new insight with predefined filters via drill-down flow insight creation', async () => {
         const insightWithFilters: InsightViewNode = {
             ...createJITMigrationToGQLInsightMetadataFixture({ type: 'calculated', id: 'view_1' }),
-            appliedFilters: {
+            defaultFilters: {
                 __typename: 'InsightViewFilters',
                 searchContexts: [],
                 includeRepoRegex: '',
@@ -226,6 +233,7 @@ describe('Backend insight drill down filters', () => {
                 },
                 seriesDisplayOptions: {
                     limit: 20,
+                    numSamples: null,
                     sortOptions: {
                         direction: 'DESC',
                         mode: 'RESULT_COUNT',

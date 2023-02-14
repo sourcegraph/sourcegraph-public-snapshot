@@ -7,10 +7,9 @@ import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { Location } from '@sourcegraph/extension-api-types'
 
+import { assertToJSON, createBarrier, integrationTestContext } from '../../testing/testHelpers'
 import { wrapRemoteObservable } from '../client/api/common'
 import { FlatExtensionHostAPI } from '../contract'
-
-import { assertToJSON, createBarrier, integrationTestContext } from './testHelpers'
 
 describe('LanguageFeatures (integration)', () => {
     testLocationProvider<sourcegraph.HoverProvider>({

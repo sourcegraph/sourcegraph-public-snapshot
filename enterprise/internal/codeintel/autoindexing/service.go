@@ -16,18 +16,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Service struct {
 	store           store.Store
-	uploadSvc       UploadService
 	inferenceSvc    InferenceService
 	repoUpdater     RepoUpdaterClient
 	gitserverClient GitserverClient
@@ -41,7 +40,6 @@ type Service struct {
 func newService(
 	observationCtx *observation.Context,
 	store store.Store,
-	uploadSvc UploadService,
 	inferenceSvc InferenceService,
 	repoUpdater RepoUpdaterClient,
 	gitserver GitserverClient,
@@ -56,7 +54,6 @@ func newService(
 
 	jobSelector := jobselector.NewJobSelector(
 		store,
-		uploadSvc,
 		inferenceSvc,
 		gitserver,
 		log.Scoped("autoindexing job selector", ""),
@@ -72,7 +69,6 @@ func newService(
 
 	return &Service{
 		store:           store,
-		uploadSvc:       uploadSvc,
 		inferenceSvc:    inferenceSvc,
 		repoUpdater:     repoUpdater,
 		gitserverClient: gitserver,
@@ -290,8 +286,8 @@ func (s *Service) QueueIndexes(ctx context.Context, repositoryID int, rev, confi
 	return s.indexEnqueuer.QueueIndexes(ctx, repositoryID, rev, configuration, force, bypassLimit)
 }
 
-func (s *Service) QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error) {
-	return s.indexEnqueuer.QueueIndexesForPackage(ctx, pkg)
+func (s *Service) QueueIndexesForPackage(ctx context.Context, pkg dependencies.MinimialVersionedPackageRepo, assumeSynced bool) (err error) {
+	return s.indexEnqueuer.QueueIndexesForPackage(ctx, pkg, assumeSynced)
 }
 
 func (s *Service) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]config.IndexJob, error) {

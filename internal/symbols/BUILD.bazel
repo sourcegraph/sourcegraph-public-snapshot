@@ -1,0 +1,46 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "symbols",
+    srcs = ["client.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/symbols",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/actor",
+        "//internal/api",
+        "//internal/authz",
+        "//internal/conf/conftypes",
+        "//internal/endpoint",
+        "//internal/featureflag",
+        "//internal/grpc/defaults",
+        "//internal/httpcli",
+        "//internal/resetonce",
+        "//internal/search",
+        "//internal/search/result",
+        "//internal/symbols/v1:symbols",
+        "//internal/trace/ot",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_gobwas_glob//:glob",
+        "@com_github_neelance_parallel//:parallel",
+        "@com_github_opentracing_contrib_go_stdlib//nethttp",
+        "@com_github_opentracing_opentracing_go//ext",
+        "@com_github_opentracing_opentracing_go//log",
+        "@com_github_sourcegraph_go_ctags//:go-ctags",
+        "@org_golang_google_grpc//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "symbols_test",
+    srcs = ["client_test.go"],
+    embed = [":symbols"],
+    deps = [
+        "//internal/actor",
+        "//internal/authz",
+        "//internal/endpoint",
+        "//internal/search",
+        "//internal/search/result",
+        "//internal/types",
+    ],
+)

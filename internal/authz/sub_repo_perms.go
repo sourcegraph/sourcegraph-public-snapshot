@@ -4,7 +4,6 @@ import (
 	"context"
 	"io/fs"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -63,11 +62,11 @@ var DefaultSubRepoPermsChecker SubRepoPermissionChecker = &noopPermsChecker{}
 
 type noopPermsChecker struct{}
 
-func (*noopPermsChecker) Permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error) {
+func (*noopPermsChecker) Permissions(_ context.Context, _ int32, _ RepoContent) (Perms, error) {
 	return None, nil
 }
 
-func (*noopPermsChecker) FilePermissionsFunc(ctx context.Context, userID int32, repo api.RepoName) (FilePermissionFunc, error) {
+func (*noopPermsChecker) FilePermissionsFunc(_ context.Context, _ int32, _ api.RepoName) (FilePermissionFunc, error) {
 	return func(path string) (Perms, error) {
 		return None, nil
 	}, nil
@@ -77,52 +76,12 @@ func (*noopPermsChecker) Enabled() bool {
 	return false
 }
 
-func (*noopPermsChecker) EnabledForRepoID(ctx context.Context, repoID api.RepoID) (bool, error) {
+func (*noopPermsChecker) EnabledForRepoID(_ context.Context, _ api.RepoID) (bool, error) {
 	return false, nil
 }
 
-func (*noopPermsChecker) EnabledForRepo(ctx context.Context, repo api.RepoName) (bool, error) {
+func (*noopPermsChecker) EnabledForRepo(_ context.Context, _ api.RepoName) (bool, error) {
 	return false, nil
-}
-
-// filePermissionsFuncAllRead is a FilePermissionFunc which _always_ returns
-// Read. Only use in cases that sub repo permission checks should not be done.
-func filePermissionsFuncAllRead(_ string) (Perms, error) {
-	return Read, nil
-}
-
-// expandDirs will return a new set of rules that will match all directories
-// above the supplied rule. As a special case, if the rule starts with a wildcard
-// we return a rule to match all directories.
-func expandDirs(rule string) []string {
-	dirs := make([]string, 0)
-
-	// Make sure the rule starts with a slash
-	if !strings.HasPrefix(rule, "/") {
-		rule = "/" + rule
-	}
-
-	// If a rule starts with a wildcard it can match at any level in the tree
-	// structure so there's no way of walking up the tree and expand out to the list
-	// of valid directories. Instead, we just return a rule that matches any
-	// directory
-	if strings.HasPrefix(rule, "/*") {
-		dirs = append(dirs, "**/")
-		return dirs
-	}
-
-	for {
-		lastSlash := strings.LastIndex(rule, "/")
-		if lastSlash <= 0 { // we have to ignore the slash at index 0
-			break
-		}
-		// Drop anything after the last slash
-		rule = rule[:lastSlash]
-
-		dirs = append(dirs, rule+"/")
-	}
-
-	return dirs
 }
 
 // ActorPermissions returns the level of access the given actor has for the requested

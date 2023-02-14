@@ -30,12 +30,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -189,12 +189,12 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 			perms := edb.NewStrictMockPermsStore()
 			perms.TransactFunc.SetDefaultReturn(perms, nil)
 			perms.DoneFunc.SetDefaultReturn(nil)
-			perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) error {
+			perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
 				ids := p.UserIDs
 				if diff := cmp.Diff(test.expUserIDs, ids); diff != "" {
-					return errors.Errorf("p.UserIDs: %v", diff)
+					return nil, errors.Errorf("p.UserIDs: %v", diff)
 				}
-				return nil
+				return nil, nil
 			})
 			perms.SetRepoPendingPermissionsFunc.SetDefaultHook(func(_ context.Context, accounts *extsvc.Accounts, _ *authz.RepoPermissions) error {
 				if diff := cmp.Diff(test.expAccounts, accounts); diff != "" {
@@ -296,6 +296,7 @@ func TestResolver_SetRepositoryPermissionsUnrestricted(t *testing.T) {
 
 func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 	licensing.MockCheckFeatureError("")
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		users := database.NewStrictMockUserStore()
@@ -304,7 +305,6 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 		db := edb.NewStrictMockEnterpriseDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		result, err := (&Resolver{db: db}).ScheduleRepositoryPermissionsSync(ctx, &graphqlbackend.RepositoryIDArgs{})
 		if want := auth.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
@@ -315,7 +315,7 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 	})
 
 	users := database.NewStrictMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
 	db := edb.NewStrictMockEnterpriseDB()
 	db.UsersFunc.SetDefaultReturn(users)
@@ -330,10 +330,13 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 		if len(req.RepoIDs) != 1 && req.RepoIDs[0] == api.RepoID(repoID) {
 			t.Errorf("unexpected repoID argument. want=%d have=%d", repoID, req.RepoIDs[0])
 		}
+		if req.TriggeredByUserID != 1 {
+			t.Errorf("unexpected TriggeredByUserID argument. want=%d have=%d", 1, req.TriggeredByUserID)
+		}
 	}
 	t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
 
-	_, err := r.ScheduleRepositoryPermissionsSync(context.Background(), &graphqlbackend.RepositoryIDArgs{
+	_, err := r.ScheduleRepositoryPermissionsSync(ctx, &graphqlbackend.RepositoryIDArgs{
 		Repository: graphqlbackend.MarshalRepositoryID(api.RepoID(repoID)),
 	})
 	if err != nil {
@@ -348,6 +351,7 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 	reset := licensing.TestingSkipFeatureChecks()
 	t.Cleanup(reset)
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 123})
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		users := database.NewStrictMockUserStore()
@@ -356,7 +360,6 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 		db := edb.NewStrictMockEnterpriseDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		result, err := (&Resolver{db: db}).ScheduleUserPermissionsSync(ctx, &graphqlbackend.UserPermissionsSyncArgs{})
 		if want := auth.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
@@ -367,7 +370,7 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 	})
 
 	users := database.NewStrictMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 123, SiteAdmin: true}, nil)
 
 	db := edb.NewStrictMockEnterpriseDB()
 	db.UsersFunc.SetDefaultReturn(users)
@@ -383,12 +386,14 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 			if len(req.UserIDs) != 1 && req.UserIDs[0] == userID {
 				t.Errorf("unexpected UserIDs argument. want=%d have=%d", userID, req.UserIDs[0])
 			}
+			if req.TriggeredByUserID != 123 {
+				t.Errorf("unexpected TriggeredByUserID argument. want=%d have=%d", 1, req.TriggeredByUserID)
+			}
 		}
 		t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
 
-		_, err := r.ScheduleUserPermissionsSync(context.Background(), &graphqlbackend.UserPermissionsSyncArgs{
-			User: graphqlbackend.MarshalUserID(userID),
-		})
+		_, err := r.ScheduleUserPermissionsSync(actor.WithActor(context.Background(), &actor.Actor{UID: 123}),
+			&graphqlbackend.UserPermissionsSyncArgs{User: graphqlbackend.MarshalUserID(userID)})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1400,11 +1405,8 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 		})
 
 		db := edb.NewStrictMockEnterpriseDB()
-		db.TransactFunc.SetDefaultHook(func(ctx context.Context) (database.DB, error) {
-			return db, nil
-		})
-		db.DoneFunc.SetDefaultHook(func(err error) error {
-			return nil
+		db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+			return f(db)
 		})
 		db.UsersFunc.SetDefaultReturn(usersStore)
 		db.SubRepoPermsFunc.SetDefaultReturn(subReposStore)
@@ -1502,7 +1504,7 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 				ExpectedErrors: []*gqlerrors.QueryError{
 					{
 						Message: "either both pathIncludes and pathExcludes needs to be set, or paths needs to be set",
-						Path:    []any{string("setSubRepositoryPermissionsForUsers")},
+						Path:    []any{"setSubRepositoryPermissionsForUsers"},
 					},
 				},
 				ExpectedResult: "null",
@@ -1605,7 +1607,7 @@ query {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		bbProjects := database.NewMockBitbucketProjectPermissionsStore()
-		entry := workerutil.ExecutionLogEntry{Key: "key", Command: []string{"command"}, StartTime: mustParseTime("2020-01-06"), ExitCode: intPtr(1), Out: "out", DurationMs: intPtr(1)}
+		entry := executor.ExecutionLogEntry{Key: "key", Command: []string{"command"}, StartTime: mustParseTime("2020-01-06"), ExitCode: intPtr(1), Out: "out", DurationMs: intPtr(1)}
 		bbProjects.ListJobsFunc.SetDefaultReturn([]*types.BitbucketProjectPermissionJob{
 			{
 				ID:                1,
@@ -1696,7 +1698,7 @@ query {
 
 type mockRecordsReader []syncjobs.Status
 
-func (m mockRecordsReader) Get(t time.Time) (*syncjobs.Status, error) {
+func (m mockRecordsReader) Get(ctx context.Context, t time.Time) (*syncjobs.Status, error) {
 	for _, r := range m {
 		if r.Completed.Equal(t) {
 			return &r, nil
@@ -1806,6 +1808,28 @@ query {
 		"totalCount": 1
 	}
 }`,
+		}})
+	})
+
+	t.Run("too many entries requested", func(t *testing.T) {
+		graphqlbackend.RunTests(t, []*graphqlbackend.Test{{
+			Context: ctx,
+			Schema:  parsedSchema,
+			Query: `
+query {
+  permissionsSyncJobs(first:999) {
+	totalCount
+	pageInfo { hasNextPage }
+    nodes {
+		id
+	}
+  }
+}`,
+			ExpectedResult: "null",
+			ExpectedErrors: []*gqlerrors.QueryError{{
+				Message: "cannot retrieve more than 500 records",
+				Path:    []any{"permissionsSyncJobs"},
+			}},
 		}})
 	})
 

@@ -178,7 +178,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.C
 		}
 	})
 
-	t.Run("Upsert", func(t *testing.T) {
+	t.Run("UpdateForApply", func(t *testing.T) {
 		changeset := &btypes.Changeset{
 			RepoID:               repo.ID,
 			CreatedAt:            clock.Now(),
@@ -201,27 +201,22 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.C
 			ProcessAfter:         clock.Now(),
 		}
 
-		if err := s.UpsertChangeset(ctx, changeset); err != nil {
-			t.Fatal(err)
-		}
+		err := s.CreateChangeset(ctx, changeset)
+		require.NoError(t, err)
 
-		if changeset.ID == 0 {
-			t.Fatal("id should not be zero")
-		}
+		assert.NotZero(t, changeset.ID)
 
 		prev := changeset.Clone()
 
-		if err := s.UpsertChangeset(ctx, changeset); err != nil {
-			t.Fatal(err)
-		}
+		err = s.UpdateChangesetsForApply(ctx, []*btypes.Changeset{changeset})
+		require.NoError(t, err)
 
 		if diff := cmp.Diff(changeset, prev); diff != "" {
 			t.Fatal(diff)
 		}
 
-		if err := s.DeleteChangeset(ctx, changeset.ID); err != nil {
-			t.Fatal(err)
-		}
+		err = s.DeleteChangeset(ctx, changeset.ID)
+		require.NoError(t, err)
 	})
 
 	t.Run("ReconcilerState database representation", func(t *testing.T) {

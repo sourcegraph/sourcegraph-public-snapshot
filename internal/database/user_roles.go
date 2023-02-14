@@ -57,7 +57,7 @@ type UserRoleStore interface {
 	// Delete deletes the user and role relationship from the database.
 	Delete(ctx context.Context, opts DeleteUserRoleOpts) error
 	// Transact creates a transaction for the UserRoleStore.
-	Transact(context.Context) (UserRoleStore, error)
+	WithTransact(context.Context, func(UserRoleStore) error) error
 	// With is used to merge the store with another to pull data via other stores.
 	With(basestore.ShareableStore) UserRoleStore
 }
@@ -76,9 +76,10 @@ func (r *userRoleStore) With(other basestore.ShareableStore) UserRoleStore {
 	return &userRoleStore{Store: r.Store.With(other)}
 }
 
-func (r *userRoleStore) Transact(ctx context.Context) (UserRoleStore, error) {
-	tx, err := r.Store.Transact(ctx)
-	return &userRoleStore{Store: tx}, err
+func (r *userRoleStore) WithTransact(ctx context.Context, f func(UserRoleStore) error) error {
+	return r.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&userRoleStore{Store: tx})
+	})
 }
 
 const userRoleCreateQueryFmtStr = `

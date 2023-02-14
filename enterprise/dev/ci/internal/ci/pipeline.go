@@ -76,7 +76,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "4.3.0"
+	const minimumUpgradeableVersion = "4.4.0"
 
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
@@ -91,6 +91,20 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	switch c.RunType {
 	case runtype.BazelExpBranch:
 		ops.Merge(BazelOperations())
+	case runtype.WolfiExpBranch:
+		if c.Diff.Has(changed.WolfiPackages) {
+			ops.Merge(WolfiPackagesOperations(c.ChangedFiles[changed.WolfiPackages]))
+		}
+		if c.Diff.Has(changed.WolfiBaseImages) {
+			ops.Merge(
+				WolfiBaseImagesOperations(
+					c.ChangedFiles[changed.WolfiBaseImages],
+					c.Version,
+					c.Diff.Has(changed.WolfiPackages),
+				),
+			)
+		}
+
 	case runtype.PullRequest:
 		// First, we set up core test operations that apply both to PRs and to other run
 		// types such as main.
@@ -179,6 +193,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			// TODO: fix integrations tests and re-enable: https://github.com/sourcegraph/sourcegraph/issues/40891
 			// addVsceIntegrationTests,
 		)
+
+	case runtype.AppSnapshotRelease:
+		// If this is an App snapshot build, release a snapshot.
+		ops = operations.NewSet(addAppSnapshotReleaseSteps(c))
 
 	case runtype.ImagePatch:
 		// only build image for the specified image in the branch name

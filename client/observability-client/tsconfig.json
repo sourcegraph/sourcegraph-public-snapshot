@@ -1,7 +1,7 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "module": "esnext",
+    "module": "commonjs",
     "baseUrl": ".",
     "jsx": "react-jsx",
     "rootDir": ".",

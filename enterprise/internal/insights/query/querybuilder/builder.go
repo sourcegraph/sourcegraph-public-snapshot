@@ -127,7 +127,7 @@ func forRepos(query BasicQuery, repos []string) BasicQuery {
 	for i, repo := range repos {
 		escapedRepos[i] = regexp.QuoteMeta(repo)
 	}
-	return BasicQuery(fmt.Sprintf("%s repo:^(%s)$", query, (strings.Join(escapedRepos, "|"))))
+	return BasicQuery(fmt.Sprintf("%s repo:^(%s)$", query, strings.Join(escapedRepos, "|")))
 }
 
 type PointDiffQueryOpts struct {

@@ -1,6 +1,6 @@
 import { FC, useEffect, useState } from 'react'
 
-import { useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom-v5-compat'
 
 import { Alert } from '@sourcegraph/wildcard'
 
@@ -15,7 +15,7 @@ interface Props {
  */
 export const RedirectionAlert: FC<Props> = ({ to, className, messagePrefix }) => {
     const [ttl, setTtl] = useState(3)
-    const history = useHistory()
+    const navigate = useNavigate()
 
     useEffect(() => {
         const interval = setInterval(() => setTtl(ttl => ttl - 1), 700)
@@ -25,9 +25,9 @@ export const RedirectionAlert: FC<Props> = ({ to, className, messagePrefix }) =>
 
     useEffect(() => {
         if (ttl === 0) {
-            history.push(to)
+            navigate(to)
         }
-    }, [ttl, history, to])
+    }, [ttl, navigate, to])
 
     return (
         <Alert className={className} variant="success">

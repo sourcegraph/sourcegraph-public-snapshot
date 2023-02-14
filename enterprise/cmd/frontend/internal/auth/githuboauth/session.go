@@ -80,8 +80,8 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return nil, "", err
 	}
 	var (
-		firstSafeErrMsg string
-		firstErr        error
+		lastSafeErrMsg string
+		lastErr        error
 	)
 
 	// We will first attempt to connect one of the verified emails with an existing
@@ -97,6 +97,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			createIfNotExist: false,
 		})
 	}
+	signupErrorMessage := ""
 	// If allowSignup is true, we will create an account using the first verified
 	// email address from GitHub which we expect to be their primary address. Note
 	// that the order of attempts is important. If we manage to connect with an
@@ -106,9 +107,10 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			email:            verifiedEmails[0],
 			createIfNotExist: true,
 		})
+		signupErrorMessage = "\n\nOr failed on creating a user account"
 	}
 
-	for i, attempt := range attempts {
+	for _, attempt := range attempts {
 		userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
 			UserProps: database.NewUser{
 				Username: login,
@@ -137,13 +139,11 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			})
 			return actor.FromUser(userID), "", nil // success
 		}
-		if i == 0 {
-			firstSafeErrMsg, firstErr = safeErrMsg, err
-		}
+		lastSafeErrMsg, lastErr = safeErrMsg, err
 	}
 
-	// On failure, return the first error
-	return nil, fmt.Sprintf("No user exists matching any of the verified emails: %s.\n\nFirst error was: %s", strings.Join(verifiedEmails, ", "), firstSafeErrMsg), firstErr
+	// On failure, return the last error
+	return nil, fmt.Sprintf("Could not find existing user matching any of the verified emails: %s %s \n\nLast error was: %s", strings.Join(verifiedEmails, ", "), signupErrorMessage, lastSafeErrMsg), lastErr
 }
 
 func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter) {

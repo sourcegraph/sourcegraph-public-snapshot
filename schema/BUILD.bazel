@@ -1,3 +1,4 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 
 package(default_visibility = ["//client/shared:__pkg__"])
@@ -28,4 +29,45 @@ js_library(
     srcs = [
         "batch_spec.schema.json",
     ],
+)
+
+go_library(
+    name = "schema",
+    srcs = [
+        "bitbucket_server_util.go",
+        "bitbucketcloud_util.go",
+        "extension_schema.go",
+        "gen.go",
+        "github_util.go",
+        "gitlab_util.go",
+        "schema.go",
+        "stringdata.go",
+    ],
+    embedsrcs = [
+        "aws_codecommit.schema.json",
+        "batch_spec.schema.json",
+        "bitbucket_cloud.schema.json",
+        "bitbucket_server.schema.json",
+        "changeset_spec.schema.json",
+        "gerrit.schema.json",
+        "github.schema.json",
+        "gitlab.schema.json",
+        "gitolite.schema.json",
+        "go-modules.schema.json",
+        "jvm-packages.schema.json",
+        "npm-packages.schema.json",
+        "other_external_service.schema.json",
+        "pagure.schema.json",
+        "perforce.schema.json",
+        "phabricator.schema.json",
+        "python-packages.schema.json",
+        "ruby-packages.schema.json",
+        "rust-packages.schema.json",
+        "settings.schema.json",
+        "site.schema.json",
+        "azuredevops.schema.json",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/schema",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_sourcegraph_go_jsonschema//jsonschema"],
 )

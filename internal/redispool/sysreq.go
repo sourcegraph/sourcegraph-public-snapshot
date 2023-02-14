@@ -13,8 +13,8 @@ import (
 var timeout, _ = time.ParseDuration(env.Get("SRC_REDIS_WAIT_FOR", "90s", "Duration to wait for Redis to become ready before quitting"))
 
 func init() {
-	sysreq.AddCheck("Redis Store", redisCheck("Store", addrStore, timeout, Store))
-	sysreq.AddCheck("Redis Cache", redisCheck("Cache", addrCache, timeout, Cache))
+	sysreq.AddCheck("Redis Store", redisCheck("Store", addresses.Store, timeout, Store))
+	sysreq.AddCheck("Redis Cache", redisCheck("Cache", addresses.Cache, timeout, Cache))
 }
 
 func redisCheck(name, addr string, timeout time.Duration, kv KeyValue) sysreq.CheckFunc {

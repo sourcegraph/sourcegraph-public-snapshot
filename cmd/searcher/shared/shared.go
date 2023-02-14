@@ -5,7 +5,6 @@ package shared
 import (
 	"context"
 	"io"
-	stdlog "log"
 	"net"
 	"net/http"
 	"os"
@@ -15,33 +14,28 @@ import (
 	"syscall"
 	"time"
 
-	"golang.org/x/sync/errgroup"
-
-	"github.com/getsentry/sentry-go"
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/sourcegraph/log"
+	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/hostname"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	grpcdefaults "github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
-	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	sharedsearch "github.com/sourcegraph/sourcegraph/internal/search"
+	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
+	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/tracer"
-	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -49,22 +43,13 @@ var (
 	cacheDir    = env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
 	cacheSizeMB = env.Get("SEARCHER_CACHE_SIZE_MB", "100000", "maximum size of the on disk cache in megabytes")
 
+	// Same environment variable name (and default value) used by symbols.
+	backgroundTimeout = env.MustGetDuration("PROCESSING_TIMEOUT", 2*time.Hour, "maximum time to spend processing a repository")
+
 	maxTotalPathsLengthRaw = env.Get("MAX_TOTAL_PATHS_LENGTH", "100000", "maximum sum of lengths of all paths in a single call to git archive")
 )
 
 const port = "3181"
-
-func frontendDB(observationCtx *observation.Context) (database.DB, error) {
-	logger := log.Scoped("frontendDB", "")
-	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
-		return serviceConnections.PostgresDSN
-	})
-	sqlDB, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "searcher")
-	if err != nil {
-		return nil, err
-	}
-	return database.NewDB(logger, sqlDB), nil
-}
 
 func shutdownOnSignal(ctx context.Context, server *http.Server) error {
 	// Listen for shutdown signals. When we receive one attempt to clean up,
@@ -116,11 +101,11 @@ func setupTmpDir() error {
 	return nil
 }
 
-func run(logger log.Logger) error {
+func Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc) error {
+	logger := observationCtx.Logger
+
 	// Ready immediately
-	ready := make(chan struct{})
-	close(ready)
-	go debugserver.NewServerRoutine(ready).Start()
+	ready()
 
 	var cacheSizeBytes int64
 	if i, err := strconv.ParseInt(cacheSizeMB, 10, 64); err != nil {
@@ -141,13 +126,9 @@ func run(logger log.Logger) error {
 	// Explicitly don't scope Store logger under the parent logger
 	storeObservationCtx := observation.NewContext(log.Scoped("Store", "searcher archives store"))
 
-	db, err := frontendDB(observation.NewContext(log.Scoped("db", "server frontend db")))
-	if err != nil {
-		return errors.Wrap(err, "failed to connect to frontend database")
-	}
-	git := gitserver.NewClient(db)
+	git := gitserver.NewClient()
 
-	service := &search.Service{
+	sService := &search.Service{
 		Store: &search.Store{
 			FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 				// We pass in a nil sub-repo permissions checker and an internal actor here since
@@ -175,9 +156,9 @@ func run(logger log.Logger) error {
 			FilterTar:         search.NewFilter,
 			Path:              filepath.Join(cacheDir, "searcher-archives"),
 			MaxCacheSizeBytes: cacheSizeBytes,
+			BackgroundTimeout: backgroundTimeout,
 			Log:               storeObservationCtx.Logger,
 			ObservationCtx:    storeObservationCtx,
-			DB:                db,
 		},
 
 		Indexed: sharedsearch.Indexed(),
@@ -191,22 +172,23 @@ func run(logger log.Logger) error {
 
 		Log: logger,
 	}
-	service.Store.Start()
+	sService.Store.Start()
 
 	// Set up handler middleware
-	handler := actor.HTTPMiddleware(logger, service)
+	handler := actor.HTTPMiddleware(logger, sService)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	g, ctx := errgroup.WithContext(ctx)
 
-	host := ""
-	if env.InsecureDev {
-		host = "127.0.0.1"
-	}
-	addr := net.JoinHostPort(host, port)
+	grpcServer := grpc.NewServer(grpcdefaults.ServerOptions(logger)...)
+	reflection.Register(grpcServer)
+	grpcServer.RegisterService(&proto.SearcherService_ServiceDesc, &search.Server{
+		Service: sService,
+	})
+
+	addr := getAddr()
 	server := &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
@@ -214,7 +196,7 @@ func run(logger log.Logger) error {
 		BaseContext: func(_ net.Listener) context.Context {
 			return ctx
 		},
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		Handler: internalgrpc.MultiplexHandlers(grpcServer, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// For cluster liveness and readiness probes
 			if r.URL.Path == "/healthz" {
 				w.WriteHeader(200)
@@ -222,8 +204,10 @@ func run(logger log.Logger) error {
 				return
 			}
 			handler.ServeHTTP(w, r)
-		}),
+		})),
 	}
+
+	g, ctx := errgroup.WithContext(ctx)
 
 	// Listen
 	g.Go(func() error {
@@ -242,29 +226,11 @@ func run(logger log.Logger) error {
 	return g.Wait()
 }
 
-func Main() {
-	stdlog.SetFlags(0)
-	logging.Init() //nolint:staticcheck // Deprecated, but logs unmigrated to sourcegraph/log look really bad without this.
-	liblog := log.Init(log.Resource{
-		Name:       env.MyName,
-		Version:    version.Version(),
-		InstanceID: hostname.Get(),
-	}, log.NewSentrySinkWith(
-		log.SentrySink{
-			ClientOptions: sentry.ClientOptions{SampleRate: 0.2},
-		},
-	)) // Experimental: DevX is observing how sampling affects the errors signal
-	defer liblog.Sync()
-
-	conf.Init()
-	go conf.Watch(liblog.Update(conf.GetLogSinks))
-	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
-	profiler.Init()
-
-	logger := log.Scoped("server", "the searcher service")
-
-	err := run(logger)
-	if err != nil {
-		logger.Fatal("searcher failed", log.Error(err))
+func getAddr() string {
+	host := ""
+	if env.InsecureDev {
+		host = "127.0.0.1"
 	}
+
+	return net.JoinHostPort(host, port)
 }

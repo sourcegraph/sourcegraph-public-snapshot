@@ -83,6 +83,19 @@ The default run type.
   - **Scan test builds**: Scan alpine-3.14, Scan cadvisor, Scan codeinsights-db, Scan codeintel-db, Scan frontend, Scan github-proxy, Scan gitserver, Scan grafana, Scan indexed-searcher, Scan jaeger-agent, Scan jaeger-all-in-one, Scan blobstore2, Scan node-exporter, Scan postgres-12-alpine, Scan postgres_exporter, Scan precise-code-intel-worker, Scan prometheus, Scan prometheus-gcp, Scan redis-cache, Scan redis-store, Scan redis_exporter, Scan repo-updater, Scan search-indexer, Scan searcher, Scan symbols, Scan syntax-highlighter, Scan worker, Scan migrator, Scan executor, Scan executor-vm, Scan batcheshelper, Scan opentelemetry-collector, Scan sg
   - Upload build trace
 
+- Pipeline for `WolfiPackages` changes:
+  - **Metadata**: Pipeline metadata
+  - Upload build trace
+
+- Pipeline for `WolfiBaseImages` changes:
+  - **Metadata**: Pipeline metadata
+  - Upload build trace
+
+- Pipeline for `Protobuf` changes:
+  - **Metadata**: Pipeline metadata
+  - **Linters and static analysis**: Run sg lint
+  - Upload build trace
+
 ### Bazel Exp Branch
 
 The run type for branches matching `bzl/`.
@@ -95,7 +108,22 @@ sg ci build bzl
 Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
-- Build //dev/sg
+- Build ...
+- Tests
+- Upload build trace
+
+### Wolfi Exp Branch
+
+The run type for branches matching `wolfi/`.
+You can create a build of this run type for your changes using:
+
+```sh
+sg ci build wolfi
+```
+
+Base pipeline (more steps might be included based on branch changes):
+
+- **Metadata**: Pipeline metadata
 - Upload build trace
 
 ### Release branch nightly healthcheck build
@@ -105,8 +133,8 @@ The run type for environment including `{"RELEASE_NIGHTLY":"true"}`.
 Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
+- Trigger 4.4 release branch healthcheck build
 - Trigger 4.3 release branch healthcheck build
-- Trigger 4.2 release branch healthcheck build
 - Upload build trace
 
 ### Browser extension nightly release build
@@ -131,6 +159,15 @@ Base pipeline (more steps might be included based on branch changes):
 
 - ESLint (all)
 - Stylelint (all)
+- Upload build trace
+
+### App snapshot release
+
+The run type for branches matching `app/release-snapshot` (exact match).
+
+Base pipeline (more steps might be included based on branch changes):
+
+- App release
 - Upload build trace
 
 ### Tagged release

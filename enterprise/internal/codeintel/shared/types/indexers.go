@@ -143,6 +143,7 @@ var ImageToIndexer = map[string]CodeIntelIndexer{
 	"sourcegraph/lsif-clang":      lsifClang,
 	"davidrjenni/lsif-php":        lsifPHP,
 	"sourcegraph/lsif-rust":       rustAnalyzer,
+	"sourcegraph/scip-rust":       rustAnalyzer,
 	"sourcegraph/scip-python":     scipPython,
 	"sourcegraph/scip-ruby":       scipRuby,
 }
@@ -162,6 +163,7 @@ var PreferredIndexers = map[string]CodeIntelIndexer{
 	"lsif-ocaml":      lsifOcaml,
 	"scip-python":     scipPython,
 	"lsif-rust":       rustAnalyzer,
+	"scip-rust":       rustAnalyzer,
 	"rust-analyzer":   rustAnalyzer,
 	"lsif-php":        lsifPHP,
 	"lsif-terraform":  lsifTerraform,

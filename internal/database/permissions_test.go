@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestPermissionGetByID(t *testing.T) {
@@ -71,18 +72,56 @@ func TestPermissionList(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.Permissions()
 
-	totalPerms := 10
-	for i := 1; i <= totalPerms; i++ {
-		_, err := store.Create(ctx, CreatePermissionOpts{
-			Namespace: fmt.Sprintf("PERMISSION-%d", i),
-			Action:    "READ",
-		})
-		assert.NoError(t, err)
-	}
+	role, user, totalPerms := seedPermissionDataForList(ctx, t, store, db)
+	firstParam := 100
 
-	ps, err := store.List(ctx)
-	assert.NoError(t, err)
-	assert.Len(t, ps, totalPerms)
+	t.Run("all permissions", func(t *testing.T) {
+		ps, err := store.List(ctx, PermissionListOpts{
+			PaginationArgs: &PaginationArgs{
+				First: &firstParam,
+			},
+		})
+
+		assert.NoError(t, err)
+		assert.Len(t, ps, totalPerms)
+		assert.LessOrEqual(t, len(ps), firstParam)
+	})
+
+	t.Run("with pagination", func(t *testing.T) {
+		firstParam := 2
+		ps, err := store.List(ctx, PermissionListOpts{
+			PaginationArgs: &PaginationArgs{
+				First: &firstParam,
+			},
+		})
+
+		assert.NoError(t, err)
+		assert.Len(t, ps, firstParam)
+	})
+
+	t.Run("role association", func(t *testing.T) {
+		ps, err := store.List(ctx, PermissionListOpts{
+			PaginationArgs: &PaginationArgs{
+				First: &firstParam,
+			},
+			RoleID: role.ID,
+		})
+
+		assert.NoError(t, err)
+		assert.Len(t, ps, 2)
+	})
+
+	t.Run("user association", func(t *testing.T) {
+		ps, err := store.List(ctx, PermissionListOpts{
+			PaginationArgs: &PaginationArgs{
+				First: &firstParam,
+			},
+			UserID: user.ID,
+		})
+
+		assert.NoError(t, err)
+		assert.Len(t, ps, 2)
+	})
 }
 
 func TestPermissionDelete(t *testing.T) {
@@ -205,4 +244,99 @@ func TestPermissionBulkDelete(t *testing.T) {
 		assert.Error(t, err)
 		assert.Equal(t, err, &PermissionNotFoundErr{ps[0].ID})
 	})
+}
+
+func TestPermissionCount(t *testing.T) {
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := db.Permissions()
+
+	role, user, totalPerms := seedPermissionDataForList(ctx, t, store, db)
+
+	t.Run("all permissions", func(t *testing.T) {
+		count, err := store.Count(ctx, PermissionListOpts{})
+
+		assert.NoError(t, err)
+		assert.Equal(t, count, totalPerms)
+	})
+
+	t.Run("role permissions", func(t *testing.T) {
+		count, err := store.Count(ctx, PermissionListOpts{
+			RoleID: role.ID,
+		})
+
+		assert.NoError(t, err)
+		assert.Equal(t, count, 2)
+	})
+
+	t.Run("user permissions", func(t *testing.T) {
+		count, err := store.Count(ctx, PermissionListOpts{
+			UserID: user.ID,
+		})
+
+		assert.NoError(t, err)
+		assert.Equal(t, count, 2)
+	})
+}
+
+func TestPermissionFetchAll(t *testing.T) {
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := db.Permissions()
+
+	_, _, totalPerms := seedPermissionDataForList(ctx, t, store, db)
+
+	perms, err := store.FetchAll(ctx)
+
+	assert.NoError(t, err)
+	assert.Len(t, perms, totalPerms)
+}
+
+func seedPermissionDataForList(ctx context.Context, t *testing.T, store PermissionStore, db DB) (*types.Role, *types.User, int) {
+	t.Helper()
+
+	perms, totalPerms := createTestPermissions(ctx, t, store)
+	user := createTestUserForUserRole(ctx, "test@test.com", "test-user-1", t, db)
+	role, err := createTestRole(ctx, "TEST-ROLE", false, t, db.Roles())
+	assert.NoError(t, err)
+
+	_, err = db.RolePermissions().Create(ctx, CreateRolePermissionOpts{
+		RoleID:       role.ID,
+		PermissionID: perms[0].ID,
+	})
+	assert.NoError(t, err)
+
+	_, err = db.RolePermissions().Create(ctx, CreateRolePermissionOpts{
+		RoleID:       role.ID,
+		PermissionID: perms[1].ID,
+	})
+	assert.NoError(t, err)
+
+	_, err = db.UserRoles().Create(ctx, CreateUserRoleOpts{
+		RoleID: role.ID,
+		UserID: user.ID,
+	})
+	assert.NoError(t, err)
+
+	return role, user, totalPerms
+}
+
+func createTestPermissions(ctx context.Context, t *testing.T, store PermissionStore) ([]*types.Permission, int) {
+	t.Helper()
+
+	var permissions []*types.Permission
+
+	totalPerms := 10
+	for i := 1; i <= totalPerms; i++ {
+		permission, err := store.Create(ctx, CreatePermissionOpts{
+			Namespace: fmt.Sprintf("PERMISSION-%d", i),
+			Action:    "READ",
+		})
+		assert.NoError(t, err)
+		permissions = append(permissions, permission)
+	}
+
+	return permissions, totalPerms
 }

@@ -1,14 +1,16 @@
 # Sourcegraph Instance Validation
 
->🚨 WARNING 🚨: **Sourcegraph Instance Validation is currently experimental.** We're exploring this feature set. 
+>🚨 WARNING 🚨: **Sourcegraph Validation is currently experimental.** We're exploring this feature set. 
 >Let us know what you think! [File an issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose)
 >with feedback/problems/questions, or [contact us directly](https://about.sourcegraph.com/contact).
 
-Instance validation provides a quick way to check that a Sourcegraph instance functions properly after a fresh install
+## Validate Sourcegraph Installation
+
+Installation validation provides a quick way to check that a Sourcegraph installation functions properly after a fresh install
  or an update.
 
 The [`src` CLI](https://github.com/sourcegraph/src-cli) has an experimental command `validate install` which drives the
- validation from a user-provided configuration file with a validation specification (in JSON or YAML format). If no validation specification file is provided it will execute the following: 
+ validation from a user-provided configuration file with a validation specification (in JSON or YAML format). If no validation specification file is provided it will execute the following defaults: 
  
 * temporarily adds an external service
 * waits for a repository to be cloned
@@ -72,6 +74,7 @@ insight:
         "timeScopeValue": 1
       }
     ]
+  deleteWhenDone: true
 ```
 #### JSON File Specification
 
@@ -122,7 +125,8 @@ insight:
         "timeScopeUnit": "MONTH",
         "timeScopeValue": 1
       }
-    ]
+    ],
+    "deleteWhenDone": true
   }
 
 }
@@ -174,3 +178,42 @@ src validate install
 
 The `src` binary finds the Sourcegraph instance to validate from the environment variables 
 [`SRC_ENDPOINT` and `SRC_ACCESS_TOKEN`](https://github.com/sourcegraph/src-cli#setup-with-your-sourcegraph-instance). 
+
+## Validate Sourcegraph Kubernetes Deployment
+
+Kubernetes deployment validation provides a quick way to check that a Sourcegraph deployment on Kubernetes is configured correctly.
+
+The [`src` CLI](https://github.com/sourcegraph/src-cli) has an experimental command `validate kube` which performs validation of a Sourcegraph deployment on Kubernetes. These validation checks include:
+
+* Pod validation
+* Service validation
+* Persistent Volume Claim (PVC) validation 
+* Inter-Service network connection validation
+
+These validations can also include warnings for non-failure states that should be addressed, e.g. high restart counts.
+
+### Cluster Authentication
+
+Kubernetes cluster authentication is handled via a standard [kubeconfig](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/) file. You can also use the `--kubeconfig` option to use a different configuration file. By default this program will use the default file used by `kubectl`. 
+
+### Usage
+
+Use the [`src` CLI](https://github.com/sourcegraph/src-cli) to validate Kubernetes deployment:
+```shell script
+src validate kube
+```
+
+Specify a non-default Kubernetes namespace:
+```shell script
+src validate kube --namespace sourcegraph
+```
+
+Specify a different kubeconfig file:
+```shell script
+src validate kube --kubeconfig ~/.kube/config
+```
+
+Silence output:
+```shell script
+src validate kube --quiet
+```

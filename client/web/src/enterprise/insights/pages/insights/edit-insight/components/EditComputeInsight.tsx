@@ -26,7 +26,7 @@ export const EditComputeInsight: FC<EditComputeInsightProps> = props => {
     const insightFormValues = useMemo<CreateComputeInsightFormFields>(
         () => ({
             title: insight.title,
-            repositories: insight.repositories.join(', '),
+            repositories: insight.repositories,
             series: insight.series.map(line => createDefaultEditSeries({ ...line, valid: true })),
             dashboardReferenceCount: insight.dashboardReferenceCount,
             groupBy: insight.groupBy,

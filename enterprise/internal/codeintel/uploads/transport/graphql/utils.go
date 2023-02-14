@@ -97,7 +97,7 @@ func makeDeleteUploadsOptions(args *resolverstubs.DeleteLSIFUploadsArgs) (shared
 	}
 
 	return shared.DeleteUploadsOptions{
-		State:        strings.ToLower(derefString(args.State, "")),
+		States:       []string{strings.ToLower(derefString(args.State, ""))},
 		Term:         derefString(args.Query, ""),
 		VisibleAtTip: derefBool(args.IsLatestForRepo, false),
 		RepositoryID: repository,

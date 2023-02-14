@@ -115,29 +115,9 @@ func newOIDCIDServer(t *testing.T, code string, providerConfig *cloud.SchemaAuth
 	return httptest.NewServer(s), &email
 }
 
-func TestMiddleware(t *testing.T) {
-	cleanup := session.ResetMockSessionStore(t)
-	defer cleanup()
+type doRequestFunc func(method, urlStr, body string, cookies []*http.Cookie, authed bool) *http.Response
 
-	const testCode = "testCode"
-	providerConfig := cloud.SchemaAuthProviderSourcegraphOperator{
-		ClientID:          testClientID,
-		ClientSecret:      "testClientSecret",
-		LifecycleDuration: 60,
-	}
-	oidcIDServer, emailPtr := newOIDCIDServer(t, testCode, &providerConfig)
-	defer oidcIDServer.Close()
-	providerConfig.Issuer = oidcIDServer.URL
-
-	mockProvider := NewProvider(providerConfig).(*provider)
-	providers.MockProviders = []providers.Provider{mockProvider}
-	defer func() { providers.MockProviders = nil }()
-
-	t.Run("refresh", func(t *testing.T) {
-		err := mockProvider.Refresh(context.Background())
-		require.NoError(t, err)
-	})
-
+func newMockDBAndRequester(t *testing.T) (*database.MockUserStore, *database.MockUserExternalAccountsStore, doRequestFunc) {
 	usersStore := database.NewMockUserStore()
 	userExternalAccountsStore := database.NewMockUserExternalAccountsStore()
 	userExternalAccountsStore.ListFunc.SetDefaultReturn(
@@ -173,12 +153,42 @@ func TestMiddleware(t *testing.T) {
 		return resp.Result()
 	}
 
+	return usersStore, userExternalAccountsStore, doRequest
+}
+
+func TestMiddleware(t *testing.T) {
+	cleanup := session.ResetMockSessionStore(t)
+	defer cleanup()
+
+	const testCode = "testCode"
+	providerConfig := cloud.SchemaAuthProviderSourcegraphOperator{
+		ClientID:          testClientID,
+		ClientSecret:      "testClientSecret",
+		LifecycleDuration: 60,
+	}
+	oidcIDServer, emailPtr := newOIDCIDServer(t, testCode, &providerConfig)
+	defer oidcIDServer.Close()
+	providerConfig.Issuer = oidcIDServer.URL
+
+	mockProvider := NewProvider(providerConfig).(*provider)
+	providers.MockProviders = []providers.Provider{mockProvider}
+	defer func() { providers.MockProviders = nil }()
+
+	t.Run("refresh", func(t *testing.T) {
+		err := mockProvider.Refresh(context.Background())
+		require.NoError(t, err)
+	})
+
 	t.Run("unauthenticated API request should pass through", func(t *testing.T) {
+		_, _, doRequest := newMockDBAndRequester(t)
+
 		resp := doRequest(http.MethodGet, "http://example.com/.api/foo", "", nil, false)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 
 	t.Run("login triggers auth flow", func(t *testing.T) {
+		_, _, doRequest := newMockDBAndRequester(t)
+
 		urlStr := fmt.Sprintf("http://example.com%s/login?pc=%s", authPrefix, mockProvider.ConfigID().ID)
 		resp := doRequest(http.MethodGet, urlStr, "", nil, false)
 		assert.Equal(t, http.StatusFound, resp.StatusCode)
@@ -196,6 +206,8 @@ func TestMiddleware(t *testing.T) {
 	})
 
 	t.Run("callback with bad CSRF should fail", func(t *testing.T) {
+		_, _, doRequest := newMockDBAndRequester(t)
+
 		badState := &openidconnect.AuthnState{
 			CSRFToken:  "bad",
 			Redirect:   "/redirect",
@@ -206,6 +218,8 @@ func TestMiddleware(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
 	t.Run("callback with good CSRF should set auth cookie", func(t *testing.T) {
+		usersStore, userExternalAccountsStore, doRequest := newMockDBAndRequester(t)
+
 		state := &openidconnect.AuthnState{
 			CSRFToken:  "good",
 			Redirect:   "/redirect",
@@ -228,9 +242,9 @@ func TestMiddleware(t *testing.T) {
 				CreatedAt: time.Now(),
 			}, nil
 		})
-		userExternalAccountsStore.CreateUserAndSaveFunc.SetDefaultHook(func(_ context.Context, user database.NewUser, _ extsvc.AccountSpec, _ extsvc.AccountData) (int32, error) {
+		userExternalAccountsStore.CreateUserAndSaveFunc.SetDefaultHook(func(_ context.Context, user database.NewUser, _ extsvc.AccountSpec, _ extsvc.AccountData) (*types.User, error) {
 			assert.True(t, strings.HasPrefix(user.Username, usernamePrefix), "%q does not have prefix %q", user.Username, usernamePrefix)
-			return 1, nil
+			return &types.User{ID: 1}, nil
 		})
 
 		urlStr := fmt.Sprintf("http://example.com/.auth/sourcegraph-operator/callback?code=%s&state=%s", testCode, state.Encode())
@@ -247,6 +261,8 @@ func TestMiddleware(t *testing.T) {
 	})
 
 	t.Run("callback with bad email domain should fail", func(t *testing.T) {
+		_, _, doRequest := newMockDBAndRequester(t)
+
 		oldEmail := *emailPtr
 		*emailPtr = "alice@example.com" // Doesn't match requiredEmailDomain
 		defer func() { *emailPtr = oldEmail }()
@@ -279,6 +295,8 @@ func TestMiddleware(t *testing.T) {
 	})
 
 	t.Run("no open redirection", func(t *testing.T) {
+		usersStore, _, doRequest := newMockDBAndRequester(t)
+
 		state := &openidconnect.AuthnState{
 			CSRFToken:  "good",
 			Redirect:   "https://evil.com",
@@ -316,6 +334,8 @@ func TestMiddleware(t *testing.T) {
 	})
 
 	t.Run("lifetime expired", func(t *testing.T) {
+		usersStore, _, doRequest := newMockDBAndRequester(t)
+
 		usersStore.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
 			return &types.User{
 				ID:        id,

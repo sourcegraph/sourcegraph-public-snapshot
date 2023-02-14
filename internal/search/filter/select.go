@@ -86,5 +86,5 @@ func SelectPathFromString(s string) (SelectPath, error) {
 		}
 		cur = child
 	}
-	return SelectPath(fields), nil
+	return fields, nil
 }

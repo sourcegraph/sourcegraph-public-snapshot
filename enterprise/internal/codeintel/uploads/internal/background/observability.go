@@ -12,28 +12,28 @@ import (
 
 type workerOperations struct {
 	uploadProcessor *observation.Operation
-	uploadSizeGuage prometheus.Gauge
+	uploadSizeGauge prometheus.Gauge
 }
 
 func newWorkerOperations(observationCtx *observation.Context) *workerOperations {
-	honeyobservationCtx := *observationCtx
-	honeyobservationCtx.HoneyDataset = &honey.Dataset{Name: "codeintel-worker"}
-	uploadProcessor := honeyobservationCtx.Operation(observation.Op{
+	honeyObservationCtx := *observationCtx
+	honeyObservationCtx.HoneyDataset = &honey.Dataset{Name: "codeintel-worker"}
+	uploadProcessor := honeyObservationCtx.Operation(observation.Op{
 		Name: "codeintel.uploadHandler",
 		ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
 			return observation.EmitForTraces | observation.EmitForHoney
 		},
 	})
 
-	uploadSizeGuage := prometheus.NewGauge(prometheus.GaugeOpts{
+	uploadSizeGauge := prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "src_codeintel_upload_processor_upload_size",
 		Help: "The combined size of uploads being processed at this instant by this worker.",
 	})
-	observationCtx.Registerer.MustRegister(uploadSizeGuage)
+	observationCtx.Registerer.MustRegister(uploadSizeGauge)
 
 	return &workerOperations{
 		uploadProcessor: uploadProcessor,
-		uploadSizeGuage: uploadSizeGuage,
+		uploadSizeGauge: uploadSizeGauge,
 	}
 }
 

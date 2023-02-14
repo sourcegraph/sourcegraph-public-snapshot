@@ -46,6 +46,7 @@ const (
 	routeRepoCompare             = "repo-compare"
 	routeRepoStats               = "repo-stats"
 	routeInsights                = "insights"
+	routeSetup                   = "setup"
 	routeBatchChanges            = "batch-changes"
 	routeWelcome                 = "welcome"
 	routeCodeMonitoring          = "code-monitoring"
@@ -76,6 +77,7 @@ const (
 	routeViews                   = "views"
 	routeDevToolTime             = "devtooltime"
 	routeEmbed                   = "embed"
+	routeCody                    = "cody"
 
 	routeSearchStream  = "search.stream"
 	routeSearchConsole = "search.console"
@@ -145,6 +147,7 @@ func newRouter() *mux.Router {
 	r.Path("/unlock-account/{token}").Methods("GET").Name(uirouter.RouteUnlockAccount)
 	r.Path("/welcome").Methods("GET").Name(routeWelcome)
 	r.PathPrefix("/insights").Methods("GET").Name(routeInsights)
+	r.PathPrefix("/setup").Methods("GET").Name(routeSetup)
 	r.PathPrefix("/batch-changes").Methods("GET").Name(routeBatchChanges)
 	r.PathPrefix("/code-monitoring").Methods("GET").Name(routeCodeMonitoring)
 	r.PathPrefix("/contexts").Methods("GET").Name(routeContexts)
@@ -167,6 +170,7 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/subscriptions").Methods("GET").Name(routeSubscriptions)
 	r.PathPrefix("/views").Methods("GET").Name(routeViews)
 	r.PathPrefix("/devtooltime").Methods("GET").Name(routeDevToolTime)
+	r.PathPrefix("/cody").Methods("GET").Name(routeCody)
 	r.Path("/ping-from-self-hosted").Methods("GET", "OPTIONS").Name(uirouter.RoutePingFromSelfHosted)
 
 	// 🚨 SECURITY: The embed route is used to serve embeddable content (via an iframe) to 3rd party sites.
@@ -241,6 +245,7 @@ func initRouter(db database.DB, router *mux.Router) {
 	router.Get(routeHome).Handler(handler(db, serveHome(db)))
 	router.Get(routeThreads).Handler(brandedNoIndex("Threads"))
 	router.Get(routeInsights).Handler(brandedIndex("Insights"))
+	router.Get(routeSetup).Handler(brandedIndex("Setup"))
 	router.Get(routeBatchChanges).Handler(brandedIndex("Batch Changes"))
 	router.Get(routeCodeMonitoring).Handler(brandedIndex("Code Monitoring"))
 	router.Get(routeContexts).Handler(brandedNoIndex("Search Contexts"))
@@ -276,6 +281,7 @@ func initRouter(db database.DB, router *mux.Router) {
 	router.Get(routeSnippets).Handler(brandedNoIndex("Snippets"))
 	router.Get(routeSubscriptions).Handler(brandedNoIndex("Subscriptions"))
 	router.Get(routeViews).Handler(brandedNoIndex("View"))
+	router.Get(routeCody).Handler(brandedNoIndex("Cody"))
 	router.Get(uirouter.RoutePingFromSelfHosted).Handler(handler(db, servePingFromSelfHosted))
 
 	// 🚨 SECURITY: The embed route is used to serve embeddable content (via an iframe) to 3rd party sites.
@@ -366,7 +372,7 @@ func initRouter(db database.DB, router *mux.Router) {
 	})))
 
 	// raw
-	router.Get(routeRaw).Handler(handler(db, serveRaw(db, gitserver.NewClient(db))))
+	router.Get(routeRaw).Handler(handler(db, serveRaw(db, gitserver.NewClient())))
 
 	// All other routes that are not found.
 	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

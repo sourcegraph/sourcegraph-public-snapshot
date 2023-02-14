@@ -100,7 +100,7 @@ func getSgEmpUserIDs(ctx context.Context, db database.DB, cache bool) ([]*int32,
 		return ids, err
 	}
 
-	if _, err := setDataToCache(employeeUserIdsCacheKey, string(cacheData), employeeUserIdsCacheExpirySeconds); err != nil {
+	if err := setDataToCache(employeeUserIdsCacheKey, string(cacheData), employeeUserIdsCacheExpirySeconds); err != nil {
 		return ids, err
 	}
 

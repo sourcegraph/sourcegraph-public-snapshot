@@ -28,12 +28,11 @@ import (
 )
 
 func TestGithubSource_CreateChangeset(t *testing.T) {
-	// Repository used: sourcegraph/automation-testing
+	// Repository used: https://github.com/sourcegraph/automation-testing
 	//
-	// The requests here cannot be easily rerun with `-update` since you can only
-	// open a pull request once. To update, push a new branch to
-	// automation-testing, and put the branch names into the `success` case
-	// below.
+	// The requests here cannot be easily rerun with `-update` since you can only open a
+	// pull request once. To update, push a new branch with at least one commit to
+	// automation-testing, and put the branch names into the `success` case below.
 	//
 	// You can update just this test with `-update GithubSource_CreateChangeset`.
 	repo := &types.Repo{
@@ -54,12 +53,13 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 			cs: &Changeset{
 				Title:      "This is a test PR",
 				Body:       "This is the description of the test PR",
-				HeadRef:    "refs/heads/test-pr-10",
+				HeadRef:    "refs/heads/test-pr-11",
 				BaseRef:    "refs/heads/master",
 				RemoteRepo: repo,
 				TargetRepo: repo,
 				Changeset:  &btypes.Changeset{},
 			},
+			err: "<nil>",
 		},
 		{
 			name: "already exists",
@@ -73,7 +73,7 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 				Changeset:  &btypes.Changeset{},
 			},
 			// If PR already exists we'll just return it, no error
-			err:    "",
+			err:    "<nil>",
 			exists: true,
 		},
 	}
@@ -84,36 +84,11 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 		tc.name = "GithubSource_CreateChangeset_" + strings.ReplaceAll(tc.name, " ", "_")
 
 		t.Run(tc.name, func(t *testing.T) {
-			// The GithubSource uses the github.Client under the hood, which
-			// uses rcache, a caching layer that uses Redis.
-			// We need to clear the cache before we run the tests
-			rcache.SetupForTest(t)
-
-			cf, save := newClientFactory(t, tc.name)
+			ctx := context.Background()
+			src, save := setup(t, ctx, tc.name)
 			defer save(t)
 
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
-			svc := &types.ExternalService{
-				Kind: extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
-					Url:   "https://github.com",
-					Token: os.Getenv("GITHUB_TOKEN"),
-				})),
-			}
-
-			ctx := context.Background()
-			githubSrc, err := NewGithubSource(ctx, svc, cf)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if tc.err == "" {
-				tc.err = "<nil>"
-			}
-
-			exists, err := githubSrc.CreateChangeset(ctx, tc.cs)
+			exists, err := src.CreateChangeset(ctx, tc.cs)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
@@ -211,13 +186,10 @@ func (d *mockDoer) Do(req *http.Request) (*http.Response, error) {
 }
 
 func TestGithubSource_CloseChangeset(t *testing.T) {
-	// Repository used: sourcegraph/automation-testing
+	// Repository used: https://github.com/sourcegraph/automation-testing
 	//
-	// This test can be run with `-update` provided:
-	//
-	// 1. https://github.com/sourcegraph/automation-testing/pull/468 is open.
-	//
-	// You can update just this test with `-update GithubSource_CloseChangeset`.
+	// This test can be updated with `-update GithubSource_CloseChangeset`, provided this
+	// PR is open: https://github.com/sourcegraph/automation-testing/pull/468
 	testCases := []struct {
 		name string
 		cs   *Changeset
@@ -232,6 +204,7 @@ func TestGithubSource_CloseChangeset(t *testing.T) {
 					},
 				},
 			},
+			err: "<nil>",
 		},
 	}
 
@@ -240,36 +213,11 @@ func TestGithubSource_CloseChangeset(t *testing.T) {
 		tc.name = "GithubSource_CloseChangeset_" + strings.ReplaceAll(tc.name, " ", "_")
 
 		t.Run(tc.name, func(t *testing.T) {
-			// The GithubSource uses the github.Client under the hood, which
-			// uses rcache, a caching layer that uses Redis.
-			// We need to clear the cache before we run the tests
-			rcache.SetupForTest(t)
-
-			cf, save := newClientFactory(t, tc.name)
+			ctx := context.Background()
+			src, save := setup(t, ctx, tc.name)
 			defer save(t)
 
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
-			svc := &types.ExternalService{
-				Kind: extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
-					Url:   "https://github.com",
-					Token: os.Getenv("GITHUB_TOKEN"),
-				})),
-			}
-
-			ctx := context.Background()
-			githubSrc, err := NewGithubSource(ctx, svc, cf)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if tc.err == "" {
-				tc.err = "<nil>"
-			}
-
-			err = githubSrc.CloseChangeset(ctx, tc.cs)
+			err := src.CloseChangeset(ctx, tc.cs)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
@@ -285,14 +233,10 @@ func TestGithubSource_CloseChangeset(t *testing.T) {
 }
 
 func TestGithubSource_ReopenChangeset(t *testing.T) {
-	// Repository used: sourcegraph/automation-testing
+	// Repository used: https://github.com/sourcegraph/automation-testing
 	//
-	// This test can be run with `-update` provided:
-	//
-	// 1. https://github.com/sourcegraph/automation-testing/pull/353 is closed,
-	//    but _not_ merged.
-	//
-	// You can update just this test with `-update GithubSource_ReopenChangeset`.
+	// This test can be updated with `-update GithubSource_ReopenChangeset`, provided this
+	// PR is closed but _not_ merged: https://github.com/sourcegraph/automation-testing/pull/468
 	testCases := []struct {
 		name string
 		cs   *Changeset
@@ -308,6 +252,7 @@ func TestGithubSource_ReopenChangeset(t *testing.T) {
 					},
 				},
 			},
+			err: "<nil>",
 		},
 	}
 
@@ -316,36 +261,11 @@ func TestGithubSource_ReopenChangeset(t *testing.T) {
 		tc.name = "GithubSource_ReopenChangeset_" + strings.ReplaceAll(tc.name, " ", "_")
 
 		t.Run(tc.name, func(t *testing.T) {
-			// The GithubSource uses the github.Client under the hood, which
-			// uses rcache, a caching layer that uses Redis.
-			// We need to clear the cache before we run the tests
-			rcache.SetupForTest(t)
-
-			cf, save := newClientFactory(t, tc.name)
+			ctx := context.Background()
+			src, save := setup(t, ctx, tc.name)
 			defer save(t)
 
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
-			svc := &types.ExternalService{
-				Kind: extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
-					Url:   "https://github.com",
-					Token: os.Getenv("GITHUB_TOKEN"),
-				})),
-			}
-
-			ctx := context.Background()
-			githubSrc, err := NewGithubSource(ctx, svc, cf)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if tc.err == "" {
-				tc.err = "<nil>"
-			}
-
-			err = githubSrc.ReopenChangeset(ctx, tc.cs)
+			err := src.ReopenChangeset(ctx, tc.cs)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
@@ -375,6 +295,7 @@ func TestGithubSource_CreateComment(t *testing.T) {
 					},
 				},
 			},
+			err: "<nil>",
 		},
 	}
 
@@ -383,31 +304,11 @@ func TestGithubSource_CreateComment(t *testing.T) {
 		tc.name = "GithubSource_CreateComment_" + strings.ReplaceAll(tc.name, " ", "_")
 
 		t.Run(tc.name, func(t *testing.T) {
-			cf, save := newClientFactory(t, tc.name)
+			ctx := context.Background()
+			src, save := setup(t, ctx, tc.name)
 			defer save(t)
 
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
-			svc := &types.ExternalService{
-				Kind: extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
-					Url:   "https://github.com",
-					Token: os.Getenv("GITHUB_TOKEN"),
-				})),
-			}
-
-			ctx := context.Background()
-			githubSrc, err := NewGithubSource(ctx, svc, cf)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if tc.err == "" {
-				tc.err = "<nil>"
-			}
-
-			err = githubSrc.CreateComment(ctx, tc.cs, "test-comment")
+			err := src.CreateComment(ctx, tc.cs, "test-comment")
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
@@ -416,13 +317,10 @@ func TestGithubSource_CreateComment(t *testing.T) {
 }
 
 func TestGithubSource_UpdateChangeset(t *testing.T) {
-	// Repository used: sourcegraph/automation-testing
+	// Repository used: https://github.com/sourcegraph/automation-testing
 	//
-	// This test can be run with `-update` provided:
-	//
-	// 1. https://github.com/sourcegraph/automation-testing/pull/358 is open.
-	//
-	// You can update just this test with `-update GithubSource_UpdateChangeset`.
+	// This test can be updated with `-update GithubSource_UpdateChangeset`, provided this
+	// PR is open: https://github.com/sourcegraph/automation-testing/pull/1
 	testCases := []struct {
 		name string
 		cs   *Changeset
@@ -431,15 +329,16 @@ func TestGithubSource_UpdateChangeset(t *testing.T) {
 		{
 			name: "success",
 			cs: &Changeset{
-				Title:   "This is a new title",
-				Body:    "This is a new body",
+				Title:   "This is a test PR that is always open (keep it open!)",
+				Body:    "Feel free to ignore this. This is a test PR that is always open and is sometimes updated.",
 				BaseRef: "refs/heads/master",
 				Changeset: &btypes.Changeset{
 					Metadata: &github.PullRequest{
-						ID: "MDExOlB1bGxSZXF1ZXN0NTA0NDU4Njg1",
+						ID: "MDExOlB1bGxSZXF1ZXN0MzM5NzUyNDQy",
 					},
 				},
 			},
+			err: "<nil>",
 		},
 	}
 
@@ -448,36 +347,11 @@ func TestGithubSource_UpdateChangeset(t *testing.T) {
 		tc.name = "GithubSource_UpdateChangeset_" + strings.ReplaceAll(tc.name, " ", "_")
 
 		t.Run(tc.name, func(t *testing.T) {
-			// The GithubSource uses the github.Client under the hood, which
-			// uses rcache, a caching layer that uses Redis.
-			// We need to clear the cache before we run the tests
-			rcache.SetupForTest(t)
-
-			cf, save := newClientFactory(t, tc.name)
+			ctx := context.Background()
+			src, save := setup(t, ctx, tc.name)
 			defer save(t)
 
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
-			svc := &types.ExternalService{
-				Kind: extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
-					Url:   "https://github.com",
-					Token: os.Getenv("GITHUB_TOKEN"),
-				})),
-			}
-
-			ctx := context.Background()
-			githubSrc, err := NewGithubSource(ctx, svc, cf)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if tc.err == "" {
-				tc.err = "<nil>"
-			}
-
-			err = githubSrc.UpdateChangeset(ctx, tc.cs)
+			err := src.UpdateChangeset(ctx, tc.cs)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
@@ -505,6 +379,7 @@ func TestGithubSource_LoadChangeset(t *testing.T) {
 				TargetRepo: &types.Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
 				Changeset:  &btypes.Changeset{ExternalID: "5550"},
 			},
+			err: "<nil>",
 		},
 		{
 			name: "not-found",
@@ -522,36 +397,11 @@ func TestGithubSource_LoadChangeset(t *testing.T) {
 		tc.name = "GithubSource_LoadChangeset_" + tc.name
 
 		t.Run(tc.name, func(t *testing.T) {
-			// The GithubSource uses the github.Client under the hood, which
-			// uses rcache, a caching layer that uses Redis.
-			// We need to clear the cache before we run the tests
-			rcache.SetupForTest(t)
-
-			cf, save := newClientFactory(t, tc.name)
+			ctx := context.Background()
+			src, save := setup(t, ctx, tc.name)
 			defer save(t)
 
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
-			svc := &types.ExternalService{
-				Kind: extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
-					Url:   "https://github.com",
-					Token: os.Getenv("GITHUB_TOKEN"),
-				})),
-			}
-
-			ctx := context.Background()
-			githubSrc, err := NewGithubSource(ctx, svc, cf)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if tc.err == "" {
-				tc.err = "<nil>"
-			}
-
-			err = githubSrc.LoadChangeset(ctx, tc.cs)
+			err := src.LoadChangeset(ctx, tc.cs)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
@@ -615,26 +465,181 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 	})
 }
 
-func TestGithubSource_GetUserFork(t *testing.T) {
+func TestGithubSource_GetFork(t *testing.T) {
 	ctx := context.Background()
+	urn := extsvc.URN(extsvc.KindGitHub, 1)
+
+	t.Run("vcr tests", func(t *testing.T) {
+		newGitHubRepo := func(urn, nameWithOwner, id string) *types.Repo {
+			return &types.Repo{
+				Metadata: &github.Repository{
+					ID:            id,
+					NameWithOwner: nameWithOwner,
+				},
+				Sources: map[string]*types.SourceInfo{
+					urn: {
+						ID:       urn,
+						CloneURL: "https://github.com/" + nameWithOwner,
+					},
+				},
+			}
+		}
+
+		type TCRepo struct{ name, namespace string }
+
+		failTestCases := []struct {
+			name   string
+			target TCRepo
+			fork   TCRepo
+			err    string
+		}{
+			// This test expects that:
+			// - The repo sourcegraph-testing/vcr-fork-test-repo exists and is not a fork.
+			// - The repo sourcegraph-vcr/vcr-fork-test-repo exists and is not a fork.
+			// Use credentials in 1password for "sourcegraph-vcr" to access or update this test.
+			{
+				name:   "not a fork",
+				target: TCRepo{name: "vcr-fork-test-repo", namespace: "sourcegraph-testing"},
+				fork:   TCRepo{name: "vcr-fork-test-repo", namespace: "sourcegraph-vcr"},
+				err:    "repo is not a fork",
+			},
+		}
+
+		for _, tc := range failTestCases {
+			tc := tc
+			tc.name = "GithubSource_GetFork_" + strings.ReplaceAll(tc.name, " ", "_")
+			t.Run(tc.name, func(t *testing.T) {
+				src, save := setup(t, ctx, tc.name)
+				defer save(t)
+				target := newGitHubRepo(urn, tc.target.namespace+"/"+tc.target.name, "123")
+
+				fork, err := src.GetFork(ctx, target, strPtr(tc.fork.namespace), strPtr(tc.fork.name))
+
+				assert.Nil(t, fork)
+				assert.ErrorContains(t, err, tc.err)
+			})
+		}
+
+		successTestCases := []struct {
+			name string
+			// True if changeset is already created on code host.
+			externalNameAndNamespace bool
+			target                   TCRepo
+			fork                     TCRepo
+		}{
+			// This test validates the behavior when `GetFork` is called without a
+			// namespace or name set, but a fork of the repo already exists in the user's
+			// namespace with the default fork name. `GetFork` should return the existing
+			// fork.
+			//
+			// This test expects that:
+			// - The repo sourcegraph-testing/vcr-fork-test-repo exists and is not a fork.
+			// - The repo sourcegraph-vcr/sourcegraph-testing-vcr-fork-test-repo-already-forked
+			//   exists and is a fork of it.
+			// - The current user is sourcegraph-vcr and the default fork naming convention
+			//   would produce the fork name "sourcegraph-testing-vcr-fork-test-repo-already-forked".
+			// Use credentials in 1password for "sourcegraph-vcr" to access or update this test.
+			{
+				name:                     "success with new changeset and existing fork",
+				externalNameAndNamespace: false,
+				target:                   TCRepo{name: "vcr-fork-test-repo-already-forked", namespace: "sourcegraph-testing"},
+				fork:                     TCRepo{name: "sourcegraph-testing-vcr-fork-test-repo-already-forked", namespace: "sourcegraph-vcr"},
+			},
+
+			// This test validates the behavior when `GetFork` is called without a
+			// namespace or name set and no fork of the repo exists in the user's
+			// namespace with the default fork name. `GetFork` should return the
+			// newly-created fork.
+			//
+			// This test expects that:
+			// - The repo sourcegraph-testing/vcr-fork-test-repo-not-forked exists and
+			//   is not a fork.
+			// - The repo sourcegraph-vcr/sourcegraph-testing-vcr-fork-test-repo-not-forked
+			//   does not exist.
+			// - The current user is sourcegraph-vcr and the default fork naming convention
+			//   would produce the fork name "sourcegraph-testing-vcr-fork-test-repo-not-forked".
+			// Use credentials in 1password for "sourcegraph-vcr" to access or update this test.
+			//
+			// NOTE: It is not possible to update this test and "success with existing
+			// changeset and new fork" at the same time.
+			{
+				name:                     "success with new changeset and new fork",
+				externalNameAndNamespace: false,
+				target:                   TCRepo{name: "vcr-fork-test-repo-not-forked", namespace: "sourcegraph-testing"},
+				fork:                     TCRepo{name: "sourcegraph-testing-vcr-fork-test-repo-not-forked", namespace: "sourcegraph-vcr"},
+			},
+
+			// This test validates the behavior when `GetFork` is called with a namespace
+			// and name both already set, and a fork of the repo already exists at that
+			// destination. `GetFork` should return the existing fork.
+			//
+			// This test expects that:
+			// - The repo sourcegraph-testing/vcr-fork-test-repo exists and is not a fork.
+			// - The repo sourcegraph-vcr/sourcegraph-testing-vcr-fork-test-repo-already-forked
+			//   exists and is a fork of it.
+			// Use credentials in 1password for "sourcegraph-vcr" to access or update this test.
+			{
+				name:                     "success with existing changeset and existing fork",
+				externalNameAndNamespace: true,
+				target:                   TCRepo{name: "vcr-fork-test-repo-already-forked", namespace: "sourcegraph-testing"},
+				fork:                     TCRepo{name: "sourcegraph-testing-vcr-fork-test-repo-already-forked", namespace: "sourcegraph-vcr"},
+			},
+
+			// This test validates the behavior when `GetFork` is called with a namespace
+			// and name both already set, but no fork of the repo already exists at that
+			// destination. This situation is only possible if the changeset and fork repo
+			// have been deleted on the code host since the changeset was created.
+			// `GetFork` should return the newly-created fork.
+			//
+			// This test expects that:
+			// - The repo sourcegraph-testing/vcr-fork-test-repo-not-forked exists and
+			//   is not a fork.
+			// - The repo sgtest/sourcegraph-testing-vcr-fork-test-repo-not-forked
+			//   does not exist.
+			// Use credentials in 1password for "sourcegraph-vcr" to access or update this test.
+			//
+			// NOTE: It is not possible to update this test and "success with existing
+			// changeset and new fork" at the same time.
+			{
+				name:                     "success with existing changeset and new fork",
+				externalNameAndNamespace: true,
+				target:                   TCRepo{name: "vcr-fork-test-repo-not-forked", namespace: "sourcegraph-testing"},
+				fork:                     TCRepo{name: "sourcegraph-testing-vcr-fork-test-repo-not-forked", namespace: "sgtest"},
+			},
+		}
+
+		for _, tc := range successTestCases {
+			tc := tc
+			tc.name = "GithubSource_GetFork_" + strings.ReplaceAll(tc.name, " ", "_")
+			t.Run(tc.name, func(t *testing.T) {
+				src, save := setup(t, ctx, tc.name)
+				defer save(t)
+				target := newGitHubRepo(urn, tc.target.namespace+"/"+tc.target.name, "123")
+
+				var fork *types.Repo
+				var err error
+				if tc.externalNameAndNamespace {
+					fork, err = src.GetFork(ctx, target, strPtr(tc.fork.namespace), strPtr(tc.fork.name))
+				} else {
+					fork, err = src.GetFork(ctx, target, nil, nil)
+				}
+
+				assert.Nil(t, err)
+				assert.NotNil(t, fork)
+				assert.NotEqual(t, fork, target)
+				assert.Equal(t, tc.fork.namespace+"/"+tc.fork.name, fork.Metadata.(*github.Repository).NameWithOwner)
+				assert.Equal(t, fork.Sources[urn].CloneURL, "https://github.com/"+tc.fork.namespace+"/"+tc.fork.name)
+
+				testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), fork)
+			})
+		}
+	})
 
 	t.Run("failures", func(t *testing.T) {
 		for name, tc := range map[string]struct {
 			targetRepo *types.Repo
 			client     githubClientFork
 		}{
-			"nil metadata": {
-				targetRepo: &types.Repo{
-					Metadata: nil,
-				},
-				client: nil,
-			},
-			"invalid metadata": {
-				targetRepo: &types.Repo{
-					Metadata: []string{},
-				},
-				client: nil,
-			},
 			"invalid NameWithOwner": {
 				targetRepo: &types.Repo{
 					Metadata: &github.Repository{
@@ -653,7 +658,7 @@ func TestGithubSource_GetUserFork(t *testing.T) {
 			},
 		} {
 			t.Run(name, func(t *testing.T) {
-				fork, err := githubGetUserFork(ctx, tc.targetRepo, tc.client, nil)
+				fork, err := getGitHubForkInternal(ctx, tc.targetRepo, tc.client, nil, nil)
 				assert.Nil(t, fork)
 				assert.NotNil(t, err)
 			})
@@ -670,6 +675,8 @@ func TestGithubSource_GetUserFork(t *testing.T) {
 			forkRepo      *github.Repository
 			namespace     *string
 			wantNamespace string
+			name          *string
+			wantName      string
 			client        githubClientFork
 		}{
 			"no namespace": {
@@ -684,10 +691,11 @@ func TestGithubSource_GetUserFork(t *testing.T) {
 						},
 					},
 				},
-				forkRepo:      &github.Repository{NameWithOwner: user + "/bar"},
+				forkRepo:      &github.Repository{NameWithOwner: user + "/user-bar", IsFork: true},
 				namespace:     nil,
 				wantNamespace: user,
-				client:        &mockGithubClientFork{fork: &github.Repository{NameWithOwner: user + "/bar"}},
+				wantName:      user + "-bar",
+				client:        &mockGithubClientFork{fork: &github.Repository{NameWithOwner: user + "/user-bar", IsFork: true}},
 			},
 			"with namespace": {
 				targetRepo: &types.Repo{
@@ -701,22 +709,45 @@ func TestGithubSource_GetUserFork(t *testing.T) {
 						},
 					},
 				},
-				forkRepo:      &github.Repository{NameWithOwner: org + "/bar"},
+				forkRepo:      &github.Repository{NameWithOwner: org + "/" + org + "-bar", IsFork: true},
 				namespace:     &org,
 				wantNamespace: org,
+				wantName:      org + "-bar",
 				client: &mockGithubClientFork{
-					fork:    &github.Repository{NameWithOwner: org + "/bar"},
+					fork:    &github.Repository{NameWithOwner: org + "/" + org + "-bar", IsFork: true},
+					wantOrg: &org,
+				},
+			},
+			"with namespace and name": {
+				targetRepo: &types.Repo{
+					Metadata: &github.Repository{
+						NameWithOwner: "foo/bar",
+					},
+					Sources: map[string]*types.SourceInfo{
+						urn: {
+							ID:       urn,
+							CloneURL: "https://github.com/foo/bar",
+						},
+					},
+				},
+				forkRepo:      &github.Repository{NameWithOwner: org + "/custom-bar", IsFork: true},
+				namespace:     &org,
+				wantNamespace: org,
+				name:          strPtr("custom-bar"),
+				wantName:      "custom-bar",
+				client: &mockGithubClientFork{
+					fork:    &github.Repository{NameWithOwner: org + "/custom-bar", IsFork: true},
 					wantOrg: &org,
 				},
 			},
 		} {
 			t.Run(name, func(t *testing.T) {
-				fork, err := githubGetUserFork(ctx, tc.targetRepo, tc.client, tc.namespace)
+				fork, err := getGitHubForkInternal(ctx, tc.targetRepo, tc.client, tc.namespace, tc.name)
 				assert.Nil(t, err)
 				assert.NotNil(t, fork)
 				assert.NotEqual(t, fork, tc.targetRepo)
 				assert.Equal(t, tc.forkRepo, fork.Metadata)
-				assert.Equal(t, fork.Sources[urn].CloneURL, "https://github.com/"+tc.wantNamespace+"/bar")
+				assert.Equal(t, fork.Sources[urn].CloneURL, "https://github.com/"+tc.wantNamespace+"/"+tc.wantName)
 			})
 		}
 	})
@@ -736,4 +767,33 @@ func (mock *mockGithubClientFork) Fork(ctx context.Context, owner, repo string, 
 	}
 
 	return mock.fork, mock.err
+}
+
+func (mock *mockGithubClientFork) GetRepo(ctx context.Context, owner, repo string) (*github.Repository, error) {
+	return nil, nil
+}
+
+func setup(t *testing.T, ctx context.Context, tName string) (src *GithubSource, save func(testing.TB)) {
+	// The GithubSource uses the github.Client under the hood, which uses rcache, a
+	// caching layer that uses Redis. We need to clear the cache before we run the tests
+	rcache.SetupForTest(t)
+
+	cf, save := newClientFactory(t, tName)
+
+	lg := log15.New()
+	lg.SetHandler(log15.DiscardHandler())
+
+	svc := &types.ExternalService{
+		Kind: extsvc.KindGitHub,
+		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
+			Url:   "https://github.com",
+			Token: os.Getenv("GITHUB_TOKEN"),
+		})),
+	}
+
+	src, err := NewGithubSource(ctx, svc, cf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return src, save
 }

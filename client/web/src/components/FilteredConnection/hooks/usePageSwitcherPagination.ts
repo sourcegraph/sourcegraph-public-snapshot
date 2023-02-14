@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react'
 
 import { ApolloError, WatchQueryFetchPolicy } from '@apollo/client'
-import { useHistory, useLocation } from 'react-router'
+import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
 
 import { GraphQLResult, useQuery } from '@sourcegraph/http-client'
 
@@ -41,7 +41,7 @@ export interface UsePaginatedConnectionResult<TResult, TVariables, TNode> extend
     connection?: PaginatedConnection<TNode>
     loading: boolean
     error?: ApolloError
-    refetch: () => any
+    refetch: (variables?: TVariables) => any
 }
 
 interface UsePaginatedConnectionConfig<TResult> {
@@ -53,6 +53,8 @@ interface UsePaginatedConnectionConfig<TResult> {
     fetchPolicy?: WatchQueryFetchPolicy
     // Allows running an optional callback on any successful request
     onCompleted?: (data: TResult) => void
+    // Allows to provide polling interval to useQuery
+    pollInterval?: number
 }
 
 interface UsePaginatedConnectionParameters<TResult, TVariables extends PaginatedConnectionQueryArguments, TNode> {
@@ -98,6 +100,7 @@ export const usePageSwitcherPagination = <TResult, TVariables extends PaginatedC
         variables: queryVariables,
         fetchPolicy: options?.fetchPolicy,
         onCompleted: options?.onCompleted,
+        pollInterval: options?.pollInterval,
     })
 
     const connection = useMemo(() => {
@@ -202,7 +205,7 @@ const useSyncPaginationArgsWithUrl = (
     setPaginationArgs: (args: PaginatedConnectionQueryArguments) => void
 ] => {
     const location = useLocation()
-    const history = useHistory()
+    const navigate = useNavigate()
 
     const initialPaginationArgs = useMemo(() => {
         if (enabled) {
@@ -218,10 +221,10 @@ const useSyncPaginationArgsWithUrl = (
         (paginationArgs: PaginatedConnectionQueryArguments): void => {
             if (enabled) {
                 const search = getSearchFromPaginationArgs(paginationArgs)
-                history.replace({ search })
+                navigate({ search }, { replace: true })
             }
         },
-        [enabled, history]
+        [enabled, navigate]
     )
     return [initialPaginationArgs, setPaginationArgs]
 }

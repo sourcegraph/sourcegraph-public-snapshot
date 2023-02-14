@@ -820,6 +820,13 @@ type User struct {
 	Searchable            bool
 }
 
+// UserForSCIM extends user with email addresses and SCIM external ID.
+type UserForSCIM struct {
+	User
+	Emails         []string
+	SCIMExternalID string
+}
+
 type SystemRole string
 
 var (
@@ -832,7 +839,6 @@ type Role struct {
 	Name      string
 	System    bool
 	CreatedAt time.Time
-	DeletedAt time.Time
 }
 
 type Permission struct {
@@ -840,6 +846,13 @@ type Permission struct {
 	Namespace string
 	Action    string
 	CreatedAt time.Time
+}
+
+// DisplayName returns an human-readable string for permissions.
+func (p *Permission) DisplayName() string {
+	// Based on the zanzibar representation for data relations:
+	// <namespace>:<object_id>#<relation>@<user_id | user_group>
+	return fmt.Sprintf("%s#%s", p.Namespace, p.Action)
 }
 
 type RolePermission struct {
@@ -852,6 +865,21 @@ type UserRole struct {
 	RoleID    int32
 	UserID    int32
 	CreatedAt time.Time
+}
+
+type NamespacePermission struct {
+	ID         int64
+	Namespace  string
+	ResourceID int64
+	Action     string
+	UserID     int32
+	CreatedAt  time.Time
+}
+
+func (n *NamespacePermission) DisplayName() string {
+	// Based on the zanzibar representation for data relations:
+	// <namespace>:<object_id>#<relation>@<user_id | user_group>
+	return fmt.Sprintf("%s:%d#%s@%d", n.Namespace, n.ResourceID, n.Action, n.UserID)
 }
 
 type OrgMemberAutocompleteSearchItem struct {
@@ -876,11 +904,6 @@ type OrgMembership struct {
 	UserID    int32
 	CreatedAt time.Time
 	UpdatedAt time.Time
-}
-
-type OrgStats struct {
-	OrgID             int32
-	CodeHostRepoCount int32
 }
 
 type PhabricatorRepo struct {
@@ -1808,4 +1831,22 @@ type SlowRequest struct {
 	Errors    []string       `json:"errors"`
 	Query     string         `json:"query"`
 	Filepath  string         `json:"filepath"`
+}
+
+type Team struct {
+	ID           int32
+	Name         string
+	DisplayName  string
+	ReadOnly     bool
+	ParentTeamID int32
+	CreatorID    int32
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+type TeamMember struct {
+	UserID    int32
+	TeamID    int32
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }

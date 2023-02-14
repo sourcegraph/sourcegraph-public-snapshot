@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -14,9 +15,15 @@ import (
 )
 
 type siteConfigStubs struct {
-	db          database.DB
-	users       []*types.User
-	siteConfigs []*database.SiteConfig
+	db            database.DB
+	users         []*types.User
+	expectedDiffs map[int32]string
+}
+
+func toStringPtr(n int) *string {
+	str := strconv.Itoa(n)
+
+	return &str
 }
 
 func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
@@ -45,35 +52,35 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 
 	conf := db.Conf()
 	siteConfigsToCreate := []*database.SiteConfig{
+		// ID: 2 (because first time we create a config an initial config will be created first)
 		{
-			Contents: `
-{
+			Contents: `{
   "auth.Providers": []
 }`,
 		},
+		// ID: 3
 		{
 			AuthorUserID: 2,
 			// A new line is added.
-			Contents: `
-{
+			Contents: `{
   "disableAutoGitUpdates": true,
   "auth.Providers": []
 }`,
 		},
+		// ID: 4
 		{
 			AuthorUserID: 1,
 			// Existing line is changed.
-			Contents: `
-{
+			Contents: `{
   "disableAutoGitUpdates": false,
   "auth.Providers": []
 }`,
 		},
+		// ID: 5
 		{
 			AuthorUserID: 1,
 			// Existing line is removed.
-			Contents: `
-{
+			Contents: `{
   "auth.Providers": []
 }`,
 		},
@@ -91,24 +98,105 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 		lastID = siteConfig.ID
 	}
 
+	expectedDiffs := map[int32]string{
+		5: `--- ID: 4
++++ ID: 5
+@@ -1,4 +1,3 @@
+ {
+-  "disableAutoGitUpdates": false,
+   "auth.Providers": []
+ }
+\ No newline at end of file
+`,
+
+		4: `--- ID: 3
++++ ID: 4
+@@ -1,4 +1,4 @@
+ {
+-  "disableAutoGitUpdates": true,
++  "disableAutoGitUpdates": false,
+   "auth.Providers": []
+ }
+\ No newline at end of file
+`,
+
+		3: `--- ID: 2
++++ ID: 3
+@@ -1,3 +1,4 @@
+ {
++  "disableAutoGitUpdates": true,
+   "auth.Providers": []
+ }
+\ No newline at end of file
+`,
+
+		2: `--- ID: 1
++++ ID: 2
+@@ -1,17 +1,3 @@
+ {
+-  // The externally accessible URL for Sourcegraph (i.e., what you type into your browser)
+-  // This is required to be configured for Sourcegraph to work correctly.
+-  // "externalURL": "https://sourcegraph.example.com",
+-  // The authentication provider to use for identifying and signing in users.
+-  // Only one entry is supported.
+-  //
+-  // The builtin auth provider with signup disallowed (shown below) means that
+-  // after the initial site admin signs in, all other users must be invited.
+-  //
+-  // Other providers are documented at https://docs.sourcegraph.com/admin/auth.
+-  "auth.providers": [
+-    {
+-      "type": "builtin"
+-    }
+-  ],
++  "auth.Providers": []
+ }
+\ No newline at end of file
+`,
+
+		1: `--- ID: 0
++++ ID: 1
+@@ -1 +1,17 @@
++{
++  // The externally accessible URL for Sourcegraph (i.e., what you type into your browser)
++  // This is required to be configured for Sourcegraph to work correctly.
++  // "externalURL": "https://sourcegraph.example.com",
++  // The authentication provider to use for identifying and signing in users.
++  // Only one entry is supported.
++  //
++  // The builtin auth provider with signup disallowed (shown below) means that
++  // after the initial site admin signs in, all other users must be invited.
++  //
++  // Other providers are documented at https://docs.sourcegraph.com/admin/auth.
++  "auth.providers": [
++    {
++      "type": "builtin"
++    }
++  ],
++}
+\ No newline at end of file
+`,
+	}
+
 	return &siteConfigStubs{
-		db:    db,
-		users: users,
-		// siteConfigs: siteConfigs,
+		db:            db,
+		users:         users,
+		expectedDiffs: expectedDiffs,
 	}
 }
 
 func TestSiteConfigConnection(t *testing.T) {
 	stubs := setupSiteConfigStubs(t)
+	expectedDiffs := stubs.expectedDiffs
 
 	// Create a context with an admin user as the actor.
-	context := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+	contextWithActor := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
 	RunTests(t, []*Test{
 		{
 			Schema:  mustParseGraphQLSchema(t, stubs.db),
 			Label:   "Get first 2 site configuration history",
-			Context: context,
+			Context: contextWithActor,
 			Query: `
 			{
 			  site {
@@ -124,6 +212,8 @@ func TestSiteConfigConnection(t *testing.T) {
 								  username,
 								  displayName
 							  }
+							  reproducedDiff
+							  diff
 						  }
 						  pageInfo {
 							hasNextPage
@@ -151,7 +241,9 @@ func TestSiteConfigConnection(t *testing.T) {
 										"id": "VXNlcjox",
 										"username": "foo",
 										"displayName": "foo user"
-									}
+									},
+									"reproducedDiff": true,
+									"diff": %[3]q
 								},
 								{
 									"id": %[2]q,
@@ -159,7 +251,9 @@ func TestSiteConfigConnection(t *testing.T) {
 										"id": "VXNlcjox",
 										"username": "foo",
 										"displayName": "foo user"
-									}
+									},
+									"reproducedDiff": true,
+									"diff": %[4]q
 								}
 							],
 							"pageInfo": {
@@ -172,12 +266,12 @@ func TestSiteConfigConnection(t *testing.T) {
 					}
 				}
 			}
-		`, marshalSiteConfigurationChangeID(5), marshalSiteConfigurationChangeID(4)),
+		`, marshalSiteConfigurationChangeID(5), marshalSiteConfigurationChangeID(4), expectedDiffs[5], expectedDiffs[4]),
 		},
 		{
 			Schema:  mustParseGraphQLSchema(t, stubs.db),
-			Label:   "Get last 2 site configuration history",
-			Context: context,
+			Label:   "Get last 3 site configuration history",
+			Context: contextWithActor,
 			Query: `
 					{
 						site {
@@ -193,6 +287,8 @@ func TestSiteConfigConnection(t *testing.T) {
 											username,
 											displayName
 										}
+										reproducedDiff
+										diff
 									}
 									pageInfo {
 									  hasNextPage
@@ -220,15 +316,21 @@ func TestSiteConfigConnection(t *testing.T) {
 												"id": "VXNlcjoy",
 												"username": "bar",
 												"displayName": "bar user"
-											}
+											},
+											"reproducedDiff": true,
+											"diff": %[4]q
 										},
 										{
 											"id": %[2]q,
-											"author": null
+											"author": null,
+											"reproducedDiff": true,
+											"diff": %[5]q
 										},
 										{
 											"id": %[3]q,
-											"author": null
+											"author": null,
+											"reproducedDiff": true,
+											"diff": %[6]q
 										}
 									],
 									"pageInfo": {
@@ -241,12 +343,14 @@ func TestSiteConfigConnection(t *testing.T) {
 							}
 						}
 					}
-				`, marshalSiteConfigurationChangeID(3), marshalSiteConfigurationChangeID(2), marshalSiteConfigurationChangeID(1)),
+				`, marshalSiteConfigurationChangeID(3), marshalSiteConfigurationChangeID(2), marshalSiteConfigurationChangeID(1),
+				expectedDiffs[3], expectedDiffs[2], expectedDiffs[1],
+			),
 		},
 		{
 			Schema:  mustParseGraphQLSchema(t, stubs.db),
 			Label:   "Get first 2 site configuration history based on an offset",
-			Context: context,
+			Context: contextWithActor,
 			Query: fmt.Sprintf(`
 			{
 				site {
@@ -262,6 +366,8 @@ func TestSiteConfigConnection(t *testing.T) {
 									username,
 									displayName
 								}
+								reproducedDiff
+								diff
 							}
 							pageInfo {
 							  hasNextPage
@@ -289,7 +395,9 @@ func TestSiteConfigConnection(t *testing.T) {
 										"id": "VXNlcjox",
 										"username": "foo",
 										"displayName": "foo user"
-									}
+									},
+									"reproducedDiff": true,
+									"diff": %[3]q
 								},
 								{
 									"id": %[2]q,
@@ -297,7 +405,9 @@ func TestSiteConfigConnection(t *testing.T) {
 										"id": "VXNlcjoy",
 										"username": "bar",
 										"displayName": "bar user"
-									}
+									},
+									"reproducedDiff": true,
+									"diff": %[4]q
 								}
 							],
 							"pageInfo": {
@@ -310,12 +420,12 @@ func TestSiteConfigConnection(t *testing.T) {
 					}
 				}
 			}
-		`, marshalSiteConfigurationChangeID(4), marshalSiteConfigurationChangeID(3)),
+		`, marshalSiteConfigurationChangeID(4), marshalSiteConfigurationChangeID(3), expectedDiffs[4], expectedDiffs[3]),
 		},
 		{
 			Schema:  mustParseGraphQLSchema(t, stubs.db),
 			Label:   "Get last 2 site configuration history based on an offset",
-			Context: context,
+			Context: contextWithActor,
 			Query: fmt.Sprintf(`
 			{
 			  site {
@@ -331,6 +441,8 @@ func TestSiteConfigConnection(t *testing.T) {
 									username,
 									displayName
 								}
+								reproducedDiff
+								diff
 							}
 							pageInfo {
 							  hasNextPage
@@ -353,16 +465,20 @@ func TestSiteConfigConnection(t *testing.T) {
 							"totalCount": 5,
 							"nodes": [
 								 {
-									 "id": %[1]q,
-									 "author": {
-										 "id": "VXNlcjoy",
-										 "username": "bar",
-										 "displayName": "bar user"
-									 }
+									"id": %[1]q,
+									"author": {
+										"id": "VXNlcjoy",
+										"username": "bar",
+										"displayName": "bar user"
+									},
+									"reproducedDiff": true,
+									"diff": %[3]q
 								 },
 								 {
-									 "id": %[2]q,
-									 "author": null
+									"id": %[2]q,
+									"author": null,
+									"reproducedDiff": true,
+									"diff": %[4]q
 								 }
 							],
 							"pageInfo": {
@@ -375,7 +491,7 @@ func TestSiteConfigConnection(t *testing.T) {
 					}
 				}
 			}
-		`, marshalSiteConfigurationChangeID(3), marshalSiteConfigurationChangeID(2)),
+		`, marshalSiteConfigurationChangeID(3), marshalSiteConfigurationChangeID(2), expectedDiffs[3], expectedDiffs[2]),
 		},
 	})
 }
@@ -449,7 +565,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 			name: "first: 2, after: 4",
 			paginationArgs: &database.PaginationArgs{
 				First: intPtr(2),
-				After: intPtr(4),
+				After: toStringPtr(4),
 			},
 			expectedSiteConfigIDs:         []int32{3, 2},
 			expectedPreviousSiteConfigIDs: []int32{2, 1},
@@ -458,7 +574,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 			name: "first: 10, after: 4",
 			paginationArgs: &database.PaginationArgs{
 				First: intPtr(10),
-				After: intPtr(4),
+				After: toStringPtr(4),
 			},
 			expectedSiteConfigIDs:         []int32{3, 2, 1},
 			expectedPreviousSiteConfigIDs: []int32{2, 1, 0},
@@ -467,7 +583,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 			name: "first: 2, after: 1",
 			paginationArgs: &database.PaginationArgs{
 				First: intPtr(2),
-				After: intPtr(1),
+				After: toStringPtr(1),
 			},
 			expectedSiteConfigIDs:         []int32{},
 			expectedPreviousSiteConfigIDs: []int32{},
@@ -476,7 +592,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 			name: "last: 2, before: 2",
 			paginationArgs: &database.PaginationArgs{
 				Last:   intPtr(2),
-				Before: intPtr(2),
+				Before: toStringPtr(2),
 			},
 			expectedSiteConfigIDs:         []int32{3, 4},
 			expectedPreviousSiteConfigIDs: []int32{2, 3},
@@ -485,7 +601,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 			name: "last: 10, before: 2",
 			paginationArgs: &database.PaginationArgs{
 				Last:   intPtr(10),
-				Before: intPtr(2),
+				Before: toStringPtr(2),
 			},
 			expectedSiteConfigIDs:         []int32{3, 4, 5},
 			expectedPreviousSiteConfigIDs: []int32{2, 3, 4},
@@ -494,7 +610,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 			name: "last: 2, before: 5",
 			paginationArgs: &database.PaginationArgs{
 				Last:   intPtr(2),
-				Before: intPtr(5),
+				Before: toStringPtr(5),
 			},
 			expectedSiteConfigIDs:         []int32{},
 			expectedPreviousSiteConfigIDs: []int32{},
@@ -558,8 +674,8 @@ func TestModifyArgs(t *testing.T) {
 		},
 		{
 			name:             "first: 5, after: 10 (next page)",
-			args:             &database.PaginationArgs{First: intPtr(5), After: intPtr(10)},
-			expectedArgs:     &database.PaginationArgs{First: intPtr(6), After: intPtr(10)},
+			args:             &database.PaginationArgs{First: intPtr(5), After: toStringPtr(10)},
+			expectedArgs:     &database.PaginationArgs{First: intPtr(6), After: toStringPtr(10)},
 			expectedModified: true,
 		},
 		{
@@ -570,27 +686,31 @@ func TestModifyArgs(t *testing.T) {
 		},
 		{
 			name:             "last: 5, before: 10 (previous page)",
-			args:             &database.PaginationArgs{Last: intPtr(5), Before: intPtr(10)},
-			expectedArgs:     &database.PaginationArgs{Last: intPtr(6), Before: intPtr(9)},
+			args:             &database.PaginationArgs{Last: intPtr(5), Before: toStringPtr(10)},
+			expectedArgs:     &database.PaginationArgs{Last: intPtr(6), Before: toStringPtr(9)},
 			expectedModified: true,
 		},
 		{
 			name:             "last: 5, before: 1 (edge case)",
-			args:             &database.PaginationArgs{Last: intPtr(5), Before: intPtr(1)},
-			expectedArgs:     &database.PaginationArgs{Last: intPtr(6), Before: intPtr(0)},
+			args:             &database.PaginationArgs{Last: intPtr(5), Before: toStringPtr(1)},
+			expectedArgs:     &database.PaginationArgs{Last: intPtr(6), Before: toStringPtr(0)},
 			expectedModified: true,
 		},
 		{
 			name:             "last: 5, before: 0 (same as last page but a mathematical  edge case)",
-			args:             &database.PaginationArgs{Last: intPtr(5), Before: intPtr(0)},
-			expectedArgs:     &database.PaginationArgs{Last: intPtr(5), Before: intPtr(0)},
+			args:             &database.PaginationArgs{Last: intPtr(5), Before: toStringPtr(0)},
+			expectedArgs:     &database.PaginationArgs{Last: intPtr(5), Before: toStringPtr(0)},
 			expectedModified: false,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			modified := modifyArgs(tc.args)
+			modified, err := modifyArgs(tc.args)
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			if modified != tc.expectedModified {
 				t.Errorf("Expected modified to be %v, but got %v", modified, tc.expectedModified)
 			}

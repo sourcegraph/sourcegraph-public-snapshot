@@ -1,0 +1,70 @@
+contents:
+  keyring:
+    - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    - https://storage.googleapis.com/package-repository/packages/melange.rsa.pub
+  repositories:
+    - https://packages.wolfi.dev/os
+    - '@sourcegraph https://storage.googleapis.com/package-repository/packages/main/'
+  packages:
+    ## Base set of packages included in sourcegraph/alpine base image
+    - wolfi-baselayout
+    - ca-certificates-bundle
+    - tzdata
+    - tini
+    - mailcap
+    # Dev tools - may not be required in production
+    - busybox
+    - curl
+    - wget
+    # - 'bind-tools>=9.16.33-r0' # TODO: Not available in Wolfi repo
+
+    ## server packages
+    - bash
+    - ca-certificates # TODO: Required?
+    - git
+    - git-lfs
+    - git-p4
+    - libev
+    - nodejs # TODO: Is this the same as nodejs-current? Test upgrade from 14.5.0 to 18.12
+    - openssh-client
+    - pcre
+    - postgresql-12
+    - postgresql-12-contrib
+    - python3 # TODO: Missing python2; required?
+    - redis # TODO: 7.0.7; test upgrade from 5.0
+    - sqlite-libs
+    - su-exec
+
+    ## Missing packages
+    #- nginx
+    #- python2
+
+    - comby@sourcegraph
+    - ctags@sourcegraph
+    - coursier@sourcegraph
+    - p4cli@sourcegraph
+    - p4-fusion@sourcegraph
+
+accounts:
+  groups:
+    - groupname: sourcegraph
+      gid: 101
+    - groupname: grafana
+      gid: 201
+  users:
+    - username: sourcegraph
+      uid: 100
+      gid: 101
+    - username: grafana
+      uid: 200
+      gid: 201
+
+# NOTE: This is ignored (see build output)
+# To force amd64, first run `docker pull --platform linux/arm64 cgr.dev/chainguard/apko`
+archs:
+ - amd64
+
+annotations:
+  org.opencontainers.image.url: https://sourcegraph.com/
+  org.opencontainers.image.source: https://github.com/sourcegraph/sourcegraph/
+  org.opencontainers.image.documentation: https://docs.sourcegraph.com/

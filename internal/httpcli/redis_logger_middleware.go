@@ -18,11 +18,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// outboundRequestsRedisFIFOListDefaultSize sets a default value for the FIFO list.
-const outboundRequestsRedisFIFOListDefaultSize = 50
-
 // outboundRequestsRedisFIFOList is a FIFO redis cache to store the requests.
-var outboundRequestsRedisFIFOList = rcache.NewFIFOList("outbound-requests", outboundRequestsRedisFIFOListDefaultSize)
+var outboundRequestsRedisFIFOList = rcache.NewFIFOListDynamic("outbound-requests", func() int {
+	return int(OutboundRequestLogLimit())
+})
 
 const sourcegraphPrefix = "github.com/sourcegraph/sourcegraph/"
 
@@ -35,9 +34,6 @@ func redisLoggerMiddleware() Middleware {
 			duration := time.Since(start)
 			limit := OutboundRequestLogLimit()
 			shouldRedactSensitiveHeaders := !deploy.IsDev(deploy.Type()) || RedactOutboundRequestHeaders()
-
-			// Update limit in case it changed
-			outboundRequestsRedisFIFOList.SetMaxSize(int(limit))
 
 			// Feature is turned off, do not log
 			if limit == 0 {

@@ -365,6 +365,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 		withPnpmCache(),
 		bk.Key(prepStepKey),
 		bk.Env("ENTERPRISE", "1"),
+		bk.Env("NODE_ENV", "production"),
 		bk.Env("INTEGRATION_TESTS", "true"),
 		bk.Env("COVERAGE_INSTRUMENT", "true"),
 		bk.Cmd("dev/ci/pnpm-build.sh client/web"),
@@ -567,6 +568,25 @@ func addVsceReleaseSteps(pipeline *bk.Pipeline) {
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("pnpm generate"),
 		bk.Cmd("pnpm --filter @sourcegraph/vscode run release"))
+}
+
+// Release a snapshot of App.
+func addAppSnapshotReleaseSteps(c Config) operations.Operation {
+	// TODO(sqs): Use goreleaser-pro nightly feature? Blocked on
+	// https://github.com/goreleaser/goreleaser-cross/issues/22.
+
+	// goreleaser requires that the version is semver-compatible
+	// (https://goreleaser.com/limitations/semver/). This is fine for now in alpha.
+	version := fmt.Sprintf("0.0.%d-snapshot+%s-%.6s", c.BuildNumber, c.Time.Format("20060102"), c.Commit)
+
+	return func(pipeline *bk.Pipeline) {
+		// Release App (.zip/.deb/.rpm to Google Cloud Storage, new tap for Homebrew, etc.).
+		pipeline.AddStep(":desktop_computer: App release",
+			withPnpmCache(),
+			bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
+			bk.Env("VERSION", version),
+			bk.Cmd("enterprise/dev/ci/scripts/release-app.sh"))
+	}
 }
 
 // Adds a Buildkite pipeline "Wait".
@@ -876,18 +896,18 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 		devImage := images.DevRegistryImage(app, "")
 		publishImage := images.PublishedRegistryImage(app, "")
 
-		var images []string
+		var imgs []string
 		for _, image := range []string{publishImage, devImage} {
 			if app != "server" || c.RunType.Is(runtype.TaggedRelease, runtype.ImagePatch, runtype.ImagePatchNoTest) {
-				images = append(images, fmt.Sprintf("%s:%s", image, c.Version))
+				imgs = append(imgs, fmt.Sprintf("%s:%s", image, c.Version))
 			}
 
 			if app == "server" && c.RunType.Is(runtype.ReleaseBranch) {
-				images = append(images, fmt.Sprintf("%s:%s-insiders", image, c.Branch))
+				imgs = append(imgs, fmt.Sprintf("%s:%s-insiders", image, c.Branch))
 			}
 
 			if c.RunType.Is(runtype.MainBranch) {
-				images = append(images, fmt.Sprintf("%s:insiders", image))
+				imgs = append(imgs, fmt.Sprintf("%s:insiders", image))
 			}
 		}
 
@@ -903,11 +923,11 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 			strconv.Itoa(c.BuildNumber),
 		} {
 			internalImage := fmt.Sprintf("%s:%s", devImage, tag)
-			images = append(images, internalImage)
+			imgs = append(imgs, internalImage)
 		}
 
 		candidateImage := fmt.Sprintf("%s:%s", devImage, c.candidateImageTag())
-		cmd := fmt.Sprintf("./dev/ci/docker-publish.sh %s %s", candidateImage, strings.Join(images, " "))
+		cmd := fmt.Sprintf("./dev/ci/docker-publish.sh %s %s", candidateImage, strings.Join(imgs, " "))
 
 		pipeline.AddStep(fmt.Sprintf(":docker: :truck: %s", app),
 			// This step just pulls a prebuild image and pushes it to some registries. The

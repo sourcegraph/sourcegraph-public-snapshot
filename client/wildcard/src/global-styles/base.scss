@@ -1,8 +1,8 @@
-@import './colors.scss';
-@import './variables.scss';
+@import './colors';
+@import './variables';
 
-@import './functions.scss';
-@import './mixins.scss';
+@import './functions';
+@import './mixins';
 @import './reboot';
 @import './utilities';
 @import './breakpoints';
@@ -41,10 +41,10 @@ input[type='checkbox'] {
     }
 }
 
-@import 'react-resizable/css/styles.css';
+@import 'react-resizable/css/styles';
 // Global styles provided by @reach packages. Should be imported once in the global scope.
-@import '@reach/combobox/styles.css';
-@import '@reach/menu-button/styles.css';
+@import '@reach/combobox/styles';
+@import '@reach/menu-button/styles';
 
 // stylelint-disable-next-line selector-max-id
 html,

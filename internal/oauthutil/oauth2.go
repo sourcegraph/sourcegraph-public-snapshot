@@ -2,10 +2,7 @@ package oauthutil
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"net/http"
-	"strings"
 
 	"golang.org/x/oauth2"
 
@@ -30,32 +27,6 @@ type OAuthContext struct {
 	Endpoint Endpoint
 	// Scope specifies optional requested permissions.
 	Scopes []string
-}
-
-type oauthError struct {
-	Err              string `json:"error"`
-	ErrorDescription string `json:"error_description"`
-}
-
-func (e oauthError) Error() string {
-	return fmt.Sprintf("OAuth response error %q description %q", e.Err, e.ErrorDescription)
-}
-
-// getOAuthErrorDetails is a method that only returns OAuth errors.
-// It is intended to be used in the oauth flow, when refreshing an expired token.
-func getOAuthErrorDetails(body []byte) error {
-	var oe oauthError
-	if err := json.Unmarshal(body, &oe); err != nil {
-		// If we failed to unmarshal body with oauth error, it's not oauthError and we should return nil.
-		return nil
-	}
-
-	// https://www.oauth.com/oauth2-servers/access-tokens/access-token-response/
-	// {"error":"invalid_token","error_description":"Token is expired. You can either do re-authorization or token refresh."}
-	if oe.Err == "invalid_token" && strings.Contains(oe.ErrorDescription, "expired") {
-		return &oe
-	}
-	return nil
 }
 
 // TokenRefresher is a function to refresh and return the new OAuth token.

@@ -7669,7 +7669,7 @@ Custom query for critical alert: `min(((sum(src_executor_processor_handlers{sg_j
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> executor: 100%+ executor operation error rate over 5m for 1h0m0s
+- <span class="badge badge-warning">warning</span> executor: 100%+ executor operation error rate over 5m for 1h0m0s
 
 **Next steps**
 
@@ -7682,7 +7682,7 @@ problem is not know to be resolved until jobs start succeeding again.
 
 ```json
 "observability.silenceAlerts": [
-  "critical_executor_executor_processor_error_rate"
+  "warning_executor_executor_processor_error_rate"
 ]
 ```
 
@@ -7691,7 +7691,7 @@ problem is not know to be resolved until jobs start succeeding again.
 <details>
 <summary>Technical details</summary>
 
-Custom query for critical alert: `max((last_over_time(sum(increase(src_executor_processor_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:]) / (last_over_time(sum(increase(src_executor_processor_total{sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:]) + last_over_time(sum(increase(src_executor_processor_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:])) * 100) >= 100)`
+Custom query for warning alert: `max((last_over_time(sum(increase(src_executor_processor_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:]) / (last_over_time(sum(increase(src_executor_processor_total{sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:]) + last_over_time(sum(increase(src_executor_processor_errors_total{sg_job=~"^sourcegraph-executors.*"}[5m]))[5h:])) * 100) >= 100)`
 
 </details>
 

@@ -1,8 +1,8 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "module": "esnext",
+    "module": "commonjs",
     "sourceRoot": "src",
     "baseUrl": ".",
     "paths": {
@@ -23,6 +23,9 @@
     },
     {
       "path": "../common",
+    },
+    {
+      "path": "../extension-api",
     },
     {
       "path": "../extension-api-types",

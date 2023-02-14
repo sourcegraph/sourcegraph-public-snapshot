@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -185,7 +185,7 @@ func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBa
 		return nil, err
 	}
 
-	actor := actor.FromContext(ctx)
+	actor := sgactor.FromContext(ctx)
 	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
 
 	batchSpec := &btypes.BatchSpec{
@@ -269,7 +269,7 @@ func (s *Service) UpsertEmptyBatchChange(ctx context.Context, opts UpsertEmptyBa
 		return nil, err
 	}
 
-	actor := actor.FromContext(ctx)
+	actor := sgactor.FromContext(ctx)
 	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
 
 	batchSpec := &btypes.BatchSpec{
@@ -338,7 +338,7 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 	}
 	spec.NamespaceOrgID = opts.NamespaceOrgID
 	spec.NamespaceUserID = opts.NamespaceUserID
-	a := actor.FromContext(ctx)
+	a := sgactor.FromContext(ctx)
 	spec.UserID = a.UID
 
 	if len(opts.ChangesetSpecRandIDs) == 0 {
@@ -431,7 +431,7 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 	spec.NamespaceOrgID = opts.NamespaceOrgID
 	spec.NamespaceUserID = opts.NamespaceUserID
 	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
-	a := actor.FromContext(ctx)
+	a := sgactor.FromContext(ctx)
 	spec.UserID = a.UID
 
 	spec.BatchChangeID = opts.BatchChange
@@ -726,7 +726,7 @@ func (s *Service) UpsertBatchSpecInput(ctx context.Context, opts UpsertBatchSpec
 	spec.NamespaceOrgID = opts.NamespaceOrgID
 	spec.NamespaceUserID = opts.NamespaceUserID
 	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
-	a := actor.FromContext(ctx)
+	a := sgactor.FromContext(ctx)
 	spec.UserID = a.UID
 
 	// Start transaction.
@@ -807,6 +807,32 @@ func (s *Service) CreateChangesetSpec(ctx context.Context, rawSpec string, userI
 	}
 
 	return spec, s.store.CreateChangesetSpec(ctx, spec)
+}
+
+// CreateChangesetSpecs validates the given raw spec inputs and creates the ChangesetSpecs.
+func (s *Service) CreateChangesetSpecs(ctx context.Context, rawSpecs []string, userID int32) (specs []*btypes.ChangesetSpec, err error) {
+	ctx, _, endObservation := s.operations.createChangesetSpec.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	specs = make([]*btypes.ChangesetSpec, len(rawSpecs))
+
+	for i, rawSpec := range rawSpecs {
+		spec, err := btypes.NewChangesetSpecFromRaw(rawSpec)
+		if err != nil {
+			return nil, err
+		}
+
+		// 🚨 SECURITY: We use database.Repos.Get to check whether the user has access to
+		// the repository or not.
+		if _, err = s.store.Repos().Get(ctx, spec.BaseRepoID); err != nil {
+			return nil, err
+		}
+
+		spec.UserID = userID
+		specs[i] = spec
+	}
+
+	return specs, s.store.CreateChangesetSpec(ctx, specs...)
 }
 
 // changesetSpecNotFoundErr is returned by CreateBatchSpec if a
@@ -1272,7 +1298,7 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 	}
 	defer func() { err = tx.Done(err) }()
 
-	userID := actor.FromContext(ctx).UID
+	userID := sgactor.FromContext(ctx).UID
 	changesetJobs := make([]*btypes.ChangesetJob, 0, len(cs))
 	for _, changeset := range cs {
 		changesetJobs = append(changesetJobs, &btypes.ChangesetJob{

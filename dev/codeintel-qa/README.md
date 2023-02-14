@@ -8,6 +8,8 @@ Ensure that the following tools are available on your path:
 
 - [`src`](https://github.com/sourcegraph/src-cli)
 - [`lsif-go`](https://github.com/sourcegraph/lsif-go)
+- [`scip-go`](https://github.com/sourcegraph/scip-go)
+- [`scip-typescript`](https://github.com/sourcegraph/scip-typescript)
 
 You should have enviornment variables that authenticate you to the `sourcegraph-dev` GCS project if you plan to upload or download index files (as we do in CI).
 
@@ -27,7 +29,11 @@ SOURCEGRAPH_SUDO_TOKEN=<YOUR SOURCEGRAPH API ACCESS TOKEN>
     "sourcegraph-testing/etcd",
     "sourcegraph-testing/tidb",
     "sourcegraph-testing/titan",
-    "sourcegraph-testing/zap"
+    "sourcegraph-testing/zap",
+    "sourcegraph-testing/nacelle",
+    "sourcegraph-testing/nacelle-config",
+    "sourcegraph-testing/nacelle-service",
+    "sourcegraph/code-intel-extensions"
   ],
 ```
 

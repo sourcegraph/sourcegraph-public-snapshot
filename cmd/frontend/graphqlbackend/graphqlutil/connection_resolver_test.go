@@ -3,7 +3,6 @@ package graphqlutil
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -55,19 +54,14 @@ func (s *testConnectionStore) ComputeNodes(ctx context.Context, args *database.P
 	return nodes, nil
 }
 
-func (*testConnectionStore) MarshalCursor(n *testConnectionNode) (*string, error) {
+func (*testConnectionStore) MarshalCursor(n *testConnectionNode, _ database.OrderBy) (*string, error) {
 	cursor := string(n.ID())
 
 	return &cursor, nil
 }
 
-func (*testConnectionStore) UnmarshalCursor(cursor string) (*int, error) {
-	id, err := strconv.Atoi(cursor)
-	if err != nil {
-		return nil, err
-	}
-
-	return &id, nil
+func (*testConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+	return &cursor, nil
 }
 
 func newInt(n int) *int {
@@ -116,13 +110,13 @@ func withLastPA(last int, a *database.PaginationArgs) *database.PaginationArgs {
 	return a
 }
 
-func withAfterPA(after int, a *database.PaginationArgs) *database.PaginationArgs {
+func withAfterPA(after string, a *database.PaginationArgs) *database.PaginationArgs {
 	a.After = &after
 
 	return a
 }
 
-func withBeforePA(before int, a *database.PaginationArgs) *database.PaginationArgs {
+func withBeforePA(before string, a *database.PaginationArgs) *database.PaginationArgs {
 	a.Before = &before
 
 	return a
@@ -131,7 +125,7 @@ func withBeforePA(before int, a *database.PaginationArgs) *database.PaginationAr
 func TestConnectionTotalCount(t *testing.T) {
 	ctx := context.Background()
 	store := &testConnectionStore{t: t}
-	resolver, err := NewConnectionResolver[testConnectionNode](store, withFirstCA(1, &ConnectionResolverArgs{}), nil)
+	resolver, err := NewConnectionResolver[*testConnectionNode](store, withFirstCA(1, &ConnectionResolverArgs{}), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -150,7 +144,7 @@ func TestConnectionTotalCount(t *testing.T) {
 	}
 }
 
-func testResolverNodesResponse(t *testing.T, resolver *ConnectionResolver[testConnectionNode], store *testConnectionStore, count int) {
+func testResolverNodesResponse(t *testing.T, resolver *ConnectionResolver[*testConnectionNode], store *testConnectionStore, count int) {
 	ctx := context.Background()
 	nodes, err := resolver.Nodes(ctx)
 	if err != nil {
@@ -166,6 +160,14 @@ func testResolverNodesResponse(t *testing.T, resolver *ConnectionResolver[testCo
 	}
 }
 
+func buildPaginationArgs() *database.PaginationArgs {
+	args := database.PaginationArgs{
+		OrderBy: database.OrderBy{{Field: "id"}},
+	}
+
+	return &args
+}
+
 func TestConnectionNodes(t *testing.T) {
 	for _, test := range []struct {
 		name           string
@@ -177,37 +179,37 @@ func TestConnectionNodes(t *testing.T) {
 		{
 			name:               "default",
 			connectionArgs:     withFirstCA(5, &ConnectionResolverArgs{}),
-			wantPaginationArgs: withFirstPA(6, &database.PaginationArgs{}),
+			wantPaginationArgs: withFirstPA(6, buildPaginationArgs()),
 			wantNodes:          2,
 		},
 		{
 			name:               "last arg",
-			wantPaginationArgs: withLastPA(6, &database.PaginationArgs{}),
+			wantPaginationArgs: withLastPA(6, buildPaginationArgs()),
 			connectionArgs:     withLastCA(5, &ConnectionResolverArgs{}),
 			wantNodes:          2,
 		},
 		{
 			name:               "after arg",
-			wantPaginationArgs: withAfterPA(0, withFirstPA(6, &database.PaginationArgs{})),
+			wantPaginationArgs: withAfterPA("0", withFirstPA(6, buildPaginationArgs())),
 			connectionArgs:     withAfterCA("0", withFirstCA(5, &ConnectionResolverArgs{})),
 			wantNodes:          2,
 		},
 		{
 			name:               "before arg",
-			wantPaginationArgs: withBeforePA(0, withLastPA(6, &database.PaginationArgs{})),
+			wantPaginationArgs: withBeforePA("0", withLastPA(6, buildPaginationArgs())),
 			connectionArgs:     withBeforeCA("0", withLastCA(5, &ConnectionResolverArgs{})),
 			wantNodes:          2,
 		},
 		{
 			name:               "with limit",
-			wantPaginationArgs: withBeforePA(0, withLastPA(2, &database.PaginationArgs{})),
+			wantPaginationArgs: withBeforePA("0", withLastPA(2, buildPaginationArgs())),
 			connectionArgs:     withBeforeCA("0", withLastCA(1, &ConnectionResolverArgs{})),
 			wantNodes:          1,
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			store := &testConnectionStore{t: t, expectedPaginationArgs: test.wantPaginationArgs}
-			resolver, err := NewConnectionResolver[testConnectionNode](store, test.connectionArgs, nil)
+			resolver, err := NewConnectionResolver[*testConnectionNode](store, test.connectionArgs, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -224,7 +226,7 @@ type pageInfoResponse struct {
 	hasPreviousPage bool
 }
 
-func testResolverPageInfoResponse(t *testing.T, resolver *ConnectionResolver[testConnectionNode], store *testConnectionStore, expectedResponse *pageInfoResponse) {
+func testResolverPageInfoResponse(t *testing.T, resolver *ConnectionResolver[*testConnectionNode], store *testConnectionStore, expectedResponse *pageInfoResponse) {
 	ctx := context.Background()
 	pageInfo, err := resolver.PageInfo(ctx)
 	if err != nil {
@@ -299,7 +301,7 @@ func TestConnectionPageInfo(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			store := &testConnectionStore{t: t}
-			resolver, err := NewConnectionResolver[testConnectionNode](store, test.args, nil)
+			resolver, err := NewConnectionResolver[*testConnectionNode](store, test.args, nil)
 			if err != nil {
 				t.Fatal(err)
 			}

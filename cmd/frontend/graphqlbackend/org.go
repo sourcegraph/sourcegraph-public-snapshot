@@ -6,12 +6,12 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
@@ -35,7 +35,7 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 				return nil
 			}
 
-			if a := actor.FromContext(ctx); a.IsAuthenticated() {
+			if a := sgactor.FromContext(ctx); a.IsAuthenticated() {
 				_, err = r.db.OrgInvitations().GetPending(ctx, org.ID, a.UID)
 				if err == nil {
 					return nil
@@ -86,7 +86,7 @@ func orgByIDInt32WithForcedAccess(ctx context.Context, db database.DB, orgID int
 		if err != nil {
 			hasAccess := false
 			// allow invited user to view org details
-			if a := actor.FromContext(ctx); a.IsAuthenticated() {
+			if a := sgactor.FromContext(ctx); a.IsAuthenticated() {
 				_, err := db.OrgInvitations().GetPending(ctx, orgID, a.UID)
 				if err == nil {
 					hasAccess = true
@@ -108,8 +108,6 @@ type OrgResolver struct {
 	db  database.DB
 	org *types.Org
 }
-
-func NewOrg(db database.DB, org *types.Org) *OrgResolver { return &OrgResolver{db: db, org: org} }
 
 func (o *OrgResolver) ID() graphql.ID { return MarshalOrgID(o.org.ID) }
 
@@ -144,7 +142,7 @@ func (o *OrgResolver) CreatedAt() gqlutil.DateTime { return gqlutil.DateTime{Tim
 func (o *OrgResolver) Members(ctx context.Context, args struct {
 	graphqlutil.ConnectionResolverArgs
 	Query *string
-}) (*graphqlutil.ConnectionResolver[UserResolver], error) {
+}) (*graphqlutil.ConnectionResolver[*UserResolver], error) {
 	// 🚨 SECURITY: Only org members can list other org members.
 	if err := checkMembersAccess(ctx, o.db, o.org.ID); err != nil {
 		return nil, err
@@ -156,7 +154,7 @@ func (o *OrgResolver) Members(ctx context.Context, args struct {
 		query: args.Query,
 	}
 
-	return graphqlutil.NewConnectionResolver[UserResolver](connectionStore, &args.ConnectionResolverArgs, nil)
+	return graphqlutil.NewConnectionResolver[*UserResolver](connectionStore, &args.ConnectionResolverArgs, nil)
 }
 
 type membersConnectionStore struct {
@@ -195,7 +193,7 @@ func (s *membersConnectionStore) ComputeNodes(ctx context.Context, args *databas
 	return userResolvers, nil
 }
 
-func (s *membersConnectionStore) MarshalCursor(node *UserResolver) (*string, error) {
+func (s *membersConnectionStore) MarshalCursor(node *UserResolver, _ database.OrderBy) (*string, error) {
 	if node == nil {
 		return nil, errors.New(`node is nil`)
 	}
@@ -205,13 +203,13 @@ func (s *membersConnectionStore) MarshalCursor(node *UserResolver) (*string, err
 	return &cursor, nil
 }
 
-func (s *membersConnectionStore) UnmarshalCursor(cusror string) (*int, error) {
-	nodeID, err := UnmarshalUserID(graphql.ID(cusror))
+func (s *membersConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+	nodeID, err := UnmarshalUserID(graphql.ID(cursor))
 	if err != nil {
 		return nil, err
 	}
 
-	id := int(nodeID)
+	id := string(nodeID)
 
 	return &id, nil
 }
@@ -244,7 +242,7 @@ func (o *OrgResolver) SettingsCascade() *settingsCascade {
 func (o *OrgResolver) ConfigurationCascade() *settingsCascade { return o.SettingsCascade() }
 
 func (o *OrgResolver) ViewerPendingInvitation(ctx context.Context) (*organizationInvitationResolver, error) {
-	if actor := actor.FromContext(ctx); actor.IsAuthenticated() {
+	if actor := sgactor.FromContext(ctx); actor.IsAuthenticated() {
 		orgInvitation, err := o.db.OrgInvitations().GetPending(ctx, o.org.ID, actor.UID)
 		if errcode.IsNotFound(err) {
 			return nil, nil
@@ -272,7 +270,7 @@ func (o *OrgResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 }
 
 func (o *OrgResolver) ViewerIsMember(ctx context.Context) (bool, error) {
-	actor := actor.FromContext(ctx)
+	actor := sgactor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return false, nil
 	}
@@ -298,7 +296,7 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	DisplayName *string
 	StatsID     *string
 }) (*OrgResolver, error) {
-	a := actor.FromContext(ctx)
+	a := sgactor.FromContext(ctx)
 	if !a.IsAuthenticated() {
 		return nil, errors.New("no current user")
 	}
@@ -316,7 +314,7 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 		// we do not throw errors here as this is best effort
 		err = r.db.Orgs().UpdateOrgsOpenBetaStats(ctx, *args.StatsID, newOrg.ID)
 		if err != nil {
-			log15.Warn("Cannot update orgs open beta stats", "id", *args.StatsID, "orgID", newOrg.ID, "error", err)
+			r.logger.Warn("Cannot update orgs open beta stats", log.String("id", *args.StatsID), log.Int32("orgID", newOrg.ID), log.Error(err))
 		}
 	}
 
@@ -377,13 +375,13 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 	if memberCount == 1 && !r.siteAdminSelfRemoving(ctx, userID) {
 		return nil, errors.New("you can’t remove the only member of an organization")
 	}
-	log15.Info("removing user from org", "user", userID, "org", orgID)
+	r.logger.Info("removing user from org", log.Int32("userID", userID), log.Int32("orgID", orgID))
 	if err := r.db.OrgMembers().Remove(ctx, orgID, userID); err != nil {
 		return nil, err
 	}
 
 	// Enqueue a sync job. Internally this will log an error if enqueuing failed.
-	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{UserIDs: []int32{userID}, Reason: permssync.ReasonUserRemovedFromOrg})
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{UserIDs: []int32{userID}, Reason: database.ReasonUserRemovedFromOrg})
 
 	return nil, nil
 }
@@ -429,7 +427,7 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 	}
 
 	// Schedule permission sync for newly added user. Internally it will log an error if enqueuing failed.
-	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{UserIDs: []int32{userToInvite.ID}, Reason: permssync.ReasonUserAddedToOrg})
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{UserIDs: []int32{userToInvite.ID}, Reason: database.ReasonUserAddedToOrg})
 
 	return &EmptyResponse{}, nil
 }
