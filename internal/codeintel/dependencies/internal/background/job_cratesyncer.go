@@ -8,7 +8,9 @@ import (
 	"io"
 	"strings"
 	"time"
+	"unsafe"
 
+	"github.com/derision-test/glock"
 	jsoniter "github.com/json-iterator/go"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -28,11 +30,13 @@ import (
 )
 
 type crateSyncerJob struct {
-	autoindexingSvc AutoIndexingService
-	dependenciesSvc DependenciesService
-	gitClient       GitserverClient
-	extSvcStore     ExternalServiceStore
-	operations      *operations
+	archiveWindowSize int
+	autoindexingSvc   AutoIndexingService
+	dependenciesSvc   DependenciesService
+	gitClient         GitserverClient
+	extSvcStore       ExternalServiceStore
+	clock             glock.Clock
+	operations        *operations
 }
 
 func NewCrateSyncer(
@@ -57,11 +61,15 @@ func NewCrateSyncer(
 	}
 
 	job := crateSyncerJob{
-		autoindexingSvc: autoindexingSvc,
-		dependenciesSvc: dependenciesSvc,
-		gitClient:       gitClient,
-		extSvcStore:     extSvcStore,
-		operations:      newOperations(observationCtx),
+		// average file size is ~10022bytes, 5000 files gives us an average (uncompressed) archive size of
+		// about ~48MB. This will require ~21 gitserver archive calls
+		archiveWindowSize: 5000,
+		autoindexingSvc:   autoindexingSvc,
+		dependenciesSvc:   dependenciesSvc,
+		gitClient:         gitClient,
+		extSvcStore:       extSvcStore,
+		clock:             glock.NewRealClock(),
+		operations:        newOperations(observationCtx),
 	}
 
 	return goroutine.NewPeriodicGoroutine(
@@ -74,11 +82,11 @@ func NewCrateSyncer(
 	)
 }
 
-func (b *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Duration) (err error) {
-	ctx, _, endObservation := b.operations.handleCrateSyncer.With(ctx, &err, observation.Args{})
+func (j *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Duration) (err error) {
+	ctx, _, endObservation := j.operations.handleCrateSyncer.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	exists, externalService, err := singleRustExternalService(ctx, b.extSvcStore)
+	exists, externalService, err := singleRustExternalService(ctx, j.extSvcStore)
 	if !exists || err != nil {
 		// err can be nil when there is no RUSTPACKAGES code host.
 		return err
@@ -99,32 +107,20 @@ func (b *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 	// We should use an internal actor when doing cross service calls.
 	clientCtx := actor.WithInternalActor(ctx)
 
-	update, err := b.gitClient.RequestRepoUpdate(clientCtx, repoName, interval)
+	update, err := j.gitClient.RequestRepoUpdate(clientCtx, repoName, interval)
 	if err != nil {
 		return err
 	}
 	if update != nil && update.Error != "" {
 		return errors.Newf("failed to update repo %s, error %s", repoName, update.Error)
 	}
-	reader, err := b.gitClient.ArchiveReader(
-		clientCtx,
-		nil,
-		repoName,
-		gitserver.ArchiveOptions{
-			Treeish:   "HEAD",
-			Format:    gitserver.ArchiveFormatTar,
-			Pathspecs: []gitdomain.Pathspec{},
-		},
-	)
-	if err != nil {
-		return errors.Wrapf(err, "failed to git archive repo %s", config.IndexRepositoryName)
-	}
-	defer reader.Close()
 
-	tr := tar.NewReader(reader)
+	allFilesStr, err := j.gitClient.LsFiles(ctx, nil, repoName, "HEAD")
 	if err != nil {
 		return err
 	}
+	// safe according to rule #1 of pkg/unsafe
+	allFiles := *(*[]gitdomain.Pathspec)(unsafe.Pointer(&allFilesStr))
 
 	var (
 		allCratePkgs       []shared.MinimalPackageRepoRef
@@ -133,71 +129,89 @@ func (b *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 		// the crates index partially
 		cratesReadErr error
 	)
-	for {
-		header, err := tr.Next()
+
+	for len(allFiles) > 0 {
+		var batch []gitdomain.Pathspec
+		if len(allFiles) <= j.archiveWindowSize {
+			batch, allFiles = allFiles, nil
+		} else {
+			batch, allFiles = allFiles[:j.archiveWindowSize], allFiles[j.archiveWindowSize:]
+		}
+
+		buf, err := j.readIndexArchiveBatch(clientCtx, repoName, batch)
 		if err != nil {
-			if err != io.EOF {
+			return err
+		}
+
+		tr := tar.NewReader(buf)
+		if err != nil {
+			return err
+		}
+
+		for {
+			header, err := tr.Next()
+			if err != nil {
+				if err != io.EOF {
+					cratesReadErr = errors.Append(cratesReadErr, err)
+					break
+				}
+				break
+			}
+
+			// Skip directory entries
+			if strings.HasSuffix(header.Name, "/") {
+				continue
+			}
+
+			// `.github/` contains non-crates information
+			if strings.HasPrefix(header.Name, ".github") {
+				continue
+			}
+
+			// `config.json` contains metadata about the repo,
+			// we can use this file later if we want to support other
+			// file formats
+			if header.Name == "config.json" {
+				continue
+			}
+
+			buf := bytes.NewBuffer(make([]byte, 0, header.Size))
+			if _, err := io.CopyN(buf, tr, header.Size); err != nil {
 				cratesReadErr = errors.Append(cratesReadErr, err)
 				break
 			}
-			break
-		}
 
-		// Skip directory entries
-		if strings.HasSuffix(header.Name, "/") {
-			continue
-		}
+			pkgs, err := parseCrateInformation(buf.Bytes())
+			if err != nil {
+				cratesReadErr = errors.Append(cratesReadErr, err)
+				break
+			}
 
-		// `.github/` contains non-crates information
-		if strings.HasPrefix(header.Name, ".github") {
-			continue
-		}
+			allCratePkgs = append(allCratePkgs, pkgs...)
 
-		// `config.json` contains metadata about the repo,
-		// we can use this file later if we want to support other
-		// file formats
-		if header.Name == "config.json" {
-			continue
+			newCrates, newVersions, err := j.dependenciesSvc.InsertPackageRepoRefs(ctx, pkgs)
+			if err != nil {
+				return errors.Wrapf(err, "failed to insert rust crate")
+			}
+			didInsertNewCrates = didInsertNewCrates || len(newCrates) != 0 || len(newVersions) != 0
 		}
-
-		var buf bytes.Buffer
-		if _, err := io.CopyN(&buf, tr, header.Size); err != nil {
-			cratesReadErr = errors.Append(cratesReadErr, err)
-			break
-		}
-
-		pkgs, err := parseCrateInformation(buf.Bytes())
-		if err != nil {
-			cratesReadErr = errors.Append(cratesReadErr, err)
-			break
-		}
-
-		allCratePkgs = append(allCratePkgs, pkgs...)
-
-		newCrates, newVersions, err := b.dependenciesSvc.InsertPackageRepoRefs(ctx, pkgs)
-		if err != nil {
-			return errors.Wrapf(err, "failed to insert Rust crate")
-		}
-		didInsertNewCrates = didInsertNewCrates || len(newCrates) != 0 || len(newVersions) != 0
 	}
 
-	nextSync := time.Now()
+	nextSync := j.clock.Now()
 	if didInsertNewCrates {
 		// We picked up new crates so we trigger a new sync for the RUSTPACKAGES code host.
 		externalService.NextSyncAt = nextSync
-		if err := b.extSvcStore.Upsert(ctx, externalService); err != nil {
+		if err := j.extSvcStore.Upsert(ctx, externalService); err != nil {
 			return errors.Append(cratesReadErr, err)
 		}
 
-		attemptsRemaining := 5
-		for {
-			externalService, err = b.extSvcStore.GetByID(ctx, externalService.ID)
+		for attemptsRemaining := 5; attemptsRemaining > 0; attemptsRemaining-- {
+			externalService, err = j.extSvcStore.GetByID(ctx, externalService.ID)
 			if err != nil && attemptsRemaining == 0 {
 				return errors.Append(cratesReadErr, err)
-			} else if err != nil || externalService.LastSyncAt.After(nextSync) {
-				attemptsRemaining--
+			} else if err != nil || !externalService.LastSyncAt.After(nextSync) {
 				// mirrors backoff in job_dependency_indexing_scheduler.go
-				time.Sleep(time.Second * 30)
+				j.clock.Sleep(time.Second * 30)
 				continue
 			}
 
@@ -207,7 +221,7 @@ func (b *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 		var queueErrs errors.MultiError
 		for _, pkg := range allCratePkgs {
 			for _, version := range pkg.Versions {
-				if err := b.autoindexingSvc.QueueIndexesForPackage(clientCtx, shared.MinimialVersionedPackageRepo{
+				if err := j.autoindexingSvc.QueueIndexesForPackage(clientCtx, shared.MinimialVersionedPackageRepo{
 					Scheme:  pkg.Scheme,
 					Name:    pkg.Name,
 					Version: version,
@@ -223,6 +237,32 @@ func (b *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 	return cratesReadErr
 }
 
+func (j *crateSyncerJob) readIndexArchiveBatch(ctx context.Context, repoName api.RepoName, batch []gitdomain.Pathspec) (io.Reader, error) {
+	reader, err := j.gitClient.ArchiveReader(
+		ctx,
+		nil,
+		repoName,
+		gitserver.ArchiveOptions{
+			Treeish:   "HEAD",
+			Format:    gitserver.ArchiveFormatTar,
+			Pathspecs: batch,
+		},
+	)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to git archive repo %q", repoName)
+	}
+	// important to read this into memory asap
+	defer reader.Close()
+
+	// read into mem to avoid holding connection open, with a 50MB buffer
+	buf := bytes.NewBuffer(make([]byte, 0, 50*1024*1024))
+	if _, err := io.Copy(buf, reader); err != nil {
+		return nil, errors.Wrap(err, "failed to read git archive")
+	}
+
+	return bytes.NewReader(buf.Bytes()), nil
+}
+
 // rustPackagesConfig returns the configuration for the provided RUSTPACKAGES code host.
 func rustPackagesConfig(ctx context.Context, externalService *dbtypes.ExternalService) (*schema.RustPackagesConnection, error) {
 	rawConfig, err := externalService.Config.Decrypt(ctx)
@@ -233,11 +273,11 @@ func rustPackagesConfig(ctx context.Context, externalService *dbtypes.ExternalSe
 	config := &schema.RustPackagesConnection{}
 	normalized, err := jsonc.Parse(rawConfig)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to parse JSON config for Rust external service %s", rawConfig)
+		return nil, errors.Wrapf(err, "failed to parse JSON config for rust external service %s", rawConfig)
 	}
 
 	if err = jsoniter.Unmarshal(normalized, config); err != nil {
-		return nil, errors.Wrapf(err, "failed to unmarshal Rust external service config %s", rawConfig)
+		return nil, errors.Wrapf(err, "failed to unmarshal rust external service config %s", rawConfig)
 	}
 	return config, nil
 }
@@ -253,7 +293,7 @@ func singleRustExternalService(ctx context.Context, store ExternalServiceStore) 
 		Kinds: []string{kind},
 	})
 	if err != nil {
-		return false, nil, errors.Wrapf(err, "failed to list Rust external service types")
+		return false, nil, errors.Wrapf(err, "failed to list rust external service types")
 	}
 
 	//  Skip if RUSTPACKAGES not enabled
@@ -286,7 +326,7 @@ func parseCrateInformation(contents []byte) ([]shared.MinimalPackageRepoRef, err
 		var info crateInfo
 		err := json.Unmarshal(line, &info)
 		if err != nil {
-			return nil, errors.Wrapf(err, "malformed create info (%q)", line)
+			return nil, errors.Wrapf(err, "malformed crate info (%q)", line)
 		}
 
 		name := reposource.PackageName(info.Name)
