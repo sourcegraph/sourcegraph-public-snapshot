@@ -1,13 +1,18 @@
 import {
+    selectAll,
     selectCharLeft,
     selectCharRight,
+    selectDocEnd,
+    selectDocStart,
     selectGroupLeft,
     selectGroupRight,
     selectLineDown,
     selectLineUp,
+    selectPageDown,
+    selectPageUp,
 } from '@codemirror/commands'
 import { Extension, Prec } from '@codemirror/state'
-import { EditorView, KeyBinding, keymap, layer, RectangleMarker } from '@codemirror/view'
+import { EditorView, KeyBinding, keymap, layer, RectangleMarker, ViewPlugin, ViewUpdate } from '@codemirror/view'
 
 import { blobPropsFacet } from '..'
 import { syntaxHighlight } from '../highlight'
@@ -159,6 +164,35 @@ const textSelectionKeybindings: KeyBinding[] = [
     {
         key: 'ArrowDown',
         shift: selectLineDown,
+    },
+
+    {
+        key: 'Mod-Home',
+        mac: 'Cmd-ArrowUp',
+        shift: selectDocStart,
+    },
+
+    {
+        key: 'Mod-End',
+        mac: 'Cmd-ArrowDown',
+        shift: selectDocEnd,
+    },
+
+    {
+        key: 'PageUp',
+        mac: 'Ctrl-ArrowUp',
+        shift: selectPageUp,
+    },
+
+    {
+        key: 'PageDown',
+        mac: 'Ctrl-ArrowDown',
+        shift: selectPageDown,
+    },
+
+    {
+        key: 'Mod-a',
+        run: selectAll,
     },
 ]
 
