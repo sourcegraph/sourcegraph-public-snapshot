@@ -13,7 +13,7 @@ Open the repository's `Settings` page on Sourcegraph and from the `Options` tab 
 
 ![Exclude repository from code host](https://storage.googleapis.com/sourcegraph-assets/docs/images/admin/how-to/exclude-repo.png)
 
-Alternately, if a repository is synced from multiple code host connections you may exclude it from all code hosts by clicking the `Exclude repository from all code hosts` instead.
+Alternately, if a repository is synced from multiple code host connections you may exclude it from all code hosts by clicking the `Exclude repository from all code hosts` button instead.
 
 ![Exclude repository from all code hosts](https://storage.googleapis.com/sourcegraph-assets/docs/images/admin/how-to/exclude-repo-from-all-code-hosts.png)
 
