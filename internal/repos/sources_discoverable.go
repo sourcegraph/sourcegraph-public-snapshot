@@ -12,6 +12,11 @@ type DiscoverableSource interface {
 	// Namespaces are used to organize which members and users can access repositories
 	// and are defined by external service kind (e.g. Github organizations, Bitbucket projects, etc.)
 	ListNamespaces(context.Context, chan SourceNamespaceResult)
+	// ListRepos sends all the repos a source yields over the passed in channel
+	// as SourceResults
+
+	// TODO
+	SearchRepos(context.Context, string, int, []string, chan SourceResult)
 }
 
 // A SourceNamespaceResult is sent by a Source over a channel for each namespace it

@@ -273,9 +273,11 @@ type ExternalServiceSyncResult struct {
 }
 
 type ExternalServiceRepositoriesArgs struct {
-	Kind  string
-	Token string
-	Url   string
+	Kind         string
+	Query        string
+	Config       string
+	Limit        int32
+	ExcludeRepos []string
 }
 type ExternalServiceRepositoriesResult struct {
 	Repos []*types.Repo

@@ -3,6 +3,8 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	jsoniter "github.com/json-iterator/go"
+	"github.com/sourcegraph/sourcegraph/schema"
 	"strconv"
 	"strings"
 	"sync"
@@ -451,9 +453,13 @@ type externalServiceRepositoriesArgs struct {
 }
 
 type externalServiceRepositoriesInput struct {
-	Kind  string
-	Token string
-	Url   string
+	Kind         string
+	Token        string
+	Url          string
+	Query        string
+	ExcludeRepos []string
+	// ExcludeNamespaces []string
+	Limit *int32
 }
 
 // TODO Comment Desc,
@@ -470,7 +476,7 @@ func (r *schemaResolver) ExternalServiceRepositories(ctx context.Context, args *
 		return nil, err
 	}
 
-	_, err = r.repoupdaterClient.ExternalServiceRepositories(ctx, args.Input.Kind, args.Input.Token, args.Input.Url)
+	//_, err = r.repoupdaterClient.ExternalServiceRepositories(ctx, args.Input.Kind, args.Input.Token, args.Input.Url)
 	res := externalServiceSourceRepositoryConnectionResolver{
 		db:                r.db,
 		args:              args,
@@ -483,6 +489,7 @@ type externalServiceSourceRepositoryConnectionResolver struct {
 	args              *externalServiceRepositoriesArgs
 	db                database.DB
 	repoupdaterClient *repoupdater.Client
+	// limit             int
 
 	once       sync.Once
 	nodes      []*types.ExternalServiceSourceRepo
@@ -514,7 +521,7 @@ func (r *schemaResolver) ExternalServiceNamespaces(ctx context.Context, args *ex
 		return nil, err
 	}
 
-	_, err = r.repoupdaterClient.ExternalServiceNamespaces(ctx, args.Input.Kind, args.Input.Token, args.Input.Url)
+	//_, err = r.repoupdaterClient.ExternalServiceNamespaces(ctx, args.Input.Kind, args.Input.Token, args.Input.Url)
 	res := externalServiceNamespaceConnectionResolver{
 		//db:                r.db,
 		args:              args,
@@ -532,4 +539,34 @@ type externalServiceNamespaceConnectionResolver struct {
 	nodes      []*types.ExternalServiceNamespace
 	totalCount int32
 	err        error
+}
+
+func NewSourceConnection(args externalServiceRepositoriesInput) (string, error) {
+	var (
+		err        error
+		marshalled []byte
+	)
+	switch args.Kind {
+	case extsvc.KindGitHub:
+		excluded := make([]*schema.ExcludedGitHubRepo, len(args.ExcludeRepos))
+		for i, repo := range args.ExcludeRepos {
+			excluded[i] = &schema.ExcludedGitHubRepo{Name: repo}
+		}
+
+		cnxn := schema.GitHubConnection{
+			Url:     args.Url,
+			Token:   args.Token,
+			Exclude: excluded,
+		}
+
+		marshalled, err = jsoniter.Marshal(cnxn)
+	default:
+		return "", errors.New("External Service type does not support discovery")
+	}
+
+	if err != nil {
+		// TODO Error Handling
+	}
+
+	return string(marshalled), err
 }

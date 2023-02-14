@@ -929,6 +929,18 @@ input ExternalServiceRepositoriesInput {
     The url of the external service.
     """
     url: String!
+    """
+    TODO
+    """
+    query: String!
+    """
+    TODO
+    """
+    excludeRepos: [String!]!
+    """
+    TODO
+    """
+    limit: Int
 }
 
 """

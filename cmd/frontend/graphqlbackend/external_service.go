@@ -440,7 +440,12 @@ func (r *externalServiceSyncJobResolver) ReposUnmodified() int32 { return r.job.
 
 func (r *externalServiceSourceRepositoryConnectionResolver) compute(ctx context.Context) ([]*types.ExternalServiceSourceRepo, int32, error) {
 	r.once.Do(func() {
-		res, err := r.repoupdaterClient.ExternalServiceRepositories(ctx, r.args.Input.Kind, r.args.Input.Token, r.args.Input.Url)
+		connection, err := NewSourceConnection(r.args.Input)
+		limit := int32(2)
+		if r.args.Input.Limit != nil {
+			limit = *r.args.Input.Limit
+		}
+		res, err := r.repoupdaterClient.ExternalServiceRepositories(ctx, r.args.Input.Kind, r.args.Input.Query, connection, limit, r.args.Input.ExcludeRepos)
 		if err != nil {
 			r.err = err
 			return

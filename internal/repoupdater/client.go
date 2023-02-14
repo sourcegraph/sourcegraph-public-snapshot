@@ -277,17 +277,17 @@ func (c *Client) SyncExternalService(ctx context.Context, externalServiceID int6
 }
 
 // MockExternalServiceRepositories mocks (*Client).ExternalServiceRepositories for tests.
-var MockExternalServiceRepositories func(ctx context.Context, kind string, token string, url string) (*protocol.ExternalServiceRepositoriesResult, error)
+var MockExternalServiceRepositories func(ctx context.Context, kind, query, config string, first int32, excludeRepos []string) (*protocol.ExternalServiceRepositoriesResult, error)
 
 // ExternalServiceRepositories retrieves a list of repositories sourced by the given external service configuration
 // TODO : add parameter for count
-func (c *Client) ExternalServiceRepositories(ctx context.Context, kind string, token string, url string) (result *protocol.ExternalServiceRepositoriesResult, err error) {
+func (c *Client) ExternalServiceRepositories(ctx context.Context, kind, query, config string, limit int32, excludeRepos []string) (result *protocol.ExternalServiceRepositoriesResult, err error) {
 	if MockExternalServiceRepositories != nil {
-		return MockExternalServiceRepositories(ctx, kind, token, url)
+		return MockExternalServiceRepositories(ctx, kind, query, config, limit, excludeRepos)
 	}
 	// TODO Spans
 
-	args := &protocol.ExternalServiceRepositoriesArgs{Kind: kind, Token: token, Url: url}
+	args := &protocol.ExternalServiceRepositoriesArgs{Kind: kind, Query: query, Config: config, Limit: limit, ExcludeRepos: excludeRepos}
 	resp, err := c.httpPost(ctx, "ext-svc-repos", args)
 
 	if err != nil {

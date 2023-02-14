@@ -118,44 +118,26 @@ func (s *Server) handleExternalServiceRepos(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	repoQuery := []string{"affiliated"}
-
-	config := struct {
-		Url             string   `json:"url"`
-		Token           string   `json:"token"`
-		RepositoryQuery []string `json:"repositoryQuery"`
-	}{
-		Url:             req.Url,
-		Token:           req.Token,
-		RepositoryQuery: repoQuery,
-	}
-
-	configMarshalled, err := json.Marshal(config)
-	if err != nil {
-		// TODO Error Handling
-	}
-
-	confMarshString := string(configMarshalled)
 	extsvc := &types.ExternalService{
 		Kind:   req.Kind,
-		Config: extsvc.NewUnencryptedConfig(confMarshString),
+		Config: extsvc.NewUnencryptedConfig(req.Config),
 	}
 
-	logger := s.Logger.With(log.String("ExternalServiceUrl", req.Url), log.String("ExternalServiceKind", req.Kind))
+	logger := s.Logger.With(log.String("ExternalServiceKind", req.Kind))
 
-	// We use the generic sourcer that doesn't have observability attached to it here because the way externalServiceValidate is set up,
-	// using the regular sourcer will cause a large dump of errors to be logged when it exits ListRepos prematurely.
-	var genericSourcer repos.Sourcer
-	sourcerLogger := logger.Scoped("repos.Sourcer", "repositories source")
-	db := database.NewDBWith(sourcerLogger.Scoped("db", "sourcer database"), s)
-	dependenciesService := dependencies.NewService(s.ObservationCtx, db)
-	cf := httpcli.NewExternalClientFactory(httpcli.NewLoggingMiddleware(sourcerLogger))
-	genericSourcer = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependenciesService))
-
+	genericSourcer := s.NewGenericSourcer(logger)
 	genericSrc, err := genericSourcer(ctx, extsvc)
 	if err != nil {
 		//logger.Error("server.external-service-sync", log.Error(err))
 		return
+	}
+
+	var (
+		discoverableSrc repos.DiscoverableSource
+		discoverable    bool
+	)
+	if discoverableSrc, discoverable = genericSrc.(repos.DiscoverableSource); !discoverable {
+		s.respond(w, http.StatusNotImplemented, errors.Newf("ExternalServiceRepositories not implemented for the External Service Kind: %s.", req.Kind))
 	}
 
 	// TODO Check connection?
@@ -163,7 +145,7 @@ func (s *Server) handleExternalServiceRepos(w http.ResponseWriter, r *http.Reque
 	results := make(chan repos.SourceResult)
 
 	go func() {
-		genericSrc.ListRepos(ctx, results)
+		discoverableSrc.SearchRepos(ctx, req.Query, int(req.Limit), req.ExcludeRepos, results)
 		close(results)
 	}()
 
@@ -174,9 +156,7 @@ func (s *Server) handleExternalServiceRepos(w http.ResponseWriter, r *http.Reque
 
 	for res := range results {
 		if res.Err != nil {
-			for _, extSvc := range res.Source.ExternalServices() {
-				sourceErrs = errors.Append(sourceErrs, &repos.SourceError{Err: res.Err, ExtSvc: extSvc})
-			}
+			sourceErrs = errors.Append(sourceErrs, &repos.SourceError{Err: res.Err, ExtSvc: extsvc})
 			continue
 		}
 		repositories = append(repositories, res.Repo)
@@ -222,15 +202,7 @@ func (s *Server) handleExternalServiceNamespaces(w http.ResponseWriter, r *http.
 
 	logger := s.Logger.With(log.String("ExternalServiceUrl", req.Url), log.String("ExternalServiceKind", req.Kind))
 
-	// We use the generic sourcer that doesn't have observability attached to it here because the way externalServiceValidate is set up,
-	// using the regular sourcer will cause a large dump of errors to be logged when it exits ListRepos prematurely.
-	var genericSourcer repos.Sourcer
-	sourcerLogger := logger.Scoped("repos.Sourcer", "repositories source")
-	db := database.NewDBWith(sourcerLogger.Scoped("db", "sourcer database"), s)
-	dependenciesService := dependencies.NewService(s.ObservationCtx, db)
-	cf := httpcli.NewExternalClientFactory(httpcli.NewLoggingMiddleware(sourcerLogger))
-	genericSourcer = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependenciesService))
-
+	genericSourcer := s.NewGenericSourcer(logger)
 	genericSrc, err := genericSourcer(ctx, extsvc)
 	if err != nil {
 		// TODO error handling
@@ -260,9 +232,7 @@ func (s *Server) handleExternalServiceNamespaces(w http.ResponseWriter, r *http.
 
 	for res := range results {
 		if res.Err != nil {
-			for _, extSvc := range res.Source.ExternalServices() {
-				sourceErrs = errors.Append(sourceErrs, &repos.SourceError{Err: res.Err, ExtSvc: extSvc})
-			}
+			sourceErrs = errors.Append(sourceErrs, &repos.SourceError{Err: res.Err, ExtSvc: extsvc})
 			continue
 		}
 		namespaces = append(namespaces, res.Namespace)
@@ -336,15 +306,6 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	}
 	logger := s.Logger.With(log.Int64("ExternalServiceID", req.ExternalServiceID))
 
-	// We use the generic sourcer that doesn't have observability attached to it here because the way externalServiceValidate is set up,
-	// using the regular sourcer will cause a large dump of errors to be logged when it exits ListRepos prematurely.
-	var genericSourcer repos.Sourcer
-	sourcerLogger := logger.Scoped("repos.Sourcer", "repositories source")
-	db := database.NewDBWith(sourcerLogger.Scoped("db", "sourcer database"), s)
-	dependenciesService := dependencies.NewService(s.ObservationCtx, db)
-	cf := httpcli.NewExternalClientFactory(httpcli.NewLoggingMiddleware(sourcerLogger))
-	genericSourcer = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependenciesService))
-
 	externalServiceID := req.ExternalServiceID
 
 	es, err := s.ExternalServiceStore().GetByID(ctx, externalServiceID)
@@ -357,6 +318,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	genericSourcer := s.NewGenericSourcer(logger)
 	genericSrc, err := genericSourcer(ctx, es)
 	if err != nil {
 		logger.Error("server.external-service-sync", log.Error(err))
@@ -576,4 +538,14 @@ func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request)
 	s.PermsSyncer.ScheduleRepos(r.Context(), req.RepoIDs...)
 
 	s.respond(w, http.StatusOK, nil)
+}
+
+func (s *Server) NewGenericSourcer(logger log.Logger) repos.Sourcer {
+	// We use the generic sourcer that doesn't have observability attached to it here because the way externalServiceValidate is set up,
+	// using the regular sourcer will cause a large dump of errors to be logged when it exits ListRepos prematurely.
+	sourcerLogger := logger.Scoped("repos.Sourcer", "repositories source")
+	db := database.NewDBWith(sourcerLogger.Scoped("db", "sourcer database"), s)
+	dependenciesService := dependencies.NewService(s.ObservationCtx, db)
+	cf := httpcli.NewExternalClientFactory(httpcli.NewLoggingMiddleware(sourcerLogger))
+	return repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependenciesService))
 }

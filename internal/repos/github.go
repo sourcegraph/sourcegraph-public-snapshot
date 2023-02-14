@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -290,6 +291,78 @@ func (s *GitHubSource) ListRepos(ctx context.Context, results chan SourceResult)
 	}
 }
 
+// SearchRepos returns all Github repositories matching a single repositoryQuery string and the excluded repos provided
+// with the GitHubSource configuration
+func (s *GitHubSource) SearchRepos(ctx context.Context, query string, first int, excludedRepos []string, results chan SourceResult) {
+	if query == "" {
+		s.fetchReposAffiliated(ctx, first, excludedRepos, results)
+	} else {
+		s.fetchReposQuery(ctx, query, first, excludedRepos, results)
+	}
+}
+
+func (s *GitHubSource) fetchReposQuery(ctx context.Context, query string, first int, excludedRepos []string, results chan SourceResult) {
+	unfiltered := make(chan *githubResult)
+	var buildExcludeClause strings.Builder
+	buildExcludeClause.WriteString(query)
+	for _, repo := range excludedRepos {
+		fmt.Fprintf(&buildExcludeClause, " -repo:%s", repo)
+	}
+
+	queryWithExclude := buildExcludeClause.String()
+	go func() {
+		s.listSearch(ctx, queryWithExclude, first, true, unfiltered)
+		close(unfiltered)
+	}()
+
+	s.logger.Debug("fetch github repos by search query", log.String("query", query), log.Int("excluded repos count", len(excludedRepos)))
+	for res := range unfiltered {
+		if res.err != nil {
+			results <- SourceResult{Source: s, Err: res.err}
+			continue
+		}
+
+		results <- SourceResult{Source: s, Repo: s.makeRepo(res.repo)}
+		s.logger.Debug("sent to result", log.String("repo", res.repo.NameWithOwner))
+	}
+}
+
+func (s *GitHubSource) fetchReposAffiliated(ctx context.Context, first int, excludedRepos []string, results chan SourceResult) {
+	unfiltered := make(chan *githubResult)
+
+	// request larger page of results to account for exclusion taking effect afterwards
+	bufferedFirst := first + len(excludedRepos)
+	s.listAffiliated(ctx, bufferedFirst, unfiltered)
+
+	var eb excludeBuilder
+	// Only exclude on exact nameWithOwner match
+	for _, r := range excludedRepos {
+		eb.Exact(r)
+	}
+	exclude, err := eb.Build()
+	if err != nil {
+		results <- SourceResult{Source: s, Err: err}
+		return
+	}
+
+	s.logger.Debug("fetch github repos by affiliation", log.Int("excluded repos count", len(excludedRepos)))
+	for res := range unfiltered {
+		if first < 1 {
+			continue // drain the remaining github results
+		}
+		if res.err != nil {
+			results <- SourceResult{Source: s, Err: res.err}
+			continue
+		}
+		s.logger.Debug("unfiltered", log.String("repo", res.repo.NameWithOwner))
+		if !exclude(res.repo.NameWithOwner) {
+			results <- SourceResult{Source: s, Repo: s.makeRepo(res.repo)}
+			s.logger.Debug("sent to result", log.String("repo", res.repo.NameWithOwner))
+			first--
+		}
+	}
+}
+
 // ExternalServices returns a singleton slice containing the external service.
 func (s *GitHubSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
@@ -402,9 +475,10 @@ type repositoryPager func(page int) (repos []*github.Repository, hasNext bool, c
 // paginate returns all the repositories from the given repositoryPager.
 // It repeatedly calls `pager` with incrementing page count until it
 // returns false for hasNext.
-func (s *GitHubSource) paginate(ctx context.Context, results chan *githubResult, pager repositoryPager) {
+// A first with a positive value will only return that result count at most
+func (s *GitHubSource) paginate(ctx context.Context, limit int, results chan *githubResult, pager repositoryPager) {
 	hasNext := true
-	for page := 1; hasNext; page++ {
+	for page := 1; hasNext && limit > 0; page++ {
 		if err := ctx.Err(); err != nil {
 			results <- &githubResult{err: err}
 			return
@@ -419,7 +493,8 @@ func (s *GitHubSource) paginate(ctx context.Context, results chan *githubResult,
 			return
 		}
 
-		for _, r := range pageRepos {
+		for i := 0; i < len(pageRepos) && limit > 0; i, limit = i+1, limit-1 {
+			r := pageRepos[i]
 			if err := ctx.Err(); err != nil {
 				results <- &githubResult{err: err}
 				return
@@ -456,7 +531,7 @@ func (s *GitHubSource) listOrg(ctx context.Context, org string, results chan *gi
 	getReposByType := func(tp string) error {
 		var oerr error
 
-		s.paginate(ctx, dedupC, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
+		s.paginate(ctx, 0, dedupC, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
 			defer func() {
 				if page == 1 {
 					var e *github.APIError
@@ -528,7 +603,7 @@ func (s *GitHubSource) listOrg(ctx context.Context, org string, results chan *gi
 //
 // It returns an error if the request fails on the first page.
 func (s *GitHubSource) listUser(ctx context.Context, user string, results chan *githubResult) (fail error) {
-	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
+	s.paginate(ctx, 0, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
 		defer func() {
 			if err != nil && page == 1 {
 				fail, err = err, nil
@@ -673,7 +748,7 @@ func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResul
 // NOTE: There is a limitation on the search API that this uses, if there are more than 1000 public archived repos that
 // were created in the same time (to the second), this list will miss any repos that lie outside of the first 1000.
 func (s *GitHubSource) listPublicArchivedRepos(ctx context.Context, results chan *githubResult) {
-	s.listSearch(ctx, "archived:true is:public", results)
+	s.listSearch(ctx, "archived:true is:public", 0, false, results)
 }
 
 // listAffiliated handles the `affiliated` keyword of the `repositoryQuery` config option.
@@ -682,8 +757,8 @@ func (s *GitHubSource) listPublicArchivedRepos(ctx context.Context, results chan
 //
 // Affiliation is present if the user: (1) owns the repo, (2) is apart of an org that
 // the repo belongs to, or (3) is a collaborator.
-func (s *GitHubSource) listAffiliated(ctx context.Context, results chan *githubResult) {
-	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
+func (s *GitHubSource) listAffiliated(ctx context.Context, first int, results chan *githubResult) {
+	s.paginate(ctx, first, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
 		defer func() {
 			remaining, reset, retry, _ := s.v3Client.RateLimitMonitor().Get()
 			s.logger.Debug(
@@ -705,8 +780,8 @@ func (s *GitHubSource) listAffiliated(ctx context.Context, results chan *githubR
 // listSearch handles the `repositoryQuery` config option when a keyword is not present.
 // It returns the repositories matching a GitHub's advanced repository search query
 // via the GraphQL API.
-func (s *GitHubSource) listSearch(ctx context.Context, q string, results chan *githubResult) {
-	(&repositoryQuery{Query: q, Searcher: s.v4Client, Logger: s.logger}).Do(ctx, results)
+func (s *GitHubSource) listSearch(ctx context.Context, q string, first int, singlePage bool, results chan *githubResult) {
+	(&repositoryQuery{Query: q, First: first, Searcher: s.v4Client, SinglePage: singlePage, Logger: s.logger}).Do(ctx, results)
 }
 
 // GitHub was founded on February 2008, so this minimum date covers all repos
@@ -727,13 +802,14 @@ func (r dateRange) String() string {
 func (r dateRange) Size() time.Duration { return r.To.Sub(r.From) }
 
 type repositoryQuery struct {
-	Query    string
-	Created  *dateRange
-	Cursor   github.Cursor
-	First    int
-	Limit    int
-	Searcher *github.V4Client
-	Logger   log.Logger
+	Query      string
+	Created    *dateRange
+	Cursor     github.Cursor
+	First      int
+	Limit      int
+	SinglePage bool
+	Searcher   *github.V4Client
+	Logger     log.Logger
 }
 
 func (q *repositoryQuery) Do(ctx context.Context, results chan *githubResult) {
@@ -805,6 +881,9 @@ func (q *repositoryQuery) Do(ctx context.Context, results chan *githubResult) {
 			}
 		}
 
+		if q.SinglePage {
+			return
+		}
 		if res.EndCursor != "" {
 			q.Cursor = res.EndCursor
 		} else if !q.Next() {
@@ -886,7 +965,7 @@ func (s *GitHubSource) listRepositoryQuery(ctx context.Context, query string, re
 		s.listPublic(ctx, results)
 		return
 	case "affiliated":
-		s.listAffiliated(ctx, results)
+		s.listAffiliated(ctx, 0, results)
 		return
 	case "none":
 		// nothing
@@ -907,7 +986,7 @@ func (s *GitHubSource) listRepositoryQuery(ctx context.Context, query string, re
 
 	// Run the query as a GitHub advanced repository search
 	// (https://github.com/search/advanced).
-	s.listSearch(ctx, query, results)
+	s.listSearch(ctx, query, 0, false, results)
 }
 
 // listAllRepositories returns the repositories from the given `orgs`, `repos`, and
