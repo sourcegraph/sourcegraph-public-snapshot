@@ -127,16 +127,16 @@ func (b *SeriesBackfill) SetLowestPriority(ctx context.Context, store *BackfillS
 	if err != nil {
 		return err
 	}
-	currentMax, found, err := basestore.ScanFirstInt(tx.Query(ctx,
+	currentMax, found, err := basestore.ScanFirstFloat(tx.Query(ctx,
 		sqlf.Sprintf(`
-		SELECT max(estimated_cost)
+		SELECT coalesce(max(estimated_cost), 0)
 		FROM insight_series_backfill
-		WHERE state in ('new','in-progress')
+		WHERE state in ('new','processing')
 	`)))
 	if err != nil {
 		return err
 	}
-	newCost := 10000 //default lowest cost
+	newCost := 10000.0 //default lowest cost
 	if found && (currentMax*2 > newCost) {
 		newCost = currentMax * 2
 	}
@@ -169,7 +169,7 @@ func (b *SeriesBackfill) RestBackfillAttempt(ctx context.Context, store *Backfil
 	return b.setState(ctx, tx, BackfillStateProcessing)
 }
 
-func (b *SeriesBackfill) setCost(ctx context.Context, storeTx *BackfillStore, newCost int) (err error) {
+func (b *SeriesBackfill) setCost(ctx context.Context, storeTx *BackfillStore, newCost float64) (err error) {
 	defer func(ic float64) {
 		err = storeTx.Done(err)
 		if err != nil {
