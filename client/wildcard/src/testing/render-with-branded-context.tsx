@@ -2,7 +2,14 @@ import { FC, ReactNode, useEffect } from 'react'
 
 import { RenderResult, render } from '@testing-library/react'
 import { InitialEntry } from 'history'
-import { Location, MemoryRouter, Routes, Route, useLocation, NavigateFunction, useNavigate } from 'react-router-dom'
+import {
+    RouterProvider,
+    createMemoryRouter,
+    Location,
+    useLocation,
+    NavigateFunction,
+    useNavigate,
+} from 'react-router-dom'
 
 import { WildcardThemeContext, WildcardTheme } from '../hooks/useWildcardTheme'
 
@@ -44,13 +51,12 @@ export function renderWithBrandedContext(
         current: undefined,
     }
 
-    return {
-        ...render(
-            <WildcardThemeContext.Provider value={wildcardTheme}>
-                <MemoryRouter initialEntries={[route]}>
-                    <Routes>
-                        <Route path={path} element={children} />
-                    </Routes>
+    const routes = [
+        {
+            path,
+            element: (
+                <>
+                    {children}
                     <SyncRouterRefs
                         onLocationChange={location => {
                             locationRef.current = location
@@ -60,7 +66,20 @@ export function renderWithBrandedContext(
                             navigateRef.current = navigate
                         }}
                     />
-                </MemoryRouter>
+                </>
+            ),
+        },
+    ]
+
+    const router = createMemoryRouter(routes, {
+        initialEntries: [route],
+        initialIndex: 1,
+    })
+
+    return {
+        ...render(
+            <WildcardThemeContext.Provider value={wildcardTheme}>
+                <RouterProvider router={router} />
             </WildcardThemeContext.Provider>
         ),
         locationRef,

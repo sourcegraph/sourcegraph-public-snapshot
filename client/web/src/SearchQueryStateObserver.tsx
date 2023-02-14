@@ -24,6 +24,9 @@ export const SearchQueryStateObserver: FC<SearchQueryStateObserverProps> = props
     const { searchContextsEnabled, platformContext, setSelectedSearchContextSpec, selectedSearchContextSpec } = props
 
     const location = useLocation()
+
+    // Execute once on mount. New values are provided in the `useEffect` hook.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const locationSubject = useMemo(() => new BehaviorSubject<Location>(location), [])
 
     useEffect(() => {
