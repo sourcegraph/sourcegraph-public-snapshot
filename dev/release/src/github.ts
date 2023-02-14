@@ -9,7 +9,7 @@ import execa from 'execa'
 import fetch from 'node-fetch'
 import * as semver from 'semver'
 
-import { readLine, formatDate, timezoneLink, cacheFolder, changelogURL, getContainerRegistryCredential } from './util'
+import { readLine, formatDate, timezoneLink, cacheFolder, changelogURL } from './util'
 const mkdtemp = promisify(original_mkdtemp)
 let githubPAT: string
 
@@ -584,14 +584,10 @@ async function createBranchWithChanges(
         commitMessage,
         edits,
         dryRun,
-        workdir,
     }: CreateBranchWithChangesOptions
 ): Promise<void> {
-    if (!workdir) {
-        // Set up repository if the working directory override has not been provided.
-        const result = await cloneRepo(octokit, owner, repo, { revision: baseRevision })
-        workdir = result.workdir
-    }
+    // Set up repository if the working directory override has not been provided.
+    const {workdir} = await cloneRepo(octokit, owner, repo, { revision: baseRevision })
 
     // Apply edits
     for (const edit of edits) {
