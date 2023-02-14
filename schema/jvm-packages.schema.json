@@ -59,6 +59,38 @@
             "pattern": "^[^:]+:[^:]+:[^:]+(:[^:]+)?$"
           },
           "examples": [["groupID:artifactID"], ["org.apache.commons:commons-csv", "com.google.guava:guava"]]
+        },
+        "blocklist": {
+          "description": "An array of either package-name glob patterns or specific package's version glob patterns.",
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "packageGlob": {
+                    "description": "A glob-pattern to match the package name.",
+                    "type": "string",
+                    "examples": ["*-pad", "@types/*"]
+                  }
+                }
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "package": {
+                    "description": "Exact package name to match.",
+                    "type": "string"
+                  },
+                  "versionGlob": {
+                    "description": "A glob-pattern to match package versions",
+                    "type": "string",
+                    "default": "*"
+                  }
+                }
+              }
+            ]
+          }
         }
       }
     }
