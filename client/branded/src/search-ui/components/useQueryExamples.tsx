@@ -64,7 +64,7 @@ function getRepoFilterExamples(repositoryName: string): { singleRepoExample: str
     const repoOrg = repositoryNameParts[repositoryNameParts.length - 2]
     return {
         singleRepoExample: quoteIfNeeded(`${repoOrg}/${repoName}`),
-        orgReposExample: quoteIfNeeded(`${repoOrg}/.*`),
+        orgReposExample: quoteIfNeeded(`${repoOrg}/`),
     }
 }
 
@@ -159,45 +159,27 @@ export function useQueryExamples(
         return [
             [
                 {
-                    title: 'Scope search to specific repos',
+                    title: 'Search in files',
                     queryExamples: [
-                        { id: 'single-repo', query: `repo:${singleRepoExample}` },
-                        { id: 'org-repos', query: orgReposExample ? `repo:${orgReposExample}` : '' },
+                        { id: 'exact-matches', query: 'some exact error message', helperText: 'No quotes needed' },
+                        { id: 'regex-pattern', query: '/open(File|Dir)/' },
                     ],
                 },
                 {
-                    title: 'Jump into code navigation',
-                    queryExamples: [
-                        { id: 'file-filter', query: `file:${fileName}` },
-                        { id: 'type-symbol', query: 'type:symbol SymbolName' },
-                    ],
-                },
-                {
-                    title: 'Explore code history',
-                    queryExamples: [
-                        { id: 'type-diff-author', query: `type:diff author:${quotedAuthor}` },
-                        { id: 'type-commit-message', query: 'type:commit some message' },
-                        { id: 'type-diff-after', query: 'type:diff after:"1 year ago"' },
-                    ],
+                    title: 'Search in commit diffs',
+                    queryExamples: [{ id: 'type-diff-author', query: `type:diff author:${quotedAuthor} fix` }],
                 },
             ],
             [
                 {
-                    title: 'Find content or patterns',
+                    title: 'Filter by...',
                     queryExamples: [
-                        { id: 'exact-matches', query: 'some exact error message', helperText: 'No quotes needed' },
-                        { id: 'regex-pattern', query: '/regex.*pattern/' },
+                        { id: 'single-repo', query: `repo:${singleRepoExample}` },
+                        { id: 'org-repos', query: orgReposExample ? `repo:${orgReposExample}` : '' },
+                        { id: 'lang-filter', query: 'lang:javascript' },
                     ],
                 },
-                {
-                    title: 'Get logical',
-                    queryExamples: [
-                        { id: 'or-operator', query: 'lang:javascript OR lang:typescript' },
-                        { id: 'and-operator', query: 'hello AND world' },
-                        { id: 'not-operator', query: 'lang:go NOT file:main.go' },
-                    ],
-                },
-                ...(enableOwnershipSearch
+            ...(enableOwnershipSearch
                     ? [
                           {
                               title: 'Explore code ownership',

@@ -6,6 +6,7 @@ export const BUTTON_VARIANTS = [
     'warning',
     'info',
     'merged',
+    'purple',
     'link',
     'icon',
 ] as const

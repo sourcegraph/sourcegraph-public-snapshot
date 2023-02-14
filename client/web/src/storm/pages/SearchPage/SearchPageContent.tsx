@@ -20,6 +20,7 @@ import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
 
 import styles from './SearchPageContent.module.scss'
+import { CodyAssistanceButton } from '../../../enterprise/cody/components/codyAssist/CodyAssistanceButton'
 
 interface SearchPageContentProps {
     shouldShowAddCodeHostWidget?: boolean
@@ -109,6 +110,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                         enableOwnershipSearch={enableOwnershipSearch}
                     />
                 )}
+                <CodyAssistanceButton variant="secondary" size="lg" />
             </div>
 
             <SearchPageFooter />

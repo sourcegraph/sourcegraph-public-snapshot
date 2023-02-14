@@ -26,6 +26,7 @@ import { CodeMonitoringProps } from '../codeMonitoring'
 import { CodyIcon } from '../cody/CodyIcon'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { useFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
+import { GlobalCodyAssistancePopover } from '../enterprise/cody/components/codyAssist/GlobalCodyAssistancePopover'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
@@ -334,6 +335,9 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             <StatusMessagesNavItem />
                         </NavAction>
                     )}
+                    <NavAction>
+                        <GlobalCodyAssistancePopover />
+                    </NavAction>
                     {!props.authenticatedUser ? (
                         <>
                             <NavAction>

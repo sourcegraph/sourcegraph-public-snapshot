@@ -10,7 +10,10 @@ import { LegacyLayoutRouteContext } from '../LegacyRouteContext'
 import { parseSearchURLQuery } from '.'
 
 const SearchPage = lazyComponent(() => import('./home/SearchPage'), 'SearchPage')
+const CodyHomepage = lazyComponent(() => import('../enterprise/cody/home/CodyHomepage'), 'CodyHomepage')
 const StreamingSearchResults = lazyComponent(() => import('./results/StreamingSearchResults'), 'StreamingSearchResults')
+
+const USE_CODY_SEARCH_PAGE = true
 
 /**
  * Renders the Search home page or Search results depending on whether a query
@@ -26,7 +29,7 @@ export const SearchPageWrapper: FC<LegacyLayoutRouteContext> = props => {
         </TraceSpanProvider>
     ) : (
         <TraceSpanProvider name="SearchPage">
-            <SearchPage {...props} />
+            {USE_CODY_SEARCH_PAGE ? <CodyHomepage {...props} /> : <SearchPage {...props} />}
         </TraceSpanProvider>
     )
 }

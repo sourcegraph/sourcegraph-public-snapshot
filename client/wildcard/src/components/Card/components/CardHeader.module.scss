@@ -1,6 +1,8 @@
 .card-header {
+    --card-header-bg: var(--color-bg-2);
+
     padding: 0.5rem;
-    background-color: var(--color-bg-2);
+    background-color: var(--card-header-bg);
     border-bottom: 1px solid var(--card-border-color);
 
     // This calc(var(--border-radius) - 1px) calculation will remove small white spaces in top left and top right corners

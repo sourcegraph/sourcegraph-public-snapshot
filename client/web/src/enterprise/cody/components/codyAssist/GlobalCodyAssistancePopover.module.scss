@@ -1,0 +1,16 @@
+.popover {
+    width: 90%;
+    max-width: 25rem;
+
+}
+
+.trigger-button {
+    &:not(:hover):not(:focus-visible):not([aria-expanded="true"]) {
+        --btn-base-color: var(--icon-color);
+        border-color: transparent;
+    }
+}
+
+.list-group-item {
+    padding: calc(0.5 * var(--spacer)) calc(0.75 * var(--spacer));
+}

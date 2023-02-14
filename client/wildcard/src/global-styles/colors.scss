@@ -5,7 +5,7 @@
 @import 'open-color/open-color.css';
 
 $blue: #0b70db;
-$purple: #a305e1;
+$purple: #a112ff;
 $red: $oc-red-9;
 $orange: $oc-orange-7;
 $yellow: $oc-yellow-7;
@@ -50,6 +50,7 @@ $theme-colors: (
     'light': $light,
     'dark': $dark,
     'merged': $merged,
+    'purple': $purple,
 );
 
 :root {

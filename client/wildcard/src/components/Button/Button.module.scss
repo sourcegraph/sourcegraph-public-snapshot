@@ -164,6 +164,7 @@ input.btn {
 .btn-danger,
 .btn-warning,
 .btn-info,
+.btn-purple,
 .btn-merged {
     --btn-text-color: var(--light-text);
     --btn-base-color: var(--primary);
@@ -338,6 +339,13 @@ input.btn {
     --btn-text-color: var(--dark-text);
     --btn-light-disabled-text-color: var(--text-muted);
     --btn-dark-disabled-text-color: var(--text-muted);
+}
+
+.btn-purple {
+    --btn-base-color: var(--purple);
+    --btn-light-color-variant: var(--violet-06);
+    --btn-dark-color-variant: var(--violet-03);
+    --btn-dark-disabled-text-color: var(--light-text);
 }
 
 .btn-merged {
