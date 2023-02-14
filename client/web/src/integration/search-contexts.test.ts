@@ -191,7 +191,7 @@ describe('Search contexts', () => {
 
         // Enter repositories
         const repositoriesConfig =
-            '[{ "repository": "github.com/example/example", "revisions": ["main", "pr/feature1"] }]'
+            '[{ "repository": "github.com/example/example", "revisions": ["main", "pr/feature1"] }]'
         {
             const editor = await createEditorAPI(driver, '[data-testid="repositories-config-area"] .test-editor')
             await editor.replace(repositoriesConfig, 'paste')
@@ -372,8 +372,7 @@ describe('Search contexts', () => {
         })
 
         // Enter repositories
-        const repositoriesConfig =
-            '[{ "repository": "github.com/example/example", "revisions": ["main", "pr/feature1"] }]'
+        const repositoriesConfig = '[{ "repository": "github.com/example/example", "revisions": ["main"] }]'
         const editor = await createEditorAPI(driver, '[data-testid="repositories-config-area"] .test-editor')
         await editor.replace(repositoriesConfig, 'paste')
 

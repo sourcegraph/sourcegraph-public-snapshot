@@ -21,8 +21,8 @@ interface ReactRouterMock {
     useNavigate: () => unknown
 }
 
-jest.mock('react-router', () => ({
-    ...jest.requireActual<ReactRouterMock>('react-router-dom-v5-compat'),
+jest.mock('react-router-dom', () => ({
+    ...jest.requireActual<ReactRouterMock>('react-router-dom'),
     useNavigate: () => ({
         push: jest.fn(),
     }),

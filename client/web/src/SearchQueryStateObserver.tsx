@@ -1,7 +1,7 @@
 import { FC, useEffect, useMemo } from 'react'
 
 import { Location, useLocation } from 'react-router-dom'
-import { Subject } from 'rxjs'
+import { BehaviorSubject } from 'rxjs'
 import { first } from 'rxjs/operators'
 
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
@@ -24,9 +24,11 @@ export const SearchQueryStateObserver: FC<SearchQueryStateObserverProps> = props
     const { searchContextsEnabled, platformContext, setSelectedSearchContextSpec, selectedSearchContextSpec } = props
 
     const location = useLocation()
-    const locationSubject = useMemo(() => new Subject<Location>(), [])
+    const locationSubject = useMemo(() => new BehaviorSubject<Location>(location), [])
 
-    useEffect(() => locationSubject.next(location), [location, locationSubject])
+    useEffect(() => {
+        locationSubject.next(location)
+    }, [location, locationSubject])
 
     useEffect(() => {
         const subscription = getQueryStateFromLocation({
