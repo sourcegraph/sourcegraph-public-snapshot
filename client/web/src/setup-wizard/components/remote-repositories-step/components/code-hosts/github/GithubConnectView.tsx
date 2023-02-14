@@ -2,6 +2,7 @@ import { FC, ReactNode, ReactElement, useCallback, useState, useMemo, ChangeEven
 
 import classNames from 'classnames'
 import { parse as parseJSONC } from 'jsonc-parser'
+import { noop } from 'lodash';
 
 import { modify } from '@sourcegraph/common'
 import { Tabs, Tab, TabList, TabPanel, TabPanels, Input, Checkbox, useLocalStorage } from '@sourcegraph/wildcard'
@@ -71,7 +72,7 @@ export const GithubConnectView: FC<GithubConnectViewProps> = props => {
     return (
         <GithubConnectForm
             initialValues={initialValues ?? localValues}
-            onChange={setInitialValues}
+            onChange={initialValues ? noop : setInitialValues}
             onSubmit={handleSubmit}
         >
             {children}
