@@ -8,15 +8,29 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestJobTokenStore_Create(t *testing.T) {
-	tokenStore := newTokenStore(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	tokenStore := store.NewJobTokenStore(&observation.TestContext, db)
+
+	repoStore := database.ReposWith(logger, db)
+	esStore := database.ExternalServicesWith(logger, db)
+
+	repo := bt.TestRepo(t, esStore, extsvc.KindGitHub)
+
+	ctx := context.Background()
+	err := repoStore.Create(ctx, repo)
+	require.NoError(t, err)
+	defer repoStore.Delete(ctx, repo.ID)
 
 	tests := []struct {
 		name        string
@@ -29,18 +43,18 @@ func TestJobTokenStore_Create(t *testing.T) {
 			name:  "Token created",
 			jobId: 10,
 			queue: "test",
-			repo:  "test-repo",
+			repo:  string(repo.Name),
 		},
 		{
 			name:        "No jobId",
 			queue:       "test",
-			repo:        "test-repo",
+			repo:        string(repo.Name),
 			expectedErr: errors.New("missing jobId"),
 		},
 		{
 			name:        "No queue",
 			jobId:       10,
-			repo:        "test-repo",
+			repo:        string(repo.Name),
 			expectedErr: errors.New("missing queue"),
 		},
 		{
@@ -69,17 +83,40 @@ func TestJobTokenStore_Create_Duplicate(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	tokenStore := store.NewJobTokenStore(&observation.TestContext, db)
 
-	_, err := tokenStore.Create(context.Background(), 10, "test", "repo")
+	repoStore := database.ReposWith(logger, db)
+	esStore := database.ExternalServicesWith(logger, db)
+
+	repo := bt.TestRepo(t, esStore, extsvc.KindGitHub)
+
+	ctx := context.Background()
+	err := repoStore.Create(ctx, repo)
 	require.NoError(t, err)
-	_, err = tokenStore.Create(context.Background(), 10, "test", "repo")
+	defer repoStore.Delete(ctx, repo.ID)
+
+	_, err = tokenStore.Create(context.Background(), 10, "test", string(repo.Name))
+	require.NoError(t, err)
+	_, err = tokenStore.Create(context.Background(), 10, "test", string(repo.Name))
 	require.Error(t, err)
+	assert.True(t, errors.Is(err, store.ErrJobTokenAlreadyCreated))
 }
 
 func TestJobTokenStore_Regenerate(t *testing.T) {
-	tokenStore := newTokenStore(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	tokenStore := store.NewJobTokenStore(&observation.TestContext, db)
+
+	repoStore := database.ReposWith(logger, db)
+	esStore := database.ExternalServicesWith(logger, db)
+
+	repo := bt.TestRepo(t, esStore, extsvc.KindGitHub)
+
+	ctx := context.Background()
+	err := repoStore.Create(ctx, repo)
+	require.NoError(t, err)
+	defer repoStore.Delete(ctx, repo.ID)
 
 	// Create an existing token to test against
-	_, err := tokenStore.Create(context.Background(), 10, "test", "repo")
+	_, err = tokenStore.Create(context.Background(), 10, "test", string(repo.Name))
 	require.NoError(t, err)
 
 	tests := []struct {
@@ -92,12 +129,6 @@ func TestJobTokenStore_Regenerate(t *testing.T) {
 			name:  "Regenerate Token",
 			jobId: 10,
 			queue: "test",
-		},
-		{
-			name:        "Token does not exist",
-			jobId:       100,
-			queue:       "test1",
-			expectedErr: errors.New("job token does not exist"),
 		},
 	}
 	for _, test := range tests {
@@ -115,10 +146,22 @@ func TestJobTokenStore_Regenerate(t *testing.T) {
 }
 
 func TestJobTokenStore_Exists(t *testing.T) {
-	tokenStore := newTokenStore(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	tokenStore := store.NewJobTokenStore(&observation.TestContext, db)
+
+	repoStore := database.ReposWith(logger, db)
+	esStore := database.ExternalServicesWith(logger, db)
+
+	repo := bt.TestRepo(t, esStore, extsvc.KindGitHub)
+
+	ctx := context.Background()
+	err := repoStore.Create(ctx, repo)
+	require.NoError(t, err)
+	defer repoStore.Delete(ctx, repo.ID)
 
 	// Create an existing token to test against
-	_, err := tokenStore.Create(context.Background(), 10, "test", "repo")
+	_, err = tokenStore.Create(context.Background(), 10, "test", string(repo.Name))
 	require.NoError(t, err)
 
 	tests := []struct {
@@ -156,10 +199,22 @@ func TestJobTokenStore_Exists(t *testing.T) {
 }
 
 func TestJobTokenStore_Get(t *testing.T) {
-	tokenStore := newTokenStore(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	tokenStore := store.NewJobTokenStore(&observation.TestContext, db)
+
+	repoStore := database.ReposWith(logger, db)
+	esStore := database.ExternalServicesWith(logger, db)
+
+	repo := bt.TestRepo(t, esStore, extsvc.KindGitHub)
+
+	ctx := context.Background()
+	err := repoStore.Create(ctx, repo)
+	require.NoError(t, err)
+	defer repoStore.Delete(ctx, repo.ID)
 
 	// Create an existing token to test against
-	_, err := tokenStore.Create(context.Background(), 10, "test", "repo")
+	_, err = tokenStore.Create(context.Background(), 10, "test", string(repo.Name))
 	require.NoError(t, err)
 
 	tests := []struct {
@@ -177,7 +232,7 @@ func TestJobTokenStore_Get(t *testing.T) {
 				Id:    1,
 				JobID: 10,
 				Queue: "test",
-				Repo:  "repo",
+				Repo:  string(repo.Name),
 			},
 		},
 		{
@@ -211,10 +266,22 @@ func TestJobTokenStore_Get(t *testing.T) {
 }
 
 func TestJobTokenStore_GetByToken(t *testing.T) {
-	tokenStore := newTokenStore(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	tokenStore := store.NewJobTokenStore(&observation.TestContext, db)
+
+	repoStore := database.ReposWith(logger, db)
+	esStore := database.ExternalServicesWith(logger, db)
+
+	repo := bt.TestRepo(t, esStore, extsvc.KindGitHub)
+
+	ctx := context.Background()
+	err := repoStore.Create(ctx, repo)
+	require.NoError(t, err)
+	defer repoStore.Delete(ctx, repo.ID)
 
 	// Create an existing token to test against
-	token, err := tokenStore.Create(context.Background(), 10, "test", "repo")
+	token, err := tokenStore.Create(context.Background(), 10, "test", string(repo.Name))
 	require.NoError(t, err)
 	require.NotEmpty(t, token)
 
@@ -231,7 +298,7 @@ func TestJobTokenStore_GetByToken(t *testing.T) {
 				Id:    1,
 				JobID: 10,
 				Queue: "test",
-				Repo:  "repo",
+				Repo:  string(repo.Name),
 			},
 		},
 		{
@@ -264,10 +331,22 @@ func TestJobTokenStore_GetByToken(t *testing.T) {
 }
 
 func TestJobTokenStore_Delete(t *testing.T) {
-	tokenStore := newTokenStore(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	tokenStore := store.NewJobTokenStore(&observation.TestContext, db)
+
+	repoStore := database.ReposWith(logger, db)
+	esStore := database.ExternalServicesWith(logger, db)
+
+	repo := bt.TestRepo(t, esStore, extsvc.KindGitHub)
+
+	ctx := context.Background()
+	err := repoStore.Create(ctx, repo)
+	require.NoError(t, err)
+	defer repoStore.Delete(ctx, repo.ID)
 
 	// Create an existing token to test against
-	_, err := tokenStore.Create(context.Background(), 10, "test", "repo")
+	_, err = tokenStore.Create(context.Background(), 10, "test", string(repo.Name))
 	require.NoError(t, err)
 
 	tests := []struct {
@@ -302,11 +381,4 @@ func TestJobTokenStore_Delete(t *testing.T) {
 			}
 		})
 	}
-}
-
-func newTokenStore(t *testing.T) store.JobTokenStore {
-	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	tokenStore := store.NewJobTokenStore(&observation.TestContext, db)
-	return tokenStore
 }

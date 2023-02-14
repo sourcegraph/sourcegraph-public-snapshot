@@ -1937,7 +1937,7 @@ CREATE TABLE executor_job_tokens (
     value_sha256 bytea NOT NULL,
     job_id bigint NOT NULL,
     queue text NOT NULL,
-    repo text NOT NULL,
+    repo_id bigint NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -3356,6 +3356,7 @@ CREATE TABLE permission_sync_jobs (
     permissions_added integer DEFAULT 0 NOT NULL,
     permissions_removed integer DEFAULT 0 NOT NULL,
     permissions_found integer DEFAULT 0 NOT NULL,
+    code_host_states json[],
     CONSTRAINT permission_sync_jobs_for_repo_or_user CHECK (((user_id IS NULL) <> (repository_id IS NULL)))
 );
 
@@ -3634,7 +3635,6 @@ CREATE TABLE roles (
     id integer NOT NULL,
     name text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    deleted_at timestamp with time zone,
     system boolean DEFAULT false NOT NULL,
     CONSTRAINT name_not_blank CHECK ((name <> ''::text))
 );
@@ -4412,7 +4412,7 @@ ALTER TABLE ONLY executor_heartbeats
     ADD CONSTRAINT executor_heartbeats_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY executor_job_tokens
-    ADD CONSTRAINT executor_job_tokens_job_id_queue_repo_key UNIQUE (job_id, queue, repo);
+    ADD CONSTRAINT executor_job_tokens_job_id_queue_repo_id_key UNIQUE (job_id, queue, repo_id);
 
 ALTER TABLE ONLY executor_job_tokens
     ADD CONSTRAINT executor_job_tokens_pkey PRIMARY KEY (id);
@@ -5657,7 +5657,7 @@ INSERT INTO lsif_configuration_policies VALUES (3, NULL, 'Default commit retenti
 
 SELECT pg_catalog.setval('lsif_configuration_policies_id_seq', 3, true);
 
-INSERT INTO roles VALUES (1, 'USER', '2023-01-04 16:29:41.195966+00', NULL, true);
-INSERT INTO roles VALUES (2, 'SITE_ADMINISTRATOR', '2023-01-04 16:29:41.195966+00', NULL, true);
+INSERT INTO roles VALUES (1, 'USER', '2023-01-04 16:29:41.195966+00', true);
+INSERT INTO roles VALUES (2, 'SITE_ADMINISTRATOR', '2023-01-04 16:29:41.195966+00', true);
 
 SELECT pg_catalog.setval('roles_id_seq', 3, true);

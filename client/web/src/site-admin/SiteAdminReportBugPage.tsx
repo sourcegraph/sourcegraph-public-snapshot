@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react'
 
 import { mapValues, values } from 'lodash'
-import { RouteComponentProps } from 'react-router'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -110,12 +109,11 @@ const allConfigSchema = {
         .reduce((allDefinitions, definitions) => ({ ...allDefinitions, ...definitions }), {}),
 }
 
-interface Props extends RouteComponentProps, ThemeProps, TelemetryProps {}
+interface Props extends ThemeProps, TelemetryProps {}
 
 export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     isLightTheme,
     telemetryService,
-    history,
 }) => {
     const allConfig = useObservable(useMemo(fetchAllConfigAndSettings, []))
     return (

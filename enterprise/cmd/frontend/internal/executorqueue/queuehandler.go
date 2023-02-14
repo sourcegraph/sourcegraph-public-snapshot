@@ -1,6 +1,7 @@
 package executorqueue
 
 import (
+	"crypto/subtle"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -97,6 +98,13 @@ func newExecutorQueuesHandler(
 		// The lsif route are treated as an internal actor and require the executor access token to authenticate.
 		lsifRouter.Use(withInternalActor, executorAuth)
 
+		// Upload SCIP indexes without a sudo access token or github tokens.
+		scipRouter := base.PathPrefix("/scip").Name("executor-scip").Subrouter()
+		scipRouter.Path("/upload").Methods("POST").Handler(uploadHandler)
+		scipRouter.Path("/upload").Methods("HEAD").Handler(noopHandler)
+		// The scip route are treated as an internal actor and require the executor access token to authenticate.
+		scipRouter.Use(withInternalActor, executorAuth)
+
 		filesRouter := base.PathPrefix("/files").Name("executor-files").Subrouter()
 		batchChangesRouter := filesRouter.PathPrefix("/batch-changes").Subrouter()
 		batchChangesRouter.Path("/{spec}/{file}").Methods(http.MethodGet).Handler(batchesWorkspaceFileGetHandler)
@@ -169,7 +177,10 @@ func validateExecutorToken(w http.ResponseWriter, r *http.Request, logger log.Lo
 		return false
 	}
 
-	if token != expectedAccessToken {
+	// 🚨 SECURITY: Use constant-time comparisons to avoid leaking the verification
+	// code via timing attack. It is not important to avoid leaking the *length* of
+	// the code, because the length of verification codes is constant.
+	if subtle.ConstantTimeCompare([]byte(token), []byte(expectedAccessToken)) == 0 {
 		w.WriteHeader(http.StatusForbidden)
 		return false
 	}
@@ -226,7 +237,10 @@ func validateJobRequest(
 
 	// If the general executor access token was provided, simply check the value.
 	if tokenType == "token-executor" {
-		if authToken == conf.SiteConfig().ExecutorsAccessToken {
+		// 🚨 SECURITY: Use constant-time comparisons to avoid leaking the verification
+		// code via timing attack. It is not important to avoid leaking the *length* of
+		// the code, because the length of verification codes is constant.
+		if subtle.ConstantTimeCompare([]byte(authToken), []byte(conf.SiteConfig().ExecutorsAccessToken)) == 1 {
 			return true
 		} else {
 			w.WriteHeader(http.StatusForbidden)
@@ -322,3 +336,7 @@ func parseJobIdHeader(r *http.Request) (int64, error) {
 	}
 	return int64(id), nil
 }
+
+var noopHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+})

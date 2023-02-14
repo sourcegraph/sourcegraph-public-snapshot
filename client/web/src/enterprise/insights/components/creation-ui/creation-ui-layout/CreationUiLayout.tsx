@@ -2,7 +2,7 @@ import { forwardRef } from 'react'
 
 import classNames from 'classnames'
 
-import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
+import { Container, ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
 import styles from './CreationUiLayout.module.scss'
 
@@ -13,9 +13,13 @@ export const CreationUiLayout = forwardRef((props, reference) => {
 }) as ForwardReferenceComponent<'div', {}>
 
 export const CreationUIForm = forwardRef((props, reference) => {
-    const { as: Component = 'form', className, ...attributes } = props
+    const { as: Component = 'form', ...attributes } = props
 
-    return <Component ref={reference} {...attributes} className={classNames(styles.rootForm, className)} />
+    return (
+        <Container className={styles.rootForm}>
+            <Component ref={reference} {...attributes} />
+        </Container>
+    )
 }) as ForwardReferenceComponent<'form', {}>
 
 export const CreationUIPreview = forwardRef((props, reference) => {

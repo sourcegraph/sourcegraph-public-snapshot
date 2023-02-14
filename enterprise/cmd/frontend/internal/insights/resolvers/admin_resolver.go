@@ -119,7 +119,7 @@ type insightSeriesMetadataPayloadResolver struct {
 	series *types.InsightSeries
 }
 
-func (i *insightSeriesMetadataPayloadResolver) Series(ctx context.Context) graphqlbackend.InsightSeriesMetadataResolver {
+func (i *insightSeriesMetadataPayloadResolver) Series(_ context.Context) graphqlbackend.InsightSeriesMetadataResolver {
 	return &insightSeriesMetadataResolver{series: i.series}
 }
 
@@ -127,15 +127,15 @@ type insightSeriesMetadataResolver struct {
 	series *types.InsightSeries
 }
 
-func (i *insightSeriesMetadataResolver) SeriesId(ctx context.Context) (string, error) {
+func (i *insightSeriesMetadataResolver) SeriesId(_ context.Context) (string, error) {
 	return i.series.SeriesID, nil
 }
 
-func (i *insightSeriesMetadataResolver) Query(ctx context.Context) (string, error) {
+func (i *insightSeriesMetadataResolver) Query(_ context.Context) (string, error) {
 	return i.series.Query, nil
 }
 
-func (i *insightSeriesMetadataResolver) Enabled(ctx context.Context) (bool, error) {
+func (i *insightSeriesMetadataResolver) Enabled(_ context.Context) (bool, error) {
 	return i.series.Enabled, nil
 }
 
@@ -143,35 +143,35 @@ type insightSeriesQueryStatusResolver struct {
 	status types.InsightSeriesStatus
 }
 
-func (i *insightSeriesQueryStatusResolver) SeriesId(ctx context.Context) (string, error) {
+func (i *insightSeriesQueryStatusResolver) SeriesId(_ context.Context) (string, error) {
 	return i.status.SeriesId, nil
 }
 
-func (i *insightSeriesQueryStatusResolver) Query(ctx context.Context) (string, error) {
+func (i *insightSeriesQueryStatusResolver) Query(_ context.Context) (string, error) {
 	return i.status.Query, nil
 }
 
-func (i *insightSeriesQueryStatusResolver) Enabled(ctx context.Context) (bool, error) {
+func (i *insightSeriesQueryStatusResolver) Enabled(_ context.Context) (bool, error) {
 	return i.status.Enabled, nil
 }
 
-func (i *insightSeriesQueryStatusResolver) Errored(ctx context.Context) (int32, error) {
+func (i *insightSeriesQueryStatusResolver) Errored(_ context.Context) (int32, error) {
 	return int32(i.status.Errored), nil
 }
 
-func (i *insightSeriesQueryStatusResolver) Completed(ctx context.Context) (int32, error) {
+func (i *insightSeriesQueryStatusResolver) Completed(_ context.Context) (int32, error) {
 	return int32(i.status.Completed), nil
 }
 
-func (i *insightSeriesQueryStatusResolver) Processing(ctx context.Context) (int32, error) {
+func (i *insightSeriesQueryStatusResolver) Processing(_ context.Context) (int32, error) {
 	return int32(i.status.Processing), nil
 }
 
-func (i *insightSeriesQueryStatusResolver) Failed(ctx context.Context) (int32, error) {
+func (i *insightSeriesQueryStatusResolver) Failed(_ context.Context) (int32, error) {
 	return int32(i.status.Failed), nil
 }
 
-func (i *insightSeriesQueryStatusResolver) Queued(ctx context.Context) (int32, error) {
+func (i *insightSeriesQueryStatusResolver) Queued(_ context.Context) (int32, error) {
 	return int32(i.status.Queued), nil
 }
 

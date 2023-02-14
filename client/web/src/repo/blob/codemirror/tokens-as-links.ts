@@ -9,7 +9,7 @@ import { logger, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
 import { Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
 import { toPrettyBlobURL, UIRange } from '@sourcegraph/shared/src/util/url'
 
-import { BlobInfo } from '../Blob'
+import type { BlobInfo } from '../CodeMirrorBlob'
 import { DefinitionResponse, fetchDefinitionsFromRanges } from '../definitions'
 
 import { SelectedLineRange, selectedLines } from './linenumbers'

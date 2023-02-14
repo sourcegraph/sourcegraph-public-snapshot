@@ -1,5 +1,4 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import * as H from 'history'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -22,12 +21,7 @@ export const Page: Story = () => (
     <WebStory>
         {() => (
             <MockedTestProvider mocks={[eventTypesMock]}>
-                <CreatePage
-                    match={{} as any}
-                    history={H.createMemoryHistory()}
-                    location={{} as any}
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                />
+                <CreatePage telemetryService={NOOP_TELEMETRY_SERVICE} />
             </MockedTestProvider>
         )}
     </WebStory>

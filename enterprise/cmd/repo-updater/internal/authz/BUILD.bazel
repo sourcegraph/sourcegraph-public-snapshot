@@ -73,7 +73,6 @@ go_test(
         "//internal/extsvc/gitlab",
         "//internal/httptestutil",
         "//internal/observation",
-        "//internal/ratelimit",
         "//internal/repos",
         "//internal/timeutil",
         "//internal/types",

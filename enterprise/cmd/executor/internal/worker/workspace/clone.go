@@ -48,15 +48,7 @@ func cloneRepo(
 		}
 	}
 
-	proxyURL, cleanup, err := newGitProxyServer(
-		options.EndpointURL,
-		options.GitServicePath,
-		job.RepositoryName,
-		options.ExecutorToken,
-		job.Token,
-		options.ExecutorName,
-		job.ID,
-	)
+	proxyURL, cleanup, err := newGitProxyServer(options, job)
 	defer func() {
 		err = errors.Append(err, cleanup())
 	}()
@@ -189,7 +181,7 @@ func cloneRepo(
 // In the future, this will be used to provide different access tokens per job,
 // so that we can tell _which_ job misused the token and also scope its access
 // to the particular repo in question.
-func newGitProxyServer(endpointURL, gitServicePath, repositoryName, accessToken string, jobToken string, executorName string, jobId int) (string, func() error, error) {
+func newGitProxyServer(options CloneOptions, job types.Job) (string, func() error, error) {
 	// Get new random free port.
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -198,21 +190,21 @@ func newGitProxyServer(endpointURL, gitServicePath, repositoryName, accessToken 
 	cleanupListener := func() error { return listener.Close() }
 
 	upstream, err := makeRelativeURL(
-		endpointURL,
-		gitServicePath,
+		options.EndpointURL,
+		options.GitServicePath,
 	)
 	if err != nil {
 		return "", cleanupListener, err
 	}
 
-	proxy := newReverseProxy(upstream, accessToken, jobToken, executorName, jobId)
+	proxy := newReverseProxy(upstream, options.ExecutorToken, job.Token, options.ExecutorName, job.ID)
 
 	go http.Serve(listener, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Prevent queries for repos other than this jobs repo.
 		// This is _not_ a security measure, that should be handled by additional
 		// clone tokens. This is mostly a gate to finding when we accidentally
 		// would access another repo.
-		if !strings.HasPrefix(r.URL.Path, "/"+repositoryName+"/") {
+		if !strings.HasPrefix(r.URL.Path, "/"+job.RepositoryName+"/") {
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}

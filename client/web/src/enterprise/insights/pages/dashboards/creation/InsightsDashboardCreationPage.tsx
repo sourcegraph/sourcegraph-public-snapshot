@@ -1,7 +1,7 @@
 import React, { useContext, useMemo } from 'react'
 
 import classNames from 'classnames'
-import { useHistory } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom-v5-compat'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Container, Button, LoadingSpinner, useObservable, Link, Tooltip } from '@sourcegraph/wildcard'
@@ -26,7 +26,8 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<
     React.PropsWithChildren<InsightsDashboardCreationPageProps>
 > = props => {
     const { telemetryService } = props
-    const history = useHistory()
+
+    const navigate = useNavigate()
     const { dashboard } = useUiFeatures()
 
     const { createDashboard, getDashboardOwners } = useContext(CodeInsightsBackendContext)
@@ -45,10 +46,10 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<
         telemetryService.log('CodeInsightsDashboardCreationPageSubmitClick')
 
         // Navigate user to the dashboard page with new created dashboard
-        history.push(`/insights/dashboards/${createdDashboard.id}`)
+        navigate(`/insights/dashboards/${createdDashboard.id}`)
     }
 
-    const handleCancel = (): void => history.goBack()
+    const handleCancel = (): void => navigate(-1)
 
     // Loading state
     if (owners === undefined) {

@@ -35,7 +35,7 @@ pkgs.mkShell {
     universal-ctags
 
     # Build our backend.
-    go_1_19
+    go_1_20
 
     # Lots of our tooling and go tests rely on git et al.
     git
