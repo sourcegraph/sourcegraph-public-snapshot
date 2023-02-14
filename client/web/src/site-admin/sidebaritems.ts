@@ -102,6 +102,10 @@ export const usersGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/users',
         },
         {
+            label: 'Access requests',
+            to: '/site-admin/access-requests',
+        },
+        {
             label: 'Organizations',
             to: '/site-admin/organizations',
         },
