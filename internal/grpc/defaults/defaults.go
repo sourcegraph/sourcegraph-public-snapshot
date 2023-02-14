@@ -36,24 +36,13 @@ var (
 		grpc_prometheus.WithServerHandlingTimeHistogram(setHistogramNamespace), // record the overall response latency for a gRPC request
 	)
 
-	// processName is the name of the current binary (e.g. "frontend", "gitserver", "github_proxy"), with some
-	// additional normalization so that it can be used as a Prometheus namespace.
-	processName = strings.ReplaceAll(
-		strings.ReplaceAll(
-			env.MyName,
-			"-",
-			"_",
-		),
-		".",
-		"_")
-
 	// prometheus option to set the namespace for counter metrics to the process name
 	setCounterNamespace = func(opts *prometheus.CounterOpts) {
-		opts.Namespace = processName
+		opts.Namespace = processNamePrometheus()
 	}
 	// prometheus option to set the namespace for histogram to the process name
 	setHistogramNamespace = func(opts *prometheus.HistogramOpts) {
-		opts.Namespace = processName
+		opts.Namespace = processNamePrometheus()
 	}
 )
 
@@ -104,4 +93,14 @@ func ServerOptions(logger log.Logger) []grpc.ServerOption {
 			otelgrpc.UnaryServerInterceptor(),
 		),
 	}
+}
+
+// processNamePrometheus returns the name of the current binary (e.g. "frontend", "gitserver", "github_proxy"), with some
+// additional normalization so that it can be used as a Prometheus namespace.
+func processNamePrometheus() string {
+	base := env.MyName
+	base = strings.ReplaceAll(base, "-", "_")
+	base = strings.ReplaceAll(base, ".", "_")
+
+	return base
 }
