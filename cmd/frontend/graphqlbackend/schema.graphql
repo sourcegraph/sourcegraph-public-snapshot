@@ -9464,7 +9464,7 @@ extend type Query {
 
 extend type Mutation {
     """
-    Marks access_request as "rejected"
+    Marks access_request as rejected
     """
-    rejectAccessRequest(id: ID!): EmptyResponse
+    setAccessRequestStatus(id: ID!, status: AccessRequestStatus!): EmptyResponse
 }

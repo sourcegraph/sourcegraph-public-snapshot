@@ -19,7 +19,10 @@ func UnmarshalAccessRequestID(id graphql.ID) (userID int32, err error) {
 	return
 }
 
-func (r *schemaResolver) RejectAccessRequest(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error) {
+func (r *schemaResolver) SetAccessRequestStatus(ctx context.Context, args *struct {
+	ID     graphql.ID
+	Status types.AccessRequestStatus
+}) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins can see users.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -34,7 +37,7 @@ func (r *schemaResolver) RejectAccessRequest(ctx context.Context, args *struct{ 
 		return nil, err
 	}
 
-	accessRequest.Status = types.AccessRequestStatusRejected
+	accessRequest.Status = args.Status
 	if err := r.db.AccessRequests().Update(ctx, database.AccessRequestUpdate{ID: accessRequest.ID, Status: &accessRequest.Status}); err != nil {
 		return nil, err
 	}

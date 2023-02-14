@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useCallback } from 'react'
+import React, { Fragment, useEffect, useCallback, useState } from 'react'
 
 import { mdiAccount, mdiPlus } from '@mdi/js'
 import { formatDistanceToNowStrict } from 'date-fns'
@@ -11,14 +11,22 @@ import {
     PendingAccessRequestsListVariables,
     RejectAccessRequestResult,
     RejectAccessRequestVariables,
+    ApproveAccessRequestResult,
+    ApproveAccessRequestVariables,
 } from '../../graphql-operations'
 import { useURLSyncedState } from '../../hooks'
 import { eventLogger } from '../../tracking/eventLogger'
+import { AccountCreatedAlert } from '../components/AccountCreatedAlert'
 import { DropdownPagination } from '../components/DropdownPagination'
 
-import { PENDING_ACCESS_REQUESTS_LIST, REJECT_ACCESS_REQUEST } from './queries'
+import { APPROVE_ACCESS_REQUEST, PENDING_ACCESS_REQUESTS_LIST, REJECT_ACCESS_REQUEST } from './queries'
 
 import styles from './index.module.scss'
+
+function toUsername(name: string): string {
+    // Remove all non-alphanumeric characters from the name and add some short hash to the end
+    return name.replace(/[^\dA-Za-z]/g, '').toLowerCase() + '-' + Math.random().toString(36).slice(2, 7)
+}
 
 const DEFAULT_FILTERS = {
     offset: '0',
@@ -29,7 +37,6 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
     useEffect(() => {
         eventLogger.logPageView('AccessRequestsPage')
     }, [])
-
     const [filters, setFilters] = useURLSyncedState(DEFAULT_FILTERS)
 
     const offset = Number(filters.offset)
@@ -51,7 +58,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
 
     const handleReject = useCallback(
         (id: string) => {
-            if (confirm('Are you sure you want to delete the selected access request?')) {
+            if (confirm('Are you sure you want to reject the selected access request?')) {
                 rejectAccessRequest({
                     variables: {
                         id,
@@ -63,6 +70,44 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
             }
         },
         [refetch, rejectAccessRequest]
+    )
+
+    const [lastApprovedUser, setLastApprovedUser] = useState<{
+        email: string
+        resetPasswordURL?: string | null
+        username: string
+    }>()
+
+    const [approveAccessRequest] = useMutation<ApproveAccessRequestResult, ApproveAccessRequestVariables>(
+        APPROVE_ACCESS_REQUEST
+    )
+
+    const handleApprove = useCallback(
+        (accessRequestId: number, name: string, email: string) => {
+            if (confirm('Are you sure you want to approve the selected access request?')) {
+                approveAccessRequest({
+                    variables: {
+                        accessRequestId: accessRequestId.toString(),
+                        email,
+                        username: toUsername(name),
+                    },
+                })
+                    .then(({ data }) => {
+                        if (!data) {
+                            throw new Error('No data returned from approveAccessRequest mutation')
+                        }
+                        setLastApprovedUser({
+                            username: data?.createUser.user.username,
+                            email,
+                            resetPasswordURL: data?.createUser.resetPasswordURL,
+                        })
+                        return refetch()
+                    })
+                    // eslint-disable-next-line no-console
+                    .catch(error => console.error(error))
+            }
+        },
+        [refetch, approveAccessRequest]
     )
 
     return (
@@ -92,6 +137,13 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                 onOffsetChange={offset => setFilters({ offset: offset.toString() })}
                 options={[4, 8, 16]}
             />
+            {lastApprovedUser && (
+                <AccountCreatedAlert
+                    email={lastApprovedUser.email}
+                    username={lastApprovedUser.username}
+                    resetPasswordURL={lastApprovedUser.resetPasswordURL}
+                />
+            )}
             <Card className="p-3">
                 <Grid columnCount={5}>
                     {['Email', 'Name', 'Last requested at', 'Extra Details', ''].map((value, index) => (
@@ -111,7 +163,12 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                                 {additionalInfo}
                             </Text>
                             <div className="d-flex justify-content-end align-items-start">
-                                <Button variant="success" size="sm" className="mr-2">
+                                <Button
+                                    variant="success"
+                                    size="sm"
+                                    className="mr-2"
+                                    onClick={() => handleApprove(id, name, email)}
+                                >
                                     Approve
                                 </Button>
                                 <Button variant="danger" size="sm" onClick={() => handleReject(id)}>

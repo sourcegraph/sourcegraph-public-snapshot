@@ -18,7 +18,21 @@ export const PENDING_ACCESS_REQUESTS_LIST = gql`
 
 export const REJECT_ACCESS_REQUEST = gql`
     mutation RejectAccessRequest($id: ID!) {
-        rejectAccessRequest(id: $id) {
+        setAccessRequestStatus(id: $id, status: REJECTED) {
+            alwaysNil
+        }
+    }
+`
+
+export const APPROVE_ACCESS_REQUEST = gql`
+    mutation ApproveAccessRequest($accessRequestId: ID!, $username: String!, $email: String) {
+        createUser(username: $username, email: $email, verifiedEmail: false) {
+            user {
+                username
+            }
+            resetPasswordURL
+        }
+        setAccessRequestStatus(id: $accessRequestId, status: APPROVED) {
             alwaysNil
         }
     }
