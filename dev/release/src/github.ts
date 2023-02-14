@@ -576,7 +576,16 @@ export const localSourcegraphRepo = `${process.cwd()}/../..`
 
 async function createBranchWithChanges(
     octokit: Octokit,
-    { owner, repo, base: baseRevision, head: headBranch, commitMessage, edits, dryRun, workdir }: CreateBranchWithChangesOptions
+    {
+        owner,
+        repo,
+        base: baseRevision,
+        head: headBranch,
+        commitMessage,
+        edits,
+        dryRun,
+        workdir,
+    }: CreateBranchWithChangesOptions
 ): Promise<void> {
     if (!workdir) {
         // Set up repository if the working directory override has not been provided.

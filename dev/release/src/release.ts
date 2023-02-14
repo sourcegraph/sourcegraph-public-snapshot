@@ -1007,45 +1007,45 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         description: 'mvu',
         argNames: ['version'],
         run: async config => {
-            const {previous, upcoming} = await releaseVersions(config)
+            const { upcoming } = await releaseVersions(config)
 
             const releaseBranch = `${upcoming.major}.${upcoming.minor}`
-            const prevReleaseBranch = `${previous.major}.${previous.minor}`
             const version = upcoming.version
 
             const prConfig = {
                 edits: [
-                    `git remote set-branches --add origin '${prevReleaseBranch}'`,
-                    `git fetch --depth 1 origin ${prevReleaseBranch}`,
                     `git remote set-branches --add origin '${releaseBranch}'`,
-                    `git fetch --depth 1 origin ${prevReleaseBranch}`,
-                    `comby -in-place 'const maxVersionString = ":[1]"' "const maxVersionString = "${version}"" internal/database/migration/shared/data/cmd/generator/consts.go`,
-                    'go generate internal/database/migration/shared/embed.go'
+                    `git fetch --depth 1 origin ${releaseBranch}`,
+                    `comby -in-place 'const maxVersionString = ":[1]"' "const maxVersionString = \\"${version}\\"" internal/database/migration/shared/data/cmd/generator/consts.go`,
+                    'cd internal/database/migration/shared && go run ./data/cmd/generator --write-frozen=false',
                 ],
-                repo:'sourcegraph',
+                repo: 'sourcegraph',
                 owner: 'sourcegraph',
                 body: 'Update the multi version upgrade constants',
                 title: `${version} multi version upgrade constants`,
-                head: `${version}-update-multi-version-upgrade`,
                 commitMessage: `baking multi version upgrade files for version ${version}`,
             }
+
             const sets = await createChangesets({
                 requiredCommands: ['comby', 'go'],
                 changes: [
                     {
                         ...prConfig,
-                        base: 'main'
+                        base: 'test-mvu',
+                        head: `${version}-update-multi-version-upgrade`,
                     },
                     {
                         ...prConfig,
-                        base: `${releaseBranch}`,
+                        base: 'test-mvu2',
+                        head: `${version}-update-multi-version-upgrade-rb`,
                     },
-                ], dryRun: true,
+                ],
+                dryRun: false,
             })
             console.log('Merge the following pull requests:\n')
             for (const set of sets) {
                 console.log(set.pullRequestURL)
             }
         },
-    }
+    },
 ]
