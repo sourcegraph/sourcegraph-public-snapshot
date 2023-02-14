@@ -255,10 +255,8 @@ func DetectSyntaxHighlightingLanguage(path string, contents string) SyntaxEngine
 
 	engine := engineConfig.Default
 	if overrideEngine, ok := engineConfig.Overrides[lang]; ok {
-		fmt.Println("OVERRIDE", lang, overrideEngine, "")
 		engine = overrideEngine
 	}
-	fmt.Println("LANG", lang, "OVERRIDE", langOverride)
 
 	return SyntaxEngineQuery{
 		Language:         lang,
