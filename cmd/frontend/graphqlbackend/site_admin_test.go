@@ -601,7 +601,7 @@ func TestSetIsSiteAdmin(t *testing.T) {
 			argsUserID:            1,
 			argsSiteAdmin:         true,
 			result:                nil,
-			wantErr:               ErrRefuseToSetCurrentUserSiteAdmin,
+			wantErr:               errRefuseToSetCurrentUserSiteAdmin,
 			securityLogEventCalls: 1,
 			setIsSiteAdminCalls:   0,
 		},

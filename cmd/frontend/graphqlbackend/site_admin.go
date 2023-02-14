@@ -270,7 +270,7 @@ type roleChangeEventArgs struct {
 	Reason string `json:"reason"`
 }
 
-var ErrRefuseToSetCurrentUserSiteAdmin = errors.New("refusing to set current user site admin status")
+var errRefuseToSetCurrentUserSiteAdmin = errors.New("refusing to set current user site admin status")
 
 func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 	UserID    graphql.ID
@@ -321,7 +321,7 @@ func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 	}
 
 	if userResolver.ID() == args.UserID {
-		return nil, ErrRefuseToSetCurrentUserSiteAdmin
+		return nil, errRefuseToSetCurrentUserSiteAdmin
 	}
 
 	if err = r.db.Users().SetIsSiteAdmin(ctx, affectedUserID, args.SiteAdmin); err != nil {
