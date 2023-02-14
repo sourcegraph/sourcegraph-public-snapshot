@@ -574,15 +574,7 @@ export const localSourcegraphRepo = `${process.cwd()}/../..`
 
 async function createBranchWithChanges(
     octokit: Octokit,
-    {
-        owner,
-        repo,
-        base: baseRevision,
-        head: headBranch,
-        commitMessage,
-        edits,
-        dryRun,
-    }: CreateBranchWithChangesOptions
+    { owner, repo, base: baseRevision, head: headBranch, commitMessage, edits, dryRun }: CreateBranchWithChangesOptions
 ): Promise<void> {
     // Set up repository if the working directory override has not been provided.
     const { workdir } = await cloneRepo(octokit, owner, repo, { revision: baseRevision })

@@ -896,7 +896,8 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
     },
     {
         id: 'release:multi-version-bake',
-        description: 'Bake stitched migration files into the build for a release version. Only required for minor / major versions.',
+        description:
+            'Bake stitched migration files into the build for a release version. Only required for minor / major versions.',
         run: async config => {
             const { upcoming } = await releaseVersions(config)
 
