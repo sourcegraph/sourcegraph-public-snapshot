@@ -27,6 +27,7 @@ import { CodeMonitoringProps } from '../codeMonitoring'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { getFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
 import { WebCommandListPopoverButton } from '../components/shared'
+import { CodyIcon } from '../enterprise/cody/CodyIcon'
 import { useHandleSubmitFeedback, useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
@@ -46,6 +47,7 @@ import { UserNavItem } from './UserNavItem'
 import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '.'
 
 import styles from './GlobalNavbar.module.scss'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
 export interface GlobalNavbarProps
     extends SettingsCascadeProps<Settings>,
@@ -182,6 +184,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
 
     const { fuzzyFinderNavbar } = getFuzzyFinderFeatureFlags(props.settingsCascade.final) ?? false
 
+    const [codyEnabled] = useFeatureFlag('cody')
+
     return (
         <>
             <NavBar
@@ -240,6 +244,13 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         <NavItem icon={BarChartIcon}>
                             <NavLink variant={navLinkVariant} to="/insights">
                                 Insights
+                            </NavLink>
+                        </NavItem>
+                    )}
+                    {codyEnabled && (
+                        <NavItem icon={CodyIcon}>
+                            <NavLink variant={navLinkVariant} to="/cody">
+                                Cody
                             </NavLink>
                         </NavItem>
                     )}

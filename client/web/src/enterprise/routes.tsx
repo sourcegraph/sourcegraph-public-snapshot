@@ -8,6 +8,7 @@ import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enable
 import { LayoutRouteProps, routes } from '../routes'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { useExperimentalFeatures } from '../stores'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
 const NotebookPage = lazyComponent(() => import('../notebooks/notebookPage/NotebookPage'), 'NotebookPage')
 const CreateNotebookPage = lazyComponent(
@@ -37,6 +38,7 @@ const EditSearchContextPage = lazyComponent(
     'EditSearchContextPage'
 )
 const SearchContextPage = lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage')
+const GlobalCodyArea = lazyComponent(() => import('./cody/GlobalCodyArea'), 'GlobalCodyArea')
 
 const isSearchContextsManagementEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
     !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.showSearchContext !== false
@@ -108,6 +110,11 @@ export const enterpriseRoutes: readonly LayoutRouteProps[] = [
             ) : (
                 <Navigate to={PageRoutes.Search} replace={true} />
             ),
+    },
+    {
+        path: EnterprisePageRoutes.Cody,
+        render: props => <GlobalCodyArea {...props} />,
+        condition: () => useFeatureFlag('cody')[0],
     },
     ...routes,
 ]
