@@ -221,17 +221,17 @@ func (s BitbucketCloudSource) GetNamespaceFork(ctx context.Context, targetRepo *
 		return nil, errors.Wrap(err, "forking repository")
 	}
 
-	targetRepoNamespace := targetMetaNamespace + "-" + targetMeta.Slug
+	forkRepoName := targetMetaNamespace + "-" + targetMeta.Slug
 
 	// Figure out if we already have the repo.
-	if fork, err := s.client.Repo(ctx, namespace, targetRepoNamespace); err == nil {
+	if fork, err := s.client.Repo(ctx, namespace, forkRepoName); err == nil {
 		return s.copyRepoAsFork(targetRepo, fork)
 	} else if !errcode.IsNotFound(err) {
 		return nil, errors.Wrap(err, "checking for fork existence")
 	}
 
 	fork, err := s.client.ForkRepository(ctx, targetMeta, bitbucketcloud.ForkInput{
-		Name:      &targetRepoNamespace,
+		Name:      &forkRepoName,
 		Workspace: bitbucketcloud.ForkInputWorkspace(namespace),
 	})
 	if err != nil {

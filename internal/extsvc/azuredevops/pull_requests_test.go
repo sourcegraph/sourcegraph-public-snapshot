@@ -156,7 +156,7 @@ func TestClient_CompletePullRequest(t *testing.T) {
 		Project:       "sgtestazure",
 		RepoNameOrID:  "sgtestazure3",
 	}
-	input := PullRequestCommitRef{
+	input := PullRequestCompleteInput{
 		CommitID: "7867eee4f671d69f9a9be0fcacb6a7af764ec962",
 	}
 

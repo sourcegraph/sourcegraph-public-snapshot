@@ -5,15 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
-	"net/url"
-
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"io"
+	"net/http"
+	"net/url"
 )
 
 const (
@@ -131,6 +130,10 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) (*Client, error) {
 		auth:       a,
 		rateLimit:  c.rateLimit,
 	}, nil
+}
+
+func (c *Client) Authenticator() auth.Authenticator {
+	return c.auth
 }
 
 // IsAzureDevOpsServices returns true if the client is configured to Azure DevOps

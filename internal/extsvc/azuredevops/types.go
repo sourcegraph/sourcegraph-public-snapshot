@@ -1,7 +1,10 @@
 package azuredevops
 
 import (
+	"fmt"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -73,6 +76,11 @@ type CreatePullRequestInput struct {
 	Title         string     `json:"title"`
 	Description   string     `json:"description"`
 	Reviewers     []Reviewer `json:"reviewers"`
+	ForkSource    ForkRef    `json:"forkSource"`
+}
+
+type ForkRef struct {
+	Repository Repository `json:"repository"`
 }
 
 type Reviewer struct {
@@ -121,12 +129,13 @@ type PullRequestReviewer struct {
 }
 
 type PullRequestUpdateInput struct {
-	Status                *PullRequestStatus       `json:"status"`
-	Title                 *string                  `json:"title"`
-	Description           *string                  `json:"description"`
-	MergeOptions          *PullRequestMergeOptions `json:"mergeOptions"`
-	LastMergeSourceCommit *PullRequestCommitRef    `json:"lastMergeSourceCommit"`
-	TargetRefName         *string                  `json:"targetRefName"`
+	Status                *PullRequestStatus           `json:"status"`
+	Title                 *string                      `json:"title"`
+	Description           *string                      `json:"description"`
+	MergeOptions          *PullRequestMergeOptions     `json:"mergeOptions"`
+	LastMergeSourceCommit *PullRequestCompleteInput    `json:"lastMergeSourceCommit"`
+	TargetRefName         *string                      `json:"targetRefName"`
+	CompletionOptions     PullRequestCompletionOptions `json:"completionOptions"`
 	// ADO does not seem to support updating Source ref name, only TargetRefName which needs to be explicitly enabled.
 }
 
@@ -139,15 +148,15 @@ type PullRequestMergeOptions struct {
 	DisableRenames             *bool `json:"disableRenames"`
 }
 
-type PullRequestCommitRef struct {
-	CommitID string `json:"commitId"`
+type PullRequestCompleteInput struct {
+	CommitID      string                    `json:"commitId"`
+	MergeStrategy *PullRequestMergeStrategy `json:"mergeStrategy"`
 }
 
 type PullRequestCompletionOptions struct {
 	MergeStrategy      PullRequestMergeStrategy `json:"mergeStrategy"`
 	DeleteSourceBranch bool                     `json:"deleteSourceBranch"`
 	MergeCommitMessage string                   `json:"mergeCommitMessage"`
-	SquashMerge        bool                     `json:"squashMerge"`
 }
 
 type PullRequestCommentInput struct {
@@ -208,6 +217,30 @@ type Project struct {
 	State      string `json:"state"`
 	Revision   int    `json:"revision"`
 	Visibility string `json:"visibility"`
+	URL        string `json:"url"`
+}
+
+func (p Project) GetOrganization() (string, error) {
+	u, err := url.Parse(p.URL)
+	if err != nil {
+		return "", err
+	}
+
+	org, _, found := strings.Cut(u.Path, "/")
+
+	if !found {
+		return "", errors.Errorf("unable to parse Azure DevOps organization from Project URL: %s", p.URL)
+	}
+
+	return org, nil
+}
+
+func (p Project) GetNamespace() (string, error) {
+	org, err := p.GetOrganization()
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s/%s", org, p.Name), nil
 }
 
 type Profile struct {

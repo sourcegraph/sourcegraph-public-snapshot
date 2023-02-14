@@ -138,11 +138,17 @@ func (c *Client) CreatePullRequestCommentThread(ctx context.Context, args PullRe
 }
 
 // CompletePullRequest completes(merges) the specified PR, returns the updated PR.
-func (c *Client) CompletePullRequest(ctx context.Context, args PullRequestCommonArgs, input PullRequestCommitRef) (PullRequest, error) {
+func (c *Client) CompletePullRequest(ctx context.Context, args PullRequestCommonArgs, input PullRequestCompleteInput) (PullRequest, error) {
 	reqURL := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/pullrequests/%s", args.Org, args.Project, args.RepoNameOrID, args.PullRequestID)}
-
 	completed := PullRequestStatusCompleted
-	data, err := json.Marshal(PullRequestUpdateInput{Status: &completed, LastMergeSourceCommit: &input})
+	pri := PullRequestUpdateInput{Status: &completed, LastMergeSourceCommit: &input}
+	if input.MergeStrategy != nil {
+		pri.CompletionOptions = PullRequestCompletionOptions{
+			MergeStrategy: *input.MergeStrategy,
+		}
+	}
+
+	data, err := json.Marshal(pri)
 	if err != nil {
 		return PullRequest{}, errors.Wrap(err, "marshalling request")
 	}
