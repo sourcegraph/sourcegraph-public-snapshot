@@ -111,6 +111,7 @@ var baseEngineConfig = syntaxEngineConfig{
 		"python":     EngineTreeSitter,
 		"java":       EngineTreeSitter,
 		"scala":      EngineTreeSitter,
+		"rust":       EngineTreeSitter,
 		"c#":         EngineTreeSitter,
 		"jsonnet":    EngineTreeSitter,
 		"xlsg":       EngineTreeSitter,

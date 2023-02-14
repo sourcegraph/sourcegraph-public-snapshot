@@ -1,0 +1,432 @@
+---
+source: crates/sg-syntax/src/sg_treesitter.rs
+expression: "dump_document(&document, &contents)"
+---
+  #![allow(all)]
+//   ^^^^^ Identifier 
+//         ^^^ Identifier 
+  
+  fn main() {
+//^^ IdentifierKeyword 
+//   ^^^^ IdentifierFunction 
+      let mut vector = vec![1, 2, 3];
+//    ^^^ IdentifierKeyword 
+//        ^^^ IdentifierKeyword 
+//            ^^^^^^ Identifier 
+//                     ^^^ IdentifierFunction 
+//                        ^ IdentifierBuiltin 
+//                          ^ NumericLiteral 
+//                             ^ NumericLiteral 
+//                                ^ NumericLiteral 
+      // Destructuring assignment
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+      let (first, second, third) = vector;
+//    ^^^ IdentifierKeyword 
+//         ^^^^^ Identifier 
+//                ^^^^^^ Identifier 
+//                        ^^^^^ Identifier 
+//                                 ^^^^^^ Identifier 
+      // Enum variant
+//    ^^^^^^^^^^^^^^^ Comment 
+      let option = Some(5);
+//    ^^^ IdentifierKeyword 
+//        ^^^^^^ Identifier 
+//                 ^^^^ IdentifierConstant 
+//                      ^ NumericLiteral 
+      // Match arm
+//    ^^^^^^^^^^^^ Comment 
+      match option {
+//    ^^^^^ IdentifierKeyword 
+//          ^^^^^^ Identifier 
+          Some(x) => println!("Got a value: {}", x),
+//        ^^^^ IdentifierConstant 
+//             ^ Identifier 
+//                   ^^^^^^^ IdentifierFunction 
+//                          ^ IdentifierBuiltin 
+//                            ^^^^^^^^^^^^^^^^^ StringLiteral 
+//                                               ^ Identifier 
+          None => println!("No value"),
+//        ^^^^ IdentifierConstant 
+//                ^^^^^^^ IdentifierFunction 
+//                       ^ IdentifierBuiltin 
+//                         ^^^^^^^^^^ StringLiteral 
+      }
+      // Loop
+//    ^^^^^^^ Comment 
+      loop {
+//    ^^^^ IdentifierKeyword 
+          // If let
+//        ^^^^^^^^^ Comment 
+          if let Some(x) = vector.pop() {
+//        ^^ IdentifierKeyword 
+//           ^^^ IdentifierKeyword 
+//               ^^^^ IdentifierConstant 
+//                    ^ Identifier 
+//                         ^^^^^^ Identifier 
+//                                ^^^ IdentifierFunction 
+              println!("Popped: {}", x);
+//            ^^^^^^^ IdentifierFunction 
+//                   ^ IdentifierBuiltin 
+//                     ^^^^^^^^^^^^ StringLiteral 
+//                                   ^ Identifier 
+          } else {
+//          ^^^^ IdentifierKeyword 
+              break;
+//            ^^^^^ IdentifierKeyword 
+          }
+      }
+      // While loop
+//    ^^^^^^^^^^^^^ Comment 
+      while vector.len() > 0 {
+//    ^^^^^ IdentifierKeyword 
+//          ^^^^^^ Identifier 
+//                 ^^^ IdentifierFunction 
+//                         ^ NumericLiteral 
+          vector.pop();
+//        ^^^^^^ Identifier 
+//               ^^^ IdentifierFunction 
+      }
+      // For loop
+//    ^^^^^^^^^^^ Comment 
+      for num in 1..4 {
+//    ^^^ IdentifierKeyword 
+//        ^^^ Identifier 
+//            ^^ IdentifierKeyword 
+//               ^ NumericLiteral 
+//                  ^ NumericLiteral 
+          println!("Counted to: {}", num);
+//        ^^^^^^^ IdentifierFunction 
+//               ^ IdentifierBuiltin 
+//                 ^^^^^^^^^^^^^^^^ StringLiteral 
+//                                   ^^^ Identifier 
+      }
+      // Closures
+//    ^^^^^^^^^^^ Comment 
+      let square = |x| x * x;
+//    ^^^ IdentifierKeyword 
+//        ^^^^^^ Identifier 
+//                  ^ Identifier 
+//                     ^ Identifier 
+//                       ^ IdentifierOperator 
+//                         ^ Identifier 
+      println!("3 squared is: {:?}", square(3));
+//    ^^^^^^^ IdentifierFunction 
+//           ^ IdentifierBuiltin 
+//             ^^^^^^^^^^^^^^^^^^^^ StringLiteral 
+//                                   ^^^^^^ Identifier 
+//                                          ^ NumericLiteral 
+      // Structs
+//    ^^^^^^^^^^ Comment 
+      struct Point {
+//    ^^^^^^ IdentifierKeyword 
+//           ^^^^^ IdentifierType 
+          x: i32,
+//        ^ IdentifierConstant 
+//           ^^^ IdentifierBuiltin 
+          y: i32,
+//        ^ IdentifierConstant 
+//           ^^^ IdentifierBuiltin 
+      }
+      let origin = Point { x: 0, y: 0 };
+//    ^^^ IdentifierKeyword 
+//        ^^^^^^ Identifier 
+//                 ^^^^^ IdentifierType 
+//                         ^ IdentifierConstant 
+//                            ^ NumericLiteral 
+//                               ^ IdentifierConstant 
+//                                  ^ NumericLiteral 
+      // Methods
+//    ^^^^^^^^^^ Comment 
+      impl Point {
+//    ^^^^ IdentifierKeyword 
+//         ^^^^^ IdentifierType 
+          fn x(&self) -> i32 {
+//        ^^ IdentifierKeyword 
+//           ^ IdentifierFunction 
+//             ^ IdentifierOperator 
+//              ^^^^ IdentifierBuiltin 
+//                       ^^^ IdentifierBuiltin 
+              self.x
+//            ^^^^ IdentifierBuiltin 
+//                 ^ IdentifierConstant 
+          }
+      }
+      println!("Origin x: {}", origin.x());
+//    ^^^^^^^ IdentifierFunction 
+//           ^ IdentifierBuiltin 
+//             ^^^^^^^^^^^^^^ StringLiteral 
+//                             ^^^^^^ Identifier 
+//                                    ^ Identifier 
+      // Associated functions
+//    ^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+      impl Point {
+//    ^^^^ IdentifierKeyword 
+//         ^^^^^ IdentifierType 
+          fn origin() -> Point {
+//        ^^ IdentifierKeyword 
+//           ^^^^^^ IdentifierFunction 
+//                       ^^^^^ IdentifierType 
+              Point { x: 0, y: 0 }
+//            ^^^^^ IdentifierType 
+//                    ^ IdentifierConstant 
+//                       ^ NumericLiteral 
+//                          ^ IdentifierConstant 
+//                             ^ NumericLiteral 
+          }
+      }
+      let origin = Point::origin();
+//    ^^^ IdentifierKeyword 
+//        ^^^^^^ Identifier 
+//                 ^^^^^ IdentifierType 
+//                        ^^^^^^ IdentifierFunction 
+  }
+  
+  // interfaces:
+//^^^^^^^^^^^^^^ Comment 
+  trait Printable {
+//^^^^^ IdentifierKeyword 
+//      ^^^^^^^^^ IdentifierType 
+      fn print(&self);
+//    ^^ IdentifierKeyword 
+//       ^^^^^ IdentifierFunction 
+//             ^ IdentifierOperator 
+//              ^^^^ IdentifierBuiltin 
+  }
+  // Generics - Allows abstracting over types:
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  fn largest<T: Ord>(list: &[T]) -> T {
+//^^ IdentifierKeyword 
+//   ^^^^^^^ IdentifierFunction 
+//           ^ IdentifierType 
+//              ^^^ IdentifierType 
+//                   ^^^^ IdentifierParameter 
+//                         ^ IdentifierOperator 
+//                           ^ IdentifierType 
+//                                  ^ IdentifierType 
+      // ...
+//    ^^^^^^ Comment 
+      return list[0];
+//    ^^^^^^ IdentifierKeyword 
+//           ^^^^ Identifier 
+//                ^ NumericLiteral 
+  }
+  
+  // Function
+//^^^^^^^^^^^ Comment 
+  pub fn add(a: i32, b: i32) -> i32 {
+//^^^ IdentifierKeyword 
+//    ^^ IdentifierKeyword 
+//       ^^^ IdentifierFunction 
+//           ^ IdentifierParameter 
+//              ^^^ IdentifierBuiltin 
+//                   ^ IdentifierParameter 
+//                      ^^^ IdentifierBuiltin 
+//                              ^^^ IdentifierBuiltin 
+      a + b
+//    ^ Identifier 
+//        ^ Identifier 
+  }
+  
+  fn examples() {
+//^^ IdentifierKeyword 
+//   ^^^^^^^^ IdentifierFunction 
+      // Crates and Cargo - For building, testing, and sharing crates of Rust code.
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+      // Ownership - Each value has a single owning reference:
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+      let vec = Vec::new(); // vec owns the memory
+//    ^^^ IdentifierKeyword 
+//        ^^^ Identifier 
+//              ^^^ IdentifierType 
+//                   ^^^ IdentifierFunction 
+//                          ^^^^^^^^^^^^^^^^^^^^^^ Comment 
+      let elem = vec[0]; // elem borrows the memory
+//    ^^^ IdentifierKeyword 
+//        ^^^^ Identifier 
+//               ^^^ Identifier 
+//                   ^ NumericLiteral 
+//                       ^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  
+      // Borrowing - Immutable or mutable non-owning references:
+//    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+      let vec = vec![1, 2, 3];
+//    ^^^ IdentifierKeyword 
+//        ^^^ Identifier 
+//              ^^^ IdentifierFunction 
+//                 ^ IdentifierBuiltin 
+//                   ^ NumericLiteral 
+//                      ^ NumericLiteral 
+//                         ^ NumericLiteral 
+      let elem = &vec[0]; // immutable borrow
+//    ^^^ IdentifierKeyword 
+//        ^^^^ Identifier 
+//               ^ IdentifierOperator 
+//                ^^^ Identifier 
+//                    ^ NumericLiteral 
+//                        ^^^^^^^^^^^^^^^^^^^ Comment 
+      let mut vec = vec![1, 2, 3];
+//    ^^^ IdentifierKeyword 
+//        ^^^ IdentifierKeyword 
+//            ^^^ Identifier 
+//                  ^^^ IdentifierFunction 
+//                     ^ IdentifierBuiltin 
+//                       ^ NumericLiteral 
+//                          ^ NumericLiteral 
+//                             ^ NumericLiteral 
+      let elem = &mut vec[0]; // mutable borrow
+//    ^^^ IdentifierKeyword 
+//        ^^^^ Identifier 
+//               ^ IdentifierOperator 
+//                ^^^ IdentifierKeyword 
+//                    ^^^ Identifier 
+//                        ^ NumericLiteral 
+//                            ^^^^^^^^^^^^^^^^^ Comment 
+  }
+  
+  enum Weekend {
+//^^^^ IdentifierKeyword 
+//     ^^^^^^^ IdentifierType 
+      Saturday,
+//    ^^^^^^^^ IdentifierConstant 
+      Sunday(String, i32),
+//    ^^^^^^ IdentifierConstant 
+//           ^^^^^^ IdentifierType 
+//                   ^^^ IdentifierBuiltin 
+  }
+  
+  fn use_enum() {
+//^^ IdentifierKeyword 
+//   ^^^^^^^^ IdentifierFunction 
+      let saturday = Weekend::Saturday;
+//    ^^^ IdentifierKeyword 
+//        ^^^^^^^^ Identifier 
+//                   ^^^^^^^ IdentifierType 
+//                            ^^^^^^^^ IdentifierConstant 
+      let sunday = Weekend::Sunday("Sunday".to_string(), 1);
+//    ^^^ IdentifierKeyword 
+//        ^^^^^^ Identifier 
+//                 ^^^^^^^ IdentifierType 
+//                          ^^^^^^ IdentifierConstant 
+//                                 ^^^^^^^^ StringLiteral 
+//                                          ^^^^^^^^^ IdentifierFunction 
+//                                                       ^ NumericLiteral 
+  }
+  
+  // Decorators
+//^^^^^^^^^^^^^ Comment 
+  #[derive(Debug)]
+//  ^^^^^^ Identifier 
+//         ^^^^^ IdentifierConstant 
+  struct Point {
+//^^^^^^ IdentifierKeyword 
+//       ^^^^^ IdentifierType 
+      x: i32,
+//    ^ IdentifierConstant 
+//       ^^^ IdentifierBuiltin 
+      y: i32,
+//    ^ IdentifierConstant 
+//       ^^^ IdentifierBuiltin 
+  }
+  
+  #[test]
+//  ^^^^ Identifier 
+  fn it_works() {
+//^^ IdentifierKeyword 
+//   ^^^^^^^^ IdentifierFunction 
+      let point = Point { x: 1, y: 2 };
+//    ^^^ IdentifierKeyword 
+//        ^^^^^ Identifier 
+//                ^^^^^ IdentifierType 
+//                        ^ IdentifierConstant 
+//                           ^ NumericLiteral 
+//                              ^ IdentifierConstant 
+//                                 ^ NumericLiteral 
+      assert_eq!(point.x, 1);
+//    ^^^^^^^^^ IdentifierFunction 
+//             ^ IdentifierBuiltin 
+//               ^^^^^ Identifier 
+//                     ^ Identifier 
+//                        ^ NumericLiteral 
+  }
+  
+  // Macros
+//^^^^^^^^^ Comment 
+  macro_rules! double {
+//^^^^^^^^^^^^ IdentifierKeyword 
+//             ^^^^^^ Identifier 
+      ($x:expr) => {
+//     ^^ IdentifierAttribute 
+//        ^^^^ IdentifierType 
+          $x * 2
+//        ^^ IdentifierAttribute 
+//             ^ NumericLiteral 
+      };
+  }
+  fn macro_example() {
+//^^ IdentifierKeyword 
+//   ^^^^^^^^^^^^^ IdentifierFunction 
+      let result = double!(5);
+//    ^^^ IdentifierKeyword 
+//        ^^^^^^ Identifier 
+//                 ^^^^^^ IdentifierFunction 
+//                       ^ IdentifierBuiltin 
+//                         ^ NumericLiteral 
+      println!("Double is: {}", result);
+//    ^^^^^^^ IdentifierFunction 
+//           ^ IdentifierBuiltin 
+//             ^^^^^^^^^^^^^^^ StringLiteral 
+//                              ^^^^^^ Identifier 
+  }
+  
+  // Inline assembly example
+//^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment 
+  fn asmExample() {
+//^^ IdentifierKeyword 
+//   ^^^^^^^^^^ IdentifierFunction 
+      let mut x = 0;
+//    ^^^ IdentifierKeyword 
+//        ^^^ IdentifierKeyword 
+//            ^ Identifier 
+//                ^ NumericLiteral 
+      unsafe {
+//    ^^^^^^ IdentifierKeyword 
+          asm!("add $0, $0, $1"
+//        ^^^ IdentifierFunction 
+//           ^ IdentifierBuiltin 
+//             ^^^^^^^^^^^^^^^^ StringLiteral 
+              : "+r"(x)
+//              ^^^^ StringLiteral 
+//                   ^ Identifier 
+              : "r"(1)
+//              ^^^ StringLiteral 
+//                  ^ NumericLiteral 
+              : "cc"
+//              ^^^^ StringLiteral 
+          );
+      }
+      println!("x is {}", x);
+//    ^^^^^^^ IdentifierFunction 
+//           ^ IdentifierBuiltin 
+//             ^^^^^^^^^ StringLiteral 
+//                        ^ Identifier 
+  }
+  
+  // Extern
+//^^^^^^^^^ Comment 
+  extern "C" {
+//^^^^^^ IdentifierKeyword 
+//       ^^^ StringLiteral 
+      fn say_hello();
+//    ^^ IdentifierKeyword 
+//       ^^^^^^^^^ IdentifierFunction 
+  }
+  fn extern_example() {
+//^^ IdentifierKeyword 
+//   ^^^^^^^^^^^^^^ IdentifierFunction 
+      unsafe {
+//    ^^^^^^ IdentifierKeyword 
+          say_hello();
+//        ^^^^^^^^^ IdentifierFunction 
+      }
+  }
+

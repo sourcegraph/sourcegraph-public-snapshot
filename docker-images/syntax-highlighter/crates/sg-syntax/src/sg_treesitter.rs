@@ -142,7 +142,7 @@ macro_rules! create_configurations {
 
 lazy_static::lazy_static! {
     static ref CONFIGURATIONS: HashMap<&'static str, HighlightConfiguration> = {
-        create_configurations!( go, sql, c_sharp, jsonnet, python, java, scala, xlsg, javascript )
+        create_configurations!( go, sql, c_sharp, jsonnet, python, rust, java, scala, xlsg, javascript )
     };
 }
 

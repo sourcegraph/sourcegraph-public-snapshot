@@ -146,6 +146,7 @@ var supportedFiletypes = map[string]struct{}{
 	"tsx":        {},
 	"java":       {},
 	"scala":      {},
+	"rust":       {},
 	"python":     {},
 	"xlsg":       {},
 }

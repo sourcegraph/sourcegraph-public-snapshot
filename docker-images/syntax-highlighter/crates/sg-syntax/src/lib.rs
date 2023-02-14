@@ -108,6 +108,7 @@ pub fn determine_filetype(q: &SourcegraphQuery) -> String {
 
     // We normalize all the filenames here
     match filetype.as_str() {
+        "Rust Enhanced" => "rust",
         "C#" => "c_sharp",
         "JS Custom - React" => "javascript",
         "TypeScriptReact" => {
