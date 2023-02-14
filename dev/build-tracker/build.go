@@ -53,10 +53,10 @@ func (b *Build) hasFailed() bool {
 	return b.state() == "failed"
 }
 
-// isFixed determines whether the job is considered fixed. A job is fixed when:
+// isFinalized determines whether the job is considered fixed. A job is fixed when:
 // * It has previously failed which means we have sent a notification for it
 // * It is not failed anymore
-func (b *Build) isFixed() bool {
+func (b *Build) isFinalized() bool {
 	// if we have sent a notification previously for this build ie. the build failed previously
 	// and the build is not failed currently = the build must be fixed
 	return !b.hasFailed() && b.hasNotification()

@@ -32,7 +32,7 @@ func newCacheItem[T any](value T) *cacheItem[T] {
 type NotificationClient struct {
 	slack               slack.Client
 	team                team.TeammateResolver
-	commitTeammateCache map[string]cacheItem[*team.Teammate]
+	commitTeammateCache map[string]*cacheItem[*team.Teammate]
 	logger              log.Logger
 	channel             string
 }
@@ -86,8 +86,8 @@ func NewNotificationClient(logger log.Logger, slackToken, githubToken, channel s
 
 func (c *NotificationClient) getTeammateForBuild(build *Build) (*team.Teammate, error) {
 	// first check if we already have the details for this teammate
-	c.logger.Debug("determining teammate", log.String("author", build.authorName()), log.String("commit", build.commit()))
-	cached, ok := c.commitTeammateCache[build.commit()]
+	c.logger.Debug("determining teammate", log.String("author", build.authorName()), log.String("email", build.authorEmail()), log.String("commit", build.commit()))
+	cached, ok := c.commitTeammateCache[build.authorEmail()]
 
 	// we have the details for this member already!
 	if ok {
@@ -98,9 +98,13 @@ func (c *NotificationClient) getTeammateForBuild(build *Build) (*team.Teammate, 
 	if err != nil {
 		return nil, err
 	}
-	// remember this teammate! for this commit
-	// we're not using the author email from the build since might not map 1:1 to the commit author
-	c.commitTeammateCache[build.commit()] = *newCacheItem(result)
+	// remember this teammate!
+	c.logger.Debug("caching teammate", log.String("teammateEmail", result.Email), log.String("buildEmail", build.authorEmail()))
+	if build.authorEmail() != result.Email {
+		c.logger.Warn("build mail and teammate mail do not match", log.String("teammateEmail", result.Email), log.String("buildEmail", build.authorEmail()))
+	}
+	// we're assuming the build author email and resolved teammate email match
+	c.commitTeammateCache[result.Email] = newCacheItem(result)
 	return result, nil
 
 }
@@ -281,7 +285,7 @@ func (n *NotificationClient) cacheCleanup(hours int) {
 }
 
 func generateSlackHeader(build *Build) string {
-	if build.isFixed() {
+	if build.isFinalized() {
 		return fmt.Sprintf(":green_circle: Build %d fixed", build.number())
 	}
 	header := fmt.Sprintf(":red_circle: Build %d failed", build.number())

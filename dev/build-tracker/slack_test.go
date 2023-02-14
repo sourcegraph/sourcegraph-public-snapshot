@@ -216,12 +216,12 @@ func TestCacheClean(t *testing.T) {
 		item := newCacheItem(&team.Teammate{})
 		// subtract 1 year
 		item.Timestamp = time.Now().AddDate(-1, 0, 0)
-		client.commitTeammateCache[fmt.Sprintf("%d", i)] = *item
+		client.commitTeammateCache[fmt.Sprintf("%d", i)] = item
 	}
 	// Add some recent builds
-	client.commitTeammateCache["4"] = *newCacheItem(&team.Teammate{})
-	client.commitTeammateCache["5"] = *newCacheItem(&team.Teammate{})
-	client.commitTeammateCache["6"] = *newCacheItem(&team.Teammate{})
+	client.commitTeammateCache["4"] = newCacheItem(&team.Teammate{})
+	client.commitTeammateCache["5"] = newCacheItem(&team.Teammate{})
+	client.commitTeammateCache["6"] = newCacheItem(&team.Teammate{})
 
 	// Clean up! 3 items should be left
 	// we can put any hours, since our 3 builds are years old
