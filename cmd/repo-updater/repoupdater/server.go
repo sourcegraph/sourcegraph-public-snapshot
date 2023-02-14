@@ -132,6 +132,9 @@ func (s *Server) handleExternalServiceRepos(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	if err = genericSrc.CheckConnection(ctx); err != nil {
+		s.respond(w, http.StatusUnauthorized, errors.Newf("Connection check failed for the External Service Kind %s: %s", req.Kind, err.Error()))
+	}
 	var (
 		discoverableSrc repos.DiscoverableSource
 		discoverable    bool
@@ -139,8 +142,6 @@ func (s *Server) handleExternalServiceRepos(w http.ResponseWriter, r *http.Reque
 	if discoverableSrc, discoverable = genericSrc.(repos.DiscoverableSource); !discoverable {
 		s.respond(w, http.StatusNotImplemented, errors.Newf("ExternalServiceRepositories not implemented for the External Service Kind: %s.", req.Kind))
 	}
-
-	// TODO Check connection?
 
 	results := make(chan repos.SourceResult)
 
@@ -208,6 +209,10 @@ func (s *Server) handleExternalServiceNamespaces(w http.ResponseWriter, r *http.
 		// TODO error handling
 	}
 
+	if err = genericSrc.CheckConnection(ctx); err != nil {
+		s.respond(w, http.StatusUnauthorized, errors.Newf("Connection check failed for the External Service Kind %s: %s", req.Kind, err.Error()))
+	}
+
 	var (
 		discoverableSrc repos.DiscoverableSource
 		discoverable    bool
@@ -215,8 +220,6 @@ func (s *Server) handleExternalServiceNamespaces(w http.ResponseWriter, r *http.
 	if discoverableSrc, discoverable = genericSrc.(repos.DiscoverableSource); !discoverable {
 		s.respond(w, http.StatusNotImplemented, errors.Newf("ExternalServiceNamespaces not implemented for the External Service Kind: %s.", req.Kind))
 	}
-
-	// TODO Check connection?
 
 	results := make(chan repos.SourceNamespaceResult)
 
