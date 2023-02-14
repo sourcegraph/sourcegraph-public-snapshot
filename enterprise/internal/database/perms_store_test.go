@@ -25,6 +25,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -670,46 +672,34 @@ func testPermsStore_SetUserPermissions(db database.DB) func(*testing.T) {
 	}
 }
 
-func checkUserRepoPermissionsTable(s *permsStore, where *sqlf.Query, expected []authz.Permission) ([]authz.Permission, error) {
+var scanPermissions = basestore.NewSliceScanner(func(s dbutil.Scanner) (p authz.Permission, _ error) {
+	err := s.Scan(&p.UserID, &p.ExternalAccountID, &p.RepoID, &p.CreatedAt, &p.UpdatedAt)
+	return p, err
+})
+
+func checkUserRepoPermissions(t *testing.T, s *permsStore, where *sqlf.Query, expectedPermissions []authz.Permission) {
+	t.Helper()
 	format := "SELECT user_id, user_external_account_id, repo_id, created_at, updated_at FROM user_repo_permissions WHERE %s;"
-	rows, err := s.Query(context.Background(), sqlf.Sprintf(format, where))
+	permissions, err := scanPermissions(s.Query(context.Background(), sqlf.Sprintf(format, where)))
 	if err != nil {
-		return nil, err
+		t.Fatal(err)
+	}
+	// scanPermissions returns nil if there are no results, but for the purpose of test readability,
+	// we defined expectedPermissions to be an empty slice, which matches the empty permissions input to write to the db.
+	// hence if permissions is nil, we set it to an empty slice.
+	if permissions == nil {
+		permissions = []authz.Permission{}
 	}
 
-	permissions := []authz.Permission{}
-	index := 0
-	for rows.Next() {
-		p := authz.Permission{}
-		if err = rows.Scan(&p.UserID, &p.ExternalAccountID, &p.RepoID, &p.CreatedAt, &p.UpdatedAt); err != nil {
-			return nil, err
-		}
-		permissions = append(permissions, p)
-
-		if cmp.Diff(expected[index], p, cmpopts.IgnoreFields(authz.Permission{}, "CreatedAt", "UpdatedAt")) != "" {
-			return nil, errors.Errorf("Comparing %d item, want %v, got %v", index, expected[index], p)
-		}
-
-		index++
+	if diff := cmp.Diff(expectedPermissions, permissions, cmpopts.IgnoreFields(authz.Permission{}, "CreatedAt", "UpdatedAt")); diff != "" {
+		t.Fatalf("Expected permissions: %v do not match actual permissions: %v; diff %v", expectedPermissions, permissions, diff)
 	}
-
-	if err = rows.Close(); err != nil {
-		return nil, err
-	}
-
-	if index != len(expected) {
-		return nil, errors.Errorf("Want %d rows, got %d", len(expected), index)
-	}
-
-	return permissions, nil
 }
 
-func setupPermsForeignKeys(t *testing.T, s *permsStore, permissions []authz.Permission) {
-	if t.Failed() {
-		return
-	}
+func setupPermsRelatedEntities(t *testing.T, s *permsStore, permissions []authz.Permission) error {
+	t.Helper()
 	if permissions == nil || len(permissions) == 0 {
-		return
+		return errors.New("no permissions to setup foreign keys for")
 	}
 
 	users := make(map[int32]*sqlf.Query, len(permissions))
@@ -723,16 +713,18 @@ func setupPermsForeignKeys(t *testing.T, s *permsStore, permissions []authz.Perm
 
 	usersQuery := sqlf.Sprintf(`INSERT INTO users(id, username) VALUES %s ON CONFLICT (id) DO NOTHING`, sqlf.Join(maps.Values(users), ","))
 	if err := s.execute(context.Background(), usersQuery); err != nil {
-		t.Fatal(err)
+		return err
 	}
 	externalAccountsQuery := sqlf.Sprintf(`INSERT INTO user_external_accounts(id, user_id, service_type, service_id, account_id, client_id) VALUES %s ON CONFLICT(id) DO NOTHING`, sqlf.Join(maps.Values(externalAccounts), ","))
 	if err := s.execute(context.Background(), externalAccountsQuery); err != nil {
-		t.Fatal(err)
+		return err
 	}
 	reposQuery := sqlf.Sprintf(`INSERT INTO repo(id, name) VALUES %s ON CONFLICT(id) DO NOTHING`, sqlf.Join(maps.Values(repos), ","))
 	if err := s.execute(context.Background(), reposQuery); err != nil {
-		t.Fatal(err)
+		return err
 	}
+
+	return nil
 }
 
 func testPermsStore_SetUserRepoPermissions(db database.DB) func(*testing.T) {
@@ -884,28 +876,30 @@ func testPermsStore_SetUserRepoPermissions(db database.DB) func(*testing.T) {
 					cleanupReposTable(t, s)
 				})
 
-				if test.origPermissions != nil && len(test.origPermissions) > 0 {
-					setupPermsForeignKeys(t, s, test.origPermissions)
-					err := s.SetUserRepoPermissions(ctx, test.origPermissions, test.entity, source)
+				if len(test.origPermissions) > 0 {
+					err := setupPermsRelatedEntities(t, s, test.origPermissions)
+					if err != nil {
+						t.Fatal("setup test related entities before actual test", err)
+					}
+					err = s.SetUserRepoPermissions(ctx, test.origPermissions, test.entity, source)
 					if err != nil {
 						t.Fatal("setup test permissions before actual test", err)
 					}
 				}
 
-				setupPermsForeignKeys(t, s, test.permissions)
-				err := s.SetUserRepoPermissions(ctx, test.permissions, test.entity, source)
-				if err != nil {
+				if len(test.permissions) > 0 {
+					if err := setupPermsRelatedEntities(t, s, test.permissions); err != nil {
+						t.Fatal("setup test related entities before actual test", err)
+					}
+				}
+				if err := s.SetUserRepoPermissions(ctx, test.permissions, test.entity, source); err != nil {
 					t.Fatal("testing user repo permissions", err)
 				}
 
 				if test.entity.UserID > 0 {
-					_, err = checkUserRepoPermissionsTable(s, sqlf.Sprintf("user_id = %d", test.entity.UserID), test.expectedPermissions)
+					checkUserRepoPermissions(t, s, sqlf.Sprintf("user_id = %d", test.entity.UserID), test.expectedPermissions)
 				} else if test.entity.RepoID > 0 {
-					_, err = checkUserRepoPermissionsTable(s, sqlf.Sprintf("repo_id = %d", test.entity.RepoID), test.expectedPermissions)
-				}
-
-				if err != nil {
-					t.Fatal("user_repo_permissions:", err)
+					checkUserRepoPermissions(t, s, sqlf.Sprintf("repo_id = %d", test.entity.RepoID), test.expectedPermissions)
 				}
 			})
 		}
@@ -982,8 +976,11 @@ func testPermsStore_FetchReposByExternalAccount(db database.DB) func(*testing.T)
 				})
 
 				if test.origPermissions != nil && len(test.origPermissions) > 0 {
-					setupPermsForeignKeys(t, s, test.origPermissions)
-					err := s.SetUserRepoPermissions(ctx, test.origPermissions, authz.PermissionEntity{UserID: 42}, source)
+					err := setupPermsRelatedEntities(t, s, test.origPermissions)
+					if err != nil {
+						t.Fatal("setup test related entities before actual test", err)
+					}
+					err = s.SetUserRepoPermissions(ctx, test.origPermissions, authz.PermissionEntity{UserID: 42}, source)
 					if err != nil {
 						t.Fatal("setup test permissions before actual test", err)
 					}
