@@ -93,9 +93,7 @@ func Init(
 			for _, feature := range licensing.AllFeatures {
 				licenseInfo.KnownLicenseTags = append(licenseInfo.KnownLicenseTags, feature.FeatureName())
 			}
-			for _, tag := range licensing.MiscTags {
-				licenseInfo.KnownLicenseTags = append(licenseInfo.KnownLicenseTags, tag)
-			}
+			licenseInfo.KnownLicenseTags = append(licenseInfo.KnownLicenseTags, licensing.MiscTags...)
 		}
 
 		return licenseInfo
