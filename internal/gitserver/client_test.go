@@ -23,7 +23,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 
@@ -456,7 +456,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 	}
 
 	grpcServer := grpc.NewServer(defaults.ServerOptions(logtest.Scoped(t))...)
-	grpcServer.RegisterService(&v1.GitserverService_ServiceDesc, &server.GRPCServer{Server: &s})
+	grpcServer.RegisterService(&proto.GitserverService_ServiceDesc, &server.GRPCServer{Server: &s})
 
 	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
 	srv := httptest.NewServer(handler)
