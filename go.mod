@@ -35,7 +35,6 @@ require (
 	github.com/daviddengcn/go-colortext v1.0.0
 	github.com/derision-test/glock v1.0.0
 	github.com/derision-test/go-mockgen v1.3.7
-	github.com/dghubble/gologin v2.2.0+incompatible
 	github.com/dgraph-io/ristretto v0.1.0
 	github.com/distribution/distribution/v3 v3.0.0-20220128175647-b60926597a1b
 	github.com/dnaeon/go-vcr v1.2.0
@@ -248,6 +247,8 @@ require (
 	github.com/c2h5oh/datasize v0.0.0-20220606134207-859f65c6625b
 	github.com/coreos/go-iptables v0.6.0
 	github.com/crewjam/saml/samlidp v0.0.0-20221211125903-d951aa2d145a
+	github.com/dcadenas/pagerank v0.0.0-20171013173705-af922e3ceea8
+	github.com/dghubble/gologin v2.1.0+incompatible
 	github.com/di-wu/xsd-datetime v1.0.0
 	github.com/elimity-com/scim v0.0.0-20220121082953-15165b1a61c8
 	github.com/fergusstrange/embedded-postgres v1.19.0
