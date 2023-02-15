@@ -1,0 +1,198 @@
+syntax = "proto3";
+
+package frontend.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/sourcegraph/sourcegraph/internal/frontend/v1";
+
+service FrontendService {
+  // SearchConfiguration returns the current indexing configuration for the specified repositories.
+  rpc SearchConfiguration(SearchConfigurationRequest) returns (SearchConfigurationResponse) {}
+
+  // List returns the list of repositories that the client should index.
+  rpc List(ListRequest) returns (ListResponse) {}
+
+  // RepositoryRank returns the rank vector for the specified repository.
+  rpc RepositoryRank(RepositoryRankRequest) returns (RepositoryRankResponse) {}
+
+  // DocumentRanks returns the rank vectors for all documents in the specified repository.
+  rpc DocumentRanks(DocumentRanksRequest) returns (DocumentRanksResponse) {}
+
+  // UpdateIndexStatus informs the server that the caller has indexed the specified repositories
+  // at the specified commits.
+  rpc UpdateIndexStatus(UpdateIndexStatusRequest) returns (UpdateIndexStatusResponse) {}
+}
+
+// SearchConfigurationRequest is the request to the SearchConfiguration RPC.
+message SearchConfigurationRequest {
+  // fingerprint is the Fingerprint of the last configuration that the client
+  // received.
+  //
+  // If the fingerprint is empty, the current indexing options for all repositories will be returned.
+  Fingerprint fingerprint = 1;
+
+  // repo_ids is a list of repository IDs that wishes to receive the current indexing options for.
+  repeated int32 repo_ids = 2;
+}
+
+// SearchConfigurationResponse is the response from the SearchConfiguration RPC.
+message SearchConfigurationResponse {
+  // fingerprint is the Fingerprint of the current configuration that the client should save and
+  // present in the next request to SearchConfiguration.
+  Fingerprint fingerprint = 1;
+
+  // updated_options is a list of indexing options that have been updated since the last request.
+  //
+  // The repositories returned are a subset of the repository IDs specified in the request.
+  repeated ZoektIndexOptions updated_options = 2;
+}
+
+// Fingerprint is an opaque identifier that the server sends to clients to allow
+// efficient calculation of what has changed since the last request.
+message Fingerprint {
+  // generatedAt is the time at which the fingerprint was generated.
+  google.protobuf.Timestamp generatedAt = 1;
+
+  // identifier is an opaque identifier that represents the state of the
+  // configuration at the time it was generated.
+  bytes identifier = 2;
+}
+
+// ZoektIndexOptions are options which change what we index for a
+// repository. Everytime a repository is indexed by zoekt this structure is
+// fetched.
+//
+// See getIndexOptions in the zoekt codebase. We only specify a subset of the fields.
+message ZoektIndexOptions {
+  // name is the repository name.
+  string name = 1;
+
+  // repo_id is the Sourcegraph repository ID.
+  int32 repo_id = 2;
+
+  // public is true if the repository is public and does not
+  // require auth filtering.
+  bool public = 3;
+
+  // fork is ture if the repository is a fork.
+  bool fork = 4;
+
+  // archived is true if the repository is archived.
+  bool archived = 5;
+
+  // large_files is a slice of glob patterns where matching file paths should
+  // be indexed regardless of their size. The pattern syntax can be found
+  // here: https://golang.org/pkg/path/filepath/#Match.
+  repeated string large_files = 6;
+
+  // symbols, if true, will make zoekt index the output of ctags.
+  bool symbols = 7;
+
+  // branches is a list of branches that should be indexed.
+  repeated ZoektRepositoryBranch branches = 8;
+
+  // priority indicates the ranking of the repository in the search results,
+  // higher first.
+  double priority = 9;
+
+  // document_ranks_version when non-empty will lead to indexing using offline
+  // ranking. When the string changes, this will also causes us to re-index with new ranks.
+  // TODO@ggilmore: The zero-value seems important here.
+  string document_ranks_version = 10;
+
+  // error, if non-empty, indicates that the request failed for the repo. // TODO@ggilmore: What does this mean?
+  // TODO@ggilmore: The zero-value seems important here.
+  string error = 11;
+}
+
+// ZoektRepositoryBranch describes an indexed branch of a repository.
+// TODO@ggilmore: Should this live in the Zoekt repository?
+message ZoektRepositoryBranch {
+  // name is the name of the branch.
+  string name = 1;
+
+  // version is the commit of the branch.
+  string version = 2;
+}
+
+// ListRequest is the request to the List RPC.
+message ListRequest {
+  // hostname is the hostname of the client making the request.
+  string hostname = 1;
+
+  // indexed_ids is the lists of repository IDs that the client currently has indexed.
+  repeated int32 indexed_ids = 2;
+}
+
+// ListResponse is the response from the List RPC.
+message ListResponse {
+  // repo_ids is the list of repository IDs that the client should index.
+  repeated int32 repo_ids = 1;
+}
+
+// RepositoryRankRequest is the request to the RepositoryRank RPC.
+message RepositoryRankRequest {
+  // repository is the repository name.
+  string repository = 1;
+}
+
+message RepositoryRankResponse {
+  // rank is the rank vector for the given repository. Repositories are assumed to
+  // be ordered by each pairwise component of the resulting vector, higher ranks coming earlier.
+  // We currently rank first by user-defined scores, then by GitHub star count.
+  repeated double rank = 1;
+}
+
+// DocumentRanksRequest is the request to the DocumentRanks RPC.
+message DocumentRanksRequest {
+  // repository is the repository name.
+  string repository = 1;
+}
+
+// DocumentRanksResponse is the response from the DocumentRanks RPC.
+message DocumentRanksResponse {
+  // DocumentRank is a vector of ranks for a given document.
+  message DocumentRank {
+    // ranks is a vector of ranks for a given document. The ranks are ordered as follows:
+    //   - precision                   [0 to 1]
+    //   - generated                   [0 or 1]
+    //   - vendor                      [0 or 1]
+    //   - test                        [0 or 1]
+    //   - global document rank        [0 to 1] (=0 w/o pagerank)
+    //   - name length                 [0 to 1] (=1 w/  pagerank)
+    //   - lexicographic order in repo [0 to 1] (=1 w/  pagerank)
+    repeated double ranks = 1; // TODO@ggilmore: Should this have strong types?
+  }
+
+  // ranks is a  map from paths within the given repo to their rank vector. Paths are
+  // assumed to be ordered by each pairwise component of the resulting vector, higher ranks coming
+  // earlier.
+  //
+  // We currently rank documents by path name length and lexicographic order, while performing
+  // a few heuristics to sink generated, test, and vendor files lower in the ranking.
+  map<string, DocumentRank> ranks = 1;
+}
+
+// UpdateIndexStatusRequest is the request to the UpdateIndexStatus RPC.
+message UpdateIndexStatusRequest {
+  message Repository {
+    // repo_id is the Sourcegraph repository ID.
+    // TODO@ggilmore: Why is this a uint32 where everything else is an int32???
+    uint32 repo_id = 1;
+
+    // branches is the list of branches that the client has indexed.
+    repeated ZoektRepositoryBranch branches = 2;
+  }
+
+  repeated Repository repositories = 1;
+}
+
+// UpdateIndexStatusResponse is the response from the UpdateIndexStatus RPC.
+message UpdateIndexStatusResponse {
+  // Always empty.
+}
+
+// TODO@ggilmore handle URL moved error
+// TODO@gilmore: handle special logic that only logs HTTP errors < 200 or >= 500
+// TODO@gilmore: adopt special error handling logic in cmd/frontend/internal/handlerutil/handler.go
