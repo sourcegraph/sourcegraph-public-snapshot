@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { formatISO, subYears } from 'date-fns'
 import { escapeRegExp } from 'lodash'
 import { Observable } from 'rxjs'
-import { map, switchMap, tap } from 'rxjs/operators'
+import { map, switchMap } from 'rxjs/operators'
 
 import { numberWithCommas, pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
