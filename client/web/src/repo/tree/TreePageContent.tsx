@@ -468,7 +468,6 @@ const Contributors: React.FunctionComponent<ContributorsProps> = ({ repo, filePa
                                 key={node.person.email}
                                 node={node}
                                 repoName={repo.name}
-                                globbing={false}
                                 {...spec}
                             />
                         ))}
@@ -518,19 +517,16 @@ interface QuerySpec {
 interface RepositoryContributorNodeProps extends QuerySpec {
     node: RepositoryContributorNodeFields
     repoName: string
-    globbing: boolean
 }
-
-const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren<RepositoryContributorNodeProps>> = ({
+const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNodeProps> = ({
     node,
     repoName,
     revisionRange,
     after,
     path,
-    globbing,
 }) => {
     const query: string = [
-        searchQueryForRepoRevision(repoName, globbing),
+        searchQueryForRepoRevision(repoName, false),
         'type:diff',
         `author:${quoteIfNeeded(node.person.email)}`,
         after ? `after:${quoteIfNeeded(after)}` : '',
@@ -543,7 +539,7 @@ const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren
         <tr className={classNames('list-group-item py-2', contributorsStyles.repositoryContributorNode)}>
             <td className={contributorsStyles.person}>
                 <UserAvatar inline={true} className="mr-2" user={node.person.user ? node.person.user : node.person} />
-                <PersonLink userClassName="font-weight-bold" person={node.person} />
+                <PersonLink person={node.person} />
             </td>
             <td className={contributorsStyles.commits}>
                 <Tooltip
@@ -554,10 +550,7 @@ const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren
                     }
                     placement="left"
                 >
-                    <Link
-                        to={`/search?${buildSearchURLQuery(query, SearchPatternType.standard, false)}`}
-                        className="font-weight-bold"
-                    >
+                    <Link to={`/search?${buildSearchURLQuery(query, SearchPatternType.standard, false)}`}>
                         {numberWithCommas(node.count)} {pluralize('commit', node.count)}
                     </Link>
                 </Tooltip>
