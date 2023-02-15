@@ -355,7 +355,10 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
 
                     <FilteredConnection<
                         GitCommitFields,
-                        Pick<GitCommitNodeProps, 'className' | 'compact' | 'messageSubjectClassName' | 'wrapperElement'>
+                        Pick<
+                            GitCommitNodeProps,
+                            'className' | 'compact' | 'messageSubjectClassName' | 'wrapperElement' | 'externalURLs'
+                        >
                     >
                         listClassName="list-group list-group-flush"
                         noun="commit in this tree"
