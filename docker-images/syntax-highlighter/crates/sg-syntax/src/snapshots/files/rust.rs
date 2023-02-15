@@ -1,4 +1,5 @@
 #![allow(all)]
+#![allow(unreachable_patterns)]
 
 fn main() {
     let mut vector = vec![1, 2, 3];
@@ -136,4 +137,85 @@ fn extern_example() {
     unsafe {
         say_hello();
     }
+}
+
+// More macro + enum examples
+macro_rules! m {
+    ($expr:expr) => {
+        match $expr {
+            foo => bar!(baz),
+            _ => quux,
+        }
+    };
+}
+enum FooBar {
+    BazQux(i32, &'static str),
+    QuxBaz(bool, (i32, char)),
+}
+fn macro_enum_example() {
+    let slice = &[1, 2, 3];
+    let foobar = m!(slice[0]);
+    match foobar {
+        FooBar::BazQux(n, s) if n > 1 => println!("{}", s),
+        FooBar::QuxBaz(b, (n, c)) if b => println!("{}{}", n, c),
+        _ => (),
+    }
+}
+
+enum Expr {
+    Lit(i32),
+    Add(Box<Expr>, Box<Expr>),
+    // Many more variants...
+}
+fn eval(expr: Expr) -> i32 {
+    match expr {
+        Expr::Lit(n) => n,
+        Expr::Add(lhs, rhs) => eval(*lhs) + eval(*rhs),
+        // Arms for Sub, Mul, Div, etc.
+        Expr::FunctionCall(name, args) => {
+            match name.as_str() {
+                "pow" => {
+                    let base = eval(args[0]);
+                    let expo = eval(args[1]);
+                    base.pow(expo)
+                } // More function cases...
+            }
+        } // Even more variants...
+    }
+}
+
+// Pattern matching examples
+fn match_example() {
+    let x = 42;
+    // match - Match on enums, tuples, structs, etc.:
+    match x {
+        foo => println!("Foo!"),
+        bar => println!("Bar!"),
+    }
+    // if let - Match and bind:
+    if let foo = x {
+        println!("x is foo!");
+    }
+    // while let - Loop while a pattern matches:
+    while let Some(x) = iter.next() {
+        println!("{}", x);
+    }
+    // for bindings in iterable - Destructure and loop:
+    for (a, b) in pairs {
+        println!("a: {}, b: {}", a, b);
+    }
+    // let bindings = value - Destructure in a let statement:
+    let (a, b) = (1, 2);
+    // | (the "or" pattern) - Match multiple variants:
+    match x {
+        foo | bar => println!("Foo or bar!"),
+        baz => println!("Baz!"),
+    }
+    // _ to ignore bindings:
+    let (_a, b) = (1, 2); // Ignore the first element
+
+    for (a, b) in [1, 2, 3].iter().zip([4, 5, 6].iter()) {
+        println!("a = {}, b = {}", a, b);
+    }
+    let (a, b) = (1, 2);
 }

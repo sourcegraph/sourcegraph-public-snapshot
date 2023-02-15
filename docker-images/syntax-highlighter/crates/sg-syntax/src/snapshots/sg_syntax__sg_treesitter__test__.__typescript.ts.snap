@@ -17,11 +17,11 @@ expression: "dump_document(&document, &contents)"
 //  ^^^^^^ IdentifierKeyword 
 //         ^^^^^^ IdentifierKeyword 
 //                ^^^^^^^ Identifier 
-//                         ^^^^^^ IdentifierType 
+//                         ^^^^^^ IdentifierBuiltinType 
     constructor(init: string) {
 //  ^^^^^^^^^^^ IdentifierFunction 
 //              ^^^^ Identifier 
-//                    ^^^^^^ IdentifierType 
+//                    ^^^^^^ IdentifierBuiltinType 
       super();
 //    ^^^^^ IdentifierBuiltin 
       this.myValue = init;
@@ -53,7 +53,7 @@ expression: "dump_document(&document, &contents)"
 //                                       ^^^^^ IdentifierType 
       myProperty: any;
 //    ^^^^^^^^^^ Identifier 
-//                ^^^ IdentifierType 
+//                ^^^ IdentifierBuiltinType 
       myKeyoff: keyof MyClass;
 //    ^^^^^^^^ Identifier 
 //              ^^^^^ IdentifierKeyword 
@@ -71,8 +71,8 @@ expression: "dump_document(&document, &contents)"
 //^^^^^ IdentifierKeyword 
 //      ^^^^^ IdentifierFunction 
 //               ^ Identifier 
-//                 ^^^^^^ IdentifierType 
-//                          ^^^^^^ IdentifierType 
+//                 ^^^^^^ IdentifierBuiltinType 
+//                          ^^^^^^ IdentifierBuiltinType 
 //                                    ^ Identifier 
 //                                        ^ NumericLiteral 
   export enum Day {
@@ -90,7 +90,7 @@ expression: "dump_document(&document, &contents)"
 //^^^^^^ IdentifierKeyword 
 //       ^^^^ IdentifierKeyword 
 //            ^^^^^^^^ IdentifierType 
-//                       ^^^^^^ IdentifierType 
+//                       ^^^^^^ IdentifierBuiltinType 
   export const a = 42
 //^^^^^^ IdentifierKeyword 
 //       ^^^^^ IdentifierKeyword 
@@ -169,7 +169,7 @@ expression: "dump_document(&document, &contents)"
 //^^^^^^ IdentifierKeyword 
 //       ^^^^^ IdentifierKeyword 
 //             ^^ Identifier 
-//                 ^^^^^ IdentifierType 
+//                 ^^^^^ IdentifierBuiltinType 
   export const e3: undefined = undefined
 //^^^^^^ IdentifierKeyword 
 //       ^^^^^ IdentifierKeyword 
@@ -214,11 +214,11 @@ expression: "dump_document(&document, &contents)"
 //^^^^^ IdentifierKeyword 
 //      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier 
 //                                         ^^^ Identifier 
-//                                              ^^^^^^ IdentifierType 
+//                                              ^^^^^^ IdentifierBuiltinType 
 //                                                       ^^^^^^^ IdentifierType 
 //                                                                   ^^^^ IdentifierBuiltin 
 //                                                                        ^^ IdentifierKeyword 
-//                                                                           ^^^ IdentifierType 
+//                                                                           ^^^ IdentifierBuiltinType 
   
   const scanToken = <T extends Term = Literal>(
 //^^^^^ IdentifierKeyword 
@@ -234,13 +234,13 @@ expression: "dump_document(&document, &contents)"
 //    ^^^^^^ Identifier 
 //             ^ IdentifierType 
 //                   ^^^^^ Identifier 
-//                          ^^^^^^ IdentifierType 
+//                          ^^^^^^ IdentifierBuiltinType 
 //                                  ^^^^^ Identifier 
 //                                         ^^^^^^^^^^^^^^ IdentifierType 
 //                                                            ^ IdentifierType 
       expected?: string
 //    ^^^^^^^^ Identifier 
-//               ^^^^^^ IdentifierType 
+//               ^^^^^^ IdentifierBuiltinType 
   ): Parser<T> => {
 //   ^^^^^^ IdentifierType 
 //          ^ IdentifierType 
@@ -328,7 +328,7 @@ expression: "dump_document(&document, &contents)"
 //       ^^^^^^^^ IdentifierKeyword 
 //                ^^^^^^^^^^^ IdentifierFunction 
 //                            ^^^^^^^^^ Identifier 
-//                                       ^^^^^^ IdentifierType 
+//                                       ^^^^^^ IdentifierBuiltinType 
 //                                                 ^^^^^^^^^ Identifier 
 //                                                            ^^^^^^^^^^^^^^^^^ IdentifierType 
 //                                                                                ^^^^^^^^ IdentifierType 
@@ -356,13 +356,13 @@ expression: "dump_document(&document, &contents)"
   type Age = number;
 //^^^^ IdentifierKeyword 
 //     ^^^ IdentifierType 
-//           ^^^^^^ IdentifierType 
+//           ^^^^^^ IdentifierBuiltinType 
   type Person = {
 //^^^^ IdentifierKeyword 
 //     ^^^^^^ IdentifierType 
       name: string;
 //    ^^^^ Identifier 
-//          ^^^^^^ IdentifierType 
+//          ^^^^^^ IdentifierBuiltinType 
       age: Age;
 //    ^^^ Identifier 
 //         ^^^ IdentifierType 
@@ -433,8 +433,8 @@ expression: "dump_document(&document, &contents)"
   type StringOrNumber = string | number;
 //^^^^ IdentifierKeyword 
 //     ^^^^^^^^^^^^^^ IdentifierType 
-//                      ^^^^^^ IdentifierType 
-//                               ^^^^^^ IdentifierType 
+//                      ^^^^^^ IdentifierBuiltinType 
+//                               ^^^^^^ IdentifierBuiltinType 
   const unionExample: StringOrNumber = "hello";
 //^^^^^ IdentifierKeyword 
 //      ^^^^^^^^^^^^ Identifier 
@@ -466,7 +466,7 @@ expression: "dump_document(&document, &contents)"
 //                  ^^^^^ Identifier 
 //                         ^^^^^^^^^^^^^^ IdentifierType 
 //                                          ^^^^^ Identifier 
-//                                                   ^^^^^^ IdentifierType 
+//                                                   ^^^^^^ IdentifierBuiltinType 
       return typeof value === "string";
 //    ^^^^^^ IdentifierKeyword 
 //           ^^^^^^ IdentifierKeyword 
@@ -510,7 +510,7 @@ expression: "dump_document(&document, &contents)"
 //      ^^^^^^^^^^ IdentifierType 
 //                 ^ IdentifierType 
 //                   ^^^^^^^ IdentifierKeyword 
-//                           ^^^^^^ IdentifierType 
+//                           ^^^^^^ IdentifierBuiltinType 
       items: T[];
 //    ^^^^^ Identifier 
 //           ^ IdentifierType 
@@ -560,12 +560,12 @@ expression: "dump_document(&document, &contents)"
 //     ^^^^^^ IdentifierType 
       (array: number[], callback: (item: number) => boolean): number[];
 //     ^^^^^ Identifier 
-//            ^^^^^^ IdentifierType 
+//            ^^^^^^ IdentifierBuiltinType 
 //                      ^^^^^^^^ Identifier 
 //                                 ^^^^ Identifier 
-//                                       ^^^^^^ IdentifierType 
-//                                                  ^^^^^^^ IdentifierType 
-//                                                            ^^^^^^ IdentifierType 
+//                                       ^^^^^^ IdentifierBuiltinType 
+//                                                  ^^^^^^^ IdentifierBuiltinType 
+//                                                            ^^^^^^ IdentifierBuiltinType 
   };
   const filter: Filter = (array, callback) => {
 //^^^^^ IdentifierKeyword 
@@ -621,7 +621,7 @@ expression: "dump_document(&document, &contents)"
 //     ^^^^^^ IdentifierType 
       [key: string]: Person;
 //     ^^^ Identifier 
-//          ^^^^^^ IdentifierType 
+//          ^^^^^^ IdentifierBuiltinType 
 //                   ^^^^^^ IdentifierType 
   };
   const peopleObject: People = {
@@ -654,15 +654,15 @@ expression: "dump_document(&document, &contents)"
       readonly make: string;
 //    ^^^^^^^^ IdentifierKeyword 
 //             ^^^^ Identifier 
-//                   ^^^^^^ IdentifierType 
+//                   ^^^^^^ IdentifierBuiltinType 
       readonly model: string;
 //    ^^^^^^^^ IdentifierKeyword 
 //             ^^^^^ Identifier 
-//                    ^^^^^^ IdentifierType 
+//                    ^^^^^^ IdentifierBuiltinType 
       readonly year: number;
 //    ^^^^^^^^ IdentifierKeyword 
 //             ^^^^ Identifier 
-//                   ^^^^^^ IdentifierType 
+//                   ^^^^^^ IdentifierBuiltinType 
   }
   const car: Car = {
 //^^^^^ IdentifierKeyword 
@@ -732,14 +732,14 @@ expression: "dump_document(&document, &contents)"
 //              ^ IdentifierType 
 //                   ^ IdentifierType 
 //                     ^^^^^^^ IdentifierKeyword 
-//                             ^^^^^^ IdentifierType 
+//                             ^^^^^^ IdentifierBuiltinType 
 //                                      ^^^^ IdentifierBuiltin 
 //                                             ^^^^^ IdentifierBuiltin 
   type IsNumberType = IsNumber<number>;
 //^^^^ IdentifierKeyword 
 //     ^^^^^^^^^^^^ IdentifierType 
 //                    ^^^^^^^^ IdentifierType 
-//                             ^^^^^^ IdentifierType 
+//                             ^^^^^^ IdentifierBuiltinType 
   const isNumberType: IsNumberType = true;
 //^^^^^ IdentifierKeyword 
 //      ^^^^^^^^^^^^ Identifier 
@@ -819,13 +819,13 @@ expression: "dump_document(&document, &contents)"
 //          ^^^^^^^^^^ IdentifierType 
       make?: string;
 //    ^^^^ Identifier 
-//           ^^^^^^ IdentifierType 
+//           ^^^^^^ IdentifierBuiltinType 
       model?: string;
 //    ^^^^^ Identifier 
-//            ^^^^^^ IdentifierType 
+//            ^^^^^^ IdentifierBuiltinType 
       year?: number;
 //    ^^^^ Identifier 
-//           ^^^^^^ IdentifierType 
+//           ^^^^^^ IdentifierBuiltinType 
   }
   type RequiredCarDetails = Required<CarDetails>;
 //^^^^ IdentifierKeyword 
@@ -857,7 +857,7 @@ expression: "dump_document(&document, &contents)"
   type PersonTuple = [string, Age];
 //^^^^ IdentifierKeyword 
 //     ^^^^^^^^^^^ IdentifierType 
-//                    ^^^^^^ IdentifierType 
+//                    ^^^^^^ IdentifierBuiltinType 
 //                            ^^^ IdentifierType 
   const personTuple: PersonTuple = ["John", 30];
 //^^^^^ IdentifierKeyword 
@@ -981,7 +981,7 @@ expression: "dump_document(&document, &contents)"
 //^^^^^ IdentifierKeyword 
 //      ^^^^^^^^^^^^^^^ Identifier 
 //                        ^^^^^^^^ IdentifierFunction 
-//                                 ^^^^^^ IdentifierType 
+//                                 ^^^^^^ IdentifierBuiltinType 
 //                                         ^ StringLiteral 
 //                                          ^^^^^ StringLiteral 
 //                                               ^ StringLiteral 
@@ -1011,7 +1011,7 @@ expression: "dump_document(&document, &contents)"
 //      ^^^^^^^ Identifier 
 //                ^^^ IdentifierKeyword 
 //                    ^^^^^^^ Identifier 
-//                            ^^^^^^ IdentifierType 
+//                            ^^^^^^ IdentifierBuiltinType 
   myArray.add("hello").add("world");
 //^^^^^^^ Identifier 
 //        ^^^ IdentifierFunction 
@@ -1085,10 +1085,10 @@ expression: "dump_document(&document, &contents)"
 //          ^^^^^ IdentifierType 
       width: number;
 //    ^^^^^ Identifier 
-//           ^^^^^^ IdentifierType 
+//           ^^^^^^ IdentifierBuiltinType 
       height: number;
 //    ^^^^^^ Identifier 
-//            ^^^^^^ IdentifierType 
+//            ^^^^^^ IdentifierBuiltinType 
   }
   interface Square extends Shape {
 //^^^^^^^^^ IdentifierKeyword 
@@ -1097,7 +1097,7 @@ expression: "dump_document(&document, &contents)"
 //                         ^^^^^ IdentifierType 
       sideLength: number;
 //    ^^^^^^^^^^ Identifier 
-//                ^^^^^^ IdentifierType 
+//                ^^^^^^ IdentifierBuiltinType 
   }
   const square: Square = {
 //^^^^^ IdentifierKeyword 

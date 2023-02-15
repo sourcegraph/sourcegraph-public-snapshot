@@ -60,7 +60,12 @@ const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
     ("tag",                     SyntaxKind::UnspecifiedSyntaxKind),
     ("type",                    SyntaxKind::IdentifierType),
     ("identifier.type",         SyntaxKind::IdentifierType),
-    ("type.builtin",            SyntaxKind::IdentifierType),
+    ("type.builtin",            SyntaxKind::IdentifierBuiltinType),
+    ("regex.delimiter",         SyntaxKind::RegexDelimiter),
+    ("regex.join",              SyntaxKind::RegexJoin),
+    ("regex.escape",            SyntaxKind::RegexEscape),
+    ("regex.repeated",          SyntaxKind::RegexRepeated),
+    ("regex.wildcard",          SyntaxKind::RegexWildcard),
     ("identifier",              SyntaxKind::Identifier),
     ("variable",                SyntaxKind::Identifier),
     ("identifier.builtin",      SyntaxKind::IdentifierBuiltin),
@@ -142,7 +147,7 @@ macro_rules! create_configurations {
 
 lazy_static::lazy_static! {
     static ref CONFIGURATIONS: HashMap<&'static str, HighlightConfiguration> = {
-        create_configurations!( go, sql, c_sharp, jsonnet, python, rust, java, scala, xlsg, javascript )
+        create_configurations!( go, sql, c_sharp, jsonnet, python, rust, ruby, java, scala, xlsg, javascript )
     };
 }
 
