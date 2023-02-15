@@ -12,7 +12,7 @@ On top of that, whenever we attempt at building our app, we also need to fetch m
 
 In the end, it's not what composes our application that drives us to use a build system, but instead the size it reached after years of development. We could solve all these problems individually with custom solutions, that would enable us to deterministically say that we need to build X ebecause Y changed. But guess what? The result would pretty much look like a build system. It's a known problem and solutions exists in the wild for us to use.
 
-Finally, build systems provides additional benefits, especially on the security side. Because a build system is by definition aware of every little dependency, we can use that to ensure we react switfly to CVEs and produce SBOMs for our customers to speed up the upgrade process. 
+Finally, build systems provides additional benefits, especially on the security side. Because a build system is by definition aware of every little dependency, we can use that to ensure we react swiftly to CVEs and produce SBOMs for our customers to speed up the upgrade process. 
 
 ## Why Bazel? 
 
@@ -22,7 +22,7 @@ We could have used others, but that would translate in having to write much more
 
 ## What is Bazel?
 
-Bazel sits in between in traditonal tools to build code and you, similarly to how Make does you could say. At it's core, Bazel enables you to describe a hierarchy of all the pieces needed to build the application, plus the steps required to build one based on the others. 
+Bazel sits in between in traditional tools to build code and you, similarly to how Make does you could say. At it's core, Bazel enables you to describe a hierarchy of all the pieces needed to build the application, plus the steps required to build one based on the others. 
 
 ### What a build system does
 
@@ -81,7 +81,7 @@ So, building and testing is in the end, practically the same thing.
 
 ### Why Bazel is frequently mentioned in a negative way on Reddit|HN|Twitter|... ? 
 
-Build systems are solving a complex problem. Assembling a deterministic tree of all the _inputs_ and _outputs_ is not an easy task, especially when your project is becoming less and less trivial. And to enforce it's properties, such as hermeticity and being deterministic, Bazel requires both a "boil the ocean first" approach, where you need to convert almost everything in your project to benefit from it and to learn how to operate it. That's quite the upfront cost and a lot of cognitive weight to absorb, naturally resuting in negative opinions. 
+Build systems are solving a complex problem. Assembling a deterministic tree of all the _inputs_ and _outputs_ is not an easy task, especially when your project is becoming less and less trivial. And to enforce it's properties, such as hermeticity and being deterministic, Bazel requires both a "boil the ocean first" approach, where you need to convert almost everything in your project to benefit from it and to learn how to operate it. That's quite the upfront cost and a lot of cognitive weight to absorb, naturally resulting in negative opinions. 
 
 But in exchange for that, we get a much more robust system, resilient to some unavoidable problems that comes when building your app requires to reach the outside world. 
 
