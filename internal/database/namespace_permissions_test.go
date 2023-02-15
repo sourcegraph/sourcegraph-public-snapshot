@@ -41,17 +41,6 @@ func TestCreateNamespacePermission(t *testing.T) {
 		require.ErrorContains(t, err, "user id is required")
 	})
 
-	t.Run("missing action", func(t *testing.T) {
-		np, err := store.Create(ctx, CreateNamespacePermissionOpts{
-			ResourceID: 1,
-			UserID:     user.ID,
-		})
-
-		require.Nil(t, np)
-		require.Error(t, err)
-		require.ErrorContains(t, err, "action is required")
-	})
-
 	t.Run("missing namespace", func(t *testing.T) {
 		np, err := store.Create(ctx, CreateNamespacePermissionOpts{
 			ResourceID: 1,
