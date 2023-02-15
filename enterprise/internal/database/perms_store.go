@@ -404,7 +404,7 @@ func (s *permsStore) SetUserExternalAccountPerms(ctx context.Context, user authz
 		p = append(p, authz.Permission{
 			UserID:            user.UserID,
 			ExternalAccountID: user.ExternalAccountID,
-			RepoID:            int32(repoID),
+			RepoID:            repoID,
 		})
 	}
 
@@ -522,7 +522,7 @@ WHERE
 	AND
 	source != %s
 `
-	where := sqlf.Sprintf("FALSE")
+	var where *sqlf.Query
 	if entity.UserID > 0 {
 		where = sqlf.Sprintf("user_id = %d", entity.UserID)
 		if entity.ExternalAccountID > 0 {
