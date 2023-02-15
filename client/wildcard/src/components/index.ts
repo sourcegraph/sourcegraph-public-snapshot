@@ -128,7 +128,7 @@ export type {
     SubmissionResult,
     Validator,
     AsyncValidator,
-    ValidationResult
+    ValidationResult,
 } from './Form/Form'
 
 /**

@@ -11,7 +11,7 @@ import {
     getDefaultInputProps,
     useFieldAPI,
     FormInstance,
-    SubmissionErrors
+    SubmissionErrors,
 } from '@sourcegraph/wildcard'
 
 import {

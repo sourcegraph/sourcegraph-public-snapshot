@@ -1,8 +1,4 @@
-import {
-    Validator,
-    composeValidators,
-    createRequiredValidator,
-} from '@sourcegraph/wildcard'
+import { Validator, composeValidators, createRequiredValidator } from '@sourcegraph/wildcard'
 
 import { insightStepValueValidator, insightTitleValidator } from '../../../../../components'
 import { Checks, searchQueryValidator } from '../utils/search-query-validator'

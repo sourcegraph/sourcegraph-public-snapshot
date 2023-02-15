@@ -1,11 +1,5 @@
 import { QueryState } from '@sourcegraph/shared/src/search'
-import {
-    FormInstance,
-    FormChangeEvent,  SubmissionErrors,
-    useField,
-    useFieldAPI,
-    useForm
-} from '@sourcegraph/wildcard'
+import { FormInstance, FormChangeEvent, SubmissionErrors, useField, useFieldAPI, useForm } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../../../../../../stores'
 import {
