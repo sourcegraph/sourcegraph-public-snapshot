@@ -159,7 +159,7 @@ func (r *repositorySummaryResolver) RecentUploads() []resolverstubs.LSIFUploadsW
 func (r *repositorySummaryResolver) AvailableIndexers() []resolverstubs.InferredAvailableIndexersResolver {
 	resolvers := make([]resolverstubs.InferredAvailableIndexersResolver, 0, len(r.availableIndexers))
 	for _, indexer := range r.availableIndexers {
-		resolvers = append(resolvers, resolverstubs.NewInferredAvailableIndexersResolver(types.NewCodeIntelIndexerResolver(indexer.Indexer.Name), indexer.Roots))
+		resolvers = append(resolvers, resolverstubs.NewInferredAvailableIndexersResolver(types.NewCodeIntelIndexerResolverFrom(indexer.Indexer), indexer.Roots))
 	}
 	return resolvers
 }
