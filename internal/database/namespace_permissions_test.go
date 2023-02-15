@@ -187,18 +187,6 @@ func TestGetNamespacePermission(t *testing.T) {
 		require.Equal(t, err.Error(), "missing namespace permission query")
 	})
 
-	t.Run("missing action", func(t *testing.T) {
-		n, err := store.Get(ctx, GetNamespacePermissionOpts{
-			Namespace:  types.BatchChangesNamespace,
-			UserID:     user.ID,
-			ResourceID: 1,
-		})
-
-		require.Nil(t, n)
-		require.Error(t, err)
-		require.Equal(t, err.Error(), "missing namespace permission query")
-	})
-
 	t.Run("missing resource id", func(t *testing.T) {
 		n, err := store.Get(ctx, GetNamespacePermissionOpts{
 			Namespace: types.BatchChangesNamespace,
