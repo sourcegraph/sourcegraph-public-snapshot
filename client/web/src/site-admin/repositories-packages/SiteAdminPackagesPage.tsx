@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 
-import { dataOrThrowErrors } from '@sourcegraph/http-client'
+import { isEqual } from 'lodash'
+import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
+
+import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -21,15 +24,42 @@ import {
     FilteredConnectionFilterValue,
 } from '../../components/FilteredConnection'
 import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
-import { getFilterFromURL } from '../../components/FilteredConnection/utils'
+import { getFilterFromURL, getUrlQuery } from '../../components/FilteredConnection/utils'
 import { PageTitle } from '../../components/PageTitle'
-import { PackagesResult, PackagesVariables, SiteAdminPackageFields } from '../../graphql-operations'
-import { PACKAGES_QUERY } from '../backend'
+import {
+    PackagesResult,
+    PackagesVariables,
+    SiteAdminPackageFields,
+    ExternalServiceKindsVariables,
+    ExternalServiceKindsResult,
+    ExternalServiceKind,
+} from '../../graphql-operations'
+import { EXTERNAL_SERVICE_KINDS, PACKAGES_QUERY } from '../backend'
 import { PackageHost, PackageRepositoryIcon } from '../components/PackageRepositoryIcon'
 import { RepoMirrorInfo } from '../components/RepoMirrorInfo'
-import { ConnectionSummary } from '../../components/FilteredConnection/ui'
+import { PackageRepoReferenceKind } from '@sourcegraph/shared/src/graphql-operations'
+
+import { mdiCloudQuestion } from '@mdi/js'
+
+import { Icon } from '@sourcegraph/wildcard'
+
+import { defaultExternalServices } from '../../components/externalServices/externalServices'
+import { ExternalServiceKind } from '../../graphql-operations'
 
 interface SiteAdminPackagesPageProps extends TelemetryProps {}
+
+interface PackageRepositoryIconProps {
+    host: PackageRepoReferenceKind
+}
+
+export const PackageRepositoryIcon: React.FunctionComponent<PackageRepositoryIconProps> = ({ host }) => {
+    const IconComponent = defaultExternalServices[PACKAGE_HOST_TO_EXTERNAL_REPO[host]].icon
+    return IconComponent ? (
+        <Icon as={IconComponent} aria-label="Package host logo" className="mr-2" />
+    ) : (
+        <Icon svgPath={mdiCloudQuestion} aria-label="Unknown package host" className="mr-2" />
+    )
+}
 
 interface PackageNodeProps {
     node: SiteAdminPackageFields
@@ -39,7 +69,7 @@ const PackageNode: React.FunctionComponent<React.PropsWithChildren<PackageNodePr
     <li className="list-group-item px-0 py-2">
         <div className="d-flex align-items-center justify-content-between">
             <div>
-                <PackageRepositoryIcon host={node.scheme as PackageHost} />
+                <PackageRepositoryIcon host={node.scheme} />
                 {node.repository ? <RepoLink repoName={node.name} to={node.repository.url} /> : node.name}
                 {node.repository && <RepoMirrorInfo mirrorInfo={node.repository.mirrorInfo} />}
             </div>
@@ -47,59 +77,39 @@ const PackageNode: React.FunctionComponent<React.PropsWithChildren<PackageNodePr
     </li>
 )
 
-const PACKAGE_HOST_FILTER: Record<PackageHost, FilteredConnectionFilterValue> = {
-    npm: {
-        label: 'npm',
-        value: 'npm',
-        args: {
-            scheme: 'npm',
-        },
-    },
-    go: {
-        label: 'Go',
-        value: 'go',
-        args: {
-            scheme: 'go',
-        },
-    },
-    semanticdb: {
-        label: 'SemanticDB',
-        value: 'semanticdb',
-        args: {
-            scheme: 'semanticdb',
-        },
-    },
-    'scip-ruby': {
-        label: 'Ruby',
-        value: 'scip-ruby',
-        args: {
-            scheme: 'scip-ruby',
-        },
-    },
-    python: {
-        label: 'Python',
-        value: 'python',
-        args: {
-            scheme: 'python',
-        },
-    },
-    'rust-analyzer': {
-        label: 'Rust',
-        value: 'rust-analyzer',
-        args: {
-            scheme: 'rust-analyzer',
-        },
-    },
+interface FriendlyPackageRepoReferenceKind {
+    label: string
+    value: PackageRepoReferenceKind
 }
 
-const FILTERS: FilteredConnectionFilter[] = [
-    {
-        id: 'host',
-        label: 'Code Host',
-        type: 'select',
-        values: Object.values(PACKAGE_HOST_FILTER),
+const EXTERNAL_SERVICE_KIND_TO_PACKAGE_REPO_REFERENCE_KIND: Partial<
+    Record<ExternalServiceKind, FriendlyPackageRepoReferenceKind>
+> = {
+    [ExternalServiceKind.NPMPACKAGES]: {
+        label: 'NPM',
+        value: PackageRepoReferenceKind.NPMPACKAGES,
     },
-]
+    [ExternalServiceKind.GOMODULES]: {
+        label: 'Go',
+        value: PackageRepoReferenceKind.GOMODULES,
+    },
+    [ExternalServiceKind.JVMPACKAGES]: {
+        label: 'JVM',
+        value: PackageRepoReferenceKind.JVMPACKAGES,
+    },
+    [ExternalServiceKind.RUBYPACKAGES]: {
+        label: 'Ruby',
+        value: PackageRepoReferenceKind.RUBYPACKAGES,
+    },
+    [ExternalServiceKind.PYTHONPACKAGES]: {
+        label: 'Python',
+        value: PackageRepoReferenceKind.PYTHONPACKAGES,
+    },
+    [ExternalServiceKind.RUSTPACKAGES]: {
+        label: 'Rust',
+        value: PackageRepoReferenceKind.RUSTPACKAGES,
+    },
+}
 
 /**
  * A page displaying the packages on this instance.
@@ -107,12 +117,51 @@ const FILTERS: FilteredConnectionFilter[] = [
 export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChildren<SiteAdminPackagesPageProps>> = ({
     telemetryService,
 }) => {
+    const location = useLocation()
+    const navigate = useNavigate()
+
     useEffect(() => {
         telemetryService.logPageView('SiteAdminPackages')
     }, [telemetryService])
 
+    const {
+        loading: extSvcLoading,
+        data: extSvcs,
+        error: extSvcError,
+    } = useQuery<ExternalServiceKindsResult, ExternalServiceKindsVariables>(EXTERNAL_SERVICE_KINDS, {})
+
+    const filters = useMemo<FilteredConnectionFilter[]>(() => {
+        const values = [
+            {
+                label: 'All',
+                value: 'all',
+                args: {},
+            },
+        ]
+
+        for (const extSvc of extSvcs?.externalServices.nodes ?? []) {
+            const packageRepoScheme = EXTERNAL_SERVICE_KIND_TO_PACKAGE_REPO_REFERENCE_KIND[extSvc.kind]
+
+            if (packageRepoScheme) {
+                values.push({
+                    ...packageRepoScheme,
+                    args: { scheme: packageRepoScheme.value },
+                })
+            }
+        }
+
+        return [
+            {
+                id: 'ecosystem',
+                label: 'Host',
+                type: 'select',
+                values,
+            },
+        ]
+    }, [extSvcs])
+
     const [filterValues, setFilterValues] = useState<Map<string, FilteredConnectionFilterValue>>(() =>
-        getFilterFromURL(new URLSearchParams(location.search), FILTERS)
+        getFilterFromURL(new URLSearchParams(location.search), filters)
     )
 
     const [searchValue, setSearchValue] = useState<string>(
@@ -121,14 +170,43 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
 
     const query = useDebounce(searchValue, 200)
 
-    const variables = useMemo(() => {
+    useEffect(() => {
+        const searchFragment = getUrlQuery({
+            query: searchValue,
+            filters,
+            filterValues,
+            search: location.search,
+        })
+        const searchFragmentParams = new URLSearchParams(searchFragment)
+        searchFragmentParams.sort()
+
+        const oldParams = new URLSearchParams(location.search)
+        oldParams.sort()
+
+        if (!isEqual(Array.from(searchFragmentParams), Array.from(oldParams))) {
+            navigate(
+                {
+                    search: searchFragment,
+                    hash: location.hash,
+                },
+                {
+                    replace: true,
+                    // Do not throw away flash messages
+                    state: location.state,
+                }
+            )
+        }
+    }, [filterValues, filters, searchValue, location, navigate])
+
+    const variables = useMemo<PackagesVariables>(() => {
         const args = buildFilterArgs(filterValues)
 
         return {
-            ...args,
             name: query,
-            first: 5,
-            // after: null, TODO: Cursor pagination seems broken
+            scheme: null,
+            after: null,
+            first: 15,
+            ...args,
         }
     }, [filterValues, query])
 
@@ -139,12 +217,13 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
     >({
         query: PACKAGES_QUERY,
         variables,
-        options: {
-            useAlternateAfterCursor: true,
-        },
         getConnection: result => {
             const data = dataOrThrowErrors(result)
             return data.packageRepoReferences
+        },
+        options: {
+            fetchPolicy: 'cache-first',
+            useURL: true,
         },
     })
 
@@ -186,7 +265,7 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
                 />
                 <div className="d-flex mt-3">
                     <FilterControl
-                        filters={FILTERS}
+                        filters={filters}
                         values={filterValues}
                         onValueSelect={(filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) =>
                             setFilterValues(values => {

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
