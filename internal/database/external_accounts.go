@@ -262,6 +262,7 @@ func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUs
 		return nil, err
 	}
 
+<<<<<<< HEAD
 	// Every user on a Sourcegraph instance is assigned the `USER` role.
 	roles := []types.SystemRole{types.UserSystemRole}
 	if createdUser.SiteAdmin {
@@ -278,6 +279,8 @@ func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUs
 		s.logger.Error("failed to assign system role to user", log.Error(err))
 	}
 
+=======
+>>>>>>> 62a497ede9 (assign roles in the same transaction as user creation)
 	err = tx.Insert(ctx, createdUser.ID, spec, data)
 	if err == nil {
 		logAccountCreatedEvent(ctx, NewDBWith(s.logger, s), createdUser, spec.ServiceType)

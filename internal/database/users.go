@@ -378,8 +378,23 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 	}
 
 	{
-		// Assign roles to the created user. We do this in here to ensure user creation occurs in the same transaction
-		// as role assignment. This ensures we don't have "zombie" users (users with no role assigned to them).
+		// Assign roles to the created user. We do this in here to ensure role assign occurs in the same transaction as user creation occurs.
+		// This ensures we don't have "zombie" users (users with no role assigned to them).
+		// All users on a Sourcegraph instance must have the `USER` role, however depending on the value of user.SiteAdmin,
+		// we assign them the `SITE_ADMINISTRATOR` role.
+		roles := []types.SystemRole{types.UserSystemRole}
+		if user.SiteAdmin {
+			roles = append(roles, types.SiteAdministratorSystemRole)
+		}
+
+		db := NewDBWith(u.logger, u)
+		_, err := db.UserRoles().BulkAssignSystemRolesToUser(ctx, BulkAssignSystemRolesToUserOpts{
+			UserID: user.ID,
+			Roles:  roles,
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	{
