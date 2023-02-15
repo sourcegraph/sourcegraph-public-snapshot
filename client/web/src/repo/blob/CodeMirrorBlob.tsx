@@ -15,6 +15,7 @@ import {
     formatSearchParameters,
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
+import { findLanguageMatchingDocument } from '@sourcegraph/shared/src/codeintel/api'
 import { editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -22,7 +23,7 @@ import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
+import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash, toURIWithPath } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { BlobStencilFields, ExternalLinkFields, Scalars } from '../../graphql-operations'
@@ -276,6 +277,10 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         },
         [customHistoryAction]
     )
+    const isLanguageSupported = useMemo(
+        () => !!findLanguageMatchingDocument({ uri: toURIWithPath(props.blobInfo) }),
+        [props.blobInfo]
+    )
     const extensions = useMemo(
         () => [
             // Log uncaught errors that happen in callbacks that we pass to
@@ -292,7 +297,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 enableSelectionDrivenCodeNavigation,
             }),
             codeFoldingExtension(),
-            enableSelectionDrivenCodeNavigation ? tokenSelectionExtension() : [],
+            enableSelectionDrivenCodeNavigation && isLanguageSupported ? tokenSelectionExtension() : [],
             enableLinkDrivenCodeNavigation
                 ? tokensAsLinks({ navigate: navigateRef.current, blobInfo, preloadGoToDefinition })
                 : [],
