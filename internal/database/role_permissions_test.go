@@ -193,7 +193,7 @@ func TestRolePermissionGetByRoleID(t *testing.T) {
 
 	totalRolePermissions := 5
 	for i := 1; i <= totalRolePermissions; i++ {
-		p := createTestPermissionForRolePermission(ctx, "BATCH CHANGES", fmt.Sprintf("action-%d", i), t, db)
+		p := createTestPermissionForRolePermission(ctx, fmt.Sprintf("action-%d", i), t, db)
 		_, err := store.Assign(ctx, AssignRolePermissionOpts{
 			RoleID:       r.ID,
 			PermissionID: p.ID,
