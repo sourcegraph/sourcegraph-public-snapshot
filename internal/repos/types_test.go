@@ -158,3 +158,43 @@ type MockExternalServicesLister struct {
 func (m MockExternalServicesLister) List(ctx context.Context, args database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 	return m.list(ctx, args)
 }
+
+func Test_splitTopics(t *testing.T) {
+	cases := []struct {
+		old, new    []string
+		add, remove []string
+	}{{
+		old:    []string{},
+		new:    []string{},
+		add:    nil,
+		remove: nil,
+	}, {
+		old:    []string{"test"},
+		new:    []string{},
+		add:    nil,
+		remove: []string{"test"},
+	}, {
+		old:    []string{"test"},
+		new:    []string{"test"},
+		add:    nil,
+		remove: nil,
+	}, {
+		old:    []string{"test"},
+		new:    []string{"test2"},
+		add:    []string{"test2"},
+		remove: []string{"test"},
+	}, {
+		old:    []string{"test", "test3"},
+		new:    []string{"test3", "test4"},
+		add:    []string{"test4"},
+		remove: []string{"test"},
+	}}
+
+	for _, tc := range cases {
+		t.Run("", func(t *testing.T) {
+			add, remove := splitTopics(tc.old, tc.new)
+			require.EqualValues(t, tc.add, add)
+			require.EqualValues(t, tc.remove, remove)
+		})
+	}
+}

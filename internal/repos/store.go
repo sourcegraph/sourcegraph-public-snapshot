@@ -389,8 +389,10 @@ func (s *store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		return err
 	}
 
+	// Update the list of key-value pairs associated with a repo for
+	// key-value pairs that are derived from the repo metadata.
 	if err = s.updateKVPs(ctx, r.ID, nil, r.Metadata); err != nil {
-		return err
+		return errors.Wrap(err, "updateKVPs")
 	}
 
 	return s.Exec(ctx, sqlf.Sprintf(upsertExternalServiceRepoQuery,
@@ -552,16 +554,27 @@ func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		defer func() { err = s.Done(err) }()
 	}
 
-	oldRepo, err := s.RepoStore().Get(ctx, r.ID)
-	if err != nil {
-		return err
+	{
+		// This block handles updating the list of key-value pairs associated with
+		// a repo for key-value pairs that are derived from the repo metadata.
+		oldRepo, err := s.RepoStore().List(ctx, database.ReposListOptions{
+			IDs:            []api.RepoID{r.ID},
+			IncludeBlocked: true,
+			IncludeDeleted: true,
+		})
+		if err != nil {
+			return errors.Wrap(err, "fetch original metadata")
+		}
+		if len(oldRepo) != 1 {
+			return &database.RepoNotFoundErr{ID: r.ID}
+		}
+		oldMetadata := oldRepo[0].Metadata
+		if err = s.updateKVPs(ctx, r.ID, oldMetadata, r.Metadata); err != nil {
+			return err
+		}
 	}
 
 	if err = s.QueryRow(ctx, q).Scan(&r.UpdatedAt); err != nil {
-		return err
-	}
-
-	if err := s.updateKVPs(ctx, r.ID, oldRepo.Metadata, r.Metadata); err != nil {
 		return err
 	}
 
