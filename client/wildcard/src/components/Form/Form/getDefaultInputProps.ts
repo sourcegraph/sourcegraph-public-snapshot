@@ -1,4 +1,4 @@
-import { InputStatus, InputProps } from '@sourcegraph/wildcard'
+import { InputStatus, InputProps } from '../Input'
 
 import { useFieldAPI } from './hooks'
 

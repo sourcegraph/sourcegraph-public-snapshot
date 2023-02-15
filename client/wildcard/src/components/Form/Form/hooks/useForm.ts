@@ -17,7 +17,7 @@ import { noop } from 'rxjs'
 
 import { asError } from '@sourcegraph/common'
 
-import { useDistinctValue } from '../../../hooks'
+import { useDeepMemo } from '../../../../hooks'
 
 // Special key for the submit error store.
 export const FORM_ERROR = 'useForm/submissionErrors'
@@ -67,7 +67,7 @@ interface UseFormProps<FormValues extends object> {
  * form state, form handlers like handleSubmit and some props which should be
  * passed on root form element.
  */
-export interface Form<FormValues> {
+export interface FormInstance<FormValues> {
     /**
      * Values of all inputs in the form.
      */
@@ -211,7 +211,7 @@ type FieldsState<FormValues> = {
  * form state - submitted, submitting, state of all form fileds from useField
  * hook.
  */
-export function useForm<FormValues extends object>(props: UseFormProps<FormValues>): Form<FormValues> {
+export function useForm<FormValues extends object>(props: UseFormProps<FormValues>): FormInstance<FormValues> {
     const { onSubmit = noop, initialValues, touched = false, onChange = noop, onPureValueChange = noop } = props
 
     const [submitted, setSubmitted] = useState(false)
@@ -243,9 +243,9 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
         })
     }
 
-    const values = useDistinctValue(useMemo(() => getFormValues<FormValues>(fields), [fields]))
+    const values = useDeepMemo(useMemo(() => getFormValues<FormValues>(fields), [fields]))
 
-    const changeEvent = useDistinctValue(
+    const changeEvent = useDeepMemo(
         useMemo<{ values: FormValues; valid: boolean }>(
             () => ({
                 values: getFormValues(fields),
