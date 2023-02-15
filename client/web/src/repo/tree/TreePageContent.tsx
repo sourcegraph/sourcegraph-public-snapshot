@@ -15,7 +15,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Card, CardHeader, Link, Tooltip, Text, useObservable } from '@sourcegraph/wildcard'
+import { Button, Card, CardHeader, Link, Tooltip, Text } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'

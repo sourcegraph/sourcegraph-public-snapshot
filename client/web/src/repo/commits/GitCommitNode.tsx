@@ -102,7 +102,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
             className={classNames('flex-grow-1', styles.message, compact && styles.messageSmall)}
             data-testid="git-commit-node-message"
         >
-            <span className={classNames('mr-1', styles.messageSubject)}>
+            <span className={classNames('mr-2', styles.messageSubject)}>
                 <CommitMessageWithLinks
                     to={node.canonicalURL}
                     className={classNames(messageSubjectClassName, styles.messageLink)}
