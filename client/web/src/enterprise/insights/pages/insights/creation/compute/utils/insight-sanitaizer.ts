@@ -1,6 +1,5 @@
 import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../graphql-operations'
 import { getSanitizedSeries } from '../../../../../components'
-import { MAX_NUMBER_OF_SERIES } from '../../../../../constants'
 import { ComputeInsight, InsightType } from '../../../../../core'
 import { CreateComputeInsightFormFields } from '../types'
 
@@ -20,7 +19,7 @@ export const getSanitizedComputeInsight = (values: CreateComputeInsightFormField
         context: '',
         seriesDisplayOptions: {
             numSamples: null,
-            limit: MAX_NUMBER_OF_SERIES,
+            limit: null,
             sortOptions: {
                 direction: SeriesSortDirection.DESC,
                 mode: SeriesSortMode.RESULT_COUNT,
