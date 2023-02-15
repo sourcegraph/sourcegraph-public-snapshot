@@ -376,6 +376,12 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 		InvalidatedSessionsAt: invalidatedSessionsAt,
 		Searchable:            searchable,
 	}
+
+	{
+		// Assign roles to the created user. We do this in here to ensure user creation occurs in the same transaction
+		// as role assignment. This ensures we don't have "zombie" users (users with no role assigned to them).
+	}
+
 	{
 		// Run hooks.
 		//
