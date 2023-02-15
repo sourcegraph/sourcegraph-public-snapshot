@@ -35,17 +35,34 @@ message ExecStatusPayload {
 }
 
 message SearchRequest {
+  // repo is the name of the repo to be searched
   string repo = 1;
+  // revisions is the list of git revision to be searched. They are all passed
+  // to the same underlying git command, so the searched commits will be the
+  // union of all revisions listed.
   repeated RevisionSpecifier revisions = 2;
-  int64 limit = 5;
+  // limit is a limit on the number of search results returned. Additional
+  // results will be ignored.
+  int64 limit = 3;
+  // include_diff specifies whether the full diff should be included on the result messages.
+  // This can be expensive, so is disabled by default.
   bool include_diff = 4;
-  bool include_modified_files = 6;
-  QueryNode query = 7;
+  // include_modified specifies whether to include the list of modified files
+  // in the search results. This can be expensive, so is disabled by default.
+  bool include_modified_files = 5;
+  // query is a tree of filters to apply to commits being searched.
+  QueryNode query = 6;
 }
 
 message RevisionSpecifier {
+  // RevSpec is a revision range specifier suitable for passing to git. See
+  // the manpage gitrevisions(7).
   string rev_spec = 1;
+  // RefGlob is a reference glob to pass to git. See the documentation for
+  // "--glob" in git-log.
   string ref_glob = 2;
+  // ExcludeRefGlob is a glob for references to exclude. See the
+  // documentation for "--exclude" in git-log.
   string exclude_ref_glob = 3;
 }
 
@@ -156,13 +173,22 @@ message CommitMatch {
     uint32 column = 3;
   }
 
+  // oid is the 40-character, hex-encoded commit hash
   string oid = 1;
   Signature author = 2;
   Signature committer = 3;
+  // parents is the list of commit hashes for this commit's parents
   repeated string parents = 4;
   repeated string refs = 5;
   repeated string source_refs = 6;
+  // message is the commits message and a list of ranges that match
+  // the search query.
   MatchedString message = 7;
+  // diff is the diff between this commit and its first parent.
+  // May be unset if `include_diff` was not specified in the request.
   MatchedString diff = 8;
+  // modified_files is the list of files modified by this commit compared
+  // to its first parent. May be unset if `include_modified_files` is not
+  // specified in the request.
   repeated string modified_files = 9;
 }
