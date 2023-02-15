@@ -944,6 +944,7 @@ func (c *Changeset) ResetReconcilerState(state ReconcilerState) {
 	c.ReconcilerState = state
 	c.NumResets = 0
 	c.NumFailures = 0
+	c.PreviousFailureMessage = c.FailureMessage
 	c.FailureMessage = nil
 	// The reconciler syncs where needed, so we reset this message.
 	c.SyncErrorMessage = nil

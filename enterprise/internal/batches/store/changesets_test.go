@@ -1092,6 +1092,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.C
 
 			c.PublicationState = btypes.ChangesetPublicationStatePublished
 			c.ReconcilerState = btypes.ReconcilerStateErrored
+			c.PreviousFailureMessage = c.FailureMessage
 			c.FailureMessage = nil
 			c.StartedAt = clock.Now()
 			c.FinishedAt = clock.Now()
