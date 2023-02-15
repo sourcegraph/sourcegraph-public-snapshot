@@ -405,7 +405,7 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
                 .map(
                     ({ condition = () => true, render, path }) =>
                         condition(context) && {
-                            path: path.slice(1),
+                            path: path.slice(1), // remove leading slash
                             element: render(context),
                         }
                 )
