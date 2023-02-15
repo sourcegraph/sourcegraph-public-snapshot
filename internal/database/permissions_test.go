@@ -208,10 +208,11 @@ func TestPermissionBulkCreate(t *testing.T) {
 			{Action: "READ", Namespace: types.PermissionNamespace("TEST-NAMESPACE")},
 		}
 
-	ps, err := store.BulkCreate(ctx, perms)
-	require.NoError(t, err)
-	require.NotNil(t, ps)
-	require.Len(t, ps, 5)
+		ps, err := store.BulkCreate(ctx, opts)
+		require.NoError(t, err)
+		require.NotNil(t, ps)
+		require.Len(t, ps, 5)
+	})
 }
 
 func TestPermissionBulkDelete(t *testing.T) {
