@@ -420,6 +420,12 @@
               "default": 4500,
               "group": "Search",
               "!go": { "pointer": true }
+            },
+            "flushWallTimeMS": {
+              "description": "Controls the amount of time that Zoekt shards collect and rank results when the 'search-ranking' feature is enabled. Larger values give a more stable ranking, but searches can take longer to return an initial result.",
+              "type": "integer",
+              "default": 500,
+              "group": "Search"
             }
           }
         },
