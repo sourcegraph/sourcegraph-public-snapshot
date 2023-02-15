@@ -28,7 +28,7 @@ func (s *loggedOtelTracerProvider) Tracer(instrumentationName string, opts ...ot
 	return s.concreteTracer(instrumentationName, opts...)
 }
 
-// concreteTracer generates a concrete concreteTracer OpenTelemetry Tracer implementation, and is used by
+// concreteTracer generates a concrete shouldTraceTracer OpenTelemetry Tracer implementation, and is used by
 // Tracer to implement TracerProvider, and is used by tests to assert against concreteTracer types.
 func (s *loggedOtelTracerProvider) concreteTracer(instrumentationName string, opts ...oteltrace.TracerOption) *shouldTraceTracer {
 	logger := s.logger
