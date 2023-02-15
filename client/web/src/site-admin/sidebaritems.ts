@@ -76,12 +76,12 @@ export const configurationGroup: SiteAdminSideBarGroup = {
 
 export const repositoriesGroup: SiteAdminSideBarGroup = {
     header: {
-        label: 'Repositories & packages',
+        label: 'Repositories',
         icon: SourceRepositoryIcon,
     },
     items: [
         {
-            label: 'Manage code and package hosts',
+            label: 'Manage code hosts',
             to: '/site-admin/external-services',
         },
         {

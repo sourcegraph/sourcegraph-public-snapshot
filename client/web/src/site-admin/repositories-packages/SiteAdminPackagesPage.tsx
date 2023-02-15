@@ -257,8 +257,7 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
                 headingElement="h2"
                 description={
                     <>
-                        Packages are synced from connected <Link to="/site-admin/external-services">package hosts</Link>
-                        .
+                        Packages are synced from connected <Link to="/site-admin/external-services">code hosts</Link>.
                     </>
                 }
                 className="mb-3"
