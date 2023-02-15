@@ -1,7 +1,7 @@
 import { countColumn, Extension, Prec, StateEffect, StateField } from '@codemirror/state'
 import { EditorView, getTooltip, PluginValue, showTooltip, Tooltip, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { BehaviorSubject, from, fromEvent, of, Subject, Subscription } from 'rxjs'
-import { catchError, debounceTime, filter, map, scan, switchMap, tap } from 'rxjs/operators'
+import { debounceTime, filter, map, scan, switchMap, tap } from 'rxjs/operators'
 
 import { HoverMerged, TextDocumentPositionParameters } from '@sourcegraph/client-api/src'
 import { formatSearchParameters, LineOrPositionOrRange } from '@sourcegraph/common/src'
@@ -349,7 +349,6 @@ const hoverManager = ViewPlugin.fromClass(
                                     }
 
                                     return from(getHoverTooltip(view, offset)).pipe(
-                                        catchError(() => of(null)),
                                         map(tooltip => (tooltip ? { tooltip, occurrence } : null))
                                     )
                                 }),
