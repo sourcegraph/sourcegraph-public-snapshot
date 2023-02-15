@@ -3,8 +3,6 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
@@ -16,8 +14,6 @@ type ListOwnershipArgs struct {
 }
 
 type OwnResolver interface {
-	RepoOwnership(ctx context.Context, repo graphql.ID, args ListOwnershipArgs) (OwnershipConnectionResolver, error)
-	GitTreeOwnership(ctx context.Context, tree *GitTreeEntryResolver, args ListOwnershipArgs) (OwnershipConnectionResolver, error)
 	GitBlobOwnership(ctx context.Context, blob *GitTreeEntryResolver, args ListOwnershipArgs) (OwnershipConnectionResolver, error)
 
 	PersonOwnerField(person *PersonResolver) string
@@ -34,8 +30,6 @@ type OwnershipConnectionResolver interface {
 }
 
 type Ownable interface {
-	ToRepository() (RepositoryResolver, bool)
-	ToGitTree() (*GitTreeEntryResolver, bool)
 	ToGitBlob() (*GitTreeEntryResolver, bool)
 }
 

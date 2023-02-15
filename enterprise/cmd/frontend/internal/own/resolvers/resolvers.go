@@ -14,12 +14,6 @@ func New() graphqlbackend.OwnResolver {
 
 type resolver struct{}
 
-func (r *resolver) RepoOwnership(ctx context.Context, repo graphql.ID, args graphqlbackend.ListOwnershipArgs) (graphqlbackend.OwnershipConnectionResolver, error) {
-	return nil, nil
-}
-func (r *resolver) GitTreeOwnership(ctx context.Context, tree *graphqlbackend.GitTreeEntryResolver, args graphqlbackend.ListOwnershipArgs) (graphqlbackend.OwnershipConnectionResolver, error) {
-	return nil, nil
-}
 func (r *resolver) GitBlobOwnership(ctx context.Context, blob *graphqlbackend.GitTreeEntryResolver, args graphqlbackend.ListOwnershipArgs) (graphqlbackend.OwnershipConnectionResolver, error) {
 	return nil, nil
 }

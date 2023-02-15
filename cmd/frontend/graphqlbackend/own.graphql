@@ -21,46 +21,6 @@ interface Ownable {
     ): OwnershipConnection!
 }
 
-extend type Repository implements Ownable {
-    """
-    Ownership summary for this repository.
-    """
-    ownership(
-        """
-        Returns the first n ownership records from the list.
-        """
-        first: Int
-        """
-        Opaque pagination cursor.
-        """
-        after: String
-        """
-        Return only ownership for the given reasons.
-        """
-        reasons: [OwnershipReasonType!]
-    ): OwnershipConnection!
-}
-
-extend type GitTree implements Ownable {
-    """
-    Ownership summary for this tree.
-    """
-    ownership(
-        """
-        Returns the first n ownership records from the list.
-        """
-        first: Int
-        """
-        Opaque pagination cursor.
-        """
-        after: String
-        """
-        Return only ownership for the given reasons.
-        """
-        reasons: [OwnershipReasonType!]
-    ): OwnershipConnection!
-}
-
 extend type GitBlob implements Ownable {
     """
     Ownership summary for this file.
