@@ -10,8 +10,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
 
-// newConfWatcher subscribes to changes in site configuration and propagates them to the
-// provider and debugMode pointer.
+// newConfWatcher creates a callback that can be used on subscription to changes in site
+// configuration via conf.Watch(). The callback is stateful, compares the new state of
+// configuration with previous known state on each call, and propagates any changes to the
+// provider and debugMode references.
 func newConfWatcher(
 	logger log.Logger,
 	c conftypes.SiteConfigQuerier,
@@ -102,7 +104,8 @@ func newConfWatcher(
 			// continue with handling, do not fail fast
 		}
 
-		// add the new processor
+		// add the new processor. we do this before adding the new processor to
+		// ensure we don't have any gaps where spans are being dropped.
 		if processor != nil {
 			provider.RegisterSpanProcessor(processor)
 		}
