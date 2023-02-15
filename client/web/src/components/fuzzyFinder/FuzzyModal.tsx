@@ -644,5 +644,6 @@ function fuzzyResultId(id: number): string {
 function focusFuzzyInput(): void {
     // Redirect the focus to the fuzzy search bar
     const input = document.querySelector<HTMLInputElement>('#fuzzy-modal-input')
+
     input?.focus()
 }
