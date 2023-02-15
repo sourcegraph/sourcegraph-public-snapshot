@@ -36,9 +36,7 @@ func TestUserResourceHandler_Create(t *testing.T) {
 	}
 
 	// Assert that ID is correct
-	if user.ID != "1" {
-		t.Errorf("expected ID = 1, got %s", user.ID)
-	}
+	assert.Equal(t, "5", user.ID)
 }
 
 func TestUserResourceHandler_Get(t *testing.T) {
@@ -183,6 +181,9 @@ func getMockDB() *database.MockDB {
 		return applyLimitOffset(users, opt.LimitOffset)
 	})
 	userStore.CountFunc.SetDefaultReturn(4, nil)
+	userStore.CreateFunc.SetDefaultHook(func(ctx context.Context, user database.NewUser) (*types.User, error) {
+		return &types.User{ID: 5, Username: user.Username, DisplayName: user.DisplayName}, nil
+	})
 
 	// Create DB
 	db := database.NewMockDB()

@@ -128,8 +128,9 @@ func extractDisplayName(attributes scim.ResourceAttributes) (displayName string)
 		displayName = attributes["displayName"].(string)
 	} else if attributes["name"] != nil {
 		name := attributes["name"].(map[string]interface{})
-		displayName = name["formatted"].(string)
-		if displayName == "" && name["givenName"] != nil && name["familyName"] != nil {
+		if name["formatted"] != nil {
+			displayName = name["formatted"].(string)
+		} else if name["givenName"] != nil && name["familyName"] != nil {
 			displayName = name["givenName"].(string) + " " + name["familyName"].(string)
 		}
 	} else if attributes["userName"] != nil {
