@@ -40,7 +40,6 @@ const distributionPath = path.resolve(__dirname, '..', 'dist')
         plugins: [buildTimerPlugin],
         ignoreAnnotations: true,
         treeShaking: true,
-        watch: !!process.env.WATCH,
         sourcemap: true,
         outdir: distributionPath,
     })

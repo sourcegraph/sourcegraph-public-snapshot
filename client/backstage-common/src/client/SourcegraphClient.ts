@@ -76,6 +76,7 @@ class BaseClient {
             'X-Requested-With': `Sourcegraph - Backstage plugin DEV`,
             Authorization: authz,
         }
+
         if (!BaseClient.client) {
             getGraphQLClient({
                 baseUrl: baseUrl,
@@ -90,8 +91,6 @@ class BaseClient {
 
     async fetch<T>(query: Query<T>): Promise<T> {
         const client = BaseClient.client
-        // for now the variables are of string type but ideally it should be a type inferred from Query
-        // TODO (@burmudar): Add generic parameter for variables
         const { data } = await client.query({
             query: query.gql(),
             variables: query.vars(),

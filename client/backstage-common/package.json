@@ -24,9 +24,11 @@
   "devDependencies": {
     "@backstage/cli": "^0.22.1",
     "@jest/globals": "^29.4.0",
+    "@sourcegraph/build-config": "workspace:^0.0.1",
     "@sourcegraph/tsconfig": "^4.0.1",
     "babel-jest": "^28.1.3",
     "babel-loader": "^9.1.0",
+    "esbuild": "^0.17.8",
     "winston": "^3.8.2"
   },
   "dependencies": {
