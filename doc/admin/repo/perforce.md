@@ -42,7 +42,7 @@ To enable Perforce code host connections, a site admin must:
       - `p4 trust`
       - and any p4 commands involved with `git p4 clone` and `git p4 sync` for listed `depots`.
            
-      If repository permissions are mirrored, the user needs additional ability (aka. "super" access level) to perform the commands
+      If repository permissions are mirrored, the user needs additional ability (aka. "super" access level) to perform the commands:
       - `p4 protects`
       - `p4 groups`
       - `p4 group` 
