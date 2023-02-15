@@ -5871,9 +5871,9 @@ Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",ins
 
 ### Git Server: GRPC server metrics
 
-#### gitserver: gitserver_grpc_request_rate_all_methods_aggregate
+#### gitserver: gitserver_grpc_request_rate_all_methods
 
-<p class="subtitle">Request rate across all methods over 1m (aggregate)</p>
+<p class="subtitle">Request rate across all methods over 1m</p>
 
 The number of gRPC requests received per second across all methods, aggregated across all instances.
 
@@ -5886,15 +5886,15 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10070
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(gitserver_grpc_server_started_total[1m]))`
+Query: `sum(rate(gitserver_grpc_server_started_total{instance=~`${shard:regex}`}[1m]))`
 
 </details>
 
 <br />
 
-#### gitserver: gitserver_grpc_request_rate_per_method_aggregate
+#### gitserver: gitserver_grpc_request_rate_per_method
 
-<p class="subtitle">Request rate per-method over 1m (aggregate)</p>
+<p class="subtitle">Request rate per-method over 1m</p>
 
 The number of gRPC requests received per second broken out per method, aggregated across all instances.
 
@@ -5907,17 +5907,17 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10070
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(gitserver_grpc_server_started_total{grpc_method=~`${method:regex}`}[1m])) by (grpc_method)`
+Query: `sum(rate(gitserver_grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[1m])) by (grpc_method)`
 
 </details>
 
 <br />
 
-#### gitserver: gitserver_grpc_request_rate_overall_per_instance
+#### gitserver: gitserver_error_percentage_all_methods
 
-<p class="subtitle">Request rate across all methods over 1m (per instance)</p>
+<p class="subtitle">Error percentage across all methods over 1m</p>
 
-The number of gRPC requests received per second, aggregated across all methods, broken out per instance.
+The percentage of gRPC requests that fail across all methods, aggregated across all instances.
 
 This panel has no related alerts.
 
@@ -5928,17 +5928,17 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10071
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(gitserver_grpc_server_started_total{instance=~`${shard:regex}`}[1m])) by (instance)`
+Query: `(100.0 * ( (sum(rate(gitserver_grpc_server_handled_total{grpc_code!="OK",instance=~`${shard:regex}`}[1m]))) / (sum(rate(gitserver_grpc_server_handled_total{instance=~`${shard:regex}`}[1m]))) ))`
 
 </details>
 
 <br />
 
-#### gitserver: gitserver_grpc_request_rate_per_method_per_instance
+#### gitserver: gitserver_grpc_error_percentage_per_method
 
-<p class="subtitle">Request rate per-method over 1m (per instance)</p>
+<p class="subtitle">Error percentage per-method over 1m</p>
 
-The number of gRPC requests received per second, broken out per method, broken out per instance.
+The percentage of gRPC requests that fail per method, aggregated across all instances.
 
 This panel has no related alerts.
 
@@ -5949,17 +5949,17 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10071
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(gitserver_grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[1m])) by (grpc_method, instance)`
+Query: `(100.0 * ( (sum(rate(gitserver_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${shard:regex}`}[1m])) by (grpc_method)) / (sum(rate(gitserver_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[1m])) by (grpc_method)) ))`
 
 </details>
 
 <br />
 
-#### gitserver: gitserver_error_percentage_all_methods_aggregate
+#### gitserver: gitserver_p99_response_time_per_method
 
-<p class="subtitle">Error percentage across all methods over 1m (aggregate)</p>
+<p class="subtitle">99th percentile response time per method over 1m</p>
 
-The percentage of gRPC requests that fail across all methods, aggregated across all instances.
+The 99th percentile response time per method, aggregated across all instances.
 
 This panel has no related alerts.
 
@@ -5970,17 +5970,17 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10072
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(gitserver_grpc_server_handled_total{grpc_code!="OK"}[1m]))) / (sum(rate(gitserver_grpc_server_handled_total[1m]))) ))`
+Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(gitserver_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[1m])))`
 
 </details>
 
 <br />
 
-#### gitserver: gitserver_grpc_error_percentage_per_method_aggregate
+#### gitserver: gitserver_p90_response_time_per_method
 
-<p class="subtitle">Error percentage per-method over 1m (aggregate)</p>
+<p class="subtitle">90th percentile response time per method over 1m</p>
 
-The percentage of gRPC requests that fail per method, aggregated across all instances.
+The 90th percentile response time per method, aggregated across all instances.
 
 This panel has no related alerts.
 
@@ -5991,17 +5991,38 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10072
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(gitserver_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK"}[1m])) by (grpc_method)) / (sum(rate(gitserver_grpc_server_handled_total{grpc_method=~`${method:regex}`}[1m])) by (grpc_method)) ))`
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(gitserver_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[1m])))`
 
 </details>
 
 <br />
 
-#### gitserver: gitserver_error_percentage_all_methods_per_instance
+#### gitserver: gitserver_p75_response_time_per_method
 
-<p class="subtitle">Error percentage across all methods over 1m (per instance)</p>
+<p class="subtitle">75th percentile response time per method over 1m</p>
 
-The percentage of gRPC requests that fail across all methods, broken out per instance.
+The 75th percentile response time per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100722` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(gitserver_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[1m])))`
+
+</details>
+
+<br />
+
+#### gitserver: gitserver_grpc_response_stream_message_count_per_method
+
+<p class="subtitle">Average streaming response message count per-method over 1m</p>
+
+The average number of response messages sent during a streaming RPC method, broken out per method, aggregated across all instances.
 
 This panel has no related alerts.
 
@@ -6012,38 +6033,17 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10073
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(gitserver_grpc_server_handled_total{grpc_code!="OK",instance=~`${shard:regex}`}[1m])) by (instance)) / (sum(rate(gitserver_grpc_server_handled_total{instance=~`${shard:regex}`}[1m])) by (instance)) ))`
+Query: `((sum(rate(gitserver_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${shard:regex}`}[1m])) by (grpc_method))/(sum(rate(gitserver_grpc_server_started_total{grpc_type="server_stream",instance=~`${shard:regex}`}[1m])) by (grpc_method)))`
 
 </details>
 
 <br />
 
-#### gitserver: gitserver_grpc_error_rate_per_method_per_instance
+#### gitserver: gitserver_grpc_all_codes_per_method
 
-<p class="subtitle">Error rate per-method over 1m (per instance)</p>
+<p class="subtitle">Response codes rate per-method over 1m</p>
 
-The percentage of gRPC requests that fail broken out per method, broken out per instance.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100731` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `(100.0 * ( (sum(rate(gitserver_grpc_server_handled_total{grpc_code!="OK",grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[1m])) by (grpc_method, instance)) / (sum(rate(gitserver_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[1m])) by (grpc_method, instance)) ))`
-
-</details>
-
-<br />
-
-#### gitserver: gitserver_p99_response_time_all_methods_aggregate
-
-<p class="subtitle">99th percentile response time across all methods over 1m (aggregate)</p>
-
-The 99th percentile response time across all methods, aggregated across all instances.
+The rate of all generated gRPC response codes per method, aggregated across all instances.
 
 This panel has no related alerts.
 
@@ -6054,322 +6054,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10074
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum by (le, name)(rate(gitserver_grpc_server_handling_seconds_bucket[1m])))`
-
-</details>
-
-<br />
-
-#### gitserver: gitserver_p90_response_time_all_methods_aggregate
-
-<p class="subtitle">90th percentile response time across all methods over 1m (aggregate)</p>
-
-The 90th percentile response time across all methods, aggregated across all instances.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100741` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.90, sum by (le, name)(rate(gitserver_grpc_server_handling_seconds_bucket[1m])))`
-
-</details>
-
-<br />
-
-#### gitserver: gitserver_p75_response_time_all_methods_aggregate
-
-<p class="subtitle">75th percentile response time across all methods over 1m (aggregate)</p>
-
-The 75th percentile response time across all methods, aggregated across all instances.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100742` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.75, sum by (le, name)(rate(gitserver_grpc_server_handling_seconds_bucket[1m])))`
-
-</details>
-
-<br />
-
-#### gitserver: gitserver_p99_response_time_per_method_aggregate
-
-<p class="subtitle">99th percentile response time per method over 1m (aggregate)</p>
-
-The 99th percentile response time per method, aggregated across all instances.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100750` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(gitserver_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`}[1m])))`
-
-</details>
-
-<br />
-
-#### gitserver: gitserver_p90_response_time_per_method_aggregate
-
-<p class="subtitle">90th percentile response time per method over 1m (aggregate)</p>
-
-The 90th percentile response time per method, aggregated across all instances.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100751` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(gitserver_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`}[1m])))`
-
-</details>
-
-<br />
-
-#### gitserver: gitserver_p75_response_time_per_method_aggregate
-
-<p class="subtitle">75th percentile response time per method over 1m (aggregate)</p>
-
-The 75th percentile response time per method, aggregated across all instances.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100752` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(gitserver_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`}[1m])))`
-
-</details>
-
-<br />
-
-#### gitserver: gitserver_p99_response_time_all_methods_per_instance
-
-<p class="subtitle">99th percentile response time across all methods over 1m (per instance)</p>
-
-The 99th percentile response time across all methods, broken down by instance.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100760` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.99, sum by (le, name, instance)(rate(gitserver_grpc_server_handling_seconds_bucket{instance=~`${shard:regex}`}[1m])))`
-
-</details>
-
-<br />
-
-#### gitserver: gitserver_p90_response_time_all_methods_per_instance
-
-<p class="subtitle">90th percentile response time across all methods over 1m (per instance)</p>
-
-The 90th percentile response time across all methods, broken down by instance.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100761` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.90, sum by (le, name, instance)(rate(gitserver_grpc_server_handling_seconds_bucket{instance=~`${shard:regex}`}[1m])))`
-
-</details>
-
-<br />
-
-#### gitserver: gitserver_p75_response_time_all_methods_per_instance
-
-<p class="subtitle">75th percentile response time across all methods over 1m (per instance)</p>
-
-The 75th percentile response time across all methods, broken down by instance.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100762` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.75, sum by (le, name, instance)(rate(gitserver_grpc_server_handling_seconds_bucket{instance=~`${shard:regex}`}[1m])))`
-
-</details>
-
-<br />
-
-#### gitserver: gitserver_p99_response_time_per_method_per_instance
-
-<p class="subtitle">99th percentile response time per method over 1m (per instance)</p>
-
-The 99th percentile response time per method, broken down by instance.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100770` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.99, sum by (le, name, grpc_method, instance)(rate(gitserver_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[1m])))`
-
-</details>
-
-<br />
-
-#### gitserver: gitserver_p90_response_time_per_method_per_instance
-
-<p class="subtitle">90th percentile response time per method over 1m (per instance)</p>
-
-The 90th percentile response time per method, broken down by instance.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100771` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.90, sum by (le, name, grpc_method, instance)(rate(gitserver_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[1m])))`
-
-</details>
-
-<br />
-
-#### gitserver: gitserver_p75_response_time_per_method_per_instance
-
-<p class="subtitle">75th percentile response time per method over 1m (per instance)</p>
-
-The 75th percentile response time per method, broken down by instance.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100772` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.75, sum by (le, name, grpc_method, instance)(rate(gitserver_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[1m])))`
-
-</details>
-
-<br />
-
-#### gitserver: gitserver_grpc_response_stream_size_per_method_aggregate
-
-<p class="subtitle">Average response stream size per-method over 1m (aggregate)</p>
-
-The average number of response messages sent during a streaming RPC method, broken out per method, aggregated across all instances.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100780` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `((sum(rate(gitserver_grpc_server_msg_sent_total{grpc_type="server_stream"}[1m])) by (grpc_method))/(sum(rate(gitserver_grpc_server_started_total{grpc_type="server_stream"}[1m])) by (grpc_method)))`
-
-</details>
-
-<br />
-
-#### gitserver: gitserver_grpc_response_stream_size_per_method_per_instance
-
-<p class="subtitle">Average response stream size per-method over 1m (per instance)</p>
-
-The average number of response messages sent during a streaming RPC method, broken out per method, broken out per instance.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100781` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `((sum(rate(gitserver_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${shard:regex}`}[1m])) by (grpc_method, instance))/(sum(rate(gitserver_grpc_server_started_total{grpc_type="server_stream",instance=~`${shard:regex}`}[1m])) by (grpc_method, instance)))`
-
-</details>
-
-<br />
-
-#### gitserver: gitserver_grpc_all_codes_per_method_aggregate
-
-<p class="subtitle">Response codes rate per-method over 1m (aggregate)</p>
-
-The rate of all generated gRPC response codes per method, aggregated across all instances.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100790` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(rate(gitserver_grpc_server_handled_total{grpc_method=~`${method:regex}`}[1m])) by (grpc_method, grpc_code)`
-
-</details>
-
-<br />
-
-#### gitserver: gitserver_grpc_all_codes_per_method_per_instance
-
-<p class="subtitle">Response codes rate per-method over 1m (per instance)</p>
-
-The rate of all generated gRPC response codes per method, broken down by instance.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100791` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(rate(gitserver_grpc_server_handled_total{instance=~`${shard:regex}`,grpc_method=~`${method:regex}`}[1m])) by (grpc_method, grpc_code, instance)`
+Query: `sum(rate(gitserver_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[1m])) by (grpc_method, grpc_code)`
 
 </details>
 
@@ -15115,9 +14800,9 @@ Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",inst
 
 ### Searcher: GRPC server metrics
 
-#### searcher: searcher_grpc_request_rate_all_methods_aggregate
+#### searcher: searcher_grpc_request_rate_all_methods
 
-<p class="subtitle">Request rate across all methods over 1m (aggregate)</p>
+<p class="subtitle">Request rate across all methods over 1m</p>
 
 The number of gRPC requests received per second across all methods, aggregated across all instances.
 
@@ -15130,15 +14815,15 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100300`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(searcher_grpc_server_started_total[1m]))`
+Query: `sum(rate(searcher_grpc_server_started_total{instance=~`${instance:regex}`}[1m]))`
 
 </details>
 
 <br />
 
-#### searcher: searcher_grpc_request_rate_per_method_aggregate
+#### searcher: searcher_grpc_request_rate_per_method
 
-<p class="subtitle">Request rate per-method over 1m (aggregate)</p>
+<p class="subtitle">Request rate per-method over 1m</p>
 
 The number of gRPC requests received per second broken out per method, aggregated across all instances.
 
@@ -15151,17 +14836,17 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100301`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(searcher_grpc_server_started_total{grpc_method=~`${method:regex}`}[1m])) by (grpc_method)`
+Query: `sum(rate(searcher_grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method)`
 
 </details>
 
 <br />
 
-#### searcher: searcher_grpc_request_rate_overall_per_instance
+#### searcher: searcher_error_percentage_all_methods
 
-<p class="subtitle">Request rate across all methods over 1m (per instance)</p>
+<p class="subtitle">Error percentage across all methods over 1m</p>
 
-The number of gRPC requests received per second, aggregated across all methods, broken out per instance.
+The percentage of gRPC requests that fail across all methods, aggregated across all instances.
 
 This panel has no related alerts.
 
@@ -15172,17 +14857,17 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100310`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(searcher_grpc_server_started_total{instance=~`${instance:regex}`}[1m])) by (instance)`
+Query: `(100.0 * ( (sum(rate(searcher_grpc_server_handled_total{grpc_code!="OK",instance=~`${instance:regex}`}[1m]))) / (sum(rate(searcher_grpc_server_handled_total{instance=~`${instance:regex}`}[1m]))) ))`
 
 </details>
 
 <br />
 
-#### searcher: searcher_grpc_request_rate_per_method_per_instance
+#### searcher: searcher_grpc_error_percentage_per_method
 
-<p class="subtitle">Request rate per-method over 1m (per instance)</p>
+<p class="subtitle">Error percentage per-method over 1m</p>
 
-The number of gRPC requests received per second, broken out per method, broken out per instance.
+The percentage of gRPC requests that fail per method, aggregated across all instances.
 
 This panel has no related alerts.
 
@@ -15193,17 +14878,17 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100311`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(searcher_grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method, instance)`
+Query: `(100.0 * ( (sum(rate(searcher_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${instance:regex}`}[1m])) by (grpc_method)) / (sum(rate(searcher_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method)) ))`
 
 </details>
 
 <br />
 
-#### searcher: searcher_error_percentage_all_methods_aggregate
+#### searcher: searcher_p99_response_time_per_method
 
-<p class="subtitle">Error percentage across all methods over 1m (aggregate)</p>
+<p class="subtitle">99th percentile response time per method over 1m</p>
 
-The percentage of gRPC requests that fail across all methods, aggregated across all instances.
+The 99th percentile response time per method, aggregated across all instances.
 
 This panel has no related alerts.
 
@@ -15214,17 +14899,17 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100320`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(searcher_grpc_server_handled_total{grpc_code!="OK"}[1m]))) / (sum(rate(searcher_grpc_server_handled_total[1m]))) ))`
+Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(searcher_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])))`
 
 </details>
 
 <br />
 
-#### searcher: searcher_grpc_error_percentage_per_method_aggregate
+#### searcher: searcher_p90_response_time_per_method
 
-<p class="subtitle">Error percentage per-method over 1m (aggregate)</p>
+<p class="subtitle">90th percentile response time per method over 1m</p>
 
-The percentage of gRPC requests that fail per method, aggregated across all instances.
+The 90th percentile response time per method, aggregated across all instances.
 
 This panel has no related alerts.
 
@@ -15235,17 +14920,38 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100321`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(searcher_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK"}[1m])) by (grpc_method)) / (sum(rate(searcher_grpc_server_handled_total{grpc_method=~`${method:regex}`}[1m])) by (grpc_method)) ))`
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(searcher_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])))`
 
 </details>
 
 <br />
 
-#### searcher: searcher_error_percentage_all_methods_per_instance
+#### searcher: searcher_p75_response_time_per_method
 
-<p class="subtitle">Error percentage across all methods over 1m (per instance)</p>
+<p class="subtitle">75th percentile response time per method over 1m</p>
 
-The percentage of gRPC requests that fail across all methods, broken out per instance.
+The 75th percentile response time per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100322` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(searcher_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])))`
+
+</details>
+
+<br />
+
+#### searcher: searcher_grpc_response_stream_message_count_per_method
+
+<p class="subtitle">Average streaming response message count per-method over 1m</p>
+
+The average number of response messages sent during a streaming RPC method, broken out per method, aggregated across all instances.
 
 This panel has no related alerts.
 
@@ -15256,38 +14962,17 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100330`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(searcher_grpc_server_handled_total{grpc_code!="OK",instance=~`${instance:regex}`}[1m])) by (instance)) / (sum(rate(searcher_grpc_server_handled_total{instance=~`${instance:regex}`}[1m])) by (instance)) ))`
+Query: `((sum(rate(searcher_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${instance:regex}`}[1m])) by (grpc_method))/(sum(rate(searcher_grpc_server_started_total{grpc_type="server_stream",instance=~`${instance:regex}`}[1m])) by (grpc_method)))`
 
 </details>
 
 <br />
 
-#### searcher: searcher_grpc_error_rate_per_method_per_instance
+#### searcher: searcher_grpc_all_codes_per_method
 
-<p class="subtitle">Error rate per-method over 1m (per instance)</p>
+<p class="subtitle">Response codes rate per-method over 1m</p>
 
-The percentage of gRPC requests that fail broken out per method, broken out per instance.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100331` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `(100.0 * ( (sum(rate(searcher_grpc_server_handled_total{grpc_code!="OK",grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method, instance)) / (sum(rate(searcher_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method, instance)) ))`
-
-</details>
-
-<br />
-
-#### searcher: searcher_p99_response_time_all_methods_aggregate
-
-<p class="subtitle">99th percentile response time across all methods over 1m (aggregate)</p>
-
-The 99th percentile response time across all methods, aggregated across all instances.
+The rate of all generated gRPC response codes per method, aggregated across all instances.
 
 This panel has no related alerts.
 
@@ -15298,322 +14983,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100340`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum by (le, name)(rate(searcher_grpc_server_handling_seconds_bucket[1m])))`
-
-</details>
-
-<br />
-
-#### searcher: searcher_p90_response_time_all_methods_aggregate
-
-<p class="subtitle">90th percentile response time across all methods over 1m (aggregate)</p>
-
-The 90th percentile response time across all methods, aggregated across all instances.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100341` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.90, sum by (le, name)(rate(searcher_grpc_server_handling_seconds_bucket[1m])))`
-
-</details>
-
-<br />
-
-#### searcher: searcher_p75_response_time_all_methods_aggregate
-
-<p class="subtitle">75th percentile response time across all methods over 1m (aggregate)</p>
-
-The 75th percentile response time across all methods, aggregated across all instances.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100342` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.75, sum by (le, name)(rate(searcher_grpc_server_handling_seconds_bucket[1m])))`
-
-</details>
-
-<br />
-
-#### searcher: searcher_p99_response_time_per_method_aggregate
-
-<p class="subtitle">99th percentile response time per method over 1m (aggregate)</p>
-
-The 99th percentile response time per method, aggregated across all instances.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100350` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(searcher_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`}[1m])))`
-
-</details>
-
-<br />
-
-#### searcher: searcher_p90_response_time_per_method_aggregate
-
-<p class="subtitle">90th percentile response time per method over 1m (aggregate)</p>
-
-The 90th percentile response time per method, aggregated across all instances.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100351` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(searcher_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`}[1m])))`
-
-</details>
-
-<br />
-
-#### searcher: searcher_p75_response_time_per_method_aggregate
-
-<p class="subtitle">75th percentile response time per method over 1m (aggregate)</p>
-
-The 75th percentile response time per method, aggregated across all instances.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100352` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(searcher_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`}[1m])))`
-
-</details>
-
-<br />
-
-#### searcher: searcher_p99_response_time_all_methods_per_instance
-
-<p class="subtitle">99th percentile response time across all methods over 1m (per instance)</p>
-
-The 99th percentile response time across all methods, broken down by instance.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100360` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.99, sum by (le, name, instance)(rate(searcher_grpc_server_handling_seconds_bucket{instance=~`${instance:regex}`}[1m])))`
-
-</details>
-
-<br />
-
-#### searcher: searcher_p90_response_time_all_methods_per_instance
-
-<p class="subtitle">90th percentile response time across all methods over 1m (per instance)</p>
-
-The 90th percentile response time across all methods, broken down by instance.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100361` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.90, sum by (le, name, instance)(rate(searcher_grpc_server_handling_seconds_bucket{instance=~`${instance:regex}`}[1m])))`
-
-</details>
-
-<br />
-
-#### searcher: searcher_p75_response_time_all_methods_per_instance
-
-<p class="subtitle">75th percentile response time across all methods over 1m (per instance)</p>
-
-The 75th percentile response time across all methods, broken down by instance.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100362` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.75, sum by (le, name, instance)(rate(searcher_grpc_server_handling_seconds_bucket{instance=~`${instance:regex}`}[1m])))`
-
-</details>
-
-<br />
-
-#### searcher: searcher_p99_response_time_per_method_per_instance
-
-<p class="subtitle">99th percentile response time per method over 1m (per instance)</p>
-
-The 99th percentile response time per method, broken down by instance.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100370` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.99, sum by (le, name, grpc_method, instance)(rate(searcher_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])))`
-
-</details>
-
-<br />
-
-#### searcher: searcher_p90_response_time_per_method_per_instance
-
-<p class="subtitle">90th percentile response time per method over 1m (per instance)</p>
-
-The 90th percentile response time per method, broken down by instance.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100371` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.90, sum by (le, name, grpc_method, instance)(rate(searcher_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])))`
-
-</details>
-
-<br />
-
-#### searcher: searcher_p75_response_time_per_method_per_instance
-
-<p class="subtitle">75th percentile response time per method over 1m (per instance)</p>
-
-The 75th percentile response time per method, broken down by instance.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100372` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.75, sum by (le, name, grpc_method, instance)(rate(searcher_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])))`
-
-</details>
-
-<br />
-
-#### searcher: searcher_grpc_response_stream_size_per_method_aggregate
-
-<p class="subtitle">Average response stream size per-method over 1m (aggregate)</p>
-
-The average number of response messages sent during a streaming RPC method, broken out per method, aggregated across all instances.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100380` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `((sum(rate(searcher_grpc_server_msg_sent_total{grpc_type="server_stream"}[1m])) by (grpc_method))/(sum(rate(searcher_grpc_server_started_total{grpc_type="server_stream"}[1m])) by (grpc_method)))`
-
-</details>
-
-<br />
-
-#### searcher: searcher_grpc_response_stream_size_per_method_per_instance
-
-<p class="subtitle">Average response stream size per-method over 1m (per instance)</p>
-
-The average number of response messages sent during a streaming RPC method, broken out per method, broken out per instance.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100381` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `((sum(rate(searcher_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${instance:regex}`}[1m])) by (grpc_method, instance))/(sum(rate(searcher_grpc_server_started_total{grpc_type="server_stream",instance=~`${instance:regex}`}[1m])) by (grpc_method, instance)))`
-
-</details>
-
-<br />
-
-#### searcher: searcher_grpc_all_codes_per_method_aggregate
-
-<p class="subtitle">Response codes rate per-method over 1m (aggregate)</p>
-
-The rate of all generated gRPC response codes per method, aggregated across all instances.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100390` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(rate(searcher_grpc_server_handled_total{grpc_method=~`${method:regex}`}[1m])) by (grpc_method, grpc_code)`
-
-</details>
-
-<br />
-
-#### searcher: searcher_grpc_all_codes_per_method_per_instance
-
-<p class="subtitle">Response codes rate per-method over 1m (per instance)</p>
-
-The rate of all generated gRPC response codes per method, broken down by instance.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100391` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(rate(searcher_grpc_server_handled_total{instance=~`${instance:regex}`,grpc_method=~`${method:regex}`}[1m])) by (grpc_method, grpc_code, instance)`
+Query: `sum(rate(searcher_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method, grpc_code)`
 
 </details>
 
@@ -16851,9 +16221,9 @@ Query: `sum by (op)(increase(src_codeintel_symbols_gitserver_errors_total{job=~"
 
 ### Symbols: GRPC server metrics
 
-#### symbols: symbols_grpc_request_rate_all_methods_aggregate
+#### symbols: symbols_grpc_request_rate_all_methods
 
-<p class="subtitle">Request rate across all methods over 1m (aggregate)</p>
+<p class="subtitle">Request rate across all methods over 1m</p>
 
 The number of gRPC requests received per second across all methods, aggregated across all instances.
 
@@ -16866,15 +16236,15 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100500` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(symbols_grpc_server_started_total[1m]))`
+Query: `sum(rate(symbols_grpc_server_started_total{instance=~`${instance:regex}`}[1m]))`
 
 </details>
 
 <br />
 
-#### symbols: symbols_grpc_request_rate_per_method_aggregate
+#### symbols: symbols_grpc_request_rate_per_method
 
-<p class="subtitle">Request rate per-method over 1m (aggregate)</p>
+<p class="subtitle">Request rate per-method over 1m</p>
 
 The number of gRPC requests received per second broken out per method, aggregated across all instances.
 
@@ -16887,17 +16257,17 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100501` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(symbols_grpc_server_started_total{grpc_method=~`${method:regex}`}[1m])) by (grpc_method)`
+Query: `sum(rate(symbols_grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method)`
 
 </details>
 
 <br />
 
-#### symbols: symbols_grpc_request_rate_overall_per_instance
+#### symbols: symbols_error_percentage_all_methods
 
-<p class="subtitle">Request rate across all methods over 1m (per instance)</p>
+<p class="subtitle">Error percentage across all methods over 1m</p>
 
-The number of gRPC requests received per second, aggregated across all methods, broken out per instance.
+The percentage of gRPC requests that fail across all methods, aggregated across all instances.
 
 This panel has no related alerts.
 
@@ -16908,17 +16278,17 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100510` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(symbols_grpc_server_started_total{instance=~`${instance:regex}`}[1m])) by (instance)`
+Query: `(100.0 * ( (sum(rate(symbols_grpc_server_handled_total{grpc_code!="OK",instance=~`${instance:regex}`}[1m]))) / (sum(rate(symbols_grpc_server_handled_total{instance=~`${instance:regex}`}[1m]))) ))`
 
 </details>
 
 <br />
 
-#### symbols: symbols_grpc_request_rate_per_method_per_instance
+#### symbols: symbols_grpc_error_percentage_per_method
 
-<p class="subtitle">Request rate per-method over 1m (per instance)</p>
+<p class="subtitle">Error percentage per-method over 1m</p>
 
-The number of gRPC requests received per second, broken out per method, broken out per instance.
+The percentage of gRPC requests that fail per method, aggregated across all instances.
 
 This panel has no related alerts.
 
@@ -16929,17 +16299,17 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100511` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(symbols_grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method, instance)`
+Query: `(100.0 * ( (sum(rate(symbols_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${instance:regex}`}[1m])) by (grpc_method)) / (sum(rate(symbols_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method)) ))`
 
 </details>
 
 <br />
 
-#### symbols: symbols_error_percentage_all_methods_aggregate
+#### symbols: symbols_p99_response_time_per_method
 
-<p class="subtitle">Error percentage across all methods over 1m (aggregate)</p>
+<p class="subtitle">99th percentile response time per method over 1m</p>
 
-The percentage of gRPC requests that fail across all methods, aggregated across all instances.
+The 99th percentile response time per method, aggregated across all instances.
 
 This panel has no related alerts.
 
@@ -16950,17 +16320,17 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100520` o
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(symbols_grpc_server_handled_total{grpc_code!="OK"}[1m]))) / (sum(rate(symbols_grpc_server_handled_total[1m]))) ))`
+Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(symbols_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])))`
 
 </details>
 
 <br />
 
-#### symbols: symbols_grpc_error_percentage_per_method_aggregate
+#### symbols: symbols_p90_response_time_per_method
 
-<p class="subtitle">Error percentage per-method over 1m (aggregate)</p>
+<p class="subtitle">90th percentile response time per method over 1m</p>
 
-The percentage of gRPC requests that fail per method, aggregated across all instances.
+The 90th percentile response time per method, aggregated across all instances.
 
 This panel has no related alerts.
 
@@ -16971,17 +16341,38 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100521` o
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(symbols_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK"}[1m])) by (grpc_method)) / (sum(rate(symbols_grpc_server_handled_total{grpc_method=~`${method:regex}`}[1m])) by (grpc_method)) ))`
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(symbols_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])))`
 
 </details>
 
 <br />
 
-#### symbols: symbols_error_percentage_all_methods_per_instance
+#### symbols: symbols_p75_response_time_per_method
 
-<p class="subtitle">Error percentage across all methods over 1m (per instance)</p>
+<p class="subtitle">75th percentile response time per method over 1m</p>
 
-The percentage of gRPC requests that fail across all methods, broken out per instance.
+The 75th percentile response time per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100522` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(symbols_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])))`
+
+</details>
+
+<br />
+
+#### symbols: symbols_grpc_response_stream_message_count_per_method
+
+<p class="subtitle">Average streaming response message count per-method over 1m</p>
+
+The average number of response messages sent during a streaming RPC method, broken out per method, aggregated across all instances.
 
 This panel has no related alerts.
 
@@ -16992,38 +16383,17 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100530` o
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(symbols_grpc_server_handled_total{grpc_code!="OK",instance=~`${instance:regex}`}[1m])) by (instance)) / (sum(rate(symbols_grpc_server_handled_total{instance=~`${instance:regex}`}[1m])) by (instance)) ))`
+Query: `((sum(rate(symbols_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${instance:regex}`}[1m])) by (grpc_method))/(sum(rate(symbols_grpc_server_started_total{grpc_type="server_stream",instance=~`${instance:regex}`}[1m])) by (grpc_method)))`
 
 </details>
 
 <br />
 
-#### symbols: symbols_grpc_error_rate_per_method_per_instance
+#### symbols: symbols_grpc_all_codes_per_method
 
-<p class="subtitle">Error rate per-method over 1m (per instance)</p>
+<p class="subtitle">Response codes rate per-method over 1m</p>
 
-The percentage of gRPC requests that fail broken out per method, broken out per instance.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100531` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `(100.0 * ( (sum(rate(symbols_grpc_server_handled_total{grpc_code!="OK",grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method, instance)) / (sum(rate(symbols_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method, instance)) ))`
-
-</details>
-
-<br />
-
-#### symbols: symbols_p99_response_time_all_methods_aggregate
-
-<p class="subtitle">99th percentile response time across all methods over 1m (aggregate)</p>
-
-The 99th percentile response time across all methods, aggregated across all instances.
+The rate of all generated gRPC response codes per method, aggregated across all instances.
 
 This panel has no related alerts.
 
@@ -17034,322 +16404,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100540` o
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum by (le, name)(rate(symbols_grpc_server_handling_seconds_bucket[1m])))`
-
-</details>
-
-<br />
-
-#### symbols: symbols_p90_response_time_all_methods_aggregate
-
-<p class="subtitle">90th percentile response time across all methods over 1m (aggregate)</p>
-
-The 90th percentile response time across all methods, aggregated across all instances.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100541` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.90, sum by (le, name)(rate(symbols_grpc_server_handling_seconds_bucket[1m])))`
-
-</details>
-
-<br />
-
-#### symbols: symbols_p75_response_time_all_methods_aggregate
-
-<p class="subtitle">75th percentile response time across all methods over 1m (aggregate)</p>
-
-The 75th percentile response time across all methods, aggregated across all instances.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100542` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.75, sum by (le, name)(rate(symbols_grpc_server_handling_seconds_bucket[1m])))`
-
-</details>
-
-<br />
-
-#### symbols: symbols_p99_response_time_per_method_aggregate
-
-<p class="subtitle">99th percentile response time per method over 1m (aggregate)</p>
-
-The 99th percentile response time per method, aggregated across all instances.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100550` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(symbols_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`}[1m])))`
-
-</details>
-
-<br />
-
-#### symbols: symbols_p90_response_time_per_method_aggregate
-
-<p class="subtitle">90th percentile response time per method over 1m (aggregate)</p>
-
-The 90th percentile response time per method, aggregated across all instances.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100551` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(symbols_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`}[1m])))`
-
-</details>
-
-<br />
-
-#### symbols: symbols_p75_response_time_per_method_aggregate
-
-<p class="subtitle">75th percentile response time per method over 1m (aggregate)</p>
-
-The 75th percentile response time per method, aggregated across all instances.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100552` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(symbols_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`}[1m])))`
-
-</details>
-
-<br />
-
-#### symbols: symbols_p99_response_time_all_methods_per_instance
-
-<p class="subtitle">99th percentile response time across all methods over 1m (per instance)</p>
-
-The 99th percentile response time across all methods, broken down by instance.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100560` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.99, sum by (le, name, instance)(rate(symbols_grpc_server_handling_seconds_bucket{instance=~`${instance:regex}`}[1m])))`
-
-</details>
-
-<br />
-
-#### symbols: symbols_p90_response_time_all_methods_per_instance
-
-<p class="subtitle">90th percentile response time across all methods over 1m (per instance)</p>
-
-The 90th percentile response time across all methods, broken down by instance.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100561` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.90, sum by (le, name, instance)(rate(symbols_grpc_server_handling_seconds_bucket{instance=~`${instance:regex}`}[1m])))`
-
-</details>
-
-<br />
-
-#### symbols: symbols_p75_response_time_all_methods_per_instance
-
-<p class="subtitle">75th percentile response time across all methods over 1m (per instance)</p>
-
-The 75th percentile response time across all methods, broken down by instance.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100562` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.75, sum by (le, name, instance)(rate(symbols_grpc_server_handling_seconds_bucket{instance=~`${instance:regex}`}[1m])))`
-
-</details>
-
-<br />
-
-#### symbols: symbols_p99_response_time_per_method_per_instance
-
-<p class="subtitle">99th percentile response time per method over 1m (per instance)</p>
-
-The 99th percentile response time per method, broken down by instance.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100570` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.99, sum by (le, name, grpc_method, instance)(rate(symbols_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])))`
-
-</details>
-
-<br />
-
-#### symbols: symbols_p90_response_time_per_method_per_instance
-
-<p class="subtitle">90th percentile response time per method over 1m (per instance)</p>
-
-The 90th percentile response time per method, broken down by instance.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100571` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.90, sum by (le, name, grpc_method, instance)(rate(symbols_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])))`
-
-</details>
-
-<br />
-
-#### symbols: symbols_p75_response_time_per_method_per_instance
-
-<p class="subtitle">75th percentile response time per method over 1m (per instance)</p>
-
-The 75th percentile response time per method, broken down by instance.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100572` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.75, sum by (le, name, grpc_method, instance)(rate(symbols_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])))`
-
-</details>
-
-<br />
-
-#### symbols: symbols_grpc_response_stream_size_per_method_aggregate
-
-<p class="subtitle">Average response stream size per-method over 1m (aggregate)</p>
-
-The average number of response messages sent during a streaming RPC method, broken out per method, aggregated across all instances.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100580` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `((sum(rate(symbols_grpc_server_msg_sent_total{grpc_type="server_stream"}[1m])) by (grpc_method))/(sum(rate(symbols_grpc_server_started_total{grpc_type="server_stream"}[1m])) by (grpc_method)))`
-
-</details>
-
-<br />
-
-#### symbols: symbols_grpc_response_stream_size_per_method_per_instance
-
-<p class="subtitle">Average response stream size per-method over 1m (per instance)</p>
-
-The average number of response messages sent during a streaming RPC method, broken out per method, broken out per instance.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100581` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `((sum(rate(symbols_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${instance:regex}`}[1m])) by (grpc_method, instance))/(sum(rate(symbols_grpc_server_started_total{grpc_type="server_stream",instance=~`${instance:regex}`}[1m])) by (grpc_method, instance)))`
-
-</details>
-
-<br />
-
-#### symbols: symbols_grpc_all_codes_per_method_aggregate
-
-<p class="subtitle">Response codes rate per-method over 1m (aggregate)</p>
-
-The rate of all generated gRPC response codes per method, aggregated across all instances.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100590` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(rate(symbols_grpc_server_handled_total{grpc_method=~`${method:regex}`}[1m])) by (grpc_method, grpc_code)`
-
-</details>
-
-<br />
-
-#### symbols: symbols_grpc_all_codes_per_method_per_instance
-
-<p class="subtitle">Response codes rate per-method over 1m (per instance)</p>
-
-The rate of all generated gRPC response codes per method, broken down by instance.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100591` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(rate(symbols_grpc_server_handled_total{instance=~`${instance:regex}`,grpc_method=~`${method:regex}`}[1m])) by (grpc_method, grpc_code, instance)`
+Query: `sum(rate(symbols_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method, grpc_code)`
 
 </details>
 
