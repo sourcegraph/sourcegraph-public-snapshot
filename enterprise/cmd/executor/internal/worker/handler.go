@@ -87,13 +87,21 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 		}
 	}()
 
-	// For backwards compatibility. If no runtime mode is provided, then use the old handler.
-	if len(job.RuntimeMode) == 0 {
+	// src-cli steps do not work in the new runtime environment.
+	// Remove this when native SSBC is complete.
+	if len(job.CliSteps) > 0 {
+		logger.Debug("Handling src-cli steps")
 		return h.handle(ctx, logger, commandLogger, job)
 	}
 
-	jobRuntime, err := runtime.GetRuntime(job.RuntimeMode)
+	jobRuntime, err := runtime.GetRuntime()
 	if err != nil {
+		// For backwards compatibility. If no runtime mode is provided, then use the old handler.
+		// TODO: remove when firecracker support has been added.
+		if errors.Is(err, runtime.ErrNoRuntime) {
+			logger.Debug("Runtime not configured. Falling back to legacy handler")
+			return h.handle(ctx, logger, commandLogger, job)
+		}
 		return err
 	}
 
