@@ -12,6 +12,7 @@ import { GitCommitNodeByline } from './GitCommitNodeByline'
 
 import styles from './GitCommitNode.module.scss'
 import { GitCommitNodeProps } from './GitCommitNode'
+import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
 
 export const GitCommitNodeTableRow: React.FC<
     Omit<
@@ -23,7 +24,14 @@ export const GitCommitNodeTableRow: React.FC<
         | 'onHandleDiffMode'
         | 'diffMode'
     >
-> = ({ node, className, expandCommitMessageBody, hideExpandCommitMessageBody, messageSubjectClassName }) => {
+> = ({
+    node,
+    className,
+    expandCommitMessageBody,
+    hideExpandCommitMessageBody,
+    messageSubjectClassName,
+    externalURLs,
+}) => {
     const [showCommitMessageBody, setShowCommitMessageBody] = useState<boolean>(false)
 
     const toggleShowCommitMessageBody = useCallback((): void => {
@@ -33,13 +41,14 @@ export const GitCommitNodeTableRow: React.FC<
 
     const messageElement = (
         <div className={classNames(styles.message, styles.messageSmall)} data-testid="git-commit-node-message">
-            <Link
-                to={node.canonicalURL}
-                className={classNames(messageSubjectClassName, styles.messageSubject)}
-                data-testid="git-commit-node-message-subject"
-            >
-                {node.subject}
-            </Link>
+            <span className={classNames('mr-2', styles.messageSubject)}>
+                <CommitMessageWithLinks
+                    to={node.canonicalURL}
+                    className={classNames(messageSubjectClassName, styles.messageLink)}
+                    message={node.subject}
+                    externalURLs={externalURLs}
+                />
+            </span>
             {node.body && !hideExpandCommitMessageBody && !expandCommitMessageBody && (
                 <Button
                     className={styles.messageToggle}
@@ -70,12 +79,12 @@ export const GitCommitNodeTableRow: React.FC<
     return (
         <>
             <tr
-                className={classNames(styles.tableRow, className)}
+                className={classNames(styles.tableRow, 'px-1', className)}
                 style={commitMessageBody !== undefined ? { borderBottom: 0 } : {}}
             >
                 <GitCommitNodeByline
                     wrapperElement="td"
-                    className={classNames('d-flex text-muted', styles.colByline)}
+                    className={classNames('d-flex', styles.colByline)}
                     avatarClassName={styles.fontWeightNormal}
                     author={node.author}
                     committer={node.committer}

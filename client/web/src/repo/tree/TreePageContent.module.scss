@@ -46,13 +46,12 @@
     padding: 0.25rem 0;
 
     &-message-subject {
-        opacity: 0.9;
         font-weight: normal;
     }
 
-    :global(.btn) {
-        opacity: 0.85;
-    }
+    // :global(.btn) {
+    //     opacity: 0.85;
+    // }
 }
 
 .table {

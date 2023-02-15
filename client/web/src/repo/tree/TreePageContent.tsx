@@ -44,13 +44,14 @@ import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
 import { UserAvatar } from '../../user/UserAvatar'
 import { GitCommitNodeTableRow } from '../commits/GitCommitNodeTableRow'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
-import { BATCH_COUNT } from '../RepositoriesPopover'
 
 import { DiffStat, FilesCard, ReadmePreviewCard } from './TreePagePanels'
 
 import styles from './TreePageContent.module.scss'
 import contributorsStyles from './TreePageContentContributors.module.scss'
 import panelStyles from './TreePagePanels.module.scss'
+
+const COUNT = 20
 
 export interface TreeCommitsResponse {
     ancestors: NonNullable<Extract<TreeCommitsResult['node'], { __typename: 'Repository' }>['commit']>['ancestors']
@@ -289,7 +290,7 @@ const Contributors: React.FC<ContributorsProps> = ({ repo, filePath }) => {
         TreePageRepositoryContributorsVariables
     >(CONTRIBUTORS_QUERY, {
         variables: {
-            first: 20,
+            first: COUNT,
             repo: repo.id,
             revisionRange: spec.revisionRange,
             afterDate: spec.after,
@@ -331,7 +332,7 @@ const Contributors: React.FC<ContributorsProps> = ({ repo, filePath }) => {
                         <ConnectionSummary
                             compact={true}
                             connection={connection}
-                            first={BATCH_COUNT}
+                            first={COUNT}
                             noun="contributor"
                             pluralNoun="contributors"
                             hasNextPage={connection.pageInfo.hasNextPage}
@@ -435,7 +436,7 @@ const Commits: React.FC<CommitsProps> = ({ repo, revision, filePath, tree }) => 
     const after: string = useMemo(() => formatISO(subYears(Date.now(), 1)), [])
     const { data, error, loading } = useQuery<TreeCommitsResult, TreeCommitsVariables>(COMMITS_QUERY, {
         variables: {
-            first: 20,
+            first: COUNT,
             repo: repo.id,
             revspec: revision || '',
             after,
@@ -474,14 +475,16 @@ const Commits: React.FC<CommitsProps> = ({ repo, revision, filePath, tree }) => 
             <SummaryContainer className={styles.tableSummary}>
                 {connection && (
                     <>
-                        <ConnectionSummary
-                            compact={true}
-                            connection={connection}
-                            first={BATCH_COUNT}
-                            noun="commits in the past year"
-                            pluralNoun="commits in the past year"
-                            hasNextPage={connection.pageInfo.hasNextPage}
-                        />
+                        <small className="text-muted">
+                            <span>
+                                Showing latest {connection.nodes.length}
+                                {pluralize(
+                                    'commit of the past year',
+                                    connection.nodes.length,
+                                    'commits of the past year'
+                                )}
+                            </span>
+                        </small>
                         <small>
                             <Link to={`${tree.url}/-/commits`}>
                                 Show {connection.pageInfo.hasNextPage ? 'more' : 'all'}
