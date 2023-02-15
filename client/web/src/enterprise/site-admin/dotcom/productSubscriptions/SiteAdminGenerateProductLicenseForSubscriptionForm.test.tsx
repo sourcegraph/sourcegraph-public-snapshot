@@ -2,15 +2,12 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SiteAdminGenerateProductLicenseForSubscriptionForm } from './SiteAdminGenerateProductLicenseForSubscriptionForm'
+import { mockLicenseContext } from './testUtils'
 
 describe('SiteAdminGenerateProductLicenseForSubscriptionForm', () => {
     const origContext = window.context
     beforeEach(() => {
-        window.context = {
-            licenseInfo: {
-                knownLicenseTags: ['plan:enterprise-1', 'batch-changes', 'true-up', 'trial'],
-            },
-        } as any
+        window.context = mockLicenseContext
     })
     afterEach(() => {
         window.context = origContext
