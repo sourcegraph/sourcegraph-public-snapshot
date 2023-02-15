@@ -292,6 +292,8 @@ type Changeset struct {
 	NumFailures      int64
 	SyncErrorMessage *string
 
+	PreviousFailureMessage *string
+
 	// Closing is set to true (along with the ReocncilerState) when the
 	// reconciler should close the changeset.
 	Closing bool

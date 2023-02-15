@@ -355,7 +355,13 @@ func (r *changesetResolver) CheckState() *string {
 	return &checkState
 }
 
-func (r *changesetResolver) Error() *string { return r.changeset.FailureMessage }
+func (r *changesetResolver) Error() *string {
+	if r.changeset.FailureMessage != nil {
+		return r.changeset.FailureMessage
+	} else {
+		return r.changeset.PreviousFailureMessage
+	}
+}
 
 func (r *changesetResolver) SyncerError() *string { return r.changeset.SyncErrorMessage }
 
