@@ -51,8 +51,6 @@ For other options, please refer to [the Windows specific `src` documentation](ex
 
 Once complete, you should have two new environment variables set: `SRC_ENDPOINT` and `SRC_ACCESS_TOKEN`.
 
-> NOTE: If you are running `src login` through a proxy, you may have further requirements. Contact support at support@sourcegraph.com
-
 ## Run a code search
 
 Searching is performed using the [`src search`](references/search.md) command. For example, to search for `ResolveRepositories` in the `src` repository, you can run:
@@ -72,3 +70,21 @@ You've run your first search from the command line! 🎉🎉
 You can now explore the [range of commands `src` provides](references/index.md), including the extensive support for [batch changes](../../batch_changes/index.md).
 
 To learn what else you can do with `src`, see "[CLI](index.md)" in the Sourcegraph documentation.
+
+## Troubleshooting
+If you run into authentication issues, the `frontend` container is the best place to check for useful logs. 
+
+### Gzip Error on Apache Proxies
+If you are running `src login` through an apache proxy, you may run into the following error in your frontend logs:
+```bash
+"error":"gzip: invalid header"
+```
+Please check your `httpd.conf` for the following:
+```
+<Location>
+  ... 
+  SetInputFilter DEFLATE
+  ...
+</Location>
+```
+If this is present, you will need to delete this line. If not, it will result in sending an unexpected response back to `src`, which will, in turn, be rejected. 
