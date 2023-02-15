@@ -16,7 +16,7 @@ A [standard upgrade](../../updates/index.md#standard-upgrades) occurs between tw
 - Read our [update policy](../../updates/index.md#update-policy) to learn about Sourcegraph updates.
 - Find the relevant entry for your update in the [update notes for Sourcegraph with Kubernetes](../../updates/kubernetes.md).
 
-**The following steps assume that you have created a `release` branch following the [instructions in the configuration guide](configure.md)**.
+**The following steps assume that you have created a `release` branch following the [instructions in our guide](../repositories.md)**.
 
 First, merge the new version of Sourcegraph into your release branch.
 
