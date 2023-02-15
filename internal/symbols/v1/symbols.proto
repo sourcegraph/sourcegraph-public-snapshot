@@ -120,10 +120,10 @@ message ListLanguagesRequest {
   // All fields are empty.
 }
 
-// ListLanguagesResponses is the response from the ListLanguages method.
+// ListLanguagesResponse is the response from the ListLanguages method.
 message ListLanguagesResponse {
   message GlobFilePatterns {
-    repeated string patterns = 2;
+    repeated string patterns = 1;
   }
 
   // language_file_name_map is a of map of language names to
