@@ -492,7 +492,7 @@ func (c *clientImplementor) lStat(ctx context.Context, checker authz.SubRepoPerm
 		return fis[0], nil
 	} else {
 		if filteringErr != nil {
-			err = errors.Wrap(err, "filtering paths")
+			err = errors.Wrap(filteringErr, "filtering paths")
 		} else {
 			err = &os.PathError{Op: "ls-tree", Path: path, Err: os.ErrNotExist}
 		}
