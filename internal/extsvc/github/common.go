@@ -1778,7 +1778,11 @@ type RepositoryTopics struct {
 }
 
 type RepositoryTopic struct {
-	Name string
+	Topic Topic `json:",omitempty"`
+}
+
+type Topic struct {
+	Name string `json:",omitempty"`
 }
 
 type restRepositoryPermissions struct {
@@ -1826,7 +1830,7 @@ func (c *V3Client) getRepositoryFromAPI(ctx context.Context, owner, name string)
 func convertRestRepo(restRepo restRepository) *Repository {
 	topics := make([]RepositoryTopic, 0, len(restRepo.Topics))
 	for _, topic := range restRepo.Topics {
-		topics = append(topics, RepositoryTopic{Name: topic})
+		topics = append(topics, RepositoryTopic{Topic{Name: topic}})
 	}
 	repo := Repository{
 		ID:               restRepo.ID,

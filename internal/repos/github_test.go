@@ -178,7 +178,7 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 						ForkCount:        0,
 						IsPrivate:        true,
 						Visibility:       github.VisibilityInternal,
-						RepositoryTopics: github.RepositoryTopics{Nodes: []github.RepositoryTopic{{Name: "fluff"}}},
+						RepositoryTopics: github.RepositoryTopics{Nodes: []github.RepositoryTopic{{Topic: github.Topic{Name: "fluff"}}}},
 					},
 				}
 

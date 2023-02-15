@@ -851,7 +851,10 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 		IsLocked:         true,
 		ViewerPermission: "ADMIN",
 		Visibility:       "internal",
-		RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{{Name: "topic1"}, {Name: "topic2"}}},
+		RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{
+			{Topic: Topic{Name: "topic1"}},
+			{Topic: Topic{Name: "topic2"}},
+		}},
 	}
 
 	clojureGrapherRepo := &Repository{
@@ -892,7 +895,20 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
       "isLocked": true,
       "viewerPermission": "ADMIN",
       "visibility": "internal",
-	  "topics": ["test1", "test2"]
+	  "repositoryTopics": {
+		"nodes": [
+		  {
+		    "topic": {
+			  "name": "topic1"
+			}
+		  },
+		  {
+			"topic": {
+			  "name": "topic2"
+			}
+		  }
+	    ]
+	  }
     },
     "repo_sourcegraph_clojure_grapher": {
       "id": "MDEwOlJlcG9zaXRvcnkxNTc1NjkwOA==",
@@ -929,7 +945,20 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
       "isLocked": true,
       "viewerPermission": "ADMIN",
       "visibility": "internal",
-	  "topics": ["test1", "test2"]
+	  "repositoryTopics": {
+		  "nodes": [
+			  {
+				  "topic": {
+					  "name": "topic1"
+				  }
+			  },
+			  {
+				  "topic": {
+					  "name": "topic2"
+				  }
+			  }
+		  ]
+	  }
     },
     "repo_sourcegraph_clojure_grapher": null
   },
