@@ -12,7 +12,14 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../../../components/FilteredConnection/ui'
-import { ExecutorSecretFields, ExecutorSecretScope, Scalars } from '../../../graphql-operations'
+import {
+    ExecutorSecretFields,
+    ExecutorSecretScope,
+    GlobalExecutorSecretsResult,
+    OrgExecutorSecretsResult,
+    Scalars,
+    UserExecutorSecretsResult,
+} from '../../../graphql-operations'
 
 import { AddSecretModal } from './AddSecretModal'
 import {
@@ -97,7 +104,12 @@ export const OrgExecutorSecretsListPage: FC<OrgExecutorSecretsListPageProps> = p
 export interface ExecutorSecretsListPageProps extends GlobalExecutorSecretsListPageProps {
     namespaceID: Scalars['ID'] | null
     headerLine: JSX.Element
-    connectionLoader: (scope: ExecutorSecretScope) => UseShowMorePaginationResult<ExecutorSecretFields>
+    connectionLoader: (
+        scope: ExecutorSecretScope
+    ) => UseShowMorePaginationResult<
+        OrgExecutorSecretsResult | UserExecutorSecretsResult | GlobalExecutorSecretsResult,
+        ExecutorSecretFields
+    >
 }
 
 const ExecutorSecretsListPage: FC<ExecutorSecretsListPageProps> = ({ namespaceID, headerLine, connectionLoader }) => {
