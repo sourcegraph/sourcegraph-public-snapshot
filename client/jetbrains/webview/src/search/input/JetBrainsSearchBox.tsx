@@ -5,12 +5,8 @@ import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 
-import {
-    IEditor,
-    LazyMonacoQueryInput,
-    LazyMonacoQueryInputProps,
-} from '@sourcegraph/search-ui/src/input/LazyMonacoQueryInput'
-import { SearchContextDropdown } from '@sourcegraph/search-ui/src/input/SearchContextDropdown'
+import { IEditor, LazyQueryInput } from '@sourcegraph/branded'
+import { SearchContextDropdown } from '@sourcegraph/branded/src/search-ui/input/SearchContextDropdown'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { QueryState, SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/shared/src/search'
@@ -29,8 +25,7 @@ export interface JetBrainsSearchBoxProps
         ThemeProps,
         SearchContextInputProps,
         TelemetryProps,
-        PlatformContextProps<'requestGraphQL'>,
-        Pick<LazyMonacoQueryInputProps, 'editorComponent'> {
+        PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean // significant for query suggestions
     showSearchContext: boolean
@@ -122,7 +117,7 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                     <div className={styles.searchBoxFocusContainerIcon}>
                         <Search />
                     </div>
-                    <LazyMonacoQueryInput
+                    <LazyQueryInput
                         preventNewLine={true}
                         autoFocus={props.autoFocus}
                         caseSensitive={props.caseSensitive}
@@ -138,7 +133,6 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                         className={styles.searchBoxInput}
                         onEditorCreated={onEditorCreated}
                         placeholder="Enter search query..."
-                        editorComponent="codemirror6"
                     />
                     <JetBrainsToggles
                         patternType={props.patternType}

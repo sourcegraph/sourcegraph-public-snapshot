@@ -19,8 +19,11 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "lint:js": "yarn run -T eslint 'src/**/*.[jt]s?(x)'",
-    "prepublish": "yarn run -T eslint"
+    "lint:js": "pnpm eslint 'src/**/*.[jt]s?(x)'",
+    "prepublish": "pnpm eslint"
+  },
+  "devDependencies": {
+    "sourcegraph": "workspace:*"
   },
   "peerDependencies": {
     "sourcegraph": "*"

@@ -15,7 +15,7 @@ exports[`GitCommitNodeByline author (compact) 1`] = `
       />
     </div>
     <div
-      class="overflow-hidden"
+      class="text-truncate"
     >
       committed by 
       <span
@@ -49,7 +49,7 @@ exports[`GitCommitNodeByline author 1`] = `
       />
     </div>
     <div
-      class="overflow-hidden"
+      class="text-truncate"
     >
       committed by 
       <span
@@ -181,7 +181,7 @@ exports[`GitCommitNodeByline omit GitHub committer 1`] = `
       />
     </div>
     <div
-      class="overflow-hidden"
+      class="text-truncate"
     >
       committed by 
       <span
@@ -215,7 +215,7 @@ exports[`GitCommitNodeByline same author and committer 1`] = `
       />
     </div>
     <div
-      class="overflow-hidden"
+      class="text-truncate"
     >
       committed by 
       <span

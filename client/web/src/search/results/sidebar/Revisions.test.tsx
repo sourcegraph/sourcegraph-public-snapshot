@@ -1,6 +1,6 @@
 import { cleanup, within, fireEvent } from '@testing-library/react'
 
-import { RevisionsProps } from '@sourcegraph/search-ui'
+import { RevisionsProps } from '@sourcegraph/branded'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 

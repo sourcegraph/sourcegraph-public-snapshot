@@ -8,11 +8,12 @@ import (
 	"time"
 
 	"github.com/go-openapi/strfmt"
-	"github.com/inconshreveable/log15"
 	amclient "github.com/prometheus/alertmanager/api/v2/client"
 	"github.com/prometheus/alertmanager/api/v2/client/silence"
 	"github.com/prometheus/alertmanager/api/v2/models"
 	amconfig "github.com/prometheus/alertmanager/config"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -30,10 +31,10 @@ type ChangeResult struct {
 }
 
 // Change implements a change to configuration
-type Change func(ctx context.Context, log log15.Logger, change ChangeContext, newConfig *subscribedSiteConfig) (result ChangeResult)
+type Change func(ctx context.Context, logger log.Logger, change ChangeContext, newConfig *subscribedSiteConfig) (result ChangeResult)
 
 // changeReceivers applies `observability.alerts` as Alertmanager receivers.
-func changeReceivers(ctx context.Context, log log15.Logger, change ChangeContext, newConfig *subscribedSiteConfig) (result ChangeResult) {
+func changeReceivers(ctx context.Context, _ log.Logger, change ChangeContext, newConfig *subscribedSiteConfig) (result ChangeResult) {
 	// convenience function for creating a prefixed problem - this reflects the relevant site configuration fields
 	newProblem := func(err error) {
 		result.Problems = append(result.Problems, conf.NewSiteProblem(fmt.Sprintf("`observability.alerts`: %v", err)))
@@ -48,7 +49,7 @@ func changeReceivers(ctx context.Context, log log15.Logger, change ChangeContext
 }
 
 // changeSMTP applies SMTP server configuration.
-func changeSMTP(ctx context.Context, log log15.Logger, change ChangeContext, newConfig *subscribedSiteConfig) (result ChangeResult) {
+func changeSMTP(ctx context.Context, _ log.Logger, change ChangeContext, newConfig *subscribedSiteConfig) (result ChangeResult) {
 	if change.AMConfig.Global == nil {
 		change.AMConfig.Global = &amconfig.GlobalConfig{}
 	}
@@ -90,7 +91,7 @@ func changeSMTP(ctx context.Context, log log15.Logger, change ChangeContext, new
 }
 
 // changeSilences syncs Alertmanager silences with silences configured in observability.silenceAlerts
-func changeSilences(ctx context.Context, log log15.Logger, change ChangeContext, newConfig *subscribedSiteConfig) (result ChangeResult) {
+func changeSilences(ctx context.Context, logger log.Logger, change ChangeContext, newConfig *subscribedSiteConfig) (result ChangeResult) {
 	// convenience function for creating a prefixed problem - this reflects the relevant site configuration fields
 	newProblem := func(err error) {
 		result.Problems = append(result.Problems, conf.NewSiteProblem(fmt.Sprintf("`observability.silenceAlerts`: %v", err)))
@@ -137,7 +138,12 @@ func changeSilences(ctx context.Context, log log15.Logger, change ChangeContext,
 			}
 		}
 	}
-	log.Info("updating alert silences", "silences", activeSilences)
+
+	var activeSilencesNames []string
+	for s := range activeSilences {
+		activeSilencesNames = append(activeSilencesNames, s)
+	}
+	logger.Info("updating alert silences", log.Strings("activeSilences", activeSilencesNames))
 
 	// create or update silences
 	for alert, existingSilence := range activeSilences {
@@ -167,7 +173,9 @@ func changeSilences(ctx context.Context, log log15.Logger, change ChangeContext,
 		}
 		if err != nil {
 			silenceData, _ := json.Marshal(s)
-			log.Error("failed to update silence", "error", err, "silence", string(silenceData), "existingSilence", existingSilence)
+			logger.Error("failed to update silence", log.Error(err),
+				log.String("silence", string(silenceData)),
+				log.String("existingSilence", existingSilence))
 			newProblem(errors.Errorf("failed to update silence: %w", err))
 			return
 		}

@@ -103,8 +103,8 @@ func QueryCost(o *QueryObject) {
 }
 
 var (
-	megarepoSizeThresold  int64 = 5368709120                // 5GB
-	gigarepoSizethreshold int64 = megarepoSizeThresold * 10 // 50GB
+	megarepoSizeThreshold int64 = 5368709120                 // 5GB
+	gigarepoSizeThreshold       = megarepoSizeThreshold * 10 // 50GB
 )
 
 func RepositoriesCost(o *QueryObject) {
@@ -112,16 +112,16 @@ func RepositoriesCost(o *QueryObject) {
 		o.cost = 1 // if this handler is called on its own we still want it to impact the cost.
 	}
 
-	if o.NumberOfRepositories > 10000 {
-		o.cost *= ManyRepositoriesMultiplier
+	if o.NumberOfRepositories > 100 {
+		o.cost *= float64(o.NumberOfRepositories) / 100.0
 	}
 
 	var megarepo, gigarepo bool
 	for _, byteSize := range o.RepositoryByteSizes {
-		if byteSize >= gigarepoSizethreshold {
+		if byteSize >= gigarepoSizeThreshold {
 			gigarepo = true
 		}
-		if byteSize >= megarepoSizeThresold {
+		if byteSize >= megarepoSizeThreshold {
 			megarepo = true
 		}
 	}

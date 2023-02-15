@@ -20,6 +20,7 @@ import {
     getStatoscopePlugin,
     getTerserPlugin,
     NODE_MODULES_PATH,
+    resolveWithSymlink,
     ROOT_PATH,
     STATIC_ASSETS_PATH,
 } from '@sourcegraph/build-config'
@@ -42,7 +43,7 @@ const getStoriesGlob = (): string[] => {
     // Due to an issue with constant recompiling (https://github.com/storybookjs/storybook/issues/14342)
     // we need to make the globs more specific (`(web|shared..)` also doesn't work). Once the above issue
     // is fixed, this can be removed and watched for `client/**/*.story.tsx` again.
-    const directoriesWithStories = ['branded', 'browser', 'jetbrains/webview', 'shared', 'web', 'wildcard', 'search-ui']
+    const directoriesWithStories = ['branded', 'browser', 'jetbrains/webview', 'shared', 'web', 'wildcard']
     const storiesGlobs = directoriesWithStories.map(packageDirectory =>
         path.resolve(ROOT_PATH, `client/${packageDirectory}/src/**/*.story.tsx`)
     )
@@ -171,7 +172,7 @@ const config: Config = {
             ...getBabelLoader(),
         })
 
-        const storybookPath = path.resolve(NODE_MODULES_PATH, '@storybook')
+        const storybookPath = resolveWithSymlink(NODE_MODULES_PATH, '@storybook')
 
         // Put our style rules at the beginning so they're processed by the time it
         // gets to storybook's style rules.

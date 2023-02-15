@@ -70,6 +70,7 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 
 	worker := dbworker.NewWorker(ctx, workerStore, workerutil.Handler[*BaseJob](task), workerutil.WorkerOptions{
 		Name:              name,
+		Description:       "generates and runs searches to backfill a code insight",
 		NumHandlers:       1,
 		Interval:          inProgressPollingInterval,
 		HeartbeatInterval: 15 * time.Second,
@@ -79,7 +80,7 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 	resetter := dbworker.NewResetter(log.Scoped("", ""), workerStore, dbworker.ResetterOptions{
 		Name:     fmt.Sprintf("%s_resetter", name),
 		Interval: time.Second * 20,
-		Metrics:  *dbworker.NewResetterMetrics(config.ObservationCtx, name),
+		Metrics:  dbworker.NewResetterMetrics(config.ObservationCtx, name),
 	})
 
 	configLogger := log.Scoped("insightsInProgressConfigWatcher", "")

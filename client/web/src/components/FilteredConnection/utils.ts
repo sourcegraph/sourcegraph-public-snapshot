@@ -65,7 +65,7 @@ export const hasNextPage = (connection: Connection<unknown>): boolean =>
         : typeof connection.totalCount === 'number' && connection.nodes.length < connection.totalCount
 
 export interface GetUrlQueryParameters {
-    first: {
+    first?: {
         actual: number
         default: number
     }
@@ -93,7 +93,7 @@ export const getUrlQuery = ({
         searchParameters.set(QUERY_KEY, query)
     }
 
-    if (first.actual !== first.default) {
+    if (!!first && first.actual !== first.default) {
         searchParameters.set('first', String(first.actual))
     }
 
@@ -111,7 +111,7 @@ export const getUrlQuery = ({
         }
     }
 
-    if (visibleResultCount && visibleResultCount !== 0 && visibleResultCount !== first.actual) {
+    if (visibleResultCount && visibleResultCount !== 0 && visibleResultCount !== first?.actual) {
         searchParameters.set('visible', String(visibleResultCount))
     }
 

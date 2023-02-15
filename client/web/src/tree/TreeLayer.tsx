@@ -40,7 +40,6 @@ export interface TreeLayerProps extends Omit<TreeRootProps, 'sizeKey'> {
     entryInfo: TreeEntryInfo
     onHover: (filePath: string) => void
     repoID: Scalars['ID']
-    enableMergedFileSymbolSidebar: boolean
 }
 
 const LOADING = 'loading' as const
@@ -278,9 +277,6 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                                         singleChildTreeEntry={singleChildTreeEntry}
                                                         childrenEntries={singleChildTreeEntry.children}
                                                         setChildNodes={this.setChildNode}
-                                                        enableMergedFileSymbolSidebar={
-                                                            this.props.enableMergedFileSymbolSidebar
-                                                        }
                                                     />
                                                 )
                                             )}
@@ -298,7 +294,6 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                 linkRowClick={this.linkRowClick}
                                 isActive={isActive}
                                 isSelected={isSelected}
-                                enableMergedFileSymbolSidebar={this.props.enableMergedFileSymbolSidebar}
                             />
                         )}
                     </tbody>

@@ -1,8 +1,10 @@
 package run
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"net/url"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -18,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func newQueueTelemetryOptions(ctx context.Context, useFirecracker bool, logger log.Logger) queue.TelemetryOptions {
@@ -55,39 +58,42 @@ func newQueueTelemetryOptions(ctx context.Context, useFirecracker bool, logger l
 }
 
 func getGitVersion(ctx context.Context) (string, error) {
-	cmd := exec.CommandContext(ctx, "git", "version")
-	out, err := cmd.Output()
+	out, err := execOutput(ctx, "git", "version")
 	if err != nil {
 		return "", err
 	}
-	return strings.TrimPrefix(strings.TrimSpace(string(out)), "git version "), nil
+	return strings.TrimPrefix(out, "git version "), nil
 }
 
 func getSrcVersion(ctx context.Context) (string, error) {
-	cmd := exec.CommandContext(ctx, "src", "version", "-client-only")
-	out, err := cmd.Output()
+	out, err := execOutput(ctx, "src", "version", "-client-only")
 	if err != nil {
 		return "", err
 	}
-	return strings.TrimPrefix(strings.TrimSpace(string(out)), "Current version: "), nil
+	return strings.TrimPrefix(out, "Current version: "), nil
 }
 
 func getDockerVersion(ctx context.Context) (string, error) {
-	cmd := exec.CommandContext(ctx, "docker", "version", "-f", "{{.Server.Version}}")
-	out, err := cmd.Output()
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(string(out)), nil
+	return execOutput(ctx, "docker", "version", "-f", "{{.Server.Version}}")
 }
 
 func getIgniteVersion(ctx context.Context) (string, error) {
-	cmd := exec.CommandContext(ctx, "ignite", "version", "-o", "short")
-	out, err := cmd.Output()
-	if err != nil {
-		return "", err
+	return execOutput(ctx, "ignite", "version", "-o", "short")
+}
+
+// execCommand allows the ability to mock the command in unit tests.
+var execCommand = exec.CommandContext
+
+func execOutput(ctx context.Context, name string, args ...string) (string, error) {
+	var buf bytes.Buffer
+	cmd := execCommand(ctx, name, args...)
+	cmd.Stderr = &buf
+	cmd.Stdout = &buf
+	if err := cmd.Run(); err != nil {
+		cmdLine := strings.Join(append([]string{name}, args...), " ")
+		return "", errors.Wrap(err, fmt.Sprintf("'%s': %s", cmdLine, buf.String()))
 	}
-	return strings.TrimSpace(string(out)), nil
+	return strings.TrimSpace(buf.String()), nil
 }
 
 func apiWorkerOptions(c *config.Config, queueTelemetryOptions queue.TelemetryOptions) apiworker.Options {
@@ -128,8 +134,13 @@ func workerOptions(c *config.Config) workerutil.WorkerOptions {
 }
 
 func dockerOptions(c *config.Config) command.DockerOptions {
+	u, _ := url.Parse(c.FrontendURL)
 	return command.DockerOptions{
 		DockerAuthConfig: c.DockerAuthConfig,
+		// If the configured Sourcegraph endpoint is host.docker.internal add a
+		// host entry and route to it to the containers. This is used for LSIF
+		// uploads and should not be required anymore once we support native uploads.
+		AddHostGateway: u.Hostname() == "host.docker.internal",
 	}
 }
 
@@ -162,6 +173,7 @@ func resourceOptions(c *config.Config) command.ResourceOptions {
 func queueOptions(c *config.Config, telemetryOptions queue.TelemetryOptions) queue.Options {
 	return queue.Options{
 		ExecutorName:      c.WorkerHostname,
+		QueueName:         c.QueueName,
 		BaseClientOptions: baseClientOptions(c, "/.executors/queue"),
 		TelemetryOptions:  telemetryOptions,
 		ResourceOptions: queue.ResourceOptions{

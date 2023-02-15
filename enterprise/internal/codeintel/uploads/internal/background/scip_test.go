@@ -225,6 +225,7 @@ var testedInvertedRangeIndex = []codeinteltypes.InvertedRangeIndex{
 	{
 		SymbolName:       "scip-typescript npm template 0.0.0-DEVELOPMENT src/util/`graphql.ts`/GraphQLResponseSuccess#errors.",
 		DefinitionRanges: []int32{7, 4, 7, 10},
+		ReferenceRanges:  []int32{27, 17, 27, 23},
 	},
 	{
 		SymbolName:       "scip-typescript npm template 0.0.0-DEVELOPMENT src/util/`graphql.ts`/QueryGraphQLFn#",
@@ -242,8 +243,12 @@ var testedInvertedRangeIndex = []codeinteltypes.InvertedRangeIndex{
 	},
 	{
 		SymbolName:       "scip-typescript npm template 0.0.0-DEVELOPMENT src/util/`graphql.ts`/aggregateErrors().(errors)",
-		DefinitionRanges: []int32{34, 25, 34, 31, 37, 8, 37, 14},
-		ReferenceRanges:  []int32{35, 35, 35, 41},
+		DefinitionRanges: []int32{34, 25, 34, 31},
+		ReferenceRanges:  []int32{35, 35, 35, 41, 37, 8, 37, 14},
+	},
+	{
+		SymbolName:       "scip-typescript npm template 0.0.0-DEVELOPMENT src/util/`graphql.ts`/errors0:",
+		DefinitionRanges: []int32{37, 8, 37, 14},
 	},
 	{
 		SymbolName:       "scip-typescript npm template 0.0.0-DEVELOPMENT src/util/`graphql.ts`/graphqlIdToRepoId().",
@@ -286,8 +291,19 @@ var testedInvertedRangeIndex = []codeinteltypes.InvertedRangeIndex{
 		ReferenceRanges: []int32{16, 87, 16, 94, 24, 94, 24, 101},
 	},
 	{
-		SymbolName:      "scip-typescript npm typescript 4.9.3 lib/`lib.es2015.symbol.wellknown.d.ts`/String#split().",
+		SymbolName:      "scip-typescript npm typescript 4.9.3 lib/`lib.es2015.promise.d.ts`/Promise.",
+		ReferenceRanges: []int32{16, 87, 16, 94, 24, 94, 24, 101},
+	},
+	{
+		SymbolName:      "scip-typescript npm typescript 4.9.3 lib/`lib.es2015.symbol.wellknown.d.ts`/Promise#",
+		ReferenceRanges: []int32{16, 87, 16, 94, 24, 94, 24, 101},
+	},
+	{SymbolName: "scip-typescript npm typescript 4.9.3 lib/`lib.es2015.symbol.wellknown.d.ts`/String#split().",
 		ReferenceRanges: []int32{43, 30, 43, 35},
+	},
+	{
+		SymbolName:      "scip-typescript npm typescript 4.9.3 lib/`lib.es2018.promise.d.ts`/Promise#",
+		ReferenceRanges: []int32{16, 87, 16, 94, 24, 94, 24, 101},
 	},
 	{
 		SymbolName:      "scip-typescript npm typescript 4.9.3 lib/`lib.es2022.error.d.ts`/Error#",
@@ -306,12 +322,32 @@ var testedInvertedRangeIndex = []codeinteltypes.InvertedRangeIndex{
 		ReferenceRanges: []int32{35, 42, 35, 45},
 	},
 	{
+		SymbolName:      "scip-typescript npm typescript 4.9.3 lib/`lib.es5.d.ts`/Error#",
+		ReferenceRanges: []int32{12, 12, 12, 17, 34, 33, 34, 38, 34, 43, 34, 48, 35, 29, 35, 34},
+	},
+	{
 		SymbolName:      "scip-typescript npm typescript 4.9.3 lib/`lib.es5.d.ts`/Error#message.",
 		ReferenceRanges: []int32{35, 61, 35, 68},
 	},
 	{
+		SymbolName:      "scip-typescript npm typescript 4.9.3 lib/`lib.es5.d.ts`/Error.",
+		ReferenceRanges: []int32{12, 12, 12, 17, 34, 33, 34, 38, 34, 43, 34, 48, 35, 29, 35, 34},
+	},
+	{
 		SymbolName:      "scip-typescript npm typescript 4.9.3 lib/`lib.es5.d.ts`/Object#",
 		ReferenceRanges: []int32{35, 11, 35, 17},
+	},
+	{
+		SymbolName:      "scip-typescript npm typescript 4.9.3 lib/`lib.es5.d.ts`/Object.",
+		ReferenceRanges: []int32{35, 11, 35, 17},
+	},
+	{
+		SymbolName:      "scip-typescript npm typescript 4.9.3 lib/`lib.es5.d.ts`/Promise#",
+		ReferenceRanges: []int32{16, 87, 16, 94, 24, 94, 24, 101},
+	},
+	{
+		SymbolName:      "scip-typescript npm typescript 4.9.3 lib/`lib.es5.d.ts`/String#split().",
+		ReferenceRanges: []int32{43, 30, 43, 35},
 	},
 	{
 		SymbolName:      "scip-typescript npm typescript 4.9.3 lib/`lib.es5.d.ts`/parseInt().",

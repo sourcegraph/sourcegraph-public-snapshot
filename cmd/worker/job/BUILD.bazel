@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "job",
+    srcs = ["job.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/job",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/observation",
+    ],
+)

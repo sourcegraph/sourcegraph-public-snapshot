@@ -8,6 +8,19 @@
     grid-column: 1 / 2;
 }
 
-.button {
+.grid-button {
     grid-column: 3;
+}
+
+.invisible-text {
+    visibility: hidden;
+}
+.button {
+    position: relative;
+}
+
+.loader {
+    position: absolute;
+    top: 25%;
+    left: 48%;
 }

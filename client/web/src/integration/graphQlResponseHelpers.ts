@@ -41,6 +41,7 @@ export const createBlobContentResult = (
                 __typename: 'VirtualFile',
                 content,
                 richHTML: '',
+                totalLines: content.split('\n').length,
                 highlight: {
                     aborted: false,
                     html,

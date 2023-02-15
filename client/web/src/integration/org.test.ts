@@ -162,7 +162,7 @@ describe('Organizations', () => {
                         },
                     }),
                 })
-                await driver.page.goto(driver.sourcegraphBaseUrl + '/organizations/sourcegraph/settings')
+                await driver.page.goto(driver.sourcegraphBaseUrl + `/organizations/${testOrg.name}/settings`)
                 const updatedSettings = '// updated'
                 const editor = await createEditorAPI(driver, '.test-settings-file .test-editor')
                 await editor.replace(updatedSettings, 'paste')
@@ -184,16 +184,20 @@ describe('Organizations', () => {
         describe('Members tab', () => {
             it('allows to remove a member', async () => {
                 const testMember = {
+                    __typename: 'User' as any,
                     id: 'TestMember',
                     displayName: 'Test member',
                     username: 'testmember',
                     avatarURL: null,
+                    siteAdmin: false,
                 }
                 const testMember2 = {
+                    __typename: 'User' as any,
                     id: 'TestMember2',
                     displayName: 'Test member 2',
                     username: 'testmember2',
                     avatarURL: null,
+                    siteAdmin: false,
                 }
                 const graphQlResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
                     ...commonWebGraphQlResults,
@@ -208,8 +212,10 @@ describe('Organizations', () => {
                                 totalCount: 2,
                                 nodes: [testMember, testMember2],
                                 pageInfo: {
-                                    endCursor: null,
+                                    startCursor: testMember.id,
+                                    endCursor: testMember2.id,
                                     hasNextPage: false,
+                                    hasPreviousPage: false,
                                 },
                             },
                         },
@@ -220,7 +226,7 @@ describe('Organizations', () => {
                 }
                 testContext.overrideGraphQL(graphQlResults)
 
-                await driver.page.goto(driver.sourcegraphBaseUrl + '/organizations/sourcegraph/settings/members')
+                await driver.page.goto(driver.sourcegraphBaseUrl + `/organizations/${testOrg.name}/settings/members`)
 
                 await driver.page.waitForSelector('.test-remove-org-member')
 
@@ -245,6 +251,12 @@ describe('Organizations', () => {
                             members: {
                                 totalCount: 1,
                                 nodes: [testMember2],
+                                pageInfo: {
+                                    startCursor: testMember2.id,
+                                    endCursor: testMember2.id,
+                                    hasNextPage: false,
+                                    hasPreviousPage: false,
+                                },
                             },
                             pageInfo: {
                                 endCursor: null,

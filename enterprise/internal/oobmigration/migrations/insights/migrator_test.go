@@ -146,7 +146,7 @@ func TestInsightsMigrator(t *testing.T) {
 		t.Fatalf("failed to marshal description: %s", err)
 	}
 
-	autogold.Equal(t, autogold.Raw(string(serialized)))
+	autogold.Equal(t, autogold.Raw(serialized))
 }
 
 func describe(ctx context.Context, insightsStore *basestore.Store) (any, error) {

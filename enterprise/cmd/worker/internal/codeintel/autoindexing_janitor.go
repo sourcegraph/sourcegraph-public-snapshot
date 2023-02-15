@@ -27,7 +27,7 @@ func (j *autoindexingJanitorJob) Config() []env.Config {
 	return []env.Config{autoindexing.ConfigCleanupInst}
 }
 
-func (j *autoindexingJanitorJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *autoindexingJanitorJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	services, err := codeintel.InitServices(observationCtx)
 	if err != nil {
 		return nil, err

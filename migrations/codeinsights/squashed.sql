@@ -30,6 +30,23 @@ CREATE TYPE time_unit AS ENUM (
     'YEAR'
 );
 
+CREATE TABLE archived_insight_series_recording_times (
+    insight_series_id integer NOT NULL,
+    recording_time timestamp with time zone NOT NULL,
+    snapshot boolean NOT NULL
+);
+
+CREATE TABLE archived_series_points (
+    series_id text NOT NULL,
+    "time" timestamp with time zone NOT NULL,
+    value double precision NOT NULL,
+    repo_id integer,
+    repo_name_id integer,
+    original_repo_name_id integer,
+    capture text,
+    CONSTRAINT check_repo_fields_specifity CHECK ((((repo_id IS NULL) AND (repo_name_id IS NULL) AND (original_repo_name_id IS NULL)) OR ((repo_id IS NOT NULL) AND (repo_name_id IS NOT NULL) AND (original_repo_name_id IS NOT NULL))))
+);
+
 CREATE TABLE commit_index (
     committed_at timestamp with time zone NOT NULL,
     repo_id integer NOT NULL,
@@ -120,35 +137,6 @@ CREATE SEQUENCE dashboard_insight_view_id_seq
     CACHE 1;
 
 ALTER SEQUENCE dashboard_insight_view_id_seq OWNED BY dashboard_insight_view.id;
-
-CREATE TABLE insight_dirty_queries (
-    id integer NOT NULL,
-    insight_series_id integer,
-    query text NOT NULL,
-    dirty_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    reason text NOT NULL,
-    for_time timestamp without time zone NOT NULL
-);
-
-COMMENT ON TABLE insight_dirty_queries IS 'Stores queries that were unsuccessful or otherwise flagged as incomplete or incorrect.';
-
-COMMENT ON COLUMN insight_dirty_queries.query IS 'Sourcegraph query string that was executed.';
-
-COMMENT ON COLUMN insight_dirty_queries.dirty_at IS 'Timestamp when this query was marked dirty.';
-
-COMMENT ON COLUMN insight_dirty_queries.reason IS 'Human readable string indicating the reason the query was marked dirty.';
-
-COMMENT ON COLUMN insight_dirty_queries.for_time IS 'Timestamp for which the original data point was recorded or intended to be recorded.';
-
-CREATE SEQUENCE insight_dirty_queries_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE insight_dirty_queries_id_seq OWNED BY insight_dirty_queries.id;
 
 CREATE TABLE insight_series (
     id integer NOT NULL,
@@ -265,7 +253,8 @@ CREATE TABLE insight_view (
     default_filter_search_contexts text[],
     series_sort_mode series_sort_mode_enum,
     series_sort_direction series_sort_direction_enum,
-    series_limit integer
+    series_limit integer,
+    series_num_samples integer
 );
 
 COMMENT ON TABLE insight_view IS 'Views for insight data series. An insight view is an abstraction on top of an insight data series that allows for lightweight modifications to filters or metadata without regenerating the underlying series.';
@@ -376,7 +365,8 @@ CREATE TABLE insights_data_retention_jobs (
     execution_logs json[],
     worker_hostname text DEFAULT ''::text NOT NULL,
     cancel boolean DEFAULT false NOT NULL,
-    series_id integer NOT NULL
+    series_id integer NOT NULL,
+    series_id_string text DEFAULT ''::text NOT NULL
 );
 
 CREATE SEQUENCE insights_data_retention_jobs_id_seq
@@ -563,8 +553,6 @@ ALTER TABLE ONLY dashboard_grants ALTER COLUMN id SET DEFAULT nextval('dashboard
 
 ALTER TABLE ONLY dashboard_insight_view ALTER COLUMN id SET DEFAULT nextval('dashboard_insight_view_id_seq'::regclass);
 
-ALTER TABLE ONLY insight_dirty_queries ALTER COLUMN id SET DEFAULT nextval('insight_dirty_queries_id_seq'::regclass);
-
 ALTER TABLE ONLY insight_series ALTER COLUMN id SET DEFAULT nextval('insight_series_id_seq'::regclass);
 
 ALTER TABLE ONLY insight_series_backfill ALTER COLUMN id SET DEFAULT nextval('insight_series_backfill_id_seq'::regclass);
@@ -587,6 +575,9 @@ ALTER TABLE ONLY repo_iterator_errors ALTER COLUMN id SET DEFAULT nextval('repo_
 
 ALTER TABLE ONLY repo_names ALTER COLUMN id SET DEFAULT nextval('repo_names_id_seq'::regclass);
 
+ALTER TABLE ONLY archived_insight_series_recording_times
+    ADD CONSTRAINT archived_insight_series_recor_insight_series_id_recording_t_key UNIQUE (insight_series_id, recording_time);
+
 ALTER TABLE ONLY commit_index_metadata
     ADD CONSTRAINT commit_index_metadata_pkey PRIMARY KEY (repo_id);
 
@@ -601,9 +592,6 @@ ALTER TABLE ONLY dashboard_insight_view
 
 ALTER TABLE ONLY dashboard
     ADD CONSTRAINT dashboard_pk PRIMARY KEY (id);
-
-ALTER TABLE ONLY insight_dirty_queries
-    ADD CONSTRAINT insight_dirty_queries_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY insight_series_backfill
     ADD CONSTRAINT insight_series_backfill_pk PRIMARY KEY (id);
@@ -660,8 +648,6 @@ CREATE INDEX dashboard_grants_user_id_idx ON dashboard_grants USING btree (user_
 CREATE INDEX dashboard_insight_view_dashboard_id_fk_idx ON dashboard_insight_view USING btree (dashboard_id);
 
 CREATE INDEX dashboard_insight_view_insight_view_id_fk_idx ON dashboard_insight_view USING btree (insight_view_id);
-
-CREATE INDEX insight_dirty_queries_insight_series_id_fk_idx ON insight_dirty_queries USING btree (insight_series_id);
 
 CREATE INDEX insight_series_deleted_at_idx ON insight_series USING btree (deleted_at);
 
@@ -722,17 +708,20 @@ ALTER TABLE ONLY dashboard_insight_view
 ALTER TABLE ONLY dashboard_insight_view
     ADD CONSTRAINT dashboard_insight_view_insight_view_id_fk FOREIGN KEY (insight_view_id) REFERENCES insight_view(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY insight_dirty_queries
-    ADD CONSTRAINT insight_dirty_queries_insight_series_id_fkey FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
-
 ALTER TABLE ONLY insight_series_backfill
     ADD CONSTRAINT insight_series_backfill_series_id_fk FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY insight_series_recording_times
     ADD CONSTRAINT insight_series_id_fkey FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
 
+ALTER TABLE ONLY archived_insight_series_recording_times
+    ADD CONSTRAINT insight_series_id_fkey FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
+
 ALTER TABLE ONLY insight_series_incomplete_points
     ADD CONSTRAINT insight_series_incomplete_points_series_id_fk FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY archived_series_points
+    ADD CONSTRAINT insight_series_series_id_fkey FOREIGN KEY (series_id) REFERENCES insight_series(series_id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY insight_view_grants
     ADD CONSTRAINT insight_view_grants_insight_view_id_fk FOREIGN KEY (insight_view_id) REFERENCES insight_view(id) ON DELETE CASCADE;

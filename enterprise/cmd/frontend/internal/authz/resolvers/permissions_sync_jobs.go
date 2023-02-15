@@ -46,7 +46,7 @@ func getPermissionsSyncJobByIDFunc(r *Resolver) graphqlbackend.NodeByIDFunc {
 		if err != nil {
 			return nil, errors.Wrap(err, "unmarshal ID")
 		}
-		status, err := r.syncJobsRecords.Get(time.Unix(0, unixNano))
+		status, err := r.syncJobsRecords.Get(ctx, time.Unix(0, unixNano))
 		if err != nil {
 			return nil, errors.Wrap(err, "node with ID not found - it may have expired")
 		}

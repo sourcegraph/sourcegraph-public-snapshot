@@ -255,28 +255,15 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitS
 	}
 
 	maybeRemoveCorrupt := func(dir GitDir) (done bool, _ error) {
-		var reason string
-
-		// We treat repositories missing HEAD to be corrupt. Both our cloning
-		// and fetching ensure there is a HEAD file.
-		if _, err := os.Stat(dir.Path("HEAD")); os.IsNotExist(err) {
-			reason = "missing-head"
-		} else if err != nil {
+		corrupt, reason, err := checkRepoDirCorrupt(dir)
+		if !corrupt || err != nil {
 			return false, err
 		}
 
-		// We have seen repository corruption fail in such a way that the git
-		// config is missing the bare repo option but everything else looks
-		// like it works. This leads to failing fetches, so treat non-bare
-		// repos as corrupt. Since we often fetch with ensureRevision, this
-		// leads to most commands failing against the repository. It is safer
-		// to remove now than try a safe reclone.
-		if reason == "" && gitIsNonBareBestEffort(dir) {
-			reason = "non-bare"
-		}
-
-		if reason == "" {
-			return false, nil
+		err = s.DB.GitserverRepos().LogCorruption(ctx, s.name(dir), fmt.Sprintf("sourcegraph detected corrupt repo: %s", reason), s.Hostname)
+		if err != nil {
+			repoName := string(s.name(dir))
+			logger.Warn("failed to log repo corruption", log.String("repo", repoName), log.Error(err))
 		}
 
 		s.Logger.Info("removing corrupt repo", log.String("repo", string(dir)), log.String("reason", reason))
@@ -336,7 +323,13 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitS
 		var reason string
 		const maybeCorrupt = "maybeCorrupt"
 		if maybeCorrupt, _ := gitConfigGet(dir, gitConfigMaybeCorrupt); maybeCorrupt != "" {
+			// Set the reason so that the repo cleaned up
 			reason = maybeCorrupt
+			// We don't log the corruption here, since the corruption *should* have already been
+			// logged when this config setting was set in the repo.
+			// When the repo is recloned, the corrupted_at status should be cleared, which means
+			// the repo is not considered corrupted anymore.
+			//
 			// unset flag to stop constantly re-cloning if it fails.
 			_ = gitConfigUnset(dir, gitConfigMaybeCorrupt)
 		}
@@ -407,7 +400,7 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitS
 			multi = errors.Append(multi, err)
 		}
 		// we use the same conservative age for locks inside of refs
-		if err := bestEffortWalk(gitDir.Path("refs"), func(path string, fi fs.FileInfo) error {
+		if err := bestEffortWalk(gitDir.Path("refs"), func(path string, fi fs.DirEntry) error {
 			if fi.IsDir() {
 				return nil
 			}
@@ -512,7 +505,7 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitS
 		})
 	}
 
-	err := bestEffortWalk(s.ReposDir, func(dir string, fi fs.FileInfo) error {
+	err := bestEffortWalk(s.ReposDir, func(dir string, fi fs.DirEntry) error {
 		if s.ignorePath(dir) {
 			if fi.IsDir() {
 				return filepath.SkipDir
@@ -569,6 +562,28 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitS
 	if err := s.freeUpSpace(b); err != nil {
 		logger.Error("error freeing up space", log.Error(err))
 	}
+}
+
+func checkRepoDirCorrupt(dir GitDir) (bool, string, error) {
+	// We treat repositories missing HEAD to be corrupt. Both our cloning
+	// and fetching ensure there is a HEAD file.
+	if _, err := os.Stat(dir.Path("HEAD")); os.IsNotExist(err) {
+		return true, "missing-head", nil
+	} else if err != nil {
+		return false, "", err
+	}
+
+	// We have seen repository corruption fail in such a way that the git
+	// config is missing the bare repo option but everything else looks
+	// like it works. This leads to failing fetches, so treat non-bare
+	// repos as corrupt. Since we often fetch with ensureRevision, this
+	// leads to most commands failing against the repository. It is safer
+	// to remove now than try a safe reclone.
+	if gitIsNonBareBestEffort(dir) {
+		return true, "non-bare", nil
+	}
+
+	return false, "", nil
 }
 
 // setRepoSizes uses calculated sizes of repos to update database entries of repos
@@ -774,7 +789,7 @@ func gitDirModTime(d GitDir) (time.Time, error) {
 
 func (s *Server) findGitDirs() ([]GitDir, error) {
 	var dirs []GitDir
-	err := bestEffortWalk(s.ReposDir, func(path string, fi fs.FileInfo) error {
+	err := bestEffortWalk(s.ReposDir, func(path string, fi fs.DirEntry) error {
 		if s.ignorePath(path) {
 			if fi.IsDir() {
 				return filepath.SkipDir
@@ -798,8 +813,13 @@ func dirSize(d string) int64 {
 	var size int64
 	// We don't return an error, so we know that err is always nil and can be
 	// ignored.
-	_ = bestEffortWalk(d, func(path string, fi fs.FileInfo) error {
-		if fi.IsDir() {
+	_ = bestEffortWalk(d, func(path string, d fs.DirEntry) error {
+		if d.IsDir() {
+			return nil
+		}
+		fi, err := d.Info()
+		if err != nil {
+			// We ignore errors for individual files.
 			return nil
 		}
 		size += fi.Size()
@@ -898,12 +918,16 @@ func (s *Server) removeRepoDirectory(gitDir GitDir, updateCloneStatus bool) erro
 func (s *Server) cleanTmpFiles(dir GitDir) {
 	now := time.Now()
 	packdir := dir.Path("objects", "pack")
-	err := bestEffortWalk(packdir, func(path string, info fs.FileInfo) error {
-		if path != packdir && info.IsDir() {
+	err := bestEffortWalk(packdir, func(path string, d fs.DirEntry) error {
+		if path != packdir && d.IsDir() {
 			return filepath.SkipDir
 		}
 		file := filepath.Base(path)
 		if strings.HasPrefix(file, "tmp_pack_") {
+			info, err := d.Info()
+			if err != nil {
+				return err
+			}
 			if now.Sub(info.ModTime()) > conf.GitLongCommandTimeout() {
 				err := os.Remove(path)
 				if err != nil {
@@ -1027,13 +1051,12 @@ func getRecloneTime(dir GitDir) (time.Time, error) {
 	return time.Unix(sec, 0), nil
 }
 
-func checkMaybeCorruptRepo(logger log.Logger, repo api.RepoName, dir GitDir, stderr string) {
+func checkMaybeCorruptRepo(logger log.Logger, repo api.RepoName, dir GitDir, stderr string) bool {
 	if !stdErrIndicatesCorruption(stderr) {
-		return
+		return false
 	}
 
 	logger = logger.With(log.String("repo", string(repo)), log.String("dir", string(dir)))
-
 	logger.Warn("marking repo for re-cloning due to stderr output indicating repo corruption",
 		log.String("stderr", stderr))
 
@@ -1043,6 +1066,8 @@ func checkMaybeCorruptRepo(logger log.Logger, repo api.RepoName, dir GitDir, std
 	if err != nil {
 		logger.Error("failed to set maybeCorruptRepo config", log.Error(err))
 	}
+
+	return true
 }
 
 // stdErrIndicatesCorruption returns true if the provided stderr output from a git command indicates

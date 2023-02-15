@@ -369,11 +369,14 @@ function initCodeIntelligence({
 
     const containerComponentUpdates = new Subject<void>()
 
+    const history = H.createBrowserHistory()
+
     subscription.add(
         registerHoverContributions({
             extensionsController,
             platformContext,
-            history: H.createBrowserHistory(),
+            historyOrNavigate: history,
+            getLocation: () => history.location,
             locationAssign: location.assign.bind(location),
         })
     )
@@ -1217,7 +1220,6 @@ export async function handleCodeHost({
                                     })
                                 )
 
-                                // eslint-disable-next-line rxjs/no-nested-subscribe
                                 .subscribe()
                         )
                     }
@@ -1335,7 +1337,6 @@ export async function handleCodeHost({
                 const adjustPosition = getPositionAdjuster?.(platformContext.requestGraphQL)
                 let hoverSubscription = new Subscription()
                 codeViewEvent.subscriptions.add(
-                    // eslint-disable-next-line rxjs/no-nested-subscribe
                     nativeTooltipsEnabled.subscribe(useNativeTooltips => {
                         hoverSubscription.unsubscribe()
                         if (!useNativeTooltips) {

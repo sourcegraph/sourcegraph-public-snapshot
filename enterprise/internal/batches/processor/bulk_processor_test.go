@@ -57,6 +57,7 @@ func TestBulkProcessor(t *testing.T) {
 		bp := &bulkProcessor{
 			tx:      bstore,
 			sourcer: stesting.NewFakeSourcer(nil, fake),
+			logger:  logtest.Scoped(t),
 		}
 		job := &types.ChangesetJob{JobType: types.ChangesetJobType("UNKNOWN"), UserID: user.ID}
 		err := bp.Process(ctx, job)
@@ -85,7 +86,7 @@ func TestBulkProcessor(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		bp := &bulkProcessor{tx: bstore}
+		bp := &bulkProcessor{tx: bstore, logger: logtest.Scoped(t)}
 		err := bp.Process(ctx, job)
 		if err != changesetIsProcessingErr {
 			t.Fatalf("unexpected error. want=%s, got=%s", changesetIsProcessingErr, err)
@@ -97,6 +98,7 @@ func TestBulkProcessor(t *testing.T) {
 		bp := &bulkProcessor{
 			tx:      bstore,
 			sourcer: stesting.NewFakeSourcer(nil, fake),
+			logger:  logtest.Scoped(t),
 		}
 		job := &types.ChangesetJob{
 			JobType:     types.ChangesetJobTypeComment,
@@ -121,6 +123,7 @@ func TestBulkProcessor(t *testing.T) {
 		bp := &bulkProcessor{
 			tx:      bstore,
 			sourcer: stesting.NewFakeSourcer(nil, fake),
+			logger:  logtest.Scoped(t),
 		}
 		job := &types.ChangesetJob{
 			JobType:       types.ChangesetJobTypeDetach,
@@ -154,6 +157,7 @@ func TestBulkProcessor(t *testing.T) {
 		bp := &bulkProcessor{
 			tx:      bstore,
 			sourcer: stesting.NewFakeSourcer(nil, fake),
+			logger:  logtest.Scoped(t),
 		}
 		job := &types.ChangesetJob{
 			JobType:     types.ChangesetJobTypeReenqueue,
@@ -183,6 +187,7 @@ func TestBulkProcessor(t *testing.T) {
 		bp := &bulkProcessor{
 			tx:      bstore,
 			sourcer: stesting.NewFakeSourcer(nil, fake),
+			logger:  logtest.Scoped(t),
 		}
 		job := &types.ChangesetJob{
 			JobType:     types.ChangesetJobTypeMerge,
@@ -204,6 +209,7 @@ func TestBulkProcessor(t *testing.T) {
 		bp := &bulkProcessor{
 			tx:      bstore,
 			sourcer: stesting.NewFakeSourcer(nil, fake),
+			logger:  logtest.Scoped(t),
 		}
 		job := &types.ChangesetJob{
 			JobType:     types.ChangesetJobTypeClose,
@@ -225,6 +231,7 @@ func TestBulkProcessor(t *testing.T) {
 		bp := &bulkProcessor{
 			tx:      bstore,
 			sourcer: stesting.NewFakeSourcer(nil, fake),
+			logger:  logtest.Scoped(t),
 		}
 
 		t.Run("errors", func(t *testing.T) {

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 
-import { useLocation, useParams } from 'react-router'
+import { useParams, useLocation } from 'react-router-dom-v5-compat'
 
 import { FeedbackText } from '@sourcegraph/wildcard'
 
@@ -10,7 +10,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { TweetFeedback } from '../components/TweetFeedback'
 
-import { SurveyForm, SurveyFormLocationState } from './SurveyForm'
+import { SurveyForm } from './SurveyForm'
 
 import styles from './SurveyPage.module.scss'
 
@@ -26,7 +26,7 @@ const getScoreFromString = (score?: string): number | undefined =>
     score ? Math.max(0, Math.min(10, Math.round(+score))) : undefined
 
 export const SurveyPage: React.FunctionComponent<React.PropsWithChildren<SurveyPageProps>> = props => {
-    const location = useLocation<SurveyFormLocationState>()
+    const location = useLocation()
     const matchParameters = useParams<{ score?: string }>()
     const score = props.forceScore || matchParameters.score
 

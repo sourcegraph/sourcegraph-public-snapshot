@@ -194,6 +194,7 @@ type Repo struct {
 	IsPrivate   bool       `json:"is_private"`
 	Links       RepoLinks  `json:"links"`
 	ForkPolicy  ForkPolicy `json:"fork_policy"`
+	Owner       *Account   `json:"owner"`
 }
 
 func (r *Repo) Namespace() (string, error) {

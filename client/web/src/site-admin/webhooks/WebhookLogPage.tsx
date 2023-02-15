@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router'
 
 import { Alert, Container, PageHeader, H5, Link } from '@sourcegraph/wildcard'
 
@@ -14,14 +13,12 @@ import { WebhookLogPageHeader } from './WebhookLogPageHeader'
 
 import styles from './WebhookLogPage.module.scss'
 
-export interface Props extends Pick<RouteComponentProps, 'history' | 'location'> {
+export interface Props {
     queryWebhookLogs?: typeof _queryWebhookLogs
     webhookID?: string
 }
 
 export const WebhookLogPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    history,
-    location,
     queryWebhookLogs = _queryWebhookLogs,
     webhookID,
 }) => {
@@ -63,8 +60,6 @@ export const WebhookLogPage: React.FunctionComponent<React.PropsWithChildren<Pro
                     onSelectExternalService={setExternalService}
                 />
                 <FilteredConnection
-                    history={history}
-                    location={location}
                     queryConnection={query}
                     nodeComponent={WebhookLogNode}
                     noun="webhook log"

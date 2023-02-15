@@ -1,6 +1,5 @@
 import * as React from 'react'
 
-import * as H from 'history'
 import * as _monaco from 'monaco-editor' // type only
 import { Subscription } from 'rxjs'
 
@@ -10,6 +9,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { SaveToolbarProps, SaveToolbar, SaveToolbarPropsGenerator } from '../components/SaveToolbar'
+import { globalHistory } from '../util/globalHistory'
 
 import { EditorAction, EditorActionsGroup } from './EditorActionsGroup'
 import * as _monacoSettingsEditorModule from './MonacoSettingsEditor'
@@ -53,8 +53,6 @@ interface Props<T extends object>
     }
 
     explanation?: JSX.Element
-
-    history: H.History
 }
 
 interface State {
@@ -80,9 +78,11 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
 
     public componentDidMount(): void {
         if (this.props.blockNavigationIfDirty !== false) {
+            // TODO(valery): RR6
+            // https://github.com/remix-run/react-router/blob/0ce0e4c728129efe214521a22fb902fa652bac70/decisions/0001-use-blocker.md
             // Prevent navigation when dirty.
             this.subscriptions.add(
-                this.props.history.block((location: H.Location, action: H.Action) => {
+                globalHistory.block((location, action) => {
                     if (action === 'REPLACE') {
                         return undefined
                     }

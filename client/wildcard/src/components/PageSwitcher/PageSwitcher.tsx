@@ -60,6 +60,10 @@ export const PageSwitcher: React.FunctionComponent<React.PropsWithChildren<PageS
     const isPreviousPageDisabled = isLoadingPage || (hasPreviousPage !== null ? !hasPreviousPage : true)
     const isNextPageDisabled = isLoadingPage || (hasNextPage !== null ? !hasNextPage : true)
 
+    if (isPreviousPageDisabled && isNextPageDisabled && !isLoadingPage) {
+        return null
+    }
+
     return (
         <nav className={className} aria-label="pagination">
             <ul className={styles.list}>

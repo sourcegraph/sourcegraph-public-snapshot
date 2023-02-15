@@ -1006,6 +1006,7 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
             break
         }
         case 'has.tag':
+        case 'has.owner':
         case 'has.key':
             return [
                 {
@@ -1200,7 +1201,7 @@ export const toCSSClassName = (token: DecoratedToken): string => {
     }
 }
 
-interface Decoration {
+export interface Decoration {
     value: string
     key: number
     className: string

@@ -2,7 +2,7 @@ import React, { useRef } from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { useLocation, Routes, Route } from 'react-router-dom-v5-compat'
 
 import { SiteSettingFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -16,7 +16,7 @@ import { BatchChangesProps } from '../batches'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import { Page } from '../components/Page'
-import { RouteDescriptor } from '../util/contributions'
+import { RouteV6Descriptor } from '../util/contributions'
 
 import { SiteAdminSidebar, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
@@ -48,14 +48,9 @@ export interface SiteAdminAreaRouteContext
     overviewComponents: readonly React.ComponentType<React.PropsWithChildren<{}>>[]
 }
 
-export interface SiteAdminAreaRoute extends RouteDescriptor<SiteAdminAreaRouteContext> {}
+export interface SiteAdminAreaRoute extends RouteV6Descriptor<SiteAdminAreaRouteContext> {}
 
-interface SiteAdminAreaProps
-    extends RouteComponentProps<{}>,
-        PlatformContextProps,
-        SettingsCascadeProps,
-        BatchChangesProps,
-        TelemetryProps {
+interface SiteAdminAreaProps extends PlatformContextProps, SettingsCascadeProps, BatchChangesProps, TelemetryProps {
     routes: readonly SiteAdminAreaRoute[]
     sideBarGroups: SiteAdminSideBarGroups
     overviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
@@ -66,6 +61,7 @@ interface SiteAdminAreaProps
 
 const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildren<SiteAdminAreaProps>> = props => {
     const reference = useRef<HTMLDivElement>(null)
+    const location = useLocation()
 
     // If not site admin, redirect to sign in.
     if (!props.authenticatedUser.siteAdmin) {
@@ -103,25 +99,22 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
                     batchChangesWebhookLogsEnabled={props.batchChangesWebhookLogsEnabled}
                 />
                 <div className="flex-bounded">
-                    <ErrorBoundary location={props.location}>
+                    <ErrorBoundary location={location}>
                         <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
-                            <Switch>
+                            <Routes>
                                 {props.routes.map(
-                                    ({ render, path, exact, condition = () => true }) =>
+                                    ({ render, path, condition = () => true }) =>
                                         condition(context) && (
                                             <Route
                                                 // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                                 key="hardcoded-key"
-                                                path={props.match.url + path}
-                                                exact={exact}
-                                                render={routeComponentProps =>
-                                                    render({ ...context, ...routeComponentProps })
-                                                }
+                                                path={path}
+                                                element={render(context)}
                                             />
                                         )
                                 )}
-                                <Route component={NotFoundPage} />
-                            </Switch>
+                                <Route path="*" element={<NotFoundPage />} />
+                            </Routes>
                         </React.Suspense>
                     </ErrorBoundary>
                 </div>

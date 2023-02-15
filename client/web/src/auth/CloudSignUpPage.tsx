@@ -29,6 +29,7 @@ interface Props extends ThemeProps, TelemetryProps {
         SourcegraphContext,
         'authProviders' | 'experimentalFeatures' | 'authPasswordPolicy' | 'authMinPasswordLength'
     >
+    isSourcegraphDotCom: boolean
 }
 
 const SourceToTitleMap = {
@@ -55,6 +56,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
     onSignUp,
     context,
     telemetryService,
+    isSourcegraphDotCom,
 }) => {
     const location = useLocation()
 
@@ -72,7 +74,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
 
     const invitedBy = queryWithUseEmailToggled.get('invitedBy')
     const { data } = useQuery<UserAreaUserProfileResult, UserAreaUserProfileVariables>(USER_AREA_USER_PROFILE, {
-        variables: { username: invitedBy || '' },
+        variables: { username: invitedBy || '', isSourcegraphDotCom },
         skip: !invitedBy,
     })
     const invitedByUser = data?.user

@@ -7,8 +7,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
@@ -142,7 +142,7 @@ func TestParseLogLines(t *testing.T) {
 
 	tcs := []struct {
 		name  string
-		entry workerutil.ExecutionLogEntry
+		entry executor.ExecutionLogEntry
 		lines []*batcheslib.LogEvent
 		want  map[int]*StepInfo
 	}{
@@ -262,7 +262,7 @@ func TestParseLogLines(t *testing.T) {
 		},
 		{
 			name:  "Started but timeout",
-			entry: workerutil.ExecutionLogEntry{StartTime: time1, ExitCode: intPtr(-1), DurationMs: intPtr(500)},
+			entry: executor.ExecutionLogEntry{StartTime: time1, ExitCode: intPtr(-1), DurationMs: intPtr(500)},
 			lines: []*batcheslib.LogEvent{
 				{
 					Timestamp: time1,

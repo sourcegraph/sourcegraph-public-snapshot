@@ -35,13 +35,7 @@ To get started and open the Sourcegraph extension, simply click the Sourcegraph 
 
 Sourcegraph functions like any search engine; simply type in your search query, and Sourcegraph will populate search results.
 
-Sourcegraph offers 3 different ways to search:
-
-1. [Literal search](https://learn.sourcegraph.com/how-to-search-code-with-sourcegraph-using-literal-patterns)
-2. [Structural search](https://learn.sourcegraph.com/how-to-search-with-sourcegraph-using-structural-patterns)
-3. [Regular expressions](https://learn.sourcegraph.com/how-to-search-with-sourcegraph-using-regular-expression-patterns)
-
-Sourcegraph also accepts filters to narrow down search results, such as `repo`, `file`, and `lang`. Check out our search [cheat sheet](https://learn.sourcegraph.com/how-to-search-code-with-sourcegraph-a-cheat-sheet).
+Learn more about Sourcegraph search in our [docs](https://docs.sourcegraph.com/code_search).
 
 For example, you can search for "auth provider" in a Go repository with a search like this one:
 

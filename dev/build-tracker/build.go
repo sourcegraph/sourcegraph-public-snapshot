@@ -23,7 +23,25 @@ type Build struct {
 
 	// ConsecutiveFailure indicates whether this build is the nth consecutive failure.
 	ConsecutiveFailure int `json:"consecutiveFailures"`
+
+	// Notification is the details about the notification that was sent for this build.
+	Notification *SlackNotification
+
+	// Mutex is used to to control and stop other changes being made to the build.
+	sync.Mutex
 }
+
+// GroupJobFilter has a filter with an associated group. Jobs matching the Filter can be considered as part of the group
+type GroupJobFilter struct {
+	Filter func(j *Job) bool
+	Group  string
+}
+
+// FailedJobFilter filters jobs that have failed and the group is "failed"
+var FailedJobFilter = GroupJobFilter{Group: "failed", Filter: func(j *Job) bool { return j.failed() }}
+
+// FixedJobFilter filters jobs that are considered fixed and the group is "fixed"
+var FixedJobFilter = GroupJobFilter{Group: "fixed", Filter: func(j *Job) bool { return j.fixed }}
 
 // updateFromEvent updates the current build with the build and pipeline from the event.
 func (b *Build) updateFromEvent(e *Event) {
@@ -33,6 +51,15 @@ func (b *Build) updateFromEvent(e *Event) {
 
 func (b *Build) hasFailed() bool {
 	return b.state() == "failed"
+}
+
+// isFinalized determines whether the job is considered fixed. A job is fixed when:
+// * It has previously failed which means we have sent a notification for it
+// * It is not failed anymore
+func (b *Build) isFinalized() bool {
+	// if we have sent a notification previously for this build ie. the build failed previously
+	// and the build is not failed currently = the build must be fixed
+	return !b.hasFailed() && b.hasNotification()
 }
 
 func (b *Build) isFinished() bool {
@@ -80,20 +107,42 @@ func (b *Build) message() string {
 	return strp(b.Message)
 }
 
-func (b *Build) failedJobs() []*Job {
-	result := make([]*Job, 0)
+func (b *Build) filterJobs(filters ...GroupJobFilter) map[string][]*Job {
+	result := map[string][]*Job{}
 	for _, j := range b.Jobs {
 		j := j
-		if j.failed() {
-			result = append(result, &j)
+		for _, f := range filters {
+			add := f.Filter(&j)
+			if add {
+				jobs, ok := result[f.Group]
+				if !ok {
+					jobs = []*Job{}
+				}
+				jobs = append(jobs, &j)
+				result[f.Group] = jobs
+			}
 		}
 	}
 
 	return result
 }
 
+func (b *Build) failedJobs() []*Job {
+	results := b.filterJobs(FailedJobFilter)
+
+	if items, ok := results[FailedJobFilter.Group]; ok {
+		return items
+	}
+	return []*Job{}
+}
+
+func (b *Build) hasNotification() bool {
+	return b.Notification != nil
+}
+
 type Job struct {
 	buildkite.Job
+	fixed bool
 }
 
 func (j *Job) id() string {
@@ -110,6 +159,14 @@ func (j *Job) exitStatus() int {
 
 func (j *Job) failed() bool {
 	return !j.SoftFailed && j.exitStatus() > 0
+}
+
+func (j *Job) state() string {
+	return strp(j.State)
+}
+
+func (j *Job) hasTimedOut() bool {
+	return j.state() == "timed_out"
 }
 
 // Pipeline wraps a buildkite.Pipeline and provides convenience functions to access values of the wrapped pipeline is a safe maner
@@ -155,6 +212,10 @@ func (b *Event) pipeline() *Pipeline {
 
 func (b *Event) isBuildFinished() bool {
 	return b.Name == "build.finished"
+}
+
+func (b *Event) isJobFinished() bool {
+	return b.Name == "job.finished"
 }
 
 func (b *Event) jobName() string {
@@ -204,6 +265,10 @@ func (s *BuildStore) Add(event *Event) {
 		s.builds[event.buildNumber()] = build
 	}
 
+	// Now that we have a build, lets make sure it isn't modified while we look and possibly update it
+	build.Lock()
+	defer build.Unlock()
+
 	// if the build is finished replace the original build with the replaced one since it
 	// will be more up to date, and tack on some finalized data
 	if event.isBuildFinished() {
@@ -223,18 +288,25 @@ func (s *BuildStore) Add(event *Event) {
 	}
 
 	// Keep track of the job, if there is one
-	wrappedJob := event.job()
-	if wrappedJob.name() != "" {
-		build.Jobs[wrappedJob.name()] = *wrappedJob
+	newJob := event.job()
+	if newJob.name() != "" {
+		// we get the oldJob so that we can check if the new job fixed the failure
+		oldJob, ok := build.Jobs[newJob.name()]
+		if ok {
+			// if the old job failed and the new job (with the same name) has succeeded, it means
+			// this is an updated job and the job was retried and got fixed, so we marked the job as fixed
+			newJob.fixed = oldJob.failed() && newJob.Retried && !newJob.failed()
+		}
+		build.Jobs[newJob.name()] = *newJob
 		s.logger.Debug("job added",
 			log.Int("buildNumber", event.buildNumber()),
-			log.Object("job", log.String("name", wrappedJob.name()), log.String("id", wrappedJob.id())),
+			log.Object("job", log.String("name", newJob.name()), log.String("id", newJob.id())),
 			log.Int("totalJobs", len(build.Jobs)),
 		)
 	} else {
 		s.logger.Warn("job has no name - not added",
 			log.Int("buildNumber", event.buildNumber()),
-			log.Object("job", log.String("name", wrappedJob.name()), log.String("id", wrappedJob.id())),
+			log.Object("job", log.String("name", newJob.name()), log.String("id", newJob.id())),
 			log.Int("totalJobs", len(build.Jobs)),
 		)
 	}

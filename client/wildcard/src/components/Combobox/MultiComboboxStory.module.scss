@@ -1,0 +1,15 @@
+.custom-option {
+    &--description {
+        display: block;
+        color: var(--text-muted);
+    }
+
+    &[aria-selected='true'] &--description {
+        opacity: 0.7;
+        color: var(--dropdown-link-active-color);
+    }
+}
+
+.async-search-popover {
+    max-width: 550px;
+}

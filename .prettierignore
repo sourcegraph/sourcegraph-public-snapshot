@@ -40,3 +40,7 @@ client/jetbrains/.gradle
 .browserslistrc
 code-intel-extensions.json
 .direnv
+pnpm-lock.yaml
+client/plugin-backstage/
+node_modules/
+client/web-sveltekit/.svelte-kit

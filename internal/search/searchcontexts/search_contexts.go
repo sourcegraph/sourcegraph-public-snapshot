@@ -5,7 +5,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
@@ -209,21 +208,19 @@ func validateSearchContextQuery(contextQuery string) error {
 				return
 			}
 
-			repoRegex, revs := search.ParseRepositoryRevisions(value)
+			repoRevs, err := query.ParseRepositoryRevisions(value)
+			if err != nil {
+				errs = errors.Append(errs,
+					errors.Errorf("repo field regex %q is invalid: %v", value, err))
+				return
+			}
 
-			for _, rev := range revs {
+			for _, rev := range repoRevs.Revs {
 				if rev.HasRefGlob() {
 					errs = errors.Append(errs,
 						errors.Errorf("unsupported rev glob in search context query: %q", value))
 					return
 				}
-			}
-
-			_, err := regexp.Compile(repoRegex)
-			if err != nil {
-				errs = errors.Append(errs,
-					errors.Errorf("repo field regex %q is invalid: %v", value, err))
-				return
 			}
 
 		case query.FieldFork:
@@ -489,13 +486,12 @@ func ParseRepoOpts(contextQuery string) ([]RepoOpts, error) {
 		}
 
 		for _, r := range repoFilters {
-			repoFilter, revs := search.ParseRepositoryRevisions(r)
-			for _, rev := range revs {
+			for _, rev := range r.Revs {
 				if !rev.HasRefGlob() {
 					rq.RevSpecs = append(rq.RevSpecs, rev.RevSpec)
 				}
 			}
-			rq.IncludePatterns = append(rq.IncludePatterns, repoFilter)
+			rq.IncludePatterns = append(rq.IncludePatterns, r.Repo)
 		}
 
 		qs = append(qs, rq)

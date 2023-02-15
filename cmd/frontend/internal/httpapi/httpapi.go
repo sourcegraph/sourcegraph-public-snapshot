@@ -57,11 +57,17 @@ type Handlers struct {
 	BatchesChangesFileExistsHandler http.Handler
 	BatchesChangesFileUploadHandler http.Handler
 
+	// SCIM
+	SCIMHandler http.Handler
+
 	// Code intel
 	NewCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler
 
 	// Compute
 	NewComputeStreamHandler enterprise.NewComputeStreamHandler
+
+	// Code Insights
+	CodeInsightsDataExportHandler http.Handler
 }
 
 // NewHandler returns a new API handler that uses the provided API
@@ -137,10 +143,13 @@ func NewHandler(
 	m.Get(apirouter.SCIPUploadExists).Handler(trace.Route(noopHandler))
 	m.Get(apirouter.ComputeStream).Handler(trace.Route(handlers.NewComputeStreamHandler()))
 
+	m.Get(apirouter.CodeInsightsDataExport).Handler(trace.Route(handlers.CodeInsightsDataExportHandler))
+
 	if envvar.SourcegraphDotComMode() {
 		m.Path("/updates").Methods("GET", "POST").Name("updatecheck").Handler(trace.Route(http.HandlerFunc(updatecheck.HandlerWithLog(logger))))
 	}
 
+	m.Get(apirouter.SCIM).Handler(trace.Route(handlers.SCIMHandler))
 	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(logger, schema, rateLimiter, false))))
 
 	m.Get(apirouter.SearchStream).Handler(trace.Route(frontendsearch.StreamHandler(db)))
@@ -148,14 +157,14 @@ func NewHandler(
 	// Return the minimum src-cli version that's compatible with this instance
 	m.Get(apirouter.SrcCli).Handler(trace.Route(newSrcCliVersionHandler(logger)))
 
-	gsClient := gitserver.NewClient(db)
+	gsClient := gitserver.NewClient()
 	m.Get(apirouter.GitBlameStream).Handler(trace.Route(handleStreamBlame(logger, db, gsClient)))
 
 	// Set up the src-cli version cache handler (this will effectively be a
 	// no-op anywhere other than dot-com).
 	m.Get(apirouter.SrcCliVersionCache).Handler(trace.Route(releasecache.NewHandler(logger)))
 
-	m.Get(apirouter.Registry).Handler(trace.Route(handler(registry.HandleRegistry(db))))
+	m.Get(apirouter.Registry).Handler(trace.Route(handler(registry.HandleRegistry)))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
@@ -195,7 +204,7 @@ func NewInternalHandler(
 	m.Get(apirouter.ExternalServiceConfigs).Handler(trace.Route(handler(serveExternalServiceConfigs(db))))
 
 	// zoekt-indexserver endpoints
-	gsClient := gitserver.NewClient(db)
+	gsClient := gitserver.NewClient()
 	indexer := &searchIndexerServer{
 		db:              db,
 		logger:          logger.Scoped("searchIndexerServer", "zoekt-indexserver endpoints"),

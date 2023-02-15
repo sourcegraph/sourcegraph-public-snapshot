@@ -1,5 +1,6 @@
 :root {
     --filter-input-height: 2.5rem;
+    --filter-input-padding-y: 0.25rem;
     --group-header-font-size: 0.875rem;
     --group-divider-height: 0.25rem;
     --card-header-height: 1.5rem;
@@ -8,8 +9,8 @@
 .filter {
     height: var(--filter-input-height);
     padding-left: 1rem;
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
+    padding-top: var(--filter-input-padding-y);
+    padding-bottom: var(--filter-input-padding-y);
     padding-right: 1rem;
 
     input {
@@ -99,6 +100,7 @@
     display: flex;
     flex-direction: column;
     min-height: 18px;
+    position: relative;
 
     &:not(:last-child) > &--link {
         border-bottom: 1px solid var(--body-bg);
@@ -106,6 +108,21 @@
 
     &--active {
         background-color: var(--color-bg-3);
+    }
+
+    &--active-icon {
+        width: 1.35rem;
+        // stylelint-disable-next-line declaration-property-unit-allowed-list
+        height: calc(100% - 1px);
+        position: absolute;
+        right: 0;
+        top: 0;
+        background-color: var(--color-bg-3);
+        padding-left: 0.25rem;
+        padding-right: 0.1rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 
     &--link:hover {
@@ -210,8 +227,6 @@
 
         border: none;
 
-        height: 1.8rem;
-
         background-color: var(--body-bg);
 
         h4 {
@@ -247,7 +262,7 @@
 
 // Lists of locations (definitions, references, implementations) on the left
 .location-lists {
-    height: calc(100% - var(--filter-input-height));
+    height: calc(100% - var(--filter-input-height) - 2 * var(--filter-input-padding-y));
     overflow: auto;
 }
 

@@ -9,11 +9,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
-func InferRepositoryAndRevision(pkg precise.Package) (repoName api.RepoName, gitTagOrCommit string, ok bool) {
-	for _, fn := range []func(pkg precise.Package) (api.RepoName, string, bool){
+func InferRepositoryAndRevision(pkg dependencies.MinimialVersionedPackageRepo) (repoName api.RepoName, gitTagOrCommit string, ok bool) {
+	for _, fn := range []func(pkg dependencies.MinimialVersionedPackageRepo) (api.RepoName, string, bool){
 		inferGoRepositoryAndRevision,
 		inferJVMRepositoryAndRevision,
 		inferNpmRepositoryAndRevision,
@@ -33,12 +32,12 @@ const GitHubScheme = "https://"
 
 var goVersionPattern = lazyregexp.New(`^v?[\d\.]+-([a-f0-9]+)`)
 
-func inferGoRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, bool) {
-	if pkg.Scheme != "gomod" || !strings.HasPrefix(pkg.Name, GitHubScheme+"github.com/") {
+func inferGoRepositoryAndRevision(pkg dependencies.MinimialVersionedPackageRepo) (api.RepoName, string, bool) {
+	if pkg.Scheme != "gomod" || !strings.HasPrefix(string(pkg.Name), GitHubScheme+"github.com/") {
 		return "", "", false
 	}
 
-	repoParts := strings.Split(pkg.Name[len(GitHubScheme):], "/")[:3]
+	repoParts := strings.Split(string(pkg.Name[len(GitHubScheme):]), "/")[:3]
 	if len(repoParts) > 3 {
 		repoParts = repoParts[:3]
 	}
@@ -51,20 +50,20 @@ func inferGoRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, bo
 	return api.RepoName(strings.Join(repoParts, "/")), version, true
 }
 
-func inferJVMRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, bool) {
+func inferJVMRepositoryAndRevision(pkg dependencies.MinimialVersionedPackageRepo) (api.RepoName, string, bool) {
 	if pkg.Scheme != dependencies.JVMPackagesScheme {
 		return "", "", false
 	}
 	return api.RepoName(pkg.Name), "v" + pkg.Version, true
 }
 
-func inferNpmRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, bool) {
+func inferNpmRepositoryAndRevision(pkg dependencies.MinimialVersionedPackageRepo) (api.RepoName, string, bool) {
 	if pkg.Scheme != dependencies.NpmPackagesScheme {
 		return "", "", false
 	}
 
 	logger := log.Scoped("inferNpmRepositoryAndRevision", "")
-	npmPkg, err := reposource.ParseNpmPackageFromPackageSyntax(reposource.PackageName(pkg.Name))
+	npmPkg, err := reposource.ParseNpmPackageFromPackageSyntax(pkg.Name)
 	if err != nil {
 		logger.Error("invalid npm package name in database", log.Error(err))
 		return "", "", false
@@ -72,47 +71,31 @@ func inferNpmRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, b
 	return npmPkg.RepoName(), "v" + pkg.Version, true
 }
 
-func inferRustRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, bool) {
+func inferRustRepositoryAndRevision(pkg dependencies.MinimialVersionedPackageRepo) (api.RepoName, string, bool) {
 	if pkg.Scheme != dependencies.RustPackagesScheme {
 		return "", "", false
 	}
 
-	logger := log.Scoped("inferRustRepositoryAndRevision", "")
-	rustPkg, err := reposource.ParseRustVersionedPackage(pkg.Name)
-	if err != nil {
-		logger.Error("invalid rust package name in database", log.Error(err), log.String("pkg", pkg.Name))
-		return "", "", false
-	}
-
+	rustPkg := reposource.ParseRustVersionedPackage(string(pkg.Name))
 	return rustPkg.RepoName(), "v" + pkg.Version, true
 }
 
-func inferPythonRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, bool) {
+func inferPythonRepositoryAndRevision(pkg dependencies.MinimialVersionedPackageRepo) (api.RepoName, string, bool) {
 	if pkg.Scheme != dependencies.PythonPackagesScheme {
 		return "", "", false
 	}
 
-	logger := log.Scoped("inferPythonRepositoryAndRevision", "")
-	pythonPkg, err := reposource.ParsePythonPackageFromName(reposource.PackageName(pkg.Name))
-	if err != nil {
-		logger.Error("invalid python package name in database", log.Error(err), log.String("pkg", pkg.Name))
-		return "", "", false
-	}
+	pythonPkg := reposource.ParsePythonPackageFromName(pkg.Name)
 
 	return pythonPkg.RepoName(), pkg.Version, true
 }
 
-func inferRubyRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, bool) {
+func inferRubyRepositoryAndRevision(pkg dependencies.MinimialVersionedPackageRepo) (api.RepoName, string, bool) {
 	if pkg.Scheme != dependencies.RubyPackagesScheme {
 		return "", "", false
 	}
 
-	logger := log.Scoped("inferRubyRepositoryAndRevision", "")
-	rubyPkg, err := reposource.ParseRubyPackageFromName(reposource.PackageName(pkg.Name))
-	if err != nil {
-		logger.Error("invalid ruby package name in database", log.Error(err), log.String("pkg", pkg.Name))
-		return "", "", false
-	}
+	rubyPkg := reposource.ParseRubyPackageFromName(pkg.Name)
 
 	return rubyPkg.RepoName(), pkg.Version, true
 }

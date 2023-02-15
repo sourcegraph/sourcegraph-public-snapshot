@@ -69,7 +69,7 @@ const config = {
 See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-source for more information.`,
           },
           {
-            group: ['@sourcegraph/search-ui/src/experimental'],
+            group: ['@sourcegraph/branded/src/search-ui/experimental'],
             message:
               'The experimental search input is not available for general use. If you have questions about it reach out to the search product team.',
           },
@@ -83,7 +83,7 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
               '!@sourcegraph/shared/src/*',
               '!@sourcegraph/shared/src/testing/*',
               '!@sourcegraph/web/src/SourcegraphWebApp.scss',
-              '!@sourcegraph/search-ui/src/experimental',
+              '!@sourcegraph/branded/src/search-ui/experimental',
               '!@sourcegraph/*/src/testing',
               '!@sourcegraph/*/src/stories',
             ],
@@ -206,6 +206,11 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
         selector: 'JSXSpreadAttribute[argument.name=/^(props|rest)$/]',
         message:
           "Spreading props can be unsafe. Prefer destructuring the props object, or continue only if you're sure.",
+      },
+      {
+        selector: 'ImportDeclaration[source.value="react-router"]',
+        message:
+          'Use `react-router-dom-v5-compat` instead. We are in the process of migrating from react-router v5 to v6. More info https://github.com/sourcegraph/sourcegraph/issues/33834',
       },
     ],
     // https://reactjs.org/blog/2020/09/22/introducing-the-new-jsx-transform.html#eslint

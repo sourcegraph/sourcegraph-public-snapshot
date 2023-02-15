@@ -36,6 +36,9 @@ Then, deploy the updated version of Sourcegraph to your Kubernetes cluster:
 ./kubectl-apply-all.sh
 ```
 
+> NOTE: By default, this script applies our base manifests using [`kubectl apply`](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#apply) with a variety of arguments specific to the [reference repository](./index.md#reference-repository)'s layout.
+> If you have specific commands that should be run whenever you apply your manifests, you should modify this script as needed. For example, if you use [overlays to make changes to the manifests](./configure.md#overlays), you should modify this script to apply your generated cluster instead.
+
 Monitor the status of the deployment to determine its success.
 
 ```bash
@@ -75,7 +78,7 @@ To perform a multi-version upgrade on a Sourcegraph instance running on Kubernet
   - If using an external database, follow the [upgrading external PostgreSQL instances](../../postgres.md#upgrading-external-postgresql-instances) guide.
   - Otherwise, perform the following steps from the [upgrading internal Postgres instances](../../postgres.md#upgrading-internal-postgresql-instances) guide:
       1. It's assumed that your fork of `deploy-sourcegraph` is up to date with your instance's current version. Pull the upstream changes for `v3.27.0` and resolve any git merge conflicts. We need to temporarily boot the containers defined at this specific version to rewrite existing data to the new Postgres 12 format.
-      1. Run `kubectl apply -l deploy=sourcegraph -f base/pgsql` to launch a new Postgres 12 container and rewrite the old Postgres 11 data. This may take a while, but streaming container logs should show progress. **NOTE**: The Postgres migration requires enough capacity in its attached volume to accommodate an additional copy of the data currently on disk. Resize the volume now if necessary - the container will fail to start if there is not enough free disk space.
+      1. Run `kubectl apply -l deploy=sourcegraph -f base/pgsql` to launch a new Postgres 12 container and rewrite the old Postgres 11 data. This may take a while, but streaming container logs should show progress. **NOTE**: The Postgres migration requires enough capacity in its attached volume to accommodate an additional copy of the data currently on disk. Resize the volume now if necessary—the container will fail to start if there is not enough free disk space.
       1. Wait until the database container is accepting connections. Once ready, run the command `kubectl exec pgsql -- psql -U sg -c 'REINDEX database sg;'` issue a reindex command to Postgres to repair indexes that were silently invalidated by the previous data rewrite step. **If you skip this step**, then some data may become inaccessible under normal operation, the following steps are not guaranteed to work, and **data loss will occur**.
       1. Follow the same steps for the `codeintel-db`:
           - Run `kubectl apply -l deploy=sourcegraph -f base/codeintel-db` to launch Postgres 12.
@@ -120,8 +123,7 @@ If this happens, do the following:
 
 Note that the need to run the above steps can be prevented altogether with [node
 selectors](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector), which
-tell Kubernetes to assign certain pods to specific nodes. See the [docs on enabling node
-selectors](scale.md#node-selector) for Sourcegraph on Kubernetes.
+tell Kubernetes to assign certain pods to specific nodes.
 
 ## High-availability updates
 

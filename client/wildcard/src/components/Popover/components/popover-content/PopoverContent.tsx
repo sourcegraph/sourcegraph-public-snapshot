@@ -8,6 +8,7 @@ import { useKeyboard, useOnClickOutside } from '../../../../hooks'
 import { ForwardReferenceComponent } from '../../../../types'
 import { PopoverContext } from '../../contexts/internal-context'
 import { PopoverRoot } from '../../contexts/public-context'
+import { TetherInstanceAPI } from '../../tether'
 import { PopoverOpenEvent, PopoverOpenEventReason } from '../../types'
 import { FloatingPanel, FloatingPanelProps } from '../floating-panel/FloatingPanel'
 
@@ -22,6 +23,7 @@ export interface PopoverContentProps extends Omit<FloatingPanelProps, 'target' |
     returnTargetFocus?: boolean
     focusContainerClassName?: string
 
+    onTetherCreate?: (tether: TetherInstanceAPI) => void
     onOpenChange?: (event: PopoverOpenEvent) => void
 }
 
@@ -39,6 +41,7 @@ export const PopoverContent = forwardRef(function PopoverContent(props, referenc
         role = 'dialog',
         focusContainerClassName,
         onOpenChange: onOpenChangeProp,
+        onTetherCreate,
         ...otherProps
     } = props
 
@@ -96,6 +99,7 @@ export const PopoverContent = forwardRef(function PopoverContent(props, referenc
             aria-modal={ariaModal}
             rootRender={renderRoot}
             className={classNames(styles.popover, otherProps.className)}
+            onTetherCreate={onTetherCreate}
         >
             <FloatingPanelContent
                 autoFocus={true}

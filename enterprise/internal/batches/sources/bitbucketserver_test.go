@@ -129,7 +129,7 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 		exists bool
 	}{
 		{
-			name: "abbreviated refs",
+			name: "abbreviated_refs",
 			cs: &Changeset{
 				Title:      "This is a test PR",
 				Body:       "This is the body of a test PR",
@@ -153,7 +153,7 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 			},
 		},
 		{
-			name: "already exists",
+			name: "already_exists",
 			cs: &Changeset{
 				Title:      "This is a test PR",
 				Body:       "This is the body of a test PR",
@@ -685,7 +685,7 @@ func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
 	})
 }
 
-func TestBitbucketServerSource_GetUserFork(t *testing.T) {
+func TestBitbucketServerSource_GetFork(t *testing.T) {
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
 		// The test fixtures and golden files were generated with
@@ -744,111 +744,212 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
 		assert.Nil(t, err)
 
-		fork, err := bbsSrc.GetUserFork(ctx, newBitbucketServerRepo(urn, "SOUR", "read-only", 10103))
+		fork, err := bbsSrc.GetFork(ctx, newBitbucketServerRepo(urn, "SOUR", "read-only", 10103), nil, nil)
 		assert.Nil(t, fork)
 		assert.NotNil(t, err)
 		assert.Contains(t, err.Error(), "getting username")
 	})
 
+	// This test validates the behavior when `GetFork` is called but the response from the
+	// API indicates the destination we would like to fork the repo into is already used
+	// for a different repo. `GetFork` should return `nil` and an error.
 	t.Run("not a fork", func(t *testing.T) {
+		// This test expects that:
+		// - The repo BAT/vcr-fork-test-repo exists and is not a fork.
+		// - The repo ~MILTON/vcr-fork-test-repo exists and is not a fork.
+		// Use credentials in 1Password for "milton" to access or update this test.
 		name := testName(t)
 		cf, save := newClientFactory(t, name)
 		defer save(t)
 
 		svc := newExternalService(t, nil)
-		// This is a repo that isn't a fork. Use credentials in 1Password for "milton" to
-		// access or update this test. If an update is run by someone who's not aharvey, this
-		// needs to be a repo that isn't a fork.
-		// This test is to ensure that a user cannot fork a repo that is already in their user namespace
-		target := newBitbucketServerRepo(urn, "~milton", "vcr-fork-test-repo", 0)
+		target := newBitbucketServerRepo(urn, "BAT", "vcr-fork-test-repo", 0)
 
 		ctx := context.Background()
 		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
 		assert.Nil(t, err)
 
-		fork, err := bbsSrc.GetUserFork(ctx, target)
+		fork, err := bbsSrc.GetFork(ctx, target, strPtr("~milton"), strPtr("vcr-fork-test-repo"))
 		assert.Nil(t, fork)
-		assert.ErrorContains(t, err, "This repository URL is already taken")
+		assert.ErrorContains(t, err, "repo is not a fork")
 	})
 
+	// This test validates the behavior when `GetFork` is called but the response from the
+	// API indicates the destination we would like to fork the repo into is a fork of a
+	// different repo. `GetFork` should return `nil` and an error.
 	t.Run("not forked from parent", func(t *testing.T) {
 		// This test expects that:
-		// - The repo BAT/vcr-fork-test-repo-already-forked already exists.
+		// - The repo BAT/vcr-fork-test-repo-already-forked exists and is not a fork.
 		// - The repo ~MILTON/BAT-vcr-fork-test-repo-already-forked exists and is a fork of it.
+		// Use credentials in 1Password for "milton" to access or update this test.
 		name := testName(t)
 		cf, save := newClientFactory(t, name)
 		defer save(t)
 
 		svc := newExternalService(t, nil)
 		// We'll give the target repo the incorrect ID, which will result in the
-		// parent check in getFork() failing.
+		// origin ID check in checkAndCopy() failing.
 		target := newBitbucketServerRepo(urn, "BAT", "vcr-fork-test-repo-already-forked", 0)
 
 		ctx := context.Background()
 		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
 		assert.Nil(t, err)
 
-		fork, err := bbsSrc.GetUserFork(ctx, target)
+		fork, err := bbsSrc.GetFork(ctx, target, strPtr("~milton"), strPtr("BAT-vcr-fork-test-repo-already-forked"))
 		assert.Nil(t, fork)
-		assert.ErrorIs(t, err, errNotForkedFromParent)
+		assert.ErrorContains(t, err, "repo was not forked from the given parent")
 	})
 
-	t.Run("already forked", func(t *testing.T) {
+	// This test validates the behavior when `GetFork` is called without a namespace or
+	// name set, but a fork of the repo already exists in the user's namespace with the
+	// default fork name. `GetFork` should return the existing fork.
+	t.Run("success with new changeset and existing fork", func(t *testing.T) {
 		// This test expects that:
-		// - The repo BAT/vcr-fork-test-repo-already-forked already exists.
+		// - The repo BAT/vcr-fork-test-repo-already-forked exists and is not a fork.
 		// - The repo ~MILTON/BAT-vcr-fork-test-repo-already-forked exists and is a fork of it.
+		// - The current user is ~MILTON and the default fork naming convention would produce
+		//   the fork name "BAT-vcr-fork-test-repo-already-forked".
+		// Use credentials in 1Password for "milton" to access or update this test.
 		name := testName(t)
 		cf, save := newClientFactory(t, name)
 		defer save(t)
 
 		svc := newExternalService(t, nil)
-		// Use credentials in 1Password for "milton" to access or update this repo.
+		// Code host ID for this repo can be found in the VCR cassette or by inspecting
+		// the response body at GET
+		// https://bitbucket.sgdev.org/rest/api/1.0/projects/BAT/repos/vcr-fork-test-repo-already-forked
 		target := newBitbucketServerRepo(urn, "BAT", "vcr-fork-test-repo-already-forked", 24378)
 
 		ctx := context.Background()
 		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
 		assert.Nil(t, err)
 
-		user, err := bbsSrc.client.AuthenticatedUsername(ctx)
+		username, err := bbsSrc.client.AuthenticatedUsername(ctx)
 		assert.Nil(t, err)
 
-		fork, err := bbsSrc.GetUserFork(ctx, target)
+		fork, err := bbsSrc.GetFork(ctx, target, nil, nil)
 		assert.Nil(t, err)
 		assert.NotNil(t, fork)
 		assert.NotEqual(t, fork, target)
-		assert.Equal(t, "~"+strings.ToUpper(user), fork.Metadata.(*bitbucketserver.Repo).Project.Key)
-		assert.Equal(t, fork.Sources[urn].CloneURL, "https://bitbucket.sgdev.org/~"+user+"/bat-vcr-fork-test-repo-already-forked")
+		assert.Equal(t, "~"+strings.ToUpper(username), fork.Metadata.(*bitbucketserver.Repo).Project.Key)
+		assert.Equal(t, fork.Sources[urn].CloneURL, "https://bitbucket.sgdev.org/~"+username+"/bat-vcr-fork-test-repo-already-forked")
 
 		testutil.AssertGolden(t, "testdata/golden/"+name, update(name), fork)
 	})
 
-	t.Run("new fork", func(t *testing.T) {
+	// This test validates the behavior when `GetFork` is called without a namespace or
+	// name set and no fork of the repo exists in the user's namespace with the default
+	// fork name. `GetFork` should return the newly-created fork.
+	//
+	// NOTE: It is not possible to update this test and "success with existing changeset
+	// and new fork" at the same time.
+	t.Run("success with new changeset and new fork", func(t *testing.T) {
+		t.Skip()
 		// This test expects that:
-		// - The repo BAT/vcr-fork-test-repo already exists.
-		// - The repo ~MILTON/BAT-vcr-fork-test-repo does NOT already exist.
+		// - The repo BAT/vcr-fork-test-repo-not-forked exists and is not a fork.
+		// - The repo ~MILTON/BAT-vcr-fork-test-repo-not-forked does not exist.
+		// - The current user is ~MILTON and the default fork naming convention would produce
+		//   the fork name "BAT-vcr-fork-test-repo-not-forked".
+		// Use credentials in 1Password for "milton" to access or update this test.
 		name := testName(t)
 		cf, save := newClientFactory(t, name)
 		defer save(t)
 
 		svc := newExternalService(t, nil)
-		// Use credentials in 1Password for "milton" to access or update this repo.
-		target := newBitbucketServerRepo(urn, "BAT", "vcr-fork-test-repo", 24373)
+		// Code host ID for this repo can be found in the VCR cassette or by inspecting
+		// the response body at GET
+		// https://bitbucket.sgdev.org/rest/api/1.0/projects/BAT/repos/vcr-fork-test-repo-not-forked
+		target := newBitbucketServerRepo(urn, "BAT", "vcr-fork-test-repo-not-forked", 216974)
 
 		ctx := context.Background()
 		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
-
 		assert.Nil(t, err)
 
-		user, err := bbsSrc.client.AuthenticatedUsername(ctx)
+		username, err := bbsSrc.client.AuthenticatedUsername(ctx)
 		assert.Nil(t, err)
 
-		fork, err := bbsSrc.GetUserFork(ctx, target)
+		fork, err := bbsSrc.GetFork(ctx, target, nil, nil)
 		assert.Nil(t, err)
 		assert.NotNil(t, fork)
 		assert.NotEqual(t, fork, target)
-		assert.Equal(t, "~"+strings.ToUpper(user), fork.Metadata.(*bitbucketserver.Repo).Project.Key)
-		// Fork name should be of the form "projectkey-slug"
-		assert.Equal(t, fork.Sources[urn].CloneURL, "https://bitbucket.sgdev.org/~"+user+"/bat-vcr-fork-test-repo")
+		assert.Equal(t, "~"+strings.ToUpper(username), fork.Metadata.(*bitbucketserver.Repo).Project.Key)
+		assert.Equal(t, fork.Sources[urn].CloneURL, "https://bitbucket.sgdev.org/~"+username+"/bat-vcr-fork-test-repo-not-forked")
+
+		testutil.AssertGolden(t, "testdata/golden/"+name, update(name), fork)
+	})
+
+	// This test validates the behavior when `GetFork` is called with a namespace and name
+	// both already set, and a fork of the repo already exists at that destination.
+	// `GetFork` should return the existing fork.
+	t.Run("success with existing changeset and existing fork", func(t *testing.T) {
+		// This test expects that:
+		// - The repo BAT/vcr-fork-test-repo-already-forked exists and is not a fork.
+		// - The repo ~MILTON/BAT-vcr-fork-test-repo-already-forked exists and is a fork of it.
+		// Use credentials in 1Password for "milton" to access or update this test.
+		name := testName(t)
+		cf, save := newClientFactory(t, name)
+		defer save(t)
+
+		svc := newExternalService(t, nil)
+		// Code host ID for this repo can be found in the VCR cassette or by inspecting
+		// the response body at GET
+		// https://bitbucket.sgdev.org/rest/api/1.0/projects/BAT/repos/vcr-fork-test-repo-already-forked
+		target := newBitbucketServerRepo(urn, "BAT", "vcr-fork-test-repo-already-forked", 24378)
+
+		ctx := context.Background()
+		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
+		assert.Nil(t, err)
+
+		username, err := bbsSrc.client.AuthenticatedUsername(ctx)
+		assert.Nil(t, err)
+
+		fork, err := bbsSrc.GetFork(ctx, target, strPtr("~milton"), strPtr("BAT-vcr-fork-test-repo-already-forked"))
+		assert.Nil(t, err)
+		assert.NotNil(t, fork)
+		assert.NotEqual(t, fork, target)
+		assert.Equal(t, "~"+strings.ToUpper(username), fork.Metadata.(*bitbucketserver.Repo).Project.Key)
+		assert.Equal(t, fork.Sources[urn].CloneURL, "https://bitbucket.sgdev.org/~"+username+"/bat-vcr-fork-test-repo-already-forked")
+
+		testutil.AssertGolden(t, "testdata/golden/"+name, update(name), fork)
+	})
+
+	// This test validates the behavior when `GetFork` is called with a namespace and name
+	// both already set, but no fork of the repo already exists at that destination. This
+	// situation is only possible if the changeset and fork repo have been deleted on the
+	// code host since the changeset was created. `GetFork` should return the
+	// newly-created fork.
+	//
+	// NOTE: It is not possible to update this test and "success with new changeset and
+	// new fork" at the same time.
+	t.Run("success with existing changeset and new fork", func(t *testing.T) {
+		t.Skip()
+		// This test expects that:
+		// - The repo BAT/vcr-fork-test-repo-not-forked exists and is not a fork.
+		// - The repo ~MILTON/BAT-vcr-fork-test-repo-not-forked does not exist.
+		// Use credentials in 1Password for "milton" to access or update this test.
+		name := testName(t)
+		cf, save := newClientFactory(t, name)
+		defer save(t)
+
+		svc := newExternalService(t, nil)
+		// Code host ID for this repo can be found in the VCR cassette or by inspecting
+		// the response body at GET
+		// https://bitbucket.sgdev.org/rest/api/1.0/projects/BAT/repos/vcr-fork-test-repo-not-forked
+		target := newBitbucketServerRepo(urn, "BAT", "vcr-fork-test-repo-not-forked", 216974)
+
+		ctx := context.Background()
+		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
+		assert.Nil(t, err)
+
+		username, err := bbsSrc.client.AuthenticatedUsername(ctx)
+		assert.Nil(t, err)
+
+		fork, err := bbsSrc.GetFork(ctx, target, strPtr("~milton"), strPtr("BAT-vcr-fork-test-repo-not-forked"))
+		assert.Nil(t, err)
+		assert.NotNil(t, fork)
+		assert.NotEqual(t, fork, target)
+		assert.Equal(t, "~"+strings.ToUpper(username), fork.Metadata.(*bitbucketserver.Repo).Project.Key)
+		assert.Equal(t, fork.Sources[urn].CloneURL, "https://bitbucket.sgdev.org/~"+username+"/bat-vcr-fork-test-repo-not-forked")
 
 		testutil.AssertGolden(t, "testdata/golden/"+name, update(name), fork)
 	})

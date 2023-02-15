@@ -227,13 +227,12 @@ const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: nul
 export const Create: Story = args => {
     const link = useMemo(() => fetchBatchSpecCreate(args), [args])
     return (
-        <WebStory>
+        <WebStory path="/:batchSpecID" initialEntries={['/123123']}>
             {props => (
                 <MockedTestProvider link={link}>
                     <BatchChangePreviewPage
                         {...props}
                         expandChangesetDescriptions={true}
-                        batchSpecID="123123"
                         queryChangesetApplyPreview={queryChangesetApplyPreview}
                         queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                         queryApplyPreviewStats={queryApplyPreviewStats}
@@ -241,7 +240,7 @@ export const Create: Story = args => {
                             url: '/users/alice',
                             displayName: 'Alice',
                             username: 'alice',
-                            email: 'alice@email.test',
+                            emails: [{ email: 'alice@email.test', isPrimary: true, verified: true }],
                         }}
                     />
                 </MockedTestProvider>
@@ -253,13 +252,12 @@ export const Create: Story = args => {
 export const Update: Story = args => {
     const link = useMemo(() => fetchBatchSpecUpdate(args), [args])
     return (
-        <WebStory>
+        <WebStory path="/:batchSpecID" initialEntries={['/123123']}>
             {props => (
                 <MockedTestProvider link={link}>
                     <BatchChangePreviewPage
                         {...props}
                         expandChangesetDescriptions={true}
-                        batchSpecID="123123"
                         queryChangesetApplyPreview={queryChangesetApplyPreview}
                         queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                         queryApplyPreviewStats={queryApplyPreviewStats}
@@ -267,7 +265,7 @@ export const Update: Story = args => {
                             url: '/users/alice',
                             displayName: 'Alice',
                             username: 'alice',
-                            email: 'alice@email.test',
+                            emails: [{ email: 'alice@email.test', isPrimary: true, verified: true }],
                         }}
                     />
                 </MockedTestProvider>
@@ -279,13 +277,12 @@ export const Update: Story = args => {
 export const MissingCredentials: Story = args => {
     const link = useMemo(() => fetchBatchSpecMissingCredentials(args), [args])
     return (
-        <WebStory>
+        <WebStory path="/:batchSpecID" initialEntries={['/123123']}>
             {props => (
                 <MockedTestProvider link={link}>
                     <BatchChangePreviewPage
                         {...props}
                         expandChangesetDescriptions={true}
-                        batchSpecID="123123"
                         queryChangesetApplyPreview={queryChangesetApplyPreview}
                         queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                         queryApplyPreviewStats={queryApplyPreviewStats}
@@ -293,7 +290,7 @@ export const MissingCredentials: Story = args => {
                             url: '/users/alice',
                             displayName: 'Alice',
                             username: 'alice',
-                            email: 'alice@email.test',
+                            emails: [{ email: 'alice@email.test', isPrimary: true, verified: true }],
                         }}
                     />
                 </MockedTestProvider>
@@ -307,13 +304,12 @@ MissingCredentials.storyName = 'Missing credentials'
 export const SpecFile: Story = args => {
     const link = useMemo(() => fetchBatchSpecCreate(args), [args])
     return (
-        <WebStory initialEntries={['/users/alice/batch-changes/awesome-batch-change?tab=spec']}>
+        <WebStory path="/:batchSpecID" initialEntries={['/123123?tab=spec']}>
             {props => (
                 <MockedTestProvider link={link}>
                     <BatchChangePreviewPage
                         {...props}
                         expandChangesetDescriptions={true}
-                        batchSpecID="123123"
                         queryChangesetApplyPreview={queryChangesetApplyPreview}
                         queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                         queryApplyPreviewStats={queryApplyPreviewStats}
@@ -321,7 +317,7 @@ export const SpecFile: Story = args => {
                             url: '/users/alice',
                             displayName: 'Alice',
                             username: 'alice',
-                            email: 'alice@email.test',
+                            emails: [{ email: 'alice@email.test', isPrimary: true, verified: true }],
                         }}
                     />
                 </MockedTestProvider>
@@ -335,13 +331,12 @@ SpecFile.storyName = 'Spec file'
 export const NoChangesets: Story = args => {
     const link = useMemo(() => fetchBatchSpecCreate(args), [args])
     return (
-        <WebStory>
+        <WebStory path="/:batchSpecID" initialEntries={['/123123']}>
             {props => (
                 <MockedTestProvider link={link}>
                     <BatchChangePreviewPage
                         {...props}
                         expandChangesetDescriptions={true}
-                        batchSpecID="123123"
                         queryChangesetApplyPreview={queryEmptyChangesetApplyPreview}
                         queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                         queryApplyPreviewStats={queryApplyPreviewStats}
@@ -349,7 +344,7 @@ export const NoChangesets: Story = args => {
                             url: '/users/alice',
                             displayName: 'Alice',
                             username: 'alice',
-                            email: 'alice@email.test',
+                            emails: [{ email: 'alice@email.test', isPrimary: true, verified: true }],
                         }}
                     />
                 </MockedTestProvider>
@@ -363,13 +358,12 @@ NoChangesets.storyName = 'No changesets'
 export const CreateNewStory: Story = args => {
     const link = useMemo(() => fetchBatchSpecCreate(args), [args])
     return (
-        <WebStory>
+        <WebStory path="/:batchSpecID" initialEntries={['/123123']}>
             {props => (
                 <MockedTestProvider link={link}>
                     <NewBatchChangePreviewPage
                         {...props}
                         expandChangesetDescriptions={true}
-                        batchSpecID="123123"
                         queryChangesetApplyPreview={queryChangesetApplyPreview}
                         queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                         queryApplyPreviewStats={queryApplyPreviewStats}
@@ -377,7 +371,7 @@ export const CreateNewStory: Story = args => {
                             url: '/users/alice',
                             displayName: 'Alice',
                             username: 'alice',
-                            email: 'alice@email.test',
+                            emails: [{ email: 'alice@email.test', isPrimary: true, verified: true }],
                         }}
                     />
                 </MockedTestProvider>
@@ -391,13 +385,12 @@ CreateNewStory.storyName = 'Create (New)'
 export const ExceedsLicenseStory: Story = args => {
     const link = useMemo(() => fetchExceedsLicense(args), [args])
     return (
-        <WebStory>
+        <WebStory path="/:batchSpecID" initialEntries={['/123123']}>
             {props => (
                 <MockedTestProvider link={link}>
                     <NewBatchChangePreviewPage
                         {...props}
                         expandChangesetDescriptions={true}
-                        batchSpecID="123123"
                         queryChangesetApplyPreview={queryChangesetApplyPreview}
                         queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                         queryApplyPreviewStats={queryApplyPreviewStats}
@@ -405,7 +398,7 @@ export const ExceedsLicenseStory: Story = args => {
                             url: '/users/alice',
                             displayName: 'Alice',
                             username: 'alice',
-                            email: 'alice@email.test',
+                            emails: [{ email: 'alice@email.test', isPrimary: true, verified: true }],
                         }}
                     />
                 </MockedTestProvider>

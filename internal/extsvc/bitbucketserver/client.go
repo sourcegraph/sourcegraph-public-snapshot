@@ -1158,6 +1158,7 @@ type Repo struct {
 	Slug          string    `json:"slug"`
 	ID            int       `json:"id"`
 	Name          string    `json:"name"`
+	Description   string    `json:"description"`
 	SCMID         string    `json:"scmId"`
 	State         string    `json:"state"`
 	StatusMessage string    `json:"statusMessage"`
