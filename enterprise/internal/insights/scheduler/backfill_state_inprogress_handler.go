@@ -234,7 +234,7 @@ func (h *inProgressHandler) doExecution(ctx context.Context, execution *backfill
 				}
 				// The groups functions don't return errors so not checking for them
 				g.Wait()
-				execution.logger.Info("page complete", log.Duration("page duration", time.Since(startPage)), log.Int("page size", pageSize), log.Int("number repos", len(repoIds)))
+				execution.logger.Debug("page complete", log.Duration("page duration", time.Since(startPage)), log.Int("page size", pageSize), log.Int("number repos", len(repoIds)))
 				err = finish(ctx, h.backfillStore.Store, repoErrors)
 				if err != nil {
 					return false, err
