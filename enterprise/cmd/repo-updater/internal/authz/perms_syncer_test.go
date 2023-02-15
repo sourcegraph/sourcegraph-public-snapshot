@@ -472,6 +472,7 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
+	db.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
 
 	reposStore := repos.NewMockStore()
 
