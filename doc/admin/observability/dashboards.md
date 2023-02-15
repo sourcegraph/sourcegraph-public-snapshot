@@ -17720,7 +17720,7 @@ Query: `(proc_metrics_memory_map_current_count{instance=~`${instance:regex}`} / 
 
 <br />
 
-### Zoekt: Compound shards (experimental)
+### Zoekt: Compound shards
 
 #### zoekt: compound_shards_aggregate
 
