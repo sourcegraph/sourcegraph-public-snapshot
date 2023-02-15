@@ -27,6 +27,7 @@ import {
     FilteredConnectionFilterValue,
 } from '../components/FilteredConnection'
 import { useShowMorePagination } from '../components/FilteredConnection/hooks/useShowMorePagination'
+import { ConnectionSummary } from '../components/FilteredConnection/ui'
 import { getFilterFromURL, getUrlQuery } from '../components/FilteredConnection/utils'
 import { PageTitle } from '../components/PageTitle'
 import {
@@ -42,6 +43,7 @@ import { EXTERNAL_SERVICE_KINDS, PACKAGES_QUERY } from './backend'
 import { ExternalRepositoryIcon } from './components/ExternalRepositoryIcon'
 import { RepoMirrorInfo } from './components/RepoMirrorInfo'
 
+import { searchQuery } from '../components/fuzzyFinder/FuzzyModal.module.scss'
 import styles from './SiteAdminPackagesPage.module.scss'
 
 // TODO: Share this with backend (Make `scheme` a GQL enum)
@@ -130,6 +132,8 @@ const PackageNode: React.FunctionComponent<React.PropsWithChildren<PackageNodePr
 }
 
 interface SiteAdminPackagesPageProps extends TelemetryProps {}
+
+const DEFAULT_FIRST = 15
 
 /**
  * A page displaying the packages on this instance.
@@ -225,7 +229,7 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
             name: query,
             scheme: null,
             after: null,
-            first: 15,
+            first: DEFAULT_FIRST,
             ...args,
         }
     }, [filterValues, query])
@@ -282,7 +286,7 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
                     aria-label="Search packages..."
                     variant="regular"
                 />
-                <div className="d-flex mt-3">
+                <div className="d-flex align-items-end justify-content-between mt-3">
                     <FilterControl
                         filters={filters}
                         values={filterValues}
@@ -294,10 +298,21 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
                             })
                         }
                     />
+                    {connection && (
+                        <ConnectionSummary
+                            connection={connection}
+                            connectionQuery={searchQuery}
+                            hasNextPage={hasNextPage}
+                            first={DEFAULT_FIRST}
+                            noun="package"
+                            pluralNoun="packages"
+                            className="mb-0"
+                        />
+                    )}
                 </div>
                 {loading && !error && <LoadingSpinner className="d-block mx-auto mt-3" />}
                 {connection?.nodes && connection.nodes.length > 0 && (
-                    <ul className="list-group list-group-flush mt-4">
+                    <ul className="list-group list-group-flush mt-2">
                         {(connection?.nodes || []).map(node => (
                             <PackageNode node={node} key={node.id} />
                         ))}
