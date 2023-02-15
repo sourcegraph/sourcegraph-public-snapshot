@@ -244,17 +244,17 @@ export const RepoDashboardPage: FunctionComponent<RepoDashboardPageProps> = ({
 
                             {languageKeys.map(key => (
                                 <span className="float-right ml-2">
-                                    <Checkbox
-                                        id={`lang-${key}`}
-                                        label={`Show only ${key}`}
-                                        checked={filterState.indexers.has(key)}
-                                        onChange={event =>
+                                    <div
+                                        onClick={() => {
                                             setFilterState({
                                                 ...filterState,
-                                                indexers: new Set(event.target.checked ? [key] : []),
+                                                indexers: new Set(filterState.indexers.has(key) ? [] : [key]),
                                             })
-                                        }
-                                    />
+                                        }}
+                                        className={filterState.indexers.has(key) ? styles.selected : ''}
+                                    >
+                                        {key}
+                                    </div>
                                 </span>
                             ))}
                         </div>
