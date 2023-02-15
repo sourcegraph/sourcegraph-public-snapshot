@@ -36,20 +36,29 @@ func Searcher() *monitoring.Dashboard {
 				Rows: []monitoring.Row{
 					{
 						{
+							Name:        "traffic",
+							Description: "requests per second by code over 10m",
+							Query:       "sum by (code) (rate(searcher_service_request_total[10m]))",
+							Panel:       monitoring.Panel().LegendFormat("{{code}}"),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							NoAlert:     true,
+						},
+						{
+							Name:        "replica_traffic",
+							Description: "requests per second per replica over 10m",
+							Query:       "sum by (instance) (rate(searcher_service_request_total[10m]))",
+							Warning:     monitoring.Alert().GreaterOrEqual(5),
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}"),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							NextSteps:   "none",
+						},
+					}, {
+						{
 							Name:        "unindexed_search_request_errors",
 							Description: "unindexed search request errors every 5m by code",
 							Query:       `sum by (code)(increase(searcher_service_request_total{code!="200",code!="canceled"}[5m])) / ignoring(code) group_left sum(increase(searcher_service_request_total[5m])) * 100`,
 							Warning:     monitoring.Alert().GreaterOrEqual(5).For(5 * time.Minute),
 							Panel:       monitoring.Panel().LegendFormat("{{code}}").Unit(monitoring.Percentage),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							NextSteps:   "none",
-						},
-						{
-							Name:        "replica_traffic",
-							Description: "requests per second over 10m",
-							Query:       "sum by(instance) (rate(searcher_service_request_total[10m]))",
-							Warning:     monitoring.Alert().GreaterOrEqual(5),
-							Panel:       monitoring.Panel().LegendFormat("{{instance}}"),
 							Owner:       monitoring.ObservableOwnerSearchCore,
 							NextSteps:   "none",
 						},
