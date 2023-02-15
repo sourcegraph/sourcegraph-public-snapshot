@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -284,4 +285,31 @@ func (r *upgradeReadinessResolver) SchemaDrift(ctx context.Context) (string, err
 		return "", errors.Wrap(err, "check drift")
 	}
 	return "", nil
+}
+
+func (r *upgradeReadinessResolver) RequiredOutOfBandMigrations(ctx context.Context) ([]*outOfBandMigrationResolver, error) {
+	observationCtx := observation.NewContext(r.logger)
+	runner, err := migratorshared.NewRunnerWithSchemas(observationCtx, r.logger, schemas.SchemaNames, schemas.Schemas)
+	if err != nil {
+		return nil, errors.Wrap(err, "new runner")
+	}
+
+	version, _, _, _ := cliutil.GetServiceVersion(ctx, runner)
+
+	migrations, err := oobmigration.NewStoreWithDB(r.db).List(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var requiredMigrations []*outOfBandMigrationResolver
+	for _, m := range migrations {
+		if m.Deprecated == nil {
+			continue
+		}
+
+		if oobmigration.CompareVersions(*m.Deprecated, version) != oobmigration.VersionOrderAfter && m.Progress < 1 {
+			requiredMigrations = append(requiredMigrations, &outOfBandMigrationResolver{m})
+		}
+	}
+	return requiredMigrations, nil
 }
