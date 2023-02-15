@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runtime"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -101,7 +100,10 @@ func NewWorker(observationCtx *observation.Context, nameSet *janitor.NameSet, op
 	}
 
 	// Configure the supported runtimes
-	runtime.SetupRuntimes(observationCtx.Logger, commandOps, filesClient, options.CommandOptions, cloneOptions)
+	// TODO uncomment when firecracker runtime is complete
+	//if err = runtime.SetupRuntime(observationCtx.Logger, commandOps, filesClient, options.CommandOptions, cloneOptions); err != nil {
+	//	return nil, err
+	//}
 
 	h := &handler{
 		nameSet:       nameSet,
