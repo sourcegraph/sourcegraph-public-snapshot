@@ -576,7 +576,7 @@ async function createBranchWithChanges(
     octokit: Octokit,
     { owner, repo, base: baseRevision, head: headBranch, commitMessage, edits, dryRun }: CreateBranchWithChangesOptions
 ): Promise<void> {
-    // Set up repository if the working directory override has not been provided.
+    // Set up repository
     const { workdir } = await cloneRepo(octokit, owner, repo, { revision: baseRevision })
 
     // Apply edits
