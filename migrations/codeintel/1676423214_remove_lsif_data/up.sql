@@ -1,4 +1,4 @@
-DROP TABLE IF EXISTS 
+DROP TABLE IF EXISTS
     lsif_data_metadata,
     lsif_data_documents,
     lsif_data_documents_schema_versions,
