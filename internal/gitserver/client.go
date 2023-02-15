@@ -40,8 +40,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/proto"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -585,7 +585,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 	}
 
 	if featureflag.FromContext(ctx).GetBoolOr("grpc", false) {
-		req := &v1.ExecRequest{
+		req := &proto.ExecRequest{
 			Repo:           string(repoName),
 			EnsureRevision: c.EnsureRevision(),
 			Args:           c.args[1:],
@@ -602,7 +602,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 			return nil, err
 		}
 
-		client := v1.NewGitserverServiceClient(conn)
+		client := proto.NewGitserverServiceClient(conn)
 		stream, err := client.Exec(ctx, req)
 		if err != nil {
 			return nil, err
@@ -666,13 +666,13 @@ func (r *readCloseWrapper) Read(p []byte) (int, error) {
 
 		for _, detail := range st.Details() {
 			switch payload := detail.(type) {
-			case *v1.ExecStatusPayload:
+			case *proto.ExecStatusPayload:
 				return n, &CommandStatusError{
 					Message:    st.Message(),
 					Stderr:     payload.Stderr,
 					StatusCode: payload.StatusCode,
 				}
-			case *v1.NotFoundPayload:
+			case *proto.NotFoundPayload:
 				return n, &gitdomain.RepoNotExistError{
 					Repo:            api.RepoName(payload.Repo),
 					CloneInProgress: payload.CloneInProgress,

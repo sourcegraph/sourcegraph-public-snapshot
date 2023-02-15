@@ -7,6 +7,9 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+
+	"github.com/sourcegraph/log/logtest"
+
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -19,13 +22,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/log/logtest"
-
-	"google.golang.org/grpc"
-
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/proto"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -456,7 +456,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 	}
 
 	grpcServer := grpc.NewServer(defaults.ServerOptions(logtest.Scoped(t))...)
-	grpcServer.RegisterService(&v1.GitserverService_ServiceDesc, &server.GRPCServer{Server: &s})
+	grpcServer.RegisterService(&proto.GitserverService_ServiceDesc, &server.GRPCServer{Server: &s})
 
 	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
 	srv := httptest.NewServer(handler)

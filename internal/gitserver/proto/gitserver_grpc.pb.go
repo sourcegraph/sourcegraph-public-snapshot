@@ -4,7 +4,7 @@
 // - protoc             (unknown)
 // source: gitserver.proto
 
-package v1
+package proto
 
 import (
 	context "context"

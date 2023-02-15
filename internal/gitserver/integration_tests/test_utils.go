@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/proto"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -71,7 +71,7 @@ func InitGitserver() {
 	}
 
 	grpcServer := grpc.NewServer(defaults.ServerOptions(logger)...)
-	grpcServer.RegisterService(&v1.GitserverService_ServiceDesc, &server.GRPCServer{Server: &s})
+	grpcServer.RegisterService(&proto.GitserverService_ServiceDesc, &server.GRPCServer{Server: &s})
 	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
 
 	srv := &http.Server{

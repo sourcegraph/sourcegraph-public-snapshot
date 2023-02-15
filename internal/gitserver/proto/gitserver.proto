@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package gitserver.v1;
+package gitserver;
 
 option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/proto";
 
