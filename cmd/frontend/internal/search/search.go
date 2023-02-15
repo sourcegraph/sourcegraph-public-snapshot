@@ -540,11 +540,8 @@ func fromOwner(owner *result.OwnerMatch) streamhttp.EventMatch {
 			Handle: v.Handle,
 			Email:  v.Email,
 		}
-	}
-	// We shouldn't reach this.
-	return &streamhttp.EventUnknownOwnerMatch{
-		Type:   streamhttp.UnknownOwnerMatchType,
-		Handle: owner.ResolvedOwner.Identifier(),
+	default:
+		panic(fmt.Sprintf("unknown owner match type %T", v))
 	}
 }
 
