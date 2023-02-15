@@ -56,7 +56,7 @@ export const SiteAdminSidebar: React.FunctionComponent<React.PropsWithChildren<S
                                         openByDefault={true}
                                     >
                                         {items.map(
-                                            ({ label, badge, to, source = 'client', condition = () => true }) =>
+                                            ({ label, to, source = 'client', condition = () => true }) =>
                                                 condition(props) && (
                                                     <SidebarNavItem
                                                         to={to}
@@ -65,7 +65,6 @@ export const SiteAdminSidebar: React.FunctionComponent<React.PropsWithChildren<S
                                                         source={source}
                                                         className={styles.navItem}
                                                         onClick={collapseMobileSidebar}
-                                                        badge={badge}
                                                     >
                                                         {label}
                                                     </SidebarNavItem>

@@ -1,7 +1,5 @@
 import React from 'react'
 
-import { BadgeProps } from '@sourcegraph/wildcard'
-
 interface Conditional<C extends object> {
     /** Optional condition under which this item should be used */
     readonly condition?: (context: C) => boolean
@@ -48,9 +46,6 @@ export interface NavGroupDescriptor<C extends object = {}> extends Conditional<C
 export interface NavItemDescriptor<C extends object = {}> extends Conditional<C> {
     /** The text of the item */
     readonly label: string
-
-    /** The text of the item */
-    readonly badge?: () => Promise<Pick<BadgeProps, 'variant'> & { content: React.ReactNode }>
 
     /** The link destination (appended to the current match) */
     readonly to: string

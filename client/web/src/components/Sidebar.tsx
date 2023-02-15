@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 
 import { mdiMenuDown, mdiMenuUp } from '@mdi/js'
 import classNames from 'classnames'
@@ -15,43 +15,24 @@ import {
     H2,
     H3,
     ForwardReferenceComponent,
-    Badge,
-    BadgeProps,
 } from '@sourcegraph/wildcard'
 
 import styles from './Sidebar.module.scss'
 
-export interface SidebarNavItemProps {
-    to: string
-    className?: string
-    exact?: boolean
-    source?: string
-    badge?: () => Promise<Pick<BadgeProps, 'variant'> & { content: React.ReactNode }>
-    onClick?: () => void
-}
 /**
  * Item of `SideBarGroup`.
  */
-export const SidebarNavItem: React.FunctionComponent<React.PropsWithChildren<SidebarNavItemProps>> = ({
-    children,
-    className,
-    to,
-    exact,
-    source,
-    onClick,
-    badge,
-}) => {
+export const SidebarNavItem: React.FunctionComponent<
+    React.PropsWithChildren<{
+        to: string
+        className?: string
+        exact?: boolean
+        source?: string
+        onClick?: () => void
+    }>
+> = ({ children, className, to, exact, source, onClick }) => {
     const buttonClassNames = classNames('text-left d-flex', styles.linkInactive, className)
     const routeMatch = useRouteMatch({ path: to, exact })
-    const [badgeProps, setBadgeProps] = useState<Pick<BadgeProps, 'variant'> & { content: React.ReactNode }>()
-    useEffect(() => {
-        if (badge) {
-            badge()
-                .then(setBadgeProps)
-                // eslint-disable-next-line no-console
-                .catch(error => console.error(error))
-        }
-    }, [badge])
 
     if (source === 'server') {
         return (
@@ -69,11 +50,6 @@ export const SidebarNavItem: React.FunctionComponent<React.PropsWithChildren<Sid
             onClick={onClick}
         >
             {children}
-            {badgeProps && (
-                <Badge {...badgeProps} className="ml-2 d-flex align-items-center" pill={true} small={true}>
-                    {badgeProps.content}
-                </Badge>
-            )}
         </ButtonLink>
     )
 }

@@ -103,11 +103,6 @@ export const usersGroup: SiteAdminSideBarGroup = {
         },
         {
             label: 'Access requests',
-            badge: () =>
-                Promise.resolve({
-                    content: '1',
-                    variant: 'danger',
-                }),
             to: '/site-admin/access-requests',
         },
         {
