@@ -14,6 +14,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -887,6 +888,193 @@ func TestSyncRepo(t *testing.T) {
 			}
 
 			if diff := cmp.Diff(types.Repos(after), tc.after, opt); diff != "" {
+				t.Errorf("repos mismatch: (-have, +want):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestSyncTopics(t *testing.T) {
+	t.Parallel()
+	store := getTestRepoStore(t)
+
+	servicesPerKind := createExternalServices(t, store, func(svc *types.ExternalService) { svc.CloudDefault = true })
+
+	repo := &types.Repo{
+		ID:          0, // explicitly make default value for sourced repo
+		Name:        "github.com/foo/bar",
+		Description: "The description",
+		Archived:    false,
+		Fork:        false,
+		Stars:       100,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+			ServiceType: extsvc.TypeGitHub,
+			ServiceID:   "https://github.com/",
+		},
+		Sources: map[string]*types.SourceInfo{
+			servicesPerKind[extsvc.KindGitHub].URN(): {
+				ID:       servicesPerKind[extsvc.KindGitHub].URN(),
+				CloneURL: "git@github.com:foo/bar.git",
+			},
+		},
+		Metadata: &github.Repository{
+			ID:             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+			URL:            "github.com/foo/bar",
+			DatabaseID:     1234,
+			Description:    "The description",
+			NameWithOwner:  "foo/bar",
+			StargazerCount: 100,
+			Topics:         []string{"topic1", "topic2"},
+		},
+	}
+
+	now := time.Now().UTC()
+	oldRepo := repo.Clone().With(func(r *types.Repo) {
+		r.UpdatedAt = now.Add(-time.Hour)
+		r.CreatedAt = r.UpdatedAt.Add(-time.Hour)
+		r.Stars = 0
+	})
+
+	type repoWithKVPs struct {
+		Repo *types.Repo
+		KVPs []database.KeyValuePair
+	}
+
+	testCases := []struct {
+		name       string
+		repo       api.RepoName
+		background bool           // whether to run SyncRepo in the background
+		before     types.Repos    // the repos to insert into the database before syncing
+		sourced    *types.Repo    // the repo that is returned by the fake sourcer
+		returned   *types.Repo    // the expected return value from SyncRepo (which changes meaning depending on background)
+		after      []repoWithKVPs // the expected database repos after syncing
+		diff       repos.Diff     // the expected repos.Diff sent by the syncer
+	}{{
+		name:       "insert",
+		repo:       repo.Name,
+		background: true,
+		sourced:    repo.Clone(),
+		returned:   repo,
+		after: []repoWithKVPs{{
+			Repo: repo,
+			KVPs: []database.KeyValuePair{{Key: "topic1"}, {Key: "topic2"}},
+		}},
+		diff: repos.Diff{
+			Added: types.Repos{repo},
+		},
+	}, {
+		name:       "update",
+		repo:       repo.Name,
+		background: true,
+		before:     types.Repos{oldRepo},
+		sourced: repo.Clone().With(func(r *types.Repo) {
+			m := *r.Metadata.(*github.Repository)
+			m.Topics = []string{"topic2", "topic3"}
+			r.Metadata = &m
+		}),
+		returned: oldRepo,
+		after: []repoWithKVPs{{
+			Repo: repo.Clone().With(func(r *types.Repo) {
+				m := *r.Metadata.(*github.Repository)
+				m.Topics = []string{"topic2", "topic3"}
+				r.Metadata = &m
+			}),
+			KVPs: []database.KeyValuePair{{Key: "topic2"}, {Key: "topic3"}},
+		}},
+		diff: repos.Diff{
+			Modified: repos.ReposModified{{
+				Repo: repo.Clone().With(func(r *types.Repo) {
+					m := *r.Metadata.(*github.Repository)
+					m.Topics = []string{"topic2", "topic3"}
+					r.Metadata = &m
+				}),
+				Modified: types.RepoModifiedStars | types.RepoModifiedMetadata,
+			}},
+		},
+	}}
+
+	for _, tc := range testCases {
+		tc := tc
+		ctx := context.Background()
+
+		t.Run(tc.name, func(t *testing.T) {
+			logger := logtest.Scoped(t)
+			kvps := database.NewDBWith(logger, store).RepoKVPs()
+			q := sqlf.Sprintf("DELETE FROM repo")
+			_, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			q = sqlf.Sprintf("DELETE FROM repo_kvps")
+			_, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(tc.before) > 0 {
+				before := tc.before.Clone()
+				if err := store.RepoStore().Create(ctx, before...); err != nil {
+					t.Fatalf("failed to prepare store: %v", err)
+				}
+
+				for _, repo := range before {
+					for _, topic := range repo.Metadata.(*github.Repository).Topics {
+						err := kvps.Create(ctx, repo.ID, database.KeyValuePair{Key: topic})
+						if err != nil {
+							t.Fatalf("failed to insert KVP: %v", err)
+						}
+					}
+				}
+			}
+
+			syncer := &repos.Syncer{
+				ObsvCtx: observation.TestContextTB(t),
+				Now:     time.Now,
+				Store:   store,
+				Synced:  make(chan repos.Diff, 1),
+				Sourcer: repos.NewFakeSourcer(nil,
+					repos.NewFakeSource(servicesPerKind[extsvc.KindGitHub], nil, tc.sourced),
+				),
+			}
+
+			have, err := syncer.SyncRepo(ctx, tc.repo, tc.background)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have.ID == 0 {
+				t.Fatalf("expected returned synced repo to have an ID set")
+			}
+
+			opt := cmpopts.IgnoreFields(types.Repo{}, "ID", "CreatedAt", "UpdatedAt")
+			if diff := cmp.Diff(tc.returned, have, opt); diff != "" {
+				t.Fatalf("returned mismatch: (-have, +want):\n%s", diff)
+			}
+
+			if diff := cmp.Diff(<-syncer.Synced, tc.diff, opt); diff != "" {
+				t.Fatalf("diff mismatch: (-have, +want):\n%s", diff)
+			}
+
+			after, err := store.RepoStore().List(ctx, database.ReposListOptions{})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var got []repoWithKVPs
+			for _, repo := range after {
+				singleKVPs, err := kvps.List(ctx, repo.ID)
+				if err != nil {
+					t.Fatal(err)
+				}
+				got = append(got, repoWithKVPs{
+					Repo: repo,
+					KVPs: singleKVPs,
+				})
+			}
+
+			if diff := cmp.Diff(tc.after, got, opt); diff != "" {
 				t.Errorf("repos mismatch: (-have, +want):\n%s", diff)
 			}
 		})

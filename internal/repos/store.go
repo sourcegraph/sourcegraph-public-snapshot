@@ -557,6 +557,9 @@ func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 	{
 		// This block handles updating the list of key-value pairs associated with
 		// a repo for key-value pairs that are derived from the repo metadata.
+		//
+		// We do not use `s.RepoStore().Get()` because we need to also be able to
+		// fetch the metadata for deleted repos, which are excluded by default.
 		oldRepo, err := s.RepoStore().List(ctx, database.ReposListOptions{
 			IDs:            []api.RepoID{r.ID},
 			IncludeBlocked: true,
