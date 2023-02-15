@@ -362,12 +362,6 @@
           "default": false,
           "!go": { "pointer": false }
         },
-        "enablePostSignupFlow": {
-          "description": "Enables post sign-up user flow to add code hosts and sync code",
-          "type": "boolean",
-          "default": false,
-          "!go": { "pointer": false }
-        },
         "enableStorm": {
           "description": "Enables the Storm frontend architecture changes.",
           "type": "boolean",
