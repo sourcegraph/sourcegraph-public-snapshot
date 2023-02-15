@@ -101,7 +101,7 @@ export const OptionsPage: React.FunctionComponent<React.PropsWithChildren<Option
             </section>
             <section className={styles.section}>
                 Get code navigation tooltips while browsing and reviewing code on your code host.{' '}
-                <Link to="https://docs.sourcegraph.com/integration/browser_extension#features" {...NEW_TAB_LINK_PROPS}>
+                <Link to="/help/integration/browser_extension#features" {...NEW_TAB_LINK_PROPS}>
                     Learn more
                 </Link>{' '}
                 about the extension and compatible code hosts.
@@ -129,11 +129,7 @@ export const OptionsPage: React.FunctionComponent<React.PropsWithChildren<Option
             )}
 
             <section className={styles.section}>
-                <Link
-                    to="https://docs.sourcegraph.com/integration/browser_extension#privacy"
-                    {...NEW_TAB_LINK_PROPS}
-                    className="d-block mb-1"
-                >
+                <Link to="/help/integration/browser_extension#privacy" {...NEW_TAB_LINK_PROPS} className="d-block mb-1">
                     <small>How do we keep your code private?</small>{' '}
                     <Icon
                         className="ml-2"

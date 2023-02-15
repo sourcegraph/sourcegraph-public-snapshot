@@ -14,9 +14,9 @@ import (
 )
 
 func init() {
-	scipMigratorUploadBatchSize = 1
-	scipMigratorDocumentBatchSize = 4
-	scipMigratorResultChunkDefaultCacheSize = 16
+	scipMigratorUploadReaderBatchSize = 1
+	scipMigratorDocumentReaderBatchSize = 4
+	scipMigratorResultChunkReaderCacheSize = 16
 }
 
 func TestSCIPMigrator(t *testing.T) {
@@ -77,7 +77,7 @@ func TestSCIPMigrator(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error counting symbols: %s", err)
 	}
-	if expected := 3745; symbolsCount != expected {
+	if expected := 4221; symbolsCount != expected {
 		t.Fatalf("unexpected number of documents. want=%d have=%d", expected, symbolsCount)
 	}
 }

@@ -44,10 +44,13 @@ func performPurge(ctx context.Context, postgres database.DB, insightsdb edb.Insi
 		// isn't across the same database currently, so there isn't a single transaction across all the
 		// tables.
 		logger.Info("pruning insight series", log.String("seriesId", id))
-		err := deleteQueuedRecords(ctx, postgres, id)
-		if err != nil {
+		if err := deleteQueuedRecords(ctx, postgres, id); err != nil {
 			return errors.Wrap(err, "deleteQueuedRecords")
 		}
+		if err := deleteQueuedRetentionRecords(ctx, insightsdb, id); err != nil {
+			return errors.Wrap(err, "deleteQueuedRetentionRecords")
+		}
+
 		err = func() (err error) {
 			// scope the transaction to an anonymous function so we can defer Done
 			tx, err := timeseriesStore.Transact(ctx)
@@ -62,6 +65,7 @@ func performPurge(ctx context.Context, postgres database.DB, insightsdb edb.Insi
 			}
 
 			insightStoreTx := insightStore.With(tx)
+			// HardDeleteSeries will cascade delete to recording times and archived points and recording times.
 			return insightStoreTx.HardDeleteSeries(ctx, id)
 		}()
 		if err != nil {
@@ -79,4 +83,13 @@ func deleteQueuedRecords(ctx context.Context, postgres database.DB, seriesId str
 
 const deleteQueuedForSeries = `
 delete from insights_query_runner_jobs where series_id = %s;
+`
+
+func deleteQueuedRetentionRecords(ctx context.Context, insightsDB edb.InsightsDB, seriesId string) error {
+	queueStore := basestore.NewWithHandle(insightsDB.Handle())
+	return queueStore.Exec(ctx, sqlf.Sprintf(deleteQueuedRetentionRecordsSql, seriesId))
+}
+
+const deleteQueuedRetentionRecordsSql = `
+delete from insights_data_retention_jobs where series_id_string = %s;
 `

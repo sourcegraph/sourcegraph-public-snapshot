@@ -13,7 +13,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
-	scip "github.com/sourcegraph/scip/bindings/go/scip"
+	"github.com/sourcegraph/scip/bindings/go/scip"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -75,7 +75,7 @@ func TestHandle(t *testing.T) {
 
 	svc := &handler{
 		store:           mockDBStore,
-		lsifstore:       mockLSIFStore,
+		lsifStore:       mockLSIFStore,
 		gitserverClient: gitserverClient,
 		repoStore:       mockRepoStore,
 		workerStore:     mockWorkerStore,
@@ -241,7 +241,7 @@ func TestHandle(t *testing.T) {
 				_, _ = hash.Write(payload)
 
 				foundDocument1 = true
-				expectedHash := "OnPkRp2fEy9AP4I4Z4YeXLpMMj4IvAnArO6t7Rc0+jE="
+				expectedHash := "TTQ+xW2zU2O1b+MEGtkYLhjB3dbHRpHM3CXoS6pqqvI="
 				if diff := cmp.Diff(expectedHash, base64.StdEncoding.EncodeToString(hash.Sum(nil))); diff != "" {
 					t.Errorf("unexpected hash (-want +got):\n%s", diff)
 				}
@@ -304,7 +304,7 @@ func TestHandleError(t *testing.T) {
 
 	svc := &handler{
 		store:     mockDBStore,
-		lsifstore: mockLSIFStore,
+		lsifStore: mockLSIFStore,
 		// lsifstore:       mockLSIFStore,
 		gitserverClient: gitserverClient,
 		repoStore:       mockRepoStore,

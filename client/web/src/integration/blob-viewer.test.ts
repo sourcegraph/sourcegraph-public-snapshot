@@ -17,7 +17,7 @@ import {
     createTreeEntriesResult,
     createBlobContentResult,
 } from './graphQlResponseHelpers'
-import { commonWebGraphQlResults } from './graphQlResults'
+import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
 import { percySnapshotWithVariants } from './utils'
 
 describe('Blob viewer', () => {
@@ -44,6 +44,13 @@ describe('Blob viewer', () => {
 
     const commonBlobGraphQlResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
         ...commonWebGraphQlResults,
+        ...createViewerSettingsGraphQLOverride({
+            user: {
+                experimentalFeatures: {
+                    enableCodeMirrorFileView: false,
+                },
+            },
+        }),
         ResolveRepoRev: () => createResolveRepoRevisionResult(repositorySourcegraphUrl),
         FileExternalLinks: ({ filePath }) =>
             createFileExternalLinksResult(`https://${repositoryName}/blob/master/${filePath}`),
@@ -109,6 +116,7 @@ describe('Blob viewer', () => {
                             file: {
                                 __typename: 'VirtualFile',
                                 content: '// Log to console\nconsole.log("Hello world")\n// Third line',
+                                totalLines: 3,
                                 richHTML: '',
                                 highlight: {
                                     aborted: false,
@@ -195,6 +203,7 @@ describe('Blob viewer', () => {
                             file: {
                                 __typename: 'VirtualFile',
                                 content: '// Log to console\nconsole.log("Hello world")',
+                                totalLines: 2,
                                 richHTML: '',
                                 highlight: {
                                     aborted: false,
@@ -351,6 +360,7 @@ describe('Blob viewer', () => {
                             file: {
                                 __typename: 'VirtualFile',
                                 content: `// file path: ${filePath}\nconsole.log("Hello world")`,
+                                totalLines: 2,
                                 richHTML: '',
                                 highlight: {
                                     aborted: false,

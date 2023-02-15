@@ -30,14 +30,61 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 		Usage:    "The target schema description file.",
 		Required: false,
 	}
+	skipVersionCheckFlag := &cli.BoolFlag{
+		Name:     "skip-version-check",
+		Usage:    "Skip validation of the instance's current version.",
+		Required: false,
+	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
 		schemaName := schemaNameFlag.Get(cmd)
 		version := versionFlag.Get(cmd)
 		file := fileFlag.Get(cmd)
+		skipVersionCheck := skipVersionCheckFlag.Get(cmd)
 
-		if (version == "" && file == "") || (version != "" && file != "") {
-			return errors.New("must supply exactly one of -version or -file")
+		r, err := factory([]string{schemaName})
+		if err != nil {
+			return err
+		}
+		store, err := r.Store(ctx, schemaName)
+		if err != nil {
+			return err
+		}
+
+		if version != "" && file != "" {
+			return errors.New("the flags -version or -file are mutually exclusive")
+		}
+
+		// Note: Error is correctly checked here; we want to use the return value
+		// `patch` below but only if we can best-effort fetch it. We want to allow
+		// the user to skip erroring here if they are explicitly skipping this
+		// version check.
+		inferredVersion, ok, err := func() (string, bool, error) {
+			v, patch, ok, err := getServiceVersion(ctx, r)
+			if err != nil || !ok {
+				return "", false, err
+			}
+
+			return fmt.Sprintf("v%d.%d.%d", v.Major, v.Minor, patch), true, nil
+		}()
+		if !skipVersionCheck {
+			if err != nil {
+				return err
+			}
+			if !ok {
+				err := errors.Newf("version assertion failed: unknown version != %q", version)
+				return errors.Newf("%s. Re-invoke with --skip-version-check to ignore this check", err)
+			}
+
+			if version == "" {
+				version = inferredVersion
+				out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "Checking drift against version %q", version))
+			} else if version != inferredVersion {
+				err := errors.Newf("version assertion failed: %q != %q", inferredVersion, version)
+				return errors.Newf("%s. Re-invoke with --skip-version-check to ignore this check", err)
+			}
+		} else if version == "" && file == "" {
+			return errors.New("-skip-version-check was supplied without -version or -file")
 		}
 
 		if file != "" {
@@ -50,10 +97,6 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 			return err
 		}
 
-		store, err := setupStore(ctx, factory, schemaName)
-		if err != nil {
-			return err
-		}
 		schemas, err := store.Describe(ctx)
 		if err != nil {
 			return err
@@ -72,6 +115,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 			schemaNameFlag,
 			versionFlag,
 			fileFlag,
+			skipVersionCheckFlag,
 		},
 	}
 }

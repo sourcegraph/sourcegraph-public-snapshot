@@ -39,6 +39,7 @@ describe('createSVGIcon', () => {
         expect(createSVGIcon('M 10 10')).toMatchInlineSnapshot(`
             <svg
               aria-hidden="true"
+              style="fill: currentcolor;"
               viewBox="0 0 24 24"
             >
               <path
@@ -51,6 +52,7 @@ describe('createSVGIcon', () => {
         expect(createSVGIcon('M 10 10', 'open')).toMatchInlineSnapshot(`
             <svg
               aria-label="open"
+              style="fill: currentcolor;"
               viewBox="0 0 24 24"
             >
               <path
@@ -63,6 +65,7 @@ describe('createSVGIcon', () => {
         expect(createSVGIcon('M 10 10', '')).toMatchInlineSnapshot(`
             <svg
               aria-hidden="true"
+              style="fill: currentcolor;"
               viewBox="0 0 24 24"
             >
               <path

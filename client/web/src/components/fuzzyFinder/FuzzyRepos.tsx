@@ -1,8 +1,8 @@
 import { ApolloClient } from '@apollo/client'
 import gql from 'tagged-template-noop'
 
+import { CodeHostIcon, formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/branded'
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { CodeHostIcon, formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/search-ui'
 
 import { getWebGraphQLClient } from '../../backend/graphql'
 import { SearchValue } from '../../fuzzyFinder/SearchValue'

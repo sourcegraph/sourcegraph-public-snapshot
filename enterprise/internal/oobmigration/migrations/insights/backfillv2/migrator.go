@@ -50,11 +50,10 @@ func (m *backfillerv2Migrator) Progress(ctx context.Context, _ bool) (float64, e
 	return progress, err
 }
 
+// backfillSeries contains only the fields of insight_series_backfill we care about.
 type backfillSeries struct {
 	id               int
 	seriesID         string
-	createdAt        time.Time
-	lastRecordedAt   time.Time
 	interval         timeInterval
 	justInTime       bool
 	backfillQueuedAt *time.Time

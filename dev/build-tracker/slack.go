@@ -15,56 +15,147 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/team"
 )
 
-const JobShowLimit = 10
+const JobShowLimit = 5
+
+type cacheItem[T any] struct {
+	Value     T
+	Timestamp time.Time
+}
+
+func newCacheItem[T any](value T) *cacheItem[T] {
+	return &cacheItem[T]{
+		Value:     value,
+		Timestamp: time.Now(),
+	}
+}
 
 type NotificationClient struct {
-	slack   slack.Client
-	team    team.TeammateResolver
-	logger  log.Logger
-	channel string
+	slack               slack.Client
+	team                team.TeammateResolver
+	commitTeammateCache map[string]*cacheItem[*team.Teammate]
+	logger              log.Logger
+	channel             string
+}
+type SlackNotification struct {
+	// SentAt is the time the notification got sent.
+	SentAt time.Time
+	// ID is the unique idenfifier which represents this notification in Slack. Typically this is the timestamp as
+	// is returned by the Slack API upon successful send of a notification.
+	ID string
+	// ChannelID is the channelID as returned by the Slack API after successful sending of a notification. It is NOT
+	// the traditional channel you're use to that starts with a '#'. Instead it's the global ID for that channel used by
+	// Slack.
+	ChannelID string
+}
+
+func (n *SlackNotification) Equals(o *SlackNotification) bool {
+	if o == nil {
+		return false
+	}
+
+	return n.ID == o.ID && n.ChannelID == o.ChannelID && n.SentAt.Equal(o.SentAt)
+}
+
+func NewSlackNotification(id, channel string) *SlackNotification {
+	return &SlackNotification{
+		SentAt:    time.Now(),
+		ID:        id,
+		ChannelID: channel,
+	}
 }
 
 func NewNotificationClient(logger log.Logger, slackToken, githubToken, channel string) *NotificationClient {
 	debug := os.Getenv("BUILD_TRACKER_SLACK_DEBUG") == "1"
-	slack := slack.New(slackToken, slack.OptionDebug(debug))
+	slackClient := slack.New(slackToken, slack.OptionDebug(debug))
 
 	httpClient := http.Client{
 		Timeout: 5 * time.Second,
 	}
 	githubClient := github.NewClient(&httpClient)
-	teamResolver := team.NewTeammateResolver(githubClient, slack)
+	teamResolver := team.NewTeammateResolver(githubClient, slackClient)
 
 	return &NotificationClient{
-		logger:  logger.Scoped("notificationClient", "client which interacts with Slack and Github to send notifications"),
-		slack:   *slack,
-		team:    teamResolver,
-		channel: channel,
+		logger:              logger.Scoped("notificationClient", "client which interacts with Slack and Github to send notifications"),
+		slack:               *slackClient,
+		team:                teamResolver,
+		commitTeammateCache: map[string]*cacheItem[*team.Teammate]{},
+		channel:             channel,
 	}
+
 }
 
 func (c *NotificationClient) getTeammateForBuild(build *Build) (*team.Teammate, error) {
-	return c.team.ResolveByCommitAuthor(context.Background(), "sourcegraph", "sourcegraph", build.commit())
+	// first check if we already have the details for this teammate
+	c.logger.Debug("determining teammate", log.String("author", build.authorName()), log.String("email", build.authorEmail()), log.String("commit", build.commit()))
+	cached, ok := c.commitTeammateCache[build.authorEmail()]
+
+	// we have the details for this member already!
+	if ok {
+		return cached.Value, nil
+	}
+
+	result, err := c.team.ResolveByCommitAuthor(context.Background(), "sourcegraph", "sourcegraph", build.commit())
+	if err != nil {
+		return nil, err
+	}
+	// remember this teammate!
+	c.logger.Debug("caching teammate", log.String("teammateEmail", result.Email), log.String("buildEmail", build.authorEmail()))
+	if build.authorEmail() != result.Email {
+		c.logger.Warn("build mail and teammate mail do not match", log.String("teammateEmail", result.Email), log.String("buildEmail", build.authorEmail()))
+	}
+	// we're assuming the build author email and resolved teammate email match
+	c.commitTeammateCache[result.Email] = newCacheItem(result)
+	return result, nil
+
 }
 
-func (c *NotificationClient) sendFailedBuild(build *Build) error {
+func (c *NotificationClient) sendUpdatedMessage(build *Build, previous *SlackNotification) (*SlackNotification, error) {
+	if previous == nil {
+		return nil, fmt.Errorf("cannot update message with nil notification")
+	}
 	logger := c.logger.With(log.Int("buildNumber", build.number()), log.String("channel", c.channel))
 	logger.Debug("creating slack json")
 
 	blocks, err := c.createMessageBlocks(logger, build)
 	if err != nil {
-		return err
+		return previous, err
 	}
 
-	logger.Debug("sending notification")
+	// Slack responds with the message timestamp and a channel, which you have to use when you want to update the message.
+	var id, channel string
+	logger.Debug("sending updated notification")
 	msgOptBlocks := slack.MsgOptionBlocks(blocks...)
-	_, _, err = c.slack.PostMessage(c.channel, msgOptBlocks)
+	// Note: for UpdateMessage using the #channel-name format doesn't work, you need the Slack ChannelID.
+	channel, id, _, err = c.slack.UpdateMessage(previous.ChannelID, previous.ID, msgOptBlocks)
+	if err != nil {
+		logger.Error("failed to update message", log.Error(err))
+		return previous, err
+	}
+
+	return NewSlackNotification(id, channel), nil
+}
+
+func (c *NotificationClient) sendNewMessage(build *Build) (*SlackNotification, error) {
+	logger := c.logger.With(log.Int("buildNumber", build.number()), log.String("channel", c.channel))
+	logger.Debug("creating slack json")
+
+	blocks, err := c.createMessageBlocks(logger, build)
+	if err != nil {
+		return build.Notification, err
+	}
+	// Slack responds with the message timestamp and a channel, which you have to use when you want to update the message.
+	var id, channel string
+
+	logger.Debug("sending new notification")
+	msgOptBlocks := slack.MsgOptionBlocks(blocks...)
+	channel, id, err = c.slack.PostMessage(c.channel, msgOptBlocks)
 	if err != nil {
 		logger.Error("failed to post message", log.Error(err))
-		return err
+		return nil, err
 	}
 
 	logger.Info("notification posted")
-	return nil
+	return NewSlackNotification(id, channel), nil
 }
 
 func commitLink(msg, commit string) string {
@@ -88,21 +179,28 @@ func (c *NotificationClient) createMessageBlocks(logger log.Logger, build *Build
 
 	// create a bulleted list of all the failed jobs
 	//
-	// if there are more than JobShowLimit of failed jobs, we cannot print all of it
-	// since the message will to big and slack will reject the message with "invalid_blocks"
-	failedJobs := build.failedJobs()
-	jobSection := "*Failed jobs:*\n\n"
-	if len(failedJobs) > JobShowLimit {
-		jobSection = fmt.Sprintf("* %d Failed jobs (showing %d):*\n\n", len(failedJobs), JobShowLimit)
-	}
-	logger.Info("failed job count on build", log.Int("failedJobs", len(failedJobs)))
-	for i := 0; i < JobShowLimit && i < len(failedJobs); i++ {
-		j := failedJobs[i]
-		jobSection += fmt.Sprintf("• %s", *j.Name)
-		if j.WebURL != "" {
-			jobSection += fmt.Sprintf(" - <%s|logs>", j.WebURL)
+	filteredJobs := build.filterJobs(FailedJobFilter, FixedJobFilter)
+
+	jobSection := ""
+	for group, groupJobs := range filteredJobs {
+		jobSection := fmt.Sprintf("*%s jobs:*\n\n", group)
+		// if there are more than JobShowLimit of failed jobs, we cannot print all of it
+		// since the message will to big and slack will reject the message with "invalid_blocks"
+		if len(groupJobs) > JobShowLimit {
+			jobSection = fmt.Sprintf("* %d %s jobs (showing %d):*\n\n", len(groupJobs), group, JobShowLimit)
 		}
-		jobSection += "\n"
+		logger.Info("group job count on build", log.String("group", group), log.Int("jobs", len(groupJobs)))
+		for i := 0; i < JobShowLimit && i < len(groupJobs); i++ {
+			j := groupJobs[i]
+			jobSection += fmt.Sprintf("• %s", *j.Name)
+			if j.hasTimedOut() {
+				jobSection += " (Timed out)"
+			}
+			if j.WebURL != "" {
+				jobSection += fmt.Sprintf(" - <%s|logs>", j.WebURL)
+			}
+			jobSection += "\n"
+		}
 	}
 
 	failedSection += jobSection
@@ -177,7 +275,19 @@ _Disable flakes on sight and save your fellow teammate some time!_`,
 	return blocks, nil
 }
 
+func (n *NotificationClient) cacheCleanup(hours int) {
+	for k, v := range n.commitTeammateCache {
+		duration := time.Since(v.Timestamp)
+		if duration.Hours() >= float64(hours) {
+			delete(n.commitTeammateCache, k)
+		}
+	}
+}
+
 func generateSlackHeader(build *Build) string {
+	if build.isFinalized() {
+		return fmt.Sprintf(":green_circle: Build %d fixed", build.number())
+	}
 	header := fmt.Sprintf(":red_circle: Build %d failed", build.number())
 	switch build.ConsecutiveFailure {
 	case 0, 1: // no suffix

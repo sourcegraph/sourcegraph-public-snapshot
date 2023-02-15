@@ -21,6 +21,7 @@ exports[`LoaderButton should render a loading spinner when loading prop is true 
       aria-label="Loading"
       aria-live="polite"
       class="mdi-icon iconInline loadingSpinner"
+      data-loading-spinner="true"
       role="img"
     />
   </button>

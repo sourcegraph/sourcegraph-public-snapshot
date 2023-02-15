@@ -7,6 +7,11 @@ import _ "embed"
 //go:embed aws_codecommit.schema.json
 var AWSCodeCommitSchemaJSON string
 
+// AzureDevOpsSchemaJSON is the content of the file "azuredevops.schema.json".
+//
+//go:embed azuredevops.schema.json
+var AzureDevOpsSchemaJSON string
+
 // BatchSpecSchemaJSON is the content of the file "batch_spec.schema.json".
 //
 //go:embed batch_spec.schema.json

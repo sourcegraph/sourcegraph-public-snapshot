@@ -680,7 +680,7 @@ func (s *Service) GetImplementations(ctx context.Context, args shared.RequestArg
 	// may already be stashed in the cursor decoded above, in which case we don't need to hit
 	// the database.
 	if cursor.OrderedImplementationMonikers == nil {
-		if cursor.OrderedImplementationMonikers, err = s.getOrderedMonikers(ctx, visibleUploads, precise.Implementation); err != nil {
+		if cursor.OrderedImplementationMonikers, err = s.getOrderedMonikers(ctx, visibleUploads, precise.Implementation, "import", "export"); err != nil {
 			return nil, cursor, err
 		}
 	}
@@ -733,6 +733,12 @@ func (s *Service) GetImplementations(ctx context.Context, args shared.RequestArg
 			return nil, cursor, err
 		}
 		locations = append(locations, definitionLocations...)
+
+		implementationLocations, _, err := s.getBulkMonikerLocations(ctx, uploads, cursor.OrderedImplementationMonikers, "implementations", DefinitionsLimit, 0)
+		if err != nil {
+			return nil, cursor, err
+		}
+		locations = append(locations, implementationLocations...)
 
 		cursor.Phase = "dependents"
 	}

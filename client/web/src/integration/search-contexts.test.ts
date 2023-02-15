@@ -13,7 +13,7 @@ import { WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
-import { createEditorAPI, enableEditor, percySnapshotWithVariants, withSearchQueryInput } from './utils'
+import { createEditorAPI, percySnapshotWithVariants, withSearchQueryInput } from './utils'
 
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
@@ -98,7 +98,6 @@ describe('Search contexts', () => {
                     user: {
                         experimentalFeatures: {
                             showSearchContext: true,
-                            ...enableEditor(editorName).experimentalFeatures,
                         },
                     },
                 }),

@@ -17,7 +17,6 @@ client/http-client/package.json=1413453754
 client/jetbrains/package.json=1441482894
 client/observability-client/package.json=-463261822
 client/observability-server/package.json=1984976913
-client/search-ui/package.json=-602996280
 client/search/package.json=-467983686
 client/shared/package.json=1160771529
 client/storybook/package.json=-1924844575

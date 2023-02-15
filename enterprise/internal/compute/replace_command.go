@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -50,10 +49,10 @@ func replace(ctx context.Context, content []byte, matchPattern MatchPattern, rep
 	return &Text{Value: newContent, Kind: "replace-in-place"}, nil
 }
 
-func (c *Replace) Run(ctx context.Context, db database.DB, r result.Match) (Result, error) {
+func (c *Replace) Run(ctx context.Context, r result.Match) (Result, error) {
 	switch m := r.(type) {
 	case *result.FileMatch:
-		content, err := gitserver.NewClient(db).ReadFile(ctx, authz.DefaultSubRepoPermsChecker, m.Repo.Name, m.CommitID, m.Path)
+		content, err := gitserver.NewClient().ReadFile(ctx, authz.DefaultSubRepoPermsChecker, m.Repo.Name, m.CommitID, m.Path)
 		if err != nil {
 			return nil, err
 		}

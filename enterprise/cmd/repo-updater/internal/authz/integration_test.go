@@ -131,7 +131,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			userID, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
+			user, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -139,7 +139,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			permsStore := edb.Perms(logger, testDB, timeutil.Now)
 			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now, nil)
 
-			providerStates, err := syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
+			_, providerStates, err := syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -151,7 +151,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}}, providerStates)
 
 			p := &authz.UserPermissions{
-				UserID: userID,
+				UserID: user.ID,
 				Perm:   authz.Read,
 				Type:   authz.PermRepos,
 			}
@@ -217,7 +217,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			userID, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
+			user, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -225,7 +225,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			permsStore := edb.Perms(logger, testDB, timeutil.Now)
 			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now, nil)
 
-			providerStates, err := syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
+			_, providerStates, err := syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -237,7 +237,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}}, providerStates)
 
 			p := &authz.UserPermissions{
-				UserID: userID,
+				UserID: user.ID,
 				Perm:   authz.Read,
 				Type:   authz.PermRepos,
 			}
@@ -252,7 +252,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 
 			// sync again and check
-			providerStates, err = syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
+			_, providerStates, err = syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -334,7 +334,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 
 			authData := json.RawMessage(fmt.Sprintf(`{"access_token": "%s"}`, token))
-			userID, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
+			user, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
 				AuthData: extsvc.NewUnencryptedData(authData),
 			})
 			if err != nil {
@@ -344,7 +344,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			permsStore := edb.Perms(logger, testDB, timeutil.Now)
 			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now, nil)
 
-			providerStates, err := syncer.syncUserPerms(ctx, userID, false, authz.FetchPermsOptions{})
+			_, providerStates, err := syncer.syncUserPerms(ctx, user.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -356,7 +356,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}}, providerStates)
 
 			p := &authz.UserPermissions{
-				UserID: userID,
+				UserID: user.ID,
 				Perm:   authz.Read,
 				Type:   authz.PermRepos,
 			}
@@ -423,7 +423,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 
 			authData := json.RawMessage(fmt.Sprintf(`{"access_token": "%s"}`, token))
-			userID, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
+			user, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
 				AuthData: extsvc.NewUnencryptedData(authData),
 			})
 			if err != nil {
@@ -433,7 +433,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			permsStore := edb.Perms(logger, testDB, timeutil.Now)
 			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now, nil)
 
-			providerStates, err := syncer.syncUserPerms(ctx, userID, false, authz.FetchPermsOptions{})
+			_, providerStates, err := syncer.syncUserPerms(ctx, user.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -445,7 +445,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}}, providerStates)
 
 			p := &authz.UserPermissions{
-				UserID: userID,
+				UserID: user.ID,
 				Perm:   authz.Read,
 				Type:   authz.PermRepos,
 			}
@@ -460,7 +460,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 
 			// sync again and check
-			providerStates, err = syncer.syncUserPerms(ctx, userID, false, authz.FetchPermsOptions{})
+			_, providerStates, err = syncer.syncUserPerms(ctx, user.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}

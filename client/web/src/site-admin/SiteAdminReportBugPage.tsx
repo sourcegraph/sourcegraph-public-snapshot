@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react'
 
 import { mapValues, values } from 'lodash'
-import { RouteComponentProps } from 'react-router'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -9,6 +8,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, useObservable, Alert, Link, H2, Text } from '@sourcegraph/wildcard'
 
 import awsCodeCommitJSON from '../../../../schema/aws_codecommit.schema.json'
+import azureDevOpsJSON from '../../../../schema/azuredevops.schema.json'
 import bitbucketCloudSchemaJSON from '../../../../schema/bitbucket_cloud.schema.json'
 import bitbucketServerSchemaJSON from '../../../../schema/bitbucket_server.schema.json'
 import gerritSchemaJSON from '../../../../schema/gerrit.schema.json'
@@ -30,7 +30,7 @@ import siteSchemaJSON from '../../../../schema/site.schema.json'
 import { PageTitle } from '../components/PageTitle'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 
-import { fetchAllConfigAndSettings, fetchMonitoringStats } from './backend'
+import { fetchAllConfigAndSettings } from './backend'
 
 /**
  * Minimal shape of a JSON Schema. These values are treated as opaque, so more specific types are
@@ -43,6 +43,7 @@ interface JSONSchema {
 
 const externalServices: Record<ExternalServiceKind, JSONSchema> = {
     AWSCODECOMMIT: awsCodeCommitJSON,
+    AZUREDEVOPS: azureDevOpsJSON,
     BITBUCKETCLOUD: bitbucketCloudSchemaJSON,
     BITBUCKETSERVER: bitbucketServerSchemaJSON,
     GERRIT: gerritSchemaJSON,
@@ -108,15 +109,12 @@ const allConfigSchema = {
         .reduce((allDefinitions, definitions) => ({ ...allDefinitions, ...definitions }), {}),
 }
 
-interface Props extends RouteComponentProps, ThemeProps, TelemetryProps {}
+interface Props extends ThemeProps, TelemetryProps {}
 
 export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     isLightTheme,
     telemetryService,
-    history,
 }) => {
-    const monitoringDaysBack = 7
-    const monitoringStats = useObservable(useMemo(() => fetchMonitoringStats(monitoringDaysBack), []))
     const allConfig = useObservable(useMemo(fetchAllConfigAndSettings, []))
     return (
         <div>
@@ -143,20 +141,15 @@ export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChil
                     support@sourcegraph.com.
                 </div>
             </Alert>
-            {allConfig === undefined || monitoringStats === undefined ? (
+            {allConfig === undefined ? (
                 <LoadingSpinner className="mt-2" />
             ) : (
                 <DynamicallyImportedMonacoSettingsEditor
-                    value={JSON.stringify(
-                        monitoringStats ? { ...allConfig, ...monitoringStats } : { ...allConfig, alerts: null },
-                        undefined,
-                        2
-                    )}
+                    value={JSON.stringify(allConfig, undefined, 2)}
                     jsonSchema={allConfigSchema}
                     canEdit={false}
                     height={800}
                     isLightTheme={isLightTheme}
-                    history={history}
                     readOnly={true}
                     telemetryService={telemetryService}
                 />

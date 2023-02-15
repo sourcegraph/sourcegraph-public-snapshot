@@ -124,10 +124,10 @@ client/vscode
 #### Desktop and Web Version
 
 1. `git clone` the [Sourcegraph repository](https://github.com/sourcegraph/sourcegraph)
-2. Install dependencies via `yarn` for the Sourcegraph repository
-3. Run `yarn generate` at the root directory to generate the required schemas
+2. Install dependencies via `pnpm install` for the Sourcegraph repository
+3. Run `pnpm generate` at the root directory to generate the required schemas
 4. Make your changes to the files within the `client/vscode` directory with VS Code
-5. Run `yarn build-vsce` to build or `yarn watch-vsce` to build and watch the tasks from the `root` directory
+5. Run `pnpm build-vsce` to build or `pnpm watch-vsce` to build and watch the tasks from the `root` directory
 6. To see your changes, open the `Run and Debug` sidebar view in VS Code, and
    select `Launch VS Code Extension` (`Launch VS Code Web Extension` for VS Code Web) from the dropdown menu.
 
@@ -136,11 +136,11 @@ client/vscode
 To perform integration tests:
 
 1. In the Sourcegraph repository:
-   1. `yarn`
-   2. `yarn generate`
+   1. `pnpm install`
+   2. `pnpm generate`
 2. In the `client/vscode` directory:
-   1. `yarn build:test` or `yarn watch:test`
-   2. `yarn test-integration`
+   1. `pnpm build:test` or `pnpm watch:test`
+   2. `pnpm test-integration`
 
 ## GitPod
 
@@ -159,8 +159,8 @@ To install this extension on GitPod Desktop:
 To run and test the web extension on GitPod Web (as well as VS Code and GitHub for the web), you must sideload the extension from your local machine as suggested in the following steps:
 
 1. `git clone` the [Sourcegraph repository](https://github.com/sourcegraph/sourcegraph)
-1. Run `yarn && yarn generate` at the root directory to install dependencies and generate the required schemas
-1. Run `yarn build-vsce` at root to build the Sourcegraph VS Code extension for Web
+1. Run `pnpm install && pnpm generate` at the root directory to install dependencies and generate the required schemas
+1. Run `pnpm build-vsce` at root to build the Sourcegraph VS Code extension for Web
 1. Once the build has been completed, move to the extension’s directory: `cd client/vscode`
 1. Start an HTTP server inside the extension’s path to host the extension locally: `npx serve --cors -l 8988`
 1. In another terminal, generate a publicly-accessible URL from your locally running HTTP server using the localtunnel tool: `npx localtunnel -p 8988`
@@ -201,16 +201,16 @@ The release process for the VS Code Extension for Sourcegraph is currently autom
 #### Release Steps
 
 1. Create a new branch when the main branch is ready for release, or use your current working branch if it is ready for release
-2. Run `yarn workspace @sourcegraph/vscode run release:$RELEASE_TYPE` in the root directory
+2. Run `pnpm --filter @sourcegraph/vscode run release:$RELEASE_TYPE` in the root directory
    - $RELEASE_TYPE: major, minor, patch, pre
-     - Example: `yarn workspace @sourcegraph/vscode run release:patch`
+     - Example: `pnpm --filter @sourcegraph/vscode run release:patch`
    - This command will:
      - Update the package.json file with the next version number
      - Update the changelog format by listing everything under `Unreleased` to the updated version number
      - Make a commit for the release and push to the current branch
 3. Open a PR to merge the current branch into main
 4. Once the main branch has the updated version number and changelog, run `git push origin main:vsce/release`
-   - This will trigger the build pipeline for publishing the extension using the `yarn release` command
+   - This will trigger the build pipeline for publishing the extension using the `pnpm release` command
    - Publish release to [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph)
    - Publish release to [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/sourcegraph)
    - The extension will be published with the correct package name via the [vsce CLI tool](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#vsce)

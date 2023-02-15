@@ -47,7 +47,7 @@ var (
 		Name:            "frontend",
 		MigrationsTable: "schema_migrations",
 		FS:              GetFSForPath("frontend"),
-		DataTables:      []string{"lsif_configuration_policies"},
+		DataTables:      []string{"lsif_configuration_policies", "roles"},
 		CountTables:     nil,
 	}
 

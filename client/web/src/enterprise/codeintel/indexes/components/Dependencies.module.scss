@@ -1,0 +1,18 @@
+.grid {
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--border-color-2);
+}
+
+.grid:first-child {
+    border-top: none;
+}
+
+.grid div:hover {
+    cursor: pointer;
+    background-color: var(--gray-02);
+}
+
+.tag {
+    color: #ae6e00;
+    background-color: #ff9e0045;
+}

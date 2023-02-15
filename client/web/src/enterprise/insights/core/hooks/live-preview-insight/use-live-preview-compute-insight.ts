@@ -35,7 +35,7 @@ export function useLivePreviewComputeInsight(props: Props): Result<ComputeDatum[
 
     const { state, refetch } = useLivePreviewSeriesInsight({
         skip,
-        repositories,
+        repoScope: { repositories },
         series: series.map(srs => ({
             ...srs,
             groupBy,

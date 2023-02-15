@@ -1,22 +1,13 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-static-element-interactions: warn */
 import * as React from 'react'
-import { useEffect, useState } from 'react'
 
 import { mdiSourceRepository, mdiFileDocumentOutline } from '@mdi/js'
-import classNames from 'classnames'
-import * as H from 'history'
-import { escapeRegExp, isEqual } from 'lodash'
-import { NavLink, useLocation } from 'react-router-dom'
 
-import { gql, useQuery } from '@sourcegraph/http-client'
 import { PrefetchableFile } from '@sourcegraph/shared/src/components/PrefetchableFile'
-import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
-import { Icon, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Icon } from '@sourcegraph/wildcard'
 
-import { InlineSymbolsResult } from '../graphql-operations'
 import { fetchBlob, usePrefetchBlobFormat } from '../repo/blob/backend'
 import { useExperimentalFeatures } from '../stores'
-import { parseBrowserRepoURL } from '../util/url'
 
 import {
     TreeLayerCell,
@@ -30,10 +21,8 @@ import {
 } from './components'
 import { MAX_TREE_ENTRIES } from './constants'
 import { useTreeRootContext } from './TreeContext'
-import { TreeLayerProps } from './TreeLayer'
 import { TreeEntryInfo, getTreeItemOffset } from './util'
 
-import styles from './File.module.scss'
 import treeStyles from './Tree.module.scss'
 
 interface FileProps {
@@ -47,7 +36,6 @@ interface FileProps {
     isActive: boolean
     isSelected: boolean
     customIconPath?: string
-    enableMergedFileSymbolSidebar: boolean
     isGoUpTreeLink?: boolean
 }
 
@@ -62,7 +50,6 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
         noopRowClick,
         depth,
         index,
-        enableMergedFileSymbolSidebar,
         customIconPath,
     } = props
 
@@ -154,155 +141,6 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                     )}
                 </TreeLayerCell>
             </TreeRow>
-            {enableMergedFileSymbolSidebar && isActive && <Symbols activePath={entryInfo.path} style={offsetStyle} />}
         </>
     )
-}
-
-export const SYMBOLS_QUERY = gql`
-    query InlineSymbols($repo: ID!, $revision: String!, $includePatterns: [String!]) {
-        node(id: $repo) {
-            __typename
-            ... on Repository {
-                commit(rev: $revision) {
-                    symbols(first: 1000, query: "", includePatterns: $includePatterns) {
-                        ...InlineSymbolConnectionFields
-                    }
-                }
-            }
-        }
-    }
-
-    fragment InlineSymbolConnectionFields on SymbolConnection {
-        __typename
-        nodes {
-            ...InlineSymbolNodeFields
-        }
-    }
-
-    fragment InlineSymbolNodeFields on Symbol {
-        __typename
-        name
-        containerName
-        kind
-        language
-        location {
-            resource {
-                path
-            }
-            range {
-                start {
-                    line
-                    character
-                }
-                end {
-                    line
-                    character
-                }
-            }
-        }
-        url
-    }
-`
-
-interface SymbolsProps
-    extends Pick<TreeLayerProps, 'activePath'>,
-        Pick<React.HTMLAttributes<HTMLDivElement>, 'style'> {}
-
-const Symbols: React.FunctionComponent<SymbolsProps> = ({ activePath, style }) => {
-    const location = useLocation()
-    const { repoID, revision } = useTreeRootContext()
-    const { data, loading, error } = useQuery<InlineSymbolsResult>(SYMBOLS_QUERY, {
-        variables: {
-            repo: repoID,
-            revision,
-            // `includePatterns` expects regexes, so first escape the path.
-            includePatterns: ['^' + escapeRegExp(activePath)],
-        },
-    })
-
-    const currentLocation = parseBrowserRepoURL(H.createPath(location))
-    const isSymbolActive = (symbolUrl: string): boolean => {
-        const symbolLocation = parseBrowserRepoURL(symbolUrl)
-        return (
-            currentLocation.repoName === symbolLocation.repoName &&
-            currentLocation.revision === symbolLocation.revision &&
-            currentLocation.filePath === symbolLocation.filePath &&
-            isEqual(currentLocation.position, symbolLocation.position)
-        )
-    }
-
-    const symbolKindTags = useExperimentalFeatures(features => features.symbolKindTags)
-
-    if (loading) {
-        return (
-            <Delay timeout={800}>
-                <TreeRow className={styles.symbols}>
-                    <TreeLayerCell>
-                        <TreeLayerRowContents className="d-flex" style={style}>
-                            <LoadingSpinner /> Loading symbol data...
-                        </TreeLayerRowContents>
-                    </TreeLayerCell>
-                </TreeRow>
-            </Delay>
-        )
-    }
-
-    let content = null
-
-    if (error) {
-        content = 'Unable to load symbol data.'
-    }
-
-    if (data && data.node?.__typename === 'Repository') {
-        // Only consider top-level symbols
-        const symbols = data.node.commit?.symbols.nodes.filter(symbol => !symbol.containerName) ?? []
-        if (symbols.length > 0) {
-            content = (
-                <ul>
-                    {symbols.map(symbol => (
-                        <li key={symbol.url}>
-                            <NavLink
-                                to={symbol.url}
-                                isActive={() => isSymbolActive(symbol.url)}
-                                className={classNames('test-symbol-link', styles.link)}
-                                activeClassName={styles.linkActive}
-                            >
-                                <SymbolKind
-                                    kind={symbol.kind}
-                                    className="mr-1 test-symbol-icon"
-                                    symbolKindTags={symbolKindTags}
-                                />
-                                <span className={classNames('test-symbol-name')}>{symbol.name}</span>
-                            </NavLink>
-                        </li>
-                    ))}
-                </ul>
-            )
-        } else {
-            content = 'No symbols found.'
-        }
-    }
-
-    if (content) {
-        return (
-            <TreeRow className={styles.symbols}>
-                <TreeLayerCell>
-                    <TreeLayerRowContents style={style}>{content}</TreeLayerRowContents>
-                </TreeLayerCell>
-            </TreeRow>
-        )
-    }
-    return null
-}
-
-const Delay: React.FunctionComponent<{ timeout: number; children: React.ReactElement }> = ({ timeout, children }) => {
-    const [show, setShow] = useState(false)
-
-    useEffect(() => {
-        const id = setTimeout(() => setShow(true), timeout)
-        return () => clearTimeout(id)
-    }, [timeout])
-
-    return show ? children : null
 }

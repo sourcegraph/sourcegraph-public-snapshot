@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { mdiGithub, mdiGitlab } from '@mdi/js'
+import { mdiBitbucket, mdiGithub, mdiGitlab } from '@mdi/js'
 import classNames from 'classnames'
 import cookies from 'js-cookie'
 import { Observable, of } from 'rxjs'
@@ -256,6 +256,8 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                                         <Icon aria-hidden={true} svgPath={mdiGithub} />
                                     ) : provider.serviceType === 'gitlab' ? (
                                         <Icon aria-hidden={true} svgPath={mdiGitlab} />
+                                    ) : provider.serviceType === 'bitbucketCloud' ? (
+                                        <Icon aria-hidden={true} svPath={mdiBitbucket} />
                                     ) : null}{' '}
                                     Continue with {provider.displayName}
                                 </Button>

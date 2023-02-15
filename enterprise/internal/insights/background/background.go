@@ -24,13 +24,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 )
+
+type RepoStore interface {
+	GetByName(ctx context.Context, name api.RepoName) (*types.Repo, error)
+}
 
 // GetBackgroundJobs is the main entrypoint which starts background jobs for code insights. It is
 // called from the worker service.
@@ -41,19 +47,28 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 	// Create a base store to be used for storing worker state. We store this in the main app Postgres
 	// DB, not the insights DB (which we use only for storing insights data.)
 	workerBaseStore := basestore.NewWithHandle(mainAppDB.Handle())
+	// Create an insights-DB backed store for retention jobs which live in the insights DB.
+	workerInsightsBaseStore := basestore.NewWithHandle(insightsDB.Handle())
 
 	// Create basic metrics for recording information about background jobs.
 	observationCtx := observation.NewContext(logger.Scoped("background", "insights background jobs"))
 	insightsMetadataStore := store.NewInsightStore(insightsDB)
-	featureFlagStore := mainAppDB.FeatureFlags()
 
 	// Start background goroutines for all of our workers.
 	// The query runner worker is started in a separate routine so it can benefit from horizontal scaling.
 	routines := []goroutine.BackgroundRoutine{
-		// Register the background goroutine which discovers and enqueues insights work.
+		// Discovers and enqueues insights work.
 		newInsightEnqueuer(ctx, observationCtx, workerBaseStore, insightsMetadataStore),
-
-		// TODO(slimsag): future: register another worker here for webhook querying.
+		// Enqueues series to be picked up by the retention worker.
+		newRetentionEnqueuer(ctx, workerInsightsBaseStore, insightsMetadataStore),
+		// Emits backend pings based on insights data.
+		pings.NewInsightsPingEmitterJob(ctx, mainAppDB, insightsDB),
+		// Cleans up soft-deleted insight series.
+		NewInsightsDataPrunerJob(ctx, mainAppDB, insightsDB),
+		// Checks for Code Insights license and freezes insights if necessary.
+		NewLicenseCheckJob(ctx, mainAppDB, insightsDB),
+		// Stamps backfill completion time.
+		NewBackfillCompletedCheckJob(ctx, mainAppDB, insightsDB),
 	}
 
 	// Register the background goroutine which discovers historical gaps in data and enqueues
@@ -63,10 +78,10 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 		searchRateLimiter := limiter.SearchQueryRate()
 		historicRateLimiter := limiter.HistoricalWorkRate()
 		backfillConfig := pipeline.BackfillerConfig{
-			CompressionPlan:         compression.NewGitserverFilter(mainAppDB, logger),
+			CompressionPlan:         compression.NewGitserverFilter(logger),
 			SearchHandlers:          queryrunner.GetSearchHandlers(),
 			InsightStore:            insightsStore,
-			CommitClient:            gitserver.NewGitCommitClient(mainAppDB),
+			CommitClient:            gitserver.NewGitCommitClient(),
 			SearchPlanWorkerLimit:   1,
 			SearchRunnerWorkerLimit: 5, // TODO: move these to settings
 			SearchRateLimiter:       searchRateLimiter,
@@ -96,18 +111,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 		// Add the backfill v2 workers
 		monitor := scheduler.NewBackgroundJobMonitor(ctx, config)
 		routines = append(routines, monitor.Routines()...)
-
-		// Add the backfiller v1 workers
-		routines = append(routines, newInsightHistoricalEnqueuer(ctx, observationCtx, workerBaseStore, insightsMetadataStore, insightsStore, featureFlagStore))
 	}
-
-	routines = append(
-		routines,
-		pings.NewInsightsPingEmitterJob(ctx, mainAppDB, insightsDB),
-		NewInsightsDataPrunerJob(ctx, mainAppDB, insightsDB),
-		NewLicenseCheckJob(ctx, mainAppDB, insightsDB),
-		NewBackfillCompletedCheckJob(ctx, mainAppDB, insightsDB),
-	)
 
 	return routines
 }
@@ -139,14 +143,16 @@ func GetBackgroundQueryRunnerJob(ctx context.Context, logger log.Logger, mainApp
 	}
 }
 
-func GetBackgroundDataRetentionJob(ctx context.Context, observationCtx *observation.Context, insightsDB edb.InsightsDB) []goroutine.BackgroundRoutine {
+func GetBackgroundDataRetentionJob(ctx context.Context, observationCtx *observation.Context, mainAppDB database.DB, insightsDB edb.InsightsDB) []goroutine.BackgroundRoutine {
 	workerMetrics, resetterMetrics := newWorkerMetrics(observationCtx, "insights_data_retention")
+
+	insightsStore := store.New(insightsDB, store.NewInsightPermissionStore(mainAppDB))
 
 	workerBaseStore := basestore.NewWithHandle(insightsDB.Handle())
 	dbWorkerStore := retention.CreateDBWorkerStore(observationCtx, workerBaseStore)
 
 	return []goroutine.BackgroundRoutine{
-		retention.NewWorker(ctx, observationCtx.Logger.Scoped("Worker", ""), dbWorkerStore, workerMetrics),
+		retention.NewWorker(ctx, observationCtx.Logger.Scoped("Worker", ""), dbWorkerStore, insightsStore, workerMetrics),
 		retention.NewResetter(ctx, observationCtx.Logger.Scoped("Resetter", ""), dbWorkerStore, resetterMetrics),
 		retention.NewCleaner(ctx, observationCtx, workerBaseStore),
 	}
@@ -165,5 +171,5 @@ func newWorkerMetrics(observationCtx *observation.Context, workerName string) (w
 		return true
 	}))
 	resetterMetrics := dbworker.NewResetterMetrics(observationCtx, workerName)
-	return workerMetrics, *resetterMetrics
+	return workerMetrics, resetterMetrics
 }

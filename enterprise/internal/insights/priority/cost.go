@@ -10,21 +10,21 @@ const (
 )
 
 const (
-	LiteralCost    float64 = 10
+	LiteralCost    float64 = 400
 	RegexpCost     float64 = 500
-	StructuralCost float64 = 5000
+	StructuralCost float64 = 1000
 
-	DiffMultiplier   float64 = 1000
-	CommitMultiplier float64 = 800
+	DiffMultiplier   float64 = 10
+	CommitMultiplier float64 = 8
 
-	AuthorMultiplier float64 = 0.1
+	AuthorMultiplier float64 = 0.7
 
 	UnindexedMultiplier float64 = 100
 	YesMultiplier       float64 = 1.5
 	OnlyMultiplier      float64 = 0.5
 
-	FileMultiplier float64 = 0.1
-	LangMultiplier float64 = 0.5
+	FileMultiplier float64 = 0.7
+	LangMultiplier float64 = 0.8
 
 	ManyRepositoriesMultiplier float64 = 10
 	MegarepoMultiplier         float64 = 100

@@ -20,6 +20,6 @@ type Service interface {
 	GetRetentionPolicyOverview(ctx context.Context, upload types.Upload, matchesOnly bool, first int, after int64, query string, now time.Time) (matches []types.RetentionPolicyMatchCandidate, totalCount int, err error)
 
 	// Repository
-	GetPreviewRepositoryFilter(ctx context.Context, patterns []string, limit, offset int) (_ []int, totalCount int, repositoryMatchLimit *int, _ error)
+	GetPreviewRepositoryFilter(ctx context.Context, patterns []string, limit, offset int) (_ []int, totalCount int, matchesAll bool, repositoryMatchLimit *int, _ error)
 	GetPreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType types.GitObjectType, pattern string) (map[string][]string, error)
 }

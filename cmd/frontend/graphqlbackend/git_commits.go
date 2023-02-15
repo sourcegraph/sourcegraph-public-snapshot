@@ -29,6 +29,7 @@ type gitCommitConnectionResolver struct {
 	// the field. See next field.
 	after       *string
 	afterCursor *string
+	before      *string
 
 	repo *RepositoryResolver
 
@@ -83,6 +84,7 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain
 			Author:       toValue(r.author).(string),
 			After:        toValue(r.after).(string),
 			Skip:         uint(afterCursor),
+			Before:       toValue(r.before).(string),
 			Path:         toValue(r.path).(string),
 			Follow:       r.follow,
 		})

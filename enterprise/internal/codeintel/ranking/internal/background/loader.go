@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/csv"
 	"io"
-	"os"
 	"strconv"
 	"time"
 
@@ -12,7 +11,6 @@ import (
 	"github.com/sourcegraph/log"
 	"google.golang.org/api/iterator"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -63,11 +61,7 @@ const (
 )
 
 func (l *rankLoader) loadRanks(ctx context.Context, config RankLoaderConfig) (err error) {
-	if !envvar.SourcegraphDotComMode() && os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
-		return nil
-	}
 	if l.resultsBucket == nil {
-		l.logger.Warn("No result bucket is configured")
 		return nil
 	}
 

@@ -13,11 +13,6 @@ func TestDatabaseExists(t *testing.T) {
 		path     string
 		expected bool
 	}{
-		// LSIF
-		{testLSIFUploadID, "cmd/lsif-go/main.go", true},
-		{testLSIFUploadID, "internal/index/indexer.go", true},
-		{testLSIFUploadID, "missing.go", false},
-
 		// SCIP
 		{testSCIPUploadID, "template/src/lsif/api.ts", true},
 		{testSCIPUploadID, "template/src/lsif/util.ts", true},

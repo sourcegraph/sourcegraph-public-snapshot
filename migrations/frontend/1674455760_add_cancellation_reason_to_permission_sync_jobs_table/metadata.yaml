@@ -1,0 +1,2 @@
+name: add cancellation_reason to permission_sync_jobs table
+parents: [1674041632, 1674047296]

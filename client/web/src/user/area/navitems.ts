@@ -1,3 +1,4 @@
+import AccountIcon from 'mdi-react/AccountIcon'
 import CogOutlineIcon from 'mdi-react/CogOutlineIcon'
 import FeatureSearchOutlineIcon from 'mdi-react/FeatureSearchOutlineIcon'
 
@@ -6,6 +7,11 @@ import { namespaceAreaHeaderNavItems } from '../../namespaces/navitems'
 import { UserAreaHeaderNavItem } from './UserAreaHeader'
 
 export const userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[] = [
+    {
+        to: '/profile',
+        label: 'Profile',
+        icon: AccountIcon,
+    },
     {
         to: '/settings',
         label: 'Settings',

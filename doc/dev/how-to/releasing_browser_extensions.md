@@ -19,7 +19,7 @@ The release process for Safari is currently not automated.
 
 Steps:
 1. On your terminal navigate to `./sourcegraph/client/browser`.
-1. Run the command `yarn run build`.
+1. Run the command `pnpm run build`.
 1. Build will generate an Xcode project under `./sourcegraph/client/browser/build/Sourcegraph for Safari`.
    1. If you run into Xcode related errors, make sure that you've downloaded Xcode from the app store, opened it and accepted the license/terms agreements.
 1. Open the project using Xcode.

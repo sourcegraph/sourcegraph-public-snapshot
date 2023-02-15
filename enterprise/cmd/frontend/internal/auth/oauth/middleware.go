@@ -183,14 +183,6 @@ func newOAuthFlowHandler(serviceType string) http.Handler {
 	return mux
 }
 
-// serviceType -> scopes
-var extraScopes = map[string][]string{
-	// We need `repo` scopes for reading private repos
-	extsvc.TypeGitHub: {"repo"},
-	// We need full `api` scope for cloning private repos
-	extsvc.TypeGitLab: {"api"},
-}
-
 // withOAuthExternalClient updates client such that the
 // golang.org/x/oauth2 package will use our http client which is configured
 // with proxy and TLS settings/etc.

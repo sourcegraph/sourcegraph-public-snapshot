@@ -73,9 +73,9 @@ import {
     WebHoverOverlay,
     WebHoverOverlayProps,
 } from '../../../components/WebHoverOverlay'
-import { BlobProps, updateBrowserHistoryIfChanged } from '../Blob'
+import { updateBrowserHistoryIfChanged, BlobPropsFacet } from '../CodeMirrorBlob'
 
-import { Container } from './react-interop'
+import { CodeMirrorContainer } from './react-interop'
 import {
     preciseWordAtCoords,
     offsetToUIPosition,
@@ -127,7 +127,7 @@ interface Hovercard {
 }
 
 const HOVER_INFO_CACHE_SIZE = 30
-const HOVER_DEBOUNCE_TIME = 25 // ms
+export const HOVER_DEBOUNCE_TIME = 25 // ms
 
 /**
  * Some style overrides to replicate the existing hovercard style.
@@ -155,7 +155,7 @@ const hovercardTheme = EditorView.theme({
 /**
  * Decorations for highlighting the range of the {@link Hovercard}.
  */
-const selectionHighlightDecoration = Decoration.mark({ class: 'selection-highlight' })
+export const selectionHighlightDecoration = Decoration.mark({ class: 'selection-highlight' })
 const selectionGoToDefinitionDecoration = Decoration.mark({ class: 'selection-highlight hover-gtd' })
 
 /**
@@ -233,7 +233,7 @@ const pinHovercard = StateEffect.define<void>()
 /**
  * Field for storing hover and pinned hovercard information. Gets updated by
  * {@link pinManager} and {@link hoverManager} and provides input for
- * {@link hovercards}.
+ * {@link hovercardSource}.
  */
 const hovercardState = StateField.define<{ pinned: Hovercard | null; hover: Hovercard | null }>({
     create() {
@@ -378,7 +378,7 @@ const pinManager = ViewPlugin.fromClass(
  * The MouseEvent uses numbers to indicate which button was pressed.
  * See https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/buttons#value
  */
-const MOUSE_NO_BUTTON = 0
+export const MOUSE_NO_BUTTON = 0
 
 /**
  * Listens to mousemove events, determines whether the position under the mouse
@@ -457,7 +457,7 @@ const hoverManager = ViewPlugin.fromClass(
                                 return next
                             }
 
-                            const direction = this.computeMouseDirection(
+                            const direction = computeMouseDirection(
                                 tooltipView.dom.getBoundingClientRect(),
                                 previous,
                                 next
@@ -508,27 +508,6 @@ const hoverManager = ViewPlugin.fromClass(
             this.view.dom.addEventListener('mouseleave', this.mouseleave)
         }
 
-        private computeMouseDirection(
-            rect: DOMRect,
-            position1: { x: number; y: number },
-            position2: { x: number; y: number }
-        ): 'towards' | 'away' {
-            if (
-                // Moves away from the top
-                (position2.y < position1.y && position2.y < rect.top) ||
-                // Moves away from the bottom
-                (position2.y > position1.y && position2.y > rect.bottom) ||
-                // Moves away from the left
-                (position2.x < position1.x && position2.x < rect.left) ||
-                // Moves away from the right
-                (position2.x > position1.x && position2.x > rect.right)
-            ) {
-                return 'away'
-            }
-
-            return 'towards'
-        }
-
         private mouseleave = (): void => {
             this.nextOffset.next(null)
         }
@@ -539,6 +518,27 @@ const hoverManager = ViewPlugin.fromClass(
         }
     }
 )
+
+export function computeMouseDirection(
+    rect: DOMRect,
+    position1: { x: number; y: number },
+    position2: { x: number; y: number }
+): 'towards' | 'away' {
+    if (
+        // Moves away from the top
+        (position2.y < position1.y && position2.y < rect.top) ||
+        // Moves away from the bottom
+        (position2.y > position1.y && position2.y > rect.bottom) ||
+        // Moves away from the left
+        (position2.x < position1.x && position2.x < rect.left) ||
+        // Moves away from the right
+        (position2.x > position1.x && position2.x > rect.right)
+    ) {
+        return 'away'
+    }
+
+    return 'towards'
+}
 
 // WebHoverOverlay expects to be passed the overlay position. Since CodeMirror
 // positions the element we always use the same value.
@@ -554,8 +554,8 @@ export class HovercardView implements TooltipView {
     public dom: HTMLElement
     private root: Root | null = null
     private nextContainer = new Subject<HTMLElement>()
-    private nextProps = new Subject<BlobProps>()
-    private props: BlobProps | null = null
+    private nextProps = new Subject<BlobPropsFacet>()
+    private props: BlobPropsFacet | null = null
     public overlap = true
     private nextPinned = new Subject<boolean>()
     private subscription: Subscription
@@ -599,7 +599,12 @@ export class HovercardView implements TooltipView {
         this.root?.unmount()
     }
 
-    private render(root: Root, { hoverOrError, actionsOrError }: HoverData, props: BlobProps, pinned: boolean): void {
+    private render(
+        root: Root,
+        { hoverOrError, actionsOrError }: HoverData,
+        props: BlobPropsFacet,
+        pinned: boolean
+    ): void {
         const hoverContext = {
             commitID: props.blobInfo.commitID,
             filePath: props.blobInfo.filePath,
@@ -620,7 +625,7 @@ export class HovercardView implements TooltipView {
         }
 
         root.render(
-            <Container onRender={() => repositionTooltips(this.view)} history={props.history}>
+            <CodeMirrorContainer onRender={() => repositionTooltips(this.view)}>
                 <div
                     className={classNames({
                         'cm-code-intel-hovercard': true,
@@ -651,7 +656,7 @@ export class HovercardView implements TooltipView {
                                 const parameters = new URLSearchParams(props.location.search)
                                 parameters.delete('popover')
 
-                                updateBrowserHistoryIfChanged(props.history, props.location, parameters)
+                                updateBrowserHistoryIfChanged(props.navigate, props.location, parameters)
                                 this.nextPinned.next(false)
                             },
                             onCopyLinkButtonClick: async () => {
@@ -668,7 +673,7 @@ export class HovercardView implements TooltipView {
                                 search.set('popover', 'pinned')
 
                                 updateBrowserHistoryIfChanged(
-                                    props.history,
+                                    props.navigate,
                                     props.location,
                                     // It may seem strange to set start and end to the same value, but that what's the old blob view is doing as well
                                     addLineRangeQueryParameter(
@@ -687,7 +692,7 @@ export class HovercardView implements TooltipView {
                         hoverOverlayContainerClassName="position-relative"
                     />
                 </div>
-            </Container>
+            </CodeMirrorContainer>
         )
     }
 }
@@ -793,7 +798,7 @@ function tokenRangeToHovercard(
                                         if (props.nav) {
                                             props.nav(url)
                                         } else {
-                                            props.history.push(url)
+                                            props.navigate(url)
                                         }
                                     }
                                 }

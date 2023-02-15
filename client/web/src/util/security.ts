@@ -93,3 +93,12 @@ export function getPasswordRequirements(
 
     return requirements
 }
+
+export const generateSecret = (): string => {
+    let text = ''
+    const possible = 'ABCDEF0123456789'
+    for (let index = 0; index < 12; index++) {
+        text += possible.charAt(Math.floor(Math.random() * possible.length))
+    }
+    return text
+}

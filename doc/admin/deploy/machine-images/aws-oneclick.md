@@ -25,8 +25,6 @@ This page describes how to launch a verified and pre-configured Sourcegraph inst
 
 <small>Prefer manually installing on AWS yourself? See our [AMI](aws-ami.md) and [script-install](../single-node/script.md) options.</small>
 
-<small>Prefer manually installing on AWS yourself? See our [AMI installation options](aws-ami.md) and [script installation options](../single-node/script.md).</small>
-
 ---
 
 ## Prerequisites
@@ -124,7 +122,7 @@ By default Sourcegraph will be available over HTTP on the public internet. To se
 
 We strongly recommend you taking [snapshots of the entire Sourcegraph data EBS volume](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-creating-snapshot.html) on an [automatic, scheduled basis](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshot-lifecycle.html). Only the Sourcegraph data volume (500G) needs to be backed up.
 
-To restore from a backup, simply follow our [upgrade instructions](http://localhost:5080/admin/deploy/machine-images/aws-ami#upgrade) and skip directly to **Step 2: Launch a new instance** - choosing your desired Sourcegraph version and your backed up data volume.
+To restore from a backup, simply follow our [upgrade instructions](https://docs.sourcegraph.com/admin/deploy/machine-images/aws-ami#upgrade) and skip directly to **Step 2: Launch a new instance** - choosing your desired Sourcegraph version and your backed up data volume.
 
 ### Upgrading your Sourcegraph instance
 

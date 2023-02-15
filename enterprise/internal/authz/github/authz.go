@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
+	atypes "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -37,7 +37,8 @@ func NewAuthzProviders(
 	conns []*ExternalConnection,
 	authProviders []schema.AuthProviders,
 	enableGithubInternalRepoVisibility bool,
-) (ps []authz.Provider, problems []string, warnings []string, invalidConnections []string) {
+) *atypes.ProviderInitResult {
+	initResults := &atypes.ProviderInitResult{}
 	// Auth providers (i.e. login mechanisms)
 	githubAuthProviders := make(map[string]*schema.GitHubAuthProvider)
 	for _, p := range authProviders {
@@ -60,8 +61,8 @@ func NewAuthzProviders(
 		// Initialize authz (permissions) provider.
 		p, err := newAuthzProvider(db, c)
 		if err != nil {
-			invalidConnections = append(invalidConnections, extsvc.TypeGitHub)
-			problems = append(problems, err.Error())
+			initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeGitHub)
+			initResults.Problems = append(initResults.Problems, err.Error())
 		}
 		if p == nil {
 			continue
@@ -75,7 +76,7 @@ func NewAuthzProviders(
 		// Permissions require a corresponding GitHub OAuth provider. Without one, repos
 		// with restricted permissions will not be visible to non-admins.
 		if authProvider, exists := githubAuthProviders[p.ServiceID()]; !exists {
-			warnings = append(warnings,
+			initResults.Warnings = append(initResults.Warnings,
 				fmt.Sprintf("GitHub config for %[1]s has `authorization` enabled, "+
 					"but no authentication provider matching %[1]q was found. "+
 					"Check the [**site configuration**](/site-admin/configuration) to "+
@@ -83,7 +84,7 @@ func NewAuthzProviders(
 					p.ServiceID()))
 		} else if p.groupsCache != nil && !authProvider.AllowGroupsPermissionsSync {
 			// Groups permissions requires auth provider to request the correct scopes.
-			warnings = append(warnings,
+			initResults.Warnings = append(initResults.Warnings,
 				fmt.Sprintf("GitHub config for %[1]s has `authorization.groupsCacheTTL` enabled, but "+
 					"the authentication provider matching %[1]q does not have `allowGroupsPermissionsSync` enabled. "+
 					"Update the [**site configuration**](/site-admin/configuration) in the appropriate entry "+
@@ -94,10 +95,10 @@ func NewAuthzProviders(
 		}
 
 		// Register this provider.
-		ps = append(ps, p)
+		initResults.Providers = append(initResults.Providers, p)
 	}
 
-	return ps, problems, warnings, invalidConnections
+	return initResults
 }
 
 // newAuthzProvider instantiates a provider, or returns nil if authorization is disabled.

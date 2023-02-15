@@ -29,7 +29,11 @@ class LineLinkManager implements PluginValue {
                 builder.add(
                     line.from,
                     line.to,
-                    Decoration.mark({ tagName: 'a', attributes: { href, 'data-line-link': '' } })
+                    Decoration.mark({
+                        tagName: 'a',
+                        attributes: { href, 'data-line-link': '' },
+                        class: 'text-decoration-none',
+                    })
                 )
                 pos = line.to + 1
             }
@@ -55,7 +59,7 @@ export const navigateToLineOnAnyClickExtension: Extension = [
                 if (props.nav) {
                     props.nav(href)
                 } else {
-                    props.history.push(href)
+                    props.navigate(href)
                 }
             }
         },

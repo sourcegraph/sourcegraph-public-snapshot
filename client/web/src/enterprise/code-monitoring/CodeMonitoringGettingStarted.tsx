@@ -110,7 +110,9 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                         to={buildCloudTrialURL(authenticatedUser, 'monitoring')}
                         target="_blank"
                         rel="noopener noreferrer"
-                        onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                        onClick={() =>
+                            eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'MonitoringGettingStarted' })
+                        }
                     >
                         try Sourcegraph Cloud
                     </Link>

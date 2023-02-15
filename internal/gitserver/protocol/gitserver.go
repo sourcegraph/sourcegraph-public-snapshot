@@ -95,11 +95,10 @@ type Signature struct {
 type ExecRequest struct {
 	Repo api.RepoName `json:"repo"`
 
-	EnsureRevision string      `json:"ensureRevision"`
-	Args           []string    `json:"args"`
-	Stdin          []byte      `json:"stdin,omitempty"`
-	Opt            *RemoteOpts `json:"opt"`
-	NoTimeout      bool        `json:"noTimeout"`
+	EnsureRevision string   `json:"ensureRevision"`
+	Args           []string `json:"args"`
+	Stdin          []byte   `json:"stdin,omitempty"`
+	NoTimeout      bool     `json:"noTimeout"`
 }
 
 // BatchLogRequest is a request to execute a `git log` command inside a set of
@@ -150,25 +149,6 @@ type P4ExecRequest struct {
 	Args     []string `json:"args"`
 }
 
-// RemoteOpts configures interactions with a remote repository.
-type RemoteOpts struct {
-	SSH   *SSHConfig   `json:"ssh"`   // SSH configuration for communication with the remote
-	HTTPS *HTTPSConfig `json:"https"` // HTTPS configuration for communication with the remote
-}
-
-// SSHConfig configures and authenticates SSH for communication with remotes.
-type SSHConfig struct {
-	User       string `json:"user,omitempty"`      // SSH user (if empty, inferred from URL)
-	PublicKey  []byte `json:"publicKey,omitempty"` // SSH public key (if nil, inferred from PrivateKey)
-	PrivateKey []byte `json:"privateKey"`          // SSH private key, usually passed to ssh.ParsePrivateKey (passphrases currently unsupported)
-}
-
-// HTTPSConfig configures and authenticates HTTPS for communication with remotes.
-type HTTPSConfig struct {
-	User string `json:"user"` // the username provided to the remote
-	Pass string `json:"pass"` // the password provided to the remote
-}
-
 // RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.
 type RepoUpdateRequest struct {
 	Repo  api.RepoName  `json:"repo"`  // identifying URL for repo
@@ -215,6 +195,7 @@ type IsRepoCloneableRequest struct {
 // IsRepoCloneableResponse is the response type for the IsRepoCloneableRequest.
 type IsRepoCloneableResponse struct {
 	Cloneable bool   // whether the repo is cloneable
+	Cloned    bool   // true if the repo was ever cloned in the past
 	Reason    string // if not cloneable, the reason why not
 }
 

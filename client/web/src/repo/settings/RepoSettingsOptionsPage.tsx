@@ -1,20 +1,9 @@
 import { FC, useCallback, useEffect, useState } from 'react'
 
 import { noop } from 'lodash'
-import { RouteComponentProps } from 'react-router'
 
 import { useMutation, useQuery } from '@sourcegraph/http-client'
-import {
-    Alert,
-    Button,
-    Container,
-    ErrorAlert,
-    H2,
-    LoadingSpinner,
-    PageHeader,
-    renderError,
-    Text,
-} from '@sourcegraph/wildcard'
+import { Button, Container, ErrorAlert, H2, LoadingSpinner, PageHeader, renderError, Text } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../components/CopyableText'
 import { PageTitle } from '../../components/PageTitle'
@@ -32,17 +21,18 @@ import { eventLogger } from '../../tracking/eventLogger'
 
 import { EXCLUDE_REPO_FROM_EXTERNAL_SERVICES, FETCH_SETTINGS_AREA_REPOSITORY_GQL } from './backend'
 import { ExternalServiceEntry } from './components/ExternalServiceEntry'
+import { RedirectionAlert } from './components/RedirectionAlert'
 
 import styles from './RepoSettingsOptionsPage.module.scss'
 
-interface Props extends RouteComponentProps<{}> {
+interface Props {
     repo: SettingsAreaRepositoryFields
 }
 
 /**
  * The repository settings options page.
  */
-export const RepoSettingsOptionsPage: FC<Props> = ({ repo, history }) => {
+export const RepoSettingsOptionsPage: FC<Props> = ({ repo }) => {
     useEffect(() => {
         eventLogger.logViewEvent('RepoSettings')
     })
@@ -55,7 +45,6 @@ export const RepoSettingsOptionsPage: FC<Props> = ({ repo, history }) => {
     // This state shows that any of possible "exclude" buttons (in this or child components) were pushed.
     // It is used to disable all the "exclude" buttons except the button which was actually clicked.
     const [exclusionInProgress, setExclusionInProgress] = useState<boolean>(false)
-    const [ttl, setTtl] = useState<number>(3)
 
     // Callback used in child components (ExternalServiceEntry) to update the state in current component.
     const updateExclusion = useCallback((updatedExclusionState: boolean) => {
@@ -72,19 +61,7 @@ export const RepoSettingsOptionsPage: FC<Props> = ({ repo, history }) => {
     const [excludeRepo, { data: excludeData, error: excludeError, loading: isExcluding }] = useMutation<
         ExcludeRepoFromExternalServicesResult,
         ExcludeRepoFromExternalServicesVariables
-    >(EXCLUDE_REPO_FROM_EXTERNAL_SERVICES, {
-        onCompleted: () => {
-            let count = 3
-            const interval = setInterval(() => {
-                if (count === 0) {
-                    clearInterval(interval)
-                    history.push('/site-admin/external-services')
-                }
-                setTtl(count)
-                count--
-            }, 700)
-        },
-    })
+    >(EXCLUDE_REPO_FROM_EXTERNAL_SERVICES)
 
     const excludingDisabled =
         (!siteConfigError &&
@@ -112,7 +89,7 @@ export const RepoSettingsOptionsPage: FC<Props> = ({ repo, history }) => {
                                 excludingLoading={exclusionInProgress}
                                 updateExclusionLoading={updateExclusion}
                                 repo={repo}
-                                history={history}
+                                redirectAfterExclusion={services.length < 2}
                             />
                         ))}
                         {services.length > 1 && (
@@ -143,18 +120,20 @@ export const RepoSettingsOptionsPage: FC<Props> = ({ repo, history }) => {
                                     }}
                                     disabled={excludingDisabled || (exclusionInProgress && !isExcluding)}
                                 >
-                                    <span className={exclusionInProgress ? styles.invisibleText : ''}>
+                                    <span className={exclusionInProgress && isExcluding ? styles.invisibleText : ''}>
                                         Exclude repository from all code hosts
                                     </span>
-                                    {exclusionInProgress && <LoadingSpinner className={styles.loader} />}
+                                    {exclusionInProgress && isExcluding && <LoadingSpinner className={styles.loader} />}
                                 </Button>
                                 {excludeError && (
                                     <ErrorAlert error={`Failed to exclude repository: ${renderError(excludeError)}`} />
                                 )}
                                 {excludeData && (
-                                    <Alert className="mt-2" variant="success">
-                                        {`Code host configurations updated. You will be redirected in ${ttl}...`}
-                                    </Alert>
+                                    <RedirectionAlert
+                                        to="/site-admin/external-services"
+                                        messagePrefix="Code host configurations updated."
+                                        className="mt-2"
+                                    />
                                 )}
                             </>
                         )}{' '}

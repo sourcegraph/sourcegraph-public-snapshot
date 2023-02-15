@@ -50,7 +50,7 @@ func (m gitlabAuthzProviderParams) URN() string {
 	panic("should never be called")
 }
 
-func (m gitlabAuthzProviderParams) ValidateConnection(context.Context) []string { return nil }
+func (m gitlabAuthzProviderParams) ValidateConnection(context.Context) error { return nil }
 
 func (m gitlabAuthzProviderParams) FetchUserPerms(context.Context, *extsvc.Account, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	panic("should never be called")
@@ -489,7 +489,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(bbs)),
 							})
 						}
-					case extsvc.KindGitHub, extsvc.KindPerforce:
+					case extsvc.KindGitHub, extsvc.KindPerforce, extsvc.KindBitbucketCloud, extsvc.KindGerrit:
 					default:
 						return nil, errors.Errorf("unexpected kind: %s", kind)
 					}
@@ -521,6 +521,8 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 		bitbucketServerConnections []*schema.BitbucketServerConnection
 		githubConnections          []*schema.GitHubConnection
 		perforceConnections        []*schema.PerforceConnection
+		bitbucketCloudConnections  []*schema.BitbucketCloudConnection
+		gerritConnections          []*schema.GerritConnection
 
 		expInvalidConnections []string
 		expSeriousProblems    []string
@@ -577,7 +579,7 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 			expInvalidConnections: []string{"gitlab"},
 		},
 		{
-			description: "Bitbucket connection with authz enabled but missing license for ACLs",
+			description: "Bitbucket Server connection with authz enabled but missing license for ACLs",
 			cfg:         conf.Unified{},
 			bitbucketServerConnections: []*schema.BitbucketServerConnection{
 				{
@@ -599,6 +601,34 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 			},
 			expSeriousProblems:    []string{"failed"},
 			expInvalidConnections: []string{"bitbucketServer"},
+		},
+		{
+			description: "Bitbucket Cloud connection with authz enabled but missing license for ACLs",
+			cfg:         conf.Unified{},
+			bitbucketCloudConnections: []*schema.BitbucketCloudConnection{
+				{
+					Authorization: &schema.BitbucketCloudAuthorization{},
+					Url:           "https://bitbucket.org",
+					Username:      "admin",
+					AppPassword:   "secret-password",
+				},
+			},
+			expSeriousProblems:    []string{"failed"},
+			expInvalidConnections: []string{"bitbucketCloud"},
+		},
+		{
+			description: "Gerrit connection with authz enabled but missing license for ACLs",
+			cfg:         conf.Unified{},
+			gerritConnections: []*schema.GerritConnection{
+				{
+					Authorization: &schema.GerritAuthorization{},
+					Url:           "https://gerrit.sgdev.org",
+					Username:      "admin",
+					Password:      "secret-password",
+				},
+			},
+			expSeriousProblems:    []string{"failed"},
+			expInvalidConnections: []string{"gerrit"},
 		},
 		{
 			description: "Perforce connection with authz enabled but missing license for ACLs",
@@ -652,6 +682,20 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 							svcs = append(svcs, &types.ExternalService{
 								Kind:   kind,
 								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(gh)),
+							})
+						}
+					case extsvc.KindBitbucketCloud:
+						for _, bbcloud := range test.bitbucketCloudConnections {
+							svcs = append(svcs, &types.ExternalService{
+								Kind:   kind,
+								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(bbcloud)),
+							})
+						}
+					case extsvc.KindGerrit:
+						for _, g := range test.gerritConnections {
+							svcs = append(svcs, &types.ExternalService{
+								Kind:   kind,
+								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(g)),
 							})
 						}
 					case extsvc.KindPerforce:

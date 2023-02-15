@@ -55,7 +55,7 @@ func NewGitBlobLSIFDataResolver(
 		uploadSvc:        uploadSvc,
 		policiesSvc:      policiesSvc,
 		requestState:     requestState,
-		locationResolver: sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient(db)),
+		locationResolver: sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient()),
 		errTracer:        errTracer,
 		operations:       operations,
 	}
@@ -286,11 +286,13 @@ func (r *gitBlobLSIFDataResolver) LSIFUploads(ctx context.Context) (_ []resolver
 		dbUploads = append(dbUploads, sharedDumpToDbstoreUpload(u))
 	}
 
+	db := r.autoindexingSvc.GetUnsafeDB()
 	prefetcher := sharedresolvers.NewPrefetcher(r.autoindexingSvc, r.uploadSvc)
+	locationResolver := sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient())
 
 	resolvers := make([]resolverstubs.LSIFUploadResolver, 0, len(uploads))
 	for _, upload := range dbUploads {
-		resolvers = append(resolvers, sharedresolvers.NewUploadResolver(r.uploadSvc, r.autoindexingSvc, r.policiesSvc, upload, prefetcher, r.errTracer))
+		resolvers = append(resolvers, sharedresolvers.NewUploadResolver(r.uploadSvc, r.autoindexingSvc, r.policiesSvc, upload, prefetcher, locationResolver, r.errTracer))
 	}
 
 	return resolvers, nil

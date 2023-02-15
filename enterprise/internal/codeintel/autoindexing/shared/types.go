@@ -5,11 +5,13 @@ import (
 )
 
 type GetIndexesOptions struct {
-	RepositoryID int
-	State        string
-	Term         string
-	Limit        int
-	Offset       int
+	RepositoryID  int
+	State         string
+	States        []string
+	Term          string
+	WithoutUpload bool
+	Limit         int
+	Offset        int
 }
 
 type SourcedCommits struct {
@@ -32,13 +34,15 @@ type IndexesWithRepositoryNamespace struct {
 }
 
 type DeleteIndexesOptions struct {
-	State        string
-	Term         string
-	RepositoryID int
+	States        []string
+	Term          string
+	RepositoryID  int
+	WithoutUpload bool
 }
 
 type ReindexIndexesOptions struct {
-	State        string
-	Term         string
-	RepositoryID int
+	States        []string
+	Term          string
+	RepositoryID  int
+	WithoutUpload bool
 }

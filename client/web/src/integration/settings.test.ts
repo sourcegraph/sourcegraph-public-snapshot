@@ -73,6 +73,7 @@ describe('Settings', () => {
                         viewerCanAdminister: true,
                         builtinAuth: true,
                         tags: [],
+                        createdAt: '2020-03-02T11:52:15Z',
                     },
                 }),
                 UserSettingsAreaUserProfile: () => ({
@@ -89,7 +90,7 @@ describe('Settings', () => {
                         siteAdmin: true,
                         builtinAuth: true,
                         createdAt: '2020-03-02T11:52:15Z',
-                        emails: [{ email: 'test@sourcegraph.test', verified: true }],
+                        emails: [{ email: 'test@sourcegraph.test', verified: true, isPrimary: true }],
                         organizations: { nodes: [] },
                         permissionsInfo: null,
                         tags: [],

@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "processrestart",
+    srcs = [
+        "doc.go",
+        "goreman_server.go",
+        "processrestart.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/processrestart",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = ["//lib/errors"],
+)

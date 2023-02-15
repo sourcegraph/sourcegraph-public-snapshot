@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react'
 
 import { ApolloError, WatchQueryFetchPolicy } from '@apollo/client'
-import { useHistory, useLocation } from 'react-router'
+import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
 
 import { GraphQLResult, useQuery } from '@sourcegraph/http-client'
 
@@ -35,11 +35,13 @@ export interface PaginationProps {
     goToLastPage: () => Promise<void>
 }
 
-export interface UsePaginatedConnectionResult<TData> extends PaginationProps {
-    connection?: PaginatedConnection<TData>
+export interface UsePaginatedConnectionResult<TResult, TVariables, TNode> extends PaginationProps {
+    data: TResult | undefined | null
+    variables: TVariables
+    connection?: PaginatedConnection<TNode>
     loading: boolean
     error?: ApolloError
-    refetch: () => any
+    refetch: (variables?: TVariables) => any
 }
 
 interface UsePaginatedConnectionConfig<TResult> {
@@ -51,12 +53,14 @@ interface UsePaginatedConnectionConfig<TResult> {
     fetchPolicy?: WatchQueryFetchPolicy
     // Allows running an optional callback on any successful request
     onCompleted?: (data: TResult) => void
+    // Allows to provide polling interval to useQuery
+    pollInterval?: number
 }
 
-interface UsePaginatedConnectionParameters<TResult, TVariables extends PaginatedConnectionQueryArguments, TData> {
+interface UsePaginatedConnectionParameters<TResult, TVariables extends PaginatedConnectionQueryArguments, TNode> {
     query: string
     variables: Omit<TVariables, 'first' | 'last' | 'before' | 'after'>
-    getConnection: (result: GraphQLResult<TResult>) => PaginatedConnection<TData> | undefined
+    getConnection: (result: GraphQLResult<TResult>) => PaginatedConnection<TNode> | undefined
     options?: UsePaginatedConnectionConfig<TResult>
 }
 
@@ -71,25 +75,32 @@ const DEFAULT_PAGE_SIZE = 20
  * @param getConnection A function that filters and returns the relevant data from the connection response.
  * @param options Additional configuration options
  */
-export const usePageSwitcherPagination = <TResult, TVariables extends PaginatedConnectionQueryArguments, TData>({
+export const usePageSwitcherPagination = <TResult, TVariables extends PaginatedConnectionQueryArguments, TNode>({
     query,
     variables,
     getConnection,
     options,
-}: UsePaginatedConnectionParameters<TResult, TVariables, TData>): UsePaginatedConnectionResult<TData> => {
+}: UsePaginatedConnectionParameters<TResult, TVariables, TNode>): UsePaginatedConnectionResult<
+    TResult,
+    TVariables,
+    TNode
+> => {
     const pageSize = options?.pageSize ?? DEFAULT_PAGE_SIZE
     const [initialPaginationArgs, setPaginationArgs] = useSyncPaginationArgsWithUrl(!!options?.useURL, pageSize)
 
+    // TODO(philipp-spiess): Find out why Omit<TVariables, "first" | ...> & { first: number, ... }
+    // does not work here and get rid of the any cast.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const queryVariables: TVariables = {
+        ...variables,
+        ...initialPaginationArgs,
+    } as any
+
     const { data, error, loading, refetch } = useQuery<TResult, TVariables>(query, {
-        // TODO(philipp-spiess): Find out why Omit<TVariables, "first" | ...> & { first: number, ... }
-        // does not work here and get rid of the any cast.
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        variables: {
-            ...variables,
-            ...initialPaginationArgs,
-        } as any,
+        variables: queryVariables,
         fetchPolicy: options?.fetchPolicy,
         onCompleted: options?.onCompleted,
+        pollInterval: options?.pollInterval,
     })
 
     const connection = useMemo(() => {
@@ -133,6 +144,8 @@ export const usePageSwitcherPagination = <TResult, TVariables extends PaginatedC
     }, [updatePagination, pageSize])
 
     return {
+        data,
+        variables: queryVariables,
         connection,
         loading,
         error,
@@ -192,7 +205,7 @@ const useSyncPaginationArgsWithUrl = (
     setPaginationArgs: (args: PaginatedConnectionQueryArguments) => void
 ] => {
     const location = useLocation()
-    const history = useHistory()
+    const navigate = useNavigate()
 
     const initialPaginationArgs = useMemo(() => {
         if (enabled) {
@@ -208,10 +221,10 @@ const useSyncPaginationArgsWithUrl = (
         (paginationArgs: PaginatedConnectionQueryArguments): void => {
             if (enabled) {
                 const search = getSearchFromPaginationArgs(paginationArgs)
-                history.replace({ search })
+                navigate({ search }, { replace: true })
             }
         },
-        [enabled, history]
+        [enabled, navigate]
     )
     return [initialPaginationArgs, setPaginationArgs]
 }

@@ -92,7 +92,7 @@ We also run [separate vulnerability scans for our infrastructure](https://handbo
 
 ### Pipeline health
 
-Maintaining [Buildkite pipeline](#buildkite-pipelines) health is a critical part of ensuring we ship a stable product - changes that make it to the `main` branch may be deployed to various Sourcegraph instances, and having a reliable and predictable pipeline is crucial to ensuring bugs do not make it to production environments.
+Maintaining [Buildkite pipeline](#buildkite-pipelines) health is a critical part of ensuring we ship a stable product—changes that make it to the `main` branch may be deployed to various Sourcegraph instances, and having a reliable and predictable pipeline is crucial to ensuring bugs do not make it to production environments.
 
 To enable this, we [address flakes as they arise](#flakes) and mitigate the impacts of pipeline instability with [branch locks](#branch-locks).
 
@@ -102,7 +102,7 @@ To enable this, we [address flakes as they arise](#flakes) and mitigate the impa
 
 > WARNING: **A red `main` build is not okay and must be fixed.** Learn more about our `main` branch policy in [Testing principles: Failures on the `main` branch](../testing_principles.md#failures-on-the-main-branch).
 
-[`buildchecker`](#buildchecker) is a tool responding to periods of consecutive build failures on the `main` branch Sourcegraph Buildkite pipeline. If it detects a series of failures on the `main` branch, merges to `main` will be restricted to members of the Sourcegraph team who authored the failing commits until the issue is resolved - this is referred to as a "branch lock". When a build passes on `main` again, `buildchecker` will automatically unlock the branch.
+[`buildchecker`](#buildchecker) is a tool responding to periods of consecutive build failures on the `main` branch Sourcegraph Buildkite pipeline. If it detects a series of failures on the `main` branch, merges to `main` will be restricted to members of the Sourcegraph team who authored the failing commits until the issue is resolved—this is referred to as a "branch lock". When a build passes on `main` again, `buildchecker` will automatically unlock the branch.
 
 **Authors of the most recent failed builds are responsible for investigating failures.** Please refer to the [Continuous integration playbook](https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/incidents/playbooks/ci#build-has-failed-on-the-main-branch) for step-by-step guides on what to do in various scenarios.
 
@@ -110,7 +110,7 @@ To enable this, we [address flakes as they arise](#flakes) and mitigate the impa
 
 A *flake* is defined as a test or script that is unreliable or non-deterministic, i.e. it exhibits both a passing and a failing result with the same code. In other words: something that sometimes fails, but if you retry it enough times, it passes, *eventually*.
 
-Tests are not the only thing that are flaky - flakes can also encompass [sporadic infrastructure issues](#flaky-infrastructure) and [unreliable steps](#flaky-steps).
+Tests are not the only thing that are flaky—flakes can also encompass [sporadic infrastructure issues](#flaky-infrastructure) and [unreliable steps](#flaky-steps).
 
 ##### Flaky tests
 
@@ -200,7 +200,7 @@ If you want to be explictly notified (through a Slack ping) when your pull reque
 
 [![buildchecker](https://github.com/sourcegraph/sourcegraph/actions/workflows/buildchecker.yml/badge.svg)](https://github.com/sourcegraph/sourcegraph/actions/workflows/buildchecker.yml) [![buildchecker-history](https://github.com/sourcegraph/sourcegraph/actions/workflows/buildchecker-history.yml/badge.svg)](https://github.com/sourcegraph/sourcegraph/actions/workflows/buildchecker-history.yml)
 
-[`buildchecker`](https://github.com/sourcegraph/sourcegraph/actions/workflows/buildchecker.yml), our [branch lock management tool](#branch-locks), runs in GitHub actions - see the [workflow specification](https://github.com/sourcegraph/sourcegraph/blob/main/.github/workflows/buildchecker.yml).
+[`buildchecker`](https://github.com/sourcegraph/sourcegraph/actions/workflows/buildchecker.yml), our [branch lock management tool](#branch-locks), runs in GitHub actions—see the [workflow specification](https://github.com/sourcegraph/sourcegraph/blob/main/.github/workflows/buildchecker.yml).
 
 To learn more about `buildchecker`, refer to the [`buildchecker` source code and documentation](https://github.com/sourcegraph/sourcegraph/tree/main/dev/buildchecker).
 
@@ -208,7 +208,7 @@ To learn more about `buildchecker`, refer to the [`buildchecker` source code and
 
 [![pr-auditor](https://github.com/sourcegraph/sourcegraph/actions/workflows/pr-auditor.yml/badge.svg)](https://github.com/sourcegraph/sourcegraph/actions/workflows/pr-auditor.yml)
 
-[`pr-auditor`](https://github.com/sourcegraph/sourcegraph/actions/workflows/pr-auditor.yml), our [PR audit tool](../testing_principles.md#policy), runs in GitHub actions - see the [workflow specification](https://github.com/sourcegraph/sourcegraph/blob/main/.github/workflows/pr-auditor.yml).
+[`pr-auditor`](https://github.com/sourcegraph/sourcegraph/actions/workflows/pr-auditor.yml), our [PR audit tool](../testing_principles.md#policy), runs in GitHub actions—see the [workflow specification](https://github.com/sourcegraph/sourcegraph/blob/main/.github/workflows/pr-auditor.yml).
 
 To learn more about `pr-auditor`, refer to the [`pr-auditor` source code and documentation](https://github.com/sourcegraph/sourcegraph/tree/main/dev/pr-auditor).
 
@@ -236,6 +236,6 @@ The `license_finder` tool can be installed using `gem install license_finder`. Y
 LICENSE_CHECK=true ./dev/licenses.sh
 ```
 
-The `./dev/licenses.sh` script will also output some `license_finder` configuration for debugging purposes - this configuration is based on the `doc/dependency_decisions.yml` file, which tracks decisions made about licenses and dependencies.
+The `./dev/licenses.sh` script will also output some `license_finder` configuration for debugging purposes—this configuration is based on the `doc/dependency_decisions.yml` file, which tracks decisions made about licenses and dependencies.
 
 For more details, refer to the [`license_finder` documentation](https://github.com/pivotal/LicenseFinder#usage).

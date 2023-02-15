@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 )
 
 func TestStoreQueuedCount(t *testing.T) {
@@ -480,7 +480,7 @@ func TestStoreAddExecutionLogEntry(t *testing.T) {
 		command := []string{"ls", "-a", fmt.Sprintf("%d", i+1)}
 		payload := fmt.Sprintf("<load payload %d>", i+1)
 
-		entry := workerutil.ExecutionLogEntry{
+		entry := executor.ExecutionLogEntry{
 			Command: command,
 			Out:     payload,
 		}
@@ -504,12 +504,12 @@ func TestStoreAddExecutionLogEntry(t *testing.T) {
 	}
 
 	for i := 0; i < numEntries; i++ {
-		var entry workerutil.ExecutionLogEntry
+		var entry executor.ExecutionLogEntry
 		if err := json.Unmarshal([]byte(contents[i]), &entry); err != nil {
 			t.Fatalf("unexpected error decoding entry: %s", err)
 		}
 
-		expected := workerutil.ExecutionLogEntry{
+		expected := executor.ExecutionLogEntry{
 			Command: []string{"ls", "-a", fmt.Sprintf("%d", i+1)},
 			Out:     fmt.Sprintf("<load payload %d>", i+1),
 		}
@@ -522,7 +522,7 @@ func TestStoreAddExecutionLogEntry(t *testing.T) {
 func TestStoreAddExecutionLogEntryNoRecord(t *testing.T) {
 	db := setupStoreTest(t)
 
-	entry := workerutil.ExecutionLogEntry{
+	entry := executor.ExecutionLogEntry{
 		Command: []string{"ls", "-a"},
 		Out:     "output",
 	}
@@ -549,7 +549,7 @@ func TestStoreUpdateExecutionLogEntry(t *testing.T) {
 		command := []string{"ls", "-a", fmt.Sprintf("%d", i+1)}
 		payload := fmt.Sprintf("<load payload %d>", i+1)
 
-		entry := workerutil.ExecutionLogEntry{
+		entry := executor.ExecutionLogEntry{
 			Command: command,
 			Out:     payload,
 		}
@@ -578,12 +578,12 @@ func TestStoreUpdateExecutionLogEntry(t *testing.T) {
 	}
 
 	for i := 0; i < numEntries; i++ {
-		var entry workerutil.ExecutionLogEntry
+		var entry executor.ExecutionLogEntry
 		if err := json.Unmarshal([]byte(contents[i]), &entry); err != nil {
 			t.Fatalf("unexpected error decoding entry: %s", err)
 		}
 
-		expected := workerutil.ExecutionLogEntry{
+		expected := executor.ExecutionLogEntry{
 			Command: []string{"ls", "-a", fmt.Sprintf("%d", i+1)},
 			Out:     fmt.Sprintf("<load payload %d>\n<load payload %d again, nobody was at home>", i+1, i+1),
 		}
@@ -604,7 +604,7 @@ func TestStoreUpdateExecutionLogEntryUnknownEntry(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	entry := workerutil.ExecutionLogEntry{
+	entry := executor.ExecutionLogEntry{
 		Command: []string{"ls", "-a"},
 		Out:     "<load payload>",
 	}

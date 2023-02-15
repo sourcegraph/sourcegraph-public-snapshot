@@ -142,7 +142,7 @@ func fileDiffVirtualFileContent(r *FileDiffResolver) FileContentFunc {
 			var oldContent string
 			if oldFile := r.OldFile(); oldFile != nil {
 				var err error
-				oldContent, err = r.OldFile().Content(ctx)
+				oldContent, err = r.OldFile().Content(ctx, &GitTreeContentPageArgs{})
 				if err != nil {
 					return
 				}

@@ -2,8 +2,8 @@ import React from 'react'
 
 import VisuallyHidden from '@reach/visually-hidden'
 
+import { SearchResultStyles as styles, LegacyResultContainer, CommitSearchResultMatch } from '@sourcegraph/branded'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { SearchResultStyles as styles, LegacyResultContainer, CommitSearchResultMatch } from '@sourcegraph/search-ui'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { CommitMatch, getCommitMatchUrl } from '@sourcegraph/shared/src/search/stream'

@@ -7,12 +7,13 @@ import { act, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
 
+import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import {
-    GetDashboardAccessibleInsightsResult,
+    FindInsightsBySearchTermResult,
     GetDashboardInsightsResult,
     GetInsightsResult,
     InsightsDashboardsResult,
@@ -27,7 +28,7 @@ import {
 } from '../../../core/backend/gql-backend'
 import { GET_INSIGHT_DASHBOARDS_GQL } from '../../../core/hooks/use-insight-dashboards'
 
-import { GET_ACCESSIBLE_INSIGHTS_LIST } from './components/add-insight-modal'
+import { GET_INSIGHTS_BY_SEARCH_TERM } from './components/add-insight-modal'
 import { DashboardsView } from './DashboardsView'
 
 type UserEvent = typeof userEvent
@@ -104,16 +105,22 @@ const mocks: MockedResponse[] = [
     } as MockedResponse<InsightsDashboardsResult>,
     {
         request: {
-            query: GET_ACCESSIBLE_INSIGHTS_LIST,
-            variables: { id: 'foo' },
+            query: getDocumentNode(GET_INSIGHTS_BY_SEARCH_TERM),
+            variables: { search: '', first: 20, after: null, excludeIds: [] },
         },
         result: {
             data: {
-                dashboardInsightsIds: { nodes: [{ views: { nodes: [] } }] },
-                accessibleInsights: { nodes: [] },
+                insightViews: {
+                    nodes: [],
+                    totalCount: 0,
+                    pageInfo: {
+                        endCursor: null,
+                        hasNextPage: false,
+                    },
+                },
             },
         },
-    } as MockedResponse<GetDashboardAccessibleInsightsResult>,
+    } as MockedResponse<FindInsightsBySearchTermResult>,
     {
         request: {
             query: GET_INSIGHTS_DASHBOARD_OWNERS_GQL,

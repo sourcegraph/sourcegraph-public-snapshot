@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -20,8 +21,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -49,7 +50,7 @@ func TestInsertIndexes(t *testing.T) {
 			Indexer:     "sourcegraph/scip-typescript:latest",
 			IndexerArgs: []string{"index", "--yarn-workspaces"},
 			Outfile:     "dump.lsif",
-			ExecutionLogs: []workerutil.ExecutionLogEntry{
+			ExecutionLogs: []executor.ExecutionLogEntry{
 				{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
 				{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
 			},
@@ -69,7 +70,7 @@ func TestInsertIndexes(t *testing.T) {
 			Indexer:     "sourcegraph/lsif-rust:15",
 			IndexerArgs: []string{"-v"},
 			Outfile:     "dump.lsif",
-			ExecutionLogs: []workerutil.ExecutionLogEntry{
+			ExecutionLogs: []executor.ExecutionLogEntry{
 				{Command: []string{"op", "1"}, Out: "Done with 1.\n"},
 				{Command: []string{"op", "2"}, Out: "Done with 2.\n"},
 			},
@@ -106,7 +107,7 @@ func TestInsertIndexes(t *testing.T) {
 			Indexer:     "sourcegraph/scip-typescript:latest",
 			IndexerArgs: []string{"index", "--yarn-workspaces"},
 			Outfile:     "dump.lsif",
-			ExecutionLogs: []workerutil.ExecutionLogEntry{
+			ExecutionLogs: []executor.ExecutionLogEntry{
 				{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
 				{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
 			},
@@ -133,7 +134,7 @@ func TestInsertIndexes(t *testing.T) {
 			Indexer:     "sourcegraph/lsif-rust:15",
 			IndexerArgs: []string{"-v"},
 			Outfile:     "dump.lsif",
-			ExecutionLogs: []workerutil.ExecutionLogEntry{
+			ExecutionLogs: []executor.ExecutionLogEntry{
 				{Command: []string{"op", "1"}, Out: "Done with 1.\n"},
 				{Command: []string{"op", "2"}, Out: "Done with 2.\n"},
 			},
@@ -192,19 +193,23 @@ func TestGetIndexes(t *testing.T) {
 	)
 
 	testCases := []struct {
-		repositoryID int
-		state        string
-		term         string
-		expectedIDs  []int
+		repositoryID  int
+		state         string
+		states        []string
+		term          string
+		withoutUpload bool
+		expectedIDs   []int
 	}{
 		{expectedIDs: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}},
 		{repositoryID: 50, expectedIDs: []int{1, 2, 3, 5, 7, 8, 9, 10}},
 		{state: "completed", expectedIDs: []int{7, 8, 10}},
-		{term: "003", expectedIDs: []int{1, 3, 5}},       // searches commits
-		{term: "333", expectedIDs: []int{1, 2, 3, 5}},    // searches commits and failure message
-		{term: "QuEuEd", expectedIDs: []int{1, 3, 4, 9}}, // searches text status
-		{term: "bAr", expectedIDs: []int{4, 6}},          // search repo names
-		{state: "failed", expectedIDs: []int{2}},         // treats errored/failed states equivalently
+		{term: "003", expectedIDs: []int{1, 3, 5}},                                 // searches commits
+		{term: "333", expectedIDs: []int{1, 2, 3, 5}},                              // searches commits and failure message
+		{term: "QuEuEd", expectedIDs: []int{1, 3, 4, 9}},                           // searches text status
+		{term: "bAr", expectedIDs: []int{4, 6}},                                    // search repo names
+		{state: "failed", expectedIDs: []int{2}},                                   // treats errored/failed states equivalently
+		{states: []string{"completed", "failed"}, expectedIDs: []int{2, 7, 8, 10}}, // searches multiple states
+		{withoutUpload: true, expectedIDs: []int{2, 4, 6, 7, 8, 9, 10}},            // anti-join with upload records
 	}
 
 	for _, testCase := range testCases {
@@ -215,20 +220,24 @@ func TestGetIndexes(t *testing.T) {
 			}
 
 			name := fmt.Sprintf(
-				"repositoryID=%d state=%s term=%s offset=%d",
+				"repositoryID=%d state=%s states=%s term=%s without_upload=%v offset=%d",
 				testCase.repositoryID,
 				testCase.state,
+				strings.Join(testCase.states, ","),
 				testCase.term,
+				testCase.withoutUpload,
 				lo,
 			)
 
 			t.Run(name, func(t *testing.T) {
 				indexes, totalCount, err := store.GetIndexes(ctx, shared.GetIndexesOptions{
-					RepositoryID: testCase.repositoryID,
-					State:        testCase.state,
-					Term:         testCase.term,
-					Limit:        3,
-					Offset:       lo,
+					RepositoryID:  testCase.repositoryID,
+					State:         testCase.state,
+					States:        testCase.states,
+					Term:          testCase.term,
+					WithoutUpload: testCase.withoutUpload,
+					Limit:         3,
+					Offset:        lo,
 				})
 				if err != nil {
 					t.Fatalf("unexpected error getting indexes for repo: %s", err)
@@ -308,7 +317,7 @@ func TestGetIndexByID(t *testing.T) {
 		Indexer:     "sourcegraph/scip-typescript:latest",
 		IndexerArgs: []string{"index", "--yarn-workspaces"},
 		Outfile:     "dump.lsif",
-		ExecutionLogs: []workerutil.ExecutionLogEntry{
+		ExecutionLogs: []executor.ExecutionLogEntry{
 			{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
 			{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
 		},
@@ -581,7 +590,7 @@ func TestDeleteIndexes(t *testing.T) {
 	insertIndexes(t, db, types.Index{ID: 2, State: "errored"})
 
 	if err := store.DeleteIndexes(context.Background(), shared.DeleteIndexesOptions{
-		State:        "errored",
+		States:       []string{"errored"},
 		Term:         "",
 		RepositoryID: 0,
 	}); err != nil {
@@ -662,7 +671,7 @@ func TestReindexIndexes(t *testing.T) {
 	insertIndexes(t, db, types.Index{ID: 2, State: "errored"})
 
 	if err := store.ReindexIndexes(context.Background(), shared.ReindexIndexesOptions{
-		State:        "errored",
+		States:       []string{"errored"},
 		Term:         "",
 		RepositoryID: 0,
 	}); err != nil {

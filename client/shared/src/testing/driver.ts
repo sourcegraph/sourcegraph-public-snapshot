@@ -45,9 +45,38 @@ import { readEnvironmentBoolean, retry } from './utils'
 export const oncePageEvent = <E extends keyof PageEventObject>(page: Page, eventName: E): Promise<PageEventObject[E]> =>
     new Promise(resolve => page.once(eventName, resolve))
 
-export const percySnapshot = readEnvironmentBoolean({ variable: 'PERCY_ON', defaultValue: false })
-    ? realPercySnapshot
-    : () => Promise.resolve()
+export const extractStyles = (page: puppeteer.Page): Promise<string> =>
+    page.evaluate(() =>
+        [...document.styleSheets].reduce(
+            (styleSheetRules, styleSheet) =>
+                styleSheetRules.concat(
+                    [...styleSheet.cssRules].reduce((rules, rule) => rules.concat(rule.cssText), '')
+                ),
+            ''
+        )
+    )
+
+interface CommonSnapshotOptions {
+    widths?: number[]
+    minHeight?: number
+    percyCSS?: string
+    enableJavaScript?: boolean
+    devicePixelRatio?: number
+    scope?: string
+}
+
+export const percySnapshot = async (
+    page: puppeteer.Page,
+    name: string,
+    options: CommonSnapshotOptions = {}
+): Promise<void> => {
+    if (!readEnvironmentBoolean({ variable: 'PERCY_ON', defaultValue: false })) {
+        return Promise.resolve()
+    }
+
+    const pageStyles = await extractStyles(page)
+    return realPercySnapshot(page, name, { ...options, percyCSS: pageStyles.concat(options.percyCSS || '') })
+}
 
 export const BROWSER_EXTENSION_DEV_ID = 'bmfbcejdknlknpncfpeloejonjoledha'
 
@@ -823,7 +852,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
         }
         if (!manifest.permissions.includes('<all_urls>')) {
             throw new Error(
-                'Browser extension was not built with permissions for all URLs.\nThis is necessary because permissions cannot be granted by e2e tests.\nTo fix, run `EXTENSION_PERMISSIONS_ALL_URLS=true yarn run dev` inside the browser/ directory.'
+                'Browser extension was not built with permissions for all URLs.\nThis is necessary because permissions cannot be granted by e2e tests.\nTo fix, run `EXTENSION_PERMISSIONS_ALL_URLS=true pnpm run dev` inside the browser/ directory.'
             )
         }
         args.push(`--disable-extensions-except=${chromeExtensionPath}`, `--load-extension=${chromeExtensionPath}`)

@@ -22,14 +22,14 @@ import (
 // and webhook insights across all user settings, and enqueue work for the query runner and webhook
 // runner workers to perform.
 func newInsightEnqueuer(ctx context.Context, observationCtx *observation.Context, workerBaseStore *basestore.Store, insightStore store.DataSeriesStore) goroutine.BackgroundRoutine {
-	metrics := metrics.NewREDMetrics(
+	redMetrics := metrics.NewREDMetrics(
 		observationCtx.Registerer,
 		"insights_enqueuer",
 		metrics.WithCountHelp("Total number of insights enqueuer executions"),
 	)
 	operation := observationCtx.Operation(observation.Op{
 		Name:    "Enqueuer.Run",
-		Metrics: metrics,
+		Metrics: redMetrics,
 	})
 
 	// Note: We run this goroutine once every hour, and StalledMaxAge in queryrunner/ is

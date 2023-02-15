@@ -24,4 +24,4 @@ tests/**
 tsconfig.json
 webpack.config.js
 webviews/**
-yarn.lock
+pnpm-lock.yaml

@@ -1,7 +1,5 @@
 import React from 'react'
 
-import { createLocation, createMemoryHistory } from 'history'
-
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
     mockFetchSearchContexts,
@@ -17,12 +15,9 @@ import { GlobalNavbar } from './GlobalNavbar'
 jest.mock('../search/input/SearchNavbarItem', () => ({ SearchNavbarItem: 'SearchNavbarItem' }))
 jest.mock('../components/branding/BrandLogo', () => ({ BrandLogo: 'BrandLogo' }))
 
-const history = createMemoryHistory()
 const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     authenticatedUser: null,
     extensionsController,
-    location: createLocation('/'),
-    history,
     isSourcegraphDotCom: false,
     onThemePreferenceChange: () => undefined,
     isLightTheme: true,

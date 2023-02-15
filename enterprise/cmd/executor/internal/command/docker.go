@@ -42,6 +42,7 @@ func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options, doc
 			"docker",
 			dockerConfigFlag(dockerConfigPath),
 			"run", "--rm",
+			dockerHostGatewayFlag(options.DockerOptions.AddHostGateway),
 			dockerResourceFlags(options.ResourceOptions),
 			dockerVolumeFlags(hostDir),
 			dockerWorkingdirectoryFlags(spec.Dir),
@@ -52,6 +53,18 @@ func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options, doc
 		),
 		Operation: spec.Operation,
 	}
+}
+
+// dockerHostGatewayFlag makes the Docker host accessible to the container (on the hostname
+// `host.docker.internal`), which simplifies the use of executors when the Sourcegraph instance is
+// running uncontainerized in the Docker host. This *only* takes effect if the site config
+// `executors.frontendURL` is a URL with hostname `host.docker.internal`, to reduce the risk of
+// unexpected compatibility or security issues with using --add-host=...  when it is not needed.
+func dockerHostGatewayFlag(shouldAdd bool) []string {
+	if shouldAdd {
+		return []string{"--add-host=host.docker.internal:host-gateway"}
+	}
+	return nil
 }
 
 func dockerResourceFlags(options ResourceOptions) []string {

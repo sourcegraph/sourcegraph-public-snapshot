@@ -231,28 +231,28 @@ func (codeIntelligence) NewUploadsExpirationTaskGroup(containerName string) moni
 		Rows: []monitoring.Row{
 			{
 				Standard.Count("repositories scanned")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_background_repositories_scanned_total",
+					MetricNameRoot:        "codeintel_background_repositories_scanned",
 					MetricDescriptionRoot: "lsif upload repository scan",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of repositories scanned for data retention
 				`).Observable(),
 
 				Standard.Count("records scanned")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_background_upload_records_scanned_total",
+					MetricNameRoot:        "codeintel_background_upload_records_scanned",
 					MetricDescriptionRoot: "lsif upload records scan",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of codeintel upload records scanned for data retention
 				`).Observable(),
 
 				Standard.Count("commits scanned")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_background_commits_scanned_total",
+					MetricNameRoot:        "codeintel_background_commits_scanned",
 					MetricDescriptionRoot: "lsif upload commits scanned",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of commits reachable from a codeintel upload record scanned for data retention
 				`).Observable(),
 
 				Standard.Count("uploads scanned")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_background_upload_records_expired_total",
+					MetricNameRoot:        "codeintel_background_upload_records_expired",
 					MetricDescriptionRoot: "lsif upload records expired",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of codeintel upload records marked as expired

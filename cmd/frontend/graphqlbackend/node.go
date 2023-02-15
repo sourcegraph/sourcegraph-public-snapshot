@@ -218,6 +218,11 @@ func (r *NodeResolver) ToSite() (*siteResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToSiteConfigurationChange() (*SiteConfigurationChangeResolver, bool) {
+	n, ok := r.Node.(*SiteConfigurationChangeResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToLSIFUpload() (resolverstubs.LSIFUploadResolver, bool) {
 	n, ok := r.Node.(resolverstubs.LSIFUploadResolver)
 	return n, ok
@@ -225,6 +230,11 @@ func (r *NodeResolver) ToLSIFUpload() (resolverstubs.LSIFUploadResolver, bool) {
 
 func (r *NodeResolver) ToLSIFIndex() (resolverstubs.LSIFIndexResolver, bool) {
 	n, ok := r.Node.(resolverstubs.LSIFIndexResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToPreciseIndex() (resolverstubs.PreciseIndexResolver, bool) {
+	n, ok := r.Node.(resolverstubs.PreciseIndexResolver)
 	return n, ok
 }
 
@@ -279,6 +289,11 @@ func (r *NodeResolver) ToOutboundRequest() (*OutboundRequestResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToBackgroundJob() (*BackgroundJobResolver, bool) {
+	n, ok := r.Node.(*BackgroundJobResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToWebhook() (WebhookResolver, bool) {
 	n, ok := r.Node.(WebhookResolver)
 	return n, ok
@@ -311,5 +326,25 @@ func (r *NodeResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, b
 
 func (r *NodeResolver) ToPermissionsSyncJob() (PermissionsSyncJobResolver, bool) {
 	n, ok := r.Node.(PermissionsSyncJobResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToOutboundWebhook() (OutboundWebhookResolver, bool) {
+	n, ok := r.Node.(OutboundWebhookResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToTeam() (*teamResolver, bool) {
+	n, ok := r.Node.(*teamResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToRole() (RoleResolver, bool) {
+	n, ok := r.Node.(RoleResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToPermission() (PermissionResolver, bool) {
+	n, ok := r.Node.(PermissionResolver)
 	return n, ok
 }

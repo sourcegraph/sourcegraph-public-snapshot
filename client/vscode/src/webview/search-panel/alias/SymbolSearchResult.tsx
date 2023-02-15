@@ -12,7 +12,7 @@ import {
     navigateToFileOnMiddleMouseButtonClick,
     ResultContainer,
     CopyPathAction,
-} from '@sourcegraph/search-ui'
+} from '@sourcegraph/branded'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { getFileMatchUrl, getRepositoryUrl, getRevision, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'

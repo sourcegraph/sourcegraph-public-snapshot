@@ -12,12 +12,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types/scheduler/config"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -67,10 +68,6 @@ func NewChangesetResolver(store *store.Store, gitserverClient gitserver.Client, 
 }
 
 const changesetIDKind = "Changeset"
-
-func marshalChangesetID(id int64) graphql.ID {
-	return relay.MarshalID(changesetIDKind, id)
-}
 
 func unmarshalChangesetID(id graphql.ID) (cid int64, err error) {
 	err = relay.UnmarshalSpec(id, &cid)
@@ -132,7 +129,7 @@ func (r *changesetResolver) computeNextSyncAt(ctx context.Context) (time.Time, e
 }
 
 func (r *changesetResolver) ID() graphql.ID {
-	return marshalChangesetID(r.changeset.ID)
+	return bgql.MarshalChangesetID(r.changeset.ID)
 }
 
 func (r *changesetResolver) ExternalID() *string {
@@ -151,15 +148,15 @@ func (r *changesetResolver) BatchChanges(ctx context.Context, args *graphqlbacke
 		ChangesetID: r.changeset.ID,
 	}
 
-	state, err := parseBatchChangeState(args.State)
+	bcState, err := parseBatchChangeState(args.State)
 	if err != nil {
 		return nil, err
 	}
-	if state != "" {
-		opts.States = []btypes.BatchChangeState{state}
+	if bcState != "" {
+		opts.States = []btypes.BatchChangeState{bcState}
 	}
 
-	// If multiple `states` are provided, prefer them over `state`.
+	// If multiple `states` are provided, prefer them over `bcState`.
 	if args.States != nil {
 		states, err := parseBatchChangeStates(args.States)
 		if err != nil {
@@ -187,7 +184,7 @@ func (r *changesetResolver) BatchChanges(ctx context.Context, args *graphqlbacke
 	isSiteAdmin := authErr != auth.ErrMustBeSiteAdmin
 	if !isSiteAdmin {
 		if args.ViewerCanAdminister != nil && *args.ViewerCanAdminister {
-			actor := actor.FromContext(ctx)
+			actor := sgactor.FromContext(ctx)
 			opts.OnlyAdministeredByUserID = actor.UID
 		}
 	}
@@ -330,12 +327,19 @@ func (r *changesetResolver) ForkNamespace() *string {
 	return nil
 }
 
+func (r *changesetResolver) ForkName() *string {
+	if name := r.changeset.ExternalForkName; name != "" {
+		return &name
+	}
+	return nil
+}
+
 func (r *changesetResolver) ReviewState(ctx context.Context) *string {
 	if !r.changeset.Published() {
 		return nil
 	}
-	state := string(r.changeset.ExternalReviewState)
-	return &state
+	reviewState := string(r.changeset.ExternalReviewState)
+	return &reviewState
 }
 
 func (r *changesetResolver) CheckState() *string {
@@ -343,12 +347,12 @@ func (r *changesetResolver) CheckState() *string {
 		return nil
 	}
 
-	state := string(r.changeset.ExternalCheckState)
-	if state == string(btypes.ChangesetCheckStateUnknown) {
+	checkState := string(r.changeset.ExternalCheckState)
+	if checkState == string(btypes.ChangesetCheckStateUnknown) {
 		return nil
 	}
 
-	return &state
+	return &checkState
 }
 
 func (r *changesetResolver) Error() *string { return r.changeset.FailureMessage }

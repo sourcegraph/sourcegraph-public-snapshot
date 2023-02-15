@@ -156,10 +156,16 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	}
 
 	isValidRegexp := func() error {
-		if _, err := regexp.Compile(value); err != nil {
-			return err
+		_, err := regexp.Compile(value)
+		return err
+	}
+
+	isValidRepoRegexp := func() error {
+		if negated {
+			return isValidRegexp()
 		}
-		return nil
+		_, err := ParseRepositoryRevisions(value)
+		return err
 	}
 
 	isBoolean := func() error {
@@ -239,7 +245,7 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		return satisfies(isSingular, isBoolean, isNotNegated)
 	case
 		FieldRepo:
-		return satisfies(isValidRegexp)
+		return satisfies(isValidRepoRegexp)
 	case
 		FieldContext:
 		return satisfies(isSingular, isNotNegated)
@@ -526,19 +532,14 @@ func parseYesNoOnly(s string) YesNoOnly {
 }
 
 func ContainsRefGlobs(q Q) bool {
-	containsRefGlobs := false
-	if repoFilterValues, _ := q.Repositories(); len(repoFilterValues) > 0 {
-		for _, v := range repoFilterValues {
-			repoRev := strings.SplitN(v, "@", 2)
-			if len(repoRev) == 1 { // no revision
-				continue
+	if repoFilters, _ := q.Repositories(); len(repoFilters) > 0 {
+		for _, r := range repoFilters {
+			for _, rev := range r.Revs {
+				if rev.HasRefGlob() {
+					return true
+				}
 			}
-			if ContainsNoGlobSyntax(repoRev[1]) {
-				continue
-			}
-			containsRefGlobs = true
-			break
 		}
 	}
-	return containsRefGlobs
+	return false
 }

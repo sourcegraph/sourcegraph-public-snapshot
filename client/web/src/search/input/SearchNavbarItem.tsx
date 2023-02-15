@@ -1,9 +1,9 @@
 import React, { useCallback } from 'react'
 
-import * as H from 'history'
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
 import shallow from 'zustand/shallow'
 
-import { SearchBox } from '@sourcegraph/search-ui'
+import { SearchBox } from '@sourcegraph/branded'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextInputProps, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -24,8 +24,6 @@ interface Props
         TelemetryProps,
         PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser | null
-    location: H.Location
-    history: H.History
     isSourcegraphDotCom: boolean
     globbing: boolean
     isSearchAutoFocusRequired?: boolean
@@ -48,10 +46,12 @@ const selectQueryState = ({
  * The search item in the navbar
  */
 export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
+    const navigate = useNavigate()
+    const location = useLocation()
+
     const { queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType, searchMode } =
         useNavbarQueryState(selectQueryState, shallow)
 
-    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
@@ -60,13 +60,14 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
             submitSearch({
-                history: props.history,
+                historyOrNavigate: navigate,
+                location,
                 source: 'nav',
                 selectedSearchContextSpec: props.selectedSearchContextSpec,
                 ...parameters,
             })
         },
-        [submitSearch, props.history, props.selectedSearchContextSpec]
+        [submitSearch, navigate, location, props.selectedSearchContextSpec]
     )
 
     const onSubmit = useCallback(
@@ -85,7 +86,6 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
             <SearchBox
                 {...props}
                 autoFocus={false}
-                editorComponent={editorComponent}
                 applySuggestionsOnEnter={applySuggestionsOnEnter}
                 showSearchContext={props.searchContextsEnabled}
                 showSearchContextManagement={true}

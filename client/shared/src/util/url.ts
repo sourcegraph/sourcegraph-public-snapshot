@@ -231,14 +231,6 @@ export interface RepoRevision extends RepoSpec, RevisionSpec {}
 export interface AbsoluteRepo extends RepoSpec, RevisionSpec, ResolvedRevisionSpec {}
 
 /**
- * A documentation page in a repo
- */
-export interface DocumentationPathID {
-    pathID: string
-}
-export interface RepoDocumentation extends RepoSpec, RevisionSpec, Partial<ResolvedRevisionSpec>, DocumentationPathID {}
-
-/**
  * A file in a repo
  */
 export interface RepoFile extends RepoSpec, RevisionSpec, Partial<ResolvedRevisionSpec>, FileSpec {}
@@ -594,7 +586,7 @@ export function buildGetStartedURL(cloudSignup?: boolean, authenticatedUser?: Au
  * @returns signup UR string with relevant params attached
  */
 export const buildCloudTrialURL = (
-    authenticatedUser: Pick<AuthenticatedUser, 'displayName' | 'email'> | null | undefined,
+    authenticatedUser: Pick<AuthenticatedUser, 'displayName' | 'emails'> | null | undefined,
     product?: string
 ): string => {
     const url = new URL('https://signup.sourcegraph.com/')
@@ -602,8 +594,9 @@ export const buildCloudTrialURL = (
     if (product) {
         url.searchParams.append('p', product)
     }
-    if (authenticatedUser?.email) {
-        url.searchParams.append('email', authenticatedUser.email)
+    const primaryEmail = authenticatedUser?.emails.find(email => email.isPrimary)
+    if (primaryEmail) {
+        url.searchParams.append('email', primaryEmail.email)
     }
     if (authenticatedUser?.displayName) {
         url.searchParams.append('name', authenticatedUser.displayName)
