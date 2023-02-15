@@ -6,7 +6,7 @@ import shallow from 'zustand/shallow'
 import { SearchBox, Toggles } from '@sourcegraph/branded'
 // The experimental search input should be shown in the navbar
 // eslint-disable-next-line no-restricted-imports
-import { LazyCodeMirrorQueryInput, searchHistoryExtension } from '@sourcegraph/branded/src/search-ui/experimental'
+import { LazyCodeMirrorQueryInput } from '@sourcegraph/branded/src/search-ui/experimental'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextInputProps, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -18,7 +18,7 @@ import { AuthenticatedUser } from '../../auth'
 import { useExperimentalFeatures, useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
 import { NavbarQueryState, setSearchMode, setSearchPatternType } from '../../stores/navbarSearchQueryState'
 
-import { createSuggestionsSource } from './suggestions'
+import { useLazyCreateSuggestions, useLazyHistoryExtension } from './lazy'
 import { useRecentSearches } from './useRecentSearches'
 
 interface Props
@@ -87,39 +87,30 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
         [submitSearchOnChangeRef]
     )
 
-    const suggestionSource = useMemo(
-        () =>
-            createSuggestionsSource({
+    const suggestionSource = useLazyCreateSuggestions(
+        experimentalQueryInput,
+        useMemo(
+            () => ({
                 platformContext: props.platformContext,
                 authenticatedUser: props.authenticatedUser,
                 fetchSearchContexts: props.fetchSearchContexts,
                 getUserSearchContextNamespaces: props.getUserSearchContextNamespaces,
                 isSourcegraphDotCom: props.isSourcegraphDotCom,
             }),
-        [
-            props.platformContext,
-            props.authenticatedUser,
-            props.fetchSearchContexts,
-            props.getUserSearchContextNamespaces,
-            props.isSourcegraphDotCom,
-        ]
+            [
+                props.platformContext,
+                props.authenticatedUser,
+                props.fetchSearchContexts,
+                props.getUserSearchContextNamespaces,
+                props.isSourcegraphDotCom,
+            ]
+        )
     )
 
-    const experimentalExtensions = useMemo(
-        () =>
-            experimentalQueryInput
-                ? [
-                      searchHistoryExtension({
-                          mode: {
-                              name: 'History',
-                              placeholder: 'Filter history',
-                          },
-                          source: () => recentSearchesRef.current ?? [],
-                          submitQuery: query => submitSearchOnChangeRef.current({ query }),
-                      }),
-                  ]
-                : [],
-        [experimentalQueryInput, recentSearchesRef, submitSearchOnChangeRef]
+    const experimentalExtensions = useLazyHistoryExtension(
+        experimentalQueryInput,
+        recentSearchesRef,
+        submitSearchOnChangeRef
     )
 
     if (experimentalQueryInput) {

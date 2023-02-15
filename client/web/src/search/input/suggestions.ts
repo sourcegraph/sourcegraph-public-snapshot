@@ -570,7 +570,7 @@ interface Caches {
     symbol: ContextualCache<CodeSymbol, FzfResultItem<CodeSymbol>>
 }
 
-interface SuggestionsSourceConfig
+export interface SuggestionsSourceConfig
     extends Pick<SearchContextProps, 'fetchSearchContexts' | 'getUserSearchContextNamespaces'> {
     platformContext: Pick<PlatformContext, 'requestGraphQL'>
     authenticatedUser?: AuthenticatedUser | null
