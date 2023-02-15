@@ -3,8 +3,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { defaultKeymap, historyKeymap, history as codemirrorHistory } from '@codemirror/commands'
 import { Compartment, EditorState, Extension, Prec } from '@codemirror/state'
 import { EditorView, keymap, drawSelection } from '@codemirror/view'
-import { mdiClose } from '@mdi/js'
-import classNames from 'classnames'
 import inRange from 'lodash/inRange'
 import { useNavigate } from 'react-router-dom-v5-compat'
 import useResizeObserver from 'use-resize-observer'
@@ -15,7 +13,6 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { QueryChangeSource, QueryState } from '@sourcegraph/shared/src/search'
 import { getTokenLength } from '@sourcegraph/shared/src/search/query/utils'
-import { Icon } from '@sourcegraph/wildcard'
 
 import { singleLine, placeholder as placeholderExtension } from '../codemirror'
 import { parseInputAsQuery, tokens } from '../codemirror/parsedQuery'
@@ -327,15 +324,9 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
         editorRef.current?.contentDOM.focus()
     }, [editorRef])
 
-    const clear = useCallback(() => {
-        onChange({ query: '' })
-    }, [onChange])
-
     const { ref: spacerRef, height: spacerHeight } = useResizeObserver({
         ref: focusContainerRef,
     })
-
-    const hasValue = queryState.query.length > 0
 
     return (
         <div className={styles.container}>
@@ -344,26 +335,6 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
             <div className={styles.root}>
                 <div ref={spacerRef} className={styles.focusContainer}>
                     <div ref={setContainer} className="d-contents" />
-                    <button
-                        type="button"
-                        className={classNames(styles.inputButton, hasValue && styles.showWhenFocused)}
-                        onClick={clear}
-                    >
-                        <Icon svgPath={mdiClose} aria-label="Clear" />
-                    </button>
-                    <button
-                        type="button"
-                        className={classNames(
-                            styles.inputButton,
-                            styles.globalShortcut,
-                            styles.hideWhenFocused,
-                            'mr-2'
-                        )}
-                        onClick={focus}
-                    >
-                        /
-                    </button>
-                    {children && <span className={classNames(styles.separator, !hasValue && styles.hideWhenFocused)} />}
                     {children}
                 </div>
                 <div ref={setSuggestionsContainer} className={styles.suggestions} />
