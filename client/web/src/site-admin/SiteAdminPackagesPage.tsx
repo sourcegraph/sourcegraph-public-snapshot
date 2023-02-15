@@ -25,10 +25,10 @@ import {
     FilterControl,
     FilteredConnectionFilter,
     FilteredConnectionFilterValue,
-} from '../../components/FilteredConnection'
-import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
-import { getFilterFromURL, getUrlQuery } from '../../components/FilteredConnection/utils'
-import { PageTitle } from '../../components/PageTitle'
+} from '../components/FilteredConnection'
+import { useShowMorePagination } from '../components/FilteredConnection/hooks/useShowMorePagination'
+import { getFilterFromURL, getUrlQuery } from '../components/FilteredConnection/utils'
+import { PageTitle } from '../components/PageTitle'
 import {
     PackagesResult,
     PackagesVariables,
@@ -36,10 +36,11 @@ import {
     ExternalServiceKindsVariables,
     ExternalServiceKindsResult,
     ExternalServiceKind,
-} from '../../graphql-operations'
-import { EXTERNAL_SERVICE_KINDS, PACKAGES_QUERY } from '../backend'
-import { ExternalRepositoryIcon } from '../components/ExternalRepositoryIcon'
-import { RepoMirrorInfo } from '../components/RepoMirrorInfo'
+} from '../graphql-operations'
+
+import { EXTERNAL_SERVICE_KINDS, PACKAGES_QUERY } from './backend'
+import { ExternalRepositoryIcon } from './components/ExternalRepositoryIcon'
+import { RepoMirrorInfo } from './components/RepoMirrorInfo'
 
 import styles from './SiteAdminPackagesPage.module.scss'
 

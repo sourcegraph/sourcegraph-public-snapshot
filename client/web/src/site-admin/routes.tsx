@@ -35,7 +35,7 @@ const SiteAdminExternalServicesArea = lazyComponent(
     'SiteAdminExternalServicesArea'
 )
 const SiteAdminRepositoriesPage = lazyComponent(
-    () => import('./repositories-packages/SiteAdminRepositoriesPage'),
+    () => import('./SiteAdminRepositoriesPage'),
     'SiteAdminRepositoriesPage'
 )
 const SiteAdminOrgsPage = lazyComponent(() => import('./SiteAdminOrgsPage'), 'SiteAdminOrgsPage')
@@ -86,10 +86,7 @@ const SiteAdminWebhookUpdatePage = lazyComponent(
     () => import('./SiteAdminWebhookUpdatePage'),
     'SiteAdminWebhookUpdatePage'
 )
-const SiteAdminPackagesPage = lazyComponent(
-    () => import('./repositories-packages/SiteAdminPackagesPage'),
-    'SiteAdminPackagesPage'
-)
+const SiteAdminPackagesPage = lazyComponent(() => import('./SiteAdminPackagesPage'), 'SiteAdminPackagesPage')
 
 export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     {

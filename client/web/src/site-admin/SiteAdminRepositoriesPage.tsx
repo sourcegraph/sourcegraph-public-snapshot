@@ -26,16 +26,16 @@ import {
     PageSwitcher,
 } from '@sourcegraph/wildcard'
 
-import { EXTERNAL_SERVICE_IDS_AND_NAMES } from '../../components/externalServices/backend'
+import { EXTERNAL_SERVICE_IDS_AND_NAMES } from '../components/externalServices/backend'
 import {
     buildFilterArgs,
     FilterControl,
     FilteredConnectionFilterValue,
     FilteredConnectionFilter,
-} from '../../components/FilteredConnection'
-import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
-import { getFilterFromURL, getUrlQuery } from '../../components/FilteredConnection/utils'
-import { PageTitle } from '../../components/PageTitle'
+} from '../components/FilteredConnection'
+import { usePageSwitcherPagination } from '../components/FilteredConnection/hooks/usePageSwitcherPagination'
+import { getFilterFromURL, getUrlQuery } from '../components/FilteredConnection/utils'
+import { PageTitle } from '../components/PageTitle'
 import {
     RepositoriesResult,
     RepositoriesVariables,
@@ -45,13 +45,13 @@ import {
     ExternalServiceIDsAndNamesResult,
     RepositoryStatsVariables,
     SiteAdminRepositoryFields,
-} from '../../graphql-operations'
-import { refreshSiteFlags } from '../../site/backend'
+} from '../graphql-operations'
+import { refreshSiteFlags } from '../site/backend'
 
-import { ValueLegendList, ValueLegendListProps } from '../analytics/components/ValueLegendList'
-import { REPOSITORY_STATS, REPO_PAGE_POLL_INTERVAL, REPOSITORIES_QUERY } from '../backend'
-import { ExternalRepositoryIcon } from '../components/ExternalRepositoryIcon'
-import { RepoMirrorInfo } from '../components/RepoMirrorInfo'
+import { ValueLegendList, ValueLegendListProps } from './analytics/components/ValueLegendList'
+import { REPOSITORY_STATS, REPO_PAGE_POLL_INTERVAL, REPOSITORIES_QUERY } from './backend'
+import { ExternalRepositoryIcon } from './components/ExternalRepositoryIcon'
+import { RepoMirrorInfo } from './components/RepoMirrorInfo'
 
 import styles from './SiteAdminRepositoriesPage.module.scss'
 
