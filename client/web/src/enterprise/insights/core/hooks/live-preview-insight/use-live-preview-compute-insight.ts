@@ -17,7 +17,7 @@ export interface Props {
 
 interface Result<R> {
     state: State<ComputeDatum[]>
-    refetch: () => {}
+    refetch: () => unknown
 }
 
 /**
