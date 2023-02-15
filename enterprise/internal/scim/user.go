@@ -74,7 +74,7 @@ func (h *UserResourceHandler) Create(_ *http.Request, attributes scim.ResourceAt
 	}
 	if err != nil {
 		if dbErr, ok := containsDBError(err); ok {
-			if dbErr.Code() == database.ErrorCodeUsernameExists || dbErr.Code() == database.ErrorCodeEmailExists {
+			if code := dbErr.Code(); code == database.ErrorCodeUsernameExists || code == database.ErrorCodeEmailExists {
 				return scim.Resource{}, scimerrors.ScimError{Status: http.StatusConflict, Detail: err.Error()}
 			}
 		}
