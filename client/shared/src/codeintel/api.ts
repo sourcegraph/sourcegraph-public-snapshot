@@ -1,6 +1,6 @@
 import { castArray } from 'lodash'
 import { Observable, of } from 'rxjs'
-import { defaultIfEmpty, map } from 'rxjs/operators'
+import { catchError, defaultIfEmpty, map, tap } from 'rxjs/operators'
 
 import {
     fromHoverMerged,
@@ -38,7 +38,7 @@ interface CodeIntelAPI {
         context: sourcegraph.ReferenceContext
     ): Observable<clientType.Location[]>
     getImplementations(parameters: TextDocumentPositionParameters): Observable<clientType.Location[]>
-    getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged | null>
+    getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged | null | undefined>
     getDocumentHighlights(textParameters: TextDocumentPositionParameters): Observable<DocumentHighlight[]>
 }
 
@@ -110,7 +110,7 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
             request.providers.implementations.provideLocations(request.document, request.position)
         )
     }
-    public getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged | null> {
+    public getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged | null | undefined> {
         const request = requestFor(textParameters)
         return (
             request.providers.hover

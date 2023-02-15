@@ -189,7 +189,7 @@ async function hoverRequest(
     const hover = await api.getHover(params).toPromise()
 
     let markdownContents: string =
-        hover === null || hover.contents.length === 0
+        hover === null || hover === undefined || hover.contents.length === 0
             ? ''
             : hover.contents
                   .map(({ value }) => value)
@@ -201,7 +201,7 @@ async function hoverRequest(
     return { markdownContents, hoverMerged: hover, isPrecise: isPrecise(hover) }
 }
 
-function isPrecise(hover: HoverMerged | null): boolean {
+function isPrecise(hover: HoverMerged | null | undefined): boolean {
     for (const badge of hover?.aggregatedBadges || []) {
         if (badge.text === 'precise') {
             return true
