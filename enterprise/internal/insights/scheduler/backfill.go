@@ -127,20 +127,20 @@ func (b *SeriesBackfill) SetLowestPriority(ctx context.Context, store *BackfillS
 	if err != nil {
 		return err
 	}
-	currentMax, found, err := basestore.ScanFirstFloat(tx.Query(ctx,
+	currentMax, _, err := basestore.ScanFirstFloat(tx.Query(ctx,
 		sqlf.Sprintf(`
 		SELECT coalesce(max(estimated_cost), 0)
 		FROM insight_series_backfill
-		WHERE state in ('new','processing')
-	`)))
+		WHERE state in ('new','processing') AND id != %s`, b.Id)))
 	if err != nil {
 		return err
 	}
-	newCost := 10000.0 // default lowest cost as there needs to be room below it
-	if found && (currentMax*2 > newCost) {
-		newCost = currentMax * 2
-	}
 
+	// If this item is already the lowest priority there is nothing to do here
+	if b.EstimatedCost >= currentMax {
+		return nil
+	}
+	newCost := currentMax * 2
 	defer func(ic float64) {
 		err = tx.Done(err)
 		if err != nil {
