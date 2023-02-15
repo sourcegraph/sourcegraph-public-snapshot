@@ -38,6 +38,15 @@ export const globalCodeIntelStatusQuery = gql`
     ${codeIntelIndexerFieldsFragment}
 `
 
+export const inferredAvailableIndexersFieldsFragment = gql`
+    fragment InferredAvailableIndexersFields on InferredAvailableIndexers {
+        indexer {
+            ...CodeIntelIndexerFields
+        }
+        roots
+    }
+`
+
 export const repoCodeIntelStatusQuery = gql`
     query RepoCodeIntelStatus($repository: String!) {
         repository(name: $repository) {
@@ -61,13 +70,6 @@ export const repoCodeIntelStatusQuery = gql`
                 }
             }
         }
-    }
-
-    fragment InferredAvailableIndexersFields on InferredAvailableIndexers {
-        indexer {
-            ...CodeIntelIndexerFields
-        }
-        roots
     }
 
     fragment GitTreeCodeIntelInfoFields on GitTreeCodeIntelInfo {
@@ -97,4 +99,5 @@ export const repoCodeIntelStatusQuery = gql`
     }
 
     ${preciseIndexFieldsFragment}
+    ${inferredAvailableIndexersFieldsFragment}
 `

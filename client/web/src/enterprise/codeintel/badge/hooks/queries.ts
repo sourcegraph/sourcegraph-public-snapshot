@@ -1,4 +1,6 @@
 import { gql } from '@sourcegraph/http-client'
+import { codeIntelIndexerFieldsFragment } from '../../indexes/hooks/types'
+import { inferredAvailableIndexersFieldFragment } from '../../dashboard/hooks/queries'
 
 export const lsifIndexFieldsFragment = gql`
     fragment LsifIndexFields on LSIFIndex {
@@ -236,11 +238,6 @@ export const codeIntelStatusQuery = gql`
         supportLevel
     }
 
-    fragment CodeIntelIndexerFields on CodeIntelIndexer {
-        name
-        url
-    }
-
     fragment LSIFUploadsWithRepositoryNamespaceFields on LSIFUploadsWithRepositoryNamespace {
         root
         indexer {
@@ -261,15 +258,10 @@ export const codeIntelStatusQuery = gql`
         }
     }
 
-    fragment InferredAvailableIndexersFields on InferredAvailableIndexers {
-        key
-        name
-        url
-        roots
-    }
-
     ${lsifUploadFieldsFragment}
     ${lsifIndexFieldsFragment}
+    ${codeIntelIndexerFieldsFragment}
+    ${inferredAvailableIndexersFieldFragment}
 `
 
 export const requestedLanguageSupportQuery = gql`

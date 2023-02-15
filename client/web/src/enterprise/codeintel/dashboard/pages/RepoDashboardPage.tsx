@@ -70,11 +70,11 @@ export const RepoDashboardPage: FunctionComponent<RepoDashboardPageProps> = ({
 
     const availableIndexersByRoot = groupBy(
         // Flatten nested lists of roots grouped by indexers
-        (data?.availableIndexers || []).flatMap(({ roots, ...rest }) =>
+        (data?.availableIndexers || []).flatMap(({ roots, indexer }) =>
             roots
                 // Filter out suggestions for which there already exists a record
-                .filter(root => (indexesByIndexerNameByRoot.get(sanitize(root))?.get(rest.key) || []).length === 0)
-                .map(root => ({ root, ...rest }))
+                .filter(root => (indexesByIndexerNameByRoot.get(sanitize(root))?.get(indexer.key) || []).length === 0)
+                .map(root => ({ root, indexer }))
         ),
         // Then re-group by root
         index => sanitize(index.root)
@@ -82,7 +82,7 @@ export const RepoDashboardPage: FunctionComponent<RepoDashboardPageProps> = ({
 
     // Aggregates
     const keysFromRecords = [...indexesByIndexerNameByRoot.values()].flatMap(im => [...im.keys()])
-    const keysFromInference = [...availableIndexersByRoot.values()].flatMap(is => is.map(i => i.key))
+    const keysFromInference = [...availableIndexersByRoot.values()].flatMap(is => is.map(i => i.indexer.key))
     const languageKeys = [...new Set([...keysFromRecords, ...keysFromInference])].sort()
 
     // count the number of unique indexes matching the given predicate
@@ -135,7 +135,7 @@ export const RepoDashboardPage: FunctionComponent<RepoDashboardPageProps> = ({
                         !filterState.hideSuggestions &&
                         // Show only paths with a matching indexer, if set
                         (filterState.indexers.size === 0 ||
-                            indexers.some(indexer => filterState.indexers.has(indexer.key)))
+                            indexers.some(indexer => filterState.indexers.has(indexer.indexer.key)))
                 )
                 .map(([root, _]) => root),
         ])
@@ -275,11 +275,14 @@ export const RepoDashboardPage: FunctionComponent<RepoDashboardPageProps> = ({
                                         )
                                     )
 
-                                    const availableIndexersForRoot = (availableIndexersByRoot.get(name) || []).filter(
-                                        indexer =>
-                                            !filterState.hideSuggestions &&
-                                            (filterState.indexers.size === 0 || filterState.indexers.has(indexer.key))
-                                    )
+                                    const availableIndexersForRoot = (availableIndexersByRoot.get(name) || [])
+                                        .filter(
+                                            indexer =>
+                                                !filterState.hideSuggestions &&
+                                                (filterState.indexers.size === 0 ||
+                                                    filterState.indexers.has(indexer.indexer.key))
+                                        )
+                                        .map(({ root, indexer }) => ({ root, ...indexer }))
 
                                     // Calculate the number of failed + configurable roots _under_ this key.
                                     const descendentRoots = descendentNames(filteredTreeData, id)
@@ -357,7 +360,6 @@ interface IndexerDescription {
 }
 
 const TreeNode: FunctionComponent<TreeNodeProps> = ({
-    name,
     displayName,
     isBranch,
     isExpanded,
@@ -457,7 +459,7 @@ const ConfigurationStateBadge: FunctionComponent<ConfigurationStateBadgeProps> =
     <small className={classNames('float-right', 'ml-2', styles.hint)}>
         <Icon aria-hidden={true} svgPath={mdiClose} className="text-muted" />{' '}
         <strong>
-            Configure {indexer.name} {indexer.key}?
+            Configure {indexer.key} via {indexer.name}?
         </strong>
     </small>
 )
