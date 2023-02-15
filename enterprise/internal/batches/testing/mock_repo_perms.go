@@ -25,7 +25,7 @@ func MockRepoPermissions(t *testing.T, db database.DB, userID int32, repoIDs ...
 		userID: {},
 	}
 	for _, id := range repoIDs {
-		err := permsStore.SetRepoPermissions(context.Background(),
+		_, err := permsStore.SetRepoPermissions(context.Background(),
 			&authz.RepoPermissions{
 				RepoID:  int32(id),
 				Perm:    authz.Read,

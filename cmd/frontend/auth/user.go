@@ -117,7 +117,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (u
 		// information of the actor, especially whether the actor is a Sourcegraph
 		// operator or not.
 		ctx = sgactor.WithActor(ctx, act)
-		userID, err := externalAccountsStore.CreateUserAndSave(ctx, op.UserProps, op.ExternalAccount, op.ExternalAccountData)
+		user, err := externalAccountsStore.CreateUserAndSave(ctx, op.UserProps, op.ExternalAccount, op.ExternalAccountData)
 		switch {
 		case database.IsUsernameExists(err):
 			return 0, false, false, fmt.Sprintf("Username %q already exists, but no verified email matched %q", op.UserProps.Username, op.UserProps.Email), err
@@ -126,16 +126,16 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (u
 		case err != nil:
 			return 0, false, false, "Unable to create a new user account due to a unexpected error. Ask a site admin for help.", err
 		}
-		act.UID = userID
+		act.UID = user.ID
 
 		if err = db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
-			UserID: userID,
+			UserID: user.ID,
 			Perm:   authz.Read,
 			Type:   authz.PermRepos,
 		}); err != nil {
 			logger.Error(
 				"failed to grant user pending permissions",
-				sglog.Int32("userID", userID),
+				sglog.Int32("userID", user.ID),
 				sglog.Error(err),
 			)
 			// OK to continue, since this is a best-effort to improve the UX with some initial permissions available.
@@ -177,7 +177,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (u
 			)
 		}
 
-		return userID, true, true, "", nil
+		return user.ID, true, true, "", nil
 	}()
 	if err != nil {
 		const eventName = "ExternalAuthSignupFailed"

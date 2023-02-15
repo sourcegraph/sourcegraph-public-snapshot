@@ -162,7 +162,7 @@ describe('Organizations', () => {
                         },
                     }),
                 })
-                await driver.page.goto(driver.sourcegraphBaseUrl + '/organizations/sourcegraph/settings')
+                await driver.page.goto(driver.sourcegraphBaseUrl + `/organizations/${testOrg.name}/settings`)
                 const updatedSettings = '// updated'
                 const editor = await createEditorAPI(driver, '.test-settings-file .test-editor')
                 await editor.replace(updatedSettings, 'paste')
@@ -226,7 +226,7 @@ describe('Organizations', () => {
                 }
                 testContext.overrideGraphQL(graphQlResults)
 
-                await driver.page.goto(driver.sourcegraphBaseUrl + '/organizations/sourcegraph/settings/members')
+                await driver.page.goto(driver.sourcegraphBaseUrl + `/organizations/${testOrg.name}/settings/members`)
 
                 await driver.page.waitForSelector('.test-remove-org-member')
 

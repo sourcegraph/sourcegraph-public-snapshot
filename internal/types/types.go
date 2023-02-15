@@ -814,8 +814,12 @@ type UserForSCIM struct {
 
 type SystemRole string
 
-var (
-	UserSystemRole              SystemRole = "USER"
+const (
+	// UserSystemRole represents the role associated with all users on a Sourcegraph instance.
+	UserSystemRole SystemRole = "USER"
+
+	// SiteAdministratorSystemRole represents the role associated with Site Administrators
+	// on a sourcegraph instance.
 	SiteAdministratorSystemRole SystemRole = "SITE_ADMINISTRATOR"
 )
 
@@ -824,14 +828,41 @@ type Role struct {
 	Name      string
 	System    bool
 	CreatedAt time.Time
-	DeletedAt time.Time
 }
+
+// A PermissionNamespace represents a distinct context within which permission policies
+// are defined and enforced.
+type PermissionNamespace string
+
+func (n PermissionNamespace) String() string {
+	return string(n)
+}
+
+// Valid checks if a namespace is valid and supported by the Sourcegraph RBAC system.
+func (n PermissionNamespace) Valid() bool {
+	switch n {
+	case BatchChangesNamespace:
+		return true
+	default:
+		return false
+	}
+}
+
+// BatchChangesNamespace represents the Batch Changes namespace.
+const BatchChangesNamespace PermissionNamespace = "BATCH_CHANGES"
 
 type Permission struct {
 	ID        int32
-	Namespace string
+	Namespace PermissionNamespace
 	Action    string
 	CreatedAt time.Time
+}
+
+// DisplayName returns an human-readable string for permissions.
+func (p *Permission) DisplayName() string {
+	// Based on the zanzibar representation for data relations:
+	// <namespace>:<object_id>#<relation>@<user_id | user_group>
+	return fmt.Sprintf("%s#%s", p.Namespace, p.Action)
 }
 
 type RolePermission struct {
@@ -844,6 +875,21 @@ type UserRole struct {
 	RoleID    int32
 	UserID    int32
 	CreatedAt time.Time
+}
+
+type NamespacePermission struct {
+	ID         int64
+	Namespace  PermissionNamespace
+	ResourceID int64
+	Action     string
+	UserID     int32
+	CreatedAt  time.Time
+}
+
+func (n *NamespacePermission) DisplayName() string {
+	// Based on the zanzibar representation for data relations:
+	// <namespace>:<object_id>#<relation>@<user_id | user_group>
+	return fmt.Sprintf("%s:%d#%s@%d", n.Namespace, n.ResourceID, n.Action, n.UserID)
 }
 
 type OrgMemberAutocompleteSearchItem struct {

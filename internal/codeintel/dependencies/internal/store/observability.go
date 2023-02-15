@@ -51,7 +51,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		preciseDependents:            op("PreciseDependents"),
 		selectRepoRevisionsToResolve: op("SelectRepoRevisionsToResolve"),
 		updateResolvedRevisions:      op("UpdateResolvedRevisions"),
-		upsertDependencyRepos:        op("UpsertDependencyRepos"),
+		upsertDependencyRepos:        op("InsertDependencyRepos"),
 		upsertLockfileGraph:          op("UpsertLockfileGraph"),
 		listLockfileIndexes:          op("ListLockfileIndexes"),
 		getLockfileIndex:             op("GetLockfileIndex"),

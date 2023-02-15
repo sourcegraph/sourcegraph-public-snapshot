@@ -42,6 +42,7 @@ type InsightViewSeries struct {
 	BackfillAttempts              int32
 	SupportsAugmentation          bool
 	RepositoryCriteria            *string
+	SeriesNumSamples              *int32
 }
 
 type Insight struct {
@@ -83,6 +84,7 @@ type InsightView struct {
 	SeriesSortMode      *SeriesSortMode
 	SeriesSortDirection *SeriesSortDirection
 	SeriesLimit         *int32
+	SeriesNumSamples    *int32
 }
 
 // InsightSeries is a single data series for a Code Insight. This contains some metadata about the data series, as well
@@ -186,7 +188,7 @@ const (
 type SeriesDisplayOptions struct {
 	SortOptions *SeriesSortOptions
 	Limit       *int32
-	NumSamples  int
+	NumSamples  *int32
 }
 
 type SeriesSortOptions struct {

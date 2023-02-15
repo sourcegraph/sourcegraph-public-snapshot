@@ -60,12 +60,15 @@
                     cursor: pointer;
                 }
 
+                .label {
+                    margin-right: 0.5rem;
+                }
+
                 .match {
                     font-weight: bold;
                 }
 
                 .description {
-                    margin-left: 0.5rem;
                     color: var(--input-placeholder-color);
                 }
 
@@ -75,6 +78,7 @@
                     color: var(--text-muted);
                     font-family: var(--font-family-base);
                     display: flex;
+                    white-space: nowrap;
 
                     > [role='gridcell'] {
                         padding: 0 0.5rem;
@@ -91,7 +95,6 @@
 }
 
 .filter-option {
-    display: flex;
     font-family: var(--code-font-family);
     font-size: 0.75rem;
 

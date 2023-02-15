@@ -325,7 +325,7 @@ func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Cont
 	}
 
 	// set repo permissions (and user permissions)
-	err = txs.SetRepoPermissions(ctx, &p)
+	_, err = txs.SetRepoPermissions(ctx, &p)
 	if err != nil {
 		return errors.Wrapf(err, "failed to set repo permissions for repo %d", repoID)
 	}

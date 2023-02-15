@@ -83,7 +83,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 				err := errors.Newf("version assertion failed: %q != %q", inferredVersion, version)
 				return errors.Newf("%s. Re-invoke with --skip-version-check to ignore this check", err)
 			}
-		} else if version == "" {
+		} else if version == "" && file == "" {
 			return errors.New("-skip-version-check was supplied without -version or -file")
 		}
 
