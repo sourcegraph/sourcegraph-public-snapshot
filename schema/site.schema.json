@@ -489,14 +489,14 @@
             "pointer": true
           }
         },
-        "requestAccess": {
+        "accessRequests": {
           "description": "Allow users to request access to the instance if signup is disabled",
           "type": "object",
           "properties": {
             "enabled": {
-              "description": "Whether to enable this feature",
+              "description": "Whether to enable this feature or not",
               "type": "boolean",
-              "default": false
+              "default": true
             }
           }
         }

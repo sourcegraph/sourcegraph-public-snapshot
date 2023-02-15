@@ -33,15 +33,17 @@ export const DOES_USERNAME_EXIST = gql`
 `
 
 export const APPROVE_ACCESS_REQUEST = gql`
-    mutation ApproveAccessRequest($accessRequestId: ID!, $username: String!, $email: String) {
-        createUser(username: $username, email: $email, verifiedEmail: false) {
-            user {
-                username
-            }
-            resetPasswordURL
-        }
-        setAccessRequestStatus(id: $accessRequestId, status: APPROVED) {
+    mutation ApproveAccessRequest($id: ID!) {
+        setAccessRequestStatus(id: $id, status: APPROVED) {
             alwaysNil
+        }
+    }
+`
+
+export const CREATE_USER = gql`
+    mutation CreateUser($username: String!, $email: String) {
+        createUser(username: $username, email: $email, verifiedEmail: false) {
+            resetPasswordURL
         }
     }
 `

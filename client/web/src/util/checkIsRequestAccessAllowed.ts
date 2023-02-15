@@ -1,6 +1,6 @@
 import { SourcegraphContext } from '../jscontext'
 
-export function checkIsRequestAccessEnabled(
+export function checkIsRequestAccessAllowed(
     isSourcegraphDotCom: boolean,
     allowSignup: boolean,
     requestAccessExperimentalFeature: SourcegraphContext['experimentalFeatures']['requestAccess']

@@ -54,6 +54,12 @@ type AWSKMSEncryptionKey struct {
 	Type            string `json:"type"`
 }
 
+// AccessRequests description: Allow users to request access to the instance if signup is disabled
+type AccessRequests struct {
+	// Enabled description: Whether to enable this feature or not
+	Enabled bool `json:"enabled,omitempty"`
+}
+
 // ApiRatelimit description: Configuration for API rate limiting
 type ApiRatelimit struct {
 	// Enabled description: Whether API rate limiting is enabled
@@ -683,6 +689,8 @@ type ExpandedGitCommitDescription struct {
 
 // ExperimentalFeatures description: Experimental features and settings.
 type ExperimentalFeatures struct {
+	// AccessRequests description: Allow users to request access to the instance if signup is disabled
+	AccessRequests *AccessRequests `json:"accessRequests,omitempty"`
 	// AzureDevOps description: Allow adding Azure DevOps code host connections
 	AzureDevOps string `json:"azureDevOps,omitempty"`
 	// BitbucketServerFastPerm description: DEPRECATED: Configure in Bitbucket Server config.
@@ -729,8 +737,6 @@ type ExperimentalFeatures struct {
 	Ranking *Ranking `json:"ranking,omitempty"`
 	// RateLimitAnonymous description: Configures the hourly rate limits for anonymous calls to the GraphQL API. Setting limit to 0 disables the limiter. This is only relevant if unauthenticated calls to the API are permitted.
 	RateLimitAnonymous int `json:"rateLimitAnonymous,omitempty"`
-	// RequestAccess description: Allow users to request access to the instance if signup is disabled
-	RequestAccess *RequestAccess `json:"requestAccess,omitempty"`
 	// RubyPackages description: Allow adding Ruby package host connections
 	RubyPackages string `json:"rubyPackages,omitempty"`
 	// RustPackages description: Allow adding Rust package code host connections
@@ -781,6 +787,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &m); err != nil {
 		return err
 	}
+	delete(m, "accessRequests")
 	delete(m, "azureDevOps")
 	delete(m, "bitbucketServerFastPerm")
 	delete(m, "customGitFetch")
@@ -804,7 +811,6 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "pythonPackages")
 	delete(m, "ranking")
 	delete(m, "rateLimitAnonymous")
-	delete(m, "requestAccess")
 	delete(m, "rubyPackages")
 	delete(m, "rustPackages")
 	delete(m, "search.index.branches")
@@ -1772,12 +1778,6 @@ type Repository struct {
 	Name string `json:"name,omitempty"`
 	// Owner description: The repository namespace.
 	Owner string `json:"owner,omitempty"`
-}
-
-// RequestAccess description: Allow users to request access to the instance if signup is disabled
-type RequestAccess struct {
-	// Enabled description: Whether to enable this feature
-	Enabled bool `json:"enabled,omitempty"`
 }
 type Responders struct {
 	Id       string `json:"id,omitempty"`

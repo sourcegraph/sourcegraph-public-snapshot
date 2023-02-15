@@ -5,7 +5,7 @@ import { ButtonLink, Badge } from '@sourcegraph/wildcard'
 
 import { AccessRequestsCountResult, AccessRequestsCountVariables } from '../../graphql-operations'
 import { SourcegraphContext } from '../../jscontext'
-import { checkIsRequestAccessEnabled } from '../../util/checkIsRequestAccessEnabled'
+import { checkIsRequestAccessAllowed } from '../../util/checkIsRequestAccessAllowed'
 
 import { ACCESS_REQUESTS_COUNT } from './queries'
 
@@ -15,14 +15,14 @@ interface AccessRequestsGlobalNavItemProps {
 }
 
 export const AccessRequestsGlobalNavItem: React.FunctionComponent<AccessRequestsGlobalNavItemProps> = props => {
-    const isRequestAccessEnabled = checkIsRequestAccessEnabled(
+    const IsRequestAccessAllowed = checkIsRequestAccessAllowed(
         props.isSourcegraphDotCom,
         props.context.allowSignup,
-        props.context.experimentalFeatures.requestAccess
+        props.context.experimentalFeatures.accessRequests
     )
     const { data } = useQuery<AccessRequestsCountResult, AccessRequestsCountVariables>(ACCESS_REQUESTS_COUNT, {
         fetchPolicy: 'network-only',
-        skip: !isRequestAccessEnabled,
+        skip: !IsRequestAccessAllowed,
     })
 
     if (!data?.accessRequests.totalCount) {

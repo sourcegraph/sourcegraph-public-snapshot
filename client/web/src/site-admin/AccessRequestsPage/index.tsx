@@ -4,7 +4,7 @@ import { mdiAccount, mdiPlus } from '@mdi/js'
 import { formatDistanceToNowStrict } from 'date-fns'
 
 import { useLazyQuery, useMutation, useQuery } from '@sourcegraph/http-client'
-import { H1, Card, Text, Icon, Button, Link, Grid } from '@sourcegraph/wildcard'
+import { H1, Card, Text, Icon, Button, Link, Grid, Alert } from '@sourcegraph/wildcard'
 
 import {
     PendingAccessRequestsListResult,
@@ -15,6 +15,8 @@ import {
     ApproveAccessRequestVariables,
     DoesUsernameExistResult,
     DoesUsernameExistVariables,
+    CreateUserResult,
+    CreateUserVariables,
 } from '../../graphql-operations'
 import { useURLSyncedState } from '../../hooks'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -23,6 +25,7 @@ import { DropdownPagination } from '../components/DropdownPagination'
 
 import {
     APPROVE_ACCESS_REQUEST,
+    CREATE_USER,
     DOES_USERNAME_EXIST,
     PENDING_ACCESS_REQUESTS_LIST,
     REJECT_ACCESS_REQUEST,
@@ -74,19 +77,21 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
         eventLogger.logPageView('AccessRequestsPage')
     }, [])
     const [filters, setFilters] = useURLSyncedState(DEFAULT_FILTERS)
+    const [error, setError] = useState<Error | null>(null)
 
     const offset = Number(filters.offset)
     const limit = Number(filters.limit)
 
-    const { data, refetch } = useQuery<PendingAccessRequestsListResult, PendingAccessRequestsListVariables>(
-        PENDING_ACCESS_REQUESTS_LIST,
-        {
-            variables: {
-                limit,
-                offset,
-            },
-        }
-    )
+    const {
+        data,
+        refetch,
+        error: queryError,
+    } = useQuery<PendingAccessRequestsListResult, PendingAccessRequestsListVariables>(PENDING_ACCESS_REQUESTS_LIST, {
+        variables: {
+            limit,
+            offset,
+        },
+    })
 
     const [rejectAccessRequest] = useMutation<RejectAccessRequestResult, RejectAccessRequestVariables>(
         REJECT_ACCESS_REQUEST
@@ -104,8 +109,11 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                 },
             })
                 .then(() => refetch())
-                // eslint-disable-next-line no-console
-                .catch(error => console.error(error))
+                .catch(error => {
+                    setError(error)
+                    // eslint-disable-next-line no-console
+                    console.error(error)
+                })
         },
         [refetch, rejectAccessRequest]
     )
@@ -115,6 +123,8 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
         resetPasswordURL?: string | null
         username: string
     }>()
+
+    const [createUser] = useMutation<CreateUserResult, CreateUserVariables>(CREATE_USER)
 
     const [approveAccessRequest] = useMutation<ApproveAccessRequestResult, ApproveAccessRequestVariables>(
         APPROVE_ACCESS_REQUEST
@@ -128,30 +138,39 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                 return
             }
             eventLogger.log('AccessRequestApproved', { id: accessRequestId })
-            async function approveAndCreateUser(): Promise<void> {
+            async function createUserAndApproveRequest(): Promise<void> {
                 const username = await generateUsername(name)
-                const { data } = await approveAccessRequest({
+                const { data } = await createUser({
                     variables: {
-                        accessRequestId,
                         email,
                         username,
                     },
                 })
+
                 if (!data) {
                     throw new Error('No data returned from approveAccessRequest mutation')
                 }
+
+                await approveAccessRequest({
+                    variables: {
+                        id: accessRequestId,
+                    },
+                })
+
                 setLastApprovedUser({
-                    username: data?.createUser.user.username,
+                    username,
                     email,
                     resetPasswordURL: data?.createUser.resetPasswordURL,
                 })
                 await refetch()
             }
-            approveAndCreateUser()
+            createUserAndApproveRequest().catch(error => {
+                setError(error)
                 // eslint-disable-next-line no-console
-                .catch(error => console.error(error))
+                console.error(error)
+            })
         },
-        [generateUsername, approveAccessRequest, refetch]
+        [generateUsername, createUser, approveAccessRequest, refetch]
     )
 
     return (
@@ -173,6 +192,11 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                     </Button>
                 </div>
             </div>
+            {[queryError, error].filter(Boolean).map((err, index) => (
+                <Alert variant="danger" key={index}>
+                    {err?.message}
+                </Alert>
+            ))}
             <DropdownPagination
                 limit={limit}
                 offset={offset}

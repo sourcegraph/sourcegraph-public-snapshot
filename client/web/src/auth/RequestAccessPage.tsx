@@ -11,7 +11,7 @@ import { PageTitle } from '../components/PageTitle'
 import { SourcegraphContext } from '../jscontext'
 import { PageRoutes } from '../routes.constants'
 import { eventLogger } from '../tracking/eventLogger'
-import { checkIsRequestAccessEnabled } from '../util/checkIsRequestAccessEnabled'
+import { checkIsRequestAccessAllowed } from '../util/checkIsRequestAccessAllowed'
 
 import { SourcegraphIcon } from './icons'
 import { getReturnTo } from './SignInSignUpCommon'
@@ -144,10 +144,10 @@ export const RequestAccessPage: React.FunctionComponent<React.PropsWithChildren<
     const location = useLocation()
     const navigate = useNavigate()
     const [error, setError] = useState<Error | null>(null)
-    const isRequestAccessEnabled = checkIsRequestAccessEnabled(
+    const IsRequestAccessAllowed = checkIsRequestAccessAllowed(
         isSourcegraphDotCom,
         context.allowSignup,
-        context.experimentalFeatures.requestAccess
+        context.experimentalFeatures.accessRequests
     )
 
     if (authenticatedUser) {
@@ -155,7 +155,7 @@ export const RequestAccessPage: React.FunctionComponent<React.PropsWithChildren<
         return <Navigate to={returnTo} replace={true} />
     }
 
-    if (!isRequestAccessEnabled) {
+    if (!IsRequestAccessAllowed) {
         return <Navigate to={PageRoutes.SignIn} replace={true} />
     }
 
@@ -172,12 +172,7 @@ export const RequestAccessPage: React.FunctionComponent<React.PropsWithChildren<
                 <Routes>
                     <Route
                         path="done"
-                        element={
-                            <Text>
-                                Thank your for confirming your email [Name]. We notified the admin of this instance of
-                                your request.
-                            </Text>
-                        }
+                        element={<Text>Thank you! We notified the admin of this instance of your request.</Text>}
                     />
                     <Route
                         path=""

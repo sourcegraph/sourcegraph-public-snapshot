@@ -32,13 +32,13 @@ func HandleRequestAccess(logger log.Logger, db database.DB) http.HandlerFunc {
 }
 
 func handleEnabledCheck(logger log.Logger, w http.ResponseWriter) (handled bool) {
-	e := conf.Get().ExperimentalFeatures.RequestAccess
-	if !e.Enabled {
+	e := conf.Get().ExperimentalFeatures.AccessRequests
+	if e != nil && !e.Enabled {
 		logger.Error("Request access is not enabled.")
 		http.Error(w, "Request access is not enabled.", http.StatusConflict)
-		return false
+		return true
 	}
-	return true
+	return false
 }
 
 type requestAccessData struct {

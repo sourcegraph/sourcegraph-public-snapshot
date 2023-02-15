@@ -12,7 +12,7 @@ import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
-import { checkIsRequestAccessEnabled } from '../util/checkIsRequestAccessEnabled'
+import { checkIsRequestAccessAllowed } from '../util/checkIsRequestAccessAllowed'
 
 import { SourcegraphIcon } from './icons'
 import { OrDivider } from './OrDivider'
@@ -41,10 +41,10 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     const location = useLocation()
     const [error, setError] = useState<Error | null>(null)
     const [searchParams] = useSearchParams()
-    const isRequestAccessEnabled = checkIsRequestAccessEnabled(
+    const IsRequestAccessAllowed = checkIsRequestAccessAllowed(
         props.isSourcegraphDotCom,
         props.context.allowSignup,
-        props.context.experimentalFeatures.requestAccess
+        props.context.experimentalFeatures.accessRequests
     )
 
     if (props.authenticatedUser) {
@@ -149,7 +149,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                             <Link to="/sign-up">Sign up</Link>
                         )}
                     </Text>
-                ) : isRequestAccessEnabled ? (
+                ) : IsRequestAccessAllowed ? (
                     <Text className="text-muted">
                         Need an account? <Link to="/request-access">Request access to the admin</Link> or contact your
                         site admin.
