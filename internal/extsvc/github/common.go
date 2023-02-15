@@ -1746,20 +1746,22 @@ func (r *Repository) Name() (string, error) {
 
 // Repository is a GitHub repository.
 type Repository struct {
-	ID            string   // ID of repository (GitHub GraphQL ID, not GitHub database ID)
-	DatabaseID    int64    // The integer database id
-	NameWithOwner string   // full name of repository ("owner/name")
-	Description   string   // description of repository
-	URL           string   // the web URL of this repository ("https://github.com/foo/bar")
-	IsPrivate     bool     // whether the repository is private
-	IsFork        bool     // whether the repository is a fork of another repository
-	IsArchived    bool     // whether the repository is archived on the code host
-	IsLocked      bool     // whether the repository is locked on the code host
-	IsDisabled    bool     // whether the repository is disabled on the code host
-	Topics        []string `json:"topics,omitempty"` // a list of topics the repository is tagged with
+	ID            string // ID of repository (GitHub GraphQL ID, not GitHub database ID)
+	DatabaseID    int64  // The integer database id
+	NameWithOwner string // full name of repository ("owner/name")
+	Description   string // description of repository
+	URL           string // the web URL of this repository ("https://github.com/foo/bar")
+	IsPrivate     bool   // whether the repository is private
+	IsFork        bool   // whether the repository is a fork of another repository
+	IsArchived    bool   // whether the repository is archived on the code host
+	IsLocked      bool   // whether the repository is locked on the code host
+	IsDisabled    bool   // whether the repository is disabled on the code host
 	// This field will always be blank on repos stored in our database because the value will be different
 	// depending on which token was used to fetch it
 	ViewerPermission string // ADMIN, WRITE, READ, or empty if unknown. Only the graphql api populates this. https://developer.github.com/v4/enum/repositorypermission/
+
+	// a list of topics the repository is tagged with
+	RepositoryTopics RepositoryTopics `json:",omitempty"`
 
 	// Metadata retained for ranking
 	StargazerCount int `json:",omitempty"`
@@ -1769,6 +1771,14 @@ type Repository struct {
 	// to identify if a repository is public or private or internal.
 	// https://developer.github.com/changes/2019-12-03-internal-visibility-changes/#repository-visibility-fields
 	Visibility Visibility `json:",omitempty"`
+}
+
+type RepositoryTopics struct {
+	Nodes []RepositoryTopic `json:",omitempty"`
+}
+
+type RepositoryTopic struct {
+	Name string
 }
 
 type restRepositoryPermissions struct {
@@ -1814,6 +1824,10 @@ func (c *V3Client) getRepositoryFromAPI(ctx context.Context, owner, name string)
 // convertRestRepo converts repo information returned by the rest API
 // to a standard format.
 func convertRestRepo(restRepo restRepository) *Repository {
+	topics := make([]RepositoryTopic, 0, len(restRepo.Topics))
+	for _, topic := range restRepo.Topics {
+		topics = append(topics, RepositoryTopic{Name: topic})
+	}
 	repo := Repository{
 		ID:               restRepo.ID,
 		DatabaseID:       restRepo.DatabaseID,
@@ -1828,7 +1842,7 @@ func convertRestRepo(restRepo restRepository) *Repository {
 		ViewerPermission: convertRestRepoPermissions(restRepo.Permissions),
 		StargazerCount:   restRepo.Stars,
 		ForkCount:        restRepo.Forks,
-		Topics:           restRepo.Topics,
+		RepositoryTopics: RepositoryTopics{topics},
 	}
 
 	if conf.ExperimentalFeatures().EnableGithubInternalRepoVisibility {
