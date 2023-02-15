@@ -9,7 +9,7 @@ import { BatchChangesProps } from './batches'
 import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
-import type { LayoutProps } from './Layout'
+import type { LegacyLayoutProps } from './LegacyLayout'
 import { PageRoutes } from './routes.constants'
 import { SearchPageWrapper } from './search/SearchPageWrapper'
 import { getExperimentalFeatures } from './stores'
@@ -37,8 +37,8 @@ const UserArea = lazyComponent(() => import('./user/area/UserArea'), 'UserArea')
 const SurveyPage = lazyComponent(() => import('./marketing/page/SurveyPage'), 'SurveyPage')
 const RepoContainer = lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer')
 
-export interface LayoutRouteComponentProps
-    extends Omit<LayoutProps, 'match'>,
+export interface LegacyLayoutRouteComponentProps
+    extends Omit<LegacyLayoutProps, 'match'>,
         ThemeProps,
         ThemePreferenceProps,
         BreadcrumbsProps,
@@ -51,14 +51,14 @@ export interface LayoutRouteComponentProps
 
 export interface LayoutRouteProps {
     path: string
-    render: (props: LayoutRouteComponentProps) => React.ReactNode
+    render: (props: LegacyLayoutRouteComponentProps) => React.ReactNode
 
     /**
      * A condition function that needs to return true if the route should be rendered
      *
      * @default () => true
      */
-    condition?: (props: LayoutRouteComponentProps) => boolean
+    condition?: (props: LegacyLayoutRouteComponentProps) => boolean
 }
 
 // Force a hard reload so that we delegate to the serverside HTTP handler for a route.

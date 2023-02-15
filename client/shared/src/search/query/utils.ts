@@ -1,3 +1,5 @@
+import { memoize } from 'lodash'
+
 import { FilterType, resolveFilter } from './filters'
 import type { Filter, Token } from './token'
 
@@ -8,6 +10,8 @@ export function getTokenLength(token: Token): number {
     return token.range.end - token.range.start
 }
 
-export function isFilterOfType(filter: Filter, type: FilterType): boolean {
-    return resolveFilter(filter.field.value)?.type === type
+export const resolveFilterMemoized = memoize(resolveFilter)
+
+export function isFilterOfType(filter: Filter, filterType: FilterType): boolean {
+    return resolveFilterMemoized(filter.field.value)?.type === filterType
 }

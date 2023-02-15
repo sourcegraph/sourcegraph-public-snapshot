@@ -35,6 +35,7 @@ export interface UserSettingsAreaProps extends UserAreaRouteContext, ThemeProps,
     sideBarItems: UserSettingsSidebarItems
     routes: readonly UserSettingsAreaRoute[]
     user: UserAreaUserFields
+    isSourcegraphDotCom: boolean
 }
 
 export interface UserSettingsAreaRouteContext extends UserSettingsAreaProps {
@@ -54,9 +55,10 @@ const UserSettingsAreaGQLFragment = gql`
         siteAdmin @include(if: $siteAdmin)
         builtinAuth
         createdAt
-        emails @include(if: $siteAdmin) {
+        emails @skip(if: $isSourcegraphDotCom) {
             email
             verified
+            isPrimary
         }
         organizations {
             nodes {
@@ -72,7 +74,7 @@ const UserSettingsAreaGQLFragment = gql`
 `
 
 const USER_SETTINGS_AREA_USER_PROFILE = gql`
-    query UserSettingsAreaUserProfile($userID: ID!, $siteAdmin: Boolean!) {
+    query UserSettingsAreaUserProfile($userID: ID!, $siteAdmin: Boolean!, $isSourcegraphDotCom: Boolean!) {
         node(id: $userID) {
             __typename
             ...UserSettingsAreaUserFields
@@ -97,6 +99,7 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<
         variables: {
             userID: props.user.id,
             siteAdmin: authenticatedUser.siteAdmin,
+            isSourcegraphDotCom: props.isSourcegraphDotCom,
         },
     })
 

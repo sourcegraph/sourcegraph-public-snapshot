@@ -6,35 +6,32 @@ load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
 exports_files(["buf.gen.yaml"])
 
 proto_library(
-    name = "proto_proto",
+    name = "v1_proto",
     srcs = ["symbols.proto"],
     visibility = ["//visibility:public"],
-    deps = [
-        "@com_google_protobuf//:duration_proto",
-        "@com_google_protobuf//:empty_proto",
-    ],
+    deps = ["@com_google_protobuf//:duration_proto"],
 )
 
 go_proto_library(
-    name = "proto_go_proto",
+    name = "v1_go_proto",
     compilers = [
         "//:gen-go-grpc",
         "@io_bazel_rules_go//proto:go_proto",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/symbols/proto",
-    proto = ":proto_proto",
-    visibility = ["//visibility:public"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/symbols/v1",
+    proto = ":v1_proto",
+    visibility = ["//:__subpackages__"],
 )
 
 go_library(
-    name = "proto",
+    name = "symbols",
     srcs = [
         "conversion.go",
         "doc.go",
     ],
-    embed = [":proto_go_proto"],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/symbols/proto",
-    visibility = ["//visibility:public"],
+    embed = [":v1_go_proto"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/symbols/v1",
+    visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
         "//internal/search",
@@ -45,9 +42,9 @@ go_library(
 )
 
 go_test(
-    name = "proto_test",
+    name = "symbols_test",
     srcs = ["conversion_test.go"],
-    embed = [":proto"],
+    embed = [":symbols"],
     deps = [
         "//internal/search",
         "//internal/search/result",
@@ -58,6 +55,6 @@ go_test(
 )
 
 buf_lint_test(
-    name = "proto_proto_lint",
-    targets = [":proto_proto"],
+    name = "v1_proto_lint",
+    targets = [":v1_proto"],
 )

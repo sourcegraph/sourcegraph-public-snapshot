@@ -1,6 +1,7 @@
 import React from 'react'
 
 import './SourcegraphWebApp.scss'
+import { LegacySourcegraphWebApp } from './LegacySourcegraphWebApp'
 import { orgAreaHeaderNavItems } from './org/area/navitems'
 import { orgAreaRoutes } from './org/area/routes'
 import { orgSettingsAreaRoutes } from './org/settings/routes'
@@ -13,7 +14,6 @@ import { repoSettingsSideBarGroups } from './repo/settings/sidebaritems'
 import { routes } from './routes'
 import { siteAdminAreaRoutes } from './site-admin/routes'
 import { siteAdminSidebarGroups } from './site-admin/sidebaritems'
-import { SourcegraphWebApp } from './SourcegraphWebApp'
 import { userAreaHeaderNavItems } from './user/area/navitems'
 import { userAreaRoutes } from './user/area/routes'
 import { userSettingsAreaRoutes } from './user/settings/routes'
@@ -21,8 +21,8 @@ import { userSettingsSideBarItems } from './user/settings/sidebaritems'
 
 // Entry point for the app without enterprise functionality.
 // For more info see: https://docs.sourcegraph.com/admin/subscriptions#paid-subscriptions-for-sourcegraph-enterprise
-export const OpenSourceWebApp: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <SourcegraphWebApp
+export const LegacyOpenSourceWebApp: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
+    <LegacySourcegraphWebApp
         siteAdminAreaRoutes={siteAdminAreaRoutes}
         siteAdminSideBarGroups={siteAdminSidebarGroups}
         siteAdminOverviewComponents={[]}
