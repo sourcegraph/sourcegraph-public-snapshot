@@ -45,3 +45,11 @@ export const APPROVE_ACCESS_REQUEST = gql`
         }
     }
 `
+
+export const ACCESS_REQUESTS_COUNT = gql`
+    query AccessRequestsCount {
+        accessRequests(status: PENDING) {
+            totalCount
+        }
+    }
+`

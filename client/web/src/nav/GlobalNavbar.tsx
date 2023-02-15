@@ -36,6 +36,7 @@ import { NotebookProps } from '../notebooks'
 import { LayoutRouteProps } from '../routes'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
+import { AccessRequestsGlobalNavItem } from '../site-admin/AccessRequestsPage/AccessRequestsGlobalNavItem'
 import { useNavbarQueryState } from '../stores'
 import { ThemePreferenceProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
@@ -307,6 +308,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             Search private code
                         </ButtonLink>
                     )}
+                    {props.authenticatedUser?.siteAdmin && <AccessRequestsGlobalNavItem />}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
                     {props.authenticatedUser && extensionsController !== null && enableLegacyExtensions && (
                         <NavAction>
