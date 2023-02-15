@@ -222,6 +222,9 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
         treeDataRef.current = treeData
     }, [treeData])
     useEffect(() => {
+        if (loading || error) {
+            return
+        }
         const id = treeDataRef.current?.pathToId.get(props.filePath)
         if (id) {
             setSelectedIds([id])
@@ -232,11 +235,29 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
             if (path === '.') {
                 path = ''
             }
-            if (props.initialFilePath.length > path.length && props.initialFilePath.startsWith(path)) {
+
+            if (!path.startsWith(props.initialFilePath)) {
                 onExpandParent(path)
+            } else if (path !== props.initialFilePath) {
+                // eslint-disable-next-line no-void
+                void refetch({
+                    ...defaultVariables,
+                    filePath: path,
+                    // The file can be anywhere in the tree so we need to load all ancestors
+                    ancestors: true,
+                })
             }
         }
-    }, [onExpandParent, props.filePath, props.filePathIsDirectory, props.initialFilePath])
+    }, [
+        onExpandParent,
+        props.filePath,
+        props.filePathIsDirectory,
+        props.initialFilePath,
+        loading,
+        error,
+        refetch,
+        defaultVariables,
+    ])
 
     if (error) {
         return (
@@ -465,6 +486,13 @@ function appendTreeData(
                 singleChildParentPathForPath = [singleChildParentPathForPath[0], entry.path]
             }
             singleChildFolderPath.push(entry.name)
+
+            // Store the path id in our lookup map and point to the single child
+            // parent (where this path name will be appended to)
+            const parentId = tree.pathToId.get(singleChildParentPathForPath[0])
+            if (parentId) {
+                tree.pathToId.set(entry.path, parentId)
+            }
 
             // Single child entries are not rendered, so we're skipping over
             // them.

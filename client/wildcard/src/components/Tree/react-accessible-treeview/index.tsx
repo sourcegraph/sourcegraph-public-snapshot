@@ -640,7 +640,10 @@ const useTree = ({
             const tabbableNode = nodeRefs.current[tabbableId]
             const leafNode = leafRefs.current[lastInteractedWith]
             scrollToRef(leafNode)
-            focusRef(tabbableNode)
+            const shouldFocus = !!tabbableNode?.closest('.tree')?.contains(document.activeElement)
+            if (shouldFocus) {
+                focusRef(tabbableNode)
+            }
         }
     }, [tabbableId, nodeRefs, leafRefs, lastInteractedWith])
 
