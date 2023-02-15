@@ -65,8 +65,8 @@ func (h *UserResourceHandler) Create(_ *http.Request, attributes scim.ResourceAt
 		accountSpec := extsvc.AccountSpec{
 			ServiceType: "scim",
 			// TODO: provide proper service ID
-			ServiceID:   "TODO",
-			AccountID:   optionalExternalID.Value(),
+			ServiceID: "TODO",
+			AccountID: optionalExternalID.Value(),
 		}
 		user, err = h.db.UserExternalAccounts().CreateUserAndSave(h.ctx, newUser, accountSpec, extsvc.AccountData{})
 	} else {
