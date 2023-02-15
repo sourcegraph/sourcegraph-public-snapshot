@@ -51,9 +51,10 @@ func (h *UserResourceHandler) Create(_ *http.Request, attributes scim.ResourceAt
 		return scim.Resource{}, scimerrors.ScimErrorBadParams([]string{"emails missing"})
 	}
 	emails := attributes["emails"].([]interface{})
-	for _, email := range emails {
-		if email.(map[string]interface{})["primary"] == true {
-			primaryEmail = email.(map[string]interface{})["value"].(string)
+	for _, emailRaw := range emails {
+		email := emailRaw.(map[string]interface{})
+		if email["primary"] == true {
+			primaryEmail = email["value"].(string)
 			break
 		}
 	}
@@ -72,9 +73,10 @@ func (h *UserResourceHandler) Create(_ *http.Request, attributes scim.ResourceAt
 	if attributes["displayName"] != nil {
 		displayName = attributes["displayName"].(string)
 	} else if attributes["name"] != nil {
-		displayName = attributes["name"].(map[string]interface{})["formatted"].(string)
-		if displayName == "" && attributes["name"].(map[string]interface{})["givenName"] != nil && attributes["name"].(map[string]interface{})["familyName"] != nil {
-			displayName = attributes["name"].(map[string]interface{})["givenName"].(string) + " " + attributes["name"].(map[string]interface{})["familyName"].(string)
+		name := attributes["name"].(map[string]interface{})
+		displayName = name["formatted"].(string)
+		if displayName == "" && name["givenName"] != nil && name["familyName"] != nil {
+			displayName = name["givenName"].(string) + " " + name["familyName"].(string)
 		}
 	}
 
