@@ -47,9 +47,9 @@ type InsightsResolver interface {
 	InsightAdminBackfillQueue(ctx context.Context, args *AdminBackfillQueueArgs) (*graphqlutil.ConnectionResolver[*BackfillQueueItemResolver], error)
 	// Admin Mutations
 	UpdateInsightSeries(ctx context.Context, args *UpdateInsightSeriesArgs) (InsightSeriesMetadataPayloadResolver, error)
-	// RetryInsightSeriesBackfill(ctx context.Context, args *BackfillArgs) (InsightBackfillQueueItemResolver, error)
-	// MoveInsightSeriesBackfillToFrontOfQueue(ctx context.Context, args *BackfillArgs) (InsightBackfillQueueItemResolver, error)
-	// MoveInsightSeriesBackfillToBackOfQueue(ctx context.Context, args *BackfillArgs) (InsightBackfillQueueItemResolver, error)
+	RetryInsightSeriesBackfill(ctx context.Context, args *BackfillArgs) (*BackfillQueueItemResolver, error)
+	MoveInsightSeriesBackfillToFrontOfQueue(ctx context.Context, args *BackfillArgs) (*BackfillQueueItemResolver, error)
+	MoveInsightSeriesBackfillToBackOfQueue(ctx context.Context, args *BackfillArgs) (*BackfillQueueItemResolver, error)
 }
 
 type SearchInsightLivePreviewArgs struct {

@@ -249,6 +249,38 @@ func (p *PersistentRepoIterator) MarkComplete(ctx context.Context, store *basest
 	return nil
 }
 
+// Restart the iterator to the initial state.
+func (p *PersistentRepoIterator) Restart(ctx context.Context, store *basestore.Store) (err error) {
+	tx, err := store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	err = tx.Exec(ctx, sqlf.Sprintf("UPDATE repo_iterator SET percent_complete = 0, runtime_duration = 0, success_count = 0, repo_cursor = 0, completed_at = null, started_at = null, last_updated_at = now() where id = %s", p.Id))
+	if err != nil {
+		return err
+	}
+
+	err = tx.Exec(ctx, sqlf.Sprintf("DELETE FROM repo_iterator_errors WHERE id = %s", p.Id))
+	if err != nil {
+		return err
+	}
+	p.CompletedAt = time.Time{}
+	p.StartedAt = time.Time{}
+	p.PercentComplete = 0
+	p.retryCursor = 0
+	p.retryCursor = 0
+	p.retryRepos = []int32{}
+	p.terminalErrors = make(errorMap)
+	p.Cursor = 0
+	p.RuntimeDuration = 0
+	p.SuccessCount = 0
+	p.errors = make(errorMap)
+
+	return nil
+}
+
 func (p *PersistentRepoIterator) HasMore() bool {
 	_, has := peek(p.Cursor, p.repos)
 	return has

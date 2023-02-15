@@ -50,7 +50,7 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 		ViewName:          "insights_jobs_backfill_in_progress",
 		ColumnExpressions: baseJobColumns,
 		Scan:              dbworkerstore.BuildWorkerScan(scanBaseJob),
-		OrderByExpression: sqlf.Sprintf("cost_bucket, id"), // take the oldest item in the group of least work
+		OrderByExpression: sqlf.Sprintf("estimated_cost, backfill_id"),
 		MaxNumResets:      100,
 		StalledMaxAge:     time.Second * 30,
 		RetryAfter:        time.Second * 30,
@@ -339,7 +339,7 @@ func (h *inProgressHandler) disableBackfill(ctx context.Context, ex *backfillExe
 }
 
 func (h *inProgressHandler) load(ctx context.Context, logger log.Logger, backfillId int) (*backfillExecution, error) {
-	backfillJob, err := h.backfillStore.loadBackfill(ctx, backfillId)
+	backfillJob, err := h.backfillStore.LoadBackfill(ctx, backfillId)
 	if err != nil {
 		return nil, errors.Wrap(err, "loadBackfill")
 	}

@@ -653,6 +653,44 @@ func TestForNextRetryAndFinish(t *testing.T) {
 	})
 }
 
+func TestReset(t *testing.T) {
+	logger := logtest.Scoped(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
+	store := basestore.NewWithHandle(insightsDB.Handle())
+
+	ctx := context.Background()
+
+	clock := glock.NewMockClock()
+	clock.SetCurrent(time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC))
+	repos := []int32{1, 5, 6, 14, 17}
+	itr, _ := NewWithClock(ctx, store, clock, repos)
+	var seen []api.RepoID
+
+	addError(ctx, itr, store, t)
+	require.Equal(t, 1, itr.Cursor)
+	require.Equal(t, 1, len(itr.errors))
+	require.Equal(t, float64(0), itr.PercentComplete)
+
+	itrAfterStep, _ := testForNextRetryAndFinish(t, itr, seen, func(ctx context.Context, id api.RepoID, fn FinishFunc) bool {
+		clock.Advance(time.Second * 1)
+		err := fn(ctx, store, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return true
+	}, IterationConfig{})
+	jsonify, _ := json.Marshal(itrAfterStep)
+	autogold.Want("iterate once with an error", `{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":1000000000,"PercentComplete":0.2,"TotalCount":5,"SuccessCount":1,"Cursor":1}`).Equal(t, string(jsonify))
+
+	err := itrAfterStep.Restart(ctx, store)
+	require.NoError(t, err, "restart should not error")
+	reloaded, err := LoadWithClock(ctx, store, itrAfterStep.Id, clock)
+	require.NoError(t, err, "load should not error")
+	resetJson, _ := json.Marshal(reloaded)
+	autogold.Want("iterator should reset to starting position", `{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"0001-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":0,"TotalCount":5,"SuccessCount":0,"Cursor":0}`).Equal(t, string(resetJson))
+
+}
+
 func addError(ctx context.Context, itr *PersistentRepoIterator, store *basestore.Store, t *testing.T) {
 	// create an error
 	_, _, finish := itr.NextWithFinish(IterationConfig{})

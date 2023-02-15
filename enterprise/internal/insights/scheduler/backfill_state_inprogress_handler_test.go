@@ -108,7 +108,7 @@ func Test_MovesBackfillFromProcessingToComplete(t *testing.T) {
 		t.Fatal(errors.New("found record that should not be visible to the new backfill store"))
 	}
 
-	completedBackfill, err := bfs.loadBackfill(ctx, backfill.Id)
+	completedBackfill, err := bfs.LoadBackfill(ctx, backfill.Id)
 	require.NoError(t, err)
 	if completedBackfill.State != BackfillStateCompleted {
 		t.Fatal(errors.New("backfill should be state COMPLETED after success"))
@@ -120,7 +120,7 @@ func Test_MovesBackfillFromProcessingToComplete(t *testing.T) {
 	}
 }
 
-func Test_PullsByPriorityGroupAge(t *testing.T) {
+func Test_PullsByEstimatedCostAge(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
@@ -167,7 +167,7 @@ func Test_PullsByPriorityGroupAge(t *testing.T) {
 		return backfill
 	}
 
-	bf1 := addBackfillToState(series, []int32{1, 2}, 5, BackfillStateProcessing)
+	bf1 := addBackfillToState(series, []int32{1, 2}, 3, BackfillStateProcessing)
 	bf2 := addBackfillToState(series, []int32{1, 2}, 3, BackfillStateProcessing)
 	bf3 := addBackfillToState(series, []int32{1, 2}, 40, BackfillStateProcessing)
 	bf4 := addBackfillToState(series, []int32{1, 2}, 10, BackfillStateProcessing)
@@ -177,9 +177,6 @@ func Test_PullsByPriorityGroupAge(t *testing.T) {
 	dequeue3, _, _ := monitor.inProgressStore.Dequeue(ctx, "test3", nil)
 	dequeue4, _, _ := monitor.inProgressStore.Dequeue(ctx, "test4", nil)
 
-	// cost split is in 4 equal buckets based on 0 - max(cost)
-
-	// 1st job is bf1 it has higher cost but it's grouped in same cost and is older
 	assert.Equal(t, bf1.Id, dequeue1.backfillId)
 	assert.Equal(t, bf2.Id, dequeue2.backfillId)
 	assert.Equal(t, bf4.Id, dequeue3.backfillId)
@@ -258,7 +255,7 @@ func Test_BackfillWithRetry(t *testing.T) {
 	err = handler.Handle(ctx, logger, dequeue)
 	require.NoError(t, err)
 
-	completedBackfill, err := bfs.loadBackfill(ctx, backfill.Id)
+	completedBackfill, err := bfs.LoadBackfill(ctx, backfill.Id)
 	require.NoError(t, err)
 	if completedBackfill.State != BackfillStateProcessing {
 		t.Fatal(errors.New("backfill should be state in progress"))
@@ -341,7 +338,7 @@ func Test_BackfillWithRetryAndComplete(t *testing.T) {
 	err = handler.Handle(ctx, logger, dequeue)
 	require.NoError(t, err)
 
-	completedBackfill, err := bfs.loadBackfill(ctx, backfill.Id)
+	completedBackfill, err := bfs.LoadBackfill(ctx, backfill.Id)
 	require.NoError(t, err)
 	if completedBackfill.State != BackfillStateCompleted {
 		t.Fatal(errors.New("backfill should be state completed"))
@@ -415,7 +412,7 @@ func Test_BackfillWithInterrupt(t *testing.T) {
 	require.NoError(t, err)
 
 	// we will check that it was interrupted by verifying the backfill has progress, but is not completed yet
-	reloaded, err := bfs.loadBackfill(ctx, backfill.Id)
+	reloaded, err := bfs.LoadBackfill(ctx, backfill.Id)
 	require.NoError(t, err)
 	require.Equal(t, BackfillStateProcessing, reloaded.State)
 	itr, err := iterator.LoadWithClock(ctx, basestore.NewWithHandle(insightsDB.Handle()), reloaded.repoIteratorId, clock)
@@ -426,7 +423,7 @@ func Test_BackfillWithInterrupt(t *testing.T) {
 	err = handler.Handle(ctx, logger, dequeue)
 	require.NoError(t, err)
 
-	completedBackfill, err := bfs.loadBackfill(ctx, backfill.Id)
+	completedBackfill, err := bfs.LoadBackfill(ctx, backfill.Id)
 	require.NoError(t, err)
 	if completedBackfill.State != BackfillStateCompleted {
 		t.Fatal(errors.New("backfill should be state completed"))
@@ -504,7 +501,7 @@ func Test_BackfillCrossingErrorThreshold(t *testing.T) {
 	require.NoError(t, err)
 
 	// we will check that it was interrupted by verifying the backfill has progress, but is not completed yet
-	reloaded, err := bfs.loadBackfill(ctx, backfill.Id)
+	reloaded, err := bfs.LoadBackfill(ctx, backfill.Id)
 	require.NoError(t, err)
 	require.Equal(t, BackfillStateFailed, reloaded.State)
 	itr, err := iterator.LoadWithClock(ctx, basestore.NewWithHandle(insightsDB.Handle()), reloaded.repoIteratorId, clock)

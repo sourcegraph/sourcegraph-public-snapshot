@@ -64,7 +64,7 @@ func (s *BackfillStore) NewBackfill(ctx context.Context, series types.InsightSer
 	return scanBackfill(row)
 }
 
-func (s *BackfillStore) loadBackfill(ctx context.Context, id int) (*SeriesBackfill, error) {
+func (s *BackfillStore) LoadBackfill(ctx context.Context, id int) (*SeriesBackfill, error) {
 	q := "SELECT %s FROM insight_series_backfill WHERE id = %s"
 	row := s.QueryRow(ctx, sqlf.Sprintf(q, backfillColumnsJoin, id))
 	return scanBackfill(row)
@@ -120,6 +120,85 @@ func (b *SeriesBackfill) SetCompleted(ctx context.Context, store *BackfillStore)
 
 func (b *SeriesBackfill) SetFailed(ctx context.Context, store *BackfillStore) error {
 	return b.setState(ctx, store, BackfillStateFailed)
+}
+
+func (b *SeriesBackfill) SetLowestPriority(ctx context.Context, store *BackfillStore) error {
+	tx, err := store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	currentMax, _, err := basestore.ScanFirstFloat(tx.Query(ctx,
+		sqlf.Sprintf(`
+		SELECT coalesce(max(estimated_cost), 0)
+		FROM insight_series_backfill
+		WHERE state in ('new','processing') AND id != %s`, b.Id)))
+	if err != nil {
+		return err
+	}
+
+	// If this item is already the lowest priority there is nothing to do here
+	if b.EstimatedCost >= currentMax {
+		return nil
+	}
+	newCost := currentMax * 2
+	defer func(ic float64) {
+		err = tx.Done(err)
+		if err != nil {
+			b.EstimatedCost = ic
+		}
+	}(b.EstimatedCost)
+	err = b.setCost(ctx, tx, newCost)
+	return err
+}
+
+func (b *SeriesBackfill) SetHighestPriority(ctx context.Context, store *BackfillStore) (err error) {
+	tx, err := store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func(ic float64) {
+		err = tx.Done(err)
+		if err != nil {
+			b.EstimatedCost = ic
+		}
+	}(b.EstimatedCost)
+	err = b.setCost(ctx, tx, 0)
+	return err
+}
+
+func (b *SeriesBackfill) RetryBackfillAttempt(ctx context.Context, store *BackfillStore) (err error) {
+	tx, err := store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+	iterator, err := b.repoIterator(ctx, tx)
+	if err != nil {
+		return err
+	}
+	err = iterator.Restart(ctx, tx.Store)
+	if err != nil {
+		return err
+	}
+	err = b.setState(ctx, tx, BackfillStateProcessing)
+	if err != nil {
+		return err
+	}
+	// enqueue backfill for next step in processing
+	err = enqueueBackfill(ctx, tx.Handle(), b)
+	if err != nil {
+		return errors.Wrap(err, "backfill.enqueueBackfill")
+	}
+	return nil
+}
+
+func (b *SeriesBackfill) setCost(ctx context.Context, store *BackfillStore, newCost float64) (err error) {
+	err = store.Exec(ctx, sqlf.Sprintf("update insight_series_backfill set estimated_cost = %s where id = %s;", newCost, b.Id))
+	if err != nil {
+		return err
+	}
+	b.EstimatedCost = 0
+	return nil
 }
 
 func (b *SeriesBackfill) setState(ctx context.Context, store *BackfillStore, newState BackfillState) error {
@@ -234,6 +313,7 @@ type BackfillQueueArgs struct {
 	PaginationArgs *database.PaginationArgs
 	States         *[]string
 	TextSearch     *string
+	ID             *int
 }
 type BackfillQueueItem struct {
 	ID                  int
@@ -274,12 +354,21 @@ func backfillWhere(args BackfillQueueArgs) []*sqlf.Query {
 		}
 		where = append(where, sqlf.Sprintf(fmt.Sprintf("state.backfill_state in (%s)", strings.Join(states, ","))))
 	}
+
+	if args.ID != nil {
+		where = append(where, sqlf.Sprintf("isb.id = %s", *args.ID))
+	}
 	return where
 }
 
 func (s *BackfillStore) GetBackfillQueueInfo(ctx context.Context, args BackfillQueueArgs) (results []BackfillQueueItem, err error) {
 	where := backfillWhere(args)
-	pagination := database.PaginationArgs{}
+	pagination := database.PaginationArgs{
+		OrderBy: database.OrderBy{
+			{
+				Field: string(BackfillID),
+			},
+		}}
 	if args.PaginationArgs != nil {
 		pagination = *args.PaginationArgs
 	}
@@ -368,7 +457,7 @@ const (
 var backfillQueueSQL = `
 WITH job_queue as (
     select backfill_id, state, row_number() over () queue_position
-    from insights_jobs_backfill_in_progress where state = 'queued'  order by cost_bucket
+    from insights_jobs_backfill_in_progress where state = 'queued' order by estimated_cost, backfill_id
 ),
 errors as (
     select repo_iterator_id, array_agg(err_msg) error_messages
