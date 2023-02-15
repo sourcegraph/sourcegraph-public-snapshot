@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -239,6 +240,17 @@ type upgradeReadinessResolver struct {
 	db     database.DB
 }
 
+var schemaFactories = append(
+	migratorshared.DefaultSchemaFactories,
+	// Special schema factory for dev environment.
+	cliutil.NewExpectedSchemaFactory(
+		"Local file",
+		[]cliutil.NamedRegexp{{Regexp: lazyregexp.New(`^dev$`)}},
+		func(filename, _ string) string { return filename },
+		cliutil.ReadSchemaFromFile,
+	),
+)
+
 func (r *upgradeReadinessResolver) SchemaDrift(ctx context.Context) (string, error) {
 	observationCtx := observation.NewContext(r.logger)
 	runner, err := migratorshared.NewRunnerWithSchemas(observationCtx, r.logger, schemas.SchemaNames, schemas.Schemas)
@@ -246,16 +258,17 @@ func (r *upgradeReadinessResolver) SchemaDrift(ctx context.Context) (string, err
 		return "", errors.Wrap(err, "new runner")
 	}
 
+	var version string
+	v, patch, ok, err := cliutil.GetServiceVersion(ctx, runner)
+	if err != nil || !ok {
+		version = "dev"
+	} else {
+		version = v.GitTagWithPatch(patch)
+	}
+
 	var drift bytes.Buffer
 	out := output.NewOutput(&drift, output.OutputOpts{Verbose: true})
-	err = cliutil.CheckDrift(
-		ctx,
-		runner,
-		"2939fb1300d431075994ebb7d50ab2352b8983a9", // todo: get the current service version
-		out,
-		true, // verbose
-		migratorshared.DefaultSchemaFactories,
-	)
+	err = cliutil.CheckDrift(ctx, runner, version, out, true, schemaFactories)
 	if err == cliutil.ErrDatabaseDriftDetected {
 		return drift.String(), nil
 	} else if err != nil {

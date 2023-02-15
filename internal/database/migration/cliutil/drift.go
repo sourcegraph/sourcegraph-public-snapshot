@@ -60,7 +60,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 		// the user to skip erroring here if they are explicitly skipping this
 		// version check.
 		inferredVersion, ok, err := func() (string, bool, error) {
-			v, patch, ok, err := getServiceVersion(ctx, r)
+			v, patch, ok, err := GetServiceVersion(ctx, r)
 			if err != nil || !ok {
 				return "", false, err
 			}

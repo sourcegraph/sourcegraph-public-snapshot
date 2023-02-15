@@ -142,7 +142,7 @@ func runMigration(
 	// `patch` below but only if we can best-effort fetch it. We want to allow
 	// the user to skip erroring here if they are explicitly skipping this
 	// version check.
-	version, patch, ok, err := getServiceVersion(ctx, r)
+	version, patch, ok, err := GetServiceVersion(ctx, r)
 	if !skipVersionCheck {
 		if err != nil {
 			return err
@@ -270,7 +270,8 @@ func filterStitchedMigrationsForTags(tags []string) (map[string]shared.StitchedM
 	return filteredStitchedMigrationBySchemaName, nil
 }
 
-func getServiceVersion(ctx context.Context, r Runner) (_ oobmigration.Version, patch int, ok bool, _ error) {
+// todo
+func GetServiceVersion(ctx context.Context, r Runner) (_ oobmigration.Version, patch int, ok bool, _ error) {
 	db, err := extractDatabase(ctx, r)
 	if err != nil {
 		return oobmigration.Version{}, 0, false, err
