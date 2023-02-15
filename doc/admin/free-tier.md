@@ -1,6 +1,6 @@
 # Sourcegraph Enterprise Free Plan FAQ
 
-The new Sourcegraph Enterprise free plan will be enforced starting in Sourcegraph 4.5. You can find details on Sourcegraph's (various tiers and licenses here)[https://docs.sourcegraph.com/getting-started/oss-enterprise].
+The new Sourcegraph Enterprise free plan will be enforced starting in Sourcegraph 4.5. You can find details on Sourcegraph's [various tiers and licenses here](https://docs.sourcegraph.com/getting-started/oss-enterprise).
 
 ## What's changing?
 
@@ -26,4 +26,4 @@ Any Sourcegraph instances without a license key that are upgraded to 4.5 or late
 
 ## Contacting Sourcegraph
 
-If you have any questions, or would like to upgrade to a Business-tier Sourcegraph license, you can (contact us here)[https://about.sourcegraph.com/contact].
+If you have any questions, or would like to upgrade to a Business-tier Sourcegraph license, you can [contact us here](ttps://about.sourcegraph.com/contact).
