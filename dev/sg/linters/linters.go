@@ -96,7 +96,7 @@ var Targets = []Target{
 		Checks: []*linter{
 			bufFormat,
 			bufGenerate,
-			//bufLint,
+			bufLint,
 		},
 	},
 	Formatting,

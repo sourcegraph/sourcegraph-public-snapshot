@@ -50,7 +50,7 @@ message SearchRequest {
   // timeout is the maximum amount of time the symbols search should take.
   //
   // If timeout isn't specified, a default timeout of 60 seconds is used.
-  google.protobuf.Duration timeout = 12;
+  google.protobuf.Duration timeout = 9;
 }
 
 message SearchResponse {
