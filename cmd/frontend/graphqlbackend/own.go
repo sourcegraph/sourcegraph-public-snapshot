@@ -54,7 +54,6 @@ type OwnershipReasonResolver interface {
 type CodeownersFileEntryResolver interface {
 	Title() string
 	Description() string
-	Ingested() bool
 	CodeownersFile() FileResolver
 	RuleLineMatch() int32
 }

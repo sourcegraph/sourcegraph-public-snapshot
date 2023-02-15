@@ -136,12 +136,6 @@ type CodeownersFileEntry {
     """
     description: String!
     """
-    Codeowners information can either be gathered from reading the CODEOWNERS file
-    in the git repository, or ingested from an external system. This flag indicates
-    which of the two it is.
-    """
-    ingested: Boolean!
-    """
     Either GitBlob or VirtualFile. This points to the CODEOWNERS file that yielded the
     determination.
     """
