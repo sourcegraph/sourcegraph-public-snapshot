@@ -47,52 +47,7 @@ import styles from './SiteAdminPackagesPage.module.scss'
 // TODO: Share this with backend (Make `scheme` a GQL enum)
 type PackageScheme = 'npm' | 'go' | 'semanticdb' | 'scip-ruby' | 'python' | 'rust-analyzer'
 
-interface PackageNodeProps {
-    node: SiteAdminPackageFields
-}
-
-const PackageNode: React.FunctionComponent<React.PropsWithChildren<PackageNodeProps>> = ({ node }) => {
-    const packageRepository = node.repository
-
-    return (
-        <li className="list-group-item px-0 py-2">
-            <div className="d-flex align-items-center justify-content-between">
-                <div>
-                    {packageRepository ? (
-                        <>
-                            <ExternalRepositoryIcon externalRepo={packageRepository.externalRepository} />
-                            <RepoLink repoName={node.name} to={packageRepository.url} />
-                            <RepoMirrorInfo mirrorInfo={packageRepository.mirrorInfo} />
-                        </>
-                    ) : (
-                        <>{node.name}</>
-                    )}
-                </div>
-            </div>
-            <div>
-                {packageRepository?.mirrorInfo.lastError && (
-                    <div className={styles.alertWrapper}>
-                        <Alert variant="warning">
-                            <Text className="font-weight-bold">Error syncing repository:</Text>
-                            <Code className={styles.alertContent}>
-                                {packageRepository.mirrorInfo.lastError.replaceAll('\r', '\n')}
-                            </Code>
-                        </Alert>
-                    </div>
-                )}
-                {packageRepository?.mirrorInfo.isCorrupted && (
-                    <div className={styles.alertWrapper}>
-                        <Alert variant="danger">
-                            Repository is corrupt. <Link to={`/${node.name}/-/settings/mirror`}>More details</Link>
-                        </Alert>
-                    </div>
-                )}
-            </div>
-        </li>
-    )
-}
-
-const EXTERNAL_SERVICE_KIND_TO_PACKAGE_REPO_REFERENCE_KIND: Partial<
+const ExternalServicePackageMap: Partial<
     Record<
         ExternalServiceKind,
         {
@@ -127,6 +82,51 @@ const EXTERNAL_SERVICE_KIND_TO_PACKAGE_REPO_REFERENCE_KIND: Partial<
     },
 }
 
+interface PackageNodeProps {
+    node: SiteAdminPackageFields
+}
+
+const PackageNode: React.FunctionComponent<React.PropsWithChildren<PackageNodeProps>> = ({ node }) => {
+    const packageRepository = node.repository
+
+    return (
+        <li className="list-group-item px-0 py-2">
+            <div className="d-flex align-items-center justify-content-between">
+                <div>
+                    {packageRepository ? (
+                        <>
+                            <ExternalRepositoryIcon externalRepo={packageRepository.externalRepository} />
+                            <RepoLink repoName={node.name} to={packageRepository.url} />
+                            <RepoMirrorInfo mirrorInfo={packageRepository.mirrorInfo} />
+                        </>
+                    ) : (
+                        <>{node.name}</>
+                    )}
+                </div>
+            </div>
+            <div>
+                {packageRepository?.mirrorInfo.lastError && (
+                    <div className={styles.alertWrapper}>
+                        <Alert variant="warning">
+                            <Text className="font-weight-bold">Error syncing package:</Text>
+                            <Code className={styles.alertContent}>
+                                {packageRepository.mirrorInfo.lastError.replaceAll('\r', '\n')}
+                            </Code>
+                        </Alert>
+                    </div>
+                )}
+                {packageRepository?.mirrorInfo.isCorrupted && (
+                    <div className={styles.alertWrapper}>
+                        <Alert variant="danger">
+                            Package is corrupt. <Link to={`/${node.name}/-/settings/mirror`}>More details</Link>
+                        </Alert>
+                    </div>
+                )}
+            </div>
+        </li>
+    )
+}
+
 interface SiteAdminPackagesPageProps extends TelemetryProps {}
 
 /**
@@ -158,7 +158,7 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
         ]
 
         for (const extSvc of extSvcs?.externalServices.nodes ?? []) {
-            const packageRepoScheme = EXTERNAL_SERVICE_KIND_TO_PACKAGE_REPO_REFERENCE_KIND[extSvc.kind]
+            const packageRepoScheme = ExternalServicePackageMap[extSvc.kind]
 
             if (packageRepoScheme) {
                 values.push({
