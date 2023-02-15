@@ -111,7 +111,10 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
         [setValidDays]
     )
 
-    const dismissAlert = useCallback((): void => setFormData(getEmptyFormData(subscriptionAccount)), [])
+    const dismissAlert = useCallback(
+        (): void => setFormData(getEmptyFormData(subscriptionAccount)),
+        [subscriptionAccount]
+    )
 
     const [generateLicense, { loading, error, data }] = useMutation<
         GenerateProductLicenseForSubscriptionResult['dotcom']['generateProductLicenseForSubscription'],
