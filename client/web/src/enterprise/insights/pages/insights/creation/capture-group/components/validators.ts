@@ -1,10 +1,10 @@
 import {
-    insightStepValueValidator,
-    insightTitleValidator,
-    composeValidators,
     Validator,
-} from '../../../../../components'
-import { createRequiredValidator } from '../../../../../components/form/hooks'
+    composeValidators,
+    createRequiredValidator,
+} from '@sourcegraph/wildcard'
+
+import { insightStepValueValidator, insightTitleValidator } from '../../../../../components'
 import { Checks, searchQueryValidator } from '../utils/search-query-validator'
 
 const validateQueryCheck: Validator<string, Checks> = (value: string | undefined) => {
