@@ -1,24 +1,28 @@
 import { FC, HTMLAttributes, ReactNode } from 'react'
 
 import { GroupByField } from '@sourcegraph/shared/src/graphql-operations'
-import { Code, Input, Label } from '@sourcegraph/wildcard'
+import {
+    Code,
+    Input,
+    Label,
+    useForm,
+    useField,
+    FormGroup,
+    FormChangeEvent,
+    getDefaultInputProps,
+    SubmissionErrors,
+} from '@sourcegraph/wildcard'
 
 import {
     createDefaultEditSeries,
     CreationUIForm,
     CreationUiLayout,
     CreationUIPreview,
-    FormChangeEvent,
-    FormGroup,
     FormSeries,
-    getDefaultInputProps,
     insightRepositoriesValidator,
     insightSeriesValidator,
     insightTitleValidator,
     RepositoriesField,
-    SubmissionErrors,
-    useField,
-    useForm,
 } from '../../../../../components'
 import { useUiFeatures } from '../../../../../hooks'
 import { CreateComputeInsightFormFields } from '../types'

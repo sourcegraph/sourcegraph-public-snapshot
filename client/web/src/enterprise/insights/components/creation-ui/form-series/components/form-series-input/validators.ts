@@ -1,7 +1,6 @@
-import { createRequiredValidator, composeValidators } from '@sourcegraph/wildcard'
+import { createRequiredValidator, composeValidators, ValidationResult } from '@sourcegraph/wildcard'
 
 import { searchQueryValidator } from '../../../../../pages/insights/creation/capture-group/utils/search-query-validator'
-import { ValidationResult } from '../../../../form'
 
 export const SERIES_NAME_VALIDATORS = createRequiredValidator('Name is a required field for data series.')
 

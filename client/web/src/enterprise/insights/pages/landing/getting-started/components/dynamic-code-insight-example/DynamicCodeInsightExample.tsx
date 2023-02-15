@@ -5,16 +5,22 @@ import classNames from 'classnames'
 import { noop } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, Link, useObservable, useDebounce, Icon, Input, Text, Label } from '@sourcegraph/wildcard'
-
 import {
-    getDefaultInputProps,
-    useField,
+    Button,
+    Card,
+    Link,
+    Icon,
+    Input,
+    Text,
+    Label,
     useForm,
-    InsightQueryInput,
-    RepositoriesField,
-    insightRepositoriesValidator,
-} from '../../../../../components'
+    useField,
+    useObservable,
+    useDebounce,
+    getDefaultInputProps,
+} from '@sourcegraph/wildcard'
+
+import { InsightQueryInput, RepositoriesField, insightRepositoriesValidator } from '../../../../../components'
 import { CodeInsightsBackendContext } from '../../../../../core'
 import { getQueryPatternTypeFilter } from '../../../../insights/creation/search-insight'
 import { CodeInsightsDescription } from '../code-insights-description/CodeInsightsDescription'
