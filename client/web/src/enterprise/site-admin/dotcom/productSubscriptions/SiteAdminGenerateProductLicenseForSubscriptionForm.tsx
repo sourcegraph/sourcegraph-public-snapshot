@@ -2,24 +2,10 @@ import React, { useState, useCallback } from 'react'
 
 import addDays from 'date-fns/addDays'
 import endOfDay from 'date-fns/endOfDay'
-import { Observable } from 'rxjs'
-import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
 
-import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql, useMutation } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import {
-    Alert,
-    Button,
-    useEventObservable,
-    Link,
-    Label,
-    Input,
-    ErrorAlert,
-    Form,
-    Select,
-    useDebounce,
-} from '@sourcegraph/wildcard'
+import { Alert, Button, Link, Label, Input, ErrorAlert, Form, Select, useDebounce } from '@sourcegraph/wildcard'
 
 import {
     GenerateProductLicenseForSubscriptionResult,
@@ -27,7 +13,6 @@ import {
 } from '../../../../graphql-operations'
 import { ExpirationDate } from '../../../productSubscription/ExpirationDate'
 import { hasUnknownTags, ProductLicenseTags, UnknownTagWarning } from '../../../productSubscription/ProductLicenseTags'
-import { debounce, DebouncedFunc } from 'lodash'
 
 interface Props {
     subscriptionID: Scalars['ID']
@@ -72,16 +57,17 @@ const GENERATE_PRODUCT_LICENSE = gql`
     }
 `
 
-const tagsFromString = (tagString: string): string[] => {
-    return tagString
+const tagsFromString = (tagString: string): string[] =>
+    tagString
         .split(',')
         .map(item => item.trim())
         .filter(tag => tag !== '')
-}
 
-const getTagsFromFormData = (formData: FormData): string[] => {
-    return [`customer:${formData.customer}`, `plan:${formData.plan}`, ...tagsFromString(formData.tags)]
-}
+const getTagsFromFormData = (formData: FormData): string[] => [
+    `customer:${formData.customer}`,
+    `plan:${formData.plan}`,
+    ...tagsFromString(formData.tags),
+]
 
 /**
  * Displays a form to generate a new product license for a product subscription.
@@ -149,12 +135,13 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
     const onSubmit = useCallback<React.FormEventHandler>(
         event => {
             event.preventDefault()
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
             generateLicense()
         },
         [generateLicense]
     )
 
-    const disableForm = loading || error
+    const disableForm = loading || error !== undefined
     const tags = useDebounce<string[]>(tagsFromString(formData.tags), 300)
 
     return (
