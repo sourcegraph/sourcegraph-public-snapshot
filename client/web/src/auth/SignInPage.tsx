@@ -11,8 +11,8 @@ import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
-import { PageRoutes } from '../routes.constants'
 import { eventLogger } from '../tracking/eventLogger'
+import { checkIsRequestAccessEnabled } from '../util/checkIsRequestAccessEnabled'
 
 import { SourcegraphIcon } from './icons'
 import { OrDivider } from './OrDivider'
@@ -20,7 +20,6 @@ import { getReturnTo } from './SignInSignUpCommon'
 import { UsernamePasswordSignInForm } from './UsernamePasswordSignInForm'
 
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
-import { useShouldShowRequestAccess } from './useShouldShowRequestAccess'
 
 interface SignInPageProps {
     authenticatedUser: AuthenticatedUser | null
@@ -42,10 +41,10 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     const location = useLocation()
     const [error, setError] = useState<Error | null>(null)
     const [searchParams] = useSearchParams()
-    const showRequestAccess = useShouldShowRequestAccess(
+    const isRequestAccessEnabled = checkIsRequestAccessEnabled(
         props.isSourcegraphDotCom,
         props.context.allowSignup,
-        props.context.experimentalFeatures
+        props.context.experimentalFeatures.requestAccess
     )
 
     if (props.authenticatedUser) {
@@ -150,10 +149,10 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                             <Link to="/sign-up">Sign up</Link>
                         )}
                     </Text>
-                ) : showRequestAccess ? (
+                ) : isRequestAccessEnabled ? (
                     <Text className="text-muted">
-                        Need an account? <Link to={PageRoutes.RequestAccess}>Request access to the admin</Link> or
-                        contact your site admin.
+                        Need an account? <Link to="/request-access">Request access to the admin</Link> or contact your
+                        site admin.
                     </Text>
                 ) : (
                     <Text className="text-muted">Need an account? Contact your site admin</Text>

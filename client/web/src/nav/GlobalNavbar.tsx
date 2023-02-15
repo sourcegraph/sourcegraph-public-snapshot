@@ -308,7 +308,12 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             Search private code
                         </ButtonLink>
                     )}
-                    {props.authenticatedUser?.siteAdmin && <AccessRequestsGlobalNavItem />}
+                    {props.authenticatedUser?.siteAdmin && (
+                        <AccessRequestsGlobalNavItem
+                            isSourcegraphDotCom={isSourcegraphDotCom}
+                            context={window.context}
+                        />
+                    )}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
                     {props.authenticatedUser && extensionsController !== null && enableLegacyExtensions && (
                         <NavAction>

@@ -5,6 +5,8 @@ import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import MonitorStarIcon from 'mdi-react/MonitorStarIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
+import { checkIsRequestAccessEnabled } from '../util/checkIsRequestAccessEnabled'
+
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
 export const analyticsGroup: SiteAdminSideBarGroup = {
@@ -104,6 +106,12 @@ export const usersGroup: SiteAdminSideBarGroup = {
         {
             label: 'Access requests',
             to: '/site-admin/access-requests',
+            condition: context =>
+                checkIsRequestAccessEnabled(
+                    context.isSourcegraphDotCom,
+                    window.context.allowSignup,
+                    window.context.experimentalFeatures.requestAccess
+                ),
         },
         {
             label: 'Organizations',

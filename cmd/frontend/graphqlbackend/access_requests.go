@@ -23,7 +23,7 @@ func (r *schemaResolver) SetAccessRequestStatus(ctx context.Context, args *struc
 	ID     graphql.ID
 	Status types.AccessRequestStatus
 }) (*EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins can see users.
+	// 🚨 SECURITY: Only site admins can update access requests.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func (r *schemaResolver) SetAccessRequestStatus(ctx context.Context, args *struc
 }
 
 func (r *schemaResolver) AccessRequests(ctx context.Context, args *database.AccessRequestsFilterOptions) (*accessRequestsResolver, error) {
-	// 🚨 SECURITY: Only site admins can see users.
+	// 🚨 SECURITY: Only site admins can see access requests.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}

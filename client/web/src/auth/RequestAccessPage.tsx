@@ -11,10 +11,10 @@ import { PageTitle } from '../components/PageTitle'
 import { SourcegraphContext } from '../jscontext'
 import { PageRoutes } from '../routes.constants'
 import { eventLogger } from '../tracking/eventLogger'
+import { checkIsRequestAccessEnabled } from '../util/checkIsRequestAccessEnabled'
 
 import { SourcegraphIcon } from './icons'
 import { getReturnTo } from './SignInSignUpCommon'
-import { useShouldShowRequestAccess } from './useShouldShowRequestAccess'
 
 import RequestAccessSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 
@@ -143,10 +143,10 @@ export const RequestAccessPage: React.FunctionComponent<React.PropsWithChildren<
     const location = useLocation()
     const navigate = useNavigate()
     const [error, setError] = useState<Error | null>(null)
-    const showRequestAccess = useShouldShowRequestAccess(
+    const isRequestAccessEnabled = checkIsRequestAccessEnabled(
         isSourcegraphDotCom,
         context.allowSignup,
-        context.experimentalFeatures
+        context.experimentalFeatures.requestAccess
     )
 
     if (authenticatedUser) {
@@ -154,7 +154,7 @@ export const RequestAccessPage: React.FunctionComponent<React.PropsWithChildren<
         return <Navigate to={returnTo} replace={true} />
     }
 
-    if (!showRequestAccess) {
+    if (!isRequestAccessEnabled) {
         return <Navigate to={PageRoutes.SignIn} replace={true} />
     }
 

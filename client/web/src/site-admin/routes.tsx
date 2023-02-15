@@ -1,5 +1,7 @@
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
+import { checkIsRequestAccessEnabled } from '../util/checkIsRequestAccessEnabled'
+
 import { SiteAdminAreaRoute } from './SiteAdminArea'
 
 const AnalyticsOverviewPage = lazyComponent(() => import('./analytics/AnalyticsOverviewPage'), 'AnalyticsOverviewPage')
@@ -149,6 +151,12 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/access-requests',
         render: () => <AccessRequestsPage />,
+        condition: context =>
+            checkIsRequestAccessEnabled(
+                context.isSourcegraphDotCom,
+                window.context.allowSignup,
+                window.context.experimentalFeatures.requestAccess
+            ),
     },
     {
         path: '/users/new',
