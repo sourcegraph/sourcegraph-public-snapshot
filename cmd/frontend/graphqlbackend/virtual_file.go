@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"path"
+	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -56,19 +57,32 @@ func (r *VirtualFileResolver) ExternalURLs(ctx context.Context) ([]*externallink
 }
 
 func (r *VirtualFileResolver) ByteSize(ctx context.Context) (int32, error) {
-	content, err := r.Content(ctx)
+	content, err := r.Content(ctx, &GitTreeContentPageArgs{})
 	if err != nil {
 		return 0, err
 	}
 	return int32(len([]byte(content))), nil
 }
 
-func (r *VirtualFileResolver) Content(ctx context.Context) (string, error) {
+func (r *VirtualFileResolver) TotalLines(ctx context.Context) (int32, error) {
+	// If it is a binary, return 0
+	binary, err := r.Binary(ctx)
+	if err != nil || binary {
+		return 0, err
+	}
+	content, err := r.Content(ctx, &GitTreeContentPageArgs{})
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(strings.Split(content, "\n"))), nil
+}
+
+func (r *VirtualFileResolver) Content(ctx context.Context, args *GitTreeContentPageArgs) (string, error) {
 	return r.fileContent(ctx)
 }
 
-func (r *VirtualFileResolver) RichHTML(ctx context.Context) (string, error) {
-	content, err := r.Content(ctx)
+func (r *VirtualFileResolver) RichHTML(ctx context.Context, args *GitTreeContentPageArgs) (string, error) {
+	content, err := r.Content(ctx, args)
 	if err != nil {
 		return "", err
 	}
@@ -76,7 +90,7 @@ func (r *VirtualFileResolver) RichHTML(ctx context.Context) (string, error) {
 }
 
 func (r *VirtualFileResolver) Binary(ctx context.Context) (bool, error) {
-	content, err := r.Content(ctx)
+	content, err := r.Content(ctx, &GitTreeContentPageArgs{})
 	if err != nil {
 		return false, err
 	}
@@ -89,7 +103,7 @@ var highlightHistogram = promauto.NewHistogram(prometheus.HistogramOpts{
 })
 
 func (r *VirtualFileResolver) Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error) {
-	content, err := r.Content(ctx)
+	content, err := r.Content(ctx, &GitTreeContentPageArgs{StartLine: args.StartLine, EndLine: args.EndLine})
 	if err != nil {
 		return nil, err
 	}

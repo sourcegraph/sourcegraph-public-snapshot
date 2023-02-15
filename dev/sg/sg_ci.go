@@ -267,14 +267,13 @@ sg ci build --help
 		Usage:   "Get the status of the CI run associated with the currently checked out branch",
 		Flags: append(ciTargetFlags,
 			&cli.BoolFlag{
-				Name:    "wait",
-				Aliases: []string{"w"},
-				Usage:   "Wait by blocking until the build is finished",
+				Name:  "wait",
+				Usage: "Wait by blocking until the build is finished",
 			},
 			&cli.BoolFlag{
-				Name:    "view",
-				Aliases: []string{"v"},
-				Usage:   "Open build page in browser",
+				Name:    "web",
+				Aliases: []string{"view", "w"},
+				Usage:   "Open build page in web browser (--view is DEPRECATED and will be removed in the future)",
 			}),
 		Action: func(cmd *cli.Context) error {
 			client, err := bk.NewClient(cmd.Context, std.Out)
@@ -745,14 +744,14 @@ From there, you can start exploring logs with the Grafana explore panel.
 }
 
 func buildGrafanaURL(text string, stepName string) string {
-	var base string
+	var urlWithPlaceholder string
 	if stepName == "" {
-		base = "https://sourcegraph.grafana.net/explore?orgId=1&left=%7B%22datasource%22:%22grafanacloud-sourcegraph-logs%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22editorMode%22:%22code%22,%22expr%22:%22%7Bapp%3D%5C%22buildkite%5C%22%7D%20%7C%3D%20%60_TEXT_%60%22,%22queryType%22:%22range%22%7D%5D,%22range%22:%7B%22from%22:%22now-10d%22,%22to%22:%22now%22%7D%7D"
+		urlWithPlaceholder = "https://sourcegraph.grafana.net/explore?orgId=1&left=%7B%22datasource%22:%22grafanacloud-sourcegraph-logs%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22editorMode%22:%22code%22,%22expr%22:%22%7Bapp%3D%5C%22buildkite%5C%22%7D%20%7C%3D%20%60_TEXT_%60%22,%22queryType%22:%22range%22%7D%5D,%22range%22:%7B%22from%22:%22now-10d%22,%22to%22:%22now%22%7D%7D"
 	} else {
-		base = "https://sourcegraph.grafana.net/explore?orgId=1&left=%7B%22datasource%22:%22grafanacloud-sourcegraph-logs%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22editorMode%22:%22code%22,%22expr%22:%22%7Bapp%3D%5C%22buildkite%5C%22,%20step_key%3D~%5C%22_STEP_%5C%22%7D%20%7C%3D%20%60_TEXT_%60%22,%22queryType%22:%22range%22%7D%5D,%22range%22:%7B%22from%22:%22now-10d%22,%22to%22:%22now%22%7D%7D"
+		urlWithPlaceholder = "https://sourcegraph.grafana.net/explore?orgId=1&left=%7B%22datasource%22:%22grafanacloud-sourcegraph-logs%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22editorMode%22:%22code%22,%22expr%22:%22%7Bapp%3D%5C%22buildkite%5C%22,%20step_key%3D~%5C%22_STEP_%5C%22%7D%20%7C%3D%20%60_TEXT_%60%22,%22queryType%22:%22range%22%7D%5D,%22range%22:%7B%22from%22:%22now-10d%22,%22to%22:%22now%22%7D%7D"
 	}
-	url := strings.ReplaceAll(base, "_TEXT_", text)
-	return strings.ReplaceAll(url, "_STEP_", fmt.Sprintf(".*%s.*", stepName))
+	replaced := strings.ReplaceAll(urlWithPlaceholder, "_TEXT_", text)
+	return strings.ReplaceAll(replaced, "_STEP_", fmt.Sprintf(".*%s.*", stepName))
 }
 
 func getAllowedBuildTypeArgs() []string {

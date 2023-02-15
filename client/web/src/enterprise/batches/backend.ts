@@ -17,11 +17,22 @@ export const queryBatchSpecs = ({
     first,
     after,
     includeLocallyExecutedSpecs,
+    excludeEmptySpecs,
 }: BatchSpecsVariables): Observable<BatchSpecListConnectionFields> =>
     requestGraphQL<BatchSpecsResult, BatchSpecsVariables>(
         gql`
-            query BatchSpecs($first: Int, $after: String, $includeLocallyExecutedSpecs: Boolean) {
-                batchSpecs(first: $first, after: $after, includeLocallyExecutedSpecs: $includeLocallyExecutedSpecs) {
+            query BatchSpecs(
+                $first: Int
+                $after: String
+                $includeLocallyExecutedSpecs: Boolean
+                $excludeEmptySpecs: Boolean
+            ) {
+                batchSpecs(
+                    first: $first
+                    after: $after
+                    includeLocallyExecutedSpecs: $includeLocallyExecutedSpecs
+                    excludeEmptySpecs: $excludeEmptySpecs
+                ) {
                     ...BatchSpecListConnectionFields
                 }
             }
@@ -32,6 +43,7 @@ export const queryBatchSpecs = ({
             first,
             after,
             includeLocallyExecutedSpecs,
+            excludeEmptySpecs,
         }
     ).pipe(
         map(dataOrThrowErrors),
@@ -44,6 +56,7 @@ export const queryBatchChangeBatchSpecs =
         first,
         after,
         includeLocallyExecutedSpecs,
+        excludeEmptySpecs,
     }: Omit<BatchChangeBatchSpecsVariables, 'id'>): Observable<BatchSpecListConnectionFields> =>
         requestGraphQL<BatchChangeBatchSpecsResult, BatchChangeBatchSpecsVariables>(
             gql`
@@ -52,6 +65,7 @@ export const queryBatchChangeBatchSpecs =
                     $first: Int
                     $after: String
                     $includeLocallyExecutedSpecs: Boolean
+                    $excludeEmptySpecs: Boolean
                 ) {
                     node(id: $id) {
                         __typename
@@ -60,6 +74,7 @@ export const queryBatchChangeBatchSpecs =
                                 first: $first
                                 after: $after
                                 includeLocallyExecutedSpecs: $includeLocallyExecutedSpecs
+                                excludeEmptySpecs: $excludeEmptySpecs
                             ) {
                                 ...BatchSpecListConnectionFields
                             }
@@ -74,6 +89,7 @@ export const queryBatchChangeBatchSpecs =
                 first,
                 after,
                 includeLocallyExecutedSpecs,
+                excludeEmptySpecs,
             }
         ).pipe(
             map(dataOrThrowErrors),

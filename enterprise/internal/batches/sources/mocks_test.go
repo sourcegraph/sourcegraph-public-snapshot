@@ -1301,12 +1301,9 @@ type MockForkableChangesetSource struct {
 	// CreateCommentFunc is an instance of a mock function object
 	// controlling the behavior of the method CreateComment.
 	CreateCommentFunc *ForkableChangesetSourceCreateCommentFunc
-	// GetNamespaceForkFunc is an instance of a mock function object
-	// controlling the behavior of the method GetNamespaceFork.
-	GetNamespaceForkFunc *ForkableChangesetSourceGetNamespaceForkFunc
-	// GetUserForkFunc is an instance of a mock function object controlling
-	// the behavior of the method GetUserFork.
-	GetUserForkFunc *ForkableChangesetSourceGetUserForkFunc
+	// GetForkFunc is an instance of a mock function object controlling the
+	// behavior of the method GetFork.
+	GetForkFunc *ForkableChangesetSourceGetForkFunc
 	// GitserverPushConfigFunc is an instance of a mock function object
 	// controlling the behavior of the method GitserverPushConfig.
 	GitserverPushConfigFunc *ForkableChangesetSourceGitserverPushConfigFunc
@@ -1350,13 +1347,8 @@ func NewMockForkableChangesetSource() *MockForkableChangesetSource {
 				return
 			},
 		},
-		GetNamespaceForkFunc: &ForkableChangesetSourceGetNamespaceForkFunc{
-			defaultHook: func(context.Context, *types.Repo, string) (r0 *types.Repo, r1 error) {
-				return
-			},
-		},
-		GetUserForkFunc: &ForkableChangesetSourceGetUserForkFunc{
-			defaultHook: func(context.Context, *types.Repo) (r0 *types.Repo, r1 error) {
+		GetForkFunc: &ForkableChangesetSourceGetForkFunc{
+			defaultHook: func(context.Context, *types.Repo, *string, *string) (r0 *types.Repo, r1 error) {
 				return
 			},
 		},
@@ -1418,14 +1410,9 @@ func NewStrictMockForkableChangesetSource() *MockForkableChangesetSource {
 				panic("unexpected invocation of MockForkableChangesetSource.CreateComment")
 			},
 		},
-		GetNamespaceForkFunc: &ForkableChangesetSourceGetNamespaceForkFunc{
-			defaultHook: func(context.Context, *types.Repo, string) (*types.Repo, error) {
-				panic("unexpected invocation of MockForkableChangesetSource.GetNamespaceFork")
-			},
-		},
-		GetUserForkFunc: &ForkableChangesetSourceGetUserForkFunc{
-			defaultHook: func(context.Context, *types.Repo) (*types.Repo, error) {
-				panic("unexpected invocation of MockForkableChangesetSource.GetUserFork")
+		GetForkFunc: &ForkableChangesetSourceGetForkFunc{
+			defaultHook: func(context.Context, *types.Repo, *string, *string) (*types.Repo, error) {
+				panic("unexpected invocation of MockForkableChangesetSource.GetFork")
 			},
 		},
 		GitserverPushConfigFunc: &ForkableChangesetSourceGitserverPushConfigFunc{
@@ -1480,11 +1467,8 @@ func NewMockForkableChangesetSourceFrom(i ForkableChangesetSource) *MockForkable
 		CreateCommentFunc: &ForkableChangesetSourceCreateCommentFunc{
 			defaultHook: i.CreateComment,
 		},
-		GetNamespaceForkFunc: &ForkableChangesetSourceGetNamespaceForkFunc{
-			defaultHook: i.GetNamespaceFork,
-		},
-		GetUserForkFunc: &ForkableChangesetSourceGetUserForkFunc{
-			defaultHook: i.GetUserFork,
+		GetForkFunc: &ForkableChangesetSourceGetForkFunc{
+			defaultHook: i.GetFork,
 		},
 		GitserverPushConfigFunc: &ForkableChangesetSourceGitserverPushConfigFunc{
 			defaultHook: i.GitserverPushConfig,
@@ -1843,37 +1827,36 @@ func (c ForkableChangesetSourceCreateCommentFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// ForkableChangesetSourceGetNamespaceForkFunc describes the behavior when
-// the GetNamespaceFork method of the parent MockForkableChangesetSource
-// instance is invoked.
-type ForkableChangesetSourceGetNamespaceForkFunc struct {
-	defaultHook func(context.Context, *types.Repo, string) (*types.Repo, error)
-	hooks       []func(context.Context, *types.Repo, string) (*types.Repo, error)
-	history     []ForkableChangesetSourceGetNamespaceForkFuncCall
+// ForkableChangesetSourceGetForkFunc describes the behavior when the
+// GetFork method of the parent MockForkableChangesetSource instance is
+// invoked.
+type ForkableChangesetSourceGetForkFunc struct {
+	defaultHook func(context.Context, *types.Repo, *string, *string) (*types.Repo, error)
+	hooks       []func(context.Context, *types.Repo, *string, *string) (*types.Repo, error)
+	history     []ForkableChangesetSourceGetForkFuncCall
 	mutex       sync.Mutex
 }
 
-// GetNamespaceFork delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockForkableChangesetSource) GetNamespaceFork(v0 context.Context, v1 *types.Repo, v2 string) (*types.Repo, error) {
-	r0, r1 := m.GetNamespaceForkFunc.nextHook()(v0, v1, v2)
-	m.GetNamespaceForkFunc.appendCall(ForkableChangesetSourceGetNamespaceForkFuncCall{v0, v1, v2, r0, r1})
+// GetFork delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockForkableChangesetSource) GetFork(v0 context.Context, v1 *types.Repo, v2 *string, v3 *string) (*types.Repo, error) {
+	r0, r1 := m.GetForkFunc.nextHook()(v0, v1, v2, v3)
+	m.GetForkFunc.appendCall(ForkableChangesetSourceGetForkFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the GetNamespaceFork
-// method of the parent MockForkableChangesetSource instance is invoked and
-// the hook queue is empty.
-func (f *ForkableChangesetSourceGetNamespaceForkFunc) SetDefaultHook(hook func(context.Context, *types.Repo, string) (*types.Repo, error)) {
+// SetDefaultHook sets function that is called when the GetFork method of
+// the parent MockForkableChangesetSource instance is invoked and the hook
+// queue is empty.
+func (f *ForkableChangesetSourceGetForkFunc) SetDefaultHook(hook func(context.Context, *types.Repo, *string, *string) (*types.Repo, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetNamespaceFork method of the parent MockForkableChangesetSource
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *ForkableChangesetSourceGetNamespaceForkFunc) PushHook(hook func(context.Context, *types.Repo, string) (*types.Repo, error)) {
+// GetFork method of the parent MockForkableChangesetSource instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *ForkableChangesetSourceGetForkFunc) PushHook(hook func(context.Context, *types.Repo, *string, *string) (*types.Repo, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1881,20 +1864,20 @@ func (f *ForkableChangesetSourceGetNamespaceForkFunc) PushHook(hook func(context
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ForkableChangesetSourceGetNamespaceForkFunc) SetDefaultReturn(r0 *types.Repo, r1 error) {
-	f.SetDefaultHook(func(context.Context, *types.Repo, string) (*types.Repo, error) {
+func (f *ForkableChangesetSourceGetForkFunc) SetDefaultReturn(r0 *types.Repo, r1 error) {
+	f.SetDefaultHook(func(context.Context, *types.Repo, *string, *string) (*types.Repo, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ForkableChangesetSourceGetNamespaceForkFunc) PushReturn(r0 *types.Repo, r1 error) {
-	f.PushHook(func(context.Context, *types.Repo, string) (*types.Repo, error) {
+func (f *ForkableChangesetSourceGetForkFunc) PushReturn(r0 *types.Repo, r1 error) {
+	f.PushHook(func(context.Context, *types.Repo, *string, *string) (*types.Repo, error) {
 		return r0, r1
 	})
 }
 
-func (f *ForkableChangesetSourceGetNamespaceForkFunc) nextHook() func(context.Context, *types.Repo, string) (*types.Repo, error) {
+func (f *ForkableChangesetSourceGetForkFunc) nextHook() func(context.Context, *types.Repo, *string, *string) (*types.Repo, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1907,28 +1890,27 @@ func (f *ForkableChangesetSourceGetNamespaceForkFunc) nextHook() func(context.Co
 	return hook
 }
 
-func (f *ForkableChangesetSourceGetNamespaceForkFunc) appendCall(r0 ForkableChangesetSourceGetNamespaceForkFuncCall) {
+func (f *ForkableChangesetSourceGetForkFunc) appendCall(r0 ForkableChangesetSourceGetForkFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of
-// ForkableChangesetSourceGetNamespaceForkFuncCall objects describing the
-// invocations of this function.
-func (f *ForkableChangesetSourceGetNamespaceForkFunc) History() []ForkableChangesetSourceGetNamespaceForkFuncCall {
+// History returns a sequence of ForkableChangesetSourceGetForkFuncCall
+// objects describing the invocations of this function.
+func (f *ForkableChangesetSourceGetForkFunc) History() []ForkableChangesetSourceGetForkFuncCall {
 	f.mutex.Lock()
-	history := make([]ForkableChangesetSourceGetNamespaceForkFuncCall, len(f.history))
+	history := make([]ForkableChangesetSourceGetForkFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// ForkableChangesetSourceGetNamespaceForkFuncCall is an object that
-// describes an invocation of method GetNamespaceFork on an instance of
+// ForkableChangesetSourceGetForkFuncCall is an object that describes an
+// invocation of method GetFork on an instance of
 // MockForkableChangesetSource.
-type ForkableChangesetSourceGetNamespaceForkFuncCall struct {
+type ForkableChangesetSourceGetForkFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -1937,7 +1919,10 @@ type ForkableChangesetSourceGetNamespaceForkFuncCall struct {
 	Arg1 *types.Repo
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 string
+	Arg2 *string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 *string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *types.Repo
@@ -1948,124 +1933,13 @@ type ForkableChangesetSourceGetNamespaceForkFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c ForkableChangesetSourceGetNamespaceForkFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+func (c ForkableChangesetSourceGetForkFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c ForkableChangesetSourceGetNamespaceForkFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// ForkableChangesetSourceGetUserForkFunc describes the behavior when the
-// GetUserFork method of the parent MockForkableChangesetSource instance is
-// invoked.
-type ForkableChangesetSourceGetUserForkFunc struct {
-	defaultHook func(context.Context, *types.Repo) (*types.Repo, error)
-	hooks       []func(context.Context, *types.Repo) (*types.Repo, error)
-	history     []ForkableChangesetSourceGetUserForkFuncCall
-	mutex       sync.Mutex
-}
-
-// GetUserFork delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockForkableChangesetSource) GetUserFork(v0 context.Context, v1 *types.Repo) (*types.Repo, error) {
-	r0, r1 := m.GetUserForkFunc.nextHook()(v0, v1)
-	m.GetUserForkFunc.appendCall(ForkableChangesetSourceGetUserForkFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the GetUserFork method
-// of the parent MockForkableChangesetSource instance is invoked and the
-// hook queue is empty.
-func (f *ForkableChangesetSourceGetUserForkFunc) SetDefaultHook(hook func(context.Context, *types.Repo) (*types.Repo, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetUserFork method of the parent MockForkableChangesetSource instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *ForkableChangesetSourceGetUserForkFunc) PushHook(hook func(context.Context, *types.Repo) (*types.Repo, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ForkableChangesetSourceGetUserForkFunc) SetDefaultReturn(r0 *types.Repo, r1 error) {
-	f.SetDefaultHook(func(context.Context, *types.Repo) (*types.Repo, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ForkableChangesetSourceGetUserForkFunc) PushReturn(r0 *types.Repo, r1 error) {
-	f.PushHook(func(context.Context, *types.Repo) (*types.Repo, error) {
-		return r0, r1
-	})
-}
-
-func (f *ForkableChangesetSourceGetUserForkFunc) nextHook() func(context.Context, *types.Repo) (*types.Repo, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ForkableChangesetSourceGetUserForkFunc) appendCall(r0 ForkableChangesetSourceGetUserForkFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ForkableChangesetSourceGetUserForkFuncCall
-// objects describing the invocations of this function.
-func (f *ForkableChangesetSourceGetUserForkFunc) History() []ForkableChangesetSourceGetUserForkFuncCall {
-	f.mutex.Lock()
-	history := make([]ForkableChangesetSourceGetUserForkFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ForkableChangesetSourceGetUserForkFuncCall is an object that describes an
-// invocation of method GetUserFork on an instance of
-// MockForkableChangesetSource.
-type ForkableChangesetSourceGetUserForkFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *types.Repo
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *types.Repo
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ForkableChangesetSourceGetUserForkFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ForkableChangesetSourceGetUserForkFuncCall) Results() []interface{} {
+func (c ForkableChangesetSourceGetForkFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -3589,6 +3463,9 @@ func (c SourcerStoreUserCredentialsFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud) used
 // for unit testing.
 type MockBitbucketCloudClient struct {
+	// AllCurrentUserEmailsFunc is an instance of a mock function object
+	// controlling the behavior of the method AllCurrentUserEmails.
+	AllCurrentUserEmailsFunc *BitbucketCloudClientAllCurrentUserEmailsFunc
 	// AuthenticatorFunc is an instance of a mock function object
 	// controlling the behavior of the method Authenticator.
 	AuthenticatorFunc *BitbucketCloudClientAuthenticatorFunc
@@ -3601,6 +3478,9 @@ type MockBitbucketCloudClient struct {
 	// CurrentUserFunc is an instance of a mock function object controlling
 	// the behavior of the method CurrentUser.
 	CurrentUserFunc *BitbucketCloudClientCurrentUserFunc
+	// CurrentUserEmailsFunc is an instance of a mock function object
+	// controlling the behavior of the method CurrentUserEmails.
+	CurrentUserEmailsFunc *BitbucketCloudClientCurrentUserEmailsFunc
 	// DeclinePullRequestFunc is an instance of a mock function object
 	// controlling the behavior of the method DeclinePullRequest.
 	DeclinePullRequestFunc *BitbucketCloudClientDeclinePullRequestFunc
@@ -3613,6 +3493,10 @@ type MockBitbucketCloudClient struct {
 	// GetPullRequestStatusesFunc is an instance of a mock function object
 	// controlling the behavior of the method GetPullRequestStatuses.
 	GetPullRequestStatusesFunc *BitbucketCloudClientGetPullRequestStatusesFunc
+	// ListExplicitUserPermsForRepoFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// ListExplicitUserPermsForRepo.
+	ListExplicitUserPermsForRepoFunc *BitbucketCloudClientListExplicitUserPermsForRepoFunc
 	// MergePullRequestFunc is an instance of a mock function object
 	// controlling the behavior of the method MergePullRequest.
 	MergePullRequestFunc *BitbucketCloudClientMergePullRequestFunc
@@ -3637,6 +3521,11 @@ type MockBitbucketCloudClient struct {
 // All methods return zero values for all results, unless overwritten.
 func NewMockBitbucketCloudClient() *MockBitbucketCloudClient {
 	return &MockBitbucketCloudClient{
+		AllCurrentUserEmailsFunc: &BitbucketCloudClientAllCurrentUserEmailsFunc{
+			defaultHook: func(context.Context) (r0 []*bitbucketcloud.UserEmail, r1 error) {
+				return
+			},
+		},
 		AuthenticatorFunc: &BitbucketCloudClientAuthenticatorFunc{
 			defaultHook: func() (r0 auth.Authenticator) {
 				return
@@ -3654,6 +3543,11 @@ func NewMockBitbucketCloudClient() *MockBitbucketCloudClient {
 		},
 		CurrentUserFunc: &BitbucketCloudClientCurrentUserFunc{
 			defaultHook: func(context.Context) (r0 *bitbucketcloud.User, r1 error) {
+				return
+			},
+		},
+		CurrentUserEmailsFunc: &BitbucketCloudClientCurrentUserEmailsFunc{
+			defaultHook: func(context.Context, *bitbucketcloud.PageToken) (r0 []*bitbucketcloud.UserEmail, r1 *bitbucketcloud.PageToken, r2 error) {
 				return
 			},
 		},
@@ -3677,6 +3571,11 @@ func NewMockBitbucketCloudClient() *MockBitbucketCloudClient {
 				return
 			},
 		},
+		ListExplicitUserPermsForRepoFunc: &BitbucketCloudClientListExplicitUserPermsForRepoFunc{
+			defaultHook: func(context.Context, *bitbucketcloud.PageToken, string, string, *bitbucketcloud.RequestOptions) (r0 []*bitbucketcloud.Account, r1 *bitbucketcloud.PageToken, r2 error) {
+				return
+			},
+		},
 		MergePullRequestFunc: &BitbucketCloudClientMergePullRequestFunc{
 			defaultHook: func(context.Context, *bitbucketcloud.Repo, int64, bitbucketcloud.MergePullRequestOpts) (r0 *bitbucketcloud.PullRequest, r1 error) {
 				return
@@ -3693,7 +3592,7 @@ func NewMockBitbucketCloudClient() *MockBitbucketCloudClient {
 			},
 		},
 		ReposFunc: &BitbucketCloudClientReposFunc{
-			defaultHook: func(context.Context, *bitbucketcloud.PageToken, string) (r0 []*bitbucketcloud.Repo, r1 *bitbucketcloud.PageToken, r2 error) {
+			defaultHook: func(context.Context, *bitbucketcloud.PageToken, string, *bitbucketcloud.ReposOptions) (r0 []*bitbucketcloud.Repo, r1 *bitbucketcloud.PageToken, r2 error) {
 				return
 			},
 		},
@@ -3714,6 +3613,11 @@ func NewMockBitbucketCloudClient() *MockBitbucketCloudClient {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockBitbucketCloudClient() *MockBitbucketCloudClient {
 	return &MockBitbucketCloudClient{
+		AllCurrentUserEmailsFunc: &BitbucketCloudClientAllCurrentUserEmailsFunc{
+			defaultHook: func(context.Context) ([]*bitbucketcloud.UserEmail, error) {
+				panic("unexpected invocation of MockBitbucketCloudClient.AllCurrentUserEmails")
+			},
+		},
 		AuthenticatorFunc: &BitbucketCloudClientAuthenticatorFunc{
 			defaultHook: func() auth.Authenticator {
 				panic("unexpected invocation of MockBitbucketCloudClient.Authenticator")
@@ -3732,6 +3636,11 @@ func NewStrictMockBitbucketCloudClient() *MockBitbucketCloudClient {
 		CurrentUserFunc: &BitbucketCloudClientCurrentUserFunc{
 			defaultHook: func(context.Context) (*bitbucketcloud.User, error) {
 				panic("unexpected invocation of MockBitbucketCloudClient.CurrentUser")
+			},
+		},
+		CurrentUserEmailsFunc: &BitbucketCloudClientCurrentUserEmailsFunc{
+			defaultHook: func(context.Context, *bitbucketcloud.PageToken) ([]*bitbucketcloud.UserEmail, *bitbucketcloud.PageToken, error) {
+				panic("unexpected invocation of MockBitbucketCloudClient.CurrentUserEmails")
 			},
 		},
 		DeclinePullRequestFunc: &BitbucketCloudClientDeclinePullRequestFunc{
@@ -3754,6 +3663,11 @@ func NewStrictMockBitbucketCloudClient() *MockBitbucketCloudClient {
 				panic("unexpected invocation of MockBitbucketCloudClient.GetPullRequestStatuses")
 			},
 		},
+		ListExplicitUserPermsForRepoFunc: &BitbucketCloudClientListExplicitUserPermsForRepoFunc{
+			defaultHook: func(context.Context, *bitbucketcloud.PageToken, string, string, *bitbucketcloud.RequestOptions) ([]*bitbucketcloud.Account, *bitbucketcloud.PageToken, error) {
+				panic("unexpected invocation of MockBitbucketCloudClient.ListExplicitUserPermsForRepo")
+			},
+		},
 		MergePullRequestFunc: &BitbucketCloudClientMergePullRequestFunc{
 			defaultHook: func(context.Context, *bitbucketcloud.Repo, int64, bitbucketcloud.MergePullRequestOpts) (*bitbucketcloud.PullRequest, error) {
 				panic("unexpected invocation of MockBitbucketCloudClient.MergePullRequest")
@@ -3770,7 +3684,7 @@ func NewStrictMockBitbucketCloudClient() *MockBitbucketCloudClient {
 			},
 		},
 		ReposFunc: &BitbucketCloudClientReposFunc{
-			defaultHook: func(context.Context, *bitbucketcloud.PageToken, string) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
+			defaultHook: func(context.Context, *bitbucketcloud.PageToken, string, *bitbucketcloud.ReposOptions) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
 				panic("unexpected invocation of MockBitbucketCloudClient.Repos")
 			},
 		},
@@ -3792,6 +3706,9 @@ func NewStrictMockBitbucketCloudClient() *MockBitbucketCloudClient {
 // implementation, unless overwritten.
 func NewMockBitbucketCloudClientFrom(i bitbucketcloud.Client) *MockBitbucketCloudClient {
 	return &MockBitbucketCloudClient{
+		AllCurrentUserEmailsFunc: &BitbucketCloudClientAllCurrentUserEmailsFunc{
+			defaultHook: i.AllCurrentUserEmails,
+		},
 		AuthenticatorFunc: &BitbucketCloudClientAuthenticatorFunc{
 			defaultHook: i.Authenticator,
 		},
@@ -3804,6 +3721,9 @@ func NewMockBitbucketCloudClientFrom(i bitbucketcloud.Client) *MockBitbucketClou
 		CurrentUserFunc: &BitbucketCloudClientCurrentUserFunc{
 			defaultHook: i.CurrentUser,
 		},
+		CurrentUserEmailsFunc: &BitbucketCloudClientCurrentUserEmailsFunc{
+			defaultHook: i.CurrentUserEmails,
+		},
 		DeclinePullRequestFunc: &BitbucketCloudClientDeclinePullRequestFunc{
 			defaultHook: i.DeclinePullRequest,
 		},
@@ -3815,6 +3735,9 @@ func NewMockBitbucketCloudClientFrom(i bitbucketcloud.Client) *MockBitbucketClou
 		},
 		GetPullRequestStatusesFunc: &BitbucketCloudClientGetPullRequestStatusesFunc{
 			defaultHook: i.GetPullRequestStatuses,
+		},
+		ListExplicitUserPermsForRepoFunc: &BitbucketCloudClientListExplicitUserPermsForRepoFunc{
+			defaultHook: i.ListExplicitUserPermsForRepo,
 		},
 		MergePullRequestFunc: &BitbucketCloudClientMergePullRequestFunc{
 			defaultHook: i.MergePullRequest,
@@ -3835,6 +3758,115 @@ func NewMockBitbucketCloudClientFrom(i bitbucketcloud.Client) *MockBitbucketClou
 			defaultHook: i.WithAuthenticator,
 		},
 	}
+}
+
+// BitbucketCloudClientAllCurrentUserEmailsFunc describes the behavior when
+// the AllCurrentUserEmails method of the parent MockBitbucketCloudClient
+// instance is invoked.
+type BitbucketCloudClientAllCurrentUserEmailsFunc struct {
+	defaultHook func(context.Context) ([]*bitbucketcloud.UserEmail, error)
+	hooks       []func(context.Context) ([]*bitbucketcloud.UserEmail, error)
+	history     []BitbucketCloudClientAllCurrentUserEmailsFuncCall
+	mutex       sync.Mutex
+}
+
+// AllCurrentUserEmails delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockBitbucketCloudClient) AllCurrentUserEmails(v0 context.Context) ([]*bitbucketcloud.UserEmail, error) {
+	r0, r1 := m.AllCurrentUserEmailsFunc.nextHook()(v0)
+	m.AllCurrentUserEmailsFunc.appendCall(BitbucketCloudClientAllCurrentUserEmailsFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the AllCurrentUserEmails
+// method of the parent MockBitbucketCloudClient instance is invoked and the
+// hook queue is empty.
+func (f *BitbucketCloudClientAllCurrentUserEmailsFunc) SetDefaultHook(hook func(context.Context) ([]*bitbucketcloud.UserEmail, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AllCurrentUserEmails method of the parent MockBitbucketCloudClient
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *BitbucketCloudClientAllCurrentUserEmailsFunc) PushHook(hook func(context.Context) ([]*bitbucketcloud.UserEmail, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *BitbucketCloudClientAllCurrentUserEmailsFunc) SetDefaultReturn(r0 []*bitbucketcloud.UserEmail, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]*bitbucketcloud.UserEmail, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *BitbucketCloudClientAllCurrentUserEmailsFunc) PushReturn(r0 []*bitbucketcloud.UserEmail, r1 error) {
+	f.PushHook(func(context.Context) ([]*bitbucketcloud.UserEmail, error) {
+		return r0, r1
+	})
+}
+
+func (f *BitbucketCloudClientAllCurrentUserEmailsFunc) nextHook() func(context.Context) ([]*bitbucketcloud.UserEmail, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BitbucketCloudClientAllCurrentUserEmailsFunc) appendCall(r0 BitbucketCloudClientAllCurrentUserEmailsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// BitbucketCloudClientAllCurrentUserEmailsFuncCall objects describing the
+// invocations of this function.
+func (f *BitbucketCloudClientAllCurrentUserEmailsFunc) History() []BitbucketCloudClientAllCurrentUserEmailsFuncCall {
+	f.mutex.Lock()
+	history := make([]BitbucketCloudClientAllCurrentUserEmailsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BitbucketCloudClientAllCurrentUserEmailsFuncCall is an object that
+// describes an invocation of method AllCurrentUserEmails on an instance of
+// MockBitbucketCloudClient.
+type BitbucketCloudClientAllCurrentUserEmailsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*bitbucketcloud.UserEmail
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BitbucketCloudClientAllCurrentUserEmailsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BitbucketCloudClientAllCurrentUserEmailsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // BitbucketCloudClientAuthenticatorFunc describes the behavior when the
@@ -4278,6 +4310,121 @@ func (c BitbucketCloudClientCurrentUserFuncCall) Args() []interface{} {
 // invocation.
 func (c BitbucketCloudClientCurrentUserFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// BitbucketCloudClientCurrentUserEmailsFunc describes the behavior when the
+// CurrentUserEmails method of the parent MockBitbucketCloudClient instance
+// is invoked.
+type BitbucketCloudClientCurrentUserEmailsFunc struct {
+	defaultHook func(context.Context, *bitbucketcloud.PageToken) ([]*bitbucketcloud.UserEmail, *bitbucketcloud.PageToken, error)
+	hooks       []func(context.Context, *bitbucketcloud.PageToken) ([]*bitbucketcloud.UserEmail, *bitbucketcloud.PageToken, error)
+	history     []BitbucketCloudClientCurrentUserEmailsFuncCall
+	mutex       sync.Mutex
+}
+
+// CurrentUserEmails delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockBitbucketCloudClient) CurrentUserEmails(v0 context.Context, v1 *bitbucketcloud.PageToken) ([]*bitbucketcloud.UserEmail, *bitbucketcloud.PageToken, error) {
+	r0, r1, r2 := m.CurrentUserEmailsFunc.nextHook()(v0, v1)
+	m.CurrentUserEmailsFunc.appendCall(BitbucketCloudClientCurrentUserEmailsFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the CurrentUserEmails
+// method of the parent MockBitbucketCloudClient instance is invoked and the
+// hook queue is empty.
+func (f *BitbucketCloudClientCurrentUserEmailsFunc) SetDefaultHook(hook func(context.Context, *bitbucketcloud.PageToken) ([]*bitbucketcloud.UserEmail, *bitbucketcloud.PageToken, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CurrentUserEmails method of the parent MockBitbucketCloudClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *BitbucketCloudClientCurrentUserEmailsFunc) PushHook(hook func(context.Context, *bitbucketcloud.PageToken) ([]*bitbucketcloud.UserEmail, *bitbucketcloud.PageToken, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *BitbucketCloudClientCurrentUserEmailsFunc) SetDefaultReturn(r0 []*bitbucketcloud.UserEmail, r1 *bitbucketcloud.PageToken, r2 error) {
+	f.SetDefaultHook(func(context.Context, *bitbucketcloud.PageToken) ([]*bitbucketcloud.UserEmail, *bitbucketcloud.PageToken, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *BitbucketCloudClientCurrentUserEmailsFunc) PushReturn(r0 []*bitbucketcloud.UserEmail, r1 *bitbucketcloud.PageToken, r2 error) {
+	f.PushHook(func(context.Context, *bitbucketcloud.PageToken) ([]*bitbucketcloud.UserEmail, *bitbucketcloud.PageToken, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *BitbucketCloudClientCurrentUserEmailsFunc) nextHook() func(context.Context, *bitbucketcloud.PageToken) ([]*bitbucketcloud.UserEmail, *bitbucketcloud.PageToken, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BitbucketCloudClientCurrentUserEmailsFunc) appendCall(r0 BitbucketCloudClientCurrentUserEmailsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// BitbucketCloudClientCurrentUserEmailsFuncCall objects describing the
+// invocations of this function.
+func (f *BitbucketCloudClientCurrentUserEmailsFunc) History() []BitbucketCloudClientCurrentUserEmailsFuncCall {
+	f.mutex.Lock()
+	history := make([]BitbucketCloudClientCurrentUserEmailsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BitbucketCloudClientCurrentUserEmailsFuncCall is an object that describes
+// an invocation of method CurrentUserEmails on an instance of
+// MockBitbucketCloudClient.
+type BitbucketCloudClientCurrentUserEmailsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *bitbucketcloud.PageToken
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*bitbucketcloud.UserEmail
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 *bitbucketcloud.PageToken
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BitbucketCloudClientCurrentUserEmailsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BitbucketCloudClientCurrentUserEmailsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // BitbucketCloudClientDeclinePullRequestFunc describes the behavior when
@@ -4735,6 +4882,130 @@ func (c BitbucketCloudClientGetPullRequestStatusesFuncCall) Results() []interfac
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// BitbucketCloudClientListExplicitUserPermsForRepoFunc describes the
+// behavior when the ListExplicitUserPermsForRepo method of the parent
+// MockBitbucketCloudClient instance is invoked.
+type BitbucketCloudClientListExplicitUserPermsForRepoFunc struct {
+	defaultHook func(context.Context, *bitbucketcloud.PageToken, string, string, *bitbucketcloud.RequestOptions) ([]*bitbucketcloud.Account, *bitbucketcloud.PageToken, error)
+	hooks       []func(context.Context, *bitbucketcloud.PageToken, string, string, *bitbucketcloud.RequestOptions) ([]*bitbucketcloud.Account, *bitbucketcloud.PageToken, error)
+	history     []BitbucketCloudClientListExplicitUserPermsForRepoFuncCall
+	mutex       sync.Mutex
+}
+
+// ListExplicitUserPermsForRepo delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockBitbucketCloudClient) ListExplicitUserPermsForRepo(v0 context.Context, v1 *bitbucketcloud.PageToken, v2 string, v3 string, v4 *bitbucketcloud.RequestOptions) ([]*bitbucketcloud.Account, *bitbucketcloud.PageToken, error) {
+	r0, r1, r2 := m.ListExplicitUserPermsForRepoFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.ListExplicitUserPermsForRepoFunc.appendCall(BitbucketCloudClientListExplicitUserPermsForRepoFuncCall{v0, v1, v2, v3, v4, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the
+// ListExplicitUserPermsForRepo method of the parent
+// MockBitbucketCloudClient instance is invoked and the hook queue is empty.
+func (f *BitbucketCloudClientListExplicitUserPermsForRepoFunc) SetDefaultHook(hook func(context.Context, *bitbucketcloud.PageToken, string, string, *bitbucketcloud.RequestOptions) ([]*bitbucketcloud.Account, *bitbucketcloud.PageToken, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListExplicitUserPermsForRepo method of the parent
+// MockBitbucketCloudClient instance invokes the hook at the front of the
+// queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *BitbucketCloudClientListExplicitUserPermsForRepoFunc) PushHook(hook func(context.Context, *bitbucketcloud.PageToken, string, string, *bitbucketcloud.RequestOptions) ([]*bitbucketcloud.Account, *bitbucketcloud.PageToken, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *BitbucketCloudClientListExplicitUserPermsForRepoFunc) SetDefaultReturn(r0 []*bitbucketcloud.Account, r1 *bitbucketcloud.PageToken, r2 error) {
+	f.SetDefaultHook(func(context.Context, *bitbucketcloud.PageToken, string, string, *bitbucketcloud.RequestOptions) ([]*bitbucketcloud.Account, *bitbucketcloud.PageToken, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *BitbucketCloudClientListExplicitUserPermsForRepoFunc) PushReturn(r0 []*bitbucketcloud.Account, r1 *bitbucketcloud.PageToken, r2 error) {
+	f.PushHook(func(context.Context, *bitbucketcloud.PageToken, string, string, *bitbucketcloud.RequestOptions) ([]*bitbucketcloud.Account, *bitbucketcloud.PageToken, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *BitbucketCloudClientListExplicitUserPermsForRepoFunc) nextHook() func(context.Context, *bitbucketcloud.PageToken, string, string, *bitbucketcloud.RequestOptions) ([]*bitbucketcloud.Account, *bitbucketcloud.PageToken, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BitbucketCloudClientListExplicitUserPermsForRepoFunc) appendCall(r0 BitbucketCloudClientListExplicitUserPermsForRepoFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// BitbucketCloudClientListExplicitUserPermsForRepoFuncCall objects
+// describing the invocations of this function.
+func (f *BitbucketCloudClientListExplicitUserPermsForRepoFunc) History() []BitbucketCloudClientListExplicitUserPermsForRepoFuncCall {
+	f.mutex.Lock()
+	history := make([]BitbucketCloudClientListExplicitUserPermsForRepoFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BitbucketCloudClientListExplicitUserPermsForRepoFuncCall is an object
+// that describes an invocation of method ListExplicitUserPermsForRepo on an
+// instance of MockBitbucketCloudClient.
+type BitbucketCloudClientListExplicitUserPermsForRepoFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *bitbucketcloud.PageToken
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 *bitbucketcloud.RequestOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*bitbucketcloud.Account
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 *bitbucketcloud.PageToken
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BitbucketCloudClientListExplicitUserPermsForRepoFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BitbucketCloudClientListExplicitUserPermsForRepoFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
 // BitbucketCloudClientMergePullRequestFunc describes the behavior when the
 // MergePullRequest method of the parent MockBitbucketCloudClient instance
 // is invoked.
@@ -5069,24 +5340,24 @@ func (c BitbucketCloudClientRepoFuncCall) Results() []interface{} {
 // BitbucketCloudClientReposFunc describes the behavior when the Repos
 // method of the parent MockBitbucketCloudClient instance is invoked.
 type BitbucketCloudClientReposFunc struct {
-	defaultHook func(context.Context, *bitbucketcloud.PageToken, string) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error)
-	hooks       []func(context.Context, *bitbucketcloud.PageToken, string) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error)
+	defaultHook func(context.Context, *bitbucketcloud.PageToken, string, *bitbucketcloud.ReposOptions) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error)
+	hooks       []func(context.Context, *bitbucketcloud.PageToken, string, *bitbucketcloud.ReposOptions) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error)
 	history     []BitbucketCloudClientReposFuncCall
 	mutex       sync.Mutex
 }
 
 // Repos delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockBitbucketCloudClient) Repos(v0 context.Context, v1 *bitbucketcloud.PageToken, v2 string) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
-	r0, r1, r2 := m.ReposFunc.nextHook()(v0, v1, v2)
-	m.ReposFunc.appendCall(BitbucketCloudClientReposFuncCall{v0, v1, v2, r0, r1, r2})
+func (m *MockBitbucketCloudClient) Repos(v0 context.Context, v1 *bitbucketcloud.PageToken, v2 string, v3 *bitbucketcloud.ReposOptions) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
+	r0, r1, r2 := m.ReposFunc.nextHook()(v0, v1, v2, v3)
+	m.ReposFunc.appendCall(BitbucketCloudClientReposFuncCall{v0, v1, v2, v3, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the Repos method of the
 // parent MockBitbucketCloudClient instance is invoked and the hook queue is
 // empty.
-func (f *BitbucketCloudClientReposFunc) SetDefaultHook(hook func(context.Context, *bitbucketcloud.PageToken, string) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error)) {
+func (f *BitbucketCloudClientReposFunc) SetDefaultHook(hook func(context.Context, *bitbucketcloud.PageToken, string, *bitbucketcloud.ReposOptions) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error)) {
 	f.defaultHook = hook
 }
 
@@ -5094,7 +5365,7 @@ func (f *BitbucketCloudClientReposFunc) SetDefaultHook(hook func(context.Context
 // Repos method of the parent MockBitbucketCloudClient instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *BitbucketCloudClientReposFunc) PushHook(hook func(context.Context, *bitbucketcloud.PageToken, string) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error)) {
+func (f *BitbucketCloudClientReposFunc) PushHook(hook func(context.Context, *bitbucketcloud.PageToken, string, *bitbucketcloud.ReposOptions) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -5103,19 +5374,19 @@ func (f *BitbucketCloudClientReposFunc) PushHook(hook func(context.Context, *bit
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *BitbucketCloudClientReposFunc) SetDefaultReturn(r0 []*bitbucketcloud.Repo, r1 *bitbucketcloud.PageToken, r2 error) {
-	f.SetDefaultHook(func(context.Context, *bitbucketcloud.PageToken, string) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
+	f.SetDefaultHook(func(context.Context, *bitbucketcloud.PageToken, string, *bitbucketcloud.ReposOptions) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *BitbucketCloudClientReposFunc) PushReturn(r0 []*bitbucketcloud.Repo, r1 *bitbucketcloud.PageToken, r2 error) {
-	f.PushHook(func(context.Context, *bitbucketcloud.PageToken, string) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
+	f.PushHook(func(context.Context, *bitbucketcloud.PageToken, string, *bitbucketcloud.ReposOptions) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *BitbucketCloudClientReposFunc) nextHook() func(context.Context, *bitbucketcloud.PageToken, string) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
+func (f *BitbucketCloudClientReposFunc) nextHook() func(context.Context, *bitbucketcloud.PageToken, string, *bitbucketcloud.ReposOptions) ([]*bitbucketcloud.Repo, *bitbucketcloud.PageToken, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -5157,6 +5428,9 @@ type BitbucketCloudClientReposFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 *bitbucketcloud.ReposOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []*bitbucketcloud.Repo
@@ -5171,7 +5445,7 @@ type BitbucketCloudClientReposFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c BitbucketCloudClientReposFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this

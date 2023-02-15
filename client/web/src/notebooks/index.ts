@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs'
 
-import { HighlightRange } from '@sourcegraph/search-ui'
+import { HighlightRange } from '@sourcegraph/branded'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { UIRangeSpec } from '@sourcegraph/shared/src/util/url'

@@ -7,10 +7,8 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -159,36 +157,6 @@ func unzipJarFile(jarPath, destination string) (err error) {
 	}
 
 	return nil
-}
-
-func copyZipFileEntry(entry *zip.File, outputPath string) (err error) {
-	inputFile, err := entry.Open()
-	if err != nil {
-		return err
-	}
-	defer func() {
-		err1 := inputFile.Close()
-		if err == nil {
-			err = err1
-		}
-	}()
-
-	if err = os.MkdirAll(path.Dir(outputPath), 0o700); err != nil {
-		return err
-	}
-	outputFile, err := os.OpenFile(outputPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		err1 := outputFile.Close()
-		if err == nil {
-			err = err1
-		}
-	}()
-
-	_, err = io.Copy(outputFile, inputFile)
-	return err
 }
 
 // inferJVMVersionFromByteCode returns the JVM version that was used to compile

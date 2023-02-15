@@ -56,7 +56,7 @@ func TestDatabaseMonikersByPosition(t *testing.T) {
 
 func TestGetBulkMonikerLocations(t *testing.T) {
 	tableName := "references"
-	uploadIDs := []int{testLSIFUploadID, testSCIPUploadID}
+	uploadIDs := []int{testSCIPUploadID}
 	monikers := []precise.MonikerData{
 		{
 			Scheme:     "gomod",

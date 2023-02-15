@@ -32,6 +32,22 @@ export const NeverUpdated: Story = () => (
 
 NeverUpdated.storyName = 'Never updated'
 
+export const CreatedByDeletedUser: Story = () => (
+    <WebStory>
+        {props => (
+            <CreatedByAndUpdatedByInfoByline
+                {...props}
+                createdAt={THREE_DAYS_AGO}
+                createdBy={null}
+                updatedAt={THREE_DAYS_AGO}
+                updatedBy={null}
+            />
+        )}
+    </WebStory>
+)
+
+CreatedByDeletedUser.storyName = 'Created by deleted user'
+
 export const NeverUpdatedSSBC: Story = () => (
     <WebStory>
         {props => (
@@ -79,3 +95,18 @@ export const UpdatedDifferentUser: Story = () => (
 )
 
 UpdatedDifferentUser.storyName = 'Updated (different users)'
+
+export const DatesWithoutAuthors: Story = () => (
+    <WebStory>
+        {props => (
+            <CreatedByAndUpdatedByInfoByline
+                {...props}
+                createdAt={THREE_DAYS_AGO}
+                updatedAt={subDays(new Date(), 1).toISOString()}
+                noAuthor={true}
+            />
+        )}
+    </WebStory>
+)
+
+DatesWithoutAuthors.storyName = 'Created and updated dates without authors'

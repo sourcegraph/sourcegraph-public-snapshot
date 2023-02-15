@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from 'react'
 
 import { mdiArrowRight } from '@mdi/js'
 
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { CaseSensitivityProps, SearchPatternTypeProps, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { ALL_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilter'

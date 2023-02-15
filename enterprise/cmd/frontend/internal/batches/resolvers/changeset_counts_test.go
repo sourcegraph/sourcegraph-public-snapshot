@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
+	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -224,7 +225,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	end := parseJSONTime(t, "2019-10-07T13:13:45Z")
 
 	input := map[string]any{
-		"batchChange": string(marshalBatchChangeID(batchChange.ID)),
+		"batchChange": string(bgql.MarshalBatchChangeID(batchChange.ID)),
 		"from":        start,
 		"to":          end,
 	}

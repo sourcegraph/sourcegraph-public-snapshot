@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/retention"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -111,12 +110,6 @@ func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record *Job
 	}
 	if series.JustInTime {
 		return errors.Newf("just in time series are not eligible for background processing, series_id: %s", series.ID)
-	}
-
-	// enqueue this insight series for data retention in parallel
-	_, err = retention.EnqueueJob(ctx, ss, &retention.DataRetentionJob{SeriesID: series.ID})
-	if err != nil {
-		logger.Error("could not enqueue data retention job", log.Int("seriesID", series.ID), log.Error(err))
 	}
 
 	recordTime := time.Now()

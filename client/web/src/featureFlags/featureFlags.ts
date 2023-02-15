@@ -6,7 +6,6 @@ import { OrgFeatureFlagOverridesResult, OrgFeatureFlagOverridesVariables } from 
 // If there are no feature flags at the moment, this should be `never`.
 export type FeatureFlagName =
     | 'quick-start-tour-for-authenticated-users'
-    | 'new-repo-page'
     | 'insight-polling-enabled'
     | 'ab-visitor-tour-with-notebooks'
     | 'ab-email-verification-alert'
@@ -17,6 +16,9 @@ export type FeatureFlagName =
     | 'enable-streaming-git-blame'
     | 'plg-enable-add-codehost-widget'
     | 'enable-rbac'
+    | 'accessible-file-tree'
+    | 'accessible-file-tree-always-load-ancestors'
+    | 'cody'
 
 interface OrgFlagOverride {
     orgID: string

@@ -15,7 +15,7 @@ Currently, all repositories belonging to the user configured will be synced.
 
 In addition, there is one more field for configuring which repositories are mirrored:
 
-- [`teams`](bitbucket_cloud.md#configuration)<br>A list of teams that the configured user has access to whose repositories should be synced.
+- [`teams`](bitbucket_cloud.md#configuration)<br>A list of teams (workspaces) that the configured user has access to whose repositories should be synced.
 - [`exclude`](bitbucket_cloud.md#configuration)<br>A list of repositories to exclude, which takes precedence over the `teams` field.
 
 ### HTTPS cloning
@@ -32,6 +32,11 @@ If enabled, the default rate is set at 7200 per hour (2 per second), which can b
 - For Sourcegraph >=3.39, rate limiting should be enabled and configured for each individual code host connection.
 
 **NOTE** Internal rate limiting is only currently applied when synchronizing changesets in [batch changes](../../batch_changes/index.md), repository permissions, and repository metadata from code hosts.
+
+## User authentication
+
+To configure Bitbucket Cloud as an authentication provider (which will enable sign-in via Bitbucket Cloud), see the
+[authentication documentation](../auth/index.md#bitbucket-cloud).
 
 ## Configuration
 

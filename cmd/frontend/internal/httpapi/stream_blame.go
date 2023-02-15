@@ -10,6 +10,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -126,6 +127,31 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 					parentsCache[h.CommitID] = c.Parents
 				}
 
+				user, err := db.Users().GetByVerifiedEmail(ctx, h.Author.Email)
+				if err != nil && !errcode.IsNotFound(err) {
+					tr.SetError(err)
+					http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
+					return
+				}
+
+				var blameHunkUserResponse *BlameHunkUserResponse
+				if user != nil {
+					displayName := &user.DisplayName
+					if *displayName == "" {
+						displayName = nil
+					}
+					avatarURL := &user.AvatarURL
+					if *avatarURL == "" {
+						avatarURL = nil
+					}
+
+					blameHunkUserResponse = &BlameHunkUserResponse{
+						Username:    user.Username,
+						DisplayName: displayName,
+						AvatarURL:   avatarURL,
+					}
+				}
+
 				blameResponse := BlameHunkResponse{
 					StartLine: h.StartLine,
 					EndLine:   h.EndLine,
@@ -137,6 +163,7 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 						Parents: parents,
 						URL:     fmt.Sprintf("%s/-/commit/%s", repo.URI, h.CommitID),
 					},
+					User: blameHunkUserResponse,
 				}
 				blameResponses = append(blameResponses, blameResponse)
 			}
@@ -159,9 +186,16 @@ type BlameHunkResponse struct {
 	Message   string                  `json:"message"`
 	Filename  string                  `json:"filename"`
 	Commit    BlameHunkCommitResponse `json:"commit"`
+	User      *BlameHunkUserResponse  `json:"user,omitempty"`
 }
 
 type BlameHunkCommitResponse struct {
 	Parents []api.CommitID `json:"parents"`
 	URL     string         `json:"url"`
+}
+
+type BlameHunkUserResponse struct {
+	Username    string  `json:"username"`
+	DisplayName *string `json:"displayName"`
+	AvatarURL   *string `json:"avatarURL"`
 }

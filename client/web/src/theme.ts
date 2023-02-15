@@ -35,11 +35,11 @@ export const useTheme = (): ThemeState => {
         []
     )
     const systemIsLightTheme = useObservable(systemIsLightThemeObservable) ?? systemIsLightThemeInitialValue
-
     const [storedThemePreference, setThemePreference] = useTemporarySetting(
         'user.themePreference',
         ThemePreference.System
     )
+
     const themePreference = readStoredThemePreference(storedThemePreference)
 
     const enhancedThemePreference =
@@ -48,6 +48,13 @@ export const useTheme = (): ThemeState => {
                 ? ThemePreference.Light
                 : ThemePreference.Dark
             : themePreference
+
+    useMemo(() => {
+        const isLightTheme = enhancedThemePreference === ThemePreference.Light
+
+        document.documentElement.classList.toggle('theme-light', isLightTheme)
+        document.documentElement.classList.toggle('theme-dark', !isLightTheme)
+    }, [enhancedThemePreference])
 
     return {
         themePreference,
@@ -74,11 +81,6 @@ export interface ThemePreferenceProps {
 export const useThemeProps = (): ThemeProps & ThemePreferenceProps => {
     const { themePreference, enhancedThemePreference, setThemePreference } = useTheme()
     const isLightTheme = enhancedThemePreference === ThemePreference.Light
-
-    useMemo(() => {
-        document.documentElement.classList.toggle('theme-light', isLightTheme)
-        document.documentElement.classList.toggle('theme-dark', !isLightTheme)
-    }, [isLightTheme])
 
     return {
         isLightTheme,

@@ -1,13 +1,14 @@
 import React, { KeyboardEvent, MouseEvent, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 
-import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronUp, mdiFilterOutline } from '@mdi/js'
+import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronUp, mdiFilterOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { capitalize, uniqBy } from 'lodash'
-import { MemoryRouter, useLocation } from 'react-router'
+import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { CodeExcerpt, onClickCodeExcerptHref } from '@sourcegraph/branded'
 import { HoveredToken } from '@sourcegraph/codeintellify'
 import {
     addLineRangeQueryParameter,
@@ -20,7 +21,6 @@ import {
 } from '@sourcegraph/common'
 import { Position } from '@sourcegraph/extension-api-classes'
 import { useQuery } from '@sourcegraph/http-client'
-import { CodeExcerpt, onClickCodeExcerptHref } from '@sourcegraph/search-ui'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 import { findLanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/languages'
@@ -60,8 +60,8 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
-import { Blob } from '../repo/blob/Blob'
-import { Blob as CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
+import { CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
+import { LegacyBlob } from '../repo/blob/LegacyBlob'
 import * as BlobAPI from '../repo/blob/use-blob-store'
 import { HoverThresholdProps } from '../repo/RepoContainer'
 import { useExperimentalFeatures } from '../stores'
@@ -97,36 +97,27 @@ export interface ReferencesPanelProps
     jumpToFirst?: boolean
 
     /**
-     * The panel runs inside its own MemoryRouter, we keep track of externalHistory
-     * so that we're still able to actually navigate within the browser when required
-     */
-    externalHistory: H.History
-    externalLocation: H.Location
-
-    /**
      * Used to overwrite the initial active URL
      */
     initialActiveURL?: string
 }
+interface State {
+    repoName: string
+    revision?: string
+    filePath: string
+    line: number
+    character: number
+    jumpToFirst: boolean
+    collapsedState: {
+        references: boolean
+        definitions: boolean
+        implementations: boolean
+    }
+}
 
-export const ReferencesPanelWithMemoryRouter: React.FunctionComponent<
-    React.PropsWithChildren<ReferencesPanelProps>
-> = props => (
-    // TODO: this won't be working with Router V6
-    <MemoryRouter
-        // Force router to remount the Panel when external location changes
-        key={`${props.externalLocation.pathname}${props.externalLocation.search}${props.externalLocation.hash}`}
-        initialEntries={[props.externalLocation]}
-    >
-        <ReferencesPanel {...props} />
-    </MemoryRouter>
-)
-
-const ReferencesPanel: React.FunctionComponent<React.PropsWithChildren<ReferencesPanelProps>> = props => {
-    const location = useLocation()
-
+function createStateFromLocation(location: H.Location): null | State {
     const { hash, pathname, search } = location
-    const { line, character } = parseQueryAndHash(search, hash)
+    const { line, character, viewState } = parseQueryAndHash(search, hash)
     const { filePath, repoName, revision } = parseBrowserRepoURL(pathname)
 
     // If we don't have enough information in the URL, we can't render the panel
@@ -137,9 +128,40 @@ const ReferencesPanel: React.FunctionComponent<React.PropsWithChildren<Reference
     const searchParameters = new URLSearchParams(search)
     const jumpToFirst = searchParameters.get('jumpToFirst') === 'true'
 
-    const token = { repoName, line, character, filePath }
+    const collapsedState: State['collapsedState'] = {
+        references: viewState === 'references',
+        definitions: viewState === 'definitions',
+        implementations: viewState?.startsWith('implementations_') ?? false,
+    }
+    // If the URL doesn't contain tab=<tab>, we open it (likely because the
+    // user clicked on a link in the preview code blob) to show definitions.
+    if (!collapsedState.references && !collapsedState.definitions && !collapsedState.implementations) {
+        collapsedState.definitions = true
+    }
 
-    return <RevisionResolvingReferencesList {...props} {...token} revision={revision} jumpToFirst={jumpToFirst} />
+    return { repoName, revision, filePath, line, character, jumpToFirst, collapsedState }
+}
+
+export const ReferencesPanel: React.FunctionComponent<React.PropsWithChildren<ReferencesPanelProps>> = props => {
+    const location = useLocation()
+    const state = useMemo(() => createStateFromLocation(location), [location])
+
+    if (state === null) {
+        return null
+    }
+
+    return (
+        <RevisionResolvingReferencesList
+            {...props}
+            repoName={state.repoName}
+            revision={state.revision}
+            filePath={state.filePath}
+            line={state.line}
+            character={state.character}
+            jumpToFirst={state.jumpToFirst}
+            collapsedState={state.collapsedState}
+        />
+    )
 }
 
 export const RevisionResolvingReferencesList: React.FunctionComponent<
@@ -150,6 +172,7 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
             character: number
             filePath: string
             revision?: string
+            collapsedState: State['collapsedState']
         }
     >
 > = props => {
@@ -204,6 +227,7 @@ interface ReferencesPanelPropsWithToken extends ReferencesPanelProps {
     isArchived: boolean
     fileContent: string
     useCodeIntel: NonNullable<ReferencesPanelProps['useCodeIntel']>
+    collapsedState: State['collapsedState']
 }
 
 const SearchTokenFindingReferencesList: React.FunctionComponent<
@@ -258,11 +282,14 @@ const ReferencesList: React.FunctionComponent<
             searchToken: string
             spec: LanguageSpec
             fileContent: string
+            collapsedState: State['collapsedState']
         }
     >
 > = props => {
     const [filter, setFilter] = useState<string>()
     const debouncedFilter = useDebounce(filter, 150)
+
+    const navigate = useNavigate()
 
     useEffect(() => {
         setFilter(undefined)
@@ -386,34 +413,18 @@ const ReferencesList: React.FunctionComponent<
         // points to the same line. In case they press "back" in the browser history,
         // the promoted line should be highlighted.
         setActiveURL(url)
-        props.externalHistory.push(url)
+        navigate(url)
     }
 
     const navigateToUrl = (url: string): void => {
-        props.externalHistory.push(url)
+        navigate(url)
     }
 
-    // Manual management of the open/closed state of collapsible lists so they
-    // stay open/closed across re-renders and re-mounts.
-    const location = useLocation()
-    const initialCollapseState = useMemo(() => {
-        const { viewState } = parseQueryAndHash(location.search, location.hash)
-        const state = {
-            references: viewState === 'references',
-            definitions: viewState === 'definitions',
-            implementations: viewState?.startsWith('implementations_') ?? false,
-        }
-        // If the URL doesn't contain tab=<tab>, we open it (likely because the
-        // user clicked on a link in the preview code blob) to show definitions.
-        if (!state.references && !state.definitions && !state.implementations) {
-            state.definitions = true
-        }
-        return state
-    }, [location])
     const [collapsed, setCollapsed] = useSessionStorage<Record<string, boolean>>(
         'sideblob-collapse-state-' + sessionStorageKeyFromToken(props.token),
-        initialCollapseState
+        props.collapsedState
     )
+
     const handleOpenChange = (id: string, isOpen: boolean): void =>
         setCollapsed(previous => ({ ...previous, [id]: isOpen }))
 
@@ -619,7 +630,7 @@ const CollapsibleLocationList: React.FunctionComponent<
                             fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
                         />
                     ) : (
-                        <Text className="text-muted pl-2">
+                        <Text className="text-muted pl-4 pb-0">
                             {props.filter ? (
                                 <i>
                                     No {props.name} matching <strong>{props.filter}</strong> found
@@ -683,7 +694,7 @@ function parseSideBlobProps(
 
 const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> = props => {
     const useCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
-    const BlobComponent = useCodeMirror ? CodeMirrorBlob : Blob
+    const BlobComponent = useCodeMirror ? CodeMirrorBlob : LegacyBlob
 
     const highlightFormat = useCodeMirror ? HighlightResponseFormat.JSON_SCIP : HighlightResponseFormat.HTML_HIGHLIGHT
     const { data, error, loading } = useQuery<
@@ -702,12 +713,6 @@ const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> 
         fetchPolicy: 'cache-and-network',
         nextFetchPolicy: 'network-only',
     })
-
-    const history = useMemo(() => H.createMemoryHistory(), [])
-    const location = useMemo(() => {
-        history.replace(props.activeURL)
-        return history.location
-    }, [history, props.activeURL])
 
     // If we're loading and haven't received any data yet
     if (loading && !data) {
@@ -748,8 +753,6 @@ const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> 
         <BlobComponent
             {...props}
             nav={props.blobNav}
-            history={history}
-            location={location}
             wrapCode={true}
             className={styles.sideBlobCode}
             navigateToLineOnAnyClick={true}
@@ -1013,6 +1016,8 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                         <ul className="list-unstyled mb-0">
                             {group.locations.map((reference, index) => {
                                 const isActive = isActiveLocation(reference)
+                                const isFirstInActive =
+                                    isActive && !(index > 0 && isActiveLocation(group.locations[index - 1]))
                                 const locationActive = isActive ? styles.locationActive : ''
                                 const selectReference = (
                                     event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>
@@ -1061,6 +1066,20 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                                     fetchPlainTextFileRangeLines(reference)
                                                 }
                                             />
+                                            {isFirstInActive ? (
+                                                <span className={classNames('ml-2', styles.locationActiveIcon)}>
+                                                    <Tooltip
+                                                        content="Click again to open line in full view"
+                                                        placement="left"
+                                                    >
+                                                        <Icon
+                                                            aria-label="Open line in full view"
+                                                            size="sm"
+                                                            svgPath={mdiOpenInNew}
+                                                        />
+                                                    </Tooltip>
+                                                </span>
+                                            ) : null}
                                         </div>
                                     </li>
                                 )

@@ -9,7 +9,7 @@ import { classHighlighter, tags } from '@lezer/highlight'
 import { mdiPlayCircleOutline, mdiPencil } from '@mdi/js'
 import classNames from 'classnames'
 
-import { changeListener } from '@sourcegraph/search-ui'
+import { changeListener } from '@sourcegraph/branded'
 import { useCodeMirror, editorHeight } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Icon, Markdown } from '@sourcegraph/wildcard'

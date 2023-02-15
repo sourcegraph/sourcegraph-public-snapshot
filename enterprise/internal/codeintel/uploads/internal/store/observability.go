@@ -76,12 +76,15 @@ type operations struct {
 
 	// Dependencies
 	insertDependencySyncingJob *observation.Operation
+
+	reindexUploads    *observation.Operation
+	reindexUploadByID *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
 
 func newOperations(observationCtx *observation.Context) *operations {
-	metrics := m.Get(func() *metrics.REDMetrics {
+	redMetrics := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
 			observationCtx.Registerer,
 			"codeintel_uploads_store",
@@ -94,7 +97,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.uploads.store.%s", name),
 			MetricLabelValues: []string{name},
-			Metrics:           metrics,
+			Metrics:           redMetrics,
 		})
 	}
 
@@ -168,5 +171,8 @@ func newOperations(observationCtx *observation.Context) *operations {
 
 		// Dependencies
 		insertDependencySyncingJob: op("InsertDependencySyncingJob"),
+
+		reindexUploads:    op("ReindexUploads"),
+		reindexUploadByID: op("ReindexUploadByID"),
 	}
 }

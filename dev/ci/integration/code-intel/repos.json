@@ -8,7 +8,11 @@
         "sourcegraph-testing/etcd",
         "sourcegraph-testing/tidb",
         "sourcegraph-testing/titan",
-        "sourcegraph-testing/zap"
+        "sourcegraph-testing/zap",
+        "sourcegraph-testing/nacelle",
+        "sourcegraph-testing/nacelle-config",
+        "sourcegraph-testing/nacelle-service",
+        "sourcegraph/code-intel-extensions"
       ]
     }
   }

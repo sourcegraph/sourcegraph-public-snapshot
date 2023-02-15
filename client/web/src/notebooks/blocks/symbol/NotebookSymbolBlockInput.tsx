@@ -2,7 +2,7 @@ import React, { useCallback, useMemo } from 'react'
 
 import { EditorView } from '@codemirror/view'
 
-import { createDefaultSuggestions, RepoFileLink } from '@sourcegraph/search-ui'
+import { createDefaultSuggestions, RepoFileLink } from '@sourcegraph/branded'
 import { getFileMatchUrl, getRepositoryUrl, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'

@@ -10,6 +10,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -51,7 +52,7 @@ type UserExternalAccountsStore interface {
 	//
 	// It creates a new user and associates it with the specified external account. If the user to
 	// create already exists, it returns an error.
-	CreateUserAndSave(ctx context.Context, newUser NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUserID int32, err error)
+	CreateUserAndSave(ctx context.Context, newUser NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUser *types.User, err error)
 
 	// Delete will soft delete all accounts matching the options combined using AND.
 	// If options are all zero values then it does nothing.
@@ -248,23 +249,23 @@ AND deleted_at IS NULL
 	return nil
 }
 
-func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUser NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUserID int32, err error) {
+func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUser NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUser *types.User, err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	createdUser, err := UsersWith(s.logger, tx).CreateInTransaction(ctx, newUser, &spec)
+	createdUser, err = UsersWith(s.logger, tx).CreateInTransaction(ctx, newUser, &spec)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	err = tx.Insert(ctx, createdUser.ID, spec, data)
 	if err == nil {
 		logAccountCreatedEvent(ctx, NewDBWith(s.logger, s), createdUser, spec.ServiceType)
 	}
-	return createdUser.ID, err
+	return createdUser, err
 }
 
 func (s *userExternalAccountsStore) Insert(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (err error) {

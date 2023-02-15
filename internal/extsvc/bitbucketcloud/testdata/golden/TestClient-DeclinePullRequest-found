@@ -101,7 +101,8 @@
       "href": "https://bitbucket.org/sourcegraph-testing/src-cli"
      }
     },
-    "fork_policy": ""
+    "fork_policy": "",
+    "owner": null
    },
    "branch": {
     "name": "branch-00",
@@ -128,7 +129,8 @@
       "href": "https://bitbucket.org/sourcegraph-testing/src-cli"
      }
     },
-    "fork_policy": ""
+    "fork_policy": "",
+    "owner": null
    },
    "branch": {
     "name": "master",

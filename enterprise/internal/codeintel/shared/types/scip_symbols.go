@@ -14,15 +14,16 @@ type InvertedRangeIndex struct {
 	TypeDefinitionRanges []int32
 }
 
-// ExtractSymbolIndexes creates the inverse index of symbol uses to sets of ranges within the given
-// document.
+// ExtractSymbolIndexes creates the inverse index of symbol uses to sets of ranges within the
+// given document.
 func ExtractSymbolIndexes(document *scip.Document) []InvertedRangeIndex {
 	rangesBySymbol := make(map[string]struct {
-		definitionRanges []*scip.Range
-		referenceRanges  []*scip.Range
-		// implementationRanges []*scip.Range // TODO
-		// typeDefinitionRanges []*scip.Range // TODO
+		definitionRanges     []*scip.Range
+		referenceRanges      []*scip.Range
+		implementationRanges []*scip.Range
+		typeDefinitionRanges []*scip.Range
 	}, len(document.Occurrences))
+
 	for _, occurrence := range document.Occurrences {
 		if occurrence.Symbol == "" || scip.IsLocalSymbol(occurrence.Symbol) {
 			continue
@@ -43,14 +44,38 @@ func ExtractSymbolIndexes(document *scip.Document) []InvertedRangeIndex {
 		rangesBySymbol[occurrence.Symbol] = rangeSet
 	}
 
+	for _, symbol := range document.Symbols {
+		definitionRanges := rangesBySymbol[symbol.Symbol].definitionRanges
+		if len(definitionRanges) == 0 {
+			continue
+		}
+
+		for _, relationship := range symbol.Relationships {
+			if !(relationship.IsImplementation || relationship.IsTypeDefinition) {
+				continue
+			}
+
+			rangeSet := rangesBySymbol[relationship.Symbol]
+			{
+				if relationship.IsImplementation {
+					rangeSet.implementationRanges = append(rangeSet.implementationRanges, definitionRanges...)
+				}
+				if relationship.IsTypeDefinition {
+					rangeSet.typeDefinitionRanges = append(rangeSet.typeDefinitionRanges, definitionRanges...)
+				}
+			}
+			rangesBySymbol[relationship.Symbol] = rangeSet
+		}
+	}
+
 	invertedRangeIndexes := make([]InvertedRangeIndex, 0, len(rangesBySymbol))
 	for symbolName, rangeSet := range rangesBySymbol {
 		invertedRangeIndexes = append(invertedRangeIndexes, InvertedRangeIndex{
-			SymbolName:       symbolName,
-			DefinitionRanges: collapseRanges(rangeSet.definitionRanges),
-			ReferenceRanges:  collapseRanges(rangeSet.referenceRanges),
-			// ImplementationRanges: collapseRanges(rangeSet.implementationRanges), // TODO
-			// TypeDefinitionRanges: collapseRanges(rangeSet.typeDefinitionRanges), // TODO
+			SymbolName:           symbolName,
+			DefinitionRanges:     collapseRanges(rangeSet.definitionRanges),
+			ReferenceRanges:      collapseRanges(rangeSet.referenceRanges),
+			ImplementationRanges: collapseRanges(rangeSet.implementationRanges),
+			TypeDefinitionRanges: collapseRanges(rangeSet.typeDefinitionRanges),
 		})
 	}
 	sort.Slice(invertedRangeIndexes, func(i, j int) bool {

@@ -2,8 +2,8 @@ import React from 'react'
 
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 
+import { formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/branded'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/search-ui'
 import { CommitMatch } from '@sourcegraph/shared/src/search/stream'
 import { Code } from '@sourcegraph/wildcard'
 

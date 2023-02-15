@@ -12,9 +12,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -24,8 +23,7 @@ type BitbucketProjectPermissionsStore interface {
 	basestore.ShareableStore
 	With(other basestore.ShareableStore) BitbucketProjectPermissionsStore
 	Enqueue(ctx context.Context, projectKey string, externalServiceID int64, permissions []types.UserPermission, unrestricted bool) (int, error)
-	Transact(ctx context.Context) (BitbucketProjectPermissionsStore, error)
-	Done(err error) error
+	WithTransact(context.Context, func(BitbucketProjectPermissionsStore) error) error
 	ListJobs(ctx context.Context, opt ListJobsOptions) ([]*types.BitbucketProjectPermissionJob, error)
 }
 
@@ -49,25 +47,18 @@ func (s *bitbucketProjectPermissionsStore) copy() *bitbucketProjectPermissionsSt
 	}
 }
 
-func (s *bitbucketProjectPermissionsStore) Transact(ctx context.Context) (BitbucketProjectPermissionsStore, error) {
-	return s.transact(ctx)
+func (s *bitbucketProjectPermissionsStore) WithTransact(ctx context.Context, f func(BitbucketProjectPermissionsStore) error) error {
+	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		c := s.copy()
+		c.Store = tx
+		return f(c)
+	})
 }
 
-func (s *bitbucketProjectPermissionsStore) transact(ctx context.Context) (*bitbucketProjectPermissionsStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	c := s.copy()
-	c.Store = txBase
-	return c, err
-}
-
-func (s *bitbucketProjectPermissionsStore) Done(err error) error {
-	return s.Store.Done(err)
-}
-
-// Enqueue a job to apply permissions to a Bitbucket project.
+// Enqueue a job to apply permissions to a Bitbucket project, returning its jobID.
 // The job will be enqueued to the BitbucketProjectPermissions worker.
 // If a non-empty permissions slice is passed, unrestricted has to be false, and vice versa.
-func (s *bitbucketProjectPermissionsStore) Enqueue(ctx context.Context, projectKey string, externalServiceID int64, permissions []types.UserPermission, unrestricted bool) (jobID int, err error) {
+func (s *bitbucketProjectPermissionsStore) Enqueue(ctx context.Context, projectKey string, externalServiceID int64, permissions []types.UserPermission, unrestricted bool) (int, error) {
 	if len(permissions) > 0 && unrestricted {
 		return 0, errors.New("cannot specify permissions when unrestricted is true")
 	}
@@ -80,32 +71,30 @@ func (s *bitbucketProjectPermissionsStore) Enqueue(ctx context.Context, projectK
 		perms = append(perms, userPermission(perm))
 	}
 
-	tx, err := s.transact(ctx)
-	if err != nil {
-		return 0, err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	// ensure we don't enqueue a job for the same project twice.
-	// if so, cancel the existing jobs and enqueue a new one.
-	// this doesn't apply to running jobs.
-	err = tx.Exec(ctx, sqlf.Sprintf(`--sql
+	var jobID int
+	err := s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		// ensure we don't enqueue a job for the same project twice.
+		// if so, cancel the existing jobs and enqueue a new one.
+		// this doesn't apply to running jobs.
+		err := tx.Exec(ctx, sqlf.Sprintf(`--sql
 UPDATE explicit_permissions_bitbucket_projects_jobs SET state = 'canceled' WHERE project_key = %s AND external_service_id = %s AND state = 'queued'
 `, projectKey, externalServiceID))
-	if err != nil && err != sql.ErrNoRows {
-		return 0, err
-	}
+		if err != nil && err != sql.ErrNoRows {
+			return err
+		}
 
-	err = tx.QueryRow(ctx, sqlf.Sprintf(`--sql
+		err = tx.QueryRow(ctx, sqlf.Sprintf(`--sql
 INSERT INTO
 	explicit_permissions_bitbucket_projects_jobs (project_key, external_service_id, permissions, unrestricted)
 VALUES (%s, %s, %s, %s) RETURNING id
 	`, projectKey, externalServiceID, pq.Array(perms), unrestricted)).Scan(&jobID)
-	if err != nil {
-		return 0, err
-	}
+		if err != nil {
+			return err
+		}
 
-	return jobID, nil
+		return nil
+	})
+	return jobID, err
 }
 
 var BitbucketProjectPermissionsColumnExpressions = []*sqlf.Query{
@@ -162,7 +151,7 @@ func (s *bitbucketProjectPermissionsStore) ListJobs(
 
 func ScanBitbucketProjectPermissionJob(rows dbutil.Scanner) (*types.BitbucketProjectPermissionJob, error) {
 	var job types.BitbucketProjectPermissionJob
-	var executionLogs []dbworkerstore.ExecutionLogEntry
+	var executionLogs []executor.ExecutionLogEntry
 	var permissions []userPermission
 
 	if err := rows.Scan(
@@ -187,7 +176,8 @@ func ScanBitbucketProjectPermissionJob(rows dbutil.Scanner) (*types.BitbucketPro
 	}
 
 	for _, entry := range executionLogs {
-		job.ExecutionLogs = append(job.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
+		logEntry := entry
+		job.ExecutionLogs = append(job.ExecutionLogs, &logEntry)
 	}
 
 	for _, perm := range permissions {

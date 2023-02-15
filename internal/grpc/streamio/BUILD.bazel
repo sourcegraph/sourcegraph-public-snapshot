@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "streamio",
+    srcs = ["streamio.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/streamio",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "streamio_test",
+    srcs = ["streamio_test.go"],
+    embed = [":streamio"],
+    deps = ["@com_github_stretchr_testify//require"],
+)

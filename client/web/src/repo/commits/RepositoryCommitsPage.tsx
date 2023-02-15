@@ -1,7 +1,6 @@
-import React, { useEffect, useMemo } from 'react'
+import { FC, useEffect, useMemo } from 'react'
 
-import * as H from 'history'
-import { RouteComponentProps } from 'react-router'
+import { useLocation } from 'react-router-dom-v5-compat'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
@@ -28,6 +27,7 @@ import {
 } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { basename } from '../../util/path'
+import { parseBrowserRepoURL } from '../../util/url'
 import { externalLinkFieldsFragment } from '../backend'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 
@@ -106,26 +106,16 @@ const REPOSITORY_GIT_COMMITS_QUERY = gql`
     ${gitCommitFragment}
 `
 
-export interface RepositoryCommitsPageProps
-    extends RevisionSpec,
-        BreadcrumbSetters,
-        RouteComponentProps<{
-            filePath?: string | undefined
-        }>,
-        TelemetryProps {
+export interface RepositoryCommitsPageProps extends RevisionSpec, BreadcrumbSetters, TelemetryProps {
     repo: RepositoryFields
-
-    history: H.History
-    location: H.Location
 }
 
 // A page that shows a repository's commits at the current revision.
-export const RepositoryCommitsPage: React.FunctionComponent<React.PropsWithChildren<RepositoryCommitsPageProps>> = ({
-    useBreadcrumb,
-    ...props
-}) => {
-    const repo = props.repo
-    const filePath = props.match.params.filePath
+export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
+    const { useBreadcrumb, repo } = props
+
+    const location = useLocation()
+    const { filePath = '' } = parseBrowserRepoURL(location.pathname)
 
     const { connection, error, loading, hasNextPage, fetchMore } = useShowMorePagination<
         RepositoryGitCommitsResult,

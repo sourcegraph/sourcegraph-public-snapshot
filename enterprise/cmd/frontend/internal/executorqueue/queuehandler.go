@@ -20,7 +20,7 @@ import (
 func newExecutorQueueHandler(logger log.Logger, db database.DB, queueHandlers []handler.ExecutorHandler, accessToken func() string, uploadHandler http.Handler, batchesWorkspaceFileGetHandler http.Handler, batchesWorkspaceFileExistsHandler http.Handler) func() http.Handler {
 	metricsStore := metricsstore.NewDistributedStore("executors:")
 	executorStore := db.Executors()
-	gitserverClient := gitserver.NewClient(db)
+	gitserverClient := gitserver.NewClient()
 
 	factory := func() http.Handler {
 		// 🚨 SECURITY: These routes are secured by checking a token shared between services.
@@ -35,7 +35,9 @@ func newExecutorQueueHandler(logger log.Logger, db database.DB, queueHandlers []
 		handler.SetupRoutes(executorStore, metricsStore, queueHandlers, base.PathPrefix("/queue/").Subrouter())
 
 		// Upload LSIF indexes without a sudo access token or github tokens.
+		base.Path("/scip/upload").Methods("POST").Handler(uploadHandler)
 		base.Path("/lsif/upload").Methods("POST").Handler(uploadHandler)
+		base.Path("/scip/upload").Methods("HEAD").Handler(noopHandler)
 
 		base.Path("/files/batch-changes/{spec}/{file}").Methods("GET").Handler(batchesWorkspaceFileGetHandler)
 		base.Path("/files/batch-changes/{spec}/{file}").Methods("HEAD").Handler(batchesWorkspaceFileExistsHandler)
@@ -106,3 +108,7 @@ func withInternalActor(next http.Handler) http.Handler {
 		next.ServeHTTP(rw, req.WithContext(actor.WithInternalActor(ctx)))
 	})
 }
+
+var noopHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+})

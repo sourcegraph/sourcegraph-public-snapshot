@@ -165,17 +165,26 @@ func (bt *BitbucketCodeHost) Next(ctx context.Context) []*store.Repo {
 	return results
 }
 
+func (bt *BitbucketCodeHost) projectKeyAndNameFrom(name string) (string, string) {
+	parts := strings.Split(name, separator)
+	// If this name originates from a Bitbucket client it will have the format <project key>_-_<repo name>.
+	if len(parts) == 2 {
+		return parts[0], parts[1]
+	}
+	// The name must originate from some other codehost so now we use the path from the config
+	return bt.def.Path, name
+}
+
 // CreateRepo creates a repo on bitbucket. It is assumed that the repo name has the following format: <project key>_-_<repo name>.
 // A repo can only be created under a project in bitbucket, therefore the project is extract from the repo name format and a
 // project is created first, if and only if, the project does not exist already. If the project already exists, the repo
 // will be created and the created repos git clone url will be returned.
 func (bt *BitbucketCodeHost) CreateRepo(ctx context.Context, name string) (*url.URL, error) {
-	parts := strings.Split(name, separator)
-	if len(parts) != 2 {
-		return nil, errors.New("invalid name format - expected <project key>_-_<repo name>")
+	key, repoName := bt.projectKeyAndNameFrom(name)
+
+	if len(key) == 0 || len(repoName) == 0 {
+		return nil, errors.Errorf("could not extract key and name from unknown repo format %q", name)
 	}
-	key := parts[0]
-	repoName := parts[1]
 
 	var apiErr *bitbucket.APIError
 	_, err := bt.c.GetProjectByKey(ctx, key)

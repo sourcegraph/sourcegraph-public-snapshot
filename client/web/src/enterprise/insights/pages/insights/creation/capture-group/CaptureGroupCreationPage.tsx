@@ -23,13 +23,14 @@ import { CaptureGroupFormFields } from './types'
 import { getSanitizedCaptureGroupInsight } from './utils/capture-group-insight-sanitizer'
 
 interface CaptureGroupCreationPageProps extends TelemetryProps {
+    backUrl: string
     onInsightCreateRequest: (event: { insight: MinimalCaptureGroupInsightData }) => Promise<unknown>
     onSuccessfulCreation: () => void
     onCancel: () => void
 }
 
 export const CaptureGroupCreationPage: FC<CaptureGroupCreationPageProps> = props => {
-    const { telemetryService, onInsightCreateRequest, onSuccessfulCreation, onCancel } = props
+    const { backUrl, telemetryService, onInsightCreateRequest, onSuccessfulCreation, onCancel } = props
 
     const { licensed, insight } = useUiFeatures()
     const creationPermission = useObservable(useMemo(() => insight.getCreationPermissions(), [insight]))
@@ -70,11 +71,15 @@ export const CaptureGroupCreationPage: FC<CaptureGroupCreationPageProps> = props
 
     return (
         <CodeInsightsPage>
-            <PageTitle title="Create insight - Code Insights" />
+            <PageTitle title="Create detect and track patterns insight - Code Insights" />
 
             <PageHeader
                 className="mb-5"
-                path={[{ icon: CodeInsightsIcon }, { text: 'Create new capture group insight' }]}
+                path={[
+                    { icon: CodeInsightsIcon, to: '/insights', ariaLabel: 'Code insights dashboard page' },
+                    { text: 'Create', to: backUrl },
+                    { text: 'Detect and track patterns insight' },
+                ]}
                 description={
                     <span className="text-muted">
                         Capture group code insights analyze your code based on generated data series queries.{' '}

@@ -6,7 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
+	migrationstore "github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -21,7 +21,7 @@ type StoreFactory func(db *sql.DB, migrationsTable string) Store
 
 func newStoreFactory(observationCtx *observation.Context) func(db *sql.DB, migrationsTable string) Store {
 	return func(db *sql.DB, migrationsTable string) Store {
-		return NewStoreShim(store.NewWithDB(observationCtx, db, migrationsTable))
+		return NewStoreShim(migrationstore.NewWithDB(observationCtx, db, migrationsTable))
 	}
 }
 
@@ -48,10 +48,10 @@ func initStore(ctx context.Context, newStore StoreFactory, db *sql.DB, schema *s
 }
 
 type storeShim struct {
-	*store.Store
+	*migrationstore.Store
 }
 
-func NewStoreShim(s *store.Store) Store {
+func NewStoreShim(s *migrationstore.Store) Store {
 	return &storeShim{s}
 }
 

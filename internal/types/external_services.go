@@ -22,6 +22,12 @@ type GitLabConnection struct {
 	*schema.GitLabConnection
 }
 
+type BitbucketCloudConnection struct {
+	// The unique resource identifier of the external service.
+	URN string
+	*schema.BitbucketCloudConnection
+}
+
 type PerforceConnection struct {
 	// The unique resource identifier of the external service.
 	URN string

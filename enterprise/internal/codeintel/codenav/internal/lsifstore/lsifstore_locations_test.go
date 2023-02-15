@@ -19,7 +19,6 @@ import (
 )
 
 const (
-	testLSIFUploadID = 1
 	testSCIPUploadID = 2408562
 )
 
@@ -425,20 +424,28 @@ func TestExtractOccurrenceData(t *testing.T) {
 			expectedRanges []*scip.Range
 		}{
 			{
-				explanation: "#1 happy path: symbol name match and it is a definition or an interface definition",
+				explanation: "#1 happy path: symbol name match",
 				document: &scip.Document{
 					Occurrences: []*scip.Occurrence{
 						{
 							Range:       []int32{1, 100, 1, 200},
 							Symbol:      "react 17.1 main.go func1",
-							SymbolRoles: 1, // Definition
+							SymbolRoles: 0,
+						},
+						{
+							Range:       []int32{3, 300, 4, 400},
+							Symbol:      "react 17.1 main.go iface",
+							SymbolRoles: 1, // is definition
 						},
 					},
 					Symbols: []*scip.SymbolInformation{
 						{
-							Symbol: "react 17.1 main.go func2",
+							Symbol: "react 17.1 main.go func1",
 							Relationships: []*scip.Relationship{
-								{IsImplementation: true},
+								{
+									Symbol:           "react 17.1 main.go iface",
+									IsImplementation: true,
+								},
 							},
 						},
 					},
@@ -448,7 +455,7 @@ func TestExtractOccurrenceData(t *testing.T) {
 					SymbolRoles: 1,
 				},
 				expectedRanges: []*scip.Range{
-					scip.NewRange([]int32{1, 100, 1, 200}),
+					scip.NewRange([]int32{3, 300, 4, 400}),
 				},
 			},
 			{
@@ -473,60 +480,6 @@ func TestExtractOccurrenceData(t *testing.T) {
 				occurrence: &scip.Occurrence{
 					Symbol:      "react-jest main.js func7",
 					SymbolRoles: 1,
-				},
-				expectedRanges: []*scip.Range{},
-			},
-			{
-				explanation: "#3 symbol name match and occurrence is a definition",
-				document: &scip.Document{
-					Occurrences: []*scip.Occurrence{
-						{
-							Range:       []int32{5, 500, 7, 700},
-							Symbol:      "react-test index.js func2",
-							SymbolRoles: 1, // is definition
-						},
-					},
-					Symbols: []*scip.SymbolInformation{
-						{
-							Symbol: "react-test index.js func2",
-							Relationships: []*scip.Relationship{
-								{IsTypeDefinition: true},
-								{IsImplementation: false},
-							},
-						},
-					},
-				},
-				occurrence: &scip.Occurrence{
-					Symbol:      "react-test index.js func2",
-					SymbolRoles: 1, // is definition
-				},
-				expectedRanges: []*scip.Range{
-					scip.NewRange([]int32{5, 500, 7, 700}),
-				},
-			},
-			{
-				explanation: "#4 neither occurrence nor document's occurrence are a definition",
-				document: &scip.Document{
-					Occurrences: []*scip.Occurrence{
-						{
-							Range:       []int32{5, 500, 7, 700},
-							Symbol:      "react-test index.js func2",
-							SymbolRoles: 0,
-						},
-					},
-					Symbols: []*scip.SymbolInformation{
-						{
-							Symbol: "react-test index.js func2",
-							Relationships: []*scip.Relationship{
-								{IsTypeDefinition: true},
-								{IsImplementation: false},
-							},
-						},
-					},
-				},
-				occurrence: &scip.Occurrence{
-					Symbol:      "react-test index.js func2",
-					SymbolRoles: 0,
 				},
 				expectedRanges: []*scip.Range{},
 			},

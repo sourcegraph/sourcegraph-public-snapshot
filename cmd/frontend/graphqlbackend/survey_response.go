@@ -9,7 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -99,7 +99,7 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 	}
 
 	// If user is authenticated, use their uid and overwrite the optional email field.
-	actor := actor.FromContext(ctx)
+	actor := sgactor.FromContext(ctx)
 	if actor.IsAuthenticated() {
 		uid = &actor.UID
 		e, _, err := r.db.UserEmails().GetPrimaryEmail(ctx, actor.UID)
@@ -164,7 +164,7 @@ func (r *schemaResolver) SubmitHappinessFeedback(ctx context.Context, args *stru
 
 	// We include the username and email address of the user (if signed in). For signed-in users,
 	// the UI indicates that the username and email address will be sent to Sourcegraph.
-	if actor := actor.FromContext(ctx); actor.IsAuthenticated() {
+	if actor := sgactor.FromContext(ctx); actor.IsAuthenticated() {
 		currentUser, err := r.db.Users().GetByID(ctx, actor.UID)
 		if err != nil {
 			return nil, err

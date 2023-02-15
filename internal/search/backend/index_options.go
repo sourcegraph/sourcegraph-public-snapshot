@@ -3,11 +3,11 @@ package backend
 import (
 	"bytes"
 	"encoding/json"
-	"sort"
 
 	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/zoekt"
+	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -188,13 +188,12 @@ func getIndexOptions(
 		})
 	}
 
-	sort.Slice(o.Branches, func(i, j int) bool {
-		a, b := o.Branches[i].Name, o.Branches[j].Name
+	slices.SortFunc(o.Branches, func(a, b zoekt.RepositoryBranch) bool {
 		// Zoekt treats first branch as default branch, so put HEAD first
-		if a == "HEAD" || b == "HEAD" {
-			return a == "HEAD"
+		if a.Name == "HEAD" || b.Name == "HEAD" {
+			return a.Name == "HEAD"
 		}
-		return a < b
+		return a.Name < b.Name
 	})
 
 	// If the first branch is not HEAD, do not index anything. This should

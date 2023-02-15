@@ -91,5 +91,5 @@ fi
 
 echo "--- TEST: Running tests"
 pushd client/web
-yarn run test:regression:core
+pnpm run test:regression:core
 popd

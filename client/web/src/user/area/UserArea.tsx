@@ -1,7 +1,6 @@
-import React, { useMemo } from 'react'
+import { FC, useMemo, Suspense } from 'react'
 
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { useParams, useLocation, Routes, Route } from 'react-router-dom-v5-compat'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -14,11 +13,11 @@ import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
-import { HeroPage } from '../../components/HeroPage'
+import { NotFoundPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
 import { UserAreaUserFields, UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../../graphql-operations'
 import { NamespaceProps } from '../../namespaces'
-import { RouteDescriptor } from '../../util/contributions'
+import { RouteV6Descriptor } from '../../util/contributions'
 import { UserSettingsAreaRoute } from '../settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from '../settings/UserSettingsSidebar'
 
@@ -44,11 +43,16 @@ export const UserAreaGQLFragment = gql`
         avatarURL
         viewerCanAdminister
         builtinAuth
+        createdAt
+        emails @skip(if: $isSourcegraphDotCom) {
+            email
+            isPrimary
+        }
     }
 `
 
 export const USER_AREA_USER_PROFILE = gql`
-    query UserAreaUserProfile($username: String!) {
+    query UserAreaUserProfile($username: String!, $isSourcegraphDotCom: Boolean!) {
         user(username: $username) {
             ...UserAreaUserFields
         }
@@ -56,14 +60,13 @@ export const USER_AREA_USER_PROFILE = gql`
     ${UserAreaGQLFragment}
 `
 
-export interface UserAreaRoute extends RouteDescriptor<UserAreaRouteContext> {
+export interface UserAreaRoute extends RouteV6Descriptor<UserAreaRouteContext> {
     /** When true, the header is not rendered and the component is not wrapped in a container. */
     fullPage?: boolean
 }
 
 interface UserAreaProps
-    extends RouteComponentProps<{ username: string }>,
-        PlatformContextProps,
+    extends PlatformContextProps,
         SettingsCascadeProps,
         ThemeProps,
         TelemetryProps,
@@ -120,19 +123,15 @@ export interface UserAreaRouteContext
 /**
  * A user's public profile area.
  */
-export const UserArea: React.FunctionComponent<React.PropsWithChildren<UserAreaProps>> = ({
-    useBreadcrumb,
-    userAreaRoutes,
-    match: {
-        url,
-        params: { username },
-    },
-    ...props
-}) => {
+export const UserArea: FC<UserAreaProps> = ({ useBreadcrumb, userAreaRoutes, isSourcegraphDotCom, ...props }) => {
+    const location = useLocation()
+    const { username } = useParams()
+    const userAreaMainUrl = `/users/${username}`
+
     const { data, error, loading, previousData } = useQuery<UserAreaUserProfileResult, UserAreaUserProfileVariables>(
         USER_AREA_USER_PROFILE,
         {
-            variables: { username },
+            variables: { username: username!, isSourcegraphDotCom },
         }
     )
 
@@ -165,34 +164,35 @@ export const UserArea: React.FunctionComponent<React.PropsWithChildren<UserAreaP
     }
 
     if (!user) {
-        return <NotFoundPage />
+        return <NotFoundPage pageType="user" />
     }
 
     const context: UserAreaRouteContext = {
         ...props,
-        url,
+        url: userAreaMainUrl,
         user,
         namespace: user,
         ...childBreadcrumbSetters,
+        isSourcegraphDotCom,
     }
 
     return (
-        <ErrorBoundary location={props.location}>
-            <React.Suspense
+        <ErrorBoundary location={location}>
+            <Suspense
                 fallback={
                     <div className="w-100 text-center">
                         <LoadingSpinner className="m-2" />
                     </div>
                 }
             >
-                <Switch>
+                <Routes>
                     {userAreaRoutes.map(
-                        ({ path, exact, render, condition = () => true, fullPage }) =>
+                        ({ path, render, condition = () => true, fullPage }) =>
                             condition(context) && (
                                 <Route
-                                    render={routeComponentProps =>
+                                    element={
                                         fullPage ? (
-                                            render({ ...context, ...routeComponentProps })
+                                            render(context)
                                         ) : (
                                             <Page>
                                                 <UserAreaHeader
@@ -201,27 +201,18 @@ export const UserArea: React.FunctionComponent<React.PropsWithChildren<UserAreaP
                                                     className="mb-3"
                                                     navItems={props.userAreaHeaderNavItems}
                                                 />
-                                                <div className="container">
-                                                    {render({ ...context, ...routeComponentProps })}
-                                                </div>
+                                                <div className="container">{render(context)}</div>
                                             </Page>
                                         )
                                     }
-                                    path={url + path}
+                                    path={path}
                                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                    exact={exact}
                                 />
                             )
                     )}
-                    <Route key="hardcoded-key">
-                        <NotFoundPage />
-                    </Route>
-                </Switch>
-            </React.Suspense>
+                    <Route element={<NotFoundPage pageType="user" />} />
+                </Routes>
+            </Suspense>
         </ErrorBoundary>
     )
 }
-
-const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested user page was not found." />
-)

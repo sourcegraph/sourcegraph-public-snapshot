@@ -26,6 +26,26 @@ func Prometheus() *monitoring.Dashboard {
 				Rows: []monitoring.Row{
 					{
 						{
+							Name:           "metrics_cardinality",
+							Description:    "metrics with highest cardinalities",
+							Query:          `topk(10, count by (__name__, job)({__name__!=""}))`,
+							Panel:          monitoring.Panel().LegendFormat("{{__name__}} ({{job}})"),
+							Owner:          monitoring.ObservableOwnerDevOps,
+							NoAlert:        true,
+							Interpretation: "The 10 highest-cardinality metrics collected by this Prometheus instance.",
+						},
+						{
+							Name:           "samples_scraped",
+							Description:    "samples scraped by job",
+							Query:          `sum by(job) (scrape_samples_post_metric_relabeling{job!=""})`,
+							Panel:          monitoring.Panel().LegendFormat("{{job}}"),
+							Owner:          monitoring.ObservableOwnerDevOps,
+							NoAlert:        true,
+							Interpretation: "The number of samples scraped after metric relabeling was applied by this Prometheus instance.",
+						},
+					},
+					{
+						{
 							Name:        "prometheus_rule_eval_duration",
 							Description: "average prometheus rule group evaluation duration over 10m by rule group",
 							Query:       `sum by(rule_group) (avg_over_time(prometheus_rule_group_last_duration_seconds[10m]))`,
@@ -149,6 +169,55 @@ func Prometheus() *monitoring.Dashboard {
 							Panel:       monitoring.Panel().LegendFormat("rejected scrapes"),
 							Owner:       monitoring.ObservableOwnerDevOps,
 							NextSteps:   "Check Prometheus logs for messages related to target scrape failures.",
+						},
+					},
+				},
+			},
+			{
+				// Google Managed Prometheus must be in the name here - Cloud attaches
+				// additional rows here for Centralized Observability:
+				//
+				// https://handbook.sourcegraph.com/departments/cloud/technical-docs/observability/
+				Title:  "Google Managed Prometheus (only available for `sourcegraph/prometheus-gcp`)",
+				Hidden: true,
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:          "samples_exported",
+							Description:   "samples exported to GMP every 5m",
+							Query:         `rate(gcm_export_samples_sent_total[5m])`,
+							Panel:         monitoring.Panel().LegendFormat("samples"),
+							MultiInstance: true,
+							NoAlert:       true,
+							Owner:         monitoring.ObservableOwnerCloud,
+							Interpretation: `
+								A high value indicates that large numbers of samples are being exported, potentially impacting costs.
+								In [Sourcegraph Cloud centralized observability](https://handbook.sourcegraph.com/departments/cloud/technical-docs/observability/), high values can be investigated by:
+
+								- going to per-instance self-hosted dashboards for Prometheus in (Internals -> Metrics cardinality).
+								- querying for 'monitoring_googleapis_com:billing_samples_ingested', for example:
+
+								'''
+								topk(10, sum by(metric_type, project_id) (rate(monitoring_googleapis_com:billing_samples_ingested[1h])))
+								'''
+
+								This is required because GMP does not allow queries aggregating on '__name__'
+
+								See [Anthos metrics](https://cloud.google.com/monitoring/api/metrics_anthos) for more details about 'gcm_export_samples_sent_total'.
+							`,
+						},
+						{
+							Name:        "pending_exports",
+							Description: "samples pending export to GMP per minute",
+							Query:       `sum_over_time(gcm_export_pending_requests[1m])`,
+							Panel:       monitoring.Panel().LegendFormat("pending exports"),
+							NoAlert:     true,
+							Owner:       monitoring.ObservableOwnerCloud,
+							Interpretation: `
+								A high value indicates exports are taking a long time.
+
+								See ['gmc_*' Anthos metrics](https://cloud.google.com/monitoring/api/metrics_anthos) for more details about 'gcm_export_pending_requests'.
+							`,
 						},
 					},
 				},

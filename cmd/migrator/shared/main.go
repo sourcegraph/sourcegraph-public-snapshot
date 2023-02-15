@@ -75,7 +75,7 @@ func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsing
 			cliutil.Drift(appName, newRunner, outputFactory, schemaFactories...),
 			cliutil.AddLog(appName, newRunner, outputFactory),
 			cliutil.Upgrade(appName, newRunnerWithSchemas, outputFactory, registerMigrators, schemaFactories...),
-			cliutil.Downgrade(appName, newRunnerWithSchemas, outputFactory, registerMigrators),
+			cliutil.Downgrade(appName, newRunnerWithSchemas, outputFactory, registerMigrators, schemaFactories...),
 			cliutil.RunOutOfBandMigrations(appName, newRunner, outputFactory, registerMigrators),
 		},
 	}

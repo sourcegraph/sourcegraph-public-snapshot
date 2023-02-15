@@ -52,6 +52,49 @@ func TestUserRoleCreate(t *testing.T) {
 	})
 }
 
+func TestUserRoleBulkCreateForUser(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := db.UserRoles()
+
+	user, role := createUserAndRole(ctx, t, db)
+	role2, err := createTestRole(ctx, "another-role", false, t, db.Roles())
+	assert.NoError(t, err)
+
+	t.Run("without user id", func(t *testing.T) {
+		urs, err := store.BulkCreateForUser(ctx, BulkCreateForUserOpts{})
+		assert.Nil(t, urs)
+		assert.Error(t, err)
+		assert.Equal(t, err.Error(), "missing user id")
+	})
+
+	t.Run("without role ids", func(t *testing.T) {
+		urs, err := store.BulkCreateForUser(ctx, BulkCreateForUserOpts{
+			UserID: user.ID,
+		})
+		assert.Nil(t, urs)
+		assert.Error(t, err)
+		assert.Equal(t, err.Error(), "missing role ids")
+	})
+
+	t.Run("success", func(t *testing.T) {
+		roleIDs := []int32{role.ID, role2.ID}
+		urs, err := store.BulkCreateForUser(ctx, BulkCreateForUserOpts{
+			UserID:  user.ID,
+			RoleIDs: roleIDs,
+		})
+		assert.NoError(t, err)
+		assert.Len(t, urs, 2)
+		for i, ur := range urs {
+			assert.Equal(t, ur.UserID, user.ID)
+			assert.Equal(t, ur.RoleID, roleIDs[i])
+		}
+	})
+}
+
 func TestUserRoleDelete(t *testing.T) {
 	t.Parallel()
 
@@ -145,7 +188,7 @@ func TestUserRoleGetByRoleID(t *testing.T) {
 		urs, err := store.GetByRoleID(ctx, GetUserRoleOpts{})
 		assert.Error(t, err)
 		assert.Nil(t, urs)
-		assert.Equal(t, err.Error(), "missing id from sql query")
+		assert.Equal(t, err.Error(), "missing id or name")
 	})
 
 	t.Run("with provided role id", func(t *testing.T) {

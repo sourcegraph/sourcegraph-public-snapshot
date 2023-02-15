@@ -47,7 +47,7 @@ func TestSkippedRules(t *testing.T) {
 
 	c := `type:diff foo bar`
 
-	t.Run("do not apply rules for type:diff", func(t *testing.T) {
+	t.Run("do not apply rules for type_diff", func(t *testing.T) {
 		autogold.Equal(t, autogold.Raw(test(c)))
 	})
 }

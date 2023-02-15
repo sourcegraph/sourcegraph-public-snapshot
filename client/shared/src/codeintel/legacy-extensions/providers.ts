@@ -582,6 +582,7 @@ export function createHoverProvider(
                     continue
                 }
 
+                emitter.emitOnce('searchHover')
                 logger?.log({ provider: 'hover', precise: false, ...commonLogFields })
 
                 if (hasPreciseDefinition) {

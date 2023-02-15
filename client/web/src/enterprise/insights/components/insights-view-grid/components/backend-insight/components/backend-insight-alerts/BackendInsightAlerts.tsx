@@ -1,4 +1,4 @@
-import React, { FC, ReactNode } from 'react'
+import { FC, ReactNode } from 'react'
 
 import { mdiAlertCircle as mdiAlertCircleOutline } from '@mdi/js'
 import classNames from 'classnames'
@@ -40,7 +40,6 @@ export const BackendAlertOverlay: FC<BackendAlertOverLayProps> = props => {
         return (
             <AlertOverlay
                 title="This insight is still being processed"
-                description="Datapoints shown may be undercounted."
                 icon={<ProgressWrench className={classNames('mb-3')} size={33} />}
                 className={className}
             />
@@ -62,19 +61,19 @@ export const BackendAlertOverlay: FC<BackendAlertOverLayProps> = props => {
 
 export interface AlertOverlayProps {
     title: string
-    description: string
-    icon?: React.ReactNode
+    description?: ReactNode
+    icon?: ReactNode
     className?: string
 }
 
-const AlertOverlay: React.FunctionComponent<React.PropsWithChildren<AlertOverlayProps>> = props => {
+const AlertOverlay: FC<AlertOverlayProps> = props => {
     const { title, description, icon, className } = props
 
     return (
         <div className={classNames(className, styles.alertOverlay)}>
             {icon && <div className={styles.alertOverlayIcon}>{icon}</div>}
             <H4 className={styles.alertOverlayTitle}>{title}</H4>
-            <small className={styles.alertOverlayDescription}>{description}</small>
+            {description && <small className={styles.alertOverlayDescription}>{description}</small>}
         </div>
     )
 }

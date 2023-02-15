@@ -29,14 +29,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	jwt, err := genJwtToken(*appID, *keyPath)
+	jwtToken, err := genJwtToken(*appID, *keyPath)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: jwt},
+		&oauth2.Token{AccessToken: jwtToken},
 	)
 	tc := oauth2.NewClient(ctx, ts)
 	ghc := github.NewClient(tc)

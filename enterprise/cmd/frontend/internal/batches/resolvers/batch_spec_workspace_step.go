@@ -2,15 +2,18 @@ package resolvers
 
 import (
 	"context"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 )
@@ -25,6 +28,8 @@ type batchSpecWorkspaceStepV1Resolver struct {
 
 	cachedResult *execution.AfterStepResult
 }
+
+var _ graphqlbackend.BatchSpecWorkspaceStepResolver = &batchSpecWorkspaceStepV1Resolver{}
 
 func (r *batchSpecWorkspaceStepV1Resolver) Number() int32 {
 	return int32(r.index + 1)
@@ -54,16 +59,14 @@ func (r *batchSpecWorkspaceStepV1Resolver) Skipped() bool {
 	return r.CachedResultFound() || r.stepInfo.Skipped
 }
 
-func (r *batchSpecWorkspaceStepV1Resolver) OutputLines(ctx context.Context, args *graphqlbackend.BatchSpecWorkspaceStepOutputLinesArgs) (*[]string, error) {
+func (r *batchSpecWorkspaceStepV1Resolver) OutputLines(ctx context.Context, args *graphqlbackend.BatchSpecWorkspaceStepOutputLinesArgs) graphqlbackend.BatchSpecWorkspaceStepOutputLineConnectionResolver {
 	lines := r.stepInfo.OutputLines
-	if args.After != nil {
-		lines = lines[*args.After:]
+
+	return &batchSpecWorkspaceOutputLinesResolver{
+		lines: lines,
+		first: args.First,
+		after: args.After,
 	}
-	if int(args.First) < len(lines) {
-		lines = lines[:args.First]
-	}
-	// TODO: Return nil when execution not yet started.
-	return &lines, nil
 }
 
 func (r *batchSpecWorkspaceStepV1Resolver) StartedAt() *gqlutil.DateTime {
@@ -159,10 +162,10 @@ func (r *batchSpecWorkspaceStepV1Resolver) DiffStat(ctx context.Context) (*graph
 
 func (r *batchSpecWorkspaceStepV1Resolver) Diff(ctx context.Context) (graphqlbackend.PreviewRepositoryComparisonResolver, error) {
 	if r.CachedResultFound() {
-		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(r.store.DatabaseDB()), r.repo, r.baseRev, r.cachedResult.Diff)
+		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(), r.repo, r.baseRev, r.cachedResult.Diff)
 	}
 	if r.stepInfo.DiffFound {
-		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(r.store.DatabaseDB()), r.repo, r.baseRev, r.stepInfo.Diff)
+		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(), r.repo, r.baseRev, r.stepInfo.Diff)
 	}
 	return nil, nil
 }
@@ -175,12 +178,14 @@ type batchSpecWorkspaceStepV2Resolver struct {
 	step    batcheslib.Step
 	skipped bool
 
-	logEntry      workerutil.ExecutionLogEntry
+	logEntry      executor.ExecutionLogEntry
 	logEntryFound bool
 
 	cachedResult      *execution.AfterStepResult
 	cachedResultFound bool
 }
+
+var _ graphqlbackend.BatchSpecWorkspaceStepResolver = &batchSpecWorkspaceStepV2Resolver{}
 
 func (r *batchSpecWorkspaceStepV2Resolver) Number() int32 {
 	return int32(r.index + 1)
@@ -210,20 +215,17 @@ func (r *batchSpecWorkspaceStepV2Resolver) Skipped() bool {
 	return r.CachedResultFound() || r.skipped
 }
 
-func (r *batchSpecWorkspaceStepV2Resolver) OutputLines(ctx context.Context, args *graphqlbackend.BatchSpecWorkspaceStepOutputLinesArgs) (*[]string, error) {
-	if !r.logEntryFound {
-		return nil, nil
+func (r *batchSpecWorkspaceStepV2Resolver) OutputLines(ctx context.Context, args *graphqlbackend.BatchSpecWorkspaceStepOutputLinesArgs) graphqlbackend.BatchSpecWorkspaceStepOutputLineConnectionResolver {
+	lines := []string{}
+	if r.logEntryFound {
+		lines = strings.Split(r.logEntry.Out, "\n")
 	}
 
-	lines := strings.Split(r.logEntry.Out, "\n")
-
-	if args.After != nil {
-		lines = lines[*args.After:]
+	return &batchSpecWorkspaceOutputLinesResolver{
+		lines: lines,
+		first: args.First,
+		after: args.After,
 	}
-	if int(args.First) < len(lines) {
-		lines = lines[:args.First]
-	}
-	return &lines, nil
 }
 
 func (r *batchSpecWorkspaceStepV2Resolver) StartedAt() *gqlutil.DateTime {
@@ -326,7 +328,7 @@ func (r *batchSpecWorkspaceStepV2Resolver) Diff(ctx context.Context) (graphqlbac
 	// If a cached result was found previously, or one was generated for this step, we can
 	// use it to return a comparison resolver.
 	if r.cachedResult != nil {
-		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(r.store.DatabaseDB()), r.repo, r.baseRev, r.cachedResult.Diff)
+		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(), r.repo, r.baseRev, r.cachedResult.Diff)
 	}
 	return nil, nil
 }
@@ -357,4 +359,69 @@ func (r *batchSpecWorkspaceOutputVariableResolver) Name() string {
 }
 func (r *batchSpecWorkspaceOutputVariableResolver) Value() graphqlbackend.JSONValue {
 	return graphqlbackend.JSONValue{Value: r.value}
+}
+
+type batchSpecWorkspaceOutputLinesResolver struct {
+	lines []string
+	first int32
+	after *string
+
+	once        sync.Once
+	err         error
+	total       int32
+	linesSubset []string
+	hasNextPage bool
+	endCursor   int32
+}
+
+var _ graphqlbackend.BatchSpecWorkspaceStepOutputLineConnectionResolver = &batchSpecWorkspaceOutputLinesResolver{}
+
+func (r *batchSpecWorkspaceOutputLinesResolver) compute() ([]string, int32, bool) {
+	r.once.Do(func() {
+		totalLines := len(r.lines)
+		r.total = int32(totalLines)
+
+		var after int32
+		if r.after != nil {
+			a, err := strconv.Atoi(*r.after)
+			if err != nil {
+				r.err = err
+				return
+			}
+			after = int32(a)
+		}
+
+		offset := (after + r.first)
+
+		if after < r.total {
+			r.linesSubset = r.lines[after:]
+		}
+
+		if int(r.first) < len(r.lines) && r.total > offset {
+			r.linesSubset = r.linesSubset[:r.first]
+		}
+		r.hasNextPage = r.total > offset
+		if r.hasNextPage {
+			r.endCursor = offset
+		}
+	})
+	return r.linesSubset, r.total, r.hasNextPage
+}
+
+func (r *batchSpecWorkspaceOutputLinesResolver) TotalCount() (int32, error) {
+	_, totalCount, _ := r.compute()
+	return totalCount, r.err
+}
+
+func (r *batchSpecWorkspaceOutputLinesResolver) PageInfo() (*graphqlutil.PageInfo, error) {
+	_, _, hasNextPage := r.compute()
+	if hasNextPage {
+		return graphqlutil.NextPageCursor(strconv.Itoa(int(r.endCursor))), r.err
+	}
+	return graphqlutil.HasNextPage(hasNextPage), r.err
+}
+
+func (r *batchSpecWorkspaceOutputLinesResolver) Nodes() ([]string, error) {
+	lines, _, _ := r.compute()
+	return lines, r.err
 }

@@ -48,8 +48,8 @@ data: {}`
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("resultCount", int(3)).Equal(t, resultCount)
-	autogold.Want("alertCount", int(1)).Equal(t, alertCount)
-	autogold.Want("errorCount", int(1)).Equal(t, errorCount)
-	autogold.Want("unknownCount", int(0)).Equal(t, unknownCount)
+	autogold.Want("resultCount", 3).Equal(t, resultCount)
+	autogold.Want("alertCount", 1).Equal(t, alertCount)
+	autogold.Want("errorCount", 1).Equal(t, errorCount)
+	autogold.Want("unknownCount", 0).Equal(t, unknownCount)
 }

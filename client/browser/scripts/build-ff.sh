@@ -18,17 +18,17 @@ fi
 # Install the node version that's required for Sourcegraph
 nvm install
 
-# If yarn is not installed, install yarn
-if test ! "$(which yarn)"; then
-  echo "Installing yarn"
-  npm i -g yarn
+# If pnpm is not installed, install pnpm
+if test ! "$(which pnpm)"; then
+  echo "Installing pnpm"
+  npm i -g pnpm
 else
-  echo "yarn is already installed"
+  echo "pnpm is already installed"
 fi
 
 # Install dependencies and build
-yarn
-yarn run build-browser-extension
+pnpm install
+pnpm run build-browser-extension
 
 # Remove build directory if it exists
 rm -rf build

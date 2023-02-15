@@ -21,10 +21,6 @@ func TestIDsWithMeta(t *testing.T) {
 	ctx := context.Background()
 
 	if _, err := codeIntelDB.ExecContext(ctx, `
-		INSERT INTO lsif_data_metadata (dump_id, num_result_chunks) VALUES (100, 0);
-		INSERT INTO lsif_data_metadata (dump_id, num_result_chunks) VALUES (102, 0);
-		INSERT INTO lsif_data_metadata (dump_id, num_result_chunks) VALUES (104, 0);
-
 		INSERT INTO codeintel_scip_metadata (upload_id, text_document_encoding, tool_name, tool_version, tool_arguments, protocol_version) VALUES (200, 'utf8', '', '', '{}', 1);
 		INSERT INTO codeintel_scip_metadata (upload_id, text_document_encoding, tool_name, tool_version, tool_arguments, protocol_version) VALUES (202, 'utf8', '', '', '{}', 1);
 		INSERT INTO codeintel_scip_metadata (upload_id, text_document_encoding, tool_name, tool_version, tool_arguments, protocol_version) VALUES (204, 'utf8', '', '', '{}', 1);
@@ -33,11 +29,6 @@ func TestIDsWithMeta(t *testing.T) {
 	}
 
 	candidates := []int{
-		100, // exists
-		101,
-		103,
-		104, // exists
-		105,
 		200, // exists
 		201,
 		203,
@@ -49,8 +40,6 @@ func TestIDsWithMeta(t *testing.T) {
 		t.Fatalf("failed to find upload IDs with metadata: %s", err)
 	}
 	expectedIDs := []int{
-		100,
-		104,
 		200,
 		204,
 	}
@@ -69,13 +58,6 @@ func TestReconcileCandidates(t *testing.T) {
 	now := time.Unix(1587396557, 0).UTC()
 
 	if _, err := codeIntelDB.ExecContext(ctx, `
-		INSERT INTO lsif_data_metadata (dump_id, num_result_chunks) VALUES (100, 0);
-		INSERT INTO lsif_data_metadata (dump_id, num_result_chunks) VALUES (101, 0);
-		INSERT INTO lsif_data_metadata (dump_id, num_result_chunks) VALUES (102, 0);
-		INSERT INTO lsif_data_metadata (dump_id, num_result_chunks) VALUES (103, 0);
-		INSERT INTO lsif_data_metadata (dump_id, num_result_chunks) VALUES (104, 0);
-		INSERT INTO lsif_data_metadata (dump_id, num_result_chunks) VALUES (105, 0);
-
 		INSERT INTO codeintel_scip_metadata (upload_id, text_document_encoding, tool_name, tool_version, tool_arguments, protocol_version) VALUES (200, 'utf8', '', '', '{}', 1);
 		INSERT INTO codeintel_scip_metadata (upload_id, text_document_encoding, tool_name, tool_version, tool_arguments, protocol_version) VALUES (201, 'utf8', '', '', '{}', 1);
 		INSERT INTO codeintel_scip_metadata (upload_id, text_document_encoding, tool_name, tool_version, tool_arguments, protocol_version) VALUES (202, 'utf8', '', '', '{}', 1);
@@ -92,10 +74,6 @@ func TestReconcileCandidates(t *testing.T) {
 		t.Fatalf("failed to get candidate IDs for reconciliation: %s", err)
 	}
 	expectedIDs := []int{
-		100,
-		101,
-		102,
-		103,
 		200,
 		201,
 		202,
@@ -112,10 +90,6 @@ func TestReconcileCandidates(t *testing.T) {
 		t.Fatalf("failed to get candidate IDs for reconciliation: %s", err)
 	}
 	expectedIDs = []int{
-		100,
-		101,
-		104,
-		105,
 		200,
 		201,
 		204,
@@ -132,8 +106,6 @@ func TestReconcileCandidates(t *testing.T) {
 		t.Fatalf("failed to get candidate IDs for reconciliation: %s", err)
 	}
 	expectedIDs = []int{
-		102,
-		103,
 		202,
 		203,
 	}

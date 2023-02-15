@@ -20,7 +20,12 @@ export const ManageCodeMonitorPageStory: Story = () => (
         {props => (
             <ManageCodeMonitorPage
                 {...props}
-                authenticatedUser={{ ...mockUser, id: 'foobar', username: 'alice', email: 'alice@alice.com' }}
+                authenticatedUser={{
+                    ...mockUser,
+                    id: 'foobar',
+                    username: 'alice',
+                    emails: [{ email: 'alice@alice.com', isPrimary: true, verified: true }],
+                }}
                 updateCodeMonitor={fake()}
                 fetchCodeMonitor={fake(() => of(mockCodeMonitor))}
                 deleteCodeMonitor={fake(() => NEVER)}

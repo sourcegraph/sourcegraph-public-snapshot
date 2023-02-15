@@ -15,21 +15,20 @@
   interfaces:
     - GitServerClient
 - filename: enterprise/cmd/executor/internal/command/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command
-  interfaces:
-    - ExecutionLogEntryStore
-    - Logger
-    - LogEntry
-    - commandRunner
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command
+      interfaces:
+        - ExecutionLogEntryStore
+        - Logger
+        - LogEntry
+        - commandRunner
 - filename: enterprise/cmd/executor/internal/worker/mocks_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command
       interfaces:
+        - ExecutionLogEntryStore
         - Runner
-    - path: github.com/sourcegraph/sourcegraph/internal/workerutil
-      interfaces:
-        - Store
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/store
+    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace
       interfaces:
         - FilesStore
 - filename: enterprise/cmd/frontend/internal/app/mocks_test.go
@@ -90,7 +89,14 @@
       interfaces:
         - Store
       prefix: Worker
-
+- filename: internal/codeintel/dependencies/internal/background/mocks_test.go
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/background
+      interfaces:
+        - GitserverClient
+        - ExternalServiceStore
+        - AutoIndexingService
+        - DependenciesService
 - filename: enterprise/internal/codeintel/autoindexing/mocks_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store
@@ -179,6 +185,10 @@
   path: github.com/sourcegraph/sourcegraph/internal/database/migration/runner
   interfaces:
     - Store
+- filename: internal/database/basestore/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/database/basestore
+  interfaces:
+    - Rows
 - filename: internal/featureflag/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/featureflag
   interfaces:
@@ -286,3 +296,7 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler
   interfaces:
     - RepoQueryExecutor
+- filename: enterprise/internal/insights/store/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store
+  interfaces:
+    - InsightPermissionStore
