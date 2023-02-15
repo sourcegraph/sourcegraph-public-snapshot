@@ -123,8 +123,6 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                     <Label htmlFor="repositories-id">Repositories</Label>
                     <RepositoriesField
                         id="repositories-id"
-                        autoFocus={true}
-                        required={true}
                         description="Find and choose up to 1 repository to run insight"
                         placeholder="Search repositories..."
                         {...getDefaultInputProps(repositories)}
