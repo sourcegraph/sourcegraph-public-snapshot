@@ -42703,7 +42703,11 @@ func NewMockRolePermissionStore() *MockRolePermissionStore {
 			},
 		},
 		BulkAssignPermissionsToRoleFunc: &RolePermissionStoreBulkAssignPermissionsToRoleFunc{
+<<<<<<< HEAD
 			defaultHook: func(context.Context, BulkAssignPermissionsToRoleOpts) (r0 error) {
+=======
+			defaultHook: func(context.Context, BulkAssignPermissionsToRoleOpts) (r0 []*types.RolePermission, r1 error) {
+>>>>>>> 0d99fa2106 (update mock db funcs)
 				return
 			},
 		},
@@ -42766,7 +42770,11 @@ func NewStrictMockRolePermissionStore() *MockRolePermissionStore {
 			},
 		},
 		BulkAssignPermissionsToRoleFunc: &RolePermissionStoreBulkAssignPermissionsToRoleFunc{
+<<<<<<< HEAD
 			defaultHook: func(context.Context, BulkAssignPermissionsToRoleOpts) error {
+=======
+			defaultHook: func(context.Context, BulkAssignPermissionsToRoleOpts) ([]*types.RolePermission, error) {
+>>>>>>> 0d99fa2106 (update mock db funcs)
 				panic("unexpected invocation of MockRolePermissionStore.BulkAssignPermissionsToRole")
 			},
 		},
@@ -43072,24 +43080,40 @@ func (c RolePermissionStoreAssignToSystemRoleFuncCall) Results() []interface{} {
 // when the BulkAssignPermissionsToRole method of the parent
 // MockRolePermissionStore instance is invoked.
 type RolePermissionStoreBulkAssignPermissionsToRoleFunc struct {
+<<<<<<< HEAD
 	defaultHook func(context.Context, BulkAssignPermissionsToRoleOpts) error
 	hooks       []func(context.Context, BulkAssignPermissionsToRoleOpts) error
+=======
+	defaultHook func(context.Context, BulkAssignPermissionsToRoleOpts) ([]*types.RolePermission, error)
+	hooks       []func(context.Context, BulkAssignPermissionsToRoleOpts) ([]*types.RolePermission, error)
+>>>>>>> 0d99fa2106 (update mock db funcs)
 	history     []RolePermissionStoreBulkAssignPermissionsToRoleFuncCall
 	mutex       sync.Mutex
 }
 
 // BulkAssignPermissionsToRole delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
+<<<<<<< HEAD
 func (m *MockRolePermissionStore) BulkAssignPermissionsToRole(v0 context.Context, v1 BulkAssignPermissionsToRoleOpts) error {
 	r0 := m.BulkAssignPermissionsToRoleFunc.nextHook()(v0, v1)
 	m.BulkAssignPermissionsToRoleFunc.appendCall(RolePermissionStoreBulkAssignPermissionsToRoleFuncCall{v0, v1, r0})
 	return r0
+=======
+func (m *MockRolePermissionStore) BulkAssignPermissionsToRole(v0 context.Context, v1 BulkAssignPermissionsToRoleOpts) ([]*types.RolePermission, error) {
+	r0, r1 := m.BulkAssignPermissionsToRoleFunc.nextHook()(v0, v1)
+	m.BulkAssignPermissionsToRoleFunc.appendCall(RolePermissionStoreBulkAssignPermissionsToRoleFuncCall{v0, v1, r0, r1})
+	return r0, r1
+>>>>>>> 0d99fa2106 (update mock db funcs)
 }
 
 // SetDefaultHook sets function that is called when the
 // BulkAssignPermissionsToRole method of the parent MockRolePermissionStore
 // instance is invoked and the hook queue is empty.
+<<<<<<< HEAD
 func (f *RolePermissionStoreBulkAssignPermissionsToRoleFunc) SetDefaultHook(hook func(context.Context, BulkAssignPermissionsToRoleOpts) error) {
+=======
+func (f *RolePermissionStoreBulkAssignPermissionsToRoleFunc) SetDefaultHook(hook func(context.Context, BulkAssignPermissionsToRoleOpts) ([]*types.RolePermission, error)) {
+>>>>>>> 0d99fa2106 (update mock db funcs)
 	f.defaultHook = hook
 }
 
@@ -43098,7 +43122,11 @@ func (f *RolePermissionStoreBulkAssignPermissionsToRoleFunc) SetDefaultHook(hook
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
+<<<<<<< HEAD
 func (f *RolePermissionStoreBulkAssignPermissionsToRoleFunc) PushHook(hook func(context.Context, BulkAssignPermissionsToRoleOpts) error) {
+=======
+func (f *RolePermissionStoreBulkAssignPermissionsToRoleFunc) PushHook(hook func(context.Context, BulkAssignPermissionsToRoleOpts) ([]*types.RolePermission, error)) {
+>>>>>>> 0d99fa2106 (update mock db funcs)
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -43106,13 +43134,20 @@ func (f *RolePermissionStoreBulkAssignPermissionsToRoleFunc) PushHook(hook func(
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
+<<<<<<< HEAD
 func (f *RolePermissionStoreBulkAssignPermissionsToRoleFunc) SetDefaultReturn(r0 error) {
 	f.SetDefaultHook(func(context.Context, BulkAssignPermissionsToRoleOpts) error {
 		return r0
+=======
+func (f *RolePermissionStoreBulkAssignPermissionsToRoleFunc) SetDefaultReturn(r0 []*types.RolePermission, r1 error) {
+	f.SetDefaultHook(func(context.Context, BulkAssignPermissionsToRoleOpts) ([]*types.RolePermission, error) {
+		return r0, r1
+>>>>>>> 0d99fa2106 (update mock db funcs)
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
+<<<<<<< HEAD
 func (f *RolePermissionStoreBulkAssignPermissionsToRoleFunc) PushReturn(r0 error) {
 	f.PushHook(func(context.Context, BulkAssignPermissionsToRoleOpts) error {
 		return r0
@@ -43120,6 +43155,15 @@ func (f *RolePermissionStoreBulkAssignPermissionsToRoleFunc) PushReturn(r0 error
 }
 
 func (f *RolePermissionStoreBulkAssignPermissionsToRoleFunc) nextHook() func(context.Context, BulkAssignPermissionsToRoleOpts) error {
+=======
+func (f *RolePermissionStoreBulkAssignPermissionsToRoleFunc) PushReturn(r0 []*types.RolePermission, r1 error) {
+	f.PushHook(func(context.Context, BulkAssignPermissionsToRoleOpts) ([]*types.RolePermission, error) {
+		return r0, r1
+	})
+}
+
+func (f *RolePermissionStoreBulkAssignPermissionsToRoleFunc) nextHook() func(context.Context, BulkAssignPermissionsToRoleOpts) ([]*types.RolePermission, error) {
+>>>>>>> 0d99fa2106 (update mock db funcs)
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -43162,7 +43206,14 @@ type RolePermissionStoreBulkAssignPermissionsToRoleFuncCall struct {
 	Arg1 BulkAssignPermissionsToRoleOpts
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
+<<<<<<< HEAD
 	Result0 error
+=======
+	Result0 []*types.RolePermission
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+>>>>>>> 0d99fa2106 (update mock db funcs)
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -43174,7 +43225,11 @@ func (c RolePermissionStoreBulkAssignPermissionsToRoleFuncCall) Args() []interfa
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c RolePermissionStoreBulkAssignPermissionsToRoleFuncCall) Results() []interface{} {
+<<<<<<< HEAD
 	return []interface{}{c.Result0}
+=======
+	return []interface{}{c.Result0, c.Result1}
+>>>>>>> 0d99fa2106 (update mock db funcs)
 }
 
 // RolePermissionStoreBulkAssignPermissionsToSystemRolesFunc describes the
