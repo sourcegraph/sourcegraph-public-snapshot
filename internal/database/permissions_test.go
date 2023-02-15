@@ -209,9 +209,30 @@ func TestPermissionBulkCreate(t *testing.T) {
 		}
 
 		ps, err := store.BulkCreate(ctx, opts)
+		require.ErrorContains(t, err, "valid namespace is required")
+		require.Nil(t, ps)
+	})
+
+	t.Run("success", func(t *testing.T) {
+		noOfPerms := 5
+		var opts []CreatePermissionOpts
+		for i := 1; i <= noOfPerms; i++ {
+			var action string
+			if i%2 == 0 {
+				action = "READ"
+			} else {
+				action = "WRITE"
+			}
+			opts = append(opts, CreatePermissionOpts{
+				Action:    fmt.Sprintf("%s-%d", action, i),
+				Namespace: types.BatchChangesNamespace,
+			})
+		}
+
+		ps, err := store.BulkCreate(ctx, opts)
 		require.NoError(t, err)
 		require.NotNil(t, ps)
-		require.Len(t, ps, 5)
+		require.Len(t, ps, noOfPerms)
 	})
 }
 
