@@ -50,6 +50,17 @@ func Searcher() *monitoring.Dashboard {
 							Panel:       monitoring.Panel().LegendFormat("{{code}}"),
 							Owner:       monitoring.ObservableOwnerSearchCore,
 							NoAlert:     true,
+							Interpretation: `
+This graph is the average number of requests per second searcher is
+experiencing over the last 10 minutes.
+
+The code is the HTTP Status code. 200 is success. We have a special code
+"canceled" which is common when doing a large search request and we find
+enough results before searching all possible repos.
+
+Note: A search query is translated into an unindexed search query per unique
+(repo, commit). This means a single user query may result in thousands of
+requests to searcher.`,
 						},
 						{
 							Name:        "replica_traffic",
@@ -59,6 +70,17 @@ func Searcher() *monitoring.Dashboard {
 							Panel:       monitoring.Panel().LegendFormat("{{instance}}"),
 							Owner:       monitoring.ObservableOwnerSearchCore,
 							NextSteps:   "none",
+							Interpretation: `
+This graph is the average number of requests per second searcher is
+experiencing over the last 10 minutes broken down per replica.
+
+The code is the HTTP Status code. 200 is success. We have a special code
+"canceled" which is common when doing a large search request and we find
+enough results before searching all possible repos.
+
+Note: A search query is translated into an unindexed search query per unique
+(repo, commit). This means a single user query may result in thousands of
+requests to searcher.`,
 						},
 					}, {
 						{
@@ -68,6 +90,9 @@ func Searcher() *monitoring.Dashboard {
 							Panel:       monitoring.Panel().LegendFormat("{{instance}}"),
 							Owner:       monitoring.ObservableOwnerSearchCore,
 							NoAlert:     true,
+							Interpretation: `
+This graph is the amount of in-flight unindexed search requests per instance.
+Consistently high numbers here indicate you may need to scale out searcher.`,
 						},
 						{
 							Name:        "unindexed_search_request_errors",
@@ -94,6 +119,15 @@ func Searcher() *monitoring.Dashboard {
 							Panel:       monitoring.Panel().LegendFormat("{{instance}}"),
 							Owner:       monitoring.ObservableOwnerSearchCore,
 							NoAlert:     true,
+							Interpretation: `
+Before we can search a commit we fetch the code from gitserver then cache it
+for future search requests. This graph is the current number of search
+requests which are in the state of fetching code from gitserver.
+
+Generally this number should remain low since fetching code is fast, but
+expect bursts. In the case of instances with a monorepo you would expect this
+number to stay low for the duration of fetching the code (which in some cases
+can take many minutes).`,
 						},
 						{
 							Name:        "store_fetching_waiting",
@@ -102,6 +136,10 @@ func Searcher() *monitoring.Dashboard {
 							Panel:       monitoring.Panel().LegendFormat("{{instance}}"),
 							Owner:       monitoring.ObservableOwnerSearchCore,
 							NoAlert:     true,
+							Interpretation: `
+We limit the number of requests which can fetch code to prevent overwhelming
+gitserver. This gauge is the number of requests waiting to be allowed to speak
+to gitserver.`,
 						},
 						{
 							Name:        "store_fetching_fail",
@@ -110,6 +148,11 @@ func Searcher() *monitoring.Dashboard {
 							Panel:       monitoring.Panel().LegendFormat("{{instance}}"),
 							Owner:       monitoring.ObservableOwnerSearchCore,
 							NoAlert:     true,
+							Interpretation: `
+This graph should be zero since fetching happens in the background and will
+not be influenced by user timeouts/etc. Expected upticks in this graph are
+during gitserver rollouts. If you regularly see this graph have non-zero
+values please reach out to support.`,
 						},
 					},
 				},
