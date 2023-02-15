@@ -196,6 +196,7 @@ func (r *Resolver) MoveInsightSeriesBackfillToFrontOfQueue(ctx context.Context, 
 		},
 	}, nil
 }
+
 func (r *Resolver) MoveInsightSeriesBackfillToBackOfQueue(ctx context.Context, args *graphqlbackend.BackfillArgs) (*graphqlbackend.BackfillQueueItemResolver, error) {
 	actr := actor.FromContext(ctx)
 	if err := auth.CheckUserIsSiteAdmin(ctx, r.postgresDB, actr.UID); err != nil {
