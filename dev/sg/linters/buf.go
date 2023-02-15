@@ -212,9 +212,11 @@ var bufGenerate = &linter{
 			out.WriteWarningf("Uncommitted changes found after running buf generate:")
 			out.Write(strings.TrimSpace(output))
 			// Reset repo state
-			if _, err := run.GitCmd("reset", "HEAD", "--hard"); err != nil {
-				return errors.Wrap(err, "resetting repository state")
+			if _, resetErr := run.GitCmd("reset", "HEAD", "--hard"); resetErr != nil {
+				return errors.Wrap(resetErr, "resetting repository state")
 			}
+
+			return err
 		}
 
 		return nil
