@@ -1,6 +1,6 @@
 import { castArray } from 'lodash'
 import { Observable, of } from 'rxjs'
-import { catchError, defaultIfEmpty, map, tap } from 'rxjs/operators'
+import { defaultIfEmpty, map } from 'rxjs/operators'
 
 import {
     fromHoverMerged,
