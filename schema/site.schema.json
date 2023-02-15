@@ -1407,6 +1407,20 @@
       "group": "CodeInsights",
       "default": 60
     },
+    "insights.backfill.repositoryGroupSize": {
+      "description": "Set the number of repositories to batch in a group during backfilling.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 10
+    },
+    "insights.backfill.repositoryConcurrency": {
+      "description": "Number of repositories within the batch to backfill concurrently.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 3,
+      "maximum": 10,
+      "minimum": 1
+    },
     "insights.query.worker.concurrency": {
       "description": "Number of concurrent executions of a code insight query on a worker node",
       "type": "integer",
