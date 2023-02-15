@@ -171,7 +171,7 @@ func (r *Resolver) MoveInsightSeriesBackfillToFrontOfQueue(ctx context.Context, 
 		return nil, errors.Wrap(err, "unable to load backfill")
 	}
 	if backfill.State != scheduler.BackfillStateProcessing {
-		return nil, errors.Wrap(err, "only backfills ready for precessing can have priority changed")
+		return nil, errors.Wrapf(err, "only backfills ready for processing can have priority changed [current state %v]", backfill.State)
 	}
 	err = backfill.SetHighestPriority(ctx, backfillStore)
 	if err != nil {
