@@ -40,7 +40,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/rubygems"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/proto"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
@@ -148,7 +148,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 
 	grpcServer := grpc.NewServer(defaults.ServerOptions(logger)...)
-	grpcServer.RegisterService(&proto.GitserverService_ServiceDesc, &server.GRPCServer{
+	grpcServer.RegisterService(&v1.GitserverService_ServiceDesc, &server.GRPCServer{
 		Server: &gitserver,
 	})
 	reflection.Register(grpcServer)

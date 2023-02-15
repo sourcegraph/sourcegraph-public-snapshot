@@ -2,21 +2,22 @@ package server
 
 import (
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/proto"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type GRPCServer struct {
 	Server *Server
-	proto.UnimplementedGitserverServiceServer
+	v1.UnimplementedGitserverServiceServer
 }
 
-func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_ExecServer) error {
+func (gs *GRPCServer) Exec(req *v1.ExecRequest, ss v1.GitserverService_ExecServer) error {
 	internalReq := protocol.ExecRequest{
 		Repo:           api.RepoName(req.GetRepo()),
 		EnsureRevision: req.GetEnsureRevision(),
@@ -26,7 +27,7 @@ func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 	}
 
 	w := streamio.NewWriter(func(p []byte) error {
-		return ss.Send(&proto.ExecResponse{
+		return ss.Send(&v1.ExecResponse{
 			Data: p,
 		})
 	})
@@ -35,7 +36,7 @@ func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 	execStatus, err := gs.Server.exec(ss.Context(), gs.Server.Logger, &internalReq, "unknown-grpc-client", w)
 	if err != nil {
 		if v := (&NotFoundError{}); errors.As(err, &v) {
-			s, err := status.New(codes.NotFound, "repo not found").WithDetails(&proto.NotFoundPayload{
+			s, err := status.New(codes.NotFound, "repo not found").WithDetails(&v1.NotFoundPayload{
 				Repo:            req.GetRepo(),
 				CloneInProgress: v.Payload.CloneInProgress,
 				CloneProgress:   v.Payload.CloneProgress,
@@ -54,7 +55,7 @@ func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 	}
 
 	if execStatus.ExitStatus != 0 || execStatus.Err != nil {
-		s, err := status.New(codes.Unknown, execStatus.Err.Error()).WithDetails(&proto.ExecStatusPayload{
+		s, err := status.New(codes.Unknown, execStatus.Err.Error()).WithDetails(&v1.ExecStatusPayload{
 			StatusCode: int32(execStatus.ExitStatus),
 			Stderr:     execStatus.Stderr,
 		})
