@@ -100,8 +100,11 @@ const keybindings: KeyBinding[] = [
                     () => {}
                 )
                 .finally(() => {
-                    // hide loading tooltip
-                    view.dispatch({ effects: setFocusedOccurrenceTooltip.of(null) })
+                    // close loading tooltip if any
+                    const current = getCodeIntelTooltipState(view, 'focus')
+                    if (current?.tooltip instanceof LoadingTooltip && current?.occurrence === selected.occurrence) {
+                        view.dispatch({ effects: setFocusedOccurrenceTooltip.of(null) })
+                    }
                 })
 
             return true

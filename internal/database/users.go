@@ -101,7 +101,7 @@ type userStore struct {
 var _ UserStore = (*userStore)(nil)
 
 // Users instantiates and returns a new RepoStore with prepared statements.
-func Users(logger log.Logger, db dbutil.DB) UserStore {
+func Users(logger log.Logger) UserStore {
 	return &userStore{
 		logger: logger,
 		Store:  &basestore.Store{},
@@ -765,7 +765,8 @@ func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) (_ []int3
 	return updateIds, nil
 }
 
-// SetIsSiteAdmin sets the user with the given ID to be or not to be the site admin.
+// SetIsSiteAdmin sets the user with the given ID to be or not to be the site admin. It also assigns the role `SITE_ADMINISTRATOR`
+// to the user when `isSiteAdmin` is true and revokes the role when false.
 func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error {
 	if BeforeSetUserIsSiteAdmin != nil {
 		if err := BeforeSetUserIsSiteAdmin(isSiteAdmin); err != nil {
@@ -773,8 +774,29 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 		}
 	}
 
-	err := u.Store.Exec(ctx, sqlf.Sprintf("UPDATE users SET site_admin=%s WHERE id=%s", isSiteAdmin, id))
-	return err
+	db := NewDBWith(u.logger, u)
+	return db.WithTransact(ctx, func(tx DB) error {
+		userStore := tx.Users()
+		err := userStore.Exec(ctx, sqlf.Sprintf("UPDATE users SET site_admin=%s WHERE id=%s", isSiteAdmin, id))
+		if err != nil {
+			return err
+		}
+
+		userRoleStore := tx.UserRoles()
+		if isSiteAdmin {
+			_, err := userRoleStore.AssignSystemRole(ctx, AssignSystemRoleOpts{
+				UserID: id,
+				Role:   types.SiteAdministratorSystemRole,
+			})
+			return err
+		}
+
+		err = userRoleStore.RevokeSystemRole(ctx, RevokeSystemRoleOpts{
+			UserID: id,
+			Role:   types.SiteAdministratorSystemRole,
+		})
+		return err
+	})
 }
 
 // CheckAndDecrementInviteQuota should be called before the user (identified

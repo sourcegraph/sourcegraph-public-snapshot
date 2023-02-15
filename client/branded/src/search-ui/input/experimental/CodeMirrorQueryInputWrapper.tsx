@@ -71,7 +71,7 @@ function showWhenEmptyWithoutContext(state: EditorState): boolean {
 }
 
 // For simplicity we will recompute all extensions when input changes using
-// this ocmpartment
+// this compartment
 const extensionsCompartment = new Compartment()
 
 // Helper function to update extensions dependent on props. Used when
@@ -240,7 +240,7 @@ export interface CodeMirrorQueryInputWrapperProps {
     interpretComments: boolean
     patternType: SearchPatternType
     placeholder: string
-    suggestionSource: Source
+    suggestionSource?: Source
     extensions?: Extension
 }
 

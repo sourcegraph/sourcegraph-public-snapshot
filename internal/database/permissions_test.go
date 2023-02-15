@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -30,25 +30,25 @@ func TestPermissionGetByID(t *testing.T) {
 
 	t.Run("no ID", func(t *testing.T) {
 		p, err := store.GetByID(ctx, GetPermissionOpts{})
-		assert.Error(t, err)
-		assert.Nil(t, p)
-		assert.Equal(t, err.Error(), "missing id from sql query")
+		require.Error(t, err)
+		require.Nil(t, p)
+		require.Equal(t, err.Error(), "missing id from sql query")
 	})
 
 	t.Run("non-existent permission", func(t *testing.T) {
 		p, err := store.GetByID(ctx, GetPermissionOpts{ID: 100})
-		assert.Error(t, err)
-		assert.EqualError(t, err, "permission with ID 100 not found")
-		assert.Nil(t, p)
+		require.Error(t, err)
+		require.EqualError(t, err, "permission with ID 100 not found")
+		require.Nil(t, p)
 	})
 
 	t.Run("existing permission", func(t *testing.T) {
 		permission, err := store.GetByID(ctx, GetPermissionOpts{ID: created.ID})
-		assert.NoError(t, err)
-		assert.NotNil(t, permission)
-		assert.Equal(t, permission.ID, created.ID)
-		assert.Equal(t, permission.Namespace, created.Namespace)
-		assert.Equal(t, permission.Action, created.Action)
+		require.NoError(t, err)
+		require.NotNil(t, permission)
+		require.Equal(t, permission.ID, created.ID)
+		require.Equal(t, permission.Namespace, created.Namespace)
+		require.Equal(t, permission.Action, created.Action)
 	})
 }
 
@@ -63,7 +63,7 @@ func TestPermissionCreate(t *testing.T) {
 		Namespace: "BATCHCHANGES",
 		Action:    "READ",
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestPermissionList(t *testing.T) {
@@ -82,9 +82,9 @@ func TestPermissionList(t *testing.T) {
 			},
 		})
 
-		assert.NoError(t, err)
-		assert.Len(t, ps, totalPerms)
-		assert.LessOrEqual(t, len(ps), firstParam)
+		require.NoError(t, err)
+		require.Len(t, ps, totalPerms)
+		require.LessOrEqual(t, len(ps), firstParam)
 	})
 
 	t.Run("with pagination", func(t *testing.T) {
@@ -95,8 +95,8 @@ func TestPermissionList(t *testing.T) {
 			},
 		})
 
-		assert.NoError(t, err)
-		assert.Len(t, ps, firstParam)
+		require.NoError(t, err)
+		require.Len(t, ps, firstParam)
 	})
 
 	t.Run("role association", func(t *testing.T) {
@@ -107,8 +107,8 @@ func TestPermissionList(t *testing.T) {
 			RoleID: role.ID,
 		})
 
-		assert.NoError(t, err)
-		assert.Len(t, ps, 2)
+		require.NoError(t, err)
+		require.Len(t, ps, 2)
 	})
 
 	t.Run("user association", func(t *testing.T) {
@@ -119,8 +119,8 @@ func TestPermissionList(t *testing.T) {
 			UserID: user.ID,
 		})
 
-		assert.NoError(t, err)
-		assert.Len(t, ps, 2)
+		require.NoError(t, err)
+		require.Len(t, ps, 2)
 	})
 }
 
@@ -135,29 +135,29 @@ func TestPermissionDelete(t *testing.T) {
 		Namespace: "BATCHCHANGES",
 		Action:    "READ",
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	t.Run("no ID", func(t *testing.T) {
 		err := store.Delete(ctx, DeletePermissionOpts{})
-		assert.Error(t, err)
-		assert.Equal(t, err.Error(), "missing id from sql query")
+		require.Error(t, err)
+		require.Equal(t, err.Error(), "missing id from sql query")
 	})
 
 	t.Run("existing role", func(t *testing.T) {
 		err = store.Delete(ctx, DeletePermissionOpts{p.ID})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		deleted, err := store.GetByID(ctx, GetPermissionOpts{ID: p.ID})
-		assert.Nil(t, deleted)
-		assert.Error(t, err)
-		assert.Equal(t, err, &PermissionNotFoundErr{p.ID})
+		require.Nil(t, deleted)
+		require.Error(t, err)
+		require.Equal(t, err, &PermissionNotFoundErr{p.ID})
 	})
 
 	t.Run("non-existent role", func(t *testing.T) {
 		nonExistentRoleID := int32(2381)
 		err := store.Delete(ctx, DeletePermissionOpts{nonExistentRoleID})
-		assert.Error(t, err)
-		assert.ErrorContains(t, err, "failed to delete permission")
+		require.Error(t, err)
+		require.ErrorContains(t, err, "failed to delete permission")
 	})
 }
 
@@ -183,9 +183,9 @@ func TestPermissionBulkCreate(t *testing.T) {
 	}
 
 	ps, err := store.BulkCreate(ctx, perms)
-	assert.NoError(t, err)
-	assert.NotNil(t, ps)
-	assert.Len(t, ps, 5)
+	require.NoError(t, err)
+	require.NotNil(t, ps)
+	require.Len(t, ps, 5)
 }
 
 func TestPermissionBulkDelete(t *testing.T) {
@@ -211,7 +211,7 @@ func TestPermissionBulkDelete(t *testing.T) {
 	}
 
 	ps, err := store.BulkCreate(ctx, perms)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	var permsToBeDeleted []DeletePermissionOpts
 	for _, p := range ps {
@@ -222,27 +222,28 @@ func TestPermissionBulkDelete(t *testing.T) {
 
 	t.Run("no options provided", func(t *testing.T) {
 		err = store.BulkDelete(ctx, []DeletePermissionOpts{})
-		assert.Error(t, err)
-		assert.Equal(t, err.Error(), "missing ids from sql query")
+
+		require.Error(t, err)
+		require.Equal(t, err.Error(), "missing ids from sql query")
 	})
 
 	t.Run("non existent roles", func(t *testing.T) {
 		err = store.BulkDelete(ctx, []DeletePermissionOpts{
 			{ID: 109},
 		})
-		assert.Error(t, err)
-		assert.Equal(t, err.Error(), "failed to delete permissions")
+		require.Error(t, err)
+		require.Equal(t, err.Error(), "failed to delete permissions")
 	})
 
 	t.Run("existing roles", func(t *testing.T) {
 		err = store.BulkDelete(ctx, permsToBeDeleted)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// check if the first permission exists in the database
 		deleted, err := store.GetByID(ctx, GetPermissionOpts{ID: ps[0].ID})
-		assert.Nil(t, deleted)
-		assert.Error(t, err)
-		assert.Equal(t, err, &PermissionNotFoundErr{ps[0].ID})
+		require.Nil(t, deleted)
+		require.Error(t, err)
+		require.Equal(t, err, &PermissionNotFoundErr{ps[0].ID})
 	})
 }
 
@@ -257,8 +258,8 @@ func TestPermissionCount(t *testing.T) {
 	t.Run("all permissions", func(t *testing.T) {
 		count, err := store.Count(ctx, PermissionListOpts{})
 
-		assert.NoError(t, err)
-		assert.Equal(t, count, totalPerms)
+		require.NoError(t, err)
+		require.Equal(t, count, totalPerms)
 	})
 
 	t.Run("role permissions", func(t *testing.T) {
@@ -266,8 +267,8 @@ func TestPermissionCount(t *testing.T) {
 			RoleID: role.ID,
 		})
 
-		assert.NoError(t, err)
-		assert.Equal(t, count, 2)
+		require.NoError(t, err)
+		require.Equal(t, count, 2)
 	})
 
 	t.Run("user permissions", func(t *testing.T) {
@@ -275,8 +276,8 @@ func TestPermissionCount(t *testing.T) {
 			UserID: user.ID,
 		})
 
-		assert.NoError(t, err)
-		assert.Equal(t, count, 2)
+		require.NoError(t, err)
+		require.Equal(t, count, 2)
 	})
 }
 
@@ -290,8 +291,8 @@ func TestPermissionFetchAll(t *testing.T) {
 
 	perms, err := store.FetchAll(ctx)
 
-	assert.NoError(t, err)
-	assert.Len(t, perms, totalPerms)
+	require.NoError(t, err)
+	require.Len(t, perms, totalPerms)
 }
 
 func seedPermissionDataForList(ctx context.Context, t *testing.T, store PermissionStore, db DB) (*types.Role, *types.User, int) {
@@ -300,25 +301,25 @@ func seedPermissionDataForList(ctx context.Context, t *testing.T, store Permissi
 	perms, totalPerms := createTestPermissions(ctx, t, store)
 	user := createTestUserForUserRole(ctx, "test@test.com", "test-user-1", t, db)
 	role, err := createTestRole(ctx, "TEST-ROLE", false, t, db.Roles())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	_, err = db.RolePermissions().Create(ctx, CreateRolePermissionOpts{
+	_, err = db.RolePermissions().Assign(ctx, AssignRolePermissionOpts{
 		RoleID:       role.ID,
 		PermissionID: perms[0].ID,
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	_, err = db.RolePermissions().Create(ctx, CreateRolePermissionOpts{
+	_, err = db.RolePermissions().Assign(ctx, AssignRolePermissionOpts{
 		RoleID:       role.ID,
 		PermissionID: perms[1].ID,
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	_, err = db.UserRoles().Create(ctx, CreateUserRoleOpts{
+	_, err = db.UserRoles().Assign(ctx, AssignUserRoleOpts{
 		RoleID: role.ID,
 		UserID: user.ID,
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	return role, user, totalPerms
 }
@@ -334,7 +335,7 @@ func createTestPermissions(ctx context.Context, t *testing.T, store PermissionSt
 			Namespace: fmt.Sprintf("PERMISSION-%d", i),
 			Action:    "READ",
 		})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		permissions = append(permissions, permission)
 	}
 

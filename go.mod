@@ -205,6 +205,7 @@ require (
 	github.com/gosimple/slug v1.12.0 // indirect
 	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/grafana-tools/sdk v0.0.0-20220919052116-6562121319fc // indirect
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.2.0.20210128111500-3ff779b52992 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/moby/sys/mountinfo v0.6.2 // indirect
 	github.com/mpvl/unique v0.0.0-20150818121801-cbe035fff7de // indirect
@@ -237,6 +238,7 @@ require (
 	github.com/fullstorydev/grpcui v1.3.1
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/go-github/v47 v47.1.0
+	github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2 v2.0.0-rc.3
 	github.com/hexops/autogold/v2 v2.0.3
 	github.com/k3a/html2text v1.1.0
 	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.13
@@ -253,7 +255,18 @@ require (
 	golang.org/x/exp v0.0.0-20221208152030-732eee02a75a
 )
 
-replace github.com/fergusstrange/embedded-postgres => github.com/sourcegraph/embedded-postgres v1.19.1-0.20230113234230-bb62ad58a1e1
+replace (
+	github.com/fergusstrange/embedded-postgres => github.com/sourcegraph/embedded-postgres v1.19.1-0.20230113234230-bb62ad58a1e1
+
+	// As of https://github.com/grpc-ecosystem/go-grpc-middleware/blob/7ac0846398432dee083fd8bc4ad7abacf8147ff2/providers/openmetrics/go.mod#L7,
+	// the latest release of the gRPC Prometheus middleware depends on a version of go-grpc-middleware that is two years old, and
+	// is incompatible with the latest gRPC releases.
+	//
+	// The parent project is currently working around this by using a local replace directive in their go.mod file (which ensures
+	// that they always use the current version of go-grpc-middleware that they're developing). Until this issue is fixed,
+	// we'll need to ensure that we explicitly depend on the latest version of go-grpc-middleware (v2.0.0-rc.3) as of this writing.
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 => github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.3
+)
 
 require (
 	github.com/sourcegraph/zoekt v0.0.0-20230213094204-b8a8461a9bbf

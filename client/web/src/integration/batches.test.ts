@@ -342,7 +342,7 @@ function mockCommonGraphQLResponses(
                 siteAdmin: true,
                 builtinAuth: true,
                 createdAt: '2020-04-10T21:11:42Z',
-                emails: [{ email: 'alice@example.com', verified: true }],
+                emails: [{ email: 'alice@example.com', verified: true, isPrimary: true }],
                 organizations: { nodes: [] },
                 permissionsInfo: null,
                 tags: [],

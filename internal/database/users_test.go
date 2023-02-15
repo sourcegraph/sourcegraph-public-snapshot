@@ -1159,6 +1159,42 @@ func TestUsers_SetTag(t *testing.T) {
 	})
 }
 
+func TestUsers_SetIsSiteAdmin(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// Create user.
+	u, err := db.Users().Create(ctx, NewUser{Username: "u"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("promoting to site admin", func(t *testing.T) {
+		err := db.Users().SetIsSiteAdmin(ctx, u.ID, true)
+		require.NoError(t, err)
+
+		// check that site admin role has been assigned to user
+		ur, err := db.UserRoles().GetByUserID(ctx, GetUserRoleOpts{UserID: u.ID})
+		require.NoError(t, err)
+		require.Len(t, ur, 1)
+	})
+
+	t.Run("revoking site admin", func(t *testing.T) {
+		err := db.Users().SetIsSiteAdmin(ctx, u.ID, false)
+		require.NoError(t, err)
+
+		// check that site admin role has been assigned to user
+		ur, err := db.UserRoles().GetByUserID(ctx, GetUserRoleOpts{UserID: u.ID})
+		require.NoError(t, err)
+		require.Len(t, ur, 0)
+	})
+}
+
 func normalizeUsers(users []*types.User) []*types.User {
 	for _, u := range users {
 		u.CreatedAt = u.CreatedAt.Local().Round(time.Second)
