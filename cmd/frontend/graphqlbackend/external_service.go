@@ -450,6 +450,9 @@ func (r *externalServiceSourceRepositoryConnectionResolver) compute(ctx context.
 		res, err := r.repoupdaterClient.ExternalServiceRepositories(ctx, r.args.Input.Kind, r.args.Input.Query, connection, limit, r.args.Input.ExcludeRepos)
 		if err != nil {
 			r.err = err
+		}
+		if res.Error != "" {
+			r.err = errors.New(res.Error)
 			return
 		}
 

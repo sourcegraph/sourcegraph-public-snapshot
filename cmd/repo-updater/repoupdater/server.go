@@ -132,15 +132,21 @@ func (s *Server) handleExternalServiceRepos(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	var result *protocol.ExternalServiceRepositoriesResult
+
 	if err = genericSrc.CheckConnection(ctx); err != nil {
-		s.respond(w, http.StatusUnauthorized, errors.Newf("Connection check failed for the External Service Kind %s: %s", req.Kind, err.Error()))
+		result = &protocol.ExternalServiceRepositoriesResult{Error: err.Error()}
+		s.respond(w, http.StatusUnauthorized, result)
+		return
 	}
 	var (
 		discoverableSrc repos.DiscoverableSource
 		discoverable    bool
 	)
 	if discoverableSrc, discoverable = genericSrc.(repos.DiscoverableSource); !discoverable {
-		s.respond(w, http.StatusNotImplemented, errors.Newf("ExternalServiceRepositories not implemented for the External Service Kind: %s.", req.Kind))
+		result = &protocol.ExternalServiceRepositoriesResult{Error: err.Error()}
+		s.respond(w, http.StatusNotImplemented, result)
+		return
 	}
 
 	results := make(chan repos.SourceResult)
@@ -163,7 +169,7 @@ func (s *Server) handleExternalServiceRepos(w http.ResponseWriter, r *http.Reque
 		repositories = append(repositories, res.Repo)
 	}
 
-	var result *protocol.ExternalServiceRepositoriesResult
+	//var result *protocol.ExternalServiceRepositoriesResult
 	if sourceErrs != nil {
 		result = &protocol.ExternalServiceRepositoriesResult{Repos: repositories, Error: sourceErrs.Error()}
 	} else {
@@ -209,16 +215,22 @@ func (s *Server) handleExternalServiceNamespaces(w http.ResponseWriter, r *http.
 		// TODO error handling
 	}
 
+	var result *protocol.ExternalServiceNamespacesResult
 	if err = genericSrc.CheckConnection(ctx); err != nil {
-		s.respond(w, http.StatusUnauthorized, errors.Newf("Connection check failed for the External Service Kind %s: %s", req.Kind, err.Error()))
+		result = &protocol.ExternalServiceNamespacesResult{Error: err.Error()}
+		s.respond(w, http.StatusUnauthorized, result)
+		return
 	}
 
 	var (
 		discoverableSrc repos.DiscoverableSource
 		discoverable    bool
 	)
+
 	if discoverableSrc, discoverable = genericSrc.(repos.DiscoverableSource); !discoverable {
-		s.respond(w, http.StatusNotImplemented, errors.Newf("ExternalServiceNamespaces not implemented for the External Service Kind: %s.", req.Kind))
+		result = &protocol.ExternalServiceNamespacesResult{Error: err.Error()}
+		s.respond(w, http.StatusNotImplemented, result)
+		return
 	}
 
 	results := make(chan repos.SourceNamespaceResult)
@@ -241,7 +253,6 @@ func (s *Server) handleExternalServiceNamespaces(w http.ResponseWriter, r *http.
 		namespaces = append(namespaces, res.Namespace)
 	}
 
-	var result *protocol.ExternalServiceNamespacesResult
 	if sourceErrs != nil {
 		result = &protocol.ExternalServiceNamespacesResult{Namespaces: namespaces, Error: sourceErrs.Error()}
 	} else {
