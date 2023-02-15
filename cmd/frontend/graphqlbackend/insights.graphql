@@ -1420,10 +1420,10 @@ type InsightBackfillQueueItem {
     The title of the insight view
     """
     insightViewTitle: String!
-    # """
-    # The user that originally created the insight view
-    # """
-    # creator: User
+    """
+    The user that originally created the insight view
+    """
+    creator: User
     """
     The name of the series on the associated insight view
     """

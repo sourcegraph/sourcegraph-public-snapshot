@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { formatISO, subYears } from 'date-fns'
 import { escapeRegExp } from 'lodash'
 import { Observable } from 'rxjs'
-import { map, switchMap } from 'rxjs/operators'
+import { map, switchMap, tap } from 'rxjs/operators'
 
 import { numberWithCommas, pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
@@ -52,9 +52,10 @@ import styles from './TreePageContent.module.scss'
 import contributorsStyles from './TreePageContentContributors.module.scss'
 import panelStyles from './TreePagePanels.module.scss'
 
-export type TreeCommitsRepositoryCommit = NonNullable<
-    Extract<TreeCommitsResult['node'], { __typename: 'Repository' }>['commit']
->
+export interface TreeCommitsResponse {
+    ancestors: NonNullable<Extract<TreeCommitsResult['node'], { __typename: 'Repository' }>['commit']>['ancestors']
+    externalURLs: Extract<TreeCommitsResult['node'], { __typename: 'Repository' }>['externalURLs']
+}
 
 export const fetchCommit = (args: {
     repo: Scalars['String']
@@ -409,6 +410,10 @@ const COMMITS_QUERY = gql`
         node(id: $repo) {
             __typename
             ... on Repository {
+                externalURLs {
+                    url
+                    serviceKind
+                }
                 commit(rev: $revspec) {
                     ancestors(first: $first, path: $filePath, after: $after) {
                         nodes {
@@ -439,6 +444,7 @@ const Commits: React.FC<CommitsProps> = ({ repo, revision, filePath, tree }) => 
     })
 
     const node = data?.node && data?.node.__typename === 'Repository' ? data.node : null
+    const externalURLs = node?.externalURLs
     const connection = node?.commit?.ancestors
 
     return (
@@ -454,6 +460,7 @@ const Commits: React.FC<CommitsProps> = ({ repo, revision, filePath, tree }) => 
                                 className={styles.gitCommitNode}
                                 messageSubjectClassName={styles.gitCommitNodeMessageSubject}
                                 compact={true}
+                                externalURLs={externalURLs}
                             />
                         ))}
                     </tbody>
