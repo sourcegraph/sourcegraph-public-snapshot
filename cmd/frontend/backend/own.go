@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"os"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -43,6 +44,7 @@ type ownService struct {
 	userStore       database.UserStore
 	teamStore       database.TeamStore
 
+	mu         sync.Mutex
 	ownerCache map[string]codeowners.ResolvedOwner // handle/email -> ResolvedOwner
 }
 
@@ -61,7 +63,7 @@ var codeownersLocations = []string{
 
 // OwnersFile makes a best effort attempt to return a CODEOWNERS file from one of
 // the possible codeownersLocations. It returns nil if no match is found.
-func (s ownService) OwnersFile(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (*codeownerspb.File, error) {
+func (s *ownService) OwnersFile(ctx context.Context, repoName api.RepoName, commitID api.CommitID) (*codeownerspb.File, error) {
 	for _, path := range codeownersLocations {
 		content, err := s.gitserverClient.ReadFile(
 			ctx,
@@ -80,14 +82,17 @@ func (s ownService) OwnersFile(ctx context.Context, repoName api.RepoName, commi
 	return nil, nil
 }
 
-func (s ownService) ResolveOwnersWithType(ctx context.Context, protoOwners []*codeownerspb.Owner) ([]codeowners.ResolvedOwner, error) {
+func (s *ownService) ResolveOwnersWithType(ctx context.Context, protoOwners []*codeownerspb.Owner) ([]codeowners.ResolvedOwner, error) {
 	resolved := make([]codeowners.ResolvedOwner, 0, len(protoOwners))
 
 	// We have to look up owner by owner because of the branching conditions:
 	// We first try to find a user given the owner information. If we cannot find a user, we try to match a team.
 	// If all fails, we return an unknown owner type with the information we have from the proto.
 	for _, po := range protoOwners {
-		if cached, ok := s.ownerCache[po.Handle+po.Email]; ok {
+		s.mu.Lock()
+		cached, ok := s.ownerCache[po.Handle+po.Email]
+		s.mu.Unlock()
+		if ok {
 			resolved = append(resolved, cached)
 			continue
 		}
@@ -100,13 +105,15 @@ func (s ownService) ResolveOwnersWithType(ctx context.Context, protoOwners []*co
 			continue
 		}
 		resolved = append(resolved, resolvedOwner)
+		s.mu.Lock()
 		s.ownerCache[po.Handle+po.Email] = resolvedOwner
+		s.mu.Unlock()
 	}
 
 	return resolved, nil
 }
 
-func (s ownService) resolveOwner(ctx context.Context, handle, email string) (codeowners.ResolvedOwner, error) {
+func (s *ownService) resolveOwner(ctx context.Context, handle, email string) (codeowners.ResolvedOwner, error) {
 	if handle != "" {
 		resolvedOwner, err := tryGetUserThenTeam(ctx, handle, s.userStore.GetByUsername, s.teamStore.GetTeamByName)
 		if err != nil {
