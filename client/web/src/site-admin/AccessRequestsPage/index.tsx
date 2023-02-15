@@ -3,7 +3,7 @@ import React, { Fragment, useEffect, useCallback, useState } from 'react'
 import { mdiAccount, mdiPlus } from '@mdi/js'
 import { formatDistanceToNowStrict } from 'date-fns'
 
-import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { useLazyQuery, useMutation, useQuery } from '@sourcegraph/http-client'
 import { H1, Card, Text, Icon, Button, Link, Grid } from '@sourcegraph/wildcard'
 
 import {
@@ -13,19 +13,54 @@ import {
     RejectAccessRequestVariables,
     ApproveAccessRequestResult,
     ApproveAccessRequestVariables,
+    DoesUsernameExistResult,
+    DoesUsernameExistVariables,
 } from '../../graphql-operations'
 import { useURLSyncedState } from '../../hooks'
 import { eventLogger } from '../../tracking/eventLogger'
 import { AccountCreatedAlert } from '../components/AccountCreatedAlert'
 import { DropdownPagination } from '../components/DropdownPagination'
 
-import { APPROVE_ACCESS_REQUEST, PENDING_ACCESS_REQUESTS_LIST, REJECT_ACCESS_REQUEST } from './queries'
+import {
+    APPROVE_ACCESS_REQUEST,
+    DOES_USERNAME_EXIST,
+    PENDING_ACCESS_REQUESTS_LIST,
+    REJECT_ACCESS_REQUEST,
+} from './queries'
 
 import styles from './index.module.scss'
 
-function toUsername(name: string): string {
+function toUsername(name: string, randomize?: boolean): string {
     // Remove all non-alphanumeric characters from the name and add some short hash to the end
-    return name.replace(/[^\dA-Za-z]/g, '').toLowerCase() + '-' + Math.random().toString(36).slice(2, 7)
+    const username = name.replace(/[^\dA-Za-z]/g, '').toLowerCase()
+    if (!randomize) {
+        return username
+    }
+    return username + '-' + Math.random().toString(36).slice(2, 7)
+}
+
+function useGenerateUsername(): (name: string) => Promise<string> {
+    const [doesUsernameExist] = useLazyQuery<DoesUsernameExistResult, DoesUsernameExistVariables>(
+        DOES_USERNAME_EXIST,
+        {}
+    )
+
+    return useCallback(
+        async (name: string) => {
+            let username = toUsername(name)
+            while (
+                await doesUsernameExist({
+                    variables: {
+                        username,
+                    },
+                }).then(({ data }) => !!data?.user)
+            ) {
+                username = toUsername(name, true)
+            }
+            return username
+        },
+        [doesUsernameExist]
+    )
 }
 
 const DEFAULT_FILTERS = {
@@ -58,16 +93,17 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
 
     const handleReject = useCallback(
         (id: string) => {
-            if (confirm('Are you sure you want to reject the selected access request?')) {
-                rejectAccessRequest({
-                    variables: {
-                        id,
-                    },
-                })
-                    .then(() => refetch())
-                    // eslint-disable-next-line no-console
-                    .catch(error => console.error(error))
+            if (!confirm('Are you sure you want to reject the selected access request?')) {
+                return
             }
+            rejectAccessRequest({
+                variables: {
+                    id,
+                },
+            })
+                .then(() => refetch())
+                // eslint-disable-next-line no-console
+                .catch(error => console.error(error))
         },
         [refetch, rejectAccessRequest]
     )
@@ -82,32 +118,37 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
         APPROVE_ACCESS_REQUEST
     )
 
+    const generateUsername = useGenerateUsername()
+
     const handleApprove = useCallback(
-        (accessRequestId: number, name: string, email: string) => {
-            if (confirm('Are you sure you want to approve the selected access request?')) {
-                approveAccessRequest({
+        (accessRequestId: string, name: string, email: string): void => {
+            if (!confirm('Are you sure you want to approve the selected access request?')) {
+                return
+            }
+            async function approveAndCreateUser(): Promise<void> {
+                const username = await generateUsername(name)
+                const { data } = await approveAccessRequest({
                     variables: {
-                        accessRequestId: accessRequestId.toString(),
+                        accessRequestId,
                         email,
-                        username: toUsername(name),
+                        username,
                     },
                 })
-                    .then(({ data }) => {
-                        if (!data) {
-                            throw new Error('No data returned from approveAccessRequest mutation')
-                        }
-                        setLastApprovedUser({
-                            username: data?.createUser.user.username,
-                            email,
-                            resetPasswordURL: data?.createUser.resetPasswordURL,
-                        })
-                        return refetch()
-                    })
-                    // eslint-disable-next-line no-console
-                    .catch(error => console.error(error))
+                if (!data) {
+                    throw new Error('No data returned from approveAccessRequest mutation')
+                }
+                setLastApprovedUser({
+                    username: data?.createUser.user.username,
+                    email,
+                    resetPasswordURL: data?.createUser.resetPasswordURL,
+                })
+                await refetch()
             }
+            approveAndCreateUser()
+                // eslint-disable-next-line no-console
+                .catch(error => console.error(error))
         },
-        [refetch, approveAccessRequest]
+        [generateUsername, approveAccessRequest, refetch]
     )
 
     return (

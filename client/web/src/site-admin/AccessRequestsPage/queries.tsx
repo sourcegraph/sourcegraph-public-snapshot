@@ -24,6 +24,14 @@ export const REJECT_ACCESS_REQUEST = gql`
     }
 `
 
+export const DOES_USERNAME_EXIST = gql`
+    query DoesUsernameExist($username: String!) {
+        user(username: $username) {
+            id
+        }
+    }
+`
+
 export const APPROVE_ACCESS_REQUEST = gql`
     mutation ApproveAccessRequest($accessRequestId: ID!, $username: String!, $email: String) {
         createUser(username: $username, email: $email, verifiedEmail: false) {
