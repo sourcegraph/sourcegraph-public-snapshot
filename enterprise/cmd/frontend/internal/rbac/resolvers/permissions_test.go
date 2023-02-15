@@ -297,7 +297,7 @@ func TestAssignPermissionsToRole(t *testing.T) {
 	t.Run("as non-site-admin", func(t *testing.T) {
 		input := map[string]any{"role": roleID, "permissions": permissionIDs}
 		var response struct{ Permissions apitest.EmptyResponse }
-		errs := apitest.Exec(userCtx, t, s, input, &response, queryPermissionConnection)
+		errs := apitest.Exec(userCtx, t, s, input, &response, assignPermissionsToRoleQuery)
 
 		require.Len(t, errs, 1)
 		require.ErrorContains(t, errs[0], "must be site admin")
@@ -306,14 +306,14 @@ func TestAssignPermissionsToRole(t *testing.T) {
 	t.Run("as site-admin", func(t *testing.T) {
 		input := map[string]any{"role": roleID, "permissions": permissionIDs}
 		var response struct{ Permissions apitest.EmptyResponse }
-		errs := apitest.Exec(adminCtx, t, s, input, &response, queryPermissionConnection)
+		errs := apitest.Exec(adminCtx, t, s, input, &response, assignPermissionsToRoleQuery)
 
 		require.Len(t, errs, 0)
 	})
 }
 
 const assignPermissionsToRoleQuery = `
-mutation($role: ID!, $permissions: ID!) {
+mutation($role: ID!, $permissions: [ID!]!) {
 	assignPermissionsToRole(role: $role, permissions: $permissions) {
 		alwaysNil
 	}
