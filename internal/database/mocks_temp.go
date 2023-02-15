@@ -3746,6 +3746,9 @@ func (c ConfStoreTransactFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/internal/database) used for unit
 // testing.
 type MockDB struct {
+	// AccessRequestsFunc is an instance of a mock function object
+	// controlling the behavior of the method AccessRequests.
+	AccessRequestsFunc *DBAccessRequestsFunc
 	// AccessTokensFunc is an instance of a mock function object controlling
 	// the behavior of the method AccessTokens.
 	AccessTokensFunc *DBAccessTokensFunc
@@ -3900,6 +3903,11 @@ type MockDB struct {
 // values for all results, unless overwritten.
 func NewMockDB() *MockDB {
 	return &MockDB{
+		AccessRequestsFunc: &DBAccessRequestsFunc{
+			defaultHook: func() (r0 AccessRequestStore) {
+				return
+			},
+		},
 		AccessTokensFunc: &DBAccessTokensFunc{
 			defaultHook: func() (r0 AccessTokenStore) {
 				return
@@ -4152,6 +4160,11 @@ func NewMockDB() *MockDB {
 // on invocation, unless overwritten.
 func NewStrictMockDB() *MockDB {
 	return &MockDB{
+		AccessRequestsFunc: &DBAccessRequestsFunc{
+			defaultHook: func() AccessRequestStore {
+				panic("unexpected invocation of MockDB.AccessRequests")
+			},
+		},
 		AccessTokensFunc: &DBAccessTokensFunc{
 			defaultHook: func() AccessTokenStore {
 				panic("unexpected invocation of MockDB.AccessTokens")
@@ -4404,6 +4417,9 @@ func NewStrictMockDB() *MockDB {
 // delegate to the given implementation, unless overwritten.
 func NewMockDBFrom(i DB) *MockDB {
 	return &MockDB{
+		AccessRequestsFunc: &DBAccessRequestsFunc{
+			defaultHook: i.AccessRequests,
+		},
 		AccessTokensFunc: &DBAccessTokensFunc{
 			defaultHook: i.AccessTokens,
 		},
@@ -4552,6 +4568,105 @@ func NewMockDBFrom(i DB) *MockDB {
 			defaultHook: i.ZoektRepos,
 		},
 	}
+}
+
+// DBAccessRequestsFunc describes the behavior when the AccessRequests
+// method of the parent MockDB instance is invoked.
+type DBAccessRequestsFunc struct {
+	defaultHook func() AccessRequestStore
+	hooks       []func() AccessRequestStore
+	history     []DBAccessRequestsFuncCall
+	mutex       sync.Mutex
+}
+
+// AccessRequests delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) AccessRequests() AccessRequestStore {
+	r0 := m.AccessRequestsFunc.nextHook()()
+	m.AccessRequestsFunc.appendCall(DBAccessRequestsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the AccessRequests
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBAccessRequestsFunc) SetDefaultHook(hook func() AccessRequestStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AccessRequests method of the parent MockDB instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBAccessRequestsFunc) PushHook(hook func() AccessRequestStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBAccessRequestsFunc) SetDefaultReturn(r0 AccessRequestStore) {
+	f.SetDefaultHook(func() AccessRequestStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBAccessRequestsFunc) PushReturn(r0 AccessRequestStore) {
+	f.PushHook(func() AccessRequestStore {
+		return r0
+	})
+}
+
+func (f *DBAccessRequestsFunc) nextHook() func() AccessRequestStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBAccessRequestsFunc) appendCall(r0 DBAccessRequestsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBAccessRequestsFuncCall objects describing
+// the invocations of this function.
+func (f *DBAccessRequestsFunc) History() []DBAccessRequestsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBAccessRequestsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBAccessRequestsFuncCall is an object that describes an invocation of
+// method AccessRequests on an instance of MockDB.
+type DBAccessRequestsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 AccessRequestStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBAccessRequestsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBAccessRequestsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // DBAccessTokensFunc describes the behavior when the AccessTokens method of

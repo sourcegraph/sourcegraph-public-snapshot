@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
@@ -23,9 +24,21 @@ import (
 func HandleRequestAccess(logger log.Logger, db database.DB) http.HandlerFunc {
 	logger = logger.Scoped("HandleRequestAccess", "request access request handler")
 	return func(w http.ResponseWriter, r *http.Request) {
-		// TODO: add check conditions for request access
+		if handleEnabledCheck(logger, w) {
+			return
+		}
 		handleRequestAccess(logger, db, w, r)
 	}
+}
+
+func handleEnabledCheck(logger log.Logger, w http.ResponseWriter) (handled bool) {
+	e := conf.Get().ExperimentalFeatures.RequestAccess
+	if !e.Enabled {
+		logger.Error("Request access is not enabled.")
+		http.Error(w, "Request access is not enabled.", http.StatusConflict)
+		return false
+	}
+	return true
 }
 
 type requestAccessData struct {
@@ -93,15 +106,6 @@ func handleRequestAccess(logger log.Logger, db database.DB, w http.ResponseWrite
 
 		return
 	}
-
-	// TODO: add email verification depending on the conf.EmailVerificationRequired()
-	// if conf.EmailVerificationRequired() && !accessRequestCreateData.EmailIsVerified {
-	// 	if err := backend.SendUserEmailVerificationEmail(r.Context(), accessRequest.Username, data.Email, accessRequestCreateData.EmailVerificationCode); err != nil {
-	// 		logger.Error("failed to send email verification (continuing, user's email will be unverified)", log.String("email", data.Email), log.Error(err))
-	// 	} else if err = db.UserEmails().SetLastVerification(r.Context(), accessRequest.ID, data.Email, accessRequestCreateData.EmailVerificationCode, time.Now()); err != nil {
-	// 		logger.Error("failed to set email last verification sent at (user's email is verified)", log.String("email", data.Email), log.Error(err))
-	// 	}
-	// }
 
 	w.WriteHeader(http.StatusCreated)
 	if err = usagestats.LogBackendEvent(db, sgactor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "CreateAccessRequestSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
