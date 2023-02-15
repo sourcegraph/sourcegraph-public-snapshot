@@ -58,7 +58,7 @@ func TestVirtualFile(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		renderedMarkdown := `<h1><a name="this-is-content" class="anchor" href="#this-is-content" rel="nofollow" aria-hidden="true"><span></span></a>this is content</h1>
+		renderedMarkdown := `<h1 id="this-is-content"><a href="#this-is-content" class="anchor" rel="nofollow" aria-hidden="true" name="this-is-content"></a>this is content</h1>
 `
 		if diff := cmp.Diff(have, renderedMarkdown); diff != "" {
 			t.Fatalf("wrong RichHTML: %s", diff)

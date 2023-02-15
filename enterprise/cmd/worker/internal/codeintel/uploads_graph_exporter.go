@@ -27,7 +27,7 @@ func (j *graphExporterJob) Config() []env.Config {
 	}
 }
 
-func (j *graphExporterJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *graphExporterJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	services, err := codeintel.InitServices(observationCtx)
 	if err != nil {
 		return nil, err

@@ -68,9 +68,10 @@ type confStore struct {
 
 // SiteConfig contains the contents of a site config along with associated metadata.
 type SiteConfig struct {
-	ID           int32  // the unique ID of this config
-	AuthorUserID int32  // the user id of the author that updated this config
-	Contents     string // the raw JSON content (with comments and trailing commas allowed)
+	ID               int32  // the unique ID of this config
+	AuthorUserID     int32  // the user id of the author that updated this config
+	Contents         string // the raw JSON content (with comments and trailing commas allowed)
+	RedactedContents string // the raw JSON content but with sensitive fields redacted
 
 	CreatedAt time.Time // the date when this config was created
 	UpdatedAt time.Time // the date when this config was updated
@@ -80,6 +81,7 @@ var siteConfigColumns = []*sqlf.Query{
 	sqlf.Sprintf("critical_and_site_config.id"),
 	sqlf.Sprintf("critical_and_site_config.author_user_id"),
 	sqlf.Sprintf("critical_and_site_config.contents"),
+	sqlf.Sprintf("critical_and_site_config.redacted_contents"),
 	sqlf.Sprintf("critical_and_site_config.created_at"),
 	sqlf.Sprintf("critical_and_site_config.updated_at"),
 }
@@ -139,28 +141,12 @@ SELECT
 	id,
 	author_user_id,
 	contents,
+    redacted_contents,
 	created_at,
 	updated_at
 FROM critical_and_site_config
 WHERE (%s)
 `
-
-var scanSiteConfigs = basestore.NewSliceScanner(scanSiteConfig)
-
-func scanSiteConfig(s dbutil.Scanner) (*SiteConfig, error) {
-	var c SiteConfig
-	err := s.Scan(
-		&c.ID,
-		&dbutil.NullInt32{N: &c.AuthorUserID},
-		&c.Contents,
-		&c.CreatedAt,
-		&c.UpdatedAt,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &c, nil
-}
 
 func (s *confStore) ListSiteConfigs(ctx context.Context, paginationArgs *PaginationArgs) ([]*SiteConfig, error) {
 	where := []*sqlf.Query{sqlf.Sprintf(`type = 'site'`)}
@@ -172,10 +158,7 @@ func (s *confStore) ListSiteConfigs(ctx context.Context, paginationArgs *Paginat
 		return scanSiteConfigs(rows, err)
 	}
 
-	args, err := paginationArgs.SQL()
-	if err != nil {
-		return []*SiteConfig{}, nil
-	}
+	args := paginationArgs.SQL()
 
 	if args.Where != nil {
 		where = append(where, args.Where)
@@ -300,8 +283,11 @@ func scanSiteConfigRow(scanner dbutil.Scanner) (*SiteConfig, error) {
 		&s.ID,
 		&dbutil.NullInt32{N: &s.AuthorUserID},
 		&s.Contents,
+		&dbutil.NullString{S: &s.RedactedContents},
 		&s.CreatedAt,
 		&s.UpdatedAt,
 	)
 	return &s, err
 }
+
+var scanSiteConfigs = basestore.NewSliceScanner(scanSiteConfigRow)

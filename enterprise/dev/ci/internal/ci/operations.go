@@ -365,6 +365,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 		withPnpmCache(),
 		bk.Key(prepStepKey),
 		bk.Env("ENTERPRISE", "1"),
+		bk.Env("NODE_ENV", "production"),
 		bk.Env("INTEGRATION_TESTS", "true"),
 		bk.Env("COVERAGE_INSTRUMENT", "true"),
 		bk.Cmd("dev/ci/pnpm-build.sh client/web"),
@@ -895,18 +896,18 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 		devImage := images.DevRegistryImage(app, "")
 		publishImage := images.PublishedRegistryImage(app, "")
 
-		var images []string
+		var imgs []string
 		for _, image := range []string{publishImage, devImage} {
 			if app != "server" || c.RunType.Is(runtype.TaggedRelease, runtype.ImagePatch, runtype.ImagePatchNoTest) {
-				images = append(images, fmt.Sprintf("%s:%s", image, c.Version))
+				imgs = append(imgs, fmt.Sprintf("%s:%s", image, c.Version))
 			}
 
 			if app == "server" && c.RunType.Is(runtype.ReleaseBranch) {
-				images = append(images, fmt.Sprintf("%s:%s-insiders", image, c.Branch))
+				imgs = append(imgs, fmt.Sprintf("%s:%s-insiders", image, c.Branch))
 			}
 
 			if c.RunType.Is(runtype.MainBranch) {
-				images = append(images, fmt.Sprintf("%s:insiders", image))
+				imgs = append(imgs, fmt.Sprintf("%s:insiders", image))
 			}
 		}
 
@@ -922,11 +923,11 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 			strconv.Itoa(c.BuildNumber),
 		} {
 			internalImage := fmt.Sprintf("%s:%s", devImage, tag)
-			images = append(images, internalImage)
+			imgs = append(imgs, internalImage)
 		}
 
 		candidateImage := fmt.Sprintf("%s:%s", devImage, c.candidateImageTag())
-		cmd := fmt.Sprintf("./dev/ci/docker-publish.sh %s %s", candidateImage, strings.Join(images, " "))
+		cmd := fmt.Sprintf("./dev/ci/docker-publish.sh %s %s", candidateImage, strings.Join(imgs, " "))
 
 		pipeline.AddStep(fmt.Sprintf(":docker: :truck: %s", app),
 			// This step just pulls a prebuild image and pushes it to some registries. The

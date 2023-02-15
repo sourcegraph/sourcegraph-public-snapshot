@@ -1,0 +1,120 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/users?limit=1
+    method: GET
+  response:
+    body: '{"size":1,"limit":1,"isLastPage":false,"values":[{"name":"batch-change-buddy","emailAddress":"batch-changes@sourcegraph.com","id":403,"displayName":"Batch
+      Change Buddy","active":true,"slug":"batch-change-buddy","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/batch-change-buddy"}]}}],"start":0,"nextPageStart":1}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Fri, 03 Feb 2023 19:46:25 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - x-ausername,x-auserid,cookie,accept-encoding
+      X-Arequestid:
+      - '@ILDZGBx1186x13019178x1'
+      X-Asessionid:
+      - 105aay8
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - milton
+      X-Content-Type-Options:
+      - nosniff
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/users?limit=1
+    method: GET
+  response:
+    body: '{"size":1,"limit":1,"isLastPage":false,"values":[{"name":"batch-change-buddy","emailAddress":"batch-changes@sourcegraph.com","id":403,"displayName":"Batch
+      Change Buddy","active":true,"slug":"batch-change-buddy","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/batch-change-buddy"}]}}],"start":0,"nextPageStart":1}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Fri, 03 Feb 2023 19:46:25 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - x-ausername,x-auserid,cookie,accept-encoding
+      X-Arequestid:
+      - '@ILDZGBx1186x13019187x3'
+      X-Asessionid:
+      - njhtq5
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - milton
+      X-Content-Type-Options:
+      - nosniff
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/~milton/repos/BAT-vcr-fork-test-repo-not-forked
+    method: GET
+  response:
+    body: '{"slug":"bat-vcr-fork-test-repo-not-forked","id":216976,"name":"BAT-vcr-fork-test-repo-not-forked","description":"This
+      repo is intended to be used for recording batch changes VCR tests","hierarchyId":"f9c563200eafe317aee9","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"origin":{"slug":"vcr-fork-test-repo-not-forked","id":216974,"name":"vcr-fork-test-repo-not-forked","description":"This
+      repo is intended to be used for recording batch changes VCR tests","hierarchyId":"f9c563200eafe317aee9","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"BAT","id":183,"name":"batch-changes-testing","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/BAT"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/bat/vcr-fork-test-repo-not-forked.git","name":"http"},{"href":"ssh://git@bitbucket.sgdev.org:7999/bat/vcr-fork-test-repo-not-forked.git","name":"ssh"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/BAT/repos/vcr-fork-test-repo-not-forked/browse"}]}},"project":{"key":"~MILTON","id":2,"name":"milton
+      woof","type":"PERSONAL","owner":{"name":"milton","emailAddress":"dev@sourcegraph.com","id":1,"displayName":"milton
+      woof","active":true,"slug":"milton","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/milton"}]}},"links":{"self":[{"href":"https://bitbucket.sgdev.org/users/milton"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/~milton/bat-vcr-fork-test-repo-not-forked.git","name":"http"},{"href":"ssh://git@bitbucket.sgdev.org:7999/~milton/bat-vcr-fork-test-repo-not-forked.git","name":"ssh"}],"self":[{"href":"https://bitbucket.sgdev.org/users/milton/repos/bat-vcr-fork-test-repo-not-forked/browse"}]}}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Fri, 03 Feb 2023 19:46:25 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - x-ausername,x-auserid,cookie,accept-encoding
+      X-Arequestid:
+      - '@ILDZGBx1186x13019200x4'
+      X-Asessionid:
+      - x48jx0
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - milton
+      X-Content-Type-Options:
+      - nosniff
+    status: 200 OK
+    code: 200
+    duration: ""

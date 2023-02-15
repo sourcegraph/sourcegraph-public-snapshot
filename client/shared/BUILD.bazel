@@ -1,11 +1,16 @@
-load("@aspect_rules_js//js:defs.bzl", "js_library", "js_run_binary")
-load("//dev:defs.bzl", "sass_library")
+load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("//client/shared/dev:generate_schema.bzl", "generate_schema")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
+load("//dev:defs.bzl", "sass")
 
 module_style_typings(
     name = "module_style_typings",
+)
+
+sass(
+    name = "module_styles",
+    srcs = glob(["src/**/*.module.scss"]),
 )
 
 generate_graphql_operations(
@@ -44,11 +49,3 @@ js_library(
     "settings",
     "batch_spec",
 ]]
-
-sass_library(
-    name = "global-style-vars",
-    srcs = [
-        "src/global-styles/icons.scss",
-    ],
-    visibility = ["//visibility:public"],
-)

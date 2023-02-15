@@ -35,7 +35,7 @@ import (
 func NewUploadProcessorWorker(
 	observationCtx *observation.Context,
 	store store.Store,
-	lsifstore lsifstore.LsifStore,
+	lsifStore lsifstore.LsifStore,
 	gitserverClient GitserverClient,
 	repoStore RepoStore,
 	workerStore dbworkerstore.Store[codeinteltypes.Upload],
@@ -50,12 +50,11 @@ func NewUploadProcessorWorker(
 	handler := NewUploadProcessorHandler(
 		observationCtx,
 		store,
-		lsifstore,
+		lsifStore,
 		gitserverClient,
 		repoStore,
 		workerStore,
 		uploadStore,
-		workerConcurrency,
 		workerBudget,
 	)
 
@@ -74,7 +73,7 @@ func NewUploadProcessorWorker(
 
 type handler struct {
 	store           store.Store
-	lsifstore       lsifstore.LsifStore
+	lsifStore       lsifstore.LsifStore
 	gitserverClient GitserverClient
 	repoStore       RepoStore
 	workerStore     dbworkerstore.Store[codeinteltypes.Upload]
@@ -82,7 +81,7 @@ type handler struct {
 	handleOp        *observation.Operation
 	budgetRemaining int64
 	enableBudget    bool
-	uploadSizeGuage prometheus.Gauge
+	uploadSizeGauge prometheus.Gauge
 }
 
 var (
@@ -94,19 +93,18 @@ var (
 func NewUploadProcessorHandler(
 	observationCtx *observation.Context,
 	store store.Store,
-	lsifstore lsifstore.LsifStore,
+	lsifStore lsifstore.LsifStore,
 	gitserverClient GitserverClient,
 	repoStore RepoStore,
 	workerStore dbworkerstore.Store[codeinteltypes.Upload],
 	uploadStore uploadstore.Store,
-	numProcessorRoutines int,
 	budgetMax int64,
 ) workerutil.Handler[codeinteltypes.Upload] {
 	operations := newWorkerOperations(observationCtx)
 
 	return &handler{
 		store:           store,
-		lsifstore:       lsifstore,
+		lsifStore:       lsifStore,
 		gitserverClient: gitserverClient,
 		repoStore:       repoStore,
 		workerStore:     workerStore,
@@ -114,7 +112,7 @@ func NewUploadProcessorHandler(
 		handleOp:        operations.uploadProcessor,
 		budgetRemaining: budgetMax,
 		enableBudget:    budgetMax > 0,
-		uploadSizeGuage: operations.uploadSizeGuage,
+		uploadSizeGauge: operations.uploadSizeGauge,
 	}
 }
 
@@ -136,7 +134,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, upload codeinte
 	return err
 }
 
-func (h *handler) PreDequeue(ctx context.Context, logger log.Logger) (bool, any, error) {
+func (h *handler) PreDequeue(_ context.Context, _ log.Logger) (bool, any, error) {
 	if !h.enableBudget {
 		return true, nil, nil
 	}
@@ -149,17 +147,17 @@ func (h *handler) PreDequeue(ctx context.Context, logger log.Logger) (bool, any,
 	return true, []*sqlf.Query{sqlf.Sprintf("(upload_size IS NULL OR upload_size <= %s)", budgetRemaining)}, nil
 }
 
-func (h *handler) PreHandle(ctx context.Context, logger log.Logger, upload codeinteltypes.Upload) {
+func (h *handler) PreHandle(_ context.Context, _ log.Logger, upload codeinteltypes.Upload) {
 	uncompressedSize := h.getUploadSize(upload.UncompressedSize)
-	h.uploadSizeGuage.Add(float64(uncompressedSize))
+	h.uploadSizeGauge.Add(float64(uncompressedSize))
 
 	gzipSize := h.getUploadSize(upload.UploadSize)
 	atomic.AddInt64(&h.budgetRemaining, -gzipSize)
 }
 
-func (h *handler) PostHandle(ctx context.Context, logger log.Logger, upload codeinteltypes.Upload) {
+func (h *handler) PostHandle(_ context.Context, _ log.Logger, upload codeinteltypes.Upload) {
 	uncompressedSize := h.getUploadSize(upload.UncompressedSize)
-	h.uploadSizeGuage.Sub(float64(uncompressedSize))
+	h.uploadSizeGauge.Sub(float64(uncompressedSize))
 
 	gzipSize := h.getUploadSize(upload.UploadSize)
 	atomic.AddInt64(&h.budgetRemaining, +gzipSize)
@@ -190,20 +188,20 @@ func createLogFields(upload codeinteltypes.Upload) []otlog.Field {
 	return fields
 }
 
-// handle converts a raw upload into a dump within the given transaction context. Returns true if the
+// HandleRawUpload converts a raw upload into a dump within the given transaction context. Returns true if the
 // upload record was requeued and false otherwise.
-func (s *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload codeinteltypes.Upload, uploadStore uploadstore.Store, trace observation.TraceLogger) (requeued bool, err error) {
-	repo, err := s.repoStore.Get(ctx, api.RepoID(upload.RepositoryID))
+func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload codeinteltypes.Upload, uploadStore uploadstore.Store, trace observation.TraceLogger) (requeued bool, err error) {
+	repo, err := h.repoStore.Get(ctx, api.RepoID(upload.RepositoryID))
 	if err != nil {
 		return false, errors.Wrap(err, "Repos.Get")
 	}
 
-	if requeued, err := requeueIfCloningOrCommitUnknown(ctx, logger, s.repoStore, s.workerStore, upload, repo); err != nil || requeued {
+	if requeued, err := requeueIfCloningOrCommitUnknown(ctx, logger, h.repoStore, h.workerStore, upload, repo); err != nil || requeued {
 		return requeued, err
 	}
 
 	// Determine if the upload is for the default Git branch.
-	isDefaultBranch, err := s.gitserverClient.DefaultBranchContains(ctx, upload.RepositoryID, upload.Commit)
+	isDefaultBranch, err := h.gitserverClient.DefaultBranchContains(ctx, upload.RepositoryID, upload.Commit)
 	if err != nil {
 		return false, errors.Wrap(err, "gitserver.DefaultBranchContains")
 	}
@@ -211,7 +209,7 @@ func (s *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 	trace.AddEvent("TODO Domain Owner", attribute.Bool("defaultBranch", isDefaultBranch))
 
 	getChildren := func(ctx context.Context, dirnames []string) (map[string][]string, error) {
-		directoryChildren, err := s.gitserverClient.DirectoryChildren(ctx, upload.RepositoryID, upload.Commit, dirnames)
+		directoryChildren, err := h.gitserverClient.DirectoryChildren(ctx, upload.RepositoryID, upload.Commit, dirnames)
 		if err != nil {
 			return nil, errors.Wrap(err, "gitserverClient.DirectoryChildren")
 		}
@@ -243,7 +241,7 @@ func (s *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 		// database (if not already present). We need to have the commit data of every processed upload
 		// for a repository when calculating the commit graph (triggered at the end of this handler).
 
-		_, commitDate, revisionExists, err := s.gitserverClient.CommitDate(ctx, upload.RepositoryID, upload.Commit)
+		_, commitDate, revisionExists, err := h.gitserverClient.CommitDate(ctx, upload.RepositoryID, upload.Commit)
 		if err != nil {
 			return errors.Wrap(err, "gitserverClient.CommitDate")
 		}
@@ -257,14 +255,14 @@ func (s *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 		// We do choose to perform this before this the following transaction rather than after so that
 		// we can guarantee the presence of the date for this commit by the time the repository is set
 		// as dirty.
-		if err := s.store.UpdateCommittedAt(ctx, upload.RepositoryID, upload.Commit, commitDate.Format(time.RFC3339)); err != nil {
+		if err := h.store.UpdateCommittedAt(ctx, upload.RepositoryID, upload.Commit, commitDate.Format(time.RFC3339)); err != nil {
 			return errors.Wrap(err, "store.CommitDate")
 		}
 
 		if upload.ContentType == lsifContentType {
 			// Note: this is writing to a different database than the block below, so we need to use a
 			// different transaction context (managed by the writeData function).
-			if err := writeData(ctx, s.lsifstore, upload, groupedBundleData, trace); err != nil {
+			if err := writeData(ctx, h.lsifStore, upload, groupedBundleData, trace); err != nil {
 				if isUniqueConstraintViolation(err) {
 					// If this is a unique constraint violation, then we've previously processed this same
 					// upload record up to this point, but failed to perform the transaction below. We can
@@ -279,14 +277,14 @@ func (s *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 		} else if upload.ContentType == scipContentType {
 			// Note: this is writing to a different database than the block below, so we need to use a
 			// different transaction context (managed by the writeData function).
-			if err := writeSCIPData(ctx, s.lsifstore, upload, correlatedSCIPData, trace); err != nil {
+			if err := writeSCIPData(ctx, h.lsifStore, upload, correlatedSCIPData, trace); err != nil {
 				if isUniqueConstraintViolation(err) {
 					// If this is a unique constraint violation, then we've previously processed this same
 					// upload record up to this point, but failed to perform the transaction below. We can
 					// safely assume that the entire index's data is in the codeintel database, as it's
 					// parsed deterministically and written atomically.
 					logger.Warn("SCIP data already exists for upload record")
-					trace.AddEvent("TODO Domain Onwer", attribute.Bool("rewriting", true))
+					trace.AddEvent("TODO Domain Owner", attribute.Bool("rewriting", true))
 				} else {
 					return err
 				}
@@ -297,9 +295,9 @@ func (s *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 		// point fails, we want to update the upload record with an error message but do not want to
 		// alter any other data in the database. Rolling back to this savepoint will allow us to discard
 		// any other changes but still commit the transaction as a whole.
-		return inTransaction(ctx, s.store, func(tx store.Store) error {
+		return inTransaction(ctx, h.store, func(tx store.Store) error {
 			// Before we mark the upload as complete, we need to delete any existing completed uploads
-			// that have the same repository_id, commit, root, and indexer values. Otherwise the transaction
+			// that have the same repository_id, commit, root, and indexer values. Otherwise, the transaction
 			// will fail as these values form a unique constraint.
 			if err := tx.DeleteOverlappingDumps(ctx, upload.RepositoryID, upload.Commit, upload.Root, upload.Indexer); err != nil {
 				return errors.Wrap(err, "store.DeleteOverlappingDumps")
@@ -341,7 +339,7 @@ func (s *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 
 			// Mark this repository so that the commit updater process will pull the full commit graph from
 			// gitserver and recalculate the nearest upload for each commit as well as which uploads are visible
-			// from the tip of the default branch. We don't do this inside of the transaction as we re-calcalute
+			// from the tip of the default branch. We don't do this inside of the transaction as we re-calculate
 			// the entire set of data from scratch and we want to be able to coalesce requests for the same
 			// repository rather than having a set of uploads for the same repo re-calculate nearly identical
 			// data multiple times.

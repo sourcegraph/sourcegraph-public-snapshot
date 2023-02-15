@@ -1,18 +1,26 @@
 import React, { useEffect } from 'react'
 
-import { History } from 'history'
 import { Router } from 'react-router'
 import { CompatRouter } from 'react-router-dom-v5-compat'
 
 import { WildcardThemeContext } from '@sourcegraph/wildcard'
 
+import { globalHistory } from '../../../util/globalHistory'
+
+interface CodeMirrorContainerProps {
+    onMount?: () => void
+    onRender?: () => void
+}
+
 /**
  * Creates the necessary context for React components to be rendered inside
  * CodeMirror.
  */
-export const Container: React.FunctionComponent<
-    React.PropsWithChildren<{ history: History; onMount?: () => void; onRender?: () => void }>
-> = ({ history, onMount, onRender, children }) => {
+export const CodeMirrorContainer: React.FunctionComponent<React.PropsWithChildren<CodeMirrorContainerProps>> = ({
+    onMount,
+    onRender,
+    children,
+}) => {
     useEffect(() => onRender?.())
     // This should only be called once when the component is mounted
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -20,7 +28,7 @@ export const Container: React.FunctionComponent<
 
     return (
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
-            <Router history={history}>
+            <Router history={globalHistory}>
                 <CompatRouter>{children}</CompatRouter>
             </Router>
         </WildcardThemeContext.Provider>

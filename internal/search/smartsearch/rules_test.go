@@ -23,8 +23,8 @@ func apply(input string, transform []transform) string {
 		queryStr = query.StringHuman(out.ToParseTree())
 	}
 	result := want{Input: input, Query: queryStr}
-	json, _ := json.MarshalIndent(result, "", "  ")
-	return string(json)
+	j, _ := json.MarshalIndent(result, "", "  ")
+	return string(j)
 }
 
 func Test_unquotePatterns(t *testing.T) {

@@ -5,7 +5,7 @@ go_library(
     srcs = ["client_types.go"],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/executor",
     visibility = ["//enterprise:__subpackages__"],
-    deps = ["//internal/workerutil"],
+    deps = ["//internal/executor"],
 )
 
 go_test(

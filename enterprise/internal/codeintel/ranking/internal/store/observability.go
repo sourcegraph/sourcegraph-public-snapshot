@@ -8,8 +8,7 @@ import (
 )
 
 type operations struct {
-	getStaleSourcedCommits      *observation.Operation
-	insertDependencyIndexingJob *observation.Operation
+	getStaleSourcedCommits *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)

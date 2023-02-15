@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 
 import * as H from 'history'
 import SearchIcon from 'mdi-react/SearchIcon'
-import { useLocation } from 'react-router'
+import { useLocation } from 'react-router-dom-v5-compat'
 
 import { createAggregateError, escapeRevspecForURL } from '@sourcegraph/common'
 import { GitRefType, Scalars } from '@sourcegraph/shared/src/graphql-operations'

@@ -23,6 +23,12 @@ Another way this could be used is to ingest GitHub topics as tags so repositorie
 
 Currently, there are two ways to add metadata to a repository: Sourcegraph's GraphQL API, and the [`src-cli` command line tool](https://github.com/sourcegraph/src-cli). 
 
+### Limitations
+
+- There are no scale limits in terms of number of pairs per repo, or number of pairs globally.
+- The size of a field is unbounded, but practically it's better to keep it small for performance reasons.
+- There are no limits on special characters in the key-value pairs, but in practice we recommend not using special characters because the search query language doesn’t have full support for escaping arbitrary sequences, in particular `:`, `(` and`)`.
+
 ### GraphQL
 
 Metadata can be added with the `addRepoKeyValuePair` mutation, updated with the `updateRepoKeyValuePair` mutation, and deleted with the `deleteRepoKeyValuePair` mutation. You will need the GraphQL ID for the repository being targeted.

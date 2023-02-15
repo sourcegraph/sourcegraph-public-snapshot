@@ -69,7 +69,7 @@ namespace Foo {
 	defer squirrel.Close()
 
 	for _, test := range tests {
-		payload, err := squirrel.localCodeIntel(context.Background(), types.RepoCommitPath{Repo: "foo", Commit: "bar", Path: test.path})
+		payload, err := squirrel.LocalCodeIntel(context.Background(), types.RepoCommitPath{Repo: "foo", Commit: "bar", Path: test.path})
 		fatalIfError(t, err)
 
 		ok := false

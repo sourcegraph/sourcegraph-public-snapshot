@@ -10,7 +10,6 @@ import { EditorHint, QueryChangeSource, QueryState } from '@sourcegraph/shared/s
 import {
     Button,
     Code,
-    Input,
     Label,
     InputElement,
     InputErrorMessage,
@@ -28,6 +27,7 @@ import {
     getDefaultInputProps,
     getDefaultInputStatus,
     getDefaultInputError,
+    getRepoQueryPreview,
     RepositoriesField,
     useFieldAPI,
     MonacoField,
@@ -128,16 +128,16 @@ function RepositoriesURLsPicker(props: RepositoriesURLsPickerProps): ReactElemen
     const { repositories, 'aria-labelledby': ariaLabelledby } = props
 
     const { value, disabled, ...attributes } = getDefaultInputProps(repositories)
-    const fieldValue = disabled ? '' : value
+    const fieldValue = disabled ? [] : value
 
     return (
-        <Input
-            as={RepositoriesField}
-            message="Use a full repo URL (github.com/...). Separate repositories with commas"
-            placeholder="Example: github.com/sourcegraph/sourcegraph"
+        <RepositoriesField
+            id="repositories-id"
+            description="Find and choose up to 1 repository to run insight"
+            placeholder="Search repositories..."
             aria-labelledby={ariaLabelledby}
+            aria-invalid={!!repositories.meta.error}
             value={fieldValue}
-            disabled={disabled}
             {...attributes}
         />
     )
@@ -229,6 +229,7 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
     }
 
     const queryState = disabled ? EMPTY_QUERY_STATA : value
+    const previewQuery = value.query ? getRepoQueryPreview(value.query) : value.query
     const fieldStatus = getDefaultInputStatus(repoQuery, value => value.query)
     const LabelComponent = label ? Label : 'div'
 
@@ -252,11 +253,12 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
                     onChange={handleOnChange}
                     disabled={disabled}
                     aria-busy={fieldStatus === InputStatus.loading}
+                    aria-invalid={!!repoQuery.meta.error}
                     {...attributes}
                 />
 
                 <MonacoPreviewLink
-                    query={value.query}
+                    query={previewQuery}
                     patternType={SearchPatternType.standard}
                     className={styles.repoLabelPreviewLink}
                     tabIndex={disabled ? -1 : 0}

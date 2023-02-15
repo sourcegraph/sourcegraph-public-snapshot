@@ -26,7 +26,7 @@ type ExecutorResolver struct {
 }
 
 func (e *ExecutorResolver) ID() graphql.ID {
-	return relay.MarshalID("Executor", (int64(e.executor.ID)))
+	return relay.MarshalID("Executor", int64(e.executor.ID))
 }
 func (e *ExecutorResolver) Hostname() string  { return e.executor.Hostname }
 func (e *ExecutorResolver) QueueName() string { return e.executor.QueueName }
@@ -58,7 +58,7 @@ func (e *ExecutorResolver) Compatibility() (*string, error) {
 }
 
 func calculateExecutorCompatibility(ev string) (*string, error) {
-	var compatibility ExecutorCompatibility = ExecutorCompatibilityUpToDate
+	compatibility := ExecutorCompatibilityUpToDate
 	sv := version.Version()
 
 	isExecutorDev := ev != "" && version.IsDev(ev)

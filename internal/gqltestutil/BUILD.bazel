@@ -11,6 +11,7 @@ go_library(
         "external_service.go",
         "git.go",
         "helper.go",
+        "migration.go",
         "organization.go",
         "permissions.go",
         "product_subscription.go",

@@ -11,10 +11,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/proto"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -24,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -111,7 +110,7 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 					ctx, done := limitCtx, limitDone
 					defer done()
 
-					repoLimitHit, err := s.searchFilesInRepo(ctx, clients.DB, clients.SearcherURLs, repo, repo.Name, rev, s.Indexed, s.PatternInfo, fetchTimeout, stream)
+					repoLimitHit, err := s.searchFilesInRepo(ctx, clients.SearcherURLs, repo, repo.Name, rev, s.Indexed, s.PatternInfo, fetchTimeout, stream)
 					if err != nil {
 						tr.SetAttributes(
 							attribute.String("repo", string(repo.Name)),
@@ -176,7 +175,6 @@ var MockSearchFilesInRepo func(
 
 func (s *TextSearchJob) searchFilesInRepo(
 	ctx context.Context,
-	db database.DB,
 	searcherURLs *endpoint.Map,
 	repo types.MinimalRepo,
 	gitserverRepo api.RepoName,
@@ -194,7 +192,7 @@ func (s *TextSearchJob) searchFilesInRepo(
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commit, err := gitserver.NewClient(db).ResolveRevision(ctx, gitserverRepo, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+	commit, err := gitserver.NewClient().ResolveRevision(ctx, gitserverRepo, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
 		return false, err
 	}
@@ -215,7 +213,17 @@ func (s *TextSearchJob) searchFilesInRepo(
 		})
 	}
 
-	return Search(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Features, onMatches)
+	onMatchGRPC := func(searcherMatch *proto.FileMatch) {
+		stream.Send(streaming.SearchEvent{
+			Results: []result.Match{convertProtoMatch(repo, commit, &rev, searcherMatch, s.PathRegexps)},
+		})
+	}
+
+	if featureflag.FromContext(ctx).GetBoolOr("grpc", false) {
+		return SearchGRPC(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Features, onMatchGRPC)
+	} else {
+		return Search(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Features, onMatches)
+	}
 }
 
 func convertProtoMatch(repo types.MinimalRepo, commit api.CommitID, rev *string, fm *proto.FileMatch, pathRegexps []*regexp.Regexp) result.Match {
@@ -225,14 +233,14 @@ func convertProtoMatch(repo types.MinimalRepo, commit api.CommitID, rev *string,
 		for _, rr := range cm.Ranges {
 			ranges = append(ranges, result.Range{
 				Start: result.Location{
-					Offset: int(rr.GetStart().GetOffset()),
-					Line:   int(rr.GetStart().GetLine()),
-					Column: int(rr.GetStart().GetColumn()),
+					Offset: int(rr.Start.Offset),
+					Line:   int(rr.Start.Line),
+					Column: int(rr.Start.Column),
 				},
 				End: result.Location{
-					Offset: int(rr.GetEnd().GetOffset()),
-					Line:   int(rr.GetEnd().GetLine()),
-					Column: int(rr.GetEnd().GetColumn()),
+					Offset: int(rr.End.Offset),
+					Line:   int(rr.End.Line),
+					Column: int(rr.End.Column),
 				},
 			})
 		}
@@ -240,8 +248,8 @@ func convertProtoMatch(repo types.MinimalRepo, commit api.CommitID, rev *string,
 		chunkMatches = append(chunkMatches, result.ChunkMatch{
 			Content: cm.Content,
 			ContentStart: result.Location{
-				Offset: int(cm.GetContentStart().GetOffset()),
-				Line:   int(cm.GetContentStart().GetLine()),
+				Offset: int(cm.ContentStart.Offset),
+				Line:   int(cm.ContentStart.Line),
 				Column: 0,
 			},
 			Ranges: ranges,
@@ -251,18 +259,18 @@ func convertProtoMatch(repo types.MinimalRepo, commit api.CommitID, rev *string,
 
 	var pathMatches []result.Range
 	for _, pathRe := range pathRegexps {
-		pathSubmatches := pathRe.FindAllStringSubmatchIndex(fm.GetPath(), -1)
+		pathSubmatches := pathRe.FindAllStringSubmatchIndex(fm.Path, -1)
 		for _, sm := range pathSubmatches {
 			pathMatches = append(pathMatches, result.Range{
 				Start: result.Location{
 					Offset: sm[0],
 					Line:   0,
-					Column: utf8.RuneCountInString(fm.GetPath()[:sm[0]]),
+					Column: utf8.RuneCountInString(fm.Path[:sm[0]]),
 				},
 				End: result.Location{
 					Offset: sm[1],
 					Line:   0,
-					Column: utf8.RuneCountInString(fm.GetPath()[:sm[1]]),
+					Column: utf8.RuneCountInString(fm.Path[:sm[1]]),
 				},
 			})
 		}
@@ -270,14 +278,14 @@ func convertProtoMatch(repo types.MinimalRepo, commit api.CommitID, rev *string,
 
 	return &result.FileMatch{
 		File: result.File{
-			Path:     fm.GetPath(),
+			Path:     fm.Path,
 			Repo:     repo,
 			CommitID: commit,
 			InputRev: rev,
 		},
 		ChunkMatches: chunkMatches,
 		PathMatches:  pathMatches,
-		LimitHit:     fm.GetLimitHit(),
+		LimitHit:     fm.LimitHit,
 	}
 }
 

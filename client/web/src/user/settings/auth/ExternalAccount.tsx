@@ -6,6 +6,7 @@ import { Button, Link, H3 } from '@sourcegraph/wildcard'
 import { LoaderButton } from '../../../components/LoaderButton'
 import { AuthProvider } from '../../../jscontext'
 
+import { AddGerritAccountModal } from './AddGerritAccountModal'
 import type { NormalizedExternalAccount } from './ExternalAccountsSignIn'
 import { RemoveExternalAccountModal } from './RemoveExternalAccountModal'
 
@@ -14,6 +15,7 @@ interface Props {
     authProvider: AuthProvider
     onDidRemove: (id: string, name: string) => void
     onDidError: (error: ErrorLike) => void
+    onDidAdd: () => void
 }
 
 export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
@@ -21,15 +23,17 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
     authProvider,
     onDidRemove,
     onDidError,
+    onDidAdd,
 }) => {
     const [isLoading, setIsLoading] = useState(false)
     const [isRemoveAccountModalOpen, setIsRemoveAccountModalOpen] = useState(false)
-    const toggleRemoveAccountModal = useCallback(
-        () => setIsRemoveAccountModalOpen(!isRemoveAccountModalOpen),
-        [isRemoveAccountModalOpen]
-    )
+    const [isAddGerritAccountModalOpen, setIsGerritAccountModalOpen] = useState(false)
 
     const navigateToAuthProvider = useCallback((): void => {
+        if (authProvider.serviceType === 'gerrit') {
+            setIsGerritAccountModalOpen(true)
+            return
+        }
         setIsLoading(true)
 
         if (authProvider.serviceType === 'saml') {
@@ -45,6 +49,7 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
     switch (authProvider.serviceType) {
         case 'openidconnect':
         case 'saml':
+        case 'gerrit':
             accountConnection = account.external?.displayName || 'Not connected'
             break
         default:
@@ -67,15 +72,28 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
 
     return (
         <div className="d-flex align-items-start">
-            {isRemoveAccountModalOpen && account.external && (
+            {account.external && (
                 <RemoveExternalAccountModal
                     id={account.external.id}
                     name={account.name}
-                    onDidCancel={toggleRemoveAccountModal}
-                    onDidRemove={onDidRemove}
+                    onDidCancel={() => setIsRemoveAccountModalOpen(false)}
+                    onDidRemove={(id: string, name: string) => {
+                        onDidRemove(id, name)
+                        setIsRemoveAccountModalOpen(false)
+                    }}
                     onDidError={onDidError}
+                    isOpen={isRemoveAccountModalOpen}
                 />
             )}
+            <AddGerritAccountModal
+                serviceID={authProvider.serviceID}
+                onDidAdd={() => {
+                    onDidAdd()
+                    setIsGerritAccountModalOpen(false)
+                }}
+                onDismiss={() => setIsGerritAccountModalOpen(false)}
+                isOpen={isAddGerritAccountModalOpen}
+            />
             <div className="align-self-center">
                 <AccountIcon className="mb-0 mr-2" />
             </div>
@@ -85,7 +103,11 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
             </div>
             <div className="align-self-center">
                 {account.external ? (
-                    <Button className="text-danger px-0" onClick={toggleRemoveAccountModal} variant="link">
+                    <Button
+                        className="text-danger px-0"
+                        onClick={() => setIsRemoveAccountModalOpen(true)}
+                        variant="link"
+                    >
                         Remove
                     </Button>
                 ) : (

@@ -158,6 +158,7 @@ type Label struct {
 
 type PullRequestRepo struct {
 	ID    string
+	Name  string
 	Owner struct {
 		Login string
 	}
@@ -1380,6 +1381,7 @@ fragment prCommit on PullRequestCommit {
 
 fragment repo on Repository {
   id
+  name
   owner {
     login
   }
@@ -1486,12 +1488,12 @@ func getGithubProxyURL() (*url.URL, bool) {
 	if githubProxyRawURL == "" {
 		return nil, false
 	}
-	url, err := url.Parse(githubProxyRawURL)
+	parsedUrl, err := url.Parse(githubProxyRawURL)
 	if err != nil {
 		log.Scoped("extsvc.github", "github package").Fatal("Error parsing GITHUB_BASE_URL", log.Error(err))
 		return nil, false
 	}
-	return url, true
+	return parsedUrl, true
 }
 
 // APIRoot returns the root URL of the API using the base URL of the GitHub instance.

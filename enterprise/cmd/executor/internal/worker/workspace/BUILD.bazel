@@ -14,7 +14,6 @@ go_library(
     visibility = ["//enterprise/cmd/executor:__subpackages__"],
     deps = [
         "//enterprise/cmd/executor/internal/command",
-        "//enterprise/cmd/executor/internal/worker/store",
         "//enterprise/internal/executor",
         "//lib/errors",
         "@com_github_c2h5oh_datasize//:datasize",

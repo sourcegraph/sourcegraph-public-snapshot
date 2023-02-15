@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/log/logtest"
@@ -55,16 +56,17 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	type input struct {
-		lastID         int32
-		author_user_id int32
-		contents       string
+		lastID       int32
+		authorUserID int32
+		contents     string
 	}
 
 	type output struct {
-		ID             int32
-		author_user_id int32
-		contents       string
-		err            error
+		ID               int32
+		authorUserID     int32
+		contents         string
+		redactedContents string
+		err              error
 	}
 
 	type pair struct {
@@ -77,20 +79,34 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 		sequence []pair
 	}
 
+	configRateLimitZero := `{"defaultRateLimit": 0,"auth.providers": []}`
+	configRateLimitOne := `{"defaultRateLimit": 1,"auth.providers": []}`
+
+	jsonConfigRateLimitZero := `{
+  "defaultRateLimit": 0,
+  "auth.providers": []
+}`
+
+	jsonConfigRateLimitOne := `{
+  "defaultRateLimit": 1,
+  "auth.providers": []
+}`
+
 	for _, test := range []test{
 		{
 			name: "create_with_author_user_id",
 			sequence: []pair{
 				{
 					input{
-						lastID:         0,
-						author_user_id: 1,
-						contents:       `{"defaultRateLimit": 0,"auth.providers": []}`,
+						lastID:       0,
+						authorUserID: 1,
+						contents:     configRateLimitZero,
 					},
 					output{
-						ID:             2,
-						author_user_id: 1,
-						contents:       `{"defaultRateLimit": 0,"auth.providers": []}`,
+						ID:               2,
+						authorUserID:     1,
+						contents:         configRateLimitZero,
+						redactedContents: jsonConfigRateLimitZero,
 					},
 				},
 			},
@@ -101,11 +117,12 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 				{
 					input{
 						lastID:   0,
-						contents: `{"defaultRateLimit": 0,"auth.providers": []}`,
+						contents: configRateLimitZero,
 					},
 					output{
-						ID:       2,
-						contents: `{"defaultRateLimit": 0,"auth.providers": []}`,
+						ID:               2,
+						contents:         configRateLimitZero,
+						redactedContents: jsonConfigRateLimitZero,
 					},
 				},
 			},
@@ -116,21 +133,23 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 				{
 					input{
 						lastID:   0,
-						contents: `{"defaultRateLimit": 0,"auth.providers": []}`,
+						contents: configRateLimitZero,
 					},
 					output{
-						ID:       2,
-						contents: `{"defaultRateLimit": 0,"auth.providers": []}`,
+						ID:               2,
+						contents:         configRateLimitZero,
+						redactedContents: jsonConfigRateLimitZero,
 					},
 				},
 				{
 					input{
 						lastID:   2,
-						contents: `{"defaultRateLimit": 1,"auth.providers": []}`,
+						contents: configRateLimitOne,
 					},
 					output{
-						ID:       3,
-						contents: `{"defaultRateLimit": 1,"auth.providers": []}`,
+						ID:               3,
+						contents:         configRateLimitOne,
+						redactedContents: jsonConfigRateLimitOne,
 					},
 				},
 			},
@@ -141,23 +160,25 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 				{
 					input{
 						lastID:   0,
-						contents: `{"defaultRateLimit": 0,"auth.providers": []}`,
+						contents: configRateLimitZero,
 					},
 					output{
-						ID:       2,
-						contents: `{"defaultRateLimit": 0,"auth.providers": []}`,
+						ID:               2,
+						contents:         configRateLimitZero,
+						redactedContents: jsonConfigRateLimitZero,
 					},
 				},
 				{
 					input{
 						lastID: 0,
 						// This configuration is now behind the first one, so it shouldn't be saved
-						contents: `{"defaultRateLimit": 1,"auth.providers": []}`,
+						contents: configRateLimitOne,
 					},
 					output{
-						ID:       2,
-						contents: `{"defaultRateLimit": 1,"auth.providers": []}`,
-						err:      errors.Append(ErrNewerEdit),
+						ID:               2,
+						contents:         configRateLimitOne,
+						redactedContents: jsonConfigRateLimitOne,
+						err:              errors.Append(ErrNewerEdit),
 					},
 				},
 			},
@@ -183,6 +204,68 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
              "defaultRateLimit": 42,
              "auth.providers": [],
 						}`,
+						redactedContents: `{
+  "disableAutoGitUpdates": true,
+  // This is a comment.
+  "defaultRateLimit": 42,
+  "auth.providers": [],
+}`,
+					},
+				},
+			},
+		},
+
+		{
+			name: "redact_sensitive_data",
+			sequence: []pair{
+				{
+					input{
+						lastID: 0,
+						contents: `{"disableAutoGitUpdates": true,
+
+		// This is a comment.
+		             "defaultRateLimit": 42,
+					 "auth.providers": [
+					   {
+						 "clientID": "sourcegraph-client-openid",
+						 "clientSecret": "strongsecret",
+						 "displayName": "Keycloak local OpenID Connect #1 (dev)",
+						 "issuer": "http://localhost:3220/auth/realms/master",
+						 "type": "openidconnect"
+					   }
+					 ]
+								}`,
+					},
+					output{
+						ID: 2,
+						contents: `{"disableAutoGitUpdates": true,
+
+		// This is a comment.
+		             "defaultRateLimit": 42,
+					 "auth.providers": [
+					   {
+						 "clientID": "sourcegraph-client-openid",
+						 "clientSecret": "strongsecret",
+						 "displayName": "Keycloak local OpenID Connect #1 (dev)",
+						 "issuer": "http://localhost:3220/auth/realms/master",
+						 "type": "openidconnect"
+					   }
+					 ]
+								}`,
+						redactedContents: `{
+  "disableAutoGitUpdates": true,
+  // This is a comment.
+  "defaultRateLimit": 42,
+  "auth.providers": [
+    {
+      "clientID": "sourcegraph-client-openid",
+      "clientSecret": "REDACTED-DATA-CHUNK-f434ecc765",
+      "displayName": "Keycloak local OpenID Connect #1 (dev)",
+      "issuer": "http://localhost:3220/auth/realms/master",
+      "type": "openidconnect"
+    }
+  ]
+}`,
 					},
 				},
 			},
@@ -208,9 +291,14 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 					t.Fatal("got unexpected nil configuration after creation")
 				}
 
-				if output.Contents != p.expected.contents {
-					t.Fatalf("returned configuration contents after creation - expected: %q, got:%q", p.expected.contents, output.Contents)
+				if diff := cmp.Diff(p.expected.contents, output.Contents); diff != "" {
+					t.Fatalf("mismatched configuration contents after creation, (-want +got):\n%s", diff)
 				}
+
+				if diff := cmp.Diff(p.expected.redactedContents, output.RedactedContents); diff != "" {
+					t.Fatalf("mismatched redacted_contents after creation, %v", diff)
+				}
+
 				if output.ID != p.expected.ID {
 					t.Fatalf("returned configuration ID after creation - expected: %v, got:%v", p.expected.ID, output.ID)
 				}

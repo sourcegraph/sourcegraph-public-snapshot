@@ -103,6 +103,9 @@ type Store interface {
 		batchSize int,
 		deleter func(ctx context.Context, objectPrefix string) error,
 	) (totalDeleted int, err error)
+
+	ReindexUploads(ctx context.Context, opts shared.ReindexUploadsOptions) error
+	ReindexUploadByID(ctx context.Context, id int) error
 }
 
 // store manages the database operations for uploads.

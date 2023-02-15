@@ -92,7 +92,19 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.BazelExpBranch:
 		ops.Merge(BazelOperations())
 	case runtype.WolfiExpBranch:
-		ops.Merge(WolfiOperations())
+		if c.Diff.Has(changed.WolfiPackages) {
+			ops.Merge(WolfiPackagesOperations(c.ChangedFiles[changed.WolfiPackages]))
+		}
+		if c.Diff.Has(changed.WolfiBaseImages) {
+			ops.Merge(
+				WolfiBaseImagesOperations(
+					c.ChangedFiles[changed.WolfiBaseImages],
+					c.Version,
+					c.Diff.Has(changed.WolfiPackages),
+				),
+			)
+		}
+
 	case runtype.PullRequest:
 		// First, we set up core test operations that apply both to PRs and to other run
 		// types such as main.

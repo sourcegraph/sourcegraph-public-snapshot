@@ -16,6 +16,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+const (
+	azureDevOpsServicesURL = "https://dev.azure.com/"
+	// TODO: @varsanojidan look into which API version/s we want to support.
+	apiVersion              = "7.0"
+	continuationTokenHeader = "x-ms-continuationtoken"
+)
+
 // Client used to access an AzureDevOps code host via the REST API.
 type Client struct {
 	// HTTP Client used to communicate with the API.
@@ -58,65 +65,52 @@ func NewClient(urn string, config *schema.AzureDevOpsConnection, httpClient http
 	}, nil
 }
 
-// ListRepositoriesByProjectOrOrgArgs defines options to be set on the ListRepositories methods' calls.
-type ListRepositoriesByProjectOrOrgArgs struct {
-	// Should be in the form of 'org/project' for projects and 'org' for orgs.
-	ProjectOrOrgName string
-}
-
-func (c *Client) ListRepositoriesByProjectOrOrg(ctx context.Context, opts ListRepositoriesByProjectOrOrgArgs) ([]Repository, error) {
-	qs := make(url.Values)
-
-	// TODO: @varsanojidan look into which API version/s we want to support.
-	qs.Set("api-version", "7.0")
-
-	urlRepositoriesByProjects := url.URL{Path: fmt.Sprintf("%s/_apis/git/repositories", opts.ProjectOrOrgName), RawQuery: qs.Encode()}
-
-	req, err := http.NewRequest("GET", urlRepositoriesByProjects.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	var repos ListRepositoriesResponse
-	if _, err = c.do(ctx, req, &repos); err != nil {
-		return nil, err
-	}
-
-	return repos.Value, nil
-}
-
+// do performs the specified request, returning any errors and a continuationToken used for pagination (if the API supports it).
+//
 //nolint:unparam // http.Response is never used, but it makes sense API wise.
-func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {
-	req.URL = c.URL.ResolveReference(req.URL)
+func (c *Client) do(ctx context.Context, req *http.Request, urlOverride string, result any) (continuationToken string, err error) {
+	u := c.URL
+	if urlOverride != "" {
+		u, err = url.Parse(urlOverride)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	queryParams := req.URL.Query()
+	queryParams.Set("api-version", apiVersion)
+	req.URL.RawQuery = queryParams.Encode()
+	req.URL = u.ResolveReference(req.URL)
+	if req.Body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
 
 	// Add Basic Auth headers for authenticated requests.
 	c.auth.Authenticate(req)
 
 	if err := c.rateLimit.Wait(ctx); err != nil {
-		return nil, err
+		return "", err
 	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-
-	defer resp.Body.Close()
 
 	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return nil, &httpError{
+		return "", &httpError{
 			URL:        req.URL,
 			StatusCode: resp.StatusCode,
 			Body:       bs,
 		}
 	}
 
-	return resp, json.Unmarshal(bs, result)
+	return resp.Header.Get(continuationTokenHeader), json.Unmarshal(bs, result)
 }
 
 // WithAuthenticator returns a new Client that uses the same configuration,
@@ -139,34 +133,10 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) (*Client, error) {
 	}, nil
 }
 
-type ListRepositoriesResponse struct {
-	Value []Repository `json:"value"`
-	Count int          `json:"count"`
-}
-
-type Repository struct {
-	ID         string  `json:"id"`
-	Name       string  `json:"name"`
-	CloneURL   string  `json:"remoteURL"`
-	APIURL     string  `json:"url"`
-	SSHURL     string  `json:"sshUrl"`
-	WebURL     string  `json:"webUrl"`
-	IsDisabled bool    `json:"isDisabled"`
-	Project    Project `json:"project"`
-}
-
-type Project struct {
-	ID         string `json:"id"`
-	Name       string `json:"name"`
-	State      string `json:"state"`
-	Revision   int    `json:"revision"`
-	Visibility string `json:"visibility"`
-}
-
-type httpError struct {
-	StatusCode int
-	URL        *url.URL
-	Body       []byte
+// IsAzureDevOpsServices returns true if the client is configured to Azure DevOps
+// Services (https://dev.azure.com
+func (c *Client) IsAzureDevOpsServices() bool {
+	return c.URL.String() == azureDevOpsServicesURL
 }
 
 func (e *httpError) Error() string {

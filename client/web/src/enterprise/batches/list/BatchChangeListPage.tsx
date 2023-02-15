@@ -1,7 +1,7 @@
 import React, { useEffect, useCallback, useState, useMemo } from 'react'
 
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router'
+import { useLocation } from 'react-router-dom-v5-compat'
 
 import { pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
@@ -48,10 +48,7 @@ import { useBatchChangeListFilters } from './useBatchChangeListFilters'
 
 import styles from './BatchChangeListPage.module.scss'
 
-export interface BatchChangeListPageProps
-    extends TelemetryProps,
-        Pick<RouteComponentProps, 'location'>,
-        SettingsCascadeProps<Settings> {
+export interface BatchChangeListPageProps extends TelemetryProps, SettingsCascadeProps<Settings> {
     canCreate: boolean
     headingElement: 'h1' | 'h2'
     namespaceID?: Scalars['ID']
@@ -72,13 +69,13 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
     canCreate,
     namespaceID,
     headingElement,
-    location,
     openTab,
     settingsCascade,
     telemetryService,
     isSourcegraphDotCom,
     authenticatedUser,
 }) => {
+    const location = useLocation()
     useEffect(() => telemetryService.logViewEvent('BatchChangesListPage'), [telemetryService])
 
     const isExecutionEnabled = isBatchChangesExecutionEnabled(settingsCascade)
@@ -238,9 +235,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                                         noun="batch change"
                                         pluralNoun="batch changes"
                                         hasNextPage={hasNextPage}
-                                        emptyElement={
-                                            <BatchChangeListEmptyElement canCreate={canCreate} location={location} />
-                                        }
+                                        emptyElement={<BatchChangeListEmptyElement canCreate={canCreate} />}
                                     />
                                     {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
                                 </SummaryContainer>
@@ -283,18 +278,21 @@ export const NamespaceBatchChangeListPage: React.FunctionComponent<
     )
 }
 
-interface BatchChangeListEmptyElementProps extends Pick<BatchChangeListPageProps, 'location' | 'canCreate'> {}
+interface BatchChangeListEmptyElementProps extends Pick<BatchChangeListPageProps, 'canCreate'> {}
 
 const BatchChangeListEmptyElement: React.FunctionComponent<
     React.PropsWithChildren<BatchChangeListEmptyElementProps>
-> = ({ canCreate, location }) => (
-    <div className="w-100 py-5 text-center">
-        <Text>
-            <strong>No batch changes have been created.</strong>
-        </Text>
-        {canCreate ? <NewBatchChangeButton to={`${location.pathname}/create`} /> : null}
-    </div>
-)
+> = ({ canCreate }) => {
+    const location = useLocation()
+    return (
+        <div className="w-100 py-5 text-center">
+            <Text>
+                <strong>No batch changes have been created.</strong>
+            </Text>
+            {canCreate ? <NewBatchChangeButton to={`${location.pathname}/create`} /> : null}
+        </div>
+    )
+}
 
 const BatchChangeListTabHeader: React.FunctionComponent<
     React.PropsWithChildren<{

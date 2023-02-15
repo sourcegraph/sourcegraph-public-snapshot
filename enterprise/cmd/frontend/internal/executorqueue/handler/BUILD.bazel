@@ -11,6 +11,7 @@ go_library(
     deps = [
         "//enterprise/internal/executor",
         "//internal/database",
+        "//internal/executor",
         "//internal/metrics/store",
         "//internal/types",
         "//internal/workerutil",
@@ -33,9 +34,9 @@ go_test(
     deps = [
         "//enterprise/internal/executor",
         "//internal/database",
+        "//internal/executor",
         "//internal/metrics/store",
         "//internal/types",
-        "//internal/workerutil",
         "//internal/workerutil/dbworker/store",
         "//internal/workerutil/dbworker/store/mocks",
         "//lib/errors",

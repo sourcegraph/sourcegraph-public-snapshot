@@ -15,7 +15,8 @@
   "devDependencies": {
     "@sourcegraph/testing": "workspace:*",
     "@sourcegraph/build-config": "workspace:*",
-    "@sourcegraph/extension-api-types": "workspace:*"
+    "@sourcegraph/extension-api-types": "workspace:*",
+    "sourcegraph": "workspace:*"
   },
   "dependencies": {
     "@sourcegraph/wildcard": "workspace:*",

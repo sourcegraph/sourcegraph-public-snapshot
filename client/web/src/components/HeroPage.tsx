@@ -1,13 +1,14 @@
-import * as React from 'react'
+import { FC } from 'react'
 
 import classNames from 'classnames'
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 
 import { Link, H1, Icon } from '@sourcegraph/wildcard'
 
 import styles from './HeroPage.module.scss'
 
 interface HeroPageProps {
-    icon?: React.ComponentType<React.PropsWithChildren<any>>
+    icon?: React.ComponentType
     iconLinkTo?: string
     iconClassName?: string
     iconAriaLabel?: string
@@ -20,7 +21,7 @@ interface HeroPageProps {
     lessPadding?: boolean
 }
 
-export const HeroPage: React.FunctionComponent<React.PropsWithChildren<HeroPageProps>> = props => (
+export const HeroPage: FC<HeroPageProps> = props => (
     <div
         className={classNames(
             styles.heroPage,
@@ -50,4 +51,16 @@ export const HeroPage: React.FunctionComponent<React.PropsWithChildren<HeroPageP
         {props.body}
         {props.cta && <div className={styles.cta}>{props.cta}</div>}
     </div>
+)
+
+interface NotFoundPageProps {
+    pageType: string
+}
+
+export const NotFoundPage: FC<NotFoundPageProps> = ({ pageType }) => (
+    <HeroPage
+        icon={MapSearchIcon}
+        title="404: Not Found"
+        subtitle={`Sorry, the requested ${pageType} page was not found.`}
+    />
 )

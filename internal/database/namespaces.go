@@ -31,7 +31,7 @@ var (
 type NamespaceStore interface {
 	basestore.ShareableStore
 	With(other basestore.ShareableStore) NamespaceStore
-	Transact(ctx context.Context) (NamespaceStore, error)
+	WithTransact(context.Context, func(NamespaceStore) error) error
 	GetByID(ctx context.Context, orgID, userID int32) (*Namespace, error)
 	GetByName(ctx context.Context, name string) (*Namespace, error)
 }
@@ -49,9 +49,10 @@ func (s *namespaceStore) With(other basestore.ShareableStore) NamespaceStore {
 	return &namespaceStore{Store: s.Store.With(other)}
 }
 
-func (s *namespaceStore) Transact(ctx context.Context) (NamespaceStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	return &namespaceStore{Store: txBase}, err
+func (s *namespaceStore) WithTransact(ctx context.Context, f func(NamespaceStore) error) error {
+	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&namespaceStore{Store: tx})
+	})
 }
 
 // GetByID looks up the namespace by an ID.

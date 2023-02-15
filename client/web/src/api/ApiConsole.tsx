@@ -2,6 +2,7 @@ import * as React from 'react'
 
 import * as _graphiqlModule from 'graphiql' // type only
 import * as H from 'history'
+import { useNavigate, useLocation, type NavigateFunction } from 'react-router-dom-v5-compat'
 import { from as fromPromise, Subject, Subscription } from 'rxjs'
 import { catchError, debounceTime } from 'rxjs/operators'
 
@@ -33,7 +34,7 @@ query {
 
 interface Props {
     location: H.Location
-    history: H.History
+    navigate: NavigateFunction
 }
 
 interface State {
@@ -56,10 +57,17 @@ interface Parameters {
     operationName?: string
 }
 
+export const ApiConsole: React.FC<{}> = () => {
+    const navigate = useNavigate()
+    const location = useLocation()
+
+    return <ApiConsoleInner location={location} navigate={navigate} />
+}
+
 /**
  * Component to show the GraphQL API console.
  */
-export class ApiConsole extends React.PureComponent<Props, State> {
+class ApiConsoleInner extends React.PureComponent<Props, State> {
     public state: State = { parameters: {} }
 
     private updates = new Subject<Parameters>()
@@ -95,9 +103,7 @@ export class ApiConsole extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             this.updates
                 .pipe(debounceTime(500))
-                .subscribe(data =>
-                    this.props.history.replace({ ...location, hash: encodeURIComponent(JSON.stringify(data)) })
-                )
+                .subscribe(data => this.props.navigate({ ...location, hash: encodeURIComponent(JSON.stringify(data)) }))
         )
 
         this.subscriptions.add(

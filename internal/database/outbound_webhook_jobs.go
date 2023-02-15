@@ -12,15 +12,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type OutboundWebhookJobStore interface {
 	basestore.ShareableStore
-	Transact(context.Context) (OutboundWebhookJobStore, error)
+	WithTransact(context.Context, func(OutboundWebhookJobStore) error) error
 	With(basestore.ShareableStore) OutboundWebhookJobStore
 	Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error)
 	Done(error) error
@@ -57,12 +56,13 @@ func (s *outboundWebhookJobStore) With(other basestore.ShareableStore) OutboundW
 	}
 }
 
-func (s *outboundWebhookJobStore) Transact(ctx context.Context) (OutboundWebhookJobStore, error) {
-	tx, err := s.Store.Transact(ctx)
-	return &outboundWebhookJobStore{
-		Store: tx,
-		key:   s.key,
-	}, err
+func (s *outboundWebhookJobStore) WithTransact(ctx context.Context, f func(OutboundWebhookJobStore) error) error {
+	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&outboundWebhookJobStore{
+			Store: tx,
+			key:   s.key,
+		})
+	})
 }
 
 func (s *outboundWebhookJobStore) Create(ctx context.Context, eventType string, scope *string, payload []byte) (*types.OutboundWebhookJob, error) {
@@ -137,7 +137,7 @@ func scanOutboundWebhookJob(key encryption.Key, job *types.OutboundWebhookJob, s
 	var (
 		keyID         string
 		rawPayload    []byte
-		executionLogs []store.ExecutionLogEntry
+		executionLogs []executor.ExecutionLogEntry
 	)
 
 	if err := sc.Scan(
@@ -168,9 +168,7 @@ func scanOutboundWebhookJob(key encryption.Key, job *types.OutboundWebhookJob, s
 		job.Payload = encryption.NewUnencrypted(string(rawPayload))
 	}
 
-	for _, entry := range executionLogs {
-		job.ExecutionLogs = append(job.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
-	}
+	job.ExecutionLogs = append(job.ExecutionLogs, executionLogs...)
 
 	return nil
 }

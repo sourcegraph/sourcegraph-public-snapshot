@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 
-import * as H from 'history'
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
 import shallow from 'zustand/shallow'
 
 import { SearchBox } from '@sourcegraph/branded'
@@ -24,8 +24,6 @@ interface Props
         TelemetryProps,
         PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser | null
-    location: H.Location
-    history: H.History
     isSourcegraphDotCom: boolean
     globbing: boolean
     isSearchAutoFocusRequired?: boolean
@@ -48,6 +46,9 @@ const selectQueryState = ({
  * The search item in the navbar
  */
 export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
+    const navigate = useNavigate()
+    const location = useLocation()
+
     const { queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType, searchMode } =
         useNavbarQueryState(selectQueryState, shallow)
 
@@ -59,13 +60,14 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
             submitSearch({
-                history: props.history,
+                historyOrNavigate: navigate,
+                location,
                 source: 'nav',
                 selectedSearchContextSpec: props.selectedSearchContextSpec,
                 ...parameters,
             })
         },
-        [submitSearch, props.history, props.selectedSearchContextSpec]
+        [submitSearch, navigate, location, props.selectedSearchContextSpec]
     )
 
     const onSubmit = useCallback(

@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 	"go.opentelemetry.io/otel/attribute"
+	"golang.org/x/exp/slices"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -901,7 +902,7 @@ func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []
 				matched = append(matched, rev)
 			}
 		}
-		sort.Slice(matched, func(i, j int) bool { return matched[i].Less(matched[j]) })
+		slices.SortFunc(matched, query.RevisionSpecifier.Less)
 		return
 	}
 
@@ -910,7 +911,7 @@ func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []
 		clashing = append(clashing, rev)
 	}
 	// ensure that lists are always returned in sorted order.
-	sort.Slice(clashing, func(i, j int) bool { return clashing[i].Less(clashing[j]) })
+	slices.SortFunc(clashing, query.RevisionSpecifier.Less)
 	return
 }
 
@@ -942,22 +943,6 @@ func optimizeRepoPatternWithHeuristics(repoPattern string) string {
 	// so that the regexp can be optimized more effectively.
 	repoPattern = strings.ReplaceAll(repoPattern, "github.com", `github\.com`)
 	return repoPattern
-}
-
-type badRequestError struct {
-	err error
-}
-
-func (e *badRequestError) BadRequest() bool {
-	return true
-}
-
-func (e *badRequestError) Error() string {
-	return "bad request: " + e.err.Error()
-}
-
-func (e *badRequestError) Cause() error {
-	return e.err
 }
 
 var ErrNoResolvedRepos = errors.New("no resolved repositories")

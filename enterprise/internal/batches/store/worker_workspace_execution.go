@@ -16,8 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
@@ -205,14 +205,14 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 
 	// Find the result for the last step. This is the one we'll be building the execution
 	// result from.
-	var latestStepResult *batcheslib.CacheAfterStepResultMetadata = stepResults[0]
+	latestStepResult := stepResults[0]
 	for _, r := range stepResults {
 		if r.Value.StepIndex > latestStepResult.Value.StepIndex {
 			latestStepResult = r
 		}
 	}
 
-	author, err := author.GetChangesetAuthorForUser(ctx, database.UsersWith(s.logger, s), batchSpec.UserID)
+	changesetAuthor, err := author.GetChangesetAuthorForUser(ctx, database.UsersWith(s.logger, s), batchSpec.UserID)
 	if err != nil {
 		return false, errors.Wrap(err, "creating changeset author")
 	}
@@ -229,7 +229,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		latestStepResult.Value,
 		workspace.Path,
 		true,
-		author,
+		changesetAuthor,
 	)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to build changeset specs from cache")
@@ -338,7 +338,7 @@ func extractCacheEntries(events []*batcheslib.LogEvent) (cacheEntries []*batches
 	return cacheEntries, nil
 }
 
-func logEventsFromLogEntries(logs []workerutil.ExecutionLogEntry) []*batcheslib.LogEvent {
+func logEventsFromLogEntries(logs []executor.ExecutionLogEntry) []*batcheslib.LogEvent {
 	if len(logs) < 1 {
 		return nil
 	}

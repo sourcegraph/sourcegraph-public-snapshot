@@ -8,6 +8,7 @@ import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { PageHeader, Link, Button, Icon, Alert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { CloudCtaBanner } from '../../components/CloudCtaBanner'
 import { Page } from '../../components/Page'
 import { eventLogger } from '../../tracking/eventLogger'
 
@@ -41,32 +42,37 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                                 <Icon aria-hidden={true} svgPath={mdiPlus} />
                                 Create search context
                             </Button>
-                            {isSourcegraphDotCom && (
-                                <Button
-                                    to={buildCloudTrialURL(authenticatedUser, 'context')}
-                                    className="mt-2"
-                                    as={Link}
-                                    variant="secondary"
-                                    onClick={() =>
-                                        eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'ContextsSettings' })
-                                    }
-                                >
-                                    Search private code
-                                </Button>
-                            )}
                         </div>
                     }
                     description={
-                        <span className="text-muted">
-                            Search code you care about with search contexts.{' '}
-                            <Link
-                                to="/help/code_search/explanations/features#search-contexts"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                Learn more
-                            </Link>
-                        </span>
+                        <>
+                            <span className="text-muted">
+                                Search code you care about with search contexts.{' '}
+                                <Link
+                                    to="/help/code_search/explanations/features#search-contexts"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    Learn more
+                                </Link>
+                            </span>
+                            {isSourcegraphDotCom && (
+                                <CloudCtaBanner variant="filled" className="mb-0">
+                                    To search across your team's private repos,{' '}
+                                    <Link
+                                        to={buildCloudTrialURL(authenticatedUser, 'context')}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={() =>
+                                            eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'ContextsSettings' })
+                                        }
+                                    >
+                                        try Sourcegraph Cloud
+                                    </Link>
+                                    .
+                                </CloudCtaBanner>
+                            )}
+                        </>
                     }
                     className="mb-3"
                 >

@@ -24,7 +24,7 @@ func (s *insightsDataRetentionJob) Config() []env.Config {
 	return nil
 }
 
-func (s *insightsDataRetentionJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+func (s *insightsDataRetentionJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	if !insights.IsEnabled() {
 		observationCtx.Logger.Debug("Code Insights disabled. Disabling insights data retention job.")
 		return []goroutine.BackgroundRoutine{}, nil

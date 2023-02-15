@@ -282,7 +282,16 @@ func loadRunStats(c *rcache.Cache, jobName string, routineName string, now time.
 			if err != nil {
 				return RoutineRunStats{}, errors.Wrap(err, "deserialize stats for day")
 			}
-			stats = mergeStats(stats, statsForDay)
+			mergedStats := mergeStats(stats, statsForDay)
+
+			// Temporary code: There was a bug that messed up past averages.
+			// This block helps ignore that messed-up data.
+			// We can pretty safely remove this in four months.
+			if mergedStats.AvgDurationMs < 0 {
+				mergedStats.AvgDurationMs = stats.AvgDurationMs
+			}
+
+			stats = mergedStats
 			if stats.Since.IsZero() {
 				stats.Since = date
 			}

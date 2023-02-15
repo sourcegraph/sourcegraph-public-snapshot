@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -32,10 +33,13 @@ func (n *noopBackfillRunner) Run(ctx context.Context, req pipeline.BackfillReque
 }
 
 type delegateBackfillRunner struct {
+	mu          sync.Mutex
 	doSomething func(ctx context.Context, req pipeline.BackfillRequest) error
 }
 
 func (e *delegateBackfillRunner) Run(ctx context.Context, req pipeline.BackfillRequest) error {
+	e.mu.Lock()
+	defer e.mu.Unlock()
 	return e.doSomething(ctx, req)
 }
 
@@ -229,6 +233,7 @@ func Test_BackfillWithRetry(t *testing.T) {
 	attemptCounts := make(map[int]int)
 	runner := &delegateBackfillRunner{
 		doSomething: func(ctx context.Context, req pipeline.BackfillRequest) error {
+
 			val := attemptCounts[int(req.Repo.ID)]
 			attemptCounts[int(req.Repo.ID)] += 1
 			if val > 2 {
@@ -371,7 +376,7 @@ func Test_BackfillWithInterrupt(t *testing.T) {
 		SeriesID:            "series1",
 		Query:               "asdf",
 		SampleIntervalUnit:  string(types.Month),
-		Repositories:        []string{"repo1", "repo2"},
+		Repositories:        []string{"repo1", "repo2", "repo3", "repo4"},
 		SampleIntervalValue: 1,
 		GenerationMethod:    types.Search,
 	})
@@ -379,7 +384,7 @@ func Test_BackfillWithInterrupt(t *testing.T) {
 
 	backfill, err := bfs.NewBackfill(ctx, series)
 	require.NoError(t, err)
-	backfill, err = backfill.SetScope(ctx, bfs, []int32{1, 2}, 0)
+	backfill, err = backfill.SetScope(ctx, bfs, []int32{1, 2, 3, 4}, 0)
 	require.NoError(t, err)
 	err = backfill.setState(ctx, bfs, BackfillStateProcessing)
 	require.NoError(t, err)
@@ -404,6 +409,7 @@ func Test_BackfillWithInterrupt(t *testing.T) {
 		clock:              clock,
 	}
 	handler.config.interruptAfter = time.Second * 5
+	handler.config.pageSize = 2 // setting the page size to only complete 1/2 repos in 1 iteration
 
 	err = handler.Handle(ctx, logger, dequeue)
 	require.NoError(t, err)

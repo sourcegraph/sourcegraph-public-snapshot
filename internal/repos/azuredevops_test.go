@@ -15,10 +15,10 @@ func TestAzureDevOpsSource_ListRepos(t *testing.T) {
 		Url:      "https://dev.azure.com",
 		Username: "testuser",
 		Token:    "testtoken",
-		Orgs:     []string{"sgtestazure"},
+		Projects: []string{"sgtestazure/sgtestazure", "sgtestazure/sg test with spaces"},
 		Exclude: []*schema.ExcludedAzureDevOpsServerRepo{
 			{
-				Name: "sgtestazure/sgtestazure2",
+				Name: "sg test with spaces/sg test with spaces",
 			},
 			{
 				Pattern: "^sgtestazure/sgtestazure[3-9]",

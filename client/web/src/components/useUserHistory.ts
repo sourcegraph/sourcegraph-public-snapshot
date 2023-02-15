@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react'
 
 import * as H from 'history'
+import { useLocation } from 'react-router-dom-v5-compat'
 
 import { parseBrowserRepoURL } from '../util/url'
 
@@ -103,8 +104,8 @@ export class UserHistory {
     }
 }
 
-export function useUserHistory(history: H.History, isRepositoryRelatedPage: boolean): UserHistory {
-    const { location } = history
+export function useUserHistory(isRepositoryRelatedPage: boolean): UserHistory {
+    const location = useLocation()
     const userHistory = useMemo(() => new UserHistory(), [])
     useEffect(() => {
         if (isRepositoryRelatedPage) {

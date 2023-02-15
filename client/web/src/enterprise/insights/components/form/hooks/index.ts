@@ -2,7 +2,7 @@
 export { useForm, FORM_ERROR } from './useForm'
 export type { Form, SubmissionErrors, FormChangeEvent } from './useForm'
 
-export { useField } from './useField'
+export { useField, useControlledField } from './useField'
 export type { useFieldAPI } from './useField'
 
 export { useCheckboxes } from './useCheckboxes'

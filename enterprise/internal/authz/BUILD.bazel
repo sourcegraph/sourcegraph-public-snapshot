@@ -8,6 +8,7 @@ go_library(
     deps = [
         "//enterprise/internal/authz/bitbucketcloud",
         "//enterprise/internal/authz/bitbucketserver",
+        "//enterprise/internal/authz/gerrit",
         "//enterprise/internal/authz/github",
         "//enterprise/internal/authz/gitlab",
         "//enterprise/internal/authz/perforce",
