@@ -83,6 +83,39 @@ func Searcher() *monitoring.Dashboard {
 			},
 
 			{
+				Title:  "Cache store",
+				Hidden: true,
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:        "store_fetching",
+							Description: "amount of in-flight unindexed search requests fetching code from gitserver (per instance)",
+							Query:       "sum by (instance) (searcher_store_fetching{instance=~`${instance:regex}`})",
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}"),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							NoAlert:     true,
+						},
+						{
+							Name:        "store_fetching_waiting",
+							Description: "amount of in-flight unindexed search requests waiting to fetch code from gitserver (per instance)",
+							Query:       "sum by (instance) (searcher_store_fetch_queue_size{instance=~`${instance:regex}`})",
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}"),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							NoAlert:     true,
+						},
+						{
+							Name:        "store_fetching_fail",
+							Description: "amount of unindexed search requests that failed while fetching code from gitserver over 10m (per instance)",
+							Query:       "sum by (instance) (rate(searcher_store_fetch_failed{instance=~`${instance:regex}`}[10m]))",
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}"),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							NoAlert:     true,
+						},
+					},
+				},
+			},
+
+			{
 				Title:  "Index use",
 				Hidden: true,
 				Rows: []monitoring.Row{
