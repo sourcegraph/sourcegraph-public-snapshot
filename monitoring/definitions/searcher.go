@@ -54,6 +54,14 @@ func Searcher() *monitoring.Dashboard {
 						},
 					}, {
 						{
+							Name:        "concurrent_requests",
+							Description: "amount of in-flight unindexed search requests (per instance)",
+							Query:       "sum by (instance) (searcher_service_running)",
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}"),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							NoAlert:     true,
+						},
+						{
 							Name:        "unindexed_search_request_errors",
 							Description: "unindexed search request errors every 5m by code",
 							Query:       `sum by (code)(increase(searcher_service_request_total{code!="200",code!="canceled"}[5m])) / ignoring(code) group_left sum(increase(searcher_service_request_total[5m])) * 100`,
