@@ -121,7 +121,7 @@ enum OwnershipReasonType {
 Union of all possible types of ownership reasons. Use the individual subtypes to
 get more details on the ownership determination.
 """
-union OwnershipReason = CodeownersFileEntry | RecentContributor
+union OwnershipReason = CodeownersFileEntry
 
 """
 The entity is an owner because they were mentioned on a codeowners file.
@@ -144,26 +144,4 @@ type CodeownersFileEntry {
     The line in the CODEOWNERS file that matched for this determination.
     """
     ruleLineMatch: Int!
-}
-
-"""
-The entity is an owner because they were a recent contributor to the file.
-"""
-type RecentContributor {
-    """
-    Descriptive title to display in the UI for the determination.
-    """
-    title: String!
-    """
-    More detailed description to display in the UI for the determination.
-    """
-    description: String!
-    """
-    The timeframe that was considered for this determination.
-    """
-    since: DateTime!
-    """
-    The amount of recent contributions to this file.
-    """
-    count: Int!
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 type ListOwnershipArgs struct {
@@ -48,7 +47,6 @@ type OwnerResolver interface {
 
 type OwnershipReasonResolver interface {
 	ToCodeownersFileEntry() (CodeownersFileEntryResolver, bool)
-	ToRecentContributor() (RecentContributorResolver, bool)
 }
 
 type CodeownersFileEntryResolver interface {
@@ -56,11 +54,4 @@ type CodeownersFileEntryResolver interface {
 	Description() string
 	CodeownersFile() FileResolver
 	RuleLineMatch() int32
-}
-
-type RecentContributorResolver interface {
-	Title() string
-	Description() string
-	Since() gqlutil.DateTime
-	Count() int32
 }
