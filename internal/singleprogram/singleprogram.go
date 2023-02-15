@@ -133,11 +133,17 @@ func Init(logger log.Logger) {
 	}
 
 	setDefaultEnv(logger, "CTAGS_PROCESSES", "2")
-	// Write script that invokes universal-ctags via Docker.
-	// TODO(sqs): TODO(single-binary): stop relying on a ctags Docker image
-	ctagsPath := filepath.Join(cacheDir, "universal-ctags-dev")
-	writeFile(ctagsPath, []byte(universalCtagsDevScript), 0700)
-	setDefaultEnv(logger, "CTAGS_COMMAND", ctagsPath)
+
+	// generate a shell script to run a ctags Docker image
+	// unless the environment is already set up to find ctags
+	ctagsPath := os.Getenv("CTAGS_COMMAND")
+	if stat, err := os.Stat(ctagsPath); err != nil || stat.IsDir() {
+		// Write script that invokes universal-ctags via Docker.
+		// TODO(sqs): TODO(single-binary): stop relying on a ctags Docker image
+		ctagsPath = filepath.Join(cacheDir, "universal-ctags-dev")
+		writeFile(ctagsPath, []byte(universalCtagsDevScript), 0700)
+		setDefaultEnv(logger, "CTAGS_COMMAND", ctagsPath)
+	}
 }
 
 // universalCtagsDevScript is copied from cmd/symbols/universal-ctags-dev.

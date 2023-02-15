@@ -186,7 +186,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 	}
 
 	{ // Apply code ownership post-search filter
-		if includeOwners, excludeOwners := b.FileHasOwner(); inputs.Features.CodeOwnershipFilters && (len(includeOwners) > 0 || len(excludeOwners) > 0) {
+		if includeOwners, excludeOwners := b.FileHasOwner(); inputs.Features.CodeOwnershipSearch && (len(includeOwners) > 0 || len(excludeOwners) > 0) {
 			basicJob = codeownershipjob.New(basicJob, includeOwners, excludeOwners)
 		}
 	}
@@ -195,6 +195,10 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		if v, _ := b.ToParseTree().StringValue(query.FieldSelect); v != "" {
 			sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
 			basicJob = NewSelectJob(sp, basicJob)
+			// the select owners job is ran separately as it requires state and can return multiple owners from one match.
+			if inputs.Features.CodeOwnershipSearch && sp.Root() == filter.File && len(sp) == 2 && sp[1] == "owners" {
+				basicJob = codeownershipjob.NewSelectOwnersSearch(basicJob)
+			}
 		}
 	}
 

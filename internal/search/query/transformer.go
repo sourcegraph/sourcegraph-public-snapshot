@@ -567,11 +567,11 @@ func ConcatRevFilters(b Basic) Basic {
 	if revision == "" {
 		return b
 	}
-	modified := MapField(nodes, FieldRepo, func(value string, negated bool, _ Annotation) Node {
-		if !negated {
-			return Parameter{Value: value + "@" + revision, Field: FieldRepo, Negated: negated}
+	modified := MapField(nodes, FieldRepo, func(value string, negated bool, ann Annotation) Node {
+		if !negated && !ann.Labels.IsSet(IsPredicate) {
+			return Parameter{Value: value + "@" + revision, Field: FieldRepo, Negated: negated, Annotation: ann}
 		}
-		return Parameter{Value: value, Field: FieldRepo, Negated: negated}
+		return Parameter{Value: value, Field: FieldRepo, Negated: negated, Annotation: ann}
 	})
 	return Basic{Parameters: toParameters(modified), Pattern: b.Pattern}
 }
