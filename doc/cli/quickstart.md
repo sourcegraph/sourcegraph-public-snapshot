@@ -87,4 +87,4 @@ Please check your `httpd.conf` for the following:
   ...
 </Location>
 ```
-If this is present, you will need to delete this line. If not, it will result in sending an unexpected response back to `src`, which will, in turn, be rejected. 
+If this is present, you will need to delete `SetInputFilter DEFLATE`. If not, it will result in sending an unexpected response back to `src`, which will, in turn, be rejected. 
