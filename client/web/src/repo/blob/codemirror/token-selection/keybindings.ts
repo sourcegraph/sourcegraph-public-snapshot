@@ -12,7 +12,7 @@ import {
     selectPageUp,
 } from '@codemirror/commands'
 import { Extension, Prec } from '@codemirror/state'
-import { EditorView, KeyBinding, keymap, layer, RectangleMarker, ViewPlugin, ViewUpdate } from '@codemirror/view'
+import { EditorView, KeyBinding, keymap, layer, RectangleMarker } from '@codemirror/view'
 
 import { blobPropsFacet } from '..'
 import { syntaxHighlight } from '../highlight'
