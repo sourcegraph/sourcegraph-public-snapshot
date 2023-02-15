@@ -362,14 +362,14 @@ func (r *RepositoryResolver) Stars(ctx context.Context) (int32, error) {
 }
 
 func (r *RepositoryResolver) KeyValuePairs(ctx context.Context) ([]KeyValuePair, error) {
-	repo, err := r.repo(ctx)
+	dbKVPs, err := r.db.RepoKVPs().List(ctx, r.IDInt32())
 	if err != nil {
 		return nil, err
 	}
 
-	kvps := make([]KeyValuePair, 0, len(repo.KeyValuePairs))
-	for k, v := range repo.KeyValuePairs {
-		kvps = append(kvps, KeyValuePair{key: k, value: v})
+	kvps := make([]KeyValuePair, 0, len(dbKVPs))
+	for _, kvp := range dbKVPs {
+		kvps = append(kvps, KeyValuePair{key: kvp.Key, value: kvp.Value})
 	}
 	return kvps, nil
 }

@@ -471,14 +471,12 @@ var repoColumns = []string{
 	"repo.deleted_at",
 	"repo.metadata",
 	"repo.blocked",
-	"(SELECT json_object_agg(key, value) FROM repo_kvps WHERE repo_kvps.repo_id = repo.id)",
 }
 
 func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 	var sources dbutil.NullJSONRawMessage
 	var metadata json.RawMessage
 	var blocked dbutil.NullJSONRawMessage
-	var kvps repoKVPs
 
 	err = rows.Scan(
 		&r.ID,
@@ -497,7 +495,6 @@ func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 		&dbutil.NullTime{Time: &r.DeletedAt},
 		&metadata,
 		&blocked,
-		&kvps,
 		&sources,
 	)
 	if err != nil {
@@ -510,8 +507,6 @@ func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 			return err
 		}
 	}
-
-	r.KeyValuePairs = kvps.kvps
 
 	type sourceInfo struct {
 		ID       int64
