@@ -154,7 +154,7 @@ export const SavedSearchListPage: React.FunctionComponent<Props> = props => {
             <PageHeader
                 description="Manage notifications and alerts for specific search queries."
                 actions={
-                    <Button to="searches/add" className="test-add-saved-search-button" variant="primary" as={Link}>
+                    <Button to="add" className="test-add-saved-search-button" variant="primary" as={Link}>
                         <Icon aria-hidden={true} svgPath={mdiPlus} /> Add saved search
                     </Button>
                 }

@@ -86,6 +86,7 @@ export const OrgSettingsSidebar: React.FunctionComponent<React.PropsWithChildren
                                     key={label}
                                     to={`/organizations/${org.name}/settings` + to}
                                     onClick={collapseMobileSidebar}
+                                    exact={exact}
                                 >
                                     {label} {status && <ProductStatusBadge className="ml-1" status={status} />}
                                 </SidebarNavItem>

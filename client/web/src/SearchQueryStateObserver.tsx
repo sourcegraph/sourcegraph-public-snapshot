@@ -1,4 +1,4 @@
-import { FC, useEffect, useMemo } from 'react'
+import { FC, useEffect, useState } from 'react'
 
 import { Location, useLocation } from 'react-router-dom'
 import { BehaviorSubject } from 'rxjs'
@@ -25,9 +25,9 @@ export const SearchQueryStateObserver: FC<SearchQueryStateObserverProps> = props
 
     const location = useLocation()
 
-    // Execute once on mount. New values are provided in the `useEffect` hook.
+    // Create `locationSubject` once on mount. New values are provided in the `useEffect` hook.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    const locationSubject = useMemo(() => new BehaviorSubject<Location>(location), [])
+    const [locationSubject] = useState(() => new BehaviorSubject<Location>(location))
 
     useEffect(() => {
         locationSubject.next(location)

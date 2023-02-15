@@ -6,7 +6,7 @@ import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner, Prompt } from '@sourcegraph/wildcard'
+import { LoadingSpinner, BeforeUnloadPrompt } from '@sourcegraph/wildcard'
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { SaveToolbar } from '../components/SaveToolbar'
@@ -139,7 +139,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
 
         return (
             <div className={classNames('test-settings-file d-flex flex-grow-1 flex-column', styles.settingsFile)}>
-                <Prompt when={this.state.saving || this.dirty} message="Discard settings changes?" />
+                <BeforeUnloadPrompt when={this.state.saving || this.dirty} message="Discard settings changes?" />
                 <React.Suspense fallback={<LoadingSpinner className="mt-2" />}>
                     <MonacoSettingsEditor
                         value={contents}

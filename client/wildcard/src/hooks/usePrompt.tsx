@@ -13,7 +13,7 @@ import { useBeforeUnload, unstable_useBlocker as useBlocker } from 'react-router
 // or the app may stay on the correct page but the browser's history stack gets
 // out of whack. You should test your own implementation thoroughly to make sure
 // the tradeoffs are right for your users.
-export function usePrompt(
+export function useBeforeUnloadPrompt(
     message: string | null | undefined | false,
     { beforeUnload }: { beforeUnload?: boolean } = {}
 ): void {
@@ -41,17 +41,4 @@ export function usePrompt(
         ),
         { capture: true }
     )
-}
-
-// You can also reimplement the v5 <Prompt> component API
-export function Prompt({ when, message, ...props }: PromptProps): null {
-    usePrompt(when ? message : false, props)
-
-    return null
-}
-
-interface PromptProps {
-    when: boolean
-    message: string
-    beforeUnload?: boolean
 }

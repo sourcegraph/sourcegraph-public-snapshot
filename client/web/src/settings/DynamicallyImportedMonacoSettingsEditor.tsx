@@ -6,7 +6,7 @@ import { Subscription } from 'rxjs'
 import { logger } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner, Prompt } from '@sourcegraph/wildcard'
+import { LoadingSpinner, BeforeUnloadPrompt } from '@sourcegraph/wildcard'
 
 import { SaveToolbarProps, SaveToolbar, SaveToolbarPropsGenerator } from '../components/SaveToolbar'
 
@@ -112,7 +112,7 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
 
         return (
             <div className={this.props.className || ''}>
-                <Prompt when={this.props.loading || this.isDirty} message="Discard changes?" />
+                <BeforeUnloadPrompt when={this.props.loading || this.isDirty} message="Discard changes?" />
                 {this.props.actions && (
                     <EditorActionsGroup actions={this.props.actions} onClick={this.runAction.bind(this)} />
                 )}

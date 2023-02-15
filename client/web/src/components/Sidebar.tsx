@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { FC, PropsWithChildren } from 'react'
 
 import { mdiMenuDown, mdiMenuUp } from '@mdi/js'
 import classNames from 'classnames'
@@ -19,18 +19,27 @@ import {
 
 import styles from './Sidebar.module.scss'
 
+interface SidebarNavItemProps {
+    to: string
+    className?: string
+    source?: string
+    onClick?: () => void
+    exact?: boolean
+}
+
 /**
  * Item of `SideBarGroup`.
  */
-export const SidebarNavItem: React.FunctionComponent<
-    React.PropsWithChildren<{
-        to: string
-        className?: string
-        source?: string
-        onClick?: () => void
-    }>
-> = ({ children, className, to, source, onClick }) => {
-    const routeMatch = useMatch(to)
+export const SidebarNavItem: FC<PropsWithChildren<SidebarNavItemProps>> = ({
+    children,
+    className,
+    to,
+    source,
+    onClick,
+    exact = false,
+}) => {
+    // Match nested routes too.
+    const routeMatch = useMatch(to + (exact ? '' : '/*'))
     const buttonClassNames = classNames('text-left d-flex', styles.linkInactive, className)
 
     if (source === 'server') {

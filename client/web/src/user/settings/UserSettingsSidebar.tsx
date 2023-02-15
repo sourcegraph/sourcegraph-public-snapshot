@@ -71,6 +71,7 @@ export const UserSettingsSidebar: FC<UserSettingsSidebarProps> = props => {
                                     key={label}
                                     to={`/users/${user.username}/settings` + to}
                                     onClick={collapseMobileSidebar}
+                                    exact={true}
                                 >
                                     {label} {status && <ProductStatusBadge className="ml-1" status={status} />}
                                 </SidebarNavItem>
