@@ -64,6 +64,7 @@ func (h *UserResourceHandler) Create(_ *http.Request, attributes scim.ResourceAt
 	if optionalExternalID.Present() {
 		accountSpec := extsvc.AccountSpec{
 			ServiceType: "scim",
+			// TODO: provide proper service ID
 			ServiceID:   "TODO",
 			AccountID:   optionalExternalID.Value(),
 		}
