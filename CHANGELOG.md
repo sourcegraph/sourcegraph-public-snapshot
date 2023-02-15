@@ -27,9 +27,11 @@ All notable changes to Sourcegraph are documented in this file.
 - Markdown files now support `<picture>` and `<video>` elements in the rendered view. [#47074](https://github.com/sourcegraph/sourcegraph/pull/47074)
 - Batch Changes: Log outputs from execution steps are now paginated in the web interface. [#46335](https://github.com/sourcegraph/sourcegraph/pull/46335)
 - Monitoring: the searcher dashboard now contains more detailed request metrics as well as information on interactions with the local cache (via gitserver). [#47654](https://github.com/sourcegraph/sourcegraph/pull/47654)
+- Renders GitHub pull request references in the commit list. [#47593](https://github.com/sourcegraph/sourcegraph/pull/47593)
 
 ### Changed
 
+- Archived and deleted changesets are no longer counted towards the completion percentage shown in the Batch Changes UI. [#46831](https://github.com/sourcegraph/sourcegraph/pull/46831)
 - Code Insights has a new UI for the "Add or remove insights" view, which now allows you to search code insights by series label in addition to insight title. [#46538](https://github.com/sourcegraph/sourcegraph/pull/46538)
 - When SMTP is configured, users created by site admins via the "Create user" page will no longer have their email verified by default - users must verify their emails by using the "Set password" link they get sent, or have their emails verified by a site admin via the "Emails" tab in user settings or the `setUserEmailVerified` mutation. The `createUser` mutation retains the old behaviour of automatically marking emails as verified. To learn more, refer to the [SMTP and email delivery](https://docs.sourcegraph.com/admin/config/email) documentation. [#46187](https://github.com/sourcegraph/sourcegraph/pull/46187)
 - Connection checks for code host connections have been changed to talk to code host APIs directly via HTTP instead of doing DNS lookup and TCP dial. That makes them more resistant in environments where proxies are used. [#46918](https://github.com/sourcegraph/sourcegraph/pull/46918)
@@ -39,6 +41,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Resolved issue which would prevent Batch Changes from being able to update changesets on forks of repositories on Bitbucket Server created prior to version 4.2. [#47397](https://github.com/sourcegraph/sourcegraph/pull/47397)
+- Fixed a bug where changesets created on forks of repositories in a personal user's namespace on GitHub could not be updated after creation. [#47397](https://github.com/sourcegraph/sourcegraph/pull/47397)
 - Fixed a bug where saving default Sort & Limit filters in Code Insights did not persist [#46653](https://github.com/sourcegraph/sourcegraph/pull/46653)
 - Restored the old syntax for `repo:contains` filters that was previously removed in version 4.0.0. For now, both the old and new syntaxes are supported to allow for smooth upgrades. Users are encouraged to switch to the new syntax, since the old one may still be removed in a future version.
 - Fixed a bug where removing an auth provider would render a user's Account Security page inaccessible if they still had an external account associated with the removed auth provider. [#47092](https://github.com/sourcegraph/sourcegraph/pull/47092)
