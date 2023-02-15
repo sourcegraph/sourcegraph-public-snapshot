@@ -2450,6 +2450,8 @@ type SiteConfiguration struct {
 	InsightsAggregationsProactiveResultLimit int `json:"insights.aggregations.proactiveResultLimit,omitempty"`
 	// InsightsBackfillInterruptAfter description: Set the number of seconds an insight series will spend backfilling before being interrupted. Series are interrupted to prevent long running insights from exhausting all of the available workers. Interrupted series will be placed back in the queue and retried based on their priority.
 	InsightsBackfillInterruptAfter int `json:"insights.backfill.interruptAfter,omitempty"`
+	// InsightsBackfillRepositoryConcurrency description: Number of repositories within the batch to backfill concurrently.
+	InsightsBackfillRepositoryConcurrency int `json:"insights.backfill.repositoryConcurrency,omitempty"`
 	// InsightsBackfillRepositoryGroupSize description: Set the number of repositories to batch in a group during backfilling.
 	InsightsBackfillRepositoryGroupSize int `json:"insights.backfill.repositoryGroupSize,omitempty"`
 	// InsightsHistoricalWorkerRateLimit description: Maximum number of historical Code Insights data frames that may be analyzed per second.
@@ -2634,6 +2636,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "insights.aggregations.bufferSize")
 	delete(m, "insights.aggregations.proactiveResultLimit")
 	delete(m, "insights.backfill.interruptAfter")
+	delete(m, "insights.backfill.repositoryConcurrency")
 	delete(m, "insights.backfill.repositoryGroupSize")
 	delete(m, "insights.historical.worker.rateLimit")
 	delete(m, "insights.historical.worker.rateLimitBurst")
