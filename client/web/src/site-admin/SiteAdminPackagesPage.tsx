@@ -104,25 +104,27 @@ const PackageNode: React.FunctionComponent<React.PropsWithChildren<PackageNodePr
                     )}
                 </div>
             </div>
-            <div>
-                {packageRepository?.mirrorInfo.lastError && (
-                    <div className={styles.alertWrapper}>
-                        <Alert variant="warning">
-                            <Text className="font-weight-bold">Error syncing package:</Text>
-                            <Code className={styles.alertContent}>
-                                {packageRepository.mirrorInfo.lastError.replaceAll('\r', '\n')}
-                            </Code>
-                        </Alert>
-                    </div>
-                )}
-                {packageRepository?.mirrorInfo.isCorrupted && (
-                    <div className={styles.alertWrapper}>
-                        <Alert variant="danger">
-                            Package is corrupt. <Link to={`/${node.name}/-/settings/mirror`}>More details</Link>
-                        </Alert>
-                    </div>
-                )}
-            </div>
+            {packageRepository && (
+                <div>
+                    {packageRepository.mirrorInfo.lastError && (
+                        <div className={styles.alertWrapper}>
+                            <Alert variant="warning">
+                                <Text className="font-weight-bold">Error syncing package:</Text>
+                                <Code className={styles.alertContent}>
+                                    {packageRepository.mirrorInfo.lastError.replaceAll('\r', '\n')}
+                                </Code>
+                            </Alert>
+                        </div>
+                    )}
+                    {packageRepository.mirrorInfo.isCorrupted && (
+                        <div className={styles.alertWrapper}>
+                            <Alert variant="danger">
+                                Package is corrupt. <Link to={`/${node.name}/-/settings/mirror`}>More details</Link>
+                            </Alert>
+                        </div>
+                    )}
+                </div>
+            )}
         </li>
     )
 }
