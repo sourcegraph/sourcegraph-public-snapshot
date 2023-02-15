@@ -1,10 +1,11 @@
 import React, { Suspense, useCallback, useRef, useState } from 'react'
 
 import classNames from 'classnames'
-import { useLocation, Navigate, Outlet } from 'react-router-dom-v5-compat'
+import { matchPath, useLocation, Route, Routes, Navigate } from 'react-router-dom-v5-compat'
 import { Observable } from 'rxjs'
 
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
+import { isMacPlatform } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
@@ -14,7 +15,6 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps, SettingsSubjectCommonFields } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { FeedbackPrompt, LoadingSpinner, Panel } from '@sourcegraph/wildcard'
 
@@ -24,6 +24,7 @@ import type { CodeIntelligenceProps } from './codeintel'
 import { CodeMonitoringProps } from './codeMonitoring'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
+import { useBreadcrumbs } from './components/Breadcrumbs'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { LazyFuzzyFinder } from './components/fuzzyFinder/LazyFuzzyFinder'
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
@@ -36,12 +37,28 @@ import { useHandleSubmitFeedback } from './hooks'
 import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import type { NotebookProps } from './notebooks'
+import { OrgAreaRoute } from './org/area/OrgArea'
+import type { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
+import type { OrgSettingsAreaRoute } from './org/settings/OrgSettingsArea'
+import type { OrgSettingsSidebarItems } from './org/settings/OrgSettingsSidebar'
+import type { RepoContainerRoute } from './repo/RepoContainer'
+import { RepoHeaderActionButton } from './repo/RepoHeader'
+import type { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
+import type { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
+import type { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
+import type { LegacyLayoutRouteComponentProps, LayoutRouteProps } from './routes'
 import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
 import { parseSearchURLQuery, SearchAggregationProps, SearchStreamingProps } from './search'
 import { NotepadContainer } from './search/Notepad'
 import { SetupWizard } from './setup-wizard'
+import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
+import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { useExperimentalFeatures } from './stores'
-import { ThemePreferenceProps, useTheme } from './theme'
+import { useTheme, useThemeProps } from './theme'
+import type { UserAreaRoute } from './user/area/UserArea'
+import type { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
+import type { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
+import type { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { getExperimentalFeatures } from './util/get-experimental-features'
 import { parseBrowserRepoURL } from './util/url'
 
@@ -59,6 +76,24 @@ export interface LegacyLayoutProps
         NotebookProps,
         CodeMonitoringProps,
         SearchAggregationProps {
+    siteAdminAreaRoutes: readonly SiteAdminAreaRoute[]
+    siteAdminSideBarGroups: SiteAdminSideBarGroups
+    siteAdminOverviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
+    userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
+    userAreaRoutes: readonly UserAreaRoute[]
+    userSettingsSideBarItems: UserSettingsSidebarItems
+    userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
+    orgSettingsSideBarItems: OrgSettingsSidebarItems
+    orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[]
+    orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
+    orgAreaRoutes: readonly OrgAreaRoute[]
+    repoContainerRoutes: readonly RepoContainerRoute[]
+    repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
+    repoHeaderActionButtons: readonly RepoHeaderActionButton[]
+    repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
+    repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
+    routes: readonly LayoutRouteProps[]
+
     authenticatedUser: AuthenticatedUser | null
 
     /**
@@ -72,8 +107,7 @@ export interface LegacyLayoutProps
 
     globbing: boolean
     isSourcegraphDotCom: boolean
-
-    themeProps: ThemeProps & ThemePreferenceProps
+    children?: never
 }
 /**
  * Syntax highlighting changes for WCAG 2.1 contrast compliance (currently behind feature flag)
@@ -81,14 +115,14 @@ export interface LegacyLayoutProps
  */
 const CONTRAST_COMPLIANT_CLASSNAME = 'theme-contrast-compliant-syntax-highlighting'
 
-export const Layout: React.FC<LegacyLayoutProps> = props => {
+export const LegacyLayout: React.FunctionComponent<React.PropsWithChildren<LegacyLayoutProps>> = props => {
     const location = useLocation()
 
     // TODO: Replace with useMatches once top-level <Router/> is V6
-    const routeMatch: any = '' /* props.routes.find(
+    const routeMatch = props.routes.find(
         route =>
             matchPath(route.path, location.pathname) || matchPath(route.path.replace(/\/\*$/, ''), location.pathname)
-    )?.path*/
+    )?.path
 
     const isSearchRelatedPage = (routeMatch === PageRoutes.RepoContainer || routeMatch?.startsWith('/search')) ?? false
     const isSearchHomepage = location.pathname === '/search' && !parseSearchURLQuery(location.search)
@@ -119,10 +153,13 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
         location.pathname === PageRoutes.PasswordReset ||
         location.pathname === PageRoutes.Welcome
 
+    const themeProps = useThemeProps()
     const themeState = useTheme()
     const themeStateRef = useRef(themeState)
     themeStateRef.current = themeState
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
+
+    const breadcrumbProps = useBreadcrumbs()
 
     useScrollToLocationHash(location)
 
@@ -150,6 +187,13 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     if (location.pathname !== '/' && location.pathname.endsWith('/')) {
         return <Navigate replace={true} to={{ ...location, pathname: location.pathname.slice(0, -1) }} />
     }
+
+    const context = {
+        ...props,
+        ...themeProps,
+        ...breadcrumbProps,
+        isMacPlatform: isMacPlatform(),
+    } satisfies Omit<LegacyLayoutRouteComponentProps, 'location' | 'history' | 'match' | 'staticContext'>
 
     if (isSetupWizardPage) {
         return <SetupWizard />
@@ -194,9 +238,8 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
             )}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
-                    routes={[]}
                     {...props}
-                    {...props.themeProps}
+                    {...themeProps}
                     showSearchBox={
                         isSearchRelatedPage &&
                         !isSearchHomepage &&
@@ -221,7 +264,18 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     }
                 >
                     <AppRouterContainer>
-                        <Outlet />
+                        <Routes>
+                            {props.routes.map(
+                                ({ condition = () => true, ...route }) =>
+                                    condition(context) && (
+                                        <Route
+                                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                            path={route.path}
+                                            element={route.render(context)}
+                                        />
+                                    )
+                            )}
+                        </Routes>
                     </AppRouterContainer>
                 </Suspense>
             </ErrorBoundary>
@@ -236,7 +290,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                 >
                     <TabbedPanelContent
                         {...props}
-                        {...props.themeProps}
+                        {...themeProps}
                         repoName={`git://${parseBrowserRepoURL(location.pathname).repoName}`}
                         fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
                     />
