@@ -105,7 +105,8 @@ func (s *ownService) ResolveOwnersWithType(ctx context.Context, protoOwners []*c
 		resolvedOwner, err := s.resolveOwner(ctx, po.Handle, po.Email)
 		if err != nil {
 			return nil, err
-		} else if resolvedOwner == nil {
+		}
+		if resolvedOwner == nil {
 			// This is a safeguard in case somehow neither email nor handle are set.
 			continue
 		}
