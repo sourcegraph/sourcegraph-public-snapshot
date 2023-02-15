@@ -4,7 +4,7 @@
 // 	protoc        (unknown)
 // source: gitserver.proto
 
-package proto
+package v1
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
