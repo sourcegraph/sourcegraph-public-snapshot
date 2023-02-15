@@ -814,8 +814,12 @@ type UserForSCIM struct {
 
 type SystemRole string
 
-var (
-	UserSystemRole              SystemRole = "USER"
+const (
+	// UserSystemRole represents the role associated with all users on a Sourcegraph instance.
+	UserSystemRole SystemRole = "USER"
+
+	// SiteAdministratorSystemRole represents the role associated with Site Administrators
+	// on a sourcegraph instance.
 	SiteAdministratorSystemRole SystemRole = "SITE_ADMINISTRATOR"
 )
 
@@ -826,9 +830,30 @@ type Role struct {
 	CreatedAt time.Time
 }
 
+// A PermissionNamespace represents a distinct context within which permission policies
+// are defined and enforced.
+type PermissionNamespace string
+
+func (n PermissionNamespace) String() string {
+	return string(n)
+}
+
+// Valid checks if a namespace is valid and supported by the Sourcegraph RBAC system.
+func (n PermissionNamespace) Valid() bool {
+	switch n {
+	case BatchChangesNamespace:
+		return true
+	default:
+		return false
+	}
+}
+
+// BatchChangesNamespace represents the Batch Changes namespace.
+const BatchChangesNamespace PermissionNamespace = "BATCH_CHANGES"
+
 type Permission struct {
 	ID        int32
-	Namespace string
+	Namespace PermissionNamespace
 	Action    string
 	CreatedAt time.Time
 }
@@ -854,7 +879,7 @@ type UserRole struct {
 
 type NamespacePermission struct {
 	ID         int64
-	Namespace  string
+	Namespace  PermissionNamespace
 	ResourceID int64
 	Action     string
 	UserID     int32

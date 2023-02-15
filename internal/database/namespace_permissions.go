@@ -63,7 +63,7 @@ INSERT INTO
 `
 
 type CreateNamespacePermissionOpts struct {
-	Namespace  string
+	Namespace  types.PermissionNamespace
 	ResourceID int64
 	Action     string
 	UserID     int32
@@ -76,6 +76,14 @@ func (n *namespacePermissionStore) Create(ctx context.Context, opts CreateNamesp
 
 	if opts.UserID == 0 {
 		return nil, errors.New("user id is required")
+	}
+
+	if opts.Action == "" {
+		return nil, errors.New("action is required")
+	}
+
+	if !opts.Namespace.Valid() {
+		return nil, errors.New("valid namespace is required")
 	}
 
 	q := sqlf.Sprintf(
@@ -141,7 +149,7 @@ SELECT %s FROM namespace_permissions WHERE %s
 // 2. The Namespace, ResourceID, Action and UserID associated with the namespace permission.
 type GetNamespacePermissionOpts struct {
 	ID         int64
-	Namespace  string
+	Namespace  types.PermissionNamespace
 	ResourceID int64
 	Action     string
 	UserID     int32
@@ -184,7 +192,7 @@ func (n *namespacePermissionStore) Get(ctx context.Context, opts GetNamespacePer
 // 1. ID is provided
 // 2. Namespace, Actions, UserID and ResourceID is provided.
 func isGetNamsepaceOptsValid(opts GetNamespacePermissionOpts) bool {
-	areNonIDOptsValid := opts.Namespace != "" && opts.Action != "" && opts.UserID != 0 && opts.ResourceID != 0
+	areNonIDOptsValid := opts.Namespace.Valid() && opts.Action != "" && opts.UserID != 0 && opts.ResourceID != 0
 	if areNonIDOptsValid || opts.ID != 0 {
 		return true
 	}

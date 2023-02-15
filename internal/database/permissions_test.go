@@ -21,7 +21,7 @@ func TestPermissionGetByID(t *testing.T) {
 	store := db.Permissions()
 
 	created, err := store.Create(ctx, CreatePermissionOpts{
-		Namespace: "BATCHCHANGES",
+		Namespace: types.BatchChangesNamespace,
 		Action:    "READ",
 	})
 	if err != nil {
@@ -59,11 +59,46 @@ func TestPermissionCreate(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.Permissions()
 
-	_, err := store.Create(ctx, CreatePermissionOpts{
-		Namespace: "BATCHCHANGES",
-		Action:    "READ",
+	t.Run("invalid namespace", func(t *testing.T) {
+		p, err := store.Create(ctx, CreatePermissionOpts{
+			Namespace: types.PermissionNamespace("TEST-NAMESPACE"),
+			Action:    "READ",
+		})
+
+		require.Nil(t, p)
+		require.Error(t, err)
+		require.ErrorContains(t, err, "valid action and namespace is required")
 	})
-	require.NoError(t, err)
+
+	t.Run("missing namespace", func(t *testing.T) {
+		p, err := store.Create(ctx, CreatePermissionOpts{
+			Action: "READ",
+		})
+
+		require.Nil(t, p)
+		require.Error(t, err)
+		require.ErrorContains(t, err, "valid action and namespace is required")
+	})
+
+	t.Run("missing action", func(t *testing.T) {
+		p, err := store.Create(ctx, CreatePermissionOpts{
+			Namespace: types.PermissionNamespace("TEST-NAMESPACE"),
+		})
+
+		require.Nil(t, p)
+		require.Error(t, err)
+		require.ErrorContains(t, err, "valid action and namespace is required")
+	})
+
+	t.Run("success", func(t *testing.T) {
+		p, err := store.Create(ctx, CreatePermissionOpts{
+			Namespace: types.BatchChangesNamespace,
+			Action:    "READ",
+		})
+
+		require.NotNil(t, p)
+		require.NoError(t, err)
+	})
 }
 
 func TestPermissionList(t *testing.T) {
@@ -132,7 +167,7 @@ func TestPermissionDelete(t *testing.T) {
 	store := db.Permissions()
 
 	p, err := store.Create(ctx, CreatePermissionOpts{
-		Namespace: "BATCHCHANGES",
+		Namespace: types.BatchChangesNamespace,
 		Action:    "READ",
 	})
 	require.NoError(t, err)
@@ -168,24 +203,37 @@ func TestPermissionBulkCreate(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.Permissions()
 
-	var perms []CreatePermissionOpts
-	for i := 1; i <= 5; i++ {
-		var action string
-		if i%2 == 0 {
-			action = "READ"
-		} else {
-			action = "WRITE"
+	t.Run("invalid namespace", func(t *testing.T) {
+		opts := []CreatePermissionOpts{
+			{Action: "READ", Namespace: types.PermissionNamespace("TEST-NAMESPACE")},
 		}
-		perms = append(perms, CreatePermissionOpts{
-			Action:    action,
-			Namespace: fmt.Sprintf("namespace-%d", i),
-		})
-	}
 
-	ps, err := store.BulkCreate(ctx, perms)
-	require.NoError(t, err)
-	require.NotNil(t, ps)
-	require.Len(t, ps, 5)
+		ps, err := store.BulkCreate(ctx, opts)
+		require.ErrorContains(t, err, "valid namespace is required")
+		require.Nil(t, ps)
+	})
+
+	t.Run("success", func(t *testing.T) {
+		noOfPerms := 5
+		var opts []CreatePermissionOpts
+		for i := 1; i <= noOfPerms; i++ {
+			var action string
+			if i%2 == 0 {
+				action = "READ"
+			} else {
+				action = "WRITE"
+			}
+			opts = append(opts, CreatePermissionOpts{
+				Action:    fmt.Sprintf("%s-%d", action, i),
+				Namespace: types.BatchChangesNamespace,
+			})
+		}
+
+		ps, err := store.BulkCreate(ctx, opts)
+		require.NoError(t, err)
+		require.NotNil(t, ps)
+		require.Len(t, ps, noOfPerms)
+	})
 }
 
 func TestPermissionBulkDelete(t *testing.T) {
@@ -205,8 +253,8 @@ func TestPermissionBulkDelete(t *testing.T) {
 			action = "WRITE"
 		}
 		perms = append(perms, CreatePermissionOpts{
-			Action:    action,
-			Namespace: fmt.Sprintf("namespace-for-deletion-%d", i),
+			Action:    fmt.Sprintf("%s-%d", action, i),
+			Namespace: types.BatchChangesNamespace,
 		})
 	}
 
@@ -222,7 +270,6 @@ func TestPermissionBulkDelete(t *testing.T) {
 
 	t.Run("no options provided", func(t *testing.T) {
 		err = store.BulkDelete(ctx, []DeletePermissionOpts{})
-
 		require.Error(t, err)
 		require.Equal(t, err.Error(), "missing ids from sql query")
 	})
@@ -332,8 +379,8 @@ func createTestPermissions(ctx context.Context, t *testing.T, store PermissionSt
 	totalPerms := 10
 	for i := 1; i <= totalPerms; i++ {
 		permission, err := store.Create(ctx, CreatePermissionOpts{
-			Namespace: fmt.Sprintf("PERMISSION-%d", i),
-			Action:    "READ",
+			Namespace: types.BatchChangesNamespace,
+			Action:    fmt.Sprintf("READ-%d", i),
 		})
 		require.NoError(t, err)
 		permissions = append(permissions, permission)
