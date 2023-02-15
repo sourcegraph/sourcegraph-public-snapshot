@@ -890,25 +890,40 @@ export const UPDATE_WEBHOOK_QUERY = gql`
     }
 `
 
+export const EXTERNAL_SERVICE_KINDS = gql`
+    query ExternalServiceKinds {
+        externalServices {
+            nodes {
+                kind
+            }
+        }
+    }
+`
+
 const siteAdminPackageFieldsFragment = gql`
     ${mirrorRepositoryInfoFieldsFragment}
+    ${externalRepositoryFieldsFragment}
 
     fragment SiteAdminPackageFields on PackageRepoReference {
         id
         name
         scheme
         repository {
+            id
             name
             url
             mirrorInfo {
                 ...MirrorRepositoryInfoFields
+            }
+            externalRepository {
+                ...ExternalRepositoryFields
             }
         }
     }
 `
 
 export const PACKAGES_QUERY = gql`
-    query Packages($scheme: String, $name: String, $first: Int, $after: String) {
+    query Packages($scheme: String, $name: String, $first: Int!, $after: String) {
         packageRepoReferences(scheme: $scheme, name: $name, first: $first, after: $after) {
             nodes {
                 ...SiteAdminPackageFields
