@@ -112,7 +112,7 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
             <div
                 className={classNames(
                     styles.externalChangesetNodeStatuses,
-                    'd-flex d-md-none justify-content-start',
+                    'd-flex d-sm-none justify-content-start',
                     (node.checkState || node.reviewState || node.diffStat) && 'p-2'
                 )}
             >
@@ -134,7 +134,7 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
             </div>
             <span
                 className={classNames(
-                    'align-self-stretch d-none d-md-flex justify-content-center',
+                    'align-self-stretch d-none d-sm-flex justify-content-center',
                     node.checkState && 'p-2'
                 )}
             >
@@ -146,7 +146,7 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
             </span>
             <span
                 className={classNames(
-                    'align-self-stretch d-none d-md-flex justify-content-center',
+                    'align-self-stretch d-none d-sm-flex justify-content-center',
                     node.reviewState && 'p-2'
                 )}
             >
@@ -158,7 +158,7 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
             </span>
             <div
                 className={classNames(
-                    'align-self-center d-none d-md-flex justify-content-center',
+                    'align-self-center d-none d-sm-flex justify-content-center',
                     node.diffStat && 'p-2'
                 )}
             >
