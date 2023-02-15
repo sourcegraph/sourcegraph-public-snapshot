@@ -6850,17 +6850,17 @@ type Site implements SettingsSubject {
     enableLegacyExtensions: Boolean!
 
     """
-    FOR INTERNAL USE ONLY: todo
+    FOR INTERNAL USE ONLY: Returns information about instance upgrade readiness.
     """
     upgradeReadiness: UpgradeReadiness!
 }
 
 """
-todo
+Instance upgrade readiness information includes schema drifts and deprecated-but-unfinished out-of-band migrations.
 """
 type UpgradeReadiness {
     """
-    todo
+    The schema drift details.
     """
     schemaDrift: String!
 }

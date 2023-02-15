@@ -27,7 +27,8 @@ var out = output.NewOutput(os.Stdout, output.OutputOpts{
 	ForceTTY:   true,
 })
 
-// todo
+// NewRunnerWithSchemas returns new migrator runner with given scheme names and
+// definitions.
 func NewRunnerWithSchemas(observationCtx *observation.Context, logger log.Logger, schemaNames []string, schemas []*schemas.Schema) (cliutil.Runner, error) {
 	dsns, err := postgresdsn.DSNsBySchema(schemaNames)
 	if err != nil {

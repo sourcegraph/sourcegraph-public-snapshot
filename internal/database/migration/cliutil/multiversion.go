@@ -270,7 +270,9 @@ func filterStitchedMigrationsForTags(tags []string) (map[string]shared.StitchedM
 	return filteredStitchedMigrationBySchemaName, nil
 }
 
-// todo
+// GetServiceVersion returns the frontend service version information for the
+// given runner. Both of the return values `ok` and `error` should be checked to
+// ensure a valid version is returned.
 func GetServiceVersion(ctx context.Context, r Runner) (_ oobmigration.Version, patch int, ok bool, _ error) {
 	db, err := extractDatabase(ctx, r)
 	if err != nil {
@@ -308,7 +310,13 @@ func setServiceVersion(ctx context.Context, r Runner, version oobmigration.Versi
 
 var ErrDatabaseDriftDetected = errors.New("database drift detected")
 
-// todo
+// CheckDrift uses given runner to check whether schema drift exists for any
+// non-empty database. It returns ErrDatabaseDriftDetected when the schema drift
+// exists, and nil error when not.
+//
+//   - The `verbose` indicates whether to collect drift details in the output.
+//   - The `expectedSchemaFactories` is the means to retrieve the schema
+//     definitions at the target version.
 func CheckDrift(ctx context.Context, r Runner, version string, out *output.Output, verbose bool, expectedSchemaFactories []ExpectedSchemaFactory) error {
 	type schemaWithDrift struct {
 		name  string
