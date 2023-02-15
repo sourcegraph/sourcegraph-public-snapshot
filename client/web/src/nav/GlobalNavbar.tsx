@@ -63,6 +63,7 @@ export interface GlobalNavbarProps
         CodeMonitoringProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
+    isSourcegraphApp?: boolean
     showSearchBox: boolean
     routes: readonly LayoutRouteProps[]
 
@@ -295,6 +296,17 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 </FeedbackPrompt>
                             </NavAction>
                         </>
+                    )}
+                    {isSourcegraphApp && (
+                        <ButtonLink
+                            variant="secondary"
+                            outline={true}
+                            to={buildCloudTrialURL(props.authenticatedUser)}
+                            size="sm"
+                            onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NavBarApp' })}
+                        >
+                            Try Sourcegraph Cloud
+                        </ButtonLink>
                     )}
                     {props.authenticatedUser && isSourcegraphDotCom && (
                         <ButtonLink
