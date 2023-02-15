@@ -42,43 +42,14 @@ func NewUserResourceHandler(ctx context.Context, observationCtx *observation.Con
 
 // Create stores given attributes. Returns a resource with the attributes that are stored and a (new) unique identifier.
 func (h *UserResourceHandler) Create(_ *http.Request, attributes scim.ResourceAttributes) (scim.Resource, error) {
-	// Get external ID
+	// Get external ID, primary email, username, and display name
 	optionalExternalID := getOptionalExternalID(attributes)
-
-	// Get primary email: try to get the (first) email address marked as primary, otherwise use the first email address
-	primaryEmail := ""
-	if attributes["emails"] == nil {
+	primaryEmail := extractPrimaryEmail(attributes)
+	if primaryEmail == "" {
 		return scim.Resource{}, scimerrors.ScimErrorBadParams([]string{"emails missing"})
 	}
-	emails := attributes["emails"].([]interface{})
-	for _, emailRaw := range emails {
-		email := emailRaw.(map[string]interface{})
-		if email["primary"] == true {
-			primaryEmail = email["value"].(string)
-			break
-		}
-	}
-	if primaryEmail == "" && len(emails) > 0 {
-		primaryEmail = emails[0].(map[string]interface{})["value"].(string)
-	}
-
-	// Get username
-	username := ""
-	if attributes["userName"] != nil {
-		username = attributes["userName"].(string)
-	}
-
-	// Get displayName
-	displayName := ""
-	if attributes["displayName"] != nil {
-		displayName = attributes["displayName"].(string)
-	} else if attributes["name"] != nil {
-		name := attributes["name"].(map[string]interface{})
-		displayName = name["formatted"].(string)
-		if displayName == "" && name["givenName"] != nil && name["familyName"] != nil {
-			displayName = name["givenName"].(string) + " " + name["familyName"].(string)
-		}
-	}
+	username := extractUsername(attributes)
+	displayName := extractDisplayName(attributes)
 
 	// Create user (with or without external ID)
 	// TODO: Use NewSCIMUser instead of NewUser?
@@ -120,6 +91,50 @@ func (h *UserResourceHandler) Create(_ *http.Request, attributes scim.ResourceAt
 			LastModified: &now,
 		},
 	}, nil
+}
+
+// extractPrimaryEmail extracts the primary email address from the given attributes.
+// Tries to get the (first) email address marked as primary, otherwise uses the first email address it finds.
+func extractPrimaryEmail(attributes scim.ResourceAttributes) (primaryEmail string) {
+	if attributes["emails"] == nil {
+		return
+	}
+	emails := attributes["emails"].([]interface{})
+	for _, emailRaw := range emails {
+		email := emailRaw.(map[string]interface{})
+		if email["primary"] == true {
+			primaryEmail = email["value"].(string)
+			break
+		}
+	}
+	if primaryEmail == "" && len(emails) > 0 {
+		primaryEmail = emails[0].(map[string]interface{})["value"].(string)
+	}
+	return
+}
+
+// extractUsername extracts the username from the given attributes.
+func extractUsername(attributes scim.ResourceAttributes) (username string) {
+	if attributes["userName"] != nil {
+		username = attributes["userName"].(string)
+	}
+	return
+}
+
+// extractDisplayName extracts the user's display name from the given attributes.
+func extractDisplayName(attributes scim.ResourceAttributes) (displayName string) {
+	if attributes["displayName"] != nil {
+		displayName = attributes["displayName"].(string)
+	} else if attributes["name"] != nil {
+		name := attributes["name"].(map[string]interface{})
+		displayName = name["formatted"].(string)
+		if displayName == "" && name["givenName"] != nil && name["familyName"] != nil {
+			displayName = name["givenName"].(string) + " " + name["familyName"].(string)
+		}
+	} else if attributes["userName"] != nil {
+		displayName = attributes["userName"].(string)
+	}
+	return
 }
 
 // containsDBError returns true if the given error contains at least one database.ErrCannotCreateUser.
