@@ -458,15 +458,17 @@ const Contributors: React.FunctionComponent<ContributorsProps> = ({ repo, filePa
         <ConnectionContainer>
             {error && <ConnectionError errors={[error.message]} />}
             {connection && connection.nodes.length > 0 && (
-                <ConnectionList className="test-filtered-contributors-connection" as="table">
+                <ConnectionList
+                    className={classNames('test-filtered-contributors-connection', styles.table)}
+                    as="table"
+                >
                     <tbody>
                         {connection.nodes.map(node => (
                             <RepositoryContributorNode
-                                key={`${node.person.displayName}:${node.count}`}
+                                key={node.person.email}
                                 node={node}
                                 repoName={repo.name}
-                                // TODO: what does `globbing` do?
-                                globbing={true}
+                                globbing={false}
                                 {...spec}
                             />
                         ))}
