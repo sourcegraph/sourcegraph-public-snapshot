@@ -35,8 +35,7 @@ func NewOwnService(g gitserver.Client, db database.DB) OwnService {
 		gitserverClient: g,
 		userStore:       db.Users(),
 		teamStore:       db.Teams(),
-		ownerCache:      make(map[string]codeowners.ResolvedOwner),
-		mu:              sync.Mutex{},
+		ownerCache:      make(map[ownerKey]codeowners.ResolvedOwner),
 	}
 }
 
@@ -46,7 +45,11 @@ type ownService struct {
 	teamStore       database.TeamStore
 
 	mu         sync.Mutex
-	ownerCache map[string]codeowners.ResolvedOwner // handle/email -> ResolvedOwner
+	ownerCache map[ownerKey]codeowners.ResolvedOwner
+}
+
+type ownerKey struct {
+	handle, email string
 }
 
 // codeownersLocations contains the locations where CODEOWNERS file
@@ -90,8 +93,9 @@ func (s *ownService) ResolveOwnersWithType(ctx context.Context, protoOwners []*c
 	// We first try to find a user given the owner information. If we cannot find a user, we try to match a team.
 	// If all fails, we return an unknown owner type with the information we have from the proto.
 	for _, po := range protoOwners {
+		ownerIdentifier := ownerKey{po.Handle, po.Email}
 		s.mu.Lock()
-		cached, ok := s.ownerCache[po.Handle+po.Email]
+		cached, ok := s.ownerCache[ownerIdentifier]
 		s.mu.Unlock()
 		if ok {
 			resolved = append(resolved, cached)
@@ -107,7 +111,7 @@ func (s *ownService) ResolveOwnersWithType(ctx context.Context, protoOwners []*c
 		}
 		resolved = append(resolved, resolvedOwner)
 		s.mu.Lock()
-		s.ownerCache[po.Handle+po.Email] = resolvedOwner
+		s.ownerCache[ownerIdentifier] = resolvedOwner
 		s.mu.Unlock()
 	}
 
