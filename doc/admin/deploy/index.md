@@ -1,6 +1,18 @@
----
-title: Deployment Overview
----
+<style>
+
+.markdown-body aside p:before {
+  content: '';
+  display: inline-block;
+  height: 1.2em;
+  width: 1em;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-image: url(../code_monitoring/file-icon.svg);
+  margin-right: 0.2em;
+  margin-bottom: -0.29em;
+}
+
+</style>
 
 # Deployment Overview
 
@@ -12,7 +24,7 @@ Carefully consider your organization's needs and technical expertise when select
 
 ### [Sourcegraph Cloud](https://signup.sourcegraph.com/)
 
-**For Enterprises looking for a cloud solution.**
+**For Enterprises looking for a Cloud solution.**
 
 A cloud instance hosted and maintained by Sourcegraph
 
@@ -31,7 +43,7 @@ A cloud instance hosted and maintained by Sourcegraph
   
 ### [Machine Images](machine-images/index.md) 
 
-**For Enterprises looking for a self-hosted solution.** 
+**For Enterprises looking for a self-hosted solution on Cloud.** 
 
 <span class="badge badge-note">RECOMMENDED</span> An option to run Sourcegraph on your own infrastructure using pre-configured machine images.
 
@@ -44,6 +56,8 @@ Customized machine images allow you to spin up a preconfigured and customized So
 </div>
 
 ### [Install-script](single-node/script.md)
+
+**For Enterprises looking for a generic self-hosted solution.** 
 
 The [install-script](single-node/script.md) is recommended for on-premises deployments to unsupported cloud environments. You can also use it to set up Linux VMs for your own machine images.
 

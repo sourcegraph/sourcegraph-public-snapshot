@@ -1,3 +1,28 @@
+<style>
+
+.note p:before {
+  content: '';
+  display: inline-block;
+  height: 1.2em;
+  width: 1em;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-image: url(../../../code_monitoring/file-icon.svg);
+  margin-right: 0.2em;
+  margin-bottom: -0.29em;
+}
+
+.warning p:before {
+  content: '⚠️';
+  display: inline-block;
+  background-size: contain;
+  background-repeat: no-repeat;
+  margin-right: 0.2em;
+  margin-bottom: -0.29em;
+}
+
+</style>
+
 # Configure Sourcegraph with Kustomize
 
 This guide will demonstrate how to customize your Sourcegraph deployment using Kustomize components.
@@ -22,9 +47,7 @@ Following these guidelines will help you create a seamless deployment and avoid 
 
 ## Base cluster
 
-The base resources in Sourcegraph include the services that make up the main Sourcegraph apps as well as the monitoring services. These services are configured to run as non-root users without privileges, ensuring a secure deployment.
-
-The base resources also include a set of services that are responsible for providing metrics about the Sourcegraph cluster, such as CPU and memory usage. To enable cluster metrics, you will need to deploy Cadvisor, which is a container resource usage monitoring service. Cadvisor is configured for Sourcegraph and can be deployed using one of the provided components. This component contains RBAC resources and must be run with privileges to ensure that it has the necessary permissions to access the container metrics.
+The base resources in Sourcegraph include the services that make up the main Sourcegraph apps as well as the monitoring services (Cadvisor not included). These services are configured to run as non-root users without privileges, ensuring a secure deployment. To enable cluster metrics monitoring, you will need to deploy Cadvisor, which is a container resource usage monitoring service. Cadvisor is configured for Sourcegraph and can be deployed using one of the provided components. This component contains RBAC resources and must be run with privileges to ensure that it has the necessary permissions to access the container metrics.
 
 ### RBAC
 
@@ -70,6 +93,8 @@ components:
 
 This will allow the frontend service to discover endpoints for each service replica and communicate with them through the Kubernetes API. Note that this component should only be added if RBAC is enabled in your cluster.
 
+---
+
 ## Monitoring stack
 
 The monitoring stack for Sourcegraph, similar to the main stack, does not include RBAC (Role-Based Access Control) resources by default. As a result, some dashboards may not display any data unless cAdvisor is deployed seperately with privileged access.
@@ -109,6 +134,8 @@ components:
 - ../../components/monitoring/cadvisor
 ```
 
+---
+
 ## Namespace
 
 Follow the steps below to add namespace to all your Sourcegraph resources:
@@ -134,6 +161,8 @@ To create a new namespace, include the [utils/namespace](https://sourcegraph.com
 components:
 - ../../components/resources/namespace
 ```
+
+---
 
 ## Resources
 
@@ -210,15 +239,14 @@ components:
 
 ℹ️ If the `monitoring component` is not included in your overlay, adding the `remove/daemonset component` would result in errors because there will be no daemonsets to remove.
 
+---
+
 ## Storage class
 
-A storage class is required for all persistent volume claims by default. It must be configured and created before deploying Sourcegraph to your cluster.
-
-See [the official documentation](https://kubernetes.io/docs/tasks/administer-cluster/change-pv-reclaim-policy/#changing-the-reclaim-policy-of-a-persistentvolume) for more information about configuring persistent volumes.
-
-**Kubernetes 1.19 and higher required**
+A storage class is required for all persistent volume claims by default. It must be configured and created before deploying Sourcegraph to your cluster. See [the official documentation](https://kubernetes.io/docs/tasks/administer-cluster/change-pv-reclaim-policy/#changing-the-reclaim-policy-of-a-persistentvolume) for more information about configuring persistent volumes.
 
 ### Google Cloud Platform
+
 
 **Step 1**: Read and follow the [official documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver) for enabling the persistent disk CSI driver on a [new](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver#enabling_the_on_a_new_cluster) or [existing](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver#enabling_the_on_an_existing_cluster) cluster.
 
@@ -293,7 +321,7 @@ components:
 
 ### Trident
 
-If you are using Trident as your storage orchestrator, you must have [fsType](https://docs.netapp.com/us-en/trident/trident-reference/objects.html#storage-pool-selection-attributes) defined in your storageClass for it to respect the volume ownership required by Sourcegraph. When [fsType](https://docs.netapp.com/us-en/trident/trident-reference/objects.html#storage-pool-selection-attributes) is not set, all the files within the cluster will be owned by user 99 (NOBODY), resulting in permission issues for all Sourcegraph databases.
+If you are using Trident as your storage orchestrator, you must have [fsType](https://docs.netapp.com/us-en/trident/trident-reference/objects.html#storage-pool-selection-attributes) defined in your storageClass for it to respect the volume ownership required by Sourcegraph. When [fsType](https://docs.netapp.com/us-en/trident/trident-reference/objects.html#storage-pool-selection-attributes) is not set, all the files within the cluster will be owned by user `99 (NOBODY)`, resulting in permission issues for all Sourcegraph databases.
 
 Add one of the available `storage-class/trident/$FSTYPE` components to the `kustomization.yaml` file for your Kustomize overlay based on your fsType:
 
@@ -398,6 +426,8 @@ configMapGenerator:
 ```
 
 > IMPORTANT: Make sure to create the storage class in your cluster before deploying Sourcegraph
+
+---
 
 ## Network access
 
@@ -507,6 +537,8 @@ components:
 ### TLS with Let’s Encrypt
 
 Alternatively, you can configure [cert-manager with Let’s Encrypt](https://cert-manager.io/docs/configuration/acme/) in your cluster. Then, follow the steps listed above for configuring TLS certificate via TLS Secrets manually. However, when adding the variables to the BUILD CONFIGURATIONS section, set **TLS_CLUSTER_ISSUER=letsencrypt** to include the cert-manager with Let's Encrypt.
+
+---
 
 ## Ingress
 
@@ -645,6 +677,8 @@ components:
 
 > NOTE: You should check with your cluster administrator to ensure that NetworkPolicy is supported in your cluster.
 
+---
+
 ## Network rule
 
 Add a network rule that allows incoming traffic on port 30080 (HTTP) to at least one node. Note that this configuration does not include support for Transport Layer Security (TLS).
@@ -704,6 +738,8 @@ components:
 
 > NOTE: Check with your upstream admin for the correct nodePort value.
 
+---
+
 ## Service mesh
 
 There are a few [known issues](../troubleshoot.md#service-mesh) when running Sourcegraph with service mesh. We recommend including the `network/envoy` component in your components list to bypass the issue where Envoy, the proxy used by Istio, breaks Sourcegraph search function by dropping proxied trailers for requests made over HTTP/1.1 protocol.
@@ -713,6 +749,8 @@ There are a few [known issues](../troubleshoot.md#service-mesh) when running Sou
 components:
 - ../../components/network/envoy
 ```
+
+---
 
 ## Environment variables
 
@@ -732,6 +770,8 @@ configMapGenerator:
 These values will be automatically merged with the environment variables currently listed in the ConfigMap for frontend.
 
 > WARNING: You must restart frontend for the updated values to be activiated
+
+---
 
 ## External services
 
@@ -801,6 +841,8 @@ configMapGenerator:
 
 > WARNING: You must restart frontend for the updated values to be activiated
 
+---
+
 ## SSH for cloning
 
 Sourcegraph will clone repositories using SSH credentials when the `id_rsa` and `known_hosts` files are mounted at `/home/sourcegraph/.ssh` (or `/root/.ssh` when the cluster is run by root users) in the `gitserver` deployment. 
@@ -839,6 +881,8 @@ To mount the files through Kustomize:
 
 Update your [code host configuration file](../../../external_service/index.md#full-code-host-docs) to enable ssh cloning. For example, set [gitURLType](../../../../admin/external_service/github.md#gitURLType) to `ssh` for [GitHub](../../../external_service/github.md). See the [external service docs](../../../admin/external_service.md) for the correct setting for your code host.
 
+---
+
 ## Openshift
 
 ### Arbitrary users
@@ -851,6 +895,8 @@ The `utils/uid` component bind-mount `/etc/passwd` as read-only through hostpath
 components:
 - ../../components/utils/uid
 ```
+
+---
 
 ## OpenTelemetry Collector
 
@@ -878,11 +924,15 @@ patchesStrategicMerge:
 
 The component will update the `command` for the `otel-collector` container to `"--config=/etc/otel-collector/conf/config.yaml"`, which is now point to the mounted config.
 
+---
+
 ## Add license key
 
 Sourcegraph's Kubernetes deployment [requires an Enterprise license key](https://about.sourcegraph.com/pricing).
 
 Once you have a license key, add it to your [site configuration](https://docs.sourcegraph.com/admin/patches/site_config).
+
+---
 
 ## Filtering cAdvisor metrics
 
@@ -902,6 +952,8 @@ patchesStrategicMerge:
 ```
 
 This will cause Prometheus to drop all metrics *from cAdvisor* that are not from services in the desired namespace.
+
+---
 
 ## Private registry
 
@@ -926,6 +978,8 @@ configMapGenerator:
       - PRIVATE_REGISTRY=your.private.registry.com
 ```
 
+---
+
 ## Multi-version upgrade
 
 In order to perform a [multi-version upgrade](../../../updates/index.md#multi-version-upgrades), all pods must be scaled down to 0 except databases, which can be handled by including the `utils/multi-version-upgrade` component:
@@ -937,6 +991,8 @@ components:
 ```
 
 After completing the multi-version-upgrade process, exclude the component to allow the pods to scale back to their original number as defined in your overlay.
+
+---
 
 ## Migrate from Privileged to Non-privileged
 
@@ -950,9 +1006,13 @@ components:
 - ../../components/utils/migrate-to-nonprivileged
 ```
 
+---
+
 ## Outbound Traffic
 
 When working with an [Internet Gateway](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Internet_Gateway.html) or VPC it may be necessary to expose ports for outbound network traffic. Sourcegraph must open port 443 for outbound traffic to codehosts, and to enable [telemetry](https://docs.sourcegraph.com/admin/pings) with Sourcegraph.com. Port 22 must also be opened to enable git SSH cloning by Sourcegraph. In addition, please make sure to apply other required changes to secure your cluster in a manner that meets your organization's security requirements.
+
+---
 
 ## Troubleshooting
 
