@@ -3,12 +3,11 @@ import { useMemo } from 'react'
 import { ApolloClient, gql, useApolloClient } from '@apollo/client'
 
 import { QueryState } from '@sourcegraph/shared/src/search'
+import { FormAPI, AsyncValidator, useField, useFieldAPI, ValidationResult } from '@sourcegraph/wildcard'
 
 import { ValidateInsightRepoQueryResult, ValidateInsightRepoQueryVariables } from '../../../../../graphql-operations'
 import { useExperimentalFeatures } from '../../../../../stores'
 import { RepoMode } from '../../../pages/insights/creation/search-insight/types'
-import { AsyncValidator, useField, useFieldAPI, ValidationResult } from '../../form'
-import { FormAPI } from '../../form/hooks/useForm'
 import { insightRepositoriesValidator } from '../validators/validators'
 
 interface RepositoriesFields {

@@ -3,8 +3,7 @@ import { RefObject, useCallback, useRef } from 'react'
 import { EMPTY, from, Observable } from 'rxjs'
 import { debounceTime, switchMap, tap } from 'rxjs/operators'
 
-import { useEventObservable } from '@sourcegraph/wildcard'
-
+import { useEventObservable } from '../../../../../hooks'
 import { FieldMetaState } from '../useForm'
 import { AsyncValidator, getCustomValidationContext, getCustomValidationMessage } from '../validators'
 
