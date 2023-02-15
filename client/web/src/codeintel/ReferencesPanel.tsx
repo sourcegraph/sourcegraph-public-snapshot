@@ -235,22 +235,24 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
 > = props => {
     const languageId = getModeFromPath(props.token.filePath)
     const spec = findLanguageSpec(languageId)
-    const tokenResult = findSearchToken({
-        text: props.fileContent,
-        position: {
-            line: props.token.line - 1,
-            character: props.token.character - 1,
-        },
-        lineRegexes: spec.commentStyles.map(style => style.lineRegex).filter(isDefined),
-        blockCommentStyles: spec.commentStyles.map(style => style.block).filter(isDefined),
-        identCharPattern: spec.identCharPattern,
-    })
+    const tokenResult =
+        spec &&
+        findSearchToken({
+            text: props.fileContent,
+            position: {
+                line: props.token.line - 1,
+                character: props.token.character - 1,
+            },
+            lineRegexes: spec.commentStyles.map(style => style.lineRegex).filter(isDefined),
+            blockCommentStyles: spec.commentStyles.map(style => style.block).filter(isDefined),
+            identCharPattern: spec.identCharPattern,
+        })
     const shouldMixPreciseAndSearchBasedReferences: boolean = newSettingsGetter(props.settingsCascade)<boolean>(
         'codeIntel.mixPreciseAndSearchBasedReferences',
         false
     )
 
-    if (!tokenResult?.searchToken) {
+    if (!spec || !tokenResult?.searchToken) {
         return (
             <div>
                 <Text className="text-danger">Could not find token.</Text>
