@@ -1,6 +1,7 @@
 package definitions
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
@@ -9,6 +10,8 @@ import (
 
 func Searcher() *monitoring.Dashboard {
 	const containerName = "searcher"
+
+	grpcMethodVariable := shared.GRPCMethodVariable(containerName)
 
 	return &monitoring.Dashboard{
 		Name:        "searcher",
@@ -25,6 +28,7 @@ func Searcher() *monitoring.Dashboard {
 				},
 				Multi: true,
 			},
+			grpcMethodVariable,
 		},
 		Groups: []monitoring.Group{
 			{
@@ -113,6 +117,14 @@ regularly above 0 it is a sign for further investigation.`,
 				monitoring.ObservableOwnerSearchCore,
 			),
 
+			shared.NewGRPCServerMetricsGroup(
+				shared.GRPCServerMetricsOptions{
+					ServiceName:       "searcher",
+					MetricNamespace:   "searcher",
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+
+					InstanceFilterRegex: `${instance:regex}`,
+				}, monitoring.ObservableOwnerSearchCore),
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerSearchCore, nil),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerSearchCore, nil),

@@ -1,7 +1,7 @@
-import React, { Suspense, useEffect, useMemo } from 'react'
+import { FC, Suspense, useEffect, useMemo } from 'react'
 
-import { BrowserRouter, Route, RouteComponentProps, Switch, useHistory } from 'react-router-dom'
-import { CompatRouter } from 'react-router-dom-v5-compat'
+import { Router } from 'react-router'
+import { CompatRouter, Routes, Route } from 'react-router-dom-v5-compat'
 
 import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/createSyncLoadedController'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
@@ -12,6 +12,7 @@ import '../../SourcegraphWebApp.scss'
 import { GlobalContributions } from '../../contributions'
 import { createPlatformContext } from '../../platform/context'
 import { useTheme, ThemePreference } from '../../theme'
+import { globalHistory } from '../../util/globalHistory'
 
 import { OpenNewTabAnchorLink } from './OpenNewTabAnchorLink'
 
@@ -33,7 +34,7 @@ const EmbeddedNotebookPage = lazyComponent(
 
 const EMPTY_SETTINGS_CASCADE = { final: {}, subjects: [] }
 
-export const EmbeddedWebApp: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => {
+export const EmbeddedWebApp: FC = () => {
     const { enhancedThemePreference, setThemePreference } = useTheme()
     const isLightTheme = enhancedThemePreference === ThemePreference.Light
 
@@ -52,7 +53,6 @@ export const EmbeddedWebApp: React.FunctionComponent<React.PropsWithChildren<unk
 
     const platformContext = useMemo(() => createPlatformContext(), [])
     const extensionsController = useMemo(() => createExtensionsController(platformContext), [platformContext])
-    const history = useHistory()
 
     // 🚨 SECURITY: The `EmbeddedWebApp` is intended to be embedded into 3rd party sites where we do not have total control.
     // That is why it is essential to be mindful when adding new routes that may be vulnerable to clickjacking or similar exploits.
@@ -61,7 +61,7 @@ export const EmbeddedWebApp: React.FunctionComponent<React.PropsWithChildren<unk
     //
     // IMPORTANT: Please consult with the security team if you are unsure whether your changes could introduce security exploits.
     return (
-        <BrowserRouter>
+        <Router history={globalHistory}>
             <CompatRouter>
                 <WildcardThemeContext.Provider value={WILDCARD_THEME}>
                     <div className={styles.body}>
@@ -72,12 +72,11 @@ export const EmbeddedWebApp: React.FunctionComponent<React.PropsWithChildren<unk
                                 </div>
                             }
                         >
-                            <Switch>
+                            <Routes>
                                 <Route
                                     path="/embed/notebooks/:notebookId"
-                                    render={(props: RouteComponentProps<{ notebookId: string }>) => (
+                                    element={
                                         <EmbeddedNotebookPage
-                                            notebookId={props.match.params.notebookId}
                                             searchContextsEnabled={true}
                                             isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                                             authenticatedUser={null}
@@ -85,26 +84,25 @@ export const EmbeddedWebApp: React.FunctionComponent<React.PropsWithChildren<unk
                                             settingsCascade={EMPTY_SETTINGS_CASCADE}
                                             platformContext={platformContext}
                                         />
-                                    )}
+                                    }
                                 />
                                 <Route
                                     path="*"
-                                    render={() => (
+                                    element={
                                         <Alert variant="danger">
                                             Invalid embedding route, please check the embedding URL.
                                         </Alert>
-                                    )}
+                                    }
                                 />
-                            </Switch>
+                            </Routes>
                         </Suspense>
                         <GlobalContributions
                             extensionsController={extensionsController}
                             platformContext={platformContext}
-                            history={history}
                         />
                     </div>
                 </WildcardThemeContext.Provider>
             </CompatRouter>
-        </BrowserRouter>
+        </Router>
     )
 }

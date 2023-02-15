@@ -1,12 +1,12 @@
 # Using Perforce depots with Sourcegraph
 
-Sourcegraph supports [Perforce](https://perforce.com) depots using the [git p4](https://git-scm.com/docs/git-p4) adapter or [p4-fusion](https://github.com/salesforce/p4-fusion). This creates an equivalent Git repository from a Perforce depot. An experimental feature can be enabled to [configure Perforce depots through the Sourcegraph UI](#add-a-perforce-code-host). For Sourcegraph <3.25.1, Sourcegraph's tool for serving local directories is required - see [adding depots using `src serve-git`](#add-perforce-depos-using-src-serve-git).
+Sourcegraph supports [Perforce](https://perforce.com) depots using the [git p4](https://git-scm.com/docs/git-p4) adapter or [p4-fusion](https://github.com/salesforce/p4-fusion). This creates an equivalent Git repository from a Perforce depot. An experimental feature can be enabled to [configure Perforce depots through the Sourcegraph UI](#add-a-perforce-code-host). For Sourcegraph <3.25.1, Sourcegraph's tool for serving local directories is required—see [adding depots using `src serve-git`](#add-perforce-depos-using-src-serve-git).
 
 Screenshot of using Sourcegraph for code navigation in a Perforce depot:
 
 ![Viewing a Perforce repository on Sourcegraph](https://sourcegraphstatic.com/git-p4-example.png)
 
-> NOTE: Perforce support is a work in progress - see [known issues and limitations](#known-issues-and-limitations).
+> NOTE: Perforce support is a work in progress—see [known issues and limitations](#known-issues-and-limitations).
 
 ## Add a Perforce code host
 

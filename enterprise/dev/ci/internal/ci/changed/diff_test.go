@@ -73,7 +73,32 @@ func TestParseDiff(t *testing.T) {
 			WolfiPackages:   []string{"wolfi-packages/package-test.yaml"},
 		},
 		doNotWantAffects: []Diff{},
-	}}
+	}, {
+		name:             "Protobuf definitions",
+		files:            []string{"cmd/searcher/messages.proto"},
+		wantAffects:      []Diff{Protobuf},
+		wantChangedFiles: make(ChangedFiles),
+		doNotWantAffects: []Diff{},
+	}, {
+		name:             "Protobuf generated code",
+		files:            []string{"cmd/searcher/messages.pb.go"},
+		wantAffects:      []Diff{Protobuf, Go},
+		wantChangedFiles: make(ChangedFiles),
+		doNotWantAffects: []Diff{},
+	}, {
+		name:             "Buf CLI module configuration",
+		files:            []string{"cmd/searcher/buf.yaml"},
+		wantAffects:      []Diff{Protobuf},
+		wantChangedFiles: make(ChangedFiles),
+		doNotWantAffects: []Diff{},
+	}, {
+		name:             "Buf CLI generated code configuration",
+		files:            []string{"cmd/searcher/buf.gen.yaml"},
+		wantAffects:      []Diff{Protobuf},
+		wantChangedFiles: make(ChangedFiles),
+		doNotWantAffects: []Diff{},
+	},
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			diff, changedFiles := ParseDiff(tt.files)

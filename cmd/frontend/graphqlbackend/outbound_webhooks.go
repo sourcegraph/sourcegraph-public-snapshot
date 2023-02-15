@@ -115,12 +115,12 @@ func (r *schemaResolver) OutboundWebhookEventTypes(ctx context.Context) ([]Outbo
 		return nil, err
 	}
 
-	types := outbound.GetRegisteredEventTypes()
-	sort.Slice(types, func(i, j int) bool {
-		return types[i].Key < types[j].Key
+	eventTypes := outbound.GetRegisteredEventTypes()
+	sort.Slice(eventTypes, func(i, j int) bool {
+		return eventTypes[i].Key < eventTypes[j].Key
 	})
-	resolvers := make([]OutboundWebhookEventTypeResolver, len(types))
-	for i, et := range types {
+	resolvers := make([]OutboundWebhookEventTypeResolver, len(eventTypes))
+	for i, et := range eventTypes {
 		resolvers[i] = &outboundWebhookEventTypeResolver{et}
 	}
 
@@ -362,14 +362,14 @@ func (r *outboundWebhookResolver) EventTypes() ([]OutboundWebhookScopedEventType
 		return nil, err
 	}
 
-	types := make([]OutboundWebhookScopedEventTypeResolver, len(webhook.EventTypes))
+	eventTypes := make([]OutboundWebhookScopedEventTypeResolver, len(webhook.EventTypes))
 	for i, et := range webhook.EventTypes {
-		types[i] = &outboundWebhookScopedEventTypeResolver{
+		eventTypes[i] = &outboundWebhookScopedEventTypeResolver{
 			eventType: et.EventType,
 			scope:     et.Scope,
 		}
 	}
-	return types, nil
+	return eventTypes, nil
 }
 
 func (r *outboundWebhookResolver) Stats(ctx context.Context) (OutboundWebhookLogStatsResolver, error) {

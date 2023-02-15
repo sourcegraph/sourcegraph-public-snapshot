@@ -7,7 +7,7 @@ Sourcegraph App is a single-binary distribution of Sourcegraph that runs on your
 ## Development
 
 ```shell
-sg start enterprise-single-program
+sg start app
 ```
 
 ## Usage
@@ -37,9 +37,9 @@ Check the build status in [Buildkite `app/release-snapshot` branch builds](https
 To build it locally for all platforms (without releasing, uploading, or publishing it anywhere), run:
 
 ```shell
-enterprise/dev/app/release.sh --snapshot
+VERSION=0.0.0+dev enterprise/dev/app/release.sh --snapshot
 ```
 
 The builds are written to the `dist` directory.
 
-If you just need a local build for your current platform, run `sg start enterprise-single-program` (as mentioned in the [Development](#development) section) and then grab the `.bin/sourcegraph` binary. This binary does not have the web bundle (JavaScript/CSS) embedded into it.
+If you just need a local build for your current platform, run `sg start app` (as mentioned in the [Development](#development) section) and then grab the `.bin/sourcegraph` binary. This binary does not have the web bundle (JavaScript/CSS) embedded into it.

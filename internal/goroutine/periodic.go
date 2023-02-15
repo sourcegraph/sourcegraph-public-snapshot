@@ -21,7 +21,6 @@ type getIntervalFunc func() time.Duration
 // PeriodicBackgroundRoutine.
 type PeriodicGoroutine struct {
 	name        string
-	routineType recorder.RoutineType
 	description string
 	jobName     string
 	recorder    *recorder.Recorder

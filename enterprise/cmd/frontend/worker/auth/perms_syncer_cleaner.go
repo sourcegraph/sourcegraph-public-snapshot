@@ -113,7 +113,7 @@ const cleanJobsFmtStr = `
 WITH job_history AS (
 	SELECT id, repository_id, user_id, ROW_NUMBER() OVER (
 		PARTITION BY repository_id, user_id
-		ORDER BY id
+		ORDER BY finished_at DESC NULLS LAST
 	) FROM permission_sync_jobs
 	WHERE state NOT IN ('queued', 'processing')
 )

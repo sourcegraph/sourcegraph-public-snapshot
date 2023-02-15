@@ -10,41 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 )
 
-const (
-	featureFlagName = "database-permission-sync-worker"
-
-	// ReasonUserOutdatedPermissions and below are reasons of scheduled permission
-	// syncs.
-	ReasonUserOutdatedPermissions = "REASON_USER_OUTDATED_PERMS"
-	ReasonUserNoPermissions       = "REASON_USER_NO_PERMS"
-	ReasonUserEmailRemoved        = "REASON_USER_EMAIL_REMOVED"
-	ReasonUserEmailVerified       = "REASON_USER_EMAIL_VERIFIED"
-	ReasonUserAddedToOrg          = "REASON_USER_ADDED_TO_ORG"
-	ReasonUserRemovedFromOrg      = "REASON_USER_REMOVED_FROM_ORG"
-	ReasonUserAcceptedOrgInvite   = "REASON_USER_ACCEPTED_ORG_INVITE"
-	ReasonRepoOutdatedPermissions = "REASON_REPO_OUTDATED_PERMS"
-	ReasonRepoNoPermissions       = "REASON_REPO_NO_PERMS"
-	ReasonRepoUpdatedFromCodeHost = "REASON_REPO_UPDATED_FROM_CODE_HOST"
-
-	// ReasonGitHubUserEvent and below are reasons of permission syncs triggered by
-	// webhook events.
-	ReasonGitHubUserEvent                  = "REASON_GITHUB_USER_EVENT"
-	ReasonGitHubUserAddedEvent             = "REASON_GITHUB_USER_ADDED_EVENT"
-	ReasonGitHubUserRemovedEvent           = "REASON_GITHUB_USER_REMOVED_EVENT"
-	ReasonGitHubUserMembershipAddedEvent   = "REASON_GITHUB_USER_MEMBERSHIP_ADDED_EVENT"
-	ReasonGitHubUserMembershipRemovedEvent = "REASON_GITHUB_USER_MEMBERSHIP_REMOVED_EVENT"
-	ReasonGitHubTeamAddedToRepoEvent       = "REASON_GITHUB_TEAM_ADDED_TO_REPO_EVENT"
-	ReasonGitHubTeamRemovedFromRepoEvent   = "REASON_GITHUB_TEAM_REMOVED_FROM_REPO_EVENT"
-	ReasonGitHubOrgMemberAddedEvent        = "REASON_GITHUB_ORG_MEMBER_ADDED_EVENT"
-	ReasonGitHubOrgMemberRemovedEvent      = "REASON_GITHUB_ORG_MEMBER_REMOVED_EVENT"
-	ReasonGitHubRepoEvent                  = "REASON_GITHUB_REPO_EVENT"
-	ReasonGitHubRepoMadePrivateEvent       = "REASON_GITHUB_REPO_MADE_PRIVATE_EVENT"
-
-	// ReasonManualRepoSync and below are reasons of permission syncs triggered
-	// manually.
-	ReasonManualRepoSync = "REASON_MANUAL_REPO_SYNC"
-	ReasonManualUserSync = "REASON_MANUAL_USER_SYNC"
-)
+const featureFlagName = "database-permission-sync-worker"
 
 func PermissionSyncWorkerEnabled(ctx context.Context, db database.DB, logger log.Logger) bool {
 	globalFeatureFlags, err := db.FeatureFlags().GetGlobalFeatureFlags(ctx)

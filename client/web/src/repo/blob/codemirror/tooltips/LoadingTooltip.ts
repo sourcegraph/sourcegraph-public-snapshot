@@ -1,28 +1,14 @@
-import { EditorView, getTooltip, Tooltip } from '@codemirror/view'
+import { Tooltip, TooltipView } from '@codemirror/view'
 
-import { closeHover, showHover } from '../token-selection/hover'
+export class LoadingTooltip implements Tooltip {
+    public readonly above = true
 
-/** Helper to display a "Loading..." CodeMirror tooltip. */
-export class LoadingTooltip {
-    private tooltip?: Tooltip
-    constructor(private view: EditorView, pos: number | null) {
-        if (pos) {
-            this.tooltip = {
-                pos,
-                above: true,
-                create() {
-                    const dom = document.createElement('div')
-                    dom.classList.add('tmp-tooltip')
-                    dom.textContent = 'Loading...'
-                    return { dom }
-                },
-            }
-            showHover(this.view, this.tooltip)
-        }
-    }
-    public stop(): void {
-        if (this.tooltip && getTooltip(this.view, this.tooltip)) {
-            closeHover(this.view)
-        }
+    constructor(public readonly pos: number) {}
+
+    public create(): TooltipView {
+        const dom = document.createElement('div')
+        dom.classList.add('tmp-tooltip')
+        dom.textContent = 'Loading...'
+        return { dom }
     }
 }

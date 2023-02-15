@@ -89,7 +89,14 @@
       interfaces:
         - Store
       prefix: Worker
-
+- filename: internal/codeintel/dependencies/internal/background/mocks_test.go
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/background
+      interfaces:
+        - GitserverClient
+        - ExternalServiceStore
+        - AutoIndexingService
+        - DependenciesService
 - filename: enterprise/internal/codeintel/autoindexing/mocks_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store
@@ -178,6 +185,10 @@
   path: github.com/sourcegraph/sourcegraph/internal/database/migration/runner
   interfaces:
     - Store
+- filename: internal/database/basestore/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/database/basestore
+  interfaces:
+    - Rows
 - filename: internal/featureflag/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/featureflag
   interfaces:

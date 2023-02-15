@@ -22,24 +22,22 @@ type repositoryContributorsArgs struct {
 func (r *RepositoryResolver) Contributors(args *struct {
 	repositoryContributorsArgs
 	graphqlutil.ConnectionResolverArgs
-}) (*graphqlutil.ConnectionResolver[repositoryContributorResolver], error) {
+}) (*graphqlutil.ConnectionResolver[*repositoryContributorResolver], error) {
 	connectionStore := &repositoryContributorConnectionStore{
-		db:             r.db,
-		args:           &args.repositoryContributorsArgs,
-		connectionArgs: &args.ConnectionResolverArgs,
-		repo:           r,
+		db:   r.db,
+		args: &args.repositoryContributorsArgs,
+		repo: r,
 	}
 	reverse := false
 	connectionOptions := graphqlutil.ConnectionResolverOptions{
 		Reverse: &reverse,
 	}
-	return graphqlutil.NewConnectionResolver[repositoryContributorResolver](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
+	return graphqlutil.NewConnectionResolver[*repositoryContributorResolver](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
 }
 
 type repositoryContributorConnectionStore struct {
-	db             database.DB
-	args           *repositoryContributorsArgs
-	connectionArgs *graphqlutil.ConnectionResolverArgs
+	db   database.DB
+	args *repositoryContributorsArgs
 
 	repo *RepositoryResolver
 

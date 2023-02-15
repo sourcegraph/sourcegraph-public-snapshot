@@ -19,7 +19,7 @@ Engineers should budget an appropriate amount of time for ensuring [test plans](
 
 **All pull requests must provide test plans** that indicate what has been done to test the changes being introduced. This can be done with a "Test plan" section within a pull request's description.
 
-Some pull requests may not require a rigorous test plan - see [Exceptions](#exceptions).
+Some pull requests may not require a rigorous test plan—see [Exceptions](#exceptions).
 
 ## Types of tests
 
@@ -63,7 +63,7 @@ Benefits:
 
 - To the extent that fewer systems are under test compared to e2e tests, they are faster to run, easier to debug, have clearer ownership, and less vulnerable to [flakiness](#flaky-tests).
 - They only need to run on changes that touch code which could make the test fail, which makes CI faster and minimizes the impact of any [flakiness](#flaky-tests).
-- For UI behavior, they run in an actual browser - rather than a JSDOM environment.
+- For UI behavior, they run in an actual browser—rather than a JSDOM environment.
 
 Tradeoffs:
 
@@ -118,7 +118,7 @@ We use [Percy](https://percy.io/) to detect visual changes in Sourcegraph featur
   - Introduce adequate [observability measures](observability/index.md) so that issues can easily be detected and monitored.
 - Documentation can help ensure that changes are easy to understand if anything goes wrong, and should be added to [sources of truth](https://handbook.sourcegraph.com/company-info-and-process/communication#sources-of-truth).
   - If the documentation will be published to docs.sourcegraph.com, it can be tested by running `sg run docsite` and navigating to the corrected page.
-- Some changes are easy to test manually - test plans can include what was done to perform this manual testing.
+- Some changes are easy to test manually—test plans can include what was done to perform this manual testing.
 
 ## Exceptions
 

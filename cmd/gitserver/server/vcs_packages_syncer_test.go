@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -31,7 +32,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 		download:      map[string]error{},
 		downloadCount: map[string]int{},
 	}
-	depsService := &fakeDepsService{deps: map[reposource.PackageName][]dependencies.Repo{}}
+	depsService := &fakeDepsService{deps: map[reposource.PackageName]dependencies.PackageRepoReference{}}
 
 	s := vcsPackagesSyncer{
 		logger:      logtest.Scoped(t),
@@ -159,11 +160,10 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 		// For context, see https://github.com/sourcegraph/sourcegraph/pull/38811
 		err := s.Fetch(ctx, remoteURL, dir, "v0.0.3^0")
 		require.ErrorContains(t, err, "401 unauthorized") // v0.0.1 is still erroring
-		require.Equal(t, s.svc.(*fakeDepsService).upsertedDeps, []dependencies.Repo{{
-			ID:      0,
-			Scheme:  fakeVersionedPackage{}.Scheme(),
-			Name:    "foo",
-			Version: "0.0.3",
+		require.Equal(t, s.svc.(*fakeDepsService).upsertedDeps, []dependencies.MinimalPackageRepoRef{{
+			Scheme:   fakeVersionedPackage{}.Scheme(),
+			Name:     "foo",
+			Versions: []string{"0.0.3"},
 		}})
 		s.assertRefs(t, dir, bothV2andV3Refs)
 		// We triggered a single download for v0.0.3 since it was lazily requested.
@@ -172,7 +172,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	})
 
 	depsSource.download["foo@0.0.4"] = errors.New("0.0.4 not found")
-	s.svc.(*fakeDepsService).upsertedDeps = []dependencies.Repo{}
+	s.svc.(*fakeDepsService).upsertedDeps = []dependencies.MinimalPackageRepoRef{}
 
 	t.Run("lazy-sync error version via revspec", func(t *testing.T) {
 		// the v0.0.4 tag cannot be created on-demand because it returns a "0.0.4 not found" error
@@ -181,7 +181,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 		// // the 0.0.4 error is silently ignored, we only return the error for v0.0.1.
 		// require.Equal(t, fmt.Sprint(err.Error()), "error pushing dependency {\"foo\" \"0.0.1\"}: 401 unauthorized")
 		// the 0.0.4 dependency was not stored in the database because the download failed.
-		require.Equal(t, s.svc.(*fakeDepsService).upsertedDeps, []dependencies.Repo{})
+		require.Equal(t, s.svc.(*fakeDepsService).upsertedDeps, []dependencies.MinimalPackageRepoRef{})
 		// git tags are unchanged, v0.0.2 and v0.0.3 are cached.
 		s.assertRefs(t, dir, bothV2andV3Refs)
 		// We triggered downloads only for v0.0.4.
@@ -202,55 +202,85 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 }
 
 type fakeDepsService struct {
-	deps         map[reposource.PackageName][]dependencies.Repo
-	upsertedDeps []dependencies.Repo
+	deps         map[reposource.PackageName]dependencies.PackageRepoReference
+	upsertedDeps []dependencies.MinimalPackageRepoRef
 }
 
-func (s *fakeDepsService) UpsertDependencyRepos(ctx context.Context, deps []dependencies.Repo) ([]dependencies.Repo, error) {
-	s.upsertedDeps = append(s.upsertedDeps, deps...)
-	for _, dep := range deps {
-		alreadyExists := false
-		for _, existingDep := range s.deps[dep.Name] {
-			if existingDep.Version == dep.Version {
-				alreadyExists = true
-				break
+func (s *fakeDepsService) InsertPackageRepoRefs(ctx context.Context, depsToAdd []dependencies.MinimalPackageRepoRef) (newRepos []dependencies.PackageRepoReference, newVersions []dependencies.PackageRepoRefVersion, _ error) {
+	s.upsertedDeps = append(s.upsertedDeps, depsToAdd...)
+	for _, depToAdd := range depsToAdd {
+		if existingDep, exists := s.deps[depToAdd.Name]; exists {
+			for _, version := range depToAdd.Versions {
+				if !slices.ContainsFunc(existingDep.Versions, func(v dependencies.PackageRepoRefVersion) bool {
+					return v.Version == version
+				}) {
+					existingDep.Versions = append(existingDep.Versions, dependencies.PackageRepoRefVersion{
+						PackageRefID: existingDep.ID,
+						Version:      version,
+					})
+					s.deps[depToAdd.Name] = existingDep
+					newVersions = append(newVersions, dependencies.PackageRepoRefVersion{
+						Version: version,
+					})
+				}
 			}
-		}
-		if !alreadyExists {
-			s.deps[dep.Name] = append(s.deps[dep.Name], dep)
+		} else {
+			versionsForDep := make([]dependencies.PackageRepoRefVersion, 0, len(depToAdd.Versions))
+			for _, version := range depToAdd.Versions {
+				versionsForDep = append(versionsForDep, dependencies.PackageRepoRefVersion{
+					Version: version,
+				})
+			}
+			s.deps[depToAdd.Name] = dependencies.PackageRepoReference{
+				Scheme:   depToAdd.Scheme,
+				Name:     depToAdd.Name,
+				Versions: versionsForDep,
+			}
+			newRepos = append(newRepos, dependencies.PackageRepoReference{
+				Scheme:   depToAdd.Scheme,
+				Name:     depToAdd.Name,
+				Versions: versionsForDep,
+			})
 		}
 	}
-	return deps, nil
+	return
 }
 
-func (s *fakeDepsService) ListDependencyRepos(ctx context.Context, opts dependencies.ListDependencyReposOpts) ([]dependencies.Repo, error) {
-	return s.deps[opts.Name], nil
+func (s *fakeDepsService) ListPackageRepoRefs(ctx context.Context, opts dependencies.ListDependencyReposOpts) ([]dependencies.PackageRepoReference, int, error) {
+	return []dependencies.PackageRepoReference{s.deps[opts.Name]}, 1, nil
 }
 
 func (s *fakeDepsService) Add(deps ...string) {
 	for _, d := range deps {
 		dep, _ := parseFakeDependency(d)
 		name := dep.PackageSyntax()
-		s.deps[name] = append(s.deps[name], dependencies.Repo{
-			Scheme:  dep.Scheme(),
-			Name:    name,
-			Version: dep.PackageVersion(),
-		})
+		if d, ok := s.deps[name]; !ok {
+			s.deps[name] = dependencies.PackageRepoReference{
+				Scheme: dep.Scheme(),
+				Name:   name,
+				Versions: []dependencies.PackageRepoRefVersion{
+					{Version: dep.PackageVersion()},
+				},
+			}
+		} else {
+			d.Versions = append(d.Versions, dependencies.PackageRepoRefVersion{Version: dep.PackageVersion()})
+			s.deps[name] = d
+		}
 	}
 }
 
 func (s *fakeDepsService) Delete(deps ...string) {
 	for _, d := range deps {
-		dep, _ := parseFakeDependency(d)
-		name := dep.PackageSyntax()
-		version := dep.PackageVersion()
-		filtered := s.deps[name][:0]
-		for _, r := range s.deps[name] {
-			if r.Version != version {
-				filtered = append(filtered, r)
-			}
+		depToDelete, _ := parseFakeDependency(d)
+		name := depToDelete.PackageSyntax()
+		version := depToDelete.PackageVersion()
+		dep := s.deps[name]
+		if idx := slices.IndexFunc(dep.Versions, func(v dependencies.PackageRepoRefVersion) bool {
+			return v.Version == version
+		}); idx > -1 {
+			dep.Versions = slices.Delete(dep.Versions, idx, idx+1)
+			s.deps[name] = dep
 		}
-		s.deps[name] = filtered
 	}
 }
 
@@ -280,12 +310,13 @@ func (s *fakeDepsSource) Download(ctx context.Context, dir string, dep reposourc
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filepath.Join(dir, "README.md"), []byte("README for "+dep.VersionedPackageSyntax()), 0666)
+	return os.WriteFile(filepath.Join(dir, "README.md"), []byte("README for "+dep.VersionedPackageSyntax()), 0o666)
 }
 
 func (fakeDepsSource) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
 	return parseFakeDependency(string(name) + "@" + version)
 }
+
 func (fakeDepsSource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
 	return parseFakeDependency(dep)
 }

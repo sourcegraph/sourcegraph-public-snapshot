@@ -20,17 +20,17 @@ func main() {
 
 	contents := map[string]string{}
 	for _, schema := range schemas.Schemas {
-		for _, definition := range schema.Definitions.All() {
-			metadata, err := renderMetadata(definition)
+		for _, def := range schema.Definitions.All() {
+			metadata, err := renderMetadata(def)
 			if err != nil {
 				panic(err.Error())
 			}
 
-			migrationDirectory := filepath.Join(tempDirectory, schema.Name, strconv.Itoa(definition.ID))
+			migrationDirectory := filepath.Join(tempDirectory, schema.Name, strconv.Itoa(def.ID))
 
 			contents[filepath.Join(migrationDirectory, "metadata.yaml")] = string(metadata)
-			contents[filepath.Join(migrationDirectory, "up.sql")] = definition.UpQuery.Query(sqlf.PostgresBindVar)
-			contents[filepath.Join(migrationDirectory, "down.sql")] = definition.DownQuery.Query(sqlf.PostgresBindVar)
+			contents[filepath.Join(migrationDirectory, "up.sql")] = def.UpQuery.Query(sqlf.PostgresBindVar)
+			contents[filepath.Join(migrationDirectory, "down.sql")] = def.DownQuery.Query(sqlf.PostgresBindVar)
 		}
 	}
 

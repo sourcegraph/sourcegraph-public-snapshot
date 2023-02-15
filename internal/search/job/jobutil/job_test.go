@@ -1448,12 +1448,12 @@ func RunRepoSubsetTextSearch(
 			return nil, streaming.Stats{}, err
 		}
 
-		types, _ := q.StringValues(query.FieldType)
+		fieldTypes, _ := q.StringValues(query.FieldType)
 		var resultTypes result.Types
-		if len(types) == 0 {
+		if len(fieldTypes) == 0 {
 			resultTypes = result.TypeFile | result.TypePath | result.TypeRepo
 		} else {
-			for _, t := range types {
+			for _, t := range fieldTypes {
 				resultTypes = resultTypes.With(result.TypeFromString[t])
 			}
 		}

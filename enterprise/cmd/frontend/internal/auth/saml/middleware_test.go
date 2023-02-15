@@ -344,7 +344,7 @@ func TestMiddleware(t *testing.T) {
 		if err := idpAuthnReq.Validate(); err != nil {
 			t.Fatal(err)
 		}
-		session := saml.Session{
+		samlSession := saml.Session{
 			ID:         "session-id",
 			CreateTime: time.Now(),
 			ExpireTime: time.Now().Add(24 * time.Hour),
@@ -354,7 +354,7 @@ func TestMiddleware(t *testing.T) {
 			UserName:  "testuser_username",
 			UserEmail: "testuser@email.com",
 		}
-		if err := (saml.DefaultAssertionMaker{}).MakeAssertion(idpAuthnReq, &session); err != nil {
+		if err := (saml.DefaultAssertionMaker{}).MakeAssertion(idpAuthnReq, &samlSession); err != nil {
 			t.Fatal(err)
 		}
 		if err := idpAuthnReq.MakeResponse(); err != nil {

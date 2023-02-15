@@ -164,8 +164,8 @@ func TestRepositoryLabel(t *testing.T) {
 				ID:   api.RepoID(0),
 			},
 		}
-		result, _ := r.Label()
-		html, err := result.HTML()
+		markdown, _ := r.Label()
+		html, err := markdown.HTML()
 		if err != nil {
 			t.Fatal(err)
 		}

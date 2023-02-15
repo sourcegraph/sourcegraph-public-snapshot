@@ -1,13 +1,11 @@
-import React from 'react'
+import { Fragment, FC } from 'react'
 
 import { formatDistanceToNowStrict } from 'date-fns'
 
 import { UserAreaRouteContext } from '../area/UserArea'
 
-export const UserProfile: React.FunctionComponent<
-    Pick<UserAreaRouteContext, 'user'> & { isSourcegraphDotCom: boolean }
-> = ({ user, isSourcegraphDotCom }) => {
-    const primaryEmail = user.emails.find(email => email.isPrimary)?.email
+export const UserProfile: FC<Pick<UserAreaRouteContext, 'user'>> = ({ user }) => {
+    const primaryEmail = user.emails?.find(email => email.isPrimary)?.email
 
     const userData: {
         name: string
@@ -32,12 +30,7 @@ export const UserProfile: React.FunctionComponent<
         {
             name: 'Email',
             value: primaryEmail || 'Not set',
-            visible: !!primaryEmail && !isSourcegraphDotCom, // Don't show email on Sourcegraph.com
-        },
-        {
-            name: 'Site admin',
-            value: user.siteAdmin ? 'Yes' : 'No',
-            visible: user.siteAdmin && !isSourcegraphDotCom, // Don't show site admin status on Sourcegraph.com
+            visible: !!primaryEmail,
         },
     ]
 
@@ -45,10 +38,10 @@ export const UserProfile: React.FunctionComponent<
         <dl>
             {userData.map(data =>
                 data.visible ? (
-                    <>
+                    <Fragment key={data.name}>
                         <dt>{data.name}</dt>
                         <dd>{data.value}</dd>
-                    </>
+                    </Fragment>
                 ) : null
             )}
         </dl>

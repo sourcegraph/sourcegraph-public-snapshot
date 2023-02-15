@@ -38,7 +38,7 @@ We **strongly** recommend you fork the [Sourcegraph with Kubernetes reference re
 
 <span class="virtual-br"></span>
 
-> NOTE: We do not recommend storing secrets in the repository itself - instead, consider leveraging [Kubernetes's Secret objects](https://kubernetes.io/docs/concepts/configuration/secret).
+> NOTE: We do not recommend storing secrets in the repository itself—instead, consider leveraging [Kubernetes's Secret objects](https://kubernetes.io/docs/concepts/configuration/secret).
 
 ### Create a fork or private duplicate
 
@@ -87,7 +87,7 @@ git fetch --all
 - Create a `release` branch to track all of your customizations to Sourcegraph. This branch will be used to [upgrade Sourcegraph](update.md) and [install your Sourcegraph instance](./index.md#installation).
 
 ```bash
-  export SOURCEGRAPH_VERSION="v4.4.1"
+  export SOURCEGRAPH_VERSION="v4.4.2"
   git checkout $SOURCEGRAPH_VERSION -b release
 ```
 

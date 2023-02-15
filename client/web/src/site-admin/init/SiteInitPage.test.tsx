@@ -16,7 +16,7 @@ describe('SiteInitPage', () => {
     })
 
     test('site already initialized', () => {
-        const history = createMemoryHistory({ initialEntries: ['/'] })
+        const history = createMemoryHistory({ initialEntries: ['/init'] })
         renderWithBrandedContext(
             <SiteInitPage
                 isLightTheme={true}
@@ -29,7 +29,7 @@ describe('SiteInitPage', () => {
                     authMinPasswordLength: 12,
                 }}
             />,
-            { history }
+            { history, path: '/init' }
         )
         expect(history.location.pathname).toEqual('/search')
     })

@@ -1,5 +1,4 @@
 import { act } from '@testing-library/react'
-import * as H from 'history'
 import { of } from 'rxjs'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -8,13 +7,11 @@ import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 import { DotComProductSubscriptionResult, ProductLicensesResult } from '../../../../graphql-operations'
 
 import { SiteAdminProductSubscriptionPage } from './SiteAdminProductSubscriptionPage'
+import { mockLicenseContext } from './testUtils'
 
 jest.mock('mdi-react/ArrowLeftIcon', () => 'ArrowLeftIcon')
 
 jest.mock('mdi-react/AddIcon', () => 'AddIcon')
-
-const history = H.createMemoryHistory()
-const location = H.createLocation('/')
 
 describe('SiteAdminProductSubscriptionPage', () => {
     const origContext = window.context
@@ -28,9 +25,6 @@ describe('SiteAdminProductSubscriptionPage', () => {
         const component = renderWithBrandedContext(
             <MockedTestProvider mocks={[]}>
                 <SiteAdminProductSubscriptionPage
-                    match={{ isExact: true, params: { subscriptionUUID: 's' }, path: '/p', url: '/p' }}
-                    history={history}
-                    location={location}
                     _queryProductSubscription={() =>
                         of<DotComProductSubscriptionResult['dotcom']['productSubscription']>({
                             __typename: 'ProductSubscription',
@@ -91,7 +85,7 @@ describe('SiteAdminProductSubscriptionPage', () => {
                     }
                 />
             </MockedTestProvider>,
-            { history }
+            { route: '/p' }
         )
         act(() => undefined)
         expect(component.asFragment()).toMatchSnapshot()

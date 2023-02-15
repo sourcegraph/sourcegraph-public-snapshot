@@ -59,13 +59,6 @@ func NewService(
 	)
 }
 
-type serviceDependencies struct {
-	db              database.DB
-	uploadsService  *uploads.Service
-	gitserverClient GitserverClient
-	observationCtx  *observation.Context
-}
-
 var (
 	// TODO - move these into background config
 	resultsBucketName             = env.Get("CODEINTEL_RANKING_RESULTS_BUCKET", "lsif-pagerank-experiments", "The GCS bucket.")

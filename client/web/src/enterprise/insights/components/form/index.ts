@@ -1,5 +1,6 @@
 // helpers for form-field's setup
 export { getDefaultInputProps, getDefaultInputError, getDefaultInputStatus } from './getDefaultInputProps'
+export { getRepoQueryPreview } from './query-input/utils/generate-repo-filters-query'
 
 // form components
 export { RepositoryField } from './repositories-field/RepositoryField'

@@ -13,12 +13,12 @@ import (
 )
 
 // The database is already seeded with two roles:
-// - DEFAULT
+// - USER
 // - SITE_ADMINISTRATOR
 //
 // These roles come by default on any sourcegraph instance and will always exist in the database,
 // so we need to account for these roles when accessing the database.
-var numberOfDefaultRoles = 2
+var numberOfSystemRoles = 2
 
 func TestRoleGet(t *testing.T) {
 	ctx := context.Background()
@@ -61,28 +61,62 @@ func TestRoleList(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.Roles()
 
-	total := createTestRoles(ctx, t, store)
+	roles, total := createTestRoles(ctx, t, store)
+	user := createTestUserForUserRole(ctx, "test@test.com", "test-user-1", t, db)
 
-	t.Run("basic no opts", func(t *testing.T) {
-		allRoles, err := store.List(ctx, RolesListOptions{})
+	_, err := db.UserRoles().Create(ctx, CreateUserRoleOpts{
+		RoleID: roles[0].ID,
+		UserID: user.ID,
+	})
+	assert.NoError(t, err)
+
+	firstParam := 100
+
+	t.Run("all roles", func(t *testing.T) {
+		allRoles, err := store.List(ctx, RolesListOptions{
+			PaginationArgs: &PaginationArgs{
+				First: &firstParam,
+			},
+		})
+
 		assert.NoError(t, err)
-		assert.Len(t, allRoles, total+numberOfDefaultRoles)
+		assert.LessOrEqual(t, len(allRoles), firstParam)
+		assert.Len(t, allRoles, total+numberOfSystemRoles)
 	})
 
 	t.Run("system roles", func(t *testing.T) {
 		allSystemRoles, err := store.List(ctx, RolesListOptions{
+			PaginationArgs: &PaginationArgs{
+				First: &firstParam,
+			},
 			System: true,
 		})
 		assert.NoError(t, err)
-		assert.Len(t, allSystemRoles, numberOfDefaultRoles)
+		assert.Len(t, allSystemRoles, numberOfSystemRoles)
 	})
 
 	t.Run("with pagination", func(t *testing.T) {
+		firstParam := 2
 		roles, err := store.List(ctx, RolesListOptions{
-			LimitOffset: &LimitOffset{Limit: 2, Offset: 1},
+			PaginationArgs: &PaginationArgs{
+				First: &firstParam,
+			},
+		})
+
+		assert.NoError(t, err)
+		assert.Len(t, roles, firstParam)
+	})
+
+	t.Run("user roles", func(t *testing.T) {
+		userRoles, err := store.List(ctx, RolesListOptions{
+			PaginationArgs: &PaginationArgs{
+				First: &firstParam,
+			},
+			UserID: user.ID,
 		})
 		assert.NoError(t, err)
-		assert.Len(t, roles, 2)
+		assert.Len(t, userRoles, 1)
+		assert.Equal(t, userRoles[0].ID, roles[0].ID)
 	})
 }
 
@@ -103,11 +137,39 @@ func TestRoleCount(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.Roles()
 
-	total := createTestRoles(ctx, t, store)
+	user := createTestUserForUserRole(ctx, "test@test.com", "test-user-1", t, db)
+	roles, total := createTestRoles(ctx, t, store)
 
-	count, err := store.Count(ctx, RolesListOptions{})
+	_, err := db.UserRoles().Create(ctx, CreateUserRoleOpts{
+		RoleID: roles[0].ID,
+		UserID: user.ID,
+	})
 	assert.NoError(t, err)
-	assert.Equal(t, count, total+numberOfDefaultRoles)
+
+	t.Run("all roles", func(t *testing.T) {
+		count, err := store.Count(ctx, RolesListOptions{})
+
+		assert.NoError(t, err)
+		assert.Equal(t, count, total+numberOfSystemRoles)
+	})
+
+	t.Run("system roles", func(t *testing.T) {
+		count, err := store.Count(ctx, RolesListOptions{
+			System: true,
+		})
+
+		assert.NoError(t, err)
+		assert.Equal(t, count, numberOfSystemRoles)
+	})
+
+	t.Run("user roles", func(t *testing.T) {
+		count, err := store.Count(ctx, RolesListOptions{
+			UserID: user.ID,
+		})
+
+		assert.NoError(t, err)
+		assert.Equal(t, count, 1)
+	})
 }
 
 func TestRoleUpdate(t *testing.T) {
@@ -174,15 +236,17 @@ func TestRoleDelete(t *testing.T) {
 	})
 }
 
-func createTestRoles(ctx context.Context, t *testing.T, store RoleStore) int {
+func createTestRoles(ctx context.Context, t *testing.T, store RoleStore) ([]*types.Role, int) {
 	t.Helper()
+	var roles []*types.Role
 	totalRoles := 10
 	name := "TESTROLE"
 	for i := 1; i <= totalRoles; i++ {
-		_, err := createTestRole(ctx, fmt.Sprintf("%s-%d", name, i), false, t, store)
+		role, err := createTestRole(ctx, fmt.Sprintf("%s-%d", name, i), false, t, store)
 		assert.NoError(t, err)
+		roles = append(roles, role)
 	}
-	return totalRoles
+	return roles, totalRoles
 }
 
 func createTestRole(ctx context.Context, name string, isSystemRole bool, t *testing.T, store RoleStore) (*types.Role, error) {

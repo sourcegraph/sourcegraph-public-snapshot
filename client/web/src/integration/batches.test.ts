@@ -325,8 +325,6 @@ function mockCommonGraphQLResponses(
                 viewerCanAdminister: true,
                 builtinAuth: true,
                 tags: [],
-                siteAdmin: false,
-                emails: [{ email: 'alice@example.com', verified: true, isPrimary: true }],
                 createdAt: '2020-04-10T21:11:42Z',
             },
         }),

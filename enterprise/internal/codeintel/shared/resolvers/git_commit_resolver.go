@@ -43,9 +43,9 @@ func (r *GitCommitResolver) AbbreviatedOID() string {
 }
 
 func (r *GitCommitResolver) URL() string {
-	url := r.repoResolver.url()
-	url.Path += "/-/commit/" + r.inputRevOrImmutableRev()
-	return url.String()
+	u := r.repoResolver.url()
+	u.Path += "/-/commit/" + r.inputRevOrImmutableRev()
+	return u.String()
 }
 
 // inputRevOrImmutableRev returns the input revspec, if it is provided and nonempty. Otherwise it returns the
@@ -59,9 +59,9 @@ func (r *GitCommitResolver) inputRevOrImmutableRev() string {
 
 func (r *GitCommitResolver) canonicalRepoRevURL() *url.URL {
 	// Dereference to copy the URL to avoid mutation
-	url := *r.repoResolver.RepoMatch.URL()
-	url.Path += "@" + string(r.oid)
-	return &url
+	repoURL := *r.repoResolver.RepoMatch.URL()
+	repoURL.Path += "@" + string(r.oid)
+	return &repoURL
 }
 
 // repoRevURL returns the URL path prefix to use when constructing URLs to resources at this
@@ -71,7 +71,7 @@ func (r *GitCommitResolver) canonicalRepoRevURL() *url.URL {
 // "/REPO/-/commit/REVSPEC").
 func (r *GitCommitResolver) repoRevURL() *url.URL {
 	// Dereference to copy to avoid mutation
-	url := *r.repoResolver.RepoMatch.URL()
+	repoURL := *r.repoResolver.RepoMatch.URL()
 	var rev string
 	if r.inputRev != nil {
 		rev = *r.inputRev // use the original input rev from the user
@@ -79,7 +79,7 @@ func (r *GitCommitResolver) repoRevURL() *url.URL {
 		rev = string(r.oid)
 	}
 	if rev != "" {
-		url.Path += "@" + rev
+		repoURL.Path += "@" + rev
 	}
-	return &url
+	return &repoURL
 }

@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 
 import { mdiMenu } from '@mdi/js'
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router-dom'
 
 import { Button, Icon } from '@sourcegraph/wildcard'
 
@@ -14,7 +13,7 @@ export interface RepoSettingsSideBarGroup extends Omit<NavGroupDescriptor, 'cond
 
 export type RepoSettingsSideBarGroups = readonly RepoSettingsSideBarGroup[]
 
-interface Props extends RouteComponentProps<{}> {
+interface Props {
     repoSettingsSidebarGroups: RepoSettingsSideBarGroups
     className?: string
     repo: SettingsAreaRepositoryFields

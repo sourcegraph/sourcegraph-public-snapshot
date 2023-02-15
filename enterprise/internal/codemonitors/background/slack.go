@@ -12,7 +12,7 @@ import (
 	"github.com/slack-go/slack"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	searchresult "github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -97,9 +97,9 @@ func truncateString(input string) string {
 	return strings.Join(splitLines, "")
 }
 
-func truncateResults(results []*result.CommitMatch, maxResults int) (_ []*result.CommitMatch, totalCount, truncatedCount int) {
+func truncateResults(results []*searchresult.CommitMatch, maxResults int) (_ []*searchresult.CommitMatch, totalCount, truncatedCount int) {
 	// Convert to type result.Matches
-	matches := make(result.Matches, len(results))
+	matches := make(searchresult.Matches, len(results))
 	for i, res := range results {
 		matches[i] = res
 	}
@@ -109,9 +109,9 @@ func truncateResults(results []*result.CommitMatch, maxResults int) (_ []*result
 	outputCount := matches.ResultCount()
 
 	// Convert back type []*result.CommitMatch
-	output := make([]*result.CommitMatch, len(matches))
+	output := make([]*searchresult.CommitMatch, len(matches))
 	for i, match := range matches {
-		output[i] = match.(*result.CommitMatch)
+		output[i] = match.(*searchresult.CommitMatch)
 	}
 
 	return output, totalCount, totalCount - outputCount

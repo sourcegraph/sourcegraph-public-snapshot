@@ -13,7 +13,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
-	scip "github.com/sourcegraph/scip/bindings/go/scip"
+	"github.com/sourcegraph/scip/bindings/go/scip"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -69,7 +69,7 @@ func TestHandle(t *testing.T) {
 
 	svc := &handler{
 		store:           mockDBStore,
-		lsifstore:       mockLSIFStore,
+		lsifStore:       mockLSIFStore,
 		gitserverClient: gitserverClient,
 		repoStore:       mockRepoStore,
 		workerStore:     mockWorkerStore,
@@ -202,7 +202,7 @@ func TestHandleSCIP(t *testing.T) {
 
 	svc := &handler{
 		store:           mockDBStore,
-		lsifstore:       mockLSIFStore,
+		lsifStore:       mockLSIFStore,
 		gitserverClient: gitserverClient,
 		repoStore:       mockRepoStore,
 		workerStore:     mockWorkerStore,
@@ -427,7 +427,7 @@ func TestHandleError(t *testing.T) {
 
 	svc := &handler{
 		store:     mockDBStore,
-		lsifstore: mockLSIFStore,
+		lsifStore: mockLSIFStore,
 		// lsifstore:       mockLSIFStore,
 		gitserverClient: gitserverClient,
 		repoStore:       mockRepoStore,
@@ -494,7 +494,7 @@ func TestHandleErrorScip(t *testing.T) {
 
 	svc := &handler{
 		store:     mockDBStore,
-		lsifstore: mockLSIFStore,
+		lsifStore: mockLSIFStore,
 		// lsifstore:       mockLSIFStore,
 		gitserverClient: gitserverClient,
 		repoStore:       mockRepoStore,

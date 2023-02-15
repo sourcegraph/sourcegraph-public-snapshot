@@ -1,7 +1,5 @@
 import React, { useCallback } from 'react'
 
-import * as H from 'history'
-
 import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -26,7 +24,6 @@ import { ExternalServiceEditingTemporaryAlert } from './ExternalServiceEditingTe
 import { AddExternalServiceOptions } from './externalServices'
 
 interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorActions'>, ThemeProps, TelemetryProps {
-    history: H.History
     input: AddExternalServiceInput
     externalServiceID?: string
     error?: ErrorLike
@@ -46,7 +43,6 @@ interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorAc
  * Form for submitting a new or updated external service.
  */
 export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    history,
     isLightTheme,
     telemetryService,
     jsonSchema,
@@ -123,7 +119,6 @@ export const ExternalServiceForm: React.FunctionComponent<React.PropsWithChildre
                     readOnly={disabled}
                     isLightTheme={isLightTheme}
                     onChange={onConfigChange}
-                    history={history}
                     actions={editorActions}
                     className="test-external-service-editor"
                     telemetryService={telemetryService}

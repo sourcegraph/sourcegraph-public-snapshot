@@ -25,6 +25,7 @@ interface Props {
     authProviders: AuthProvider[]
     onDidRemove: (id: string, name: string) => void
     onDidError: (error: ErrorLike) => void
+    onDidAdd: () => void
 }
 
 const getNormalizedAccount = (
@@ -62,6 +63,7 @@ export const ExternalAccountsSignIn: React.FunctionComponent<React.PropsWithChil
     authProviders,
     onDidRemove,
     onDidError,
+    onDidAdd,
 }) => (
     <>
         {authProviders && (
@@ -81,6 +83,7 @@ export const ExternalAccountsSignIn: React.FunctionComponent<React.PropsWithChil
                                     authProvider={authProvider}
                                     onDidRemove={onDidRemove}
                                     onDidError={onDidError}
+                                    onDidAdd={onDidAdd}
                                 />
                             </li>
                         )

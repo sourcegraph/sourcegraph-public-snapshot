@@ -10,12 +10,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	stesting "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/testing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -582,7 +582,7 @@ func TestService(t *testing.T) {
 
 	t.Run("CreateChangesetSpec", func(t *testing.T) {
 		repo := rs[0]
-		rawSpec := bt.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo.ID), "d34db33f")
+		rawSpec := bt.NewRawChangesetSpecGitBranch(relay.MarshalID("Repository", repo.ID), "d34db33f")
 
 		t.Run("success", func(t *testing.T) {
 			spec, err := svc.CreateChangesetSpec(ctx, rawSpec, admin.ID)
@@ -666,7 +666,7 @@ index e5af166..d44c3fc 100644
 	})
 
 	t.Run("CreateChangesetSpecs", func(t *testing.T) {
-		rawSpec := bt.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(rs[0].ID), "d34db33f")
+		rawSpec := bt.NewRawChangesetSpecGitBranch(relay.MarshalID("Repository", rs[0].ID), "d34db33f")
 
 		t.Run("success", func(t *testing.T) {
 			specs, err := svc.CreateChangesetSpecs(ctx, []string{rawSpec}, admin.ID)

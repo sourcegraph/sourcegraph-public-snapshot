@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
@@ -144,7 +143,7 @@ func testGenerator(t *testing.T, testCase generatorTestCase) {
 
 		jobs, err := service.InferIndexJobs(
 			context.Background(),
-			api.RepoName("github.com/test/test"),
+			"github.com/test/test",
 			"HEAD",
 			testCase.overrideScript,
 		)

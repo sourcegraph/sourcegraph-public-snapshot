@@ -12,7 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/go-diff/diff"
+	godiff "github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
@@ -454,7 +454,7 @@ func TestRepositoryComparison(t *testing.T) {
 func TestDiffHunk(t *testing.T) {
 	ctx := context.Background()
 
-	dr := diff.NewMultiFileDiffReader(strings.NewReader(testDiff))
+	dr := godiff.NewMultiFileDiffReader(strings.NewReader(testDiff))
 	// We only read the first file diff from testDiff
 	fileDiff, err := dr.ReadFile()
 	if err != nil && err != io.EOF {
@@ -564,7 +564,7 @@ index 4d14577..10ef458 100644
 +(c) Copyright Sourcegraph 2013-2021.
 \ No newline at end of file
 `
-	dr := diff.NewMultiFileDiffReader(strings.NewReader(filediff))
+	dr := godiff.NewMultiFileDiffReader(strings.NewReader(filediff))
 	// We only read the first file diff from testDiff
 	fileDiff, err := dr.ReadFile()
 	if err != nil && err != io.EOF {
@@ -650,7 +650,7 @@ index 4d14577..9fe9a4f 100644
 ` + "-" + `
  See [the main README](https://github.com/dominikh/go-tools#installation) for installation instructions.`
 
-	dr := diff.NewMultiFileDiffReader(strings.NewReader(filediff))
+	dr := godiff.NewMultiFileDiffReader(strings.NewReader(filediff))
 	// We only read the first file diff from testDiff
 	fileDiff, err := dr.ReadFile()
 	if err != nil && err != io.EOF {
@@ -750,7 +750,7 @@ index d206c4c..bb06461 100644
 -}
 `
 
-	dr := diff.NewMultiFileDiffReader(strings.NewReader(filediff))
+	dr := godiff.NewMultiFileDiffReader(strings.NewReader(filediff))
 	// We only read the first file diff from testDiff
 	fileDiff, err := dr.ReadFile()
 	if err != nil && err != io.EOF {

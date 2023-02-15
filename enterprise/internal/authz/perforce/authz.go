@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 
+	atypes "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/types"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -22,18 +23,19 @@ import (
 // This constructor does not and should not directly check connectivity to external services - if
 // desired, callers should use `(*Provider).ValidateConnection` directly to get warnings related
 // to connection issues.
-func NewAuthzProviders(conns []*types.PerforceConnection) (ps []authz.Provider, problems []string, warnings []string, invalidConnections []string) {
+func NewAuthzProviders(conns []*types.PerforceConnection) *atypes.ProviderInitResult {
+	initResults := &atypes.ProviderInitResult{}
 	for _, c := range conns {
 		p, err := newAuthzProvider(c.URN, c.Authorization, c.P4Port, c.P4User, c.P4Passwd, c.Depots)
 		if err != nil {
-			invalidConnections = append(invalidConnections, extsvc.TypePerforce)
-			problems = append(problems, err.Error())
+			initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypePerforce)
+			initResults.Problems = append(initResults.Problems, err.Error())
 		} else if p != nil {
-			ps = append(ps, p)
+			initResults.Providers = append(initResults.Providers, p)
 		}
 	}
 
-	return ps, problems, warnings, invalidConnections
+	return initResults
 }
 
 func newAuthzProvider(

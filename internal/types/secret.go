@@ -204,6 +204,12 @@ func (e *ExternalService) UnredactConfig(ctx context.Context, old *ExternalServi
 			return errCodeHostIdentityChanged{"p4.port", "p4.passwd"}
 		}
 		es.unredactString(c.P4Passwd, o.P4Passwd, "p4.passwd")
+	case *schema.GerritConnection:
+		o := oldCfg.(*schema.GerritConnection)
+		es.unredactString(c.Password, o.Password, "password")
+		if c.Url != o.Url {
+			return errCodeHostIdentityChanged{"url", "password"}
+		}
 	case *schema.GitoliteConnection:
 		// Nothing to redact
 	case *schema.GoModulesConnection:

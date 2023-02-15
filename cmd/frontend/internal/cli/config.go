@@ -577,8 +577,6 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 }
 
 var (
-	searcherURL string
-
 	searcherURLsOnce sync.Once
 	searcherURLs     *endpoint.Map
 
@@ -629,7 +627,6 @@ func symbolsAddr(environ []string) (string, error) {
 }
 
 func LoadConfig() {
-	searcherURL, _ = searcherAddr(os.Environ())
 	highlight.LoadConfig()
 	symbols.LoadConfig()
 }
@@ -735,9 +732,9 @@ func replicaAddrs(deployType, countStr, serviceName, port string) (string, error
 
 func getEnv(environ []string, key string) (string, bool) {
 	key = key + "="
-	for _, env := range environ {
-		if strings.HasPrefix(env, key) {
-			return env[len(key):], true
+	for _, envVar := range environ {
+		if strings.HasPrefix(envVar, key) {
+			return envVar[len(key):], true
 		}
 	}
 	return "", false

@@ -24,8 +24,6 @@ import { CreateInsightFormFields } from './types'
 import { getSanitizedSearchInsight } from './utils/insight-sanitizer'
 import { useSearchInsightInitialValues } from './utils/use-initial-values'
 
-import styles from './SearchInsightCreationPage.module.scss'
-
 export interface InsightCreateEvent {
     insight: MinimalSearchBasedInsightData
 }
@@ -96,7 +94,7 @@ export const SearchInsightCreationPage: FC<SearchInsightCreationPageProps> = pro
     }, [telemetryService, setLocalStorageFormValues, onCancel])
 
     return (
-        <CodeInsightsPage className={styles.creationPage}>
+        <CodeInsightsPage>
             <PageTitle title="Create track changes insight - Code Insights" />
 
             <PageHeader

@@ -1,5 +1,4 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import * as H from 'history'
 import { WildcardMockLink } from 'wildcard-mock-link'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -23,14 +22,9 @@ export const Page: Story = () => (
     <WebStory>
         {() => (
             <MockedTestProvider
-                link={new WildcardMockLink([logConnectionLink, buildOutboundWebhookMock('abcdef'), eventTypesMock])}
+                link={new WildcardMockLink([logConnectionLink, buildOutboundWebhookMock(''), eventTypesMock])}
             >
-                <EditPage
-                    match={{ params: { id: 'abcdef' } } as any}
-                    history={H.createMemoryHistory()}
-                    location={{} as any}
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                />
+                <EditPage telemetryService={NOOP_TELEMETRY_SERVICE} />
             </MockedTestProvider>
         )}
     </WebStory>

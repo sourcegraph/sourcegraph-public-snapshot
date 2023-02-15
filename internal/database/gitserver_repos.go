@@ -642,19 +642,19 @@ func (s *gitserverRepoStore) updateRepoSizesWithBatchSize(ctx context.Context, r
 	}
 	defer func() { err = tx.Done(err) }()
 
-	batch := make([]*sqlf.Query, batchSize)
+	queries := make([]*sqlf.Query, batchSize)
 
 	left := len(repos)
 	currentCount := 0
 	updatedRows := 0
 	for repo, size := range repos {
-		batch[currentCount] = sqlf.Sprintf("(%s::integer, %s::bigint)", repo, size)
+		queries[currentCount] = sqlf.Sprintf("(%s::integer, %s::bigint)", repo, size)
 
 		currentCount += 1
 
 		if currentCount == batchSize || currentCount == left {
 			// IMPORTANT: we only take the elements of batch up to currentCount
-			q := sqlf.Sprintf(updateRepoSizesQueryFmtstr, sqlf.Join(batch[:currentCount], ","))
+			q := sqlf.Sprintf(updateRepoSizesQueryFmtstr, sqlf.Join(queries[:currentCount], ","))
 			res, err := tx.ExecResult(ctx, q)
 			if err != nil {
 				return 0, err

@@ -16,7 +16,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/background",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//cmd/frontend/envvar",
         "//enterprise/internal/codeintel/ranking/internal/store",
         "//internal/actor",
         "//internal/api",

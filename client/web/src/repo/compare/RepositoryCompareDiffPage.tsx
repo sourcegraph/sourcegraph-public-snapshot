@@ -1,6 +1,5 @@
 import React, { useCallback } from 'react'
 
-import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -83,7 +82,7 @@ export function queryRepositoryComparisonFileDiffs(args: {
     )
 }
 
-interface RepositoryCompareDiffPageProps extends RepositoryCompareAreaPageProps, RouteComponentProps<{}>, ThemeProps {
+interface RepositoryCompareDiffPageProps extends RepositoryCompareAreaPageProps, ThemeProps {
     /** The base of the comparison. */
     base: { repoName: string; repoID: Scalars['ID']; revision: string | null; commitID: string }
 
@@ -124,8 +123,6 @@ export const RepositoryCompareDiffPage: React.FunctionComponent<RepositoryCompar
                 hideSearch={true}
                 noSummaryIfAllNodesVisible={true}
                 withCenteredSummary={true}
-                history={props.history}
-                location={props.location}
                 cursorPaging={true}
             />
         </div>

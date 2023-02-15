@@ -9,6 +9,7 @@ go_library(
         "//internal/actor",
         "//internal/api",
         "//internal/conf/conftypes",
+        "//internal/conf/deploy",
         "//internal/env",
         "//internal/httpcli",
         "//internal/txemail/txtypes",

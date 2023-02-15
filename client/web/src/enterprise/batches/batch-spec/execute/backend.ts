@@ -25,6 +25,18 @@ import {
     RetryWorkspaceExecutionVariables,
 } from '../../../../graphql-operations'
 
+export const batchSpecWorkspaceStepOutputLinesFieldsFragment = gql`
+    fragment BatchSpecWorkspaceStepOutputLines on BatchSpecWorkspaceStepOutputLineConnection {
+        __typename
+        nodes
+        totalCount
+        pageInfo {
+            hasNextPage
+            endCursor
+        }
+    }
+`
+
 const batchSpecWorkspaceFieldsFragment = gql`
     fragment BatchSpecWorkspaceFields on BatchSpecWorkspace {
         __typename
@@ -109,7 +121,6 @@ const batchSpecWorkspaceFieldsFragment = gql`
         ifCondition
         cachedResultFound
         skipped
-        outputLines
         startedAt
         finishedAt
         exitCode
@@ -234,6 +245,23 @@ export const BATCH_SPEC_WORKSPACE_BY_ID = gql`
         }
     }
     ${batchSpecWorkspaceFieldsFragment}
+`
+
+export const BATCH_SPEC_WORKSPACE_STEP = gql`
+    query BatchSpecWorkspaceStep($workspaceID: ID!, $stepIndex: Int!, $first: Int!, $after: String) {
+        node(id: $workspaceID) {
+            __typename
+            ... on VisibleBatchSpecWorkspace {
+                step(index: $stepIndex) {
+                    outputLines(first: $first, after: $after) {
+                        ...BatchSpecWorkspaceStepOutputLines
+                    }
+                }
+            }
+        }
+    }
+
+    ${batchSpecWorkspaceStepOutputLinesFieldsFragment}
 `
 
 interface BatchSpecWorkspaceHookResult {

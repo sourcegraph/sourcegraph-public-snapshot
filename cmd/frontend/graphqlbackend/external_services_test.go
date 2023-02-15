@@ -222,9 +222,8 @@ func TestExcludeRepoFromExternalServices_ExternalServiceDoesntSupportRepoExclusi
 	})
 
 	db := database.NewMockDB()
-	db.TransactFunc.SetDefaultReturn(db, nil)
-	db.DoneFunc.SetDefaultHook(func(err error) error {
-		return err
+	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+		return f(db)
 	})
 
 	db.UsersFunc.SetDefaultReturn(users)
@@ -283,9 +282,8 @@ func TestExcludeRepoFromExternalServices_NoExistingExcludedRepos_NewExcludedRepo
 	t.Cleanup(func() { repoupdater.MockSyncExternalService = nil })
 
 	db := database.NewMockDB()
-	db.TransactFunc.SetDefaultReturn(db, nil)
-	db.DoneFunc.SetDefaultHook(func(err error) error {
-		return err
+	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+		return f(db)
 	})
 
 	db.UsersFunc.SetDefaultReturn(users)
@@ -347,9 +345,8 @@ func TestExcludeRepoFromExternalServices_ExcludedRepoExists_AnotherExcludedRepoA
 	t.Cleanup(func() { repoupdater.MockSyncExternalService = nil })
 
 	db := database.NewMockDB()
-	db.TransactFunc.SetDefaultReturn(db, nil)
-	db.DoneFunc.SetDefaultHook(func(err error) error {
-		return err
+	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+		return f(db)
 	})
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
@@ -409,9 +406,8 @@ func TestExcludeRepoFromExternalServices_ExcludedRepoExists_SameRepoIsNotExclude
 	t.Cleanup(func() { repoupdater.MockSyncExternalService = nil })
 
 	db := database.NewMockDB()
-	db.TransactFunc.SetDefaultReturn(db, nil)
-	db.DoneFunc.SetDefaultHook(func(err error) error {
-		return err
+	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+		return f(db)
 	})
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
@@ -480,9 +476,8 @@ func TestExcludeRepoFromExternalServices_ExcludedFromTwoExternalServices(t *test
 	t.Cleanup(func() { repoupdater.MockSyncExternalService = nil })
 
 	db := database.NewMockDB()
-	db.TransactFunc.SetDefaultReturn(db, nil)
-	db.DoneFunc.SetDefaultHook(func(err error) error {
-		return err
+	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+		return f(db)
 	})
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)

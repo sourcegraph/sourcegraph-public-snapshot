@@ -36,7 +36,7 @@ func EnterpriseInit(
 	keyring keyring.Ring,
 	cf *httpcli.Factory,
 	server *repoupdater.Server,
-) (debugDumpers map[string]debugserver.Dumper, enqueueRepoPermsJob func(context.Context, api.RepoID, string) error) {
+) (debugDumpers map[string]debugserver.Dumper, enqueueRepoPermsJob func(context.Context, api.RepoID, ossDB.PermissionSyncJobReason) error) {
 	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
 	if debug {
 		observationCtx.Logger.Info("enterprise edition")
@@ -58,7 +58,7 @@ func EnterpriseInit(
 	permsSyncer := authz.NewPermsSyncer(observationCtx.Logger.Scoped("PermsSyncer", "repository and user permissions syncer"), db, repoStore, permsStore, timeutil.Now, ratelimit.DefaultRegistry)
 
 	permsJobStore := db.PermissionSyncJobs()
-	enqueueRepoPermsJob = func(ctx context.Context, repo api.RepoID, reason string) error {
+	enqueueRepoPermsJob = func(ctx context.Context, repo api.RepoID, reason ossDB.PermissionSyncJobReason) error {
 		if authz.PermissionSyncingDisabled() {
 			return nil
 		}
@@ -77,11 +77,16 @@ func EnterpriseInit(
 		server.PermsSyncer = permsSyncer
 	}
 
-	workerStore := authz.MakeStore(observationCtx, db.Handle())
-	worker := authz.MakeWorker(ctx, observationCtx, workerStore, permsSyncer)
-	resetter := authz.MakeResetter(observationCtx, workerStore)
+	repoWorkerStore := authz.MakeStore(observationCtx, db.Handle(), authz.SyncTypeRepo)
+	userWorkerStore := authz.MakeStore(observationCtx, db.Handle(), authz.SyncTypeUser)
+	permissionSyncJobStore := ossDB.PermissionSyncJobsWith(observationCtx.Logger, db)
+	repoSyncWorker := authz.MakeWorker(ctx, observationCtx, repoWorkerStore, permsSyncer, authz.SyncTypeRepo, permissionSyncJobStore)
+	userSyncWorker := authz.MakeWorker(ctx, observationCtx, userWorkerStore, permsSyncer, authz.SyncTypeUser, permissionSyncJobStore)
+	// Type of store (repo/user) for resetter doesn't matter, because it has its
+	// separate name for logging and metrics.
+	resetter := authz.MakeResetter(observationCtx, repoWorkerStore)
 
-	go goroutine.MonitorBackgroundRoutines(ctx, worker, resetter)
+	go goroutine.MonitorBackgroundRoutines(ctx, repoSyncWorker, userSyncWorker, resetter)
 
 	go startBackgroundPermsSync(ctx, permsSyncer, db)
 

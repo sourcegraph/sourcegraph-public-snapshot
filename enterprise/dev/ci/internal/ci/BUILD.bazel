@@ -9,6 +9,7 @@ go_library(
         "operations.go",
         "pipeline.go",
         "web-integration-workloads.go",
+        "wolfi_operations.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci",
     visibility = ["//enterprise/dev/ci:__subpackages__"],
@@ -18,7 +19,9 @@ go_library(
         "//enterprise/dev/ci/internal/buildkite",
         "//enterprise/dev/ci/internal/ci/changed",
         "//enterprise/dev/ci/internal/ci/operations",
+        "//internal/lazyregexp",
         "//lib/errors",
         "@com_github_masterminds_semver//:semver",
+        "@com_github_sourcegraph_log//:log",
     ],
 )

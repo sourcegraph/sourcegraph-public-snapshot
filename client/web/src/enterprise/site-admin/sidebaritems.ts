@@ -101,13 +101,8 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
     header: { label: 'Code graph', icon: BrainIcon },
     items: [
         {
-            to: '/site-admin/code-graph/uploads',
-            label: 'Uploads',
-        },
-        {
             to: '/site-admin/code-graph/indexes',
-            label: 'Auto-indexing',
-            condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
+            label: 'Precise indexes',
         },
         {
             to: '/site-admin/code-graph/configuration',

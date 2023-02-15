@@ -92,11 +92,17 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.BazelExpBranch:
 		ops.Merge(BazelOperations())
 	case runtype.WolfiExpBranch:
-		if c.Diff.Has(changed.WolfiBaseImages) {
-			ops.Merge(WolfiBaseImagesOperations(c.ChangedFiles[changed.WolfiBaseImages]))
-		}
 		if c.Diff.Has(changed.WolfiPackages) {
 			ops.Merge(WolfiPackagesOperations(c.ChangedFiles[changed.WolfiPackages]))
+		}
+		if c.Diff.Has(changed.WolfiBaseImages) {
+			ops.Merge(
+				WolfiBaseImagesOperations(
+					c.ChangedFiles[changed.WolfiBaseImages],
+					c.Version,
+					c.Diff.Has(changed.WolfiPackages),
+				),
+			)
 		}
 
 	case runtype.PullRequest:

@@ -836,7 +836,7 @@ export const useWebhookPageHeader = (): { loading: boolean; totalErrors: number;
     return { loading, totalErrors, totalNoEvents }
 }
 
-export const useWebhooksConnection = (): UseShowMorePaginationResult<WebhookFields> =>
+export const useWebhooksConnection = (): UseShowMorePaginationResult<WebhooksListResult, WebhookFields> =>
     useShowMorePagination<WebhooksListResult, WebhooksListVariables, WebhookFields>({
         query: WEBHOOKS,
         variables: {},
@@ -855,7 +855,7 @@ export const useWebhookLogsConnection = (
     webhookID: string,
     first: number,
     onlyErrors: boolean
-): UseShowMorePaginationResult<WebhookLogFields> =>
+): UseShowMorePaginationResult<WebhookLogsByWebhookIDResult, WebhookLogFields> =>
     useShowMorePagination<WebhookLogsByWebhookIDResult, WebhookLogsByWebhookIDVariables, WebhookLogFields>({
         query: WEBHOOK_LOGS_BY_ID,
         variables: {

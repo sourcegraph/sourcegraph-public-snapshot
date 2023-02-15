@@ -30,13 +30,13 @@ func Rewrite(database db.Database, rev string) error {
 		_ = os.RemoveAll(migrationsDirTemp)
 	}()
 
-	root, err := http.FS(fs).Open("/")
+	rootDir, err := http.FS(fs).Open("/")
 	if err != nil {
 		return err
 	}
-	defer func() { _ = root.Close() }()
+	defer func() { _ = rootDir.Close() }()
 
-	migrations, err := root.Readdir(0)
+	migrations, err := rootDir.Readdir(0)
 	if err != nil {
 		return err
 	}

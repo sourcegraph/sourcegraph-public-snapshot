@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState } from 'react'
 
 import { mdiCheck } from '@mdi/js'
 import * as jsonc from 'jsonc-parser'
-import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 import { delay, mergeMap, startWith, tap } from 'rxjs/operators'
 
@@ -129,7 +128,6 @@ export const SearchContextRepositoriesFormArea: React.FunctionComponent<
         []
     )
 
-    const history = useHistory()
     return (
         <div data-testid="repositories-config-area">
             <DynamicallyImportedMonacoSettingsEditor
@@ -140,7 +138,6 @@ export const SearchContextRepositoriesFormArea: React.FunctionComponent<
                 onChange={onChange}
                 height={300}
                 isLightTheme={isLightTheme}
-                history={history}
                 telemetryService={telemetryService}
                 blockNavigationIfDirty={false}
             />

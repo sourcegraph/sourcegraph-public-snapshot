@@ -31,14 +31,14 @@ func TestStringHuman(t *testing.T) {
 
 	test := func(input string) string {
 		q, _ := ParseStandard(input)
-		json, _ := json.MarshalIndent(struct {
+		j, _ := json.MarshalIndent(struct {
 			Input  string
 			Result string
 		}{
 			Input:  input,
 			Result: StringHuman(q),
 		}, "", "  ")
-		return string(json)
+		return string(j)
 	}
 
 	for _, c := range cases {

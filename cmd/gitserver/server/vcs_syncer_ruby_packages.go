@@ -25,7 +25,6 @@ func NewRubyPackagesSyncer(
 	svc *dependencies.Service,
 	client *rubygems.Client,
 ) VCSSyncer {
-
 	return &vcsPackagesSyncer{
 		logger:      log.Scoped("RubyPackagesSyncer", "sync Ruby packages"),
 		typ:         "ruby_packages",
@@ -42,17 +41,17 @@ type rubyDependencySource struct {
 }
 
 func (rubyDependencySource) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
-	return reposource.ParseRubyVersionedPackage(string(name) + "@" + version)
+	return reposource.ParseRubyVersionedPackage(string(name) + "@" + version), nil
 }
 
 func (rubyDependencySource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
-	return reposource.ParseRubyVersionedPackage(dep)
+	return reposource.ParseRubyVersionedPackage(dep), nil
 }
 
 func (rubyDependencySource) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
-	return reposource.ParseRubyPackageFromName(name)
-
+	return reposource.ParseRubyPackageFromName(name), nil
 }
+
 func (rubyDependencySource) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
 	return reposource.ParseRubyPackageFromRepoName(repoName)
 }
@@ -106,7 +105,7 @@ func unpackRubyPackage(packageURL string, pkg io.Reader, workDir string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filepath.Join(workDir, "rubygems-metadata.yml"), metadataBytes, 0644)
+	return os.WriteFile(filepath.Join(workDir, "rubygems-metadata.yml"), metadataBytes, 0o644)
 }
 
 // unpackRubyDataTarGz unpacks the given `data.tar.gz` from a downloaded RubyGem.

@@ -441,6 +441,7 @@ Referenced by:
  cancel                   | boolean                                      |           | not null | false
  detached_at              | timestamp with time zone                     |           |          | 
  computed_state           | text                                         |           | not null | 
+ external_fork_name       | citext                                       |           |          | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -1759,6 +1760,11 @@ Foreign-key constraints:
 Indexes:
     "lsif_dependency_repos_pkey" PRIMARY KEY, btree (id)
     "lsif_dependency_repos_unique_triplet" UNIQUE CONSTRAINT, btree (scheme, name, version)
+    "lsif_dependency_repos_name_idx" btree (name)
+Referenced by:
+    TABLE "package_repo_versions" CONSTRAINT "package_id_fk" FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos(id) ON DELETE CASCADE
+Triggers:
+    lsif_dependency_repos_backfill AFTER INSERT ON lsif_dependency_repos FOR EACH ROW WHEN (new.version <> '👁️temporary_sentinel_value👁️'::text) EXECUTE FUNCTION func_lsif_dependency_repos_backfill()
 
 ```
 
@@ -1869,6 +1875,7 @@ Stores the configuration used for code intel index jobs for a repository.
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
     "lsif_indexes_commit_last_checked_at" btree (commit_last_checked_at) WHERE state <> 'deleted'::text
+    "lsif_indexes_queued_at_id" btree (queued_at DESC, id)
     "lsif_indexes_repository_id_commit" btree (repository_id, commit)
     "lsif_indexes_state" btree (state)
 Check constraints:
@@ -2099,7 +2106,7 @@ Indexes:
     "lsif_uploads_last_reconcile_at" btree (last_reconcile_at, id) WHERE state = 'completed'::text
     "lsif_uploads_repository_id_commit" btree (repository_id, commit)
     "lsif_uploads_state" btree (state)
-    "lsif_uploads_uploaded_at" btree (uploaded_at)
+    "lsif_uploads_uploaded_at_id" btree (uploaded_at DESC, id) WHERE state <> 'deleted'::text
 Check constraints:
     "lsif_uploads_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
 Referenced by:
@@ -2249,12 +2256,14 @@ Indexes:
  name    | citext  |           | not null | 
  user_id | integer |           |          | 
  org_id  | integer |           |          | 
+ team_id | integer |           |          | 
 Indexes:
     "names_pkey" PRIMARY KEY, btree (name)
 Check constraints:
-    "names_check" CHECK (user_id IS NOT NULL OR org_id IS NOT NULL)
+    "names_check" CHECK (user_id IS NOT NULL OR org_id IS NOT NULL OR team_id IS NOT NULL)
 Foreign-key constraints:
     "names_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id) ON UPDATE CASCADE ON DELETE CASCADE
+    "names_team_id_fkey" FOREIGN KEY (team_id) REFERENCES teams(id) ON UPDATE CASCADE ON DELETE CASCADE
     "names_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
@@ -2267,7 +2276,7 @@ Foreign-key constraints:
  namespace   | text                     |           | not null | 
  resource_id | integer                  |           | not null | 
  action      | text                     |           | not null | 
- user_id     | integer                  |           |          | 
+ user_id     | integer                  |           | not null | 
  created_at  | timestamp with time zone |           | not null | now()
 Indexes:
     "namespace_permissions_pkey" PRIMARY KEY, btree (id)
@@ -2631,6 +2640,22 @@ Referenced by:
 
 ```
 
+# Table "public.package_repo_versions"
+```
+   Column   |  Type  | Collation | Nullable |                      Default                      
+------------+--------+-----------+----------+---------------------------------------------------
+ id         | bigint |           | not null | nextval('package_repo_versions_id_seq'::regclass)
+ package_id | bigint |           | not null | 
+ version    | text   |           | not null | 
+Indexes:
+    "package_repo_versions_pkey" PRIMARY KEY, btree (id)
+    "package_repo_versions_unique_version_per_package" UNIQUE, btree (package_id, version)
+    "package_repo_versions_fk_idx" btree (package_id)
+Foreign-key constraints:
+    "package_id_fk" FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos(id) ON DELETE CASCADE
+
+```
+
 # Table "public.permission_sync_jobs"
 ```
         Column        |           Type           | Collation | Nullable |                     Default                      
@@ -2655,6 +2680,11 @@ Referenced by:
  priority             | integer                  |           | not null | 0
  invalidate_caches    | boolean                  |           | not null | false
  cancellation_reason  | text                     |           |          | 
+ no_perms             | boolean                  |           | not null | false
+ permissions_added    | integer                  |           | not null | 0
+ permissions_removed  | integer                  |           | not null | 0
+ permissions_found    | integer                  |           | not null | 0
+ code_host_states     | json[]                   |           |          | 
 Indexes:
     "permission_sync_jobs_pkey" PRIMARY KEY, btree (id)
     "permission_sync_jobs_unique" UNIQUE, btree (priority, user_id, repository_id, cancel, process_after) WHERE state = 'queued'::text
@@ -2762,6 +2792,18 @@ Referenced by:
  last_executed    | timestamp with time zone |           |          | 
  latest_result    | timestamp with time zone |           |          | 
  exec_duration_ns | bigint                   |           |          | 
+
+```
+
+# Table "public.redis_key_value"
+```
+  Column   | Type  | Collation | Nullable | Default 
+-----------+-------+-----------+----------+---------
+ namespace | text  |           | not null | 
+ key       | text  |           | not null | 
+ value     | bytea |           | not null | 
+Indexes:
+    "redis_key_value_pkey" PRIMARY KEY, btree (namespace, key) INCLUDE (value)
 
 ```
 
@@ -2878,6 +2920,7 @@ Referenced by:
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "sub_repo_permissions" CONSTRAINT "sub_repo_permissions_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "user_repo_permissions" CONSTRAINT "user_repo_permissions_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "zoekt_repos" CONSTRAINT "zoekt_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 Triggers:
     trig_create_zoekt_repo_on_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_zoekt_repo()
@@ -2982,7 +3025,6 @@ Foreign-key constraints:
  id         | integer                  |           | not null | nextval('roles_id_seq'::regclass)
  name       | text                     |           | not null | 
  created_at | timestamp with time zone |           | not null | now()
- deleted_at | timestamp with time zone |           |          | 
  system     | boolean                  |           | not null | false
 Indexes:
     "roles_pkey" PRIMARY KEY, btree (id)
@@ -3214,6 +3256,51 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.team_members"
+```
+   Column   |           Type           | Collation | Nullable | Default 
+------------+--------------------------+-----------+----------+---------
+ team_id    | integer                  |           | not null | 
+ user_id    | integer                  |           | not null | 
+ created_at | timestamp with time zone |           | not null | now()
+ updated_at | timestamp with time zone |           | not null | now()
+Indexes:
+    "team_members_team_id_user_id_key" PRIMARY KEY, btree (team_id, user_id)
+Foreign-key constraints:
+    "team_members_team_id_fkey" FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
+    "team_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+
+```
+
+# Table "public.teams"
+```
+     Column     |           Type           | Collation | Nullable |              Default              
+----------------+--------------------------+-----------+----------+-----------------------------------
+ id             | integer                  |           | not null | nextval('teams_id_seq'::regclass)
+ name           | citext                   |           | not null | 
+ display_name   | text                     |           |          | 
+ readonly       | boolean                  |           | not null | false
+ parent_team_id | integer                  |           |          | 
+ creator_id     | integer                  |           | not null | 
+ created_at     | timestamp with time zone |           | not null | now()
+ updated_at     | timestamp with time zone |           | not null | now()
+Indexes:
+    "teams_pkey" PRIMARY KEY, btree (id)
+    "teams_name" UNIQUE, btree (name)
+Check constraints:
+    "teams_display_name_max_length" CHECK (char_length(display_name) <= 255)
+    "teams_name_max_length" CHECK (char_length(name::text) <= 255)
+    "teams_name_valid_chars" CHECK (name ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext)
+Foreign-key constraints:
+    "teams_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL
+    "teams_parent_team_id_fkey" FOREIGN KEY (parent_team_id) REFERENCES teams(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "names" CONSTRAINT "names_team_id_fkey" FOREIGN KEY (team_id) REFERENCES teams(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "team_members" CONSTRAINT "team_members_team_id_fkey" FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
+    TABLE "teams" CONSTRAINT "teams_parent_team_id_fkey" FOREIGN KEY (parent_team_id) REFERENCES teams(id) ON DELETE CASCADE
+
+```
+
 # Table "public.temporary_settings"
 ```
    Column   |           Type           | Collation | Nullable |                    Default                     
@@ -3304,6 +3391,8 @@ Indexes:
     "user_external_accounts_user_id" btree (user_id) WHERE deleted_at IS NULL
 Foreign-key constraints:
     "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+Referenced by:
+    TABLE "user_repo_permissions" CONSTRAINT "user_repo_permissions_user_external_account_id_fkey" FOREIGN KEY (user_external_account_id) REFERENCES user_external_accounts(id) ON DELETE CASCADE
 
 ```
 
@@ -3351,6 +3440,32 @@ Indexes:
 Foreign-key constraints:
     "user_public_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     "user_public_repos_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+
+```
+
+# Table "public.user_repo_permissions"
+```
+          Column          |           Type           | Collation | Nullable |                      Default                      
+--------------------------+--------------------------+-----------+----------+---------------------------------------------------
+ id                       | integer                  |           | not null | nextval('user_repo_permissions_id_seq'::regclass)
+ user_id                  | integer                  |           |          | 
+ repo_id                  | integer                  |           | not null | 
+ user_external_account_id | integer                  |           |          | 
+ created_at               | timestamp with time zone |           | not null | now()
+ updated_at               | timestamp with time zone |           | not null | now()
+ source                   | text                     |           | not null | 'sync'::text
+Indexes:
+    "user_repo_permissions_pkey" PRIMARY KEY, btree (id)
+    "user_repo_permissions_perms_unique_idx" UNIQUE, btree (user_id, user_external_account_id, repo_id)
+    "user_repo_permissions_repo_id_idx" btree (repo_id)
+    "user_repo_permissions_source_idx" btree (source)
+    "user_repo_permissions_updated_at_idx" btree (updated_at)
+    "user_repo_permissions_user_external_account_id_idx" btree (user_external_account_id)
+    "user_repo_permissions_user_id_idx" btree (user_id)
+Foreign-key constraints:
+    "user_repo_permissions_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+    "user_repo_permissions_user_external_account_id_fkey" FOREIGN KEY (user_external_account_id) REFERENCES user_external_accounts(id) ON DELETE CASCADE
+    "user_repo_permissions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 
 ```
 
@@ -3459,11 +3574,14 @@ Referenced by:
     TABLE "settings" CONSTRAINT "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "sub_repo_permissions" CONSTRAINT "sub_repo_permissions_users_id_fk" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "survey_responses" CONSTRAINT "survey_responses_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+    TABLE "team_members" CONSTRAINT "team_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "teams" CONSTRAINT "teams_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL
     TABLE "temporary_settings" CONSTRAINT "temporary_settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "user_credentials" CONSTRAINT "user_credentials_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "user_repo_permissions" CONSTRAINT "user_repo_permissions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "user_roles" CONSTRAINT "user_roles_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "webhooks" CONSTRAINT "webhooks_created_by_user_id_fkey" FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL
     TABLE "webhooks" CONSTRAINT "webhooks_updated_by_user_id_fkey" FOREIGN KEY (updated_by_user_id) REFERENCES users(id) ON DELETE SET NULL
@@ -3808,6 +3926,7 @@ Foreign-key constraints:
     u.num_failures,
     u.associated_index_id,
     u.content_type,
+    u.should_reindex,
     u.expired,
     u.last_retention_scan_at,
     r.name AS repository_name,
@@ -3879,6 +3998,7 @@ Foreign-key constraints:
     c.worker_hostname,
     c.ui_publication_state,
     c.last_heartbeat_at,
+    c.external_fork_name,
     c.external_fork_namespace,
     c.detached_at
    FROM (changesets c

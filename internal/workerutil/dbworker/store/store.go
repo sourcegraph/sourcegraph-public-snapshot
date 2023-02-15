@@ -89,7 +89,7 @@ type Store[T workerutil.Record] interface {
 	MaxDurationInQueue(ctx context.Context) (time.Duration, error)
 
 	// Dequeue selects the first queued record matching the given conditions and updates the state to processing. If there
-	// is such a record, it is returned. If there is no such unclaimed record, a nil record and and a nil cancel function
+	// is such a record, it is returned. If there is no such unclaimed record, a nil record and a nil cancel function
 	// will be returned along with a false-valued flag. This method must not be called from within a transaction.
 	//
 	// The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
@@ -373,7 +373,7 @@ WHERE
 
 // MaxDurationInQueue returns the longest duration for which a job associated with this store instance has
 // been in the queued state (including errored records that can be retried in the future). This method returns
-// an duration of zero if there are no jobs ready for processing.
+// a duration of zero if there are no jobs ready for processing.
 //
 // If records backed by this store do not have an initial state of 'queued', or if it is possible to requeue
 // records outside of this package, manual care should be taken to set the queued_at column to the proper time.
@@ -454,7 +454,7 @@ var columnsUpdatedByDequeue = []string{
 }
 
 // Dequeue selects the first queued record matching the given conditions and updates the state to processing. If there
-// is such a record, it is returned. If there is no such unclaimed record, a nil record and and a nil cancel function
+// is such a record, it is returned. If there is no such unclaimed record, a nil record and a nil cancel function
 // will be returned along with a false-valued flag. This method must not be called from within a transaction.
 //
 // A background goroutine that continuously updates the record's last modified time will be started. The returned cancel
@@ -1083,10 +1083,10 @@ type MatchingColumnExpressions struct {
 }
 
 // matchModifiedColumnExpressions returns a slice of columns to which each of the
-// given column expressions refers. Column references that do not refere to a member
+// given column expressions refers. Column references that do not refer to a member
 // of the columnsUpdatedByDequeue slice are ignored. Each match indicates the column
 // name and whether or not the expression is an exact reference or a reference within
-// a more complex expression (arithmetic, function call argument, etc).
+// a more complex expression (arithmetic, function call argument, etc.).
 //
 // The output slice has the same number of elements as the input column expressions
 // and the results are ordered in parallel with the given column expressions.

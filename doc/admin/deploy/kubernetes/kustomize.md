@@ -1,13 +1,13 @@
 # Kustomize
 
 > WARNING: Kustomize can be used **with** Helm to configure Sourcegraph (see [this guidance](helm.md#integrate-kustomize-with-helm-chart)) but this is only recommended as a temporary workaround while Sourcegraph adds to the Helm chart to support previously unsupported customizations.
-> If you have yet to deploy Sourcegraph, it is highly recommended to us Helm for the deployment and configuration ([Using Helm with Sourcegraph](helm.md)).
+> If you have yet to deploy Sourcegraph, it is highly recommended to use Helm for the deployment and configuration ([Using Helm with Sourcegraph](helm.md)).
 
 Sourcegraph supports the use of [Kustomize](https://kustomize.io) to modify and customize our Kubernetes manifests. Kustomize is a template-free way to customize configuration with a simple configuration file.
 
 Some benefits of using Kustomize to generate manifests instead of modifying the base directly include:
 
-- Reduce the odds of encountering a merge conflict when [updating Sourcegraph](update.md) - they allow you to separate your unique changes from the upstream base files Sourcegraph provides.
+- Reduce the odds of encountering a merge conflict when [updating Sourcegraph](update.md)—they allow you to separate your unique changes from the upstream base files Sourcegraph provides.
 - Better enable Sourcegraph to support you if you run into issues, because how your deployment varies from our defaults is encapsulated in a small set of files.
 
 ## Using Kustomize
@@ -73,7 +73,7 @@ kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
 We recommend that you:
 
 - [Update the `./overlay-generate-cluster` script](./operations.md#applying-manifests) to apply the generated manifests from the `generated-cluster` directory with something like the above snippet
-- Commit your overlays changes separately - see our [customization guide](#customizations) for more details.
+- Commit your overlays changes separately—see our [customization guide](#customizations) for more details.
 
 You can now get started with using overlays:
 

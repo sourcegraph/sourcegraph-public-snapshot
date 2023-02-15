@@ -1,16 +1,13 @@
+load("//client/shared/dev:tools.bzl", "module_style_typings")
 load("//dev:defs.bzl", "sass")
 
+module_style_typings(
+    name = "module_style_typings",
+    deps = ["//client/wildcard:sass-breakpoints"],
+)
+
 sass(
-    name = "base-css",
-    srcs = [
-        "src/global-styles/base.scss",
-    ],
-    deps = glob(
-        ["src/global-styles/**/*.scss"],
-        exclude = ["src/global-styles/base.scss"],
-    ) + [
-        "//:node_modules/open-color",
-        "//client/shared:global-style-vars",
-        "//client/wildcard:global-style-vars",
-    ],
+    name = "module_styles",
+    srcs = glob(["src/**/*.module.scss"]),
+    deps = ["//client/wildcard:sass-breakpoints"],
 )

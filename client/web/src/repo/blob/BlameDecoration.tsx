@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo } from 'react'
 
 import classNames from 'classnames'
-import { History } from 'history'
 import { truncate } from 'lodash'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
+import { NavigateFunction } from 'react-router-dom-v5-compat'
 import { BehaviorSubject } from 'rxjs'
 
 import {
@@ -19,11 +19,11 @@ import {
     useObservable,
 } from '@sourcegraph/wildcard'
 
-import { ExternalServiceKind } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 import { replaceRevisionInURL } from '../../util/url'
 import { BlameHunk, BlameHunkData } from '../blame/useBlameHunks'
+import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
 
 import { useBlameRecencyColor } from './BlameRecency'
 
@@ -109,17 +109,29 @@ const usePopover = ({
     return { isOpen, open, close, openWithTimeout, closeWithTimeout }
 }
 
-export const BlameDecoration: React.FunctionComponent<{
+interface BlameDecorationProps {
     line: number // 1-based line number
     blameHunk?: BlameHunk
     firstCommitDate?: BlameHunkData['firstCommitDate']
     externalURLs?: BlameHunkData['externalURLs']
-    history: History
+    navigate: NavigateFunction
     onSelect?: (line: number) => void
     onDeselect?: (line: number) => void
     isLightTheme: boolean
     hideRecency: boolean
-}> = ({ line, blameHunk, history, onSelect, onDeselect, firstCommitDate, externalURLs, isLightTheme, hideRecency }) => {
+}
+
+export const BlameDecoration: React.FunctionComponent<BlameDecorationProps> = ({
+    line,
+    blameHunk,
+    onSelect,
+    onDeselect,
+    firstCommitDate,
+    externalURLs,
+    isLightTheme,
+    hideRecency,
+    navigate,
+}) => {
     const hunkStartLine = blameHunk?.startLine ?? line
     const id = hunkStartLine?.toString() || ''
     const onOpen = useCallback(() => {
@@ -140,7 +152,7 @@ export const BlameDecoration: React.FunctionComponent<{
     )
 
     // Prevent hitting the backend (full page reloads) for links that stay inside the app.
-    const handleParentCommitLinkClick = useMemo(() => createLinkClickHandler(history), [history])
+    const handleParentCommitLinkClick = useMemo(() => createLinkClickHandler(navigate), [navigate])
 
     const recencyColor = useBlameRecencyColor(blameHunk?.displayInfo.commitDate, firstCommitDate, isLightTheme)
 
@@ -239,8 +251,13 @@ export const BlameDecoration: React.FunctionComponent<{
                                     as={SourceCommitIcon}
                                     className={classNames('mr-2 flex-shrink-0', styles.icon)}
                                 />
-
-                                {generateCommitMessageWithLinks(blameHunk, externalURLs)}
+                                <CommitMessageWithLinks
+                                    message={blameHunk.message}
+                                    to={blameHunk.displayInfo.linkURL}
+                                    className={styles.link}
+                                    onClick={logCommitClick}
+                                    externalURLs={externalURLs}
+                                />
                             </div>
                             {blameHunk.commit.parents.length > 0 && (
                                 <>
@@ -268,61 +285,6 @@ export const BlameDecoration: React.FunctionComponent<{
             ) : null}
         </div>
     )
-}
-
-// This regex is supposed to match in the following cases:
-//
-//  - Create search and search-ui packages (#29773)
-//  - Fix #123 for xyz
-//
-// However it is supposed not to mach in:
-//
-// - Something sourcegraph/other-repo#123 or so
-// - 123#123
-const GH_ISSUE_NUMBER_IN_COMMIT = /([^\dA-Za-z](#\d+))/g
-
-const generateCommitMessageWithLinks = (
-    blameHunk: BlameHunk,
-    externalURLs: BlameHunkData['externalURLs']
-): React.ReactNode => {
-    const commitLinkProps = {
-        to: blameHunk.displayInfo.linkURL,
-        target: '_blank',
-        rel: 'noreferrer noopener',
-        className: styles.link,
-        onClick: logCommitClick,
-    }
-
-    const github = externalURLs ? externalURLs.find(url => url.serviceKind === ExternalServiceKind.GITHUB) : null
-    const message = blameHunk.message
-    const matches = [...message.matchAll(GH_ISSUE_NUMBER_IN_COMMIT)]
-    if (github && matches.length > 0) {
-        let remainingMessage = message
-        let skippedCharacters = 0
-        const linkSegments: React.ReactNode[] = []
-
-        for (const match of matches) {
-            if (match.index === undefined) {
-                continue
-            }
-            const issueNumber = match[2]
-            const index = remainingMessage.indexOf(issueNumber, match.index - skippedCharacters)
-            const before = remainingMessage.slice(0, index)
-
-            linkSegments.push(<Link {...commitLinkProps}>{before}</Link>)
-            linkSegments.push(<Link to={`${github.url}/pull/${issueNumber.replace('#', '')}`}>{issueNumber}</Link>)
-
-            const nextIndex = index + issueNumber.length
-            remainingMessage = remainingMessage.slice(index + issueNumber.length)
-            skippedCharacters += nextIndex
-        }
-
-        linkSegments.push(<Link {...commitLinkProps}>{remainingMessage}</Link>)
-
-        return <div>{linkSegments}</div>
-    }
-
-    return <Link {...commitLinkProps}>{blameHunk.message}</Link>
 }
 
 const logCommitClick = (): void => {

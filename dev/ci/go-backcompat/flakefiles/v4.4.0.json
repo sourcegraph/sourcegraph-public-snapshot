@@ -133,5 +133,10 @@
     "path": "internal/database",
     "prefix": "TestPermissionSyncJobs_CreateAndList",
     "reason": "The column boolean column`high_priority` has been replaced by numeric column `priority`. Table not in use for 4.4."
+  },
+  {
+    "path": "internal/adminanalytics",
+    "prefix": "TestMonthlyActiveUsersLast3Month",
+    "reason": "Month subtraction produces inconsistent results, see https://github.com/sourcegraph/sourcegraph/issues/47152"
   }
 ]

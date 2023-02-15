@@ -365,3 +365,11 @@ func (s *Service) GetListTags(ctx context.Context, repo api.RepoName, commitObjs
 
 	return s.gitserverClient.ListTags(ctx, repo, commitObjs...)
 }
+
+func (s *Service) ReindexUploads(ctx context.Context, opts shared.ReindexUploadsOptions) error {
+	return s.store.ReindexUploads(ctx, opts)
+}
+
+func (s *Service) ReindexUploadByID(ctx context.Context, id int) error {
+	return s.store.ReindexUploadByID(ctx, id)
+}

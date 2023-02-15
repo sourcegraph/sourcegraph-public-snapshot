@@ -20,7 +20,7 @@ type PhabricatorStore interface {
 	CreateIfNotExists(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error)
 	CreateOrUpdate(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error)
 	GetByName(context.Context, api.RepoName) (*types.PhabricatorRepo, error)
-	Transact(context.Context) (PhabricatorStore, error)
+	WithTransact(context.Context, func(PhabricatorStore) error) error
 	With(basestore.ShareableStore) PhabricatorStore
 	basestore.ShareableStore
 }
@@ -39,9 +39,10 @@ func (s *phabricatorStore) With(other basestore.ShareableStore) PhabricatorStore
 	return &phabricatorStore{Store: s.Store.With(other)}
 }
 
-func (s *phabricatorStore) Transact(ctx context.Context) (PhabricatorStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	return &phabricatorStore{Store: txBase}, err
+func (s *phabricatorStore) WithTransact(ctx context.Context, f func(PhabricatorStore) error) error {
+	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&phabricatorStore{Store: tx})
+	})
 }
 
 type errPhabricatorRepoNotFound struct {
