@@ -8,12 +8,13 @@ service GitserverService {
   rpc Exec(ExecRequest) returns (stream ExecResponse) {}
 }
 
+// ExecRequest is the request to execute a command in a repository.
 message ExecRequest {
   string repo = 1;
   string ensure_revision = 2;
   repeated string args = 3;
   bytes stdin = 4;
-  bool no_timeout = 5;
+  bool no_timeout = 6;
 }
 
 message ExecResponse {
