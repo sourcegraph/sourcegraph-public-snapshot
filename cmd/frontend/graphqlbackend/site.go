@@ -232,7 +232,10 @@ func (r *siteResolver) EnableLegacyExtensions() bool {
 }
 
 func (r *siteResolver) UpgradeReadiness() (*upgradeReadinessResolver, error) {
-	return &upgradeReadinessResolver{logger: r.logger, db: r.db}, nil
+	return &upgradeReadinessResolver{
+		logger: r.logger.Scoped("upgradeReadiness", ""),
+		db:     r.db,
+	}, nil
 }
 
 type upgradeReadinessResolver struct {
@@ -265,6 +268,7 @@ func (r *upgradeReadinessResolver) SchemaDrift(ctx context.Context) (string, err
 	} else {
 		version = v.GitTagWithPatch(patch)
 	}
+	r.logger.Debug("schema drift", log.String("version", version))
 
 	var drift bytes.Buffer
 	out := output.NewOutput(&drift, output.OutputOpts{Verbose: true})
