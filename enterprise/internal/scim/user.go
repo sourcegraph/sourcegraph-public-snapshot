@@ -13,6 +13,7 @@ import (
 	"github.com/elimity-com/scim/schema"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/scim/filter"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -41,7 +42,7 @@ func NewUserResourceHandler(ctx context.Context, observationCtx *observation.Con
 }
 
 // Create stores given attributes. Returns a resource with the attributes that are stored and a (new) unique identifier.
-func (h *UserResourceHandler) Create(_ *http.Request, attributes scim.ResourceAttributes) (scim.Resource, error) {
+func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAttributes) (scim.Resource, error) {
 	// Get external ID, primary email, username, and display name
 	optionalExternalID := getOptionalExternalID(attributes)
 	primaryEmail := extractPrimaryEmail(attributes)
@@ -68,9 +69,9 @@ func (h *UserResourceHandler) Create(_ *http.Request, attributes scim.ResourceAt
 			ServiceID: "TODO",
 			AccountID: optionalExternalID.Value(),
 		}
-		user, err = h.db.UserExternalAccounts().CreateUserAndSave(h.ctx, newUser, accountSpec, extsvc.AccountData{})
+		user, err = h.db.UserExternalAccounts().CreateUserAndSave(r.Context(), newUser, accountSpec, extsvc.AccountData{})
 	} else {
-		user, err = h.db.Users().Create(h.ctx, newUser)
+		user, err = h.db.Users().Create(r.Context(), newUser)
 	}
 	if err != nil {
 		if dbErr, ok := containsDBError(err); ok {
@@ -335,10 +336,97 @@ func (h *UserResourceHandler) Replace(r *http.Request, id string, attributes sci
 
 // Delete removes the resource with corresponding ID.
 func (h *UserResourceHandler) Delete(r *http.Request, id string) error {
-	// TODO: Add real logic
-	h.observationCtx.Logger.Error("XXXXX Delete", log.String("method", r.Method), log.String("id", id))
+	logger := h.observationCtx.Logger.Scoped("DeleteUsers", "SCIM delete user").With(log.String("user", id))
+
+	// Find user
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		return errors.Wrap(err, "parse user ID")
+	}
+	users, err := h.db.Users().ListForSCIM(r.Context(), &database.UsersListOptions{
+		UserIDs: []int32{int32(idInt)},
+	})
+	if err != nil {
+		return errors.Wrap(err, "list users by IDs")
+	}
+	if len(users) == 0 {
+		logger.Info("requested users to delete do not exist")
+		return nil
+	} else if len(users) > 1 {
+		logger.Error("requested users to delete have duplicate IDs—that should not happen")
+		return errors.New("requested users to delete have duplicate IDs")
+	} else {
+		logger.Debug("attempting to delete requested users")
+	}
+	if users[0].SCIMExternalID != "" {
+		return errors.New("cannot delete user because it has no SCIM external ID set")
+	}
+
+	// Collect username, verified email addresses, and external accounts to be used for revoking user permissions.
+	revokeUserPermissionsArgsList, err := getRevokeUserPermissionArgs(r.Context(), users, h.db)
+	if err != nil {
+		return err
+	}
+
+	// Delete user
+	if err := h.db.Users().HardDelete(r.Context(), int32(idInt)); err != nil {
+		return err
+	}
+
+	// NOTE: Practically, we don't reuse the ID for any new users, and the situation of left-over pending permissions
+	// is possible but highly unlikely. Therefore, there is no need to roll back user deletion even if this step failed.
+	// This call is purely for the purpose of cleanup.
+	if err := h.db.Authz().RevokeUserPermissionsList(r.Context(), revokeUserPermissionsArgsList); err != nil {
+		return err
+	}
 
 	return nil
+}
+
+// getRevokeUserPermissionArgs returns a list of arguments for revoking user permissions.
+func getRevokeUserPermissionArgs(ctx context.Context, users []*types.UserForSCIM, db database.DB) ([]*database.RevokeUserPermissionsArgs, error) {
+	accountsList := make([][]*extsvc.Accounts, len(users))
+	var revokeUserPermissionsArgsList []*database.RevokeUserPermissionsArgs
+	for index, user := range users {
+		var accounts []*extsvc.Accounts
+
+		extAccounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{UserID: user.ID})
+		if err != nil {
+			return nil, errors.Wrap(err, "list external accounts")
+		}
+		for _, acct := range extAccounts {
+			accounts = append(accounts, &extsvc.Accounts{
+				ServiceType: acct.ServiceType,
+				ServiceID:   acct.ServiceID,
+				AccountIDs:  []string{acct.AccountID},
+			})
+		}
+
+		verifiedEmails, err := db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
+			UserID:       user.ID,
+			OnlyVerified: true,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "list verified emails")
+		}
+		emailStrings := make([]string, len(verifiedEmails))
+		for i := range verifiedEmails {
+			emailStrings[i] = verifiedEmails[i].Email
+		}
+		accounts = append(accounts, &extsvc.Accounts{
+			ServiceType: authz.SourcegraphServiceType,
+			ServiceID:   authz.SourcegraphServiceID,
+			AccountIDs:  append(emailStrings, user.Username),
+		})
+
+		accountsList[index] = accounts
+
+		revokeUserPermissionsArgsList = append(revokeUserPermissionsArgsList, &database.RevokeUserPermissionsArgs{
+			UserID:   user.ID,
+			Accounts: accounts,
+		})
+	}
+	return revokeUserPermissionsArgsList, nil
 }
 
 // Patch update one or more attributes of a SCIM resource using a sequence of
