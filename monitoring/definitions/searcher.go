@@ -2,6 +2,7 @@ package definitions
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
@@ -12,6 +13,13 @@ func Searcher() *monitoring.Dashboard {
 	const containerName = "searcher"
 
 	grpcMethodVariable := shared.GRPCMethodVariable(containerName)
+
+	// instanceSelector is a helper for inserting the instance selector.
+	// Should be used on strings created via `` since you can't escape in
+	// those.
+	instanceSelector := func(s string) string {
+		return strings.ReplaceAll(s, "$$INSTANCE$$", "instance=~`${instance:regex}`")
+	}
 
 	return &monitoring.Dashboard{
 		Name:        "searcher",
@@ -38,7 +46,7 @@ func Searcher() *monitoring.Dashboard {
 						{
 							Name:        "traffic",
 							Description: "requests per second by code over 10m",
-							Query:       "sum by (code) (rate(searcher_service_request_total[10m]))",
+							Query:       "sum by (code) (rate(searcher_service_request_total{instance=~`${instance:regex}`}[10m]))",
 							Panel:       monitoring.Panel().LegendFormat("{{code}}"),
 							Owner:       monitoring.ObservableOwnerSearchCore,
 							NoAlert:     true,
@@ -46,7 +54,7 @@ func Searcher() *monitoring.Dashboard {
 						{
 							Name:        "replica_traffic",
 							Description: "requests per second per replica over 10m",
-							Query:       "sum by (instance) (rate(searcher_service_request_total[10m]))",
+							Query:       "sum by (instance) (rate(searcher_service_request_total{instance=~`${instance:regex}`}[10m]))",
 							Warning:     monitoring.Alert().GreaterOrEqual(5),
 							Panel:       monitoring.Panel().LegendFormat("{{instance}}"),
 							Owner:       monitoring.ObservableOwnerSearchCore,
@@ -56,7 +64,7 @@ func Searcher() *monitoring.Dashboard {
 						{
 							Name:        "concurrent_requests",
 							Description: "amount of in-flight unindexed search requests (per instance)",
-							Query:       "sum by (instance) (searcher_service_running)",
+							Query:       "sum by (instance) (searcher_service_running{instance=~`${instance:regex}`})",
 							Panel:       monitoring.Panel().LegendFormat("{{instance}}"),
 							Owner:       monitoring.ObservableOwnerSearchCore,
 							NoAlert:     true,
@@ -64,7 +72,7 @@ func Searcher() *monitoring.Dashboard {
 						{
 							Name:        "unindexed_search_request_errors",
 							Description: "unindexed search request errors every 5m by code",
-							Query:       `sum by (code)(increase(searcher_service_request_total{code!="200",code!="canceled"}[5m])) / ignoring(code) group_left sum(increase(searcher_service_request_total[5m])) * 100`,
+							Query:       instanceSelector(`sum by (code)(increase(searcher_service_request_total{code!="200",code!="canceled",$$INSTANCE$$}[5m])) / ignoring(code) group_left sum(increase(searcher_service_request_total{$$INSTANCE$$}[5m])) * 100`),
 							Warning:     monitoring.Alert().GreaterOrEqual(5).For(5 * time.Minute),
 							Panel:       monitoring.Panel().LegendFormat("{{code}}").Unit(monitoring.Percentage),
 							Owner:       monitoring.ObservableOwnerSearchCore,
@@ -99,7 +107,7 @@ rarely.
 
 For a full list of possible state see
 [recordHybridFinalState](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+f:cmd/searcher+recordHybridFinalState).`,
-							Query:   `sum by (state)(increase(searcher_hybrid_final_state_total[10m]))`,
+							Query:   "sum by (state)(increase(searcher_hybrid_final_state_total{instance=~`${instance:regex}`}[10m]))",
 							Panel:   monitoring.Panel().LegendFormat("{{state}}"),
 							Owner:   monitoring.ObservableOwnerSearchCore,
 							NoAlert: true,
@@ -112,7 +120,7 @@ Expectation is that this graph should mostly be 0. It will trigger if a user
 manages to do a search and the underlying index changes while searching or
 Zoekt goes down. So occasional bursts can be expected, but if this graph is
 regularly above 0 it is a sign for further investigation.`,
-							Query:   `sum by (reason)(increase(searcher_hybrid_retry_total[10m]))`,
+							Query:   "sum by (reason)(increase(searcher_hybrid_retry_total{instance=~`${instance:regex}`}[10m]))",
 							Panel:   monitoring.Panel().LegendFormat("{{reason}}"),
 							Owner:   monitoring.ObservableOwnerSearchCore,
 							NoAlert: true,
