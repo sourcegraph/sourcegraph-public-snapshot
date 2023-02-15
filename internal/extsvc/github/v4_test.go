@@ -851,7 +851,7 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 		IsLocked:         true,
 		ViewerPermission: "ADMIN",
 		Visibility:       "internal",
-		Topics:           []string{"test1", "test2"},
+		RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{{Name: "topic1"}, {Name: "topic2"}}},
 	}
 
 	clojureGrapherRepo := &Repository{
