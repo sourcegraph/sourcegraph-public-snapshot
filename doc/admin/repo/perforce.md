@@ -171,7 +171,7 @@ To enable file-level permissions:
 
 ### Notes about permissions
 
-- Sourcegraph users are mapped to Perforce users based on their verified e-mail addresses.
+- Sourcegraph users are mapped to Perforce users based on their verified email addresses.
 - As long as a user has been granted at least `Read` permissions in Perforce they will be able to view content in Sourcegraph.
 - As a special case, commits in which a user does not have permissions to read any files are hidden. If a user can read a subset of files in a commit, only those files are shown.
 - [The host field from protections are not supported](#known-issues-and-limitations).
