@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
@@ -266,7 +267,6 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
-			rules := NewRulesCache()
 
 			gitserverClient := gitserver.NewMockClient()
 			gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, file string) ([]byte, error) {
@@ -277,7 +277,9 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 				return []byte(content), nil
 			})
 
-			matches, _ := applyCodeOwnershipFiltering(ctx, gitserverClient, &rules, tt.args.includeOwners, tt.args.excludeOwners, tt.args.matches)
+			rules := NewRulesCache(gitserverClient, database.NewMockDB())
+
+			matches, _ := applyCodeOwnershipFiltering(ctx, &rules, tt.args.includeOwners, tt.args.excludeOwners, tt.args.matches)
 
 			tt.want.Equal(t, matches)
 		})
