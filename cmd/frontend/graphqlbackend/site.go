@@ -231,7 +231,12 @@ func (r *siteResolver) EnableLegacyExtensions() bool {
 	return conf.ExperimentalFeatures().EnableLegacyExtensions
 }
 
-func (r *siteResolver) UpgradeReadiness() (*upgradeReadinessResolver, error) {
+func (r *siteResolver) UpgradeReadiness(ctx context.Context) (*upgradeReadinessResolver, error) {
+	// 🚨 SECURITY: Only site admins may view upgrade readiness information.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
 	return &upgradeReadinessResolver{
 		logger: r.logger.Scoped("upgradeReadiness", ""),
 		db:     r.db,
