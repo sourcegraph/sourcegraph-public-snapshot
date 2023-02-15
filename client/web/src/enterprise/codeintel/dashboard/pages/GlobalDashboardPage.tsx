@@ -91,7 +91,7 @@ export const GlobalDashboardPage: FunctionComponent<GlobalDashboardPageProps> = 
 
                                         {indexers.map(indexer => (
                                             <span className="ml-2">
-                                                {indexer.indexer?.name}
+                                                {indexer.indexer?.key}
                                                 <Badge variant="info" className="ml-2" small={true} pill={true}>
                                                     {indexer.count}
                                                 </Badge>

@@ -64,7 +64,7 @@ export const RepoDashboardPage: FunctionComponent<RepoDashboardPageProps> = ({
             ).entries(),
         ].map(
             // Create a sub-mapping from indexer to indexes in each bucket
-            ([root, indexes]) => [root, groupBy(indexes, index => index.indexer?.name || index.inputIndexer)]
+            ([root, indexes]) => [root, groupBy(indexes, index => index.indexer?.key || index.inputIndexer)]
         )
     )
 
@@ -73,7 +73,7 @@ export const RepoDashboardPage: FunctionComponent<RepoDashboardPageProps> = ({
         (data?.availableIndexers || []).flatMap(({ roots, ...rest }) =>
             roots
                 // Filter out suggestions for which there already exists a record
-                .filter(root => (indexesByIndexerNameByRoot.get(sanitize(root))?.get(rest.name) || []).length === 0)
+                .filter(root => (indexesByIndexerNameByRoot.get(sanitize(root))?.get(rest.key) || []).length === 0)
                 .map(root => ({ root, ...rest }))
         ),
         // Then re-group by root
@@ -81,9 +81,9 @@ export const RepoDashboardPage: FunctionComponent<RepoDashboardPageProps> = ({
     )
 
     // Aggregates
-    const namesFromRecords = [...indexesByIndexerNameByRoot.values()].flatMap(im => [...im.keys()])
-    const namesFromInference = [...availableIndexersByRoot.values()].flatMap(is => is.map(i => i.name))
-    const indexerNames = [...new Set([...namesFromRecords, ...namesFromInference])].sort()
+    const keysFromRecords = [...indexesByIndexerNameByRoot.values()].flatMap(im => [...im.keys()])
+    const keysFromInference = [...availableIndexersByRoot.values()].flatMap(is => is.map(i => i.key))
+    const languageKeys = [...new Set([...keysFromRecords, ...keysFromInference])].sort()
 
     // count the number of unique indexes matching the given predicate
     const count = (f: (index: PreciseIndexFields) => boolean): number =>
@@ -135,7 +135,7 @@ export const RepoDashboardPage: FunctionComponent<RepoDashboardPageProps> = ({
                         !filterState.hideSuggestions &&
                         // Show only paths with a matching indexer, if set
                         (filterState.indexers.size === 0 ||
-                            indexers.some(indexer => filterState.indexers.has(indexer.name)))
+                            indexers.some(indexer => filterState.indexers.has(indexer.key)))
                 )
                 .map(([root, _]) => root),
         ])
@@ -242,16 +242,16 @@ export const RepoDashboardPage: FunctionComponent<RepoDashboardPageProps> = ({
                                 />
                             </span>
 
-                            {indexerNames.map(indexer => (
+                            {languageKeys.map(key => (
                                 <span className="float-right ml-2">
                                     <Checkbox
-                                        id={`"indexer-${indexer}"`}
-                                        label={`Show only ${indexer}`}
-                                        checked={filterState.indexers.has(indexer)}
+                                        id={`lang-${key}`}
+                                        label={`Show only ${key}`}
+                                        checked={filterState.indexers.has(key)}
                                         onChange={event =>
                                             setFilterState({
                                                 ...filterState,
-                                                indexers: new Set(event.target.checked ? [indexer] : []),
+                                                indexers: new Set(event.target.checked ? [key] : []),
                                             })
                                         }
                                     />
@@ -278,7 +278,7 @@ export const RepoDashboardPage: FunctionComponent<RepoDashboardPageProps> = ({
                                     const availableIndexersForRoot = (availableIndexersByRoot.get(name) || []).filter(
                                         indexer =>
                                             !filterState.hideSuggestions &&
-                                            (filterState.indexers.size === 0 || filterState.indexers.has(indexer.name))
+                                            (filterState.indexers.size === 0 || filterState.indexers.has(indexer.key))
                                     )
 
                                     // Calculate the number of failed + configurable roots _under_ this key.
@@ -421,7 +421,7 @@ const IndexStateBadge: FunctionComponent<IndexStateBadgeProps> = ({ indexes }) =
                 {collapsedIndexes.map(index => (
                     <IndexStateBadgeIcon index={index} />
                 ))}
-                {collapsedIndexes[0].indexer ? collapsedIndexes[0].indexer.name : collapsedIndexes[0].inputIndexer}
+                {collapsedIndexes[0].indexer ? collapsedIndexes[0].indexer.key : collapsedIndexes[0].inputIndexer}
             </small>
         </Link>
     ) : (
@@ -457,7 +457,7 @@ const ConfigurationStateBadge: FunctionComponent<ConfigurationStateBadgeProps> =
     <small className={classNames('float-right', 'ml-2', styles.hint)}>
         <Icon aria-hidden={true} svgPath={mdiClose} className="text-muted" />{' '}
         <strong>
-            Configure {indexer.name} for {indexer.key}?
+            Configure {indexer.name} {indexer.key}?
         </strong>
     </small>
 )
