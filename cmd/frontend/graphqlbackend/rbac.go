@@ -29,6 +29,7 @@ type RBACResolver interface {
 	// MUTATIONS
 	DeleteRole(ctx context.Context, args *DeleteRoleArgs) (*EmptyResponse, error)
 	CreateRole(ctx context.Context, args *CreateRoleArgs) (RoleResolver, error)
+	AssignPermissionsToRole(ctx context.Context, args AssignPermissionToRoleArgs) (*EmptyResponse, error)
 
 	// QUERIES
 	Roles(ctx context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error)
@@ -58,4 +59,9 @@ type ListPermissionArgs struct {
 
 	Role *graphql.ID
 	User *graphql.ID
+}
+
+type AssignPermissionToRoleArgs struct {
+	Role        graphql.ID
+	Permissions []graphql.ID
 }
