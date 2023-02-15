@@ -76,37 +76,28 @@ func rawArgs(args Args) (rawArgs []string) {
 	return rawArgs
 }
 
-type unmarshaller func([]byte) Result
+type unmarshaller func([]byte) (Result, error)
 
-func ToCombyFileMatchWithChunks(b []byte) Result {
-	var m *FileMatchWithChunks
-	if err := json.Unmarshal(b, &m); err != nil {
-		log15.Warn("ToCombyFileMatchWithChunks() comby error: skipping unmarshaling error", "err", err.Error())
-		return nil
-	}
-	return m
+func ToCombyFileMatchWithChunks(b []byte) (Result, error) {
+	var m FileMatchWithChunks
+	err := json.Unmarshal(b, &m)
+	return &m, errors.Wrap(err, "unmarshal JSON")
 }
 
-func ToFileMatch(b []byte) Result {
-	var m *FileMatch
-	if err := json.Unmarshal(b, &m); err != nil {
-		log15.Warn("toFileMatch() comby error: skipping unmarshaling error", "err", err.Error())
-		return nil
-	}
-	return m
+func ToFileMatch(b []byte) (Result, error) {
+	var m FileMatch
+	err := json.Unmarshal(b, &m)
+	return &m, errors.Wrap(err, "unmarshal JSON")
 }
 
-func toFileReplacement(b []byte) Result {
-	var r *FileReplacement
-	if err := json.Unmarshal(b, &r); err != nil {
-		log15.Warn("toFileReplacement() comby error: skipping unmarshaling error", "err", err.Error())
-		return nil
-	}
-	return r
+func toFileReplacement(b []byte) (Result, error) {
+	var r FileReplacement
+	err := json.Unmarshal(b, &r)
+	return &r, errors.Wrap(err, "unmarshal JSON")
 }
 
-func toOutput(b []byte) Result {
-	return &Output{Value: b}
+func toOutput(b []byte) (Result, error) {
+	return &Output{Value: b}, nil
 }
 
 func Run(ctx context.Context, args Args, unmarshal unmarshaller) (results []Result, err error) {
@@ -133,9 +124,11 @@ func Run(ctx context.Context, args Args, unmarshal unmarshaller) (results []Resu
 		scanner.Buffer(make([]byte, 100), 10*bufio.MaxScanTokenSize)
 		for scanner.Scan() {
 			b := scanner.Bytes()
-			if r := unmarshal(b); r != nil {
-				results = append(results, r)
+			r, err := unmarshal(b)
+			if err != nil {
+				return err
 			}
+			results = append(results, r)
 		}
 
 		return errors.Wrap(scanner.Err(), "scan")

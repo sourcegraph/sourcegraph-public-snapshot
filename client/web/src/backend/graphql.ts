@@ -34,6 +34,8 @@ const getHeaders = (): { [header: string]: string } => {
  * @returns Observable That emits the result or errors if the HTTP request failed
  * @template TResult The type of the query result (import from our auto-generated types).
  * @template TVariables The type of the query input variables (import from our auto-generated types).
+ *
+ * @deprecated Prefer using Apollo-Client instead if possible. The migration is in progress.
  */
 export const requestGraphQL = <TResult, TVariables = object>(
     request: string,
@@ -54,7 +56,7 @@ type WebGraphQlOperationResults = ReturnType<WebGraphQlOperations[keyof WebGraph
  * @param variables A key/value object with variable values
  * @returns Observable That emits the result or errors if the HTTP request failed
  *
- * @deprecated Prefer using `requestGraphQL()` and passing auto-generated query types as type parameters.
+ * @deprecated Prefer using Apollo-Client instead if possible. The migration is in progress.
  */
 export const queryGraphQL = <TResult extends WebGraphQlOperationResults>(
     request: string,
@@ -73,7 +75,7 @@ export const queryGraphQL = <TResult extends WebGraphQlOperationResults>(
  * @param variables A key/value object with variable values
  * @returns Observable That emits the result or errors if the HTTP request failed
  *
- * @deprecated Prefer using `requestGraphQL()` and passing auto-generated query types as type parameters.
+ * @deprecated Prefer using Apollo-Client instead if possible. The migration is in progress.
  */
 export const mutateGraphQL = <TResult extends WebGraphQlOperationResults>(
     request: string,

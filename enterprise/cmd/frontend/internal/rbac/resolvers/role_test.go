@@ -45,7 +45,7 @@ func TestRoleResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = db.RolePermissions().Create(ctx, database.CreateRolePermissionOpts{
+	_, err = db.RolePermissions().Assign(ctx, database.AssignRolePermissionOpts{
 		RoleID:       role.ID,
 		PermissionID: perm.ID,
 	})
@@ -106,7 +106,6 @@ func TestRoleResolver(t *testing.T) {
 		assert.Len(t, errs, 1)
 		assert.Equal(t, errs[0].Message, "must be site admin")
 	})
-
 }
 
 const queryRoleNode = `

@@ -5,7 +5,7 @@ import { debounceTime, switchMap, tap } from 'rxjs/operators'
 
 import { useEventObservable } from '@sourcegraph/wildcard'
 
-import { FieldState } from '../useForm'
+import { FieldMetaState } from '../useForm'
 import { AsyncValidator, getCustomValidationContext, getCustomValidationMessage } from '../validators'
 
 const ASYNC_VALIDATION_DEBOUNCE_TIME = 500
@@ -27,7 +27,7 @@ export interface UseAsyncValidationProps<FieldValue> {
      * Validation state change handler. Used below to update state of consumer
      * according to async logic aspects (mark field as touched, set validity state, etc).
      * */
-    onValidationChange: (state: Partial<FieldState<FieldValue>>) => void
+    onValidationChange: (state: Partial<FieldMetaState<FieldValue>>) => void
 }
 
 /**

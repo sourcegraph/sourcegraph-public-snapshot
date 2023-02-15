@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -267,6 +268,7 @@ func (r *Resolver) InsightAdminBackfillQueue(ctx context.Context, args *graphqlb
 		args:          args,
 		backfillStore: scheduler.NewBackfillStore(r.insightsDB),
 		logger:        r.logger.Scoped("backfillqueue", "insights admin backfill queue resolver"),
+		mainDB:        r.postgresDB,
 	}
 
 	// `STATE` is the default enum value in the graphql schema.
@@ -292,6 +294,7 @@ func (r *Resolver) InsightAdminBackfillQueue(ctx context.Context, args *graphqlb
 
 type adminBackfillQueueConnectionStore struct {
 	backfillStore *scheduler.BackfillStore
+	mainDB        database.DB
 	logger        log.Logger
 	args          *graphqlbackend.AdminBackfillQueueArgs
 }
@@ -322,17 +325,29 @@ func (a *adminBackfillQueueConnectionStore) ComputeNodes(ctx context.Context, ar
 		return nil, err
 	}
 
+	getUser := func(userID *int32) (*graphqlbackend.UserResolver, error) {
+		if userID == nil {
+			return nil, nil
+		}
+		user, err := graphqlbackend.UserByIDInt32(ctx, a.mainDB, *userID)
+		if errcode.IsNotFound(err) {
+			return nil, nil
+		}
+		return user, err
+	}
+
 	resolvers := make([]*graphqlbackend.BackfillQueueItemResolver, 0, len(backfillItems))
 	for _, item := range backfillItems {
 		resolvers = append(resolvers, &graphqlbackend.BackfillQueueItemResolver{
 			BackfillID:   item.ID,
 			InsightTitle: item.InsightTitle,
-			CreatorID:    nil,
+			CreatorID:    item.CreatorID,
 			Label:        item.SeriesLabel,
 			Query:        item.SeriesSearchQuery,
 			BackfillStatus: &backfillStatusResolver{
 				queueItem: item,
 			},
+			GetUserResolver: getUser,
 		})
 	}
 

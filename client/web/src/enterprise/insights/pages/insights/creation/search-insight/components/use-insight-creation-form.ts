@@ -66,9 +66,9 @@ export function useInsightCreationForm(props: UseInsightCreationFormProps): Insi
 
     const form = useForm<CreateInsightFormFields>({
         initialValues,
+        touched,
         onSubmit,
         onChange,
-        touched,
     })
 
     const { repoMode, repoQuery, repositories } = useRepoFields({ formApi: form.formAPI })

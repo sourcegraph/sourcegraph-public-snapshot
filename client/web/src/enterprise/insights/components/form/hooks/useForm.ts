@@ -325,7 +325,9 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
                 // properly updated with aria invalid attributes (it happens when user touched fields
                 // or when user hits submit button)
                 requestAnimationFrame(() => {
-                    formElement.querySelector<HTMLInputElement>(':invalid:not(fieldset) [aria-invalid="true"]')?.focus()
+                    formElement
+                        .querySelector<HTMLInputElement>(':invalid:not(fieldset), [aria-invalid="true"]')
+                        ?.focus()
                 })
             }
         },

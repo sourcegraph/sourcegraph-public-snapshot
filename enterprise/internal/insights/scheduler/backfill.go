@@ -250,6 +250,7 @@ type BackfillQueueItem struct {
 	BackfillCompletedAt *time.Time
 	QueuePosition       *int
 	Errors              *[]string
+	CreatorID           *int32
 }
 
 func (s *BackfillStore) GetBackfillQueueTotalCount(ctx context.Context, args BackfillQueueArgs) (int, error) {
@@ -322,6 +323,7 @@ func scanAllBackfillQueueItems(rows *sql.Rows, queryErr error) (_ []BackfillQueu
 			&temp.BackfillCompletedAt,
 			&temp.QueuePosition,
 			pq.Array(&iteratorErrors),
+			&temp.CreatorID,
 		); err != nil {
 			return []BackfillQueueItem{}, err
 		}
@@ -394,7 +396,8 @@ select isb.id,
        ri.started_at backfill_started_at,
        ri.completed_at backfill_completed_at,
        jq.queue_position,
-       e.error_messages
+       e.error_messages,
+	   (SELECT user_id FROM insight_view_grants WHERE insight_view_id = iv.id ORDER BY id LIMIT 1) creator_id
 from insight_series_backfill isb
     left join repo_iterator ri on isb.repo_iterator_id = ri.id
     left join errors e on isb.repo_iterator_id = e.repo_iterator_id

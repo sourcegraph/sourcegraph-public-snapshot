@@ -442,6 +442,10 @@ func TestConcatRevFilters(t *testing.T) {
 			input: "repo:foo file:bas qux AND (rev:a or rev:b)",
 			want:  `("repo:foo@a" "file:bas" "qux") OR ("repo:foo@b" "file:bas" "qux")`,
 		},
+		{
+			input: "repo:foo rev:4.2.1 repo:has.file(content:fix)",
+			want:  `("repo:foo@4.2.1" "repo:has.file(content:fix)")`,
+		},
 	}
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
