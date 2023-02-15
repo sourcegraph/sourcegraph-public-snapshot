@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -388,6 +389,10 @@ func (s *store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		return err
 	}
 
+	if err = s.updateKVPs(ctx, r.ID, nil, r.Metadata); err != nil {
+		return err
+	}
+
 	return s.Exec(ctx, sqlf.Sprintf(upsertExternalServiceRepoQuery,
 		svc.ID,
 		r.ID,
@@ -547,7 +552,16 @@ func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		defer func() { err = s.Done(err) }()
 	}
 
+	oldRepo, err := s.RepoStore().Get(ctx, r.ID)
+	if err != nil {
+		return err
+	}
+
 	if err = s.QueryRow(ctx, q).Scan(&r.UpdatedAt); err != nil {
+		return err
+	}
+
+	if err := s.updateKVPs(ctx, r.ID, oldRepo.Metadata, r.Metadata); err != nil {
 		return err
 	}
 
@@ -556,6 +570,63 @@ func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		r.ID,
 		src.CloneURL,
 	))
+}
+
+func (s *store) updateKVPs(ctx context.Context, id api.RepoID, oldMetadata, newMetadata any) error {
+	if !s.InTransaction() {
+		return errors.New("updateKVPs is intended to be run inside a transaction")
+	}
+
+	var oldTopics, newTopics []string
+	if oldGithubMetadata, ok := oldMetadata.(*github.Repository); ok {
+		oldTopics = oldGithubMetadata.Topics
+	}
+	if newGithubMetadata, ok := newMetadata.(*github.Repository); ok {
+		newTopics = newGithubMetadata.Topics
+	}
+	added, removed := splitTopics(oldTopics, newTopics)
+
+	err := s.Exec(ctx, sqlf.Sprintf(`
+		INSERT INTO repo_kvps (repo_id, key)
+		SELECT %s, UNNEST(%s::text[])
+		ON CONFLICT DO NOTHING`,
+		id,
+		added,
+	))
+	if err != nil {
+		return err
+	}
+
+	err = s.Exec(ctx, sqlf.Sprintf(`
+		DELETE FROM repo_kvps
+		WHERE repo_id = %s AND key IN (SELECT UNNEST(%s::text[]))`,
+		id,
+		removed,
+	))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func splitTopics(oldTopics, newTopics []string) (added, removed []string) {
+	s := make(map[string]struct{}, len(oldTopics))
+	for _, oldTopic := range oldTopics {
+		s[oldTopic] = struct{}{}
+	}
+	for _, newTopic := range newTopics {
+		_, ok := s[newTopic]
+		if ok {
+			delete(s, newTopic)
+		} else {
+			added = append(added, newTopic)
+		}
+	}
+	for removedTopic := range s {
+		removed = append(removed, removedTopic)
+	}
+	return added, removed
 }
 
 const updateRepoQuery = `
