@@ -114,6 +114,7 @@ func (r *Resolver) InsightViewDebug(ctx context.Context, args graphqlbackend.Ins
 	}
 	return resolver, nil
 }
+
 func (r *Resolver) RetryInsightSeriesBackfill(ctx context.Context, args *graphqlbackend.BackfillArgs) (*graphqlbackend.BackfillQueueItemResolver, error) {
 	actr := actor.FromContext(ctx)
 	if err := auth.CheckUserIsSiteAdmin(ctx, r.postgresDB, actr.UID); err != nil {
