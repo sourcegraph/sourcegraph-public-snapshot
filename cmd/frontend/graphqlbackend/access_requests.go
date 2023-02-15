@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+// TODO: add tests
 func MarshalAccessRequestID(id int32) graphql.ID { return relay.MarshalID("AccessRequest", id) }
 
 func UnmarshalAccessRequestID(id graphql.ID) (userID int32, err error) {

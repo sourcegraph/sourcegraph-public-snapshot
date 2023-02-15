@@ -68,6 +68,7 @@ const DEFAULT_FILTERS = {
     limit: '25',
 }
 
+// TODO: add tests
 export const AccessRequestsPage: React.FunctionComponent = () => {
     useEffect(() => {
         eventLogger.logPageView('AccessRequestsPage')

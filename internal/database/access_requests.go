@@ -106,6 +106,7 @@ func toAccessRequestsField(orderBy string) (string, error) {
 	}
 }
 
+// TODO: add tests
 // AccessRequestStore provides access to the `access_requests` table.
 //
 // For a detailed overview of the schema, see schema.md.

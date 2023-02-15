@@ -18,6 +18,7 @@ import { getReturnTo } from './SignInSignUpCommon'
 
 import RequestAccessSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 
+// TODO: add tests
 interface RequestAccessFormProps {
     onSuccess: () => void
     onError: (error: any) => void
