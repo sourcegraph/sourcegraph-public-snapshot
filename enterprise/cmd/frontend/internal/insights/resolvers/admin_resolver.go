@@ -130,7 +130,7 @@ func (r *Resolver) RetryInsightSeriesBackfill(ctx context.Context, args *graphql
 		return nil, errors.Wrap(err, "unable to load backfill")
 	}
 	if !backfill.IsTerminalState() {
-		return nil, errors.Wrap(err, "only backfills in terminal states can be retried")
+		return nil, errors.Newf("only backfills that have finished can can be retried [current state %v]", backfill.State)
 	}
 	err = backfill.RetryBackfillAttempt(ctx, backfillStore)
 	if err != nil {
@@ -172,7 +172,7 @@ func (r *Resolver) MoveInsightSeriesBackfillToFrontOfQueue(ctx context.Context, 
 		return nil, errors.Wrap(err, "unable to load backfill")
 	}
 	if backfill.State != scheduler.BackfillStateProcessing {
-		return nil, errors.Wrapf(err, "only backfills ready for processing can have priority changed [current state %v]", backfill.State)
+		return nil, errors.Newf("only backfills ready for processing can have priority changed [current state %v]", backfill.State)
 	}
 	err = backfill.SetHighestPriority(ctx, backfillStore)
 	if err != nil {
@@ -213,7 +213,7 @@ func (r *Resolver) MoveInsightSeriesBackfillToBackOfQueue(ctx context.Context, a
 		return nil, errors.Wrap(err, "unable to load backfill")
 	}
 	if backfill.State != scheduler.BackfillStateProcessing {
-		return nil, errors.Wrap(err, "only backfills ready for precessing can have priority changed")
+		return nil, errors.Newf("only backfills ready for processing can have priority changed [current state %v]", backfill.State)
 	}
 	err = backfill.SetLowestPriority(ctx, backfillStore)
 	if err != nil {
