@@ -298,7 +298,7 @@ func TestRolePermissionGetByPermissionID(t *testing.T) {
 	})
 }
 
-func TestRolePermissionDelete(t *testing.T) {
+func TestRolePermissionRevoke(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()

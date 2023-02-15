@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
@@ -242,6 +243,79 @@ query ($node: ID!) {
 				}
 			}
 		}
+	}
+}
+`
+
+func TestAssignPermissionsToRole(t *testing.T) {
+	logger := logtest.Scoped(t)
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	admin := createTestUser(t, db, true)
+	user := createTestUser(t, db, false)
+
+	adminCtx := actor.WithActor(ctx, actor.FromUser(admin.ID))
+	userCtx := actor.WithActor(ctx, actor.FromUser(user.ID))
+
+	s, err := newSchema(db, &Resolver{logger: logger, db: db})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	r, err := db.Roles().Create(ctx, "TEST-ROLE", false)
+	require.NoError(t, err)
+
+	ps, err := db.Permissions().BulkCreate(ctx, []database.CreatePermissionOpts{
+		{
+			Namespace: types.BatchChangesNamespace,
+			Action:    "READ",
+		},
+		{
+			Namespace: types.BatchChangesNamespace,
+			Action:    "WRITE",
+		},
+		{
+			Namespace: types.BatchChangesNamespace,
+			Action:    "EXECUTE",
+		},
+	})
+	require.NoError(t, err)
+
+	var permissionIDs []graphql.ID
+	for _, p := range ps {
+		permissionIDs = append(permissionIDs, marshalPermissionID(p.ID))
+	}
+
+	roleID := marshalRoleID(r.ID)
+
+	t.Run("as non-site-admin", func(t *testing.T) {
+		input := map[string]any{"role": roleID, "permissions": permissionIDs}
+		var response struct{ Permissions apitest.EmptyResponse }
+		errs := apitest.Exec(userCtx, t, s, input, &response, queryPermissionConnection)
+
+		require.Len(t, errs, 1)
+		require.ErrorContains(t, errs[0], "must be site admin")
+	})
+
+	t.Run("as site-admin", func(t *testing.T) {
+		input := map[string]any{"role": roleID, "permissions": permissionIDs}
+		var response struct{ Permissions apitest.EmptyResponse }
+		errs := apitest.Exec(adminCtx, t, s, input, &response, queryPermissionConnection)
+
+		require.Len(t, errs, 0)
+	})
+}
+
+const assignPermissionsToRoleQuery = `
+mutation($role: ID!, $permissions: ID!) {
+	assignPermissionsToRole(role: $role, permissions: $permissions) {
+		alwaysNil
 	}
 }
 `
