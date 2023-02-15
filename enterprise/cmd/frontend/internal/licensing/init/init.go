@@ -85,6 +85,19 @@ func Init(
 			}
 		}
 
+		// returning this only makes sense on dotcom
+		if envvar.SourcegraphDotComMode() {
+			for _, plan := range licensing.AllPlans {
+				licenseInfo.KnownLicenseTags = append(licenseInfo.KnownLicenseTags, fmt.Sprintf("plan:%s", plan))
+			}
+			for _, feature := range licensing.AllFeatures {
+				licenseInfo.KnownLicenseTags = append(licenseInfo.KnownLicenseTags, feature.FeatureName())
+			}
+			for _, tag := range licensing.MiscTags {
+				licenseInfo.KnownLicenseTags = append(licenseInfo.KnownLicenseTags, tag)
+			}
+		}
+
 		return licenseInfo
 	}
 

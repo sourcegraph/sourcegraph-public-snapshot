@@ -215,6 +215,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                             <CardBody>
                                 <SiteAdminGenerateProductLicenseForSubscriptionForm
                                     subscriptionID={productSubscription.id}
+                                    subscriptionAccount={productSubscription.account.username}
                                     onGenerate={onLicenseUpdate}
                                 />
                             </CardBody>

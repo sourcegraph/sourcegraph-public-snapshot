@@ -23,7 +23,7 @@ const (
 	PlanFree0 Plan = "free-0"
 )
 
-var allPlans = []Plan{
+var AllPlans = []Plan{
 	PlanOldEnterpriseStarter,
 	PlanOldEnterprise,
 	PlanTeam0,
@@ -113,6 +113,20 @@ func (f *FeatureBatchChanges) Check(info *Info) error {
 	}
 
 	return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", f.FeatureName()))
+}
+
+var AllFeatures = []Feature{
+	FeatureSSO,
+	FeatureACLs,
+	FeatureExplicitPermissionsAPI,
+	FeatureExtensionRegistry,
+	FeatureRemoteExtensionsAllowDisallow,
+	FeatureBranding,
+	FeatureCampaigns,
+	FeatureMonitoring,
+	FeatureBackupAndRestore,
+	FeatureCodeInsights,
+	&FeatureBatchChanges{},
 }
 
 // planFeatures defines the features that are enabled for each plan.

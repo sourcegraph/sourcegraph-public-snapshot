@@ -2,63 +2,34 @@ import React from 'react'
 
 import { Alert, Badge, BadgeVariantType, Tooltip } from '@sourcegraph/wildcard'
 
-// TODO: instead of hardcoding, generate this list based on /enterprise/internal/licensing/data.go
-const PLAN_TAGS = new Set<string>([
-    'starter',
-    'plan:old-starter-0',
-    'plan:old-enterprise-0',
-    'plan:team-0',
-    'plan:enterprise-0',
-    'plan:business-0',
-    'plan:enterprise-1',
-    'plan:enterprise-extension',
-    'plan:free-0',
-])
-
-const FEATURE_TAGS = new Set<string>([
-    'sso',
-    'acls',
-    'explicit-permissions-api',
-    'private-extension-registry',
-    'remote-extensions-allow-disallow',
-    'branding',
-    'campaigns',
-    'monitoring',
-    'backup-and-restore',
-    'code-insights',
-    'batch-changes',
-])
-
 const getBadgeVariant = (tag: string): BadgeVariantType => {
-    if (PLAN_TAGS.has(tag)) {
+    if (isUnknownTag(tag)) {
+        return 'danger'
+    }
+    if (tag.startsWith('plan:')) {
         return 'primary'
     }
-    if (FEATURE_TAGS.has(tag)) {
-        return 'secondary'
-    }
-    if (tag.startsWith('customer')) {
+    if (tag.startsWith('customer:')) {
         return 'success'
     }
-
-    return 'danger'
+    return 'secondary'
 }
 
 const getTagDescription = (tag: string): string => {
-    if (PLAN_TAGS.has(tag)) {
+    if (isUnknownTag(tag)) {
+        return 'Uknown tag. Please check if it is correct.'
+    }
+    if (tag.startsWith('plan:')) {
         return 'Subscription plan'
     }
-    if (FEATURE_TAGS.has(tag)) {
-        return 'Plan features'
+    if (tag.startsWith('customer:')) {
+        return 'Customer name'
     }
-    if (tag.startsWith('customer')) {
-        return 'Customer tag'
-    }
-
-    return 'Uknown tag. Please check if it is correct.'
+    return 'Plan features'
 }
 
 export const isUnknownTag = (tag: string): boolean =>
-    !PLAN_TAGS.has(tag) && !FEATURE_TAGS.has(tag) && !tag.startsWith('customer:')
+    !window.context.licenseInfo?.knownLicenseTags?.includes(tag) && !tag.startsWith('customer:')
 
 export const hasUnknownTags = (tags: string[]): boolean => tags.some(isUnknownTag)
 
