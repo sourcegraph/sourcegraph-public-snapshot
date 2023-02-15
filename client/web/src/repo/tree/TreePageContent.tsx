@@ -477,11 +477,17 @@ const Commits: React.FC<CommitsProps> = ({ repo, revision, filePath, tree }) => 
                     <>
                         <small className="text-muted">
                             <span>
-                                Showing latest {connection.nodes.length}
-                                {pluralize(
-                                    'commit of the past year',
-                                    connection.nodes.length,
-                                    'commits of the past year'
+                                {connection.nodes.length > 0 ? (
+                                    <>
+                                        Showing last {connection.nodes.length}{' '}
+                                        {pluralize(
+                                            'commit of the past year',
+                                            connection.nodes.length,
+                                            'commits of the past year'
+                                        )}
+                                    </>
+                                ) : (
+                                    <>No commits in the past year</>
                                 )}
                             </span>
                         </small>
