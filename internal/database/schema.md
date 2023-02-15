@@ -2279,6 +2279,7 @@ Foreign-key constraints:
  created_at  | timestamp with time zone |           | not null | now()
 Indexes:
     "namespace_permissions_pkey" PRIMARY KEY, btree (id)
+    "unique_resource_permission" UNIQUE, btree (namespace, resource_id, user_id)
 Check constraints:
     "namespace_not_blank" CHECK (namespace <> ''::text)
 Foreign-key constraints:

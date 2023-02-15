@@ -5058,6 +5058,8 @@ CREATE INDEX sub_repo_perms_user_id ON sub_repo_permissions USING btree (user_id
 
 CREATE UNIQUE INDEX teams_name ON teams USING btree (name);
 
+CREATE UNIQUE INDEX unique_resource_permission ON namespace_permissions USING btree (namespace, resource_id, user_id);
+
 CREATE INDEX user_credentials_credential_idx ON user_credentials USING btree (((encryption_key_id = ANY (ARRAY[''::text, 'previously-migrated'::text]))));
 
 CREATE UNIQUE INDEX user_emails_user_id_is_primary_idx ON user_emails USING btree (user_id, is_primary) WHERE (is_primary = true);
