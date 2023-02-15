@@ -28,14 +28,15 @@ type OwnService interface {
 	ResolveOwnersWithType(context.Context, []*codeownerspb.Owner) ([]codeowners.ResolvedOwner, error)
 }
 
-var _ OwnService = ownService{}
+var _ OwnService = &ownService{}
 
 func NewOwnService(g gitserver.Client, db database.DB) OwnService {
-	return ownService{
+	return &ownService{
 		gitserverClient: g,
 		userStore:       db.Users(),
 		teamStore:       db.Teams(),
 		ownerCache:      make(map[string]codeowners.ResolvedOwner),
+		mu:              sync.Mutex{},
 	}
 }
 

@@ -23,7 +23,7 @@ const (
 )
 
 type Person struct {
-	User *types.User // todo(leo): extend to hold email.
+	User *types.User // todo(leo): extend to hold email using UserEmailStore.
 
 	OwnerIdentifier string // Handle OR email from the proto.
 }
