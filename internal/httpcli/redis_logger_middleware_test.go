@@ -82,6 +82,9 @@ func TestRedisLoggerMiddleware(t *testing.T) {
 				t.Fatalf("have error: %q\nwant error: %q", have, want)
 			}
 
+			// Wait for two seconds to make sure the async logging gets done
+			time.Sleep(2 * time.Second)
+
 			// Check logged request
 			logged, err := GetOutboundRequestLogItems(context.Background(), "")
 			if err != nil {
