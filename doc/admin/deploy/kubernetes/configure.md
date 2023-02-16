@@ -61,7 +61,7 @@ By default, all Sourcegraph services are deployed in a non-root and non-privileg
 
 ### Privileged
 
-To deploy a High Availability (HA) configured Sourcegraph instance to an RBAC-enabled cluster, you can include the [privileged](#privileged) and [monitoring](#monitoring-stack) components in your components list. 
+To deploy a High Availability (HA) configured Sourcegraph instance to an RBAC-enabled cluster, you can include the [privileged](#privileged) and [monitoring](#monitoring-stack) components in your component list. 
 
 This will enable Kubernetes service discovery for the frontend and also provide privileged access and run all Sourcegraph services as the root user by adding [cadvisor component](#deploy-cadvisor) in the list.
 
@@ -80,11 +80,11 @@ components:
 - ../../components/monitoring/cadvisor
 ```
 
-> NOTE: When including the [privileged component](#privileged), please remove the [enable/service-discovery component](#service-discovery) to avoid duplication of configurations.
+> NOTE: When including the [privileged component](#privileged), please remove the [enable/service-discovery component](#service-discovery) to avoid duplication.
 
 ### Service discovery
 
-RBAC must be enabled in your cluster for frontend to communicate with other services through the Kubernetes API. To enable service discovery for the frontend service, Include the following component as the **last** component in your `kustomization.yaml` file:
+RBAC must be enabled in your cluster for the frontend to communicate with other services through the Kubernetes API. To enable service discovery for the frontend service, Include the following component as the **last** component in your `kustomization.yaml` file:
 
 ```yaml
 components:
@@ -108,7 +108,7 @@ components:
 - ../../components/monitoring
 ```
 
-If RBAC is enabled in your cluster, it is highly recommended to deploy cAdvisor with privileged access to your cluster. With privileged access, cAdvisor will have the necessary permissions to gather and display detailed information about the resources used by your Sourcegraph instance. It's a considered as the key component for monitoring and troubleshooting. See [Deploy cAdvisor](#deploy-cadvisor) below for more information.
+If RBAC is enabled in your cluster, it is highly recommended to deploy cAdvisor with privileged access to your cluster. With privileged access, cAdvisor will have the necessary permissions to gather and display detailed information about the resources used by your Sourcegraph instance. It's considered a key component for monitoring and troubleshooting. See [Deploy cAdvisor](#deploy-cadvisor) below for more information.
 
 ### Deploy cAdvisor
 
