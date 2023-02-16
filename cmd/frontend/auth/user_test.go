@@ -300,7 +300,7 @@ func TestGetAndSaveUser(t *testing.T) {
 			innerCases: []innerCase{{
 				op:         getNonExistentUserCreateIfNotExistOp,
 				expSafeErr: "Unable to create a new user account due to a unexpected error. Ask a site admin for help.",
-				expErr:     unexpectedErr,
+				expErr:     errors.Wrap(unexpectedErr, `username: "nonexistent", email: "nonexistent@example.com"`),
 			}},
 		},
 		{
