@@ -1,6 +1,7 @@
 import { readFileSync, rmdirSync, writeFileSync } from 'fs'
 import * as path from 'path'
 
+import chalk from 'chalk'
 import commandExists from 'command-exists'
 import { addMinutes } from 'date-fns'
 import execa from 'execa'
@@ -54,7 +55,6 @@ import {
     updateUpgradeGuides,
     verifyWithInput,
 } from './util'
-import chalk from 'chalk'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
@@ -946,10 +946,10 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         description:
             'Bake stitched migration files into the build for a release version. Only required for minor / major versions.',
         run: async config => {
-            const { upcoming } = await releaseVersions(config)
+            const release = await getActiveRelease(config)
 
-            const releaseBranch = `${upcoming.major}.${upcoming.minor}`
-            const version = upcoming.version
+            const releaseBranch = release.branch
+            const version = release.version.version
             ensureReleaseBranchUpToDate(releaseBranch)
 
             const prConfig = {
