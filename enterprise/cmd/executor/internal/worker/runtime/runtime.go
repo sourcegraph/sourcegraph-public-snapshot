@@ -2,11 +2,11 @@ package runtime
 
 import (
 	"context"
-	"sync"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -21,49 +21,36 @@ type Runtime interface {
 	// NewRunner creates a runner that will execute the steps.
 	NewRunner(ctx context.Context, logger command.Logger, vmName string, path string, job types.Job) (command.Runner, error)
 	// GetCommands builds and returns the commands that the runner will execute.
-	GetCommands(ws workspace.Workspace, steps []types.DockerStep) ([]command.CommandSpec, error)
+	GetCommands(ws workspace.Workspace, steps []types.DockerStep) ([]command.Spec, error)
 }
 
-var runtime Runtime
-var once = &sync.Once{}
-
-// SetupRuntime creates the runtime based on the configured environment.
-func SetupRuntime(
+// NewRuntime creates the runtime based on the configured environment.
+func NewRuntime(
 	logger log.Logger,
 	ops *command.Operations,
 	filesStore workspace.FilesStore,
 	commandOpts command.Options,
 	cloneOpts workspace.CloneOptions,
-) (setupErr error) {
-	once.Do(func() {
-		// Docker
-		notFoundDockerTools, err := validateDockerRuntime()
-		if err != nil {
-			logger.Warn("failed to determine if docker tools are configured", log.Error(err))
-		} else if len(notFoundDockerTools) > 0 {
-			logger.Warn("runtime 'docker' is not supported: missing required tools", log.Strings("dockerTools", notFoundDockerTools))
+	runner util.CmdRunner,
+) (Runtime, error) {
+	err := util.ValidateDockerTools(runner)
+	if err != nil {
+		var errMissingTools util.ErrMissingTools
+		if errors.As(err, &errMissingTools) {
+			logger.Warn("runtime 'docker' is not supported: missing required tools", log.Strings("dockerTools", errMissingTools.Tools))
 		} else {
-			logger.Info("runtime 'docker' is supported")
-			runtime = &dockerRuntime{
-				operations:   ops,
-				filesStore:   filesStore,
-				commandOpts:  commandOpts,
-				cloneOptions: cloneOpts,
-			}
+			logger.Warn("failed to determine if docker tools are configured", log.Error(err))
 		}
-		if runtime == nil {
-			setupErr = ErrNoRuntime
-		}
-	})
-	return setupErr
-}
-
-// GetRuntime returns the runtime that has been configured.
-func GetRuntime() (Runtime, error) {
-	if runtime == nil {
-		return nil, ErrNoRuntime
+	} else {
+		logger.Info("runtime 'docker' is supported")
+		return &dockerRuntime{
+			operations:   ops,
+			filesStore:   filesStore,
+			commandOpts:  commandOpts,
+			cloneOptions: cloneOpts,
+		}, nil
 	}
-	return runtime, nil
+	return nil, ErrNoRuntime
 }
 
 // ErrNoRuntime is the error when there is no runtime configured.
