@@ -1,4 +1,4 @@
-## How to regenerate a patch 
+## How to regenerate a patch
 
 In the eventuality of having to regenerate this patch if we bump the package version, you can generate a new patch with the following:
 
@@ -14,7 +14,7 @@ In the eventuality of having to regenerate this patch if we bump the package ver
     # Add Gazelle directive to disable proto compilation
     echo '# gazelle:proto disable_global' >> BUILD
 
-    # Run Gazelle update-repos command to update repositories.bzl with 
+    # Run Gazelle update-repos command to update repositories.bzl with
     # disable_global flag
     bazel run gazelle -- update-repos \
         -from_file=go.mod \
