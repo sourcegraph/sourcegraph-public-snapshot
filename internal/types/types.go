@@ -809,7 +809,6 @@ type User struct {
 type UserForSCIM struct {
 	User
 	Emails         []string
-	SCIMServiceID  string
 	SCIMExternalID string
 }
 

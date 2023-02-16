@@ -1196,7 +1196,7 @@ SELECT u.id,
        u.tos_accepted,
        u.searchable,
        ARRAY(SELECT email FROM user_emails WHERE user_id = u.id AND verified_at IS NOT NULL) AS emails,
-       (SELECT service_id, account_id FROM user_external_accounts WHERE user_id=u.id AND service_type = 'scim') AS scim_external_id
+       (SELECT account_id FROM user_external_accounts WHERE user_id=u.id AND service_type = 'scim') AS scim_external_id
   FROM users u %s`
 
 // getBySQLForSCIM returns users matching the SQL query, along with their email addresses and SCIM ExternalID.
@@ -1210,8 +1210,8 @@ func (u *userStore) getBySQLForSCIM(ctx context.Context, query *sqlf.Query) ([]*
 // scanUserForSCIM scans a UserForSCIM from the return of a *sql.Rows.
 func scanUserForSCIM(s dbutil.Scanner) (*types.UserForSCIM, error) {
 	var u types.UserForSCIM
-	var displayName, avatarURL, scimServiceID, scimExternalID sql.NullString
-	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, pq.Array(&u.Emails), &scimServiceID, &scimExternalID)
+	var displayName, avatarURL, scimExternalID sql.NullString
+	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, pq.Array(&u.Emails), &scimExternalID)
 	if err != nil {
 		return nil, err
 	}
