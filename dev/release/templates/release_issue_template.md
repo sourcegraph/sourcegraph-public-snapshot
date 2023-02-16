@@ -6,9 +6,8 @@ Arguments:
 - $MINOR
 - $PATCH
 - $RELEASE_DATE
-- $ONE_WORKING_WEEK_BEFORE_RELEASE
-- $THREE_WORKING_DAY_BEFORE_RELEASE
-- $ONE_WORKING_DAY_AFTER_RELEASE
+- $SECURITY_REVIEW_DATE
+- $CODE_FREEZE_DATE
 -->
 
 # $MAJOR.$MINOR release
@@ -22,11 +21,11 @@ This release is scheduled for **$RELEASE_DATE**.
 - [ ] Ensure release configuration in [`dev/release/release-config.jsonc`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/release/release-config.jsonc) on `main` is up to date with the parameters for the current release.
 - [ ] Ensure you have the latest version of the release tooling and configuration by checking out and updating `sourcegraph@main`.
 
-## Security review (one week before release - $ONE_WORKING_WEEK_BEFORE_RELEASE)
+## Security review (one week before release - $SECURITY_REVIEW_DATE)
 
 - [ ] Create a [new issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose) using the **Security release approval** template and post a message in the [#security](https://sourcegraph.slack.com/archives/C1JH2BEHZ) channel tagging `@security-support`.
 
-## Cut release (three days before release - $THREE_WORKING_DAY_BEFORE_RELEASE)
+## Cut release (three days before release - $CODE_FREEZE_DATE)
 
 Perform these steps three days before the release date to generate a stable release candidate.
 

@@ -11,6 +11,7 @@ import * as semver from 'semver'
 import {SemVer} from 'semver'
 
 import {cacheFolder, changelogURL, formatDate, getContainerRegistryCredential, readLine, timezoneLink} from './util'
+import {ReleaseDates} from "./config";
 
 const mkdtemp = promisify(original_mkdtemp)
 let githubPAT: string
@@ -90,21 +91,17 @@ interface IssueTemplateArguments {
      */
     version: semver.SemVer
     /**
-     * Available as `$ONE_WORKING_WEEK_BEFORE_RELEASE`
+     * Available as `$SECURITY_REVIEW_DATE`
      */
-    oneWorkingWeekBeforeRelease: Date
+    securityReviewDate: Date
     /**
-     * Available as `$ONE_WORKING_DAY_BEFORE_RELEASE`
+     * Available as `$CODE_FREEZE_DATE`
      */
-    threeWorkingDaysBeforeRelease: Date
+    codeFreezeDate: Date
     /**
      * Available as `$RELEASE_DATE`
      */
     releaseDate: Date
-    /**
-     * Available as `$ONE_WORKING_DAY_AFTER_RELEASE`
-     */
-    oneWorkingDayAfterRelease: Date
 }
 
 /**
@@ -147,10 +144,9 @@ async function execTemplate(
     template: IssueTemplate,
     {
         version,
-        oneWorkingWeekBeforeRelease,
-        threeWorkingDaysBeforeRelease,
+        securityReviewDate,
+        codeFreezeDate,
         releaseDate,
-        oneWorkingDayAfterRelease,
     }: IssueTemplateArguments
 ): Promise<string> {
     console.log(`Preparing issue from ${JSON.stringify(template)}`)
@@ -161,18 +157,14 @@ async function execTemplate(
         .replace(/\$MINOR/g, version.minor.toString())
         .replace(/\$PATCH/g, version.patch.toString())
         .replace(
-            /\$ONE_WORKING_WEEK_BEFORE_RELEASE/g,
-            dateMarkdown(oneWorkingWeekBeforeRelease, `One working week before ${name} release`)
+            /\$SECURITY_REVIEW_DATE/g,
+            dateMarkdown(securityReviewDate, `One working week before ${name} release`)
         )
         .replace(
-            /\$THREE_WORKING_DAY_BEFORE_RELEASE/g,
-            dateMarkdown(threeWorkingDaysBeforeRelease, `Three working days before ${name} release`)
+            /\$CODE_FREEZE_DATE/g,
+            dateMarkdown(codeFreezeDate, `Three working days before ${name} release`)
         )
         .replace(/\$RELEASE_DATE/g, dateMarkdown(releaseDate, `${name} release date`))
-        .replace(
-            /\$ONE_WORKING_DAY_AFTER_RELEASE/g,
-            dateMarkdown(oneWorkingDayAfterRelease, `One working day after ${name} release`)
-        )
 }
 
 interface MaybeIssue {
@@ -191,17 +183,15 @@ export async function ensureTrackingIssues({
     version,
     assignees,
     releaseDate,
-    oneWorkingWeekBeforeRelease,
-    threeWorkingDaysBeforeRelease,
-    oneWorkingDayAfterRelease,
+    securityReviewDate,
+    codeFreezeDate,
     dryRun,
 }: {
     version: semver.SemVer
     assignees: string[]
     releaseDate: Date
-    oneWorkingWeekBeforeRelease: Date
-    threeWorkingDaysBeforeRelease: Date
-    oneWorkingDayAfterRelease: Date
+    securityReviewDate: Date
+    codeFreezeDate: Date
     dryRun: boolean
 }): Promise<MaybeIssue[]> {
     const octokit = await getAuthenticatedGitHubClient()
@@ -236,9 +226,8 @@ export async function ensureTrackingIssues({
         const body = await execTemplate(octokit, template, {
             version,
             releaseDate,
-            oneWorkingWeekBeforeRelease,
-            threeWorkingDaysBeforeRelease,
-            oneWorkingDayAfterRelease,
+            securityReviewDate,
+            codeFreezeDate,
         })
         const issue = await ensureIssue(
             octokit,
