@@ -1735,6 +1735,8 @@ type QuickLink struct {
 type Ranking struct {
 	// DocumentRanksWeight description: Controls the impact of document ranks on the final ranking when the 'search-ranking' feature is enabled. This is intended for internal testing purposes only, it's not recommended for users to change this.
 	DocumentRanksWeight *float64 `json:"documentRanksWeight,omitempty"`
+	// FlushWallTimeMS description: Controls the amount of time that Zoekt shards collect and rank results when the 'search-ranking' feature is enabled. Larger values give a more stable ranking, but searches can take longer to return an initial result.
+	FlushWallTimeMS int `json:"flushWallTimeMS,omitempty"`
 	// MaxQueueMatchCount description: The maximum number of matches that can be buffered to sort results. The default is -1 (unbounded). Setting this to a positive integer protects frontend against OOMs for queries with extremely high count of matches per repository.
 	MaxQueueMatchCount *int `json:"maxQueueMatchCount,omitempty"`
 	// MaxQueueSizeBytes description: The maximum number of bytes that can be buffered to sort results. The default is -1 (unbounded). Setting this to a positive integer protects frontend against OOMs.
@@ -2418,6 +2420,10 @@ type SiteConfiguration struct {
 	InsightsAggregationsProactiveResultLimit int `json:"insights.aggregations.proactiveResultLimit,omitempty"`
 	// InsightsBackfillInterruptAfter description: Set the number of seconds an insight series will spend backfilling before being interrupted. Series are interrupted to prevent long running insights from exhausting all of the available workers. Interrupted series will be placed back in the queue and retried based on their priority.
 	InsightsBackfillInterruptAfter int `json:"insights.backfill.interruptAfter,omitempty"`
+	// InsightsBackfillRepositoryConcurrency description: Number of repositories within the batch to backfill concurrently.
+	InsightsBackfillRepositoryConcurrency int `json:"insights.backfill.repositoryConcurrency,omitempty"`
+	// InsightsBackfillRepositoryGroupSize description: Set the number of repositories to batch in a group during backfilling.
+	InsightsBackfillRepositoryGroupSize int `json:"insights.backfill.repositoryGroupSize,omitempty"`
 	// InsightsHistoricalWorkerRateLimit description: Maximum number of historical Code Insights data frames that may be analyzed per second.
 	InsightsHistoricalWorkerRateLimit *float64 `json:"insights.historical.worker.rateLimit,omitempty"`
 	// InsightsHistoricalWorkerRateLimitBurst description: The allowed burst rate for the Code Insights historical worker rate limiter.
@@ -2600,6 +2606,8 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "insights.aggregations.bufferSize")
 	delete(m, "insights.aggregations.proactiveResultLimit")
 	delete(m, "insights.backfill.interruptAfter")
+	delete(m, "insights.backfill.repositoryConcurrency")
+	delete(m, "insights.backfill.repositoryGroupSize")
 	delete(m, "insights.historical.worker.rateLimit")
 	delete(m, "insights.historical.worker.rateLimitBurst")
 	delete(m, "insights.maximumSampleSize")

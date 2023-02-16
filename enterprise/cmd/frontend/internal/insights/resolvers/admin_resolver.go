@@ -116,6 +116,130 @@ func (r *Resolver) InsightViewDebug(ctx context.Context, args graphqlbackend.Ins
 	return resolver, nil
 }
 
+func (r *Resolver) RetryInsightSeriesBackfill(ctx context.Context, args *graphqlbackend.BackfillArgs) (*graphqlbackend.BackfillQueueItemResolver, error) {
+	actr := actor.FromContext(ctx)
+	if err := auth.CheckUserIsSiteAdmin(ctx, r.postgresDB, actr.UID); err != nil {
+		return nil, err
+	}
+	var backfillID int
+	err := relay.UnmarshalSpec(args.Id, &backfillID)
+	if err != nil {
+		return nil, errors.Wrap(err, "error unmarshalling the backfill id")
+	}
+	backfillStore := scheduler.NewBackfillStore(r.insightsDB)
+	backfill, err := backfillStore.LoadBackfill(ctx, backfillID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to load backfill")
+	}
+	if !backfill.IsTerminalState() {
+		return nil, errors.Newf("only backfills that have finished can can be retried [current state %v]", backfill.State)
+	}
+	err = backfill.RetryBackfillAttempt(ctx, backfillStore)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to reset backfill")
+	}
+
+	backfillItems, err := backfillStore.GetBackfillQueueInfo(ctx, scheduler.BackfillQueueArgs{ID: &backfill.Id})
+	if err != nil {
+		return nil, err
+	}
+	if len(backfillItems) != 1 {
+		return nil, errors.New("unable to load backfill")
+	}
+	updatedItem := backfillItems[0]
+	return &graphqlbackend.BackfillQueueItemResolver{
+		BackfillID:   updatedItem.ID,
+		InsightTitle: updatedItem.InsightTitle,
+		Label:        updatedItem.SeriesLabel,
+		Query:        updatedItem.SeriesSearchQuery,
+		BackfillStatus: &backfillStatusResolver{
+			queueItem: updatedItem,
+		},
+	}, nil
+}
+
+func (r *Resolver) MoveInsightSeriesBackfillToFrontOfQueue(ctx context.Context, args *graphqlbackend.BackfillArgs) (*graphqlbackend.BackfillQueueItemResolver, error) {
+	actr := actor.FromContext(ctx)
+	if err := auth.CheckUserIsSiteAdmin(ctx, r.postgresDB, actr.UID); err != nil {
+		return nil, err
+	}
+	var backfillID int
+	err := relay.UnmarshalSpec(args.Id, &backfillID)
+	if err != nil {
+		return nil, errors.Wrap(err, "error unmarshalling the backfill id")
+	}
+	backfillStore := scheduler.NewBackfillStore(r.insightsDB)
+	backfill, err := backfillStore.LoadBackfill(ctx, backfillID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to load backfill")
+	}
+	if backfill.State != scheduler.BackfillStateProcessing {
+		return nil, errors.Newf("only backfills ready for processing can have priority changed [current state %v]", backfill.State)
+	}
+	err = backfill.SetHighestPriority(ctx, backfillStore)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to set backfill to highest priority")
+	}
+	backfillItems, err := backfillStore.GetBackfillQueueInfo(ctx, scheduler.BackfillQueueArgs{ID: &backfill.Id})
+	if err != nil {
+		return nil, err
+	}
+	if len(backfillItems) != 1 {
+		return nil, errors.New("unable to load backfill")
+	}
+	updatedItem := backfillItems[0]
+	return &graphqlbackend.BackfillQueueItemResolver{
+		BackfillID:   updatedItem.ID,
+		InsightTitle: updatedItem.InsightTitle,
+		Label:        updatedItem.SeriesLabel,
+		Query:        updatedItem.SeriesSearchQuery,
+		BackfillStatus: &backfillStatusResolver{
+			queueItem: updatedItem,
+		},
+	}, nil
+}
+
+func (r *Resolver) MoveInsightSeriesBackfillToBackOfQueue(ctx context.Context, args *graphqlbackend.BackfillArgs) (*graphqlbackend.BackfillQueueItemResolver, error) {
+	actr := actor.FromContext(ctx)
+	if err := auth.CheckUserIsSiteAdmin(ctx, r.postgresDB, actr.UID); err != nil {
+		return nil, err
+	}
+	var backfillID int
+	err := relay.UnmarshalSpec(args.Id, &backfillID)
+	if err != nil {
+		return nil, errors.Wrap(err, "error unmarshalling the backfill id")
+	}
+	backfillStore := scheduler.NewBackfillStore(r.insightsDB)
+	backfill, err := backfillStore.LoadBackfill(ctx, backfillID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to load backfill")
+	}
+	if backfill.State != scheduler.BackfillStateProcessing {
+		return nil, errors.Newf("only backfills ready for processing can have priority changed [current state %v]", backfill.State)
+	}
+	err = backfill.SetLowestPriority(ctx, backfillStore)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to set backfill to lowest priority")
+	}
+	backfillItems, err := backfillStore.GetBackfillQueueInfo(ctx, scheduler.BackfillQueueArgs{ID: &backfill.Id})
+	if err != nil {
+		return nil, err
+	}
+	if len(backfillItems) != 1 {
+		return nil, errors.New("unable to load backfill")
+	}
+	updatedItem := backfillItems[0]
+	return &graphqlbackend.BackfillQueueItemResolver{
+		BackfillID:   updatedItem.ID,
+		InsightTitle: updatedItem.InsightTitle,
+		Label:        updatedItem.SeriesLabel,
+		Query:        updatedItem.SeriesSearchQuery,
+		BackfillStatus: &backfillStatusResolver{
+			queueItem: updatedItem,
+		},
+	}, nil
+}
+
 type insightSeriesMetadataPayloadResolver struct {
 	series *types.InsightSeries
 }
