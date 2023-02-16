@@ -135,9 +135,11 @@ func (b indexSchedulerJob) handleScheduler(
 		go func(repositoryID int) {
 			defer sema.Release(1)
 			if repositoryErr := b.handleRepository(ctx, repositoryID, policyBatchSize, now); repositoryErr != nil {
-				errMu.Lock()
-				errs = errors.Append(errs, repositoryErr)
-				errMu.Unlock()
+				if !errors.As(err, &inference.LimitError{}) {
+					errMu.Lock()
+					errs = errors.Append(errs, repositoryErr)
+					errMu.Unlock()
+				}
 			}
 		}(repositoryID)
 	}
