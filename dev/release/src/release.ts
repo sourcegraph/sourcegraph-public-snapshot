@@ -253,7 +253,8 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                         base: 'main',
                         head: `changelog-${upcoming.version.version}`,
                         title: prMessage,
-                        commitMessage: prMessage + '\n\n ## Test plan\n\nn/a',
+                        body: prMessage + '\n\n ## Test plan\n\nn/a',
+                        commitMessage: prMessage,
                         edits: [
                             (directory: string) => {
                                 console.log(`Updating '${changelogFile} for ${upcoming.version.format()}'`)
@@ -302,6 +303,31 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                                     changelog.divider,
                                     changelog.simpleReleaseTemplate
                                 )
+
+                                // Update changelog
+                                writeFileSync(changelogPath, changelogContents)
+                            },
+                        ],
+                    },
+                    {
+                        owner: 'sourcegraph',
+                        repo: 'src-cli',
+                        base: 'main',
+                        head: `changelog-${upcoming.version.version}`,
+                        title: prMessage,
+                        body: prMessage + '\n\n ## Test plan\n\nn/a',
+                        commitMessage: prMessage,
+                        edits: [
+                            (directory: string) => {
+                                console.log(`Updating '${changelogFile} for ${upcoming.version.format()}'`)
+                                const changelogPath = path.join(directory, changelogFile)
+                                let changelogContents = readFileSync(changelogPath).toString()
+
+                                // Convert 'unreleased' to a release
+                                const unreleasedHeader = '## Unreleased'
+                                const unreleasedSection = `${unreleasedHeader}\n\n### Added\n\n### Changed\n\n### Fixed\n\n### Removed\n\n`
+                                const newSection = `${unreleasedSection}## ${upcoming.version.format()}`
+                                changelogContents = changelogContents.replace(unreleasedHeader, newSection)
 
                                 // Update changelog
                                 writeFileSync(changelogPath, changelogContents)
