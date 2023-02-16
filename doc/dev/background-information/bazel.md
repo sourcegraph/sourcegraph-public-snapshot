@@ -4,13 +4,13 @@ Sourcegraph is currently migrating to Bazel as its build system and this page is
 
 ## Why do we need a build system?
 
-Building Sourcegraph is a non-trivial task, as it not only ships a frontend and a backend, but also a variety of third parties and components that makes the building process complicated, not only locally but also in CI. Historically, this always have been solved with ad-hoc solutions, such as shell scripts, and caching in various point of the process. 
+Building Sourcegraph is a non-trivial task, as it not only ships a frontend and a backend, but also a variety of third parties and components that makes the building process complicated, not only locally but also in CI. Historically, this always have been solved with ad-hoc solutions, such as shell scripts, and caching at various point in the process. 
 
-But we're using languages that are not traditionally requiring build systems right? Go and Typescript have their own ecosystem and solve those problems each with their own way right? Yes indeed, but this also means they are never aware of each other and anything linking them requires to be implemented manually, which what we did so far. And because the way our app is built, as a monolith, it's not trivial to detect things such as the need to rebuild a given Docker image because a change was made in another package, because there is nothing enforcing this structurally in the codebase. So we have to rebuild things, because there is a doubt.
+But we're using languages that traditionally don't require their own build systems right? Go and Typescript have their own ecosystem and solve those problems each with their own way right? Yes indeed, but this also means they are never aware of each other and anything linking them requires to be implemented manually, which what we've done so far. Because the way our app is built, as a monolith, it's not trivial to detect things such as the need to rebuild a given Docker image because a change was made in another package, because there is nothing enforcing this structurally in the codebase. So we have to rebuild things, because there is doubt.
 
 On top of that, whenever we attempt at building our app, we also need to fetch many third parties from various locations (GitHub releases, NPM, Go packages, ...). While most of the time, it's working well, any failure in doing so will result in failed build. This may go unnoticed when working locally, but on CI, this can prevent us to build our app for hours at times if we can't fetch the dependency we need, until the problem is resolved upstream. This makes us very dependent on the external world. 
 
-In the end, it's not what composes our application that drives us to use a build system, but instead the size it reached after years of development. We could solve all these problems individually with custom solutions, that would enable us to deterministically say that we need to build X ebecause Y changed. But guess what? The result would pretty much look like a build system. It's a known problem and solutions exists in the wild for us to use.
+In the end, it's not what composes our application that drives us to use a build system, but instead the size it has reached after years of development. We could solve all these problems individually with custom solutions, that would enable us to deterministically say that we need to build X because Y changed. But guess what? The result would pretty much look like a build system. It's a known problem and solutions exists in the wild for us to use.
 
 Finally, build systems provides additional benefits, especially on the security side. Because a build system is by definition aware of every little dependency, we can use that to ensure we react swiftly to CVEs and produce SBOMs for our customers to speed up the upgrade process. 
 
@@ -81,7 +81,7 @@ So, building and testing is in the end, practically the same thing.
 
 ### Why Bazel is frequently mentioned in a negative way on Reddit|HN|Twitter|... ? 
 
-Build systems are solving a complex problem. Assembling a deterministic tree of all the _inputs_ and _outputs_ is not an easy task, especially when your project is becoming less and less trivial. And to enforce it's properties, such as hermeticity and being deterministic, Bazel requires both a "boil the ocean first" approach, where you need to convert almost everything in your project to benefit from it and to learn how to operate it. That's quite the upfront cost and a lot of cognitive weight to absorb, naturally resulting in negative opinions. 
+Build systems are solving a complex problem. Assembling a deterministic tree of all the _inputs_ and _outputs_ is not an easy task, especially when your project is becoming less and less trivial.  To enforce it's properties, such as hermeticity and being deterministic, Bazel requires both a "boil the ocean first" approach, where you need to convert almost everything in your project to benefit from it and to learn how to operate it. That's quite the upfront cost and a lot of cognitive weight to absorb, naturally resulting in negative opinions. 
 
 But in exchange for that, we get a much more robust system, resilient to some unavoidable problems that comes when building your app requires to reach the outside world. 
 
@@ -130,7 +130,7 @@ Gazelle and the frontend: TODO
 #### Keep in mind
 
 - Do not commit file whose name include spaces, Bazel do not like it.
-- Do not expect your tests to be ran inside the source tree and to be inside a git repository. 
+- Do not expect your tests to be run inside the source tree and to be inside a git repository. 
   - They will be run in the sandbox. Instead create a temp folder and init a git repo manually over there.
 
 #### Building and testing things
