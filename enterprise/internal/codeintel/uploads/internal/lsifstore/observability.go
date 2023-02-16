@@ -16,7 +16,6 @@ type operations struct {
 	createDefinitionsAndReferencesForRanking *observation.Operation
 	setDefinitionsForRanking                 *observation.Operation
 	setReferencesForRanking                  *observation.Operation
-	getRankingReferencesByUploadID           *observation.Operation
 	insertPathCountInputs                    *observation.Operation
 	insertPathRanks                          *observation.Operation
 	insertMetadata                           *observation.Operation
@@ -57,7 +56,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		createDefinitionsAndReferencesForRanking: op("CreateDefinitionsAndReferencesForRanking"),
 		setDefinitionsForRanking:                 op("SetDefinitionsForRanking"),
 		setReferencesForRanking:                  op("SetReferencesForRanking"),
-		getRankingReferencesByUploadID:           op("GetRankingReferencesByUploadID"),
 		insertPathCountInputs:                    op("InsertPathCountInputs"),
 		insertPathRanks:                          op("InsertPathRanks"),
 		insertMetadata:                           op("InsertMetadata"),

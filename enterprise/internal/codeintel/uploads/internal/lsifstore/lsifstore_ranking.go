@@ -276,44 +276,6 @@ SELECT
 	(SELECT COUNT(*) FROM inserted) AS num_inserted
 `
 
-func (s *store) GetRankingReferencesByUploadID(ctx context.Context, uploadID int, limit, offset int) (references []shared.RankingReferences, err error) {
-	ctx, _, endObservation := s.operations.getRankingReferencesByUploadID.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	rows, err := s.db.Query(ctx, sqlf.Sprintf(getRankingReferencesByUploadIDQuery, uploadID, limit, offset))
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	references = make([]shared.RankingReferences, 0)
-	for rows.Next() {
-		var uploadID int
-		var symbolName []string
-		if err := rows.Scan(&uploadID, pq.Array(&symbolName)); err != nil {
-			return nil, err
-		}
-
-		references = append(references, shared.RankingReferences{
-			UploadID:   uploadID,
-			SymbolName: symbolName,
-		})
-	}
-
-	return references, nil
-}
-
-const getRankingReferencesByUploadIDQuery = `
-SELECT
-	upload_id,
-	symbol_names
-FROM codeintel_ranking_references
-WHERE upload_id = %s
-ORDER BY upload_id
-LIMIT %s
-OFFSET %s
-`
-
 func (s *store) InsertReferencesForRanking(ctx context.Context, rankingGraphKey string, references shared.RankingReferences) (err error) {
 	ctx, _, endObservation := s.operations.setReferencesForRanking.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
