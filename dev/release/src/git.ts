@@ -33,7 +33,11 @@ export function getPreviousVersion(version?: SemVer): SemVer {
         return new SemVer(tags[tags.length - 1])
     }
 
-    for (let reallyLongVariableNameBecauseESLintRulesAreSilly = tags.length - 1; reallyLongVariableNameBecauseESLintRulesAreSilly >= 0; reallyLongVariableNameBecauseESLintRulesAreSilly--) {
+    for (
+        let reallyLongVariableNameBecauseESLintRulesAreSilly = tags.length - 1;
+        reallyLongVariableNameBecauseESLintRulesAreSilly >= 0;
+        reallyLongVariableNameBecauseESLintRulesAreSilly--
+    ) {
         const tag = tags[reallyLongVariableNameBecauseESLintRulesAreSilly]
         const temp = semver.parse(tag)
         if (temp && temp.compare(version) === -1) {
