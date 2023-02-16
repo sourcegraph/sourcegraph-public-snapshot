@@ -4,7 +4,6 @@ Welcome to the Sourcegraph Backstage Frontend plugin!
 
 _This plugin was created through the Backstage CLI_
 
-
 ## NOTE
 
 This plugin is still very much in development as is a work in progress. For any questions please ask in #job-fair-backstage or dm @William Bezuidenhout

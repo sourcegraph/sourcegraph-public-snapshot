@@ -16,7 +16,7 @@
   "scripts": {
     "dist": "ts-node --transpile-only ./scripts/esbuild.ts && pnpm types && cp package.dist.json dist/package.json",
     "types": "tsc -d -p tsconfig.json",
-    "format": "prettier -w true ./src ",
+    "format": "prettier -w true .",
     "test": "jest"
   },
   "dependencies": {
