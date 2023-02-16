@@ -8,10 +8,13 @@ import (
 	"io/fs"
 	"net"
 	"net/http"
+	"os"
 	"os/exec"
+	"os/signal"
 	pathpkg "path"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -36,11 +39,28 @@ func (s *Serve) Start() error {
 
 	s.Logger.Info("serving git repositories", log.String("url", "http://"+s.Addr), log.String("root", s.Root))
 
+	srv := &http.Server{Handler: s.handler()}
+
+	// We have opened the listener, now start serving connections in the
+	// background.
 	go func() {
-		if err := (&http.Server{Handler: s.handler()}).Serve(ln); err != nil {
+		if err := srv.Serve(ln); err == http.ErrServerClosed {
+			s.Logger.Info("http serve closed")
+		} else {
 			s.Logger.Error("http serve failed", log.Error(err))
 		}
-		// TODO listen to shutdown signal nicely
+	}()
+
+	// Also listen for shutdown signals in the background. We don't need
+	// graceful shutdown since this only runs in app and the only clients of
+	// the server will also be shutdown at the same time.
+	go func() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
+		<-c
+		if err := srv.Close(); err != nil {
+			s.Logger.Error("failed to Close http serve", log.Error(err))
+		}
 	}()
 
 	return nil
