@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"sort"
 
 	"github.com/Masterminds/semver"
 
@@ -84,7 +85,16 @@ func ValidateRequiredTools(runner CmdRunner, useFirecracker bool) error {
 // ValidateDockerTools validates that the tools required to run Docker are installed.
 func ValidateDockerTools(runner CmdRunner) error {
 	var missingTools []string
-	for tool := range config.RequiredCLITools {
+	// So, iterating thru a map is not deterministic, breaking unit tests, so we need to sort the keys.
+	tools := make([]string, len(config.RequiredCLITools))
+	i := 0
+	for t := range config.RequiredCLITools {
+		tools[i] = t
+		i++
+	}
+	sort.Strings(tools)
+
+	for _, tool := range tools {
 		if found, err := ExistsPath(runner, tool); err != nil {
 			return err
 		} else if !found {
