@@ -34,7 +34,6 @@ func NewOwnService(g gitserver.Client, db database.DB) OwnService {
 	return &ownService{
 		gitserverClient: g,
 		userStore:       db.Users(),
-		userEmailsStore: db.UserEmails(),
 		teamStore:       db.Teams(),
 		ownerCache:      make(map[ownerKey]codeowners.ResolvedOwner),
 	}
@@ -43,7 +42,6 @@ func NewOwnService(g gitserver.Client, db database.DB) OwnService {
 type ownService struct {
 	gitserverClient gitserver.Client
 	userStore       database.UserStore
-	userEmailsStore database.UserEmailsStore
 	teamStore       database.TeamStore
 
 	mu         sync.Mutex
