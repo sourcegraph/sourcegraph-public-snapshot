@@ -140,3 +140,36 @@ func (r *Resolver) CreateRole(ctx context.Context, args *gql.CreateRoleArgs) (gq
 		role: role,
 	}, nil
 }
+
+func (r *Resolver) AssignRolesToUser(ctx context.Context, args *gql.AssignRolesToUserArgs) (*gql.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site administrators can assign roles to a user.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	if len(args.Roles) == 0 {
+		return nil, errors.New("roles are required")
+	}
+
+	userID, err := gql.UnmarshalUserID(args.User)
+	if err != nil {
+		return nil, err
+	}
+
+	opts := database.BulkAssignToUserOpts{}
+	opts.UserID = userID
+
+	for _, r := range args.Roles {
+		rID, err := unmarshalPermissionID(r)
+		if err != nil {
+			return nil, err
+		}
+		opts.RoleIDs = append(opts.RoleIDs, rID)
+	}
+
+	if _, err = r.db.UserRoles().BulkAssignToUser(ctx, opts); err != nil {
+		return nil, err
+	}
+
+	return &gql.EmptyResponse{}, nil
+}

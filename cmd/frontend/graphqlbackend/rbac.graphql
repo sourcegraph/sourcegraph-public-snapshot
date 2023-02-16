@@ -178,6 +178,11 @@ extend type Mutation {
     will be revoked for the role.
     """
     setPermissions(role: ID!, permissions: [ID!]!): EmptyResponse!
+
+    """
+    Assign multiple roles to a user.
+    """
+    assignRolesToUser(user: ID!, roles: [ID!]!): EmptyResponse!
 }
 
 extend type User {
