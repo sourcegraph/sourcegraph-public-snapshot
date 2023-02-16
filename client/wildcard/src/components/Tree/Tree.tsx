@@ -138,3 +138,42 @@ function getMarginLeft(level: number, isBranch: boolean): string {
     }
     return `${0.75 * level}rem`
 }
+
+interface FlattenableTreeNode {
+    name: string
+    // TODO: My TS wizardry is not strong enough to make this work with a
+    // generic type. 😅
+    children?: any[]
+}
+type ReturnNode<T extends FlattenableTreeNode> = Omit<T, 'children'> & TreeNode
+// This implementation is taken from `react-accessible-treeview` and modified to pass through all
+// properties of the node instead of just the `name`.
+export function flattenTree<N extends FlattenableTreeNode>(tree: N): ReturnNode<N>[] {
+    let count = 0
+    const flattenedTree: ReturnNode<N>[] = []
+
+    const flattenTreeHelper = function (tree: N, parent: number | null): void {
+        const { children, ...rest } = tree
+        const node: ReturnNode<N> = {
+            ...rest,
+            id: count,
+            name: tree.name,
+            children: [],
+            parent,
+        }
+        flattenedTree[count] = node
+        count += 1
+        if (tree.children === null || tree.children === undefined || tree.children.length === 0) {
+            return
+        }
+        for (const child of tree.children) {
+            flattenTreeHelper(child, node.id)
+        }
+        node.children = flattenedTree
+            .filter((item: ReturnNode<N>) => item.parent === node.id)
+            .map((item: ReturnNode<N>) => item.id)
+    }
+
+    flattenTreeHelper(tree, null)
+    return flattenedTree
+}
