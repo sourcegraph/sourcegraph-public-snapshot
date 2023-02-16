@@ -917,7 +917,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         description: 'Activate a feature release',
         run: async config => {
             await verifyWithInput('Are you sure you want to deactivate all releases?')
-            await deactivateAllReleases(config)
+            deactivateAllReleases(config)
         },
     },
     {

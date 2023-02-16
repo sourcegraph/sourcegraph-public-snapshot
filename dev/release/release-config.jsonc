@@ -17,17 +17,7 @@
     "tags": false,
     "changesets": false,
     "trackingIssues": false,
-    "calendar": true,
-    "slack": true
-  },
-  "in_progress": {
-    "captainGitHubUsername": "keegancsmith",
-    "captainSlackUsername": "keegan",
-    "releases": [
-      {
-        "version": "4.5.0",
-        "previous": "4.4.2"
-      }
-    ]
+    "calendar": false,
+    "slack": false
   }
 }

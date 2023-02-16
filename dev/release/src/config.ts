@@ -177,8 +177,10 @@ export interface ScheduledReleaseDefinition extends ReleaseDates, ReleaseCaptain
     current: string
 }
 
+// Prompt a user for input and activate the given release version if possible. Will redirect to release creation input if
+// the version isn't defined.
 export async function activateRelease(config: ReleaseConfig): Promise<void> {
-    const next = await selectVersionWithSuggestion('Enter the feature version to activate')
+    const next = await selectVersionWithSuggestion('Enter the version to activate')
     console.log('Attempting to detect previous version...')
     const previous = getPreviousVersion(next)
     console.log(chalk.blue(`Detected previous version: ${previous.version}`))
@@ -198,6 +200,24 @@ export function deactivateAllReleases(config: ReleaseConfig): void {
     saveReleaseConfig(config)
 }
 
+// Prompt a user for a major / minor version input with automation suggestion by adding a minor version to the previous version.
+async function selectVersionWithSuggestion(prompt: string): Promise<SemVer> {
+    const probablyMinor = getPreviousVersion().inc('minor')
+    const probablyPatch = getPreviousVersion().inc('patch')
+    const input = await retryInput(`Next minor release: ${probablyMinor.version}\nNext patch release: ${probablyPatch.version}\n${chalk.blue(prompt)}: `, val => {
+        const version = semver.parse(val)
+        return !!version
+    })
+    return new SemVer(input)
+}
+
+// Prompt a user for a release definition input, and redirect to creation input if it doesn't exist.
+export async function getReleaseDefinition(config: ReleaseConfig): Promise<ScheduledReleaseDefinition> {
+    const next = await selectVersionWithSuggestion('Enter the version number to select')
+    return getScheduledReleaseWithInput(config, next)
+}
+
+// Helper function to get a release definition from the release config, redirecting to creation input if it doesn't exist.
 async function getScheduledReleaseWithInput(config: ReleaseConfig, releaseVersion: SemVer): Promise<ScheduledReleaseDefinition> {
     let scheduled = config.scheduledReleases[releaseVersion.version]
     if (!scheduled) {
@@ -206,18 +226,4 @@ async function getScheduledReleaseWithInput(config: ReleaseConfig, releaseVersio
         addScheduledRelease(config, scheduled)
     }
     return scheduled
-}
-
-async function selectVersionWithSuggestion(prompt: string): Promise<SemVer> {
-    const probably = getPreviousVersion().inc('minor')
-    const input = await retryInput(`${prompt} (next minor release would be ${probably.version}): `, val => {
-        const version = semver.parse(val)
-        return (!(!version || version.patch !== 0))
-    })
-    return new SemVer(input)
-}
-
-export async function getReleaseDefinition(config: ReleaseConfig): Promise<ScheduledReleaseDefinition> {
-    const next = await selectVersionWithSuggestion('Enter the version number')
-    return getScheduledReleaseWithInput(config, next)
 }

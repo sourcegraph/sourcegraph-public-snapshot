@@ -8,10 +8,8 @@ import commandExists from 'command-exists'
 import execa from 'execa'
 import fetch from 'node-fetch'
 import * as semver from 'semver'
-import {SemVer} from 'semver'
 
 import {cacheFolder, changelogURL, formatDate, getContainerRegistryCredential, readLine, timezoneLink} from './util'
-import {ReleaseDates} from "./config";
 
 const mkdtemp = promisify(original_mkdtemp)
 let githubPAT: string
