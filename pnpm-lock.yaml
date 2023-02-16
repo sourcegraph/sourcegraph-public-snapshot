@@ -808,7 +808,7 @@ importers:
       '@backstage/config': ^1.0.6
       '@backstage/plugin-catalog-backend': ^1.7.1
       '@jest/globals': ^29.4.0
-      '@sourcegraph/build-config': workspace:^0.0.1
+      '@sourcegraph/build-config': workspace:*
       '@sourcegraph/http-client': workspace:^0.0.1
       '@sourcegraph/shared': workspace:^1.0.0
       '@sourcegraph/tsconfig': ^4.0.1
