@@ -18,7 +18,6 @@ import { getReturnTo } from './SignInSignUpCommon'
 
 import RequestAccessSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 
-// TODO: add tests
 interface RequestAccessFormProps {
     onSuccess: () => void
     onError: (error: any) => void
@@ -65,7 +64,7 @@ const RequestAccessForm: React.FunctionComponent<RequestAccessFormProps> = ({ on
         }
     }
     return (
-        <Form onSubmit={handleSubmit}>
+        <Form onSubmit={handleSubmit} data-testid="request-access-form">
             <Label className="w-100">
                 <Text alignment="left" className="mb-2">
                     Name
@@ -123,20 +122,10 @@ const RequestAccessForm: React.FunctionComponent<RequestAccessFormProps> = ({ on
 
 interface RequestAccessPageProps {
     authenticatedUser: AuthenticatedUser | null
-    context: Pick<
-        SourcegraphContext,
-        | 'allowSignup'
-        | 'authProviders'
-        | 'sourcegraphDotComMode'
-        | 'xhrHeaders'
-        | 'resetPasswordEnabled'
-        | 'experimentalFeatures'
-    >
-    isSourcegraphDotCom: boolean
+    context: Pick<SourcegraphContext, 'allowSignup' | 'sourcegraphDotComMode' | 'xhrHeaders' | 'experimentalFeatures'>
 }
 
 export const RequestAccessPage: React.FunctionComponent<React.PropsWithChildren<RequestAccessPageProps>> = ({
-    isSourcegraphDotCom,
     context,
     authenticatedUser,
 }) => {
@@ -145,7 +134,7 @@ export const RequestAccessPage: React.FunctionComponent<React.PropsWithChildren<
     const navigate = useNavigate()
     const [error, setError] = useState<Error | null>(null)
     const IsRequestAccessAllowed = checkIsRequestAccessAllowed(
-        isSourcegraphDotCom,
+        context.sourcegraphDotComMode,
         context.allowSignup,
         context.experimentalFeatures.accessRequests
     )
