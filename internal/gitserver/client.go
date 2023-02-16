@@ -601,6 +601,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 		if err != nil {
 			return nil, err
 		}
+		defer conn.Close()
 
 		client := proto.NewGitserverServiceClient(conn)
 		stream, err := client.Exec(ctx, req)
