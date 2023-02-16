@@ -2,6 +2,7 @@ package codeownership
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -105,6 +106,7 @@ matchesLoop:
 			errs = errors.Append(errs, err)
 			continue matchesLoop
 		}
+		fmt.Println(resolvedOwners)
 		for _, o := range resolvedOwners {
 			ownerMatch := &result.OwnerMatch{
 				ResolvedOwner: o,

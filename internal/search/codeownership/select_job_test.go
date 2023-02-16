@@ -123,7 +123,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		}
 		want := []result.Match{
 			&result.OwnerMatch{
-				ResolvedOwner: &codeowners.Person{User: personOwnerByEmail, OwnerIdentifier: "user@email.com"},
+				ResolvedOwner: &codeowners.Person{User: personOwnerByEmail, Email: "user@email.com"},
 				InputRev:      nil,
 				Repo:          types.MinimalRepo{},
 				CommitID:      "",
@@ -131,7 +131,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 				LimitHit:      0,
 			},
 			&result.OwnerMatch{
-				ResolvedOwner: &codeowners.UnknownOwner{Handle: "unknown"},
+				ResolvedOwner: &codeowners.Person{Handle: "unknown"},
 				InputRev:      nil,
 				Repo:          types.MinimalRepo{},
 				CommitID:      "",
@@ -139,7 +139,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 				LimitHit:      0,
 			},
 			&result.OwnerMatch{
-				ResolvedOwner: &codeowners.Person{User: personOwnerByHandle, OwnerIdentifier: "testUserHandle"},
+				ResolvedOwner: &codeowners.Person{User: personOwnerByHandle, Email: "testUserHandle"},
 				InputRev:      nil,
 				Repo:          types.MinimalRepo{},
 				CommitID:      "",
@@ -147,7 +147,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 				LimitHit:      0,
 			},
 			&result.OwnerMatch{
-				ResolvedOwner: &codeowners.Team{Team: teamOwner, OwnerIdentifier: "testTeamHandle"},
+				ResolvedOwner: &codeowners.Team{Team: teamOwner, Email: "testTeamHandle"},
 				InputRev:      nil,
 				Repo:          types.MinimalRepo{},
 				CommitID:      "",
@@ -186,7 +186,7 @@ func newTestTeam(teamName string) *types.Team {
 }
 
 func newTestUnknownOwner(handle, email string) codeowners.ResolvedOwner {
-	return &codeowners.UnknownOwner{
+	return &codeowners.Person{
 		Handle: handle,
 		Email:  email,
 	}

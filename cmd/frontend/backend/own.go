@@ -135,6 +135,8 @@ func (s *ownService) resolveOwner(ctx context.Context, handle, email string) (co
 		if err != nil {
 			return personOrError(handle, email, err)
 		}
+	} else {
+		return nil, nil
 	}
 	resolvedOwner.SetOwnerData(handle, email)
 	return resolvedOwner, nil
