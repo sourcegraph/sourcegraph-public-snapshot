@@ -1,9 +1,11 @@
 import * as React from 'react'
 
 import { Accordion } from '@reach/accordion'
+import classNames from 'classnames'
 
 import { logger } from '@sourcegraph/common'
 import { gql, useQuery } from '@sourcegraph/http-client'
+import { Alert } from '@sourcegraph/wildcard'
 
 import { FetchOwnershipResult, FetchOwnershipVariables } from '../../../graphql-operations'
 
@@ -26,20 +28,26 @@ export const FileOwnershipPanel: React.FunctionComponent<
         },
     })
     if (loading) {
-        return <div>Loading...</div>
+        return <div className={styles.content}>Loading...</div>
     }
 
     if (error) {
         logger.log(error)
-        return <div>
-
-
-        </div>
+        return (
+            <div className={styles.content}>
+                <Alert variant="danger">Error getting ownership data.</Alert>
+            </div>
+        )
     }
 
     if (data?.node && data.node.__typename === 'Repository' && data.node.commit) {
         return (
-            <Accordion as="table" collapsible={true} multiple={true} className={styles.table}>
+            <Accordion
+                as="table"
+                collapsible={true}
+                multiple={true}
+                className={classNames(styles.table, styles.content)}
+            >
                 <thead className="sr-only">
                     <tr>
                         <th>Show details</th>
@@ -63,7 +71,11 @@ export const FileOwnershipPanel: React.FunctionComponent<
         )
     }
 
-    return <div>No data</div>
+    return (
+        <div className={styles.content}>
+            <Alert variant="info">No ownership data for this file.</Alert>
+        </div>
+    )
 }
 
 export const FETCH_OWNERS = gql`
