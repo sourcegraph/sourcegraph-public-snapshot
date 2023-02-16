@@ -5,16 +5,16 @@ The new Sourcegraph Enterprise free plan will be enforced starting in Sourcegrap
 ## What's changing?
 
 Previously, Sourcegraph Enterprises's free plan provided the following:
-- SSO/SAML
+- SSO (OAuth, SAML, OpenID Connect, etc.)
 - Unlimited private repositories can be synced
 - 5 changesets for Batch Changes
 
 In Sourcegraph 4.0, the free plan was adjusted to the following:
-- SSO/SAML is no longer available
+- SSO is no longer available
 - 1 private repository can be synced
 - 10 changesets for Batch Changes
 
-However, SSO/SAML and private repository restrictions were not rolled out in Sourcegraph 4.0. These changes will be rolled out in Sourcegraph 4.5, releasing February 22, 2023.
+However, SSO and private repository restrictions were not rolled out in Sourcegraph 4.0. These changes will be rolled out in Sourcegraph 4.5, releasing February 22, 2023.
 
 ## How will this impact new and existing Sourcegraph Enterprise installations?
 
