@@ -12,17 +12,15 @@ import {
     Input,
     Text,
     useLocalStorage,
-} from '@sourcegraph/wildcard'
-
-import { AddExternalServiceOptions } from '../../../../../../components/externalServices/externalServices'
-import {
     FormGroup,
     getDefaultInputProps,
     SubmissionErrors,
     useField,
     useFieldAPI,
     useForm,
-} from '../../../../../../enterprise/insights/components'
+} from '@sourcegraph/wildcard'
+
+import { AddExternalServiceOptions } from '../../../../../../components/externalServices/externalServices'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../../../../settings/DynamicallyImportedMonacoSettingsEditor'
 
 import styles from './CodeHostConnection.module.scss'

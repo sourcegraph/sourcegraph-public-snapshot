@@ -5,17 +5,24 @@ import { parse as parseJSONC } from 'jsonc-parser'
 import { noop } from 'lodash';
 
 import { modify } from '@sourcegraph/common'
-import { Tabs, Tab, TabList, TabPanel, TabPanels, Input, Checkbox, useLocalStorage } from '@sourcegraph/wildcard'
-
-import { codeHostExternalServices } from '../../../../../../components/externalServices/externalServices'
 import {
+    Tabs,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Input,
+    Checkbox,
+    useLocalStorage,
     useField,
     useForm,
-    Form,
+    FormInstance,
     getDefaultInputProps,
     useFieldAPI,
     useControlledField,
-} from '../../../../../../enterprise/insights/components'
+} from '@sourcegraph/wildcard'
+
+import { codeHostExternalServices } from '../../../../../../components/externalServices/externalServices'
 import { AddExternalServiceInput, ExternalServiceKind } from '../../../../../../graphql-operations'
 import { CodeHostJSONFormContent, RadioGroupSection, CodeHostConnectFormFields, CodeHostJSONFormState } from '../common'
 
@@ -161,7 +168,7 @@ export const GithubConnectForm: FC<GithubConnectFormProps> = props => {
 }
 
 interface GithubFormViewProps {
-    form: Form<CodeHostConnectFormFields>
+    form: FormInstance<CodeHostConnectFormFields>
     displayNameField: useFieldAPI<string>
     configurationField: useFieldAPI<string>
     isTabActive: boolean
@@ -254,7 +261,7 @@ function GithubFormView(props: GithubFormViewProps): ReactElement {
                     label="Add all repositories from selected organizations or users"
                     onChange={handleOrganizationsModeChange}
                 >
-                    <GithubOrganizationsPicker organizations={organizations} onChange={handleOrganizationsChange} />
+                    <GithubOrganizationsPicker organizations={organizations} onChange={handleOrganizationsChange}/>
                 </RadioGroupSection>
 
                 <RadioGroupSection
@@ -265,7 +272,7 @@ function GithubFormView(props: GithubFormViewProps): ReactElement {
                     label="Add selected repositories"
                     onChange={handleRepositoriesModeChange}
                 >
-                    <GithubRepositoriesPicker repositories={repositories} onChange={handleRepositoriesChange} />
+                    <GithubRepositoriesPicker repositories={repositories} onChange={handleRepositoriesChange}/>
                 </RadioGroupSection>
             </section>
         </>
