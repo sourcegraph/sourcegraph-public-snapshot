@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// TODO: add tests
 func MarshalAccessRequestID(id int32) graphql.ID { return relay.MarshalID("AccessRequest", id) }
 
 func UnmarshalAccessRequestID(id graphql.ID) (userID int32, err error) {
@@ -69,9 +68,13 @@ func (s *accessRequestsResolver) TotalCount(ctx context.Context) (int32, error) 
 }
 
 func (s *accessRequestsResolver) Nodes(ctx context.Context, args *database.AccessRequestsListOptions) ([]*accessRequestResolver, error) {
+	listOptions := args
+	if listOptions == nil {
+		listOptions = &database.AccessRequestsListOptions{}
+	}
 	accessRequests, err := s.db.AccessRequests().List(ctx, database.AccessRequestsFilterAndListOptions{
 		AccessRequestsFilterOptions: *s.filterOptions,
-		AccessRequestsListOptions:   *args,
+		AccessRequestsListOptions:   *listOptions,
 	})
 	if err != nil {
 		return nil, err
