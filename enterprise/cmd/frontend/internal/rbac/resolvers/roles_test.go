@@ -403,3 +403,85 @@ mutation CreateRole($name: String!, $permissions: [ID!]!) {
 	}
 }
 `
+
+func TestAssignRolesToUser(t *testing.T) {
+	logger := logtest.Scoped(t)
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	uID := createTestUser(t, db, false).ID
+	userID := gql.MarshalUserID(uID)
+	userCtx := actor.WithActor(ctx, actor.FromUser(uID))
+
+	aID := createTestUser(t, db, true).ID
+	adminID := gql.MarshalUserID(aID)
+	adminCtx := actor.WithActor(ctx, actor.FromUser(aID))
+
+	s, err := newSchema(db, &Resolver{logger: logger, db: db})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	r1, err := db.Roles().Create(ctx, "TEST-ROLE-1", false)
+	require.NoError(t, err)
+
+	r2, err := db.Roles().Create(ctx, "TEST-ROLE-2", false)
+	require.NoError(t, err)
+
+	var roles = []graphql.ID{
+		marshalRoleID(r1.ID),
+		marshalRoleID(r2.ID),
+	}
+
+	t.Run("as non site-admin", func(t *testing.T) {
+		input := map[string]any{"user": userID, "roles": roles}
+		var response struct{ AssignRolesToUser apitest.EmptyResponse }
+		errs := apitest.Exec(userCtx, t, s, input, &response, assignRolesToUserMutation)
+
+		require.Len(t, errs, 1)
+		require.ErrorContains(t, errs[0], "must be site admin")
+	})
+
+	t.Run("as self", func(t *testing.T) {
+		input := map[string]any{"user": adminID, "roles": roles}
+		var response struct{ AssignRolesToUser apitest.EmptyResponse }
+		errs := apitest.Exec(adminCtx, t, s, input, &response, assignRolesToUserMutation)
+
+		require.Len(t, errs, 1)
+		require.ErrorContains(t, errs[0], "cannot assign role to self")
+	})
+
+	t.Run("as site-admin", func(t *testing.T) {
+		input := map[string]any{"user": userID, "roles": roles}
+		var response struct{ AssignRolesToUser apitest.EmptyResponse }
+		apitest.MustExec(adminCtx, t, s, input, &response, assignRolesToUserMutation)
+
+		// Check that both roles are assigned to the user
+		urs, err := db.UserRoles().GetByUserID(ctx, database.GetUserRoleOpts{
+			UserID: uID,
+			RoleID: r1.ID,
+		})
+		require.NoError(t, err)
+
+		var assignedRolesCount int
+		for _, ur := range urs {
+			if ur.RoleID == r1.ID || ur.RoleID == r2.ID {
+				assignedRolesCount += 1
+			}
+		}
+
+		require.Equal(t, assignedRolesCount, len(roles))
+	})
+}
+
+const assignRolesToUserMutation = `
+mutation AssignRolesToUser($roles: [ID!]!, $user: ID!) {
+	assignRolesToUser(roles: $roles, user: $user) {
+		alwaysNil
+	}
+}
+`
