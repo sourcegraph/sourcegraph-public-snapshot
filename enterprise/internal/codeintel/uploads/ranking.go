@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -24,86 +23,27 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
-const (
-	rankingDefinitionHash = "graphDefs:dev"
-	rankingReferenceHash  = "graphRefs:dev"
-	batchNumber           = 1000
-)
-
 func (s *Service) MapRankingGraph(ctx context.Context, numRankingRoutines int) (err error) {
 	ctx, _, endObservation := s.operations.mapRankingGraph.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	fmt.Println("RUNNING RUNNING RUNNING RUNNING well this is running RUNNING RUNNING RUNNING RUNNING")
-
-	// First time running. There are no uploads
-	uploadsExists, err := redisStore.Exists("ranking:uploads:processed").Int()
-	if err != nil {
-		return nil
-	}
-	if uploadsExists == 0 {
-		return nil
-	}
-
-	// First time running. There are uploads so make sure we have a graph
-	graphExists, err := redisStore.Exists("ranking:graph:processed").Int()
-	if err != nil {
-		return nil
-	}
-	if graphExists == 0 {
-		err = redisStore.Set("ranking:graph:processed", 0)
-		if err != nil {
-			return err
-		}
-	}
-
-	uploadsProcessed, err := redisStore.Get("ranking:uploads:processed").String()
-	if err != nil {
+	if err := s.lsifstore.InsertPathCountInputs(ctx, rankingGraphKey, rankingBatchSize); err != nil {
 		return err
-	}
-	fmt.Printf("DEBUG: uploadsProcessed: %s \n", uploadsProcessed)
-
-	graphProcessed, err := redisStore.Get("ranking:graph:processed").String()
-	if err != nil {
-		return err
-	}
-	fmt.Printf("DEBUG: graphProcessed: %s \n", graphProcessed)
-
-	if uploadsProcessed == graphProcessed {
-		return nil
-	}
-
-	//? TODO: Move this to postgres
-	referencesByUploadID, err := redisStore.LRange("ranking:references:gold", 0, -1).Strings()
-	if err != nil {
-		return err
-	}
-
-	for _, uid := range referencesByUploadID {
-		// for {
-		uploadID, err := strconv.Atoi(uid)
-		if err != nil {
-			return err
-		}
-
-		if err := s.lsifstore.InsertPathCountInputs(ctx, uploadID); err != nil {
-			return err
-		}
-		// }
 	}
 
 	return nil
 }
 
-func (s *Service) ReduceRankingGraph(ctx context.Context, numRankingRoutines int) (err error) {
+func (s *Service) ReduceRankingGraph(ctx context.Context, numRankingRoutines int) (numPathRanksInserted float64, numPathCountInputsProcessed float64, err error) {
 	ctx, _, endObservation := s.operations.reduceRankingGraph.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	if err := s.lsifstore.InsertPathRanks(ctx, "dev", 1000); err != nil {
-		return err
+	numPathRanksInserted, numPathCountInputsProcessed, err = s.lsifstore.InsertPathRanks(ctx, rankingGraphKey, rankingBatchSize)
+	if err != nil {
+		return numPathCountInputsProcessed, numPathCountInputsProcessed, err
 	}
 
-	return nil
+	return numPathRanksInserted, numPathCountInputsProcessed, nil
 }
 
 func (s *Service) SerializeRankingGraph(ctx context.Context, numRankingRoutines int) error {
@@ -127,19 +67,7 @@ func (s *Service) SerializeRankingGraph(ctx context.Context, numRankingRoutines 
 	for i := 0; i < numRankingRoutines; i++ {
 		g.Go(func(ctx context.Context) error {
 			for upload := range sharedUploads {
-				// if err := s.serializeAndPersistRankingGraphForUpload(ctx, upload.ID, upload.Repo, upload.Root, upload.ObjectPrefix); err != nil {
-				// 	s.logger.Error(
-				// 		"Failed to process upload for ranking graph",
-				// 		log.Int("id", upload.ID),
-				// 		log.String("repo", upload.Repo),
-				// 		log.String("root", upload.Root),
-				// 		log.Error(err),
-				// 	)
-
-				// 	return err
-				// }
-
-				if err := s.lsifstore.InsertDefinitionsAndReferencesForRanking(ctx, upload, s.setDefinitionsAndReferencesForUpload); err != nil {
+				if err := s.lsifstore.InsertDefinitionsAndReferencesForDocument(ctx, upload, rankingGraphKey, s.setDefinitionsAndReferencesForUpload); err != nil {
 					s.logger.Error(
 						"Failed to process upload for ranking graph",
 						log.Int("id", upload.ID),
@@ -148,13 +76,6 @@ func (s *Service) SerializeRankingGraph(ctx context.Context, numRankingRoutines 
 						log.Error(err),
 					)
 				}
-
-				// TODO: Move this to postgres
-				redisStore.LPush("ranking:references:gold", upload.ID)
-
-				// TODO: Move this to postgres
-				// increment the number of processed uploads
-				redisStore.Incr("ranking:uploads:processed")
 
 				s.logger.Info(
 					"Processed upload for ranking graph",
@@ -176,7 +97,7 @@ func (s *Service) SerializeRankingGraph(ctx context.Context, numRankingRoutines 
 	return nil
 }
 
-func (s *Service) setDefinitionsAndReferencesForUpload(ctx context.Context, upload store.ExportedUpload, path string, document *scip.Document) error {
+func (s *Service) setDefinitionsAndReferencesForUpload(ctx context.Context, upload store.ExportedUpload, rankingGraphKey, path string, document *scip.Document) error {
 	seenDefinitions := map[string]struct{}{}
 	definitions := []shared.RankingDefintions{}
 	for _, occ := range document.Occurrences {
@@ -189,8 +110,7 @@ func (s *Service) setDefinitionsAndReferencesForUpload(ctx context.Context, uplo
 				UploadID:     upload.ID,
 				SymbolName:   occ.Symbol,
 				Repository:   upload.Repo,
-				DocumentRoot: upload.Root,
-				DocumentPath: path,
+				DocumentPath: filepath.Join(upload.Root, path),
 			})
 			// fullPath := fmt.Sprintf("%s@@%s@@%s", upload.Repo, upload.Root, path)
 			seenDefinitions[occ.Symbol] = struct{}{}
@@ -218,7 +138,7 @@ func (s *Service) setDefinitionsAndReferencesForUpload(ctx context.Context, uplo
 		// if err != nil {
 		// 	return err
 		// }
-		if err := s.lsifstore.InsertDefintionsForRanking(ctx, definitions); err != nil {
+		if err := s.lsifstore.InsertDefintionsForRanking(ctx, rankingGraphKey, definitions); err != nil {
 			return err
 		}
 	}
@@ -230,7 +150,7 @@ func (s *Service) setDefinitionsAndReferencesForUpload(ctx context.Context, uplo
 		// 	return err
 		// }
 
-		if err := s.lsifstore.InsertReferencesForRanking(ctx, shared.RankingReferences{
+		if err := s.lsifstore.InsertReferencesForRanking(ctx, rankingGraphKey, shared.RankingReferences{
 			UploadID:   upload.ID,
 			SymbolName: references,
 		}); err != nil {

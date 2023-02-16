@@ -35,15 +35,15 @@ type LsifStore interface {
 	ReconcileCandidates(ctx context.Context, batchSize int) ([]int, error)
 	DeleteUnreferencedDocuments(ctx context.Context, batchSize int, maxAge time.Duration, now time.Time) (count int, err error)
 
-	// Stream
+	// Ranking
 	ScanDocuments(ctx context.Context, id int, f func(path string, document *scip.Document) error) (err error)
-	InsertDefinitionsAndReferencesForRanking(ctx context.Context, upload db.ExportedUpload, f func(ctx context.Context, upload db.ExportedUpload, path string, document *scip.Document) error) (err error)
-	InsertDefintionsForRanking(ctx context.Context, defintions []shared.RankingDefintions) (err error)
-	InsertReferencesForRanking(ctx context.Context, references shared.RankingReferences) (err error)
+	InsertDefinitionsAndReferencesForDocument(ctx context.Context, upload db.ExportedUpload, rankingGraphKey string, f func(ctx context.Context, upload db.ExportedUpload, rankingGraphKey, path string, document *scip.Document) error) (err error)
+	InsertDefintionsForRanking(ctx context.Context, rankingGraphKey string, defintions []shared.RankingDefintions) (err error)
+	InsertReferencesForRanking(ctx context.Context, rankingGraphKey string, references shared.RankingReferences) (err error)
 
 	GetRankingReferencesByUploadID(ctx context.Context, uploadID int, limit, offset int) (references []shared.RankingReferences, err error)
-	InsertPathCountInputs(ctx context.Context, uploadID int) (err error)
-	InsertPathRanks(ctx context.Context, graphKey string, batchSize int) (err error)
+	InsertPathCountInputs(ctx context.Context, rankingGraphKey string, batchSize int) (err error)
+	InsertPathRanks(ctx context.Context, graphKey string, batchSize int) (numPathRanksInserted float64, numInputsProcessed float64, err error)
 }
 
 type SCIPWriter interface {

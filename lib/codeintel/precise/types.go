@@ -254,10 +254,3 @@ type GroupedBundleDataMaps struct {
 	Packages          []Package
 	PackageReferences []PackageReference
 }
-
-type SymbolLocation struct {
-	// The symbol name which is unique within the document.
-	SymbolID string
-	// The path to the document containing the symbol.
-	Path string
-}

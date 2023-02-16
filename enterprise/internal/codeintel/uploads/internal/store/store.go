@@ -2,21 +2,14 @@ package store
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"path/filepath"
-	"strconv"
-	"strings"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
 	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -100,9 +93,6 @@ type Store interface {
 	// Workerutil
 	WorkerutilStore(observationCtx *observation.Context) dbworkerstore.Store[types.Upload]
 
-	// TODO: Move it out of here and the ranking service
-	SetGlobalRanks(ctx context.Context, ranks map[string]string) error
-
 	ReconcileCandidates(ctx context.Context, batchSize int) (_ []int, err error)
 
 	GetUploadsForRanking(ctx context.Context, graphKey, objectPrefix string, batchSize int) ([]ExportedUpload, error)
@@ -154,131 +144,3 @@ func (s *store) transact(ctx context.Context) (*store, error) {
 func (s *store) Done(err error) error {
 	return s.db.Done(err)
 }
-
-const batchNumber = 10000
-
-// TODO: Move it out of here and the ranking service
-func (s *store) SetGlobalRanks(ctx context.Context, ranks map[string]string) (err error) {
-	// payload, err := json.Marshal(ranks)
-	// if err != nil {
-	// 	return err
-	// }
-
-	tx, err := s.db.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	// create temporary table
-	if err := tx.Exec(ctx, sqlf.Sprintf(temporaryGlobalRanksTableQuery)); err != nil {
-		return err
-	}
-
-	column := []string{"repository_name", "payload"}
-
-	if err := batch.WithInserter(
-		ctx,
-		tx.Handle(),
-		"t_global_ranks",
-		batch.MaxNumPostgresParameters,
-		column,
-		func(inserter *batch.Inserter) error {
-			batchMap := map[string]int{}
-			for repoRootPath, fileCount := range ranks {
-				count, err := strconv.Atoi(fileCount)
-				if err != nil {
-					return err
-				}
-
-				batchMap[repoRootPath] = count
-				if len(batchMap) == batchNumber {
-					fmt.Println("inserting batch")
-					if err := insertRanks(ctx, batchMap, inserter); err != nil {
-						return err
-					}
-
-					batchMap = map[string]int{}
-					fmt.Println("finish inserting batch")
-				}
-
-			}
-
-			if len(batchMap) > 0 {
-				if err := insertRanks(ctx, batchMap, inserter); err != nil {
-					return err
-				}
-			}
-			return nil
-		},
-	); err != nil {
-		return err
-	}
-
-	fmt.Println("finish inserting all batch")
-
-	return tx.Exec(ctx, sqlf.Sprintf(setGlobalRanksQuery))
-}
-
-func insertRanks(ctx context.Context, batchMap map[string]int, inserter *batch.Inserter) error {
-	repoMap := map[string]map[string]int{}
-	for repoRootPath, fileCount := range batchMap {
-		parts := strings.Split(repoRootPath, "@@") // ex. ["repo", "root", "path"]
-		repo := parts[0]
-		rootPath := filepath.Join(parts[1], parts[2])
-		if _, ok := repoMap[repo]; !ok {
-			repoMap[repo] = map[string]int{}
-		}
-
-		repoMap[repo][rootPath] = fileCount
-	}
-
-	for repo, rootPathMap := range repoMap {
-		payload, err := json.Marshal(rootPathMap)
-		if err != nil {
-			return err
-		}
-
-		if err := inserter.Insert(ctx, repo, payload); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-const temporaryGlobalRanksTableQuery = `
-CREATE TEMPORARY TABLE t_global_ranks (
-	repository_name text NOT NULL,
-	payload      jsonb NOT NULL
-) ON COMMIT DROP
-`
-
-const setGlobalRanksQuery = `
-INSERT INTO codeintel_path_ranks AS pr (repository_id, precision, payload, graph_key)
-SELECT
-	(SELECT id FROM repo WHERE name = gr.repository_name),
-	1,
-	sg_jsonb_concat_agg(gr.payload),
-	'dev'::text
-FROM t_global_ranks AS gr
-GROUP BY gr.repository_name
-ON CONFLICT (repository_id, precision) DO UPDATE SET
-	payload = pr.payload || EXCLUDED.payload
-`
-
-// const setGlobalRanksQuery = `
-// INSERT INTO codeintel_global_ranks (payload) VALUES (%s)
-// `
-
-// const setDocumentRanksQuery = `
-// INSERT INTO codeintel_path_ranks AS pr (repository_id, precision, payload)
-// VALUES (
-// 	(SELECT id FROM repo WHERE name = %s),
-// 	%s,
-// 	%s
-// )
-// ON CONFLICT (repository_id, precision) DO
-// UPDATE
-// 	SET payload = EXCLUDED.payload
-// `

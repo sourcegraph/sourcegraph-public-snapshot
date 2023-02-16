@@ -204,7 +204,6 @@ type RankingDefintions struct {
 	UploadID     int
 	SymbolName   string
 	Repository   string
-	DocumentRoot string
 	DocumentPath string
 }
 

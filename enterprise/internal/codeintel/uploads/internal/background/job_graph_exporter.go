@@ -39,7 +39,7 @@ func NewRankingGraphMapper(
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		context.Background(),
-		"pagerank.graph-mapper", "maps graph",
+		"pagerank.graph-mapper", "maps definitions and references data to path_counts_inputs table in lsifstore",
 		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			if err := uploadsService.MapRankingGraph(ctx, numRankingRoutines); err != nil {
@@ -55,14 +55,20 @@ func NewRankingGraphReducer(
 	numRankingRoutines int,
 	interval time.Duration,
 ) goroutine.BackgroundRoutine {
+	operations := newRankingOperations(observationCtx)
 	return goroutine.NewPeriodicGoroutine(
 		context.Background(),
-		"pagerank.graph-reducer", "reduces graph",
+		"pagerank.graph-reducer", "reduces path_counts_inputs into a count of paths per repository and stores it in path_ranks table in lsifstore.",
 		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			if err := uploadsService.ReduceRankingGraph(ctx, numRankingRoutines); err != nil {
+			numPathRanksInserted, numPathCountsInputsProcessed, err := uploadsService.ReduceRankingGraph(ctx, numRankingRoutines)
+			if err != nil {
 				return err
 			}
+
+			operations.numPathCountsInputsRowsProcessed.Add(numPathCountsInputsProcessed)
+			operations.numPathRanksInserted.Add(numPathRanksInserted)
+
 			return nil
 		}))
 }
