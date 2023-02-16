@@ -14,23 +14,16 @@ If the ordering of insights is important, you can remove and then re-add the ins
 
 If the size is important, you can use the single-insight view page to consistently view an insight at a larger size, reachable by clicking the insight title or from the context three dots menu on the insight card under "Get shareable link". 
 
-## Performance speed considerations for a data series running over all repositories
+## Performance speed considerations for a data series running over many repositories
 
-To accurately return historical data for insights running over all of your repositories, the backend service must run a large number of Sourcegraph searches. This means that unlike code insights running over just a few repositories, results are not returned instantly, but more often on the scale of 20-120 minutes, depending on:
+To accurately return historical data for insights running over many of your repositories, the backend service must run a large number of Sourcegraph searches. This means that unlike code insights running over just a few repositories, results are not returned instantly, but more often on the scale of 20-120 minutes, depending on:
 
-* _N_: how many repositories you have connected to your instance; in our tests, we used 26,400 repositories
-* _q_: the performance and resources of your Sourcegraph code insights instance in queries-per-second; in our tests, 7 queries per second was average
-* _c_: how well we can "compress" repositories so we don't need to re-run queries every month (e.g., if a repository hasn't changed in two months); in our tests, C = ~2
+* How many and how large the repositories you have connected to your instance
+* The performance and resources of your Sourcegraph code insights instance in queries-per-second;
+* How well we can "compress" repositories so we don't need to run queries for each historic data point (e.g., if a repository hasn't changed in several months)
 
-A _very_ general formula for estimating how long an individual data series (query) will take to run on your instance in seconds  _N_ * 1/_c_ * 1/_q_. 
+The number of insights you have does not affect the overall speed at which they run: it will take the same total time to run all of them whether or not you let each one finish before creating the next one. As of version 4.4.0 Insights prioritize completing the backfills for the series that will complete the fastest.  In general this means that insights over many repositories will pause to allow insights over a few repositories to complete. 
 
-On our test instance, we find a code insight data series takes approximately:
-
-26,400 repositories * 1/2 compression factor * 1/7 queries per second = 31 minutes
-
-The number of insights you have does not affect the overall speed at which they run: it will take the same total time to run all of them whether or not you let each one finish before creating the next one. Insights currently [populate in parallel](https://github.com/sourcegraph/sourcegraph/pull/23101), prioritizing most-recent-in-time datapoints first. 
-
-> NOTE: we have many performance improvements planned. We'll likely release considerable performance gains in the upcoming releases of 2021. 
 
 ## Creating insights over very large repositories (<3.42)
 
