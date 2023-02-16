@@ -606,6 +606,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 		client := proto.NewGitserverServiceClient(conn)
 		stream, err := client.Exec(ctx, req)
 		if err != nil {
+			conn.Close()
 			return nil, err
 		}
 		r := streamio.NewReader(func() ([]byte, error) {
