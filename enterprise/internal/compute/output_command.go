@@ -48,7 +48,7 @@ func output(ctx context.Context, fragment string, matchPattern MatchPattern, rep
 			Input:           comby.FileContent(fragment),
 			MatchTemplate:   match.Value,
 			RewriteTemplate: replacePattern,
-			Matcher:         ".generic", // TODO(rvantoner): use language or file filter
+			Matcher:         ".generic", // TODO(search): use language or file filter
 			ResultKind:      comby.NewlineSeparatedOutput,
 			NumWorkers:      0,
 		})
@@ -99,6 +99,8 @@ func resultChunks(r result.Match, kind string, onlyPath bool) []string {
 			content = string(m.Commit.Message)
 		}
 		return []string{content}
+	case *result.OwnerMatch:
+		return []string{m.ResolvedOwner.Identifier()}
 	default:
 		panic("unsupported result kind in compute output command")
 	}
@@ -110,7 +112,6 @@ func toTextResult(ctx context.Context, content string, matchPattern MatchPattern
 		// when there's an explicit `select:` value.
 		return outputPattern, nil
 	}
-
 	return output(ctx, content, matchPattern, outputPattern, separator)
 }
 

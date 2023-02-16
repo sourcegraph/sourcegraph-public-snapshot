@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -18,7 +19,11 @@ func main() {
 	}
 }
 
+var frozenMigrationsFlag = flag.Bool("write-frozen", true, "write frozen revision migration files")
+
 func mainErr() error {
+	flag.Parse()
+
 	wd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -28,7 +33,6 @@ func mainErr() error {
 
 	//
 	// Write stitched migrations
-
 	versions, err := oobmigration.UpgradeRange(MinVersion, MaxVersion)
 	if err != nil {
 		return err
@@ -37,16 +41,19 @@ func mainErr() error {
 	for _, version := range versions {
 		versionTags = append(versionTags, version.GitTag())
 	}
+	fmt.Println(fmt.Sprintf("Generating stitched migration files for range [%s, %s]", MinVersion, MaxVersion))
 	if err := stitchAndWrite(repoRoot, filepath.Join(wd, "data", "stitched-migration-graph.json"), versionTags); err != nil {
 		return err
 	}
 
-	//
-	// Write frozen migrations
-
-	for _, rev := range FrozenRevisions {
-		if err := stitchAndWrite(repoRoot, filepath.Join(wd, "data", "frozen", fmt.Sprintf("%s.json", rev)), []string{rev}); err != nil {
-			return err
+	if *frozenMigrationsFlag {
+		fmt.Println("Generating frozen migrations")
+		// Write frozen migrations. There is an optional flag that will short circuit this step. This is useful for
+		// clients that are only interested in the stitch graph, such as the release tool.
+		for _, rev := range FrozenRevisions {
+			if err := stitchAndWrite(repoRoot, filepath.Join(wd, "data", "frozen", fmt.Sprintf("%s.json", rev)), []string{rev}); err != nil {
+				return err
+			}
 		}
 	}
 

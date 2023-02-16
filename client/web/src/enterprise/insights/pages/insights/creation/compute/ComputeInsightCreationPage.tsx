@@ -3,17 +3,17 @@ import { FunctionComponent, useCallback, useMemo } from 'react'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, useLocalStorage, useObservable } from '@sourcegraph/wildcard'
-
-import { PageTitle } from '../../../../../../components/PageTitle'
 import {
-    CodeInsightCreationMode,
-    CodeInsightsCreationActions,
-    CodeInsightsPage,
+    PageHeader,
+    useLocalStorage,
+    useObservable,
     FORM_ERROR,
     FormChangeEvent,
     SubmissionErrors,
-} from '../../../../components'
+} from '@sourcegraph/wildcard'
+
+import { PageTitle } from '../../../../../../components/PageTitle'
+import { CodeInsightCreationMode, CodeInsightsCreationActions, CodeInsightsPage } from '../../../../components'
 import { ComputeInsight } from '../../../../core'
 import { useUiFeatures } from '../../../../hooks'
 import { CodeInsightTrackType } from '../../../../pings'

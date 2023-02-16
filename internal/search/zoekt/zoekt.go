@@ -110,9 +110,9 @@ func (o *Options) ToSearch(ctx context.Context) *zoekt.SearchOptions {
 	}
 
 	if o.Features.Ranking {
-		// This enables our stream based ranking were we wait upto 500ms to
-		// collect results before ranking.
-		searchOpts.FlushWallTime = 500 * time.Millisecond
+		// This enables our stream based ranking, where we wait a certain amount
+		// of time to collect results before ranking.
+		searchOpts.FlushWallTime = conf.SearchFlushWallTime()
 
 		// This enables the use of document ranks in scoring, if they are available.
 		searchOpts.UseDocumentRanks = true
