@@ -6,6 +6,7 @@ PORT=${PORT:-"7080"}
 URL="http://localhost:$PORT"
 DATA=${DATA:-"/tmp/sourcegraph-data"}
 SOURCEGRAPH_LICENSE_GENERATION_KEY=${SOURCEGRAPH_LICENSE_GENERATION_KEY:-""}
+ENABLE_GRPC=${ENABLE_GRPC:-"false"}
 
 echo "--- Checking for existing Sourcegraph instance at $URL"
 if curl --output /dev/null --silent --head --fail "$URL"; then
@@ -40,6 +41,7 @@ docker run "$@" \
   -e DEBUG=t \
   -e ALLOW_SINGLE_DOCKER_CODE_INSIGHTS=t \
   -e SOURCEGRAPH_LICENSE_GENERATION_KEY="$SOURCEGRAPH_LICENSE_GENERATION_KEY" \
+  -e ENABLE_GRPC="$ENABLE_GRPC" \
   --volume "$DATA/config:/etc/sourcegraph" \
   --volume "$DATA/data:/var/opt/sourcegraph" \
   "$IMAGE"
