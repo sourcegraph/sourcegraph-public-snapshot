@@ -30,6 +30,8 @@ jobs:
     steps:
       - name: Check date and labels
         id: check-date-and-labels
+        outputs:
+          exists: ${{ steps.check-date-and-labels.outputs.exists }}
         run: |
           # Does this PR have the acknowledgement label?
           has_label="${{contains(github.event.pull_request.labels.*.name, 'i-acknowledge-this-goes-into-the-release')}}"
@@ -113,6 +115,7 @@ jobs:
               echo "❌ Label 'i-acknowledge-this-goes-into-the-release' is absent"
               echo "👉 We're in the next Sourcegraph release code freeze period. If you are 100% sure your changes should get released or provide no risk to the release, add the label your PR with 'i-acknowledge-this-goes-into-the-release'"
               echo "❓ When does the freeze end? The code freeze will be lifted on ${release_date} at 23:59 UTC."
+              echo $release_date_epoch
               exit 1
             fi
           else
