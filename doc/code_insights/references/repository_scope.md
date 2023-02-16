@@ -4,10 +4,9 @@ A Code Insight runs on a list of repositories as specified on insight creation. 
 
 * Manually specify a list of repositories
 * Run the insight over all repositories (Sourcegraph 3.31.1+).
-  * In Sourcegraph 4.5 this is achieved through a `repo:.*` search query (see below).
+  * From Sourcegraph 4.5 this is achieved through a `repo:.*` search query.
 * Run the insight over repositories as returned from a repository search query (Sourcegraph 4.5+)
   * This replaces the "Run your insight over all repositories" checkbox in prior versions
-  * You can still achieve that functionality using a `repo:.*` search query
 
 ## Using the repository search query box
 
