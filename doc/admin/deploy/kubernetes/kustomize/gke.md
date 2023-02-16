@@ -30,7 +30,7 @@ You must complete **all** the prerequisites listed above before installing Sourc
 Deploy Sourcegraph to your cluster:
 
 ```bash
-$ kubectl apply --prune -l deploy=sourcegraph -k https://github.com/sourcegraph/deploy-sourcegraph-k8s/examples/gke/base?ref=v4.5.0
+$ kubectl apply --prune -l deploy=sourcegraph -k https://github.com/sourcegraph/deploy-sourcegraph-k8s/examples/gke
 ```
 
 Monitor the deployment status to make sure everything is up and running:
@@ -72,7 +72,7 @@ You should now be able to access your new Sourcegraph instance at http://localho
 
 ### Further configuration
 
-The steps above have guided you to deploy Sourcegraph using the [examples/gke/base](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tree/master/examples/gke/base) overlay preconfigured by us.
+The steps above have guided you to deploy Sourcegraph using the [examples/gke](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tree/master/examples/gke) overlay preconfigured by us.
 
 If you would like to make other configurations to your existing instance, you can create a new overlay using its kustomization.yaml file shown below and build on top of it. For example, you can upgrade your instance from size XS to L, or add the monitoring stacks.
 
@@ -96,7 +96,7 @@ components:
 You can also build the kustomization file remotely and build on top of it:
 
 ```yaml
-kustomize create --resources https://github.com/sourcegraph/deploy-sourcegraph-k8s/examples/gke/base?ref=v4.5.0
+kustomize create --resources https://github.com/sourcegraph/deploy-sourcegraph-k8s/examples/gke
 ```
 
 #### Enable TLS

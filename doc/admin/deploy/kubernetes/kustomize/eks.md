@@ -29,7 +29,7 @@ You must complete **all** the prerequisites listed above before installing Sourc
 Deploy Sourcegraph main app without the monitoring stacks to your cluster:
 
 ```bash
-$ kubectl apply --prune -l deploy=sourcegraph -k https://github.com/sourcegraph/deploy-sourcegraph-k8s/examples/aws/eks?ref=v4.4.1
+$ kubectl apply --prune -l deploy=sourcegraph -k https://github.com/sourcegraph/deploy-sourcegraph-k8s/examples/aws
 ```
 
 Monitor the deployment status to make sure everything is up and running:
@@ -71,7 +71,7 @@ You should now be able to access your new Sourcegraph instance at http://localho
 
 ### Further configuration
 
-The steps above have guided you to deploy Sourcegraph using the [quick-start/aws/eks](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tree/master/examples/aws/eks) overlay preconfigured by us.
+The steps above have guided you to deploy Sourcegraph using the [quick-start/aws/eks](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tree/master/examples/aws) overlay preconfigured by us.
 
 If you would like to make other configurations to your existing instance, you can create a new overlay using its kustomization.yaml file shown below and build on top of it. For example, you can upgrade your instance from size XS to L, or add the monitoring stacks.
 

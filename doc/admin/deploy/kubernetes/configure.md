@@ -136,6 +136,84 @@ components:
 
 ---
 
+## Tracing
+
+Sourcegraph exports traces in OpenTelemetry format. The OpenTelemetry collector, which must be configured as part of the deployment using the [otel component](#deploy-opentelemetry-collector), [collects and exports traces](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/opentelemetry-collector/configs/logging.yaml). 
+
+By default, Sourcegraph supports exporting traces to multiple backends including Jaeger.
+
+### Deploy OpenTelemetry Collector
+
+Include the `otel` component to deploy OpenTelemetry Collector:
+
+```yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
+components:
+# Deploy OpenTelemetry Collector
+- ../../components/monitoring/otel
+```
+
+Learn more about Sourcegraph's integrations with the [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) in our [OpenTelemetry documentation](../../observability/opentelemetry.md).
+
+### Deploy OpenTelemetry Collector with Jaeger as tracing backend
+
+If you do not have an external backend available for the OpenTelemetry Collector to export tracing data to, you can deploy the Collector with the Jaeger backend to store and view traces using the `tracing component` as described below:
+
+**Step 1**: Include the `tracing` component to deploy both OpenTelemetry and Jaeger. The component also configures the following services:
+
+- `otel-collector` to export to this Jaeger instance
+- `grafana` to get metrics from this Jaeger instance
+
+```yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
+components:
+# Deploy OpenTelemetry Collector and Jaeger
+- ../../components/monitoring/tracing
+```
+
+**Step 2**: In your Site configuration, add the following to:
+
+- sends Sourcegraph traces to OpenTelemetry Collector
+- send traces from OpenTelemerty to Jaeger
+
+```json
+{
+  "observability.client": {
+    "openTelemetry": {
+      "endpoint": "/-/debug/otlp"
+    }
+  },
+  "observability.tracing": {
+    "type": "opentelemetry",
+    "urlTemplate": "{{ .ExternalURL }}/-/debug/jaeger/trace/{{ .TraceID }}"
+  }
+}
+```
+
+### Configure a tracing backend
+
+Follow these steps to add configure OpenTelementry to use a different backend:
+
+1. Create a subdirectory called 'patches' within the directory of your overlay
+2. Copy and paste the [base/otel-collector/otel-collector.ConfigMap.yaml file](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph-k8s@master/-/tree/base/otel-collector/otel-collector.ConfigMap.yaml) to the new [patches subdirectory](kustomize/index.md#patches-directory)
+3. In the copied file, make the necessary changes to the `exporters` and `service` blocks to connect to your backend based on the documentation linked above
+4. Include the following in your overlay:
+
+```yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
+components:
+- ../../components/otel-collector/backend
+...
+patchesStrategicMerge:
+- patches/otel-collector.ConfigMap.yaml
+```
+
+The component will update the `command` for the `otel-collector` container to `"--config=/etc/otel-collector/conf/config.yaml"`, which is now point to the mounted config.
+
+Please refer to [OpenTelemetry](../../observability/opentelemetry.md) for detailed descriptions on how to configure your backend of choice.
+
+---
+
 ## Namespace
 
 Follow the steps below to add namespace to all your Sourcegraph resources:
@@ -895,34 +973,6 @@ The `utils/uid` component bind-mount `/etc/passwd` as read-only through hostpath
 components:
 - ../../components/utils/uid
 ```
-
----
-
-## OpenTelemetry Collector
-
-Learn more about Sourcegraph's integrations with the [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) in our [OpenTelemetry documentation](../../observability/opentelemetry.md).
-
-Sourcegraph currently supports exporting tracing data to several backends. Refer to [OpenTelemetry](../../observability/opentelemetry.md) for detailed descriptions on how to configure your backend of choice.
-
-### Configure a tracing backend
-
-By default, the collector is [configured to export trace data by logging](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/opentelemetry-collector/configs/logging.yaml). Follow these steps to add a config for a different backend:
-
-1. Create a subdirectory called 'patches' within the directory of your overlay
-2. Copy and paste the [base/otel-collector/otel-collector.ConfigMap.yaml file](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph-k8s@master/-/tree/base/otel-collector/otel-collector.ConfigMap.yaml) to the new [patches subdirectory](kustomize/index.md#patches-directory)
-3. In the copied file, make the necessary changes to the `exporters` and `service` blocks to connect to your backend based on the documentation linked above
-4. Include the following in your overlay:
-
-```yaml
-# instances/$INSTANCE_NAME/kustomization.yaml
-components:
-- ../../components/otel-collector/backend
-...
-patchesStrategicMerge:
-- patches/otel-collector.ConfigMap.yaml
-```
-
-The component will update the `command` for the `otel-collector` container to `"--config=/etc/otel-collector/conf/config.yaml"`, which is now point to the mounted config.
 
 ---
 
