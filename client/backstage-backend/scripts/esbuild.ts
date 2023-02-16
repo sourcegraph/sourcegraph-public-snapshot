@@ -4,17 +4,18 @@ import path from 'path'
 import * as esbuild from 'esbuild'
 import { rm } from 'shelljs'
 
-import { buildTimerPlugin } from '@sourcegraph/build-config'
+import { WORKSPACES_PATH, buildTimerPlugin } from '@sourcegraph/build-config'
 
-const distributionPath = path.resolve(__dirname, '..', 'dist')
+const PACKAGE_ROOT_PATH = path.resolve(WORKSPACES_PATH, 'backstage-frontend')
+const DIST_PATH = path.resolve(PACKAGE_ROOT_PATH, 'dist')
 
 async function build(): Promise<void> {
-    if (existsSync(distributionPath)) {
-        rm('-rf', distributionPath)
+    if (existsSync(DIST_PATH)) {
+        rm('-rf', DIST_PATH)
     }
 
     await esbuild.build({
-        entryPoints: [path.resolve(__dirname, '..', 'src', 'index.ts')],
+        entryPoints: [path.resolve(PACKAGE_ROOT_PATH, 'src', 'index.ts')],
         bundle: true,
         external: [
             '@backstage/cli',
@@ -41,7 +42,7 @@ async function build(): Promise<void> {
         ignoreAnnotations: true,
         treeShaking: true,
         sourcemap: true,
-        outdir: distributionPath,
+        outdir: DIST_PATH,
     })
 }
 

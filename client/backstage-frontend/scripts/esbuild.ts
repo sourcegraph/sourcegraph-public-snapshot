@@ -5,23 +5,18 @@ import { nodeExternalsPlugin } from 'esbuild-node-externals'
 import * as esbuild from 'esbuild'
 import { rm } from 'shelljs'
 
-import {
-    packageResolutionPlugin,
-    stylePlugin,
-    workerPlugin,
-    RXJS_RESOLUTIONS,
-    buildTimerPlugin,
-} from '@sourcegraph/build-config'
+import { stylePlugin, workerPlugin, buildTimerPlugin, WORKSPACES_PATH } from '@sourcegraph/build-config'
 
-const distributionPath = path.resolve(__dirname, '..', 'dist')
+const PACKAGE_ROOT_PATH = path.resolve(WORKSPACES_PATH, 'backstage-frontend')
+const DIST_PATH = path.resolve(PACKAGE_ROOT_PATH, 'dist')
 
 async function build(): Promise<void> {
-    if (existsSync(distributionPath)) {
-        rm('-rf', distributionPath)
+    if (existsSync(DIST_PATH)) {
+        rm('-rf', DIST_PATH)
     }
 
     await esbuild.build({
-        entryPoints: [path.resolve(__dirname, '..', 'src', 'index.ts')],
+        entryPoints: [path.resolve(PACKAGE_ROOT_PATH, 'src', 'index.ts')],
         bundle: true,
         format: 'esm',
         logLevel: 'error',
@@ -42,7 +37,7 @@ async function build(): Promise<void> {
         treeShaking: true,
         target: 'esnext',
         sourcemap: true,
-        outdir: distributionPath,
+        outdir: DIST_PATH,
     })
 }
 
