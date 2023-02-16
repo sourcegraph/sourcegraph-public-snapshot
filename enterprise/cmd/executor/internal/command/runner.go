@@ -25,13 +25,13 @@ type Runner interface {
 	Teardown(ctx context.Context) error
 
 	// Run invokes a command in the runner context.
-	Run(ctx context.Context, command CommandSpec) error
+	Run(ctx context.Context, command Spec) error
 }
 
-// CommandSpec represents a command that can be run on a machine, whether that
+// Spec represents a command that can be run on a machine, whether that
 // is the host, in a virtual machine, or in a docker container. If an image is
 // supplied, then the command will be run in a one-shot docker container.
-type CommandSpec struct {
+type Spec struct {
 	Key        string
 	Image      string
 	ScriptPath string
@@ -182,7 +182,7 @@ func (r *dockerRunner) Teardown(ctx context.Context) error {
 	return nil
 }
 
-func (r *dockerRunner) Run(ctx context.Context, command CommandSpec) error {
+func (r *dockerRunner) Run(ctx context.Context, command Spec) error {
 	return runCommand(ctx, formatRawOrDockerCommand(command, r.dir, r.options, r.dockerConfigPath), r.cmdLogger)
 }
 
@@ -215,7 +215,7 @@ func (r *firecrackerRunner) Teardown(ctx context.Context) error {
 	return teardownFirecracker(ctx, defaultRunner, r.logger, r.name, r.tmpDir, r.operations)
 }
 
-func (r *firecrackerRunner) Run(ctx context.Context, command CommandSpec) error {
+func (r *firecrackerRunner) Run(ctx context.Context, command Spec) error {
 	return runCommand(ctx, formatFirecrackerCommand(command, r.name, r.options, r.dockerConfigPath), r.logger)
 }
 

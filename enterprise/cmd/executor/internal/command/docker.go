@@ -15,7 +15,7 @@ const ScriptsPath = ".sourcegraph-executor"
 // will be run _directly_ on the host. Otherwise, the command will be run inside
 // of a one-shot docker container subject to the resource limits specified in the
 // given options.
-func formatRawOrDockerCommand(spec CommandSpec, dir string, options Options, dockerConfigPath string) command {
+func formatRawOrDockerCommand(spec Spec, dir string, options Options, dockerConfigPath string) command {
 	// TODO - remove this once src-cli is not required anymore for SSBC.
 	if spec.Image == "" {
 		env := spec.Env

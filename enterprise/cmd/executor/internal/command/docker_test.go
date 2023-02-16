@@ -9,7 +9,7 @@ import (
 func TestFormatRawOrDockerCommandRaw(t *testing.T) {
 	t.Run("docker", func(t *testing.T) {
 		actual := formatRawOrDockerCommand(
-			CommandSpec{
+			Spec{
 				Image:   "sourcegraph/sourcegraph",
 				Command: []string{"ls", "-a"},
 				Dir:     "subdir",
@@ -46,7 +46,7 @@ func TestFormatRawOrDockerCommandRaw(t *testing.T) {
 
 	t.Run("docker with host gateway", func(t *testing.T) {
 		actual := formatRawOrDockerCommand(
-			CommandSpec{
+			Spec{
 				Image:     "sourcegraph/sourcegraph",
 				Env:       []string{},
 				Operation: makeTestOperation(),
@@ -81,7 +81,7 @@ func TestFormatRawOrDockerCommandRaw(t *testing.T) {
 
 func TestFormatRawOrDockerCommandRaw_SrcCli(t *testing.T) {
 	actual := formatRawOrDockerCommand(
-		CommandSpec{
+		Spec{
 			Image:   "",
 			Command: []string{"ls", "-a"},
 			Dir:     "subdir",
@@ -108,7 +108,7 @@ func TestFormatRawOrDockerCommandRaw_SrcCli(t *testing.T) {
 
 func TestFormatRawOrDockerCommandDockerScript(t *testing.T) {
 	actual := formatRawOrDockerCommand(
-		CommandSpec{
+		Spec{
 			Image:      "alpine:latest",
 			ScriptPath: "myscript.sh",
 			Dir:        "subdir",
@@ -154,7 +154,7 @@ func TestFormatRawOrDockerCommandDockerScript(t *testing.T) {
 
 func TestFormatRawOrDockerCommandDockerScriptWithoutResourceAllocation(t *testing.T) {
 	actual := formatRawOrDockerCommand(
-		CommandSpec{
+		Spec{
 			Image:      "alpine:latest",
 			ScriptPath: "myscript.sh",
 			Dir:        "subdir",
@@ -190,7 +190,7 @@ func TestFormatRawOrDockerCommandDockerScriptWithoutResourceAllocation(t *testin
 
 func TestFormatRawOrDockerCommandDockerScriptWithDockerHostMountPath(t *testing.T) {
 	actual := formatRawOrDockerCommand(
-		CommandSpec{
+		Spec{
 			Image:      "alpine:latest",
 			ScriptPath: "myscript.sh",
 			Dir:        "subdir",

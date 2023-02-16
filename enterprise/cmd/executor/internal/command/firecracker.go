@@ -38,7 +38,7 @@ const (
 // The name value supplied here refers to the Firecracker virtual machine, which must have
 // also been the name supplied to a successful invocation of setupFirecracker. Additionally,
 // the virtual machine must not yet have been torn down (via teardownFirecracker).
-func formatFirecrackerCommand(spec CommandSpec, name string, options Options, dockerConfigPath string) command {
+func formatFirecrackerCommand(spec Spec, name string, options Options, dockerConfigPath string) command {
 	rawOrDockerCommand := formatRawOrDockerCommand(spec, firecrackerContainerDir, options, dockerConfigPath)
 
 	innerCommand := shellquote.Join(rawOrDockerCommand.Command...)

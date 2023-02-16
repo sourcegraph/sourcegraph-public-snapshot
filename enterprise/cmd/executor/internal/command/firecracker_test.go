@@ -14,7 +14,7 @@ import (
 
 func TestFormatFirecrackerCommandRaw(t *testing.T) {
 	actual := formatFirecrackerCommand(
-		CommandSpec{
+		Spec{
 			Command: []string{"ls", "-a"},
 			Dir:     "sub dir",
 			Env: []string{
@@ -41,7 +41,7 @@ func TestFormatFirecrackerCommandRaw(t *testing.T) {
 
 func TestFormatFirecrackerCommandDockerScript(t *testing.T) {
 	actual := formatFirecrackerCommand(
-		CommandSpec{
+		Spec{
 			Image:      "alpine:latest",
 			ScriptPath: "myscript.sh",
 			Dir:        "sub dir",
@@ -88,7 +88,7 @@ func TestFormatFirecrackerCommandDockerScript(t *testing.T) {
 
 func TestFormatFirecrackerCommandDockerScript_NoInjection(t *testing.T) {
 	actual := formatFirecrackerCommand(
-		CommandSpec{
+		Spec{
 			Image:      "--privileged alpine:latest",
 			ScriptPath: "myscript.sh",
 			Operation:  makeTestOperation(),
