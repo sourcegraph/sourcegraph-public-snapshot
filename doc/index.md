@@ -1,6 +1,13 @@
 # Sourcegraph
 
-Sourcegraph is a code search and intelligence platform. Devs use it to search, understand, and fix code across large codebases.
+If you're a developer, you can simplify your life with Sourcegraph. Use it to:
+
+- Search through all repositories for code snippets, functions, and files.
+- Review and highlight code with inline comments.
+- Use our code intelligence features, including navigation, suggestions, and insights
+- Highlight and fix vulnerabilities.
+
+If you have a large codebase, Sourcegraph can help.
 
 ## [Sourcegraph.com/search](https://sourcegraph.com/search)
 
