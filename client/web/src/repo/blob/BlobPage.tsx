@@ -51,7 +51,7 @@ import { NotebookProps } from '../../notebooks'
 import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
 import { OpenInEditorActionItem } from '../../open-in-editor/OpenInEditorActionItem'
 import { SearchStreamingProps } from '../../search'
-import { useNotepad, useExperimentalFeatures } from '../../stores'
+import { useExperimentalFeatures, useNotepad } from '../../stores'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
 import { serviceKindDisplayNameAndIcon } from '../actions/GoToCodeHostAction'
@@ -130,7 +130,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     const enableLazyBlobSyntaxHighlighting = useExperimentalFeatures(
         features => features.enableLazyBlobSyntaxHighlighting ?? false
     )
-    const [enableOwnershipPanel] = useFeatureFlag('ownership-panel')
+    const [enableOwnershipPanel] = useFeatureFlag('search-ownership')
 
     const enableSelectionDrivenCodeNavigation = experimentalCodeNavigation === 'selection-driven'
     const enableLinkDrivenCodeNavigation = experimentalCodeNavigation === 'link-driven'

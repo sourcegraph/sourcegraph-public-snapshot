@@ -31,7 +31,10 @@ export const FileOwnershipPanel: React.FunctionComponent<
 
     if (error) {
         logger.log(error)
-        return <div>Error...</div>
+        return <div>
+
+
+        </div>
     }
 
     if (data?.node && data.node.__typename === 'Repository' && data.node.commit) {
@@ -45,9 +48,17 @@ export const FileOwnershipPanel: React.FunctionComponent<
                         <th>Reason</th>
                     </tr>
                 </thead>
-                {data.node.commit.blob?.ownership.map(own => (
-                    <FileOwnershipEntry key={own.handle} person={own.person} reasons={own.reasons} />
-                ))}
+                {data.node.commit.blob?.ownership.nodes.map(ownership =>
+                    ownership.owner.__typename === 'Person' ? (
+                        <FileOwnershipEntry
+                            key={ownership.owner.email}
+                            person={ownership.owner}
+                            reasons={ownership.reasons.filter(reason => reason.__typename === 'CodeownersFileEntry')}
+                        />
+                    ) : (
+                        <></>
+                    )
+                )}
             </Accordion>
         )
     }
@@ -62,24 +73,21 @@ export const FETCH_OWNERS = gql`
                 commit(rev: $revision) {
                     blob(path: $currentPath) {
                         ownership {
-                            ... on Ownership {
-                                handle
-                                person {
-                                    email
-                                    avatarURL
-                                    displayName
-                                    user {
-                                        username
+                            nodes {
+                                owner {
+                                    ... on Person {
+                                        email
+                                        avatarURL
                                         displayName
-                                        url
+                                        user {
+                                            username
+                                            displayName
+                                            url
+                                        }
                                     }
                                 }
                                 reasons {
                                     ... on CodeownersFileEntry {
-                                        title
-                                        description
-                                    }
-                                    ... on RecentContributor {
                                         title
                                         description
                                     }

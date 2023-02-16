@@ -68,7 +68,7 @@ function useBlobPanelViews({
             : undefined
     }, [location.hash, location.search])
 
-    const [enableOwnershipPanel] = useFeatureFlag('ownership-panel')
+    const [enableOwnershipPanel] = useFeatureFlag('search-ownership')
 
     useBuiltinTabbedPanelViews(
         useMemo(() => {
@@ -142,6 +142,7 @@ function useBlobPanelViews({
             filePath,
             preferAbsoluteTimestamps,
             defaultPageSize,
+            enableOwnershipPanel,
         ])
     )
 

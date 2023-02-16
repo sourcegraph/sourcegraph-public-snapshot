@@ -18,7 +18,7 @@ export type FeatureFlagName =
     | 'enable-rbac'
     | 'accessible-file-tree'
     | 'accessible-file-tree-always-load-ancestors'
-    | 'ownership-panel'
+    | 'search-ownership'
     | 'cody'
 
 interface OrgFlagOverride {
