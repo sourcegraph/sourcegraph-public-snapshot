@@ -696,10 +696,10 @@ func checkUserRepoPermissions(t *testing.T, s *permsStore, where *sqlf.Query, ex
 	}
 }
 
-func setupPermsRelatedEntities(t *testing.T, s *permsStore, permissions []authz.Permission) error {
+func setupPermsRelatedEntities(t *testing.T, s *permsStore, permissions []authz.Permission) {
 	t.Helper()
 	if permissions == nil || len(permissions) == 0 {
-		return errors.New("no permissions to setup foreign keys for")
+		t.Fatal("no permissions to setup related entities for")
 	}
 
 	users := make(map[int32]*sqlf.Query, len(permissions))
@@ -711,20 +711,19 @@ func setupPermsRelatedEntities(t *testing.T, s *permsStore, permissions []authz.
 		repos[p.RepoID] = sqlf.Sprintf("(%s::integer, %s::text)", p.RepoID, fmt.Sprintf("repo-%d", p.RepoID))
 	}
 
+	defaultErrMessage := "setup test related entities before actual test"
 	usersQuery := sqlf.Sprintf(`INSERT INTO users(id, username) VALUES %s ON CONFLICT (id) DO NOTHING`, sqlf.Join(maps.Values(users), ","))
 	if err := s.execute(context.Background(), usersQuery); err != nil {
-		return err
+		t.Fatal(defaultErrMessage, err)
 	}
 	externalAccountsQuery := sqlf.Sprintf(`INSERT INTO user_external_accounts(id, user_id, service_type, service_id, account_id, client_id) VALUES %s ON CONFLICT(id) DO NOTHING`, sqlf.Join(maps.Values(externalAccounts), ","))
 	if err := s.execute(context.Background(), externalAccountsQuery); err != nil {
-		return err
+		t.Fatal(defaultErrMessage, err)
 	}
 	reposQuery := sqlf.Sprintf(`INSERT INTO repo(id, name) VALUES %s ON CONFLICT(id) DO NOTHING`, sqlf.Join(maps.Values(repos), ","))
 	if err := s.execute(context.Background(), reposQuery); err != nil {
-		return err
+		t.Fatal(defaultErrMessage, err)
 	}
-
-	return nil
 }
 
 func testPermsStore_SetUserRepoPermissions(db database.DB) func(*testing.T) {
@@ -741,125 +740,49 @@ func testPermsStore_SetUserRepoPermissions(db database.DB) func(*testing.T) {
 			name:                "empty",
 			permissions:         []authz.Permission{},
 			expectedPermissions: []authz.Permission{},
-			entity: authz.PermissionEntity{
-				UserID:            1,
-				ExternalAccountID: 1,
-			},
+			entity:              authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
 		},
 		{
 			name: "add",
 			permissions: []authz.Permission{
-				{
-					UserID:            1,
-					ExternalAccountID: 1,
-					RepoID:            1,
-				},
-				{
-					UserID:            1,
-					ExternalAccountID: 1,
-					RepoID:            2,
-				},
-				{
-					UserID:            1,
-					ExternalAccountID: 1,
-					RepoID:            3,
-				},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 1},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 2},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 3},
 			},
 			expectedPermissions: []authz.Permission{
-				{
-					UserID:            1,
-					ExternalAccountID: 1,
-					RepoID:            1,
-				},
-				{
-					UserID:            1,
-					ExternalAccountID: 1,
-					RepoID:            2,
-				},
-				{
-					UserID:            1,
-					ExternalAccountID: 1,
-					RepoID:            3,
-				},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 1},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 2},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 3},
 			},
-			entity: authz.PermissionEntity{
-				UserID:            1,
-				ExternalAccountID: 1,
-			},
+			entity: authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
 		},
 		{
 			name: "add, update and remove",
 			origPermissions: []authz.Permission{
-				{
-					UserID:            1,
-					ExternalAccountID: 1,
-					RepoID:            1,
-				},
-				{
-					UserID:            1,
-					ExternalAccountID: 1,
-					RepoID:            2,
-				},
-				{
-					UserID:            1,
-					ExternalAccountID: 1,
-					RepoID:            3,
-				},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 1},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 2},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 3},
 			},
 			permissions: []authz.Permission{
-				{
-					UserID:            1,
-					ExternalAccountID: 1,
-					RepoID:            1,
-				},
-				{
-					UserID:            1,
-					ExternalAccountID: 1,
-					RepoID:            4,
-				},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 1},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 4},
 			},
 			expectedPermissions: []authz.Permission{
-				{
-					UserID:            1,
-					ExternalAccountID: 1,
-					RepoID:            1,
-				},
-				{
-					UserID:            1,
-					ExternalAccountID: 1,
-					RepoID:            4,
-				},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 1},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 4},
 			},
-			entity: authz.PermissionEntity{
-				UserID:            1,
-				ExternalAccountID: 1,
-			},
+			entity: authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
 		},
 		{
 			name: "remove only",
 			origPermissions: []authz.Permission{
-				{
-					UserID:            1,
-					ExternalAccountID: 1,
-					RepoID:            1,
-				},
-				{
-					UserID:            1,
-					ExternalAccountID: 1,
-					RepoID:            2,
-				},
-				{
-					UserID:            1,
-					ExternalAccountID: 1,
-					RepoID:            3,
-				},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 1},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 2},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 3},
 			},
 			permissions:         []authz.Permission{},
 			expectedPermissions: []authz.Permission{},
-			entity: authz.PermissionEntity{
-				UserID:            1,
-				ExternalAccountID: 1,
-			},
+			entity:              authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
 		},
 	}
 
@@ -877,22 +800,17 @@ func testPermsStore_SetUserRepoPermissions(db database.DB) func(*testing.T) {
 				})
 
 				if len(test.origPermissions) > 0 {
-					err := setupPermsRelatedEntities(t, s, test.origPermissions)
-					if err != nil {
-						t.Fatal("setup test related entities before actual test", err)
-					}
-					err = s.SetUserRepoPermissions(ctx, test.origPermissions, test.entity, source)
+					setupPermsRelatedEntities(t, s, test.origPermissions)
+					err := s.setUserRepoPermissions(ctx, test.origPermissions, test.entity, source)
 					if err != nil {
 						t.Fatal("setup test permissions before actual test", err)
 					}
 				}
 
 				if len(test.permissions) > 0 {
-					if err := setupPermsRelatedEntities(t, s, test.permissions); err != nil {
-						t.Fatal("setup test related entities before actual test", err)
-					}
+					setupPermsRelatedEntities(t, s, test.permissions)
 				}
-				if err := s.SetUserRepoPermissions(ctx, test.permissions, test.entity, source); err != nil {
+				if err := s.setUserRepoPermissions(ctx, test.permissions, test.entity, source); err != nil {
 					t.Fatal("testing user repo permissions", err)
 				}
 
@@ -976,11 +894,8 @@ func testPermsStore_FetchReposByExternalAccount(db database.DB) func(*testing.T)
 				})
 
 				if test.origPermissions != nil && len(test.origPermissions) > 0 {
-					err := setupPermsRelatedEntities(t, s, test.origPermissions)
-					if err != nil {
-						t.Fatal("setup test related entities before actual test", err)
-					}
-					err = s.SetUserRepoPermissions(ctx, test.origPermissions, authz.PermissionEntity{UserID: 42}, source)
+					setupPermsRelatedEntities(t, s, test.origPermissions)
+					err := s.setUserRepoPermissions(ctx, test.origPermissions, authz.PermissionEntity{UserID: 42}, source)
 					if err != nil {
 						t.Fatal("setup test permissions before actual test", err)
 					}

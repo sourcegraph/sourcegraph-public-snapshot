@@ -49,41 +49,10 @@ type PermsStore interface {
 	// LoadRepoPermissions loads stored repository permissions into p. An
 	// ErrPermsNotFound is returned when there are no valid permissions available.
 	LoadRepoPermissions(ctx context.Context, p *authz.RepoPermissions) error
-
-	// SetUserExternalAccountPerms sets the users permissions for repos in the database. Uses SetUserRepoPermissions internally.
+	// SetUserExternalAccountPerms sets the users permissions for repos in the database. Uses setUserRepoPermissions internally.
 	SetUserExternalAccountPerms(ctx context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32) error
-	// SetRepoPerms sets the users that can access a repo. Uses SetUserRepoPermissions internally.
+	// SetRepoPerms sets the users that can access a repo. Uses setUserRepoPermissions internally.
 	SetRepoPerms(ctx context.Context, repoID int32, userIDs []authz.UserIDWithExternalAccountID) error
-	// SetUserRepoPermissions performs a full update for p, new rows for pairs of user_id, repo_id
-	// found in p will be upserted and pairs of user_id, repo_id no longer in p will be removed.
-	// This method updates both `user_repo_permissions` table.
-	//
-	// Example input:
-	// p := []UserPermissions{{
-	// 	UserID: 1,
-	// 	RepoID: 1,
-	//  ExternalAccountID: 42,
-	// }, {
-	// 	UserID: 1,
-	// 	RepoID: 233,
-	//  ExternalAccountID: 42,
-	// }}
-	// isUserSync := true
-	//
-	// Original table state:
-	//   user_id | repo_id | user_external_account_id |           created_at |           updated_at | source
-	//  ---------+------------+-------------+-----------------+------------+-----------------------
-	//         1 |       1 |             42 | 2022-06-01T10:42:53Z | 2023-01-27T06:12:33Z | 'sync'
-	//         1 |       2 |             42 | 2022-06-01T10:42:53Z | 2023-01-27T09:15:06Z | 'sync'
-	//
-	// New table state:
-	//   user_id | repo_id | user_external_account_id |           created_at |           updated_at | source
-	//  ---------+------------+-------------+-----------------+------------+-----------------------
-	//         1 |       1 |             42 |          <Unchanged> | 2023-01-28T14:24:12Z | 'sync'
-	//         1 |     233 |             42 | 2023-01-28T14:24:15Z | 2023-01-28T14:24:12Z | 'sync'
-	//
-	// So one repo {id:2} was removed and one was added {id:233} to the user
-	SetUserRepoPermissions(ctx context.Context, p []authz.Permission, entity authz.PermissionEntity, source string) error
 	// LEGACY:
 	// SetUserPermissions performs a full update for p, new object IDs found in p
 	// will be upserted and object IDs no longer in p will be removed. This method
@@ -336,12 +305,7 @@ WHERE user_external_account_id = %s;
 		save(&err)
 	}()
 
-	repos, err := scanRepoIDs(s.Query(ctx, q))
-	if err != nil {
-		return nil, errors.Wrap(err, "scanning repo ids")
-	}
-
-	return repos, nil
+	return scanRepoIDs(s.Query(ctx, q))
 }
 
 func (s *permsStore) FetchReposByUserAndExternalService(ctx context.Context, userID int32, serviceType, serviceID string) (ids []api.RepoID, err error) {
@@ -369,12 +333,7 @@ WHERE external_service_id = %s
 		save(&err)
 	}()
 
-	repos, err := scanRepoIDs(s.Query(ctx, q))
-	if err != nil {
-		return nil, errors.Wrap(err, "scanning repo ids")
-	}
-
-	return repos, nil
+	return scanRepoIDs(s.Query(ctx, q))
 }
 
 func (s *permsStore) LoadRepoPermissions(ctx context.Context, p *authz.RepoPermissions) (err error) {
@@ -396,7 +355,7 @@ func (s *permsStore) LoadRepoPermissions(ctx context.Context, p *authz.RepoPermi
 	return nil
 }
 
-// SetUserExternalAccountPerms sets the users permissions for repos in the database. Uses SetUserRepoPermissions internally.
+// SetUserExternalAccountPerms sets the users permissions for repos in the database. Uses setUserRepoPermissions internally.
 func (s *permsStore) SetUserExternalAccountPerms(ctx context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32) error {
 	p := make([]authz.Permission, len(repoIDs))
 
@@ -413,10 +372,10 @@ func (s *permsStore) SetUserExternalAccountPerms(ctx context.Context, user authz
 		ExternalAccountID: user.ExternalAccountID,
 	}
 
-	return s.SetUserRepoPermissions(ctx, p, entity, authz.SourceUserSync)
+	return s.setUserRepoPermissions(ctx, p, entity, authz.SourceUserSync)
 }
 
-// SetRepoPerms sets the users that can access a repo. Uses SetUserRepoPermissions internally.
+// SetRepoPerms sets the users that can access a repo. Uses setUserRepoPermissions internally.
 func (s *permsStore) SetRepoPerms(ctx context.Context, repoID int32, userIDs []authz.UserIDWithExternalAccountID) error {
 	p := make([]authz.Permission, len(userIDs))
 
@@ -432,11 +391,45 @@ func (s *permsStore) SetRepoPerms(ctx context.Context, repoID int32, userIDs []a
 		RepoID: repoID,
 	}
 
-	return s.SetUserRepoPermissions(ctx, p, entity, authz.SourceRepoSync)
+	return s.setUserRepoPermissions(ctx, p, entity, authz.SourceRepoSync)
 }
 
-func (s *permsStore) SetUserRepoPermissions(ctx context.Context, p []authz.Permission, entity authz.PermissionEntity, source string) (err error) {
-	ctx, save := s.observe(ctx, "SetUserRepoPermissions", "")
+// setUserRepoPermissions performs a full update for p, new rows for pairs of user_id, repo_id
+// found in p will be upserted and pairs of user_id, repo_id no longer in p will be removed.
+// This method updates both `user_repo_permissions` table.
+//
+// Example input:
+//
+//	p := []UserPermissions{{
+//		UserID: 1,
+//		RepoID: 1,
+//	 ExternalAccountID: 42,
+//	}, {
+//
+//		UserID: 1,
+//		RepoID: 233,
+//	 ExternalAccountID: 42,
+//	}}
+//
+// isUserSync := true
+//
+// Original table state:
+//
+//	 user_id | repo_id | user_external_account_id |           created_at |           updated_at | source
+//	---------+------------+-------------+-----------------+------------+-----------------------
+//	       1 |       1 |             42 | 2022-06-01T10:42:53Z | 2023-01-27T06:12:33Z | 'sync'
+//	       1 |       2 |             42 | 2022-06-01T10:42:53Z | 2023-01-27T09:15:06Z | 'sync'
+//
+// New table state:
+//
+//	 user_id | repo_id | user_external_account_id |           created_at |           updated_at | source
+//	---------+------------+-------------+-----------------+------------+-----------------------
+//	       1 |       1 |             42 |          <Unchanged> | 2023-01-28T14:24:12Z | 'sync'
+//	       1 |     233 |             42 | 2023-01-28T14:24:15Z | 2023-01-28T14:24:12Z | 'sync'
+//
+// So one repo {id:2} was removed and one was added {id:233} to the user
+func (s *permsStore) setUserRepoPermissions(ctx context.Context, p []authz.Permission, entity authz.PermissionEntity, source string) (err error) {
+	ctx, save := s.observe(ctx, "setUserRepoPermissions", "")
 	defer func() {
 		f := []otlog.Field{}
 		for _, permission := range p {

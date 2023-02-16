@@ -378,6 +378,8 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 	results.subRepoPerms = make(map[api.ExternalRepoSpec]*authz.SubRepoPermissions)
 	results.repoPerms = make(map[int32][]int32, len(accts))
 
+	unifiedPermsEnabled := UnifiedUserRepoPermsEnabled(ctx, s.db)
+
 	for _, acct := range accts {
 		var repoSpecs, includeContainsSpecs, excludeContainsSpecs []api.ExternalRepoSpec
 
@@ -452,11 +454,16 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 				}
 
 				// Load last synced repos for this user and account from user_repo_permissions table
-				currentRepos, err := s.permsStore.FetchReposByExternalAccount(ctx, acct.ID)
-				if err != nil {
-					return results, errors.Wrap(err, "fetching existing repo permissions")
+				var currentRepos []api.RepoID
+				if unifiedPermsEnabled {
+					currentRepos, err = s.permsStore.FetchReposByExternalAccount(ctx, acct.ID)
+					if err != nil {
+						return results, errors.Wrap(err, "fetching existing repo permissions")
+					}
 				}
-				// Fallback to use the old user_permissions table if above gave no results
+				// Use the old user_permissions table if feature flag is off or no repos found.
+				// We need to do this because data might not have been migrated to the new table yet.
+				// TODO: refactor to be bulletproof once we have the OOB migration ready
 				if len(currentRepos) == 0 {
 					currentRepos, err = s.permsStore.FetchReposByUserAndExternalService(ctx, user.ID, provider.ServiceType(), provider.ServiceID())
 					if err != nil {
