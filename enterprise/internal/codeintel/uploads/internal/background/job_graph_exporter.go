@@ -16,7 +16,7 @@ func NewRankingGraphExporter(
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		context.Background(),
-		"pagerank.graph-exporter", "exports new and purges old code-intel data as CSV",
+		"rank.graph-exporter", "exports new and purges old code-intel data as CSV",
 		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			if err := uploadsService.SerializeRankingGraph(ctx, numRankingRoutines); err != nil {
@@ -39,7 +39,7 @@ func NewRankingGraphMapper(
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		context.Background(),
-		"pagerank.graph-mapper", "maps definitions and references data to path_counts_inputs table in lsifstore",
+		"rank.graph-mapper", "maps definitions and references data to path_counts_inputs table in lsifstore",
 		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			if err := uploadsService.MapRankingGraph(ctx, numRankingRoutines); err != nil {
@@ -58,7 +58,7 @@ func NewRankingGraphReducer(
 	operations := newRankingOperations(observationCtx)
 	return goroutine.NewPeriodicGoroutine(
 		context.Background(),
-		"pagerank.graph-reducer", "reduces path_counts_inputs into a count of paths per repository and stores it in path_ranks table in lsifstore.",
+		"rank.graph-reducer", "reduces path_counts_inputs into a count of paths per repository and stores it in path_ranks table in lsifstore.",
 		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			numPathRanksInserted, numPathCountsInputsProcessed, err := uploadsService.ReduceRankingGraph(ctx, numRankingRoutines)

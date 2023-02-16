@@ -17,7 +17,6 @@ type operations struct {
 	setDefinitionsForRanking                 *observation.Operation
 	setReferencesForRanking                  *observation.Operation
 	getRankingReferencesByUploadID           *observation.Operation
-	getRankingDefinitionsBySymbolNames       *observation.Operation
 	insertPathCountInputs                    *observation.Operation
 	insertPathRanks                          *observation.Operation
 	insertMetadata                           *observation.Operation
@@ -27,7 +26,6 @@ type operations struct {
 	writeDefinitions                         *observation.Operation
 	writeReferences                          *observation.Operation
 	writeImplementations                     *observation.Operation
-	deleteUnreferencedDocuments              *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -60,7 +58,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		setDefinitionsForRanking:                 op("SetDefinitionsForRanking"),
 		setReferencesForRanking:                  op("SetReferencesForRanking"),
 		getRankingReferencesByUploadID:           op("GetRankingReferencesByUploadID"),
-		getRankingDefinitionsBySymbolNames:       op("GetRankingDefinitionsBySymbolNames"),
 		insertPathCountInputs:                    op("InsertPathCountInputs"),
 		insertPathRanks:                          op("InsertPathRanks"),
 		insertMetadata:                           op("InsertMetadata"),
@@ -70,6 +67,5 @@ func newOperations(observationCtx *observation.Context) *operations {
 		writeDefinitions:                         op("WriteDefinitions"),
 		writeReferences:                          op("WriteReferences"),
 		writeImplementations:                     op("WriteImplementations"),
-		deleteUnreferencedDocuments:              op("DeleteUnreferencedDocuments"),
 	}
 }

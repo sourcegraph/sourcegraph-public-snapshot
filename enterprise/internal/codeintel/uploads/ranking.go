@@ -14,11 +14,9 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"google.golang.org/api/iterator"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/redis"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/group"
 )
@@ -112,12 +110,10 @@ func (s *Service) setDefinitionsAndReferencesForUpload(ctx context.Context, uplo
 				Repository:   upload.Repo,
 				DocumentPath: filepath.Join(upload.Root, path),
 			})
-			// fullPath := fmt.Sprintf("%s@@%s@@%s", upload.Repo, upload.Root, path)
 			seenDefinitions[occ.Symbol] = struct{}{}
 		}
 	}
 
-	// references := []interface{}{}
 	references := []string{}
 	for _, occ := range document.Occurrences {
 		if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) {
@@ -128,28 +124,17 @@ func (s *Service) setDefinitionsAndReferencesForUpload(ctx context.Context, uplo
 			continue
 		}
 		if !scip.SymbolRole_Definition.Matches(occ) {
-			// references = append(references, fmt.Sprintf("%s{!@@!}%s", path, occ.Symbol))
 			references = append(references, occ.Symbol)
 		}
 	}
 
 	if len(definitions) > 0 {
-		// _, err := redisStore.HMSet(rankingDefinitionHash, definitions).Int()
-		// if err != nil {
-		// 	return err
-		// }
 		if err := s.lsifstore.InsertDefintionsForRanking(ctx, rankingGraphKey, definitions); err != nil {
 			return err
 		}
 	}
 
 	if len(references) > 0 {
-		// hashKey := fmt.Sprintf("graph:references:%d", upload.ID)
-		// err := redisStore.LPush(hashKey, references...)
-		// if err != nil {
-		// 	return err
-		// }
-
 		if err := s.lsifstore.InsertReferencesForRanking(ctx, rankingGraphKey, shared.RankingReferences{
 			UploadID:   upload.ID,
 			SymbolName: references,
@@ -263,8 +248,6 @@ type gcsObjectWriter struct {
 func (b *gcsObjectWriter) Close() error {
 	return errors.Append(b.Flush(), b.c.Close())
 }
-
-var redisStore = redis.RedisKeyValue(redispool.Pool)
 
 func (s *Service) serializeRankingGraphForUpload(
 	ctx context.Context,

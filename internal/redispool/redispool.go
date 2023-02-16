@@ -101,9 +101,7 @@ var Cache = NewKeyValue(addresses.Cache, &redis.Pool{
 // only use if you have data with a high write rate.
 //
 // In Kubernetes the service is called redis-store.
-var Store = NewKeyValue(addresses.Store, Pool)
-
-var Pool = &redis.Pool{
+var Store = NewKeyValue(addresses.Store, &redis.Pool{
 	MaxIdle:     10,
 	IdleTimeout: 240 * time.Second,
-}
+})
