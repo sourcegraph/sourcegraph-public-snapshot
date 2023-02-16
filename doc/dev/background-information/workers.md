@@ -54,7 +54,7 @@ var genericHandlers = map[HandlerType]GenericHandler{
 
 In order to schedule a task, it is enough to run:
 
-```
+```go
 params := exampleParameters{One: "One", Two: "Two"}
 b, err := json.Marshal(params)
 if err != nil {
