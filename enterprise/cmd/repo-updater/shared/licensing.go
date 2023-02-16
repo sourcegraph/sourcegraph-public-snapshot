@@ -61,7 +61,7 @@ func enterpriseUpdateRepoHook(ctx context.Context, s repos.Store, existingRepo *
 			return errors.Newf("maximum number of private repositories included in license (%d) reached", prFeature.MaxNumPrivateRepos)
 		}
 
-		if numPrivateRepos >= prFeature.MaxNumPrivateRepos {
+		if numPrivateRepos == prFeature.MaxNumPrivateRepos {
 			// If the repository is already private, we don't have to check anything
 			newPrivateRepo := (!existingRepo.DeletedAt.IsZero() || !existingRepo.Private) && newRepo.Private // If restoring a deleted repository, or if it was a public repository, and is now private
 			if newPrivateRepo {

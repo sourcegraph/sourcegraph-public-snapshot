@@ -95,6 +95,7 @@ var planDetails = map[Plan]PlanDetails{
 	PlanOldEnterpriseStarter: {
 		Features: []Feature{
 			&FeatureBatchChanges{MaxNumChangesets: 10},
+			&FeaturePrivateRepositories{Unrestricted: true},
 		},
 		ExpiredFeatures: []Feature{
 			FeatureACLs,
@@ -111,6 +112,7 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureBranding,
 			FeatureCampaigns,
 			&FeatureBatchChanges{Unrestricted: true},
+			&FeaturePrivateRepositories{Unrestricted: true},
 			FeatureMonitoring,
 			FeatureBackupAndRestore,
 			FeatureCodeInsights,
@@ -126,6 +128,7 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureExplicitPermissionsAPI,
 			FeatureSSO,
 			&FeatureBatchChanges{MaxNumChangesets: 10},
+			&FeaturePrivateRepositories{Unrestricted: true},
 		},
 		ExpiredFeatures: []Feature{
 			FeatureACLs,
@@ -138,6 +141,7 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureExplicitPermissionsAPI,
 			FeatureSSO,
 			&FeatureBatchChanges{MaxNumChangesets: 10},
+			&FeaturePrivateRepositories{Unrestricted: true},
 		},
 		ExpiredFeatures: []Feature{
 			FeatureACLs,
@@ -150,6 +154,7 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureACLs,
 			FeatureCampaigns,
 			&FeatureBatchChanges{Unrestricted: true},
+			&FeaturePrivateRepositories{Unrestricted: true},
 			FeatureCodeInsights,
 			FeatureSSO,
 		},
@@ -164,6 +169,7 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureCampaigns,
 			FeatureCodeInsights,
 			&FeatureBatchChanges{Unrestricted: true},
+			&FeaturePrivateRepositories{Unrestricted: true},
 			FeatureExplicitPermissionsAPI,
 			FeatureSSO,
 		},
@@ -178,6 +184,7 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureCampaigns,
 			FeatureCodeInsights,
 			&FeatureBatchChanges{Unrestricted: true},
+			&FeaturePrivateRepositories{Unrestricted: true},
 			FeatureExplicitPermissionsAPI,
 			FeatureSSO,
 		},
@@ -186,12 +193,13 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureSSO,
 		},
 	},
-	PlanFree0: {Features: []Feature{
-		FeatureSSO,
-		FeatureMonitoring,
-		&FeatureBatchChanges{MaxNumChangesets: 10},
-		&FeaturePrivateRepositories{Unrestricted: true},
-	},
+	PlanFree0: {
+		Features: []Feature{
+			FeatureSSO,
+			FeatureMonitoring,
+			&FeatureBatchChanges{MaxNumChangesets: 10},
+			&FeaturePrivateRepositories{Unrestricted: true},
+		},
 		ExpiredFeatures: []Feature{
 			FeatureSSO,
 			FeatureMonitoring,
@@ -199,11 +207,12 @@ var planDetails = map[Plan]PlanDetails{
 			&FeaturePrivateRepositories{Unrestricted: true},
 		},
 	},
-	PlanFree1: {Features: []Feature{
-		FeatureMonitoring,
-		&FeatureBatchChanges{MaxNumChangesets: 10},
-		&FeaturePrivateRepositories{MaxNumPrivateRepos: 1},
-	},
+	PlanFree1: {
+		Features: []Feature{
+			FeatureMonitoring,
+			&FeatureBatchChanges{MaxNumChangesets: 10},
+			&FeaturePrivateRepositories{MaxNumPrivateRepos: 1},
+		},
 		ExpiredFeatures: []Feature{
 			FeatureMonitoring,
 			&FeatureBatchChanges{MaxNumChangesets: 10},
