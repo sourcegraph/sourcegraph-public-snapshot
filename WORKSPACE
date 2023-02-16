@@ -76,6 +76,11 @@ http_archive(
     ],
 )
 
+local_repository(
+    name = "com_github_hexops_autogold",
+    path = "/Users/tech/play/autogold",
+)
+
 # Node toolchain setup ==========================
 load("@rules_nodejs//nodejs:repositories.bzl", "DEFAULT_NODE_VERSION", "nodejs_register_toolchains")
 

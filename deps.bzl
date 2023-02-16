@@ -3972,13 +3972,14 @@ def go_dependencies():
         sum = "h1:WCmFAhLRooih2QHAsbCbEdpIHnshQQmrPqsr3rHE1Ow=",
         version = "v1.35.3",
     )
-    go_repository(
-        name = "com_github_hexops_autogold",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/hexops/autogold",
-        sum = "h1:YgxF9OHWbEIUjhDbpnLhgVsjUDsiHDTyDfy2lrfdlzo=",
-        version = "v1.3.1",
-    )
+    # go_repository(
+    #     name = "com_github_hexops_autogold",
+    #     build_file_proto_mode = "disable_global",
+    #     importpath = "github.com/hexops/autogold",
+    #     sum = "h1:YgxF9OHWbEIUjhDbpnLhgVsjUDsiHDTyDfy2lrfdlzo=",
+    #     version = "v1.3.1",
+    # )
+
     go_repository(
         name = "com_github_hexops_autogold_v2",
         build_file_proto_mode = "disable_global",

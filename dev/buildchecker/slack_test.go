@@ -8,6 +8,7 @@ import (
 )
 
 func TestBranchEventSummary(t *testing.T) {
+	autogold.RootPath = "/Users/tech/work/sourcegraph/dev/buildchecker"
 	t.Run("unlocked", func(t *testing.T) {
 		got := generateBranchEventSummary(false, "main", "#buildkite-main", []CommitInfo{})
 

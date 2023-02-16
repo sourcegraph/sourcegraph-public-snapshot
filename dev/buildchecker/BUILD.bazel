@@ -31,6 +31,18 @@ go_binary(
     visibility = ["//visibility:public"],
 )
 
+# filegroup(
+#     name = "testfiles",
+#     srcs = glob(["slack_test.go"]),
+# )
+#
+# genrule(
+#     name = "autogold",
+#     srcs = [":testfiles"],
+#     outs = ["slack_test.go"],
+#     cmd = "cp $(locations :testfiles) slack_test.go",
+# )
+
 go_test(
     name = "buildchecker_test",
     srcs = [
@@ -39,7 +51,9 @@ go_test(
         "failures_test.go",
         "history_test.go",
         "slack_test.go",
+        # ":autogold",
     ],
+    env = {"GODEBUG":"execerrdot=0"},
     data = glob(["testdata/**"]),
     embed = [":buildchecker_lib"],
     deps = [
