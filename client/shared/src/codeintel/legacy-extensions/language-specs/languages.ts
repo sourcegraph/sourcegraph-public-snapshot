@@ -425,13 +425,6 @@ export const languageSpecs: LanguageSpec[] = [
  * Returns the language spec with the given language identifier. If no language
  * matches is configured with the given identifier an error is thrown.
  */
-export function findLanguageSpec(languageID: string): LanguageSpec {
-    const languageSpec = languageSpecs.find(
-        spec => spec.languageID === languageID || spec.additionalLanguages?.includes(languageID)
-    )
-    if (languageSpec) {
-        return languageSpec
-    }
-
-    throw new Error(`${languageID} is not defined`)
+export function findLanguageSpec(languageID: string): LanguageSpec | undefined {
+    return languageSpecs.find(spec => spec.languageID === languageID || spec.additionalLanguages?.includes(languageID))
 }

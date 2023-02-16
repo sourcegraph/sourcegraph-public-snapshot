@@ -1150,6 +1150,7 @@ CREATE TABLE changesets (
     cancel boolean DEFAULT false NOT NULL,
     detached_at timestamp with time zone,
     computed_state text NOT NULL,
+    external_fork_name citext,
     CONSTRAINT changesets_batch_change_ids_check CHECK ((jsonb_typeof(batch_change_ids) = 'object'::text)),
     CONSTRAINT changesets_external_id_check CHECK ((external_id <> ''::text)),
     CONSTRAINT changesets_external_service_type_not_blank CHECK ((external_service_type <> ''::text)),
@@ -2972,10 +2973,8 @@ CREATE TABLE namespace_permissions (
     id integer NOT NULL,
     namespace text NOT NULL,
     resource_id integer NOT NULL,
-    action text NOT NULL,
     user_id integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT action_not_blank CHECK ((action <> ''::text)),
     CONSTRAINT namespace_not_blank CHECK ((namespace <> ''::text))
 );
 
@@ -3336,6 +3335,7 @@ CREATE TABLE permission_sync_jobs (
     permissions_added integer DEFAULT 0 NOT NULL,
     permissions_removed integer DEFAULT 0 NOT NULL,
     permissions_found integer DEFAULT 0 NOT NULL,
+    code_host_states json[],
     CONSTRAINT permission_sync_jobs_for_repo_or_user CHECK (((user_id IS NULL) <> (repository_id IS NULL)))
 );
 
@@ -3487,6 +3487,7 @@ CREATE VIEW reconciler_changesets AS
     c.worker_hostname,
     c.ui_publication_state,
     c.last_heartbeat_at,
+    c.external_fork_name,
     c.external_fork_namespace,
     c.detached_at
    FROM (changesets c
@@ -4625,9 +4626,6 @@ ALTER TABLE ONLY temporary_settings
 ALTER TABLE ONLY temporary_settings
     ADD CONSTRAINT temporary_settings_user_id_key UNIQUE (user_id);
 
-ALTER TABLE ONLY namespace_permissions
-    ADD CONSTRAINT unique_resource_permission UNIQUE (namespace, resource_id, action, user_id);
-
 ALTER TABLE ONLY user_credentials
     ADD CONSTRAINT user_credentials_domain_user_id_external_service_type_exter_key UNIQUE (domain, user_id, external_service_type, external_service_id);
 
@@ -5059,6 +5057,8 @@ CREATE UNIQUE INDEX sub_repo_permissions_repo_id_user_id_version_uindex ON sub_r
 CREATE INDEX sub_repo_perms_user_id ON sub_repo_permissions USING btree (user_id);
 
 CREATE UNIQUE INDEX teams_name ON teams USING btree (name);
+
+CREATE UNIQUE INDEX unique_resource_permission ON namespace_permissions USING btree (namespace, resource_id, user_id);
 
 CREATE INDEX user_credentials_credential_idx ON user_credentials USING btree (((encryption_key_id = ANY (ARRAY[''::text, 'previously-migrated'::text]))));
 

@@ -71,6 +71,8 @@ export const buildGraphQLUrl = ({ request, baseUrl }: BuildGraphQLUrlOptions): s
  * This function should not be called directly as it does not
  * add the necessary headers to authorize the GraphQL API call.
  * Use `requestGraphQL()` in `client/web/src/backend/graphql.ts` instead.
+ *
+ * @deprecated Prefer using Apollo-Client instead if possible. The migration is in progress.
  */
 export function requestGraphQLCommon<T, V = object>({
     request,

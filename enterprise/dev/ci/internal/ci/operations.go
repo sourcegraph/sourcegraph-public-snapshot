@@ -898,7 +898,7 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 
 		var imgs []string
 		for _, image := range []string{publishImage, devImage} {
-			if app != "server" || c.RunType.Is(runtype.TaggedRelease, runtype.ImagePatch, runtype.ImagePatchNoTest) {
+			if app != "server" || c.RunType.Is(runtype.TaggedRelease, runtype.ImagePatch, runtype.ImagePatchNoTest, runtype.CandidatesNoTest) {
 				imgs = append(imgs, fmt.Sprintf("%s:%s", image, c.Version))
 			}
 

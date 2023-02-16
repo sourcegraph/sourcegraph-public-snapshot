@@ -441,6 +441,7 @@ Referenced by:
  cancel                   | boolean                                      |           | not null | false
  detached_at              | timestamp with time zone                     |           |          | 
  computed_state           | text                                         |           | not null | 
+ external_fork_name       | citext                                       |           |          | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -2274,14 +2275,12 @@ Foreign-key constraints:
  id          | integer                  |           | not null | nextval('namespace_permissions_id_seq'::regclass)
  namespace   | text                     |           | not null | 
  resource_id | integer                  |           | not null | 
- action      | text                     |           | not null | 
  user_id     | integer                  |           | not null | 
  created_at  | timestamp with time zone |           | not null | now()
 Indexes:
     "namespace_permissions_pkey" PRIMARY KEY, btree (id)
-    "unique_resource_permission" UNIQUE CONSTRAINT, btree (namespace, resource_id, action, user_id)
+    "unique_resource_permission" UNIQUE, btree (namespace, resource_id, user_id)
 Check constraints:
-    "action_not_blank" CHECK (action <> ''::text)
     "namespace_not_blank" CHECK (namespace <> ''::text)
 Foreign-key constraints:
     "namespace_permissions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
@@ -2683,6 +2682,7 @@ Foreign-key constraints:
  permissions_added    | integer                  |           | not null | 0
  permissions_removed  | integer                  |           | not null | 0
  permissions_found    | integer                  |           | not null | 0
+ code_host_states     | json[]                   |           |          | 
 Indexes:
     "permission_sync_jobs_pkey" PRIMARY KEY, btree (id)
     "permission_sync_jobs_unique" UNIQUE, btree (priority, user_id, repository_id, cancel, process_after) WHERE state = 'queued'::text
@@ -3996,6 +3996,7 @@ Foreign-key constraints:
     c.worker_hostname,
     c.ui_publication_state,
     c.last_heartbeat_at,
+    c.external_fork_name,
     c.external_fork_namespace,
     c.detached_at
    FROM (changesets c

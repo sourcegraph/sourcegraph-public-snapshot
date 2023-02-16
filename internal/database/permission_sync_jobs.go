@@ -2,6 +2,8 @@ package database
 
 import (
 	"context"
+	"database/sql/driver"
+	"encoding/json"
 	"strconv"
 	"time"
 
@@ -88,7 +90,7 @@ type PermissionSyncJobStore interface {
 	List(ctx context.Context, opts ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error)
 	Count(ctx context.Context) (int, error)
 	CancelQueuedJob(ctx context.Context, reason string, id int) error
-	SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult) error
+	SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult, codeHostStates []PermissionSyncCodeHostState) error
 }
 
 type permissionSyncJobStore struct {
@@ -289,15 +291,16 @@ type SetPermissionsResult struct {
 	Found   int
 }
 
-func (s *permissionSyncJobStore) SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult) error {
+func (s *permissionSyncJobStore) SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult, states []PermissionSyncCodeHostState) error {
 	q := sqlf.Sprintf(`
 		UPDATE permission_sync_jobs
-		SET 
+		SET
 			permissions_added = %d,
 			permissions_removed = %d,
-			permissions_found = %d
+			permissions_found = %d,
+			code_host_states = %s
 		WHERE id = %d
-		`, result.Added, result.Removed, result.Found, id)
+		`, result.Added, result.Removed, result.Found, pq.Array(states), id)
 
 	_, err := s.ExecResult(ctx, q)
 	return err
@@ -441,6 +444,30 @@ type PermissionSyncJob struct {
 	PermissionsAdded   int
 	PermissionsRemoved int
 	PermissionsFound   int
+	CodeHostStates     []PermissionSyncCodeHostState
+}
+
+// PermissionSyncCodeHostState describes the state of a provider during an authz sync job.
+type PermissionSyncCodeHostState struct {
+	ProviderID   string `json:"provider_id"`
+	ProviderType string `json:"provider_type"`
+
+	// Status is one of "ERROR" or "SUCCESS"
+	Status  string `json:"status"`
+	Message string `json:"message"`
+}
+
+func (e *PermissionSyncCodeHostState) Scan(value any) error {
+	b, ok := value.([]byte)
+	if !ok {
+		return errors.Errorf("value is not []byte: %T", value)
+	}
+
+	return json.Unmarshal(b, &e)
+}
+
+func (e PermissionSyncCodeHostState) Value() (driver.Value, error) {
+	return json.Marshal(e)
 }
 
 func (j *PermissionSyncJob) RecordID() int { return j.ID }
@@ -473,6 +500,7 @@ var PermissionSyncJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("permission_sync_jobs.permissions_added"),
 	sqlf.Sprintf("permission_sync_jobs.permissions_removed"),
 	sqlf.Sprintf("permission_sync_jobs.permissions_found"),
+	sqlf.Sprintf("permission_sync_jobs.code_host_states"),
 }
 
 func ScanPermissionSyncJob(s dbutil.Scanner) (*PermissionSyncJob, error) {
@@ -485,6 +513,7 @@ func ScanPermissionSyncJob(s dbutil.Scanner) (*PermissionSyncJob, error) {
 
 func scanPermissionSyncJob(job *PermissionSyncJob, s dbutil.Scanner) error {
 	var executionLogs []executor.ExecutionLogEntry
+	var codeHostStates []PermissionSyncCodeHostState
 
 	if err := s.Scan(
 		&job.ID,
@@ -514,11 +543,13 @@ func scanPermissionSyncJob(job *PermissionSyncJob, s dbutil.Scanner) error {
 		&job.PermissionsAdded,
 		&job.PermissionsRemoved,
 		&job.PermissionsFound,
+		pq.Array(&codeHostStates),
 	); err != nil {
 		return err
 	}
 
 	job.ExecutionLogs = append(job.ExecutionLogs, executionLogs...)
+	job.CodeHostStates = append(job.CodeHostStates, codeHostStates...)
 
 	return nil
 }

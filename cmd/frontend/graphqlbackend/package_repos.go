@@ -20,12 +20,12 @@ import (
 
 type PackageRepoReferenceConnectionArgs struct {
 	graphqlutil.ConnectionArgs
-	After  *int
+	After  *string
 	Scheme *string
 	Name   *string
 }
 
-func (r *schemaResolver) PackageRepoReferences(ctx context.Context, args *PackageRepoReferenceConnectionArgs) (*packageRepoReferenceConnectionResolver, error) {
+func (r *schemaResolver) PackageRepoReferences(ctx context.Context, args *PackageRepoReferenceConnectionArgs) (_ *packageRepoReferenceConnectionResolver, err error) {
 	depsService := dependencies.NewService(observation.NewContext(r.logger), r.db)
 
 	var opts dependencies.ListDependencyReposOpts
@@ -43,7 +43,9 @@ func (r *schemaResolver) PackageRepoReferences(ctx context.Context, args *Packag
 	}
 
 	if args.After != nil {
-		opts.After = *args.After
+		if opts.After, err = graphqlutil.DecodeIntCursor(args.After); err != nil {
+			return nil, err
+		}
 	}
 
 	deps, total, err := depsService.ListPackageRepoRefs(ctx, opts)

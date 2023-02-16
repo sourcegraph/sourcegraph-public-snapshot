@@ -6,11 +6,20 @@ import classNames from 'classnames'
 import { isEqual, noop } from 'lodash'
 
 import { SeriesSortDirection, SeriesSortMode } from '@sourcegraph/shared/src/graphql-operations'
-import { Button, Icon, Link, H4, ErrorAlert } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Icon,
+    Link,
+    H4,
+    ErrorAlert,
+    useField,
+    FormChangeEvent,
+    SubmissionResult,
+    useForm,
+    FORM_ERROR,
+} from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
-import { useField } from '../../../../../../form'
-import { FormChangeEvent, SubmissionResult, useForm, FORM_ERROR } from '../../../../../../form/hooks/useForm'
 import { SortFilterSeriesPanel } from '../../sort-filter-series-panel/SortFilterSeriesPanel'
 import { DrillDownInput, LabelWithReset } from '../drill-down-input/DrillDownInput'
 import { FilterCollapseSection, FilterPreviewPill } from '../filter-collapse-section/FilterCollapseSection'

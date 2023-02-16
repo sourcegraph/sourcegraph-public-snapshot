@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -18,10 +17,7 @@ import (
 var _ graphqlbackend.PermissionSyncJobsResolver = &permissionSyncJobsResolver{}
 
 type permissionSyncJobsResolver struct {
-	db   database.DB
-	once sync.Once
-	jobs []*database.PermissionSyncJob
-	err  error
+	db database.DB
 }
 
 func NewPermissionSyncJobsResolver(db database.DB) graphqlbackend.PermissionSyncJobsResolver {
