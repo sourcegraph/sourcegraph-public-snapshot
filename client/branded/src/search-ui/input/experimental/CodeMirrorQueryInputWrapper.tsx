@@ -2,9 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { defaultKeymap, historyKeymap, history as codemirrorHistory } from '@codemirror/commands'
 import { Compartment, EditorState, Extension, Prec } from '@codemirror/state'
-import { EditorView, keymap } from '@codemirror/view'
-import { mdiClose } from '@mdi/js'
-import classNames from 'classnames'
+import { EditorView, keymap, drawSelection } from '@codemirror/view'
 import inRange from 'lodash/inRange'
 import { useNavigate } from 'react-router-dom-v5-compat'
 import useResizeObserver from 'use-resize-observer'
@@ -14,21 +12,20 @@ import { HistoryOrNavigate } from '@sourcegraph/common'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { QueryChangeSource, QueryState } from '@sourcegraph/shared/src/search'
-import { Icon } from '@sourcegraph/wildcard'
+import { getTokenLength } from '@sourcegraph/shared/src/search/query/utils'
 
 import { singleLine, placeholder as placeholderExtension } from '../codemirror'
 import { parseInputAsQuery, tokens } from '../codemirror/parsedQuery'
 import { querySyntaxHighlighting } from '../codemirror/syntax-highlighting'
 
 import { filterHighlight } from './codemirror/syntax-highlighting'
+import { modeScope } from './modes'
 import { editorConfigFacet, Source, suggestions } from './suggestionsExtension'
 
 import styles from './CodeMirrorQueryInputWrapper.module.scss'
 
 interface ExtensionConfig {
     popoverID: string
-    patternType: SearchPatternType
-    interpretComments: boolean
     isLightTheme: boolean
     placeholder: string
     onChange: (querySate: QueryState) => void
@@ -57,8 +54,8 @@ function showWhenEmptyWithoutContext(state: EditorState): boolean {
     }
 
     // If there are two tokens, only show the placeholder if the second one is a
-    // whitespace.
-    if (queryTokens.length === 2 && queryTokens[1].type !== 'whitespace') {
+    // whitespace of length 1
+    if (queryTokens.length === 2 && (queryTokens[1].type !== 'whitespace' || getTokenLength(queryTokens[1]) !== 1)) {
         return false
     }
 
@@ -71,15 +68,13 @@ function showWhenEmptyWithoutContext(state: EditorState): boolean {
 }
 
 // For simplicity we will recompute all extensions when input changes using
-// this ocmpartment
+// this compartment
 const extensionsCompartment = new Compartment()
 
 // Helper function to update extensions dependent on props. Used when
 // creating the editor and to update it when the props change.
 function configureExtensions({
     popoverID,
-    patternType,
-    interpretComments,
     isLightTheme,
     placeholder,
     onChange,
@@ -91,7 +86,6 @@ function configureExtensions({
     const extensions = [
         singleLine,
         EditorView.darkTheme.of(isLightTheme === false),
-        parseInputAsQuery({ patternType, interpretComments }),
         EditorView.updateListener.of(update => {
             if (update.docChanged) {
                 onChange({
@@ -131,23 +125,48 @@ function configureExtensions({
     }
 
     if (suggestionSource && suggestionsContainer) {
-        extensions.push(suggestions(popoverID, suggestionsContainer, suggestionSource, historyOrNavigate))
+        extensions.push(
+            suggestions({
+                id: popoverID,
+                parent: suggestionsContainer,
+                source: suggestionSource,
+                historyOrNavigate,
+            })
+        )
     }
 
     return extensions
+}
+
+// Holds extensions that somehow depend on the query or query parameters. They
+// are stored in a separate compartment to avoid re-creating other extensions.
+// (if we didn't do this the suggestions list would flicker because it gets
+// recreated)
+const querySettingsCompartment = new Compartment()
+
+function configureQueryExtensions({
+    patternType,
+    interpretComments,
+}: {
+    patternType: SearchPatternType
+    interpretComments: boolean
+}): Extension {
+    return parseInputAsQuery({ patternType, interpretComments })
 }
 
 function createEditor(
     parent: HTMLDivElement,
     popoverID: string,
     queryState: QueryState,
-    extensions: Extension
+    extensions: Extension,
+    queryExtensions: Extension
 ): EditorView {
     return new EditorView({
         state: EditorState.create({
             doc: queryState.query,
             selection: { anchor: queryState.query.length },
             extensions: [
+                drawSelection(),
                 EditorView.lineWrapping,
                 EditorView.contentAttributes.of({
                     role: 'combobox',
@@ -158,7 +177,7 @@ function createEditor(
                 keymap.of(historyKeymap),
                 keymap.of(defaultKeymap),
                 codemirrorHistory(),
-                Prec.low([querySyntaxHighlighting, filterHighlight]),
+                Prec.low([querySyntaxHighlighting, modeScope(filterHighlight, [null])]),
                 EditorView.theme({
                     '&': {
                         flex: 1,
@@ -175,7 +194,11 @@ function createEditor(
                         fontSize: 'var(--code-font-size)',
                         color: 'var(--search-query-text-color)',
                     },
+                    '.cm-line': {
+                        paddingLeft: '0.25rem',
+                    },
                 }),
+                querySettingsCompartment.of(queryExtensions),
                 extensionsCompartment.of(extensions),
             ],
         }),
@@ -183,9 +206,15 @@ function createEditor(
     })
 }
 
-function updateEditor(editor: EditorView | null, extensions: Extension): void {
+function updateExtensions(editor: EditorView | null, extensions: Extension): void {
     if (editor) {
         editor.dispatch({ effects: extensionsCompartment.reconfigure(extensions) })
+    }
+}
+
+function updateQueryExtensions(editor: EditorView | null, extensions: Extension): void {
+    if (editor) {
+        editor.dispatch({ effects: querySettingsCompartment.reconfigure(extensions) })
     }
 }
 
@@ -198,6 +227,8 @@ function updateValueIfNecessary(editor: EditorView | null, queryState: QueryStat
     }
 }
 
+const empty: any[] = []
+
 export interface CodeMirrorQueryInputWrapperProps {
     queryState: QueryState
     onChange: (queryState: QueryState) => void
@@ -206,10 +237,13 @@ export interface CodeMirrorQueryInputWrapperProps {
     interpretComments: boolean
     patternType: SearchPatternType
     placeholder: string
-    suggestionSource: Source
+    suggestionSource?: Source
+    extensions?: Extension
 }
 
-export const CodeMirrorQueryInputWrapper: React.FunctionComponent<CodeMirrorQueryInputWrapperProps> = ({
+export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
+    React.PropsWithChildren<CodeMirrorQueryInputWrapperProps>
+> = ({
     queryState,
     onChange,
     onSubmit,
@@ -218,6 +252,8 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<CodeMirrorQuer
     patternType,
     placeholder,
     suggestionSource,
+    extensions: externalExtensions = empty,
+    children,
 }) => {
     const navigate = useNavigate()
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
@@ -233,11 +269,9 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<CodeMirrorQuer
 
     // Update extensions whenever any of these props change
     const extensions = useMemo(
-        () =>
+        () => [
             configureExtensions({
                 popoverID,
-                patternType,
-                interpretComments,
                 isLightTheme,
                 placeholder,
                 onChange,
@@ -246,10 +280,10 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<CodeMirrorQuer
                 suggestionSource,
                 historyOrNavigate: navigate,
             }),
+            externalExtensions,
+        ],
         [
             popoverID,
-            patternType,
-            interpretComments,
             isLightTheme,
             placeholder,
             onChange,
@@ -258,11 +292,18 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<CodeMirrorQuer
             suggestionsContainer,
             suggestionSource,
             navigate,
+            externalExtensions,
         ]
     )
 
+    // Update query extensions whenever any of these props change
+    const queryExtensions = useMemo(
+        () => configureQueryExtensions({ patternType, interpretComments }),
+        [patternType, interpretComments]
+    )
+
     const editor = useMemo(
-        () => (container ? createEditor(container, popoverID, queryState, extensions) : null),
+        () => (container ? createEditor(container, popoverID, queryState, extensions, queryExtensions) : null),
         // Should only run once when the component is created, not when
         // extensions for state update (this is handled in separate hooks)
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -276,21 +317,16 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<CodeMirrorQuer
     useEffect(() => updateValueIfNecessary(editorRef.current, queryState), [queryState])
 
     // Update editor configuration whenever extensions change
-    useEffect(() => updateEditor(editorRef.current, extensions), [extensions])
+    useEffect(() => updateExtensions(editorRef.current, extensions), [extensions])
+    useEffect(() => updateQueryExtensions(editorRef.current, queryExtensions), [queryExtensions])
 
     const focus = useCallback(() => {
         editorRef.current?.contentDOM.focus()
     }, [editorRef])
 
-    const clear = useCallback(() => {
-        onChange({ query: '' })
-    }, [onChange])
-
     const { ref: spacerRef, height: spacerHeight } = useResizeObserver({
         ref: focusContainerRef,
     })
-
-    const hasValue = queryState.query.length > 0
 
     return (
         <div className={styles.container}>
@@ -299,20 +335,7 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<CodeMirrorQuer
             <div className={styles.root}>
                 <div ref={spacerRef} className={styles.focusContainer}>
                     <div ref={setContainer} className="d-contents" />
-                    <button
-                        type="button"
-                        className={classNames(styles.inputButton, { [styles.showWhenFocused]: hasValue })}
-                        onClick={clear}
-                    >
-                        <Icon svgPath={mdiClose} aria-label="Clear" />
-                    </button>
-                    <button
-                        type="button"
-                        className={classNames(styles.inputButton, styles.globalShortcut, styles.hideWhenFocused)}
-                        onClick={focus}
-                    >
-                        /
-                    </button>
+                    {children}
                 </div>
                 <div ref={setSuggestionsContainer} className={styles.suggestions} />
             </div>

@@ -24,7 +24,7 @@ func (DateTime) ImplementsGraphQLType(name string) bool {
 }
 
 func (v DateTime) MarshalJSON() ([]byte, error) {
-	return json.Marshal(v.Time.Format(time.RFC3339))
+	return json.Marshal(v.Time.UTC().Format(time.RFC3339))
 }
 
 func (v *DateTime) UnmarshalGraphQL(input any) error {
@@ -36,6 +36,6 @@ func (v *DateTime) UnmarshalGraphQL(input any) error {
 	if err != nil {
 		return err
 	}
-	*v = DateTime{Time: t}
+	*v = DateTime{Time: t.UTC()}
 	return nil
 }

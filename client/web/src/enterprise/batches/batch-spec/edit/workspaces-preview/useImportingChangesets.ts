@@ -25,7 +25,7 @@ export type ImportingChangesetFields =
  */
 export const useImportingChangesets = (
     batchSpecID: Scalars['ID']
-): UseShowMorePaginationResult<ImportingChangesetFields> =>
+): UseShowMorePaginationResult<BatchSpecImportingChangesetsResult, ImportingChangesetFields> =>
     useShowMorePagination<
         BatchSpecImportingChangesetsResult,
         BatchSpecImportingChangesetsVariables,

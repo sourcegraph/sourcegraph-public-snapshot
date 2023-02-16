@@ -237,8 +237,8 @@ func TestEventLogs_SiteUsageMultiplePeriods(t *testing.T) {
 	events := []*Event{
 		makeTestEvent(&Event{UserID: uint32(sgAdmin.ID), Timestamp: startDate}),
 		makeTestEvent(&Event{UserID: uint32(sgAdmin.ID), Timestamp: startDate}),
-		makeTestEvent(&Event{UserID: uint32(soLoganID), Timestamp: startDate, PublicArgument: soPublicArgument}),
-		makeTestEvent(&Event{UserID: uint32(soLoganID), Timestamp: startDate, PublicArgument: soPublicArgument}),
+		makeTestEvent(&Event{UserID: uint32(soLoganID.ID), Timestamp: startDate, PublicArgument: soPublicArgument}),
+		makeTestEvent(&Event{UserID: uint32(soLoganID.ID), Timestamp: startDate, PublicArgument: soPublicArgument}),
 		makeTestEvent(&Event{UserID: uint32(user1.ID), Timestamp: startDate}),
 		makeTestEvent(&Event{UserID: uint32(user1.ID), Timestamp: startDate}),
 
@@ -246,8 +246,8 @@ func TestEventLogs_SiteUsageMultiplePeriods(t *testing.T) {
 		makeTestEvent(&Event{UserID: uint32(user1.ID), Timestamp: secondDay}),
 		makeTestEvent(&Event{UserID: uint32(user2.ID), Timestamp: secondDay}),
 		makeTestEvent(&Event{UserID: uint32(sgAdmin.ID), Timestamp: secondDay}),
-		makeTestEvent(&Event{UserID: uint32(soLoganID), Timestamp: secondDay, PublicArgument: soPublicArgument}),
-		makeTestEvent(&Event{UserID: uint32(soLoganID), Timestamp: secondDay, PublicArgument: soPublicArgument}),
+		makeTestEvent(&Event{UserID: uint32(soLoganID.ID), Timestamp: secondDay, PublicArgument: soPublicArgument}),
+		makeTestEvent(&Event{UserID: uint32(soLoganID.ID), Timestamp: secondDay, PublicArgument: soPublicArgument}),
 
 		makeTestEvent(&Event{UserID: uint32(user1.ID), Timestamp: thirdDay}),
 		makeTestEvent(&Event{UserID: uint32(user2.ID), Timestamp: thirdDay}),
@@ -458,7 +458,7 @@ func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
 	require.NoError(t, err)
 	err = db.UserEmails().Add(ctx, sgAdmin.ID, "admin@sourcegraph.com", nil)
 	require.NoError(t, err)
-	soLoganID, err := db.UserExternalAccounts().CreateUserAndSave(
+	soLogan, err := db.UserExternalAccounts().CreateUserAndSave(
 		ctx,
 		NewUser{
 			Username: "sourcegraph-operator-logan",
@@ -487,7 +487,7 @@ func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
 			[]string{"test", "CODEHOSTINTEGRATION"},
 		},
 		now.Add(-time.Hour): {
-			[]uint32{uint32(soLoganID)},
+			[]uint32{uint32(soLogan.ID)},
 			[]string{"ViewSiteAdminX"},
 			[]string{"test", "CODEHOSTINTEGRATION"},
 		},
@@ -498,7 +498,7 @@ func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
 			[]string{"test", "CODEHOSTINTEGRATION"},
 		},
 		now.Add(-time.Hour * 24 * 4): {
-			[]uint32{uint32(soLoganID), uint32(user1.ID)},
+			[]uint32{uint32(soLogan.ID), uint32(user1.ID)},
 			[]string{"ViewRepository", "ViewTree"},
 			[]string{"test", "CODEHOSTINTEGRATION"},
 		},
@@ -524,7 +524,7 @@ func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
 							Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
 						}
 
-						if userID == uint32(soLoganID) {
+						if userID == uint32(soLogan.ID) {
 							e.PublicArgument = json.RawMessage(fmt.Sprintf(`{"%s": true}`, EventLogsSourcegraphOperatorKey))
 						}
 

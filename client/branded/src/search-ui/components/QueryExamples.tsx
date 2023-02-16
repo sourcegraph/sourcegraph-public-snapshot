@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
-import { useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom-v5-compat'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { EditorHint, QueryState } from '@sourcegraph/shared/src/search'
@@ -50,7 +50,7 @@ export const QueryExamples: React.FunctionComponent<QueryExamplesProps> = ({
     const [selectedTip, setSelectedTip] = useState<Tip | null>(null)
     const [selectTipTimeout, setSelectTipTimeout] = useState<NodeJS.Timeout>()
     const [queryExampleTabActive, setQueryExampleTabActive] = useState<boolean>(false)
-    const history = useHistory()
+    const navigate = useNavigate()
 
     const exampleSyntaxColumns = useQueryExamples(selectedSearchContextSpec ?? 'global', isSourcegraphDotCom)
 
@@ -63,7 +63,7 @@ export const QueryExamples: React.FunctionComponent<QueryExamplesProps> = ({
             // Run search for dotcom longer query examples
             if (isSourcegraphDotCom && queryExampleTabActive) {
                 telemetryService.log('QueryExampleClicked', { queryExample: query }, { queryExample: query })
-                history.push(slug!)
+                navigate(slug!)
             }
 
             setQueryState({ query: `${queryState.query} ${query}`.trimStart(), hint: EditorHint.Focus })
@@ -99,7 +99,7 @@ export const QueryExamples: React.FunctionComponent<QueryExamplesProps> = ({
             selectTipTimeout,
             setSelectTipTimeout,
             queryExampleTabActive,
-            history,
+            navigate,
             isSourcegraphDotCom,
         ]
     )

@@ -70,13 +70,6 @@ export const ENVIRONMENT_CONFIG = {
     DEV_WEB_BUILDER_OMIT_SLOW_DEPS: Boolean(process.env.DEV_WEB_BUILDER_OMIT_SLOW_DEPS),
 
     /**
-     * Force tree-shaking in esbuild. Currently unsafe due to
-     * https://github.com/evanw/esbuild/pull/1458; see the other comments in this repository
-     * mentioning that PR for more information. (Esbuild only.)
-     */
-    DEV_WEB_BUILDER_ESBUILD_FORCE_TREESHAKING: Boolean(process.env.DEV_WEB_BUILDER_ESBUILD_FORCE_TREESHAKING),
-
-    /**
      * ----------------------------------------
      * Application features configuration.
      * ----------------------------------------

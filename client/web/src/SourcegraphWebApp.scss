@@ -3,12 +3,15 @@ This is the main entry point for all styles for the web app.
 It should import all component stylesheets.
 */
 
+@use 'wildcard/src/global-styles/colors';
+
 // Global libraries styles
 @import 'react-grid-layout/css/styles';
 
 // Use duplicate selectors for the light-theme
 // stylelint-disable no-duplicate-selectors
 
+// Global styles
 @import 'wildcard/src/global-styles';
 
 // Document highlight is the background color for tokens which are matched with

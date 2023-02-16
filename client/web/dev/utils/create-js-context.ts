@@ -21,7 +21,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         siteConfig.authProviders.unshift(builtinAuthProvider)
     }
 
-    return <SourcegraphContext>{
+    const jsContext: SourcegraphContext = {
         externalURL: sourcegraphBaseUrl,
         accessTokensAllow: 'all-users-create',
         allowSignup: true,
@@ -69,4 +69,6 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         // Site-config overrides default JS context
         ...siteConfig,
     }
+
+    return jsContext
 }

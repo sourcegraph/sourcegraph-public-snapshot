@@ -21,7 +21,6 @@ import { useExperimentalFeatures } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 
-import { CloudHomepageCta } from './CloudHomepageCta'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
 
@@ -48,8 +47,6 @@ export interface SearchPageProps
  * The search page
  */
 export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchPageProps>> = props => {
-    const homepageUserInvitation = useExperimentalFeatures(features => features.homepageUserInvitation) ?? false
-    const showCollaborators = window.context.allowSignup && homepageUserInvitation && props.isSourcegraphDotCom
     const { width } = useWindowSize()
     const shouldShowAddCodeHostWidget = useShouldShowAddCodeHostWidget(props.authenticatedUser)
     const experimentalQueryInput = useExperimentalFeatures(features => features.searchQueryInput === 'experimental')
@@ -75,7 +72,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
             {props.isSourcegraphDotCom && (
                 <div className="d-sm-flex flex-row text-center">
                     <div className={classNames(width >= VIEWPORT_SM && 'border-right', 'text-muted mt-3 mr-sm-2 pr-2')}>
-                        Search millions of open source repositories
+                        Search millions of public repositories
                     </div>
                     <div className="mt-3">
                         <Link
@@ -110,22 +107,15 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                     <SearchPageInput {...props} queryState={queryState} setQueryState={setQueryState} source="home" />
                 )}
             </div>
-            <div
-                className={classNames(styles.panelsContainer, {
-                    [styles.panelsContainerWithCollaborators]: showCollaborators,
-                })}
-            >
+            <div className={classNames(styles.panelsContainer)}>
                 {(!!props.authenticatedUser || props.isSourcegraphDotCom) && (
-                    <div>
-                        {props.isSourcegraphDotCom && <CloudHomepageCta authenticatedUser={props.authenticatedUser} />}
-                        <QueryExamples
-                            selectedSearchContextSpec={props.selectedSearchContextSpec}
-                            telemetryService={props.telemetryService}
-                            queryState={queryState}
-                            setQueryState={setQueryState}
-                            isSourcegraphDotCom={props.isSourcegraphDotCom}
-                        />
-                    </div>
+                    <QueryExamples
+                        selectedSearchContextSpec={props.selectedSearchContextSpec}
+                        telemetryService={props.telemetryService}
+                        queryState={queryState}
+                        setQueryState={setQueryState}
+                        isSourcegraphDotCom={props.isSourcegraphDotCom}
+                    />
                 )}
             </div>
 

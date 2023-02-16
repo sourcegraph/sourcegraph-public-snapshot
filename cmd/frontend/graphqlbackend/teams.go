@@ -2,6 +2,10 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"net/url"
+	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -21,33 +25,131 @@ type ListTeamsArgs struct {
 	Search *string
 }
 
-type teamConnectionResolver struct{}
+type teamConnectionResolver struct {
+	db       database.DB
+	parentID int32
+	search   string
+	cursor   int32
+	limit    int
+	once     sync.Once
+	teams    []*types.Team
+	pageInfo *graphqlutil.PageInfo
+	err      error
+}
 
-func (r *teamConnectionResolver) TotalCount(args *struct{ CountDeeplyNestedTeams bool }) int32 {
-	return 0
+// applyArgs unmarshals query conditions and limites set in `ListTeamsArgs`
+// into `teamConnectionResolver` fields for convenient use in database query.
+func (r *teamConnectionResolver) applyArgs(args *ListTeamsArgs) error {
+	if args.After != nil {
+		cursor, err := graphqlutil.DecodeIntCursor(args.After)
+		if err != nil {
+			return err
+		}
+		r.cursor = int32(cursor)
+		if int(r.cursor) != cursor {
+			return errors.Newf("cursor int32 overflow: %d", cursor)
+		}
+	}
+	if args.Search != nil {
+		r.search = *args.Search
+	}
+	if args.First != nil {
+		r.limit = int(*args.First)
+	}
+	return nil
 }
-func (r *teamConnectionResolver) PageInfo() *graphqlutil.PageInfo {
-	return graphqlutil.HasNextPage(false)
+
+// compute resolves teams queried for this resolver.
+// The result of running it is setting `teams`, `next` and `err`
+// fields on the resolver. This ensures that resolving multiple
+// graphQL attributes that require listing (like `pageInfo` and `nodes`)
+// results in just one query.
+func (r *teamConnectionResolver) compute(ctx context.Context) {
+	r.once.Do(func() {
+		opts := database.ListTeamsOpts{
+			Cursor:       r.cursor,
+			WithParentID: r.parentID,
+			Search:       r.search,
+		}
+		if r.limit != 0 {
+			opts.LimitOffset = &database.LimitOffset{Limit: r.limit}
+		}
+		teams, next, err := r.db.Teams().ListTeams(ctx, opts)
+		if err != nil {
+			r.err = err
+			return
+		}
+		r.teams = teams
+		if next > 0 {
+			r.pageInfo = graphqlutil.EncodeIntCursor(&next)
+		} else {
+			r.pageInfo = graphqlutil.HasNextPage(false)
+		}
+	})
 }
-func (r *teamConnectionResolver) Nodes() []*teamResolver { return nil }
+
+func (r *teamConnectionResolver) TotalCount(ctx context.Context, args *struct{ CountDeeplyNestedTeams bool }) (int32, error) {
+	if args != nil && args.CountDeeplyNestedTeams {
+		return 0, errors.New("Not supported: counting deeply nested teams.")
+	}
+	// Not taking into account limit or cursor for count.
+	opts := database.ListTeamsOpts{
+		WithParentID: r.parentID,
+		Search:       r.search,
+	}
+	return r.db.Teams().CountTeams(ctx, opts)
+}
+
+func (r *teamConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	r.compute(ctx)
+	return r.pageInfo, r.err
+}
+
+func (r *teamConnectionResolver) Nodes(ctx context.Context) ([]*teamResolver, error) {
+	r.compute(ctx)
+	if r.err != nil {
+		return nil, r.err
+	}
+	var rs []*teamResolver
+	for _, t := range r.teams {
+		rs = append(rs, &teamResolver{
+			db:   r.db,
+			team: t,
+		})
+	}
+	return rs, nil
+}
 
 type teamResolver struct {
-	team *types.Team
 	db   database.DB
+	team *types.Team
 }
 
 func (r *teamResolver) ID() graphql.ID {
 	return relay.MarshalID("Team", r.team.ID)
 }
-func (r *teamResolver) Name() string { return r.team.Name }
-func (r *teamResolver) URL() string  { return "" }
+
+func (r *teamResolver) Name() string {
+	return r.team.Name
+}
+
+func (r *teamResolver) URL() string {
+	absolutePath := fmt.Sprintf("/teams/%s", r.team.Name)
+	u := &url.URL{Path: absolutePath}
+	return u.String()
+}
+
 func (r *teamResolver) DisplayName() *string {
 	if r.team.DisplayName == "" {
 		return nil
 	}
 	return &r.team.DisplayName
 }
-func (r *teamResolver) Readonly() bool { return r.team.ReadOnly }
+
+func (r *teamResolver) Readonly() bool {
+	return r.team.ReadOnly
+}
+
 func (r *teamResolver) ParentTeam(ctx context.Context) (*teamResolver, error) {
 	if r.team.ParentTeamID == 0 {
 		return nil, nil
@@ -58,28 +160,162 @@ func (r *teamResolver) ParentTeam(ctx context.Context) (*teamResolver, error) {
 	}
 	return &teamResolver{team: parentTeam, db: r.db}, nil
 }
+
 func (r *teamResolver) ViewerCanAdminister(ctx context.Context) bool {
 	// 🚨 SECURITY: For now administration is only allowed for site admins.
 	err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db)
 	return err == nil
 }
-func (r *teamResolver) Members(args *ListTeamsArgs) *teamMemberConnection {
-	return &teamMemberConnection{}
-}
-func (r *teamResolver) ChildTeams(args *ListTeamsArgs) *teamConnectionResolver {
-	return &teamConnectionResolver{}
+
+func (r *teamResolver) Members(ctx context.Context, args *ListTeamMembersArgs) (*teamMemberConnection, error) {
+	c := &teamMemberConnection{
+		db:     r.db,
+		teamID: r.team.ID,
+	}
+	if err := c.applyArgs(args); err != nil {
+		return nil, err
+	}
+	return c, nil
 }
 
-type teamMemberConnection struct{}
+func (r *teamResolver) ChildTeams(ctx context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {
+	c := &teamConnectionResolver{
+		db:       r.db,
+		parentID: r.team.ID,
+	}
+	if err := c.applyArgs(args); err != nil {
+		return nil, err
+	}
+	return c, nil
+}
 
-func (r *teamMemberConnection) TotalCount(args *struct{ CountDeeplyNestedTeamMembers bool }) int32 {
-	return 0
+type ListTeamMembersArgs struct {
+	First  *int32
+	After  *string
+	Search *string
 }
-func (r *teamMemberConnection) PageInfo() *graphqlutil.PageInfo {
-	return graphqlutil.HasNextPage(false)
+
+type teamMemberConnection struct {
+	db       database.DB
+	teamID   int32
+	cursor   teamMemberListCursor
+	search   string
+	limit    int
+	once     sync.Once
+	nodes    []*types.TeamMember
+	pageInfo *graphqlutil.PageInfo
+	err      error
 }
-func (r *teamMemberConnection) Nodes() []*UserResolver {
+
+type teamMemberListCursor struct {
+	TeamID int32 `json:"team,omitempty"`
+	UserID int32 `json:"user,omitempty"`
+}
+
+// applyArgs unmarshals query conditions and limites set in `ListTeamMembersArgs`
+// into `teamMemberConnection` fields for convenient use in database query.
+func (r *teamMemberConnection) applyArgs(args *ListTeamMembersArgs) error {
+	if args.After != nil && *args.After != "" {
+		cursorText, err := graphqlutil.DecodeCursor(args.After)
+		if err != nil {
+			return err
+		}
+		if err := json.Unmarshal([]byte(cursorText), &r.cursor); err != nil {
+			return err
+		}
+	}
+	if args.Search != nil {
+		r.search = *args.Search
+	}
+	if args.First != nil {
+		r.limit = int(*args.First)
+	}
 	return nil
+}
+
+// compute resolves team members queried for this resolver.
+// The result of running it is setting `nodes`, `pageInfo` and `err`
+// fields on the resolver. This ensures that resolving multiple
+// graphQL attributes that require listing (like `pageInfo` and `nodes`)
+// results in just one query.
+func (r *teamMemberConnection) compute(ctx context.Context) {
+	r.once.Do(func() {
+		opts := database.ListTeamMembersOpts{
+			Cursor: database.TeamMemberListCursor{
+				TeamID: r.cursor.TeamID,
+				UserID: r.cursor.UserID,
+			},
+			TeamID: r.teamID,
+			Search: r.search,
+		}
+		if r.limit != 0 {
+			opts.LimitOffset = &database.LimitOffset{Limit: r.limit}
+		}
+		nodes, next, err := r.db.Teams().ListTeamMembers(ctx, opts)
+		if err != nil {
+			r.err = err
+			return
+		}
+		r.nodes = nodes
+		if next != nil {
+			cursorStruct := teamMemberListCursor{
+				TeamID: next.TeamID,
+				UserID: next.UserID,
+			}
+			cursorBytes, err := json.Marshal(&cursorStruct)
+			if err != nil {
+				r.err = errors.Wrap(err, "error encoding pageInfo")
+			}
+			cursorString := string(cursorBytes)
+			r.pageInfo = graphqlutil.EncodeCursor(&cursorString)
+		} else {
+			r.pageInfo = graphqlutil.HasNextPage(false)
+		}
+	})
+}
+
+func (r *teamMemberConnection) TotalCount(ctx context.Context, args *struct{ CountDeeplyNestedTeamMembers bool }) (int32, error) {
+	if args != nil && args.CountDeeplyNestedTeamMembers {
+		return 0, errors.New("Not supported: counting deeply nested team members.")
+	}
+	// Not taking into account limit or cursor for count.
+	opts := database.ListTeamMembersOpts{
+		TeamID: r.teamID,
+		Search: r.search,
+	}
+	return r.db.Teams().CountTeamMembers(ctx, opts)
+}
+
+func (r *teamMemberConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	r.compute(ctx)
+	if r.err != nil {
+		return nil, r.err
+	}
+	return r.pageInfo, nil
+}
+
+func (r *teamMemberConnection) Nodes(ctx context.Context) ([]*UserResolver, error) {
+	r.compute(ctx)
+	if r.err != nil {
+		return nil, r.err
+	}
+	var rs []*UserResolver
+	// 🚨 Query in a loop is inefficient: Follow up with another pull request
+	// to where team members query joins with users and fetches them in one go.
+	for _, n := range r.nodes {
+		if n.UserID == 0 {
+			// 🚨 At this point only User can be a team member, so user ID should
+			// always be present. If not, return a `null` team member.
+			rs = append(rs, nil)
+			continue
+		}
+		user, err := r.db.Users().GetByID(ctx, n.UserID)
+		if err != nil {
+			return nil, err
+		}
+		rs = append(rs, NewUserResolver(r.db, user))
+	}
+	return rs, nil
 }
 
 type CreateTeamArgs struct {
@@ -236,8 +472,72 @@ type TeamMembersArgs struct {
 	Members  []graphql.ID
 }
 
-func (r *schemaResolver) AddTeamMembers(args *TeamMembersArgs) *teamResolver {
-	return &teamResolver{}
+func (a *TeamMembersArgs) membersIDs() (map[int32]bool, error) {
+	ids := map[int32]bool{}
+	for i, memberID := range a.Members {
+		if got, want := relay.UnmarshalKind(memberID), "TeamMember"; got != want {
+			return nil, errors.Newf("Members[%d]=%q unexpected kind, got %q want %q", i, memberID, got, want)
+		}
+		var id int32
+		if err := relay.UnmarshalSpec(memberID, &id); err != nil {
+			return nil, errors.Wrapf(err, "Members[%d]=%q ID malformed", i, memberID)
+		}
+		ids[id] = true
+	}
+	return ids, nil
+}
+
+func (r *schemaResolver) AddTeamMembers(ctx context.Context, args *TeamMembersArgs) (*teamResolver, error) {
+	// 🚨 SECURITY: For now we only allow site admins to use teams.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, errors.New("only site admins can modify team members")
+	}
+	if args.Team == nil && args.TeamName == nil {
+		return nil, errors.New("team must be identified by either id (team parameter) or name (teamName parameter), none specified")
+	}
+	if args.Team != nil && args.TeamName != nil {
+		return nil, errors.New("team must be identified by either id (team parameter) or name (teamName parameter), both specified")
+	}
+	memberIDs, err := args.membersIDs()
+	if err != nil {
+		return nil, err
+	}
+	team, err := findTeam(ctx, r.db.Teams(), args.Team, args.TeamName)
+	if err != nil {
+		return nil, err
+	}
+	listOpts := database.ListTeamMembersOpts{
+		TeamID: team.ID,
+	}
+	for {
+		existingMembers, cursor, err := r.db.Teams().ListTeamMembers(ctx, listOpts)
+		if err != nil {
+			return nil, err
+		}
+		for _, m := range existingMembers {
+			delete(memberIDs, m.UserID)
+		}
+		if cursor == nil {
+			break
+		}
+		listOpts.Cursor = *cursor
+	}
+	var membersToAdd []*types.TeamMember
+	for userID := range memberIDs {
+		membersToAdd = append(membersToAdd, &types.TeamMember{
+			TeamID: team.ID,
+			UserID: userID,
+		})
+	}
+	if len(membersToAdd) > 0 {
+		if err := r.db.Teams().CreateTeamMember(ctx, membersToAdd...); err != nil {
+			return nil, err
+		}
+	}
+	return &teamResolver{
+		db:   r.db,
+		team: team,
+	}, nil
 }
 
 func (r *schemaResolver) SetTeamMembers(args *TeamMembersArgs) *teamResolver {
@@ -249,7 +549,15 @@ func (r *schemaResolver) RemoveTeamMembers(args *TeamMembersArgs) *teamResolver 
 }
 
 func (r *schemaResolver) Teams(ctx context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {
-	return &teamConnectionResolver{}, nil
+	// 🚨 SECURITY: For now we only allow site admins to use teams.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, errors.New("only site admins can view teams")
+	}
+	c := &teamConnectionResolver{db: r.db}
+	if err := c.applyArgs(args); err != nil {
+		return nil, err
+	}
+	return c, nil
 }
 
 type TeamArgs struct {

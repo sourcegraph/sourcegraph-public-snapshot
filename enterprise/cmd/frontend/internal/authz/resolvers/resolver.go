@@ -129,7 +129,7 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		AccountIDs:  pendingBindIDs,
 	}
 
-	if err = txs.SetRepoPermissions(ctx, p); err != nil {
+	if _, err = txs.SetRepoPermissions(ctx, p); err != nil {
 		return nil, errors.Wrap(err, "set repository permissions")
 	} else if err = txs.SetRepoPendingPermissions(ctx, accounts, p); err != nil {
 		return nil, errors.Wrap(err, "set repository pending permissions")
