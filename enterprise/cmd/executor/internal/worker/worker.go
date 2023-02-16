@@ -100,8 +100,9 @@ func NewWorker(observationCtx *observation.Context, nameSet *janitor.NameSet, op
 	}
 
 	// Configure the supported runtimes
-	// TODO uncomment when firecracker runtime is complete
-	//if err = runtime.SetupRuntime(observationCtx.Logger, commandOps, filesClient, options.CommandOptions, cloneOptions); err != nil {
+	// TODO: uncomment when firecracker runtime is complete
+	//jobRuntime, err := runtime.NewRuntime(observationCtx.Logger, commandOps, filesClient, options.CommandOptions, cloneOptions)
+	//if err != nil {
 	//	return nil, err
 	//}
 
@@ -113,6 +114,8 @@ func NewWorker(observationCtx *observation.Context, nameSet *janitor.NameSet, op
 		operations:    commandOps,
 		runnerFactory: command.NewRunner,
 		cloneOptions:  cloneOptions,
+		// TODO: uncomment when firecracker runtime is complete
+		//jobRuntime:    jobRuntime,
 	}
 
 	return workerutil.NewWorker[types.Job](context.Background(), queueClient, h, options.WorkerOptions), nil
