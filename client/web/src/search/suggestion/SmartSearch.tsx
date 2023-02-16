@@ -4,7 +4,7 @@ import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 
 import { smartSearchIconSvgPath } from '@sourcegraph/branded'
 import { pluralize } from '@sourcegraph/common'
-import { SmartSearchListItem } from '@sourcegraph/shared/src/components/SmartSearchListItem'
+import { SmartSearchListItem } from '@sourcegraph/branded/src/search-ui/components/SmartSearchListItem'
 import { AggregateStreamingSearchResults, AlertKind } from '@sourcegraph/shared/src/search/stream'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Icon, Collapse, CollapseHeader, CollapsePanel, H2, Text, Button } from '@sourcegraph/wildcard'

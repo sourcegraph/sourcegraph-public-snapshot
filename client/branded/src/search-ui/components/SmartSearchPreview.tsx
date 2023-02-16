@@ -8,10 +8,10 @@ import { smartSearchIconSvgPath } from '@sourcegraph/branded'
 import { SearchMode } from '@sourcegraph/shared/src/search'
 import { Icon, H3, H2, Text, Button, useObservable } from '@sourcegraph/wildcard'
 
-import { submitSearch } from '../../../web/src/search/helpers'
-import { useNavbarQueryState, setSearchMode } from '../../../web/src/stores'
-import { SearchPatternType } from '../graphql-operations'
-import { LATEST_VERSION, aggregateStreamingSearch, ProposedQuery } from '../search/stream'
+import { submitSearch } from '../../../../web/src/search/helpers'
+import { useNavbarQueryState, setSearchMode } from '../../../../web/src/stores'
+import { SearchPatternType } from '../../../../shared/src/graphql-operations'
+import { LATEST_VERSION, aggregateStreamingSearch, ProposedQuery } from '../../../../shared/src/search/stream'
 
 import { SmartSearchListItem } from './SmartSearchListItem'
 

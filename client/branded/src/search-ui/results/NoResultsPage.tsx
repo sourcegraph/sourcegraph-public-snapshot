@@ -3,7 +3,7 @@ import React, { useCallback, useEffect } from 'react'
 import { mdiClose, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
-import { SmartSearchPreview } from '@sourcegraph/shared/src/components/SmartSearchPreview'
+import { SmartSearchPreview } from '@sourcegraph/branded/src/search-ui/components/SmartSearchPreview'
 import { QueryState, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { NoResultsSectionID as SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
