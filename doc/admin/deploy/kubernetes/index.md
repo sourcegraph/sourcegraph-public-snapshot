@@ -11,8 +11,6 @@ Deploying on Kubernetes is for organizations that need highly scalable and avail
 
 Below is an overview of installing Sourcegraph on Kubernetes using Kustomize.
 
->WARNING: **If your Sourcegraph version is older than `4.5.0`, please refer to the [old deployment docs for Kubernetes](https://docs.sourcegraph.com/@v4.4.2/admin/deploy/kubernetes).**
-
 ### Prerequisites
 
 * [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) (v1.19 or later) with [Kustomize](https://kustomize.io/) (built into [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) in version >= 1.14)
@@ -22,6 +20,8 @@ Below is an overview of installing Sourcegraph on Kubernetes using Kustomize.
      - [Amazon Web Services EKS](https://github.com/sourcegraph/tf-k8s-configs/tree/main/aws)
      - [Azure AKS](https://github.com/sourcegraph/tf-k8s-configs/tree/main/azure)
      - [Google Cloud Platform GKE](https://github.com/sourcegraph/tf-k8s-configs/tree/main/gcp)
+
+>WARNING: **If your Sourcegraph version is older than `4.5.0`, please refer to the [old deployment docs for Kubernetes](https://docs.sourcegraph.com/@v4.4.2/admin/deploy/kubernetes).**
 
 ### **Step 1**: Set up a release branch
 
@@ -165,7 +165,8 @@ Common configurations that are strongly recommended for all Sourcegraph deployme
 
 - [Enable the Sourcegraph monitoring stack](configure.md#monitoring-stack)
 - [Enable tracing](configure.md#tracing)
-- [Adjust resource allocations based on your instance size](configure.md#instance-size-based-resources) (refer to our [instance size chart](../instance-size.md))
+- [Adjust resource allocations](configure.md#instance-size-based-resources)
+- [Adjust storage sizes](configure.md#adjust-storage-sizes)
 - [Configure ingress](configure.md#ingress)
 - [Enable TLS](configure.md#tls)
 
