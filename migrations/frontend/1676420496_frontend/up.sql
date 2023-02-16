@@ -52,7 +52,8 @@ SELECT c.id,
     c.last_heartbeat_at,
     c.external_fork_name,
     c.external_fork_namespace,
-    c.detached_at
+    c.detached_at,
+    c.previous_failure_message
 FROM changesets c
 JOIN repo r ON r.id = c.repo_id
 WHERE r.deleted_at IS NULL AND EXISTS (
