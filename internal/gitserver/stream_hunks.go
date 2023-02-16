@@ -2,7 +2,6 @@ package gitserver
 
 import (
 	"bufio"
-	"context"
 	"io"
 	"strconv"
 	"strings"
@@ -14,161 +13,95 @@ import (
 
 // blameHunkReader enables to read hunks from an io.Reader.
 type blameHunkReader struct {
-	hunks chan hunkResult
-}
+	rc io.ReadCloser
+	sc *bufio.Scanner
 
-func newBlameHunkReader(ctx context.Context, rc io.ReadCloser) HunkReader {
-	br := &blameHunkReader{
-		hunks: make(chan hunkResult),
-	}
-	go br.readHunks(ctx, rc)
-	return br
-}
-
-type hunkResult struct {
-	hunk *Hunk
-	err  error
-}
-
-func (br *blameHunkReader) readHunks(ctx context.Context, rc io.ReadCloser) {
-	newHunkParser(rc, br.hunks).parse(ctx)
-}
-
-// Read returns a slice of hunks, along with a done boolean indicating if there is more to
-// read.
-func (br *blameHunkReader) Read() ([]*Hunk, bool, error) {
-	res, ok := <-br.hunks
-	if !ok {
-		return nil, true, nil
-	}
-	if res.err != nil {
-		return nil, false, res.err
-	} else {
-		return []*Hunk{res.hunk}, false, nil
-	}
-}
-
-type hunkParser struct {
-	rc      io.ReadCloser
-	sc      *bufio.Scanner
-	hunksCh chan hunkResult
+	cur *Hunk
 
 	// commits stores previously seen commits, so new hunks
 	// whose annotations are abbreviated by git can still be
 	// filled by the correct data even if the hunk entry doesn't
 	// repeat them.
-	commits map[string]*Hunk
+	commits map[api.CommitID]*Hunk
 }
 
-func newHunkParser(rc io.ReadCloser, hunksCh chan hunkResult) hunkParser {
-	return hunkParser{
+func newBlameHunkReader(rc io.ReadCloser) HunkReader {
+	return &blameHunkReader{
 		rc:      rc,
-		hunksCh: hunksCh,
-
 		sc:      bufio.NewScanner(rc),
-		commits: make(map[string]*Hunk),
+		commits: make(map[api.CommitID]*Hunk),
 	}
 }
 
-// parse processes the output from git blame and sends hunks over p.hunksCh
-// for p.Read() to consume. If an error is encountered, it will be sent to
-// p.hunksCh and will stop reading.
-//
-// Because we do not control when p.Read is called, we have to account for
-// the context being cancelled, to avoid leaking the goroutine running p.parse.
-func (p hunkParser) parse(ctx context.Context) {
-	defer p.rc.Close()
-	defer close(p.hunksCh)
-
-	var cur *Hunk
+// Read returns a slice of hunks, along with a done boolean indicating if there
+// is more to read. After the last hunk has been returned, Read() will return
+// an io.EOF error on success.
+func (br *blameHunkReader) Read() (_ *Hunk, err error) {
 	for {
-		if err := ctx.Err(); err != nil {
-			return
-		}
-
 		// Do we have more to read?
-		if !p.sc.Scan() {
-			if cur != nil {
-				if h, ok := p.commits[string(cur.CommitID)]; ok {
-					cur.CommitID = h.CommitID
-					cur.Author = h.Author
-					cur.Message = h.Message
+		if !br.sc.Scan() {
+			if br.cur != nil {
+				if h, ok := br.commits[br.cur.CommitID]; ok {
+					br.cur.CommitID = h.CommitID
+					br.cur.Author = h.Author
+					br.cur.Message = h.Message
 				}
-				// If we have an ongoing entry, send it.
-				select {
-				case p.hunksCh <- hunkResult{hunk: cur}:
-				case <-ctx.Done():
-					return
-				}
+				// If we have an ongoing entry, return it
+				res := br.cur
+				br.cur = nil
+				return res, nil
 			}
-			break
+			// Return the scanner error if ther was one
+			if err := br.sc.Err(); err != nil {
+				return nil, err
+			}
+			// Otherwise, return the sentinel io.EOF
+			return nil, io.EOF
 		}
 
 		// Read line from git blame, in porcelain format
-		annotation, fields := p.scanLine()
+		line := br.sc.Text()
+		annotation, fields := splitLine(line)
 
 		// On the first read, we have no hunk and the first thing we read is an entry.
-		if cur == nil {
-			var err error
-			cur, err = parseEntry(annotation, fields)
+		if br.cur == nil {
+			br.cur, err = parseEntry(annotation, fields)
 			if err != nil {
-				select {
-				case p.hunksCh <- hunkResult{err: err}:
-					return
-				case <-ctx.Done():
-					return
-				}
+				return nil, err
 			}
 			continue
 		}
 
 		// After that, we're either reading extras, or a new entry.
-		ok, err := parseExtra(cur, annotation, fields)
+		ok, err := parseExtra(br.cur, annotation, fields)
 		if err != nil {
-			select {
-			case p.hunksCh <- hunkResult{err: err}:
-				return
-			case <-ctx.Done():
-				return
-			}
+			return nil, err
 		}
+
 		// If we've finished reading extras, we're looking at a new entry.
 		if !ok {
-			if h, ok := p.commits[string(cur.CommitID)]; ok {
-				cur.CommitID = h.CommitID
-				cur.Author = h.Author
-				cur.Message = h.Message
+			if h, ok := br.commits[br.cur.CommitID]; ok {
+				br.cur.CommitID = h.CommitID
+				br.cur.Author = h.Author
+				br.cur.Message = h.Message
 			} else {
-				p.commits[string(cur.CommitID)] = cur
+				br.commits[br.cur.CommitID] = br.cur
 			}
 
-			select {
-			case p.hunksCh <- hunkResult{hunk: cur}:
-			case <-ctx.Done():
-				return
-			}
+			res := br.cur
 
-			cur, err = parseEntry(annotation, fields)
+			br.cur, err = parseEntry(annotation, fields)
 			if err != nil {
-				select {
-				case p.hunksCh <- hunkResult{err: err}:
-					return
-				case <-ctx.Done():
-					return
-				}
+				return nil, err
 			}
-		}
-	}
 
-	// If there is an error from the scanner, send it back.
-	if err := p.sc.Err(); err != nil {
-		select {
-		case p.hunksCh <- hunkResult{err: err}:
-			return
-		case <-ctx.Done():
-			return
+			return res, nil
 		}
 	}
+}
+
+func (br *blameHunkReader) Close() error {
+	return br.rc.Close()
 }
 
 // parseEntry turns a `67b7b725a7ff913da520b997d71c840230351e30 10 20 1` line from
@@ -230,10 +163,9 @@ func parseExtra(hunk *Hunk, annotation string, content string) (ok bool, err err
 	return
 }
 
-// scanLine reads a line from the scanner and returns the annotation along
+// splitLine splits a scanned line and returns the annotation along
 // with the content, if any.
-func (p hunkParser) scanLine() (string, string) {
-	line := p.sc.Text()
+func splitLine(line string) (annotation string, content string) {
 	annotation, content, found := strings.Cut(line, " ")
 	if found {
 		return annotation, content
@@ -244,8 +176,6 @@ func (p hunkParser) scanLine() (string, string) {
 type mockHunkReader struct {
 	hunks []*Hunk
 	err   error
-
-	idx int
 }
 
 func NewMockHunkReader(hunks []*Hunk, err error) HunkReader {
@@ -255,14 +185,16 @@ func NewMockHunkReader(hunks []*Hunk, err error) HunkReader {
 	}
 }
 
-func (mh *mockHunkReader) Read() ([]*Hunk, bool, error) {
+func (mh *mockHunkReader) Read() (*Hunk, error) {
 	if mh.err != nil {
-		return nil, false, mh.err
+		return nil, mh.err
 	}
-	if mh.idx < len(mh.hunks) {
-		idx := mh.idx
-		mh.idx++
-		return []*Hunk{mh.hunks[idx]}, false, nil
+	if len(mh.hunks) > 0 {
+		next := mh.hunks[0]
+		mh.hunks = mh.hunks[1:]
+		return next, nil
 	}
-	return nil, true, nil
+	return nil, io.EOF
 }
+
+func (mh *mockHunkReader) Close() error { return nil }
