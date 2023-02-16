@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
 func TestRequestAccess(t *testing.T) {
 	logger := logtest.NoOp(t)
 	users := database.NewMockUserStore()
@@ -32,7 +33,7 @@ func TestRequestAccess(t *testing.T) {
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
 				ExperimentalFeatures: &schema.ExperimentalFeatures{
-					AccessRequests: &schema.AccessRequests {
+					AccessRequests: &schema.AccessRequests{
 						Enabled: false,
 					},
 				},
@@ -55,7 +56,7 @@ func TestRequestAccess(t *testing.T) {
 				AuthProviders: []schema.AuthProviders{
 					{
 						Builtin: &schema.BuiltinAuthProvider{
-							Type: "builtin",
+							Type:        "builtin",
 							AllowSignup: true,
 						},
 					},
@@ -99,4 +100,3 @@ func TestRequestAccess(t *testing.T) {
 		assert.Equal(t, http.StatusCreated, res.Code)
 	})
 }
-

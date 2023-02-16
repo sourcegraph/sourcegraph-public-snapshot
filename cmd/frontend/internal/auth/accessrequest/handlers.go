@@ -26,8 +26,8 @@ func HandleRequestAccess(logger log.Logger, db database.DB) http.HandlerFunc {
 		if handleEnabledCheck(logger, w) {
 			return
 		}
-		builtInAuthProvider, _ := userpasswd.GetProviderConfig();
-		if builtInAuthProvider != nil  && builtInAuthProvider.AllowSignup {
+		builtInAuthProvider, _ := userpasswd.GetProviderConfig()
+		if builtInAuthProvider != nil && builtInAuthProvider.AllowSignup {
 			http.Error(w, "Use sign up instead.", http.StatusConflict)
 			return
 		}
