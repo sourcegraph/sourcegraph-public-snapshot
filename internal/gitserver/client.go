@@ -219,7 +219,8 @@ type RawBatchLogResult struct {
 type BatchLogCallback func(repoCommit api.RepoCommit, gitLogResult RawBatchLogResult) error
 
 type HunkReader interface {
-	Read() (hunks []*Hunk, done bool, err error)
+	Read() (*Hunk, error)
+	Close() error
 }
 
 type Client interface {
