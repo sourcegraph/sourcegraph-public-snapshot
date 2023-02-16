@@ -250,6 +250,13 @@ extend type Query {
         forIndexing: Boolean
 
         """
+        If set to true, then only protected configuration policies are returned.
+        If set to false, then only un-protected configuration policies are returned.
+        If unset, policies are returned regardless if they're protected or not.
+        """
+        protected: Boolean
+
+        """
         When specified, indicates that this request should be paginated and
         the first N results (relative to the cursor) should be returned. i.e.
         how many results to return per page.
@@ -439,6 +446,11 @@ type RepositoryFilterPreview {
     The total number of repositories in this result set.
     """
     totalCount: Int!
+
+    """
+    If every repository currently on the instance is matched by this filter.
+    """
+    matchesAllRepos: Boolean!
 
     """
     The maximum number of repository matches a single policy can make.

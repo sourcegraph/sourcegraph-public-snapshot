@@ -24,9 +24,9 @@ var reconcilerWorkerStoreOpts = dbworkerstore.Options[*types.Changeset]{
 	TableName:            "changesets",
 	ViewName:             "reconciler_changesets changesets",
 	AlternateColumnNames: map[string]string{"state": "reconciler_state"},
-	ColumnExpressions:    changesetColumns,
+	ColumnExpressions:    ChangesetColumns,
 
-	Scan: dbworkerstore.BuildWorkerScan(buildRecordScanner(scanChangeset)),
+	Scan: dbworkerstore.BuildWorkerScan(buildRecordScanner(ScanChangeset)),
 
 	// Order changesets by state, so that freshly enqueued changesets have
 	// higher priority.

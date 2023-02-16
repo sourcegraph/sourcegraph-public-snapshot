@@ -24,7 +24,7 @@ export const getSerializedSortAndLimitFilter = (seriesDisplayOptions: InsightSer
             break
     }
 
-    return `Sorted ${sortBy}, limit ${limit} series, max point per series ${numSamples ?? 90}`
+    return `Sorted ${sortBy}, limit ${limit ?? 20} series, max point per series ${numSamples ?? 90}`
 }
 
 type InsightContextsFilter = string

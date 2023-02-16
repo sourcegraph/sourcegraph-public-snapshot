@@ -74,7 +74,7 @@ Tier 1 code hosts are our highest level of support for code hosts. When leveragi
         <td class="indexer-implemented-y">✓</td> <!-- Batch Changes -->
       </tr>
       <tr>
-        <td>BitBucket Cloud</td>
+        <td>Bitbucket Cloud</td>
         <td>Tier 1</td>
         <td class="indexer-implemented-y">✓</td> <!-- Repository Syncing -->
         <td class="indexer-implemented-n">✓</td> <!-- Permissions Syncing -->
@@ -85,7 +85,7 @@ Tier 1 code hosts are our highest level of support for code hosts. When leveragi
         <td class="indexer-implemented-y">✓</td> <!-- Batch Changes -->
       </tr>
       <tr>
-        <td>BitBucket Server</td>
+        <td>Bitbucket Server</td>
         <td>Tier 1</td>
         <td class="indexer-implemented-y">✓</td> <!-- Repository Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Permissions Syncing -->

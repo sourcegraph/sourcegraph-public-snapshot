@@ -1,7 +1,7 @@
 import { countColumn, Extension, Prec, StateEffect, StateField } from '@codemirror/state'
 import { EditorView, getTooltip, PluginValue, showTooltip, Tooltip, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { BehaviorSubject, from, fromEvent, of, Subject, Subscription } from 'rxjs'
-import { catchError, debounceTime, filter, map, scan, switchMap, tap } from 'rxjs/operators'
+import { debounceTime, filter, map, scan, switchMap, tap } from 'rxjs/operators'
 
 import { HoverMerged, TextDocumentPositionParameters } from '@sourcegraph/client-api/src'
 import { formatSearchParameters, LineOrPositionOrRange } from '@sourcegraph/common/src'
@@ -189,7 +189,7 @@ async function hoverRequest(
     const hover = await api.getHover(params).toPromise()
 
     let markdownContents: string =
-        hover === null || hover.contents.length === 0
+        hover === null || hover === undefined || hover.contents.length === 0
             ? ''
             : hover.contents
                   .map(({ value }) => value)
@@ -201,7 +201,7 @@ async function hoverRequest(
     return { markdownContents, hoverMerged: hover, isPrecise: isPrecise(hover) }
 }
 
-function isPrecise(hover: HoverMerged | null): boolean {
+function isPrecise(hover: HoverMerged | null | undefined): boolean {
     for (const badge of hover?.aggregatedBadges || []) {
         if (badge.text === 'precise') {
             return true
@@ -349,7 +349,6 @@ const hoverManager = ViewPlugin.fromClass(
                                     }
 
                                     return from(getHoverTooltip(view, offset)).pipe(
-                                        catchError(() => of(null)),
                                         map(tooltip => (tooltip ? { tooltip, occurrence } : null))
                                     )
                                 }),

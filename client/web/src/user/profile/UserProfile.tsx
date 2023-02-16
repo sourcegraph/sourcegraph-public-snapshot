@@ -5,6 +5,8 @@ import { formatDistanceToNowStrict } from 'date-fns'
 import { UserAreaRouteContext } from '../area/UserArea'
 
 export const UserProfile: FC<Pick<UserAreaRouteContext, 'user'>> = ({ user }) => {
+    const primaryEmail = user.emails?.find(email => email.isPrimary)?.email
+
     const userData: {
         name: string
         value: string
@@ -24,6 +26,11 @@ export const UserProfile: FC<Pick<UserAreaRouteContext, 'user'>> = ({ user }) =>
             name: 'User since',
             value: formatDistanceToNowStrict(new Date(user.createdAt), { addSuffix: true }),
             visible: true,
+        },
+        {
+            name: 'Email',
+            value: primaryEmail || 'Not set',
+            visible: !!primaryEmail,
         },
     ]
 
