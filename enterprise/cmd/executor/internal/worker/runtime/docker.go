@@ -51,8 +51,8 @@ func (d *dockerRuntime) NewRunner(ctx context.Context, logger command.Logger, vm
 	return runner, nil
 }
 
-func (d *dockerRuntime) GetCommands(ws workspace.Workspace, steps []types.DockerStep) ([]command.CommandSpec, error) {
-	commandSpecs := make([]command.CommandSpec, len(steps))
+func (d *dockerRuntime) GetCommands(ws workspace.Workspace, steps []types.DockerStep) ([]command.Spec, error) {
+	commandSpecs := make([]command.Spec, len(steps))
 	for i, step := range steps {
 		var key string
 		if len(step.Key) != 0 {
@@ -61,7 +61,7 @@ func (d *dockerRuntime) GetCommands(ws workspace.Workspace, steps []types.Docker
 			key = fmt.Sprintf("step.docker.%d", i)
 		}
 
-		commandSpecs[i] = command.CommandSpec{
+		commandSpecs[i] = command.Spec{
 			Key:        key,
 			Image:      step.Image,
 			ScriptPath: ws.ScriptFilenames()[i],
