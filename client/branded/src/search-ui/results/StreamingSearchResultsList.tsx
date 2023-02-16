@@ -24,7 +24,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { CommitSearchResult } from '../components/CommitSearchResult'
 import { FileContentSearchResult } from '../components/FileContentSearchResult'
 import { FilePathSearchResult } from '../components/FilePathSearchResult'
-import { PersonSearchResult } from '../components/PersonSearchResult'
+import { OwnerSearchResult } from '../components/OwnerSearchResult'
 import { RepoSearchResult } from '../components/RepoSearchResult'
 import { SymbolSearchResult } from '../components/SymbolSearchResult'
 import { smartSearchClickedEvent } from '../util/events'
@@ -224,9 +224,11 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 as="li"
                             />
                         )
-                    case 'owner':
+                    case 'unknownOwner':
+                    case 'person':
+                    case 'team':
                         return (
-                            <PersonSearchResult
+                            <OwnerSearchResult
                                 index={index}
                                 result={result}
                                 as="li"

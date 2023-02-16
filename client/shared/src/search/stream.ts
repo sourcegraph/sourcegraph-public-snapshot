@@ -29,7 +29,7 @@ export type SearchEvent =
     | { type: 'error'; data: ErrorLike }
     | { type: 'done'; data: {} }
 
-export type SearchMatch = ContentMatch | RepositoryMatch | CommitMatch | SymbolMatch | PathMatch | PersonMatch
+export type SearchMatch = ContentMatch | RepositoryMatch | CommitMatch | SymbolMatch | PathMatch | OwnerMatch
 
 export interface PathMatch {
     type: 'path'
@@ -155,10 +155,28 @@ export interface RepositoryMatch {
     descriptionMatches?: Range[]
 }
 
-export interface PersonMatch {
-    type: 'owner' // This should probably be 'team' at some point
-    handle: string
+export type OwnerMatch = UnknownOwnerMatch | PersonMatch | TeamMatch
+
+export interface BaseOwnerMatch {
+    handle?: string
     email?: string
+}
+
+export interface UnknownOwnerMatch extends BaseOwnerMatch {
+    type: 'unknownOwner'
+}
+
+export interface PersonMatch extends BaseOwnerMatch {
+    type: 'person'
+    username?: string
+    displayName?: string
+    avatarURL?: string
+}
+
+export interface TeamMatch extends BaseOwnerMatch {
+    type: 'team'
+    name: string
+    displayName: string
 }
 
 /**
@@ -585,7 +603,9 @@ export function getMatchUrl(match: SearchMatch): string {
             return getCommitMatchUrl(match)
         case 'repo':
             return getRepoMatchUrl(match)
-        case 'owner':
+        case 'unknownOwner':
+        case 'person':
+        case 'team':
             return '#' // Once we have enough data, link to a user/team page
     }
 }

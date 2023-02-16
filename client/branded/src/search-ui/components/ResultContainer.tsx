@@ -31,7 +31,9 @@ const accessibleResultType: Record<SearchMatch['type'], string> = {
     repo: 'repository',
     path: 'file path',
     commit: 'commit',
-    owner: 'person',
+    unknownOwner: 'owner',
+    person: 'person',
+    team: 'team',
 }
 
 /**
