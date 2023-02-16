@@ -1,7 +1,7 @@
-import {existsSync, mkdtemp as original_mkdtemp, readFileSync} from 'fs'
+import { existsSync, mkdtemp as original_mkdtemp, readFileSync } from 'fs'
 import * as os from 'os'
 import * as path from 'path'
-import {promisify} from 'util'
+import { promisify } from 'util'
 
 import Octokit from '@octokit/rest'
 import commandExists from 'command-exists'
@@ -9,7 +9,7 @@ import execa from 'execa'
 import fetch from 'node-fetch'
 import * as semver from 'semver'
 
-import {cacheFolder, changelogURL, formatDate, getContainerRegistryCredential, readLine, timezoneLink} from './util'
+import { cacheFolder, changelogURL, formatDate, getContainerRegistryCredential, readLine, timezoneLink } from './util'
 
 const mkdtemp = promisify(original_mkdtemp)
 let githubPAT: string
@@ -140,12 +140,7 @@ function dateMarkdown(date: Date, name: string): string {
 async function execTemplate(
     octokit: Octokit,
     template: IssueTemplate,
-    {
-        version,
-        securityReviewDate,
-        codeFreezeDate,
-        releaseDate,
-    }: IssueTemplateArguments
+    { version, securityReviewDate, codeFreezeDate, releaseDate }: IssueTemplateArguments
 ): Promise<string> {
     console.log(`Preparing issue from ${JSON.stringify(template)}`)
     const name = releaseName(version)
@@ -154,14 +149,8 @@ async function execTemplate(
         .replace(/\$MAJOR/g, version.major.toString())
         .replace(/\$MINOR/g, version.minor.toString())
         .replace(/\$PATCH/g, version.patch.toString())
-        .replace(
-            /\$SECURITY_REVIEW_DATE/g,
-            dateMarkdown(securityReviewDate, `One working week before ${name} release`)
-        )
-        .replace(
-            /\$CODE_FREEZE_DATE/g,
-            dateMarkdown(codeFreezeDate, `Three working days before ${name} release`)
-        )
+        .replace(/\$SECURITY_REVIEW_DATE/g, dateMarkdown(securityReviewDate, `One working week before ${name} release`))
+        .replace(/\$CODE_FREEZE_DATE/g, dateMarkdown(codeFreezeDate, `Three working days before ${name} release`))
         .replace(/\$RELEASE_DATE/g, dateMarkdown(releaseDate, `${name} release date`))
 }
 

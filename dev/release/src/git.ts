@@ -1,12 +1,14 @@
-import execa from 'execa';
-import {SemVer} from 'semver';
-import * as semver from 'semver';
+import execa from 'execa'
+import { SemVer } from 'semver'
+import * as semver from 'semver'
 
-import {localSourcegraphRepo} from './github';
+import { localSourcegraphRepo } from './github'
 
 export function getTags(workdir: string, prefix?: string): string[] {
     execa.sync('git', ['fetch', '--tags'], { cwd: workdir })
-    return execa.sync('git', ['--no-pager', 'tag', '-l', `${prefix}`, '--sort=v:refname'], {cwd: workdir }).stdout.split('\n')
+    return execa
+        .sync('git', ['--no-pager', 'tag', '-l', `${prefix}`, '--sort=v:refname'], { cwd: workdir })
+        .stdout.split('\n')
 }
 
 export function getCandidateTags(workdir: string, version: string): string[] {
@@ -21,14 +23,14 @@ export function getReleaseTags(workdir: string): string[] {
 
 // Returns the version tagged in the repository previous to a provided input version. If no input version it will
 // simply return the highest version found in the repository.
-export function getPreviousVersion(version?: SemVer): (SemVer) {
+export function getPreviousVersion(version?: SemVer): SemVer {
     const lowest = new SemVer('0.0.1')
     const tags = getReleaseTags(localSourcegraphRepo)
     if (tags.length === 0) {
         return lowest
     }
     if (!version) {
-        return new SemVer(tags[tags.length-1])
+        return new SemVer(tags[tags.length - 1])
     }
 
     for (let i = tags.length - 1; i >= 0; i--) {

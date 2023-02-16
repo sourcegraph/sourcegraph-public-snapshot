@@ -1,10 +1,10 @@
-import {readFileSync, rmdirSync, writeFileSync} from 'fs'
+import { readFileSync, rmdirSync, writeFileSync } from 'fs'
 import * as path from 'path'
 
 import commandExists from 'command-exists'
-import {addMinutes} from 'date-fns'
+import { addMinutes } from 'date-fns'
 import execa from 'execa'
-import {SemVer} from 'semver';
+import { SemVer } from 'semver'
 
 import * as batchChanges from './batchChanges'
 import * as changelog from './changelog'
@@ -16,9 +16,11 @@ import {
     ReleaseConfig,
     getActiveRelease,
     removeScheduledRelease,
-    saveReleaseConfig, getReleaseDefinition, deactivateAllReleases
+    saveReleaseConfig,
+    getReleaseDefinition,
+    deactivateAllReleases,
 } from './config'
-import {getCandidateTags, getPreviousVersion} from './git';
+import { getCandidateTags, getPreviousVersion } from './git'
 import {
     cloneRepo,
     closeTrackingIssue,
@@ -36,8 +38,8 @@ import {
     queryIssues,
     releaseName,
 } from './github'
-import {calendarTime, ensureEvent, EventOptions, getClient} from './google-calendar'
-import {postMessage, slackURL} from './slack'
+import { calendarTime, ensureEvent, EventOptions, getClient } from './google-calendar'
+import { postMessage, slackURL } from './slack'
 import {
     cacheFolder,
     changelogURL,
@@ -52,7 +54,7 @@ import {
     updateUpgradeGuides,
     verifyWithInput,
 } from './util'
-import chalk from "chalk";
+import chalk from 'chalk'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
@@ -112,7 +114,9 @@ export async function runStep(config: ReleaseConfig, step: StepID, ...args: stri
 interface Step {
     id: StepID
     description: string
-    run?: ((config: ReleaseConfig, ...args: string[]) => Promise<void>) | ((config: ReleaseConfig, ...args: string[]) => void)
+    run?:
+        | ((config: ReleaseConfig, ...args: string[]) => Promise<void>)
+        | ((config: ReleaseConfig, ...args: string[]) => void)
     argNames?: string[]
 }
 
@@ -329,7 +333,9 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 await execa('git', ['branch', release.branch])
                 await execa('git', ['push', 'origin', release.branch])
                 await postMessage(message, config.metadata.slackAnnounceChannel)
-                console.log(`To check the status of the branch, run:\nsg ci status -branch ${release.version.version} --wait\n`)
+                console.log(
+                    `To check the status of the branch, run:\nsg ci status -branch ${release.version.version} --wait\n`
+                )
             } catch (error) {
                 console.error('Failed to create release branch', error)
             }
@@ -344,7 +350,9 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
 
             const trackingIssue = await getTrackingIssue(githubClient, release.version)
             if (!trackingIssue) {
-                throw new Error(`Tracking issue for version ${release.version.version} not found - has it been created yet?`)
+                throw new Error(
+                    `Tracking issue for version ${release.version.version} not found - has it been created yet?`
+                )
             }
             const latestTag = (await getLatestTag('sourcegraph', 'sourcegraph')).toString()
             const latestBuildURL = `https://buildkite.com/sourcegraph/sourcegraph/builds?branch=${latestTag}`
@@ -369,7 +377,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             if (!config.dryRun.slack) {
                 await postMessage(message, config.metadata.slackAnnounceChannel)
             } else {
-                console.log(chalk.green('Dry run: ' + message));
+                console.log(chalk.green('Dry run: ' + message))
             }
         },
     },
@@ -385,7 +393,10 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
 
             try {
                 const client = await getAuthenticatedGitHubClient()
-                const { workdir } = await cloneRepo(client, owner, repo, { revision: release.branch, revisionMustExist: true })
+                const { workdir } = await cloneRepo(client, owner, repo, {
+                    revision: release.branch,
+                    revisionMustExist: true,
+                })
 
                 const tags = getCandidateTags(workdir, release.version.version)
                 let nextCandidate = 1
@@ -519,7 +530,9 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             const batchChangeURL = batchChanges.batchChangeURL(batchChange)
             const trackingIssue = await getTrackingIssue(await getAuthenticatedGitHubClient(), release.version)
             if (!trackingIssue) {
-                throw new Error(`Tracking issue for version ${release.version.version} not found - has it been created yet?`)
+                throw new Error(
+                    `Tracking issue for version ${release.version.version} not found - has it been created yet?`
+                )
             }
 
             // default PR content
@@ -832,7 +845,10 @@ Batch change: ${batchChangeURL}`,
 
             // Set up announcement message
             const batchChangeURL = batchChanges.batchChangeURL(
-                batchChanges.releaseTrackingBatchChange(release.version.version, await batchChanges.sourcegraphCLIConfig())
+                batchChanges.releaseTrackingBatchChange(
+                    release.version.version,
+                    await batchChanges.sourcegraphCLIConfig()
+                )
             )
             const releaseMessage = `*Sourcegraph ${release.version.version} has been published*
 
@@ -846,7 +862,9 @@ Batch change: ${batchChangeURL}`,
                 await postMessage(slackMessage, config.metadata.slackAnnounceChannel)
                 console.log(`Posted to Slack channel ${config.metadata.slackAnnounceChannel}`)
             } else {
-                console.log(`dryRun enabled, skipping Slack post to ${config.metadata.slackAnnounceChannel}: ${slackMessage}`)
+                console.log(
+                    `dryRun enabled, skipping Slack post to ${config.metadata.slackAnnounceChannel}: ${slackMessage}`
+                )
             }
 
             // GitHub tracking issues
@@ -882,6 +900,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
             // close tracking issue
             await closeTrackingIssue(active.version)
             console.log(chalk.blue('Deactivating release...'))
+            removeScheduledRelease(config, active.version.version)
             deactivateAllReleases(config)
             console.log(chalk.green(`Release ${active.version.format()} closed!`))
         },
@@ -931,7 +950,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
     {
         id: 'util:previous-version',
         description: 'Calculate the previous version based on repo tags',
-        argNames:['version'],
+        argNames: ['version'],
         run: (config: ReleaseConfig, version?: string) => {
             let ver: SemVer | undefined
             if (version) {

@@ -1,13 +1,13 @@
-import {readFileSync, writeFileSync} from 'fs'
+import { readFileSync, writeFileSync } from 'fs'
 
 import chalk from 'chalk'
-import {parse as parseJSONC} from 'jsonc-parser'
-import {DateTime} from 'luxon';
+import { parse as parseJSONC } from 'jsonc-parser'
+import { DateTime } from 'luxon'
 import * as semver from 'semver'
-import {SemVer} from 'semver'
+import { SemVer } from 'semver'
 
-import {getPreviousVersion} from './git';
-import {retryInput} from './util'
+import { getPreviousVersion } from './git'
+import { retryInput } from './util'
 
 const releaseConfigPath = 'release-config.jsonc'
 
@@ -49,7 +49,11 @@ export async function getActiveRelease(config: ReleaseConfig): Promise<ActiveRel
         throw new Error('unable to activate a release!')
     }
     if (config.in_progress.releases.length > 1) {
-        throw new Error(chalk.red('The release config has multiple versions activated. This feature is not yet supported by the release tool! Please activate only a single release.'))
+        throw new Error(
+            chalk.red(
+                'The release config has multiple versions activated. This feature is not yet supported by the release tool! Please activate only a single release.'
+            )
+        )
     }
     const rel = config.in_progress.releases[0]
     const def = config.scheduledReleases[rel.version]
@@ -57,9 +61,9 @@ export async function getActiveRelease(config: ReleaseConfig): Promise<ActiveRel
     return {
         version,
         previous: new SemVer(rel.previous),
-        ...def as ReleaseDates,
-        ...def as ReleaseCaptainInformation,
-        branch: `${version.minor}.${version.minor}`
+        ...(def as ReleaseDates),
+        ...(def as ReleaseCaptainInformation),
+        branch: `${version.minor}.${version.minor}`,
     }
 }
 
@@ -71,12 +75,17 @@ export function saveReleaseConfig(config: ReleaseConfig): void {
     writeFileSync(releaseConfigPath, JSON.stringify(config, null, 2))
 }
 
-export function newRelease(version: SemVer, releaseDate: DateTime, captainGithub: string, captainSlack: string): ScheduledReleaseDefinition {
+export function newRelease(
+    version: SemVer,
+    releaseDate: DateTime,
+    captainGithub: string,
+    captainSlack: string
+): ScheduledReleaseDefinition {
     return {
         ...releaseDates(releaseDate),
         current: version.version,
         captainGitHubUsername: captainGithub,
-        captainSlackUsername: captainSlack
+        captainSlackUsername: captainSlack,
     }
 }
 
@@ -86,19 +95,23 @@ export async function newReleaseFromInput(versionOverride?: SemVer): Promise<Sch
         version = await selectVersionWithSuggestion('Enter the desired version number')
     }
 
-    const releaseDateStr = await retryInput('Enter the release date (YYYY-MM-DD). Enter blank to use current date: ', val => {
-        if (val && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
-            return true
-        }
-        // this will return false if the input doesn't match the regexp above but does exist, allowing blank input to still be valid
-        return !val;
-    }, 'invalid date, expected format YYYY-MM-DD')
+    const releaseDateStr = await retryInput(
+        'Enter the release date (YYYY-MM-DD). Enter blank to use current date: ',
+        val => {
+            if (val && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
+                return true
+            }
+            // this will return false if the input doesn't match the regexp above but does exist, allowing blank input to still be valid
+            return !val
+        },
+        'invalid date, expected format YYYY-MM-DD'
+    )
     let releaseTime: DateTime
     if (!releaseDateStr) {
         releaseTime = DateTime.now().setZone('America/Los_Angeles')
         console.log(chalk.blue(`Using current time: ${releaseTime.toString()}`))
     } else {
-        releaseTime = DateTime.fromISO(releaseDateStr, {zone: 'America/Los_Angeles'})
+        releaseTime = DateTime.fromISO(releaseDateStr, { zone: 'America/Los_Angeles' })
     }
 
     const captainGithubUsername = await retryInput('Enter the github username of the release captain: ', val => !!val)
@@ -111,11 +124,11 @@ export async function newReleaseFromInput(versionOverride?: SemVer): Promise<Sch
 }
 
 function releaseDates(releaseDate: DateTime): ReleaseDates {
-    releaseDate = releaseDate.set({hour: 10})
+    releaseDate = releaseDate.set({ hour: 10 })
     return {
-        codeFreezeDate: releaseDate.plus({days: -7}).toString(),
-        securityApprovalDate: releaseDate.plus({days: -7}).toString(),
-        releaseDate: releaseDate.toString()
+        codeFreezeDate: releaseDate.plus({ days: -7 }).toString(),
+        securityApprovalDate: releaseDate.plus({ days: -7 }).toString(),
+        releaseDate: releaseDate.toString(),
     }
 }
 
@@ -159,7 +172,7 @@ export interface ReleaseConfig {
     metadata: {
         teamEmail: string
         slackAnnounceChannel: string
-    },
+    }
     scheduledReleases: {
         [version: string]: ScheduledReleaseDefinition
     }
@@ -189,7 +202,7 @@ export async function activateRelease(config: ReleaseConfig): Promise<void> {
     config.in_progress = {
         captainGitHubUsername: scheduled.captainGitHubUsername,
         captainSlackUsername: scheduled.captainSlackUsername,
-        releases: [{version: next.version, previous: previous.version}]
+        releases: [{ version: next.version, previous: previous.version }],
     }
     saveReleaseConfig(config)
     console.log(chalk.green(`Release: ${next.version} activated!`))
@@ -204,10 +217,15 @@ export function deactivateAllReleases(config: ReleaseConfig): void {
 async function selectVersionWithSuggestion(prompt: string): Promise<SemVer> {
     const probablyMinor = getPreviousVersion().inc('minor')
     const probablyPatch = getPreviousVersion().inc('patch')
-    const input = await retryInput(`Next minor release: ${probablyMinor.version}\nNext patch release: ${probablyPatch.version}\n${chalk.blue(prompt)}: `, val => {
-        const version = semver.parse(val)
-        return !!version
-    })
+    const input = await retryInput(
+        `Next minor release: ${probablyMinor.version}\nNext patch release: ${probablyPatch.version}\n${chalk.blue(
+            prompt
+        )}: `,
+        val => {
+            const version = semver.parse(val)
+            return !!version
+        }
+    )
     return new SemVer(input)
 }
 
@@ -218,10 +236,15 @@ export async function getReleaseDefinition(config: ReleaseConfig): Promise<Sched
 }
 
 // Helper function to get a release definition from the release config, redirecting to creation input if it doesn't exist.
-async function getScheduledReleaseWithInput(config: ReleaseConfig, releaseVersion: SemVer): Promise<ScheduledReleaseDefinition> {
+async function getScheduledReleaseWithInput(
+    config: ReleaseConfig,
+    releaseVersion: SemVer
+): Promise<ScheduledReleaseDefinition> {
     let scheduled = config.scheduledReleases[releaseVersion.version]
     if (!scheduled) {
-        console.log(chalk.yellow(`Release definition not found for: ${releaseVersion.version}, enter release information.\n`))
+        console.log(
+            chalk.yellow(`Release definition not found for: ${releaseVersion.version}, enter release information.\n`)
+        )
         scheduled = await newReleaseFromInput(releaseVersion)
         addScheduledRelease(config, scheduled)
     }
