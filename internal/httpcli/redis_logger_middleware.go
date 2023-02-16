@@ -10,7 +10,6 @@ import (
 	"runtime"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -28,9 +27,6 @@ var outboundRequestsRedisFIFOList = rcache.NewFIFOListDynamic("outbound-requests
 const sourcegraphPrefix = "github.com/sourcegraph/sourcegraph/"
 
 func redisLoggerMiddleware() Middleware {
-	var once sync.Once
-	var logger log.Logger
-
 	creatorStackFrame, _ := getFrames(4).Next()
 	return func(cli Doer) Doer {
 		return DoerFunc(func(req *http.Request) (*http.Response, error) {
@@ -117,11 +113,8 @@ func redisLoggerMiddleware() Middleware {
 			go func() {
 				// Save new item
 				if err := outboundRequestsRedisFIFOList.Insert(logItemJson); err != nil {
-					// Log would get upset if we created a logger at init time → create logger at logging time
-					once.Do(func() {
-						logger = log.Scoped("redisLoggerMiddleware", "")
-					})
-					logger.Error("insert log item", log.Error(err))
+					// Log would get upset if we created a logger at init time → create logger on the fly
+					log.Scoped("redisLoggerMiddleware", "").Error("insert log item", log.Error(err))
 				}
 			}()
 
