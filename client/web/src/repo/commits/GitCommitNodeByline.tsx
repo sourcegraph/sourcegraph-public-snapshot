@@ -18,7 +18,7 @@ interface Props {
     preferAbsoluteTimestamps?: boolean
     messageElement?: JSX.Element
     commitMessageBody?: JSX.Element
-    wrapperElement?: 'div' | 'td'
+    as?: 'div' | 'td'
 }
 
 /**
@@ -33,9 +33,9 @@ export const GitCommitNodeByline: React.FunctionComponent<React.PropsWithChildre
     preferAbsoluteTimestamps,
     messageElement,
     commitMessageBody,
-    wrapperElement = 'div',
+    as = 'div',
 }) => {
-    const Wrapper = wrapperElement
+    const Wrapper = as
 
     // Omit GitHub as committer to reduce noise. (Edits and squash commits made in the GitHub UI
     // include GitHub as a committer.)
