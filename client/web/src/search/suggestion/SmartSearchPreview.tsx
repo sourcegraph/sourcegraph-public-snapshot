@@ -94,10 +94,10 @@ export const SmartSearchPreview: React.FunctionComponent<{}> = () => {
                             <SmartSearchListItem proposedQuery={item} previewStyle={true} key={item.query} />
                         ))}
                     </ul>
+
+                    <EnableSmartSearch query={query} caseSensitive={caseSensitive} />
                 </>
             )}
-
-            <EnableSmartSearch query={query} caseSensitive={caseSensitive} />
         </div>
     )
 }
