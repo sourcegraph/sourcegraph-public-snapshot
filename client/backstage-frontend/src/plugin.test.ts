@@ -1,7 +1,7 @@
-import { sourcegraphPlugin } from './plugin';
+import { sourcegraphPlugin } from './plugin'
 
 describe('sourcegraph', () => {
-  it('should export plugin', () => {
-    expect(sourcegraphPlugin).toBeDefined();
-  });
-});
+    it('should export plugin', () => {
+        expect(sourcegraphPlugin).toBeDefined()
+    })
+})

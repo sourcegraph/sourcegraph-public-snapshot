@@ -1,1 +1,1 @@
-export { sourcegraphPlugin, SourcegraphPage } from './plugin';
+export { sourcegraphPlugin, SourcegraphPage } from './plugin'
