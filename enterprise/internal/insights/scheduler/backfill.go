@@ -319,6 +319,7 @@ type BackfillQueueItem struct {
 	ID                  int
 	InsightTitle        string
 	SeriesID            int
+	InsightUniqueID     string
 	SeriesLabel         string
 	SeriesSearchQuery   string
 	BackfillState       string
@@ -401,6 +402,7 @@ func scanAllBackfillQueueItems(rows *sql.Rows, queryErr error) (_ []BackfillQueu
 			&temp.ID,
 			&temp.InsightTitle,
 			&temp.SeriesID,
+			&temp.InsightUniqueID,
 			&temp.SeriesLabel,
 			&temp.SeriesSearchQuery,
 			&temp.BackfillState,
@@ -475,6 +477,7 @@ END backfill_state
 select isb.id,
        title,
        s.id,
+	   iv.unique_id insight_id,
        label,
        query,
        state.backfill_state,
