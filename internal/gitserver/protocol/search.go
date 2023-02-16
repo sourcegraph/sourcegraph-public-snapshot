@@ -46,11 +46,11 @@ func NodeFromProto(p *proto.QueryNode) (Node, error) {
 		}
 		var kind OperatorKind
 		switch v.Operator.GetKind() {
-		case proto.OperatorKind_OPERATOR_KIND_AND:
+		case proto.OperatorKind_AND:
 			kind = And
-		case proto.OperatorKind_OPERATOR_KIND_OR:
+		case proto.OperatorKind_OR:
 			kind = Or
-		case proto.OperatorKind_OPERATOR_KIND_NOT:
+		case proto.OperatorKind_NOT:
 			kind = Not
 		default:
 			return nil, errors.Newf("unknown operator kind %s", v.Operator.GetKind().String())
@@ -75,7 +75,7 @@ func (a *AuthorMatches) String() string {
 func (a *AuthorMatches) ToProto() *proto.QueryNode {
 	return &proto.QueryNode{
 		Value: &proto.QueryNode_AuthorMatches{
-			AuthorMatches: &proto.AuthorMatches{
+			AuthorMatches: &proto.AuthorMatchesNode{
 				Expr:       a.Expr,
 				IgnoreCase: a.IgnoreCase,
 			},
@@ -97,7 +97,7 @@ func (c *CommitterMatches) String() string {
 func (a *CommitterMatches) ToProto() *proto.QueryNode {
 	return &proto.QueryNode{
 		Value: &proto.QueryNode_CommitterMatches{
-			CommitterMatches: &proto.CommitterMatches{
+			CommitterMatches: &proto.CommitterMatchesNode{
 				Expr:       a.Expr,
 				IgnoreCase: a.IgnoreCase,
 			},
@@ -117,7 +117,7 @@ func (c *CommitBefore) String() string {
 func (c *CommitBefore) ToProto() *proto.QueryNode {
 	return &proto.QueryNode{
 		Value: &proto.QueryNode_CommitBefore{
-			CommitBefore: &proto.CommitBefore{
+			CommitBefore: &proto.CommitBeforeNode{
 				Timestamp: timestamppb.New(c.Time),
 			},
 		},
@@ -136,7 +136,7 @@ func (c *CommitAfter) String() string {
 func (c *CommitAfter) ToProto() *proto.QueryNode {
 	return &proto.QueryNode{
 		Value: &proto.QueryNode_CommitAfter{
-			CommitAfter: &proto.CommitAfter{
+			CommitAfter: &proto.CommitAfterNode{
 				Timestamp: timestamppb.New(c.Time),
 			},
 		},
@@ -157,7 +157,7 @@ func (m *MessageMatches) String() string {
 func (m *MessageMatches) ToProto() *proto.QueryNode {
 	return &proto.QueryNode{
 		Value: &proto.QueryNode_MessageMatches{
-			MessageMatches: &proto.MessageMatches{
+			MessageMatches: &proto.MessageMatchesNode{
 				Expr:       m.Expr,
 				IgnoreCase: m.IgnoreCase,
 			},
@@ -179,7 +179,7 @@ func (d *DiffMatches) String() string {
 func (m *DiffMatches) ToProto() *proto.QueryNode {
 	return &proto.QueryNode{
 		Value: &proto.QueryNode_DiffMatches{
-			DiffMatches: &proto.DiffMatches{
+			DiffMatches: &proto.DiffMatchesNode{
 				Expr:       m.Expr,
 				IgnoreCase: m.IgnoreCase,
 			},
@@ -201,7 +201,7 @@ func (d *DiffModifiesFile) String() string {
 func (m *DiffModifiesFile) ToProto() *proto.QueryNode {
 	return &proto.QueryNode{
 		Value: &proto.QueryNode_DiffModifiesFile{
-			DiffModifiesFile: &proto.DiffModifiesFile{
+			DiffModifiesFile: &proto.DiffModifiesFileNode{
 				Expr:       m.Expr,
 				IgnoreCase: m.IgnoreCase,
 			},
@@ -221,7 +221,7 @@ func (c *Boolean) String() string {
 func (c *Boolean) ToProto() *proto.QueryNode {
 	return &proto.QueryNode{
 		Value: &proto.QueryNode_Boolean{
-			Boolean: &proto.Boolean{
+			Boolean: &proto.BooleanNode{
 				Value: c.Value,
 			},
 		},
@@ -239,13 +239,13 @@ const (
 func (o OperatorKind) ToProto() proto.OperatorKind {
 	switch o {
 	case And:
-		return proto.OperatorKind_OPERATOR_KIND_AND
+		return proto.OperatorKind_AND
 	case Or:
-		return proto.OperatorKind_OPERATOR_KIND_OR
+		return proto.OperatorKind_OR
 	case Not:
-		return proto.OperatorKind_OPERATOR_KIND_NOT
+		return proto.OperatorKind_NOT
 	default:
-		return proto.OperatorKind_OPERATOR_KIND_UNSPECIFIED
+		return proto.OperatorKind_UNSPECIFIED
 	}
 }
 
@@ -280,7 +280,7 @@ func (o *Operator) ToProto() *proto.QueryNode {
 	}
 	return &proto.QueryNode{
 		Value: &proto.QueryNode_Operator{
-			Operator: &proto.Operator{
+			Operator: &proto.OperatorNode{
 				Kind:     o.Kind.ToProto(),
 				Operands: operands,
 			},

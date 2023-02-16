@@ -66,79 +66,79 @@ message RevisionSpecifier {
   string exclude_ref_glob = 3;
 }
 
-// AuthorMatches is a predicate that matches if the author's name or email address
+// AuthorMatchesNode is a predicate that matches if the author's name or email address
 // matches the regex pattern.
-message AuthorMatches {
+message AuthorMatchesNode {
   string expr = 1;
   bool ignore_case = 2;
 }
 
-// CommitterMatches is a predicate that matches if the author's name or email address
+// CommitterMatchesNode is a predicate that matches if the author's name or email address
 // matches the regex pattern.
-message CommitterMatches {
+message CommitterMatchesNode {
   string expr = 1;
   bool ignore_case = 2;
 }
 
-// CommitBefore is a predicate that matches if the commit is before the given date
-message CommitBefore {
+// CommitBeforeNode is a predicate that matches if the commit is before the given date
+message CommitBeforeNode {
   google.protobuf.Timestamp timestamp = 1;
 }
 
-// CommitAfter is a predicate that matches if the commit is after the given date
-message CommitAfter {
+// CommitAfterNode is a predicate that matches if the commit is after the given date
+message CommitAfterNode {
   google.protobuf.Timestamp timestamp = 1;
 }
 
-// MessageMatches is a predicate that matches if the commit message matches
+// MessageMatchesNode is a predicate that matches if the commit message matches
 // the provided regex pattern.
-message MessageMatches {
+message MessageMatchesNode {
   string expr = 1;
   bool ignore_case = 2;
 }
 
-// DiffMatches is a a predicate that matches if any of the lines changed by
+// DiffMatchesNode is a a predicate that matches if any of the lines changed by
 // the commit match the given regex pattern.
-message DiffMatches {
+message DiffMatchesNode {
   string expr = 1;
   bool ignore_case = 2;
 }
 
-// DiffModifiesFile is a predicate that matches if the commit modifies any files
+// DiffModifiesFileNode is a predicate that matches if the commit modifies any files
 // that match the given regex pattern.
-message DiffModifiesFile {
+message DiffModifiesFileNode {
   string expr = 1;
   bool ignore_case = 2;
 }
 
-// Boolean is a predicate that will either always match or never match
-message Boolean {
+// BooleanNode is a predicate that will either always match or never match
+message BooleanNode {
   bool value = 1;
 }
 
 enum OperatorKind {
-  OPERATOR_KIND_UNSPECIFIED = 0;
-  OPERATOR_KIND_AND = 1;
-  OPERATOR_KIND_OR = 2;
-  OPERATOR_KIND_NOT = 3;
+  UNSPECIFIED = 0;
+  AND = 1;
+  OR = 2;
+  NOT = 3;
 }
 
-message Operator {
+message OperatorNode {
   OperatorKind kind = 1;
   repeated QueryNode operands = 2;
 }
 
 message QueryNode {
   oneof value {
-    AuthorMatches author_matches = 1;
-    CommitterMatches committer_matches = 2;
-    CommitBefore commit_before = 3;
-    CommitAfter commit_after = 4;
-    MessageMatches message_matches = 5;
-    DiffMatches diff_matches = 6;
-    DiffModifiesFile diff_modifies_file = 7;
-    Boolean boolean = 8;
-    Operator operator = 9;
+    AuthorMatchesNode author_matches = 1;
+    CommitterMatchesNode committer_matches = 2;
+    CommitBeforeNode commit_before = 3;
+    CommitAfterNode commit_after = 4;
+    MessageMatchesNode message_matches = 5;
+    DiffMatchesNode diff_matches = 6;
+    DiffModifiesFileNode diff_modifies_file = 7;
+    BooleanNode boolean = 8;
+    OperatorNode operator = 9;
   }
 }
 
