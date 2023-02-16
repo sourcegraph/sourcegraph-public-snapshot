@@ -8,7 +8,7 @@ import ServerIcon from 'mdi-react/ServerIcon'
 import { Router } from 'react-router'
 import { CompatRouter, Routes, Route } from 'react-router-dom-v5-compat'
 import { combineLatest, from, Subscription, fromEvent, of, Subject, Observable } from 'rxjs'
-import { first, startWith, switchMap } from 'rxjs/operators'
+import { distinctUntilChanged, first, map, startWith, switchMap } from 'rxjs/operators'
 
 import { isMacPlatform, logger } from '@sourcegraph/common'
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
@@ -30,6 +30,7 @@ import {
     getDefaultSearchContextSpec,
 } from '@sourcegraph/shared/src/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
+import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import {
@@ -76,6 +77,8 @@ import {
     setExperimentalFeaturesFromSettings,
     getExperimentalFeatures,
     useNavbarQueryState,
+    observeStore,
+    useExperimentalFeatures,
 } from './stores'
 import { setQueryStateFromURL } from './stores/navbarSearchQueryState'
 import { useThemeProps } from './theme'
@@ -215,9 +218,8 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
     )
 
     const selectedSearchContextSpecRef = useRef(selectedSearchContextSpec)
-    useEffect(() => {
-        selectedSearchContextSpecRef.current = selectedSearchContextSpec
-    }, [selectedSearchContextSpec])
+    selectedSearchContextSpecRef.current = selectedSearchContextSpec
+
     const getSelectedSearchContextSpec = useCallback(
         (): string | undefined =>
             getExperimentalFeatures().showSearchContext ? selectedSearchContextSpecRef.current ?? undefined : undefined,
@@ -297,32 +299,49 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
 
         // Update search query state whenever the URL changes
         subscriptions.add(
-            getQueryStateFromLocation({
-                location: observeLocation(globalHistory).pipe(startWith(globalHistory.location)),
-                showSearchContext: props.searchContextsEnabled,
-                isSearchContextAvailable: (searchContext: string) =>
-                    props.searchContextsEnabled
-                        ? isSearchContextSpecAvailable({ spec: searchContext, platformContext })
-                              .pipe(first())
-                              .toPromise()
-                        : Promise.resolve(false),
-            }).subscribe(parsedSearchURLAndContext => {
+            combineLatest([
+                observeStore(useExperimentalFeatures).pipe(
+                    map(([features]) => features.searchQueryInput === 'experimental'),
+                    // This ensures that the query stays unmodified until we know
+                    // whether the feature flag is set or not.
+                    startWith(true),
+                    distinctUntilChanged()
+                ),
+                getQueryStateFromLocation({
+                    location: observeLocation(globalHistory).pipe(startWith(globalHistory.location)),
+                    isSearchContextAvailable: (searchContext: string) =>
+                        props.searchContextsEnabled
+                            ? isSearchContextSpecAvailable({ spec: searchContext, platformContext })
+                                  .pipe(first())
+                                  .toPromise()
+                            : Promise.resolve(false),
+                }),
+            ]).subscribe(([enableExperimentalQueryInput, parsedSearchURLAndContext]) => {
                 if (parsedSearchURLAndContext.query) {
                     // Only override filters and update query from URL if there
                     // is a search query.
-                    if (
-                        parsedSearchURLAndContext.searchContextSpec &&
-                        parsedSearchURLAndContext.searchContextSpec !== selectedSearchContextSpec
-                    ) {
-                        setSelectedSearchContextSpec(parsedSearchURLAndContext.searchContextSpec)
-                    } else if (!parsedSearchURLAndContext.searchContextSpec) {
+                    if (!parsedSearchURLAndContext.searchContextSpec) {
                         // If no search context is present we have to fall back
                         // to the global search context to match the server
                         // behavior.
                         setSelectedSearchContextSpec(GLOBAL_SEARCH_CONTEXT_SPEC)
+                    } else if (
+                        parsedSearchURLAndContext.searchContextSpec.spec !== selectedSearchContextSpecRef.current
+                    ) {
+                        setSelectedSearchContextSpec(parsedSearchURLAndContext.searchContextSpec.spec)
                     }
 
-                    setQueryStateFromURL(parsedSearchURLAndContext, parsedSearchURLAndContext.processedQuery)
+                    const processedQuery =
+                        !enableExperimentalQueryInput &&
+                        parsedSearchURLAndContext.searchContextSpec &&
+                        props.searchContextsEnabled
+                            ? omitFilter(
+                                  parsedSearchURLAndContext.query,
+                                  parsedSearchURLAndContext.searchContextSpec.filter
+                              )
+                            : parsedSearchURLAndContext.query
+
+                    setQueryStateFromURL(parsedSearchURLAndContext, processedQuery)
                 }
             })
         )

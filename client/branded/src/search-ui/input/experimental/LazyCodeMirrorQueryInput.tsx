@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Suspense } from 'react'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
@@ -8,4 +8,8 @@ const CodeMirrorQueryInput = lazyComponent(() => import('./CodeMirrorQueryInputW
 
 export const LazyCodeMirrorQueryInput: React.FunctionComponent<
     React.PropsWithChildren<CodeMirrorQueryInputWrapperProps>
-> = props => <CodeMirrorQueryInput {...props} />
+> = props => (
+    <Suspense fallback={null}>
+        <CodeMirrorQueryInput {...props} />
+    </Suspense>
+)
