@@ -35,7 +35,7 @@ func MultiplexHandlers(grpcServer *grpc.Server, httpHandler http.Handler) http.H
 const envGRPCEnabled = "SG_FEATURE_FLAG_GRPC"
 
 func IsGRPCEnabled(ctx context.Context) bool {
-	if val, err := strconv.ParseBool(os.Getenv(envGRPCEnabled)); err != nil {
+	if val, err := strconv.ParseBool(os.Getenv(envGRPCEnabled)); err == nil {
 		return val
 	}
 	return featureflag.FromContext(ctx).GetBoolOr("grpc", false)
