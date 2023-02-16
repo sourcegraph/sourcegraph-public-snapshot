@@ -19,36 +19,21 @@
     background-color: var(--color-bg-1);
     position: sticky;
     top: 0;
+    z-index: 1;
 }
 
 .actions {
     grid-area: actions;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
 }
 
 .status-filter {
     min-width: 50%;
     grid-area: filters;
     justify-self: start;
-    display: flex;
-    gap: 0.5rem;
-    align-items: baseline;
-    // reset wildcard Label font weight styles
-    font-weight: normal;
-    margin: 0;
-
-    &--field {
-        flex-grow: 1;
-    }
 }
 
 .order-by {
     grid-area: orderBy;
-    display: flex;
-    gap: 0.5rem;
-    align-items: baseline;
 }
 
 .search {
@@ -67,130 +52,4 @@
     align-items: center;
     color: var(--text-muted);
     gap: 0.25rem;
-}
-
-.insight-job {
-    display: grid;
-    grid-template-columns: min-content auto min-content;
-    grid-template-areas: 'checkbox content state';
-    align-items: baseline;
-    padding: 1rem 0.75rem 1rem 0.5rem;
-    border-bottom: 1px solid var(--border-color);
-
-    &--active {
-        border-left: 3px solid var(--primary);
-        background-color: var(--gray-01);
-
-        :global(.theme-dark) & {
-            background-color: var(--gray-09);
-        }
-    }
-
-    &-checkbox {
-        grid-area: checkbox;
-        margin: 0 1rem 0 0.25rem;
-    }
-
-    &-content {
-        grid-area: content;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    &-header {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: baseline;
-        gap: 0.25rem;
-    }
-
-    &-title {
-        margin-bottom: 0.25rem;
-        margin-right: 0.5rem;
-        cursor: pointer;
-    }
-
-    &-subtitle {
-        margin-bottom: 0.25rem;
-    }
-
-    &--main-info {
-        margin-top: 0.25rem;
-        display: flex;
-        flex-direction: column;
-    }
-
-    &-state {
-        grid-area: state;
-        display: flex;
-        gap: 0.25rem;
-        align-self: flex-start;
-        color: var(--text-muted);
-
-        &--completed {
-            color: var(--success);
-        }
-
-        &--errored {
-            color: var(--danger);
-        }
-
-        &--queued {
-            color: var(--primary);
-        }
-    }
-}
-
-.pill {
-    font-weight: normal;
-
-    :global(.theme-dark) & {
-        background-color: var(--color-bg-3);
-    }
-
-    :global(.theme-light) & {
-        background-color: var(--oc-gray-1);
-    }
-}
-
-.action-button {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-}
-
-.action-count {
-    background-color: var(--gray-03);
-    color: var(--body-color);
-    font-size: 0.75rem;
-    padding: 0.25rem;
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    align-items: center;
-    justify-content: center;
-    display: flex;
-
-    :global(.theme-dark) & {
-        background-color: var(--gray-02);
-        color: var(--dark-text);
-    }
-}
-
-.errors-trigger {
-    padding: 0.2rem 0.5rem;
-}
-
-.errors-content {
-    padding: 0.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.error {
-    margin: 0;
-    flex-shrink: 0;
-    max-width: 40rem;
 }

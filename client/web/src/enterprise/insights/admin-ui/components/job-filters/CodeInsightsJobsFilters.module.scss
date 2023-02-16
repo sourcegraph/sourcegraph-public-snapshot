@@ -1,0 +1,22 @@
+.status-filter {
+    //min-width: 50%;
+    //grid-area: filters;
+    //justify-self: start;
+    display: flex;
+    gap: 0.5rem;
+    align-items: baseline;
+    // reset wildcard Label font weight styles
+    font-weight: normal;
+    margin: 0;
+
+    &--field {
+        flex-grow: 1;
+    }
+}
+
+.order-by {
+    display: flex;
+    gap: 0.5rem;
+    align-items: baseline;
+    margin: 0;
+}
