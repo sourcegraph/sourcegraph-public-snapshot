@@ -18,7 +18,12 @@ This release is scheduled for **$RELEASE_DATE**.
 
 ## Setup
 
-- [ ] Ensure release configuration in [`dev/release/release-config.jsonc`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/release/release-config.jsonc) on `main` is up to date with the parameters for the current release.
+- [ ] Ensure release configuration in [`dev/release/release-config.jsonc`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/release/release-config.jsonc) on `main` has version $MAJOR.$MINOR.$PATCH selected by using the command:
+
+```shell
+pnpm run release release:activate-release
+```
+
 - [ ] Ensure you have the latest version of the release tooling and configuration by checking out and updating `sourcegraph@main`.
 
 ## Security review (one week before release - $SECURITY_REVIEW_DATE)
