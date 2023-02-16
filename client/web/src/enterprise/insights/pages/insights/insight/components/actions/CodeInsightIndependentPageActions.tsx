@@ -10,7 +10,7 @@ import { Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 import { DownloadFileButton } from '../../../../../components/DownloadFileButton'
 import { ConfirmDeleteModal } from '../../../../../components/modals/ConfirmDeleteModal'
 import { Insight, isLangStatsInsight } from '../../../../../core'
-import { useCopyURLHandler } from '../../../../../hooks/use-copy-url-handler'
+import { useCopyURLHandler } from '../../../../../hooks'
 
 import styles from './CodeInsightIndependentPageActions.module.scss'
 
@@ -46,6 +46,10 @@ export const CodeInsightIndependentPageActions: FunctionComponent<Props> = props
         telemetryService.log('StandaloneInsightPageEditClick')
     }
 
+    const handleDownloadClick = (): void => {
+        telemetryService.log('InsightsDataExportClick')
+    }
+
     return (
         <div className={styles.container}>
             {!isLangStatsInsight(insight) && (
@@ -54,6 +58,7 @@ export const CodeInsightIndependentPageActions: FunctionComponent<Props> = props
                         fileName={escapeRegExp(insight.title)}
                         fileUrl={`/.api/insights/export/${insight.id}`}
                         variant="secondary"
+                        onClick={handleDownloadClick}
                     >
                         Export data as CSV
                     </DownloadFileButton>
