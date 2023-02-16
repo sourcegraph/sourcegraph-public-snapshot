@@ -6,7 +6,7 @@
 .role-node {
     padding: 16px;
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto 1fr auto auto;
     gap: 0.5rem;
     border: 1px solid var(--secondary);
 

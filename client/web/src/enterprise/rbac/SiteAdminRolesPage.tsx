@@ -1,25 +1,29 @@
-import React, { useEffect, FC, useCallback, useState, useMemo } from 'react'
+import React, { useEffect, FC, useCallback, useState, useMemo, FormEventHandler } from 'react'
 
 import { RouteComponentProps } from 'react-router'
-import { mdiPlus, mdiChevronUp, mdiChevronDown, mdiMapSearch } from '@mdi/js'
+import { mdiPlus, mdiChevronUp, mdiChevronDown, mdiMapSearch, mdiDelete } from '@mdi/js'
 
+import { logger } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, Button, Icon, Container, Text, Tooltip, Checkbox, Grid } from '@sourcegraph/wildcard'
+import { PageHeader, Button, Icon, Text, Tooltip, Checkbox, Grid, LoadingSpinner } from '@sourcegraph/wildcard'
+import { RoleFields } from '../../graphql-operations'
+import {
+    ConnectionContainer,
+    ConnectionError,
+    ConnectionList,
+    ConnectionLoading,
+    ConnectionSummary,
+    ShowMoreButton,
+    SummaryContainer,
+} from '../../components/FilteredConnection/ui'
 
+import { useRolesConnection, useDeleteRole } from './backend'
 import { PageTitle } from '../../components/PageTitle'
 
 import styles from './SiteAdminRolesPage.module.scss'
+import { AddRoleModal } from './AddRoleModal'
 
 export interface SiteAdminRolesPageProps extends RouteComponentProps, TelemetryProps {}
-
-type Role = {
-    id: number
-    name: string
-    system: boolean
-}
-
-type Permission = { displayName: string; action: string; namespace: string }
-type PermissionMap = Record<string, Record<string, Permission>>
 
 export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren<SiteAdminRolesPageProps>> = ({
     telemetryService,
@@ -28,45 +32,21 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
         telemetryService.logPageView('SiteAdminRoles')
     }, [telemetryService])
 
-    const allPermsMap = useMemo(() => {
-        const allPermissions = getAllPermissions()
-        return allPermissions.reduce<PermissionMap>((acc, curr) => {
-            const { displayName, namespace } = curr
-            const namespaceDetails = acc[namespace]
-                ? { ...acc[namespace], [displayName]: curr }
-                : { [displayName]: curr }
+    const { connection, error, loading, fetchMore, hasNextPage, refetchAll } = useRolesConnection()
 
-            return { ...acc, [namespace]: namespaceDetails }
-        }, {})
+    const [showAddModal, setShowAddModal] = useState<boolean>(false)
+    const openModal = useCallback<React.MouseEventHandler>(event => {
+        event.preventDefault()
+        setShowAddModal(true)
+    }, [])
+    const closeModal = useCallback(() => {
+        setShowAddModal(false)
     }, [])
 
-    const sampleRoles: Role[] = [
-        {
-            id: 1,
-            name: 'USER',
-            system: true,
-        },
-        {
-            id: 2,
-            name: 'SITE_ADMINISTRATOR',
-            system: true,
-        },
-        {
-            id: 3,
-            name: 'TEST-ROLE-3',
-            system: false,
-        },
-        {
-            id: 4,
-            name: 'TEST-ROLE-4',
-            system: false,
-        },
-        {
-            id: 5,
-            name: 'TEST-ROLE-5',
-            system: false,
-        },
-    ]
+    const afterAction = useCallback(() => {
+        setShowAddModal(false)
+        refetchAll()
+    }, [refetchAll])
 
     return (
         <div className="site-admin-roles-page">
@@ -74,28 +54,51 @@ export const SiteAdminRolesPage: React.FunctionComponent<React.PropsWithChildren
             <PageHeader
                 path={[{ text: 'Roles' }]}
                 headingElement="h2"
-                description={<>A role is a set of permissions assigned to a user.</>}
+                description={<>Roles represent a characteristic of a group of users, it can be used to define a function or attribute a group of users possess.</>}
                 className="mb-3"
                 actions={
-                    <Button variant="primary">
+                    <Button variant="primary" onClick={openModal}>
                         <Icon aria-hidden={true} svgPath={mdiPlus} /> Add Role
                     </Button>
                 }
             />
 
-            <ul className={styles.rolesList}>
-                {sampleRoles.map(role => (
-                    <RoleNode node={role} key={role.id} permissions={allPermsMap} />
-                ))}
-            </ul>
+            {showAddModal && (
+                <AddRoleModal
+                    onCancel={closeModal}
+                    afterCreate={afterAction}
+                />
+            )}
+
+            <ConnectionContainer className="mb-3">
+                {error && <ConnectionError errors={[error.message]} />}
+                {loading && !connection && <ConnectionLoading />}
+                <ConnectionList as="ul" className="list-group" aria-label="Roles">
+                    {connection?.nodes?.map(node => <RoleNode key={node.id} node={node} afterDelete={refetchAll} />)}
+                </ConnectionList>
+                {connection && (
+                    <SummaryContainer className="mt-2">
+                        <ConnectionSummary
+                            noSummaryIfAllNodesVisible={true}
+                            first={15}
+                            centered={true}
+                            connection={connection}
+                            noun="role"
+                            pluralNoun="roles"
+                            hasNextPage={hasNextPage}
+                        />
+                        {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
+                    </SummaryContainer>
+                )}
+            </ConnectionContainer>
         </div>
     )
 }
 
 const RoleNode: FC<{
-    node: Role
-    permissions: PermissionMap
-}> = ({ node, permissions }) => {
+    node: RoleFields,
+    afterDelete: () => void
+}> = ({ node, afterDelete }) => {
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
     const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
         event => {
@@ -104,6 +107,21 @@ const RoleNode: FC<{
         },
         [isExpanded]
     )
+    const [ deleteRole, { loading, error } ] = useDeleteRole()
+    const onDelete = useCallback<React.FormEventHandler>(
+        async event => {
+            event.preventDefault()
+
+            try {
+                await deleteRole({ variables: { role: node.id } })
+                afterDelete()
+            } catch (error) {
+                logger.error(error)
+            }
+        },
+        [deleteRole, name, afterDelete]
+    )
+
 
     return (
         <li className={styles.roleNode}>
@@ -115,7 +133,7 @@ const RoleNode: FC<{
                 <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />
             </Button>
 
-            <div className="d-flex">
+            <div className="d-flex align-items-center">
                 <Text className="font-weight-bold m-0">{node.name}</Text>
 
                 {node.system && (
@@ -128,79 +146,30 @@ const RoleNode: FC<{
                 )}
             </div>
 
+            {loading ? <LoadingSpinner /> : (
+                <Tooltip content={node.system ? "System roles cannot be deleted." : "Delete this role."}>
+                <Button
+                    aria-label="Delete"
+                    onClick={onDelete}
+                    disabled={node.system || loading}
+                    variant="danger"
+                    size="sm"
+                >
+                    <Icon aria-hidden={true} svgPath={mdiDelete} />
+                </Button>
+            </Tooltip>
+            )}
+
             {isExpanded ? (
                 <div className={styles.roleNodePermissions}>
-                    <PermissionList roleId={node.id} permissions={permissions} />
+                    <EmptyPermissionList />
+                    {/* <PermissionList roleId={node.id} permissions={permissions} /> */}
                 </div>
             ) : (
                 <span />
             )}
         </li>
     )
-}
-
-const getRolePermissions = (roleId: number): Array<{ namespace: string; displayName: string; action: string }> => {
-    if (roleId === 2) {
-        return []
-    }
-
-    return [
-        {
-            namespace: 'BATCHCHANGES',
-            displayName: 'BATCHCHANGES:READ',
-            action: 'READ',
-        },
-        {
-            namespace: 'BATCHCHANGES',
-            displayName: 'BATCHCHANGES:APPLY',
-            action: 'APPLY',
-        },
-        {
-            namespace: 'NOTEBOOKS',
-            displayName: 'NOTEBOOKS:READ',
-            action: 'READ',
-        },
-    ]
-}
-
-const getAllPermissions = (): Array<{ namespace: string; displayName: string; action: string }> => {
-    return [
-        {
-            namespace: 'BATCHCHANGES',
-            displayName: 'BATCHCHANGES:READ',
-            action: 'READ',
-        },
-        {
-            namespace: 'BATCHCHANGES',
-            displayName: 'BATCHCHANGES:WRITE',
-            action: 'WRITE',
-        },
-        {
-            namespace: 'BATCHCHANGES',
-            displayName: 'BATCHCHANGES:EXECUTE',
-            action: 'EXECUTE',
-        },
-        {
-            namespace: 'BATCHCHANGES',
-            displayName: 'BATCHCHANGES:APPLY',
-            action: 'APPLY',
-        },
-        {
-            namespace: 'NOTEBOOKS',
-            displayName: 'NOTEBOOKS:READ',
-            action: 'READ',
-        },
-        {
-            namespace: 'NOTEBOOKS',
-            displayName: 'NOTEBOOKS:WRITE',
-            action: 'WRITE',
-        },
-        {
-            namespace: 'CODEINSIGHTS',
-            displayName: 'CODEINSIGHTS:READ',
-            action: 'READ',
-        },
-    ]
 }
 
 const EmptyPermissionList: FC<React.PropsWithChildren<{}>> = () => (
@@ -210,50 +179,50 @@ const EmptyPermissionList: FC<React.PropsWithChildren<{}>> = () => (
     </div>
 )
 
-const PermissionList: FC<React.PropsWithChildren<{ roleId: number; permissions: PermissionMap }>> = ({
-    roleId,
-    permissions,
-}) => {
-    const rolePermissions = getRolePermissions(roleId)
+// const PermissionList: FC<React.PropsWithChildren<{ roleId: number; permissions: PermissionMap }>> = ({
+//     roleId,
+//     permissions,
+// }) => {
+//     const rolePermissions = getRolePermissions(roleId)
 
-    if (rolePermissions.length === 0) {
-        return <EmptyPermissionList />
-    }
+//     if (rolePermissions.length === 0) {
+//         return <EmptyPermissionList />
+//     }
 
-    // const allDisplayNames = rolePermissions.map(rp => rp.displayName)
-    const permissionsDisplayMap: PermissionMap[keyof PermissionMap] = rolePermissions.reduce((acc, permission) => {
-        const { displayName } = permission
-        return { ...acc, [displayName]: true }
-    }, {})
+//     // const allDisplayNames = rolePermissions.map(rp => rp.displayName)
+//     const permissionsDisplayMap: PermissionMap[keyof PermissionMap] = rolePermissions.reduce((acc, permission) => {
+//         const { displayName } = permission
+//         return { ...acc, [displayName]: true }
+//     }, {})
 
-    const namespaces = Object.keys(permissions)
-    console.log(permissionsDisplayMap)
+//     const namespaces = Object.keys(permissions)
+//     console.log(permissionsDisplayMap)
 
-    return (
-        <>
-            {namespaces.map(namespace => {
-                const namespacePerms = permissions[namespace]
-                const allNamespacePerms = Object.values(namespacePerms)
-                return (
-                    <div key={namespace}>
-                        <Text>{namespace}</Text>
-                        <Grid columnCount={4}>
-                            {allNamespacePerms.map((ap, index) => {
-                                const isChecked = Boolean(permissionsDisplayMap[ap.displayName])
-                                return (
-                                    <Checkbox
-                                        label={ap.action}
-                                        id={ap.displayName}
-                                        key={ap.displayName}
-                                        defaultChecked={isChecked}
-                                    />
-                                )
-                            })}
-                        </Grid>
-                    </div>
-                )
-            })}
-            <Button variant="primary">Update</Button>
-        </>
-    )
-}
+//     return (
+//         <>
+//             {namespaces.map(namespace => {
+//                 const namespacePerms = permissions[namespace]
+//                 const allNamespacePerms = Object.values(namespacePerms)
+//                 return (
+//                     <div key={namespace}>
+//                         <Text>{namespace}</Text>
+//                         <Grid columnCount={4}>
+//                             {allNamespacePerms.map((ap, index) => {
+//                                 const isChecked = Boolean(permissionsDisplayMap[ap.displayName])
+//                                 return (
+//                                     <Checkbox
+//                                         label={ap.action}
+//                                         id={ap.displayName}
+//                                         key={ap.displayName}
+//                                         defaultChecked={isChecked}
+//                                     />
+//                                 )
+//                             })}
+//                         </Grid>
+//                     </div>
+//                 )
+//             })}
+//             <Button variant="primary">Update</Button>
+//         </>
+//     )
+// }

@@ -1,16 +1,12 @@
-import { dataOrThrowErrors } from '@sourcegraph/http-client'
+import { MutationTuple } from '@apollo/client'
+
+import { dataOrThrowErrors, gql, useMutation } from '@sourcegraph/http-client'
 import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
+import { DeleteRoleVariables, DeleteRoleResult, AllRolesVariables, AllRolesResult, RoleFields, CreateRoleResult, CreateRoleVariables } from '../../graphql-operations'
 
-const PERMISSIONS_FRAGMENT = gql`
-    fragment Permission on Permission {
-        id
-        namespace
-        action
-    }
-`
-
-const ROLES_WITH_PERMISSIONS_FRAGMENT = gql`
-    fragment RolesWithPermissions on Role {
+const roleFragment = gql`
+    fragment RoleFields on Role {
+        __typename
         id
         name
         system
@@ -18,30 +14,62 @@ const ROLES_WITH_PERMISSIONS_FRAGMENT = gql`
 `
 
 export const ROLES_QUERY = gql`
-    query RolsList($first: Int, $after: String) {
+    query AllRoles($first: Int, $after: String) {
         roles(first: $first, after: $after) {
+            __typename
             totalCount
             pageInfo {
                 hasNextPage
                 endCursor
             }
             nodes {
-                ...RolesWithPermissions
+                ...RoleFields
             }
         }
     }
 
-    ${ROLES_WITH_PERMISSIONS_FRAGMENT}
+    ${roleFragment}
 `
 
-export const useRolesConnection = () => useShowMorePagination({
+export const CREATE_ROLE = gql`
+    mutation CreateRole($name: String!) {
+        createRole(name: $name) {
+            ...RoleFields
+        }
+    }
+
+    ${roleFragment}
+`
+
+export const DELETE_ROLE = gql`
+    mutation DeleteRole($role: ID!) {
+        deleteRole(role: $role) {
+            alwaysNil
+        }
+    }
+`
+
+export const useRolesConnection = () => useShowMorePagination<
+    AllRolesResult,
+    AllRolesVariables,
+    RoleFields
+>({
     query: ROLES_QUERY,
     variables: {
-        first: 20,
+        first: 15,
         after: null,
+    },
+    options: {
+        fetchPolicy: 'no-cache'
     },
     getConnection: result => {
         const { roles } = dataOrThrowErrors(result)
         return roles
     }
 })
+
+export const useCreateRole = (): MutationTuple<CreateRoleResult, CreateRoleVariables> =>
+    useMutation(CREATE_ROLE)
+
+export const useDeleteRole = (): MutationTuple<DeleteRoleResult, DeleteRoleVariables> =>
+    useMutation(DELETE_ROLE)
