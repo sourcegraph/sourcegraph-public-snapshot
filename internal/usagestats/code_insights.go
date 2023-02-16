@@ -565,7 +565,7 @@ func getDataExportClickCount(ctx context.Context, db database.DB, stats *types.C
 		return err
 	}
 	exportClicks := int32(count)
-	stats.WeeklyExportCodeInsightDataClicks = &exportClicks
+	stats.WeeklyDataExportClicks = &exportClicks
 	return nil
 }
 
