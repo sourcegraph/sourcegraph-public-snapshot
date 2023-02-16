@@ -7,12 +7,12 @@ import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { Button, Link, Icon, Code } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
+import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
 
+import { GitCommitNodeProps } from './GitCommitNode'
 import { GitCommitNodeByline } from './GitCommitNodeByline'
 
 import styles from './GitCommitNode.module.scss'
-import { GitCommitNodeProps } from './GitCommitNode'
-import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
 
 export const GitCommitNodeTableRow: React.FC<
     Omit<
