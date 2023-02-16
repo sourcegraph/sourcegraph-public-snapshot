@@ -93,7 +93,7 @@ export const useCodeIntelStatus = ({ variables }: UseCodeIntelStatusParameters):
                     ? {
                           ...common,
                           searchBasedSupport: (info.searchBasedSupport || []).map(wrapper => wrapper.support),
-                          preciseSupport: (info.preciseSupport || []).map(wrapper => ({
+                          preciseSupport: (info.preciseSupport?.coverage || []).map(wrapper => ({
                               ...wrapper.support,
                               confidence: wrapper.confidence,
                           })),

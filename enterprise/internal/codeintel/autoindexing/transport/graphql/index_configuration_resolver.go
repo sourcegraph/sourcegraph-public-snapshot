@@ -7,9 +7,11 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type indexConfigurationResolver struct {
@@ -39,11 +41,18 @@ func (r *indexConfigurationResolver) Configuration(ctx context.Context) (_ *stri
 	return strPtr(string(configuration.Data)), nil
 }
 
-func (r *indexConfigurationResolver) InferredConfiguration(ctx context.Context) (_ *string, err error) {
+func (r *indexConfigurationResolver) InferredConfiguration(ctx context.Context) (_ resolverstubs.InferredConfigurationResolver, err error) {
 	defer r.errTracer.Collect(&err, log.String("indexConfigResolver.field", "inferredConfiguration"))
+
+	var limitErr error
 	configuration, _, err := r.autoindexSvc.InferIndexConfiguration(ctx, r.repositoryID, "", true)
 	if err != nil {
-		return nil, err
+		if errors.As(err, &inference.LimitError{}) {
+			limitErr = err
+		} else {
+
+			return nil, err
+		}
 	}
 	if configuration == nil {
 		return nil, nil
@@ -57,5 +66,26 @@ func (r *indexConfigurationResolver) InferredConfiguration(ctx context.Context) 
 	var indented bytes.Buffer
 	_ = json.Indent(&indented, marshaled, "", "\t")
 
-	return strPtr(indented.String()), nil
+	return &inferredConfigurationResolver{
+		configuration: indented.String(),
+		limitErr:      limitErr,
+	}, nil
+}
+
+type inferredConfigurationResolver struct {
+	configuration string
+	limitErr      error
+}
+
+func (r *inferredConfigurationResolver) Configuration() string {
+	return r.configuration
+}
+
+func (r *inferredConfigurationResolver) LimitError() *string {
+	if r.limitErr != nil {
+		m := r.limitErr.Error()
+		return &m
+	}
+
+	return nil
 }

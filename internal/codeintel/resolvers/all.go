@@ -77,6 +77,7 @@ type CodeIntelRepositorySummaryResolver interface {
 	LastUploadRetentionScan() *gqlutil.DateTime
 	LastIndexScan() *gqlutil.DateTime
 	AvailableIndexers() []InferredAvailableIndexersResolver
+	LimitError() *string
 }
 
 type PreciseIndexesQueryArgs struct {
@@ -243,12 +244,22 @@ type CodeIntelIndexerResolver interface {
 
 type IndexConfigurationResolver interface {
 	Configuration(ctx context.Context) (*string, error)
-	InferredConfiguration(ctx context.Context) (*string, error)
+	InferredConfiguration(ctx context.Context) (InferredConfigurationResolver, error)
+}
+
+type InferredConfigurationResolver interface {
+	Configuration() string
+	LimitError() *string
 }
 
 type GitTreeCodeIntelSupportResolver interface {
 	SearchBasedSupport(context.Context) (*[]GitTreeSearchBasedCoverage, error)
-	PreciseSupport(context.Context) (*[]GitTreePreciseCoverage, error)
+	PreciseSupport(context.Context) (GitTreePreciseCoverageErrorResolver, error)
+}
+
+type GitTreePreciseCoverageErrorResolver interface {
+	Coverage() []GitTreePreciseCoverage
+	LimitError() *string
 }
 
 type GitTreeSearchBasedCoverage interface {

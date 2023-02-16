@@ -19,6 +19,7 @@ type repositorySummaryResolver struct {
 	policySvc         PolicyService
 	summary           RepositorySummary
 	availableIndexers []InferredAvailableIndexers
+	limitErr          error
 	prefetcher        *Prefetcher
 	locationResolver  *CachedLocationResolver
 	errTracer         *observation.ErrCollector
@@ -30,6 +31,7 @@ func NewRepositorySummaryResolver(
 	policySvc PolicyService,
 	summary RepositorySummary,
 	availableIndexers []InferredAvailableIndexers,
+	limitErr error,
 	prefetcher *Prefetcher,
 	errTracer *observation.ErrCollector,
 ) resolverstubs.CodeIntelRepositorySummaryResolver {
@@ -40,6 +42,7 @@ func NewRepositorySummaryResolver(
 		policySvc:         policySvc,
 		summary:           summary,
 		availableIndexers: availableIndexers,
+		limitErr:          limitErr,
 		prefetcher:        prefetcher,
 		locationResolver:  NewCachedLocationResolver(db, gitserver.NewClient()),
 		errTracer:         errTracer,
@@ -87,4 +90,13 @@ func (r *repositorySummaryResolver) LastUploadRetentionScan() *gqlutil.DateTime 
 
 func (r *repositorySummaryResolver) LastIndexScan() *gqlutil.DateTime {
 	return gqlutil.DateTimeOrNil(r.summary.LastIndexScan)
+}
+
+func (r *repositorySummaryResolver) LimitError() *string {
+	if r.limitErr != nil {
+		m := r.limitErr.Error()
+		return &m
+	}
+
+	return nil
 }

@@ -212,10 +212,12 @@ export const codeIntelStatusQuery = gql`
 
     fragment GitTreeCodeIntelInfoFields on GitTreeCodeIntelInfo {
         preciseSupport {
-            support {
-                ...PreciseSupportFields
+            coverage {
+                support {
+                    ...PreciseSupportFields
+                }
+                confidence
             }
-            confidence
         }
         searchBasedSupport {
             support {
