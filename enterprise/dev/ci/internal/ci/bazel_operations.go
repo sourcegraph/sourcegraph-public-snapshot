@@ -15,7 +15,7 @@ func BazelOperations() *operations.Set {
 	ops.Append(bazelBuild(
 		"//...",
 	))
-	ops.Append(bazelTest("//monitoring/..."))
+	ops.Append(bazelTest("//monitoring/...", "//lib/..."))
 	return ops
 }
 

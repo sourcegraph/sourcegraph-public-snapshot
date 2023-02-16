@@ -842,7 +842,7 @@ func Zoekt() *monitoring.Dashboard {
 				},
 			},
 			{
-				Title:  "Compound shards (experimental)",
+				Title:  "Compound shards",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{

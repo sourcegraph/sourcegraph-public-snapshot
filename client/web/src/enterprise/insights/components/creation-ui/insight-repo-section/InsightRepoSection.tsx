@@ -17,21 +17,17 @@ import {
     InputStatus,
     useDebounce,
     Link,
+    FormGroup,
+    useFieldAPI,
+    getDefaultInputProps,
+    getDefaultInputStatus,
+    getDefaultInputError,
 } from '@sourcegraph/wildcard'
 
 import { InsightRepositoriesCountResult, InsightRepositoriesCountVariables } from '../../../../../graphql-operations'
 import { useExperimentalFeatures } from '../../../../../stores'
 import { CreateInsightFormFields } from '../../../pages/insights/creation/search-insight'
-import {
-    FormGroup,
-    getDefaultInputProps,
-    getDefaultInputStatus,
-    getDefaultInputError,
-    getRepoQueryPreview,
-    RepositoriesField,
-    useFieldAPI,
-    MonacoField,
-} from '../../form'
+import { getRepoQueryPreview, RepositoriesField, MonacoField } from '../../form'
 import { MonacoPreviewLink } from '../../form/monaco-field'
 
 import styles from './InsightRepoSection.module.scss'

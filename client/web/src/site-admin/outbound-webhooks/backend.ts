@@ -89,7 +89,10 @@ export const UPDATE_OUTBOUND_WEBHOOK = gql`
     }
 `
 
-export const useOutboundWebhooksConnection = (): UseShowMorePaginationResult<OutboundWebhookFieldsWithStats> =>
+export const useOutboundWebhooksConnection = (): UseShowMorePaginationResult<
+    OutboundWebhooksListResult,
+    OutboundWebhookFieldsWithStats
+> =>
     useShowMorePagination<OutboundWebhooksListResult, OutboundWebhooksListVariables, OutboundWebhookFieldsWithStats>({
         query: OUTBOUND_WEBHOOKS,
         variables: {
