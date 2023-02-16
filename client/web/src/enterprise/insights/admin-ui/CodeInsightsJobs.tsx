@@ -30,6 +30,7 @@ import {
     PopoverTail,
     PageSwitcher,
     Container,
+    ButtonProps,
 } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../../components/FilteredConnection/hooks/usePageSwitcherPagination'
@@ -44,6 +45,7 @@ export const CodeInsightsJobs: FC = () => {
     const [orderBy, setOrderBy] = useState<BackfillQueueOrderBy>(BackfillQueueOrderBy.STATE)
     const [selectedFilters, setFilters] = useState<InsightQueueItemState[]>([])
     const [search, setSearch] = useState<string>('')
+    const [selectedJobs, setSelectedJobs] = useState<string[]>([])
 
     const { connection, loading, error, ...paginationProps } = usePageSwitcherPagination<
         GetCodeInsightsJobsResult,
@@ -56,6 +58,14 @@ export const CodeInsightsJobs: FC = () => {
         options: { pollInterval: 15000 },
     })
 
+    const handleJobSelect = (event: ChangeEvent, jobId): void => {
+        if (event.target.checked) {
+            setSelectedJobs(selectedJobs => [...selectedJobs, jobId])
+        } else {
+            setSelectedJobs(selectedJobs => selectedJobs.filter(id => id !== jobId))
+        }
+    }
+
     return (
         <div>
             <PageTitle title="Code Insights jobs" />
@@ -66,9 +76,12 @@ export const CodeInsightsJobs: FC = () => {
                 className="mb-3"
             />
 
-            <Container>
+            <Container className={styles.root}>
                 <header className={styles.header}>
-                    <CodeInsightsJobActions />
+                    <CodeInsightsJobActions
+                        selectedJobIds={selectedJobs}
+                        onSelectionClear={() => setSelectedJobs([])}
+                    />
 
                     <CodeInsightsFiltersPicker
                         selectedFilters={selectedFilters}
@@ -106,34 +119,62 @@ export const CodeInsightsJobs: FC = () => {
                 {connection && connection.nodes.length > 0 && (
                     <ul className={styles.insightJobs}>
                         {connection.nodes.map(job => (
-                            <CodeInsightJobCard key={job.id} job={job} />
+                            <CodeInsightJobCard
+                                key={job.id}
+                                job={job}
+                                selected={selectedJobs.includes(job.id)}
+                                onSelectChange={event => handleJobSelect(event, job.id)}
+                            />
                         ))}
                     </ul>
                 )}
 
                 <PageSwitcher
-                    totalLabel='jobs'
+                    totalLabel="jobs"
                     totalCount={connection?.totalCount ?? null}
                     {...paginationProps}
-                    className="mt-5" />
+                    className="mt-5"
+                />
             </Container>
         </div>
     )
 }
 
 interface CodeInsightsJobActionsProps {
+    selectedJobIds: string[]
     className?: string
+    onSelectionClear: () => void
 }
 
 function CodeInsightsJobActions(props: CodeInsightsJobActionsProps): ReactElement {
-    const { className } = props
+    const { selectedJobIds, className, onSelectionClear } = props
 
     return (
         <div className={classNames(className, styles.actions)}>
-            <Button variant="primary">Retry</Button>
-            <Button variant="primary">Front of queue</Button>
-            <Button variant="primary">Back of queue</Button>
+            <JobActionButton actionCount={selectedJobIds.length}>Retry</JobActionButton>
+            <JobActionButton actionCount={selectedJobIds.length}>Front of queue</JobActionButton>
+            <JobActionButton actionCount={selectedJobIds.length}>Back of queue</JobActionButton>
+            {selectedJobIds.length > 0 && (
+                <Button variant="secondary" outline={true} onClick={onSelectionClear}>
+                    Clear selection
+                </Button>
+            )}
         </div>
+    )
+}
+
+interface JobActionButton extends ButtonProps {
+    actionCount: number
+}
+
+function JobActionButton(props: JobActionButton): ReactElement {
+    const { actionCount, children } = props
+
+    return (
+        <Button {...props} variant="primary" disabled={actionCount === 0} className={styles.actionButton}>
+            {actionCount > 0 && <span className={styles.actionCount}>{actionCount}</span>}
+            {children}
+        </Button>
     )
 }
 
@@ -244,10 +285,13 @@ function CodeInsightsFiltersPicker(props: CodeInsightsFiltersPickerProps): React
 
 interface CodeInsightJobCardProps {
     job: InsightJob
+    selected: boolean
+    onSelectChange: (event: ChangeEvent<HTMLInputElement>) => void
 }
 
 function CodeInsightJobCard(props: CodeInsightJobCardProps): ReactElement {
     const {
+        selected,
         job: {
             insightViewTitle,
             seriesLabel,
@@ -263,39 +307,51 @@ function CodeInsightJobCard(props: CodeInsightJobCardProps): ReactElement {
                 completedAt,
             },
         },
+        onSelectChange,
     } = props
 
+    const checkboxId = useId()
+
+    const details = [
+        queuePosition !== null && `Queue position: ${queuePosition}`,
+        cost !== null && `Cost: ${cost}`,
+        createdAt !== null && `Created at: ${createdAt}`,
+        startedAt !== null && `Started at: ${startedAt}`,
+        completedAt !== null && `Completed at: ${completedAt}`,
+    ].filter(item => item)
+
     return (
-        <li className={styles.insightJob}>
+        <li className={classNames(styles.insightJob, { [styles.insightJobActive]: selected })}>
             {/* eslint-disable-next-line react/forbid-elements */}
-            <input type="checkbox" className={styles.insightJobCheckbox} />
+            <input
+                id={checkboxId}
+                type="checkbox"
+                checked={selected}
+                className={styles.insightJobCheckbox}
+                onChange={onSelectChange}
+            />
             <div className={styles.insightJobContent}>
                 <header className={styles.insightJobHeader}>
-                    <H3 className={styles.insightJobTitle}>{seriesLabel}</H3>
-                    <small className='text-muted'>From</small>
+                    <H3 as={Label} htmlFor={checkboxId} className={styles.insightJobTitle}>
+                        {seriesLabel}
+                    </H3>
+                    <small className="text-muted">From</small>
                     <Pill className={styles.insightJobSubtitle}>{insightViewTitle} insight</Pill>
                 </header>
 
-                <span className="mt-1">
-                    {percentComplete !== null && (
-                        <>Сompleted by: {percentComplete}%</>
-                    )}<br/>
-                    Series query: <Pill>{seriesSearchQuery}</Pill>
-                    {errors && errors.length > 0 && (
-                        <>
-                            {', '} <InsightJobErrors errors={errors} />
-                        </>
-                    )}
+                <span className={styles.insightJobMainInfo}>
+                    {percentComplete !== null && <span>Сompleted by: {percentComplete}%</span>}
+                    <span>
+                        Series query: <Pill>{seriesSearchQuery}</Pill>
+                        {errors && errors.length > 0 && (
+                            <>
+                                {', '} <InsightJobErrors errors={errors} />
+                            </>
+                        )}
+                    </span>
                 </span>
 
-                <small className="mt-1 text-muted">
-                    Queue position: {queuePosition}, Cost: {cost}, Created at: {createdAt}, Started at: {startedAt},
-                    {completedAt && (
-                        <>
-                            {', '} Completed at: {completedAt}
-                        </>
-                    )}
-                </small>
+                {details.length > 0 && <small className="mt-1 text-muted">{details.join(', ')}</small>}
             </div>
             <div className={styles.insightJobState}>
                 <InsightJobStatusIcon status={state} className={StatusClasses[state]} />

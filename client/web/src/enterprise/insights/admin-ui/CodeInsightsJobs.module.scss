@@ -1,3 +1,7 @@
+.root {
+    padding: 1rem;
+}
+
 .header {
     display: grid;
     gap: 0.5rem;
@@ -70,8 +74,17 @@
     grid-template-columns: min-content auto min-content;
     grid-template-areas: 'checkbox content state';
     align-items: baseline;
-    padding: 1rem 0.5rem;
+    padding: 1rem 0.75rem 1rem 0.5rem;
     border-bottom: 1px solid var(--border-color);
+
+    &--active {
+        border-left: 3px solid var(--primary);
+        background-color: var(--gray-01);
+
+        :global(.theme-dark) & {
+            background-color: var(--gray-09);
+        }
+    }
 
     &-checkbox {
         grid-area: checkbox;
@@ -95,10 +108,17 @@
     &-title {
         margin-bottom: 0.25rem;
         margin-right: 0.5rem;
+        cursor: pointer;
     }
 
     &-subtitle {
         margin-bottom: 0.25rem;
+    }
+
+    &--main-info {
+        margin-top: 0.25rem;
+        display: flex;
+        flex-direction: column;
     }
 
     &-state {
@@ -131,6 +151,30 @@
 
     :global(.theme-light) & {
         background-color: var(--oc-gray-1);
+    }
+}
+
+.action-button {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.action-count {
+    background-color: var(--gray-03);
+    color: var(--body-color);
+    font-size: 0.75rem;
+    padding: 0.25rem;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    align-items: center;
+    justify-content: center;
+    display: flex;
+
+    :global(.theme-dark) & {
+        background-color: var(--gray-02);
+        color: var(--dark-text);
     }
 }
 

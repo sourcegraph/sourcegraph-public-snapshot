@@ -74,10 +74,7 @@ const ExecutorsSiteAdminArea = lazyComponent(
     'ExecutorsSiteAdminArea'
 )
 
-const CodeInsightsJobsPage = lazyComponent(
-        () => import('../insights/admin-ui/CodeInsightsJobs'),
-        'CodeInsightsJobs'
-    )
+const CodeInsightsJobsPage = lazyComponent(() => import('../insights/admin-ui/CodeInsightsJobs'), 'CodeInsightsJobs')
 
 export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
     [
@@ -142,7 +139,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
         {
             exact: true,
             path: '/code-insights-jobs',
-            render: () => <CodeInsightsJobsPage />
+            render: () => <CodeInsightsJobsPage />,
         },
 
         // Code intelligence redirect
