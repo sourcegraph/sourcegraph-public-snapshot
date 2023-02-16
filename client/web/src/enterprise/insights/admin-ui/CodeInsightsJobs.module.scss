@@ -34,6 +34,10 @@
     // reset wildcard Label font weight styles
     font-weight: normal;
     margin: 0;
+
+    &--field {
+        flex-grow: 1;
+    }
 }
 
 .order-by {
@@ -90,6 +94,7 @@
 
     &-title {
         margin-bottom: 0.25rem;
+        margin-right: 0.5rem;
     }
 
     &-subtitle {

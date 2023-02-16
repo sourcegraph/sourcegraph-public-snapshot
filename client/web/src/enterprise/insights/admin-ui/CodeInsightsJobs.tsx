@@ -53,7 +53,7 @@ export const CodeInsightsJobs: FC = () => {
         query: GET_CODE_INSIGHTS_JOBS,
         variables: { orderBy, states: selectedFilters, search },
         getConnection: ({ data }) => data?.insightAdminBackfillQueue,
-        options: { pollInterval: 5000 },
+        options: { pollInterval: 15000 },
     })
 
     return (
@@ -111,7 +111,11 @@ export const CodeInsightsJobs: FC = () => {
                     </ul>
                 )}
 
-                <PageSwitcher totalCount={connection?.totalCount ?? null} {...paginationProps} className="mt-5" />
+                <PageSwitcher
+                    totalLabel='jobs'
+                    totalCount={connection?.totalCount ?? null}
+                    {...paginationProps}
+                    className="mt-5" />
             </Container>
         </div>
     )
@@ -203,6 +207,7 @@ function CodeInsightsFiltersPicker(props: CodeInsightsFiltersPickerProps): React
                 getItemName={formatFilter}
                 getItemKey={identity}
                 onSelectedItemsChange={onFiltersChange}
+                className={styles.statusFilterField}
             >
                 <MultiComboboxInput
                     id={filterInputId}
@@ -267,16 +272,15 @@ function CodeInsightJobCard(props: CodeInsightJobCardProps): ReactElement {
             <div className={styles.insightJobContent}>
                 <header className={styles.insightJobHeader}>
                     <H3 className={styles.insightJobTitle}>{seriesLabel}</H3>
-                    <Pill className={styles.insightJobSubtitle}>From {insightViewTitle} insight</Pill>
+                    <small className='text-muted'>From</small>
+                    <Pill className={styles.insightJobSubtitle}>{insightViewTitle} insight</Pill>
                 </header>
 
                 <span className="mt-1">
+                    {percentComplete !== null && (
+                        <>Сompleted by: {percentComplete}%</>
+                    )}<br/>
                     Series query: <Pill>{seriesSearchQuery}</Pill>
-                    {percentComplete && (
-                        <>
-                            {', '} Сompleted by: {percentComplete}%
-                        </>
-                    )}
                     {errors && errors.length > 0 && (
                         <>
                             {', '} <InsightJobErrors errors={errors} />
