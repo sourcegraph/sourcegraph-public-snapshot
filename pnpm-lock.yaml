@@ -807,8 +807,8 @@ importers:
       esbuild: ^0.17.8
       winston: ^3.8.2
     dependencies:
-      '@backstage/backend-common': 0.18.1_@swc+core@1.3.28
-      '@backstage/catalog-model': 1.1.5
+      '@backstage/backend-common': 0.18.2_@swc+core@1.3.28
+      '@backstage/catalog-model': 1.2.0
       '@backstage/config': 1.0.6
       '@backstage/plugin-catalog-backend': 1.7.1_@swc+core@1.3.28
       '@sourcegraph/http-client': link:../http-client
@@ -2649,55 +2649,6 @@ packages:
       '@babel/helper-validator-identifier': 7.19.1
       to-fast-properties: 2.0.0
 
-  /@backstage/backend-app-api/0.3.1_@swc+core@1.3.28:
-    resolution: {integrity: sha512-hBXN3KV0cxho7fWui3MbfbuMA+qqfahBtWGbXdvSOgOkj12WG442HDkYSIYnUDN4ZtFRTNF3JtsTajFRGWUmMQ==}
-    dependencies:
-      '@backstage/backend-common': 0.18.1_@swc+core@1.3.28
-      '@backstage/backend-plugin-api': 0.3.1_@swc+core@1.3.28
-      '@backstage/backend-tasks': 0.4.2_@swc+core@1.3.28
-      '@backstage/cli-common': 0.1.11
-      '@backstage/config': 1.0.6
-      '@backstage/config-loader': 1.1.8_@swc+core@1.3.28
-      '@backstage/errors': 1.1.4
-      '@backstage/plugin-auth-node': 0.2.10_@swc+core@1.3.28
-      '@backstage/plugin-permission-node': 0.7.5_@swc+core@1.3.28
-      '@backstage/types': 1.0.2
-      '@manypkg/get-packages': 1.1.3
-      '@types/cors': 2.8.12
-      '@types/express': 4.17.14
-      compression: 1.7.4
-      cors: 2.8.5
-      express: 4.18.2
-      express-promise-router: 4.1.1_wfa2iox3t5mlogo5abiq2busc4
-      fs-extra: 10.1.0
-      helmet: 6.0.1
-      lodash: 4.17.21
-      logform: 2.4.2
-      minimatch: 5.1.6
-      minimist: 1.2.6
-      morgan: 1.10.0
-      node-forge: 1.3.1
-      selfsigned: 2.1.1
-      stoppable: 1.1.0
-      winston: 3.8.2
-      winston-transport: 4.5.0
-    transitivePeerDependencies:
-      - '@swc/core'
-      - '@swc/wasm'
-      - better-sqlite3
-      - bufferutil
-      - encoding
-      - mysql
-      - mysql2
-      - pg
-      - pg-connection-string
-      - pg-native
-      - sqlite3
-      - supports-color
-      - tedious
-      - utf-8-validate
-    dev: false
-
   /@backstage/backend-app-api/0.4.0_@swc+core@1.3.28:
     resolution: {integrity: sha512-3DHjpGDqU6KP7Wcjny6bCu2rsm+kUazvoO/ut7c6jhsRRMc30NOos+O4KYyn7egQYAkiGVnWGgvC2isGB9dGQA==}
     dependencies:
@@ -2740,83 +2691,6 @@ packages:
       - mysql2
       - pg
       - pg-connection-string
-      - pg-native
-      - sqlite3
-      - supports-color
-      - tedious
-      - utf-8-validate
-    dev: false
-
-  /@backstage/backend-common/0.18.1_@swc+core@1.3.28:
-    resolution: {integrity: sha512-hOsg5LQEZuL7x5MwJ3zUHZnHpkB1BOY3MXsZ+HcZl0Zaor3684WKpscMQO08kQNag6lXxKCKTpr79sBKqlEpaQ==}
-    peerDependencies:
-      pg-connection-string: ^2.3.0
-    peerDependenciesMeta:
-      pg-connection-string:
-        optional: true
-    dependencies:
-      '@backstage/backend-app-api': 0.3.1_@swc+core@1.3.28
-      '@backstage/backend-plugin-api': 0.3.1_@swc+core@1.3.28
-      '@backstage/cli-common': 0.1.11
-      '@backstage/config': 1.0.6
-      '@backstage/config-loader': 1.1.8_@swc+core@1.3.28
-      '@backstage/errors': 1.1.4
-      '@backstage/integration': 1.4.2
-      '@backstage/types': 1.0.2
-      '@google-cloud/storage': 6.9.1
-      '@keyv/memcache': 1.3.5
-      '@keyv/redis': 2.5.4
-      '@kubernetes/client-node': 0.18.0
-      '@manypkg/get-packages': 1.1.3
-      '@octokit/rest': 19.0.7
-      '@types/cors': 2.8.12
-      '@types/dockerode': 3.3.14
-      '@types/express': 4.17.14
-      '@types/luxon': 3.2.0
-      '@types/webpack-env': 1.18.0
-      archiver: 5.3.1
-      aws-sdk: 2.1302.0
-      base64-stream: 1.0.0
-      compression: 1.7.4
-      concat-stream: 2.0.0
-      cors: 2.8.5
-      dockerode: 3.3.4
-      express: 4.18.2
-      express-promise-router: 4.1.1_wfa2iox3t5mlogo5abiq2busc4
-      fs-extra: 10.1.0
-      git-url-parse: 13.1.0
-      helmet: 6.0.1
-      isomorphic-git: 1.21.0
-      jose: 4.11.2
-      keyv: 4.5.2
-      knex: 2.4.2
-      lodash: 4.17.21
-      logform: 2.4.2
-      luxon: 3.2.1
-      minimatch: 5.1.6
-      minimist: 1.2.6
-      morgan: 1.10.0
-      node-fetch: 2.6.7
-      node-forge: 1.3.1
-      raw-body: 2.5.1
-      request: 2.88.2
-      selfsigned: 2.1.1
-      stoppable: 1.1.0
-      tar: 6.1.13
-      uuid: 8.3.2
-      winston: 3.8.2
-      winston-transport: 4.5.0
-      yauzl: 2.10.0
-      yn: 4.0.0
-    transitivePeerDependencies:
-      - '@swc/core'
-      - '@swc/wasm'
-      - better-sqlite3
-      - bufferutil
-      - encoding
-      - mysql
-      - mysql2
-      - pg
       - pg-native
       - sqlite3
       - supports-color
@@ -2909,9 +2783,9 @@ packages:
   /@backstage/backend-plugin-api/0.3.1_@swc+core@1.3.28:
     resolution: {integrity: sha512-0BJBAXVPARH/PxcYCY7bhkiur5QK+p1cwGYQfohS9KDp/cfnEdcgRs0TwxR5lzLJo6qYN2s2b5O4UYUi44wtfg==}
     dependencies:
-      '@backstage/backend-tasks': 0.4.2_@swc+core@1.3.28
+      '@backstage/backend-tasks': 0.4.3_@swc+core@1.3.28
       '@backstage/config': 1.0.6
-      '@backstage/plugin-auth-node': 0.2.10_@swc+core@1.3.28
+      '@backstage/plugin-auth-node': 0.2.11_@swc+core@1.3.28
       '@backstage/plugin-permission-common': 0.7.3
       '@backstage/types': 1.0.2
       '@types/express': 4.17.14
@@ -2962,38 +2836,6 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@backstage/backend-tasks/0.4.2_@swc+core@1.3.28:
-    resolution: {integrity: sha512-YXpZl8kEcoMyUOWWufOqrKEKBJFGfuKsJH4wlGRFv7n9pbgaNNhKAIJ3RNFC5gN7329HwgOMwpTFoN2gnrCtEw==}
-    dependencies:
-      '@backstage/backend-common': 0.18.1_@swc+core@1.3.28
-      '@backstage/config': 1.0.6
-      '@backstage/errors': 1.1.4
-      '@backstage/types': 1.0.2
-      '@types/luxon': 3.2.0
-      cron: 2.2.0
-      knex: 2.4.2
-      lodash: 4.17.21
-      luxon: 3.2.1
-      uuid: 8.3.2
-      winston: 3.8.2
-      zod: 3.18.0
-    transitivePeerDependencies:
-      - '@swc/core'
-      - '@swc/wasm'
-      - better-sqlite3
-      - bufferutil
-      - encoding
-      - mysql
-      - mysql2
-      - pg
-      - pg-connection-string
-      - pg-native
-      - sqlite3
-      - supports-color
-      - tedious
-      - utf-8-validate
-    dev: false
-
   /@backstage/backend-tasks/0.4.3_@swc+core@1.3.28:
     resolution: {integrity: sha512-1PJcLwjOTui+o4OaZD75TiLOuSQx1G2HT/QhrsEjnPKt4EiHoInnBl4IAtQVVC60PlOBMiwnW1LqbMA8kxjr4Q==}
     dependencies:
@@ -3026,36 +2868,12 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@backstage/catalog-client/1.3.0:
-    resolution: {integrity: sha512-lSbaa3Y/siMFpFT71QHtybPQsOZC7/AuLswc3vX4qDGfJuIel6DhkAoRIvJCFXUcQqpN4hOk69I4CnOtJvzftQ==}
-    dependencies:
-      '@backstage/catalog-model': 1.1.5
-      '@backstage/errors': 1.1.4
-      cross-fetch: 3.1.5
-    transitivePeerDependencies:
-      - encoding
-    dev: false
-
   /@backstage/catalog-client/1.3.1:
     resolution: {integrity: sha512-3RtkQ1z79Rm2USsuNtsEKKd2IZvgqZSQg0u7ohpB8NAJSgQ3VloyWpVPIrS9PUBOCj7oktS//HWD5d0LHm9cvw==}
     dependencies:
       '@backstage/catalog-model': 1.2.0
       '@backstage/errors': 1.1.4
       cross-fetch: 3.1.5
-    transitivePeerDependencies:
-      - encoding
-    dev: false
-
-  /@backstage/catalog-model/1.1.5:
-    resolution: {integrity: sha512-rE1KFhpLlli0A7marJpbd4MCGWG+5vIRj49XZBbEdhevl7HfCCJMAA6IKyj8U7LJjwRVygppSkc8V2yAyEU/2A==}
-    dependencies:
-      '@backstage/config': 1.0.6
-      '@backstage/errors': 1.1.4
-      '@backstage/types': 1.0.2
-      ajv: 8.11.2
-      json-schema: 0.4.0
-      lodash: 4.17.21
-      uuid: 8.3.2
     transitivePeerDependencies:
       - encoding
     dev: false
@@ -3261,34 +3079,6 @@ packages:
       - encoding
     dev: false
 
-  /@backstage/plugin-auth-node/0.2.10_@swc+core@1.3.28:
-    resolution: {integrity: sha512-a6kP+xxwUEwrVz05sxd7dJV0uVFXm+4hWrl4qEfS9RZMRUtcS9AT79kxrirMzfiR8+9rbU4pOnNCkr/ZD0oOiw==}
-    dependencies:
-      '@backstage/backend-common': 0.18.1_@swc+core@1.3.28
-      '@backstage/config': 1.0.6
-      '@backstage/errors': 1.1.4
-      '@types/express': 4.17.14
-      express: 4.18.2
-      jose: 4.11.2
-      node-fetch: 2.6.7
-      winston: 3.8.2
-    transitivePeerDependencies:
-      - '@swc/core'
-      - '@swc/wasm'
-      - better-sqlite3
-      - bufferutil
-      - encoding
-      - mysql
-      - mysql2
-      - pg
-      - pg-connection-string
-      - pg-native
-      - sqlite3
-      - supports-color
-      - tedious
-      - utf-8-validate
-    dev: false
-
   /@backstage/plugin-auth-node/0.2.11_@swc+core@1.3.28:
     resolution: {integrity: sha512-/WG55jx9dP4t2WhtlPj39D4X1qptkfEaPzEUF8SHzC3HnICXsbuFwfWZCXv7+i8VY1qvedIQHfp3ETjSaU71vA==}
     dependencies:
@@ -3320,14 +3110,14 @@ packages:
   /@backstage/plugin-catalog-backend/1.7.1_@swc+core@1.3.28:
     resolution: {integrity: sha512-C1HIOYWIB09+fjEt4eNYrBoFSysCS+G+Lb4qupPiwZlWUhJNPnylSuROihsuHEcLO3QYqBrn36reFrcr27tujw==}
     dependencies:
-      '@backstage/backend-common': 0.18.1_@swc+core@1.3.28
+      '@backstage/backend-common': 0.18.2_@swc+core@1.3.28
       '@backstage/backend-plugin-api': 0.3.1_@swc+core@1.3.28
-      '@backstage/catalog-client': 1.3.0
-      '@backstage/catalog-model': 1.1.5
+      '@backstage/catalog-client': 1.3.1
+      '@backstage/catalog-model': 1.2.0
       '@backstage/config': 1.0.6
       '@backstage/errors': 1.1.4
       '@backstage/integration': 1.4.2
-      '@backstage/plugin-catalog-common': 1.0.10
+      '@backstage/plugin-catalog-common': 1.0.11
       '@backstage/plugin-catalog-node': 1.3.3_@swc+core@1.3.28
       '@backstage/plugin-permission-common': 0.7.3
       '@backstage/plugin-permission-node': 0.7.5_@swc+core@1.3.28
@@ -3371,16 +3161,6 @@ packages:
       - supports-color
       - tedious
       - utf-8-validate
-    dev: false
-
-  /@backstage/plugin-catalog-common/1.0.10:
-    resolution: {integrity: sha512-EFxOGd++iO8Nl2LmY7uxCbaLKrglKR0LMmz35n1u2wNRbS0dE92MHJCrKjnLbgRx7JBc6LbUE9tMF24AmDxqtw==}
-    dependencies:
-      '@backstage/catalog-model': 1.1.5
-      '@backstage/plugin-permission-common': 0.7.3
-      '@backstage/plugin-search-common': 1.2.1
-    transitivePeerDependencies:
-      - encoding
     dev: false
 
   /@backstage/plugin-catalog-common/1.0.11:
@@ -5432,34 +5212,6 @@ packages:
       ioredis: 5.3.0
     transitivePeerDependencies:
       - supports-color
-    dev: false
-
-  /@kubernetes/client-node/0.18.0:
-    resolution: {integrity: sha512-Mp6q0OkZQBp+HslIgvHYpsPJk8z6mch231QWtIZQHvs+PaTE6mkUfusYE8fNw3jMjru5mVO/JDz6PTjB9YT2rQ==}
-    dependencies:
-      '@types/js-yaml': 4.0.5
-      '@types/node': 10.17.60
-      '@types/request': 2.48.8
-      '@types/ws': 6.0.4
-      byline: 5.0.0
-      execa: 5.0.0
-      isomorphic-ws: 4.0.1_ws@7.5.9
-      js-yaml: 4.1.0
-      jsonpath-plus: 0.19.0
-      request: 2.88.2
-      rfc4648: 1.5.2
-      shelljs: 0.8.5
-      stream-buffers: 3.0.2
-      tar: 6.1.13
-      tmp-promise: 3.0.3
-      tslib: 2.1.0
-      underscore: 1.13.6
-      ws: 7.5.9
-    optionalDependencies:
-      openid-client: 5.3.2
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
     dev: false
 
   /@kubernetes/client-node/0.18.1:
@@ -10440,10 +10192,6 @@ packages:
       form-data: 3.0.0
     dev: true
 
-  /@types/node/10.17.60:
-    resolution: {integrity: sha512-F0KIgDJfy2nA3zMLmWGKxcH2ZVEtCZXHHdOQs2gSaQ27+lNeEfGxzkIw90aXswATX7AZ33tahPbzy6KAfUreVw==}
-    dev: false
-
   /@types/node/12.20.55:
     resolution: {integrity: sha512-J8xLz7q2OFulZ2cyGTLE1TbbZcjpno7FaN6zdJNrgAdrJ+DZzh/uFR6YrTb4C+nXakvud8Q4+rbhoIWlYQbUFQ==}
 
@@ -10835,12 +10583,6 @@ packages:
       - uglify-js
       - webpack-cli
     dev: true
-
-  /@types/ws/6.0.4:
-    resolution: {integrity: sha512-PpPrX7SZW9re6+Ha8ojZG4Se8AZXgf0GK6zmfqEuCsY49LFDNXO3SByp44X3dFEqtB73lkCDAdUazhAjVPiNwg==}
-    dependencies:
-      '@types/node': 18.11.18
-    dev: false
 
   /@types/ws/8.5.3:
     resolution: {integrity: sha512-6YOoWjruKj1uLf3INHH7D3qTXwFfEsg1kf3c0uDdSBJwfa/llkwIjrAGV7j7mVgGNbzTQ3HiHKKDXl6bJPD97w==}
@@ -11910,7 +11652,7 @@ packages:
       async: 3.2.4
       buffer-crc32: 0.2.13
       readable-stream: 3.6.0
-      readdir-glob: 1.1.2
+      readdir-glob: 1.1.1
       tar-stream: 2.2.0
       zip-stream: 4.1.0
     dev: false
@@ -12299,8 +12041,8 @@ packages:
     resolution: {integrity: sha512-08kcGqnYf/YmjoRhfxyu+CLxBjUtHLXLXX/vUfx9l2LYzG3c1m61nrpyFUZI6zeS+Li/wWMMidD9KgrqtGq3mA==}
     dev: false
 
-  /aws4/1.12.0:
-    resolution: {integrity: sha512-NmWvPnx0F1SfrQbYwOi7OeaNGokp9XhzNioJ/CSBs8Qa4vxug81mhJEAVZwxXuBmYB5KDRfMq/F3RR0BIU7sWg==}
+  /aws4/1.11.0:
+    resolution: {integrity: sha512-xh1Rl34h6Fi1DC2WWKfxUTVqRsNnr6LsKz2+hfwDxQJWmrx8+c7ylaqBMcHfl1U1r2dsifOvKX3LQuLNZ+XSvA==}
     dev: false
 
   /axe-core/4.2.1:
@@ -13024,7 +12766,7 @@ packages:
     resolution: {integrity: sha512-VO9Ht/+p3SN7SKWqcrgEzjGbRSJYTx+Q1pTQC0wrWqHx0vpJraQ6GtHx8tvcg1rlK1byhU5gccxgOgj7B0TDkQ==}
 
   /buffer-equal-constant-time/1.0.1:
-    resolution: {integrity: sha512-zRpUiDwd/xk6ADqPMATG8vc9VPrkck7T07OIx0gnjmJAnHnTVXNQG3vfvWNuiZIkwu9KrKdA1iJKfsfTVxE6NA==}
+    resolution: {integrity: sha1-+OcRMvf/5uAaXJaXpMbz5I1cyBk=}
 
   /buffer-equal/1.0.0:
     resolution: {integrity: sha512-tcBWO2Dl4e7Asr9hTGcpVrCe+F7DubpmqWCTbj4FHLmjqO2hIaC383acQubWtRJhdceqs5uBHs6Es+Sk//RKiQ==}
@@ -14121,7 +13863,7 @@ packages:
     dev: true
 
   /concat-map/0.0.1:
-    resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
+    resolution: {integrity: sha1-2Klr13/Wjfd5OnMDajug1UBdR3s=}
 
   /concat-stream/1.6.2:
     resolution: {integrity: sha512-27HBghJxjiZtIk3Ycvn/4kbJk/1uZuJFfuPEns6LaEvpvG1f0hTea8lilrouyo9mVc2GWdcEZ8OLoGmSADlrCw==}
@@ -14402,17 +14144,20 @@ packages:
       - supports-color
     dev: true
 
-  /crc-32/1.2.2:
-    resolution: {integrity: sha512-ROmzCKrTnOwybPcJApAA6WBWij23HVfGVNKqqrZpuyZOHqK2CwHSvpGuyt/UNNvaIjEd8X5IFGp4Mh+Ie1IHJQ==}
+  /crc-32/1.2.1:
+    resolution: {integrity: sha512-Dn/xm/1vFFgs3nfrpEVScHoIslO9NZRITWGz/1E/St6u4xw99vfZzVkW0OSnzx2h9egej9xwMCEut6sqwokM/w==}
     engines: {node: '>=0.8'}
     hasBin: true
+    dependencies:
+      exit-on-epipe: 1.0.1
+      printj: 1.3.1
     dev: false
 
   /crc32-stream/4.0.2:
     resolution: {integrity: sha512-DxFZ/Hk473b/muq1VJ///PMNLj0ZMnzye9thBpmjpJKCc5eMgB95aK8zCGrGfQ90cWo561Te6HK9D+j4KPdM6w==}
     engines: {node: '>= 10'}
     dependencies:
-      crc-32: 1.2.2
+      crc-32: 1.2.1
       readable-stream: 3.6.0
     dev: false
 
@@ -16103,7 +15848,7 @@ packages:
       safe-buffer: 5.2.1
 
   /ee-first/1.1.1:
-    resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
+    resolution: {integrity: sha1-WQxhFWsK4vTwJVcyoViyZrxWsh0=}
 
   /electron-to-chromium/1.4.284:
     resolution: {integrity: sha512-M8WEXFuKXMYMVr45fo8mq0wUrrJHheiKZf6BArTKk9ZBYCKJEOU5H8cdWgDT+qCVZf7Na4lVUaZsA+h6uA9+PA==}
@@ -17143,21 +16888,6 @@ packages:
       signal-exit: 3.0.7
       strip-eof: 1.0.0
 
-  /execa/5.0.0:
-    resolution: {integrity: sha512-ov6w/2LCiuyO4RLYGdpFGjkcs0wMTgGE8PrkTHikeUy5iJekXyPIKUjifk5CsE0pt7sMCrMZ3YNqoCj6idQOnQ==}
-    engines: {node: '>=10'}
-    dependencies:
-      cross-spawn: 7.0.3
-      get-stream: 6.0.1
-      human-signals: 2.1.0
-      is-stream: 2.0.0
-      merge-stream: 2.0.0
-      npm-run-path: 4.0.1
-      onetime: 5.1.2
-      signal-exit: 3.0.7
-      strip-final-newline: 2.0.0
-    dev: false
-
   /execa/5.1.1:
     resolution: {integrity: sha512-8uSpZZocAZRBAPIEINJj3Lo9HyGitllczc27Eh5YYojjMFMn8yHMDMaUHE2Jqfq05D/wucwI4JGURyXt1vchyg==}
     engines: {node: '>=10'}
@@ -17187,6 +16917,11 @@ packages:
     resolution: {integrity: sha512-MsG3prOVw1WtLXAZbM3KiYtooKR1LvxHh3VHsVtIy0uiUu8usxgB/94DP2HxtD/661lLdB6yzQ09lGJSQr6nkg==}
     engines: {node: '>=0.10.0'}
     dev: true
+
+  /exit-on-epipe/1.0.1:
+    resolution: {integrity: sha512-h2z5mrROTxce56S+pnvAV890uu7ls7f1kEvVGJbw1OlFH3/mlJ5bkXu0KRyW94v37zzHPiUd55iLn3DA7TjWpw==}
+    engines: {node: '>=0.8'}
+    dev: false
 
   /exit/0.1.2:
     resolution: {integrity: sha512-Zk/eNKV2zbjpKzrsQ+n1G6poVbErQxJ0LBOJXaKZ1EViLzH+hrLu9cdXI4zw9dBQJslwBEpbQ2P1oS7nDxs6jQ==}
@@ -19810,6 +19545,7 @@ packages:
   /interpret/1.2.0:
     resolution: {integrity: sha512-mT34yGKMNceBQUoVn7iCDKDntA7SC6gycMAWzGx1z/CMCTV7b2AAtXlo3nRyHZ1FelRkQbQjprHSYGwzLtkVbw==}
     engines: {node: '>= 0.10'}
+    dev: true
 
   /interpret/2.2.0:
     resolution: {integrity: sha512-Ju0Bz/cEia55xDwUWEa8+olFpCiQoypjnQySseKtmjNrnps3P+xfpUmGr90T7yjlVJmOtybRvPXhKMbHr+fWnw==}
@@ -20459,7 +20195,7 @@ packages:
     dependencies:
       async-lock: 1.4.0
       clean-git-ref: 2.0.1
-      crc-32: 1.2.2
+      crc-32: 1.2.1
       diff3: 0.0.3
       ignore: 5.2.0
       minimisted: 2.0.1
@@ -20478,14 +20214,6 @@ packages:
     transitivePeerDependencies:
       - encoding
     dev: true
-
-  /isomorphic-ws/4.0.1_ws@7.5.9:
-    resolution: {integrity: sha512-BhBvN2MBpWTaSHdWRb/bwdZJ1WaehQ2L1KngkCkfLUGF0mAWAT1sQUQacEmQ0jXkFw/czDXPNQSL5u2/Krsz1w==}
-    peerDependencies:
-      ws: '*'
-    dependencies:
-      ws: 7.5.9
-    dev: false
 
   /isomorphic-ws/5.0.0_ws@8.11.0:
     resolution: {integrity: sha512-muId7Zzn9ywDsyXgTIafTry2sV3nySZeUDe6YedVd1Hvuuep5AsIlqK+XefWpYTyJG5e503F2xIuT2lcU6rCSw==}
@@ -22115,7 +21843,7 @@ packages:
     dev: false
 
   /json-buffer/3.0.0:
-    resolution: {integrity: sha512-CuUqjv0FUZIdXkHPI8MezCnFCdaTAacej1TZYulLoAg1h/PhwkdXFN4V/gzY4g+fMBCOV2xF+rp7t2XD2ns/NQ==}
+    resolution: {integrity: sha1-Wx85evx11ne96Lz8Dkfh+aPZqJg=}
     dev: true
 
   /json-buffer/3.0.1:
@@ -22235,11 +21963,6 @@ packages:
   /jsonify/0.0.0:
     resolution: {integrity: sha512-trvBk1ki43VZptdBI5rIlG4YOzyeH/WefQt5rj1grasPn4iiZWKet8nkgc4GlsAylaztn0qZfUYOiTsASJFdNA==}
     dev: true
-
-  /jsonpath-plus/0.19.0:
-    resolution: {integrity: sha512-GSVwsrzW9LsA5lzsqe4CkuZ9wp+kxBb2GwNniaWzI2YFn5Ig42rSW8ZxVpWXaAfakXNrx5pgY5AbQq7kzX29kg==}
-    engines: {node: '>=6.0'}
-    dev: false
 
   /jsonpath-plus/7.2.0:
     resolution: {integrity: sha512-zBfiUPM5nD0YZSBT/o/fbCUlCcepMIdP0CJZxM1+KgA4f2T206f6VAg9e7mX35+KlMaIc5qXW34f3BnwJ3w+RA==}
@@ -22773,7 +22496,7 @@ packages:
     resolution: {integrity: sha512-FT1yDzDYEoYWhnSGnpE/4Kj1fLZkDFyqRb7fNt6FdYOSxlUWAtp42Eh6Wb0rGIv/m9Bgo7x4GhQbm5Ys4SG5ow==}
 
   /lodash.defaults/4.2.0:
-    resolution: {integrity: sha512-qjxPLHd3r5DnsdGacqOMU6pb/avJzdh9tFX2ymgoZE27BmjXrNy/y4LoaiTeAb+O3gL8AfpJGtqfX/ae2leYYQ==}
+    resolution: {integrity: sha1-0JF4cW/+pN3p5ft7N/bwgCJ0WAw=}
     dev: false
 
   /lodash.difference/4.5.0:
@@ -22784,7 +22507,7 @@ packages:
     dev: true
 
   /lodash.flatten/4.4.0:
-    resolution: {integrity: sha512-C5N2Z3DgnnKr0LOpv/hKCgKdb7ZZwafIrsesve6lmzvZIRZRGaZ/l6Q8+2W7NaT+ZwO3fFlSCzCzrDCFdJfZ4g==}
+    resolution: {integrity: sha1-8xwiIlqWMtK7+OSt2+8kCqdlph8=}
     dev: false
 
   /lodash.flattendeep/4.4.0:
@@ -26125,6 +25848,12 @@ packages:
     resolution: {integrity: sha512-66hKPCr+72mlfiSjlEB1+45IjXSqvVAIy6mocupoww4tBFE9R9IhwwUGoI4G++Tc9Aq+2rxOt0RFU6gPcrte0A==}
     engines: {node: '>= 0.8'}
 
+  /printj/1.3.1:
+    resolution: {integrity: sha512-GA3TdL8szPK4AQ2YnOe/b+Y1jUFwmmGMMK/qbY7VcE3Z7FU8JstbKiKRzO6CIiAKPhTO8m01NoQ0V5f3jc4OGg==}
+    engines: {node: '>=0.8'}
+    hasBin: true
+    dev: false
+
   /prismjs/1.27.0:
     resolution: {integrity: sha512-t13BGPUlFDR7wRB5kQDG4jjl7XeuH6jbJGt11JHPL96qwsEHNX2+68tFXqc1/k+/jALsbSWJKUOT/hcYAZ5LkA==}
     engines: {node: '>=6'}
@@ -27207,10 +26936,10 @@ packages:
       string_decoder: 1.1.1
       util-deprecate: 1.0.2
 
-  /readdir-glob/1.1.2:
-    resolution: {integrity: sha512-6RLVvwJtVwEDfPdn6X6Ille4/lxGl0ATOY4FN/B9nxQcgOazvvI0nodiD19ScKq0PvA/29VpaOQML36o5IzZWA==}
+  /readdir-glob/1.1.1:
+    resolution: {integrity: sha512-91/k1EzZwDx6HbERR+zucygRFfiPl2zkIYZtv3Jjr6Mn7SkKcVct8aVO+sSRiGMc6fLf72du3d92/uY63YPdEA==}
     dependencies:
-      minimatch: 5.1.6
+      minimatch: 3.1.2
     dev: false
 
   /readdir-scoped-modules/1.1.0:
@@ -27293,6 +27022,7 @@ packages:
     engines: {node: '>= 0.10'}
     dependencies:
       resolve: 1.22.1
+    dev: true
 
   /rechoir/0.8.0:
     resolution: {integrity: sha512-/vxpCXddiX8NGfGO/mTafwjq4aFa/71pvamip0++IQk3zG8cbCj0fifNPrjjF1XMXUne91jL9OoxmdykoEtifQ==}
@@ -27618,7 +27348,7 @@ packages:
     deprecated: request has been deprecated, see https://github.com/request/request/issues/3142
     dependencies:
       aws-sign2: 0.7.0
-      aws4: 1.12.0
+      aws4: 1.11.0
       caseless: 0.12.0
       combined-stream: 1.0.8
       extend: 3.0.2
@@ -28447,6 +28177,7 @@ packages:
       glob: 7.2.3
       interpret: 1.2.0
       rechoir: 0.6.2
+    dev: true
 
   /shimmer/1.2.1:
     resolution: {integrity: sha512-sQTKC1Re/rM6XyFM6fIAGHRPVGvyXfgzIDvzoq608vM+jeyVD0Tu1E6Np0Kc2zAIFWIj963V2800iF/9LPieQw==}
@@ -31368,7 +31099,7 @@ packages:
     dev: true
 
   /verror/1.10.0:
-    resolution: {integrity: sha512-ZZKSmDAEFOijERBLkmYfJ+vmk3w+7hOLYDNkRCuRuMJGEmqYNCNLyBBFwWKVMhfwaEF3WOd0Zlw86U/WC/+nYw==}
+    resolution: {integrity: sha1-OhBcoXBTr1XW4nDB+CiGguGNpAA=}
     engines: {'0': node >=0.6.0}
     dependencies:
       assert-plus: 1.0.0
