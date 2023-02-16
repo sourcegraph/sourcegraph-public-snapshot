@@ -96,15 +96,16 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWith
                     label={<Text alignment="left">Username or email</Text>}
                     onChange={onUsernameOrEmailFieldChange}
                     required={true}
+                    value={usernameOrEmail}
                     disabled={loading}
-                    autoComplete="current-password"
-                    placeholder=" "
+                    autoCapitalize="off"
+                    autoFocus={true}
+                    className="form-group"
+                    // There is no well supported way to declare username OR email here.
+                    // Using username seems to be the best approach and should still support this behaviour.
+                    // See: https://github.com/whatwg/html/issues/4445
+                    autoComplete="username"
                 />
-                {context.resetPasswordEnabled && (
-                    <small className="form-text text-muted align-self-end position-absolute">
-                        <Link to="/password-reset">Forgot password?</Link>
-                    </small>
-                )}
 
                 <div className="form-group d-flex flex-column align-content-start position-relative">
                     <Label htmlFor="password" className="align-self-start">
