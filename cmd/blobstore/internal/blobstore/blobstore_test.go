@@ -63,6 +63,23 @@ func assertObjectDoesNotExist(ctx context.Context, store uploadstore.Store, t *t
 	}
 }
 
+type fooStruct struct {
+	A string
+	B string
+}
+
+func foo() fooStruct {
+	return fooStruct{
+		A: "a",
+		B: "b",
+	}
+}
+
+func TestFoo(t *testing.T) {
+	got := foo()
+	autogold.Expect(nil).Equal(t, got)
+}
+
 // Initialize uploadstore, upload an object
 func TestUpload(t *testing.T) {
 	ctx := context.Background()

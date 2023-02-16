@@ -76,9 +76,10 @@ http_archive(
     ],
 )
 
+# @slimsag 👋😊, just change the path below 👇 to wherever you're putting your local copy of autogold
 local_repository(
-    name = "com_github_hexops_autogold",
-    path = "/Users/tech/play/autogold",
+    name = "com_github_hexops_autogold_v2",
+    path = "/Users/tech/work/autogold",
 )
 
 # Node toolchain setup ==========================
