@@ -306,9 +306,11 @@ func TestAssignPermissionsToRole(t *testing.T) {
 	t.Run("as site-admin", func(t *testing.T) {
 		input := map[string]any{"role": roleID, "permissions": permissionIDs}
 		var response struct{ Permissions apitest.EmptyResponse }
-		errs := apitest.Exec(adminCtx, t, s, input, &response, assignPermissionsToRoleQuery)
+		apitest.MustExec(adminCtx, t, s, input, &response, assignPermissionsToRoleQuery)
 
-		require.Len(t, errs, 0)
+		rps, err := db.RolePermissions().GetByRoleID(ctx, database.GetRolePermissionOpts{RoleID: r.ID})
+		require.NoError(t, err)
+		require.Equal(t, rps, len(ps))
 	})
 }
 
