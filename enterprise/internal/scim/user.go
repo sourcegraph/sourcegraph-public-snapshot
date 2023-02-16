@@ -32,7 +32,6 @@ func NewUserResourceHandler(ctx context.Context, observationCtx *observation.Con
 	}
 }
 
-
 // Replace replaces ALL existing attributes of the resource with given identifier. Given attributes that are empty
 // are to be deleted. Returns a resource with the attributes that are stored.
 func (h *UserResourceHandler) Replace(r *http.Request, id string, attributes scim.ResourceAttributes) (scim.Resource, error) {

@@ -22,7 +22,7 @@ func (h *UserResourceHandler) Delete(r *http.Request, id string) error {
 	if err != nil {
 		return errors.Wrap(err, "parse user ID")
 	}
-	user, err := findUser(r.Context(), err, h.db, idInt, logger)
+	user, err := findUser(r.Context(), h.db, idInt, logger)
 	if err != nil {
 		return err
 	}
@@ -54,7 +54,7 @@ func (h *UserResourceHandler) Delete(r *http.Request, id string) error {
 }
 
 // findUser finds the user with the given ID. If the user does not exist, it returns an empty user.
-func findUser(ctx context.Context, err error, db database.DB, id int, logger log.Logger) (types.UserForSCIM, error) {
+func findUser(ctx context.Context, db database.DB, id int, logger log.Logger) (types.UserForSCIM, error) {
 	users, err := db.Users().ListForSCIM(ctx, &database.UsersListOptions{
 		UserIDs: []int32{int32(id)},
 	})
