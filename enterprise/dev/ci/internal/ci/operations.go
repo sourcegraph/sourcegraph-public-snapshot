@@ -503,13 +503,13 @@ func buildGoTests(f func(description, testSuffix string, additionalOpts ...bk.St
 	enableGRPCEnvOpt := bk.Env("SG_FEATURE_FLAG_GRPC", "true")
 
 	// Run all tests that aren't slow both with and without gRPC enabled
-	f("all (non-gRPC)", fmt.Sprintf("exclude %s", strings.Join(allSlowPackages, " ")))
+	f("all", fmt.Sprintf("exclude %s", strings.Join(allSlowPackages, " ")))
 	f("all (gRPC)", fmt.Sprintf("exclude %s", strings.Join(allSlowPackages, " ")), enableGRPCEnvOpt)
 
 	// Run most slow packages both with and without gRPC
 	for _, slowPkg := range slowGoTestPackagesGRPC {
 		f(strings.ReplaceAll(slowPkg, "github.com/sourcegraph/sourcegraph/", ""), "only "+slowPkg)
-		f(strings.ReplaceAll(slowPkg, "github.com/sourcegraph/sourcegraph/", ""), "only "+slowPkg, enableGRPCEnvOpt)
+		f(strings.ReplaceAll(slowPkg, "github.com/sourcegraph/sourcegraph/", "")+" (gRPC)", "only "+slowPkg, enableGRPCEnvOpt)
 	}
 
 	// These packages won't benefit from duplicating the tests with gRPC enabled, so only run them once.
