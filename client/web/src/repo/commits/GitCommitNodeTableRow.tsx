@@ -84,7 +84,7 @@ export const GitCommitNodeTableRow: React.FC<
                 })}
             >
                 <GitCommitNodeByline
-                    wrapperElement="td"
+                    as="td"
                     className={classNames('d-flex', styles.colByline)}
                     avatarClassName={styles.fontWeightNormal}
                     author={node.author}
