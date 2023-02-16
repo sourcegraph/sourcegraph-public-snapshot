@@ -1,10 +1,9 @@
 import React, { Fragment, useEffect, useCallback, useState } from 'react'
 
-import { mdiAccount, mdiPlus } from '@mdi/js'
 import { formatDistanceToNowStrict } from 'date-fns'
 
 import { useLazyQuery, useMutation, useQuery } from '@sourcegraph/http-client'
-import { H1, Card, Text, Icon, Button, Link, Grid, Alert } from '@sourcegraph/wildcard'
+import { H1, Card, Text, Button, Grid, Alert } from '@sourcegraph/wildcard'
 
 import {
     PendingAccessRequestsListResult,
@@ -31,17 +30,26 @@ import {
     REJECT_ACCESS_REQUEST,
 } from './queries'
 
-import styles from './index.module.scss'
-
+/**
+ * Converts a name to a username by removing all non-alphanumeric characters and converting to lowercase.
+ * @param name user's name / full name
+ * @param randomize whether to add a random suffix to the username to avoid collisions
+ * @returns username
+ */
 function toUsername(name: string, randomize?: boolean): string {
-    // Remove all non-alphanumeric characters from the name and add some short hash to the end
+    // Remove all non-alphanumeric characters from the name and convert to lowercase.
     const username = name.replace(/[^\dA-Za-z]/g, '').toLowerCase()
     if (!randomize) {
         return username
     }
+    // Add a random 5-character suffix to the username to avoid collisions.
     return username + '-' + Math.random().toString(36).slice(2, 7)
 }
 
+/**
+ * A react hook that returns a function that generates a username for a user with the given name.
+ * It checks if the username already exists and if so, it adds a random suffix to the username.
+ */
 function useGenerateUsername(): (name: string) => Promise<string> {
     const [doesUsernameExist] = useLazyQuery<DoesUsernameExistResult, DoesUsernameExistVariables>(
         DOES_USERNAME_EXIST,
@@ -66,9 +74,10 @@ function useGenerateUsername(): (name: string) => Promise<string> {
     )
 }
 
+const LIMIT_FILTER_OPTIONS = [25, 50, 100]
 const DEFAULT_FILTERS = {
     offset: '0',
-    limit: '25',
+    limit: LIMIT_FILTER_OPTIONS[0].toString(),
 }
 
 export const AccessRequestsPage: React.FunctionComponent = () => {
@@ -132,11 +141,11 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
     const generateUsername = useGenerateUsername()
 
     const handleApprove = useCallback(
-        (accessRequestId: string, name: string, email: string): void => {
+        (id: string, name: string, email: string): void => {
             if (!confirm('Are you sure you want to approve the selected access request?')) {
                 return
             }
-            eventLogger.log('AccessRequestApproved', { id: accessRequestId })
+            eventLogger.log('AccessRequestApproved', { id })
             async function createUserAndApproveRequest(): Promise<void> {
                 const username = await generateUsername(name)
                 const { data } = await createUser({
@@ -152,7 +161,7 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
 
                 await approveAccessRequest({
                     variables: {
-                        id: accessRequestId,
+                        id,
                     },
                 })
 
@@ -175,43 +184,31 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
     return (
         <>
             <div className="d-flex justify-content-between align-items-center mb-4 mt-2">
-                <H1 className="d-flex align-items-center mb-0">
-                    <Icon
-                        svgPath={mdiAccount}
-                        aria-label="user administration avatar icon"
-                        size="md"
-                        className={styles.linkColor}
-                    />{' '}
-                    Access Requests
-                </H1>
-                <div>
-                    <Button to="/site-admin/users/new" variant="primary" as={Link}>
-                        <Icon svgPath={mdiPlus} aria-label="create user" className="mr-1" />
-                        Create User
-                    </Button>
-                </div>
+                <H1 className="d-flex align-items-center mb-0">Access Requests</H1>
             </div>
-            {[queryError, error].filter(Boolean).map((err, index) => (
-                <Alert variant="danger" key={index}>
-                    {err?.message}
-                </Alert>
-            ))}
-            <DropdownPagination
-                limit={limit}
-                offset={offset}
-                total={data?.accessRequests?.totalCount ?? 0}
-                onLimitChange={limit => setFilters({ limit: limit.toString() })}
-                onOffsetChange={offset => setFilters({ offset: offset.toString() })}
-                options={[4, 8, 16]}
-            />
-            {lastApprovedUser && (
-                <AccountCreatedAlert
-                    email={lastApprovedUser.email}
-                    username={lastApprovedUser.username}
-                    resetPasswordURL={lastApprovedUser.resetPasswordURL}
-                />
-            )}
             <Card className="p-3">
+                {[queryError, error].filter(Boolean).map((err, index) => (
+                    <Alert variant="danger" key={index}>
+                        {err?.message}
+                    </Alert>
+                ))}
+                {lastApprovedUser && (
+                    <AccountCreatedAlert
+                        email={lastApprovedUser.email}
+                        username={lastApprovedUser.username}
+                        resetPasswordURL={lastApprovedUser.resetPasswordURL}
+                    />
+                )}
+                <div className="d-flex justify-content-end mb-3">
+                    <DropdownPagination
+                        limit={limit}
+                        offset={offset}
+                        total={data?.accessRequests?.totalCount ?? 0}
+                        onLimitChange={limit => setFilters({ limit: limit.toString() })}
+                        onOffsetChange={offset => setFilters({ offset: offset.toString() })}
+                        options={LIMIT_FILTER_OPTIONS}
+                    />
+                </div>
                 <Grid columnCount={5}>
                     {['Email', 'Name', 'Last requested at', 'Extra Details', ''].map((value, index) => (
                         // eslint-disable-next-line react/no-array-index-key
@@ -246,9 +243,6 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                     ))}
                 </Grid>
             </Card>
-            <Text className="font-italic text-center mt-2">
-                All events are generated from entries in the event logs table and are updated every 24 hours.
-            </Text>
         </>
     )
 }

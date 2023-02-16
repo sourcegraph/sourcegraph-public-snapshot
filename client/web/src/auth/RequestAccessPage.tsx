@@ -23,6 +23,11 @@ interface RequestAccessFormProps {
     onError: (error: any) => void
     context: Pick<SourcegraphContext, 'xhrHeaders'>
 }
+
+/**
+ * The request access form smart component.
+ * It handles the form submission.
+ */
 const RequestAccessForm: React.FunctionComponent<RequestAccessFormProps> = ({ onSuccess, onError, context }) => {
     const [loading, setLoading] = useState<boolean>(false)
     const [email, setEmail] = useState<string>('')
@@ -125,7 +130,9 @@ interface RequestAccessPageProps {
     authenticatedUser: AuthenticatedUser | null
     context: Pick<SourcegraphContext, 'allowSignup' | 'sourcegraphDotComMode' | 'xhrHeaders' | 'experimentalFeatures'>
 }
-
+/**
+ * The request access page component.
+ */
 export const RequestAccessPage: React.FunctionComponent<React.PropsWithChildren<RequestAccessPageProps>> = ({
     context,
     authenticatedUser,
@@ -134,7 +141,7 @@ export const RequestAccessPage: React.FunctionComponent<React.PropsWithChildren<
     const location = useLocation()
     const navigate = useNavigate()
     const [error, setError] = useState<Error | null>(null)
-    const IsRequestAccessAllowed = checkIsRequestAccessAllowed(
+    const isRequestAccessAllowed = checkIsRequestAccessAllowed(
         context.sourcegraphDotComMode,
         context.allowSignup,
         context.experimentalFeatures.accessRequests
@@ -145,7 +152,7 @@ export const RequestAccessPage: React.FunctionComponent<React.PropsWithChildren<
         return <Navigate to={returnTo} replace={true} />
     }
 
-    if (!IsRequestAccessAllowed) {
+    if (!isRequestAccessAllowed) {
         return <Navigate to={PageRoutes.SignIn} replace={true} />
     }
 
@@ -154,7 +161,7 @@ export const RequestAccessPage: React.FunctionComponent<React.PropsWithChildren<
             {error && <ErrorAlert className="mt-4 mb-0 text-left" error={error} />}
             <div
                 className={classNames(
-                    'test-RequestAccess-form rounded p-4 my-3',
+                    'rounded p-4 my-3',
                     RequestAccessSignUpCommonStyles.signinSignupForm,
                     error ? 'mt-3' : 'mt-4'
                 )}
@@ -162,7 +169,11 @@ export const RequestAccessPage: React.FunctionComponent<React.PropsWithChildren<
                 <Routes>
                     <Route
                         path="done"
-                        element={<Text>Thank you! We notified the admin of this instance of your request.</Text>}
+                        element={
+                            <Text data-testid="request-access-post-submit">
+                                Thank you! We notified the admin of this instance of your request.
+                            </Text>
+                        }
                     />
                     <Route
                         path=""

@@ -41,7 +41,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     const location = useLocation()
     const [error, setError] = useState<Error | null>(null)
     const [searchParams] = useSearchParams()
-    const IsRequestAccessAllowed = checkIsRequestAccessAllowed(
+    const isRequestAccessAllowed = checkIsRequestAccessAllowed(
         props.isSourcegraphDotCom,
         props.context.allowSignup,
         props.context.experimentalFeatures.accessRequests
@@ -149,7 +149,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                             <Link to="/sign-up">Sign up</Link>
                         )}
                     </Text>
-                ) : IsRequestAccessAllowed ? (
+                ) : isRequestAccessAllowed ? (
                     <Text className="text-muted">
                         Need an account? <Link to="/request-access">Request access to the admin</Link> or contact your
                         site admin.

@@ -6,16 +6,40 @@ import classNames from 'classnames'
 import { Button, Text, Icon, Popover, PopoverContent, PopoverOpenEvent, PopoverTrigger } from '@sourcegraph/wildcard'
 
 export interface DropdownPaginationProps {
+    /**
+     * The total number of items.
+     */
     total: number
+    /**
+     * The current offset.
+     */
     offset: number
+    /**
+     * The current limit.
+     */
     limit: number
+    /**
+     * The limit options to display in the dropdown.
+     */
     options?: ({ limit: number; label: string } | number)[]
+    /**
+     * Callback for when the offset changes.
+     */
     onOffsetChange: (offset: number) => void
+    /**
+     * Callback for when the limit changes.
+     */
     onLimitChange: (limit: number) => void
+    /**
+     * A function for formatting the label to display.
+     */
     formatLabel?: (start: number, end: number, total: number) => string
     className?: string
 }
 
+/**
+ * A dropdown pagination component that allows users to change the limit and offset of a paginated list.
+ */
 export const DropdownPagination: React.FunctionComponent<DropdownPaginationProps> = ({
     limit,
     offset,

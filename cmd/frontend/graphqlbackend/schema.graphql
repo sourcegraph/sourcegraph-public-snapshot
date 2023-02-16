@@ -9363,7 +9363,9 @@ extend type Mutation {
     removeTeamMembers(team: ID, teamName: String, members: [ID!]!): Team!
 }
 
-
+"""
+Access requests order by enum
+"""
 enum AccessRequestOrderBy {
     EMAIL
     NAME

@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
@@ -26,6 +27,7 @@ func HandleRequestAccess(logger log.Logger, db database.DB) http.HandlerFunc {
 		if handleEnabledCheck(logger, w) {
 			return
 		}
+		// Check whether builtin signup is enabled.
 		builtInAuthProvider, _ := userpasswd.GetProviderConfig()
 		if builtInAuthProvider != nil && builtInAuthProvider.AllowSignup {
 			http.Error(w, "Use sign up instead.", http.StatusConflict)
@@ -35,11 +37,12 @@ func HandleRequestAccess(logger log.Logger, db database.DB) http.HandlerFunc {
 	}
 }
 
+// HandleRequestAccessEnabledCheck checks whether request access experimental feature is explicitly disabled
 func handleEnabledCheck(logger log.Logger, w http.ResponseWriter) (handled bool) {
 	experimentalFeatures := conf.Get().ExperimentalFeatures
 	if experimentalFeatures != nil && experimentalFeatures.AccessRequests != nil && !experimentalFeatures.AccessRequests.Enabled {
-		logger.Error("Request access is not enabled.")
-		http.Error(w, "Request access is not enabled.", http.StatusConflict)
+		logger.Error("Request access is disabled.")
+		http.Error(w, "Request access is disabled.", http.StatusConflict)
 		return true
 	}
 
@@ -53,7 +56,7 @@ type requestAccessData struct {
 	AdditionalInfo string `json:"additionalInfo"`
 }
 
-// handleRequestAccess handles requests to /request-access.
+// handleRequestAccess handles submission of the request access form.
 func handleRequestAccess(logger log.Logger, db database.DB, w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
@@ -73,13 +76,11 @@ func handleRequestAccess(logger log.Logger, db database.DB, w http.ResponseWrite
 	}
 
 	// Create the access_request.
-	accessRequestCreateData := database.AccessRequestCreate{
+	_, err := db.AccessRequests().Create(r.Context(), &types.AccessRequest{
 		Name:           data.Name,
 		Email:          data.Email,
 		AdditionalInfo: data.AdditionalInfo,
-	}
-
-	_, err := db.AccessRequests().Create(r.Context(), accessRequestCreateData)
+	})
 	if err != nil {
 		var (
 			message    string

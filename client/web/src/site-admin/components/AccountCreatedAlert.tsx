@@ -10,6 +10,12 @@ interface AccountCreatedAlertProps {
     resetPasswordURL?: string | null
 }
 
+/**
+ * An alert component that displays a message indicating that an account has been created.
+ * - Shows a reset password URL in Copyable text if one is provided.
+ * - Shows a link to the user's profile page.
+ * - Shows a different message depending on whether email provided and email sending is enabled.
+ */
 export const AccountCreatedAlert: React.FunctionComponent<React.PropsWithChildren<AccountCreatedAlertProps>> = ({
     username,
     email,

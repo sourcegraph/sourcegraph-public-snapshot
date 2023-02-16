@@ -19,7 +19,7 @@ func TestAccessRequests_Create(t *testing.T) {
 	store := db.AccessRequests()
 
 	t.Run("valid input", func(t *testing.T) {
-		_, err := store.Create(ctx, AccessRequestCreate{
+		_, err := store.Create(ctx, &types.AccessRequest{
 			Email:          "a1@example.com",
 			Name:           "a1",
 			AdditionalInfo: "af1",
@@ -28,14 +28,14 @@ func TestAccessRequests_Create(t *testing.T) {
 	})
 
 	t.Run("existing access request email", func(t *testing.T) {
-		_, err := store.Create(ctx, AccessRequestCreate{
+		_, err := store.Create(ctx, &types.AccessRequest{
 			Email:          "a2@example.com",
 			Name:           "a1",
 			AdditionalInfo: "af1",
 		})
 		assert.NoError(t, err)
 
-		_, err = store.Create(ctx, AccessRequestCreate{
+		_, err = store.Create(ctx, &types.AccessRequest{
 			Email:          "a2@example.com",
 			Name:           "a2",
 			AdditionalInfo: "af2",
@@ -55,7 +55,7 @@ func TestAccessRequests_Create(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		_, err = store.Create(ctx, AccessRequestCreate{
+		_, err = store.Create(ctx, &types.AccessRequest{
 			Email:          "u@example.com",
 			Name:           "a3",
 			AdditionalInfo: "af3",
@@ -75,21 +75,21 @@ func TestAccessRequests_Update(t *testing.T) {
 
 	t.Run("non-existent access request", func(t *testing.T) {
 		nonExistentRoleID := int32(1234)
-		updated, err := store.Update(ctx, AccessRequestUpdate{ID: nonExistentRoleID, Status: types.AccessRequestStatusApproved})
+		updated, err := store.Update(ctx, &types.AccessRequest{ID: nonExistentRoleID, Status: types.AccessRequestStatusApproved})
 		assert.Error(t, err)
 		assert.Nil(t, updated)
-		assert.Equal(t, err, &accessRequestNotFound{ID: nonExistentRoleID})
+		assert.Equal(t, err, &errAccessRequestNotFound{ID: nonExistentRoleID})
 	})
 
 	t.Run("existing access request", func(t *testing.T) {
-		accessRequest, err := store.Create(ctx, AccessRequestCreate{
+		accessRequest, err := store.Create(ctx, &types.AccessRequest{
 			Email:          "a1@example.com",
 			Name:           "a1",
 			AdditionalInfo: "af1",
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, accessRequest.Status, types.AccessRequestStatusPending)
-		updated, err := store.Update(ctx, AccessRequestUpdate{ID: accessRequest.ID, Status: types.AccessRequestStatusApproved})
+		updated, err := store.Update(ctx, &types.AccessRequest{ID: accessRequest.ID, Status: types.AccessRequestStatusApproved})
 		assert.NotNil(t, updated)
 		assert.NoError(t, err)
 		assert.Equal(t, updated.Status, types.AccessRequestStatusApproved)
@@ -107,10 +107,10 @@ func TestAccessRequests_GetByID(t *testing.T) {
 		accessRequest, err := store.GetByID(ctx, nonExistentRoleID)
 		assert.Error(t, err)
 		assert.Nil(t, accessRequest)
-		assert.Equal(t, err, &accessRequestNotFound{ID: nonExistentRoleID})
+		assert.Equal(t, err, &errAccessRequestNotFound{ID: nonExistentRoleID})
 	})
 	t.Run("existing access request", func(t *testing.T) {
-		createdAccessRequest, err := store.Create(ctx, AccessRequestCreate{Email: "a1@example.com", Name: "a1", AdditionalInfo: "af1"})
+		createdAccessRequest, err := store.Create(ctx, &types.AccessRequest{Email: "a1@example.com", Name: "a1", AdditionalInfo: "af1"})
 		assert.NoError(t, err)
 		accessRequest, err := store.GetByID(ctx, createdAccessRequest.ID)
 		assert.NoError(t, err)
@@ -124,35 +124,35 @@ func TestAccessRequests_Count(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.AccessRequests()
 
-	ar1, err := store.Create(ctx, AccessRequestCreate{Email: "a1@example.com", Name: "a1", AdditionalInfo: "af1"})
+	ar1, err := store.Create(ctx, &types.AccessRequest{Email: "a1@example.com", Name: "a1", AdditionalInfo: "af1"})
 	assert.NoError(t, err)
-	ar2, err := store.Create(ctx, AccessRequestCreate{Email: "a2@example.com", Name: "a2", AdditionalInfo: "af2"})
+	ar2, err := store.Create(ctx, &types.AccessRequest{Email: "a2@example.com", Name: "a2", AdditionalInfo: "af2"})
 	assert.NoError(t, err)
-	_, err = store.Create(ctx, AccessRequestCreate{Email: "a3@example.com", Name: "a3", AdditionalInfo: "af3"})
+	_, err = store.Create(ctx, &types.AccessRequest{Email: "a3@example.com", Name: "a3", AdditionalInfo: "af3"})
 	assert.NoError(t, err)
 
 	t.Run("all", func(t *testing.T) {
-		count, err := store.Count(ctx, AccessRequestsFilterOptions{})
+		count, err := store.Count(ctx, &AccessRequestsFilterOptions{})
 		assert.NoError(t, err)
 		assert.Equal(t, count, 3)
 	})
 
 	t.Run("by status", func(t *testing.T) {
-		store.Update(ctx, AccessRequestUpdate{ID: ar1.ID, Status: types.AccessRequestStatusApproved})
-		store.Update(ctx, AccessRequestUpdate{ID: ar2.ID, Status: types.AccessRequestStatusRejected})
+		store.Update(ctx, &types.AccessRequest{ID: ar1.ID, Status: types.AccessRequestStatusApproved})
+		store.Update(ctx, &types.AccessRequest{ID: ar2.ID, Status: types.AccessRequestStatusRejected})
 
 		pending := types.AccessRequestStatusPending
-		count, err := store.Count(ctx, AccessRequestsFilterOptions{Status: &pending})
+		count, err := store.Count(ctx, &AccessRequestsFilterOptions{Status: &pending})
 		assert.NoError(t, err)
 		assert.Equal(t, count, 1)
 
 		rejected := types.AccessRequestStatusRejected
-		count, err = store.Count(ctx, AccessRequestsFilterOptions{Status: &rejected})
+		count, err = store.Count(ctx, &AccessRequestsFilterOptions{Status: &rejected})
 		assert.NoError(t, err)
 		assert.Equal(t, count, 1)
 
 		approved := types.AccessRequestStatusApproved
-		count, err = store.Count(ctx, AccessRequestsFilterOptions{Status: &approved})
+		count, err = store.Count(ctx, &AccessRequestsFilterOptions{Status: &approved})
 		assert.NoError(t, err)
 		assert.Equal(t, count, 1)
 	})
@@ -164,15 +164,15 @@ func TestAccessRequests_List(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.AccessRequests()
 
-	ar1, err := store.Create(ctx, AccessRequestCreate{Email: "a1@example.com", Name: "a1", AdditionalInfo: "af1"})
+	ar1, err := store.Create(ctx, &types.AccessRequest{Email: "a1@example.com", Name: "a1", AdditionalInfo: "af1"})
 	assert.NoError(t, err)
-	ar2, err := store.Create(ctx, AccessRequestCreate{Email: "a2@example.com", Name: "a2", AdditionalInfo: "af2"})
+	ar2, err := store.Create(ctx, &types.AccessRequest{Email: "a2@example.com", Name: "a2", AdditionalInfo: "af2"})
 	assert.NoError(t, err)
-	_, err = store.Create(ctx, AccessRequestCreate{Email: "a3@example.com", Name: "a3", AdditionalInfo: "af3"})
+	_, err = store.Create(ctx, &types.AccessRequest{Email: "a3@example.com", Name: "a3", AdditionalInfo: "af3"})
 	assert.NoError(t, err)
 
 	t.Run("all", func(t *testing.T) {
-		accessRequests, err := store.List(ctx, AccessRequestsFilterAndListOptions{})
+		accessRequests, err := store.List(ctx, &AccessRequestsFilterAndListOptions{})
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 3)
 
@@ -189,7 +189,7 @@ func TestAccessRequests_List(t *testing.T) {
 		orderBy := "NAME"
 		descending := true
 		listOptions := AccessRequestsListOptions{OrderBy: &orderBy, Descending: &descending}
-		accessRequests, err := store.List(ctx, AccessRequestsFilterAndListOptions{AccessRequestsListOptions: listOptions})
+		accessRequests, err := store.List(ctx, &AccessRequestsFilterAndListOptions{AccessRequestsListOptions: &listOptions})
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 3)
 
@@ -205,7 +205,7 @@ func TestAccessRequests_List(t *testing.T) {
 	t.Run("limit & offset", func(t *testing.T) {
 		limit := int32(1)
 		listOptions := AccessRequestsListOptions{Limit: &limit}
-		accessRequests, err := store.List(ctx, AccessRequestsFilterAndListOptions{AccessRequestsListOptions: listOptions})
+		accessRequests, err := store.List(ctx, &AccessRequestsFilterAndListOptions{AccessRequestsListOptions: &listOptions})
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 1)
 
@@ -220,7 +220,7 @@ func TestAccessRequests_List(t *testing.T) {
 		offset := int32(1)
 		limit = int32(2)
 		listOptions = AccessRequestsListOptions{Limit: &limit, Offset: &offset}
-		accessRequests, err = store.List(ctx, AccessRequestsFilterAndListOptions{AccessRequestsListOptions: listOptions})
+		accessRequests, err = store.List(ctx, &AccessRequestsFilterAndListOptions{AccessRequestsListOptions: &listOptions})
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 2)
 
@@ -234,27 +234,27 @@ func TestAccessRequests_List(t *testing.T) {
 	})
 
 	t.Run("by status", func(t *testing.T) {
-		store.Update(ctx, AccessRequestUpdate{ID: ar1.ID, Status: types.AccessRequestStatusApproved})
-		store.Update(ctx, AccessRequestUpdate{ID: ar2.ID, Status: types.AccessRequestStatusRejected})
+		store.Update(ctx, &types.AccessRequest{ID: ar1.ID, Status: types.AccessRequestStatusApproved})
+		store.Update(ctx, &types.AccessRequest{ID: ar2.ID, Status: types.AccessRequestStatusRejected})
 
 		// list all pending
 		pending := types.AccessRequestStatusPending
-		filterOptions := AccessRequestsFilterOptions{Status: &pending}
-		accessRequests, err := store.List(ctx, AccessRequestsFilterAndListOptions{AccessRequestsFilterOptions: filterOptions})
+		filterOptions := &AccessRequestsFilterOptions{Status: &pending}
+		accessRequests, err := store.List(ctx, &AccessRequestsFilterAndListOptions{AccessRequestsFilterOptions: filterOptions})
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 1)
 
 		// list all rejected
 		rejected := types.AccessRequestStatusRejected
-		filterOptions = AccessRequestsFilterOptions{Status: &rejected}
-		accessRequests, err = store.List(ctx, AccessRequestsFilterAndListOptions{AccessRequestsFilterOptions: filterOptions})
+		filterOptions = &AccessRequestsFilterOptions{Status: &rejected}
+		accessRequests, err = store.List(ctx, &AccessRequestsFilterAndListOptions{AccessRequestsFilterOptions: filterOptions})
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 1)
 
 		// list all approved
 		approved := types.AccessRequestStatusApproved
-		filterOptions = AccessRequestsFilterOptions{Status: &approved}
-		accessRequests, err = store.List(ctx, AccessRequestsFilterAndListOptions{AccessRequestsFilterOptions: filterOptions})
+		filterOptions = &AccessRequestsFilterOptions{Status: &approved}
+		accessRequests, err = store.List(ctx, &AccessRequestsFilterAndListOptions{AccessRequestsFilterOptions: filterOptions})
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 1)
 	})

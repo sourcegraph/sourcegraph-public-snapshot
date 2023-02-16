@@ -47,7 +47,7 @@ func TestRequestAccess(t *testing.T) {
 		res := httptest.NewRecorder()
 		handler(res, req)
 		assert.Equal(t, http.StatusConflict, res.Code)
-		assert.Equal(t, "Request access is not enabled.\n", res.Body.String())
+		assert.Equal(t, "Request access is disabled.\n", res.Body.String())
 	})
 
 	t.Run("builtin signup enabled", func(t *testing.T) {

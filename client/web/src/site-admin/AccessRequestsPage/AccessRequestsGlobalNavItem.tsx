@@ -14,15 +14,20 @@ interface AccessRequestsGlobalNavItemProps {
     isSourcegraphDotCom: boolean
 }
 
+/**
+ * A link to the access requests page that shows a badge with the number of pending requests.
+ * Does not render anything if request access is not allowed or there are no pending requests.
+ */
 export const AccessRequestsGlobalNavItem: React.FunctionComponent<AccessRequestsGlobalNavItemProps> = props => {
-    const IsRequestAccessAllowed = checkIsRequestAccessAllowed(
+    const isRequestAccessAllowed = checkIsRequestAccessAllowed(
         props.isSourcegraphDotCom,
         props.context.allowSignup,
         props.context.experimentalFeatures.accessRequests
     )
+
     const { data } = useQuery<AccessRequestsCountResult, AccessRequestsCountVariables>(ACCESS_REQUESTS_COUNT, {
         fetchPolicy: 'network-only',
-        skip: !IsRequestAccessAllowed,
+        skip: !isRequestAccessAllowed,
     })
 
     if (!data?.accessRequests.totalCount) {

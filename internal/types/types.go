@@ -1859,16 +1859,8 @@ type TeamMember struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
-type AccessRequestStatus string
-
-const (
-	AccessRequestStatusPending  AccessRequestStatus = "PENDING"
-	AccessRequestStatusApproved AccessRequestStatus = "APPROVED"
-	AccessRequestStatusRejected AccessRequestStatus = "REJECTED"
-)
 
 type AccessRequest struct {
-	// ID is the unique ID of the access request.
 	ID             int32
 	Name           string
 	CreatedAt      time.Time
@@ -1877,3 +1869,11 @@ type AccessRequest struct {
 	AdditionalInfo string
 	Status         AccessRequestStatus
 }
+
+type AccessRequestStatus string
+
+const (
+	AccessRequestStatusPending  AccessRequestStatus = "PENDING"
+	AccessRequestStatusApproved AccessRequestStatus = "APPROVED"
+	AccessRequestStatusRejected AccessRequestStatus = "REJECTED"
+)

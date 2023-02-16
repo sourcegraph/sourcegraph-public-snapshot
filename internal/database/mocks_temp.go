@@ -58,12 +58,12 @@ type MockAccessRequestStore struct {
 func NewMockAccessRequestStore() *MockAccessRequestStore {
 	return &MockAccessRequestStore{
 		CountFunc: &AccessRequestStoreCountFunc{
-			defaultHook: func(context.Context, AccessRequestsFilterOptions) (r0 int, r1 error) {
+			defaultHook: func(context.Context, *AccessRequestsFilterOptions) (r0 int, r1 error) {
 				return
 			},
 		},
 		CreateFunc: &AccessRequestStoreCreateFunc{
-			defaultHook: func(context.Context, AccessRequestCreate) (r0 *types.AccessRequest, r1 error) {
+			defaultHook: func(context.Context, *types.AccessRequest) (r0 *types.AccessRequest, r1 error) {
 				return
 			},
 		},
@@ -78,12 +78,12 @@ func NewMockAccessRequestStore() *MockAccessRequestStore {
 			},
 		},
 		ListFunc: &AccessRequestStoreListFunc{
-			defaultHook: func(context.Context, AccessRequestsFilterAndListOptions) (r0 []*types.AccessRequest, r1 error) {
+			defaultHook: func(context.Context, *AccessRequestsFilterAndListOptions) (r0 []*types.AccessRequest, r1 error) {
 				return
 			},
 		},
 		UpdateFunc: &AccessRequestStoreUpdateFunc{
-			defaultHook: func(context.Context, AccessRequestUpdate) (r0 *types.AccessRequest, r1 error) {
+			defaultHook: func(context.Context, *types.AccessRequest) (r0 *types.AccessRequest, r1 error) {
 				return
 			},
 		},
@@ -96,12 +96,12 @@ func NewMockAccessRequestStore() *MockAccessRequestStore {
 func NewStrictMockAccessRequestStore() *MockAccessRequestStore {
 	return &MockAccessRequestStore{
 		CountFunc: &AccessRequestStoreCountFunc{
-			defaultHook: func(context.Context, AccessRequestsFilterOptions) (int, error) {
+			defaultHook: func(context.Context, *AccessRequestsFilterOptions) (int, error) {
 				panic("unexpected invocation of MockAccessRequestStore.Count")
 			},
 		},
 		CreateFunc: &AccessRequestStoreCreateFunc{
-			defaultHook: func(context.Context, AccessRequestCreate) (*types.AccessRequest, error) {
+			defaultHook: func(context.Context, *types.AccessRequest) (*types.AccessRequest, error) {
 				panic("unexpected invocation of MockAccessRequestStore.Create")
 			},
 		},
@@ -116,12 +116,12 @@ func NewStrictMockAccessRequestStore() *MockAccessRequestStore {
 			},
 		},
 		ListFunc: &AccessRequestStoreListFunc{
-			defaultHook: func(context.Context, AccessRequestsFilterAndListOptions) ([]*types.AccessRequest, error) {
+			defaultHook: func(context.Context, *AccessRequestsFilterAndListOptions) ([]*types.AccessRequest, error) {
 				panic("unexpected invocation of MockAccessRequestStore.List")
 			},
 		},
 		UpdateFunc: &AccessRequestStoreUpdateFunc{
-			defaultHook: func(context.Context, AccessRequestUpdate) (*types.AccessRequest, error) {
+			defaultHook: func(context.Context, *types.AccessRequest) (*types.AccessRequest, error) {
 				panic("unexpected invocation of MockAccessRequestStore.Update")
 			},
 		},
@@ -157,15 +157,15 @@ func NewMockAccessRequestStoreFrom(i AccessRequestStore) *MockAccessRequestStore
 // AccessRequestStoreCountFunc describes the behavior when the Count method
 // of the parent MockAccessRequestStore instance is invoked.
 type AccessRequestStoreCountFunc struct {
-	defaultHook func(context.Context, AccessRequestsFilterOptions) (int, error)
-	hooks       []func(context.Context, AccessRequestsFilterOptions) (int, error)
+	defaultHook func(context.Context, *AccessRequestsFilterOptions) (int, error)
+	hooks       []func(context.Context, *AccessRequestsFilterOptions) (int, error)
 	history     []AccessRequestStoreCountFuncCall
 	mutex       sync.Mutex
 }
 
 // Count delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockAccessRequestStore) Count(v0 context.Context, v1 AccessRequestsFilterOptions) (int, error) {
+func (m *MockAccessRequestStore) Count(v0 context.Context, v1 *AccessRequestsFilterOptions) (int, error) {
 	r0, r1 := m.CountFunc.nextHook()(v0, v1)
 	m.CountFunc.appendCall(AccessRequestStoreCountFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -174,7 +174,7 @@ func (m *MockAccessRequestStore) Count(v0 context.Context, v1 AccessRequestsFilt
 // SetDefaultHook sets function that is called when the Count method of the
 // parent MockAccessRequestStore instance is invoked and the hook queue is
 // empty.
-func (f *AccessRequestStoreCountFunc) SetDefaultHook(hook func(context.Context, AccessRequestsFilterOptions) (int, error)) {
+func (f *AccessRequestStoreCountFunc) SetDefaultHook(hook func(context.Context, *AccessRequestsFilterOptions) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -182,7 +182,7 @@ func (f *AccessRequestStoreCountFunc) SetDefaultHook(hook func(context.Context, 
 // Count method of the parent MockAccessRequestStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *AccessRequestStoreCountFunc) PushHook(hook func(context.Context, AccessRequestsFilterOptions) (int, error)) {
+func (f *AccessRequestStoreCountFunc) PushHook(hook func(context.Context, *AccessRequestsFilterOptions) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -191,19 +191,19 @@ func (f *AccessRequestStoreCountFunc) PushHook(hook func(context.Context, Access
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *AccessRequestStoreCountFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, AccessRequestsFilterOptions) (int, error) {
+	f.SetDefaultHook(func(context.Context, *AccessRequestsFilterOptions) (int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *AccessRequestStoreCountFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, AccessRequestsFilterOptions) (int, error) {
+	f.PushHook(func(context.Context, *AccessRequestsFilterOptions) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *AccessRequestStoreCountFunc) nextHook() func(context.Context, AccessRequestsFilterOptions) (int, error) {
+func (f *AccessRequestStoreCountFunc) nextHook() func(context.Context, *AccessRequestsFilterOptions) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -241,7 +241,7 @@ type AccessRequestStoreCountFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 AccessRequestsFilterOptions
+	Arg1 *AccessRequestsFilterOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int
@@ -265,15 +265,15 @@ func (c AccessRequestStoreCountFuncCall) Results() []interface{} {
 // AccessRequestStoreCreateFunc describes the behavior when the Create
 // method of the parent MockAccessRequestStore instance is invoked.
 type AccessRequestStoreCreateFunc struct {
-	defaultHook func(context.Context, AccessRequestCreate) (*types.AccessRequest, error)
-	hooks       []func(context.Context, AccessRequestCreate) (*types.AccessRequest, error)
+	defaultHook func(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
+	hooks       []func(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
 	history     []AccessRequestStoreCreateFuncCall
 	mutex       sync.Mutex
 }
 
 // Create delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockAccessRequestStore) Create(v0 context.Context, v1 AccessRequestCreate) (*types.AccessRequest, error) {
+func (m *MockAccessRequestStore) Create(v0 context.Context, v1 *types.AccessRequest) (*types.AccessRequest, error) {
 	r0, r1 := m.CreateFunc.nextHook()(v0, v1)
 	m.CreateFunc.appendCall(AccessRequestStoreCreateFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -282,7 +282,7 @@ func (m *MockAccessRequestStore) Create(v0 context.Context, v1 AccessRequestCrea
 // SetDefaultHook sets function that is called when the Create method of the
 // parent MockAccessRequestStore instance is invoked and the hook queue is
 // empty.
-func (f *AccessRequestStoreCreateFunc) SetDefaultHook(hook func(context.Context, AccessRequestCreate) (*types.AccessRequest, error)) {
+func (f *AccessRequestStoreCreateFunc) SetDefaultHook(hook func(context.Context, *types.AccessRequest) (*types.AccessRequest, error)) {
 	f.defaultHook = hook
 }
 
@@ -290,7 +290,7 @@ func (f *AccessRequestStoreCreateFunc) SetDefaultHook(hook func(context.Context,
 // Create method of the parent MockAccessRequestStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *AccessRequestStoreCreateFunc) PushHook(hook func(context.Context, AccessRequestCreate) (*types.AccessRequest, error)) {
+func (f *AccessRequestStoreCreateFunc) PushHook(hook func(context.Context, *types.AccessRequest) (*types.AccessRequest, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -299,19 +299,19 @@ func (f *AccessRequestStoreCreateFunc) PushHook(hook func(context.Context, Acces
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *AccessRequestStoreCreateFunc) SetDefaultReturn(r0 *types.AccessRequest, r1 error) {
-	f.SetDefaultHook(func(context.Context, AccessRequestCreate) (*types.AccessRequest, error) {
+	f.SetDefaultHook(func(context.Context, *types.AccessRequest) (*types.AccessRequest, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *AccessRequestStoreCreateFunc) PushReturn(r0 *types.AccessRequest, r1 error) {
-	f.PushHook(func(context.Context, AccessRequestCreate) (*types.AccessRequest, error) {
+	f.PushHook(func(context.Context, *types.AccessRequest) (*types.AccessRequest, error) {
 		return r0, r1
 	})
 }
 
-func (f *AccessRequestStoreCreateFunc) nextHook() func(context.Context, AccessRequestCreate) (*types.AccessRequest, error) {
+func (f *AccessRequestStoreCreateFunc) nextHook() func(context.Context, *types.AccessRequest) (*types.AccessRequest, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -349,7 +349,7 @@ type AccessRequestStoreCreateFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 AccessRequestCreate
+	Arg1 *types.AccessRequest
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *types.AccessRequest
@@ -580,15 +580,15 @@ func (c AccessRequestStoreHandleFuncCall) Results() []interface{} {
 // AccessRequestStoreListFunc describes the behavior when the List method of
 // the parent MockAccessRequestStore instance is invoked.
 type AccessRequestStoreListFunc struct {
-	defaultHook func(context.Context, AccessRequestsFilterAndListOptions) ([]*types.AccessRequest, error)
-	hooks       []func(context.Context, AccessRequestsFilterAndListOptions) ([]*types.AccessRequest, error)
+	defaultHook func(context.Context, *AccessRequestsFilterAndListOptions) ([]*types.AccessRequest, error)
+	hooks       []func(context.Context, *AccessRequestsFilterAndListOptions) ([]*types.AccessRequest, error)
 	history     []AccessRequestStoreListFuncCall
 	mutex       sync.Mutex
 }
 
 // List delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockAccessRequestStore) List(v0 context.Context, v1 AccessRequestsFilterAndListOptions) ([]*types.AccessRequest, error) {
+func (m *MockAccessRequestStore) List(v0 context.Context, v1 *AccessRequestsFilterAndListOptions) ([]*types.AccessRequest, error) {
 	r0, r1 := m.ListFunc.nextHook()(v0, v1)
 	m.ListFunc.appendCall(AccessRequestStoreListFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -597,7 +597,7 @@ func (m *MockAccessRequestStore) List(v0 context.Context, v1 AccessRequestsFilte
 // SetDefaultHook sets function that is called when the List method of the
 // parent MockAccessRequestStore instance is invoked and the hook queue is
 // empty.
-func (f *AccessRequestStoreListFunc) SetDefaultHook(hook func(context.Context, AccessRequestsFilterAndListOptions) ([]*types.AccessRequest, error)) {
+func (f *AccessRequestStoreListFunc) SetDefaultHook(hook func(context.Context, *AccessRequestsFilterAndListOptions) ([]*types.AccessRequest, error)) {
 	f.defaultHook = hook
 }
 
@@ -605,7 +605,7 @@ func (f *AccessRequestStoreListFunc) SetDefaultHook(hook func(context.Context, A
 // List method of the parent MockAccessRequestStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *AccessRequestStoreListFunc) PushHook(hook func(context.Context, AccessRequestsFilterAndListOptions) ([]*types.AccessRequest, error)) {
+func (f *AccessRequestStoreListFunc) PushHook(hook func(context.Context, *AccessRequestsFilterAndListOptions) ([]*types.AccessRequest, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -614,19 +614,19 @@ func (f *AccessRequestStoreListFunc) PushHook(hook func(context.Context, AccessR
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *AccessRequestStoreListFunc) SetDefaultReturn(r0 []*types.AccessRequest, r1 error) {
-	f.SetDefaultHook(func(context.Context, AccessRequestsFilterAndListOptions) ([]*types.AccessRequest, error) {
+	f.SetDefaultHook(func(context.Context, *AccessRequestsFilterAndListOptions) ([]*types.AccessRequest, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *AccessRequestStoreListFunc) PushReturn(r0 []*types.AccessRequest, r1 error) {
-	f.PushHook(func(context.Context, AccessRequestsFilterAndListOptions) ([]*types.AccessRequest, error) {
+	f.PushHook(func(context.Context, *AccessRequestsFilterAndListOptions) ([]*types.AccessRequest, error) {
 		return r0, r1
 	})
 }
 
-func (f *AccessRequestStoreListFunc) nextHook() func(context.Context, AccessRequestsFilterAndListOptions) ([]*types.AccessRequest, error) {
+func (f *AccessRequestStoreListFunc) nextHook() func(context.Context, *AccessRequestsFilterAndListOptions) ([]*types.AccessRequest, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -664,7 +664,7 @@ type AccessRequestStoreListFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 AccessRequestsFilterAndListOptions
+	Arg1 *AccessRequestsFilterAndListOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []*types.AccessRequest
@@ -688,15 +688,15 @@ func (c AccessRequestStoreListFuncCall) Results() []interface{} {
 // AccessRequestStoreUpdateFunc describes the behavior when the Update
 // method of the parent MockAccessRequestStore instance is invoked.
 type AccessRequestStoreUpdateFunc struct {
-	defaultHook func(context.Context, AccessRequestUpdate) (*types.AccessRequest, error)
-	hooks       []func(context.Context, AccessRequestUpdate) (*types.AccessRequest, error)
+	defaultHook func(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
+	hooks       []func(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
 	history     []AccessRequestStoreUpdateFuncCall
 	mutex       sync.Mutex
 }
 
 // Update delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockAccessRequestStore) Update(v0 context.Context, v1 AccessRequestUpdate) (*types.AccessRequest, error) {
+func (m *MockAccessRequestStore) Update(v0 context.Context, v1 *types.AccessRequest) (*types.AccessRequest, error) {
 	r0, r1 := m.UpdateFunc.nextHook()(v0, v1)
 	m.UpdateFunc.appendCall(AccessRequestStoreUpdateFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -705,7 +705,7 @@ func (m *MockAccessRequestStore) Update(v0 context.Context, v1 AccessRequestUpda
 // SetDefaultHook sets function that is called when the Update method of the
 // parent MockAccessRequestStore instance is invoked and the hook queue is
 // empty.
-func (f *AccessRequestStoreUpdateFunc) SetDefaultHook(hook func(context.Context, AccessRequestUpdate) (*types.AccessRequest, error)) {
+func (f *AccessRequestStoreUpdateFunc) SetDefaultHook(hook func(context.Context, *types.AccessRequest) (*types.AccessRequest, error)) {
 	f.defaultHook = hook
 }
 
@@ -713,7 +713,7 @@ func (f *AccessRequestStoreUpdateFunc) SetDefaultHook(hook func(context.Context,
 // Update method of the parent MockAccessRequestStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *AccessRequestStoreUpdateFunc) PushHook(hook func(context.Context, AccessRequestUpdate) (*types.AccessRequest, error)) {
+func (f *AccessRequestStoreUpdateFunc) PushHook(hook func(context.Context, *types.AccessRequest) (*types.AccessRequest, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -722,19 +722,19 @@ func (f *AccessRequestStoreUpdateFunc) PushHook(hook func(context.Context, Acces
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *AccessRequestStoreUpdateFunc) SetDefaultReturn(r0 *types.AccessRequest, r1 error) {
-	f.SetDefaultHook(func(context.Context, AccessRequestUpdate) (*types.AccessRequest, error) {
+	f.SetDefaultHook(func(context.Context, *types.AccessRequest) (*types.AccessRequest, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *AccessRequestStoreUpdateFunc) PushReturn(r0 *types.AccessRequest, r1 error) {
-	f.PushHook(func(context.Context, AccessRequestUpdate) (*types.AccessRequest, error) {
+	f.PushHook(func(context.Context, *types.AccessRequest) (*types.AccessRequest, error) {
 		return r0, r1
 	})
 }
 
-func (f *AccessRequestStoreUpdateFunc) nextHook() func(context.Context, AccessRequestUpdate) (*types.AccessRequest, error) {
+func (f *AccessRequestStoreUpdateFunc) nextHook() func(context.Context, *types.AccessRequest) (*types.AccessRequest, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -772,7 +772,7 @@ type AccessRequestStoreUpdateFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 AccessRequestUpdate
+	Arg1 *types.AccessRequest
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *types.AccessRequest

@@ -23,7 +23,7 @@ describe('RequestAccess', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
-    it('is styled correctly', async () => {
+    it('form step is styled correctly', async () => {
         testContext.overrideGraphQL({
             ...commonWebGraphQlResults,
             CurrentAuthState: () => ({
@@ -36,6 +36,20 @@ describe('RequestAccess', () => {
         await driver.page.waitForSelector('#additionalInfo')
 
         await percySnapshotWithVariants(driver.page, 'Request access page')
+        await accessibilityAudit(driver.page)
+    })
+
+    it('post-submit step is styled correctly', async () => {
+        testContext.overrideGraphQL({
+            ...commonWebGraphQlResults,
+            CurrentAuthState: () => ({
+                currentUser: null,
+            }),
+        })
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/request-access/done')
+        await driver.page.waitForSelector('[data-testid="request-access-post-submit"]')
+
+        await percySnapshotWithVariants(driver.page, 'Request access page post-submit')
         await accessibilityAudit(driver.page)
     })
 })
