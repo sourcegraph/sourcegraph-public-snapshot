@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io/fs"
 	"net"
 	"net/http"
-	"os"
 	"os/exec"
 	pathpkg "path"
 	"path/filepath"
@@ -166,7 +166,7 @@ func (s *Serve) Repos() ([]Repo, error) {
 		return nil, nil
 	}
 
-	err = filepath.Walk(root, func(path string, fi os.FileInfo, fileErr error) error {
+	err = filepath.WalkDir(root, func(path string, fi fs.DirEntry, fileErr error) error {
 		if fileErr != nil {
 			s.Logger.Warn("ignoring error searching", log.String("path", path), log.Error(fileErr))
 			return nil
