@@ -31,7 +31,7 @@ export const SmartSearchListItem: React.FunctionComponent<SmartSearchListItemPro
                 pathname: '/search',
                 search: formatSearchParameters(new URLSearchParams({ q: proposedQuery.query })),
             })}
-            className={classNames(previewStyle ? 'text-decoration-none' : styles.link)}
+            className={classNames(previewStyle ? 'text-decoration-none' : styles.links)}
         >
             <Text className="mb-0">
                 <span className={classNames(previewStyle ? 'text-muted' : styles.listItemDescription)}>
