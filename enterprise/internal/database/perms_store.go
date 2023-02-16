@@ -357,7 +357,7 @@ func (s *permsStore) LoadRepoPermissions(ctx context.Context, p *authz.RepoPermi
 
 // SetUserExternalAccountPerms sets the users permissions for repos in the database. Uses setUserRepoPermissions internally.
 func (s *permsStore) SetUserExternalAccountPerms(ctx context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32) error {
-	p := make([]authz.Permission, len(repoIDs))
+	p := make([]authz.Permission, 0, len(repoIDs))
 
 	for _, repoID := range repoIDs {
 		p = append(p, authz.Permission{
@@ -377,7 +377,7 @@ func (s *permsStore) SetUserExternalAccountPerms(ctx context.Context, user authz
 
 // SetRepoPerms sets the users that can access a repo. Uses setUserRepoPermissions internally.
 func (s *permsStore) SetRepoPerms(ctx context.Context, repoID int32, userIDs []authz.UserIDWithExternalAccountID) error {
-	p := make([]authz.Permission, len(userIDs))
+	p := make([]authz.Permission, 0, len(userIDs))
 
 	for _, user := range userIDs {
 		p = append(p, authz.Permission{
