@@ -64,7 +64,7 @@ func (r *codeIntelTreeInfoResolver) SearchBasedSupport(ctx context.Context) (*[]
 }
 
 func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) (*[]resolverstubs.GitTreePreciseCoverage, error) {
-	configurations, _, err := r.autoindexSvc.InferIndexConfiguration(ctx, int(r.repo.ID), r.commit, true)
+	configurations, _, err := r.autoindexSvc.InferIndexConfiguration(ctx, int(r.repo.ID), r.commit, "", true)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) (*[]reso
 		}
 	}
 
-	_, hints, err := r.autoindexSvc.InferIndexConfiguration(ctx, int(r.repo.ID), r.commit, true)
+	_, hints, err := r.autoindexSvc.InferIndexConfiguration(ctx, int(r.repo.ID), r.commit, "", true)
 	if err != nil {
 		return nil, err
 	}

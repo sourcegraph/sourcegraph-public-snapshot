@@ -23,13 +23,7 @@ func (r *lsifUploadsWithRepositoryNamespaceResolver) Root() string {
 }
 
 func (r *lsifUploadsWithRepositoryNamespaceResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
-	for _, indexer := range types.AllIndexers {
-		if indexer.Name == r.uploadsSummary.Indexer {
-			return types.NewCodeIntelIndexerResolverFrom(indexer)
-		}
-	}
-
-	return types.NewCodeIntelIndexerResolver(r.uploadsSummary.Indexer)
+	return types.NewIndexerResolver(r.uploadsSummary.Indexer)
 }
 
 func (r *lsifUploadsWithRepositoryNamespaceResolver) Uploads() []resolverstubs.LSIFUploadResolver {
