@@ -11,10 +11,12 @@ import styles from './Tree.module.scss'
 
 export type TreeNode = INode
 
-interface Props<N extends TreeNode> extends Omit<ITreeViewProps, 'nodes' | 'onSelect' | 'onLoadData' | 'nodeRenderer'> {
+interface Props<N extends TreeNode>
+    extends Omit<ITreeViewProps, 'nodes' | 'onSelect' | 'onExpand' | 'onLoadData' | 'nodeRenderer'> {
     data: N[]
 
     onSelect?: (args: { element: N; isSelected: boolean }) => void
+    onExpand?: (args: { element: N; isExpanded: boolean }) => void
     onLoadData?: (args: { element: N }) => Promise<void>
 
     renderNode?: (args: {
@@ -32,7 +34,7 @@ interface Props<N extends TreeNode> extends Omit<ITreeViewProps, 'nodes' | 'onSe
     loadedIds?: Set<number>
 }
 export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
-    const { onSelect, onLoadData, renderNode, loadedIds, ...rest } = props
+    const { onSelect, onExpand, onLoadData, renderNode, loadedIds, ...rest } = props
 
     const _onSelect = useCallback(
         // TreeView expects nodes to be INode but ours are extending this type,
@@ -41,6 +43,14 @@ export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
             onSelect?.(args)
         },
         [onSelect]
+    )
+    const _onExpand = useCallback(
+        // TreeView expects nodes to be INode but ours are extending this type,
+        // hence the any cast.
+        (args: { element: any; isExpanded: boolean }): void => {
+            onExpand?.(args)
+        },
+        [onExpand]
     )
 
     const _onLoadData = useCallback(
@@ -126,6 +136,7 @@ export function Tree<N extends TreeNode>(props: Props<N>): JSX.Element {
             className={classNames(styles.fileTree, rest.className)}
             // TreeView expects nodes to be INode but ours are extending this type.
             onSelect={_onSelect}
+            onExpand={onExpand ? _onExpand : undefined}
             onLoadData={_onLoadData}
             nodeRenderer={_renderNode}
         />
