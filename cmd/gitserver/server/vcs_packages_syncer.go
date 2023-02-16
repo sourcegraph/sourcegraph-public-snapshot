@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -30,10 +31,11 @@ type vcsPackagesSyncer struct {
 	// placeholder is used to set GIT_AUTHOR_NAME for git commands that don't create
 	// commits or tags. The name of this dependency should never be publicly visible,
 	// so it can have any random value.
-	placeholder reposource.VersionedPackage
-	configDeps  []string
-	source      packagesSource
-	svc         dependenciesService
+	placeholder          reposource.VersionedPackage
+	configDeps           []string
+	allowList, blockList []repos.PackageMatcher
+	source               packagesSource
+	svc                  dependenciesService
 }
 
 var _ VCSSyncer = &vcsPackagesSyncer{}
@@ -323,7 +325,7 @@ func (s *vcsPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 	return nil
 }
 
-func (s *vcsPackagesSyncer) versions(ctx context.Context, packageName reposource.PackageName) ([]string, error) {
+func (s *vcsPackagesSyncer) versions(ctx context.Context, packageName reposource.PackageName) (versions []string, _ error) {
 	var combinedVersions []string
 	for _, d := range s.configDeps {
 		dep, err := s.source.ParseVersionedPackageFromConfiguration(d)
@@ -349,6 +351,16 @@ func (s *vcsPackagesSyncer) versions(ctx context.Context, packageName reposource
 	if len(listedPackages) > 1 {
 		return nil, errors.Newf("unexpectedly got more than 1 dependency repo for (scheme=%q,name=%q)", s.scheme, packageName)
 	}
+
+	defer func() {
+		filteredVersions := versions[:0]
+		for _, version := range versions {
+			if repos.IsVersionedPackageAllowed(packageName, version, s.allowList, s.blockList) {
+				filteredVersions = append(filteredVersions, version)
+			}
+		}
+		versions = filteredVersions
+	}()
 
 	if len(listedPackages) == 0 {
 		return combinedVersions, nil

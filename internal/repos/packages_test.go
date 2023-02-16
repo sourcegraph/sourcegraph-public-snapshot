@@ -33,7 +33,6 @@ func TestPackagesSource_GetRepo(t *testing.T) {
 }
 
 var _ packagesSource = &dummyPackagesSource{}
-var _ packagesDownloadSource = &dummyPackagesSource{}
 
 // dummyPackagesSource is a tiny shim around Go-specific methods to track when they're called.
 type dummyPackagesSource struct {
