@@ -27,7 +27,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
-	"google.golang.org/grpc"
+	// "google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 
 	sglog "github.com/sourcegraph/log"
@@ -42,8 +42,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
+	// "github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	// "github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -586,39 +586,39 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 	}
 
 	if internalgrpc.IsGRPCEnabled(ctx) {
-		req := &proto.ExecRequest{
-			Repo:           string(repoName),
-			EnsureRevision: c.EnsureRevision(),
-			Args:           c.args[1:],
-			Stdin:          c.stdin,
-			NoTimeout:      c.noTimeout,
-		}
-		addr, err := c.execer.AddrForRepo(ctx, repoName)
-		if err != nil {
-			return nil, err
-		}
+		panic("GOTCHA")
+		// req := &proto.ExecRequest{
+		// 	Repo:           string(repoName),
+		// 	EnsureRevision: c.EnsureRevision(),
+		// 	Args:           c.args[1:],
+		// 	Stdin:          c.stdin,
+		// 	NoTimeout:      c.noTimeout,
+		// }
+		// addr, err := c.execer.AddrForRepo(ctx, repoName)
+		// if err != nil {
+		// 	return nil, err
+		// }
 
-		conn, err := grpc.DialContext(ctx, addr, defaults.DialOptions()...)
-		if err != nil {
-			return nil, err
-		}
+		// conn, err := grpc.DialContext(ctx, addr, defaults.DialOptions()...)
+		// if err != nil {
+		// 	return nil, err
+		// }
 
-		client := proto.NewGitserverServiceClient(conn)
-		stream, err := client.Exec(ctx, req)
-		if err != nil {
-			conn.Close()
-			return nil, err
-		}
-		r := streamio.NewReader(func() ([]byte, error) {
-			msg, err := stream.Recv()
-			if err != nil {
+		// client := proto.NewGitserverServiceClient(conn)
+		// stream, err := client.Exec(ctx, req)
+		// if err != nil {
+		//  conn.Close()
+		// 	return nil, err
+		// }
+		// r := streamio.NewReader(func() ([]byte, error) {
+		// 	msg, err := stream.Recv()
+		// 	if err != nil {
+		// 		return nil, err
+		// 	}
+		// 	return msg.GetData(), nil
+		// })
 
-				return nil, err
-			}
-			return msg.GetData(), nil
-		})
-
-		return &readCloseWrapper{r: r, closeFn: conn.Close}, err
+		// return &readCloseWrapper{r: r, closeFn: conn.Close}, err
 
 	} else {
 		req := &protocol.ExecRequest{
