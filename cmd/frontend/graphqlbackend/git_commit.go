@@ -278,8 +278,7 @@ func (r *GitCommitResolver) path(ctx context.Context, path string, validate func
 		commit: r,
 		stat:   stat,
 	}
-	g := NewGitTreeEntryResolver(r.db, r.gitserverClient, opts)
-	return g, nil
+	return NewGitTreeEntryResolver(r.db, r.gitserverClient, opts), nil
 }
 
 func (r *GitCommitResolver) FileNames(ctx context.Context) ([]string, error) {
