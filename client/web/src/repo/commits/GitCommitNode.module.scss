@@ -187,6 +187,10 @@
     > td {
         padding: 0 0.25rem;
     }
+
+    &-open {
+        border-bottom: 0;
+    }
 }
 
 .col-byline {

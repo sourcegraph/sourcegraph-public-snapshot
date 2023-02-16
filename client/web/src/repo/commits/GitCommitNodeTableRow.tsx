@@ -79,8 +79,9 @@ export const GitCommitNodeTableRow: React.FC<
     return (
         <>
             <tr
-                className={classNames(styles.tableRow, 'px-1', className)}
-                style={commitMessageBody !== undefined ? { borderBottom: 0 } : {}}
+                className={classNames(styles.tableRow, 'px-1', className, {
+                    [styles.tableRowOpen]: commitMessageBody !== undefined,
+                })}
             >
                 <GitCommitNodeByline
                     wrapperElement="td"
