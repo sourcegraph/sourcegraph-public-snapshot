@@ -43,6 +43,7 @@ func Test_zoektSearch(t *testing.T) {
 	mockStructuralSearch = func(ctx context.Context, inputType comby.Input, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName, sender matchSender) error {
 		return errors.New("oops")
 	}
+	t.Cleanup(func() { mockStructuralSearch = nil })
 
 	// Ensure that this returns an error from structuralSearch, and does not block
 	// indefinitely because the reader returns early.
