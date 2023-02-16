@@ -9,7 +9,9 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -64,6 +66,7 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 	loader.withOperation("groupResultsExpandedViewOpen", groupResultsExpandedViewOpen)
 	loader.withOperation("groupResultsExpandedViewCollapse", groupResultsExpandedViewCollapse)
 	loader.withOperation("getBackfillTimePing", getBackfillTimePing)
+	loader.withOperation("getDataExportClicks", getDataExportClickCount)
 
 	loader.withOperation("getGroupResultsSearchesPings", getGroupResultsSearchesPings(
 		[]types.PingName{
@@ -556,6 +559,16 @@ func getBackfillTimePing(ctx context.Context, db database.DB, stats *types.CodeI
 	return nil
 }
 
+func getDataExportClickCount(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
+	count, _, err := basestore.ScanFirstInt(db.QueryContext(ctx, getDataExportClickCountSql, now))
+	if err != nil {
+		return err
+	}
+	exportClicks := int32(count)
+	stats.WeeklyExportCodeInsightDataClicks = &exportClicks
+	return nil
+}
+
 // WithAll adds multiple pings by name to this builder
 func (b *PingQueryBuilder) WithAll(pings []types.PingName) *PingQueryBuilder {
 	for _, p := range pings {
@@ -669,6 +682,11 @@ const getGroupResultsSql = `
 SELECT COUNT(*), argument::json->>'aggregationMode' as aggregationMode, argument::json->>'uiMode' as uiMode, argument::json->>'index' as bar_index FROM event_logs
 WHERE name = $1::TEXT AND timestamp > DATE_TRUNC('week', $2::TIMESTAMP)
 GROUP BY argument;
+`
+
+const getDataExportClickCountSql = `
+SELECT COUNT(*) FROM event_logs
+WHERE name = 'InsightsDataExportClick' AND timestamp > DATE_TRUNC('week', $1::TIMESTAMP);
 `
 
 const InsightsTotalCountPingName = `INSIGHT_TOTAL_COUNTS`
