@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"strings"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -64,43 +65,40 @@ func (r *PersonResolver) Email() string {
 }
 
 func (r *PersonResolver) DisplayName(ctx context.Context) (string, error) {
-	return "Foo", nil
-	// user, err := r.resolveUser(ctx)
-	// if err != nil {
-	// 	return "", err
-	// }
-	// if user != nil && user.DisplayName != "" {
-	// 	return user.DisplayName, nil
-	// }
+	user, err := r.resolveUser(ctx)
+	if err != nil {
+		return "", err
+	}
+	if user != nil && user.DisplayName != "" {
+		return user.DisplayName, nil
+	}
 
-	// if name := strings.TrimSpace(r.name); name != "" {
-	// 	return name, nil
-	// }
-	// if r.email != "" {
-	// 	return r.email, nil
-	// }
-	// return "unknown", nil
+	if name := strings.TrimSpace(r.name); name != "" {
+		return name, nil
+	}
+	if r.email != "" {
+		return r.email, nil
+	}
+	return "unknown", nil
 }
 
 func (r *PersonResolver) AvatarURL(ctx context.Context) (*string, error) {
+	user, err := r.resolveUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if user != nil && user.AvatarURL != "" {
+		return &user.AvatarURL, nil
+	}
 	return nil, nil
-	// user, err := r.resolveUser(ctx)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// if user != nil && user.AvatarURL != "" {
-	// 	return &user.AvatarURL, nil
-	// }
-	// return nil, nil
 }
 
 func (r *PersonResolver) User(ctx context.Context) (*UserResolver, error) {
-	return nil, nil
-	// user, err := r.resolveUser(ctx)
-	// if user == nil || err != nil {
-	// 	return nil, err
-	// }
-	// return NewUserResolver(r.db, user), nil
+	user, err := r.resolveUser(ctx)
+	if user == nil || err != nil {
+		return nil, err
+	}
+	return NewUserResolver(r.db, user), nil
 }
 
 func (r *PersonResolver) OwnerField() string {

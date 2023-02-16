@@ -33,6 +33,7 @@ export const FileOwnershipPanel: React.FunctionComponent<
 
     if (error) {
         logger.log(error)
+        console.log(error)
         return (
             <div className={styles.content}>
                 <Alert variant="danger">Error getting ownership data.</Alert>
