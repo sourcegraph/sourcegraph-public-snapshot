@@ -8,6 +8,62 @@ Examples:
 - [Insights query runner worker](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b946a20362ee7dfedb3b1fbc7f8bb002135d7283/-/blob/enterprise/internal/insights/background/queryrunner/worker.go?subtree=true#L29)
 - [Batch Changes background worker that reconciles changesets](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b946a20362ee7dfedb3b1fbc7f8bb002135d7283/-/blob/enterprise/internal/batches/background/workers.go?subtree=true#L26)
 
+## Generic worker
+
+Consider using a _generic worker_ if the following apply to the task at hand:
+
+*   Fire a background task with specific struct-encoded parameters.
+*   Have the task be retried in face of errors.
+*   Be able to query the state of a previously scheduled task.
+
+In order to implement a generic worker, it is enough to implement a handler:
+
+```go
+type GenericHandler func(context.Context, log.Logger, []byte) error
+
+type exampleParameters struct {
+  One string
+  Two string
+}
+
+func exampleHandler(ctx context.Context, logger log.Logger, data []byte) error {
+  var params exampleParameters
+  if err := json.Unmarshal(data, &params); err != nil {
+    return err
+  }
+  ...
+}
+```
+
+`data` is serialized parameters for the task, that have been specified during scheduling execution.
+The handler can use any serialization mechanism to encode the parameters at schedule time, and decode them at handling time.
+
+Handler is then registered by assigning it to a `HandlerType` enum value:
+
+```go
+type HandlerType = string
+
+const (
+  Example HandlerType = "example"
+)
+
+var genericHandlers = map[HandlerType]GenericHandler{
+  Example: exampleHandler,
+}
+```
+
+In order to schedule a task, it is enough to run:
+
+```
+params := exampleParameters{One: "One", Two: "Two"}
+b, err := json.Marshal(params)
+if err != nil {
+  return err
+}
+id := Schedule(Example, b)
+// can persist id to allow for querying state of a generic worker.
+```
+
 ## Overview
 
 A **worker** is a generic process configured with a _store_ and a _handler_. In short, the store describes how to interact with where jobs are persisted; the handler (supplied by the user) describes how to process each job. Both of these components will be discussed in more detail below.
