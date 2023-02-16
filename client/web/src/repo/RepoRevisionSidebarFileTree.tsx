@@ -146,7 +146,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
                     alwaysLoadAncestors
                 )
             } else {
-                newTreeData = appendTreeData(treeData!, entries, rootTreeUrl, alwaysLoadAncestors)
+                newTreeData = appendTreeData(treeData, entries, rootTreeUrl, alwaysLoadAncestors)
             }
 
             if (newTreeData) {
@@ -280,6 +280,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
                     ancestors: true,
                 }).then(
                     () => selectAndExpandPathToNode(props.filePath),
+                    // eslint-disable-next-line no-console
                     error => console.error(error)
                 )
             }
@@ -305,7 +306,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
                     return expandedIds.filter(_id => _id !== id)
                 }
 
-                // There appears to be a race condition in the tree library of
+                // There appears to be a race condition in the tree library of
                 // some sort where the onExpand callback is called with
                 // isExpanded=false before the item was ever expanded. Since
                 // this makes no sense conceptually, we expand it instead.
