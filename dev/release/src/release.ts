@@ -1,53 +1,61 @@
-import { readFileSync, rmdirSync, writeFileSync } from 'fs'
+import {readFileSync, rmdirSync, writeFileSync} from 'fs'
 import * as path from 'path'
 
 import commandExists from 'command-exists'
-import { addMinutes } from 'date-fns'
+import {addMinutes} from 'date-fns'
 import execa from 'execa'
 
 import * as batchChanges from './batchChanges'
 import * as changelog from './changelog'
 import {
-    addRelease,
+    activateRelease,
+    addScheduledRelease,
+    InProgress,
     loadReleaseConfig,
-    newReleaseFromInput, ReleaseConfig,
-    releaseVersions, removeRelease,
+    newReleaseFromInput,
+    ReleaseConfig,
+    getActiveRelease,
+    removeScheduledRelease,
     saveReleaseConfig
 } from './config'
 import {
-    getAuthenticatedGitHubClient,
-    listIssues,
-    getTrackingIssue,
+    cloneRepo,
+    closeTrackingIssue,
+    commentOnIssue,
     createChangesets,
     CreatedChangeset,
+    createLatestRelease,
     createTag,
     ensureTrackingIssues,
-    closeTrackingIssue,
-    releaseName,
-    commentOnIssue,
-    queryIssues,
+    getAuthenticatedGitHubClient,
+    getTrackingIssue,
     IssueLabel,
-    createLatestRelease,
-    cloneRepo,
-    getCandidateTags,
+    listIssues,
     localSourcegraphRepo,
+    queryIssues,
+    releaseName,
 } from './github'
-import { ensureEvent, getClient, EventOptions, calendarTime } from './google-calendar'
-import { postMessage, slackURL } from './slack'
+import {calendarTime, ensureEvent, EventOptions, getClient} from './google-calendar'
+import {postMessage, slackURL} from './slack'
 import {
     cacheFolder,
-    formatDate,
-    timezoneLink,
-    ensureDocker,
     changelogURL,
+    ensureDocker,
     ensureReleaseBranchUpToDate,
     ensureSrcCliEndpoint,
     ensureSrcCliUpToDate,
-    getLatestTag,
+    formatDate,
     getAllUpgradeGuides,
+    getLatestTag,
+    retryInput,
+    timezoneLink,
     updateUpgradeGuides,
     verifyWithInput,
 } from './util'
+import semver from "semver/preload";
+import {SemVer} from "semver";
+import chalk from "chalk";
+import {getCandidateTags, getPreviousVersion} from "./git";
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
@@ -71,6 +79,7 @@ export type StepID =
     | 'release:close'
     | 'release:prepare'
     | 'release:remove'
+    | 'release:activate-release'
     // util
     | 'util:clear-cache'
     // testing
@@ -139,8 +148,8 @@ const steps: Step[] = [
         id: 'tracking:timeline',
         description: 'Generate a set of Google Calendar events for a MAJOR.MINOR release',
         run: async config => {
-            const { upcoming: release } = await releaseVersions(config)
-            const name = releaseName(release)
+            const upcoming = await getActiveRelease(config)
+            const name = releaseName(new SemVer(upcoming.version))
             const events: EventOptions[] = [
                 {
                     title: `Security Team to Review Release Container Image Scans ${name}`,
@@ -148,7 +157,7 @@ const steps: Step[] = [
                     anyoneCanAddSelf: true,
                     attendees: [config.metadata.teamEmail],
                     transparency: 'transparent',
-                    ...calendarTime(config.oneWorkingWeekBeforeRelease),
+                    ...calendarTime(upcoming.securityApprovalDate),
                 },
                 {
                     title: `Cut Sourcegraph ${name}`,
@@ -156,7 +165,7 @@ const steps: Step[] = [
                     anyoneCanAddSelf: true,
                     attendees: [config.metadata.teamEmail],
                     transparency: 'transparent',
-                    ...calendarTime(config.threeWorkingDaysBeforeRelease),
+                    ...calendarTime(upcoming.codeFreezeDate),
                 },
                 {
                     title: `Release Sourcegraph ${name}`,
@@ -164,7 +173,7 @@ const steps: Step[] = [
                     anyoneCanAddSelf: true,
                     attendees: [config.metadata.teamEmail],
                     transparency: 'transparent',
-                    ...calendarTime(config.releaseDate),
+                    ...calendarTime(upcoming.releaseDate),
                 },
             ]
 
@@ -183,51 +192,43 @@ const steps: Step[] = [
         id: 'tracking:issues',
         description: 'Generate GitHub tracking issue for the configured release',
         run: async (config: ReleaseConfig) => {
-            const {
-                releaseDate,
-                captainGitHubUsername,
-                oneWorkingWeekBeforeRelease,
-                threeWorkingDaysBeforeRelease,
-                oneWorkingDayAfterRelease,
-                captainSlackUsername,
-                slackAnnounceChannel,
-                dryRun,
-            } = config
-            const { upcoming: release } = await releaseVersions(config)
+            const upcoming = await getActiveRelease(config)
             const date = new Date(releaseDate)
+
+            const next = new SemVer(upcoming.version)
 
             // Create issue
             const trackingIssues = await ensureTrackingIssues({
-                version: release,
-                assignees: [captainGitHubUsername],
+                version: next,
+                assignees: [upcoming.captainGitHubUsername],
                 releaseDate: date,
                 oneWorkingWeekBeforeRelease: new Date(oneWorkingWeekBeforeRelease),
                 threeWorkingDaysBeforeRelease: new Date(threeWorkingDaysBeforeRelease),
                 oneWorkingDayAfterRelease: new Date(oneWorkingDayAfterRelease),
-                dryRun: dryRun.trackingIssues || false,
+                dryRun: config.dryRun.trackingIssues || false,
             })
             console.log('Rendered tracking issues', trackingIssues)
 
             // If at least one issue was created, post to Slack
             if (trackingIssues.find(({ created }) => created)) {
-                const name = releaseName(release)
+                const name = releaseName(next)
                 const releaseDateString = slackURL(formatDate(date), timezoneLink(date, `${name} release`))
                 let annoncement = `:mega: *${name} release*
 
-:captain: Release captain: @${captainSlackUsername}
+:captain: Release captain: @${upcoming.captainSlackUsername}
 :spiral_calendar_pad: Scheduled for: ${releaseDateString}
 :pencil: Tracking issues:
 ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n')}`
-                if (release.patch !== 0) {
+                if (next.patch !== 0) {
                     const patchRequestTemplate = `https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=team%2Fdistribution&template=request_patch_release.md&title=${release.version}%3A+`
                     annoncement += `\n\nIf you have changes that should go into this patch release, ${slackURL(
                         'please *file a patch request issue*',
                         patchRequestTemplate
                     )}, or it will not be included.`
                 }
-                if (!dryRun.slack) {
-                    await postMessage(annoncement, slackAnnounceChannel)
-                    console.log(`Posted to Slack channel ${slackAnnounceChannel}`)
+                if (!config.dryRun.slack) {
+                    await postMessage(annoncement, config.metadata.slackAnnounceChannel)
+                    console.log(`Posted to Slack channel ${config.metadata.slackAnnounceChannel}`)
                 }
             } else {
                 console.log('No tracking issues were created, skipping Slack announcement')
@@ -239,8 +240,9 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         description: 'Generate pull requests to perform a changelog cut for branch cut',
         argNames: ['changelogFile'],
         run: async (config, changelogFile = 'CHANGELOG.md') => {
-            const { upcoming: release } = await releaseVersions(config)
-            const prMessage = `changelog: cut sourcegraph@${release.version}`
+            const upcoming = await getActiveRelease(config)
+            const next = new SemVer(upcoming)
+            const prMessage = `changelog: cut sourcegraph@${upcoming.version}`
             const pullRequest = await createChangesets({
                 requiredCommands: [],
                 changes: [
@@ -248,17 +250,17 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                         owner: 'sourcegraph',
                         repo: 'sourcegraph',
                         base: 'main',
-                        head: `changelog-${release.version}`,
+                        head: `changelog-${upcoming.version}`,
                         title: prMessage,
                         commitMessage: prMessage + '\n\n ## Test plan\n\nn/a',
                         edits: [
                             (directory: string) => {
-                                console.log(`Updating '${changelogFile} for ${release.format()}'`)
+                                console.log(`Updating '${changelogFile} for ${next.format()}'`)
                                 const changelogPath = path.join(directory, changelogFile)
                                 let changelogContents = readFileSync(changelogPath).toString()
 
                                 // Convert 'unreleased' to a release
-                                const releaseHeader = `## ${release.format()}`
+                                const releaseHeader = `## ${next.format()}`
                                 const unreleasedHeader = '## Unreleased'
                                 changelogContents = changelogContents.replace(unreleasedHeader, releaseHeader)
 
@@ -318,7 +320,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         id: 'release:branch-cut',
         description: 'Create release branch',
         run: async config => {
-            const { upcoming: release } = await releaseVersions(config)
+            const upcoming = await getActiveRelease(config)
             const branch = `${release.major}.${release.minor}`
             let message: string
             // notify cs team on patch release cut
@@ -343,7 +345,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         description: 'Post a message in Slack summarizing the progress of a release',
         run: async config => {
             const githubClient = await getAuthenticatedGitHubClient()
-            const { upcoming: release } = await releaseVersions(config)
+            const upcoming = await getActiveRelease(config)
 
             const trackingIssue = await getTrackingIssue(githubClient, release)
             if (!trackingIssue) {
@@ -378,7 +380,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         id: 'release:create-candidate',
         description: 'Generate the Nth release candidate. Set <candidate> to "final" to generate a final release',
         run: async config => {
-            const { upcoming: release } = await releaseVersions(config)
+            const upcoming = await getActiveRelease(config)
             const branch = `${release.major}.${release.minor}`
             ensureReleaseBranchUpToDate(branch)
 
@@ -423,7 +425,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             'Promote a release candidate to release build. Specify the full candidate tag to promote the tagged commit to release.',
         argNames: ['candidate'],
         run: async (config, candidate) => {
-            const { upcoming: release } = await releaseVersions(config)
+            const upcoming = await getActiveRelease(config)
             const releaseBranch = `${release.major}.${release.minor}`
             ensureReleaseBranchUpToDate(releaseBranch)
 
@@ -481,7 +483,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         argNames: ['version'],
         run: async (config, version) => {
             if (!version) {
-                const { upcoming: release } = await releaseVersions(config)
+                const upcoming = await getActiveRelease(config)
                 version = release.version
             }
             const tags = getCandidateTags(localSourcegraphRepo, version)
@@ -493,7 +495,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         id: 'release:stage',
         description: 'Open pull requests and a batch change staging a release',
         run: async config => {
-            const { upcoming: release, previous } = await releaseVersions(config)
+            const { upcoming: release, previous } = await getActiveRelease(config)
             // ensure docker is running for 'batch changes'
             try {
                 await ensureDocker()
@@ -739,7 +741,7 @@ Batch change: ${batchChangeURL}`,
         argNames: ['changeRepo', 'changeID'],
         // Example: pnpm run release release:add-to-batch-change sourcegraph/about 1797
         run: async (config, changeRepo, changeID) => {
-            const { upcoming: release } = await releaseVersions(config)
+            const upcoming = await getActiveRelease(config)
             if (!changeRepo || !changeID) {
                 throw new Error('Missing parameters (required: version, repo, change ID)')
             }
@@ -764,7 +766,7 @@ Batch change: ${batchChangeURL}`,
         id: 'release:finalize',
         description: 'Run final tasks for sourcegraph/sourcegraph release pull requests',
         run: async config => {
-            const { upcoming: release } = await releaseVersions(config)
+            const upcoming = await getActiveRelease(config)
             let failed = false
 
             const owner = 'sourcegraph'
@@ -811,7 +813,7 @@ Batch change: ${batchChangeURL}`,
         description: 'Announce a release as live',
         run: async config => {
             const { slackAnnounceChannel, dryRun } = config
-            const { upcoming: release } = await releaseVersions(config)
+            const upcoming = await getActiveRelease(config)
             const githubClient = await getAuthenticatedGitHubClient()
 
             // Create final GitHub release
@@ -879,18 +881,18 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         id: 'release:close',
         description: 'Close tracking issues for current release',
         run: async config => {
-            const { previous: release } = await releaseVersions(config)
+            const { previous: release } = await getActiveRelease(config)
             // close tracking issue
             await closeTrackingIssue(release)
         },
     },
     {
         id: 'release:prepare',
-        description: 'Prepare a feature release',
+        description: 'Schedule a release',
         run: async config => {
             const rconfig = loadReleaseConfig()
             const rel = await newReleaseFromInput()
-            addRelease(rconfig, rel)
+            addScheduledRelease(rconfig, rel)
             saveReleaseConfig(rconfig)
         },
     },
@@ -901,8 +903,15 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         run: async (config, version) => {
             await verifyWithInput(`Confirm you want to remove release: ${version} from the release config?`)
             const rconfig = loadReleaseConfig()
-            removeRelease(rconfig, version)
+            removeScheduledRelease(rconfig, version)
             saveReleaseConfig(rconfig)
+        },
+    },
+    {
+        id: 'release:activate-release',
+        description: 'Activate a feature release',
+        run: async config => {
+            await activateRelease(config)
         },
     },
     {

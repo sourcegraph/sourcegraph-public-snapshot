@@ -1,15 +1,17 @@
-import { mkdtemp as original_mkdtemp, readFileSync, existsSync } from 'fs'
+import {existsSync, mkdtemp as original_mkdtemp, readFileSync} from 'fs'
 import * as os from 'os'
 import * as path from 'path'
-import { promisify } from 'util'
+import {promisify} from 'util'
 
 import Octokit from '@octokit/rest'
 import commandExists from 'command-exists'
 import execa from 'execa'
 import fetch from 'node-fetch'
 import * as semver from 'semver'
+import {SemVer} from 'semver'
 
-import { readLine, formatDate, timezoneLink, cacheFolder, changelogURL, getContainerRegistryCredential } from './util'
+import {cacheFolder, changelogURL, formatDate, getContainerRegistryCredential, readLine, timezoneLink} from './util'
+
 const mkdtemp = promisify(original_mkdtemp)
 let githubPAT: string
 
@@ -734,13 +736,4 @@ export async function closeTrackingIssue(version: semver.SemVer): Promise<void> 
         console.log(`Closing #${previousIssue.number} '${previousIssue.title} with ${comment}`)
         await closeIssue(octokit, previousIssue)
     }
-}
-
-export function getTags(workdir: string, prefix: string): string[] {
-    execa.sync('git', ['fetch', '--tags'], { cwd: workdir })
-    return execa.sync('git', ['--no-pager', 'tag', '-l', `${prefix}`], { cwd: workdir }).stdout.split('\t')
-}
-
-export function getCandidateTags(workdir: string, version: string): string[] {
-    return getTags(workdir, `v${version}-rc*`)
 }

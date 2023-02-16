@@ -25,6 +25,9 @@
       "path": "../common",
     },
     {
+      "path": "../extension-api",
+    },
+    {
       "path": "../extension-api-types",
     },
     {

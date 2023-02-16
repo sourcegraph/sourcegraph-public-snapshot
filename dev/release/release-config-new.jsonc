@@ -3,7 +3,26 @@
     "teamEmail": "team@sourcegraph.com",
     "slackAnnounceChannel": "announce-engineering"
   },
-  "releases": {},
+  "in_progress": {
+    "captainGitHubUsername": "coury-clark",
+    "captainSlackUsername": "coury",
+    "releases": [
+      {
+        "version": "4.5.0",
+        "previous": "4.4.2"
+      }
+    ]
+  },
+  "scheduledReleases": {
+    "4.5.0": {
+      "codeFreezeDate": "2023-02-08T10:15:26.850-08:00",
+      "securityApprovalDate": "2023-02-08T10:15:26.850-08:00",
+      "releaseDate": "2023-02-15T10:15:26.850-08:00",
+      "current": "4.5.0",
+      "captainGitHubUsername": "coury-clark",
+      "captainSlackUsername": "coury"
+    }
+  },
   "dryRun": {
     "tags": false,
     "changesets": false,

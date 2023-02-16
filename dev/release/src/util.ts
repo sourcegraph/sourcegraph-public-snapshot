@@ -275,3 +275,17 @@ export const updateUpgradeGuides = (previous: string, next: string): EditFunc =>
         }
     }
 }
+
+export async function retryInput(prompt: string, delegate: (val: string) => boolean, errorMessage?: string): Promise<string> {
+    while (true) {
+        const val = await readLine(prompt).then(value => value)
+        if (delegate(val)) {
+            return val
+        }
+        if (errorMessage) {
+            console.log(chalk.red(errorMessage))
+        } else {
+            console.log(chalk.red('invalid input'))
+        }
+    }
+}
