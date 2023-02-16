@@ -125,9 +125,7 @@ func (s *Serve) handler() http.Handler {
 		fs.ServeHTTP(w, r)
 	})))
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		mux.ServeHTTP(w, r)
-	})
+	return http.HandlerFunc(mux.ServeHTTP)
 }
 
 // Checks if git thinks the given path is a valid .git folder for a repository
