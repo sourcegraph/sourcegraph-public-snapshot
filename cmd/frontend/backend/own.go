@@ -34,6 +34,7 @@ func NewOwnService(g gitserver.Client, db database.DB) OwnService {
 	return &ownService{
 		gitserverClient: g,
 		userStore:       db.Users(),
+		userEmailsStore: db.UserEmails(),
 		teamStore:       db.Teams(),
 		ownerCache:      make(map[ownerKey]codeowners.ResolvedOwner),
 	}
@@ -42,6 +43,7 @@ func NewOwnService(g gitserver.Client, db database.DB) OwnService {
 type ownService struct {
 	gitserverClient gitserver.Client
 	userStore       database.UserStore
+	userEmailsStore database.UserEmailsStore
 	teamStore       database.TeamStore
 
 	mu         sync.Mutex
@@ -120,21 +122,22 @@ func (s *ownService) ResolveOwnersWithType(ctx context.Context, protoOwners []*c
 }
 
 func (s *ownService) resolveOwner(ctx context.Context, handle, email string) (codeowners.ResolvedOwner, error) {
+	var resolvedOwner codeowners.ResolvedOwner
+	var err error
 	if handle != "" {
-		resolvedOwner, err := tryGetUserThenTeam(ctx, handle, s.userStore.GetByUsername, s.teamStore.GetTeamByName)
+		resolvedOwner, err = tryGetUserThenTeam(ctx, handle, s.userStore.GetByUsername, s.teamStore.GetTeamByName)
 		if err != nil {
-			return unknownOwnerOrError(handle, email, err)
+			return personOrError(handle, email, err)
 		}
-		return resolvedOwner, nil
 	} else if email != "" {
 		// Teams cannot be identified by emails, so we do not pass in a team getter here.
-		resolvedOwner, err := tryGetUserThenTeam(ctx, email, s.userStore.GetByVerifiedEmail, nil)
+		resolvedOwner, err = tryGetUserThenTeam(ctx, email, s.userStore.GetByVerifiedEmail, nil)
 		if err != nil {
-			return unknownOwnerOrError(handle, email, err)
+			return personOrError(handle, email, err)
 		}
-		return resolvedOwner, nil
 	}
-	return nil, nil
+	resolvedOwner.SetOwnerData(handle, email)
+	return resolvedOwner, nil
 }
 
 type userGetterFunc func(context.Context, string) (*types.User, error)
@@ -149,17 +152,17 @@ func tryGetUserThenTeam(ctx context.Context, identifier string, userGetter userG
 				if err != nil {
 					return nil, err
 				}
-				return &codeowners.Team{Team: team, OwnerIdentifier: identifier}, nil
+				return &codeowners.Team{Team: team}, nil
 			}
 		}
 		return nil, err
 	}
-	return &codeowners.Person{User: user, OwnerIdentifier: identifier}, nil
+	return &codeowners.Person{User: user}, nil
 }
 
-func unknownOwnerOrError(handle, email string, err error) (*codeowners.UnknownOwner, error) {
+func personOrError(handle, email string, err error) (*codeowners.Person, error) {
 	if errcode.IsNotFound(err) {
-		return &codeowners.UnknownOwner{Handle: handle, Email: email}, nil
+		return &codeowners.Person{Handle: handle, Email: email}, nil
 	}
 	return nil, err
 }
