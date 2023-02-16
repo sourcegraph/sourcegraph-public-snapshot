@@ -800,7 +800,7 @@ importers:
       yaml: 2.2.1
       yauzl: 2.10.0
 
-  client/backstage-common:
+  client/backstage-backend:
     specifiers:
       '@backstage/backend-common': ^0.18.1
       '@backstage/catalog-model': ^1.1.5
