@@ -104,6 +104,7 @@ const RequestAccessForm: React.FunctionComponent<RequestAccessFormProps> = ({ on
                     Extra information
                 </Text>
                 <TextArea
+                    id="additionalInfo"
                     onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setAdditionalInfo(event.target.value)}
                     className="mb-4"
                     value={additionalInfo}
