@@ -287,6 +287,15 @@ func (r *upgradeReadinessResolver) SchemaDrift(ctx context.Context) (string, err
 	return "", nil
 }
 
+// isRequiredOutOfBandMigration returns true if a OOB migration is deprecated not
+// after the given version and not yet completed.
+func isRequiredOutOfBandMigration(version oobmigration.Version, m oobmigration.Migration) bool {
+	if m.Deprecated == nil {
+		return false
+	}
+	return oobmigration.CompareVersions(*m.Deprecated, version) != oobmigration.VersionOrderAfter && m.Progress < 1
+}
+
 func (r *upgradeReadinessResolver) RequiredOutOfBandMigrations(ctx context.Context) ([]*outOfBandMigrationResolver, error) {
 	observationCtx := observation.NewContext(r.logger)
 	runner, err := migratorshared.NewRunnerWithSchemas(observationCtx, r.logger, schemas.SchemaNames, schemas.Schemas)
@@ -303,11 +312,7 @@ func (r *upgradeReadinessResolver) RequiredOutOfBandMigrations(ctx context.Conte
 
 	var requiredMigrations []*outOfBandMigrationResolver
 	for _, m := range migrations {
-		if m.Deprecated == nil {
-			continue
-		}
-
-		if oobmigration.CompareVersions(*m.Deprecated, version) != oobmigration.VersionOrderAfter && m.Progress < 1 {
+		if isRequiredOutOfBandMigration(version, m) {
 			requiredMigrations = append(requiredMigrations, &outOfBandMigrationResolver{m})
 		}
 	}
