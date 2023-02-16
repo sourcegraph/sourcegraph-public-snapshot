@@ -95,7 +95,7 @@ func cloneRepo(
 		appendFetchArg("--filter=blob:none")
 	}
 
-	gitCommands := []command.CommandSpec{
+	gitCommands := []command.Spec{
 		{Key: "setup.git.init", Env: gitStdEnv, Command: []string{"git", "-C", repoPath, "init"}, Operation: operations.SetupGitInit},
 		{Key: "setup.git.add-remote", Env: gitStdEnv, Command: []string{"git", "-C", repoPath, "remote", "add", "origin", cloneURL.String()}, Operation: operations.SetupAddRemote},
 		// Disable gc, this can improve performance and should never run for executor clones.
@@ -104,13 +104,13 @@ func cloneRepo(
 	}
 
 	if len(job.SparseCheckout) > 0 {
-		gitCommands = append(gitCommands, command.CommandSpec{
+		gitCommands = append(gitCommands, command.Spec{
 			Key:       "setup.git.sparse-checkout-config",
 			Env:       gitStdEnv,
 			Command:   []string{"git", "-C", repoPath, "config", "--local", "core.sparseCheckout", "1"},
 			Operation: operations.SetupGitSparseCheckoutConfig,
 		})
-		gitCommands = append(gitCommands, command.CommandSpec{
+		gitCommands = append(gitCommands, command.Spec{
 			Key:       "setup.git.sparse-checkout-set",
 			Env:       gitStdEnv,
 			Command:   append([]string{"git", "-C", repoPath, "sparse-checkout", "set", "--no-cone", "--"}, job.SparseCheckout...),
@@ -141,7 +141,7 @@ func cloneRepo(
 		}
 	}
 
-	gitCommands = append(gitCommands, command.CommandSpec{
+	gitCommands = append(gitCommands, command.Spec{
 		Key:       "setup.git.checkout",
 		Env:       gitStdEnv,
 		Command:   checkoutCommand,
@@ -150,7 +150,7 @@ func cloneRepo(
 
 	// This is for LSIF, it relies on the origin being set to the upstream repo
 	// for indexing.
-	gitCommands = append(gitCommands, command.CommandSpec{
+	gitCommands = append(gitCommands, command.Spec{
 		Key: "setup.git.set-remote",
 		Env: gitStdEnv,
 		Command: []string{
