@@ -54,7 +54,7 @@ Separate multiple repositories with a comma. The form field will validate that y
 
 If you want to run an insight over all repositories, instead check the box to do so (available in Sourcegraph 3.31.1 and later). If you otherwise want to exclude specific repositories, you can do so after creating the insight by using filters (step 10). 
 
-From Sourcegraph 4.5 you are able to define the repositories you want your insight to run over using a Sourcegraph search query.
+From Sourcegraph 4.5 you are able to define the repositories you want your insight to run over using a Sourcegraph search query. [Read the reference to learn more](references/repository_scope.md).
 
 
 ### 5. Define a data series to track the incidence of `TODO`
