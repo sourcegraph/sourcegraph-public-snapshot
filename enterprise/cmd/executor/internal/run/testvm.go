@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -25,7 +26,7 @@ import (
 // more easily.
 // TODO: Add a command to attach to the VM without calling ignite, this way we can inline or replace ignite later
 // more easily.
-func RunTestVM(cliCtx *cli.Context, logger log.Logger, config *config.Config) error {
+func RunTestVM(runner util.CmdRunner, cliCtx *cli.Context, logger log.Logger, config *config.Config) error {
 	repoName := cliCtx.String("repo")
 	revision := cliCtx.String("revision")
 	nameOnly := cliCtx.Bool("name-only")
