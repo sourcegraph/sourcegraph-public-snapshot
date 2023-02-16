@@ -36,7 +36,7 @@ export const SmartSearchListItem: React.FunctionComponent<SmartSearchListItemPro
             <Text className="mb-0">
                 <span
                     className={classNames(previewStyle ? 'text-muted' : styles.listItemDescription)}
-                >{`${processDescription(proposedQuery.description || '')}`}</span>
+                >{processDescription(proposedQuery.description || '')}</span>
                 <Icon svgPath={mdiArrowRight} aria-hidden={true} className="mx-2 text-body" />
                 <span className={classNames(previewStyle ? 'p-1 bg-code' : styles.suggestion)}>
                     <SyntaxHighlightedSearchQuery
