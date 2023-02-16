@@ -8,13 +8,15 @@ import { Maybe } from '../graphql-operations'
 
 import styles from './UserAvatar.module.scss'
 
+export interface UserAvatarData {
+    avatarURL: Maybe<string>
+    displayName: Maybe<string>
+    username?: Maybe<string>
+}
+
 interface Props {
     size?: number
-    user: {
-        avatarURL: Maybe<string>
-        displayName: Maybe<string>
-        username?: Maybe<string>
-    }
+    user: UserAvatarData
     className?: string
     targetID?: string
     alt?: string
