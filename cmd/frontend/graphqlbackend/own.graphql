@@ -62,37 +62,7 @@ type OwnershipConnection {
 """
 An owner is any entity that can own other resources.
 """
-interface Owner {
-    """
-    A temporary field that will be removed once we have actual fields on the Owner
-    interface.
-    """
-    ownerField: String!
-}
-
-extend type Person implements Owner {
-    """
-    A temporary field that will be removed once we have actual fields on the Owner
-    interface.
-    """
-    ownerField: String!
-}
-
-extend type User implements Owner {
-    """
-    A temporary field that will be removed once we have actual fields on the Owner
-    interface.
-    """
-    ownerField: String!
-}
-
-extend type Team implements Owner {
-    """
-    A temporary field that will be removed once we have actual fields on the Owner
-    interface.
-    """
-    ownerField: String!
-}
+union Owner = Person | Team
 
 """
 Ownership is the collection of data points that make Sourcegraph suggest the contained
@@ -110,12 +80,10 @@ type Ownership {
 }
 
 """
-This can also be used in search using `file:has.owner(@eseliger reason:<REASON>)`,
-the default is `CODEOWNERS_FILE_ENTRY` for now.
+The only way we can recognize ownership at this point is through CODEOWNERS file entry.
 """
 enum OwnershipReasonType {
     CODEOWNERS_FILE_ENTRY
-    RECENT_CONTRIBUTOR
 }
 """
 Union of all possible types of ownership reasons. Use the individual subtypes to
