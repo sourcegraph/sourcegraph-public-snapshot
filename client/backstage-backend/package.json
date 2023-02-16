@@ -1,5 +1,5 @@
 {
-  "name": "@sourcegraph/backstage-common",
+  "name": "@sourcegraph/backstage-backend",
   "description": "Common functionalities for the Sourcegraph plugin",
   "version": "0.1.0",
   "main": "dist/index.js",
