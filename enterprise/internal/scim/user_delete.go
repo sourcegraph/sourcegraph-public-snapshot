@@ -27,6 +27,11 @@ func (h *UserResourceHandler) Delete(r *http.Request, id string) error {
 		return err
 	}
 
+	// If we found no user, we report “all clear” to match the spec
+	if user.Username == "" {
+		return nil
+	}
+
 	// Save username, verified emails, and external accounts to be used for revoking user permissions after deletion
 	revokeUserPermissionsArgsList, err := getRevokeUserPermissionArgs(r.Context(), user, h.db)
 	if err != nil {
@@ -48,7 +53,7 @@ func (h *UserResourceHandler) Delete(r *http.Request, id string) error {
 	return nil
 }
 
-// findUser finds the user with the given ID. If the user does not exist, it returns an error.
+// findUser finds the user with the given ID. If the user does not exist, it returns an empty user.
 func findUser(ctx context.Context, err error, db database.DB, id int, logger log.Logger) (types.UserForSCIM, error) {
 	users, err := db.Users().ListForSCIM(ctx, &database.UsersListOptions{
 		UserIDs: []int32{int32(id)},
