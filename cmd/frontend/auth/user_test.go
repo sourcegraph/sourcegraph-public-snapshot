@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
@@ -18,12 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-func init() {
-	spew.Config.DisablePointerAddresses = true
-	spew.Config.SortKeys = true
-	spew.Config.SpewKeys = true
-}
 
 // TestGetAndSaveUser ensures the correctness of the GetAndSaveUser function.
 //
