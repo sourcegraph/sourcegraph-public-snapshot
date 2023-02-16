@@ -56,7 +56,7 @@ func HandleSignUp(logger log.Logger, db database.DB) http.HandlerFunc {
 		if handleEnabledCheck(logger, w) {
 			return
 		}
-		if pc, _ := getProviderConfig(); !pc.AllowSignup {
+		if pc, _ := GetProviderConfig(); !pc.AllowSignup {
 			http.Error(w, "Signup is not enabled (builtin auth provider allowSignup site configuration option)", http.StatusNotFound)
 			return
 		}

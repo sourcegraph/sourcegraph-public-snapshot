@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
 
-// TODO: add tests
 // HandleRequestAccess handles submission of the request access form.
 func HandleRequestAccess(logger log.Logger, db database.DB) http.HandlerFunc {
 	logger = logger.Scoped("HandleRequestAccess", "request access request handler")
@@ -27,17 +26,24 @@ func HandleRequestAccess(logger log.Logger, db database.DB) http.HandlerFunc {
 		if handleEnabledCheck(logger, w) {
 			return
 		}
+		builtInAuthProvider, _ := userpasswd.GetProviderConfig();
+		if builtInAuthProvider != nil  && builtInAuthProvider.AllowSignup {
+			http.Error(w, "Use sign up instead.", http.StatusConflict)
+			return
+		}
 		handleRequestAccess(logger, db, w, r)
 	}
 }
 
 func handleEnabledCheck(logger log.Logger, w http.ResponseWriter) (handled bool) {
-	e := conf.Get().ExperimentalFeatures.AccessRequests
-	if e != nil && !e.Enabled {
+	experimentalFeatures := conf.Get().ExperimentalFeatures
+	if experimentalFeatures != nil && experimentalFeatures.AccessRequests != nil && !experimentalFeatures.AccessRequests.Enabled {
 		logger.Error("Request access is not enabled.")
 		http.Error(w, "Request access is not enabled.", http.StatusConflict)
 		return true
 	}
+
+	// test whether
 	return false
 }
 
