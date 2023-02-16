@@ -46,7 +46,6 @@ import {
 } from '../../graphql-operations'
 import { PersonLink } from '../../person/PersonLink'
 import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
-import { UserAvatar } from '../../user/UserAvatar'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { BATCH_COUNT } from '../RepositoriesPopover'

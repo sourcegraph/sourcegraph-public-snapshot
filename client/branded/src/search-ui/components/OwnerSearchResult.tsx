@@ -1,14 +1,15 @@
 import React, { useMemo } from 'react'
 
+import classNames from 'classnames'
+
 import { UserAvatar, UserAvatarData } from '@sourcegraph/shared/src/components/UserAvatar'
 import { OwnerMatch } from '@sourcegraph/shared/src/search/stream'
+import { Link } from '@sourcegraph/wildcard'
 
 import { ResultContainer } from './ResultContainer'
 
 import styles from './OwnerSearchResult.module.scss'
 import resultStyles from './SearchResult.module.scss'
-import classNames from 'classnames'
-import { Link } from '@sourcegraph/wildcard'
 
 export interface PersonSearchResultProps {
     result: OwnerMatch
@@ -38,7 +39,7 @@ export const OwnerSearchResult: React.FunctionComponent<PersonSearchResultProps>
     }, [result])
 
     const avatarUser = useMemo(() => {
-        const avatarUser: UserAvatarData = { username: displayName, avatarURL: null, displayName: displayName }
+        const avatarUser: UserAvatarData = { username: displayName, avatarURL: null, displayName }
         if (result.type === 'person') {
             if (result.username) {
                 avatarUser.username = result.username
