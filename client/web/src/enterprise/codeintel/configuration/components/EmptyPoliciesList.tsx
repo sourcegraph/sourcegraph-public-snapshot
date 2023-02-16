@@ -12,6 +12,6 @@ export const EmptyPoliciesList: React.FunctionComponent<unknown> = () => (
         <Link to="/help/code_navigation/how-to/configure_data_retention" target="_blank" rel="noreferrer noopener">
             configuring data retention policies
         </Link>
-        .
+        ....
     </Text>
 )
