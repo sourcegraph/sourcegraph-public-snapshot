@@ -23,7 +23,8 @@ interface URLStateOptions<State, SerializedState> {
     serializer: (state: State) => string | null
 }
 
-type SetStateResult<State> = [state: State, dispatch: (state: State) => void]
+type UpdatedSearchQuery = string
+type SetStateResult<State> = [state: State, dispatch: (state: State) => UpdatedSearchQuery]
 
 /**
  * React hook analog standard react useState hook but with synced value with URL
@@ -52,7 +53,10 @@ function useSyncedWithURLState<State, SerializedState>(
                 urlSearchParameters.set(urlKey, serializedValue)
             }
 
-            navigate({ search: `?${urlSearchParameters.toString()}` }, { replace: true })
+            const search = `?${urlSearchParameters.toString()}`
+            navigate({ search }, { replace: true })
+
+            return search
         },
         [navigate, serializer, urlKey, urlSearchParameters]
     )
