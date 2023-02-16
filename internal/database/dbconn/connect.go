@@ -4,6 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -21,17 +22,7 @@ import (
 // Note: github.com/jackc/pgx parses the environment as well. This function will also use the value
 // of PGDATASOURCE if supplied and dataSource is the empty string.
 func ConnectInternal(logger log.Logger, dsn, appName, dbName string) (_ *sql.DB, err error) {
-	var authProvider AuthProvider
-	if pgAuthProvider != "" {
-		if v, ok := authProviders[pgAuthProvider]; !ok {
-			return nil, errors.Errorf("unknown pg auth provider %q", pgAuthProvider)
-		} else {
-			logger.Debug("using pg auth provider", log.String("provider", pgAuthProvider))
-			authProvider = v
-		}
-	}
-
-	cfg, err := buildConfig(logger, dsn, appName, authProvider)
+	cfg, err := buildConfig(logger, dsn, appName)
 	if err != nil {
 		return nil, err
 	}

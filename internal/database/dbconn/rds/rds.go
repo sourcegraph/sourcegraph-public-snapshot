@@ -11,40 +11,49 @@ import (
 	"github.com/aws/aws-sdk-go/service/rds/rdsutils"
 	"github.com/jackc/pgx/v4"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Auth implements the dbconn.AuthProvider interface for getting an auth token for RDS IAM auth.
-// It will retrieve an auth token from EC2 metadata service during startup time, and use it to
-// create a connection to RDS.
-type Auth struct{}
+// Updater implements the dbconn.ConnectionUpdater interface
+// for getting an auth token for RDS IAM auth.
+// It will retrieve an auth token from EC2 metadata service and
+// update the connection config with the token as the password.
+type Updater struct{}
 
-func NewAuth() *Auth {
-	return &Auth{}
+func NewUpdater() *Updater {
+	return &Updater{}
 }
 
-func (a *Auth) IsRefresh(logger log.Logger, cfg *pgx.ConnConfig) bool {
+func (u *Updater) ShouldUpdate(cfg *pgx.ConnConfig) bool {
+	logger := log.Scoped("rds", "shouldUpdate")
 	token, err := parseRDSAuthToken(cfg.Password)
 	if err != nil {
 		logger.Warn("Error parsing RDS auth token, refreshing", log.Error(err))
-		return false
+		return true
 	}
 
 	return token.isExpired(time.Now().UTC())
 }
 
-func (a *Auth) Apply(logger log.Logger, cfg *pgx.ConnConfig) error {
+func (u *Updater) Update(cfg *pgx.ConnConfig) (*pgx.ConnConfig, error) {
+	logger := log.Scoped("rds", "update")
 	if cfg.Password != "" {
-		logger.Warn("'PG_AUTH_PROVIDER' is 'EC2_ROLE_CREDENTIALS', but 'PGPASSWORD' is also set. Ignoring 'PGPASSWORD'.")
+		// only output the warning once, or it will emit a new entry on every connection
+		syncx.OnceFunc(func() {
+			logger.Warn("'PG_CONNECTION_UPDATER' is 'EC2_ROLE_CREDENTIALS', but 'PGPASSWORD' is also set. Ignoring 'PGPASSWORD'.")
+		})
 	}
 
-	var err error
-	cfg.Password, err = authToken(cfg.Host, cfg.Port, cfg.User)
+	logger.Debug("Updating RDS IAM auth token")
+	token, err := authToken(cfg.Host, cfg.Port, cfg.User)
 	if err != nil {
-		return errors.Wrap(err, "Error getting auth token for RDS IAM auth")
+		return nil, errors.Wrap(err, "Error getting auth token for RDS IAM auth")
 	}
+	cfg.Password = token
+	logger.Debug("Updated RDS IAM auth token")
 
-	return nil
+	return cfg, nil
 }
 
 func authToken(hostname string, port uint16, user string) (string, error) {

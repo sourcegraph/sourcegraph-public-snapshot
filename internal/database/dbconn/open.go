@@ -138,6 +138,28 @@ func (d *extendedDriver) Open(str string) (driver.Conn, error) {
 	if _, ok := d.Driver.(*sqlhooks.Driver); !ok {
 		return nil, errors.New("sql driver is not a sqlhooks.Driver")
 	}
+
+	cfg := manager.getConfig(str)
+	if cfg == nil {
+		// this should never happen if the connection
+		// is registered properly with the manager
+		return nil, errors.Newf("no config found %q", str)
+	}
+
+	if pgConnectionUpdater != "" {
+		u, ok := connectionUpdaters[pgConnectionUpdater]
+		if !ok {
+			return nil, errors.Errorf("unknown connection updater %q", pgConnectionUpdater)
+		}
+		if u.ShouldUpdate(cfg) {
+			config, err := u.Update(cfg.Copy())
+			if err != nil {
+				return nil, errors.Wrapf(err, "update connection %q", str)
+			}
+			str = manager.registerConfig(config)
+		}
+	}
+
 	c, err := d.Driver.Open(str)
 	if err != nil {
 		return nil, err
@@ -218,10 +240,11 @@ var registerOnce sync.Once
 
 func open(cfg *pgx.ConnConfig) (*sql.DB, error) {
 	registerOnce.Do(registerPostgresProxy)
+	name := manager.registerConfig(cfg)
 
 	db, err := otelsql.Open(
 		"postgres-proxy",
-		stdlib.RegisterConnConfig(cfg),
+		name,
 		otelsql.WithTracerProvider(otel.GetTracerProvider()),
 		otelsql.WithSQLCommenter(true),
 		otelsql.WithSpanOptions(otelsql.SpanOptions{
