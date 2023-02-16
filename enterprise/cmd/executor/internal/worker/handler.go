@@ -28,6 +28,7 @@ type handler struct {
 	cloneOptions  workspace.CloneOptions
 	operations    *command.Operations
 	runnerFactory func(dir string, logger command.Logger, options command.Options, operations *command.Operations) command.Runner
+	jobRuntime    runtime.Runtime
 }
 
 var (
@@ -94,20 +95,15 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 		return h.handle(ctx, logger, commandLogger, job)
 	}
 
-	jobRuntime, err := runtime.GetRuntime()
-	if err != nil {
+	if h.jobRuntime != nil {
 		// For backwards compatibility. If no runtime mode is provided, then use the old handler.
-		// TODO: remove when firecracker support has been added.
-		if errors.Is(err, runtime.ErrNoRuntime) {
-			logger.Debug("Runtime not configured. Falling back to legacy handler")
-			return h.handle(ctx, logger, commandLogger, job)
-		}
-		return err
+		logger.Debug("Runtime not configured. Falling back to legacy handler")
+		return h.handle(ctx, logger, commandLogger, job)
 	}
 
 	// Setup all the file, mounts, etc...
 	logger.Info("Creating workspace")
-	ws, err := jobRuntime.PrepareWorkspace(ctx, commandLogger, job)
+	ws, err := h.jobRuntime.PrepareWorkspace(ctx, commandLogger, job)
 	if err != nil {
 		return err
 	}
@@ -122,7 +118,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 
 	// Create the runner that will actually run the commands.
 	logger.Info("Setting up runner")
-	runner, err := jobRuntime.NewRunner(ctx, commandLogger, name, ws.Path(), job)
+	runner, err := h.jobRuntime.NewRunner(ctx, commandLogger, name, ws.Path(), job)
 	if err != nil {
 		return err
 	}
@@ -137,7 +133,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 
 	// Get the commands we will execute.
 	logger.Info("Creating commands")
-	commands, err := jobRuntime.GetCommands(ws, job.DockerSteps)
+	commands, err := h.jobRuntime.GetCommands(ws, job.DockerSteps)
 	if err != nil {
 		return err
 	}
@@ -210,7 +206,7 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger c
 		} else {
 			key = fmt.Sprintf("step.docker.%d", i)
 		}
-		dockerStepCommand := command.CommandSpec{
+		dockerStepCommand := command.Spec{
 			Key:        key,
 			Image:      dockerStep.Image,
 			ScriptPath: ws.ScriptFilenames()[i],
@@ -235,7 +231,7 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger c
 			key = fmt.Sprintf("step.src.%d", i)
 		}
 
-		cliStepCommand := command.CommandSpec{
+		cliStepCommand := command.Spec{
 			Key:       key,
 			Command:   append([]string{"src"}, cliStep.Commands...),
 			Dir:       cliStep.Dir,
