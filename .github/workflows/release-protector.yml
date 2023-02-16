@@ -112,7 +112,7 @@ jobs:
             else
               echo "❌ Label 'i-acknowledge-this-goes-into-the-release' is absent"
               echo "👉 We're in the next Sourcegraph release code freeze period. If you are 100% sure your changes should get released or provide no risk to the release, add the label your PR with 'i-acknowledge-this-goes-into-the-release'"
-              echo "❓ The code freeze is active until ${process.env.release_date} at 23:59."
+              echo "❓ The code freeze is active until ${release_date} at 23:59."
               echo "release_date=${release_date}" >> $GITHUB_ENV
               exit 1
             fi
