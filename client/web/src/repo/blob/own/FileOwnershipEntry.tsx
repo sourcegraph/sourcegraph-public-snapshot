@@ -3,33 +3,17 @@ import React, { useCallback, useState } from 'react'
 import { mdiChevronDown, mdiChevronUp, mdiEmail } from '@mdi/js'
 import { AccordionButton, AccordionItem, AccordionPanel } from '@reach/accordion'
 
-import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { Badge, Button, ButtonLink, Icon } from '@sourcegraph/wildcard'
 
+import { CodeownersFileEntryFields, OwnerFields } from '../../../graphql-operations'
 import { PersonLink } from '../../../person/PersonLink'
 import { UserAvatar } from '../../../user/UserAvatar'
 
 import styles from './FileOwnershipEntry.module.scss'
 
-interface OwnerPerson {
-    email: string
-    displayName: string
-    avatarURL: Maybe<string>
-    user: Maybe<{
-        username: string
-        displayName: Maybe<string>
-        url: string
-    }>
-}
-
 interface Props {
-    person: OwnerPerson
-    reasons: OwnershipReasonDetails[]
-}
-
-interface OwnershipReasonDetails {
-    title: string
-    description: string
+    person: OwnerFields
+    reasons: CodeownersFileEntryFields[]
 }
 
 export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ person, reasons }) => {

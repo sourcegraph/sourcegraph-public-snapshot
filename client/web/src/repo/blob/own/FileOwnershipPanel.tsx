@@ -28,14 +28,13 @@ export const FileOwnershipPanel: React.FunctionComponent<
         },
     })
     if (loading) {
-        return <div className={styles.content}>Loading...</div>
+        return <div className={styles.contents}>Loading...</div>
     }
 
     if (error) {
         logger.log(error)
-        console.log(error)
         return (
-            <div className={styles.content}>
+            <div className={styles.contents}>
                 <Alert variant="danger">Error getting ownership data.</Alert>
             </div>
         )
@@ -47,7 +46,7 @@ export const FileOwnershipPanel: React.FunctionComponent<
                 as="table"
                 collapsible={true}
                 multiple={true}
-                className={classNames(styles.table, styles.content)}
+                className={classNames(styles.table, styles.contents)}
             >
                 <thead className="sr-only">
                     <tr>
@@ -73,13 +72,29 @@ export const FileOwnershipPanel: React.FunctionComponent<
     }
 
     return (
-        <div className={styles.content}>
+        <div className={styles.contents}>
             <Alert variant="info">No ownership data for this file.</Alert>
         </div>
     )
 }
 
 export const FETCH_OWNERS = gql`
+    fragment OwnerFields on Person {
+        email
+        avatarURL
+        displayName
+        user {
+            username
+            displayName
+            url
+        }
+    }
+
+    fragment CodeownersFileEntryFields on CodeownersFileEntry {
+        title
+        description
+    }
+
     query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
         node(id: $repo) {
             ... on Repository {
@@ -88,22 +103,10 @@ export const FETCH_OWNERS = gql`
                         ownership {
                             nodes {
                                 owner {
-                                    ... on Person {
-                                        email
-                                        avatarURL
-                                        displayName
-                                        user {
-                                            username
-                                            displayName
-                                            url
-                                        }
-                                    }
+                                    ...OwnerFields
                                 }
                                 reasons {
-                                    ... on CodeownersFileEntry {
-                                        title
-                                        description
-                                    }
+                                    ...CodeownersFileEntryFields
                                 }
                             }
                         }

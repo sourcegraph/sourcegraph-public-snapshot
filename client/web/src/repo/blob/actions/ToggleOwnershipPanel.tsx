@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 
 import { mdiAccountOutline } from '@mdi/js'
-import { useHistory, useLocation } from 'react-router'
+import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
 
 import {
     addLineRangeQueryParameter,
@@ -21,7 +21,7 @@ export const ToggleOwnershipPanel: React.FunctionComponent<Pick<RepoHeaderContex
     actionType,
 }) => {
     const location = useLocation()
-    const history = useHistory()
+    const navigate = useNavigate()
 
     const [visible, setVisible] = useState<boolean>(false)
     useEffect(() => {
@@ -37,7 +37,7 @@ export const ToggleOwnershipPanel: React.FunctionComponent<Pick<RepoHeaderContex
             delete parsedQuery.viewState
         }
         const lineRangeQueryParameter = toPositionOrRangeQueryParameter({ range: lprToRange(parsedQuery) })
-        history.push({
+        navigate({
             search: formatSearchParameters(
                 addLineRangeQueryParameter(new URLSearchParams(location.search), lineRangeQueryParameter)
             ),

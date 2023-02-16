@@ -4,7 +4,7 @@ import { Meta, Story } from '@storybook/react'
 import { getDocumentNode } from '@sourcegraph/http-client'
 
 import { WebStory } from '../../../components/WebStory'
-import { FetchOwnershipResult, FetchOwnershipVariables } from '../../../graphql-operations'
+import { FetchOwnershipResult } from '../../../graphql-operations'
 
 import { FETCH_OWNERS, FileOwnershipPanel } from './FileOwnershipPanel'
 
@@ -13,49 +13,44 @@ const response: FetchOwnershipResult = {
         __typename: 'Repository',
         commit: {
             blob: {
-                ownership: [
-                    {
-                        __typename: 'Ownership',
-                        handle: 'alice',
-                        person: {
-                            __typename: 'Person',
-                            email: 'alice@example.com',
-                            avatarURL: null,
-                            displayName: 'Alice',
-                            user: null,
+                ownership: {
+                    nodes: [
+                        {
+                            __typename: 'Ownership',
+                            owner: {
+                                __typename: 'Person',
+                                email: 'alice@example.com',
+                                avatarURL: null,
+                                displayName: 'Alice',
+                                user: null,
+                            },
+                            reasons: [
+                                {
+                                    __typename: 'CodeownersFileEntry',
+                                    title: 'CodeOwner',
+                                    description: 'This person is listed in the CODEOWNERS file',
+                                },
+                            ],
                         },
-                        reasons: [
-                            {
-                                __typename: 'CodeownersFileEntry',
-                                title: 'Codeowner',
-                                description: 'This person is listed in the CODEOWNERS file',
+                        {
+                            __typename: 'Ownership',
+                            owner: {
+                                __typename: 'Person',
+                                email: '',
+                                avatarURL: null,
+                                displayName: 'Bob',
+                                user: null,
                             },
-                            {
-                                __typename: 'RecentContributor',
-                                title: 'Contributor',
-                                description: 'This person has recently contributed to this file',
-                            },
-                        ],
-                    },
-                    {
-                        __typename: 'Ownership',
-                        handle: 'bob',
-                        person: {
-                            __typename: 'Person',
-                            email: '',
-                            avatarURL: null,
-                            displayName: 'Bob',
-                            user: null,
+                            reasons: [
+                                {
+                                    __typename: 'CodeownersFileEntry',
+                                    title: 'CodeOwner',
+                                    description: 'This person is listed in the CODEOWNERS file',
+                                },
+                            ],
                         },
-                        reasons: [
-                            {
-                                __typename: 'RecentContributor',
-                                title: 'Contributor',
-                                description: 'This person has recently contributed to this file',
-                            },
-                        ],
-                    },
-                ],
+                    ],
+                },
             },
         },
     },
@@ -68,7 +63,7 @@ const mockResponse: MockedResponse<FetchOwnershipResult> = {
             repo: 'github.com/sourcegraph/sourcegraph',
             currentPath: 'README.md',
             revision: '',
-        } as FetchOwnershipVariables,
+        },
     },
     result: {
         data: response,
