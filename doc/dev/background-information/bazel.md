@@ -18,7 +18,7 @@ Finally, build systems provides additional benefits, especially on the security 
 
 Bazel is the most used build system in the wild that is fully language agnostic. It means you can build whatever you want with Bazel, from a tarball containing Markdown files to an iOS app. It's like Make, but much more powerful. Because of its popularity, it means its ecosystem is the biggest and a lot have been written for us to use already. 
 
-We could have used others, but that would translate in having to write much more. Building frontend code for example is a delicate task, because of the complexity of targeting browsers and the pace at which its ecosystem is evolving. So we're avoiding that by using a solution that has been battle tested and proved to still work at scale hundred times bigger than ours and smaller than us. 
+We could have used others, but that would translate in having to write much more. Building client code for example is a delicate task, because of the complexity of targeting browsers and the pace at which its ecosystem is evolving. So we're avoiding that by using a solution that has been battle tested and proved to still work at scale hundred times bigger than ours and smaller than us. 
 
 ## What is Bazel?
 
@@ -196,6 +196,6 @@ In the case where your testdata lives in `../**`, Gazelle cannot see those on it
 ## Resources
 
 - [Core Bazel (book)](https://www.amazon.com/Core-Bazel-Fast-Builds-People/dp/B08DVDM7BZ):
-  - Good introductory book to grasp the basics.
+  - [Bazel User guide](https://bazel.build/docs)
 - [Writing a custom rule that depends on an external dep](https://www.youtube.com/watch?v=bhirT014eCE) 
 - [Patching third parties when they don't build](https://rotemtam.com/2020/10/30/bazel-building-cgo-bindings/) 
