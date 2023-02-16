@@ -185,7 +185,13 @@ processed AS (
     WHERE id IN (SELECT r.id FROM refs r)
 )
 INSERT INTO codeintel_ranking_path_counts_inputs (repository, document_path, count, graph_key)
-SELECT repository, document_path, COUNT(*), graph_key FROM definitions GROUP BY repository, document_path, graph_key
+SELECT
+	repository,
+	document_path,
+	COUNT(*),
+	graph_key
+FROM definitions
+GROUP BY repository, document_path, graph_key
 `
 
 func (s *store) InsertPathRanks(ctx context.Context, graphKey string, batchSize int) (numPathRanksInserted float64, numInputsProcessed float64, err error) {
