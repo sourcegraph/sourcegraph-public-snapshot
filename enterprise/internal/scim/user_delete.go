@@ -70,7 +70,7 @@ func findUser(ctx context.Context, db database.DB, id int, logger log.Logger) (t
 	} else {
 		logger.Debug("attempting to delete requested users")
 	}
-	if users[0].SCIMExternalID != "" {
+	if users[0].SCIMExternalID == "" {
 		return types.UserForSCIM{}, errors.New("cannot delete user because it has no SCIM external ID set")
 	}
 	user := *users[0]
