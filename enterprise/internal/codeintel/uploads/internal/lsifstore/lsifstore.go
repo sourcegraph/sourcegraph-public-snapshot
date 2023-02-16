@@ -40,8 +40,6 @@ type LsifStore interface {
 	InsertDefinitionsAndReferencesForDocument(ctx context.Context, upload db.ExportedUpload, rankingGraphKey string, f func(ctx context.Context, upload db.ExportedUpload, rankingGraphKey, path string, document *scip.Document) error) (err error)
 	InsertDefintionsForRanking(ctx context.Context, rankingGraphKey string, defintions []shared.RankingDefintions) (err error)
 	InsertReferencesForRanking(ctx context.Context, rankingGraphKey string, references shared.RankingReferences) (err error)
-
-	GetRankingReferencesByUploadID(ctx context.Context, uploadID int, limit, offset int) (references []shared.RankingReferences, err error)
 	InsertPathCountInputs(ctx context.Context, rankingGraphKey string, batchSize int) (err error)
 	InsertPathRanks(ctx context.Context, graphKey string, batchSize int) (numPathRanksInserted float64, numInputsProcessed float64, err error)
 }

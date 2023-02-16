@@ -44,10 +44,9 @@ func (s *Service) ReduceRankingGraph(ctx context.Context, numRankingRoutines int
 	return numPathRanksInserted, numPathCountInputsProcessed, nil
 }
 
-func (s *Service) SerializeRankingGraph(ctx context.Context, numRankingRoutines int) error {
-	// if s.rankingBucket == nil {
-	// 	return nil
-	// }
+func (s *Service) ExportRankingGraph(ctx context.Context, numRankingRoutines int) (err error) {
+	ctx, _, endObservation := s.operations.exportRankingGraph.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
 
 	uploads, err := s.store.GetUploadsForRanking(ctx, rankingGraphKey, "ranking", rankingGraphBatchSize)
 	if err != nil {

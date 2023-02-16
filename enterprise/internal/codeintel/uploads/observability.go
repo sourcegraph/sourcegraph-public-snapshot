@@ -62,6 +62,7 @@ type operations struct {
 	getListTags *observation.Operation
 
 	// Ranking
+	exportRankingGraph *observation.Operation
 	mapRankingGraph    *observation.Operation
 	reduceRankingGraph *observation.Operation
 
@@ -179,6 +180,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getListTags: op("GetListTags"),
 
 		// Ranking
+		exportRankingGraph: op("ExportRankingGraph"),
 		mapRankingGraph:    op("MapRankingGraph"),
 		reduceRankingGraph: op("ReduceRankingGraph"),
 

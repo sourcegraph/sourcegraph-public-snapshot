@@ -7796,10 +7796,6 @@ type MockLsifStore struct {
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *LsifStoreDoneFunc
-	// GetRankingReferencesByUploadIDFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// GetRankingReferencesByUploadID.
-	GetRankingReferencesByUploadIDFunc *LsifStoreGetRankingReferencesByUploadIDFunc
 	// GetUploadDocumentsForPathFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// GetUploadDocumentsForPath.
@@ -7876,11 +7872,6 @@ func NewMockLsifStore() *MockLsifStore {
 		},
 		DoneFunc: &LsifStoreDoneFunc{
 			defaultHook: func(error) (r0 error) {
-				return
-			},
-		},
-		GetRankingReferencesByUploadIDFunc: &LsifStoreGetRankingReferencesByUploadIDFunc{
-			defaultHook: func(context.Context, int, int, int) (r0 []shared.RankingReferences, r1 error) {
 				return
 			},
 		},
@@ -7996,11 +7987,6 @@ func NewStrictMockLsifStore() *MockLsifStore {
 				panic("unexpected invocation of MockLsifStore.Done")
 			},
 		},
-		GetRankingReferencesByUploadIDFunc: &LsifStoreGetRankingReferencesByUploadIDFunc{
-			defaultHook: func(context.Context, int, int, int) ([]shared.RankingReferences, error) {
-				panic("unexpected invocation of MockLsifStore.GetRankingReferencesByUploadID")
-			},
-		},
 		GetUploadDocumentsForPathFunc: &LsifStoreGetUploadDocumentsForPathFunc{
 			defaultHook: func(context.Context, int, string) ([]string, int, error) {
 				panic("unexpected invocation of MockLsifStore.GetUploadDocumentsForPath")
@@ -8106,9 +8092,6 @@ func NewMockLsifStoreFrom(i lsifstore.LsifStore) *MockLsifStore {
 		},
 		DoneFunc: &LsifStoreDoneFunc{
 			defaultHook: i.Done,
-		},
-		GetRankingReferencesByUploadIDFunc: &LsifStoreGetRankingReferencesByUploadIDFunc{
-			defaultHook: i.GetRankingReferencesByUploadID,
 		},
 		GetUploadDocumentsForPathFunc: &LsifStoreGetUploadDocumentsForPathFunc{
 			defaultHook: i.GetUploadDocumentsForPath,
@@ -8499,124 +8482,6 @@ func (c LsifStoreDoneFuncCall) Args() []interface{} {
 // invocation.
 func (c LsifStoreDoneFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// LsifStoreGetRankingReferencesByUploadIDFunc describes the behavior when
-// the GetRankingReferencesByUploadID method of the parent MockLsifStore
-// instance is invoked.
-type LsifStoreGetRankingReferencesByUploadIDFunc struct {
-	defaultHook func(context.Context, int, int, int) ([]shared.RankingReferences, error)
-	hooks       []func(context.Context, int, int, int) ([]shared.RankingReferences, error)
-	history     []LsifStoreGetRankingReferencesByUploadIDFuncCall
-	mutex       sync.Mutex
-}
-
-// GetRankingReferencesByUploadID delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockLsifStore) GetRankingReferencesByUploadID(v0 context.Context, v1 int, v2 int, v3 int) ([]shared.RankingReferences, error) {
-	r0, r1 := m.GetRankingReferencesByUploadIDFunc.nextHook()(v0, v1, v2, v3)
-	m.GetRankingReferencesByUploadIDFunc.appendCall(LsifStoreGetRankingReferencesByUploadIDFuncCall{v0, v1, v2, v3, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// GetRankingReferencesByUploadID method of the parent MockLsifStore
-// instance is invoked and the hook queue is empty.
-func (f *LsifStoreGetRankingReferencesByUploadIDFunc) SetDefaultHook(hook func(context.Context, int, int, int) ([]shared.RankingReferences, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetRankingReferencesByUploadID method of the parent MockLsifStore
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *LsifStoreGetRankingReferencesByUploadIDFunc) PushHook(hook func(context.Context, int, int, int) ([]shared.RankingReferences, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *LsifStoreGetRankingReferencesByUploadIDFunc) SetDefaultReturn(r0 []shared.RankingReferences, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, int, int) ([]shared.RankingReferences, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *LsifStoreGetRankingReferencesByUploadIDFunc) PushReturn(r0 []shared.RankingReferences, r1 error) {
-	f.PushHook(func(context.Context, int, int, int) ([]shared.RankingReferences, error) {
-		return r0, r1
-	})
-}
-
-func (f *LsifStoreGetRankingReferencesByUploadIDFunc) nextHook() func(context.Context, int, int, int) ([]shared.RankingReferences, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *LsifStoreGetRankingReferencesByUploadIDFunc) appendCall(r0 LsifStoreGetRankingReferencesByUploadIDFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// LsifStoreGetRankingReferencesByUploadIDFuncCall objects describing the
-// invocations of this function.
-func (f *LsifStoreGetRankingReferencesByUploadIDFunc) History() []LsifStoreGetRankingReferencesByUploadIDFuncCall {
-	f.mutex.Lock()
-	history := make([]LsifStoreGetRankingReferencesByUploadIDFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// LsifStoreGetRankingReferencesByUploadIDFuncCall is an object that
-// describes an invocation of method GetRankingReferencesByUploadID on an
-// instance of MockLsifStore.
-type LsifStoreGetRankingReferencesByUploadIDFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 int
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []shared.RankingReferences
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c LsifStoreGetRankingReferencesByUploadIDFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c LsifStoreGetRankingReferencesByUploadIDFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // LsifStoreGetUploadDocumentsForPathFunc describes the behavior when the
