@@ -4,6 +4,7 @@ import * as path from 'path'
 import commandExists from 'command-exists'
 import {addMinutes} from 'date-fns'
 import execa from 'execa'
+import {SemVer} from 'semver';
 
 import * as batchChanges from './batchChanges'
 import * as changelog from './changelog'
@@ -15,8 +16,9 @@ import {
     ReleaseConfig,
     getActiveRelease,
     removeScheduledRelease,
-    saveReleaseConfig, getReleaseDefinition
+    saveReleaseConfig, getReleaseDefinition, deactivateAllReleases
 } from './config'
+import {getCandidateTags} from './git';
 import {
     cloneRepo,
     closeTrackingIssue,
@@ -50,8 +52,7 @@ import {
     updateUpgradeGuides,
     verifyWithInput,
 } from './util'
-import {SemVer} from "semver";
-import {getCandidateTags} from "./git";
+import chalk from "chalk";
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
@@ -76,6 +77,7 @@ export type StepID =
     | 'release:prepare'
     | 'release:remove'
     | 'release:activate-release'
+    | 'release:deactivate-release'
     // util
     | 'util:clear-cache'
     // testing
@@ -314,7 +316,6 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         description: 'Create release branch',
         run: async config => {
             const release = await getActiveRelease(config)
-            // const branch = `${upcoming.version.major}.${upcoming.version.minor}`
             let message: string
             // notify cs team on patch release cut
             if (release.version.patch !== 0) {
@@ -366,6 +367,8 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
 * ${latestBuildMessage}`
             if (!config.dryRun.slack) {
                 await postMessage(message, config.metadata.slackAnnounceChannel)
+            } else {
+                console.log(chalk.green('Dry run: ' + message));
             }
         },
     },
@@ -478,8 +481,12 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 version = release.version.version
             }
             const tags = getCandidateTags(localSourcegraphRepo, version)
-            console.log(`Release candidate tags for version: ${version}\n${tags}`)
-            console.log('To check the status of the build, run:\nsg ci status -branch tag\n')
+            if (tags.length > 0) {
+                console.log(`Release candidate tags for version: ${version}\n${tags}`)
+                console.log('To check the status of the build, run:\nsg ci status -branch tag\n')
+            } else {
+                console.log(chalk.yellow('No candidates found!'))
+            }
         },
     },
     {
@@ -870,9 +877,12 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         id: 'release:close',
         description: 'Close tracking issues for current release',
         run: async config => {
-            const { previous: release } = await getActiveRelease(config)
+            const active = await getActiveRelease(config)
             // close tracking issue
-            await closeTrackingIssue(release)
+            await closeTrackingIssue(active.version)
+            console.log(chalk.blue('Deactivating release...'))
+            deactivateAllReleases(config)
+            console.log(chalk.green(`Release ${active.version.format()} closed!`))
         },
     },
     {
@@ -900,6 +910,14 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         description: 'Activate a feature release',
         run: async config => {
             await activateRelease(config)
+        },
+    },
+    {
+        id: 'release:deactivate-release',
+        description: 'Activate a feature release',
+        run: async config => {
+            await verifyWithInput('Are you sure you want to deactivate all releases?')
+            await deactivateAllReleases(config)
         },
     },
     {

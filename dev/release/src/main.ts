@@ -1,4 +1,4 @@
-import {loadConfig, loadReleaseConfig} from './config'
+import {loadReleaseConfig} from './config'
 import { runStep, StepID } from './release'
 import { ensureMainBranchUpToDate } from './util'
 

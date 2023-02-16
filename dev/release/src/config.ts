@@ -9,6 +9,8 @@ import {SemVer} from 'semver'
 import {getPreviousVersion} from './git';
 import {retryInput} from './util'
 
+const releaseConfigPath = 'release-config.jsonc'
+
 /**
  * Release configuration file format
  */
@@ -38,22 +40,13 @@ export interface Config {
     }
 }
 
-/**
- * Default path of JSONC containing release configuration.
- */
-const configPath = 'release-config.jsonc'
-
-/**
- * Loads configuration from predefined path. It does not do any special validation.
- */
-export function loadConfig(): Config {
-    return parseJSONC(readFileSync(configPath).toString()) as Config
-}
-
 export async function getActiveRelease(config: ReleaseConfig): Promise<ActiveRelease> {
     if (!config.in_progress || config.in_progress.releases.length === 0) {
         console.log(chalk.yellow('No active releases are defined! Attempting to activate...'))
         await activateRelease(config)
+    }
+    if (!config.in_progress) {
+        throw new Error('unable to activate a release!')
     }
     if (config.in_progress.releases.length > 1) {
         throw new Error(chalk.red('The release config has multiple versions activated. This feature is not yet supported by the release tool! Please activate only a single release.'))
@@ -67,14 +60,11 @@ export async function getActiveRelease(config: ReleaseConfig): Promise<ActiveRel
         ...def as ReleaseDates,
         ...def as ReleaseCaptainInformation,
         branch: `${version.minor}.${version.minor}`
-    } as ActiveRelease
+    }
 }
 
-const releaseConfigPath = 'release-config-new.jsonc'
-
 export function loadReleaseConfig(): ReleaseConfig {
-    const config = parseJSONC(readFileSync(releaseConfigPath).toString()) as ReleaseConfig
-    return config
+    return parseJSONC(readFileSync(releaseConfigPath).toString()) as ReleaseConfig
 }
 
 export function saveReleaseConfig(config: ReleaseConfig): void {
@@ -87,13 +77,13 @@ export function newRelease(version: SemVer, releaseDate: DateTime, captainGithub
         current: version.version,
         captainGitHubUsername: captainGithub,
         captainSlackUsername: captainSlack
-    } as ScheduledReleaseDefinition
+    }
 }
 
 export async function newReleaseFromInput(versionOverride?: SemVer): Promise<ScheduledReleaseDefinition> {
     let version = versionOverride
     if (!version) {
-        version = new SemVer(await retryInput('Enter the next version number (ex. 5.4.0): ', val => !!semver.parse(val)))
+        version = await selectVersionWithSuggestion('Enter the desired version number')
     }
 
     const releaseDateStr = await retryInput('Enter the release date (YYYY-MM-DD). Enter blank to use current date: ', val => {
@@ -126,7 +116,7 @@ function releaseDates(releaseDate: DateTime): ReleaseDates {
         codeFreezeDate: releaseDate.plus({days: -7}).toString(),
         securityApprovalDate: releaseDate.plus({days: -7}).toString(),
         releaseDate: releaseDate.toString()
-    } as ReleaseDates
+    }
 }
 
 export function addScheduledRelease(config: ReleaseConfig, release: ScheduledReleaseDefinition): ReleaseConfig {
@@ -173,7 +163,7 @@ export interface ReleaseConfig {
     scheduledReleases: {
         [version: string]: ScheduledReleaseDefinition
     }
-    in_progress: InProgress
+    in_progress?: InProgress
     dryRun: {
         tags?: boolean
         changesets?: boolean
@@ -188,7 +178,7 @@ export interface ScheduledReleaseDefinition extends ReleaseDates, ReleaseCaptain
 }
 
 export async function activateRelease(config: ReleaseConfig): Promise<void> {
-    const next = await selectVersionWithSuggestion()
+    const next = await selectVersionWithSuggestion('Enter the feature version to activate')
     console.log('Attempting to detect previous version...')
     const previous = getPreviousVersion(next)
     console.log(chalk.blue(`Detected previous version: ${previous.version}`))
@@ -198,9 +188,14 @@ export async function activateRelease(config: ReleaseConfig): Promise<void> {
         captainGitHubUsername: scheduled.captainGitHubUsername,
         captainSlackUsername: scheduled.captainSlackUsername,
         releases: [{version: next.version, previous: previous.version}]
-    } as InProgress
+    }
     saveReleaseConfig(config)
     console.log(chalk.green(`Release: ${next.version} activated!`))
+}
+
+export function deactivateAllReleases(config: ReleaseConfig): void {
+    delete config.in_progress
+    saveReleaseConfig(config)
 }
 
 async function getScheduledReleaseWithInput(config: ReleaseConfig, releaseVersion: SemVer): Promise<ScheduledReleaseDefinition> {
@@ -213,9 +208,9 @@ async function getScheduledReleaseWithInput(config: ReleaseConfig, releaseVersio
     return scheduled
 }
 
-async function selectVersionWithSuggestion(): Promise<SemVer> {
+async function selectVersionWithSuggestion(prompt: string): Promise<SemVer> {
     const probably = getPreviousVersion().inc('minor')
-    const input = await retryInput(`Enter the feature version to activate (previous tagged release was ${probably.version}): `, val => {
+    const input = await retryInput(`${prompt} (next minor release would be ${probably.version}): `, val => {
         const version = semver.parse(val)
         return (!(!version || version.patch !== 0))
     })
@@ -223,6 +218,6 @@ async function selectVersionWithSuggestion(): Promise<SemVer> {
 }
 
 export async function getReleaseDefinition(config: ReleaseConfig): Promise<ScheduledReleaseDefinition> {
-    const next = await selectVersionWithSuggestion()
+    const next = await selectVersionWithSuggestion('Enter the version number')
     return getScheduledReleaseWithInput(config, next)
 }

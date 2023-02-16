@@ -1,7 +1,8 @@
-import execa from "execa";
-import {SemVer} from "semver";
-import * as semver from "semver";
-import {localSourcegraphRepo} from "./github";
+import execa from 'execa';
+import {SemVer} from 'semver';
+import * as semver from 'semver';
+
+import {localSourcegraphRepo} from './github';
 
 export function getTags(workdir: string, prefix?: string): string[] {
     execa.sync('git', ['fetch', '--tags'], { cwd: workdir })
