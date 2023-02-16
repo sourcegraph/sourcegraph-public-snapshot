@@ -73,7 +73,7 @@ func NewScheduler(
 			Metrics:           redMetrics,
 			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
 				if errors.As(err, &inference.LimitError{}) {
-					return observation.EmitForDefault.Without(observation.EmitForMetrics)
+					return observation.EmitForNone
 				}
 				return observation.EmitForDefault
 			},
