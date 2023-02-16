@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/grafana/regexp"
@@ -424,7 +425,7 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 	// Create blocklist for indexes that have already been uploaded.
 	blocklist := map[string]struct{}{}
 	for _, u := range recentUploads {
-		key := getKeyForLookup(u.Indexer, u.Root)
+		key := shared.GetKeyForLookup(u.Indexer, u.Root)
 		blocklist[key] = struct{}{}
 	}
 
@@ -434,14 +435,14 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 		return nil, err
 	}
 
-	availableIndexersMap := map[string]availableIndexer{}
-	inferredAvailableIndexers := populateInferredAvailableIndexers(indexJobs, blocklist, availableIndexersMap)
+	availableIndexersMap := map[string]shared.AvailableIndexer{}
+	inferredAvailableIndexers := shared.PopulateInferredAvailableIndexers(indexJobs, blocklist, availableIndexersMap)
 
 	indexJobHints, err := r.autoindexSvc.InferIndexJobHintsFromRepositoryStructure(ctx, repoID, commit)
 	if err != nil {
 		return nil, err
 	}
-	inferredAvailableIndexers = populateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
+	inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
 
 	inferredAvailableIndexersResolver := make([]sharedresolvers.InferredAvailableIndexers, 0, len(inferredAvailableIndexers))
 	for indexName, indexer := range inferredAvailableIndexers {
@@ -449,7 +450,7 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 			sharedresolvers.InferredAvailableIndexers{
 				Roots: indexer.Roots,
 				Index: indexName,
-				URL:   indexer.URL,
+				URL:   fmt.Sprintf("https://%s", indexer.Indexer.URN),
 			},
 		)
 	}
