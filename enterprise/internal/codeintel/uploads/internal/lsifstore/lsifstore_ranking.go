@@ -164,7 +164,7 @@ func (s *store) InsertPathCountInputs(ctx context.Context, rankingGraphKey strin
 const insertPathCountInputsQuery = `
 WITH refs AS (
 	SELECT
-	    id,
+		id,
 		unnest(symbol_names) AS symbol_names
 	FROM codeintel_ranking_references rr
 	WHERE rr.graph_key = %s AND NOT rr.processed
