@@ -389,7 +389,13 @@ type subset []string
 
 var all universalSet = struct{}{}
 
+var mockStructuralSearch func(ctx context.Context, inputType comby.Input, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName, sender matchSender) error = nil
+
 func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName, sender matchSender) (err error) {
+	if mockStructuralSearch != nil {
+		return mockStructuralSearch(ctx, inputType, paths, extensionHint, pattern, rule, languages, repo, sender)
+	}
+
 	span, ctx := ot.StartSpanFromContext(ctx, "StructuralSearch") //nolint:staticcheck // OT is deprecated
 	span.SetTag("repo", repo)
 	defer func() {
