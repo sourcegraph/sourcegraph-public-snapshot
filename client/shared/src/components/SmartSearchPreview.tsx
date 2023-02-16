@@ -8,14 +8,13 @@ import { smartSearchIconSvgPath } from '@sourcegraph/branded'
 import { SearchMode } from '@sourcegraph/shared/src/search'
 import { Icon, H3, H2, Text, Button, useObservable } from '@sourcegraph/wildcard'
 
-import { SearchPatternType } from '../../../../shared/src/graphql-operations'
-import { LATEST_VERSION, aggregateStreamingSearch, ProposedQuery } from '../../../../shared/src/search/stream'
-import { useNavbarQueryState, setSearchMode } from '../../stores'
-import { submitSearch } from '../helpers'
+import { SearchPatternType } from '../../../shared/src/graphql-operations'
+import { LATEST_VERSION, aggregateStreamingSearch, ProposedQuery } from '../search/stream'
+import { useNavbarQueryState, setSearchMode } from '../../../web/src/stores'
+import { submitSearch } from '../../../web/src/search/helpers'
 
 import { SmartSearchListItem } from './SmartSearchListItem'
 
-import iconStyles from './QuerySuggestion.module.scss'
 import styles from './SmartSearchPreview.module.scss'
 
 export const SmartSearchPreview: React.FunctionComponent<{}> = () => {
@@ -130,7 +129,7 @@ const EnableSmartSearch: React.FunctionComponent<React.PropsWithChildren<EnableS
             <Icon
                 aria-hidden={true}
                 svgPath={smartSearchIconSvgPath}
-                className={classNames(iconStyles.smartIcon, 'my-auto')}
+                className={classNames(styles.smartIcon, 'my-auto')}
             />
             <Button variant="link" className="px-0 mr-1" onClick={enableSmartSearch}>
                 Enable Smart Search

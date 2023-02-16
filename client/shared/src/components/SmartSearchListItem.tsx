@@ -7,7 +7,7 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { ProposedQuery } from '@sourcegraph/shared/src/search/stream'
 import { Link, createLinkUrl, Icon, Text } from '@sourcegraph/wildcard'
 
-import styles from './QuerySuggestion.module.scss'
+import styles from './SmartSearchPreview.module.scss'
 
 interface SmartSearchListItemProps {
     proposedQuery: ProposedQuery
@@ -34,9 +34,9 @@ export const SmartSearchListItem: React.FunctionComponent<SmartSearchListItemPro
             className={classNames(previewStyle ? 'text-decoration-none' : styles.link)}
         >
             <Text className="mb-0">
-                <span
-                    className={classNames(previewStyle ? 'text-muted' : styles.listItemDescription)}
-                >{processDescription(proposedQuery.description || '')}</span>
+                <span className={classNames(previewStyle ? 'text-muted' : styles.listItemDescription)}>
+                    {processDescription(proposedQuery.description || '')}
+                </span>
                 <Icon svgPath={mdiArrowRight} aria-hidden={true} className="mx-2 text-body" />
                 <span className={classNames(previewStyle ? 'p-1 bg-code' : styles.suggestion)}>
                     <SyntaxHighlightedSearchQuery
