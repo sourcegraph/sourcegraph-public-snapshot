@@ -105,7 +105,6 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWith
                         <Link to="/password-reset">Forgot password?</Link>
                     </small>
                 )}
-            </div>
 
                 <div className="form-group d-flex flex-column align-content-start position-relative">
                     <Label htmlFor="password" className="align-self-start">
