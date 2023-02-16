@@ -2,7 +2,10 @@ import { ReactElement } from 'react'
 
 import classNames from 'classnames'
 
-import { Button, ButtonProps } from '@sourcegraph/wildcard'
+import { gql, useMutation } from '@sourcegraph/http-client'
+import { Button, ButtonProps, LoadingSpinner } from '@sourcegraph/wildcard'
+
+import { CodeInsightsJobFragment } from '../../query'
 
 import styles from './CodeInsightsJobsActions.module.scss'
 
@@ -15,11 +18,47 @@ interface CodeInsightsJobActionsProps {
 export function CodeInsightsJobsActions(props: CodeInsightsJobActionsProps): ReactElement {
     const { selectedJobIds, className, onSelectionClear } = props
 
+    const [retryJobs, { loading: retryLoading }] = useMutation(getMultipleRetryMutation(selectedJobIds), {
+        refetchQueries: ['GetCodeInsightsJobs'],
+        onCompleted: onSelectionClear,
+    })
+    const [moveToBack, { loading: moveToBackLoading }] = useMutation(getMultipleMovetoBackMutation(selectedJobIds), {
+        refetchQueries: ['GetCodeInsightsJobs'],
+        onCompleted: onSelectionClear,
+    })
+    const [moveToFront, { loading: moveToFrontLoading }] = useMutation(getMultipleMovetoFrontMutation(selectedJobIds), {
+        refetchQueries: ['GetCodeInsightsJobs'],
+        onCompleted: onSelectionClear,
+    })
+
+    const loading = retryLoading || moveToBackLoading || moveToFrontLoading
+
     return (
         <div className={classNames(className, styles.actions)}>
-            <JobActionButton actionCount={selectedJobIds.length}>Retry</JobActionButton>
-            <JobActionButton actionCount={selectedJobIds.length}>Front of queue</JobActionButton>
-            <JobActionButton actionCount={selectedJobIds.length}>Back of queue</JobActionButton>
+            <JobActionButton
+                disabled={loading}
+                loading={retryLoading}
+                actionCount={selectedJobIds.length}
+                onClick={() => retryJobs()}
+            >
+                Retry
+            </JobActionButton>
+            <JobActionButton
+                disabled={loading}
+                loading={moveToFrontLoading}
+                actionCount={selectedJobIds.length}
+                onClick={() => moveToBack()}
+            >
+                Back of queue
+            </JobActionButton>
+            <JobActionButton
+                disabled={loading}
+                loading={moveToFrontLoading}
+                actionCount={selectedJobIds.length}
+                onClick={() => moveToFront()}
+            >
+                Front of queue
+            </JobActionButton>
             {selectedJobIds.length > 0 && (
                 <Button variant="secondary" outline={true} onClick={onSelectionClear}>
                     Clear selection
@@ -31,15 +70,101 @@ export function CodeInsightsJobsActions(props: CodeInsightsJobActionsProps): Rea
 
 interface JobActionButton extends ButtonProps {
     actionCount: number
+    loading: boolean
+    disabled: boolean
 }
 
 function JobActionButton(props: JobActionButton): ReactElement {
-    const { actionCount, children } = props
+    const { actionCount, children, loading } = props
 
     return (
-        <Button {...props} variant="primary" disabled={actionCount === 0} className={styles.action}>
+        <Button {...props} variant="primary" disabled={actionCount === 0 || loading} className={styles.action}>
             {actionCount > 0 && <span className={styles.count}>{actionCount}</span>}
             {children}
+            {loading && <LoadingSpinner className="ml-2" />}
         </Button>
     )
+}
+
+const BLANK_MUTATION = gql`
+    mutation RetryInsightSeriesBackfillBlank {
+        retryInsightSeriesBackfill(id: "0001") {
+            id
+        }
+    }
+`
+
+function getMultipleRetryMutation(jobIds: string[]): string {
+    if (jobIds.length === 0) {
+        return BLANK_MUTATION
+    }
+
+    const mutations = jobIds
+        .map(
+            (id, index) => `
+
+        retry${index}: retryInsightSeriesBackfill(id: "${id}") {
+           ...InsightJob
+        }
+
+    `
+        )
+        .join(' ')
+
+    return gql`
+        ${CodeInsightsJobFragment}
+        mutation RetryCodeInsightsJobs {
+         ${mutations}
+        }
+    `
+}
+
+function getMultipleMovetoFrontMutation(jobIds: string[]): string {
+    if (jobIds.length === 0) {
+        return BLANK_MUTATION
+    }
+
+    const mutations = jobIds
+        .map(
+            (id, index) => `
+
+        moveJobToFront${index}: moveInsightSeriesBackfillToFrontOfQueue(id: "${id}") {
+           ...InsightJob
+        }
+
+    `
+        )
+        .join(' ')
+
+    return gql`
+        ${CodeInsightsJobFragment}
+        mutation MoveToFrontCodeInsightsJobs {
+         ${mutations}
+        }
+    `
+}
+
+function getMultipleMovetoBackMutation(jobIds: string[]): string {
+    if (jobIds.length === 0) {
+        return BLANK_MUTATION
+    }
+
+    const mutations = jobIds
+        .map(
+            (id, index) => `
+
+        moveJobToBack${index}: moveInsightSeriesBackfillToBackOfQueue(id: "${id}") {
+           ...InsightJob
+        }
+
+    `
+        )
+        .join(' ')
+
+    return gql`
+        ${CodeInsightsJobFragment}
+        mutation MoveToBackCodeInsighsJobs {
+         ${mutations}
+        }
+    `
 }

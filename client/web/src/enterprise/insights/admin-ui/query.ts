@@ -1,6 +1,6 @@
 import { gql } from '@sourcegraph/http-client'
 
-export const GET_CODE_INSIGHTS_JOBS = gql`
+export const CodeInsightsJobFragment = gql`
     fragment InsightJob on InsightBackfillQueueItem {
         id
         insightViewTitle
@@ -18,7 +18,9 @@ export const GET_CODE_INSIGHTS_JOBS = gql`
             runtime
         }
     }
+`
 
+export const GET_CODE_INSIGHTS_JOBS = gql`
     query GetCodeInsightsJobs(
         $after: String
         $search: String
@@ -38,4 +40,5 @@ export const GET_CODE_INSIGHTS_JOBS = gql`
             totalCount
         }
     }
+    ${CodeInsightsJobFragment}
 `
