@@ -58,7 +58,7 @@ export const OwnerSearchResult: React.FunctionComponent<PersonSearchResultProps>
                     {displayName}
                 </Link>
             ) : (
-                <span className="text-muted">displayName</span>
+                <span className="text-muted">{displayName}</span>
             )}
         </div>
     )
