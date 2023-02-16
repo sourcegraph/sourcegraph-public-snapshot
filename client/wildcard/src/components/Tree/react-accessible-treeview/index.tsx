@@ -389,7 +389,7 @@ interface IUseTreeProps {
     multiSelect?: boolean
     propagateSelectUpwards?: boolean
     propagateSelect?: boolean
-     
+
     onLoadData?: (props: ITreeViewOnLoadDataProps) => Promise<any>
     togglableSelect?: boolean
 }
@@ -765,7 +765,7 @@ export interface ITreeViewProps {
     /** Function called when a node changes its expanded state */
     onExpand?: (props: ITreeViewOnExpandProps) => void
     /** Function called to load data asynchronously on expand */
-     
+
     onLoadData?: (props: ITreeViewOnLoadDataProps) => Promise<any>
     /** className to add to the outermost ul */
     className?: string
@@ -801,7 +801,6 @@ export interface ITreeViewProps {
     onBlur?: (event: { treeState: ITreeViewState; dispatch: React.Dispatch<TreeViewAction> }) => void
 }
 
- 
 const noop = () => {}
 const TreeView = React.forwardRef<HTMLUListElement, ITreeViewProps>(function TreeView(
     {
@@ -1179,7 +1178,6 @@ interface INodeGroupProps extends Omit<INodeProps, 'setsize' | 'posinset'> {
  * It's convenient to pass props down to the child, but we don't want to pass everything since it would create incorrect values for setsize and posinset
  */
 const removeIrrelevantGroupProps = (nodeProps: INodeProps): Omit<INodeGroupProps, 'getClasses'> => {
-     
     const { setsize, posinset, ...rest } = nodeProps
     return rest
 }
