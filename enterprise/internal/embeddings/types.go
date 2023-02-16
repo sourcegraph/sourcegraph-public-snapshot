@@ -27,7 +27,7 @@ type EmbeddingSearchResults struct {
 }
 
 type EmbeddingSearchResult struct {
-	FilePath  string `json:"filePath"`
+	FileName  string `json:"fileName"`
 	StartLine int    `json:"startLine"`
 	EndLine   int    `json:"endLine"`
 	Content   string `json:"content"`

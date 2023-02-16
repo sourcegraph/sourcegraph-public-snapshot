@@ -89,8 +89,8 @@ type embeddingsSearchResultResolver struct {
 	result embeddings.EmbeddingSearchResult
 }
 
-func (r *embeddingsSearchResultResolver) FilePath(ctx context.Context) string {
-	return r.result.FilePath
+func (r *embeddingsSearchResultResolver) FileName(ctx context.Context) string {
+	return r.result.FileName
 }
 
 func (r *embeddingsSearchResultResolver) StartLine(ctx context.Context) int32 {

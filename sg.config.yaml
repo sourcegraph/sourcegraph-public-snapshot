@@ -98,10 +98,6 @@ env:
   PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT: http://localhost:9000
   PRECISE_CODE_INTEL_UPLOAD_BACKEND: blobstore
 
-  # Required for embeddings uploadstore
-  EMBEDDINGS_UPLOAD_AWS_ENDPOINT: http://localhost:9000
-  EMBEDDINGS_UPLOAD_BACKEND: blobstore
-
   # Required for frontend and executor to communicate
   EXECUTOR_FRONTEND_URL: http://localhost:3080
   # Must match the secret defined in the site config.

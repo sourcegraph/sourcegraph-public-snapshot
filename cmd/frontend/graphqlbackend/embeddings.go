@@ -29,7 +29,7 @@ type EmbeddingsSearchResultsResolver interface {
 }
 
 type EmbeddingsSearchResultResolver interface {
-	FilePath(ctx context.Context) string
+	FileName(ctx context.Context) string
 	StartLine(ctx context.Context) int32
 	EndLine(ctx context.Context) int32
 	Content(ctx context.Context) string

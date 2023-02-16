@@ -41,12 +41,12 @@ func (s *repoEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 		return nil, err
 	}
 
-	workCtx := actor.WithInternalActor(context.Background())
-	uploadStore, err := embeddings.NewEmbeddingsUploadStore(workCtx, observationCtx, embeddings.EmbeddingsUploadStoreConfigInst)
+	uploadStore, err := embeddings.NewEmbeddingsUploadStore(context.Background(), observationCtx, embeddings.EmbeddingsUploadStoreConfigInst)
 	if err != nil {
 		return nil, err
 	}
 
+	workCtx := actor.WithInternalActor(context.Background())
 	return []goroutine.BackgroundRoutine{
 		newRepoEmbeddingJobWorker(
 			workCtx,

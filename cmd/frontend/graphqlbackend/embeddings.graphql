@@ -13,7 +13,7 @@ extend type Mutation {
 }
 
 type EmbeddingsSearchResult {
-    filePath: String!
+    fileName: String!
     startLine: Int!
     endLine: Int!
     content: String!

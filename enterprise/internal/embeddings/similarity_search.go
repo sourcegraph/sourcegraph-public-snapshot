@@ -51,6 +51,8 @@ func min(a, b int) int {
 	return b
 }
 
+// TODO: Parallelize. Split the rows among N threads, each finds nResults within its chunk,
+// combine the heaps, sort, return top nResults.
 func (index *EmbeddingIndex[T]) SimilaritySearch(query []float32, nResults int) []*T {
 	if nResults == 0 {
 		return []*T{}

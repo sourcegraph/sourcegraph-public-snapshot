@@ -10,8 +10,10 @@ import (
 	"github.com/grafana/regexp"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	embeddingsbg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -52,7 +54,9 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *embeddi
 		}
 	}
 
-	repoEmbeddingIndex, err := embed.EmbedRepo(ctx, repo.Name, record.Revision, validFiles, func(fileName string) ([]byte, error) {
+	config := conf.Get()
+
+	repoEmbeddingIndex, err := embed.EmbedRepo(ctx, repo.Name, record.Revision, validFiles, config.Embeddings, func(fileName string) ([]byte, error) {
 		return h.gitserverClient.ReadFile(ctx, nil, repo.Name, record.Revision, fileName)
 	})
 	if err != nil {
@@ -65,6 +69,6 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *embeddi
 	}
 
 	bytesReader := bytes.NewReader(indexJsonBytes)
-	_, err = h.uploadStore.Upload(ctx, "index", bytesReader)
+	_, err = h.uploadStore.Upload(ctx, string(embeddings.GetRepoEmbeddingIndexName(repo.Name)), bytesReader)
 	return err
 }

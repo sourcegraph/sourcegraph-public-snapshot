@@ -1,0 +1,21 @@
+package embeddings
+
+import (
+	"crypto/md5"
+	"encoding/hex"
+	"fmt"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+)
+
+var nonAlphanumericCharsRegexp = lazyregexp.New(`[^0-9a-zA-Z]`)
+
+type RepoEmbeddingIndexName string
+
+func GetRepoEmbeddingIndexName(repoName api.RepoName) RepoEmbeddingIndexName {
+	fsSafeRepoName := nonAlphanumericCharsRegexp.ReplaceAllString(string(repoName), "_")
+	// Add a hash as well to avoid name collisions
+	hash := md5.Sum([]byte(repoName))
+	return RepoEmbeddingIndexName(fmt.Sprintf(`%s_%s.embeddingindex`, fsSafeRepoName, hex.EncodeToString(hash[:])))
+}

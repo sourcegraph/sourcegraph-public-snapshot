@@ -18,6 +18,6 @@ Line
 Line
 Line
 `
-	chunks, _ := SplitIntoEmbeddableChunks(content, "", SplitOptions{ChunkTokensThreshold: 4, ChunkEarlySplitTokensThreshold: 1})
+	chunks := SplitIntoEmbeddableChunks(content, "", SplitOptions{ChunkTokensThreshold: 4, ChunkEarlySplitTokensThreshold: 1})
 	autogold.Equal(t, chunks)
 }
