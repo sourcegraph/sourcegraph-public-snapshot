@@ -39,7 +39,7 @@ func (r *schemaResolver) SetAccessRequestStatus(ctx context.Context, args *struc
 	}
 
 	accessRequest.Status = args.Status
-	if err := r.db.AccessRequests().Update(ctx, database.AccessRequestUpdate{ID: accessRequest.ID, Status: &accessRequest.Status}); err != nil {
+	if _, err := r.db.AccessRequests().Update(ctx, database.AccessRequestUpdate{ID: accessRequest.ID, Status: accessRequest.Status}); err != nil {
 		return nil, err
 	}
 	return nil, nil

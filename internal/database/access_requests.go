@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
 	"github.com/keegancsmith/sqlf"
@@ -26,6 +27,18 @@ func (err errCannotCreateAccessRequest) Error() string {
 	return fmt.Sprintf("cannot create user: %v", err.code)
 }
 
+type accessRequestNotFound struct {
+	ID int32
+}
+
+func (e *accessRequestNotFound) Error() string {
+	return fmt.Sprintf("access_request with ID %d not found", e.ID)
+}
+
+func (e *accessRequestNotFound) NotFound() bool {
+	return true
+}
+
 // IsAccessRequestUserWithEmailExists reports whether err is an error indicating that the access request email was already taken by a signed in user.
 func IsAccessRequestUserWithEmailExists(err error) bool {
 	var e errCannotCreateAccessRequest
@@ -43,7 +56,7 @@ type AccessRequestsFilterOptions struct {
 }
 
 func (o AccessRequestsFilterOptions) sqlConditions() []*sqlf.Query {
-	conds := []*sqlf.Query{}
+	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if o.Status != nil {
 		conds = append(conds, sqlf.Sprintf("status = %v", *o.Status))
 	}
@@ -106,20 +119,16 @@ func toAccessRequestsField(orderBy string) (string, error) {
 	}
 }
 
-// TODO: add tests
 // AccessRequestStore provides access to the `access_requests` table.
 //
 // For a detailed overview of the schema, see schema.md.
 type AccessRequestStore interface {
 	basestore.ShareableStore
-	Count(context.Context, AccessRequestsFilterOptions) (int, error)
 	Create(context.Context, AccessRequestCreate) (*types.AccessRequest, error)
-	Delete(context.Context, int32) error
+	Update(context.Context, AccessRequestUpdate) (*types.AccessRequest, error)
 	GetByID(context.Context, int32) (*types.AccessRequest, error)
-	GetByEmail(context.Context, string) (*types.AccessRequest, error)
-	HardDelete(context.Context, int32) error
+	Count(context.Context, AccessRequestsFilterOptions) (int, error)
 	List(context.Context, AccessRequestsFilterAndListOptions) (_ []*types.AccessRequest, err error)
-	Update(context.Context, AccessRequestUpdate) error
 }
 
 type accessRequestStore struct {
@@ -135,7 +144,7 @@ type AccessRequestCreate struct {
 
 type AccessRequestUpdate struct {
 	ID     int32
-	Status *types.AccessRequestStatus
+	Status types.AccessRequestStatus
 }
 
 // AccessRequestsWith instantiates and returns a new accessRequestStore using the other store handle.
@@ -159,6 +168,11 @@ const (
 		ORDER BY %s
 		LIMIT %s
 		`
+	accessRequestUpdateQuery = `
+		UPDATE access_requests
+		SET status = %s
+		WHERE id = %s
+		RETURNING id, created_at, updated_at, name, email, status, additional_info`
 )
 
 func (s *accessRequestStore) Create(ctx context.Context, accessRequestCreate AccessRequestCreate) (*types.AccessRequest, error) {
@@ -195,11 +209,6 @@ func (s *accessRequestStore) Create(ctx context.Context, accessRequestCreate Acc
 	}
 
 	return &data, nil
-
-}
-
-func (s *accessRequestStore) Delete(ctx context.Context, id int32) error {
-	panic("implement me")
 }
 
 func (s *accessRequestStore) GetByID(ctx context.Context, id int32) (*types.AccessRequest, error) {
@@ -207,34 +216,27 @@ func (s *accessRequestStore) GetByID(ctx context.Context, id int32) (*types.Acce
 	var node types.AccessRequest
 
 	if err := row.Scan(&node.ID, &node.CreatedAt, &node.UpdatedAt, &node.Name, &node.Email, &node.Status, &node.AdditionalInfo); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &accessRequestNotFound{ID: id}
+		}
 		return nil, err
 	}
 
 	return &node, nil
 }
 
-func (s *accessRequestStore) GetByEmail(ctx context.Context, email string) (*types.AccessRequest, error) {
-	panic("implement me")
-}
+func (s *accessRequestStore) Update(ctx context.Context, update AccessRequestUpdate) (*types.AccessRequest, error) {
+	q := sqlf.Sprintf(accessRequestUpdateQuery, update.Status, update.ID)
+	var data types.AccessRequest
 
-func (s *accessRequestStore) HardDelete(ctx context.Context, id int32) error {
-	panic("implement me")
-}
-
-func (s *accessRequestStore) Update(ctx context.Context, update AccessRequestUpdate) error {
-	res, err := s.ExecResult(ctx, sqlf.Sprintf("UPDATE access_requests SET status = %s WHERE id = %s", update.Status, update.ID))
-	if err != nil {
-		return err
-	}
-	rows, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows != 1 {
-		return errors.Errorf("expected 1 row to be affected, got %d", rows)
+	if err := s.QueryRow(ctx, q).Scan(&data.ID, &data.CreatedAt, &data.UpdatedAt, &data.Name, &data.Email, &data.Status, &data.AdditionalInfo); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &accessRequestNotFound{ID: update.ID}
+		}
+		return nil, errors.Wrap(err, "scanning access_request")
 	}
 
-	return nil
+	return &data, nil
 }
 
 func (s *accessRequestStore) Count(ctx context.Context, opt AccessRequestsFilterOptions) (int, error) {
