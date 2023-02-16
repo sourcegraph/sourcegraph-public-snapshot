@@ -1,6 +1,11 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 # gazelle:exclude testdata
+filegroup(
+    name = "data",
+    srcs = glob(["**/**"]),
+    visibility = ["//lib/codeintel:__subpackages__"],
+)
 
 go_library(
     name = "diff",
@@ -16,8 +21,8 @@ go_library(
 go_test(
     name = "diff_test",
     srcs = ["diff_test.go"],
+    data = [":data"],
     embed = [":diff"],
-    data = ["//lib/codeintel/precise/diff/testdata:data"],
     deps = [
         "//lib/codeintel/lsif/conversion",
         "//lib/codeintel/precise",
