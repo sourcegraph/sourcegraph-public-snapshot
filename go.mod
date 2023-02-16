@@ -258,6 +258,7 @@ require (
 	go.bobheadxi.dev/streamline v1.2.2
 	go.opentelemetry.io/otel/exporters/jaeger v1.11.2
 	golang.org/x/exp v0.0.0-20221208152030-732eee02a75a
+	gotest.tools v2.2.0+incompatible
 )
 
 replace (
