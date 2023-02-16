@@ -5,6 +5,7 @@ import { BaseInsight, InsightFilters, InsightType } from '../common'
 export interface SearchBasedInsight extends BaseInsight {
     type: InsightType.SearchBased
     repositories: string[]
+    repoQuery: string
     filters: InsightFilters
     series: SearchBasedInsightSeries[]
     step: Duration

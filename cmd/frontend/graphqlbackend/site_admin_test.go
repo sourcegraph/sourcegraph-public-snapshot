@@ -2,9 +2,11 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
+	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
@@ -13,12 +15,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	errors "github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestDeleteUser(t *testing.T) {
@@ -30,7 +34,7 @@ func TestDeleteUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(db, gitserver.NewClient(db)).DeleteUser(ctx, &struct {
+		result, err := newSchemaResolver(db, gitserver.NewClient()).DeleteUser(ctx, &struct {
 			User graphql.ID
 			Hard *bool
 		}{
@@ -52,7 +56,7 @@ func TestDeleteUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		_, err := newSchemaResolver(db, gitserver.NewClient(db)).DeleteUser(ctx, &struct {
+		_, err := newSchemaResolver(db, gitserver.NewClient()).DeleteUser(ctx, &struct {
 			User graphql.ID
 			Hard *bool
 		}{
@@ -72,25 +76,34 @@ func TestDeleteUser(t *testing.T) {
 	users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id, Username: "alice"}, nil
 	})
+	const notFoundUID = 8
+	users.ListFunc.SetDefaultHook(func(ctx context.Context, opts *database.UsersListOptions) ([]*types.User, error) {
+		var users []*types.User
+		for _, id := range opts.UserIDs {
+			if id != notFoundUID { // test not-found user
+				users = append(users, &types.User{ID: id, Username: "alice"})
+			}
+		}
+		return users, nil
+	})
 
 	userEmails := database.NewMockUserEmailsStore()
 	userEmails.ListByUserFunc.SetDefaultReturn([]*database.UserEmail{{Email: "alice@example.com"}}, nil)
 
 	externalAccounts := database.NewMockUserExternalAccountsStore()
-	externalAccounts.ListFunc.SetDefaultReturn(
-		[]*extsvc.Account{{
-			AccountSpec: extsvc.AccountSpec{
-				ServiceType: extsvc.TypeGitLab,
-				ServiceID:   "https://gitlab.com/",
-				AccountID:   "alice_gitlab",
-			},
-		}},
-		nil,
-	)
+	externalAccountsListDefaultReturn := []*extsvc.Account{{
+		AccountSpec: extsvc.AccountSpec{
+			ServiceType: extsvc.TypeGitLab,
+			ServiceID:   "https://gitlab.com/",
+			AccountID:   "alice_gitlab",
+		},
+	}}
+	externalAccounts.ListFunc.SetDefaultReturn(externalAccountsListDefaultReturn, nil)
 
+	const aliceUID = 6
 	authzStore := database.NewMockAuthzStore()
 	authzStore.RevokeUserPermissionsFunc.SetDefaultHook(func(_ context.Context, args *database.RevokeUserPermissionsArgs) error {
-		if args.UserID != 6 {
+		if args.UserID != aliceUID {
 			return errors.Errorf("args.UserID: want 6 but got %v", args.UserID)
 		}
 
@@ -118,10 +131,43 @@ func TestDeleteUser(t *testing.T) {
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
 	db.AuthzFunc.SetDefaultReturn(authzStore)
 
+	// Disable event logging, which is triggered for SOAP users
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				EventLogging: "disabled",
+			},
+		},
+	})
+	t.Cleanup(func() { conf.Mock(nil) })
+
 	tests := []struct {
 		name     string
+		setup    func(t *testing.T)
 		gqlTests []*Test
 	}{
+		{
+			name: "target is not a user",
+			gqlTests: []*Test{
+				{
+					Schema: mustParseGraphQLSchema(t, db),
+					Query: `
+				mutation {
+					deleteUser(user: "VXNlcjo4") {
+						alwaysNil
+					}
+				}
+			`,
+					ExpectedResult: `
+				{
+					"deleteUser": {
+						"alwaysNil": null
+					}
+				}
+			`,
+				},
+			},
+		},
 		{
 			name: "soft delete a user",
 			gqlTests: []*Test{
@@ -166,9 +212,93 @@ func TestDeleteUser(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "non-SOAP user cannot delete SOAP user",
+			setup: func(t *testing.T) {
+				t.Cleanup(func() { externalAccounts.ListFunc.SetDefaultReturn(externalAccountsListDefaultReturn, nil) })
+
+				externalAccounts.ListFunc.SetDefaultHook(func(ctx context.Context, opts database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
+					if opts.UserID == aliceUID {
+						// delete target is a SOAP user
+						return []*extsvc.Account{{
+							AccountSpec: extsvc.AccountSpec{
+								ServiceType: auth.SourcegraphOperatorProviderType,
+								ServiceID:   "soap",
+								AccountID:   "alice_soap",
+							},
+						}}, nil
+					}
+					return nil, errors.Newf("unexpected user %d", opts.UserID)
+				})
+			},
+			gqlTests: []*Test{
+				{
+					Schema: mustParseGraphQLSchema(t, db),
+					Query: `
+				mutation {
+					deleteUser(user: "VXNlcjo2") {
+						alwaysNil
+					}
+				}
+			`,
+					ExpectedResult: `{ "deleteUser": null }`,
+					ExpectedErrors: []*gqlerrors.QueryError{
+						{
+							Path: []any{"deleteUser"},
+							Message: fmt.Sprintf("%[1]q user %d cannot be deleted by a non-%[1]q user",
+								auth.SourcegraphOperatorProviderType, aliceUID),
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "SOAP user deletes SOAP user",
+			setup: func(t *testing.T) {
+				t.Cleanup(func() { externalAccounts.ListFunc.SetDefaultReturn(externalAccountsListDefaultReturn, nil) })
+
+				externalAccounts.ListFunc.SetDefaultHook(func(ctx context.Context, opts database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
+					if opts.UserID == aliceUID {
+						// delete target is a SOAP user
+						return []*extsvc.Account{{
+							AccountSpec: extsvc.AccountSpec{
+								ServiceType: auth.SourcegraphOperatorProviderType,
+								ServiceID:   "soap",
+								AccountID:   "alice_soap",
+							},
+						}}, nil
+					}
+					return nil, errors.Newf("unexpected user %d", opts.UserID)
+				})
+			},
+			gqlTests: []*Test{
+				{
+					Schema: mustParseGraphQLSchema(t, db),
+					Context: actor.WithActor(context.Background(),
+						&actor.Actor{UID: 1, SourcegraphOperator: true}),
+					Query: `
+				mutation {
+					deleteUser(user: "VXNlcjo2") {
+						alwaysNil
+					}
+				}
+			`,
+					ExpectedResult: `
+				{
+					"deleteUser": {
+						"alwaysNil": null
+					}
+				}
+			`,
+				},
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			if test.setup != nil {
+				test.setup(t)
+			}
 			RunTests(t, test.gqlTests)
 		})
 	}
@@ -215,7 +345,7 @@ func TestDeleteOrganization_OnPremise(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: "must be site admin",
-					Path:    []any{string("deleteOrganization")},
+					Path:    []any{"deleteOrganization"},
 				},
 			},
 		})
@@ -271,7 +401,7 @@ func TestDeleteOrganization_OnPremise(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: "hard deleting organization is only supported on Sourcegraph.com",
-					Path:    []any{string("deleteOrganization")},
+					Path:    []any{"deleteOrganization"},
 				},
 			},
 		})
@@ -324,7 +454,7 @@ func TestDeleteOrganization_OnCloud(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: "current user is not an org member",
-					Path:    []any{string("deleteOrganization")},
+					Path:    []any{"deleteOrganization"},
 				},
 			},
 		})
@@ -370,7 +500,7 @@ func TestDeleteOrganization_OnCloud(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: "hard deleting organization is not supported",
-					Path:    []any{string("deleteOrganization")},
+					Path:    []any{"deleteOrganization"},
 				},
 			},
 		})
@@ -399,7 +529,7 @@ func TestDeleteOrganization_OnCloud(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: "soft deleting organization is not supported on Sourcegraph.com",
-					Path:    []any{string("deleteOrganization")},
+					Path:    []any{"deleteOrganization"},
 				},
 			},
 		})
@@ -445,4 +575,89 @@ func TestDeleteOrganization_OnCloud(t *testing.T) {
 				`,
 		})
 	})
+}
+
+func TestSetIsSiteAdmin(t *testing.T) {
+	testCases := map[string]struct {
+		isSiteAdmin           bool
+		argsUserID            int32
+		argsSiteAdmin         bool
+		result                *EmptyResponse
+		wantErr               error
+		securityLogEventCalls int
+		setIsSiteAdminCalls   int
+	}{
+		"authenticated as non-admin": {
+			isSiteAdmin:           false,
+			argsUserID:            1,
+			argsSiteAdmin:         true,
+			result:                nil,
+			wantErr:               auth.ErrMustBeSiteAdmin,
+			securityLogEventCalls: 1,
+			setIsSiteAdminCalls:   0,
+		},
+		"set current user as site-admin": {
+			isSiteAdmin:           true,
+			argsUserID:            1,
+			argsSiteAdmin:         true,
+			result:                nil,
+			wantErr:               errRefuseToSetCurrentUserSiteAdmin,
+			securityLogEventCalls: 1,
+			setIsSiteAdminCalls:   0,
+		},
+		"authenticated as site-admin: promoting to site-admin": {
+			isSiteAdmin:           true,
+			argsUserID:            2,
+			argsSiteAdmin:         true,
+			result:                &EmptyResponse{},
+			wantErr:               nil,
+			securityLogEventCalls: 1,
+			setIsSiteAdminCalls:   1,
+		},
+		"authenticated as site-admin: demoting to site-admin": {
+			isSiteAdmin:           true,
+			argsUserID:            2,
+			argsSiteAdmin:         false,
+			result:                &EmptyResponse{},
+			wantErr:               nil,
+			securityLogEventCalls: 1,
+			setIsSiteAdminCalls:   1,
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			users := database.NewMockUserStore()
+			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: tc.isSiteAdmin}, nil)
+			users.SetIsSiteAdminFunc.SetDefaultReturn(nil)
+
+			securityLogEvents := database.NewMockSecurityEventLogsStore()
+			securityLogEvents.LogEventFunc.SetDefaultReturn()
+
+			db := database.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
+			db.SecurityEventLogsFunc.SetDefaultReturn(securityLogEvents)
+
+			s := newSchemaResolver(db, gitserver.NewClient())
+
+			actorCtx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			result, err := s.SetUserIsSiteAdmin(actorCtx, &struct {
+				UserID    graphql.ID
+				SiteAdmin bool
+			}{
+				UserID:    MarshalUserID(tc.argsUserID),
+				SiteAdmin: tc.argsSiteAdmin,
+			})
+
+			if want := tc.wantErr; err != want {
+				t.Errorf("err: want %q but got %v", want, err)
+			}
+			if result != tc.result {
+				t.Errorf("result: want %v but got %v", tc.result, result)
+			}
+
+			mockrequire.CalledN(t, securityLogEvents.LogEventFunc, tc.securityLogEventCalls)
+			mockrequire.CalledN(t, users.SetIsSiteAdminFunc, tc.setIsSiteAdminCalls)
+		})
+	}
 }

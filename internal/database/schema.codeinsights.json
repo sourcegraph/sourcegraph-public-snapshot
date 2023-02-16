@@ -67,15 +67,6 @@
       "CycleOption": "NO"
     },
     {
-      "Name": "insight_dirty_queries_id_seq",
-      "TypeName": "integer",
-      "StartValue": 1,
-      "MinimumValue": 1,
-      "MaximumValue": 2147483647,
-      "Increment": 1,
-      "CycleOption": "NO"
-    },
-    {
       "Name": "insight_series_backfill_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
@@ -883,122 +874,6 @@
       "Triggers": []
     },
     {
-      "Name": "insight_dirty_queries",
-      "Comment": "Stores queries that were unsuccessful or otherwise flagged as incomplete or incorrect.",
-      "Columns": [
-        {
-          "Name": "dirty_at",
-          "Index": 4,
-          "TypeName": "timestamp without time zone",
-          "IsNullable": false,
-          "Default": "CURRENT_TIMESTAMP",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": "Timestamp when this query was marked dirty."
-        },
-        {
-          "Name": "for_time",
-          "Index": 6,
-          "TypeName": "timestamp without time zone",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": "Timestamp for which the original data point was recorded or intended to be recorded."
-        },
-        {
-          "Name": "id",
-          "Index": 1,
-          "TypeName": "integer",
-          "IsNullable": false,
-          "Default": "nextval('insight_dirty_queries_id_seq'::regclass)",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "insight_series_id",
-          "Index": 2,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "query",
-          "Index": 3,
-          "TypeName": "text",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": "Sourcegraph query string that was executed."
-        },
-        {
-          "Name": "reason",
-          "Index": 5,
-          "TypeName": "text",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": "Human readable string indicating the reason the query was marked dirty."
-        }
-      ],
-      "Indexes": [
-        {
-          "Name": "insight_dirty_queries_pkey",
-          "IsPrimaryKey": true,
-          "IsUnique": true,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX insight_dirty_queries_pkey ON insight_dirty_queries USING btree (id)",
-          "ConstraintType": "p",
-          "ConstraintDefinition": "PRIMARY KEY (id)"
-        },
-        {
-          "Name": "insight_dirty_queries_insight_series_id_fk_idx",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX insight_dirty_queries_insight_series_id_fk_idx ON insight_dirty_queries USING btree (insight_series_id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        }
-      ],
-      "Constraints": [
-        {
-          "Name": "insight_dirty_queries_insight_series_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "insight_series",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE"
-        }
-      ],
-      "Triggers": []
-    },
-    {
       "Name": "insight_series",
       "Comment": "Data series that comprise code insights.",
       "Columns": [
@@ -1721,6 +1596,19 @@
         {
           "Name": "series_limit",
           "Index": 13,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "series_num_samples",
+          "Index": 14,
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",

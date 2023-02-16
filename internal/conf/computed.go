@@ -43,6 +43,14 @@ func defaultConfigForDeployment() conftypes.RawUnified {
 	}
 }
 
+func ExecutorsAccessToken() string {
+	isSingleProgram := deploy.IsDeployTypeSingleProgram(deploy.Type())
+	if isSingleProgram {
+		return confdefaults.SingleProgramInMemoryExecutorPassword
+	}
+	return Get().ExecutorsAccessToken
+}
+
 func BitbucketServerConfigs(ctx context.Context) ([]*schema.BitbucketServerConnection, error) {
 	var config []*schema.BitbucketServerConnection
 	if err := internalapi.Client.ExternalServiceConfigs(ctx, extsvc.KindBitbucketServer, &config); err != nil {
@@ -317,6 +325,31 @@ func StructuralSearchEnabled() bool {
 		return true
 	}
 	return val == "enabled"
+}
+
+// SearchDocumentRanksWeight controls the impact of document ranks on the final ranking when
+// SearchOptions.UseDocumentRanks is enabled. The default is 0.5 * 9000 (half the zoekt default),
+// to match existing behavior where ranks are given half the priority as existing scoring signals.
+// We plan to eventually remove this, once we experiment on real data to find a good default.
+func SearchDocumentRanksWeight() float64 {
+	ranking := ExperimentalFeatures().Ranking
+	if ranking != nil && ranking.DocumentRanksWeight != nil {
+		return *ranking.DocumentRanksWeight
+	} else {
+		return 4500
+	}
+}
+
+// SearchFlushWallTime controls the amount of time that Zoekt shards collect and rank results when
+// the 'search-ranking' feature is enabled. We plan to eventually remove this, once we experiment
+// on real data to find a good default.
+func SearchFlushWallTime() time.Duration {
+	ranking := ExperimentalFeatures().Ranking
+	if ranking != nil && ranking.FlushWallTimeMS > 0 {
+		return time.Duration(ranking.FlushWallTimeMS) * time.Millisecond
+	} else {
+		return 500 * time.Millisecond
+	}
 }
 
 func ExperimentalFeatures() schema.ExperimentalFeatures {

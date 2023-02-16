@@ -6,6 +6,7 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import GitLabIcon from 'mdi-react/GitlabIcon'
 
 import { AuthProvider } from '../../jscontext'
+import { GerritIcon } from '../externalServices/GerritIcon'
 
 export type ExternalAccountKind = Exclude<
     AuthProvider['serviceType'],
@@ -44,5 +45,9 @@ export const defaultExternalAccounts: Record<ExternalAccountKind, ExternalAccoun
     bitbucketCloud: {
         title: 'Bitbucket Cloud',
         icon: BitbucketIcon,
+    },
+    gerrit: {
+        title: 'Gerrit',
+        icon: GerritIcon,
     },
 }

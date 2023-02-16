@@ -1,8 +1,6 @@
 package database
 
 import (
-	"database/sql"
-
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -15,7 +13,7 @@ type EncryptionConfig struct {
 	KeyIDFieldName      string
 	EncryptedFieldNames []string
 	UpdateAsBytes       bool
-	Scan                func(*sql.Rows, error) (map[int]Encrypted, error)
+	Scan                func(basestore.Rows, error) (map[int]Encrypted, error)
 	Key                 func() encryption.Key
 	Limit               int
 }

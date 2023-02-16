@@ -304,7 +304,7 @@ func runUsersQuery(t *testing.T, schema *graphql.Schema, want usersQueryTest) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: want.wantError,
-					Path:    []any{string("users")},
+					Path:    []any{"users"},
 				},
 			},
 		})

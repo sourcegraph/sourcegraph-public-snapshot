@@ -29,7 +29,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
             const { defaultFilters, defaultSeriesDisplayOptions } = insight
             // We do not support different time scope for different series at the moment
             const step = getDurationFromStep(insight.dataSeriesDefinitions[0].timeScope)
-            const { repositories } = getInsightRepositories(insight.repositoryDefinition)
+            const { repositories, repoSearch } = getInsightRepositories(insight.repositoryDefinition)
             const filters = getParsedFilters(defaultFilters, defaultSeriesDisplayOptions)
 
             if (isCaptureGroupInsight) {
@@ -40,6 +40,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                     ...baseInsight,
                     type: InsightType.CaptureGroup,
                     repositories,
+                    repoQuery: repoSearch,
                     query,
                     step,
                     filters,
@@ -78,6 +79,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                 ...baseInsight,
                 type: InsightType.SearchBased,
                 repositories,
+                repoQuery: repoSearch,
                 series,
                 step,
                 filters,

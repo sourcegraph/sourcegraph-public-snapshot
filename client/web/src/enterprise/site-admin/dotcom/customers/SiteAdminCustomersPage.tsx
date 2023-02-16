@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo } from 'react'
 
-import { RouteComponentProps } from 'react-router'
 import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -43,12 +42,7 @@ const SiteAdminCustomerNode: React.FunctionComponent<React.PropsWithChildren<Sit
     </li>
 )
 
-interface Props extends RouteComponentProps<{}> {}
-
-class FilteredSiteAdminCustomerConnection extends FilteredConnection<
-    CustomerFields,
-    Pick<SiteAdminCustomerNodeProps, Exclude<keyof SiteAdminCustomerNodeProps, 'node'>>
-> {}
+interface Props {}
 
 /**
  * Displays a list of customers associated with user accounts on Sourcegraph.com.
@@ -65,7 +59,10 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<React.PropsW
             <div className="d-flex justify-content-between align-items-center mb-1">
                 <H2 className="mb-0">Customers</H2>
             </div>
-            <FilteredSiteAdminCustomerConnection
+            <FilteredConnection<
+                CustomerFields,
+                Pick<SiteAdminCustomerNodeProps, Exclude<keyof SiteAdminCustomerNodeProps, 'node'>>
+            >
                 className="list-group list-group-flush mt-3"
                 noun="customer"
                 pluralNoun="customers"
@@ -74,8 +71,6 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<React.PropsW
                 nodeComponentProps={nodeProps}
                 noSummaryIfAllNodesVisible={true}
                 updates={updates}
-                history={props.history}
-                location={props.location}
             />
         </div>
     )

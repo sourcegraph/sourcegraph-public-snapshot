@@ -276,7 +276,10 @@ describe('codmirror completions', () => {
                             },
                         ] as SearchMatch[]
                 )
-            )?.map(({ apply }) => apply)
+            )
+                // Do not consider functions like has.owner or has.content.
+                ?.filter(({ apply }) => typeof apply === 'string')
+                .map(({ apply }) => apply)
         ).toStrictEqual(['^some/path/main\\.go$ '])
     })
 

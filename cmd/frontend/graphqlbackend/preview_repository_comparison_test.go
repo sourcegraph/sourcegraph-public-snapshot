@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/go-diff/diff"
+	godiff "github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -556,7 +556,7 @@ index 373ae20..89ad131 100644
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			fileDiff, err := diff.ParseFileDiff([]byte(tc.patch))
+			fileDiff, err := godiff.ParseFileDiff([]byte(tc.patch))
 			if err != nil {
 				t.Fatal(err)
 			}

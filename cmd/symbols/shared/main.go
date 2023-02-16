@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api"
@@ -76,7 +75,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	db := database.NewDB(logger, sqlDB)
 
 	// Run setup
-	gitserverClient := gitserver.NewClient(observationCtx, db)
+	gitserverClient := gitserver.NewClient(observationCtx)
 	repositoryFetcher := fetcher.NewRepositoryFetcher(observationCtx, gitserverClient, RepositoryFetcherConfig.MaxTotalPathsLength, int64(RepositoryFetcherConfig.MaxFileSizeKb)*1000)
 	searchFunc, handleStatus, newRoutines, ctagsBinary, err := setup(observationCtx, db, gitserverClient, repositoryFetcher)
 	if err != nil {
@@ -86,6 +85,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	// Create HTTP server
 	handler := api.NewHandler(searchFunc, gitserverClient.ReadFile, handleStatus, ctagsBinary)
+
 	handler = handlePanic(logger, handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)

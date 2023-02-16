@@ -43,19 +43,19 @@ func (l *FIFOList) Insert(b []byte) error {
 	// disabling.
 	maxSize := l.MaxSize()
 	if maxSize == 0 {
-		if err := pool.LTrim(key, 0, 0); err != nil {
+		if err := kv().LTrim(key, 0, 0); err != nil {
 			return errors.Wrap(err, "failed to execute redis command LTRIM")
 		}
 		return nil
 	}
 
 	// O(1) because we're just adding a single element.
-	if err := pool.LPush(key, b); err != nil {
+	if err := kv().LPush(key, b); err != nil {
 		return errors.Wrap(err, "failed to execute redis command LPUSH")
 	}
 
 	// O(1) because the average case if just about dropping the last element.
-	if err := pool.LTrim(key, 0, maxSize-1); err != nil {
+	if err := kv().LTrim(key, 0, maxSize-1); err != nil {
 		return errors.Wrap(err, "failed to execute redis command LTRIM")
 	}
 	return nil
@@ -63,7 +63,7 @@ func (l *FIFOList) Insert(b []byte) error {
 
 func (l *FIFOList) Size() (int, error) {
 	key := l.globalPrefixKey()
-	n, err := pool.LLen(key)
+	n, err := kv().LLen(key)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to execute redis command LLEN")
 	}
@@ -95,7 +95,7 @@ func (l *FIFOList) Slice(ctx context.Context, from, to int) ([][]byte, error) {
 	}
 
 	key := l.globalPrefixKey()
-	bs, err := pool.WithContext(ctx).LRange(key, from, to).ByteSlices()
+	bs, err := kv().WithContext(ctx).LRange(key, from, to).ByteSlices()
 	if err != nil {
 		// Return ctx error if it expired
 		if ctx.Err() != nil {

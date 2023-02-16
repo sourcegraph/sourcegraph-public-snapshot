@@ -81,7 +81,7 @@ func (c *SearchResultsResolver) repositoryResolvers(ctx context.Context, ids []a
 		return nil, nil
 	}
 
-	gsClient := gitserver.NewClient(c.db)
+	gsClient := gitserver.NewClient()
 	resolvers := make([]*RepositoryResolver, 0, len(ids))
 	err := c.db.Repos().StreamMinimalRepos(ctx, database.ReposListOptions{
 		IDs: ids,
@@ -136,7 +136,7 @@ func matchesToResolvers(db database.DB, matches []result.Match) []SearchResultRe
 		Rev  string
 	}
 	repoResolvers := make(map[repoKey]*RepositoryResolver, 10)
-	gsClient := gitserver.NewClient(db)
+	gsClient := gitserver.NewClient()
 	getRepoResolver := func(repoName types.MinimalRepo, rev string) *RepositoryResolver {
 		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
 			return existing
@@ -163,6 +163,8 @@ func matchesToResolvers(db database.DB, matches []result.Match) []SearchResultRe
 				db:          db,
 				CommitMatch: *v,
 			})
+		case *result.OwnerMatch:
+			// todo(own): add OwnerSearchResultResolver
 		}
 	}
 	return resolvers
@@ -250,7 +252,7 @@ func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.
 		return time.Time{}, nil
 	}
 	hm := fm.ChunkMatches[0]
-	hunks, err := gitserver.NewClient(sr.db).BlameFile(ctx, authz.DefaultSubRepoPermsChecker, fm.Repo.Name, fm.Path, &gitserver.BlameOptions{
+	hunks, err := gitserver.NewClient().BlameFile(ctx, authz.DefaultSubRepoPermsChecker, fm.Repo.Name, fm.Path, &gitserver.BlameOptions{
 		NewestCommit: fm.CommitID,
 		StartLine:    hm.Ranges[0].Start.Line,
 		EndLine:      hm.Ranges[0].Start.Line,
@@ -299,8 +301,8 @@ loop:
 	for _, r := range sr.Matches {
 		r := r // shadow so it doesn't change in the goroutine
 		switch m := r.(type) {
-		case *result.RepoMatch:
-			// We don't care about repo results here.
+		case *result.RepoMatch, *result.OwnerMatch:
+			// We don't care about repo or owner results here.
 			continue
 		case *result.CommitMatch:
 			// Diff searches are cheap, because we implicitly have author date info.

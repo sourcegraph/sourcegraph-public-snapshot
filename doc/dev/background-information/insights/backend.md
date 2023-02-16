@@ -224,7 +224,7 @@ Insights can then be [created either via the locally running webapp](../../../co
 
 ## Debugging
 
-This being a pretty complex, high cardinality, and slow-moving system - debugging can be tricky.
+This being a pretty complex, high cardinality, and slow-moving system—debugging can be tricky.
 
 In this section, I'll cover useful tips I have for debugging the system when developing it or otherwise using it.
 

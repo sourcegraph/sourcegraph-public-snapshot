@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react'
 
 import { mapValues, values } from 'lodash'
-import { RouteComponentProps } from 'react-router'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -9,6 +8,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, useObservable, Alert, Link, H2, Text } from '@sourcegraph/wildcard'
 
 import awsCodeCommitJSON from '../../../../schema/aws_codecommit.schema.json'
+import azureDevOpsJSON from '../../../../schema/azuredevops.schema.json'
 import bitbucketCloudSchemaJSON from '../../../../schema/bitbucket_cloud.schema.json'
 import bitbucketServerSchemaJSON from '../../../../schema/bitbucket_server.schema.json'
 import gerritSchemaJSON from '../../../../schema/gerrit.schema.json'
@@ -43,6 +43,7 @@ interface JSONSchema {
 
 const externalServices: Record<ExternalServiceKind, JSONSchema> = {
     AWSCODECOMMIT: awsCodeCommitJSON,
+    AZUREDEVOPS: azureDevOpsJSON,
     BITBUCKETCLOUD: bitbucketCloudSchemaJSON,
     BITBUCKETSERVER: bitbucketServerSchemaJSON,
     GERRIT: gerritSchemaJSON,
@@ -108,12 +109,11 @@ const allConfigSchema = {
         .reduce((allDefinitions, definitions) => ({ ...allDefinitions, ...definitions }), {}),
 }
 
-interface Props extends RouteComponentProps, ThemeProps, TelemetryProps {}
+interface Props extends ThemeProps, TelemetryProps {}
 
 export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     isLightTheme,
     telemetryService,
-    history,
 }) => {
     const allConfig = useObservable(useMemo(fetchAllConfigAndSettings, []))
     return (
@@ -150,7 +150,6 @@ export const SiteAdminReportBugPage: React.FunctionComponent<React.PropsWithChil
                     canEdit={false}
                     height={800}
                     isLightTheme={isLightTheme}
-                    history={history}
                     readOnly={true}
                     telemetryService={telemetryService}
                 />

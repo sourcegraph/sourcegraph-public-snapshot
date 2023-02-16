@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -25,7 +25,7 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 			db,
 			logtest.NoOp(t),
 			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				actor := actor.FromContext(r.Context())
+				actor := sgactor.FromContext(r.Context())
 				if actor.IsAuthenticated() {
 					_, _ = fmt.Fprintf(w, "user %v", actor.UID)
 				} else {
@@ -56,7 +56,7 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 	// auth middleware.
 	t.Run("no header, actor present", func(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/", nil)
-		req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: 123}))
+		req = req.WithContext(sgactor.WithActor(context.Background(), &sgactor.Actor{UID: 123}))
 		checkHTTPResponse(t, db, req, http.StatusOK, "user 123")
 	})
 
@@ -123,7 +123,7 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 	t.Run("actor present, valid non-sudo token", func(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Set("Authorization", "token abcdef")
-		req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: 456}))
+		req = req.WithContext(sgactor.WithActor(context.Background(), &sgactor.Actor{UID: 456}))
 
 		accessTokens := database.NewMockAccessTokenStore()
 		accessTokens.LookupFunc.SetDefaultHook(func(_ context.Context, tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
@@ -156,7 +156,7 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 			} else {
 				req.SetBasicAuth("abcdef", "")
 			}
-			req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: 456}))
+			req = req.WithContext(sgactor.WithActor(context.Background(), &sgactor.Actor{UID: 456}))
 
 			accessTokens := database.NewMockAccessTokenStore()
 			accessTokens.LookupFunc.SetDefaultHook(func(_ context.Context, tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
@@ -256,7 +256,7 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 
 		securityEventLogsStore := database.NewMockSecurityEventLogsStore()
 		securityEventLogsStore.LogEventFunc.SetDefaultHook(func(ctx context.Context, _ *database.SecurityEvent) {
-			require.True(t, actor.FromContext(ctx).SourcegraphOperator, "the actor should be a Sourcegraph operator")
+			require.True(t, sgactor.FromContext(ctx).SourcegraphOperator, "the actor should be a Sourcegraph operator")
 		})
 
 		db.AccessTokensFunc.SetDefaultReturn(accessTokens)

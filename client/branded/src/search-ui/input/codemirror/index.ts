@@ -1,6 +1,6 @@
 import { ChangeSpec, EditorState, Extension } from '@codemirror/state'
 import { EditorView, ViewUpdate } from '@codemirror/view'
-import * as H from 'history'
+import { NavigateFunction } from 'react-router-dom-v5-compat'
 import { Observable } from 'rxjs'
 
 import { createCancelableFetchSuggestions } from '@sourcegraph/shared/src/search/query/providers-utils'
@@ -60,6 +60,15 @@ export const singleLine = EditorState.transactionFilter.of(transaction => {
     return changes.length > 0 ? [transaction, { changes, sequential: true }] : transaction
 })
 
+interface CreateDefaultSuggestionsOptions extends Omit<DefaultSuggestionSourcesOptions, 'fetchSuggestions'> {
+    fetchSuggestions: (query: string) => Observable<SearchMatch[]>
+    navigate?: NavigateFunction
+    /**
+     * Whether or not to allow suggestions selection by Enter key.
+     */
+    applyOnEnter?: boolean
+}
+
 /**
  * Creates a search query suggestions extension with default suggestion sources
  * and cancable requests.
@@ -70,17 +79,10 @@ export const createDefaultSuggestions = ({
     fetchSuggestions,
     disableFilterCompletion,
     disableSymbolCompletion,
-    history,
+    navigate,
     applyOnEnter,
     showWhenEmpty,
-}: Omit<DefaultSuggestionSourcesOptions, 'fetchSuggestions'> & {
-    fetchSuggestions: (query: string) => Observable<SearchMatch[]>
-    history?: H.History
-    /**
-     * Whether or not to allow suggestions selection by Enter key.
-     */
-    applyOnEnter?: boolean
-}): Extension => [
+}: CreateDefaultSuggestionsOptions): Extension => [
     searchQueryAutocompletion(
         createDefaultSuggestionSources({
             fetchSuggestions: createCancelableFetchSuggestions(fetchSuggestions),
@@ -91,7 +93,7 @@ export const createDefaultSuggestions = ({
             showWhenEmpty,
             applyOnEnter,
         }),
-        history,
+        navigate,
         applyOnEnter
     ),
     loadingIndicator(),

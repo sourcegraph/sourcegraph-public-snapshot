@@ -27,6 +27,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
 
 	sglog "github.com/sourcegraph/log"
 
@@ -36,9 +38,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -70,14 +75,13 @@ func ResetClientMocks() {
 var _ Client = &clientImplementor{}
 
 // NewClient returns a new gitserver.Client.
-func NewClient(db database.DB) Client {
+func NewClient() Client {
 	return &clientImplementor{
 		logger: sglog.Scoped("NewClient", "returns a new gitserver.Client"),
 		addrs: func() []string {
 			return conf.Get().ServiceConnections().GitServers
 		},
 		pinned:      pinnedReposFromConfig,
-		db:          db,
 		httpClient:  defaultDoer,
 		HTTPLimiter: defaultLimiter,
 		// Use the binary name for userAgent. This should effectively identify
@@ -90,7 +94,7 @@ func NewClient(db database.DB) Client {
 
 // NewTestClient returns a test client that will use the given hard coded list of
 // addresses instead of reading them from config.
-func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) Client {
+func NewTestClient(cli httpcli.Doer, addrs []string) Client {
 	logger := sglog.Scoped("NewTestClient", "Test New client")
 	return &clientImplementor{
 		logger: logger,
@@ -104,7 +108,6 @@ func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) Client {
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
 		userAgent:  filepath.Base(os.Args[0]),
-		db:         db,
 		operations: newOperations(observation.ContextWithLogger(logger, &observation.TestContext)),
 	}
 }
@@ -204,9 +207,6 @@ type clientImplementor struct {
 	// should query the conf to fetch a fresh map of pinned repos, so that we don't have to proactively watch for conf changes
 	// and sync the pinned map.
 	pinned func() map[string]string
-
-	// db is a connection to the database
-	db database.DB
 
 	// operations are used for internal observability
 	operations *operations
@@ -455,7 +455,7 @@ func (c *clientImplementor) AddrForRepo(ctx context.Context, repo api.RepoName) 
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
-	return AddrForRepo(ctx, c.userAgent, c.db, repo, GitServerAddresses{
+	return AddrForRepo(ctx, c.userAgent, repo, GitServerAddresses{
 		Addresses:     addrs,
 		PinnedServers: c.pinned(),
 	})
@@ -468,7 +468,7 @@ var addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
 // It should never be called with a nil addresses pointer.
-func AddrForRepo(ctx context.Context, userAgent string, db database.DB, repo api.RepoName, addresses GitServerAddresses) (string, error) {
+func AddrForRepo(ctx context.Context, userAgent string, repo api.RepoName, addresses GitServerAddresses) (string, error) {
 	addrForRepoInvoked.WithLabelValues(userAgent).Inc()
 
 	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
@@ -563,7 +563,7 @@ type badRequestError struct{ error }
 
 func (e badRequestError) BadRequest() bool { return true }
 
-func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, errRes error) {
+func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRes error) {
 	repoName := protocol.NormalizeRepo(c.repo)
 
 	span, ctx := ot.StartSpanFromContext(ctx, "Client.sendExec") //nolint:staticcheck // OT is deprecated
@@ -581,38 +581,132 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, _ htt
 	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {
 		deadlineExceededCounter.Inc()
-		return nil, nil, err
+		return nil, err
 	}
 
-	req := &protocol.ExecRequest{
-		Repo:           repoName,
-		EnsureRevision: c.EnsureRevision(),
-		Args:           c.args[1:],
-		Stdin:          c.stdin,
-		NoTimeout:      c.noTimeout,
-	}
-	resp, err := c.execFn(ctx, repoName, "exec", req)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	switch resp.StatusCode {
-	case http.StatusOK:
-		return resp.Body, resp.Trailer, nil
-
-	case http.StatusNotFound:
-		var payload protocol.NotFoundPayload
-		if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
-			resp.Body.Close()
-			return nil, nil, err
+	if featureflag.FromContext(ctx).GetBoolOr("grpc", false) {
+		req := &proto.ExecRequest{
+			Repo:           string(repoName),
+			EnsureRevision: c.EnsureRevision(),
+			Args:           c.args[1:],
+			Stdin:          c.stdin,
+			NoTimeout:      c.noTimeout,
 		}
-		resp.Body.Close()
-		return nil, nil, &gitdomain.RepoNotExistError{Repo: repoName, CloneInProgress: payload.CloneInProgress, CloneProgress: payload.CloneProgress}
+		addr, err := c.execer.AddrForRepo(ctx, repoName)
+		if err != nil {
+			return nil, err
+		}
 
-	default:
-		resp.Body.Close()
-		return nil, nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
+		conn, err := grpc.DialContext(ctx, addr, defaults.DialOptions()...)
+		if err != nil {
+			return nil, err
+		}
+		defer conn.Close()
+
+		client := proto.NewGitserverServiceClient(conn)
+		stream, err := client.Exec(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+		r := streamio.NewReader(func() ([]byte, error) {
+			msg, err := stream.Recv()
+			if err != nil {
+
+				return nil, err
+			}
+			return msg.GetData(), nil
+		})
+
+		return &readCloseWrapper{r: r, closeFn: conn.Close}, err
+
+	} else {
+		req := &protocol.ExecRequest{
+			Repo:           repoName,
+			EnsureRevision: c.EnsureRevision(),
+			Args:           c.args[1:],
+			Stdin:          c.stdin,
+			NoTimeout:      c.noTimeout,
+		}
+		resp, err := c.execer.httpPost(ctx, repoName, "exec", req)
+		if err != nil {
+			return nil, err
+		}
+
+		switch resp.StatusCode {
+		case http.StatusOK:
+			return &cmdReader{rc: resp.Body, trailer: resp.Trailer}, nil
+
+		case http.StatusNotFound:
+			var payload protocol.NotFoundPayload
+			if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+				resp.Body.Close()
+				return nil, err
+			}
+			resp.Body.Close()
+			return nil, &gitdomain.RepoNotExistError{Repo: repoName, CloneInProgress: payload.CloneInProgress, CloneProgress: payload.CloneProgress}
+
+		default:
+			resp.Body.Close()
+			return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
+		}
 	}
+}
+
+type readCloseWrapper struct {
+	r       io.Reader
+	closeFn func() error
+}
+
+func (r *readCloseWrapper) Read(p []byte) (int, error) {
+	n, err := r.r.Read(p)
+	if err != nil {
+		st, ok := status.FromError(err)
+		if !ok {
+			return n, err
+		}
+
+		for _, detail := range st.Details() {
+			switch payload := detail.(type) {
+			case *proto.ExecStatusPayload:
+				return n, &CommandStatusError{
+					Message:    st.Message(),
+					Stderr:     payload.Stderr,
+					StatusCode: payload.StatusCode,
+				}
+			case *proto.NotFoundPayload:
+				return n, &gitdomain.RepoNotExistError{
+					Repo:            api.RepoName(payload.Repo),
+					CloneInProgress: payload.CloneInProgress,
+					CloneProgress:   payload.CloneProgress,
+				}
+			}
+		}
+	}
+	return n, err
+}
+
+func (r *readCloseWrapper) Close() error {
+	return r.closeFn()
+}
+
+type CommandStatusError struct {
+	Message    string
+	StatusCode int32
+	Stderr     string
+}
+
+func (c *CommandStatusError) Error() string {
+	stderr := c.Stderr
+	if len(stderr) > 100 {
+		stderr = stderr[:100] + "... (truncated)"
+	}
+	if c.Message != "" {
+		return fmt.Sprintf("%s (stderr: %q)", c.Message, stderr)
+	}
+	if c.StatusCode != 0 {
+		return fmt.Sprintf("non-zero exit status: %d (stderr: %q)", c.StatusCode, stderr)
+	}
+	return stderr
 }
 
 func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, err error) {
@@ -884,7 +978,7 @@ func (c *clientImplementor) gitCommand(repo api.RepoName, arg ...string) GitComm
 	}
 	return &RemoteGitCommand{
 		repo:   repo,
-		execFn: c.httpPost,
+		execer: c,
 		args:   append([]string{git}, arg...),
 	}
 }

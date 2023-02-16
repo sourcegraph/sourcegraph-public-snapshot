@@ -30,8 +30,9 @@ export const RemoveExternalAccountModal: React.FunctionComponent<
         onDidRemove: (id: string, name: string) => void
         onDidCancel: () => void
         onDidError: (error: ErrorLike) => void
+        isOpen: boolean
     }>
-> = ({ id, name, onDidRemove, onDidCancel, onDidError }) => {
+> = ({ id, name, onDidRemove, onDidCancel, onDidError, isOpen }) => {
     const [isLoading, setIsLoading] = useState(false)
 
     const onAccountRemove = useCallback<React.FormEventHandler<HTMLFormElement>>(
@@ -56,6 +57,7 @@ export const RemoveExternalAccountModal: React.FunctionComponent<
             aria-labelledby={`heading--disconnect-${name}`}
             aria-describedby={`description--disconnect-${name}`}
             onDismiss={onDidCancel}
+            isOpen={isOpen}
         >
             <H3 id={`heading--disconnect-${name}`} className="text-danger mb-4">
                 Disconnect {name}?

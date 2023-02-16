@@ -7,17 +7,17 @@ import (
 type repositoryFilterPreviewResolver struct {
 	repositoryResolvers []resolverstubs.RepositoryResolver
 	totalCount          int
-	offset              int
 	totalMatches        int
+	matchesAllRepos     bool
 	limit               *int
 }
 
-func NewRepositoryFilterPreviewResolver(repositoryResolvers []resolverstubs.RepositoryResolver, totalCount, offset, totalMatches int, limit *int) resolverstubs.RepositoryFilterPreviewResolver {
+func NewRepositoryFilterPreviewResolver(repositoryResolvers []resolverstubs.RepositoryResolver, totalCount, totalMatches int, matchesAllRepos bool, limit *int) resolverstubs.RepositoryFilterPreviewResolver {
 	return &repositoryFilterPreviewResolver{
 		repositoryResolvers: repositoryResolvers,
 		totalCount:          totalCount,
-		offset:              offset,
 		totalMatches:        totalMatches,
+		matchesAllRepos:     matchesAllRepos,
 		limit:               limit,
 	}
 }
@@ -34,6 +34,10 @@ func (r *repositoryFilterPreviewResolver) TotalMatches() int32 {
 	return int32(r.totalMatches)
 }
 
+func (r *repositoryFilterPreviewResolver) MatchesAllRepos() bool {
+	return r.matchesAllRepos
+}
+
 func (r *repositoryFilterPreviewResolver) Limit() *int32 {
 	if r.limit == nil {
 		return nil
@@ -41,8 +45,4 @@ func (r *repositoryFilterPreviewResolver) Limit() *int32 {
 
 	v := int32(*r.limit)
 	return &v
-}
-
-func (r *repositoryFilterPreviewResolver) PageInfo() resolverstubs.PageInfo {
-	return EncodeIntCursor(toInt32(NextOffset(r.offset, len(r.repositoryResolvers), r.totalCount)))
 }

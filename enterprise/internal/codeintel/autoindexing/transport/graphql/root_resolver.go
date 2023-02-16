@@ -179,7 +179,7 @@ func (r *rootResolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (_ reso
 	// the same graphQL request, not across different request.
 	db := r.autoindexSvc.GetUnsafeDB()
 	prefetcher := sharedresolvers.NewPrefetcher(r.autoindexSvc, r.uploadSvc)
-	locationResolver := sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient(db))
+	locationResolver := sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient())
 
 	index, exists, err := prefetcher.GetIndexByID(ctx, int(indexID))
 	if err != nil || !exists {
@@ -267,7 +267,7 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *reso
 	// the same graphQL request, not across different request.
 	db := r.autoindexSvc.GetUnsafeDB()
 	prefetcher := sharedresolvers.NewPrefetcher(r.autoindexSvc, r.uploadSvc)
-	locationResolver := sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient(db))
+	locationResolver := sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient())
 
 	lsifIndexResolvers := make([]resolverstubs.LSIFIndexResolver, 0, len(indexes))
 	for i := range indexes {

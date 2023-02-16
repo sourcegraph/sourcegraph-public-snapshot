@@ -68,7 +68,7 @@ This does not cover additional load balancers, proxies, CDNs, etc. that one may 
 
 See also: [OWASP: CSRF](https://owasp.org/www-community/attacks/csrf)
 
-CSRF (Cross Site Request Forgery) is when a legitimate user is browsing another site, say either attacker.com (ran by a malicious actor), or google.com (a legitimate site, perhaps running code by a malicious actor) makes requests to your own site, say sourcegraph.com, and is able to perform actions on behalf of the user that they did not intend to, using their own authentication credentials - often unbeknownst to them.
+CSRF (Cross Site Request Forgery) is when a legitimate user is browsing another site, say either attacker.com (ran by a malicious actor), or google.com (a legitimate site, perhaps running code by a malicious actor) makes requests to your own site, say sourcegraph.com, and is able to perform actions on behalf of the user that they did not intend to, using their own authentication credentials—often unbeknownst to them.
 
 This can happen in *many* forms:
 
@@ -77,7 +77,7 @@ This can happen in *many* forms:
 * POST HTTP requests made via HTML `<form>` submissions.
 * ...
 
-For example, say a Sourcegraph user clicks a malicious link and Sourcegraph is not protected against CSRF. This would mean that, for example, a `<form>` element could be silently submitted in the background to perform destructive actions on behalf of the user using Sourcegraph's API - such as deleting data on Sourcegraph.
+For example, say a Sourcegraph user clicks a malicious link and Sourcegraph is not protected against CSRF. This would mean that, for example, a `<form>` element could be silently submitted in the background to perform destructive actions on behalf of the user using Sourcegraph's API—such as deleting data on Sourcegraph.
 
 ## How is CSRF mitigated traditionally?
 
@@ -119,7 +119,7 @@ The delineation of API and non-API endpoints is very important because we can al
 * The Sourcegraph browser extension, which browsers provide a distinct ORIGIN for (separate from the domain they are executing on.)
 * The `src` CLI, running on dev laptops, in CI pipelines, on servers, etc.
 * Users via `curl` or various programming languages.
-* Code host integrations, e.g. the Sourcegraph plugin running server-side on a Bitbucket Server / Bitbucket Data Center instance - or GitLab's integration.
+* Code host integrations, e.g. the Sourcegraph plugin running server-side on a Bitbucket Server / Bitbucket Data Center instance—or GitLab's integration.
 * Other websites, such as e.g. github1s.com using our GraphQL API to power various features.
 * Editor extensions (potentially in the future, not today)
 * The Sourcegraph application itself (however, most often this goes through `/.internal` which is unauthenticated and never exposed publicly.)
@@ -132,7 +132,7 @@ Aside from the folloowing exclusions, non-API endpoints only serve static, unpri
 
 #### A note about window.context
 
-`window.context` is served with each request. For example, if you make a request via `curl https://sourcegraph.com/search` you'll find each GET request for a page introduces context to JavaScript. This _only contains unprivileged, public content_ - which is very important as otherwise it could be vulnerable to caching (e.g. if Cloudflare caches a GET request for user A and serves it to user B later):
+`window.context` is served with each request. For example, if you make a request via `curl https://sourcegraph.com/search` you'll find each GET request for a page introduces context to JavaScript. This _only contains unprivileged, public content_—which is very important as otherwise it could be vulnerable to caching (e.g. if Cloudflare caches a GET request for user A and serves it to user B later):
 
 ```
 	<script ignore-csp>
@@ -158,7 +158,7 @@ They are [registered here in code](https://sourcegraph.com/github.com/sourcegrap
 
 ### Risk of CSRF attacks against our non-API endpoints
 
-Non-API endpoints _never_ allow API-like access (there are no traditional REST-like APIs here, there are no create/delete/modify actions these endpoints can perform), there is _no risk_ in a CSRF attack aside from the `window.context` content (which has no sensitive or user-specific data) and the potential for using the session cookie (which is mitigated through other means, see below.) - however this is NOT true for the exclusions listed above (`Exclusion: username/password manipulation (sign in, password reset, etc.)`.) It is therefor paramount that we defend against CSRF on the routes described by these exclusions. See "How we protect against CSRF in non-API endpoints" below.
+Non-API endpoints _never_ allow API-like access (there are no traditional REST-like APIs here, there are no create/delete/modify actions these endpoints can perform), there is _no risk_ in a CSRF attack aside from the `window.context` content (which has no sensitive or user-specific data) and the potential for using the session cookie (which is mitigated through other means, see below.)—however this is NOT true for the exclusions listed above (`Exclusion: username/password manipulation (sign in, password reset, etc.)`.) It is therefor paramount that we defend against CSRF on the routes described by these exclusions. See "How we protect against CSRF in non-API endpoints" below.
 
 With all of this in mind, it is worth calling out that:
 
@@ -197,7 +197,7 @@ Sourcegraph's API endpoints offer multiple forms of authentication for different
 1. Session cookies, via the [`session.CookieMiddlewareWithCSRFSafety`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40aefef0d+CookieMiddlewareWithCSRFSafety%28&patternType=literal) middleware. This allows session cookie authentication iff one of the following is true:
    1. The request originates from a trusted origin (same origin, browser extension, or an origin in the site config `corsOrigin` allow list.)
    2. The `X-Requested-With` header is present, which is only possible to send in a browser if the CORS preflight check preceded the request successfully. ([see the cors standard for details](https://fetch.spec.whatwg.org/#http-access-control-allow-headers).)
-2. Authentication tokens, created in the Sourcegraph UI (also via the API) - checked through the [`AccessTokenAuthMiddleware`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40aefef0d+AccessTokenAuthMiddleware%28&patternType=literal) and specified by either:
+2. Authentication tokens, created in the Sourcegraph UI (also via the API)—checked through the [`AccessTokenAuthMiddleware`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40aefef0d+AccessTokenAuthMiddleware%28&patternType=literal) and specified by either:
    1. The basic auth `username` field.
    2. The `Authorization` header, in either `Authorization: token <token>` or `Authorization: token-sudo ...` form with a user to impersonate in the header value somewhere.
 
@@ -228,14 +228,14 @@ Because of point #1 above (we allow session based authentication iff the request
 
 * We cannot use the Sourcegraph search API from about.sourcegraph.com
 * People cannot use the Sourcegraph.com GraphQL API from their own websites, even in authenticated form (i.e. public resolvers only)
-* Customers cannot use the Sourcegraph API from their private instance on their own internal tool websites - even by having users provide an access token. The request would be forbidden as it would not pass the CORS preflight request.
+* Customers cannot use the Sourcegraph API from their private instance on their own internal tool websites—even by having users provide an access token. The request would be forbidden as it would not pass the CORS preflight request.
 
 The only workaround for this currently is to add the "trusted" domain to the `corsOrigin` site configuration setting. Doing so is vastly more privilege to give a domain than is often desired:
 
 * If the desire is only to grant the domain token-based authentication to the API, it does not do that. It grants session-based auth.
 * If the desire is to grant only API access, it does not do that either. It also grants the ability to perform CSRF against other non-API endpoints, such as password reset endpoints.
 
-In general, people want to make API requests from other domains - and that is NOT the same as adding an allowed `corsOrigin` which is a much broader level of trust of a domain than just allowing API requests.
+In general, people want to make API requests from other domains—and that is NOT the same as adding an allowed `corsOrigin` which is a much broader level of trust of a domain than just allowing API requests.
 
 ## Improving our CSRF threat model
 
@@ -245,10 +245,10 @@ I [@slimsag](https://github.com/slimsag) advise we make the following key improv
 
 This may be completed at ANY time. It has NO pre-requisites.
 
-If you read "[Exclusion: username/password manipulation (sign in, password reset, etc.)](#exclusion-usernamepassword-manipulation-sign-in-password-reset-etc)" you will clearly see why we've ended up in the state where we have a third type of endpoint: not an API, but a static page-serving endpoint, but something in-between. It's understandable we've arrived here, and there is no immediate threat with this structure - but it's out of place.
+If you read "[Exclusion: username/password manipulation (sign in, password reset, etc.)](#exclusion-usernamepassword-manipulation-sign-in-password-reset-etc)" you will clearly see why we've ended up in the state where we have a third type of endpoint: not an API, but a static page-serving endpoint, but something in-between. It's understandable we've arrived here, and there is no immediate threat with this structure—but it's out of place.
 
 We would do well to:
 
 1. Place these routes into a separate category, so we have "(1) API endpoints, (2) non-API endpoints, and (3) user signup endpoints" or similar.
-2. The routes should be easily identified based on URL path - they should be under a common prefix, not under separate URLs as they are today.
+2. The routes should be easily identified based on URL path—they should be under a common prefix, not under separate URLs as they are today.
 3. We should ensure the logic for registering these routes is under a distinct location. Today, they are registered under, and inherit all of the middlewares of, the non-API page routes. That is not ideal and could be risky long-term if that logic changes at all without an understanding of how it could impact these "UI routes" (as they are called in code.)

@@ -47,6 +47,7 @@ const INSIGHT_CONFIGURATIONS: BackendInsight[] = [
     {
         id: 'searchInsights.insight.Backend_1',
         repositories: [],
+        repoQuery: '',
         type: InsightType.SearchBased,
         title: 'Backend insight #1',
         series: [{ id: '001', query: 'test_query', stroke: 'blue', name: 'series A' }],
@@ -59,6 +60,7 @@ const INSIGHT_CONFIGURATIONS: BackendInsight[] = [
     {
         id: 'searchInsights.insight.Backend_2',
         repositories: [],
+        repoQuery: '',
         type: InsightType.SearchBased,
         title: 'Backend insight #2',
         series: [
@@ -74,6 +76,7 @@ const INSIGHT_CONFIGURATIONS: BackendInsight[] = [
     {
         id: 'searchInsights.insight.Backend_3',
         repositories: [],
+        repoQuery: '',
         type: InsightType.SearchBased,
         title: 'Backend insight #3',
         series: [
@@ -90,6 +93,7 @@ const INSIGHT_CONFIGURATIONS: BackendInsight[] = [
     {
         id: 'searchInsights.insight.Backend_4',
         repositories: [],
+        repoQuery: '',
         type: InsightType.SearchBased,
         title: 'Backend insight #4',
         series: [{ id: '001', query: 'test_query', stroke: 'blue', name: 'series A' }],
@@ -102,6 +106,7 @@ const INSIGHT_CONFIGURATIONS: BackendInsight[] = [
     {
         id: 'searchInsights.insight.Backend_5',
         repositories: [],
+        repoQuery: '',
         type: InsightType.CaptureGroup,
         title: 'Backend insight #5',
         query: '',
@@ -114,6 +119,7 @@ const INSIGHT_CONFIGURATIONS: BackendInsight[] = [
     {
         id: 'searchInsights.insight.Backend_6',
         repositories: [],
+        repoQuery: '',
         type: InsightType.SearchBased,
         title: 'Backend insight #6',
         series: [{ id: '001', query: 'test_query', stroke: 'blue', name: 'series A' }],
@@ -126,6 +132,7 @@ const INSIGHT_CONFIGURATIONS: BackendInsight[] = [
     {
         id: 'searchInsights.insight.Backend_7',
         repositories: [],
+        repoQuery: '',
         type: InsightType.SearchBased,
         title: 'Backend insight #7',
         series: [{ id: '001', query: 'test_query', stroke: 'red', name: 'series A' }],

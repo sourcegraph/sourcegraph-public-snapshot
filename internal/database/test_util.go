@@ -7,11 +7,11 @@ import (
 )
 
 func MockEmailExistsErr() error {
-	return errCannotCreateUser{errorCodeEmailExists}
+	return ErrCannotCreateUser{ErrorCodeEmailExists}
 }
 
 func MockUsernameExistsErr() error {
-	return errCannotCreateUser{errorCodeEmailExists}
+	return ErrCannotCreateUser{ErrorCodeEmailExists}
 }
 
 func strptr(s string) *string {

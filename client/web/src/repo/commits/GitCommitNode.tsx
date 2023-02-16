@@ -8,8 +8,9 @@ import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { pluralize } from '@sourcegraph/common'
 import { Button, ButtonGroup, Link, Icon, Code, screenReaderAnnounce, Tooltip } from '@sourcegraph/wildcard'
 
-import { GitCommitFields } from '../../graphql-operations'
+import { ExternalServiceKind, GitCommitFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
+import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
 import { DiffModeSelector } from '../commit/DiffModeSelector'
 import { DiffMode } from '../commit/RepositoryCommitPage'
 
@@ -25,9 +26,6 @@ export interface GitCommitNodeProps {
 
     /** Display in a single line (more compactly). */
     compact?: boolean
-
-    /** Display in sidebar mode. */
-    sidebar?: boolean
 
     /** Expand the commit message body. */
     expandCommitMessageBody?: boolean
@@ -60,6 +58,8 @@ export interface GitCommitNodeProps {
      * Tracking issue to migrate away from this component: https://github.com/sourcegraph/sourcegraph/issues/23157
      * */
     wrapperElement?: 'div' | 'li'
+
+    externalURLs?: { url: string; serviceKind: ExternalServiceKind | null }[] | undefined
 }
 
 /** Displays a Git commit. */
@@ -68,7 +68,6 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     afterElement,
     className,
     compact,
-    sidebar,
     expandCommitMessageBody,
     hideExpandCommitMessageBody,
     messageSubjectClassName,
@@ -77,6 +76,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     diffMode,
     onHandleDiffMode,
     wrapperElement: WrapperElement = 'div',
+    externalURLs,
 }) => {
     const [showCommitMessageBody, setShowCommitMessageBody] = useState<boolean>(false)
     const [flashCopiedToClipboardMessage, setFlashCopiedToClipboardMessage] = useState<boolean>(false)
@@ -102,13 +102,15 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
             className={classNames('flex-grow-1', styles.message, compact && styles.messageSmall)}
             data-testid="git-commit-node-message"
         >
-            <Link
-                to={node.canonicalURL}
-                className={classNames(messageSubjectClassName, styles.messageSubject)}
-                data-testid="git-commit-node-message-subject"
-            >
-                {node.subject}
-            </Link>
+            <span className={classNames('mr-2', styles.messageSubject)}>
+                <CommitMessageWithLinks
+                    to={node.canonicalURL}
+                    className={classNames(messageSubjectClassName, styles.messageLink)}
+                    message={node.subject}
+                    externalURLs={externalURLs}
+                />
+            </span>
+
             {node.body && !hideExpandCommitMessageBody && !expandCommitMessageBody && (
                 <Button
                     className={styles.messageToggle}
@@ -141,7 +143,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
 
     const bylineElement = (
         <GitCommitNodeByline
-            className={classNames(styles.byline, sidebar ? 'd-flex text-muted w-50' : 'd-flex text-muted')}
+            className={classNames(styles.byline, 'd-flex text-muted')}
             avatarClassName={compact ? undefined : styles.signatureUserAvatar}
             author={node.author}
             committer={node.committer}
@@ -237,29 +239,6 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
             {node.abbreviatedOID}
         </Code>
     )
-
-    if (sidebar) {
-        return (
-            <WrapperElement
-                key={node.id}
-                className={classNames(styles.gitCommitNode, styles.gitCommitNodeCompact, className)}
-            >
-                <div
-                    className={classNames('w-100 d-flex justify-content-between align-items-center flex-wrap-reverse')}
-                >
-                    {bylineElement}
-                    <small className={classNames('text-muted', styles.messageTimestamp)}>
-                        <Timestamp
-                            noAbout={true}
-                            preferAbsolute={preferAbsoluteTimestamps}
-                            date={node.committer ? node.committer.date : node.author.date}
-                        />
-                    </small>
-                    <Link to={node.canonicalURL}>{oidElement}</Link>
-                </div>
-            </WrapperElement>
-        )
-    }
 
     return (
         <WrapperElement

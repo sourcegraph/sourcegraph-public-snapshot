@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -30,7 +29,6 @@ import (
 // with the stored Repositories in Sourcegraph.
 type Syncer struct {
 	Sourcer Sourcer
-	Worker  *workerutil.Worker[*SyncJob]
 	Store   Store
 
 	// Synced is sent a collection of Repos that were synced by Sync (only if Synced is non-nil)
@@ -107,7 +105,7 @@ type syncHandler struct {
 	minSyncInterval func() time.Duration
 }
 
-func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, sj *SyncJob) (err error) {
+func (s *syncHandler) Handle(ctx context.Context, _ log.Logger, sj *SyncJob) (err error) {
 	// Limit calls to progressRecorder as it will most likely hit the database
 	progressLimiter := rate.NewLimiter(rate.Limit(1.0), 1)
 
@@ -544,7 +542,7 @@ func (s *Syncer) SyncExternalService(
 	}
 
 	if err := src.CheckConnection(ctx); err != nil {
-		return err
+		logger.Warn("connection check failed. syncing repositories might still succeed.", log.Error(err))
 	}
 
 	results := make(chan SourceResult)
@@ -893,12 +891,4 @@ func syncErrorReason(err error) string {
 	default:
 		return "unknown"
 	}
-}
-
-func getOrgFromRepoName(repoName api.RepoName) string {
-	parts := strings.Split(string(repoName), "/")
-	if len(parts) == 1 {
-		return string(repoName)
-	}
-	return parts[1]
 }

@@ -770,8 +770,8 @@ func TestParseStandard(t *testing.T) {
 		if err != nil {
 			return err.Error()
 		}
-		json, _ := PrettyJSON(result)
-		return json
+		jsonStr, _ := PrettyJSON(result)
+		return jsonStr
 	}
 
 	t.Run("patterns are literal and slash-delimited patterns /.../ are regexp", func(t *testing.T) {

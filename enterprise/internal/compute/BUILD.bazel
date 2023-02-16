@@ -18,7 +18,6 @@ go_library(
     deps = [
         "//internal/authz",
         "//internal/comby",
-        "//internal/database",
         "//internal/gitserver",
         "//internal/lazyregexp",
         "//internal/search/query",
@@ -44,7 +43,6 @@ go_test(
     embed = [":compute"],
     deps = [
         "//internal/comby",
-        "//internal/database",
         "//internal/gitserver/gitdomain",
         "//internal/search/result",
         "//internal/types",

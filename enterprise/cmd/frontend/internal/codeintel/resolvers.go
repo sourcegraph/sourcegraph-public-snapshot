@@ -41,6 +41,9 @@ func (r *Resolver) NodeResolvers() map[string]gql.NodeByIDFunc {
 		"CodeIntelligenceConfigurationPolicy": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
 			return r.ConfigurationPolicyByID(ctx, id)
 		},
+		"PreciseIndex": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
+			return r.PreciseIndexByID(ctx, id)
+		},
 	}
 }
 
@@ -50,6 +53,30 @@ func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ resolve
 
 func (r *Resolver) LSIFUploads(ctx context.Context, args *resolverstubs.LSIFUploadsQueryArgs) (_ resolverstubs.LSIFUploadConnectionResolver, err error) {
 	return r.uploadsRootResolver.LSIFUploads(ctx, args)
+}
+
+func (r *Resolver) PreciseIndexes(ctx context.Context, args *resolverstubs.PreciseIndexesQueryArgs) (_ resolverstubs.PreciseIndexConnectionResolver, err error) {
+	return r.autoIndexingRootResolver.PreciseIndexes(ctx, args)
+}
+
+func (r *Resolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ resolverstubs.PreciseIndexResolver, err error) {
+	return r.autoIndexingRootResolver.PreciseIndexByID(ctx, id)
+}
+
+func (r *Resolver) DeletePreciseIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*resolverstubs.EmptyResponse, error) {
+	return r.autoIndexingRootResolver.DeletePreciseIndex(ctx, args)
+}
+
+func (r *Resolver) DeletePreciseIndexes(ctx context.Context, args *resolverstubs.DeletePreciseIndexesArgs) (*resolverstubs.EmptyResponse, error) {
+	return r.autoIndexingRootResolver.DeletePreciseIndexes(ctx, args)
+}
+
+func (r *Resolver) ReindexPreciseIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*resolverstubs.EmptyResponse, error) {
+	return r.autoIndexingRootResolver.ReindexPreciseIndex(ctx, args)
+}
+
+func (r *Resolver) ReindexPreciseIndexes(ctx context.Context, args *resolverstubs.ReindexPreciseIndexesArgs) (*resolverstubs.EmptyResponse, error) {
+	return r.autoIndexingRootResolver.ReindexPreciseIndexes(ctx, args)
 }
 
 func (r *Resolver) LSIFUploadsByRepo(ctx context.Context, args *resolverstubs.LSIFRepositoryUploadsQueryArgs) (_ resolverstubs.LSIFUploadConnectionResolver, err error) {
@@ -164,6 +191,6 @@ func (r *Resolver) UpdateCodeIntelligenceInferenceScript(ctx context.Context, ar
 	return r.autoIndexingRootResolver.UpdateCodeIntelligenceInferenceScript(ctx, args)
 }
 
-func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *resolverstubs.PreviewGitObjectFilterArgs) (_ []resolverstubs.GitObjectFilterPreviewResolver, err error) {
+func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *resolverstubs.PreviewGitObjectFilterArgs) (_ resolverstubs.GitObjectFilterPreviewResolver, err error) {
 	return r.policiesRootResolver.PreviewGitObjectFilter(ctx, id, args)
 }

@@ -26,6 +26,7 @@ go_library(
         "//internal/codeintel/resolvers",
         "//internal/database",
         "//internal/gitserver",
+        "//internal/gqlutil",
         "//internal/metrics",
         "//internal/observation",
         "//lib/errors",

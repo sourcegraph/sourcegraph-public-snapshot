@@ -4,18 +4,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/grafana/regexp"
 	otlog "github.com/opentracing/opentracing-go/log"
-
 	zoektquery "github.com/sourcegraph/zoekt/query"
+
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -106,8 +107,10 @@ type SymbolsParameters struct {
 	// First indicates that only the first n symbols should be returned.
 	First int
 
-	// Timeout in seconds.
-	Timeout int
+	// Timeout is the maximum amount of time the symbols search should take.
+	//
+	// If Timeout isn't specified, a default timeout of 60 seconds is used.
+	Timeout time.Duration
 }
 
 type SymbolsResponse struct {
@@ -344,6 +347,10 @@ type Features struct {
 	// Debug when true will set the Debug field on FileMatches. This may grow
 	// from here. For now we treat this like a feature flag for convenience.
 	Debug bool `json:"debug"`
+
+	// CodeOwnershipSearch when true will enable searching through code ownership
+	// using `file:has.owner({owner})` and `select:file.owners` filters.
+	CodeOwnershipSearch bool `json:"codeownership"`
 }
 
 func (f *Features) String() string {

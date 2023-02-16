@@ -307,7 +307,7 @@ func (r *Resolver) Notebooks(ctx context.Context, args graphqlbackend.ListNotebo
 	}
 
 	store := notebooks.Notebooks(r.db)
-	notebooks, err := store.ListNotebooks(ctx, pageOpts, opts)
+	nbs, err := store.ListNotebooks(ctx, pageOpts, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -318,14 +318,14 @@ func (r *Resolver) Notebooks(ctx context.Context, args graphqlbackend.ListNotebo
 	}
 
 	hasNextPage := false
-	if len(notebooks) == int(args.First)+1 {
+	if len(nbs) == int(args.First)+1 {
 		hasNextPage = true
-		notebooks = notebooks[:len(notebooks)-1]
+		nbs = nbs[:len(nbs)-1]
 	}
 
 	return &notebookConnectionResolver{
 		afterCursor: afterCursor,
-		notebooks:   r.notebooksToResolvers(notebooks),
+		notebooks:   r.notebooksToResolvers(nbs),
 		totalCount:  int32(count),
 		hasNextPage: hasNextPage,
 	}, nil

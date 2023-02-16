@@ -17,248 +17,314 @@ func TestRedisKeyValue(t *testing.T) {
 }
 
 func testKeyValue(t *testing.T, kv redispool.KeyValue) {
-	// assertWorks is a weird name, but it makes the function name align with
-	// assertEqual.
-	assertWorks := func(err error) {
-		t.Helper()
-		if err != nil {
-			t.Fatal("unexpected error: ", err)
-		}
-	}
-	// redispool.Value helpers to make test readable
-	assertEqual := func(got redispool.Value, want any) {
-		t.Helper()
-		switch wantV := want.(type) {
-		case bool:
-			gotV, err := got.Bool()
-			assertWorks(err)
-			if gotV != wantV {
-				t.Fatalf("got %v, wanted %v", gotV, wantV)
-			}
-		case []byte:
-			gotV, err := got.Bytes()
-			assertWorks(err)
-			if !reflect.DeepEqual(gotV, wantV) {
-				t.Fatalf("got %q, wanted %q", gotV, wantV)
-			}
-		case int:
-			gotV, err := got.Int()
-			assertWorks(err)
-			if gotV != wantV {
-				t.Fatalf("got %d, wanted %d", gotV, wantV)
-			}
-		case string:
-			gotV, err := got.String()
-			assertWorks(err)
-			if gotV != wantV {
-				t.Fatalf("got %q, wanted %q", gotV, wantV)
-			}
-		case nil:
-			_, err := got.String()
-			if err != redis.ErrNil {
-				t.Fatalf("%v is not nil", got)
-			}
-		case error:
-			gotV, err := got.String()
-			if err == nil {
-				t.Fatalf("want error, got %q", gotV)
-			}
-			if !strings.Contains(err.Error(), wantV.Error()) {
-				t.Fatalf("got error %v, wanted error %v", err, wantV)
-			}
-		default:
-			t.Fatalf("unsupported want type for %q: %T", want, want)
-		}
-	}
-	assertAllEqual := func(got redispool.Values, want any) {
-		t.Helper()
-		switch wantV := want.(type) {
-		case [][]byte:
-			gotV, err := got.ByteSlices()
-			assertWorks(err)
-			if !reflect.DeepEqual(gotV, wantV) {
-				t.Fatalf("got %q, wanted %q", gotV, wantV)
-			}
-		case []string:
-			gotV, err := got.Strings()
-			assertWorks(err)
-			if !reflect.DeepEqual(gotV, wantV) {
-				t.Fatalf("got %q, wanted %q", gotV, wantV)
-			}
-		case map[string]string:
-			gotV, err := got.StringMap()
-			assertWorks(err)
-			if !reflect.DeepEqual(gotV, wantV) {
-				t.Fatalf("got %q, wanted %q", gotV, wantV)
-			}
-		default:
-			t.Fatalf("unsupported want type for %q: %T", want, want)
-		}
-	}
-	assertListLen := func(key string, want int) {
-		t.Helper()
-		got, err := kv.LLen(key)
-		if err != nil {
-			t.Fatal("LLen returned error", err)
-		}
-		if got != want {
-			t.Fatalf("unexpected list length got=%d want=%d", got, want)
-		}
-	}
-	assertTTL := func(key string, want int) {
-		t.Helper()
-		got, err := kv.TTL(key)
-		if err != nil {
-			t.Fatal("TTL returned error", err)
-		}
+	t.Parallel()
 
-		// TTL timing is tough in a test environment. So if we are expecting a
-		// positive TTL we give a 10s grace.
-		if want > 10 {
-			min := want - 10
-			if got < min || got > want {
-				t.Fatalf("unexpected TTL got=%d expected=[%d,%d]", got, min, want)
-			}
-		} else if want < 0 {
-			if got != want {
-				t.Fatalf("unexpected TTL got=%d want=%d", got, want)
-			}
-		} else {
-			t.Fatalf("got bad want value %d", want)
-		}
-	}
+	errWrongType := errors.New("WRONGTYPE")
 
-	// Redis returns nil on unset values
-	assertEqual(kv.Get("hi"), redis.ErrNil)
+	// "strings" is the name of the classic group of commands in redis (get, set, ttl, etc). We call it classic since that is less confusing.
+	t.Run("classic", func(t *testing.T) {
+		t.Parallel()
 
-	// Simple get followed by set. Redigo autocasts, ensure we keep that
-	// behaviour.
-	assertWorks(kv.Set("simple", "1"))
-	assertEqual(kv.Get("simple"), "1")
-	assertEqual(kv.Get("simple"), 1)
-	assertEqual(kv.Get("simple"), true)
-	assertEqual(kv.Get("simple"), []byte("1"))
+		require := require{TB: t}
 
-	// GetSet on existing value
-	assertEqual(kv.GetSet("simple", "2"), "1")
-	assertEqual(kv.GetSet("simple", "3"), "2")
-	assertEqual(kv.Get("simple"), "3")
+		// Redis returns nil on unset values
+		require.Equal(kv.Get("hi"), redis.ErrNil)
 
-	// GetSet on nil value
-	assertEqual(kv.GetSet("missing", "found"), redis.ErrNil)
-	assertEqual(kv.Get("missing"), "found")
-	assertWorks(kv.Del("missing"))
-	assertEqual(kv.Get("missing"), redis.ErrNil)
+		// Simple get followed by set. Redigo autocasts, ensure we keep that
+		// behaviour.
+		require.Works(kv.Set("simple", "1"))
+		require.Equal(kv.Get("simple"), "1")
+		require.Equal(kv.Get("simple"), 1)
+		require.Equal(kv.Get("simple"), true)
+		require.Equal(kv.Get("simple"), []byte("1"))
 
-	// Ensure we can handle funky bytes
-	assertWorks(kv.Set("funky", []byte{0, 10, 100, 255}))
-	assertEqual(kv.Get("funky"), []byte{0, 10, 100, 255})
+		// GetSet on existing value
+		require.Equal(kv.GetSet("simple", "2"), "1")
+		require.Equal(kv.GetSet("simple", "3"), "2")
+		require.Equal(kv.Get("simple"), "3")
 
-	// Ensure we fail hashes when used against non hashes.
-	assertEqual(kv.HGet("simple", "field"), errors.New("WRONGTYPE"))
-	if err := kv.HSet("simple", "field", "value"); !strings.Contains(err.Error(), "WRONGTYPE") {
-		t.Fatalf("expected wrongtype error, got %v", err)
-	}
+		// GetSet on nil value
+		require.Equal(kv.GetSet("missing", "found"), redis.ErrNil)
+		require.Equal(kv.Get("missing"), "found")
+		require.Works(kv.Del("missing"))
+		require.Equal(kv.Get("missing"), redis.ErrNil)
 
-	// Incr
-	assertWorks(kv.Set("incr-set", 5))
-	assertWorks(kv.Incr("incr-set"))
-	assertWorks(kv.Incr("incr-unset"))
-	assertEqual(kv.Get("incr-set"), 6)
-	assertEqual(kv.Get("incr-unset"), 1)
+		// Ensure we can handle funky bytes
+		require.Works(kv.Set("funky", []byte{0, 10, 100, 255}))
+		require.Equal(kv.Get("funky"), []byte{0, 10, 100, 255})
 
-	// Pretty much copy-pasta above tests but on a hash
-
-	// Redis returns nil on unset hashes
-	assertEqual(kv.HGet("hash", "hi"), redis.ErrNil)
-
-	// Simple hget followed by hset. Redigo autocasts, ensure we keep that
-	// behaviour.
-	assertWorks(kv.HSet("hash", "simple", "1"))
-	assertEqual(kv.HGet("hash", "simple"), "1")
-	assertEqual(kv.HGet("hash", "simple"), true)
-	assertEqual(kv.HGet("hash", "simple"), []byte("1"))
-
-	// hgetall
-	assertWorks(kv.HSet("hash", "horse", "graph"))
-	assertAllEqual(kv.HGetAll("hash"), map[string]string{
-		"simple": "1",
-		"horse":  "graph",
+		// Incr
+		require.Works(kv.Set("incr-set", 5))
+		require.Works(kv.Incr("incr-set"))
+		require.Works(kv.Incr("incr-unset"))
+		require.Equal(kv.Get("incr-set"), 6)
+		require.Equal(kv.Get("incr-unset"), 1)
 	})
 
-	// Redis returns nil on unset fields
-	assertEqual(kv.HGet("hash", "hi"), redis.ErrNil)
+	t.Run("hash", func(t *testing.T) {
+		t.Parallel()
 
-	// Ensure we can handle funky bytes
-	assertWorks(kv.HSet("hash", "funky", []byte{0, 10, 100, 255}))
-	assertEqual(kv.HGet("hash", "funky"), []byte{0, 10, 100, 255})
+		require := require{TB: t}
 
-	// Lists
+		// Pretty much copy-pasta above tests but on a hash
 
-	// Redis behaviour on unset lists
-	assertListLen("list-unset-0", 0)
-	assertAllEqual(kv.LRange("list-unset-1", 0, 10), bytes())
-	assertWorks(kv.LTrim("list-unset-2", 0, 10))
+		// Redis returns nil on unset hashes
+		require.Equal(kv.HGet("hash", "hi"), redis.ErrNil)
 
-	assertWorks(kv.LPush("list", "4"))
-	assertWorks(kv.LPush("list", "3"))
-	assertWorks(kv.LPush("list", "2"))
-	assertWorks(kv.LPush("list", "1"))
-	assertWorks(kv.LPush("list", "0"))
+		// Simple hget followed by hset. Redigo autocasts, ensure we keep that
+		// behaviour.
+		require.Works(kv.HSet("hash", "simple", "1"))
+		require.Equal(kv.HGet("hash", "simple"), "1")
+		require.Equal(kv.HGet("hash", "simple"), true)
+		require.Equal(kv.HGet("hash", "simple"), []byte("1"))
 
-	// Different ways we get the full list back
-	assertAllEqual(kv.LRange("list", 0, 10), []string{"0", "1", "2", "3", "4"})
-	assertAllEqual(kv.LRange("list", 0, 10), bytes("0", "1", "2", "3", "4"))
-	assertAllEqual(kv.LRange("list", 0, -1), bytes("0", "1", "2", "3", "4"))
-	assertAllEqual(kv.LRange("list", -5, -1), bytes("0", "1", "2", "3", "4"))
-	assertAllEqual(kv.LRange("list", 0, 4), bytes("0", "1", "2", "3", "4"))
+		// hgetall
+		require.Works(kv.HSet("hash", "horse", "graph"))
+		require.AllEqual(kv.HGetAll("hash"), map[string]string{
+			"simple": "1",
+			"horse":  "graph",
+		})
 
-	// Subsets
-	assertAllEqual(kv.LRange("list", 1, 3), bytes("1", "2", "3"))
-	assertAllEqual(kv.LRange("list", 1, -2), bytes("1", "2", "3"))
-	assertAllEqual(kv.LRange("list", -4, 3), bytes("1", "2", "3"))
-	assertAllEqual(kv.LRange("list", -4, -2), bytes("1", "2", "3"))
+		// Redis returns nil on unset fields
+		require.Equal(kv.HGet("hash", "hi"), redis.ErrNil)
 
-	// Trim noop
-	assertWorks(kv.LTrim("list", 0, 10))
-	assertAllEqual(kv.LRange("list", 0, 4), bytes("0", "1", "2", "3", "4"))
+		// Ensure we can handle funky bytes
+		require.Works(kv.HSet("hash", "funky", []byte{0, 10, 100, 255}))
+		require.Equal(kv.HGet("hash", "funky"), []byte{0, 10, 100, 255})
+	})
 
-	// Trim popback
-	assertWorks(kv.LTrim("list", 0, -2))
-	assertAllEqual(kv.LRange("list", 0, 4), bytes("0", "1", "2", "3"))
-	assertListLen("list", 4)
+	t.Run("list", func(t *testing.T) {
+		t.Parallel()
 
-	// Trim popfront
-	assertWorks(kv.LTrim("list", 1, 10))
-	assertAllEqual(kv.LRange("list", 0, 4), bytes("1", "2", "3"))
-	assertListLen("list", 3)
+		require := require{TB: t}
 
-	assertWorks(kv.LPush("funky2D", []byte{100, 255}))
-	assertWorks(kv.LPush("funky2D", []byte{0, 10}))
-	assertAllEqual(kv.LRange("funky2D", 0, -1), [][]byte{{0, 10}, {100, 255}})
+		// Redis behaviour on unset lists
+		require.ListLen(kv, "list-unset-0", 0)
+		require.AllEqual(kv.LRange("list-unset-1", 0, 10), bytes())
+		require.Works(kv.LTrim("list-unset-2", 0, 10))
 
-	// SetEx, Expire and TTL
-	assertWorks(kv.SetEx("expires-setex", 60, "1"))
-	assertWorks(kv.Set("expires-set", "1"))
-	assertWorks(kv.Expire("expires-set", 60))
-	assertWorks(kv.Set("expires-unset", "1"))
-	assertTTL("expires-setex", 60)
-	assertTTL("expires-set", 60)
-	assertTTL("expires-unset", -1)
-	assertTTL("expires-does-not-exist", -2)
+		require.Works(kv.LPush("list", "4"))
+		require.Works(kv.LPush("list", "3"))
+		require.Works(kv.LPush("list", "2"))
+		require.Works(kv.LPush("list", "1"))
+		require.Works(kv.LPush("list", "0"))
 
-	assertEqual(kv.Get("expires-setex"), "1")
-	assertEqual(kv.Get("expires-set"), "1")
+		// Different ways we get the full list back
+		require.AllEqual(kv.LRange("list", 0, 10), []string{"0", "1", "2", "3", "4"})
+		require.AllEqual(kv.LRange("list", 0, 10), bytes("0", "1", "2", "3", "4"))
+		require.AllEqual(kv.LRange("list", 0, -1), bytes("0", "1", "2", "3", "4"))
+		require.AllEqual(kv.LRange("list", -5, -1), bytes("0", "1", "2", "3", "4"))
+		require.AllEqual(kv.LRange("list", 0, 4), bytes("0", "1", "2", "3", "4"))
 
-	assertWorks(kv.SetEx("expires-setex", 1, "2"))
-	assertWorks(kv.Set("expires-set", "2"))
-	assertWorks(kv.Expire("expires-set", 1))
+		// If stop < start we return nothing
+		require.AllEqual(kv.LRange("list", -1, 0), bytes())
 
-	time.Sleep(1100 * time.Millisecond)
-	assertEqual(kv.Get("expires-setex"), nil)
-	assertEqual(kv.Get("expires-set"), nil)
-	assertTTL("expires-setex", -2)
-	assertTTL("expires-set", -2)
+		// Subsets
+		require.AllEqual(kv.LRange("list", 1, 3), bytes("1", "2", "3"))
+		require.AllEqual(kv.LRange("list", 1, -2), bytes("1", "2", "3"))
+		require.AllEqual(kv.LRange("list", -4, 3), bytes("1", "2", "3"))
+		require.AllEqual(kv.LRange("list", -4, -2), bytes("1", "2", "3"))
+
+		// Trim noop
+		require.Works(kv.LTrim("list", 0, 10))
+		require.AllEqual(kv.LRange("list", 0, 4), bytes("0", "1", "2", "3", "4"))
+
+		// Trim popback
+		require.Works(kv.LTrim("list", 0, -2))
+		require.AllEqual(kv.LRange("list", 0, 4), bytes("0", "1", "2", "3"))
+		require.ListLen(kv, "list", 4)
+
+		// Trim popfront
+		require.Works(kv.LTrim("list", 1, 10))
+		require.AllEqual(kv.LRange("list", 0, 4), bytes("1", "2", "3"))
+		require.ListLen(kv, "list", 3)
+
+		// Trim all
+		require.Works(kv.LTrim("list", -1, -2))
+		require.AllEqual(kv.LRange("list", 0, 4), bytes())
+		require.ListLen(kv, "list", 0)
+
+		require.Works(kv.LPush("funky2D", []byte{100, 255}))
+		require.Works(kv.LPush("funky2D", []byte{0, 10}))
+		require.AllEqual(kv.LRange("funky2D", 0, -1), [][]byte{{0, 10}, {100, 255}})
+	})
+
+	t.Run("empty", func(t *testing.T) {
+		t.Parallel()
+
+		require := require{TB: t}
+
+		// Strings group
+		require.Works(kv.Set("empty-number", 0))
+		require.Works(kv.Set("empty-string", ""))
+		require.Works(kv.Set("empty-bytes", []byte{}))
+		require.Equal(kv.Get("empty-number"), 0)
+		require.Equal(kv.Get("empty-string"), "")
+		require.Equal(kv.Get("empty-bytes"), "")
+
+		// List group. Once empty we should be able to do a Get without a
+		// wrongtype error.
+		require.Works(kv.LPush("empty-list", "here today gone tomorrow"))
+		require.Equal(kv.Get("empty-list"), errWrongType)
+		require.Works(kv.LTrim("empty-list", -1, -2))
+		require.Equal(kv.Get("empty-list"), nil)
+	})
+
+	t.Run("expire", func(t *testing.T) {
+		// Skips because of time.Sleep
+		if testing.Short() {
+			t.Skip()
+		}
+		t.Parallel()
+
+		require := require{TB: t}
+
+		// Set removes expire
+		{
+			k := "expires-set-reset"
+			require.Works(kv.SetEx(k, 60, "1"))
+			require.Equal(kv.Get(k), "1")
+			require.TTL(kv, k, 60)
+
+			require.Works(kv.Set(k, "2"))
+			require.Equal(kv.Get(k), "2")
+			require.TTL(kv, k, -1)
+
+		}
+
+		// SetEx, Expire and TTL
+		require.Works(kv.SetEx("expires-setex", 60, "1"))
+		require.Works(kv.Set("expires-set", "1"))
+		require.Works(kv.Expire("expires-set", 60))
+		require.Works(kv.Set("expires-unset", "1"))
+		require.TTL(kv, "expires-setex", 60)
+		require.TTL(kv, "expires-set", 60)
+		require.TTL(kv, "expires-unset", -1)
+		require.TTL(kv, "expires-does-not-exist", -2)
+
+		require.Equal(kv.Get("expires-setex"), "1")
+		require.Equal(kv.Get("expires-set"), "1")
+
+		require.Works(kv.SetEx("expires-setex", 1, "2"))
+		require.Works(kv.Set("expires-set", "2"))
+		require.Works(kv.Expire("expires-set", 1))
+
+		time.Sleep(1100 * time.Millisecond)
+		require.Equal(kv.Get("expires-setex"), nil)
+		require.Equal(kv.Get("expires-set"), nil)
+		require.TTL(kv, "expires-setex", -2)
+		require.TTL(kv, "expires-set", -2)
+	})
+
+	t.Run("hash-expire", func(t *testing.T) {
+		// Skips because of time.Sleep
+		if testing.Short() {
+			t.Skip()
+		}
+		t.Parallel()
+
+		require := require{TB: t}
+
+		// Hash mutations keep expire
+		require.Works(kv.HSet("expires-unset-hash", "simple", "1"))
+		require.Works(kv.HSet("expires-set-hash", "simple", "1"))
+		require.Works(kv.Expire("expires-set-hash", 60))
+		require.TTL(kv, "expires-unset-hash", -1)
+		require.TTL(kv, "expires-set-hash", 60)
+		require.Equal(kv.HGet("expires-unset-hash", "simple"), "1")
+		require.Equal(kv.HGet("expires-set-hash", "simple"), "1")
+
+		require.Works(kv.HSet("expires-unset-hash", "simple", "2"))
+		require.Works(kv.HSet("expires-set-hash", "simple", "2"))
+		require.TTL(kv, "expires-unset-hash", -1)
+		require.TTL(kv, "expires-set-hash", 60)
+		require.Equal(kv.HGet("expires-unset-hash", "simple"), "2")
+		require.Equal(kv.HGet("expires-set-hash", "simple"), "2")
+
+		// Check expiration happens on hashes
+		require.Works(kv.Expire("expires-set-hash", 1))
+		time.Sleep(1100 * time.Millisecond)
+		require.Equal(kv.HGet("expires-set-hash", "simple"), nil)
+		require.TTL(kv, "expires-set-hash", -2)
+	})
+
+	t.Run("hash-expire", func(t *testing.T) {
+		// Skips because of time.Sleep
+		if testing.Short() {
+			t.Skip()
+		}
+		t.Parallel()
+
+		require := require{TB: t}
+
+		// Hash mutations keep expire
+		require.Works(kv.LPush("expires-unset-list", "1"))
+		require.Works(kv.LPush("expires-set-list", "1"))
+		require.Works(kv.Expire("expires-set-list", 60))
+		require.TTL(kv, "expires-unset-list", -1)
+		require.TTL(kv, "expires-set-list", 60)
+		require.AllEqual(kv.LRange("expires-unset-list", 0, -1), []string{"1"})
+		require.AllEqual(kv.LRange("expires-set-list", 0, -1), []string{"1"})
+
+		require.Works(kv.LPush("expires-unset-list", "2"))
+		require.Works(kv.LPush("expires-set-list", "2"))
+		require.TTL(kv, "expires-unset-list", -1)
+		require.TTL(kv, "expires-set-list", 60)
+		require.AllEqual(kv.LRange("expires-unset-list", 0, -1), []string{"2", "1"})
+		require.AllEqual(kv.LRange("expires-set-list", 0, -1), []string{"2", "1"})
+
+		// Check expiration happens on hashes
+		require.Works(kv.Expire("expires-set-list", 1))
+		time.Sleep(1100 * time.Millisecond)
+		require.Equal(kv.HGet("expires-set-list", "simple"), nil)
+		require.TTL(kv, "expires-set-list", -2)
+	})
+
+	t.Run("wrongtype", func(t *testing.T) {
+		t.Parallel()
+
+		require := require{TB: t}
+		requireWrongType := func(err error) {
+			t.Helper()
+			if err == nil || !strings.Contains(err.Error(), "WRONGTYPE") {
+				t.Fatalf("expected wrongtype error, got %v", err)
+			}
+		}
+
+		require.Works(kv.Set("wrongtype-string", "1"))
+		require.Works(kv.HSet("wrongtype-hash", "1", "1"))
+		require.Works(kv.LPush("wrongtype-list", "1"))
+
+		for _, k := range []string{"wrongtype-string", "wrongtype-hash", "wrongtype-list"} {
+			// Ensure we fail Get when used against non string group
+			if k != "wrongtype-string" {
+				require.Equal(kv.Get(k), errWrongType)
+				require.Equal(kv.GetSet(k, "2"), errWrongType)
+				require.Equal(kv.Get(k), errWrongType) // ensure GetSet didn't set
+				requireWrongType(kv.Incr(k))
+			}
+
+			// Ensure we fail hashes when used against non hashes.
+			if k != "wrongtype-hash" {
+				require.Equal(kv.HGet(k, "field"), errWrongType)
+				require.Equal(redispool.Value(kv.HGetAll(k)), errWrongType)
+				requireWrongType(kv.HSet(k, "field", "value"))
+			}
+
+			// Ensure we fail lists when used against non lists.
+			if k != "wrongtype-list" {
+				_, err := kv.LLen(k)
+				requireWrongType(err)
+				requireWrongType(kv.LPush(k, "1"))
+				requireWrongType(kv.LTrim(k, 1, 2))
+				require.Equal(redispool.Value(kv.LRange(k, 1, 2)), errWrongType)
+			}
+
+			// Ensure we can always override values with set
+			require.Works(kv.Set(k, "2"))
+			require.Equal(kv.Get(k), "2")
+		}
+	})
 }
 
 // Mostly copy-pasta from rache. Will clean up later as the relationship
@@ -336,4 +402,119 @@ func bytes(ss ...string) [][]byte {
 		bs = append(bs, []byte(s))
 	}
 	return bs
+}
+
+// require is redispool.Value helpers to make test readable
+type require struct {
+	testing.TB
+}
+
+func (t require) Works(err error) {
+	// Works is a weird name, but it makes the function name align with Equal.
+	t.Helper()
+	if err != nil {
+		t.Fatal("unexpected error: ", err)
+	}
+}
+
+func (t require) Equal(got redispool.Value, want any) {
+	t.Helper()
+	switch wantV := want.(type) {
+	case bool:
+		gotV, err := got.Bool()
+		t.Works(err)
+		if gotV != wantV {
+			t.Fatalf("got %v, wanted %v", gotV, wantV)
+		}
+	case []byte:
+		gotV, err := got.Bytes()
+		t.Works(err)
+		if !reflect.DeepEqual(gotV, wantV) {
+			t.Fatalf("got %q, wanted %q", gotV, wantV)
+		}
+	case int:
+		gotV, err := got.Int()
+		t.Works(err)
+		if gotV != wantV {
+			t.Fatalf("got %d, wanted %d", gotV, wantV)
+		}
+	case string:
+		gotV, err := got.String()
+		t.Works(err)
+		if gotV != wantV {
+			t.Fatalf("got %q, wanted %q", gotV, wantV)
+		}
+	case nil:
+		_, err := got.String()
+		if err != redis.ErrNil {
+			t.Fatalf("%v is not nil", got)
+		}
+	case error:
+		gotV, err := got.String()
+		if err == nil {
+			t.Fatalf("want error, got %q", gotV)
+		}
+		if !strings.Contains(err.Error(), wantV.Error()) {
+			t.Fatalf("got error %v, wanted error %v", err, wantV)
+		}
+	default:
+		t.Fatalf("unsupported want type for %q: %T", want, want)
+	}
+}
+func (t require) AllEqual(got redispool.Values, want any) {
+	t.Helper()
+	switch wantV := want.(type) {
+	case [][]byte:
+		gotV, err := got.ByteSlices()
+		t.Works(err)
+		if !reflect.DeepEqual(gotV, wantV) {
+			t.Fatalf("got %q, wanted %q", gotV, wantV)
+		}
+	case []string:
+		gotV, err := got.Strings()
+		t.Works(err)
+		if !reflect.DeepEqual(gotV, wantV) {
+			t.Fatalf("got %q, wanted %q", gotV, wantV)
+		}
+	case map[string]string:
+		gotV, err := got.StringMap()
+		t.Works(err)
+		if !reflect.DeepEqual(gotV, wantV) {
+			t.Fatalf("got %q, wanted %q", gotV, wantV)
+		}
+	default:
+		t.Fatalf("unsupported want type for %q: %T", want, want)
+	}
+}
+func (t require) ListLen(kv redispool.KeyValue, key string, want int) {
+	t.Helper()
+	got, err := kv.LLen(key)
+	if err != nil {
+		t.Fatal("LLen returned error", err)
+	}
+	if got != want {
+		t.Fatalf("unexpected list length got=%d want=%d", got, want)
+	}
+}
+func (t require) TTL(kv redispool.KeyValue, key string, want int) {
+	t.Helper()
+	got, err := kv.TTL(key)
+	if err != nil {
+		t.Fatal("TTL returned error", err)
+	}
+
+	// TTL timing is tough in a test environment. So if we are expecting a
+	// positive TTL we give a 10s grace.
+	if want > 10 {
+		min := want - 10
+		if got < min || got > want {
+			t.Fatalf("unexpected TTL got=%d expected=[%d,%d]", got, min, want)
+		}
+	} else if want < 0 {
+		if got != want {
+			t.Fatalf("unexpected TTL got=%d want=%d", got, want)
+		}
+	} else {
+		t.Fatalf("got bad want value %d", want)
+	}
 }

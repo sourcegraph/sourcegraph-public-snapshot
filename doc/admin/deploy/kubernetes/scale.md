@@ -1,80 +1,39 @@
-# Scaling Sourcegraph with Kubernetes
+# Scaling Sourcegraph on Kubernetes
 
-Sourcegraph can be configured to scale to very large codebases and large numbers of
-users. If you notice latency for search or code navigation is higher than desired, changing these
-parameters can yield a drastic improvement in performance.
+Sourcegraph can scale to accommodate large codebases and many users. 
 
-See [Scaling Overview for Services](../scale.md) for more information about scaling.
+Increase resources according to the [Scaling Overview per Service](../scale.md) if you notice slower search or navigation.
 
-> For assistance when scaling and tuning Sourcegraph, [contact us](https://about.sourcegraph.com/contact/). We're happy to help!
+## Cluster resource guidelines
 
-## Tuning replica counts for horizontal scalability
-
-By default, your cluster has a single pod for each of `sourcegraph-frontend`, `searcher`, and `gitserver`. You can
-increase the number of replicas of each of these services to handle higher scale.
-
-_You can change the replica count of `sourcegraph-frontend` by editing [base/frontend/sourcegraph-frontend.Deployment.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Deployment.yaml)._
-
-| Repositories | Number of `searcher` replicas                                                  |
-| ------------ | ------------------------------------------------------------------------------ |
-| 1-20         | 1                                                                              |
-| 20-50        | 2                                                                              |
-| 50-200       | 3-5                                                                            |
-| 200-1k       | 5-10                                                                           |
-| 1k-5k        | 10-15                                                                          |
-| 5k-25k       | 20-40                                                                          |
-| 25k+         | 40+ ([contact us](https://about.sourcegraph.com/contact/) for scaling advice)  |
-| Monorepo     | 1-25 ([contact us](https://about.sourcegraph.com/contact/) for scaling advice) |
-
-_You can change the replica count of `searcher` by editing [base/searcher/searcher.Deployment.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/searcher/searcher.Deployment.yaml)._
-
-| Repositories | Number of `gitserver` replicas                                                |
-| ------------ | ----------------------------------------------------------------------------- |
-| 1-200        | 1                                                                             |
-| 200-500      | 2                                                                             |
-| 500-1000     | 3                                                                             |
-| 1k-5k        | 4-8                                                                           |
-| 5k-25k       | 8-20                                                                          |
-| 25k+         | 20+ ([contact us](https://about.sourcegraph.com/contact/) for scaling advice) |
-| Monorepo     | 1 ([contact us](https://about.sourcegraph.com/contact/) for scaling advice)   |
-
-_Read [configure.md](configure.md#Configure-gitserver-replica-count) to learn about how to change
-the replica count of `gitserver`._
+For production environments, we recommend allocate resources based on your [instance size](../instance-size.md). See our [resource estimator](../resource_estimator.md) for estimates.
 
 ---
 
 ## Improving performance with a large number of repositories
 
-When you're using Sourcegraph with many repositories (100s-10,000s), the most important parameters to tune are:
+Here is a simplified list of the key parameters to tune when scaling Sourcegraph to many repositories:
 
 - `sourcegraph-frontend` CPU/memory resource allocations
 - `searcher` replica count
 - `indexedSearch` replica count and CPU/memory resource allocations
 - `gitserver` replica count
 - `symbols` replica count and CPU/memory resource allocations
-- `gitMaxConcurrentClones`, because `git clone` and `git fetch` operations are IO- and CPU-intensive
+- `gitMaxConcurrentClones`, because `git clone` and `git fetch` operations are IO and CPU-intensive
 - `repoListUpdateInterval` (in minutes), because each interval triggers `git fetch` operations for all repositories
-
-Consult the tables above for the recommended replica counts to use. **Note:** the `gitserver` replica count is specified
-differently from the replica counts for other services; read [configure.md](configure.md#Configure-gitserver-replica-count) to learn about how to change
-the replica count of `gitserver`.
 
 Notes:
 
-- If your change requires `gitserver` pods to be restarted and they are scheduled on another node
-  when they restart, they may go offline for 60-90 seconds (and temporarily show a `Multi-Attach`
-  error). This delay is caused by Kubernetes detaching and reattaching the volume. Mitigation
-  steps depend on your cloud provider; [contact us](https://about.sourcegraph.com/contact/) for
-  advice.
-
-- For context on what each service does, see [Sourcegraph Architecture Overview](https://docs.sourcegraph.com/dev/architecture).
+- If your change requires restarting `gitserver` pods and they are rescheduled to other nodes, they may go offline briefly (showing a `Multi-Attach` error). This is due to volume detach/reattach. [Contact us](https://about.sourcegraph.com/contact/) for mitigation steps depending on your cloud provider.
+- See the docs to understand each service's role:
+  - [Sourcegraph Architecture Overview](../../../dev/background-information/architecture/index.md)
+  - [Scaling Overview per Service](../scale.md)
 
 ---
 
 ## Improving performance with large monorepos
 
-When you're using Sourcegraph with a large monorepo (or several large monorepos), the most important parameters to tune
-are:
+Here is a simplified list of key parameters to tune when scaling Sourcegraph to large monorepos:
 
 - `sourcegraph-frontend` CPU/memory resource allocations
 - `searcher` CPU/memory resource allocations (allocate enough memory to hold all non-binary files in your repositories)
@@ -91,28 +50,3 @@ important for search performance. By default, disk caches will use the
 Kubernetes [hostPath](https://kubernetes.io/docs/concepts/storage/volumes/#hostpath) and will be the
 same IO speed as the underlying node's disk. Even if the node's default disk is a SSD, however, it
 is likely network-mounted rather than local.
-
-See [configure/ssd/README.md](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/ssd/README.md) for instructions about configuring SSDs.
-
----
-
-## Cluster resource allocation guidelines
-
-For production environments, we recommend the following resource allocations for the entire
-Kubernetes cluster, based on the number of users in your organization:
-
-| Users        | vCPUs | Memory | Attached Storage | Root Storage |
-| ------------ | ----- | ------ | ---------------- | ------------ |
-| 10-500       | 10    | 24 GB  | 500 GB           | 50 GB        |
-| 500-2,000    | 16    | 48 GB  | 500 GB           | 50 GB        |
-| 2,000-4,000  | 32    | 72 GB  | 900 GB           | 50 GB        |
-| 4,000-10,000 | 48    | 96 GB  | 900 GB           | 50 GB        |
-| 10,000+      | 64    | 200 GB | 900 GB           | 50 GB        |
-
----
-
-<a id="node-selector">
-
-## Using heterogeneous node pools with `nodeSelector`
-
-See ["Assign resource-hungry pods to larger nodes" in docs/configure.md](configure.md#assign-resource-hungry-pods-to-larger-nodes).

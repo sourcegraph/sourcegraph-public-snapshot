@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
-	"github.com/sourcegraph/sourcegraph/internal/service"
+	sgservice "github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/singleprogram"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -26,7 +26,7 @@ type Config struct {
 }
 
 // Main is called from the `main` function of the `sourcegraph-oss` and `sourcegraph` commands.
-func Main(services []service.Service, config Config) {
+func Main(services []sgservice.Service, config Config) {
 	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
@@ -49,7 +49,7 @@ func Main(services []service.Service, config Config) {
 //
 // DEPRECATED: Building per-service commands (i.e., a separate binary for frontend, gitserver, etc.)
 // is deprecated.
-func DeprecatedSingleServiceMain(svc service.Service, config Config, validateConfig, useConfPackage bool) {
+func DeprecatedSingleServiceMain(svc sgservice.Service, config Config, validateConfig, useConfPackage bool) {
 	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
@@ -63,13 +63,13 @@ func DeprecatedSingleServiceMain(svc service.Service, config Config, validateCon
 		),
 	)
 	logger := log.Scoped("sourcegraph", "Sourcegraph")
-	run(liblog, logger, []service.Service{svc}, config, validateConfig, useConfPackage)
+	run(liblog, logger, []sgservice.Service{svc}, config, validateConfig, useConfPackage)
 }
 
 func run(
 	liblog *log.PostInitCallbacks,
 	logger log.Logger,
-	services []service.Service,
+	services []sgservice.Service,
 	config Config,
 	validateConfig bool,
 	useConfPackage bool,
@@ -137,7 +137,7 @@ func run(
 			// TODO(sqs): TODO(single-binary): Consider using the goroutine package and/or the errgroup package to report
 			// errors and listen to signals to initiate cleanup in a consistent way across all
 			// services.
-			obctx := observation.ScopedContext("", service.Name(), "", obctx)
+			obctx := observation.ContextWithLogger(log.Scoped(service.Name(), service.Name()), obctx)
 			err := service.Start(ctx, obctx, allReadyWG.Done, serviceConfig)
 			if err != nil {
 				logger.Fatal("failed to start service", log.String("service", service.Name()), log.Error(err))

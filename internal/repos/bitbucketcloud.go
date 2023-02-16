@@ -81,7 +81,11 @@ func newBitbucketCloudSource(logger log.Logger, svc *types.ExternalService, c *s
 }
 
 func (s BitbucketCloudSource) CheckConnection(ctx context.Context) error {
-	return checkConnection(s.config.Url)
+	_, err := s.client.CurrentUser(ctx)
+	if err != nil {
+		return errors.Wrap(err, "connection check failed. could not fetch authenticated user")
+	}
+	return nil
 }
 
 // ListRepos returns all Bitbucket Cloud repositories accessible to all connections configured

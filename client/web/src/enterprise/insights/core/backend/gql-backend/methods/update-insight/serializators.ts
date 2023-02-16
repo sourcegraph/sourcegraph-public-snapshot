@@ -13,11 +13,15 @@ import {
 import { getStepInterval } from '../../utils/get-step-interval'
 
 export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightData): UpdateLineChartSearchInsightInput {
-    const { title, repositories, series, filters, step } = insight
+    const { title, repositories, repoQuery, series, filters, step } = insight
 
     const [unit, value] = getStepInterval(step)
 
     return {
+        repositoryScope: {
+            repositories,
+            repositoryCriteria: repoQuery || null,
+        },
         dataSeries: series.map<LineChartSearchInsightDataSeriesInput>(series => ({
             seriesId: series.id,
             query: series.query,
@@ -25,7 +29,6 @@ export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightDa
                 label: series.name,
                 lineColor: series.stroke,
             },
-            repositoryScope: { repositories },
             timeScope: { stepInterval: { unit, value } },
         })),
         presentationOptions: { title },
@@ -43,15 +46,15 @@ export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightDa
 export function getCaptureGroupInsightUpdateInput(
     insight: MinimalCaptureGroupInsightData
 ): UpdateLineChartSearchInsightInput {
-    const { step, filters, query, title, repositories } = insight
+    const { step, filters, query, title, repositories, repoQuery } = insight
     const [unit, value] = getStepInterval(step)
 
     return {
+        repositoryScope: { repositories, repositoryCriteria: repoQuery || null },
         dataSeries: [
             {
                 query,
                 options: {},
-                repositoryScope: { repositories },
                 timeScope: { stepInterval: { unit, value } },
                 generatedFromCaptureGroups: true,
             },

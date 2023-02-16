@@ -92,7 +92,19 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.BazelExpBranch:
 		ops.Merge(BazelOperations())
 	case runtype.WolfiExpBranch:
-		ops.Merge(WolfiOperations())
+		if c.Diff.Has(changed.WolfiPackages) {
+			ops.Merge(WolfiPackagesOperations(c.ChangedFiles[changed.WolfiPackages]))
+		}
+		if c.Diff.Has(changed.WolfiBaseImages) {
+			ops.Merge(
+				WolfiBaseImagesOperations(
+					c.ChangedFiles[changed.WolfiBaseImages],
+					c.Version,
+					c.Diff.Has(changed.WolfiPackages),
+				),
+			)
+		}
+
 	case runtype.PullRequest:
 		// First, we set up core test operations that apply both to PRs and to other run
 		// types such as main.
@@ -224,10 +236,20 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			publishFinalDockerImage(c, patchImage))
 
 	case runtype.CandidatesNoTest:
+		imageBuildOps := operations.NewNamedSet("Image builds")
 		for _, dockerImage := range images.SourcegraphDockerImages {
-			ops.Append(
+			imageBuildOps.Append(
 				buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), false))
 		}
+		ops.Merge(imageBuildOps)
+
+		ops.Append(wait)
+
+		publishOps := operations.NewNamedSet("Publish images")
+		for _, dockerImage := range images.SourcegraphDockerImages {
+			publishOps.Append(publishFinalDockerImage(c, dockerImage))
+		}
+		ops.Merge(publishOps)
 
 	case runtype.ExecutorPatchNoTest:
 		executorVMImage := "executor-vm"

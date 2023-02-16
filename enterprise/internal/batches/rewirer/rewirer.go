@@ -26,9 +26,7 @@ func New(mappings btypes.RewirerMappings, batchChangeID int64) *ChangesetRewirer
 // for consumption by the background reconciler.
 //
 // It also updates the ChangesetIDs on the batch change.
-func (r *ChangesetRewirer) Rewire() (changesets []*btypes.Changeset, err error) {
-	changesets = []*btypes.Changeset{}
-
+func (r *ChangesetRewirer) Rewire() (newChangesets []*btypes.Changeset, updateChangesets []*btypes.Changeset, err error) {
 	for _, m := range r.mappings {
 		// If a Changeset that's currently attached to the batch change wasn't matched to a ChangesetSpec, it needs to be closed/detached.
 		if m.ChangesetSpec == nil {
@@ -45,7 +43,7 @@ func (r *ChangesetRewirer) Rewire() (changesets []*btypes.Changeset, err error) 
 			}
 
 			r.closeChangeset(changeset)
-			changesets = append(changesets, changeset)
+			updateChangesets = append(updateChangesets, changeset)
 
 			continue
 		}
@@ -58,33 +56,33 @@ func (r *ChangesetRewirer) Rewire() (changesets []*btypes.Changeset, err error) 
 		// would require a new spec.
 		repo := m.Repo
 		if repo == nil {
-			return nil, &database.RepoNotFoundErr{ID: m.RepoID}
+			return nil, nil, &database.RepoNotFoundErr{ID: m.RepoID}
 		}
 
 		if err := checkRepoSupported(repo); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
-		var changeset *btypes.Changeset
-
 		if m.Changeset != nil {
-			changeset = m.Changeset
+			changeset := m.Changeset
 			if spec.Type == btypes.ChangesetSpecTypeExisting {
 				r.attachTrackingChangeset(changeset)
 			} else if spec.Type == btypes.ChangesetSpecTypeBranch {
 				r.updateChangesetToNewSpec(changeset, spec)
 			}
+			updateChangesets = append(updateChangesets, changeset)
 		} else {
+			var changeset *btypes.Changeset
 			if spec.Type == btypes.ChangesetSpecTypeExisting {
 				changeset = r.createTrackingChangeset(repo, spec.ExternalID)
 			} else if spec.Type == btypes.ChangesetSpecTypeBranch {
 				changeset = r.createChangesetForSpec(repo, spec)
 			}
+			newChangesets = append(newChangesets, changeset)
 		}
-		changesets = append(changesets, changeset)
 	}
 
-	return changesets, nil
+	return newChangesets, updateChangesets, nil
 }
 
 func (r *ChangesetRewirer) createChangesetForSpec(repo *types.Repo, spec *btypes.ChangesetSpec) *btypes.Changeset {

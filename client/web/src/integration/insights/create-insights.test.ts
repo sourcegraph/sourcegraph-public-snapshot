@@ -64,8 +64,11 @@ describe('Code insight create insight page', () => {
                 /**
                  * Mock for async repositories field validation.
                  */
-                BulkRepositoriesSearch: () => ({
-                    repoSearch0: { name: 'github.com/sourcegraph/sourcegraph' },
+                CheckRepositoryExists: () => ({
+                    repository: {
+                        __typename: 'Repository',
+                        name: 'github.com/sourcegraph/sourcegraph',
+                    },
                 }),
 
                 LangStatsInsightContent: () => LANG_STATS_INSIGHT_DATA_FIXTURE,
@@ -136,8 +139,11 @@ describe('Code insight create insight page', () => {
             testContext,
             overrides: {
                 // Mock for async repositories field validation.
-                BulkRepositoriesSearch: () => ({
-                    repoSearch0: { name: 'github.com/sourcegraph/sourcegraph' },
+                CheckRepositoryExists: () => ({
+                    repository: {
+                        __typename: 'Repository',
+                        name: 'github.com/sourcegraph/sourcegraph',
+                    },
                 }),
 
                 // Mocks live preview chart
@@ -163,6 +169,11 @@ describe('Code insight create insight page', () => {
                             dashboardReferenceCount: 0,
                             dashboards: { nodes: [] },
 
+                            repositoryDefinition: {
+                                repositories: ['github.com/sourcegraph/sourcegraph'],
+                                __typename: 'InsightRepositoryScope',
+                            },
+
                             presentation: {
                                 __typename: 'LineChartInsightViewPresentation',
                                 title: 'Test insight title',
@@ -180,10 +191,6 @@ describe('Code insight create insight page', () => {
                                         __typename: 'LineChartDataSeriesPresentation',
                                     },
                                 ],
-                            },
-                            repositoryDefinition: {
-                                repositories: ['github.com/sourcegraph/sourcegraph'],
-                                __typename: 'InsightRepositoryScope',
                             },
                             dataSeriesDefinitions: [
                                 {

@@ -17,25 +17,28 @@ type SearchContextLoader interface {
 	GetByName(ctx context.Context, name string) (*sctypes.SearchContext, error)
 }
 
-type SCLoader struct {
+type scLoader struct {
 	primary database.DB
-	loader  SearchContextLoader
 }
 
-func NewSCLoader(primary database.DB) *SCLoader {
-	return &SCLoader{primary: primary}
-}
-
-func (l *SCLoader) GetByName(ctx context.Context, name string) (*sctypes.SearchContext, error) {
+func (l *scLoader) GetByName(ctx context.Context, name string) (*sctypes.SearchContext, error) {
 	return searchcontexts.ResolveSearchContextSpec(ctx, l.primary, name)
 }
 
-func (l *SCLoader) UnwrapSearchContexts(ctx context.Context, rawContexts []string) ([]string, []string, error) {
+type SearchContextHandler struct {
+	loader SearchContextLoader
+}
+
+func NewSearchContextHandler(db database.DB) *SearchContextHandler {
+	return &SearchContextHandler{loader: &scLoader{db}}
+}
+
+func (h *SearchContextHandler) UnwrapSearchContexts(ctx context.Context, rawContexts []string) ([]string, []string, error) {
 	var include []string
 	var exclude []string
 
 	for _, rawContext := range rawContexts {
-		searchContext, err := l.loader.GetByName(ctx, rawContext)
+		searchContext, err := h.loader.GetByName(ctx, rawContext)
 		if err != nil {
 			return nil, nil, err
 		}

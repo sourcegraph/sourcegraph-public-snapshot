@@ -101,8 +101,16 @@ func (r *UploadResolver) AssociatedIndex(ctx context.Context) (_ resolverstubs.L
 	return NewIndexResolver(r.autoindexingSvc, r.uploadsSvc, r.policySvc, index, r.prefetcher, r.locationResolver, r.traceErrs), nil
 }
 
-func (r *UploadResolver) ProjectRoot(ctx context.Context) (resolverstubs.GitTreeEntryResolver, error) {
-	return r.locationResolver.Path(ctx, api.RepoID(r.upload.RepositoryID), r.upload.Commit, r.upload.Root)
+func (r *UploadResolver) ProjectRoot(ctx context.Context) (_ resolverstubs.GitTreeEntryResolver, err error) {
+	defer r.traceErrs.Collect(&err, log.String("uploadResolver.field", "projectRoot"))
+
+	resolver, err := r.locationResolver.Path(ctx, api.RepoID(r.upload.RepositoryID), r.upload.Commit, r.upload.Root)
+	if err != nil || resolver == nil {
+		// Do not return typed nil interface
+		return nil, err
+	}
+
+	return resolver, nil
 }
 
 const DefaultRetentionPolicyMatchesPageSize = 50
@@ -165,8 +173,8 @@ func (r *UploadResolver) AuditLogs(ctx context.Context) (*[]resolverstubs.LSIFUp
 	}
 
 	resolvers := make([]resolverstubs.LSIFUploadsAuditLogsResolver, 0, len(logs))
-	for _, log := range logs {
-		resolvers = append(resolvers, NewLSIFUploadsAuditLogsResolver(log))
+	for _, uploadLog := range logs {
+		resolvers = append(resolvers, NewLSIFUploadsAuditLogsResolver(uploadLog))
 	}
 
 	return &resolvers, nil

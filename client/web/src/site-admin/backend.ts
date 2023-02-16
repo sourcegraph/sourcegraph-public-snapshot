@@ -564,8 +564,8 @@ export function randomizeUserPassword(
 export function createUser(username: string, email: string | undefined): Observable<CreateUserResult['createUser']> {
     return mutateGraphQL<CreateUserResult>(
         gql`
-            mutation CreateUser($username: String!, $email: String) {
-                createUser(username: $username, email: $email) {
+            mutation SiteAdminCreateUser($username: String!, $email: String) {
+                createUser(username: $username, email: $email, verifiedEmail: false) {
                     resetPasswordURL
                 }
             }
@@ -836,7 +836,7 @@ export const useWebhookPageHeader = (): { loading: boolean; totalErrors: number;
     return { loading, totalErrors, totalNoEvents }
 }
 
-export const useWebhooksConnection = (): UseShowMorePaginationResult<WebhookFields> =>
+export const useWebhooksConnection = (): UseShowMorePaginationResult<WebhooksListResult, WebhookFields> =>
     useShowMorePagination<WebhooksListResult, WebhooksListVariables, WebhookFields>({
         query: WEBHOOKS,
         variables: {},
@@ -855,7 +855,7 @@ export const useWebhookLogsConnection = (
     webhookID: string,
     first: number,
     onlyErrors: boolean
-): UseShowMorePaginationResult<WebhookLogFields> =>
+): UseShowMorePaginationResult<WebhookLogsByWebhookIDResult, WebhookLogFields> =>
     useShowMorePagination<WebhookLogsByWebhookIDResult, WebhookLogsByWebhookIDVariables, WebhookLogFields>({
         query: WEBHOOK_LOGS_BY_ID,
         variables: {

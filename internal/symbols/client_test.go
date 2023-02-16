@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -37,7 +38,7 @@ func TestSearchWithFiltering(t *testing.T) {
 	t.Cleanup(func() {
 		srv.Close()
 	})
-	DefaultClient.URL = srv.URL
+	DefaultClient.Endpoints = endpoint.Static(srv.URL)
 
 	results, err := DefaultClient.Search(ctx, search.SymbolsParameters{
 		Repo:     "foo",
@@ -118,7 +119,7 @@ func TestDefinitionWithFiltering(t *testing.T) {
 	t.Cleanup(func() {
 		srv.Close()
 	})
-	DefaultClient.URL = srv.URL
+	DefaultClient.Endpoints = endpoint.Static(srv.URL)
 
 	// Request path1.
 	results, err := DefaultClient.SymbolInfo(ctx, path2)

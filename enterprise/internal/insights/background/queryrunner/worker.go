@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -453,7 +454,7 @@ type Job struct {
 	ProcessAfter   *time.Time
 	NumResets      int32
 	NumFailures    int32
-	ExecutionLogs  []workerutil.ExecutionLogEntry
+	ExecutionLogs  []executor.ExecutionLogEntry
 }
 
 // Implements the internal/workerutil.Record interface, used by the work handler to locate the job

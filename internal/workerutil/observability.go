@@ -114,7 +114,7 @@ func NewMetrics(observationCtx *observation.Context, prefix string, opts ...Obse
 }
 
 func newOperations(observationCtx *observation.Context, prefix string, keys, values []string, durationBuckets []float64) *operations {
-	metrics := metrics.NewREDMetrics(
+	redMetrics := metrics.NewREDMetrics(
 		observationCtx.Registerer,
 		prefix,
 		metrics.WithLabels(append(keys, "op")...),
@@ -126,7 +126,7 @@ func newOperations(observationCtx *observation.Context, prefix string, keys, val
 		return observationCtx.Operation(observation.Op{
 			Name:              name,
 			MetricLabelValues: append(append([]string{}, values...), name),
-			Metrics:           metrics,
+			Metrics:           redMetrics,
 		})
 	}
 

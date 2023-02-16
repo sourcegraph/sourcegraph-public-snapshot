@@ -113,7 +113,14 @@ func (r *indexResolver) ShouldReindex(ctx context.Context) bool {
 func (r *indexResolver) ProjectRoot(ctx context.Context) (_ resolverstubs.GitTreeEntryResolver, err error) {
 	defer r.traceErrs.Collect(&err, log.String("indexResolver.field", "projectRoot"))
 
-	return r.locationResolver.Path(ctx, api.RepoID(r.index.RepositoryID), r.index.Commit, r.index.Root)
+	resolver, err := r.locationResolver.Path(ctx, api.RepoID(r.index.RepositoryID), r.index.Commit, r.index.Root)
+	if err != nil || resolver == nil {
+		// Do not return typed nil interface
+		return nil, err
+	}
+
+	return resolver, nil
+
 }
 
 func (r *indexResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {

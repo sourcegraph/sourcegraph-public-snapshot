@@ -29,14 +29,14 @@ func TestRetrievingAndDeduplicatingIndexedRefs(t *testing.T) {
 		if rev != defaultBranchRef && strings.HasSuffix(rev, defaultBranchRef) {
 			return "", errors.New("x")
 		}
-		return api.CommitID("deadbeef"), nil
+		return "deadbeef", nil
 	})
 
 	repoIndexResolver := &repositoryTextSearchIndexResolver{
 		repo: NewRepositoryResolver(db, gsClient, &types.Repo{Name: "alice/repo"}),
 		client: &backend.FakeSearcher{Repos: []*zoekt.RepoListEntry{{
 			Repository: zoekt.Repository{
-				Name: string("alice/repo"),
+				Name: "alice/repo",
 				Branches: []zoekt.RepositoryBranch{
 					{Name: "HEAD", Version: "deadbeef"},
 					{Name: "main", Version: "deadbeef"},

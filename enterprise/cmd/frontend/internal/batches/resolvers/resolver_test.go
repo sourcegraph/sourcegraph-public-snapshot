@@ -130,7 +130,9 @@ func TestCreateBatchSpec(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	license := func(tags ...string) *licensing.Info { return &licensing.Info{Info: license.Info{Tags: tags}} }
+	licensingInfo := func(tags ...string) *licensing.Info {
+		return &licensing.Info{Info: license.Info{Tags: tags, ExpiresAt: time.Now().Add(1 * time.Hour)}}
+	}
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
@@ -180,22 +182,22 @@ func TestCreateBatchSpec(t *testing.T) {
 	}{
 		"batch changes license, restricted, over the limit": {
 			changesetSpecs: changesetSpecs,
-			licenseInfo:    license("starter"),
+			licenseInfo:    licensingInfo("starter"),
 			wantErr:        true,
 		},
 		"batch changes license, restricted, under the limit": {
 			changesetSpecs: changesetSpecs[0 : maxNumChangesets-1],
-			licenseInfo:    license("starter"),
+			licenseInfo:    licensingInfo("starter"),
 			wantErr:        false,
 		},
 		"batch changes license, unrestricted, over the limit": {
 			changesetSpecs: changesetSpecs,
-			licenseInfo:    license("starter", "batch-changes"),
+			licenseInfo:    licensingInfo("starter", "batch-changes"),
 			wantErr:        false,
 		},
 		"campaigns license, no limit": {
 			changesetSpecs: changesetSpecs,
-			licenseInfo:    license("starter", "campaigns"),
+			licenseInfo:    licensingInfo("starter", "campaigns"),
 			wantErr:        false,
 		},
 		"no license": {
@@ -496,6 +498,79 @@ mutation($changesetSpec: String!){
 }
 `
 
+func TestCreateChangesetSpecs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	userID := bt.CreateTestUser(t, db, true).ID
+
+	bstore := store.New(db, &observation.TestContext, nil)
+	repoStore := database.ReposWith(logger, bstore)
+	esStore := database.ExternalServicesWith(logger, bstore)
+
+	repo1 := newGitHubTestRepo("github.com/sourcegraph/create-changeset-spec-test1", newGitHubExternalService(t, esStore))
+	err := repoStore.Create(ctx, repo1)
+	require.NoError(t, err)
+
+	repo2 := newGitHubTestRepo("github.com/sourcegraph/create-changeset-spec-test2", newGitHubExternalService(t, esStore))
+	err = repoStore.Create(ctx, repo2)
+	require.NoError(t, err)
+
+	r := &Resolver{store: bstore}
+	s, err := newSchema(db, r)
+	require.NoError(t, err)
+
+	input := map[string]any{
+		"changesetSpecs": []string{
+			bt.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo1.ID), "d34db33f"),
+			bt.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo2.ID), "d34db33g"),
+		},
+	}
+
+	var response struct{ CreateChangesetSpecs []apitest.ChangesetSpec }
+
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateChangesetSpecs)
+
+	specs := response.CreateChangesetSpecs
+	assert.Len(t, specs, 2)
+
+	for _, spec := range specs {
+		assert.NotEmpty(t, spec.Typename)
+		assert.NotEmpty(t, spec.ID)
+		assert.NotNil(t, spec.ExpiresAt)
+
+		randID, err := unmarshalChangesetSpecID(graphql.ID(spec.ID))
+		require.NoError(t, err)
+
+		cs, err := bstore.GetChangesetSpec(ctx, store.GetChangesetSpecOpts{RandID: randID})
+		require.NoError(t, err)
+
+		if cs.BaseRev == "d34db33f" {
+			assert.Equal(t, repo1.ID, cs.BaseRepoID)
+		} else {
+			assert.Equal(t, repo2.ID, cs.BaseRepoID)
+		}
+	}
+}
+
+const mutationCreateChangesetSpecs = `
+mutation($changesetSpecs: [String!]!){
+  createChangesetSpecs(changesetSpecs: $changesetSpecs) {
+	__typename
+	... on VisibleChangesetSpec {
+		id
+		expiresAt
+	}
+  }
+}
+`
+
 func TestApplyBatchChange(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -709,12 +784,12 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 	}
 
 	// Second time should fail because namespace + name are not unique
-	errors := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateEmptyBatchChange)
+	errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateEmptyBatchChange)
 
-	if len(errors) != 1 {
+	if len(errs) != 1 {
 		t.Fatalf("expected single errors, but got none")
 	}
-	if have, want := errors[0].Message, service.ErrNameNotUnique.Error(); have != want {
+	if have, want := errs[0].Message, service.ErrNameNotUnique.Error(); have != want {
 		t.Fatalf("wrong error. want=%q, have=%q", want, have)
 	}
 
@@ -739,14 +814,14 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 		"name":      "not: valid:\nname",
 	}
 
-	errors = apitest.Exec(actorCtx, t, s, input3, &response, mutationCreateEmptyBatchChange)
+	errs = apitest.Exec(actorCtx, t, s, input3, &response, mutationCreateEmptyBatchChange)
 
-	if len(errors) != 1 {
+	if len(errs) != 1 {
 		t.Fatalf("expected single errors, but got none")
 	}
 
 	expError := "The batch change name can only contain word characters, dots and dashes."
-	if have, want := errors[0].Message, expError; !strings.Contains(have, "The batch change name can only contain word characters, dots and dashes.") {
+	if have, want := errs[0].Message, expError; !strings.Contains(have, "The batch change name can only contain word characters, dots and dashes.") {
 		t.Fatalf("wrong error. want to contain=%q, have=%q", want, have)
 	}
 }
@@ -806,15 +881,15 @@ func TestUpsertEmptyBatchChange(t *testing.T) {
 		"name":      "my-batch-change",
 	}
 
-	errors := apitest.Exec(actorCtx, t, s, badInput, &response, mutationUpsertEmptyBatchChange)
+	errs := apitest.Exec(actorCtx, t, s, badInput, &response, mutationUpsertEmptyBatchChange)
 
-	if len(errors) != 1 {
+	if len(errs) != 1 {
 		t.Fatalf("expected single errors")
 	}
 
 	wantError := "invalid ID \"bad_namespace-id\" for namespace"
 
-	if have, want := errors[0].Message, wantError; have != want {
+	if have, want := errs[0].Message, wantError; have != want {
 		t.Fatalf("wrong error. want=%q, have=%q", want, have)
 	}
 }
@@ -874,12 +949,12 @@ func TestCreateBatchChange(t *testing.T) {
 	}
 
 	// Second time it should fail
-	errors := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateBatchChange)
+	errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateBatchChange)
 
-	if len(errors) != 1 {
+	if len(errs) != 1 {
 		t.Fatalf("expected single errors, but got none")
 	}
-	if have, want := errors[0].Message, service.ErrMatchingBatchChangeExists.Error(); have != want {
+	if have, want := errs[0].Message, service.ErrMatchingBatchChangeExists.Error(); have != want {
 		t.Fatalf("wrong error. want=%q, have=%q", want, have)
 	}
 }
@@ -1535,7 +1610,7 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 	t.Run("User credential", func(t *testing.T) {
 		input := map[string]any{
 			"user":                graphqlbackend.MarshalUserID(userID),
-			"externalServiceKind": string(extsvc.KindGitHub),
+			"externalServiceKind": extsvc.KindGitHub,
 			"externalServiceURL":  "https://github.com/",
 			"credential":          "SOSECRET",
 		}
@@ -1581,7 +1656,7 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 	t.Run("Site credential", func(t *testing.T) {
 		input := map[string]any{
 			"user":                nil,
-			"externalServiceKind": string(extsvc.KindGitHub),
+			"externalServiceKind": extsvc.KindGitHub,
 			"externalServiceURL":  "https://github.com/",
 			"credential":          "SOSECRET",
 		}
@@ -1615,12 +1690,12 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 		}
 
 		// Second time it should fail
-		errors := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCredential)
+		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCredential)
 
-		if len(errors) != 1 {
+		if len(errs) != 1 {
 			t.Fatalf("expected single errors, but got none")
 		}
-		if have, want := errors[0].Extensions["code"], "ErrDuplicateCredential"; have != want {
+		if have, want := errs[0].Extensions["code"], "ErrDuplicateCredential"; have != want {
 			t.Fatalf("wrong error code. want=%q, have=%q", want, have)
 		}
 	})
@@ -1685,12 +1760,12 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 		apitest.MustExec(actorCtx, t, s, input, &response, mutationDeleteCredential)
 
 		// Second time it should fail
-		errors := apitest.Exec(actorCtx, t, s, input, &response, mutationDeleteCredential)
+		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationDeleteCredential)
 
-		if len(errors) != 1 {
-			t.Fatalf("expected single errors, but got none")
+		if len(errs) != 1 {
+			t.Fatalf("expected a single error, but got %d", len(errs))
 		}
-		if have, want := errors[0].Message, fmt.Sprintf("user credential not found: [%d]", userCred.ID); have != want {
+		if have, want := errs[0].Message, fmt.Sprintf("user credential not found: [%d]", userCred.ID); have != want {
 			t.Fatalf("wrong error code. want=%q, have=%q", want, have)
 		}
 	})
@@ -1707,12 +1782,12 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 		apitest.MustExec(actorCtx, t, s, input, &response, mutationDeleteCredential)
 
 		// Second time it should fail
-		errors := apitest.Exec(actorCtx, t, s, input, &response, mutationDeleteCredential)
+		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationDeleteCredential)
 
-		if len(errors) != 1 {
+		if len(errs) != 1 {
 			t.Fatalf("expected single errors, but got none")
 		}
-		if have, want := errors[0].Message, "no results"; have != want {
+		if have, want := errs[0].Message, "no results"; have != want {
 			t.Fatalf("wrong error code. want=%q, have=%q", want, have)
 		}
 	})

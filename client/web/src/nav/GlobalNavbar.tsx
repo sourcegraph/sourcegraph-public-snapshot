@@ -1,10 +1,10 @@
 import React, { SetStateAction, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
+import { useLocation } from 'react-router-dom-v5-compat'
 
 import { ContributableMenu } from '@sourcegraph/client-api'
 import { isErrorLike, isMacPlatform } from '@sourcegraph/common'
@@ -24,9 +24,11 @@ import { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { CodeMonitoringProps } from '../codeMonitoring'
+import { CodyIcon } from '../cody/CodyIcon'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { getFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
 import { WebCommandListPopoverButton } from '../components/shared'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useHandleSubmitFeedback, useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
@@ -59,12 +61,10 @@ export interface GlobalNavbarProps
         BatchChangesProps,
         NotebookProps,
         CodeMonitoringProps {
-    history: H.History
-    location: H.Location
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
     showSearchBox: boolean
-    routes: readonly LayoutRouteProps<{}>[]
+    routes: readonly LayoutRouteProps[]
 
     // Whether globbing is enabled for filters.
     globbing: boolean
@@ -129,8 +129,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     showSearchBox,
     isLightTheme,
     branding,
-    location,
-    history,
     isSourcegraphDotCom,
     isRepositoryRelatedPage,
     codeInsightsEnabled,
@@ -144,6 +142,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
 }) => {
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
     branding = branding ?? window.context?.branding
+
+    const location = useLocation()
 
     const routeMatch = useRoutesMatch(props.routes)
     const { handleSubmitFeedback } = useHandleSubmitFeedback({
@@ -183,6 +183,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     }, [showSearchContext])
 
     const { fuzzyFinderNavbar } = getFuzzyFinderFeatureFlags(props.settingsCascade.final) ?? false
+
+    const [codyEnabled] = useFeatureFlag('cody')
 
     return (
         <>
@@ -227,7 +229,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                     {showCodeMonitoring && (
                         <NavItem icon={CodeMonitoringLogo}>
-                            <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.CodeMonitoring}>
+                            <NavLink variant={navLinkVariant} to="/code-monitoring">
                                 Monitoring
                             </NavLink>
                         </NavItem>
@@ -240,8 +242,15 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                     {codeInsights && (
                         <NavItem icon={BarChartIcon}>
-                            <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Insights}>
+                            <NavLink variant={navLinkVariant} to="/insights">
                                 Insights
+                            </NavLink>
+                        </NavItem>
+                    )}
+                    {codyEnabled && (
+                        <NavItem icon={CodyIcon}>
+                            <NavLink variant={navLinkVariant} to="/cody">
+                                Cody
                             </NavLink>
                         </NavItem>
                     )}
@@ -289,7 +298,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                     {props.authenticatedUser && isSourcegraphDotCom && (
                         <ButtonLink
-                            className={styles.signUp}
+                            variant="secondary"
+                            outline={true}
                             to={buildCloudTrialURL(props.authenticatedUser)}
                             size="sm"
                             onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NavBarLoggedIn' })}
@@ -321,11 +331,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                         className="mr-1"
                                         to={
                                             '/sign-in?returnTo=' +
-                                            encodeURI(
-                                                history.location.pathname +
-                                                    history.location.search +
-                                                    history.location.hash
-                                            )
+                                            encodeURI(location.pathname + location.search + location.hash)
                                         }
                                         variant="secondary"
                                         outline={true}
@@ -335,8 +341,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                         Sign in
                                     </Button>
                                     <ButtonLink
-                                        className={styles.signUp}
                                         to={buildGetStartedURL(isSourcegraphDotCom, props.authenticatedUser)}
+                                        variant="primary"
                                         size="sm"
                                         onClick={() => eventLogger.log('ClickedOnTopNavTrialButton')}
                                     >
@@ -367,8 +373,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                 <div className="w-100 px-3 py-2 border-bottom">
                     <SearchNavbarItem
                         {...props}
-                        location={location}
-                        history={history}
                         isLightTheme={isLightTheme}
                         isSourcegraphDotCom={isSourcegraphDotCom}
                         searchContextsEnabled={searchContextsEnabled}

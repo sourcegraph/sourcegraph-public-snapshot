@@ -101,7 +101,7 @@ func (UserCredentialNotFoundErr) NotFound() bool {
 type UserCredentialsStore interface {
 	basestore.ShareableStore
 	With(basestore.ShareableStore) UserCredentialsStore
-	Transact(context.Context) (UserCredentialsStore, error)
+	WithTransact(context.Context, func(UserCredentialsStore) error) error
 	Create(ctx context.Context, scope UserCredentialScope, credential auth.Authenticator) (*UserCredential, error)
 	Update(context.Context, *UserCredential) error
 	Delete(ctx context.Context, id int64) error
@@ -134,13 +134,14 @@ func (s *userCredentialsStore) With(other basestore.ShareableStore) UserCredenti
 	}
 }
 
-func (s *userCredentialsStore) Transact(ctx context.Context) (UserCredentialsStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	return &userCredentialsStore{
-		logger: s.logger,
-		Store:  txBase,
-		key:    s.key,
-	}, err
+func (s *userCredentialsStore) WithTransact(ctx context.Context, f func(UserCredentialsStore) error) error {
+	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&userCredentialsStore{
+			logger: s.logger,
+			Store:  tx,
+			key:    s.key,
+		})
+	})
 }
 
 // UserCredentialScope represents the unique scope for a credential. Only one

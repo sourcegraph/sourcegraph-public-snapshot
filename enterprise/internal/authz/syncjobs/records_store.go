@@ -2,7 +2,6 @@ package syncjobs
 
 import (
 	"encoding/json"
-	"sync"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -22,7 +21,6 @@ type RecordsStore struct {
 	logger log.Logger
 	now    func() time.Time
 
-	mux sync.Mutex
 	// cache is a replaceable abstraction over rcache.FIFOList.
 	cache interface {
 		Insert(v []byte) error

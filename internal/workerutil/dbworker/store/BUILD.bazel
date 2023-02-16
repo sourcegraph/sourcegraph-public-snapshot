@@ -13,6 +13,7 @@ go_library(
     deps = [
         "//internal/database/basestore",
         "//internal/database/dbutil",
+        "//internal/executor",
         "//internal/metrics",
         "//internal/observation",
         "//internal/workerutil",
@@ -38,6 +39,7 @@ go_test(
         "//internal/database/basestore",
         "//internal/database/dbtest",
         "//internal/database/dbutil",
+        "//internal/executor",
         "//internal/observation",
         "//internal/workerutil",
         "@com_github_derision_test_glock//:glock",

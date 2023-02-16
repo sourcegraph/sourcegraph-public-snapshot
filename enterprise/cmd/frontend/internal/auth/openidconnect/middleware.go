@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -87,7 +87,7 @@ func handleOpenIDConnectAuth(db database.DB, w http.ResponseWriter, r *http.Requ
 
 	// If the actor is authenticated and not performing an OpenID Connect flow, then proceed to
 	// next.
-	if actor.FromContext(r.Context()).IsAuthenticated() {
+	if sgactor.FromContext(r.Context()).IsAuthenticated() {
 		next.ServeHTTP(w, r)
 		return
 	}
@@ -172,7 +172,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			// if !idToken.Expiry.IsZero() {
 			// 	exp = time.Until(idToken.Expiry)
 			// }
-			if err = session.SetActor(w, r, actor.FromUser(result.User.ID), exp, result.User.CreatedAt); err != nil {
+			if err = session.SetActor(w, r, sgactor.FromUser(result.User.ID), exp, result.User.CreatedAt); err != nil {
 				log15.Error("Failed to authenticate with OpenID connect: could not initiate session.", "error", err)
 				http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not initiate session.", http.StatusInternalServerError)
 				return
