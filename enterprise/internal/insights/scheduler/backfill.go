@@ -459,7 +459,7 @@ const (
 var backfillQueueSQL = `
 WITH job_queue as (
     select backfill_id, state, row_number() over (ORDER BY estimated_cost, backfill_id)  queue_position
-    from insights_jobs_backfill_in_progress where state = 'queued' order by estimated_cost, backfill_id
+    from insights_jobs_backfill_in_progress where state = 'queued'
 ),
 errors as (
     select repo_iterator_id, array_agg(err_msg) error_messages
