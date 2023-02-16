@@ -1,7 +1,7 @@
 import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
 
 import { gql, useQuery } from '@apollo/client'
-import { useNavigate, useLocation, To } from 'react-router-dom-v5-compat'
+import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
 
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
