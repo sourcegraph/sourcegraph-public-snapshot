@@ -10,8 +10,10 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -26,6 +28,9 @@ var outboundRequestsRedisFIFOList = rcache.NewFIFOListDynamic("outbound-requests
 const sourcegraphPrefix = "github.com/sourcegraph/sourcegraph/"
 
 func redisLoggerMiddleware() Middleware {
+	var once sync.Once
+	var logger log.Logger
+
 	creatorStackFrame, _ := getFrames(4).Next()
 	return func(cli Doer) Doer {
 		return DoerFunc(func(req *http.Request) (*http.Response, error) {
@@ -33,87 +38,90 @@ func redisLoggerMiddleware() Middleware {
 			resp, err := cli.Do(req)
 			duration := time.Since(start)
 
+			limit := OutboundRequestLogLimit()
+			shouldRedactSensitiveHeaders := !deploy.IsDev(deploy.Type()) || RedactOutboundRequestHeaders()
+
+			// Feature is turned off, do not log
+			if limit == 0 {
+				return resp, err
+			}
+
+			// middlewareErrors will be set later if there is an error
+			var middlewareErrors error
+			defer func() {
+				if middlewareErrors != nil {
+					*req = *req.WithContext(context.WithValue(req.Context(),
+						redisLoggingMiddlewareErrorKey, middlewareErrors))
+				}
+			}()
+
+			// Read body
+			var requestBody []byte
+			if req != nil && req.Body != nil {
+				body, _ := req.GetBody()
+				if body != nil {
+					var readErr error
+					requestBody, readErr = io.ReadAll(body)
+					if err != nil {
+						middlewareErrors = errors.Append(middlewareErrors,
+							errors.Wrap(readErr, "read body"))
+					}
+				}
+			}
+
+			// Pull out data if we have `resp`
+			var responseHeaders http.Header
+			var statusCode int32
+			if resp != nil {
+				responseHeaders = resp.Header
+				statusCode = int32(resp.StatusCode)
+			}
+
+			// Redact sensitive headers
+			requestHeaders := req.Header
+
+			if shouldRedactSensitiveHeaders {
+				requestHeaders = redactSensitiveHeaders(requestHeaders)
+				responseHeaders = redactSensitiveHeaders(responseHeaders)
+			}
+
+			// Create log item
+			var errorMessage string
+			if err != nil {
+				errorMessage = err.Error()
+			}
+			key := time.Now().UTC().Format("2006-01-02T15_04_05.999999999")
+			callerStackFrames := getFrames(4) // Starts at the caller of the caller of redisLoggerMiddleware
+			logItem := types.OutboundRequestLogItem{
+				ID:                 key,
+				StartedAt:          start,
+				Method:             req.Method,
+				URL:                req.URL.String(),
+				RequestHeaders:     requestHeaders,
+				RequestBody:        string(requestBody),
+				StatusCode:         statusCode,
+				ResponseHeaders:    responseHeaders,
+				Duration:           duration.Seconds(),
+				ErrorMessage:       errorMessage,
+				CreationStackFrame: formatStackFrame(creatorStackFrame.Function, creatorStackFrame.File, creatorStackFrame.Line),
+				CallStackFrame:     formatStackFrames(callerStackFrames),
+			}
+
+			// Serialize log item
+			logItemJson, jsonErr := json.Marshal(logItem)
+			if jsonErr != nil {
+				middlewareErrors = errors.Append(middlewareErrors,
+					errors.Wrap(jsonErr, "marshal log item"))
+			}
+
 			go func() {
-				limit := OutboundRequestLogLimit()
-				shouldRedactSensitiveHeaders := !deploy.IsDev(deploy.Type()) || RedactOutboundRequestHeaders()
-
-				// Feature is turned off, do not log
-				if limit == 0 {
-					return
-				}
-
-				// middlewareErrors will be set later if there is an error
-				var middlewareErrors error
-				defer func() {
-					if middlewareErrors != nil {
-						*req = *req.WithContext(context.WithValue(req.Context(),
-							redisLoggingMiddlewareErrorKey, middlewareErrors))
-					}
-				}()
-
-				// Read body
-				var requestBody []byte
-				if req != nil && req.Body != nil {
-					body, _ := req.GetBody()
-					if body != nil {
-						var readErr error
-						requestBody, readErr = io.ReadAll(body)
-						if err != nil {
-							middlewareErrors = errors.Append(middlewareErrors,
-								errors.Wrap(readErr, "read body"))
-						}
-					}
-				}
-
-				// Pull out data if we have `resp`
-				var responseHeaders http.Header
-				var statusCode int32
-				if resp != nil {
-					responseHeaders = resp.Header
-					statusCode = int32(resp.StatusCode)
-				}
-
-				// Redact sensitive headers
-				requestHeaders := req.Header
-
-				if shouldRedactSensitiveHeaders {
-					requestHeaders = redactSensitiveHeaders(requestHeaders)
-					responseHeaders = redactSensitiveHeaders(responseHeaders)
-				}
-
-				// Create log item
-				var errorMessage string
-				if err != nil {
-					errorMessage = err.Error()
-				}
-				key := time.Now().UTC().Format("2006-01-02T15_04_05.999999999")
-				callerStackFrames := getFrames(4) // Starts at the caller of the caller of redisLoggerMiddleware
-				logItem := types.OutboundRequestLogItem{
-					ID:                 key,
-					StartedAt:          start,
-					Method:             req.Method,
-					URL:                req.URL.String(),
-					RequestHeaders:     requestHeaders,
-					RequestBody:        string(requestBody),
-					StatusCode:         statusCode,
-					ResponseHeaders:    responseHeaders,
-					Duration:           duration.Seconds(),
-					ErrorMessage:       errorMessage,
-					CreationStackFrame: formatStackFrame(creatorStackFrame.Function, creatorStackFrame.File, creatorStackFrame.Line),
-					CallStackFrame:     formatStackFrames(callerStackFrames),
-				}
-
-				// Serialize log item
-				logItemJson, jsonErr := json.Marshal(logItem)
-				if jsonErr != nil {
-					middlewareErrors = errors.Append(middlewareErrors,
-						errors.Wrap(jsonErr, "marshal log item"))
-				}
-
 				// Save new item
 				if err := outboundRequestsRedisFIFOList.Insert(logItemJson); err != nil {
-					middlewareErrors = errors.Append(middlewareErrors,
-						errors.Wrap(err, "insert log item"))
+					// Log would get upset if we created a logger at init time → create logger at logging time
+					once.Do(func() {
+						logger = log.Scoped("redisLoggerMiddleware", "")
+					})
+					logger.Error("insert log item", log.Error(err))
 				}
 			}()
 
