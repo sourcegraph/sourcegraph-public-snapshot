@@ -18,7 +18,7 @@ import {
     removeScheduledRelease,
     saveReleaseConfig, getReleaseDefinition, deactivateAllReleases
 } from './config'
-import {getCandidateTags} from './git';
+import {getCandidateTags, getPreviousVersion} from './git';
 import {
     cloneRepo,
     closeTrackingIssue,
@@ -80,6 +80,7 @@ export type StepID =
     | 'release:deactivate-release'
     // util
     | 'util:clear-cache'
+    | 'util:previous-version'
     // testing
     | '_test:google-calendar'
     | '_test:slack'
@@ -925,6 +926,22 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         description: 'Clear release tool cache',
         run: () => {
             rmdirSync(cacheFolder, { recursive: true })
+        },
+    },
+    {
+        id: 'util:previous-version',
+        description: 'Calculate the previous version based on repo tags',
+        argNames:['version'],
+        run: (config: ReleaseConfig, version?: string) => {
+            let ver: SemVer | undefined
+            if (version) {
+                ver = new SemVer(version)
+                console.log(`Getting previous version from: ${version}...`)
+            } else {
+                console.log('Getting previous version...')
+            }
+            const prev = getPreviousVersion(ver)
+            console.log(chalk.green(`${prev.format()}`))
         },
     },
     {
