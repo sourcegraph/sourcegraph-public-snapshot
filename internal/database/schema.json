@@ -15011,19 +15011,6 @@
       "Comment": "",
       "Columns": [
         {
-          "Name": "action",
-          "Index": 4,
-          "TypeName": "text",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "created_at",
           "Index": 6,
           "TypeName": "timestamp with time zone",
@@ -15106,19 +15093,12 @@
           "IsUnique": true,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX unique_resource_permission ON namespace_permissions USING btree (namespace, resource_id, action, user_id)",
-          "ConstraintType": "u",
-          "ConstraintDefinition": "UNIQUE (namespace, resource_id, action, user_id)"
+          "IndexDefinition": "CREATE UNIQUE INDEX unique_resource_permission ON namespace_permissions USING btree (namespace, resource_id, user_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
-        {
-          "Name": "action_not_blank",
-          "ConstraintType": "c",
-          "RefTableName": "",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "CHECK (action \u003c\u003e ''::text)"
-        },
         {
           "Name": "namespace_not_blank",
           "ConstraintType": "c",
