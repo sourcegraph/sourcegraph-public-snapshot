@@ -331,7 +331,7 @@ type MockRunner struct {
 func NewMockRunner() *MockRunner {
 	return &MockRunner{
 		RunFunc: &RunnerRunFunc{
-			defaultHook: func(context.Context, command.CommandSpec) (r0 error) {
+			defaultHook: func(context.Context, command.Spec) (r0 error) {
 				return
 			},
 		},
@@ -353,7 +353,7 @@ func NewMockRunner() *MockRunner {
 func NewStrictMockRunner() *MockRunner {
 	return &MockRunner{
 		RunFunc: &RunnerRunFunc{
-			defaultHook: func(context.Context, command.CommandSpec) error {
+			defaultHook: func(context.Context, command.Spec) error {
 				panic("unexpected invocation of MockRunner.Run")
 			},
 		},
@@ -389,15 +389,15 @@ func NewMockRunnerFrom(i command.Runner) *MockRunner {
 // RunnerRunFunc describes the behavior when the Run method of the parent
 // MockRunner instance is invoked.
 type RunnerRunFunc struct {
-	defaultHook func(context.Context, command.CommandSpec) error
-	hooks       []func(context.Context, command.CommandSpec) error
+	defaultHook func(context.Context, command.Spec) error
+	hooks       []func(context.Context, command.Spec) error
 	history     []RunnerRunFuncCall
 	mutex       sync.Mutex
 }
 
 // Run delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockRunner) Run(v0 context.Context, v1 command.CommandSpec) error {
+func (m *MockRunner) Run(v0 context.Context, v1 command.Spec) error {
 	r0 := m.RunFunc.nextHook()(v0, v1)
 	m.RunFunc.appendCall(RunnerRunFuncCall{v0, v1, r0})
 	return r0
@@ -405,7 +405,7 @@ func (m *MockRunner) Run(v0 context.Context, v1 command.CommandSpec) error {
 
 // SetDefaultHook sets function that is called when the Run method of the
 // parent MockRunner instance is invoked and the hook queue is empty.
-func (f *RunnerRunFunc) SetDefaultHook(hook func(context.Context, command.CommandSpec) error) {
+func (f *RunnerRunFunc) SetDefaultHook(hook func(context.Context, command.Spec) error) {
 	f.defaultHook = hook
 }
 
@@ -413,7 +413,7 @@ func (f *RunnerRunFunc) SetDefaultHook(hook func(context.Context, command.Comman
 // Run method of the parent MockRunner instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *RunnerRunFunc) PushHook(hook func(context.Context, command.CommandSpec) error) {
+func (f *RunnerRunFunc) PushHook(hook func(context.Context, command.Spec) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -422,19 +422,19 @@ func (f *RunnerRunFunc) PushHook(hook func(context.Context, command.CommandSpec)
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *RunnerRunFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, command.CommandSpec) error {
+	f.SetDefaultHook(func(context.Context, command.Spec) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *RunnerRunFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, command.CommandSpec) error {
+	f.PushHook(func(context.Context, command.Spec) error {
 		return r0
 	})
 }
 
-func (f *RunnerRunFunc) nextHook() func(context.Context, command.CommandSpec) error {
+func (f *RunnerRunFunc) nextHook() func(context.Context, command.Spec) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -472,7 +472,7 @@ type RunnerRunFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 command.CommandSpec
+	Arg1 command.Spec
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
