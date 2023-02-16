@@ -7,6 +7,7 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type permissionResolver struct {
@@ -28,8 +29,11 @@ func (r *permissionResolver) ID() graphql.ID {
 	return marshalPermissionID(r.permission.ID)
 }
 
-func (r *permissionResolver) Namespace() string {
-	return r.permission.Namespace
+func (r *permissionResolver) Namespace() (string, error) {
+	if r.permission.Namespace.Valid() {
+		return r.permission.Namespace.String(), nil
+	}
+	return "", errors.New("invalid namespace")
 }
 
 func (r *permissionResolver) Action() string {

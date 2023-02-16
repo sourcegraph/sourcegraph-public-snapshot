@@ -403,104 +403,12 @@ func (r *GitTreeEntryResolver) LFS(ctx context.Context) (*lfsResolver, error) {
 	return parseLFSPointer(content), nil
 }
 
-func (r *GitTreeEntryResolver) Ownership(ctx context.Context) []Ownership {
-	s := backend.NewOwnService(r.gitserverClient)
-	if s == nil {
-		// just for testing
-		return []Ownership{{
-			gitTree: r,
-			handle:  "@no-own-service",
-			reasons: []OwnershipReason{&CodeownersFileEntry{}},
-		}}
+func (r *GitTreeEntryResolver) Ownership(ctx context.Context, args ListOwnershipArgs) (OwnershipConnectionResolver, error) {
+	_, ok := r.ToGitBlob()
+	if !ok {
+		return nil, nil
 	}
-	repo := r.Repository()
-	if repo == nil {
-		// just for testing
-		return []Ownership{{
-			gitTree: r,
-			handle:  "@no-repo-information",
-			reasons: []OwnershipReason{&CodeownersFileEntry{}},
-		}}
-	}
-	commit := r.commit
-	if commit == nil {
-		// just for testing
-		return []Ownership{{
-			gitTree: r,
-			handle:  "@no-commit-information",
-			reasons: []OwnershipReason{&CodeownersFileEntry{}},
-		}}
-	}
-	f, err := s.OwnersFile(ctx, repo.RepoMatch.Name, api.CommitID(r.commit.oid))
-	if err != nil {
-		// just for testing
-		return []Ownership{{
-			gitTree: r,
-			handle:  err.Error(),
-			reasons: []OwnershipReason{&CodeownersFileEntry{}},
-		}}
-	}
-	var ship []Ownership
-	for _, o := range f.FindOwners(r.stat.Name()) {
-		owner := o.GetEmail()
-		if h := o.GetHandle(); h != "" {
-			owner = "@" + h
-		}
-		ship = append(ship, Ownership{
-			gitTree: r,
-			handle:  owner,
-			reasons: []OwnershipReason{&CodeownersFileEntry{}, &RecentContributor{}},
-		})
-	}
-	// TODO: This is faked, we have no GITLOG backend, but put this just so we can see how it works
-	ship = append(ship, Ownership{
-		gitTree: r,
-		handle:  "@test",
-		reasons: []OwnershipReason{&RecentContributor{}},
-	})
-	return ship
-}
-
-type Ownership struct {
-	// TODO: This is here just to construct a PersonResolver. We probably need just something
-	// that can produce one - or we can inject one directly.
-	gitTree *GitTreeEntryResolver
-	handle  string
-	reasons []OwnershipReason
-}
-
-func (o Ownership) Handle() string {
-	return o.handle
-}
-
-func (o Ownership) Person() *PersonResolver {
-	// TODO this does not work at all. Just there to satisfy the API requirements.
-	return &PersonResolver{db: o.gitTree.db, name: "John Doe", email: "johndoe@example.com"}
-}
-
-func (o Ownership) Reasons() []OwnershipReason {
-	return o.reasons
-}
-
-type OwnershipReason interface {
-	ToCodeownersFileEntry() (*CodeownersFileEntry, bool)
-	ToRecentContributor() (*RecentContributor, bool)
-}
-
-type CodeownersFileEntry struct{}
-
-func (r *CodeownersFileEntry) ToCodeownersFileEntry() (*CodeownersFileEntry, bool) { return r, true }
-func (r *CodeownersFileEntry) ToRecentContributor() (*RecentContributor, bool)     { return nil, false }
-func (r *CodeownersFileEntry) Title() string                                       { return "CodeOwners" }
-func (r *CodeownersFileEntry) Description() string                                 { return "Matches the foo/bar/baz/ rule." }
-
-type RecentContributor struct{}
-
-func (r *RecentContributor) ToCodeownersFileEntry() (*CodeownersFileEntry, bool) { return nil, false }
-func (r *RecentContributor) ToRecentContributor() (*RecentContributor, bool)     { return r, true }
-func (r *RecentContributor) Title() string                                       { return "Contributor" }
-func (r *RecentContributor) Description() string {
-	return "Made 6 changes to this file in the last 3 months"
+	return EnterpriseResolvers.ownResolver.GitBlobOwnership(ctx, r, args)
 }
 
 func (r *GitTreeEntryResolver) parent(ctx context.Context) (*GitTreeEntryResolver, error) {

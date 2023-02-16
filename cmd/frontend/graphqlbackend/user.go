@@ -533,3 +533,7 @@ func (r *UserResolver) Teams(ctx context.Context, args *ListTeamsArgs) (*teamCon
 func (r *UserResolver) ToUser() (*UserResolver, bool) {
 	return r, true
 }
+
+func (r *UserResolver) OwnerField() string {
+	return EnterpriseResolvers.ownResolver.UserOwnerField(r)
+}

@@ -40,8 +40,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/proto"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -219,7 +219,8 @@ type RawBatchLogResult struct {
 type BatchLogCallback func(repoCommit api.RepoCommit, gitLogResult RawBatchLogResult) error
 
 type HunkReader interface {
-	Read() (hunks []*Hunk, done bool, err error)
+	Read() (*Hunk, error)
+	Close() error
 }
 
 type Client interface {

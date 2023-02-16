@@ -107,6 +107,7 @@ go_test(
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/inventory",
+        "//internal/own/codeowners",
         "//internal/own/codeowners/v1:codeowners",
         "//internal/rcache",
         "//internal/repoupdater",

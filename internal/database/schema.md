@@ -2275,14 +2275,12 @@ Foreign-key constraints:
  id          | integer                  |           | not null | nextval('namespace_permissions_id_seq'::regclass)
  namespace   | text                     |           | not null | 
  resource_id | integer                  |           | not null | 
- action      | text                     |           | not null | 
  user_id     | integer                  |           | not null | 
  created_at  | timestamp with time zone |           | not null | now()
 Indexes:
     "namespace_permissions_pkey" PRIMARY KEY, btree (id)
-    "unique_resource_permission" UNIQUE CONSTRAINT, btree (namespace, resource_id, action, user_id)
+    "unique_resource_permission" UNIQUE, btree (namespace, resource_id, user_id)
 Check constraints:
-    "action_not_blank" CHECK (action <> ''::text)
     "namespace_not_blank" CHECK (namespace <> ''::text)
 Foreign-key constraints:
     "namespace_permissions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
