@@ -56,9 +56,9 @@ type AccessRequestsFilterOptions struct {
 	Status *types.AccessRequestStatus
 }
 
-func (o AccessRequestsFilterOptions) sqlConditions() []*sqlf.Query {
+func (o *AccessRequestsFilterOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
-	if o.Status != nil {
+	if o != nil && o.Status != nil {
 		conds = append(conds, sqlf.Sprintf("status = %v", *o.Status))
 	}
 	return conds
@@ -71,13 +71,13 @@ type AccessRequestsListOptions struct {
 	Offset     *int32
 }
 
-func (o AccessRequestsListOptions) sqlOrderBy() (*sqlf.Query, error) {
+func (o *AccessRequestsListOptions) sqlOrderBy() (*sqlf.Query, error) {
 	orderDirection := "ASC"
-	if o.Descending != nil && *o.Descending {
+	if o != nil && o.Descending != nil && *o.Descending {
 		orderDirection = "DESC"
 	}
 	orderBy := sqlf.Sprintf("id " + orderDirection)
-	if o.OrderBy != nil {
+	if o != nil && o.OrderBy != nil {
 		newOrderColumn, err := toAccessRequestsField(*o.OrderBy)
 		orderBy = sqlf.Sprintf(newOrderColumn + " " + orderDirection)
 		if err != nil {
@@ -88,14 +88,14 @@ func (o AccessRequestsListOptions) sqlOrderBy() (*sqlf.Query, error) {
 	return orderBy, nil
 }
 
-func (o AccessRequestsListOptions) sqlLimit() *sqlf.Query {
+func (o *AccessRequestsListOptions) sqlLimit() *sqlf.Query {
 	limit := int32(100)
-	if o.Limit != nil {
+	if o != nil && o.Limit != nil {
 		limit = *o.Limit
 	}
 
 	offset := int32(0)
-	if o.Offset != nil {
+	if o != nil && o.Offset != nil {
 		offset = *o.Offset
 	}
 
