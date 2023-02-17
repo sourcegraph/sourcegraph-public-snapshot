@@ -121,13 +121,13 @@ func (r *Resolver) RetryInsightSeriesBackfill(ctx context.Context, args *graphql
 	if err := auth.CheckUserIsSiteAdmin(ctx, r.postgresDB, actr.UID); err != nil {
 		return nil, err
 	}
-	var backfillID int
-	err := relay.UnmarshalSpec(args.Id, &backfillID)
+	var backfillQueueID graphqlbackend.BackfillQueueID
+	err := relay.UnmarshalSpec(args.Id, &backfillQueueID)
 	if err != nil {
 		return nil, errors.Wrap(err, "error unmarshalling the backfill id")
 	}
 	backfillStore := scheduler.NewBackfillStore(r.insightsDB)
-	backfill, err := backfillStore.LoadBackfill(ctx, backfillID)
+	backfill, err := backfillStore.LoadBackfill(ctx, backfillQueueID.BackfillID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to load backfill")
 	}
@@ -148,10 +148,11 @@ func (r *Resolver) RetryInsightSeriesBackfill(ctx context.Context, args *graphql
 	}
 	updatedItem := backfillItems[0]
 	return &graphqlbackend.BackfillQueueItemResolver{
-		BackfillID:   updatedItem.ID,
-		InsightTitle: updatedItem.InsightTitle,
-		Label:        updatedItem.SeriesLabel,
-		Query:        updatedItem.SeriesSearchQuery,
+		BackfillID:      updatedItem.ID,
+		InsightTitle:    updatedItem.InsightTitle,
+		Label:           updatedItem.SeriesLabel,
+		Query:           updatedItem.SeriesSearchQuery,
+		InsightUniqueID: updatedItem.InsightUniqueID,
 		BackfillStatus: &backfillStatusResolver{
 			queueItem: updatedItem,
 		},
@@ -163,13 +164,13 @@ func (r *Resolver) MoveInsightSeriesBackfillToFrontOfQueue(ctx context.Context, 
 	if err := auth.CheckUserIsSiteAdmin(ctx, r.postgresDB, actr.UID); err != nil {
 		return nil, err
 	}
-	var backfillID int
-	err := relay.UnmarshalSpec(args.Id, &backfillID)
+	var backfillQueueID graphqlbackend.BackfillQueueID
+	err := relay.UnmarshalSpec(args.Id, &backfillQueueID)
 	if err != nil {
 		return nil, errors.Wrap(err, "error unmarshalling the backfill id")
 	}
 	backfillStore := scheduler.NewBackfillStore(r.insightsDB)
-	backfill, err := backfillStore.LoadBackfill(ctx, backfillID)
+	backfill, err := backfillStore.LoadBackfill(ctx, backfillQueueID.BackfillID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to load backfill")
 	}
@@ -189,10 +190,11 @@ func (r *Resolver) MoveInsightSeriesBackfillToFrontOfQueue(ctx context.Context, 
 	}
 	updatedItem := backfillItems[0]
 	return &graphqlbackend.BackfillQueueItemResolver{
-		BackfillID:   updatedItem.ID,
-		InsightTitle: updatedItem.InsightTitle,
-		Label:        updatedItem.SeriesLabel,
-		Query:        updatedItem.SeriesSearchQuery,
+		BackfillID:      updatedItem.ID,
+		InsightTitle:    updatedItem.InsightTitle,
+		Label:           updatedItem.SeriesLabel,
+		Query:           updatedItem.SeriesSearchQuery,
+		InsightUniqueID: updatedItem.InsightUniqueID,
 		BackfillStatus: &backfillStatusResolver{
 			queueItem: updatedItem,
 		},
@@ -204,13 +206,13 @@ func (r *Resolver) MoveInsightSeriesBackfillToBackOfQueue(ctx context.Context, a
 	if err := auth.CheckUserIsSiteAdmin(ctx, r.postgresDB, actr.UID); err != nil {
 		return nil, err
 	}
-	var backfillID int
-	err := relay.UnmarshalSpec(args.Id, &backfillID)
+	var backfillQueueID graphqlbackend.BackfillQueueID
+	err := relay.UnmarshalSpec(args.Id, &backfillQueueID)
 	if err != nil {
 		return nil, errors.Wrap(err, "error unmarshalling the backfill id")
 	}
 	backfillStore := scheduler.NewBackfillStore(r.insightsDB)
-	backfill, err := backfillStore.LoadBackfill(ctx, backfillID)
+	backfill, err := backfillStore.LoadBackfill(ctx, backfillQueueID.BackfillID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to load backfill")
 	}
@@ -230,10 +232,11 @@ func (r *Resolver) MoveInsightSeriesBackfillToBackOfQueue(ctx context.Context, a
 	}
 	updatedItem := backfillItems[0]
 	return &graphqlbackend.BackfillQueueItemResolver{
-		BackfillID:   updatedItem.ID,
-		InsightTitle: updatedItem.InsightTitle,
-		Label:        updatedItem.SeriesLabel,
-		Query:        updatedItem.SeriesSearchQuery,
+		BackfillID:      updatedItem.ID,
+		InsightTitle:    updatedItem.InsightTitle,
+		Label:           updatedItem.SeriesLabel,
+		Query:           updatedItem.SeriesSearchQuery,
+		InsightUniqueID: updatedItem.InsightUniqueID,
 		BackfillStatus: &backfillStatusResolver{
 			queueItem: updatedItem,
 		},
@@ -463,11 +466,12 @@ func (a *adminBackfillQueueConnectionStore) ComputeNodes(ctx context.Context, ar
 	resolvers := make([]*graphqlbackend.BackfillQueueItemResolver, 0, len(backfillItems))
 	for _, item := range backfillItems {
 		resolvers = append(resolvers, &graphqlbackend.BackfillQueueItemResolver{
-			BackfillID:   item.ID,
-			InsightTitle: item.InsightTitle,
-			CreatorID:    item.CreatorID,
-			Label:        item.SeriesLabel,
-			Query:        item.SeriesSearchQuery,
+			BackfillID:      item.ID,
+			InsightTitle:    item.InsightTitle,
+			CreatorID:       item.CreatorID,
+			Label:           item.SeriesLabel,
+			Query:           item.SeriesSearchQuery,
+			InsightUniqueID: item.InsightUniqueID,
 			BackfillStatus: &backfillStatusResolver{
 				queueItem: item,
 			},

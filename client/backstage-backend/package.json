@@ -1,5 +1,5 @@
 {
-  "name": "@sourcegraph/backstage-common",
+  "name": "@sourcegraph/backstage-backend",
   "description": "Common functionalities for the Sourcegraph plugin",
   "version": "0.1.0",
   "main": "dist/index.js",
@@ -18,13 +18,13 @@
   "scripts": {
     "dist": "ts-node --transpile-only ./scripts/esbuild.ts && pnpm types && cp package.dist.json dist/package.json",
     "types": "tsc -d -p tsconfig.json",
-    "format": "prettier -w true ./src ",
+    "format": "prettier -w true .",
     "test": "jest"
   },
   "devDependencies": {
     "@backstage/cli": "^0.22.1",
     "@jest/globals": "^29.4.0",
-    "@sourcegraph/build-config": "workspace:^0.0.1",
+    "@sourcegraph/build-config": "workspace:*",
     "@sourcegraph/tsconfig": "^4.0.1",
     "babel-jest": "^28.1.3",
     "babel-loader": "^9.1.0",

@@ -306,11 +306,20 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         [telemetryService, props, navigate, location, caseSensitive, patternType, submittedURLQuery]
     )
 
-    const handleSearchAggregationBarClick = (query: string): void => {
+    /**
+     * The `updatedSearchQuery` is required in case we synchronously update the search
+     * query in the event handlers and want to submit a new search. Without this argument,
+     * the `handleSidebarSearchSubmit` function uses the outdated location reference
+     * because the component was not re-rendered yet.
+     *
+     * Example use-case: search-aggregation result bar click where we first update the URL
+     * by settings the `groupBy` search param to `null` and then synchronously call `submitSearch`.
+     */
+    const handleSearchAggregationBarClick = (query: string, updatedSearchQuery: string): void => {
         const { selectedSearchContextSpec } = props
         submitSearch({
             historyOrNavigate: navigate,
-            location,
+            location: { ...location, search: updatedSearchQuery },
             selectedSearchContextSpec,
             caseSensitive,
             patternType,
