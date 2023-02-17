@@ -1200,6 +1200,23 @@ CREATE VIEW branch_changeset_specs_and_changesets AS
      JOIN repo ON ((changeset_specs.repo_id = repo.id)))
   WHERE ((changeset_specs.external_id IS NULL) AND (repo.deleted_at IS NULL));
 
+CREATE TABLE cached_available_indexers (
+    id integer NOT NULL,
+    repository_id integer NOT NULL,
+    num_events integer NOT NULL,
+    available_indexers jsonb NOT NULL
+);
+
+CREATE SEQUENCE cached_available_indexers_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE cached_available_indexers_id_seq OWNED BY cached_available_indexers.id;
+
 CREATE TABLE changeset_events (
     id bigint NOT NULL,
     changeset_id bigint NOT NULL,
@@ -4093,6 +4110,8 @@ ALTER TABLE ONLY batch_spec_workspaces ALTER COLUMN id SET DEFAULT nextval('batc
 
 ALTER TABLE ONLY batch_specs ALTER COLUMN id SET DEFAULT nextval('batch_specs_id_seq'::regclass);
 
+ALTER TABLE ONLY cached_available_indexers ALTER COLUMN id SET DEFAULT nextval('cached_available_indexers_id_seq'::regclass);
+
 ALTER TABLE ONLY changeset_events ALTER COLUMN id SET DEFAULT nextval('changeset_events_id_seq'::regclass);
 
 ALTER TABLE ONLY changeset_jobs ALTER COLUMN id SET DEFAULT nextval('changeset_jobs_id_seq'::regclass);
@@ -4292,6 +4311,9 @@ ALTER TABLE ONLY batch_spec_workspaces
 
 ALTER TABLE ONLY batch_specs
     ADD CONSTRAINT batch_specs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY cached_available_indexers
+    ADD CONSTRAINT cached_available_indexers_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY changeset_events
     ADD CONSTRAINT changeset_events_changeset_id_kind_key_unique UNIQUE (changeset_id, kind, key);
@@ -4709,6 +4731,10 @@ CREATE INDEX batch_spec_workspaces_id_batch_spec_id ON batch_spec_workspaces USI
 CREATE INDEX batch_specs_rand_id ON batch_specs USING btree (rand_id);
 
 CREATE UNIQUE INDEX batch_specs_unique_rand_id ON batch_specs USING btree (rand_id);
+
+CREATE INDEX cached_available_indexers_num_events ON cached_available_indexers USING btree (num_events DESC) WHERE ((available_indexers)::text <> '{}'::text);
+
+CREATE UNIQUE INDEX cached_available_indexers_repository_id ON cached_available_indexers USING btree (repository_id);
 
 CREATE INDEX changeset_jobs_bulk_group_idx ON changeset_jobs USING btree (bulk_group);
 
