@@ -23,9 +23,7 @@ var _ oobmigration.Migrator = &emptySpecIDMigrator{}
 func (m *emptySpecIDMigrator) ID() int                 { return 23 }
 func (m *emptySpecIDMigrator) Interval() time.Duration { return time.Second * 5 }
 
-// Progress returns the percentage (ranged [0, 1]) of changesets published to a fork on
-// Bitbucket Server or Bitbucket Cloud that have not had `external_fork_name` set on their
-// DB record.
+// Progress returns the percentage (ranged [0, 1]) of empty specs whose IDs are properly ordered.
 func (m *emptySpecIDMigrator) Progress(ctx context.Context, _ bool) (float64, error) {
 	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(emptySpecIDMigratorProgressQuery, sqlf.Sprintf(specsForDraftsQuery))))
 	return progress, err
@@ -35,31 +33,26 @@ const specsForDraftsQuery = `
 -- Get all batch specs for DRAFT batch changes
 SELECT
 	bc.id AS bc_id,
-	bs1.is_empty,
 	bs.id AS spec_id,
+	raw_spec SIMILAR TO 'name: \S+\n*' AS is_empty,
 	bs.*
 FROM
 	batch_changes bc
 	JOIN batch_specs bs ON bc.name = bs.spec ->> 'name'
 		AND bc.namespace_user_id IS NOT DISTINCT FROM bs.namespace_user_id
 		AND bc.namespace_org_id IS NOT DISTINCT FROM bs.namespace_org_id
-	JOIN (
-		SELECT
-			id,
-			raw_spec SIMILAR TO 'name: \S+\n*' AS is_empty
-		FROM
-			batch_specs) bs1 ON bs.id = bs1.id
-		-- We filter to specs that belong to batch changes where last_applied_at IS NULL as this is our way of distinguishing DRAFT batch changes. The migrations that caused this regression deleted and then reconstructed batch specs based on this condition, so we know the empty ones we want to re-ID are included in here.
-	WHERE
-		bc.last_applied_at IS NULL
-		-- The ordering doesn't actually matter here, this just makes the behavior more predictable.
+	-- We filter to specs that belong to batch changes where last_applied_at IS NULL, as this
+	-- is our way of distinguishing DRAFT batch changes. The migrations that caused this
+	-- regression deleted and then reconstructed batch specs based on this condition, so we
+	-- know the empty ones we want to re-ID are included in here.
+	WHERE bc.last_applied_at IS NULL
+	-- The ordering doesn't actually matter, this just makes the behavior more predictable.
 	ORDER BY
 		bc.id DESC,
 		spec_id DESC`
 
-// This query compares the count of migrated changesets, which should have
-// external_fork_name set, vs. the total count of changesets on a fork on Bitbucket Server
-// or Cloud.
+// This query compares the count empty batch specs whose IDs are the min spec ID for their
+// batch change vs. the total count of empty batch specs.
 const emptySpecIDMigratorProgressQuery = `
 WITH specs AS (%s)
 SELECT
@@ -67,11 +60,13 @@ SELECT
 		CAST(migrated.count AS float) / CAST(total.count AS float)
 	END
 FROM
+(SELECT COUNT(*) FROM specs WHERE is_empty) AS total,
 (SELECT COUNT(*) FROM specs
-	JOIN (SELECT bc_id, MIN(spec_id) AS min_spec_id FROM specs GROUP BY bc_id) mids ON mids.bc_id = specs.bc_id
-	WHERE is_empty) total,
-(SELECT COUNT(*) FROM specs
-	JOIN (SELECT bc_id, MIN(spec_id) AS min_spec_id FROM specs GROUP BY bc_id) mids ON mids.bc_id = specs.bc_id
+	JOIN (
+		SELECT bc_id, MIN(spec_id) AS min_spec_id
+		FROM specs
+		GROUP BY bc_id
+	) AS mids ON mids.bc_id = specs.bc_id
 	WHERE is_empty
 	AND spec_id = min_spec_id) migrated;`
 
@@ -107,11 +102,11 @@ DELETE FROM batch_specs
 
 const nextAvailableIDFunctionQuery = `
 -- The function next_available_id takes a starting_id and returns the first id lower than
--- starting_id which is unused on the batch_specs. The arg starting_id representing the batch
--- spec ID we need to beat to re-order an "empty" batch spec record _before_ any non-empty
+-- starting_id which is unused on the batch_specs. The arg starting_id represents the batch
+-- spec ID we need to beat to re-order an "empty" batch spec record before any non-empty spec
 -- records on the same batch change. For values of starting_id we will be calling this with,
--- we know at least one lower id must exist, for the id of the original empty batch spec
--- which was deleted in the original migration.
+-- we know at least one lower id must exist; this would be the id of the original empty batch
+-- spec that was deleted in the original migration.
 CREATE OR REPLACE FUNCTION next_available_id (starting_id int8) RETURNS int8 AS $$
 	DECLARE
 	first_available_id integer := $1;
@@ -205,7 +200,7 @@ FOR spec IN
 				spec.no_cache,
 				spec.batch_change_id
 			);
-			-- Update batch changes that were using the old spec to use the new one.
+			-- Update any batch change with the old spec applied to use the new one.
 			UPDATE batch_changes SET batch_spec_id = new_spec_id WHERE batch_spec_id = spec.spec_id;
 			-- Finally, delete the old batch spec.
 			DELETE FROM batch_specs WHERE id = spec.spec_id;
