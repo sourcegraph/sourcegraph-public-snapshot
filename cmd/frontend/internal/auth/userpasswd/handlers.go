@@ -203,7 +203,7 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 			roles = append(roles, types.SiteAdministratorSystemRole)
 		}
 
-		if _, err = tx.UserRoles().BulkAssignSystemRolesToUser(r.Context(), database.BulkAssignSystemRolesToUserOpts{
+		if err = tx.UserRoles().BulkAssignSystemRolesToUser(r.Context(), database.BulkAssignSystemRolesToUserOpts{
 			UserID: usr.ID,
 			Roles:  roles,
 		}); err != nil {

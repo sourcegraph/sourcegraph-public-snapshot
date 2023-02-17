@@ -64,7 +64,7 @@ func TestRoleList(t *testing.T) {
 	roles, total := createTestRoles(ctx, t, store)
 	user := createTestUserForUserRole(ctx, "test@test.com", "test-user-1", t, db)
 
-	_, err := db.UserRoles().Assign(ctx, AssignUserRoleOpts{
+	err := db.UserRoles().Assign(ctx, AssignUserRoleOpts{
 		RoleID: roles[0].ID,
 		UserID: user.ID,
 	})
@@ -140,7 +140,7 @@ func TestRoleCount(t *testing.T) {
 	user := createTestUserForUserRole(ctx, "test@test.com", "test-user-1", t, db)
 	roles, total := createTestRoles(ctx, t, store)
 
-	_, err := db.UserRoles().Assign(ctx, AssignUserRoleOpts{
+	err := db.UserRoles().Assign(ctx, AssignUserRoleOpts{
 		RoleID: roles[0].ID,
 		UserID: user.ID,
 	})

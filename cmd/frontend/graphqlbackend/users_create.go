@@ -84,7 +84,7 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 			roles = append(roles, types.SiteAdministratorSystemRole)
 		}
 		opts := database.BulkAssignSystemRolesToUserOpts{UserID: user.ID, Roles: roles}
-		if _, err = tx.UserRoles().BulkAssignSystemRolesToUser(ctx, opts); err != nil {
+		if err = tx.UserRoles().BulkAssignSystemRolesToUser(ctx, opts); err != nil {
 			r.logger.Error("failed to assign system roles to user",
 				log.Error(err))
 			return errors.Wrap(err, "failed to assign system roles to user")

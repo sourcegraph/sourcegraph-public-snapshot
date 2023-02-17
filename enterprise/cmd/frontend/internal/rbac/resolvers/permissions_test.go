@@ -152,7 +152,7 @@ func TestUserPermissionsListing(t *testing.T) {
 	role, err := db.Roles().Create(ctx, "TEST-ROLE", false)
 	require.NoError(t, err)
 
-	_, err = db.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
+	err = db.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
 		RoleID: role.ID,
 		UserID: userID,
 	})
@@ -164,7 +164,7 @@ func TestUserPermissionsListing(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	_, err = db.RolePermissions().Assign(ctx, database.AssignRolePermissionOpts{
+	err = db.RolePermissions().Assign(ctx, database.AssignRolePermissionOpts{
 		RoleID:       role.ID,
 		PermissionID: p.ID,
 	})

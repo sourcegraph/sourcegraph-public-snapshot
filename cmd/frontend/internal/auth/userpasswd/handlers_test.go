@@ -426,7 +426,7 @@ func TestHandleSignUp(t *testing.T) {
 		})
 
 		userRoles := database.NewMockUserRoleStore()
-		userRoles.BulkAssignSystemRolesToUserFunc.SetDefaultHook(func(ctx context.Context, basrtuo database.BulkAssignSystemRolesToUserOpts) ([]*types.UserRole, error) {
+		userRoles.BulkAssignSystemRolesToUserFunc.SetDefaultHook(func(ctx context.Context, basrtuo database.BulkAssignSystemRolesToUserOpts) error {
 			if len(basrtuo.Roles) != 1 {
 				t.Fatalf("expected UserRoles().BulkAssignSystemRolesToUser to be called with one role, got %d", len(basrtuo.Roles))
 			}
@@ -435,7 +435,7 @@ func TestHandleSignUp(t *testing.T) {
 				t.Fatalf("expected UserRoles().BulkAssignSystemRolesToUser to be called with %s role, got %s", types.UserSystemRole, basrtuo.Roles[0])
 			}
 
-			return []*types.UserRole{}, nil
+			return nil
 		})
 
 		authz := database.NewMockAuthzStore()
@@ -517,7 +517,7 @@ func TestHandleSiteInit(t *testing.T) {
 		})
 
 		userRoles := database.NewMockUserRoleStore()
-		userRoles.BulkAssignSystemRolesToUserFunc.SetDefaultHook(func(ctx context.Context, opts database.BulkAssignSystemRolesToUserOpts) ([]*types.UserRole, error) {
+		userRoles.BulkAssignSystemRolesToUserFunc.SetDefaultHook(func(ctx context.Context, opts database.BulkAssignSystemRolesToUserOpts) error {
 			if len(opts.Roles) != 2 {
 				t.Fatalf("expected UserRoles().BulkAssignSystemRolesToUser to be called with two system roles, got %d", len(opts.Roles))
 			}
@@ -528,7 +528,7 @@ func TestHandleSiteInit(t *testing.T) {
 				t.Fatalf("Mismatch (-want +got):\n%s", diff)
 			}
 
-			return []*types.UserRole{}, nil
+			return nil
 		})
 
 		authz := database.NewMockAuthzStore()

@@ -148,7 +148,7 @@ func TestUserRoleListing(t *testing.T) {
 	role, err := db.Roles().Create(ctx, "TEST-ROLE", false)
 	assert.NoError(t, err)
 
-	_, err = db.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
+	err = db.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
 		RoleID: role.ID,
 		UserID: userID,
 	})

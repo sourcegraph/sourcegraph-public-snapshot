@@ -35,7 +35,7 @@ func makeUsersCreateTestDB(t *testing.T) mockFuncs {
 	authz.GrantPendingPermissionsFunc.SetDefaultReturn(nil)
 
 	userRoles := database.NewMockUserRoleStore()
-	userRoles.BulkAssignSystemRolesToUserFunc.SetDefaultReturn([]*types.UserRole{}, nil)
+	userRoles.BulkAssignSystemRolesToUserFunc.SetDefaultReturn(nil)
 
 	userEmails := database.NewMockUserEmailsStore()
 

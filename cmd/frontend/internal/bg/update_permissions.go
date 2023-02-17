@@ -52,7 +52,7 @@ func UpdatePermissions(ctx context.Context, logger log.Logger, db database.DB) {
 				// current experience and always assume that everyone has access until a site administrator revokes that
 				// access.
 				// Context: https://sourcegraph.slack.com/archives/C044BUJET7C/p1675292124253779?thread_ts=1675280399.192819&cid=C044BUJET7C
-				if _, err := rolePermissionStore.BulkAssignPermissionsToSystemRoles(ctx, database.BulkAssignPermissionsToSystemRolesOpts{
+				if err := rolePermissionStore.BulkAssignPermissionsToSystemRoles(ctx, database.BulkAssignPermissionsToSystemRolesOpts{
 					Roles:        []types.SystemRole{types.SiteAdministratorSystemRole, types.UserSystemRole},
 					PermissionID: permission.ID,
 				}); err != nil {
