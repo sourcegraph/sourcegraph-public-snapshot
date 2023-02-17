@@ -71,6 +71,8 @@ const config = {
   // `--coverageReporters text` jest option.
   coverageReporters: ['json', 'lcov', 'text-summary'],
 
+  snapshotResolver: path.join(__dirname, './jest.snapshot-resolver.js'),
+
   setupFiles: [
     path.join(__dirname, 'client/shared/dev/mockDate.js'),
     // Needed for reusing API functions that use fetch
