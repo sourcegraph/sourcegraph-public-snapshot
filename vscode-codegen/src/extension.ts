@@ -25,11 +25,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	const embeddingsUrl = `${isDevelopment ? 'http' : 'https'}://${embeddingsAddr}`
 
 	const codebaseId: string = settings.get('cody.codebase', '')
-	if (!codebaseId) {
-		vscode.window.showWarningMessage(
-			'Cody needs a codebase to work with. Please set the "cody.codebase" setting in your workspace settings and reload the editor.'
-		)
-	}
 
 	const accessToken = (await context.secrets.get('cody.access-token')) ?? ''
 	if (!accessToken) {

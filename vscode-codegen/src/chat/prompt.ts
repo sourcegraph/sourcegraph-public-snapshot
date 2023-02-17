@@ -52,7 +52,12 @@ export class Prompt {
 	}
 
 	private addInstructionsToHumanInput(humanInput: string): string {
-		return `Answer the following question or statement only if you know the answer or can make a well-informed guess; otherwise tell me you don't know it.\n\n${humanInput}`
+		const instructions = [
+			`Answer the following question or statement only if you know the answer or can make a well-informed guess; otherwise tell me you don't know it.`,
+			`Do not reference any file names or URLs, unless you are sure they exist.`,
+			`Format code snippets using Markdown-style backticks.`,
+		].join(' ')
+		return `${instructions}\n\n${humanInput}`
 	}
 
 	async getPromptForMessage(
@@ -106,7 +111,7 @@ export class Prompt {
 		return this.messages
 	}
 
-	async constructPromptForHumanInput(humanInput: string): Promise<Message[]> {
+	async getPromptForHumanInput(humanInput: string): Promise<Message[]> {
 		const truncatedHumanInput = truncateText(humanInput, MAX_HUMAN_INPUT_TOKENS)
 
 		// TODO: Add context from currently active text editor if embeddingsClient is not available
@@ -114,14 +119,10 @@ export class Prompt {
 			? await this.embeddingsClient.queryNeedsAdditionalContext(truncatedHumanInput)
 			: false
 
-		// Load more context at the start of a chat to give the model as much information as possible.
-		// On subsequent messages load less context to avoid too many duplicates and overwhelming
-		// the conversation with context messages.
-		const numCodeResults = this.messages.length === 0 ? 4 : 1
 		const contextMessages = inputNeedsAdditionalContext
 			? await this.getContextMessages(truncatedHumanInput, {
-					numCodeResults,
-					numMarkdownResults: 1,
+					numCodeResults: 8,
+					numMarkdownResults: 2,
 			  })
 			: []
 		const humanMessage: Message = {
@@ -235,7 +236,7 @@ function isMarkdownFile(filePath: string): boolean {
 	return MARKDOWN_EXTENSIONS.has(extension)
 }
 
-const CODE_CONTEXT_TEMPLATE = `Add the following code snippet from file \`{filePath}\` to your knowledge base:
+const CODE_CONTEXT_TEMPLATE = `Use following code snippet from file \`{filePath}\`:
 \`\`\`{language}
 {text}
 \`\`\``
@@ -245,7 +246,7 @@ export function populateCodeContextTemplate(code: string, filePath: string): str
 	return CODE_CONTEXT_TEMPLATE.replace('{filePath}', filePath).replace('{language}', language).replace('{text}', code)
 }
 
-const MARKDOWN_CONTEXT_TEMPLATE = `Add the following text from file \`{filePath}\` to your knowledge base:\n{text}`
+const MARKDOWN_CONTEXT_TEMPLATE = `Use the following text from file \`{filePath}\`:\n{text}`
 
 export function populateMarkdownContextTemplate(md: string, filePath: string): string {
 	return MARKDOWN_CONTEXT_TEMPLATE.replace('{filePath}', filePath).replace('{text}', md)
@@ -254,6 +255,6 @@ export function populateMarkdownContextTemplate(md: string, filePath: string): s
 export function getContextMessageWithResponse(text: string): Message[] {
 	return [
 		{ speaker: 'you', text: text },
-		{ speaker: 'bot', text: 'Ok, adding previous message to my knowledge base.' },
+		{ speaker: 'bot', text: 'Ok.' },
 	]
 }

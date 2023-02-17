@@ -28,7 +28,7 @@ export class GenerateDocstring implements Recipe {
 		// Context messages
 		const contextQuery = truncateText(selection.selectedText, maxInputTokens)
 		const contextMessages = await getEmbeddingsContextMessages(contextQuery, {
-			numCodeResults: 2,
+			numCodeResults: 4,
 			numMarkdownResults: 0,
 		})
 		contextMessages.push(

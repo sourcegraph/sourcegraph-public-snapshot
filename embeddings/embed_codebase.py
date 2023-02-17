@@ -10,8 +10,7 @@ import numpy as np
 from embed import CHARS_PER_TOKEN, EMBEDDING_ENGINE, get_embeddings
 
 
-EMBEDDING_TOKENS_WINDOW = 512
-EMBEDDING_CHARS_WINDOW = round(EMBEDDING_TOKENS_WINDOW * CHARS_PER_TOKEN)
+EMBEDDING_TOKENS_WINDOW = 256
 EMBEDDABLE_EXTENSIONS = set(
     [
         "go",
@@ -28,6 +27,7 @@ EMBEDDABLE_EXTENSIONS = set(
         "py",
         "rb",
         "php",
+        "scala",
     ]
 )
 EMBEDDABLE_EXTENSIONLESS_FILES = set(["dockerfile", "license"])
@@ -40,11 +40,40 @@ def get_filesystem_safe_codebase_id(codebase_id: str):
     return FILESYSTEM_SAFE_NAME_REGEXP.sub("_", codebase_id)
 
 
+def count_tokens(text: str) -> int:
+    return round((len(text) + 1) / CHARS_PER_TOKEN)
+
+
 def chunk_text(text: str, chunk_size: int) -> List[Dict[str, Any]]:
+    if len(text) < 128:
+        return []
+
+    lines = text.split("\n")
+    start_line, tokens_sum = 0, 0
     chunks = []
-    for start in range(0, len(text), chunk_size):
-        end = min(len(text), start + chunk_size)
-        chunks.append({"start": start, "end": end, "text": text[start:end]})
+
+    for idx, line in enumerate(lines):
+        if tokens_sum > chunk_size:
+            chunks.append(
+                {
+                    "start": start_line,
+                    "end": idx,
+                    "text": "\n".join(lines[start_line:idx]),
+                }
+            )
+            start_line, tokens_sum = idx, 0
+
+        tokens_sum += count_tokens(line)
+
+    if tokens_sum > 0:
+        chunks.append(
+            {
+                "start": start_line,
+                "end": len(lines),
+                "text": "\n".join(lines[start_line:]),
+            }
+        )
+
     return chunks
 
 
@@ -77,7 +106,7 @@ def stream_file_chunks(codebase_path: str):
                 with open(file_path, encoding="utf-8") as f:
                     file_contents = f.read()
 
-                file_chunks = chunk_text(file_contents, EMBEDDING_CHARS_WINDOW)
+                file_chunks = chunk_text(file_contents, EMBEDDING_TOKENS_WINDOW)
                 for chunk in file_chunks:
                     relative_path = file_path[len(codebase_path) + 1 :]
                     yield {**chunk, "filePath": relative_path}

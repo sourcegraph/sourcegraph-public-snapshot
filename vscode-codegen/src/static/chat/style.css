@@ -120,7 +120,7 @@ body {
 .bubble-footer {
 	display: flex;
 	margin-top: 4px;
-	font-size: var(--vscode-font-size);
+	font-size: 14px;
 	color: #aeafc4;
 }
 
@@ -129,7 +129,7 @@ body {
 }
 
 .bubble-content {
-	font-size: var(--vscode-font-size);
+	font-size: 16px;
 	font-family: var(--vscode-font-family);
 	font-weight: var(--vscode-font-weight);
 	line-height: 150%;
@@ -273,7 +273,7 @@ body {
 	border-radius: 1rem;
 }
 
-.debug-message > pre {
+.debug-message>pre {
 	white-space: pre-wrap;
 	margin: 0;
 }

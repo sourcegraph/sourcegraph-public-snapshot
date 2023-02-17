@@ -28,7 +28,7 @@ export class GenerateTest implements Recipe {
 		// Context messages
 		const contextQuery = truncateText(selection.selectedText, maxInputTokens)
 		const contextMessages = await getEmbeddingsContextMessages(contextQuery, {
-			numCodeResults: 5,
+			numCodeResults: 8,
 			numMarkdownResults: 0,
 		})
 		contextMessages.push(

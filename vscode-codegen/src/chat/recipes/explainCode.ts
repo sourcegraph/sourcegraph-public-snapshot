@@ -24,7 +24,7 @@ export class ExplainCodeDetailed implements Recipe {
 		// Context messages
 		const contextQuery = truncateText(selection.selectedText, maxInputTokens)
 		const contextMessages = await getEmbeddingsContextMessages(contextQuery, {
-			numCodeResults: 2,
+			numCodeResults: 4,
 			numMarkdownResults: 0,
 		})
 		contextMessages.push(
@@ -73,7 +73,7 @@ export class ExplainCodeHighLevel implements Recipe {
 		// Context messages
 		const contextQuery = truncateText(selection.selectedText, maxInputTokens)
 		const contextMessages = await getEmbeddingsContextMessages(contextQuery, {
-			numCodeResults: 2,
+			numCodeResults: 4,
 			numMarkdownResults: 0,
 		})
 		contextMessages.push(

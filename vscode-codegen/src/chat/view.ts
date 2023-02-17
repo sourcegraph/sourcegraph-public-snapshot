@@ -143,7 +143,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 		}
 		this.onNewMessageSubmitted(text)
 
-		const promptMessages = await this.prompt.constructPromptForHumanInput(text)
+		const promptMessages = await this.prompt.getPromptForHumanInput(text)
 		return this.sendPrompt(promptMessages)
 	}
 
