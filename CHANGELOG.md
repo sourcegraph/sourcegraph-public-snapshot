@@ -28,7 +28,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Batch Changes: Log outputs from execution steps are now paginated in the web interface. [#46335](https://github.com/sourcegraph/sourcegraph/pull/46335)
 - Monitoring: the searcher dashboard now contains more detailed request metrics as well as information on interactions with the local cache (via gitserver). [#47654](https://github.com/sourcegraph/sourcegraph/pull/47654)
 - Renders GitHub pull request references in the commit list. [#47593](https://github.com/sourcegraph/sourcegraph/pull/47593)
-- Kubernetes Deployments: Added a new deployment option ([deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s)) using Kustomize. [#46755](https://github.com/sourcegraph/sourcegraph/issues/46755) 
+- Kubernetes Deployments: Added a new deployment option ([deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s)) using Kustomize. [#46755](https://github.com/sourcegraph/sourcegraph/issues/46755)
 - Kubernetes Deployments: The new Kustomize deployment ([deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s)) introduces a new base Kubernetes cluster configuration that runs all Sourcegraph services as non-root users with limited privileges and eliminates the need to create RBAC resources.[#4213](https://github.com/sourcegraph/deploy-sourcegraph/pull/4213)
 
 ### Changed

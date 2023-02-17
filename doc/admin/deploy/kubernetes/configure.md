@@ -53,7 +53,7 @@ To enable cluster metrics monitoring, you will need to [deploy cAdvisor](#deploy
 
 ### RBAC
 
-Sourcegraph has removed all the Role-Based Access Control (RBAC) resources from the default base cluster. This means service discovery is not available by default, and the endpoints for each service replica must be manually input into the frontend ConfigMap, which is automatically done by one of the component defined in the [kustomization file](kustomize/index.md#kustomization-yaml) built for Sourcegraph.
+Sourcegraph has removed Role-Based Access Control (RBAC) resources from the default base cluster for the Kustomize deployment. This means that [service discovery](#service-discovery) is not enabled by default, and the endpoints for each service replica must be manually added to the frontend ConfigMap. When using the [size components](#instance-size-based-resources) included in the [kustomization file built for Sourcegraph](kustomize/index.md#kustomization-yaml), service endpoints are automatically added to the ConfigMap.
 
 ### Non-Privileged
 
@@ -61,9 +61,7 @@ By default, all Sourcegraph services are deployed in a non-root and non-privileg
 
 ### Privileged
 
-To deploy a High Availability (HA) configured Sourcegraph instance to an RBAC-enabled cluster, you can include the [privileged](#privileged) and [monitoring](#monitoring-stack) components in your component list. 
-
-This will enable Kubernetes service discovery for the frontend and also provide privileged access and run all Sourcegraph services as the root user by adding [cadvisor component](#deploy-cadvisor) in the list.
+To deploy a High Availability (HA) configured Sourcegraph instance to an RBAC-enabled cluster, you can include the [privileged component](#privileged) and the [privileged component for monitoring](#deploy-cadvisor) in your component list. This provides redundant, monitored instances of each service running as root with persistent storage, and adding the [service discovery component](#service-discovery) enables automated failover and recovery by detecting backend service endpoints.
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
@@ -74,13 +72,15 @@ components:
 - ../../components/privileged
 # Run monitoring services with privilege and root
 # This also adds RBAC resources to the monitoring stack
+# and allows Prometheus to talk to the Kubernetes API
+# for service discovery
 - ../../components/monitoring/privileged
 # Add resources for cadvisor
 # cadvisor includes RBAC resources and must be run with privileges
 - ../../components/monitoring/cadvisor
+# IMPORTANT: Include as the last component
+- ../../components/enable/service-discovery
 ```
-
-> NOTE: When including the [privileged component](#privileged), please remove the [enable/service-discovery component](#service-discovery) to avoid duplication.
 
 ### Service discovery
 
@@ -108,11 +108,11 @@ components:
 - ../../components/monitoring
 ```
 
-If RBAC is enabled in your cluster, it is highly recommended to deploy cAdvisor with privileged access to your cluster. With privileged access, cAdvisor will have the necessary permissions to gather and display detailed information about the resources used by your Sourcegraph instance. It's considered a key component for monitoring and troubleshooting. See [Deploy cAdvisor](#deploy-cadvisor) below for more information.
+If RBAC is enabled in your cluster, it is highly recommended to [deploy cAdvisor](#deploy-cadvisor) with privileged access to your cluster. With privileged access, cAdvisor will have the necessary permissions to gather and display detailed information about the resources used by your Sourcegraph instance. It's considered a key component for monitoring and troubleshooting. See [Deploy cAdvisor](#deploy-cadvisor) below for more information.
 
 ### Deploy cAdvisor
 
-cAdvisor requires a service account and certain permissions to access and gather information about the Kubernetes cluster in order to display key metrics such as resource usage and performance data. Removing the service account for cAdvisor could impede its ability to collect this information, resulting in missing data on Grafana dashboards and potentially impacting visibility and monitoring capabilities for the cluster and its pods. This could negatively impact the level of monitoring and visibility into the cluster's state that cAdvisor is able to provide.
+cAdvisor requires a service account and certain permissions to access and gather information about the Kubernetes cluster in order to display key metrics such as resource usage and performance data. Removing the service account and privileged access for cAdvisor could impede its ability to collect this information, resulting in missing data on Grafana dashboards and potentially impacting visibility and monitoring capabilities for the cluster and its pods. This could negatively impact the level of monitoring and visibility into the cluster's state that cAdvisor is able to provide.
 
 To deploy cAdvisor with privileged access, include all the components listed below:
 
@@ -130,6 +130,8 @@ components:
 - ../../components/monitoring
 # Run monitoring services with privilege and root
 # This also adds RBAC resources to the monitoring stack
+# and allows Prometheus to talk to the Kubernetes API
+# for service discovery
 - ../../components/monitoring/privileged
 # Add resources for cAdvisor
 # cAdvisor includes RBAC resources and must be run with privileges
@@ -159,7 +161,7 @@ Learn more about Sourcegraph's integrations with the [OpenTelemetry Collector](h
 
 ### Deploy OpenTelemetry Collector with Jaeger as tracing backend
 
-If you do not have an external backend available for the OpenTelemetry Collector to export tracing data to, you can deploy the Collector with the Jaeger backend to store and view traces using the `tracing component` as described below:
+If you do not have an external backend available for the OpenTelemetry Collector to export tracing data to, you can deploy the Collector with the Jaeger backend to store and view traces using the `tracing component` as described below.
 
 #### Enable the bundled Jaeger deployment
 
@@ -208,8 +210,8 @@ Follow these steps to add configure OpenTelementry to use a different backend:
 components:
 - ../../components/otel-collector/backend
 ...
-patchesStrategicMerge:
-- patches/otel-collector.ConfigMap.yaml
+patches:
+  - patch: patches/otel-collector.ConfigMap.yaml
 ```
 
 The component will update the `command` for the `otel-collector` container to `"--config=/etc/otel-collector/conf/config.yaml"`, which is now point to the mounted config.
@@ -267,7 +269,7 @@ components:
 
 ### Adjust storage sizes
 
-You can adjust storage size for different services in the *STORAGE SIZES* section with [patchesJson6902](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/patchesjson6902/).
+You can adjust storage size for different services in the *STORAGE SIZES* section with [patches](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/patches/).
 
 Here is an example on how to adjust the storage sizes for different services:
 
@@ -276,7 +278,7 @@ Here is an example on how to adjust the storage sizes for different services:
 components:
 - ../../components/sizes/l
 # [STORAGE SIZES]
-patchesJson6902:
+patches:
   # `pgsql` to 500Gi
   - target:
       kind: PersistentVolumeClaim
@@ -340,7 +342,7 @@ components:
 
 ### Remove DaemonSets
 
-If you do not have permission to deploy DaemonSets, you can include the remove/daemonset component to remove all services with DaemonSets resources (e.g. node-exporter and otel) from the [monitoring component](#monitoring-stack):
+If you do not have permission to deploy DaemonSets, you can include the `remove/daemonset` component to remove all services with DaemonSets resources (e.g. node-exporter) from the [monitoring component](#monitoring-stack):
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
@@ -349,8 +351,10 @@ components:
 - ../../components/monitoring
 # component to remove all daemonsets from the monitoring stack
 - ../../components/remove/daemonset
-# Make sure the cAdvisor is excluded from the components list
+# Make sure the cAdvisor and otel are excluded from the components list
+# As they both include daemonset
 # - ../../components/monitoring/cadvisor
+# - ../../components/monitoring/otel
 ```
 
 > NOTE: If the `monitoring component` is not included in your overlay, adding the `remove/daemonset component` would result in errors because there will be no daemonsets to remove.
@@ -767,8 +771,8 @@ $ cp components/patches/frontend-ingress-annotations.yaml instances/$INSTANCE_NA
   components:
   - ../../components/...
   ...
-  patchesStrategicMerge:
-    - patches/frontend-ingress.annotations.yaml
+  patches:
+    - patch: patches/frontend-ingress.annotations.yaml
   ```
 
 This will add the annotations specified in your copy of the [frontend-ingress-annotations.yaml](https://github.com/sourcegraph/deploy-sourcegraph-k8s/blob/master/base/frontend/sourcegraph-frontend.Ingress.yaml) file to the sourcegraph-frontend ingress resource. For more information on [ingress-nginx annotations](https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/), refer to the [NGINX Configuration documentation](https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/).
@@ -1035,8 +1039,8 @@ cAdvisor can pick up metrics for services unrelated to the Sourcegraph deploymen
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
-patchesStrategicMerge:
-- patches/prometheus.ConfigMap.yaml
+patches:
+  - patch: patches/prometheus.ConfigMap.yaml
 ```
 
 This will cause Prometheus to drop all metrics *from cAdvisor* that are not from services in the desired namespace.

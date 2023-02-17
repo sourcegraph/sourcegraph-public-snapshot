@@ -97,7 +97,7 @@ For example, set `STORAGECLASS_NAME=sourcegraph` if `sourcegraph` is the name of
 
 #### Step 7: Recreate overlay
 
-Note: You may skip this step if your instance was not deployed using overlays from the deploy-sourcegraph repository.
+>NOTE: You may skip this step if your instance was not deployed using overlays from the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository.
 
 If you are currently deployed using an existing overlay from the old setup that depends on custom scripts:
 
