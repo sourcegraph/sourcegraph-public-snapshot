@@ -128,7 +128,7 @@ components:
 - ../../components/clusters/gke/mange-cert
 ```
 
-Step 2: Set the `GKE_MANAGED_CERT_NAME` variable with your Google-managed certificate name under the [BUILD CONFIGURATIONS](index.md#build-configurations) section:
+Step 2: Set the `GKE_MANAGED_CERT_NAME` variable with your Google-managed certificate name under the [BUILD CONFIGURATIONS](index.md#buildconfig-yaml) section:
 
 ```yaml
 # overlays/$INSTANCE_NAME/kustomization.yaml
