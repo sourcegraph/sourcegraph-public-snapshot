@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/grafana/regexp"
@@ -362,34 +363,6 @@ func (r *rootResolver) GetLastIndexScanForRepository(ctx context.Context, reposi
 	return r.autoindexSvc.GetLastIndexScanForRepository(ctx, repositoryID)
 }
 
-func (r *rootResolver) InferedIndexConfiguration(ctx context.Context, repositoryID int, commit string) (_ *config.IndexConfiguration, _ bool, err error) {
-	ctx, _, endObservation := r.operations.inferedIndexConfiguration.With(ctx, &err, observation.Args{
-		LogFields: []log.Field{log.Int("repositoryID", repositoryID), log.String("commit", commit)},
-	})
-	defer endObservation(1, observation.Args{})
-
-	maybeConfig, _, err := r.autoindexSvc.InferIndexConfiguration(ctx, repositoryID, commit, true)
-	if err != nil || maybeConfig == nil {
-		return nil, false, err
-	}
-
-	return maybeConfig, true, nil
-}
-
-func (r *rootResolver) InferedIndexConfigurationHints(ctx context.Context, repositoryID int, commit string) (_ []config.IndexJobHint, err error) {
-	ctx, _, endObservation := r.operations.inferedIndexConfigurationHints.With(ctx, &err, observation.Args{
-		LogFields: []log.Field{log.Int("repositoryID", repositoryID), log.String("commit", commit)},
-	})
-	defer endObservation(1, observation.Args{})
-
-	_, hints, err := r.autoindexSvc.InferIndexConfiguration(ctx, repositoryID, commit, true)
-	if err != nil {
-		return nil, err
-	}
-
-	return hints, nil
-}
-
 func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ resolverstubs.CodeIntelRepositorySummaryResolver, err error) {
 	ctx, errTracer, endObservation := r.operations.repositorySummary.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repoID", string(id)),
@@ -425,7 +398,7 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 	// Create blocklist for indexes that have already been uploaded.
 	blocklist := map[string]struct{}{}
 	for _, u := range recentUploads {
-		key := getKeyForLookup(u.Indexer, u.Root)
+		key := shared.GetKeyForLookup(u.Indexer, u.Root)
 		blocklist[key] = struct{}{}
 	}
 
@@ -440,10 +413,6 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 
 		limitErr = errors.Append(limitErr, err)
 	}
-
-	availableIndexersMap := map[string]availableIndexer{}
-	inferredAvailableIndexers := populateInferredAvailableIndexers(indexJobs, blocklist, availableIndexersMap)
-
 	indexJobHints, err := r.autoindexSvc.InferIndexJobHintsFromRepositoryStructure(ctx, repoID, commit)
 	if err != nil {
 		if !errors.As(err, &inference.LimitError{}) {
@@ -453,7 +422,9 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 		limitErr = errors.Append(limitErr, err)
 	}
 
-	inferredAvailableIndexers = populateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
+	inferredAvailableIndexers := map[string]shared.AvailableIndexer{}
+	inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobs, blocklist, inferredAvailableIndexers)
+	inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
 
 	inferredAvailableIndexersResolver := make([]sharedresolvers.InferredAvailableIndexers, 0, len(inferredAvailableIndexers))
 	for indexName, indexer := range inferredAvailableIndexers {
@@ -461,7 +432,7 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 			sharedresolvers.InferredAvailableIndexers{
 				Roots: indexer.Roots,
 				Index: indexName,
-				URL:   indexer.URL,
+				URL:   fmt.Sprintf("https://%s", indexer.Indexer.URN),
 			},
 		)
 	}

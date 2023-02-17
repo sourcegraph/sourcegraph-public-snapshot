@@ -29,10 +29,10 @@ func NewVersionFromString(v string) (Version, bool) {
 	return version, ok
 }
 
-// NewVersionFromString parses the major and minor version from the given string. If
-// the string does not look like a parseable version, a false-valued flag is returned.
-// If the input string also supplies a patch version, it is returned. If a patch is
-// not supplied this value is zero.
+// NewVersionAndPatchFromString parses the major and minor version from the given
+// string. If the string does not look like a parseable version, a false-valued
+// flag is returned. If the input string also supplies a patch version, it is
+// returned. If a patch is not supplied this value is zero.
 func NewVersionAndPatchFromString(v string) (Version, int, bool) {
 	matches := versionPattern.FindStringSubmatch(v)
 	if len(matches) < 3 {
