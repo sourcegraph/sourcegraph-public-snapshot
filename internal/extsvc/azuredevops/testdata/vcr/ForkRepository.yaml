@@ -2,7 +2,7 @@
 version: 1
 interactions:
 - request:
-    body: '{"name":"sgtestazurefork","project":{"id":"dc493f7d-0b57-4de2-a59b-3f74ff3ea334"},"parentRepository":{"id":"c4d186ef-18a6-4de4-a610-aa9ebd4e1faa","project":{"id":"dc493f7d-0b57-4de2-a59b-3f74ff3ea334"}}}'
+    body: '{"name":"sgtestazureforks","project":{"id":"dc493f7d-0b57-4de2-a59b-3f74ff3ea334"},"parentRepository":{"id":"c4d186ef-18a6-4de4-a610-aa9ebd4e1faa","project":{"id":"dc493f7d-0b57-4de2-a59b-3f74ff3ea334"}}}'
     form: {}
     headers:
       Content-Type:
@@ -10,20 +10,20 @@ interactions:
     url: https://dev.azure.com/sgtestazure/_apis/git/repositories?api-version=7.0
     method: POST
   response:
-    body: '{"id":"6a1d97ce-9301-4364-8584-3c6d59d70359","name":"sgtestazurefork","url":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/6a1d97ce-9301-4364-8584-3c6d59d70359","project":{"id":"dc493f7d-0b57-4de2-a59b-3f74ff3ea334","name":"sgtestazure","url":"https://dev.azure.com/sgtestazure/_apis/projects/dc493f7d-0b57-4de2-a59b-3f74ff3ea334","state":"wellFormed","revision":11,"visibility":"private","lastUpdateTime":"2023-01-20T19:22:47.403Z"},"size":0,"remoteUrl":"https://sgtestazure@dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazurefork","sshUrl":"git@ssh.dev.azure.com:v3/sgtestazure/sgtestazure/sgtestazurefork","webUrl":"https://dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazurefork","isFork":true,"_links":{"self":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/6a1d97ce-9301-4364-8584-3c6d59d70359"},"project":{"href":"vstfs:///Classification/TeamProject/dc493f7d-0b57-4de2-a59b-3f74ff3ea334"},"web":{"href":"https://dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazurefork"},"ssh":{"href":"git@ssh.dev.azure.com:v3/sgtestazure/sgtestazure/sgtestazurefork"},"commits":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/6a1d97ce-9301-4364-8584-3c6d59d70359/commits"},"refs":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/6a1d97ce-9301-4364-8584-3c6d59d70359/refs"},"pullRequests":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/6a1d97ce-9301-4364-8584-3c6d59d70359/pullRequests"},"items":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/6a1d97ce-9301-4364-8584-3c6d59d70359/items"},"pushes":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/6a1d97ce-9301-4364-8584-3c6d59d70359/pushes"},"forkSyncOperation":{"href":"https://dev.azure.com/sgtestazure/_apis/git/repositories/6a1d97ce-9301-4364-8584-3c6d59d70359/forkSyncRequests/6"}},"isDisabled":false,"isInMaintenance":false}'
+    body: '{"id":"edaf746e-a05e-429c-ad75-2486f9c0f7d7","name":"sgtestazureforks","url":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/edaf746e-a05e-429c-ad75-2486f9c0f7d7","project":{"id":"dc493f7d-0b57-4de2-a59b-3f74ff3ea334","name":"sgtestazure","url":"https://dev.azure.com/sgtestazure/_apis/projects/dc493f7d-0b57-4de2-a59b-3f74ff3ea334","state":"wellFormed","revision":11,"visibility":"private","lastUpdateTime":"2023-01-20T19:22:47.403Z"},"size":0,"remoteUrl":"https://sgtestazure@dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazureforks","sshUrl":"git@ssh.dev.azure.com:v3/sgtestazure/sgtestazure/sgtestazureforks","webUrl":"https://dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazureforks","isFork":true,"_links":{"self":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/edaf746e-a05e-429c-ad75-2486f9c0f7d7"},"project":{"href":"vstfs:///Classification/TeamProject/dc493f7d-0b57-4de2-a59b-3f74ff3ea334"},"web":{"href":"https://dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazureforks"},"ssh":{"href":"git@ssh.dev.azure.com:v3/sgtestazure/sgtestazure/sgtestazureforks"},"commits":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/edaf746e-a05e-429c-ad75-2486f9c0f7d7/commits"},"refs":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/edaf746e-a05e-429c-ad75-2486f9c0f7d7/refs"},"pullRequests":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/edaf746e-a05e-429c-ad75-2486f9c0f7d7/pullRequests"},"items":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/edaf746e-a05e-429c-ad75-2486f9c0f7d7/items"},"pushes":{"href":"https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/edaf746e-a05e-429c-ad75-2486f9c0f7d7/pushes"},"forkSyncOperation":{"href":"https://dev.azure.com/sgtestazure/_apis/git/repositories/edaf746e-a05e-429c-ad75-2486f9c0f7d7/forkSyncRequests/9"}},"isDisabled":false,"isInMaintenance":false}'
     headers:
       Access-Control-Expose-Headers:
       - Request-Context
       Activityid:
-      - bf8df9c5-e8b0-42af-9b97-68433f344cdb
+      - 7b6e99fd-2d22-4f8e-9c2e-a8969845bdf3
       Cache-Control:
       - no-cache, no-store, must-revalidate
       Content-Length:
-      - "2157"
+      - "2163"
       Content-Type:
       - application/json; charset=utf-8; api-version=7.0
       Date:
-      - Mon, 30 Jan 2023 22:05:22 GMT
+      - Fri, 17 Feb 2023 01:31:49 GMT
       Expires:
       - "-1"
       P3p:
@@ -42,13 +42,13 @@ interactions:
       X-Frame-Options:
       - SAMEORIGIN
       X-Msedge-Ref:
-      - 'Ref A: C292F7C8049448B7903196011D7C6DF5 Ref B: YTO01EDGE0506 Ref C: 2023-01-30T22:05:22Z'
+      - 'Ref A: F61ED5507AD441A296292A681ECA6E97 Ref B: YTO01EDGE0719 Ref C: 2023-02-17T01:31:49Z'
       X-Tfs-Processid:
-      - 937ce4cc-a287-4dbb-94b7-d3e51b168227
+      - c208d684-a461-41e5-a43d-ea1d99a0087b
       X-Tfs-Session:
-      - bf8df9c5-e8b0-42af-9b97-68433f344cdb
+      - 7b6e99fd-2d22-4f8e-9c2e-a8969845bdf3
       X-Vss-E2eid:
-      - bf8df9c5-e8b0-42af-9b97-68433f344cdb
+      - 7b6e99fd-2d22-4f8e-9c2e-a8969845bdf3
       X-Vss-Senderdeploymentid:
       - 4ff21e82-8865-0b2e-ffe8-9598818f8190
       X-Vss-Userdata:

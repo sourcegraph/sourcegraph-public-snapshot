@@ -230,39 +230,51 @@ func (s AzureDevOpsSource) MergeChangeset(ctx context.Context, cs *Changeset, sq
 	return s.setChangesetMetadata(ctx, repo, &updated, cs)
 }
 
-// GetNamespaceFork returns a repo pointing to a fork of the given repo in
-// the given namespace, ensuring that the fork exists and is a fork of the
-// target repo.
-func (s AzureDevOpsSource) GetNamespaceFork(ctx context.Context, targetRepo *types.Repo, namespace string) (*types.Repo, error) {
-	targetMeta := targetRepo.Metadata.(*azuredevops.Repository)
+// GetFork returns a repo pointing to a fork of the target repo, ensuring that the fork
+// exists and creating it if it doesn't. If namespace is not provided, an error is thrown.
+// If name is not provided, the fork will be named with the default Sourcegraph convention:
+// "${original-namespace}-${original-name}"
+func (s AzureDevOpsSource) GetFork(ctx context.Context, targetRepo *types.Repo, ns, n *string) (*types.Repo, error) {
+	var namespace string
+	if ns == nil {
+		return nil, errors.New("namespace must be provided")
+	}
+	namespace = *ns
 
-	org, err := targetMeta.GetOrganization()
+	tr := targetRepo.Metadata.(*azuredevops.Repository)
+
+	targetNamespace, err := tr.GetNamespace()
 	if err != nil {
-		return nil, errors.Wrap(err, "getting Azure DevOps organization from project")
+		return nil, errors.Wrap(err, "getting target repo namespace")
 	}
 
-	// Our namespace is structured like org/project
-	forkOrg, forkProject, found := strings.Cut(namespace, "/")
+	var name string
+	if n != nil {
+		name = *n
+	} else {
+		name = DefaultForkName(targetNamespace, tr.Name)
+	}
+
+	org, project, found := strings.Cut(namespace, "/")
 	if !found {
-		return nil, errors.Errorf("invalid namespace, does not match pattern (org/project): %s", namespace)
+		return nil, errors.Errorf("invalid namespace, must be in the form of org/project: %s", namespace)
 	}
-	forkName := fmt.Sprintf("%s-%s-%s", org, targetMeta.Project.Name, targetMeta.Name)
 
-	// Figure out if we already have the repo.
+	// Figure out if we already have a fork of the repo in the given namespace.
 	if fork, err := s.client.GetRepo(ctx, azuredevops.OrgProjectRepoArgs{
-		Project:      forkProject,
-		Org:          forkOrg,
-		RepoNameOrID: forkName,
+		Org:          org,
+		Project:      project,
+		RepoNameOrID: name,
 	}); err == nil {
-		return s.copyRepoAsFork(targetRepo, &fork)
+		return s.checkAndCopy(targetRepo, &fork)
 	} else if !errcode.IsNotFound(err) {
 		return nil, errors.Wrap(err, "checking for fork existence")
 	}
 
 	fork, err := s.client.ForkRepository(ctx, org, azuredevops.ForkRepositoryInput{
-		Name: forkName,
+		Name: name,
 		Project: azuredevops.ForkRepositoryInputProject{
-			ID: targetMeta.Project.ID,
+			ID: tr.Project.ID,
 		},
 		ParentRepository: azuredevops.ForkRepositoryInputParentRepository{
 			ID: targetMeta.ID,
@@ -271,31 +283,24 @@ func (s AzureDevOpsSource) GetNamespaceFork(ctx context.Context, targetRepo *typ
 			},
 		},
 	})
+
 	if err != nil {
 		return nil, errors.Wrap(err, "forking repository")
 	}
 
-	return s.copyRepoAsFork(targetRepo, &fork)
+	return s.checkAndCopy(targetRepo, &fork)
 }
 
-// TODO: ADO does not have user namespaces what do we do here?
-// GetUserFork returns a repo pointing to a fork of the given repo in the
-// currently authenticated user's namespace.
-func (s AzureDevOpsSource) GetUserFork(ctx context.Context, targetRepo *types.Repo) (*types.Repo, error) {
-	//user, err := s.client.CurrentUser(ctx)
-	//if err != nil {
-	//	return nil, errors.Wrap(err, "getting the current user")
-	//}
-	//
-	//return s.GetNamespaceFork(ctx, targetRepo, user.Username)
+func (s AzureDevOpsSource) checkAndCopy(targetRepo *types.Repo, fork *azuredevops.Repository) (*types.Repo, error) {
+	tr := targetRepo.Metadata.(*azuredevops.Repository)
 
-	return nil, nil
-}
+	if !fork.IsFork {
+		return nil, errors.New("repo is not a fork")
+	}
 
-func (s AzureDevOpsSource) copyRepoAsFork(targetRepo *types.Repo, fork *azuredevops.Repository) (*types.Repo, error) {
-	targetMeta := targetRepo.Metadata.(*azuredevops.Repository)
-
-	originalNamespace, err := targetMeta.GetNamespace()
+	// Now we make a copy of targetRepo, but with its sources and metadata updated to
+	// point to the fork
+	originalNamespace, err := tr.GetNamespace()
 	if err != nil {
 		return nil, err
 	}

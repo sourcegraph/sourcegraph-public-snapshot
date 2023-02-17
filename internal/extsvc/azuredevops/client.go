@@ -39,6 +39,7 @@ type Client interface {
 	ListRepositoriesByProjectOrOrg(ctx context.Context, args ListRepositoriesByProjectOrOrgArgs) ([]Repository, error)
 	ForkRepository(ctx context.Context, org string, input ForkRepositoryInput) (Repository, error)
 	GetRepositoryBranch(ctx context.Context, args OrgProjectRepoArgs, branchName string) (Ref, error)
+	GetProject(ctx context.Context, org, project string) (Project, error)
 	AzureServicesProfile(ctx context.Context) (Profile, error)
 }
 

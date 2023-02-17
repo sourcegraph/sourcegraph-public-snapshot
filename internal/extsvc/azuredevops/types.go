@@ -213,6 +213,7 @@ type Repository struct {
 	SSHURL     string  `json:"sshUrl"`
 	WebURL     string  `json:"webUrl"`
 	IsDisabled bool    `json:"isDisabled"`
+	IsFork     bool    `json:"isFork"`
 	Project    Project `json:"project"`
 }
 
