@@ -1296,20 +1296,47 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 }
 
 func TestResolver_UserPermissionsInfo(t *testing.T) {
-	t.Run("authenticated as non-admin", func(t *testing.T) {
+	t.Run("authenticated as non-admin, asking not for self", func(t *testing.T) {
+		user := &types.User{ID: 42}
+
 		users := database.NewStrictMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(user, nil)
+		users.GetByIDFunc.SetDefaultReturn(user, nil)
 
 		db := edb.NewStrictMockEnterpriseDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&Resolver{db: db}).UserPermissionsInfo(ctx, graphqlbackend.MarshalRepositoryID(1))
-		if want := auth.ErrMustBeSiteAdmin; err != want {
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: user.ID})
+		result, err := (&Resolver{db: db}).UserPermissionsInfo(ctx, graphqlbackend.MarshalUserID(1))
+		if want := auth.ErrMustBeSiteAdminOrSameUser; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
 		if result != nil {
 			t.Errorf("result: want nil but got %v", result)
+		}
+	})
+
+	t.Run("authenticated as non-admin, asking for self succeeds", func(t *testing.T) {
+		user := &types.User{ID: 42}
+
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(user, nil)
+		users.GetByIDFunc.SetDefaultReturn(user, nil)
+
+		perms := edb.NewStrictMockPermsStore()
+		perms.LoadUserPermissionsFunc.SetDefaultReturn(nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.PermsFunc.SetDefaultReturn(perms)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: user.ID})
+		result, err := (&Resolver{db: db}).UserPermissionsInfo(ctx, graphqlbackend.MarshalUserID(user.ID))
+		if err != nil {
+			t.Errorf("err: want nil but got %v", err)
+		}
+		if result == nil {
+			t.Errorf("result: want non-nil but got nil")
 		}
 	})
 
