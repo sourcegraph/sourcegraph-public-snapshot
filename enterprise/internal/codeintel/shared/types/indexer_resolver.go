@@ -1,6 +1,7 @@
 package types
 
 type CodeIntelIndexerResolver interface {
+	Key() string
 	Name() string
 	URL() string
 }
@@ -21,6 +22,10 @@ func NewCodeIntelIndexerResolver(name string) CodeIntelIndexerResolver {
 
 func NewCodeIntelIndexerResolverFrom(indexer CodeIntelIndexer) CodeIntelIndexerResolver {
 	return &codeIntelIndexerResolver{indexer: indexer}
+}
+
+func (r *codeIntelIndexerResolver) Key() string {
+	return r.indexer.LanguageKey
 }
 
 func (r *codeIntelIndexerResolver) Name() string {

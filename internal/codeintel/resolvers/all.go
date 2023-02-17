@@ -237,6 +237,7 @@ type PreciseSupportResolver interface {
 }
 
 type CodeIntelIndexerResolver interface {
+	Key() string
 	Name() string
 	URL() string
 }
