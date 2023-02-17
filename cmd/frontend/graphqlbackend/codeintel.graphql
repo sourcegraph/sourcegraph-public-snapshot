@@ -320,6 +320,11 @@ extend type Query {
     ): PreciseIndexConnection!
 
     """
+    Provides a summary of code intelligence on the instance.
+    """
+    codeIntelSummary: CodeIntelSummary!
+
+    """
     The repository's LSIF uploads.
     """
     lsifUploads(
@@ -693,7 +698,7 @@ extend type Repository {
     ): LSIFIndexConnection!
 
     """
-    Provides a summary of the most reecent upload and index status.
+    Provides a summary of the most recent upload and index status.
     """
     codeIntelSummary: CodeIntelRepositorySummary!
 
@@ -864,7 +869,146 @@ type LineRange {
 }
 
 """
-A summary of the most reecent upload and index status.
+A summary of code intelligence on the instance.
+"""
+type CodeIntelSummary {
+    """
+    The number of repositories with precise index records.
+    """
+    numRepositoriesWithCodeIntelligence: Int!
+
+    """
+    A list of repositories with precise index errors.
+    """
+    repositoriesWithErrors(
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page.
+        """
+        first: Int
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+
+        A future request can be made for more results by passing in the
+        'CodeIntelRepositoryWithErrorConnection.pageInfo.endCursor'
+        that is returned.
+        """
+        after: String
+    ): CodeIntelRepositoryWithErrorConnection!
+
+    """
+    A list of repositories with configurable auto-indexing jobs.
+    """
+    repositoriesWithConfiguration(
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page.
+        """
+        first: Int
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+
+        A future request can be made for more results by passing in the
+        'CodeIntelRepositoryWithErrorConnection.pageInfo.endCursor'
+        that is returned.
+        """
+        after: String
+    ): CodeIntelRepositoryWithConfigurationConnection
+}
+
+"""
+A list of repositories paired with a count of precise indexing errors (used by CodeIntelSummary).
+"""
+type CodeIntelRepositoryWithErrorConnection {
+    """
+    The repository and error count.
+    """
+    nodes: [CodeIntelRepositoryWithError!]!
+
+    """
+    The total number of results (over all pages) in this list.
+    """
+    totalCount: Int
+
+    """
+    Metadata about the current page of results.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A repository paired with a count of precise indexing errors (used by CodeIntelSummary).
+"""
+type CodeIntelRepositoryWithError {
+    """
+    The repository.
+    """
+    repository: CodeIntelRepository!
+
+    """
+    The number of precise indexing errors in the repository.
+    """
+    count: Int!
+}
+
+"""
+A list of repositories paired with a list of precise indexers (used by CodeIntelSummary).
+"""
+type CodeIntelRepositoryWithConfigurationConnection {
+    """
+    The repository and indexer count.
+    """
+    nodes: [CodeIntelRepositoryWithConfiguration!]!
+
+    """
+    The total number of results (over all pages) in this list.
+    """
+    totalCount: Int
+
+    """
+    Metadata about the current page of results.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A repository paired with a list of precise indexers (used by CodeIntelSummary).
+"""
+type CodeIntelRepositoryWithConfiguration {
+    """
+    The repository.
+    """
+    repository: CodeIntelRepository!
+
+    """
+    The precise indexers available for the repository.
+    """
+    indexers: [IndexerWithCount!]!
+}
+
+"""
+A precise indexer paired with a count of indexable projects in the repository (used by CodeIntelSummary).
+"""
+type IndexerWithCount {
+    """
+    The repository.
+    """
+    indexer: CodeIntelIndexer
+
+    """
+    The count of projects that could utilize the indexer in this repository.
+    """
+    count: Int!
+}
+
+"""
+A summary of the most recent upload and index status.
 """
 type CodeIntelRepositorySummary {
     """
@@ -880,6 +1024,13 @@ type CodeIntelRepositorySummary {
     and root.
     """
     recentIndexes: [LSIFIndexesWithRepositoryNamespace!]!
+
+    """
+    A list of recent precise indexes for a specific repository. This list contains processing,
+    recently queued, and the most recently processed precise indexes for each distinct indexer
+    and root.
+    """
+    recentActivity: [PreciseIndex!]!
 
     """
     The last time uploads of this repository were checked against data retention policies.

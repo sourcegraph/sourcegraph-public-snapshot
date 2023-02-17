@@ -28,6 +28,7 @@ type operations struct {
 	setRequestLanguageSupport *observation.Operation
 
 	// Misc
+	summary              *observation.Operation
 	repositorySummary    *observation.Operation
 	getSupportedByCtags  *observation.Operation
 	gitBlobCodeIntelInfo *observation.Operation
@@ -77,6 +78,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		setRequestLanguageSupport: op("SetRequestLanguageSupport"),
 
 		// Misc
+		summary:              op("Summary"),
 		repositorySummary:    op("RepositorySummary"),
 		getSupportedByCtags:  op("GetSupportedByCtags"),
 		gitBlobCodeIntelInfo: op("GitBlobCodeIntelInfo"),

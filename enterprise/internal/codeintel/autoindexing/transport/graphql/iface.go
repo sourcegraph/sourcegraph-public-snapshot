@@ -42,6 +42,10 @@ type AutoIndexingService interface {
 	GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error)
 	SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error)
 
+	NumRepositoriesWithCodeIntelligence(ctx context.Context) (int, error)
+	RepositoryIDsWithErrors(ctx context.Context, offset, limit int) (_ []shared.RepositoryWithCount, totalCount int, err error)
+	RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) (_ []shared.RepositoryWithAvailableIndexers, totalCount int, err error)
+
 	GetUnsafeDB() database.DB
 }
 
