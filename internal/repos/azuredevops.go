@@ -22,7 +22,7 @@ import (
 // in Sourcegraph via the external services configuration.
 type AzureDevOpsSource struct {
 	svc       *types.ExternalService
-	cli       *azuredevops.Client
+	cli       azuredevops.Client
 	serviceID string
 	config    schema.AzureDevOpsConnection
 	logger    log.Logger
@@ -68,7 +68,7 @@ func NewAzureDevOpsSource(ctx context.Context, logger log.Logger, svc *types.Ext
 	return &AzureDevOpsSource{
 		svc:       svc,
 		cli:       cli,
-		serviceID: extsvc.NormalizeBaseURL(cli.URL).String(),
+		serviceID: extsvc.NormalizeBaseURL(cli.GetURL()).String(),
 		config:    c,
 		logger:    logger,
 		exclude:   exclude,
@@ -144,7 +144,7 @@ func (s *AzureDevOpsSource) WithAuthenticator(a auth.Authenticator) (Source, err
 func (s *AzureDevOpsSource) makeRepo(p azuredevops.Repository) (*types.Repo, error) {
 	urn := s.svc.URN()
 
-	fullURL, err := urlx.Parse(s.cli.URL.String() + p.Name)
+	fullURL, err := urlx.Parse(s.cli.GetURL().String() + p.Name)
 	if err != nil {
 		return nil, err
 	}

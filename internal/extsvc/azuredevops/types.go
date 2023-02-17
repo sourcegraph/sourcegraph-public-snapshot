@@ -76,11 +76,13 @@ type CreatePullRequestInput struct {
 	Title         string     `json:"title"`
 	Description   string     `json:"description"`
 	Reviewers     []Reviewer `json:"reviewers"`
-	ForkSource    ForkRef    `json:"forkSource"`
+	ForkSource    *ForkRef   `json:"forkSource"`
 }
 
 type ForkRef struct {
 	Repository Repository `json:"repository"`
+	Name       string     `json:"name"`
+	URl        string     `json:"url"`
 }
 
 type Reviewer struct {
@@ -99,8 +101,9 @@ type PullRequest struct {
 	ID                    int               `json:"pullRequestId"`
 	CodeReviewID          int               `json:"codeReviewId"`
 	Status                string            `json:"status"`
-	CreationDate          string            `json:"creationDate"`
+	CreationDate          time.Time         `json:"creationDate"`
 	Title                 string            `json:"title"`
+	Description           string            `json:"description"`
 	CreatedBy             CreatorInfo       `json:"createdBy"`
 	SourceRefName         string            `json:"sourceRefName"`
 	TargetRefName         string            `json:"targetRefName"`
@@ -111,6 +114,8 @@ type PullRequest struct {
 	SupportsIterations    bool              `json:"supportsIterations"`
 	ArtifactID            string            `json:"artifactId"`
 	Reviewers             []Reviewer        `json:"reviewers"`
+	ForkSource            *ForkRef          `json:"forkSource"`
+	URL                   string            `json:"url"`
 }
 
 type PullRequestCommit struct {
@@ -220,27 +225,26 @@ type Project struct {
 	URL        string `json:"url"`
 }
 
-func (p Project) GetOrganization() (string, error) {
-	u, err := url.Parse(p.URL)
+func (p Repository) GetOrganization() (string, error) {
+	u, err := url.Parse(p.APIURL)
 	if err != nil {
 		return "", err
 	}
 
-	org, _, found := strings.Cut(u.Path, "/")
-
-	if !found {
-		return "", errors.Errorf("unable to parse Azure DevOps organization from Project URL: %s", p.URL)
+	splitPath := strings.SplitN(u.Path, "/", 3)
+	if len(splitPath) != 3 {
+		return "", errors.Errorf("unable to parse Azure DevOps organization from repo URL: %s", p.APIURL)
 	}
 
-	return org, nil
+	return splitPath[1], nil
 }
 
-func (p Project) GetNamespace() (string, error) {
+func (p Repository) GetNamespace() (string, error) {
 	org, err := p.GetOrganization()
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s/%s", org, p.Name), nil
+	return fmt.Sprintf("%s/%s", org, p.Project.Name), nil
 }
 
 type Profile struct {

@@ -7,7 +7,7 @@ import (
 )
 
 // AzureServicesProfile is used to return information about the authorized user, should only be used for Azure Services (https://dev.azure.com)
-func (c *Client) AzureServicesProfile(ctx context.Context) (Profile, error) {
+func (c *client) AzureServicesProfile(ctx context.Context) (Profile, error) {
 	reqURL := url.URL{Path: "/_apis/profile/profiles/me"}
 
 	req, err := http.NewRequest("GET", reqURL.String(), nil)
