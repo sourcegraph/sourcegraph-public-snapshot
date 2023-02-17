@@ -1,13 +1,13 @@
 import { within } from '@testing-library/dom'
 import { Route, Routes } from 'react-router-dom-v5-compat'
 
+import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { AuthenticatedUser } from '../auth'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 
 import { SignInPage } from './SignInPage'
-import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 
 describe('SignInPage', () => {
     const authProviders: SourcegraphContext['authProviders'] = [

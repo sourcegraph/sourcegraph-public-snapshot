@@ -92,7 +92,7 @@ func TestRequestAccess(t *testing.T) {
 
 	t.Run("correct inputs", func(t *testing.T) {
 		req, err := http.NewRequest(http.MethodPost, "/-/request-access", strings.NewReader(`{"email": "a1@example.com", "name": "a1", "additionalInfo": "a1"}`))
-		req.WithContext(context.Background())
+		req = req.WithContext(context.Background())
 		require.NoError(t, err)
 
 		res := httptest.NewRecorder()
