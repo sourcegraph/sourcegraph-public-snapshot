@@ -4,7 +4,7 @@ package frontend.v1;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/sourcegraph/sourcegraph/internal/frontend/v1";
+option go_package = "github.com/sourcegraph/sourcegraph/internal/frontend/indexed-search/v1";
 
 service FrontendService {
   // SearchConfiguration returns the current indexing configuration for the specified repositories.
