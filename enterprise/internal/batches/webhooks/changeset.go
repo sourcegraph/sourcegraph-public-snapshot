@@ -1,14 +1,16 @@
 package webhooks
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"net/http"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
 
 	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -35,46 +37,124 @@ type changeset struct {
 	SyncerError         *string      `json:"syncer_error"`
 }
 
-func MarshalChangeset(ctx context.Context, cs *types.Changeset) ([]byte, error) {
-	batchChangeIDs := make([]graphql.ID, 0, len(cs.BatchChanges))
-	for _, assoc := range cs.BatchChanges {
-		batchChangeIDs = append(batchChangeIDs, bgql.MarshalBatchChangeID(assoc.BatchChangeID))
-	}
-
-	labels := cs.Labels()
-	labelNames := make([]string, 0, len(cs.Labels()))
-	for _, label := range labels {
-		labelNames = append(labelNames, label.Name)
-	}
-
-	var (
-		title       *string
-		body        *string
-		authorName  *string
-		externalURL *string
-	)
-
-	if cs.Published() && !cs.IsImporting() {
-		for name, field := range map[string]struct {
-			method func() (string, error)
-			out    **string
-		}{
-			"title":        {cs.Title, &title},
-			"body":         {cs.Body, &body},
-			"author name":  {cs.AuthorName, &authorName},
-			"external URL": {cs.URL, &externalURL},
-		} {
-			value, err := field.method()
-			if err != nil {
-				return nil, errors.Wrapf(err, "getting %s", name)
+const gqlChangesetQuery = `query Changeset($id: ID!) {
+	node(id: $id) {
+		... on ExternalChangeset {
+			id
+			externalID
+			batchChanges {
+				nodes {
+					id
+				}
 			}
-			*field.out = &value
+			repository {
+				id
+			}
+			createdAt
+			updatedAt
+			title
+			body
+			author {
+				name
+			}
+			state
+			labels {
+				text
+			}
+			externalURL {
+				url
+			}
+			forkNamespace
+			reviewState
+			checkState
+			error
+			syncerError
 		}
 	}
+}`
 
-	payload := changeset{
-		ID:                  bgql.MarshalChangesetID(cs.ID),
-		ExternalID:          cs.ExternalID,
+type gqlChangesetResponse struct {
+	Data struct {
+		Node struct {
+			ID           graphql.ID `json:"id"`
+			ExternalID   string     `json:"externalId"`
+			BatchChanges struct {
+				Nodes struct {
+					ID graphql.ID `json:"id"`
+				} `json:"nodes"`
+			} `json:"batchChanges"`
+			Repository struct {
+				ID graphql.ID `json:"id"`
+			} `json:"repository"`
+			CreatedAt time.Time `json:"createdAt"`
+			UpdatedAt time.Time `json:"updatedAt"`
+			Title     *string   `json:"title"`
+			Body      *string   `json:"body"`
+			Author    *struct {
+				Name string `json:"name"`
+			} `json:"author"`
+			State  string `json:"state"`
+			Labels []struct {
+				Text string `json:"text"`
+			} `json:"labels"`
+			ExternalURL *struct {
+				URL string `json:"url"`
+			} `json:"externalURL"`
+			ForkNamespace *string `json:"forkNamespace"`
+			ReviewState   *string `json:"reviewState"`
+			CheckState    *string `json:"checkState"`
+			Error         *string `json:"error"`
+			SyncerError   *string `json:"syncerError"`
+		}
+	}
+}
+
+func marshalChangeset(ctx context.Context, id graphql.ID) ([]byte, error) {
+	q := queryInfo{}
+	q.Query = gqlChangesetQuery
+	q.Variables = map[string]any{"id": id}
+
+	reqBody, err := json.Marshal(q)
+	if err != nil {
+		return nil, errors.Wrap(err, "marshal request body")
+	}
+
+	url, err := gqlURL("Changeset")
+	if err != nil {
+		return nil, errors.Wrap(err, "construct frontend URL")
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewReader(reqBody))
+	if err != nil {
+		return nil, errors.Wrap(err, "construct request")
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))
+	if err != nil {
+		return nil, errors.Wrap(err, "do request")
+	}
+	defer resp.Body.Close()
+
+	var res gqlBatchChangeResponse
+
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		return nil, errors.Wrap(err, "decode response")
+	}
+
+	if len(res.Errors) > 0 {
+		var combined error
+		for _, err := range res.Errors {
+			combined = errors.Append(combined, err)
+		}
+		return nil, combined
+	}
+
+	node := res.Data.Node
+
+	return json.Marshal(changeset{
+		ID:                  node.ID,
+		ExternalID:          node.E,
 		BatchChangeIDs:      batchChangeIDs,
 		OwningBatchChangeID: nullableMap(cs.OwnedByBatchChangeID, bgql.MarshalBatchChangeID),
 		RepositoryID:        bgql.MarshalRepoID(cs.RepoID),
@@ -92,7 +172,5 @@ func MarshalChangeset(ctx context.Context, cs *types.Changeset) ([]byte, error) 
 		CheckState:          nullable(string(cs.ExternalCheckState)),
 		Error:               cs.FailureMessage,
 		SyncerError:         cs.SyncErrorMessage,
-	}
-
-	return json.Marshal(&payload)
+	})
 }

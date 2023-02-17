@@ -10,8 +10,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graphql-go/graphql/gqlerrors"
 
-	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -85,12 +83,10 @@ type gqlBatchChangeResponse struct {
 	Errors []gqlerrors.FormattedError
 }
 
-func MarshalBatchChange(ctx context.Context, bc *types.BatchChange) ([]byte, error) {
-	marshalledBatchChangeID := bgql.MarshalBatchChangeID(bc.ID)
-
+func marshalBatchChange(ctx context.Context, id graphql.ID) ([]byte, error) {
 	q := queryInfo{}
 	q.Query = gqlBatchChangeQuery
-	q.Variables = map[string]any{"id": marshalledBatchChangeID}
+	q.Variables = map[string]any{"id": id}
 
 	reqBody, err := json.Marshal(q)
 	if err != nil {

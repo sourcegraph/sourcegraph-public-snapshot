@@ -62,12 +62,12 @@ func EnqueueBatchChange(
 	ctx context.Context, logger log.Logger, db basestore.ShareableStore,
 	eventType string, id graphql.ID,
 ) {
-	Enqueue(ctx, logger, db, eventType, MarshalBatchChange, id)
+	Enqueue(ctx, logger, db, eventType, marshalBatchChange, id)
 }
 
 func EnqueueChangeset(
 	ctx context.Context, logger log.Logger, db basestore.ShareableStore,
 	eventType string, id graphql.ID,
 ) {
-	Enqueue(ctx, logger, db, eventType, MarshalChangeset, id)
+	Enqueue(ctx, logger, db, eventType, marshalChangeset, id)
 }
