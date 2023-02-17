@@ -117,8 +117,7 @@ func (c *Config) Validate() error {
 		}
 
 		// Make sure disk space is a valid datasize string.
-		_, err := datasize.ParseString(c.FirecrackerDiskSpace)
-		if err != nil {
+		if _, err := datasize.ParseString(c.FirecrackerDiskSpace); err != nil {
 			c.AddError(errors.Wrapf(err, "invalid disk size provided for EXECUTOR_FIRECRACKER_DISK_SPACE: %q", c.FirecrackerDiskSpace))
 		}
 	}
