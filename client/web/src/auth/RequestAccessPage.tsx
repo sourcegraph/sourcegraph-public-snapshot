@@ -20,7 +20,7 @@ import RequestAccessSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 
 interface RequestAccessFormProps {
     onSuccess: () => void
-    onError: (error: any) => void
+    onError: (error?: any) => void
     context: Pick<SourcegraphContext, 'xhrHeaders'>
 }
 
@@ -40,6 +40,7 @@ const RequestAccessForm: React.FunctionComponent<RequestAccessFormProps> = ({ on
             return
         }
         setLoading(true)
+        onError(undefined)
         try {
             const response = await fetch('/-/request-access', {
                 credentials: 'same-origin',

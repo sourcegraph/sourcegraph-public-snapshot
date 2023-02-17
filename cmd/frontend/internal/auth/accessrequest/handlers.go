@@ -93,7 +93,7 @@ func handleRequestAccess(logger log.Logger, db database.DB, w http.ResponseWrite
 			statusCode = http.StatusConflict
 		case database.IsAccessRequestWithEmailExists(err):
 			// TODO: clarify how to handle this error, since this will be shown to unauthenticated user
-			message = "A access request was already created previously."
+			message = "An access request was already created previously."
 			statusCode = http.StatusConflict
 		case errcode.PresentationMessage(err) != "":
 			message = errcode.PresentationMessage(err)
