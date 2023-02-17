@@ -1855,7 +1855,7 @@ changesetTemplate:
 				BatchChange:     batchChange.ID,
 			})
 
-			assert.Equal(t, auth.ErrMustBeSiteAdminOrSameUser, err)
+			assert.Equal(t, auth.ErrMustBeSiteAdminOrSameUser.Error(), err.Error())
 		})
 
 		t.Run("success - without batch change ID", func(t *testing.T) {

@@ -361,7 +361,7 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		result, err := (&Resolver{db: db}).ScheduleUserPermissionsSync(ctx, &graphqlbackend.UserPermissionsSyncArgs{User: graphqlbackend.MarshalUserID(1)})
-		if want := auth.ErrMustBeSiteAdmin; err != want {
+		if want := auth.ErrMustBeSiteAdminOrSameUser; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
 		if result != nil {
