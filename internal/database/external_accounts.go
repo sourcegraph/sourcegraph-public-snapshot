@@ -271,7 +271,7 @@ func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUs
 
 	// We use the BulkAssignSystemRolesToUser method here because in cases where the created
 	// user is also a site admin, we want to assign them both USER and SITE_ADMINISTRATOR roles.
-	if _, err := UserRolesWith(tx).BulkAssignSystemRolesToUser(ctx, BulkAssignSystemRolesToUserOpts{
+	if err := UserRolesWith(tx).BulkAssignSystemRolesToUser(ctx, BulkAssignSystemRolesToUserOpts{
 		UserID: createdUser.ID,
 		Roles:  roles,
 	}); err != nil {

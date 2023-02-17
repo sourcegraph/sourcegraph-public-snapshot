@@ -784,7 +784,7 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 
 		userRoleStore := tx.UserRoles()
 		if isSiteAdmin {
-			_, err := userRoleStore.AssignSystemRole(ctx, AssignSystemRoleOpts{
+			err := userRoleStore.AssignSystemRole(ctx, AssignSystemRoleOpts{
 				UserID: id,
 				Role:   types.SiteAdministratorSystemRole,
 			})

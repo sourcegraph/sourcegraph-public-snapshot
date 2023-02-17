@@ -195,7 +195,7 @@ func dbAddUserAction(cmd *cli.Context) error {
 
 		// tx.Users().SetIsSiteAdmin assigns the `SITE_ADMINISTRATOR` role to the created user, we also need to
 		// assign the `USER` role to the created user.
-		if _, err = tx.UserRoles().AssignSystemRole(ctx, database.AssignSystemRoleOpts{
+		if err = tx.UserRoles().AssignSystemRole(ctx, database.AssignSystemRoleOpts{
 			UserID: user.ID,
 			Role:   types.UserSystemRole,
 		}); err != nil {
