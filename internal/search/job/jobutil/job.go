@@ -191,13 +191,15 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		}
 	}
 
+	var deduplicateOwners bool
 	{ // Apply selectors
 		if v, _ := b.ToParseTree().StringValue(query.FieldSelect); v != "" {
 			sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
 			basicJob = NewSelectJob(sp, basicJob)
 			// the select owners job is ran separately as it requires state and can return multiple owners from one match.
 			if inputs.Features.CodeOwnershipSearch && sp.Root() == filter.File && len(sp) == 2 && sp[1] == "owners" {
-				basicJob = codeownershipjob.NewSelectOwnersSearch(basicJob)
+				basicJob = codeownershipjob.NewSelectOwners(basicJob)
+				deduplicateOwners = true
 			}
 		}
 	}
@@ -206,6 +208,13 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		checker := authz.DefaultSubRepoPermsChecker
 		if authz.SubRepoEnabled(checker) {
 			basicJob = NewFilterJob(basicJob)
+		}
+	}
+
+	{
+		// Owner matches need to be deduplicated separately, because we might first need to check for sub-repo permissions.
+		if deduplicateOwners {
+			basicJob = codeownershipjob.NewDedupJob(basicJob)
 		}
 	}
 
