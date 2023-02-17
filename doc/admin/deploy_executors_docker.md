@@ -24,6 +24,3 @@ Executors deployed via docker-compose do not use [Firecracker](executors.md#how-
 
 If you have security concerns, consider deploying via [terraform](deploy_executors_terraform.md) or [installing the binary](deploy_executors_binary.md) directly.
 
-
-
-
