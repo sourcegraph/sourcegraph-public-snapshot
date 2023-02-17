@@ -16,13 +16,13 @@ If the size is important, you can use the single-insight view page to consistent
 
 ## Performance speed considerations for a data series running over many repositories
 
-To accurately return historical data for insights running over many of your repositories, the backend service must run a large number of Sourcegraph searches. This means that unlike code insights running over just a few repositories, results are not returned instantly, but more often on the scale of 20-120 minutes, depending on:
+To accurately return historical data for insights running over many repositories, the backend service must run a large number of Sourcegraph searches. This means that unlike code insights running over just a few repositories, results are not returned instantly, but more often on the scale of 20-120 minutes, depending on:
 
 * How many and how large the repositories you have connected to your instance
-* The performance and resources of your Sourcegraph code insights instance in queries-per-second;
+* The performance and resources of your Sourcegraph code insights instance in queries-per-second
 * How well we can "compress" repositories so we don't need to run queries for each historic data point (e.g., if a repository hasn't changed in several months)
 
-The number of insights you have does not affect the overall speed at which they run: it will take the same total time to run all of them whether or not you let each one finish before creating the next one. As of version 4.4.0 Insights prioritize completing the backfills for the series that will complete the fastest.  In general this means that insights over many repositories will pause to allow insights over a few repositories to complete. 
+The number of insights you have does not affect the overall speed at which they run: it will take the same total time to run all of them whether or not you let each one finish before creating the next one. As of version 4.4.0 Insights prioritize completing the backfills for the insights that will complete the fastest.  In general this means that insights over many repositories will pause to allow insights over a few repositories to complete. 
 
 
 ## Creating insights over very large repositories (<3.42)
@@ -47,16 +47,14 @@ In this case, you may want to try:
 
 ## General scale limitations 
 
-Note: We are working on improvements for the items below in FY23Q4.
-
 Code Insights is disabled by default on single-docker deployment methods.
 
 There are a few factors to consider with respect to scale and expected performance.
 
-1. General permissiveness - instances that are more open (users can see most repos) will perform better than instances that are more restricted. It is possible to have enough restricted repositories that users cannot render Code Insights.
-2. Number of repositories - Code Insights is well tested to ~35,000 repositories. Users should expect at least linear degradation as repository count grows in both time to calcluate insights, and render performance.
-3. Large monorepos - Code Insights allocates a fixed amount of time for each query, so large repositories that cause query timeouts will likely not have exhaustive (and therefore accurate) results. Until we add more visibility to this state, a heuristic indicator for if this is a problem is seeing values "jump" (either a significant increase or decrease) between the backfilled datapoints on creation and the up-to-date datatpoints added after creation. 
-4. High cardinaltiy capture groups - When using a capture group insight, high cardinality matches (for example 1000 distinct matches per repository) will cause significant increase in loading times of charts. It is possible to exceed request timeouts if there are too many distinct matches.
+1. General permissiveness - instances that are more open (users can see most repos) will perform better than instances that are more restricted. Insights have been tested with up to 100k restricted repositories.
+2. Number of repositories - Code Insights is well tested with insights running over ~35,000 repositories. It is recommended that users should scope their insights to the smallest set of repositories needed.  Users should expect at least linear degradation as repository count grows in both time to calculate insights, and render performance.
+3. Large monorepos - Code Insights allocates a fixed amount of time for each query, so large repositories that cause query timeouts will likely not have exhaustive (and therefore accurate) results. As of version 4.4.0 we added visibility to this state via an icon on the insight. Prior to the 4.4.0 version a heuristic indicator for if this is a problem is seeing values "jump" (either a significant increase or decrease) between the backfilled datapoints on creation and the up-to-date datatpoints added after creation. 
+4. High cardinality capture groups - When using a capture group insight, high cardinality matches (for example 1000 distinct matches per repository) will cause significant increase in loading times of charts. It is possible to exceed request timeouts if there are too many distinct matches.
 5. Concurrent usage
   1. If there are many insight creators the insights will take longer to calculate.
   2. If there are more insight viewers loading times of charts may be impacted.
