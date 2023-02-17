@@ -28,15 +28,14 @@ const (
 )
 
 func Init(logger log.Logger, db database.DB) {
-	const pkgName = "azuredoauth"
+	const pkgName = "azureoauth"
 	logger = logger.Scoped(pkgName, "Azure DevOps OAuth config watch")
 	conf.ContributeValidator(func(cfg conftypes.SiteConfigQuerier) conf.Problems {
 		_, problems := parseConfig(logger, cfg, db)
 		return problems
 	})
 
-	go func() {
-		conf.Watch(func() {
+	go conf.Watch(func() {
 			newProviders, _ := parseConfig(logger, conf.Get(), db)
 			if len(newProviders) == 0 {
 				providers.Update(pkgName, nil)
@@ -55,7 +54,6 @@ func Init(logger log.Logger, db database.DB) {
 			}
 			providers.Update(pkgName, newProvidersList)
 		})
-	}()
 }
 
 type Provider struct {

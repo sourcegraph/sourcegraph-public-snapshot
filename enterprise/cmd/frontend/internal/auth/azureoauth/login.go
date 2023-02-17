@@ -21,8 +21,8 @@ func loginHandler(c oauth2.Config) http.Handler {
 func azureDevOpsHandler(logger log.Logger, config *oauth2.Config, success, failure http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
-		token, err := oauth2Login.TokenFromContext(ctx)
 
+		token, err := oauth2Login.TokenFromContext(ctx)
 		if err != nil {
 			ctx = gologin.WithError(ctx, err)
 			failure.ServeHTTP(w, req.WithContext(ctx))
@@ -58,7 +58,7 @@ func azureDevOpsHandler(logger log.Logger, config *oauth2.Config, success, failu
 
 			ctx = gologin.WithError(
 				ctx,
-				errors.Errorf(fmt.Sprintf("%s: %#v", msg, profile)),
+				errors.Errorf("%s: %#v", msg, profile),
 			)
 
 			failure.ServeHTTP(w, req.WithContext(ctx))

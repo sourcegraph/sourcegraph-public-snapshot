@@ -82,7 +82,7 @@ func Init(logger log.Logger, db database.DB) {
 			case p.Bitbucketcloud != nil:
 				name = "Bitbucket Cloud OAuth"
 			case p.AzureDevOps != nil:
-				name = "Azure Dev Ops"
+				name = "Azure DevOps"
 			case p.HttpHeader != nil:
 				name = "HTTP header"
 			case p.Openidconnect != nil:
