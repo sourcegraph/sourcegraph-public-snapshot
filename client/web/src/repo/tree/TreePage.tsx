@@ -1,6 +1,15 @@
-import React, { useMemo, useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
-import { mdiBrain, mdiCog, mdiFolder, mdiHistory, mdiSourceBranch, mdiSourceRepository, mdiTag } from '@mdi/js'
+import {
+    mdiBrain,
+    mdiCog,
+    mdiFolder,
+    mdiHistory,
+    mdiSourceBranch,
+    mdiSourceFork,
+    mdiSourceRepository,
+    mdiTag,
+} from '@mdi/js'
 import classNames from 'classnames'
 import { Navigate, useLocation } from 'react-router-dom-v5-compat'
 import { catchError } from 'rxjs/operators'
@@ -16,19 +25,20 @@ import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { toURIWithPath, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
+import { toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
 import {
-    Container,
-    PageHeader,
-    LoadingSpinner,
-    useObservable,
-    Link,
-    Icon,
-    ButtonGroup,
+    Badge,
     Button,
-    Text,
+    ButtonGroup,
+    Container,
     ErrorAlert,
+    Icon,
+    Link,
+    LoadingSpinner,
+    PageHeader,
+    Text,
     Tooltip,
+    useObservable,
 } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
@@ -188,15 +198,23 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
 
     const [showPageTitle] = useState(true)
 
+    // TODO: Implement an API to fetch this information.
+    const isFork = false
+
     const RootHeaderSection = (): React.ReactElement => (
         <>
             <div className="d-flex flex-wrap justify-content-between px-0">
                 <div className={styles.header}>
                     <PageHeader className="mb-3 test-tree-page-title">
                         <PageHeader.Heading as="h2" styleAs="h1">
-                            <PageHeader.Breadcrumb icon={mdiSourceRepository}>
+                            <PageHeader.Breadcrumb icon={isFork ? mdiSourceFork : mdiSourceRepository}>
                                 {displayRepoName(repo?.name || '')}
                             </PageHeader.Breadcrumb>
+                            {isFork && (
+                                <Badge variant="outlineSecondary" className="mr-2 mt-2">
+                                    Fork
+                                </Badge>
+                            )}
                         </PageHeader.Heading>
                     </PageHeader>
                     {repo?.description && <Text>{repo.description}</Text>}
