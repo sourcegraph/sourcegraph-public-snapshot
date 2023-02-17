@@ -327,26 +327,34 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                                           </Label>
 
                                           <div className="text-right">
-                                              <Button
-                                                  className="mr-2"
-                                                  variant="secondary"
-                                                  disabled={selection !== 'all' && selection.size === 0}
-                                                  // eslint-disable-next-line @typescript-eslint/no-misused-promises
-                                                  onClick={onReindex}
+                                              <Tooltip
+                                                  content={`Allow Sourcegraph to re-index ${
+                                                      selection === 'all' || selection.size > 1
+                                                          ? 'these commits'
+                                                          : 'this commit'
+                                                  } in the future and replace this data.`}
                                               >
-                                                  <Icon aria-hidden={true} svgPath={mdiRedo} /> Mark{' '}
-                                                  {(selection === 'all' ? totalCount : selection.size) === 0 ? (
-                                                      ''
-                                                  ) : (
-                                                      <>
-                                                          {selection === 'all' ? totalCount : selection.size}{' '}
-                                                          {(selection === 'all' ? totalCount : selection.size) === 1
-                                                              ? 'index'
-                                                              : 'indexes'}
-                                                      </>
-                                                  )}{' '}
-                                                  as replaceable by auto-indexing
-                                              </Button>
+                                                  <Button
+                                                      className="mr-2"
+                                                      variant="secondary"
+                                                      disabled={selection !== 'all' && selection.size === 0}
+                                                      // eslint-disable-next-line @typescript-eslint/no-misused-promises
+                                                      onClick={onReindex}
+                                                  >
+                                                      <Icon aria-hidden={true} svgPath={mdiRedo} /> Mark{' '}
+                                                      {(selection === 'all' ? totalCount : selection.size) === 0 ? (
+                                                          ''
+                                                      ) : (
+                                                          <>
+                                                              {selection === 'all' ? totalCount : selection.size}{' '}
+                                                              {(selection === 'all' ? totalCount : selection.size) === 1
+                                                                  ? 'index'
+                                                                  : 'indexes'}
+                                                          </>
+                                                      )}{' '}
+                                                      as replaceable by auto-indexing
+                                                  </Button>
+                                              </Tooltip>
                                               <Button
                                                   className="mr-2"
                                                   variant="danger"
