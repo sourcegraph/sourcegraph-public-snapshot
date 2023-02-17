@@ -1141,7 +1141,7 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 		}
 
 		if s.isDisabled() || permssync.PermissionSyncWorkerEnabled(ctx, s.db, logger) {
-			logger.Debug("old scheduler disabled due to either permission syncing disabled or new schduler enabled")
+			logger.Debug("old scheduler disabled due to either permission syncing disabled or new scheduler enabled")
 			continue
 		}
 
