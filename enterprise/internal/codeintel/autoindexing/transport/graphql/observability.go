@@ -22,9 +22,6 @@ type operations struct {
 	indexConfiguration            *observation.Operation
 	updateIndexConfiguration      *observation.Operation
 
-	// Index Configuration
-	inferedIndexConfiguration *observation.Operation
-
 	// Language Support
 	requestLanguageSupport    *observation.Operation
 	requestedLanguageSupport  *observation.Operation
