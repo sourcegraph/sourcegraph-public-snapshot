@@ -528,9 +528,11 @@ func fromOwner(owner *result.OwnerMatch) streamhttp.EventMatch {
 			Email:  v.Email,
 		}
 		if v.User != nil {
-			person.Username = v.User.Username
-			person.DisplayName = v.User.DisplayName
-			person.AvatarURL = v.User.AvatarURL
+			person.User = streamhttp.UserMetadata{
+				Username:    v.User.Username,
+				DisplayName: v.User.DisplayName,
+				AvatarURL:   v.User.AvatarURL,
+			}
 		}
 		return person
 	case *codeowners.Team:

@@ -174,8 +174,11 @@ type EventPersonMatch struct {
 	Handle string `json:"handle"`
 	Email  string `json:"email"`
 
-	// The following are a subset of types.User fields.
-	// These will not be set if no user was matched.
+	// User will not be set if no user was matched.
+	User UserMetadata `json:"user,omitempty"`
+}
+
+type UserMetadata struct {
 	Username    string `json:"username"`
 	DisplayName string `json:"displayName"`
 	AvatarURL   string `json:"avatarURL"`
