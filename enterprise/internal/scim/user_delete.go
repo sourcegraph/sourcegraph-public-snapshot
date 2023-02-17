@@ -44,11 +44,7 @@ func (h *UserResourceHandler) Delete(r *http.Request, id string) error {
 		// NOTE: Practically, we don't reuse the ID for any new users, and the situation of left-over pending permissions
 		// is possible but highly unlikely. Therefore, there is no need to roll back user deletion even if this step failed.
 		// This call is purely for the purpose of cleanup.
-		if err := tx.Authz().RevokeUserPermissionsList(r.Context(), []*database.RevokeUserPermissionsArgs{revokeUserPermissionsArgsList}); err != nil {
-			return err
-		}
-
-		return nil
+		return tx.Authz().RevokeUserPermissionsList(r.Context(), []*database.RevokeUserPermissionsArgs{revokeUserPermissionsArgsList})
 	})
 	if err != nil {
 		return errors.Wrap(err, "delete user")
