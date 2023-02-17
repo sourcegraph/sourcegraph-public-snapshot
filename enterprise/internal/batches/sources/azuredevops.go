@@ -14,6 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -159,23 +161,24 @@ func (s AzureDevOpsSource) UpdateChangeset(ctx context.Context, cs *Changeset) e
 	return s.setChangesetMetadata(ctx, repo, &updated, cs)
 }
 
-// TODO: @varsanojidan Look at this
 // ReopenChangeset will reopen the Changeset on the source, if it's closed.
 // If not, it's a noop.
 func (s AzureDevOpsSource) ReopenChangeset(ctx context.Context, cs *Changeset) error {
-	// Azure DevOps is a bit special, and can't reopen a declined PR under
-	// any circumstances. (See https://jira.atlassian.com/browse/BCLOUD-4954 for
-	// more details.)
-	//
-	// It will, however, allow a pull request to be recreated. So we're going to
-	// do something a bit different to the other external services, and just
-	// recreate the changeset wholesale.
-	//
-	// If the PR hasn't been declined, this will also work fine: Azure DevOps will
-	// return the same PR in that case when we try to create it, so this is
-	// still (effectively) a no-op, as required by the interface.
-	_, err := s.CreateChangeset(ctx, cs)
-	return err
+	input := azuredevops.PullRequestUpdateInput{
+		Status: &azuredevops.PullRequestStatusActive,
+	}
+	repo := cs.TargetRepo.Metadata.(*azuredevops.Repository)
+	args, err := s.createCommonPullRequestArgs(*repo, *cs)
+	if err != nil {
+		return err
+	}
+
+	updated, err := s.client.UpdatePullRequest(ctx, args, input)
+	if err != nil {
+		return errors.Wrap(err, "updating pull request")
+	}
+
+	return s.setChangesetMetadata(ctx, repo, &updated, cs)
 }
 
 // CreateComment posts a comment on the Changeset.
@@ -231,22 +234,20 @@ func (s AzureDevOpsSource) MergeChangeset(ctx context.Context, cs *Changeset, sq
 }
 
 // GetFork returns a repo pointing to a fork of the target repo, ensuring that the fork
-// exists and creating it if it doesn't. If namespace is not provided, an error is thrown.
+// exists and creating it if it doesn't. If namespace is not provided, the original namespace is used.
 // If name is not provided, the fork will be named with the default Sourcegraph convention:
 // "${original-namespace}-${original-name}"
 func (s AzureDevOpsSource) GetFork(ctx context.Context, targetRepo *types.Repo, ns, n *string) (*types.Repo, error) {
-	var namespace string
-	if ns == nil {
-		return nil, errors.New("namespace must be provided")
-	}
-	namespace = *ns
-
 	tr := targetRepo.Metadata.(*azuredevops.Repository)
 
-	targetNamespace, err := tr.GetNamespace()
-	if err != nil {
-		return nil, errors.Wrap(err, "getting target repo namespace")
+	var namespace string
+	if ns == nil {
+		namespace = tr.Namespace()
+	} else {
+		namespace = *ns
 	}
+
+	targetNamespace := tr.Namespace()
 
 	var name string
 	if n != nil {
@@ -255,15 +256,15 @@ func (s AzureDevOpsSource) GetFork(ctx context.Context, targetRepo *types.Repo, 
 		name = DefaultForkName(targetNamespace, tr.Name)
 	}
 
-	org, project, found := strings.Cut(namespace, "/")
-	if !found {
-		return nil, errors.Errorf("invalid namespace, must be in the form of org/project: %s", namespace)
+	org, err := tr.GetOrganization()
+	if err != nil {
+		return nil, err
 	}
 
 	// Figure out if we already have a fork of the repo in the given namespace.
 	if fork, err := s.client.GetRepo(ctx, azuredevops.OrgProjectRepoArgs{
 		Org:          org,
-		Project:      project,
+		Project:      namespace,
 		RepoNameOrID: name,
 	}); err == nil {
 		return s.checkAndCopy(targetRepo, &fork)
@@ -271,15 +272,25 @@ func (s AzureDevOpsSource) GetFork(ctx context.Context, targetRepo *types.Repo, 
 		return nil, errors.Wrap(err, "checking for fork existence")
 	}
 
+	pFork := tr.Project
+
+	// If the fork is in a different namespace(project), we need to get that so we can get the ID.
+	if namespace != tr.Namespace() {
+		pFork, err = s.client.GetProject(ctx, org, namespace)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	fork, err := s.client.ForkRepository(ctx, org, azuredevops.ForkRepositoryInput{
 		Name: name,
 		Project: azuredevops.ForkRepositoryInputProject{
-			ID: tr.Project.ID,
+			ID: pFork.ID,
 		},
 		ParentRepository: azuredevops.ForkRepositoryInputParentRepository{
-			ID: targetMeta.ID,
+			ID: tr.ID,
 			Project: azuredevops.ForkRepositoryInputProject{
-				ID: targetMeta.Project.ID,
+				ID: tr.Project.ID,
 			},
 		},
 	})
@@ -300,15 +311,9 @@ func (s AzureDevOpsSource) checkAndCopy(targetRepo *types.Repo, fork *azuredevop
 
 	// Now we make a copy of targetRepo, but with its sources and metadata updated to
 	// point to the fork
-	originalNamespace, err := tr.GetNamespace()
-	if err != nil {
-		return nil, err
-	}
+	originalNamespace := tr.Namespace()
 
-	forkNamespace, err := fork.GetNamespace()
-	if err != nil {
-		return nil, err
-	}
+	forkNamespace := fork.Namespace()
 
 	// Now we make a copy of the target repo, but with its sources and metadata updated to
 	// point to the fork
@@ -326,9 +331,10 @@ func (s AzureDevOpsSource) annotatePullRequest(ctx context.Context, repo *azured
 		return nil, err
 	}
 	srs, err := s.client.GetPullRequestStatuses(ctx, azuredevops.PullRequestCommonArgs{
-		Org:          org,
-		Project:      repo.Project.Name,
-		RepoNameOrID: repo.Name,
+		PullRequestID: strconv.Itoa(pr.ID),
+		Org:           org,
+		Project:       repo.Project.Name,
+		RepoNameOrID:  repo.Name,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "getting pull request statuses")
@@ -423,22 +429,25 @@ func copyAzureDevOpsRepoAsFork(repo *types.Repo, fork *azuredevops.Repository, o
 
 	for urn, src := range repo.Sources {
 		if src != nil || src.CloneURL != "" {
-			forkURL := strings.Replace(
-				strings.ToLower(src.CloneURL),
-				strings.ToLower(originalNamespace),
-				strings.ToLower(forkNamespace),
-				1,
-			)
-			lastSlash := strings.LastIndex(forkURL, "/")
-			if lastSlash <= 0 {
-				return nil, errors.New("repo has malformed clone url")
+			forkURL, err := url.Parse(src.CloneURL)
+			if err != nil {
+				return nil, err
 			}
 
-			forkURL = forkURL[:lastSlash+1] + forkName
+			// Will look like: /org/project/_git/repo, project is our namespace.
+			forkURLPathSplit := strings.SplitN(forkURL.Path, "/", 5)
+			if len(forkURLPathSplit) < 5 {
+				return nil, errors.Errorf("repo has malformed clone url: %s", src.CloneURL)
+			}
+			forkURLPathSplit[2] = forkNamespace
+			forkURLPathSplit[4] = forkName
+
+			forkPath := strings.Join(forkURLPathSplit, "/")
+			forkURL.Path = forkPath
 
 			forkSources[urn] = &types.SourceInfo{
 				ID:       src.ID,
-				CloneURL: forkURL,
+				CloneURL: forkURL.String(),
 			}
 		}
 	}

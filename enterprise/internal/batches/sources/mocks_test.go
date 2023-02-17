@@ -5707,6 +5707,9 @@ type MockAzureDevOpsClient struct {
 	// ForkRepositoryFunc is an instance of a mock function object
 	// controlling the behavior of the method ForkRepository.
 	ForkRepositoryFunc *AzureDevOpsClientForkRepositoryFunc
+	// GetProjectFunc is an instance of a mock function object controlling
+	// the behavior of the method GetProject.
+	GetProjectFunc *AzureDevOpsClientGetProjectFunc
 	// GetPullRequestFunc is an instance of a mock function object
 	// controlling the behavior of the method GetPullRequest.
 	GetPullRequestFunc *AzureDevOpsClientGetPullRequestFunc
@@ -5773,6 +5776,11 @@ func NewMockAzureDevOpsClient() *MockAzureDevOpsClient {
 		},
 		ForkRepositoryFunc: &AzureDevOpsClientForkRepositoryFunc{
 			defaultHook: func(context.Context, string, azuredevops.ForkRepositoryInput) (r0 azuredevops.Repository, r1 error) {
+				return
+			},
+		},
+		GetProjectFunc: &AzureDevOpsClientGetProjectFunc{
+			defaultHook: func(context.Context, string, string) (r0 azuredevops.Project, r1 error) {
 				return
 			},
 		},
@@ -5863,6 +5871,11 @@ func NewStrictMockAzureDevOpsClient() *MockAzureDevOpsClient {
 				panic("unexpected invocation of MockAzureDevOpsClient.ForkRepository")
 			},
 		},
+		GetProjectFunc: &AzureDevOpsClientGetProjectFunc{
+			defaultHook: func(context.Context, string, string) (azuredevops.Project, error) {
+				panic("unexpected invocation of MockAzureDevOpsClient.GetProject")
+			},
+		},
 		GetPullRequestFunc: &AzureDevOpsClientGetPullRequestFunc{
 			defaultHook: func(context.Context, azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
 				panic("unexpected invocation of MockAzureDevOpsClient.GetPullRequest")
@@ -5936,6 +5949,9 @@ func NewMockAzureDevOpsClientFrom(i azuredevops.Client) *MockAzureDevOpsClient {
 		},
 		ForkRepositoryFunc: &AzureDevOpsClientForkRepositoryFunc{
 			defaultHook: i.ForkRepository,
+		},
+		GetProjectFunc: &AzureDevOpsClientGetProjectFunc{
+			defaultHook: i.GetProject,
 		},
 		GetPullRequestFunc: &AzureDevOpsClientGetPullRequestFunc{
 			defaultHook: i.GetPullRequest,
@@ -6743,6 +6759,118 @@ func (c AzureDevOpsClientForkRepositoryFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c AzureDevOpsClientForkRepositoryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// AzureDevOpsClientGetProjectFunc describes the behavior when the
+// GetProject method of the parent MockAzureDevOpsClient instance is
+// invoked.
+type AzureDevOpsClientGetProjectFunc struct {
+	defaultHook func(context.Context, string, string) (azuredevops.Project, error)
+	hooks       []func(context.Context, string, string) (azuredevops.Project, error)
+	history     []AzureDevOpsClientGetProjectFuncCall
+	mutex       sync.Mutex
+}
+
+// GetProject delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockAzureDevOpsClient) GetProject(v0 context.Context, v1 string, v2 string) (azuredevops.Project, error) {
+	r0, r1 := m.GetProjectFunc.nextHook()(v0, v1, v2)
+	m.GetProjectFunc.appendCall(AzureDevOpsClientGetProjectFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetProject method of
+// the parent MockAzureDevOpsClient instance is invoked and the hook queue
+// is empty.
+func (f *AzureDevOpsClientGetProjectFunc) SetDefaultHook(hook func(context.Context, string, string) (azuredevops.Project, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetProject method of the parent MockAzureDevOpsClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *AzureDevOpsClientGetProjectFunc) PushHook(hook func(context.Context, string, string) (azuredevops.Project, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AzureDevOpsClientGetProjectFunc) SetDefaultReturn(r0 azuredevops.Project, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, string) (azuredevops.Project, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AzureDevOpsClientGetProjectFunc) PushReturn(r0 azuredevops.Project, r1 error) {
+	f.PushHook(func(context.Context, string, string) (azuredevops.Project, error) {
+		return r0, r1
+	})
+}
+
+func (f *AzureDevOpsClientGetProjectFunc) nextHook() func(context.Context, string, string) (azuredevops.Project, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AzureDevOpsClientGetProjectFunc) appendCall(r0 AzureDevOpsClientGetProjectFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of AzureDevOpsClientGetProjectFuncCall objects
+// describing the invocations of this function.
+func (f *AzureDevOpsClientGetProjectFunc) History() []AzureDevOpsClientGetProjectFuncCall {
+	f.mutex.Lock()
+	history := make([]AzureDevOpsClientGetProjectFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AzureDevOpsClientGetProjectFuncCall is an object that describes an
+// invocation of method GetProject on an instance of MockAzureDevOpsClient.
+type AzureDevOpsClientGetProjectFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 azuredevops.Project
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AzureDevOpsClientGetProjectFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AzureDevOpsClientGetProjectFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

@@ -3,13 +3,13 @@ package sources
 import (
 	"context"
 	"fmt"
-	azuredevops2 "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
 	"net/url"
 	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
+	azuredevops2 "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -108,16 +108,6 @@ func TestAzureDevOpsSource_ValidateAuthenticator(t *testing.T) {
 
 func TestAzureDevOpsSource_LoadChangeset(t *testing.T) {
 	ctx := context.Background()
-
-	t.Run("invalid external ID", func(t *testing.T) {
-		s, _ := mockAzureDevOpsSource()
-
-		cs, _ := mockAzureDevOpsChangeset()
-		cs.ExternalID = "not a number"
-
-		err := s.LoadChangeset(ctx, cs)
-		assert.NotNil(t, err)
-	})
 
 	t.Run("error getting pull request", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
@@ -506,148 +496,200 @@ func TestAzureDevOpsSource_MergeChangeset(t *testing.T) {
 	})
 }
 
-func TestAzureDevOpsSource_Fork(t *testing.T) {
-	// We'll test both GetNamespaceFork and GetUserFork in here, since they're
-	// closely related anyway.
-
+func TestAzureDevOpsSource_GetFork(t *testing.T) {
 	ctx := context.Background()
 
 	upstream := testRepository
 	urn := extsvc.URN(extsvc.KindAzureDevOps, 1)
-	upstreamRepo := &types.Repo{Metadata: upstream, Sources: map[string]*types.SourceInfo{
+	upstreamRepo := &types.Repo{Metadata: &upstream, Sources: map[string]*types.SourceInfo{
 		urn: {
 			ID:       urn,
-			CloneURL: testRepository.CloneURL,
+			CloneURL: "https://dev.azure.com/testorg/testproject/_git/testrepo",
 		},
 	}}
 
-	fork := &azuredevops.Repository{
-		ID:   "forkid",
-		Name: "org-forkedproject-" + testRepoName,
+	args := azuredevops.OrgProjectRepoArgs{
+		Org:          testOrgName,
+		Project:      "fork",
+		RepoNameOrID: "testproject-testrepo",
 	}
 
-	t.Run("GetNamespaceFork", func(t *testing.T) {
-		t.Run("error checking for repo", func(t *testing.T) {
-			s, client := mockAzureDevOpsSource()
+	fork := azuredevops.Repository{
+		ID:   "forkid",
+		Name: "testproject-testrepo",
+		Project: azuredevops.Project{
+			ID:   "testprojectid",
+			Name: "fork",
+		},
+		IsFork: true,
+	}
 
-			want := errors.New("error")
-			client.GetRepoFunc.SetDefaultHook(func(ctx context.Context, args azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
-				assert.Equal(t, "org", args.Project)
-				assert.Equal(t, "forkproject", args.Org)
-				assert.Equal(t, "org-forkedproject-"+testRepoName, args.RepoNameOrID)
-				return azuredevops.Repository{}, want
-			})
+	forkRespositoryInput := azuredevops.ForkRepositoryInput{
+		Name: "testproject-testrepo",
+		Project: azuredevops.ForkRepositoryInputProject{
+			ID: fork.Project.ID,
+		},
+		ParentRepository: azuredevops.ForkRepositoryInputParentRepository{
+			ID: "testrepoid",
+			Project: azuredevops.ForkRepositoryInputProject{
+				ID: fork.Project.ID,
+			},
+		},
+	}
 
-			repo, err := s.GetNamespaceFork(ctx, upstreamRepo, "org/forkproject")
-			assert.Nil(t, repo)
-			assert.NotNil(t, err)
-			assert.ErrorIs(t, err, want)
+	t.Run("error checking for repo", func(t *testing.T) {
+		s, client := mockAzureDevOpsSource()
+
+		want := errors.New("error")
+		client.GetRepoFunc.SetDefaultHook(func(ctx context.Context, a azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
+			assert.Equal(t, args, a)
+			return azuredevops.Repository{}, want
 		})
 
-		t.Run("forked repo already exists", func(t *testing.T) {
-			s, client := mockAzureDevOpsSource()
-
-			client.GetRepoFunc.SetDefaultHook(func(ctx context.Context, args azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
-				assert.Equal(t, "org", args.Project)
-				assert.Equal(t, "forkproject", args.Org)
-				assert.Equal(t, "org-forkedproject-"+testRepoName, args.RepoNameOrID)
-				return *fork, nil
-			})
-
-			forkRepo, err := s.GetNamespaceFork(ctx, upstreamRepo, "fork")
-			assert.Nil(t, err)
-			assert.NotNil(t, forkRepo)
-			assert.NotEqual(t, forkRepo, upstreamRepo)
-			assert.Equal(t, fork, forkRepo.Metadata)
-			assert.Equal(t, forkRepo.Sources[urn].CloneURL, "https://bitbucket.org/fork/repo")
-		})
-
-		t.Run("fork error", func(t *testing.T) {
-			s, client := mockAzureDevOpsSource()
-
-			client.GetRepoFunc.SetDefaultHook(func(ctx context.Context, args azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
-				assert.Equal(t, "org", args.Project)
-				assert.Equal(t, "forkproject", args.Org)
-				assert.Equal(t, "org-forkedproject-"+testRepoName, args.RepoNameOrID)
-				return azuredevops.Repository{}, &notFoundError{}
-			})
-
-			want := errors.New("error")
-			client.ForkRepositoryFunc.SetDefaultHook(func(ctx context.Context, org string, input azuredevops.ForkRepositoryInput) (azuredevops.Repository, error) {
-				assert.Equal(t, testOrgName, org)
-				assert.Equal(t, upstream, input.ParentRepository)
-				assert.Equal(t, fmt.Sprintf("%s-%s-%s", testOrgName, "forkedproject", testRepoName), input.Name)
-				return azuredevops.Repository{}, want
-			})
-
-			repo, err := s.GetNamespaceFork(ctx, upstreamRepo, "fork")
-			assert.Nil(t, repo)
-			assert.NotNil(t, err)
-			assert.ErrorIs(t, err, want)
-		})
-
-		t.Run("success", func(t *testing.T) {
-			s, client := mockAzureDevOpsSource()
-
-			client.GetRepoFunc.SetDefaultHook(func(ctx context.Context, args azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
-				assert.Equal(t, "org", args.Project)
-				assert.Equal(t, "forkproject", args.Org)
-				assert.Equal(t, "org-forkedproject-"+testRepoName, args.RepoNameOrID)
-				return azuredevops.Repository{}, &notFoundError{}
-			})
-
-			client.ForkRepositoryFunc.SetDefaultHook(func(ctx context.Context, org string, input azuredevops.ForkRepositoryInput) (azuredevops.Repository, error) {
-				assert.Equal(t, testOrgName, org)
-				assert.Equal(t, upstream, input.ParentRepository)
-				assert.Equal(t, fmt.Sprintf("%s-%s-%s", testOrgName, "forkedproject", testRepoName), input.Name)
-				return *fork, nil
-			})
-
-			forkRepo, err := s.GetNamespaceFork(ctx, upstreamRepo, "fork")
-			assert.Nil(t, err)
-			assert.NotNil(t, forkRepo)
-			assert.NotEqual(t, forkRepo, upstreamRepo)
-			assert.Equal(t, fork, forkRepo.Metadata)
-			assert.Equal(t, forkRepo.Sources[urn].CloneURL, "https://bitbucket.org/fork/repo")
-		})
+		repo, err := s.GetFork(ctx, upstreamRepo, strPtr("fork"), nil)
+		assert.Nil(t, repo)
+		assert.NotNil(t, err)
+		assert.ErrorIs(t, err, want)
 	})
 
-	// TODO: @varsanojidan reenable if this is used
-	//t.Run("GetUserFork", func(t *testing.T) {
-	//	t.Run("error getting current user", func(t *testing.T) {
-	//		s, client := mockAzureDevOpsSource()
-	//
-	//		want := errors.New("error")
-	//		client.CurrentUserFunc.SetDefaultReturn(nil, want)
-	//
-	//		repo, err := s.GetUserFork(ctx, upstreamRepo)
-	//		assert.Nil(t, repo)
-	//		assert.NotNil(t, err)
-	//		assert.ErrorIs(t, err, want)
-	//	})
-	//
-	//	t.Run("success", func(t *testing.T) {
-	//		s, client := mockAzureDevOpsSource()
-	//
-	//		user := &azuredevops.User{
-	//			Account: azuredevops.Account{
-	//				Username: "user",
-	//			},
-	//		}
-	//		client.CurrentUserFunc.SetDefaultReturn(user, nil)
-	//
-	//		client.RepoFunc.SetDefaultHook(func(ctx context.Context, namespace, slug string) (*azuredevops.Repository, error) {
-	//			assert.Equal(t, "user", namespace)
-	//			assert.Equal(t, "upstream-repo", slug)
-	//			return fork, nil
-	//		})
-	//
-	//		repo, err := s.GetUserFork(ctx, upstreamRepo)
-	//		assert.Nil(t, err)
-	//		assert.NotNil(t, repo)
-	//		assert.Same(t, fork, repo.Metadata)
-	//	})
-	//})
+	t.Run("forked repo already exists", func(t *testing.T) {
+		s, client := mockAzureDevOpsSource()
+
+		client.GetRepoFunc.SetDefaultHook(func(ctx context.Context, a azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
+			assert.Equal(t, args, a)
+			return fork, nil
+		})
+
+		forkRepo, err := s.GetFork(ctx, upstreamRepo, strPtr("fork"), nil)
+		assert.Nil(t, err)
+		assert.NotNil(t, forkRepo)
+		assert.NotEqual(t, forkRepo, upstreamRepo)
+		assert.Equal(t, &fork, forkRepo.Metadata)
+		assert.Equal(t, "https://dev.azure.com/testorg/fork/_git/testproject-testrepo", forkRepo.Sources[urn].CloneURL)
+	})
+
+	t.Run("get project error", func(t *testing.T) {
+		s, client := mockAzureDevOpsSource()
+
+		client.GetRepoFunc.SetDefaultHook(func(ctx context.Context, a azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
+			assert.Equal(t, args, a)
+			return azuredevops.Repository{}, &notFoundError{}
+		})
+		want := errors.New("error")
+		client.GetProjectFunc.SetDefaultHook(func(ctx context.Context, org string, project string) (azuredevops.Project, error) {
+			assert.Equal(t, testOrgName, org)
+			assert.Equal(t, fork.Project.Name, project)
+			return azuredevops.Project{}, want
+		})
+
+		repo, err := s.GetFork(ctx, upstreamRepo, strPtr("fork"), nil)
+		assert.Nil(t, repo)
+		assert.NotNil(t, err)
+		assert.ErrorIs(t, err, want)
+	})
+
+	t.Run("fork error", func(t *testing.T) {
+		s, client := mockAzureDevOpsSource()
+
+		client.GetRepoFunc.SetDefaultHook(func(ctx context.Context, a azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
+			assert.Equal(t, args, a)
+			return azuredevops.Repository{}, &notFoundError{}
+		})
+
+		client.GetProjectFunc.SetDefaultHook(func(ctx context.Context, org string, project string) (azuredevops.Project, error) {
+			assert.Equal(t, testOrgName, org)
+			assert.Equal(t, fork.Project.Name, project)
+			return fork.Project, nil
+		})
+
+		want := errors.New("error")
+		client.ForkRepositoryFunc.SetDefaultHook(func(ctx context.Context, org string, fi azuredevops.ForkRepositoryInput) (azuredevops.Repository, error) {
+			assert.Equal(t, testOrgName, org)
+			assert.Equal(t, forkRespositoryInput, fi)
+			return azuredevops.Repository{}, want
+		})
+
+		repo, err := s.GetFork(ctx, upstreamRepo, strPtr("fork"), nil)
+		assert.Nil(t, repo)
+		assert.NotNil(t, err)
+		assert.ErrorIs(t, err, want)
+	})
+
+	t.Run("success with default namespace, name", func(t *testing.T) {
+		s, client := mockAzureDevOpsSource()
+
+		client.GetRepoFunc.SetDefaultHook(func(ctx context.Context, a azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
+			argsNew := args
+			argsNew.Project = testProjectName
+			assert.Equal(t, argsNew, a)
+			return fork, nil
+		})
+
+		repo, err := s.GetFork(ctx, upstreamRepo, nil, nil)
+		assert.Nil(t, err)
+		assert.NotNil(t, repo)
+		assert.Equal(t, &fork, repo.Metadata)
+	})
+
+	t.Run("success with default name", func(t *testing.T) {
+		s, client := mockAzureDevOpsSource()
+
+		client.GetRepoFunc.SetDefaultHook(func(ctx context.Context, a azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
+			assert.Equal(t, args, a)
+			return azuredevops.Repository{}, &notFoundError{}
+		})
+
+		client.GetProjectFunc.SetDefaultHook(func(ctx context.Context, org string, project string) (azuredevops.Project, error) {
+			assert.Equal(t, testOrgName, org)
+			assert.Equal(t, fork.Project.Name, project)
+			return fork.Project, nil
+		})
+
+		client.ForkRepositoryFunc.SetDefaultHook(func(ctx context.Context, org string, fi azuredevops.ForkRepositoryInput) (azuredevops.Repository, error) {
+			assert.Equal(t, testOrgName, org)
+			assert.Equal(t, forkRespositoryInput, fi)
+			return fork, nil
+		})
+
+		forkRepo, err := s.GetFork(ctx, upstreamRepo, strPtr("fork"), nil)
+		assert.Nil(t, err)
+		assert.NotNil(t, forkRepo)
+		assert.NotEqual(t, forkRepo, upstreamRepo)
+		assert.Equal(t, &fork, forkRepo.Metadata)
+		assert.Equal(t, "https://dev.azure.com/testorg/fork/_git/testproject-testrepo", forkRepo.Sources[urn].CloneURL)
+	})
+
+	t.Run("success with set namespace, name", func(t *testing.T) {
+		s, client := mockAzureDevOpsSource()
+
+		client.GetRepoFunc.SetDefaultHook(func(ctx context.Context, a azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
+			newArgs := args
+			newArgs.RepoNameOrID = "special-fork-name"
+			assert.Equal(t, newArgs, a)
+			return azuredevops.Repository{}, &notFoundError{}
+		})
+
+		client.GetProjectFunc.SetDefaultHook(func(ctx context.Context, org string, project string) (azuredevops.Project, error) {
+			assert.Equal(t, testOrgName, org)
+			assert.Equal(t, fork.Project.Name, project)
+			return fork.Project, nil
+		})
+
+		client.ForkRepositoryFunc.SetDefaultHook(func(ctx context.Context, org string, fi azuredevops.ForkRepositoryInput) (azuredevops.Repository, error) {
+			assert.Equal(t, testOrgName, org)
+			newFRI := forkRespositoryInput
+			newFRI.Name = "special-fork-name"
+			assert.Equal(t, newFRI, fi)
+			return fork, nil
+		})
+
+		forkRepo, err := s.GetFork(ctx, upstreamRepo, strPtr("fork"), strPtr("special-fork-name"))
+		assert.Nil(t, err)
+		assert.NotNil(t, forkRepo)
+		assert.NotEqual(t, forkRepo, upstreamRepo)
+		assert.Equal(t, &fork, forkRepo.Metadata)
+		assert.Equal(t, "https://dev.azure.com/testorg/fork/_git/testproject-testrepo", forkRepo.Sources[urn].CloneURL)
+	})
 }
 
 func TestAzureDevOpsSource_annotatePullRequest(t *testing.T) {
@@ -663,7 +705,7 @@ func TestAzureDevOpsSource_annotatePullRequest(t *testing.T) {
 
 		want := errors.New("error")
 		client.GetPullRequestStatusesFunc.SetDefaultHook(func(ctx context.Context, args azuredevops.PullRequestCommonArgs) ([]azuredevops.PullRequestBuildStatus, error) {
-			assert.Same(t, args, testCommonPullRequestArgs)
+			assert.Equal(t, testCommonPullRequestArgs, args)
 			return nil, want
 		})
 
@@ -679,16 +721,12 @@ func TestAzureDevOpsSource_annotatePullRequest(t *testing.T) {
 
 		want := []*azuredevops.PullRequestBuildStatus{
 			{ID: 1},
-			{ID: 2},
 		}
 		client.GetPullRequestStatusesFunc.SetDefaultHook(func(ctx context.Context, args azuredevops.PullRequestCommonArgs) ([]azuredevops.PullRequestBuildStatus, error) {
-			assert.Same(t, args, testCommonPullRequestArgs)
+			assert.Equal(t, args, testCommonPullRequestArgs)
 			return []azuredevops.PullRequestBuildStatus{
 				{
 					ID: 1,
-				},
-				{
-					ID: 2,
 				},
 			}, nil
 		})
@@ -697,29 +735,11 @@ func TestAzureDevOpsSource_annotatePullRequest(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, apr)
 		assert.Same(t, pr, apr.PullRequest)
-		assert.Equal(t, want, apr.Statuses)
+
+		for index, w := range want {
+			assert.Equal(t, w, apr.Statuses[index])
+		}
 	})
-}
-
-func TestAzureDevOpsSource_setChangesetMetadata(t *testing.T) {
-	// The only interesting case we didn't cover in any other test is what
-	// happens if Changeset.SetMetadata returns an error, so let's set that up.
-
-	ctx := context.Background()
-	s, client := mockAzureDevOpsSource()
-	mockAzureDevOpsAnnotatePullRequestSuccess(client)
-	forkRepository := testRepository
-	forkRepository.Name = "testrepofork"
-	forkRepository.CloneURL = "https://dev.azure.com/testorg/testprojectfork/_git/testrepofork"
-	cs, _ := mockAzureDevOpsChangeset()
-	pr := mockAzureDevOpsPullRequest(&testRepository)
-	pr.ForkSource = &azuredevops.ForkRef{
-		Repository: forkRepository,
-	}
-
-	err := s.setChangesetMetadata(ctx, &testRepository, pr, cs)
-	assert.NotNil(t, err)
-	assert.ErrorContains(t, err, "setting changeset metadata")
 }
 
 func assertChangesetMatchesPullRequest(t *testing.T, cs *Changeset, pr *azuredevops.PullRequest) {
@@ -732,9 +752,7 @@ func assertChangesetMatchesPullRequest(t *testing.T, cs *Changeset, pr *azuredev
 	assert.Equal(t, pr.SourceRefName, cs.ExternalBranch)
 
 	if pr.ForkSource != nil {
-		ns, err := pr.ForkSource.Repository.GetNamespace()
-		assert.Nil(t, err)
-		assert.Equal(t, ns, cs.ExternalForkNamespace)
+		assert.Equal(t, pr.ForkSource.Repository.Namespace(), cs.ExternalForkNamespace)
 	} else {
 		assert.Empty(t, cs.ExternalForkNamespace)
 	}

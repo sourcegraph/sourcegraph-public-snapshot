@@ -1,14 +1,13 @@
 package azuredevops
 
 import (
-	"fmt"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"net/url"
 	"strings"
 	"time"
 )
 
-const (
+var (
 	PullRequestBuildStatusStateSucceeded     PullRequestStatusState = "succeeded"
 	PullRequestBuildStatusStateError         PullRequestStatusState = "error"
 	PullRequestBuildStatusStateFailed        PullRequestStatusState = "failed"
@@ -240,12 +239,8 @@ func (p Repository) GetOrganization() (string, error) {
 	return splitPath[1], nil
 }
 
-func (p Repository) GetNamespace() (string, error) {
-	org, err := p.GetOrganization()
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%s/%s", org, p.Project.Name), nil
+func (p Repository) Namespace() string {
+	return p.Project.Name
 }
 
 type Profile struct {

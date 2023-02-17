@@ -438,11 +438,7 @@ func (c *Changeset) SetMetadata(meta any) error {
 		c.ExternalUpdatedAt = pr.CreationDate
 
 		if pr.ForkSource != nil {
-			namespace, err := pr.ForkSource.Repository.GetNamespace()
-			if err != nil {
-				return errors.Wrap(err, "determining fork namespace")
-			}
-			c.ExternalForkNamespace = namespace
+			c.ExternalForkNamespace = pr.ForkSource.Repository.Namespace()
 		} else {
 			c.ExternalForkNamespace = ""
 		}
