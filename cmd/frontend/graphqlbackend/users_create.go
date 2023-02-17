@@ -58,52 +58,32 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 		}
 	}
 
-	var user *types.User
-	err := r.db.WithTransact(ctx, func(tx database.DB) (err error) {
-		user, err = tx.Users().Create(ctx, database.NewUser{
-			Username: args.Username,
-			Password: backend.MakeRandomHardToGuessPassword(),
+	user, err := r.db.Users().Create(ctx, database.NewUser{
+		Username: args.Username,
+		Password: backend.MakeRandomHardToGuessPassword(),
 
-			Email: email,
+		Email: email,
 
-			// In order to mark an email as unverified, we must generate a verification code.
-			EmailIsVerified:       !needsEmailVerification,
-			EmailVerificationCode: emailVerificationCode,
-		})
-		if err != nil {
-			msg := "failed to create user"
-			logger.Error(msg, log.Error(err))
-			return errors.Wrap(err, msg)
-		}
-
-		logger = logger.With(log.Int32("userID", user.ID))
-		logger.Debug("user created")
-
-		roles := []types.SystemRole{types.UserSystemRole}
-		if user.SiteAdmin {
-			roles = append(roles, types.SiteAdministratorSystemRole)
-		}
-		opts := database.BulkAssignSystemRolesToUserOpts{UserID: user.ID, Roles: roles}
-		if _, err = tx.UserRoles().BulkAssignSystemRolesToUser(ctx, opts); err != nil {
-			r.logger.Error("failed to assign system roles to user",
-				log.Error(err))
-			return errors.Wrap(err, "failed to assign system roles to user")
-		}
-
-		if err = tx.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
-			UserID: user.ID,
-			Perm:   authz.Read,
-			Type:   authz.PermRepos,
-		}); err != nil {
-			r.logger.Error("failed to grant user pending permissions",
-				log.Error(err))
-		}
-
-		return nil
+		// In order to mark an email as unverified, we must generate a verification code.
+		EmailIsVerified:       !needsEmailVerification,
+		EmailVerificationCode: emailVerificationCode,
 	})
-
 	if err != nil {
-		return nil, err
+		msg := "failed to create user"
+		logger.Error(msg, log.Error(err))
+		return nil, errors.Wrap(err, msg)
+	}
+
+	logger = logger.With(log.Int32("userID", user.ID))
+	logger.Debug("user created")
+
+	if err = r.db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
+		UserID: user.ID,
+		Perm:   authz.Read,
+		Type:   authz.PermRepos,
+	}); err != nil {
+		r.logger.Error("failed to grant user pending permissions",
+			log.Error(err))
 	}
 
 	return &createUserResult{
