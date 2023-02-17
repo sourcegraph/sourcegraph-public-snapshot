@@ -96,7 +96,7 @@ func TestAccessRequestsQuery_All(t *testing.T) {
 }
 
 func TestAccessRequestsMutation_SetAccessRequestStatus(t *testing.T) {
-	newMockAccessRequestStore := func(t *testing.T, existing *types.AccessRequest, want types.AccessRequest) database.AccessRequestStore {
+	newMockAccessRequestStore := func(t *testing.T, existing *types.AccessRequest, want *types.AccessRequest) database.AccessRequestStore {
 		mockStore := database.NewMockAccessRequestStore()
 		mockStore.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.AccessRequest, error) {
 			if id == existing.ID {
@@ -104,8 +104,8 @@ func TestAccessRequestsMutation_SetAccessRequestStatus(t *testing.T) {
 			}
 			return nil, errors.New(fmt.Sprintf("access request with id %d not found", id))
 		})
-		mockStore.UpdateFunc.SetDefaultHook(func(ctx context.Context, accessRequest types.AccessRequest) (*types.AccessRequest, error) {
-			require.Equal(t, want, accessRequest)
+		mockStore.UpdateFunc.SetDefaultHook(func(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
+			require.Equal(t, &want, &accessRequest)
 			return existing, nil
 		})
 		return mockStore
@@ -150,7 +150,7 @@ func TestAccessRequestsMutation_SetAccessRequestStatus(t *testing.T) {
 			AdditionalInfo: "af1",
 			Status:         types.AccessRequestStatusPending,
 		}
-		accessRequestStore := newMockAccessRequestStore(t, existingAccessRequest, types.AccessRequest{
+		accessRequestStore := newMockAccessRequestStore(t, existingAccessRequest, &types.AccessRequest{
 			ID:     existingAccessRequest.ID,
 			Status: types.AccessRequestStatusApproved,
 		})
@@ -186,7 +186,7 @@ func TestAccessRequestsMutation_SetAccessRequestStatus(t *testing.T) {
 			AdditionalInfo: "af1",
 			Status:         types.AccessRequestStatusPending,
 		}
-		accessRequestStore := newMockAccessRequestStore(t, existingAccessRequest, types.AccessRequest{
+		accessRequestStore := newMockAccessRequestStore(t, existingAccessRequest, &types.AccessRequest{
 			ID:     existingAccessRequest.ID,
 			Status: types.AccessRequestStatusApproved,
 		})
