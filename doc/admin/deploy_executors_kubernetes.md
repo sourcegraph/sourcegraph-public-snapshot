@@ -29,4 +29,22 @@ Ensure you have the following tools installed:
 4. Run  `kubectl apply -f . --recursive` to deploy all components.
 5. Confirm executors are working are working by checking the _Executors_ page under _Site Admin_ > _Maintenance_.
 
+#### Deployment via Helm
+
+1. Clone the [deploy-sourcegraph-helm](https://github.com/sourcegraph/deploy-sourcegraph-helm) repository to your local machine.
+2. Run `cd deploy-sourcegraph-helm/charts/sourcegraph-executor`.
+3. Edit the `values.yaml` with any other customizations you may require.
+4. Run the following command:
+   1. `helm upgrade --install -f values.yaml --version 4.4.2 sg-migrator sourcegraph/sourcegraph-migrator`
+5. Confirm executors are working are working by checking the _Executors_ page under _Site Admin_ > _Maintenance_.
+
+
 For more information on the components being deployed see the [Executors readme](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/executors/README.md).
+
+## Note
+
+Executors deployed via docker-compose do not use [Firecracker](executors.md#how-it-works), meaning they require [privileged access](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) to the docker daemon running in a sidecar alongside the executor pod.
+
+If you have security concerns, consider deploying via [terraform](deploy_executors_terraform.md) or [installing the binary](deploy_executors_binary.md) directly.
+
+
