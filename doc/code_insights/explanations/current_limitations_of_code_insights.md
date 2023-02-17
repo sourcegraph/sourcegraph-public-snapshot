@@ -51,7 +51,7 @@ Code Insights is disabled by default on single-docker deployment methods.
 
 There are a few factors to consider with respect to scale and expected performance.
 
-1. General permissiveness - instances that are more open (users can see most repos) will perform better than instances that are more restricted. Insights have been tested with up to 100k restricted repositories.
+1. General permissiveness - instances that are more open (users can see most repos) will perform better than instances that are more restricted. Insights have been tested with users having up to 100k restricted repositories.
 2. Number of repositories - Code Insights is well tested with insights running over ~35,000 repositories. It is recommended that users should scope their insights to the smallest set of repositories needed.  Users should expect at least linear degradation as repository count grows in both time to calculate insights, and render performance.
 3. Large monorepos - Code Insights allocates a fixed amount of time for each query, so large repositories that cause query timeouts will likely not have exhaustive (and therefore accurate) results. As of version 4.4.0 we added visibility to this state via an icon on the insight. Prior to the 4.4.0 version a heuristic indicator for if this is a problem is seeing values "jump" (either a significant increase or decrease) between the backfilled datapoints on creation and the up-to-date datatpoints added after creation. 
 4. High cardinality capture groups - When using a capture group insight, high cardinality matches (for example 1000 distinct matches per repository) will cause significant increase in loading times of charts. It is possible to exceed request timeouts if there are too many distinct matches.
