@@ -44,6 +44,9 @@ All notable changes to Sourcegraph are documented in this file.
   - The Free license allows for only a single private repository on the instance.
   - The Free license does not support SSO of any kind.
   - The Free license does not offer mirroring of code host user permissions.
+- Expired Sourcegraph licenses no longer allow continued use of the product. [#47251](https://github.com/sourcegraph/sourcegraph/pull/47251)
+  - Licensed features are disabled once a license expires.
+  - Users can no longer be promoted to Site Admins once a license expires.
 
 ### Fixed
 
