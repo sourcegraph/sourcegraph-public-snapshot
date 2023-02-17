@@ -61,8 +61,9 @@ interface CodeHostCreationFormProps {
 const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
     const { codeHostKind, children } = props
 
-    const handleSubmit = async () => {
-        console.log('SUBMIT')
+    const handleSubmit = async (): Promise<void> => {
+        // TODO connect API handler
+        await Promise.resolve()
     }
 
     if (codeHostKind === ExternalServiceKind.GITHUB) {

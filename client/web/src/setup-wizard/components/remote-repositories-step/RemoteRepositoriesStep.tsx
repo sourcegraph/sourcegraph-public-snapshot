@@ -8,11 +8,10 @@ import { Container, Text } from '@sourcegraph/wildcard'
 import { CustomNextButton } from '../setup-steps'
 
 import { CodeHostsPicker } from './components/code-host-picker'
-import { CodeHostCreation } from './components/code-hosts'
+import { CodeHostCreation, CodeHostEdit } from './components/code-hosts'
 import { CodeHostsNavigation } from './components/navigation'
 
 import styles from './RemoteRepositoriesStep.module.scss'
-import { CodeHostEdit } from './components/code-hosts/CodeHostEdit'
 
 interface RemoteRepositoriesStepProps extends HTMLAttributes<HTMLDivElement> {}
 

@@ -110,7 +110,8 @@ const CodeHostEditView: FC<CodeHostEditViewProps> = props => {
     const { codeHostKind, displayName, configuration, children } = props
 
     const handleSubmit = async (): Promise<void> => {
-        console.log('UPDATE')
+        // TODO Connect edit API
+        await Promise.resolve()
     }
 
     const initialValues: CodeHostConnectFormFields = {

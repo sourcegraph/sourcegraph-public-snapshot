@@ -109,7 +109,7 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
                     </Button>
 
                     <Tooltip content="Delete code host connection" placement="right" debounce={0}>
-                        <Button className={styles.delete}>
+                        <Button className={styles.deleteButton}>
                             <Icon svgPath={mdiDelete} aria-label="Delete code host connection" />
                         </Button>
                     </Tooltip>

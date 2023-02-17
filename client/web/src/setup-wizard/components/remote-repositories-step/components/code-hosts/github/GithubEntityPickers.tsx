@@ -1,6 +1,7 @@
 import { FC, useState } from 'react'
 
 import { mdiGithub } from '@mdi/js'
+import { identity } from 'lodash'
 
 import {
     Icon,
@@ -10,7 +11,6 @@ import {
     MultiComboboxOption,
     MultiComboboxOptionText,
 } from '@sourcegraph/wildcard'
-import { identity } from 'lodash'
 
 const DEMO_ORGS_SUGGESTIONS = [
     'Sourcegraph org',

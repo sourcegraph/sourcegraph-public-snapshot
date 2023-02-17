@@ -2,7 +2,7 @@ import { FC, ReactNode, ReactElement, useCallback, useState, useMemo, ChangeEven
 
 import classNames from 'classnames'
 import { parse as parseJSONC } from 'jsonc-parser'
-import { noop } from 'lodash';
+import { noop } from 'lodash'
 
 import { modify } from '@sourcegraph/common'
 import {
@@ -261,7 +261,7 @@ function GithubFormView(props: GithubFormViewProps): ReactElement {
                     label="Add all repositories from selected organizations or users"
                     onChange={handleOrganizationsModeChange}
                 >
-                    <GithubOrganizationsPicker organizations={organizations} onChange={handleOrganizationsChange}/>
+                    <GithubOrganizationsPicker organizations={organizations} onChange={handleOrganizationsChange} />
                 </RadioGroupSection>
 
                 <RadioGroupSection
@@ -272,7 +272,7 @@ function GithubFormView(props: GithubFormViewProps): ReactElement {
                     label="Add selected repositories"
                     onChange={handleRepositoriesModeChange}
                 >
-                    <GithubRepositoriesPicker repositories={repositories} onChange={handleRepositoriesChange}/>
+                    <GithubRepositoriesPicker repositories={repositories} onChange={handleRepositoriesChange} />
                 </RadioGroupSection>
             </section>
         </>
