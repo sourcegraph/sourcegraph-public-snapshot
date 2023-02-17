@@ -1,4 +1,4 @@
-import { ChangeEvent, FC, PropsWithChildren, ReactElement, useId } from 'react'
+import { ChangeEvent, FC, PropsWithChildren, useId } from 'react'
 
 import { mdiAlertCircle, mdiCheckCircle, mdiHelp, mdiMoonNew, mdiTimerSand } from '@mdi/js'
 import classNames from 'classnames'
@@ -32,7 +32,7 @@ interface CodeInsightsJobCardProps {
     onSelectChange: (event: ChangeEvent<HTMLInputElement>) => void
 }
 
-export function CodeInsightsJobCard(props: CodeInsightsJobCardProps): ReactElement {
+export const CodeInsightsJobCard: FC<CodeInsightsJobCardProps> = props => {
     const {
         selected,
         job: {

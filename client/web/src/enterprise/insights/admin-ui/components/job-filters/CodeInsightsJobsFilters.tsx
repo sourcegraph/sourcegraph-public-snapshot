@@ -1,4 +1,4 @@
-import { ChangeEvent, ReactElement, useId, useState } from 'react'
+import { ChangeEvent, useId, useState, FC } from 'react'
 
 import classNames from 'classnames'
 import { identity, upperFirst } from 'lodash'
@@ -36,7 +36,7 @@ interface CodeInsightsFiltersPickerProps {
     onFiltersChange: (filters: InsightQueueItemState[]) => void
 }
 
-export function CodeInsightsJobStatusPicker(props: CodeInsightsFiltersPickerProps): ReactElement {
+export const CodeInsightsJobStatusPicker: FC<CodeInsightsFiltersPickerProps> = props => {
     const { selectedFilters, className, onFiltersChange } = props
 
     const filterInputId = useId()
@@ -99,7 +99,7 @@ interface CodeInsightsOrderPickerProps {
     onOrderChange: (order: BackfillQueueOrderBy) => void
 }
 
-export function CodeInsightsJobsOrderPicker(props: CodeInsightsOrderPickerProps): ReactElement {
+export const CodeInsightsJobsOrderPicker: FC<CodeInsightsOrderPickerProps> = props => {
     const { order, className, onOrderChange } = props
 
     const handleSelect = (event: ChangeEvent<HTMLSelectElement>): void => {

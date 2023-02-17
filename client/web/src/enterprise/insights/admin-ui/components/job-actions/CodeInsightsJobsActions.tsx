@@ -1,4 +1,4 @@
-import { ReactElement } from 'react'
+import { FC } from 'react'
 
 import classNames from 'classnames'
 
@@ -15,7 +15,7 @@ interface CodeInsightsJobActionsProps {
     onSelectionClear: () => void
 }
 
-export function CodeInsightsJobsActions(props: CodeInsightsJobActionsProps): ReactElement {
+export const CodeInsightsJobsActions: FC<CodeInsightsJobActionsProps> = props => {
     const { selectedJobIds, className, onSelectionClear } = props
 
     const [retryJobs, { loading: retryLoading }] = useMutation(getMultipleRetryMutation(selectedJobIds), {
@@ -74,7 +74,7 @@ interface JobActionButton extends ButtonProps {
     disabled: boolean
 }
 
-function JobActionButton(props: JobActionButton): ReactElement {
+const JobActionButton: FC<JobActionButton> = props => {
     const { actionCount, children, loading } = props
 
     return (
