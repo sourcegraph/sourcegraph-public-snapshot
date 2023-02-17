@@ -6384,6 +6384,9 @@ type MockUploadService struct {
 	// GetDirtyRepositoriesFunc is an instance of a mock function object
 	// controlling the behavior of the method GetDirtyRepositories.
 	GetDirtyRepositoriesFunc *UploadServiceGetDirtyRepositoriesFunc
+	// GetRecentUploadsSummaryFunc is an instance of a mock function object
+	// controlling the behavior of the method GetRecentUploadsSummary.
+	GetRecentUploadsSummaryFunc *UploadServiceGetRecentUploadsSummaryFunc
 	// GetRepoNameFunc is an instance of a mock function object controlling
 	// the behavior of the method GetRepoName.
 	GetRepoNameFunc *UploadServiceGetRepoNameFunc
@@ -6408,6 +6411,11 @@ func NewMockUploadService() *MockUploadService {
 	return &MockUploadService{
 		GetDirtyRepositoriesFunc: &UploadServiceGetDirtyRepositoriesFunc{
 			defaultHook: func(context.Context) (r0 map[int]int, r1 error) {
+				return
+			},
+		},
+		GetRecentUploadsSummaryFunc: &UploadServiceGetRecentUploadsSummaryFunc{
+			defaultHook: func(context.Context, int) (r0 []shared1.UploadsWithRepositoryNamespace, r1 error) {
 				return
 			},
 		},
@@ -6448,6 +6456,11 @@ func NewStrictMockUploadService() *MockUploadService {
 				panic("unexpected invocation of MockUploadService.GetDirtyRepositories")
 			},
 		},
+		GetRecentUploadsSummaryFunc: &UploadServiceGetRecentUploadsSummaryFunc{
+			defaultHook: func(context.Context, int) ([]shared1.UploadsWithRepositoryNamespace, error) {
+				panic("unexpected invocation of MockUploadService.GetRecentUploadsSummary")
+			},
+		},
 		GetRepoNameFunc: &UploadServiceGetRepoNameFunc{
 			defaultHook: func(context.Context, int) (string, error) {
 				panic("unexpected invocation of MockUploadService.GetRepoName")
@@ -6483,6 +6496,9 @@ func NewMockUploadServiceFrom(i UploadService) *MockUploadService {
 	return &MockUploadService{
 		GetDirtyRepositoriesFunc: &UploadServiceGetDirtyRepositoriesFunc{
 			defaultHook: i.GetDirtyRepositories,
+		},
+		GetRecentUploadsSummaryFunc: &UploadServiceGetRecentUploadsSummaryFunc{
+			defaultHook: i.GetRecentUploadsSummary,
 		},
 		GetRepoNameFunc: &UploadServiceGetRepoNameFunc{
 			defaultHook: i.GetRepoName,
@@ -6607,6 +6623,118 @@ func (c UploadServiceGetDirtyRepositoriesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UploadServiceGetDirtyRepositoriesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// UploadServiceGetRecentUploadsSummaryFunc describes the behavior when the
+// GetRecentUploadsSummary method of the parent MockUploadService instance
+// is invoked.
+type UploadServiceGetRecentUploadsSummaryFunc struct {
+	defaultHook func(context.Context, int) ([]shared1.UploadsWithRepositoryNamespace, error)
+	hooks       []func(context.Context, int) ([]shared1.UploadsWithRepositoryNamespace, error)
+	history     []UploadServiceGetRecentUploadsSummaryFuncCall
+	mutex       sync.Mutex
+}
+
+// GetRecentUploadsSummary delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockUploadService) GetRecentUploadsSummary(v0 context.Context, v1 int) ([]shared1.UploadsWithRepositoryNamespace, error) {
+	r0, r1 := m.GetRecentUploadsSummaryFunc.nextHook()(v0, v1)
+	m.GetRecentUploadsSummaryFunc.appendCall(UploadServiceGetRecentUploadsSummaryFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetRecentUploadsSummary method of the parent MockUploadService instance
+// is invoked and the hook queue is empty.
+func (f *UploadServiceGetRecentUploadsSummaryFunc) SetDefaultHook(hook func(context.Context, int) ([]shared1.UploadsWithRepositoryNamespace, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetRecentUploadsSummary method of the parent MockUploadService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UploadServiceGetRecentUploadsSummaryFunc) PushHook(hook func(context.Context, int) ([]shared1.UploadsWithRepositoryNamespace, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadServiceGetRecentUploadsSummaryFunc) SetDefaultReturn(r0 []shared1.UploadsWithRepositoryNamespace, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]shared1.UploadsWithRepositoryNamespace, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadServiceGetRecentUploadsSummaryFunc) PushReturn(r0 []shared1.UploadsWithRepositoryNamespace, r1 error) {
+	f.PushHook(func(context.Context, int) ([]shared1.UploadsWithRepositoryNamespace, error) {
+		return r0, r1
+	})
+}
+
+func (f *UploadServiceGetRecentUploadsSummaryFunc) nextHook() func(context.Context, int) ([]shared1.UploadsWithRepositoryNamespace, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadServiceGetRecentUploadsSummaryFunc) appendCall(r0 UploadServiceGetRecentUploadsSummaryFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// UploadServiceGetRecentUploadsSummaryFuncCall objects describing the
+// invocations of this function.
+func (f *UploadServiceGetRecentUploadsSummaryFunc) History() []UploadServiceGetRecentUploadsSummaryFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadServiceGetRecentUploadsSummaryFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadServiceGetRecentUploadsSummaryFuncCall is an object that describes
+// an invocation of method GetRecentUploadsSummary on an instance of
+// MockUploadService.
+type UploadServiceGetRecentUploadsSummaryFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared1.UploadsWithRepositoryNamespace
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadServiceGetRecentUploadsSummaryFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadServiceGetRecentUploadsSummaryFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
