@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
@@ -68,12 +69,21 @@ type Metadata struct {
 	PreviewImage string
 }
 
+type PreloadedAsset struct {
+	// The as property. E.g. `image`
+	As string
+	// The href property. It should be set to a resolved path using `assetsutil.URL`
+	Href string
+}
+
 type Common struct {
 	Injected InjectedHTML
 	Metadata *Metadata
 	Context  jscontext.JSContext
 	Title    string
 	Error    *pageError
+
+	PreloadedAssets *[]PreloadedAsset
 
 	Manifest *assets.WebpackManifest
 
@@ -151,6 +161,10 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 		Context:  jscontext.NewJSContextFromRequest(r, db),
 		Title:    title,
 		Manifest: manifest,
+		PreloadedAssets: &[]PreloadedAsset{
+			// sourcegraph-mark.svg is always loaded as part of the layout component
+			{As: "image", Href: assetsutil.URL("/img/sourcegraph-mark.svg").Path + "?v2"},
+		},
 		Metadata: &Metadata{
 			Title:       globals.Branding().BrandName,
 			Description: "Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.",
