@@ -60,8 +60,6 @@ func findUser(ctx context.Context, db database.DB, id int) (types.UserForSCIM, e
 	}
 	if len(users) == 0 {
 		return types.UserForSCIM{}, nil
-	} else if len(users) > 1 {
-		return types.UserForSCIM{}, errors.New("multiple users match the find criteria")
 	}
 	if users[0].SCIMExternalID == "" {
 		return types.UserForSCIM{}, errors.New("cannot delete user because it has no SCIM external ID set")
