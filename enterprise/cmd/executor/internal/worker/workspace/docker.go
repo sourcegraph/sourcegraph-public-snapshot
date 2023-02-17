@@ -27,7 +27,7 @@ func NewDockerWorkspace(
 	}
 
 	if job.RepositoryName != "" {
-		if err := cloneRepo(ctx, workspaceDir, job, commandRunner, cloneOpts, operations); err != nil {
+		if err = cloneRepo(ctx, workspaceDir, job, commandRunner, cloneOpts, operations); err != nil {
 			_ = os.RemoveAll(workspaceDir)
 			return nil, err
 		}
