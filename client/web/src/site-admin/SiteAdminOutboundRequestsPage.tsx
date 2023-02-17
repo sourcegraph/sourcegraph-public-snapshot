@@ -147,7 +147,7 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
         <div className="site-admin-outbound-requests-page">
             <PageTitle title="Outbound requests - Admin" />
             <Button variant="secondary" onClick={togglePolling} className="float-right">
-                {polling ? 'Pause polling' : 'Resume polling'}
+                {polling ? 'Pause updating' : 'Resume updating'}
             </Button>
             <PageHeader
                 path={[{ text: 'Outbound requests' }]}
@@ -156,7 +156,7 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
                     <>
                         This is the log of recent external requests sent by the Sourcegraph instance. Handy for seeing
                         what's happening between Sourcegraph and other services.{' '}
-                        <strong>The list updates every five seconds.</strong>
+                        {polling ? <strong>The list updates every five seconds.</strong> : null}
                     </>
                 }
                 className="mb-3"
