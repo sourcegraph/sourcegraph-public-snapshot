@@ -31,7 +31,7 @@ EMBEDDABLE_EXTENSIONS = set(
     ]
 )
 EMBEDDABLE_EXTENSIONLESS_FILES = set(["dockerfile", "license"])
-EXCLUDED_PATHS = ["/__fixtures__/", "/testdata/", "/mocks"]
+EXCLUDED_PATHS = ["/__fixtures__/", "/__tests__/", "/testdata/", "/mocks"]
 MAX_FILE_SIZE_BYTES = 1000000  # 1MB
 FILESYSTEM_SAFE_NAME_REGEXP = re.compile(r"[^0-9a-zA-Z]")
 
@@ -49,6 +49,11 @@ def chunk_text(text: str, chunk_size: int) -> List[Dict[str, Any]]:
         return []
 
     lines = text.split("\n")
+
+    for line in lines:
+        if len(line) > 1024:
+            return []
+
     start_line, tokens_sum = 0, 0
     chunks = []
 
