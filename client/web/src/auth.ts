@@ -21,7 +21,7 @@ export const authenticatedUser = new ReplaySubject<AuthenticatedUser | null>(1)
  *
  * TODO: migrate the `currentAuthStateQuery` to Apollo Client and then user pre-loaded to initialize Apollo cache.
  */
-export const authenticatedUserValue = window.context.currentUser || null
+export const authenticatedUserValue = (typeof window !== 'undefined' && window.context?.currentUser) || null
 authenticatedUser.next(authenticatedUserValue)
 
 export type AuthenticatedUser = SharedAuthenticatedUser
