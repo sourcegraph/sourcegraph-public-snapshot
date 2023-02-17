@@ -2,7 +2,6 @@ package graphql
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/grafana/regexp"
@@ -417,12 +416,11 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 	inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
 
 	inferredAvailableIndexersResolver := make([]sharedresolvers.InferredAvailableIndexers, 0, len(inferredAvailableIndexers))
-	for indexName, indexer := range inferredAvailableIndexers {
+	for _, indexer := range inferredAvailableIndexers {
 		inferredAvailableIndexersResolver = append(inferredAvailableIndexersResolver,
 			sharedresolvers.InferredAvailableIndexers{
-				Roots: indexer.Roots,
-				Index: indexName,
-				URL:   fmt.Sprintf("https://%s", indexer.Indexer.URN),
+				Indexer: indexer.Indexer,
+				Roots:   indexer.Roots,
 			},
 		)
 	}

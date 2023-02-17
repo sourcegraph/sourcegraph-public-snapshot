@@ -902,17 +902,14 @@ The additionally available indexers that have been inferred from jobs and job hi
 """
 type InferredAvailableIndexers {
     """
-    The indexer name.
+    The indexer.
     """
-    index: String!
+    indexer: CodeIntelIndexer!
+
     """
     The list of roots that could be indexed.
     """
     roots: [String!]!
-    """
-    The url of the index repository.
-    """
-    url: String!
 }
 
 """
