@@ -50,10 +50,10 @@ table.
 
 | **Provider**                       | **Node type**                   | **Boot/ephemeral disk size** |
 |------------------------------------|---------------------------------|------------------------------|
-|[Amazon EKS (better than plain EC2)](eks.md)| m5.4xlarge | 100 GB (SSD preferred) |
+|[Amazon EKS (better than plain EC2)](kubernetes/eks.md)| m5.4xlarge | 100 GB (SSD preferred) |
 |[AWS EC2](https://kubernetes.io/docs/getting-started-guides/aws/)| m5.4xlarge |  100 GB (SSD preferred) |
 |[Google Kubernetes Engine (GKE)](https://cloud.google.com/kubernetes-engine/docs/quickstart)| n2-standard-16 | 100 GB (default) |
-|[Azure](azure.md)| D16 v3 | 100 GB (SSD preferred) |
+|[Azure](kubernetes/azure.md)| D16 v3 | 100 GB (SSD preferred) |
 |[Other](https://kubernetes.io/docs/setup/production-environment/turnkey-solutions/)| 16 vCPU, 60 GiB memory per node | 100 GB (SSD preferred) |
 
 <span class="virtual-br"></span>

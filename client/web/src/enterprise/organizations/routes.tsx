@@ -44,7 +44,7 @@ export const enterpriseOrganizationAreaRoutes: readonly OrgAreaRoute[] = [
         fullPage: true,
     },
     {
-        path: 'batch-changes/:batchChangeName/executions/:batchSpecID',
+        path: 'batch-changes/:batchChangeName/executions/:batchSpecID/*',
         render: props => <ExecuteBatchSpecPage {...props} />,
         condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
             batchChangesEnabled && batchChangesExecutionEnabled,

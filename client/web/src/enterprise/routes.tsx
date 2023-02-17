@@ -37,6 +37,7 @@ const EditSearchContextPage = lazyComponent(
     'EditSearchContextPage'
 )
 const SearchContextPage = lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage')
+const GlobalCodyArea = lazyComponent(() => import('./cody/GlobalCodyArea'), 'GlobalCodyArea')
 
 const isSearchContextsManagementEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
     !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.showSearchContext !== false
@@ -108,6 +109,10 @@ export const enterpriseRoutes: readonly LayoutRouteProps[] = [
             ) : (
                 <Navigate to={PageRoutes.Search} replace={true} />
             ),
+    },
+    {
+        path: EnterprisePageRoutes.Cody,
+        render: props => <GlobalCodyArea {...props} />,
     },
     ...routes,
 ]

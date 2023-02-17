@@ -402,6 +402,14 @@ func (r *GitTreeEntryResolver) LFS(ctx context.Context) (*lfsResolver, error) {
 	return parseLFSPointer(content), nil
 }
 
+func (r *GitTreeEntryResolver) Ownership(ctx context.Context, args ListOwnershipArgs) (OwnershipConnectionResolver, error) {
+	_, ok := r.ToGitBlob()
+	if !ok {
+		return nil, nil
+	}
+	return EnterpriseResolvers.ownResolver.GitBlobOwnership(ctx, r, args)
+}
+
 func (r *GitTreeEntryResolver) parent(ctx context.Context) (*GitTreeEntryResolver, error) {
 	if r.IsRoot() {
 		return nil, nil

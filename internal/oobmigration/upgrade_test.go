@@ -38,10 +38,10 @@ func TestScheduleMigrationInterruptsUp(t *testing.T) {
 				testMigration(4 /* introduced = */, 3, 41 /* deprecated = */, 3, 43),
 			},
 			interrupts: []MigrationInterrupt{
-				{Version: Version{3, 33}, MigrationIDs: []int{1}},
-				{Version: Version{3, 36}, MigrationIDs: []int{2}},
-				{Version: Version{3, 39}, MigrationIDs: []int{3}},
-				{Version: Version{3, 42}, MigrationIDs: []int{4}},
+				{Version: Version{Major: 3, Minor: 33}, MigrationIDs: []int{1}},
+				{Version: Version{Major: 3, Minor: 36}, MigrationIDs: []int{2}},
+				{Version: Version{Major: 3, Minor: 39}, MigrationIDs: []int{3}},
+				{Version: Version{Major: 3, Minor: 42}, MigrationIDs: []int{4}},
 			},
 		},
 		{
@@ -67,10 +67,10 @@ func TestScheduleMigrationInterruptsUp(t *testing.T) {
 				testMigration(6 /* introduced = */, 3, 42 /* deprecated = */, 3, 43),
 			},
 			interrupts: []MigrationInterrupt{
-				{Version: Version{3, 33}, MigrationIDs: []int{1, 2}},
-				{Version: Version{3, 37}, MigrationIDs: []int{4}},
-				{Version: Version{3, 39}, MigrationIDs: []int{3, 5}},
-				{Version: Version{3, 42}, MigrationIDs: []int{6}},
+				{Version: Version{Major: 3, Minor: 33}, MigrationIDs: []int{1, 2}},
+				{Version: Version{Major: 3, Minor: 37}, MigrationIDs: []int{4}},
+				{Version: Version{Major: 3, Minor: 39}, MigrationIDs: []int{3, 5}},
+				{Version: Version{Major: 3, Minor: 42}, MigrationIDs: []int{6}},
 			},
 		},
 		{
@@ -94,9 +94,9 @@ func TestScheduleMigrationInterruptsUp(t *testing.T) {
 				testMigration(5 /* introduced = */, 3, 39 /* deprecated = */, 3, 40),
 			},
 			interrupts: []MigrationInterrupt{
-				{Version: Version{3, 34}, MigrationIDs: []int{2}},
-				{Version: Version{3, 37}, MigrationIDs: []int{4}},
-				{Version: Version{3, 39}, MigrationIDs: []int{3, 5}},
+				{Version: Version{Major: 3, Minor: 34}, MigrationIDs: []int{2}},
+				{Version: Version{Major: 3, Minor: 37}, MigrationIDs: []int{4}},
+				{Version: Version{Major: 3, Minor: 39}, MigrationIDs: []int{3, 5}},
 			},
 		},
 	} {

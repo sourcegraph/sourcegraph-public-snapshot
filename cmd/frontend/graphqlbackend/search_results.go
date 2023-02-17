@@ -163,6 +163,8 @@ func matchesToResolvers(db database.DB, matches []result.Match) []SearchResultRe
 				db:          db,
 				CommitMatch: *v,
 			})
+		case *result.OwnerMatch:
+			// todo(own): add OwnerSearchResultResolver
 		}
 	}
 	return resolvers
@@ -299,8 +301,8 @@ loop:
 	for _, r := range sr.Matches {
 		r := r // shadow so it doesn't change in the goroutine
 		switch m := r.(type) {
-		case *result.RepoMatch:
-			// We don't care about repo results here.
+		case *result.RepoMatch, *result.OwnerMatch:
+			// We don't care about repo or owner results here.
 			continue
 		case *result.CommitMatch:
 			// Diff searches are cheap, because we implicitly have author date info.
