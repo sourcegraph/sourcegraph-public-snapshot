@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/goware/urlx"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -39,14 +40,19 @@ type Client struct {
 // NewClient returns an authenticated AzureDevOps API client with
 // the provided configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(urn string, url *url.URL, auth auth.Authenticator, httpClient httpcli.Doer) (*Client, error) {
+func NewClient(urn string, url string, auth auth.Authenticator, httpClient httpcli.Doer) (*Client, error) {
+	u, err := urlx.Parse(url)
+	if err != nil {
+		return nil, err
+	}
+
 	if httpClient == nil {
 		httpClient = httpcli.ExternalDoer
 	}
 
 	return &Client{
 		httpClient: httpClient,
-		URL:        url,
+		URL:        u,
 		rateLimit:  ratelimit.DefaultRegistry.Get(urn),
 		auth:       auth,
 	}, nil

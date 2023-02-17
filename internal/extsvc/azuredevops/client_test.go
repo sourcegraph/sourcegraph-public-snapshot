@@ -33,14 +33,7 @@ func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 		t.Fatal(err)
 	}
 
-	u, err := url.Parse("https://dev.azure.com")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	a := &auth.BasicAuth{Username: "testuser", Password: "testtoken"}
-
-	cli, err := NewClient("urn", u, a, hc)
+	cli, err := NewClient("urn", "https://dev.azure.com", &auth.BasicAuth{Username: "testuser", Password: "testtoken"}, hc)
 	if err != nil {
 		t.Fatal(err)
 	}
