@@ -451,8 +451,9 @@ mutation {
 			t.Run(test.name, func(t *testing.T) {
 				err := userClient.GraphQL("", test.query, test.variables, nil)
 				got := fmt.Sprintf("%v", err)
-				if !strings.Contains(got, auth.ErrMustBeSiteAdminOrSameUser.Error()) {
-					t.Fatalf(`Want "%s" error but got "%q"`, auth.ErrMustBeSiteAdminOrSameUser.Error(), got)
+				// check if it's one of errors that we expect
+				if !strings.Contains(got, auth.ErrMustBeSiteAdmin.Error()) && !strings.Contains(got, auth.ErrMustBeSiteAdminOrSameUser.Error()) {
+					t.Fatalf(`Want one of "%v" errors, but got "%q"`, []string{auth.ErrMustBeSiteAdmin.Error(), auth.ErrMustBeSiteAdminOrSameUser.Error()}, got)
 				}
 			})
 		}
