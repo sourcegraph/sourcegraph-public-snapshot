@@ -4,14 +4,14 @@ import { mdiMapSearch } from '@mdi/js'
 
 import { BackfillQueueOrderBy, InsightQueueItemState } from '@sourcegraph/shared/src/graphql-operations'
 import {
-    Input,
-    PageHeader,
-    LoadingSpinner,
+    Container,
     ErrorAlert,
     Icon,
+    Input,
     Link,
+    LoadingSpinner,
+    PageHeader,
     PageSwitcher,
-    Container,
 } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../../components/FilteredConnection/hooks/usePageSwitcherPagination'
@@ -20,16 +20,19 @@ import { GetCodeInsightsJobsResult, GetCodeInsightsJobsVariables, InsightJob } f
 
 import { CodeInsightsJobsActions } from './components/job-actions'
 import { CodeInsightsJobCard } from './components/job-card'
-import { CodeInsightsJobStatusPicker, CodeInsightsJobsOrderPicker } from './components/job-filters'
+import { CodeInsightsJobsOrderPicker, CodeInsightsJobStatusPicker } from './components/job-filters'
 import { GET_CODE_INSIGHTS_JOBS } from './query'
 
 import styles from './CodeInsightsJobs.module.scss'
 
 export const CodeInsightsJobs: FC = () => {
-    const [orderBy, setOrderBy] = useState<BackfillQueueOrderBy>(BackfillQueueOrderBy.STATE)
-    const [selectedFilters, setFilters] = useState<InsightQueueItemState[]>([])
     const [search, setSearch] = useState<string>('')
+    const [orderBy, setOrderBy] = useState<BackfillQueueOrderBy>(BackfillQueueOrderBy.QUEUE_POSITION)
     const [selectedJobs, setSelectedJobs] = useState<string[]>([])
+    const [selectedFilters, setFilters] = useState<InsightQueueItemState[]>([
+        InsightQueueItemState.PROCESSING,
+        InsightQueueItemState.QUEUED,
+    ])
 
     const { connection, loading, error, ...paginationProps } = usePageSwitcherPagination<
         GetCodeInsightsJobsResult,
@@ -39,7 +42,7 @@ export const CodeInsightsJobs: FC = () => {
         query: GET_CODE_INSIGHTS_JOBS,
         variables: { orderBy, states: selectedFilters, search },
         getConnection: ({ data }) => data?.insightAdminBackfillQueue,
-        options: { pollInterval: 5000 },
+        options: { pollInterval: 10000 },
     })
 
     const handleJobSelect = (event: ChangeEvent<HTMLInputElement>, jobId: string): void => {
@@ -48,6 +51,12 @@ export const CodeInsightsJobs: FC = () => {
         } else {
             setSelectedJobs(selectedJobs => selectedJobs.filter(id => id !== jobId))
         }
+    }
+
+    const handlePaginationClick = (): void => {
+        // TODO: Put AppRouterContainer element in the global state to avoid bad querySelector calls
+        const root = document.querySelector('[data-layout]')
+        root?.scrollTo({ top: 0 })
     }
 
     return (
@@ -123,6 +132,7 @@ export const CodeInsightsJobs: FC = () => {
                     totalCount={connection?.totalCount ?? null}
                     {...paginationProps}
                     className="mt-5"
+                    onClick={handlePaginationClick}
                 />
             </Container>
         </div>

@@ -72,9 +72,12 @@ export function CodeInsightsJobCard(props: CodeInsightsJobCardProps): ReactEleme
             />
             <div className={styles.insightJobContent}>
                 <header className={styles.insightJobHeader}>
-                    <H3 as={Label} htmlFor={checkboxId} className={styles.insightJobTitle}>
-                        {seriesLabel}
-                    </H3>
+                    {seriesLabel && (
+                        <H3 as={Label} htmlFor={checkboxId} className={styles.insightJobTitle}>
+                            {seriesLabel}
+                        </H3>
+                    )}
+
                     <small className="text-muted">From</small>
                     <Pill className={styles.insightJobSubtitle}>{insightViewTitle} insight</Pill>
                 </header>
