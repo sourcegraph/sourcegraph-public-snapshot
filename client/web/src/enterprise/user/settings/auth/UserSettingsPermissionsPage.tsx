@@ -95,7 +95,7 @@ class ScheduleUserPermissionsSyncActionContainer extends React.PureComponent<Sch
         return (
             <ActionContainer
                 title="Manually schedule a permissions sync"
-                description={<div>Site admins are able to manually schedule a permissions sync for this user.</div>}
+                description={<div>Schedule a permissions sync for user: {this.props.user.username}.</div>}
                 buttonLabel="Schedule now"
                 flashText="Added to queue"
                 run={this.scheduleUserPermissions}
