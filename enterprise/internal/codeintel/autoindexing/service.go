@@ -297,3 +297,15 @@ func (s *Service) InferIndexJobsFromRepositoryStructure(ctx context.Context, rep
 func (s *Service) InferIndexJobHintsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error) {
 	return s.jobSelector.InferIndexJobHintsFromRepositoryStructure(ctx, repositoryID, commit)
 }
+
+func (s *Service) NumRepositoriesWithCodeIntelligence(ctx context.Context) (int, error) {
+	return s.store.NumRepositoriesWithCodeIntelligence(ctx)
+}
+
+func (s *Service) RepositoryIDsWithErrors(ctx context.Context, offset, limit int) ([]shared.RepositoryWithCount, int, error) {
+	return s.store.RepositoryIDsWithErrors(ctx, offset, limit)
+}
+
+func (s *Service) RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) ([]shared.RepositoryWithAvailableIndexers, int, error) {
+	return s.store.RepositoryIDsWithConfiguration(ctx, offset, limit)
+}
