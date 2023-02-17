@@ -1974,9 +1974,15 @@ Describes a precise code-intel indexer.
 """
 type CodeIntelIndexer {
     """
+    The language ecosystem that this indexer supports.
+    """
+    key: String!
+
+    """
     Name of the precise code-intel indexer.
     """
     name: String!
+
     """
     URL to the source of the indexer e.g. https://github.com/sourcegraph/lsif-go
     """
