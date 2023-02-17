@@ -269,7 +269,12 @@ func (r *upgradeReadinessResolver) SchemaDrift(ctx context.Context) (string, err
 
 	var version string
 	v, patch, ok, err := cliutil.GetServiceVersion(ctx, runner)
-	if err != nil || !ok {
+	if err != nil {
+		return "", errors.Wrap(err, "get service version")
+	} else if !ok {
+		return "", errors.New("invalid service version")
+	}
+	if v.Dev {
 		version = "dev"
 	} else {
 		version = v.GitTagWithPatch(patch)
@@ -303,7 +308,12 @@ func (r *upgradeReadinessResolver) RequiredOutOfBandMigrations(ctx context.Conte
 		return nil, errors.Wrap(err, "new runner")
 	}
 
-	version, _, _, _ := cliutil.GetServiceVersion(ctx, runner)
+	version, _, ok, err := cliutil.GetServiceVersion(ctx, runner)
+	if err != nil {
+		return nil, errors.Wrap(err, "get service version")
+	} else if !ok {
+		return nil, errors.New("invalid service version")
+	}
 
 	migrations, err := oobmigration.NewStoreWithDB(r.db).List(ctx)
 	if err != nil {
