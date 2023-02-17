@@ -78,3 +78,8 @@ var embeddingsSchema string
 //
 //go:embed rbac.graphql
 var rbacSchema string
+
+// ownSchema is the Sourcegraph Own raw graqhql schema.
+//
+//go:embed own.graphql
+var ownSchema string

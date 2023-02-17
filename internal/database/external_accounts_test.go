@@ -148,6 +148,13 @@ func TestExternalAccounts_CreateUserAndSave(t *testing.T) {
 	if diff := cmp.Diff(want, account, et.CompareEncryptable); diff != "" {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
+
+	userRoles, err := db.UserRoles().GetByUserID(ctx, GetUserRoleOpts{
+		UserID: user.ID,
+	})
+	require.NoError(t, err)
+	// Both USER and SITE_ADMINISTRATOR role have been assigned.
+	require.Len(t, userRoles, 2)
 }
 
 func TestExternalAccounts_CreateUserAndSave_NilData(t *testing.T) {

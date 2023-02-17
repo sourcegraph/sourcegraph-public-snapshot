@@ -61,6 +61,7 @@ type Services struct {
 	WebhooksResolver            graphqlbackend.WebhooksResolver
 	EmbeddingsResolver          graphqlbackend.EmbeddingsResolver
 	RBACResolver                graphqlbackend.RBACResolver
+	OwnResolver                 graphqlbackend.OwnResolver
 }
 
 // NewCodeIntelUploadHandler creates a new handler for the LSIF upload endpoint. The

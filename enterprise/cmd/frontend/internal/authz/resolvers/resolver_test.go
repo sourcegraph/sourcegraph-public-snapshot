@@ -1698,7 +1698,7 @@ query {
 
 type mockRecordsReader []syncjobs.Status
 
-func (m mockRecordsReader) Get(ctx context.Context, t time.Time) (*syncjobs.Status, error) {
+func (m mockRecordsReader) Get(_ context.Context, t time.Time) (*syncjobs.Status, error) {
 	for _, r := range m {
 		if r.Completed.Equal(t) {
 			return &r, nil
@@ -1706,7 +1706,7 @@ func (m mockRecordsReader) Get(ctx context.Context, t time.Time) (*syncjobs.Stat
 	}
 	return nil, errors.New("not found")
 }
-func (m mockRecordsReader) GetAll(context.Context, int) ([]syncjobs.Status, error) { return m, nil }
+func (m mockRecordsReader) GetAll(_ context.Context, _ int) ([]syncjobs.Status, error) { return m, nil }
 
 func TestResolverPermissionsSyncJobs(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {
@@ -1744,7 +1744,7 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 				require.NoError(t, err)
 				return tm.UTC()
 			}(),
-			Providers: []syncjobs.ProviderStatus{{
+			Providers: []database.PermissionSyncCodeHostState{{
 				ProviderID:   "https://github.com",
 				ProviderType: "github",
 				Status:       "SUCCESS",

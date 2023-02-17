@@ -314,41 +314,8 @@ sg ci build docker-images-candidates-notest
 Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
-- Build alpine-3.14
-- Build cadvisor
-- Build codeinsights-db
-- Build codeintel-db
-- Build frontend
-- Build github-proxy
-- Build gitserver
-- Build grafana
-- Build indexed-searcher
-- Build jaeger-agent
-- Build jaeger-all-in-one
-- Build blobstore
-- Build blobstore2
-- Build node-exporter
-- Build postgres-12-alpine
-- Build postgres_exporter
-- Build precise-code-intel-worker
-- Build prometheus
-- Build prometheus-gcp
-- Build redis-cache
-- Build redis-store
-- Build redis_exporter
-- Build repo-updater
-- Build search-indexer
-- Build searcher
-- Build symbols
-- Build syntax-highlighter
-- Build worker
-- Build migrator
-- Build executor
-- Build executor-vm
-- Build batcheshelper
-- Build opentelemetry-collector
-- Build server
-- Build sg
+- **Image builds**: Build alpine-3.14, Build cadvisor, Build codeinsights-db, Build codeintel-db, Build frontend, Build github-proxy, Build gitserver, Build grafana, Build indexed-searcher, Build jaeger-agent, Build jaeger-all-in-one, Build blobstore, Build blobstore2, Build node-exporter, Build postgres-12-alpine, Build postgres_exporter, Build precise-code-intel-worker, Build prometheus, Build prometheus-gcp, Build redis-cache, Build redis-store, Build redis_exporter, Build repo-updater, Build search-indexer, Build searcher, Build symbols, Build syntax-highlighter, Build worker, Build migrator, Build executor, Build executor-vm, Build batcheshelper, Build opentelemetry-collector, Build server, Build sg
+- **Publish images**: alpine-3.14, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, jaeger-agent, jaeger-all-in-one, blobstore, blobstore2, node-exporter, postgres-12-alpine, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, symbols, syntax-highlighter, worker, migrator, executor, executor-vm, batcheshelper, opentelemetry-collector, server, sg
 - Upload build trace
 
 ### Build executor without testing

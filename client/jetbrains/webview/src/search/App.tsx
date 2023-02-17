@@ -83,6 +83,9 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
 }) => {
     const authState = authenticatedUser !== null ? 'success' : 'failure'
 
+    /**
+     * @deprecated Prefer using Apollo-Client instead if possible. The migration is in progress.
+     */
     const requestGraphQL = useCallback<PlatformContext['requestGraphQL']>(
         args =>
             requestGraphQLCommon({

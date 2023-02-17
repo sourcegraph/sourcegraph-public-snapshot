@@ -108,3 +108,5 @@ js_library(
         "//:node_modules/postcss-inset",
     ],
 )
+
+exports_files(["go.mod"])

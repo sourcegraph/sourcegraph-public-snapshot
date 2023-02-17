@@ -228,6 +228,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		enterpriseServices.WebhooksResolver,
 		enterpriseServices.EmbeddingsResolver,
 		enterpriseServices.RBACResolver,
+		enterpriseServices.OwnResolver,
 	)
 	if err != nil {
 		return err

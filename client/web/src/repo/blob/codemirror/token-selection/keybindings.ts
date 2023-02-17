@@ -100,8 +100,11 @@ const keybindings: KeyBinding[] = [
                     () => {}
                 )
                 .finally(() => {
-                    // hide loading tooltip
-                    view.dispatch({ effects: setFocusedOccurrenceTooltip.of(null) })
+                    // close loading tooltip if any
+                    const current = getCodeIntelTooltipState(view, 'focus')
+                    if (current?.tooltip instanceof LoadingTooltip && current?.occurrence === selected.occurrence) {
+                        view.dispatch({ effects: setFocusedOccurrenceTooltip.of(null) })
+                    }
                 })
 
             return true
@@ -111,14 +114,14 @@ const keybindings: KeyBinding[] = [
     {
         key: 'Mod-ArrowRight',
         run(view) {
-            view.state.facet(blobPropsFacet).history.goForward()
+            view.state.facet(blobPropsFacet).navigate(1)
             return true
         },
     },
     {
         key: 'Mod-ArrowLeft',
         run(view) {
-            view.state.facet(blobPropsFacet).history.goBack()
+            view.state.facet(blobPropsFacet).navigate(-1)
             return true
         },
     },
