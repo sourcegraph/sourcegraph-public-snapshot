@@ -64,7 +64,7 @@ function jsContextCurrentUserToAuthenticatedUser(user: JsContextCurrentUser): Au
 
     return {
         __typename: 'User',
-        id: String(user.ID),
+        id: user.ID,
         databaseID: user.DatabaseID,
         username: user.Username,
         avatarURL: user.AvatarURL,

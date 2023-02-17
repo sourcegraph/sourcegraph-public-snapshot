@@ -24,7 +24,7 @@ export interface AuthProvider {
 }
 
 export interface JsContextCurrentUser {
-    ID: number
+    ID: string
     DatabaseID: number
     Username: string
     AvatarURL: string
