@@ -41,6 +41,10 @@
 - [Building p4-fusion](./build_p4_fusion.md)
 - [The `gitserver` API](./gitserver-api.md)
 
+## Git
+
+- [`git gc` and its modes of operations in Sourcegraph](./git_gc.md)
+
 ## [Languages](languages/index.md)
 
 - [Go](languages/go.md)
