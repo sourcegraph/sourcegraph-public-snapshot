@@ -64,7 +64,7 @@ func (s *BackfillStore) NewBackfill(ctx context.Context, series types.InsightSer
 	return scanBackfill(row)
 }
 
-func (s *BackfillStore) loadBackfill(ctx context.Context, id int) (*SeriesBackfill, error) {
+func (s *BackfillStore) LoadBackfill(ctx context.Context, id int) (*SeriesBackfill, error) {
 	q := "SELECT %s FROM insight_series_backfill WHERE id = %s"
 	row := s.QueryRow(ctx, sqlf.Sprintf(q, backfillColumnsJoin, id))
 	return scanBackfill(row)
@@ -120,6 +120,85 @@ func (b *SeriesBackfill) SetCompleted(ctx context.Context, store *BackfillStore)
 
 func (b *SeriesBackfill) SetFailed(ctx context.Context, store *BackfillStore) error {
 	return b.setState(ctx, store, BackfillStateFailed)
+}
+
+func (b *SeriesBackfill) SetLowestPriority(ctx context.Context, store *BackfillStore) error {
+	tx, err := store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	currentMax, _, err := basestore.ScanFirstFloat(tx.Query(ctx,
+		sqlf.Sprintf(`
+		SELECT coalesce(max(estimated_cost), 0)
+		FROM insight_series_backfill
+		WHERE state in ('new','processing') AND id != %s`, b.Id)))
+	if err != nil {
+		return err
+	}
+
+	// If this item is already the lowest priority there is nothing to do here
+	if b.EstimatedCost >= currentMax {
+		return nil
+	}
+	newCost := currentMax * 2
+	defer func(ic float64) {
+		err = tx.Done(err)
+		if err != nil {
+			b.EstimatedCost = ic
+		}
+	}(b.EstimatedCost)
+	err = b.setCost(ctx, tx, newCost)
+	return err
+}
+
+func (b *SeriesBackfill) SetHighestPriority(ctx context.Context, store *BackfillStore) (err error) {
+	tx, err := store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func(ic float64) {
+		err = tx.Done(err)
+		if err != nil {
+			b.EstimatedCost = ic
+		}
+	}(b.EstimatedCost)
+	err = b.setCost(ctx, tx, 0)
+	return err
+}
+
+func (b *SeriesBackfill) RetryBackfillAttempt(ctx context.Context, store *BackfillStore) (err error) {
+	tx, err := store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+	iterator, err := b.repoIterator(ctx, tx)
+	if err != nil {
+		return err
+	}
+	err = iterator.Restart(ctx, tx.Store)
+	if err != nil {
+		return err
+	}
+	err = b.setState(ctx, tx, BackfillStateProcessing)
+	if err != nil {
+		return err
+	}
+	// enqueue backfill for next step in processing
+	err = enqueueBackfill(ctx, tx.Handle(), b)
+	if err != nil {
+		return errors.Wrap(err, "backfill.enqueueBackfill")
+	}
+	return nil
+}
+
+func (b *SeriesBackfill) setCost(ctx context.Context, store *BackfillStore, newCost float64) (err error) {
+	err = store.Exec(ctx, sqlf.Sprintf("update insight_series_backfill set estimated_cost = %s where id = %s;", newCost, b.Id))
+	if err != nil {
+		return err
+	}
+	b.EstimatedCost = 0
+	return nil
 }
 
 func (b *SeriesBackfill) setState(ctx context.Context, store *BackfillStore, newState BackfillState) error {
@@ -234,11 +313,13 @@ type BackfillQueueArgs struct {
 	PaginationArgs *database.PaginationArgs
 	States         *[]string
 	TextSearch     *string
+	ID             *int
 }
 type BackfillQueueItem struct {
 	ID                  int
 	InsightTitle        string
 	SeriesID            int
+	InsightUniqueID     string
 	SeriesLabel         string
 	SeriesSearchQuery   string
 	BackfillState       string
@@ -250,6 +331,7 @@ type BackfillQueueItem struct {
 	BackfillCompletedAt *time.Time
 	QueuePosition       *int
 	Errors              *[]string
+	CreatorID           *int32
 }
 
 func (s *BackfillStore) GetBackfillQueueTotalCount(ctx context.Context, args BackfillQueueArgs) (int, error) {
@@ -263,7 +345,7 @@ func backfillWhere(args BackfillQueueArgs) []*sqlf.Query {
 	where := []*sqlf.Query{sqlf.Sprintf("s.deleted_at IS NULL")}
 	if args.TextSearch != nil && len(*args.TextSearch) > 0 {
 		likeStr := "%" + *args.TextSearch + "%"
-		where = append(where, sqlf.Sprintf("(title LIKE %s OR label LIKE %s)", likeStr, likeStr))
+		where = append(where, sqlf.Sprintf("(title ILIKE %s OR label ILIKE %s)", likeStr, likeStr))
 	}
 
 	if args.States != nil && len(*args.States) > 0 {
@@ -273,19 +355,35 @@ func backfillWhere(args BackfillQueueArgs) []*sqlf.Query {
 		}
 		where = append(where, sqlf.Sprintf(fmt.Sprintf("state.backfill_state in (%s)", strings.Join(states, ","))))
 	}
+
+	if args.ID != nil {
+		where = append(where, sqlf.Sprintf("isb.id = %s", *args.ID))
+	}
 	return where
 }
 
 func (s *BackfillStore) GetBackfillQueueInfo(ctx context.Context, args BackfillQueueArgs) (results []BackfillQueueItem, err error) {
 	where := backfillWhere(args)
-	pagination := database.PaginationArgs{}
+	pagination := database.PaginationArgs{
+		OrderBy: database.OrderBy{
+			{
+				Field: string(BackfillID),
+			},
+		}}
 	if args.PaginationArgs != nil {
 		pagination = *args.PaginationArgs
 	}
 	p := pagination.SQL()
-	// Add in pagination where clause
-	if p.Where != nil {
-		where = append(where, p.Where)
+
+	// The underlying pagination helper makes the assumption that any sorted column is both non null and unique
+	// therefore we can't use the where clause it generates.  Below builds the correct where from the before or after
+	// from the cursor
+
+	if pagination.After != nil {
+		where = append(where, sqlf.Sprintf("isb.id > %s", *pagination.After))
+	}
+	if pagination.Before != nil {
+		where = append(where, sqlf.Sprintf(" isb.id < %s", *pagination.Before))
 	}
 	query := sqlf.Sprintf(backfillQueueSQL, sqlf.Sprintf("WHERE %s", sqlf.Join(where, " AND ")))
 	query = p.AppendOrderToQuery(query)
@@ -311,6 +409,7 @@ func scanAllBackfillQueueItems(rows *sql.Rows, queryErr error) (_ []BackfillQueu
 			&temp.ID,
 			&temp.InsightTitle,
 			&temp.SeriesID,
+			&temp.InsightUniqueID,
 			&temp.SeriesLabel,
 			&temp.SeriesSearchQuery,
 			&temp.BackfillState,
@@ -322,6 +421,7 @@ func scanAllBackfillQueueItems(rows *sql.Rows, queryErr error) (_ []BackfillQueu
 			&temp.BackfillCompletedAt,
 			&temp.QueuePosition,
 			pq.Array(&iteratorErrors),
+			&temp.CreatorID,
 		); err != nil {
 			return []BackfillQueueItem{}, err
 		}
@@ -365,8 +465,8 @@ const (
 
 var backfillQueueSQL = `
 WITH job_queue as (
-    select backfill_id, state, row_number() over () queue_position
-    from insights_jobs_backfill_in_progress where state = 'queued'  order by cost_bucket
+    select backfill_id, state, row_number() over (ORDER BY estimated_cost, backfill_id)  queue_position
+    from insights_jobs_backfill_in_progress where state = 'queued'
 ),
 errors as (
     select repo_iterator_id, array_agg(err_msg) error_messages
@@ -384,17 +484,19 @@ END backfill_state
 select isb.id,
        title,
        s.id,
+	   iv.unique_id insight_id,
        label,
        query,
        state.backfill_state,
        round(ri.percent_complete *100) percent_complete,
-       isb.estimated_cost,
+       round(isb.estimated_cost),
        ri.runtime_duration runtime_duration,
        ri.created_at backfill_created_at,
        ri.started_at backfill_started_at,
        ri.completed_at backfill_completed_at,
        jq.queue_position,
-       e.error_messages
+       e.error_messages,
+	   (SELECT user_id FROM insight_view_grants WHERE insight_view_id = iv.id ORDER BY id LIMIT 1) creator_id
 from insight_series_backfill isb
     left join repo_iterator ri on isb.repo_iterator_id = ri.id
     left join errors e on isb.repo_iterator_id = e.repo_iterator_id

@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // This file just contains stub GraphQL resolvers and data types for Code Insights which merely
@@ -48,9 +47,9 @@ type InsightsResolver interface {
 	InsightAdminBackfillQueue(ctx context.Context, args *AdminBackfillQueueArgs) (*graphqlutil.ConnectionResolver[*BackfillQueueItemResolver], error)
 	// Admin Mutations
 	UpdateInsightSeries(ctx context.Context, args *UpdateInsightSeriesArgs) (InsightSeriesMetadataPayloadResolver, error)
-	// RetryInsightSeriesBackfill(ctx context.Context, args *BackfillArgs) (InsightBackfillQueueItemResolver, error)
-	// MoveInsightSeriesBackfillToFrontOfQueue(ctx context.Context, args *BackfillArgs) (InsightBackfillQueueItemResolver, error)
-	// MoveInsightSeriesBackfillToBackOfQueue(ctx context.Context, args *BackfillArgs) (InsightBackfillQueueItemResolver, error)
+	RetryInsightSeriesBackfill(ctx context.Context, args *BackfillArgs) (*BackfillQueueItemResolver, error)
+	MoveInsightSeriesBackfillToFrontOfQueue(ctx context.Context, args *BackfillArgs) (*BackfillQueueItemResolver, error)
+	MoveInsightSeriesBackfillToBackOfQueue(ctx context.Context, args *BackfillArgs) (*BackfillQueueItemResolver, error)
 }
 
 type SearchInsightLivePreviewArgs struct {
@@ -524,17 +523,23 @@ type RepositoryPreviewPayloadResolver interface {
 	NumberOfRepositories(ctx context.Context) *int32
 }
 
+type BackfillQueueID struct {
+	BackfillID int
+	InsightID  string
+}
 type BackfillQueueItemResolver struct {
-	BackfillID     int
-	InsightTitle   string
-	CreatorID      *int
-	Label          string
-	Query          string
-	BackfillStatus BackfillQueueStatusResolver
+	BackfillID      int
+	InsightUniqueID string
+	InsightTitle    string
+	CreatorID       *int32
+	Label           string
+	Query           string
+	BackfillStatus  BackfillQueueStatusResolver
+	GetUserResolver func(*int32) (*UserResolver, error)
 }
 
 func (r *BackfillQueueItemResolver) ID() graphql.ID {
-	return relay.MarshalID("backfill", r.BackfillID)
+	return relay.MarshalID("backfillQueueItem", BackfillQueueID{BackfillID: r.BackfillID, InsightID: r.InsightUniqueID})
 }
 
 func (r *BackfillQueueItemResolver) IDInt32() int32 {
@@ -545,7 +550,7 @@ func (r *BackfillQueueItemResolver) InsightViewTitle() string {
 	return r.InsightTitle
 }
 func (r *BackfillQueueItemResolver) Creator(ctx context.Context) (*UserResolver, error) {
-	return nil, errors.New("not implemented")
+	return r.GetUserResolver(r.CreatorID)
 }
 func (r *BackfillQueueItemResolver) SeriesLabel() string {
 	return r.Label

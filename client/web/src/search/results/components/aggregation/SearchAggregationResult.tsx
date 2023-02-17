@@ -38,14 +38,14 @@ interface SearchAggregationResultProps extends TelemetryProps, HTMLAttributes<HT
      * That should update the query and re-trigger search (but this should be connected
      * to this UI through its consumer)
      */
-    onQuerySubmit: (newQuery: string) => void
+    onQuerySubmit: (newQuery: string, updatedQuerySearch: string) => void
 }
 
 export const SearchAggregationResult: FC<SearchAggregationResultProps> = props => {
     const { query, patternType, caseSensitive, onQuerySubmit, telemetryService, ...attributes } = props
 
     const [extendedTimeout, setExtendedTimeoutLocal] = useState(false)
-    const [aggregationUIMode, setAggregationUIMode] = useAggregationUIMode()
+    const [, setAggregationUIMode] = useAggregationUIMode()
     const [aggregationMode, setAggregationMode] = useAggregationSearchMode()
     const { data, error, loading } = useSearchAggregationData({
         query,
@@ -62,20 +62,13 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
         telemetryService.log(GroupResultsPing.CollapseFullViewPanel, { aggregationMode }, { aggregationMode })
     }
 
-    const resetUIMode = (): void => {
-        if (aggregationUIMode !== AggregationUIMode.Sidebar) {
-            setAggregationUIMode(AggregationUIMode.Sidebar)
-        }
-    }
-
     const handleBarLinkClick = (query: string, index: number): void => {
         // Clearing the aggregation mode on drill down would provide a better experience
         // in most cases and preserve the desired behavior of the capture group search
         // when the original query had multiple capture groups
-        setAggregationMode(null)
+        const updatedSearchQuery = setAggregationMode(null)
 
-        resetUIMode()
-        onQuerySubmit(query)
+        onQuerySubmit(query, updatedSearchQuery)
         telemetryService.log(
             GroupResultsPing.ChartBarClick,
             { aggregationMode, index, uiMode: 'resultsScreen' },

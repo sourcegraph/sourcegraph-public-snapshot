@@ -66,6 +66,7 @@ go_test(
     embed = [":userpasswd"],
     deps = [
         "//cmd/frontend/backend",
+        "//cmd/frontend/internal/session",
         "//internal/actor",
         "//internal/conf",
         "//internal/database",
