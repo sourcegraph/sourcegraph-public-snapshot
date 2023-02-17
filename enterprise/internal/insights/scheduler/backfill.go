@@ -345,7 +345,7 @@ func backfillWhere(args BackfillQueueArgs) []*sqlf.Query {
 	where := []*sqlf.Query{sqlf.Sprintf("s.deleted_at IS NULL")}
 	if args.TextSearch != nil && len(*args.TextSearch) > 0 {
 		likeStr := "%" + *args.TextSearch + "%"
-		where = append(where, sqlf.Sprintf("(title LIKE %s OR label LIKE %s)", likeStr, likeStr))
+		where = append(where, sqlf.Sprintf("(title ILIKE %s OR label ILIKE %s)", likeStr, likeStr))
 	}
 
 	if args.States != nil && len(*args.States) > 0 {
