@@ -214,7 +214,6 @@ export const flattenTree = function (tree: ITreeNode): INode[] {
     const flattenedTree: INode[] = []
 
     const flattenTreeHelper = function (tree: ITreeNode, parent: number | null) {
-        console.log({ tree, parent })
         const node: INode = {
             id: count,
             name: tree.name,

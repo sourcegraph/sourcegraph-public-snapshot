@@ -49,14 +49,12 @@ export const RepoRevisionSidebarSymbolTree: React.FC<Props> = ({
         return acc
     }, [] as number[])
 
-    // const lastUrlNavigatedToRef = React.useRef<null | string>(null)
     const onSelect = useCallback(
         ({ element, isSelected }: { element: SymbolNode; isSelected: boolean }) => {
             if (!isSelected || element.__typename !== 'Symbol' || selectedSymbolUrl === element.url) {
                 return
             }
 
-            // lastUrlNavigatedToRef.current = element.url
             navigate(element.url)
             onClick()
             setSelectedSymbolUrl(element.url)
