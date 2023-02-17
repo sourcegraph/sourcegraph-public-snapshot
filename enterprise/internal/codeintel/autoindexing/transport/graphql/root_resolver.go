@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -230,6 +231,92 @@ func (r *rootResolver) LSIFIndexesByRepo(ctx context.Context, args *resolverstub
 	return sharedresolvers.NewIndexConnectionResolver(r.autoindexSvc, r.uploadSvc, r.policySvc, indexConnectionResolver, prefetcher, traceErrs), nil
 }
 
+// 🚨 SECURITY: Only site admins may infer auto-index jobs
+func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.InferAutoIndexJobsForRepoArgs) (_ []resolverstubs.AutoIndexJobDescriptionResolver, err error) {
+	ctx, _, endObservation := r.operations.inferAutoIndexJobsForRepo.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("repoID", string(args.Repository)),
+	}})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+		return nil, err
+	}
+	if !autoIndexingEnabled() {
+		return nil, errAutoIndexingNotEnabled
+	}
+
+	repositoryID, err := UnmarshalRepositoryID(args.Repository)
+	if err != nil {
+		return nil, err
+	}
+
+	rev := "HEAD"
+	if args.Rev != nil {
+		rev = *args.Rev
+	}
+
+	localOverrideScript := ""
+	if args.Script != nil {
+		localOverrideScript = *args.Script
+	}
+
+	// TODO - expose hints
+	config, _, err := r.autoindexSvc.InferIndexConfiguration(ctx, int(repositoryID), rev, localOverrideScript, false)
+	if err != nil {
+		return nil, err
+	}
+
+	if config == nil {
+		return nil, nil
+	}
+
+	var resolvers []resolverstubs.AutoIndexJobDescriptionResolver
+	for _, indexJob := range config.IndexJobs {
+		var steps []types.DockerStep
+		for _, step := range indexJob.Steps {
+			steps = append(steps, types.DockerStep{
+				Root:     step.Root,
+				Image:    step.Image,
+				Commands: step.Commands,
+			})
+		}
+
+		resolvers = append(resolvers, &autoIndexJobDescriptionResolver{
+			root:    indexJob.Root,
+			indexer: types.NewIndexerResolver(indexJob.Indexer),
+			steps: sharedresolvers.NewIndexStepsResolver(r.autoindexSvc, types.Index{
+				DockerSteps:      steps,
+				LocalSteps:       indexJob.LocalSteps,
+				Root:             indexJob.Root,
+				Indexer:          indexJob.Indexer,
+				IndexerArgs:      indexJob.IndexerArgs,
+				Outfile:          indexJob.Outfile,
+				RequestedEnvVars: indexJob.RequestedEnvVars,
+			}),
+		})
+	}
+
+	return resolvers, nil
+}
+
+type autoIndexJobDescriptionResolver struct {
+	root    string
+	indexer resolverstubs.CodeIntelIndexerResolver
+	steps   resolverstubs.IndexStepsResolver
+}
+
+func (r *autoIndexJobDescriptionResolver) Root() string {
+	return r.root
+}
+
+func (r *autoIndexJobDescriptionResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
+	return r.indexer
+}
+
+func (r *autoIndexJobDescriptionResolver) Steps() resolverstubs.IndexStepsResolver {
+	return r.steps
+}
+
 // 🚨 SECURITY: Only site admins may queue auto-index jobs
 func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.QueueAutoIndexJobsForRepoArgs) (_ []resolverstubs.LSIFIndexResolver, err error) {
 	ctx, traceErrs, endObservation := r.operations.queueAutoIndexJobsForRepo.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -415,7 +502,7 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 	commit := "HEAD"
 	var limitErr error
 
-	indexJobs, err := r.autoindexSvc.InferIndexJobsFromRepositoryStructure(ctx, repoID, commit, false)
+	indexJobs, err := r.autoindexSvc.InferIndexJobsFromRepositoryStructure(ctx, repoID, commit, "", false)
 	if err != nil {
 		if !errors.As(err, &inference.LimitError{}) {
 			return nil, err

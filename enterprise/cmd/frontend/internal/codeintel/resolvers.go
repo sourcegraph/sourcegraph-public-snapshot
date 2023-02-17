@@ -127,6 +127,10 @@ func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *resolver
 	return r.autoIndexingRootResolver.QueueAutoIndexJobsForRepo(ctx, args)
 }
 
+func (r *Resolver) InferAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.InferAutoIndexJobsForRepoArgs) (_ []resolverstubs.AutoIndexJobDescriptionResolver, err error) {
+	return r.autoIndexingRootResolver.InferAutoIndexJobsForRepo(ctx, args)
+}
+
 func (r *Resolver) RequestLanguageSupport(ctx context.Context, args *resolverstubs.RequestLanguageSupportArgs) (_ *resolverstubs.EmptyResponse, err error) {
 	return r.autoIndexingRootResolver.RequestLanguageSupport(ctx, args)
 }

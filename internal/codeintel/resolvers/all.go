@@ -38,6 +38,7 @@ type AutoindexingServiceResolver interface {
 	LSIFIndexByID(ctx context.Context, id graphql.ID) (_ LSIFIndexResolver, err error)
 	LSIFIndexes(ctx context.Context, args *LSIFIndexesQueryArgs) (LSIFIndexConnectionResolver, error)
 	LSIFIndexesByRepo(ctx context.Context, args *LSIFRepositoryIndexesQueryArgs) (LSIFIndexConnectionResolver, error)
+	InferAutoIndexJobsForRepo(ctx context.Context, args *InferAutoIndexJobsForRepoArgs) ([]AutoIndexJobDescriptionResolver, error)
 	QueueAutoIndexJobsForRepo(ctx context.Context, args *QueueAutoIndexJobsForRepoArgs) ([]LSIFIndexResolver, error)
 	UpdateRepositoryIndexConfiguration(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*EmptyResponse, error)
 	CodeIntelSummary(ctx context.Context) (CodeIntelSummaryResolver, error)
@@ -175,6 +176,12 @@ type PreciseIndexResolver interface {
 	IsLatestForRepo() bool
 	RetentionPolicyOverview(ctx context.Context, args *LSIFUploadRetentionPolicyMatchesArgs) (CodeIntelligenceRetentionPolicyMatchesConnectionResolver, error)
 	AuditLogs(ctx context.Context) (*[]LSIFUploadsAuditLogsResolver, error)
+}
+
+type AutoIndexJobDescriptionResolver interface {
+	Root() string
+	Indexer() CodeIntelIndexerResolver
+	Steps() IndexStepsResolver
 }
 
 type PageInfo interface {
@@ -698,6 +705,12 @@ type LSIFIndexesWithRepositoryNamespaceResolver interface {
 	Root() string
 	Indexer() CodeIntelIndexerResolver
 	Indexes() []LSIFIndexResolver
+}
+
+type InferAutoIndexJobsForRepoArgs struct {
+	Repository graphql.ID
+	Rev        *string
+	Script     *string
 }
 
 type QueueAutoIndexJobsForRepoArgs struct {
