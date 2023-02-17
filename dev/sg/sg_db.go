@@ -169,45 +169,47 @@ func dbAddUserAction(cmd *cli.Context) error {
 	if err != nil {
 		return err
 	}
+
 	db := database.NewDB(logger, conn)
+	return db.WithTransact(ctx, func(tx database.DB) error {
+		username := cmd.String("username")
+		password := cmd.String("password")
 
-	username := cmd.String("username")
-	password := cmd.String("password")
+		// Create the user, generating an email based on the username.
+		email := fmt.Sprintf("%s@sourcegraph.com", username)
+		user, err := tx.Users().Create(ctx, database.NewUser{
+			Username:        username,
+			Email:           email,
+			EmailIsVerified: true,
+			Password:        password,
+		})
+		if err != nil {
+			return err
+		}
 
-	// Create the user, generating an email based on the username.
-	email := fmt.Sprintf("%s@sourcegraph.com", username)
-	user, err := db.Users().Create(ctx, database.NewUser{
-		Username:        username,
-		Email:           email,
-		EmailIsVerified: true,
-		Password:        password,
+		// Make the user site admin.
+		err = tx.Users().SetIsSiteAdmin(ctx, user.ID, true)
+		if err != nil {
+			return err
+		}
+
+		// Report back the new user information.
+		std.Out.WriteSuccessf(
+			// the space after the last %s is so the user can select the password easily in the shell to copy it.
+			"User '%s%s%s' (%s%s%s) has been created and its password is '%s%s%s'.",
+			output.StyleOrange,
+			username,
+			output.StyleReset,
+			output.StyleOrange,
+			email,
+			output.StyleReset,
+			output.StyleOrange,
+			password,
+			output.StyleReset,
+		)
+
+		return nil
 	})
-	if err != nil {
-		return err
-	}
-
-	// Make the user site admin.
-	err = db.Users().SetIsSiteAdmin(ctx, user.ID, true)
-	if err != nil {
-		return err
-	}
-
-	// Report back the new user information.
-	std.Out.WriteSuccessf(
-		// the space after the last %s is so the user can select the password easily in the shell to copy it.
-		"User '%s%s%s' (%s%s%s) has been created and its password is '%s%s%s'.",
-		output.StyleOrange,
-		username,
-		output.StyleReset,
-		output.StyleOrange,
-		email,
-		output.StyleReset,
-		output.StyleOrange,
-		password,
-		output.StyleReset,
-	)
-
-	return nil
 }
 
 func dbUpdateUserExternalAccount(cmd *cli.Context) error {

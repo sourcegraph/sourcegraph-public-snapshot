@@ -74,12 +74,13 @@
     }
 
     &-subject {
-        font-weight: 600;
         flex: 0 1 auto;
-        padding-right: 0.5rem;
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
+    }
+
+    &-link {
         color: var(--body-color);
     }
 
