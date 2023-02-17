@@ -433,7 +433,7 @@ func (d *dummyPermsSyncer) syncRepoPerms(_ context.Context, repoID api.RepoID, n
 		NoPerms: noPerms,
 		Options: options,
 	}
-	return &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}, []database.PermissionSyncCodeHostState{}, nil
+	return &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}, database.CodeHostStatusesSet{}, nil
 }
 func (d *dummyPermsSyncer) syncUserPerms(_ context.Context, userID int32, noPerms bool, options authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error) {
 	d.request = combinedRequest{
@@ -441,7 +441,7 @@ func (d *dummyPermsSyncer) syncUserPerms(_ context.Context, userID int32, noPerm
 		NoPerms: noPerms,
 		Options: options,
 	}
-	return &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}, []database.PermissionSyncCodeHostState{}, nil
+	return &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}, database.CodeHostStatusesSet{}, nil
 }
 
 type dummySyncerWithErrors struct {
@@ -459,7 +459,7 @@ func (d *dummySyncerWithErrors) syncRepoPerms(_ context.Context, repoID api.Repo
 		NoPerms: noPerms,
 		Options: options,
 	}
-	return &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}, []database.PermissionSyncCodeHostState{}, nil
+	return &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}, database.CodeHostStatusesSet{}, nil
 }
 func (d *dummySyncerWithErrors) syncUserPerms(_ context.Context, userID int32, noPerms bool, options authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error) {
 	if _, ok := d.userIDErrors[userID]; ok {
@@ -470,5 +470,5 @@ func (d *dummySyncerWithErrors) syncUserPerms(_ context.Context, userID int32, n
 		NoPerms: noPerms,
 		Options: options,
 	}
-	return &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}, []database.PermissionSyncCodeHostState{}, nil
+	return &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}, database.CodeHostStatusesSet{}, nil
 }
