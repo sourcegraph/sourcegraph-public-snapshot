@@ -18,7 +18,9 @@ export const authenticatedUser = new ReplaySubject<AuthenticatedUser | null>(1)
 
 /**
  * Represent the current user info on the initial application load. Instead waiting for the `currentAuthStateQuery` query
- * we use the value provided us from the server. Subsequent updates are done received via `authenticatedUser`.
+ * we use the value provided us from the server. Subsequent updates are received via `authenticatedUser` subject.
+ *
+ * TODO: migrate the `currentAuthStateQuery` to Apollo Client and then user pre-loaded to initialize Apollo cache.
  */
 export const authenticatedUserValue = jsContextCurrentUserToAuthenticatedUser(window.context.CurrentUser)
 authenticatedUser.next(authenticatedUserValue)
