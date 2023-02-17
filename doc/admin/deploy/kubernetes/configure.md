@@ -38,7 +38,7 @@ This guide will demonstrate how to customize your Sourcegraph deployment using K
 
 To ensure optimal performance and functionality of your Sourcegraph deployment, it is recommended to use components pre-configured by us in your overlay. These components include settings that have been specifically designed and tested for Sourcegraph and do not require any additional configuration changes.
 
-Understand how each component works and its dependencies before combining components in your overlay file. Review component configuration settings and resources to ensure components are compatible and work together properly. Disable components carefully, as some may depend on others. 
+Be sure to understand how each component and it's dependencies work before combining components in your overlay file. Review all component configuration settings and resources to ensure components are compatible and work together properly. Remember that some components may depend on others, so disable components carefully.
 
 Following these guidelines will help you create a seamless deployment and avoid conflicts.
 
