@@ -6848,6 +6848,21 @@ type Site implements SettingsSubject {
     Reflects the site configuration `enableLegacyExtensions` experimental feature value.
     """
     enableLegacyExtensions: Boolean!
+
+    """
+    FOR INTERNAL USE ONLY: Returns information about instance upgrade readiness.
+    """
+    upgradeReadiness: UpgradeReadiness!
+}
+
+"""
+Instance upgrade readiness information includes schema drifts and deprecated-but-unfinished out-of-band migrations.
+"""
+type UpgradeReadiness {
+    """
+    The schema drift details.
+    """
+    schemaDrift: String!
 }
 
 """
