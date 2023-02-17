@@ -8,10 +8,10 @@ import (
 	"testing"
 
 	"github.com/dnaeon/go-vcr/cassette"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var update = flag.Bool("update", false, "update testdata")
@@ -33,13 +33,14 @@ func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 		t.Fatal(err)
 	}
 
-	c := &schema.AzureDevOpsConnection{
-		Url:      "https://dev.azure.com",
-		Username: "testuser",
-		Token:    "testtoken",
+	u, err := url.Parse("https://dev.azure.com")
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	cli, err := NewClient("urn", c, hc)
+	a := &auth.BasicAuth{Username: "testuser", Password: "testtoken"}
+
+	cli, err := NewClient("urn", u, a, hc)
 	if err != nil {
 		t.Fatal(err)
 	}

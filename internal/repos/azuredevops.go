@@ -49,7 +49,12 @@ func NewAzureDevOpsSource(ctx context.Context, logger log.Logger, svc *types.Ext
 		return nil, err
 	}
 
-	cli, err := azuredevops.NewClient(svc.URN(), &c, httpCli)
+	u, err := urlx.Parse(c.Url)
+	if err != nil {
+		return nil, err
+	}
+
+	cli, err := azuredevops.NewClient(svc.URN(), u, &auth.BasicAuth{Username: c.Username, Password: c.Token}, httpCli)
 	if err != nil {
 		return nil, err
 	}

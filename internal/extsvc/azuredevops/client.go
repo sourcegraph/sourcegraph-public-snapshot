@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 const (
@@ -28,9 +27,6 @@ type Client struct {
 	// HTTP Client used to communicate with the API.
 	httpClient httpcli.Doer
 
-	// Config is the code host connection config for this client.
-	Config *schema.AzureDevOpsConnection
-
 	// URL is the base URL of AzureDevOps.
 	URL *url.URL
 
@@ -43,25 +39,16 @@ type Client struct {
 // NewClient returns an authenticated AzureDevOps API client with
 // the provided configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(urn string, config *schema.AzureDevOpsConnection, httpClient httpcli.Doer) (*Client, error) {
-	u, err := url.Parse(config.Url)
-	if err != nil {
-		return nil, err
-	}
-
+func NewClient(urn string, url *url.URL, auth auth.Authenticator, httpClient httpcli.Doer) (*Client, error) {
 	if httpClient == nil {
 		httpClient = httpcli.ExternalDoer
 	}
 
 	return &Client{
 		httpClient: httpClient,
-		Config:     config,
-		URL:        u,
+		URL:        url,
 		rateLimit:  ratelimit.DefaultRegistry.Get(urn),
-		auth: &auth.BasicAuth{
-			Username: config.Username,
-			Password: config.Token,
-		},
+		auth:       auth,
 	}, nil
 }
 
