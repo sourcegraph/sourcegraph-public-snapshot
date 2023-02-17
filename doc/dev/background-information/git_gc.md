@@ -1,6 +1,6 @@
 # Git GC and its modes of operations in Sourcegraph
 
-`git-gc` is git's in-built mechanism to optimise git objects in a repository. Sourcegraph runs `git gc` in `gitserver` to clean up cruft in git repos, sometimes when executing git commands and other times as part of regular clean up jobs.
+`git-gc` is git's built-in mechanism to optimise git objects in a repository. Sourcegraph runs `git gc` in `gitserver` to clean up cruft in git repos, sometimes when executing git commands and other times as part of regular clean up jobs.
 
 We have three possible modes of operation. Two of them circumvent git's default behaviour (more on it later):
 
