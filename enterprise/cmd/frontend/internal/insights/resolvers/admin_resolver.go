@@ -409,8 +409,8 @@ func (r *Resolver) InsightAdminBackfillQueue(ctx context.Context, args *graphqlb
 		&args.ConnectionResolverArgs,
 		&graphqlutil.ConnectionResolverOptions{
 			OrderBy: database.OrderBy{
-				{Field: string(orderByToDBBackfillColumn(orderBy))},
-				{Field: string(scheduler.BackfillID)},
+				{Field: string(orderByToDBBackfillColumn(orderBy))}, // user selected or default
+				{Field: string(scheduler.BackfillID)},               // key field to support paging
 			},
 			Ascending: !args.Descending})
 	if err != nil {
@@ -486,27 +486,18 @@ func (a *adminBackfillQueueConnectionStore) ComputeNodes(ctx context.Context, ar
 func (a *adminBackfillQueueConnectionStore) MarshalCursor(node *graphqlbackend.BackfillQueueItemResolver, orderBy database.OrderBy) (*string, error) {
 	// This is the enum the client requested ordering by
 	column := orderBy[0].Field
-	var value string
 
 	switch scheduler.BackfillQueueColumn(column) {
-	case scheduler.State:
-		value = strings.ToLower(node.BackfillStatus.State())
-	case scheduler.QueuePosition:
-		pos := node.BackfillStatus.QueuePosition()
-		if pos != nil {
-			value = fmt.Sprintf("%d", pos)
-		} else {
-			value = "NULL"
-		}
+	case scheduler.State, scheduler.QueuePosition:
 	default:
 		return nil, errors.New(fmt.Sprintf("invalid OrderBy.Field. Expected: one of (STATE, QUEUE_POSITION). Actual: %s", column))
 	}
 
-	// format of the "Value" is the value for the sorted by column ie `QUEUED` followed by the ID of the current node
+	// In cursor Column is the what to sort by and the Value is the backfillID
 	cursor := marshalBackfillItemCursor(
 		&itypes.Cursor{
 			Column: string(dbToOrderBy(scheduler.BackfillQueueColumn(column))),
-			Value:  fmt.Sprintf("%s@%d", value, node.IDInt32()),
+			Value:  fmt.Sprintf("%d", node.IDInt32()),
 		},
 	)
 
@@ -527,21 +518,7 @@ func (a *adminBackfillQueueConnectionStore) UnmarshalCursor(cursor string, order
 		return nil, errors.New("Invalid cursor. Expected one of (STATE, QUEUE_POSITION)")
 	}
 
-	csv := ""
-	values := strings.Split(backfillCursor.Value, "@")
-	if len(values) != 2 {
-		return nil, errors.New("Invalid cursor. Expected Value: <orderbyvalue>@<id>")
-	}
-	switch orderByColumn {
-	case scheduler.State:
-		csv = fmt.Sprintf("'%v', %v", values[0], values[1])
-	case scheduler.BackfillID, scheduler.QueuePosition:
-		csv = fmt.Sprintf("%v, %v", values[0], values[1])
-	default:
-		return nil, errors.New("Invalid OrderBy Field.")
-	}
-
-	return &csv, err
+	return &backfillCursor.Value, err
 }
 
 const backfillCursorKind = "InsightsAdminBackfillItem"
