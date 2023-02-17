@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
@@ -286,7 +287,7 @@ func TestUserRoleGetByRoleID(t *testing.T) {
 	totalUsersWithRole := 10
 	for i := 1; i <= totalUsersWithRole; i++ {
 		username := fmt.Sprintf("ANOTHERTESTUSER%d", i)
-		user := createTestUserForUserRole(ctx, fmt.Sprintf("testa%d@example.com", i), username, t, db)
+		user := createTestUserWithoutRoles(t, db, username, false)
 
 		err := store.Assign(ctx, AssignUserRoleOpts{
 			RoleID: role.ID,
@@ -324,7 +325,7 @@ func TestUserRoleGetByUserID(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.UserRoles()
 
-	user := createTestUserForUserRole(ctx, "testuser@example.com", "ANOTHERTESTUSER", t, db)
+	user := createTestUserWithoutRoles(t, db, "ANOTHERTESTUSER", false)
 
 	totalRoles := 3
 	for i := 1; i <= totalRoles; i++ {
@@ -408,7 +409,7 @@ func TestUserRoleGetByRoleIDAndUserID(t *testing.T) {
 
 func createUserAndRole(ctx context.Context, t *testing.T, db DB) (*types.User, *types.Role) {
 	t.Helper()
-	user := createTestUserForUserRole(ctx, "a1@example.com", "u1", t, db)
+	user := createTestUserWithoutRoles(t, db, "u1", false)
 	role := createTestRoleForUserRole(ctx, "ANOTHERTESTROLE - 1", t, db)
 	return user, role
 }
@@ -422,16 +423,28 @@ func createTestRoleForUserRole(ctx context.Context, name string, t *testing.T, d
 	return role
 }
 
-func createTestUserForUserRole(ctx context.Context, email, username string, t *testing.T, db DB) *types.User {
+func createTestUserWithoutRoles(t *testing.T, db DB, username string, siteAdmin bool) *types.User {
 	t.Helper()
-	user, err := db.Users().Create(ctx, NewUser{
-		Email:                 email,
-		Username:              username,
-		Password:              "p1",
-		EmailVerificationCode: email + username,
-	})
+
+	user := &types.User{
+		Username:    username,
+		DisplayName: "testuser",
+	}
+
+	q := sqlf.Sprintf("INSERT INTO users (username, site_admin) VALUES (%s, %t) RETURNING id, site_admin", user.Username, siteAdmin)
+	err := db.QueryRowContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&user.ID, &user.SiteAdmin)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	if user.SiteAdmin != siteAdmin {
+		t.Fatalf("user.SiteAdmin=%t, but expected is %t", user.SiteAdmin, siteAdmin)
+	}
+
+	_, err = db.ExecContext(context.Background(), "INSERT INTO names(name, user_id) VALUES($1, $2)", user.Username, user.ID)
+	if err != nil {
+		t.Fatalf("failed to create name: %s", err)
+	}
+
 	return user
 }

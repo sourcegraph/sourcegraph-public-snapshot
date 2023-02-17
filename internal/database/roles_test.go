@@ -62,7 +62,7 @@ func TestRoleList(t *testing.T) {
 	store := db.Roles()
 
 	roles, total := createTestRoles(ctx, t, store)
-	user := createTestUserForUserRole(ctx, "test@test.com", "test-user-1", t, db)
+	user := createTestUserWithoutRoles(t, db, "test-user-1", false)
 
 	err := db.UserRoles().Assign(ctx, AssignUserRoleOpts{
 		RoleID: roles[0].ID,
@@ -115,6 +115,7 @@ func TestRoleList(t *testing.T) {
 			UserID: user.ID,
 		})
 		require.NoError(t, err)
+
 		require.Len(t, userRoles, 1)
 		require.Equal(t, userRoles[0].ID, roles[0].ID)
 	})
@@ -137,7 +138,7 @@ func TestRoleCount(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.Roles()
 
-	user := createTestUserForUserRole(ctx, "test@test.com", "test-user-1", t, db)
+	user := createTestUserWithoutRoles(t, db, "test-user-1", false)
 	roles, total := createTestRoles(ctx, t, store)
 
 	err := db.UserRoles().Assign(ctx, AssignUserRoleOpts{
