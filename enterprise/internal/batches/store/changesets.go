@@ -312,6 +312,7 @@ func (s *Store) CreateChangeset(ctx context.Context, cs ...*btypes.Changeset) (e
 				c.NumFailures,
 				c.Closing,
 				c.SyncErrorMessage,
+				c.PreviousFailureMessage,
 				dbutil.NullStringColumn(title),
 			); err != nil {
 				return err
