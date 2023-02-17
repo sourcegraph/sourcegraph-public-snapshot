@@ -76,6 +76,11 @@ FROM
 	AND spec_id = min_spec_id) migrated;`
 
 func (m *emptySpecIDMigrator) Up(ctx context.Context) (err error) {
+	// If a batch change has multiple empty batch specs associated with it, first we clear
+	// out the dupes, so that we're only needing to reorder one record.
+	if err = m.store.Exec(ctx, sqlf.Sprintf(deleteDupEmptySpecsQuery, sqlf.Sprintf(specsForDraftsQuery))); err != nil {
+		return err
+	}
 	if err = m.store.Exec(ctx, sqlf.Sprintf(nextAvailableIDFunctionQuery)); err != nil {
 		return err
 	}
@@ -85,6 +90,20 @@ func (m *emptySpecIDMigrator) Up(ctx context.Context) (err error) {
 
 	return nil
 }
+
+const deleteDupEmptySpecsQuery = `
+WITH specs AS (%s),
+-- From just the empty specs...
+empty_specs AS (SELECT * FROM specs WHERE is_empty)
+DELETE FROM batch_specs
+	-- ...delete any empty spec that shares a batch change ID with another empty spec...
+	WHERE batch_specs.id IN (SELECT spec_id FROM empty_specs
+		WHERE EXISTS (
+			SELECT 1 FROM empty_specs s
+			WHERE s.bc_id = empty_specs.bc_id
+		)
+	-- ...so long as it's not the one that's currently applied to the batch change.
+	) AND batch_specs.id NOT IN (SELECT batch_spec_id FROM batch_changes)`
 
 const nextAvailableIDFunctionQuery = `
 -- The function next_available_id takes a starting_id and returns the first id lower than
