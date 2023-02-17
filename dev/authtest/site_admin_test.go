@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 )
 
@@ -450,8 +451,9 @@ mutation {
 			t.Run(test.name, func(t *testing.T) {
 				err := userClient.GraphQL("", test.query, test.variables, nil)
 				got := fmt.Sprintf("%v", err)
-				if !strings.Contains(got, "must be site admin") {
-					t.Fatalf(`Want "must be site admin"" error but got %q`, got)
+				// check if it's one of errors that we expect
+				if !strings.Contains(got, auth.ErrMustBeSiteAdmin.Error()) && !strings.Contains(got, auth.ErrMustBeSiteAdminOrSameUser.Error()) {
+					t.Fatalf(`Want one of "%v" errors, but got "%q"`, []string{auth.ErrMustBeSiteAdmin.Error(), auth.ErrMustBeSiteAdminOrSameUser.Error()}, got)
 				}
 			})
 		}
