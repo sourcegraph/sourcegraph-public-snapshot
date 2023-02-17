@@ -105,14 +105,14 @@ func (r *teamConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.Pag
 	return r.pageInfo, r.err
 }
 
-func (r *teamConnectionResolver) Nodes(ctx context.Context) ([]*teamResolver, error) {
+func (r *teamConnectionResolver) Nodes(ctx context.Context) ([]*TeamResolver, error) {
 	r.compute(ctx)
 	if r.err != nil {
 		return nil, r.err
 	}
-	var rs []*teamResolver
+	var rs []*TeamResolver
 	for _, t := range r.teams {
-		rs = append(rs, &teamResolver{
+		rs = append(rs, &TeamResolver{
 			db:   r.db,
 			team: t,
 		})
@@ -120,37 +120,37 @@ func (r *teamConnectionResolver) Nodes(ctx context.Context) ([]*teamResolver, er
 	return rs, nil
 }
 
-type teamResolver struct {
+type TeamResolver struct {
 	db   database.DB
 	team *types.Team
 }
 
-func (r *teamResolver) ID() graphql.ID {
+func (r *TeamResolver) ID() graphql.ID {
 	return relay.MarshalID("Team", r.team.ID)
 }
 
-func (r *teamResolver) Name() string {
+func (r *TeamResolver) Name() string {
 	return r.team.Name
 }
 
-func (r *teamResolver) URL() string {
+func (r *TeamResolver) URL() string {
 	absolutePath := fmt.Sprintf("/teams/%s", r.team.Name)
 	u := &url.URL{Path: absolutePath}
 	return u.String()
 }
 
-func (r *teamResolver) DisplayName() *string {
+func (r *TeamResolver) DisplayName() *string {
 	if r.team.DisplayName == "" {
 		return nil
 	}
 	return &r.team.DisplayName
 }
 
-func (r *teamResolver) Readonly() bool {
+func (r *TeamResolver) Readonly() bool {
 	return r.team.ReadOnly
 }
 
-func (r *teamResolver) ParentTeam(ctx context.Context) (*teamResolver, error) {
+func (r *TeamResolver) ParentTeam(ctx context.Context) (*TeamResolver, error) {
 	if r.team.ParentTeamID == 0 {
 		return nil, nil
 	}
@@ -158,16 +158,16 @@ func (r *teamResolver) ParentTeam(ctx context.Context) (*teamResolver, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &teamResolver{team: parentTeam, db: r.db}, nil
+	return &TeamResolver{team: parentTeam, db: r.db}, nil
 }
 
-func (r *teamResolver) ViewerCanAdminister(ctx context.Context) bool {
+func (r *TeamResolver) ViewerCanAdminister(ctx context.Context) bool {
 	// 🚨 SECURITY: For now administration is only allowed for site admins.
 	err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db)
 	return err == nil
 }
 
-func (r *teamResolver) Members(ctx context.Context, args *ListTeamMembersArgs) (*teamMemberConnection, error) {
+func (r *TeamResolver) Members(ctx context.Context, args *ListTeamMembersArgs) (*teamMemberConnection, error) {
 	c := &teamMemberConnection{
 		db:     r.db,
 		teamID: r.team.ID,
@@ -178,7 +178,7 @@ func (r *teamResolver) Members(ctx context.Context, args *ListTeamMembersArgs) (
 	return c, nil
 }
 
-func (r *teamResolver) ChildTeams(ctx context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {
+func (r *TeamResolver) ChildTeams(ctx context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {
 	c := &teamConnectionResolver{
 		db:       r.db,
 		parentID: r.team.ID,
@@ -187,6 +187,10 @@ func (r *teamResolver) ChildTeams(ctx context.Context, args *ListTeamsArgs) (*te
 		return nil, err
 	}
 	return c, nil
+}
+
+func (r *TeamResolver) OwnerField() string {
+	return EnterpriseResolvers.ownResolver.TeamOwnerField(r)
 }
 
 type ListTeamMembersArgs struct {
@@ -326,7 +330,7 @@ type CreateTeamArgs struct {
 	ParentTeamName *string
 }
 
-func (r *schemaResolver) CreateTeam(ctx context.Context, args *CreateTeamArgs) (*teamResolver, error) {
+func (r *schemaResolver) CreateTeam(ctx context.Context, args *CreateTeamArgs) (*TeamResolver, error) {
 	// 🚨 SECURITY: For now we only allow site admins to create teams.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, errors.New("only site admins can create teams")
@@ -352,7 +356,7 @@ func (r *schemaResolver) CreateTeam(ctx context.Context, args *CreateTeamArgs) (
 	if err := teams.CreateTeam(ctx, &t); err != nil {
 		return nil, err
 	}
-	return &teamResolver{team: &t, db: r.db}, nil
+	return &TeamResolver{team: &t, db: r.db}, nil
 }
 
 type UpdateTeamArgs struct {
@@ -363,7 +367,7 @@ type UpdateTeamArgs struct {
 	ParentTeamName *string
 }
 
-func (r *schemaResolver) UpdateTeam(ctx context.Context, args *UpdateTeamArgs) (*teamResolver, error) {
+func (r *schemaResolver) UpdateTeam(ctx context.Context, args *UpdateTeamArgs) (*TeamResolver, error) {
 	// 🚨 SECURITY: For now we only allow site admins to create teams.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, errors.New("only site admins can update teams")
@@ -406,7 +410,7 @@ func (r *schemaResolver) UpdateTeam(ctx context.Context, args *UpdateTeamArgs) (
 	if err != nil {
 		return nil, err
 	}
-	return &teamResolver{team: t, db: r.db}, nil
+	return &TeamResolver{team: t, db: r.db}, nil
 }
 
 // findTeam returns a team by either GraphQL ID or name.
@@ -487,7 +491,7 @@ func (a *TeamMembersArgs) membersIDs() (map[int32]bool, error) {
 	return ids, nil
 }
 
-func (r *schemaResolver) AddTeamMembers(ctx context.Context, args *TeamMembersArgs) (*teamResolver, error) {
+func (r *schemaResolver) AddTeamMembers(ctx context.Context, args *TeamMembersArgs) (*TeamResolver, error) {
 	// 🚨 SECURITY: For now we only allow site admins to use teams.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, errors.New("only site admins can modify team members")
@@ -534,18 +538,18 @@ func (r *schemaResolver) AddTeamMembers(ctx context.Context, args *TeamMembersAr
 			return nil, err
 		}
 	}
-	return &teamResolver{
+	return &TeamResolver{
 		db:   r.db,
 		team: team,
 	}, nil
 }
 
-func (r *schemaResolver) SetTeamMembers(args *TeamMembersArgs) *teamResolver {
-	return &teamResolver{}
+func (r *schemaResolver) SetTeamMembers(args *TeamMembersArgs) *TeamResolver {
+	return &TeamResolver{}
 }
 
-func (r *schemaResolver) RemoveTeamMembers(args *TeamMembersArgs) *teamResolver {
-	return &teamResolver{}
+func (r *schemaResolver) RemoveTeamMembers(args *TeamMembersArgs) *TeamResolver {
+	return &TeamResolver{}
 }
 
 func (r *schemaResolver) Teams(ctx context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {
@@ -564,7 +568,7 @@ type TeamArgs struct {
 	Name string
 }
 
-func (r *schemaResolver) Team(ctx context.Context, args *TeamArgs) (*teamResolver, error) {
+func (r *schemaResolver) Team(ctx context.Context, args *TeamArgs) (*TeamResolver, error) {
 	// 🚨 SECURITY: For now we only allow site admins to use teams.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, errors.New("only site admins can view teams")
@@ -578,5 +582,5 @@ func (r *schemaResolver) Team(ctx context.Context, args *TeamArgs) (*teamResolve
 		return nil, err
 	}
 
-	return &teamResolver{db: r.db, team: t}, nil
+	return &TeamResolver{db: r.db, team: t}, nil
 }
