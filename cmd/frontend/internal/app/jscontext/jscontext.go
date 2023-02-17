@@ -55,16 +55,24 @@ type UserLatestSettings struct {
 	Contents graphqlbackend.JSONCString `json:"contents"` // the raw JSON (with comments and trailing commas allowed)
 }
 type UserOrganization struct {
+	Typename    string     `json:"__typename"`
 	ID          graphql.ID `json:"id"`
 	Name        string     `json:"name"`
 	DisplayName *string    `json:"displayName"`
 	URL         string     `json:"url"`
 	SettingsURL *string    `json:"settingsURL"`
 }
+type UserOrganizationsConnection struct {
+	Typename string             `json:"__typename"`
+	Nodes    []UserOrganization `json:"nodes"`
+}
 type UserEmail struct {
 	Email     string `json:"email"`
 	IsPrimary bool   `json:"isPrimary"`
 	Verified  bool   `json:"verified"`
+}
+type UserSession struct {
+	CanSignOut *bool `json:"canSignOut"`
 }
 
 type CurrentUser struct {
@@ -81,10 +89,10 @@ type CurrentUser struct {
 	TosAccepted         bool       `json:"tosAccepted"`
 	Searchable          bool       `json:"searchable"`
 
-	Organizations  []*UserOrganization `json:"organizations"`
-	CanSignOut     *bool               `json:"canSignOut"`
-	Emails         []UserEmail         `json:"emails"`
-	LatestSettings *UserLatestSettings `json:"latestSettings"`
+	Organizations  *UserOrganizationsConnection `json:"organizations"`
+	Session        *UserSession                 `json:"session"`
+	Emails         []UserEmail                  `json:"emails"`
+	LatestSettings *UserLatestSettings          `json:"latestSettings"`
 }
 
 // JSContext is made available to JavaScript code via the
@@ -104,7 +112,7 @@ type JSContext struct {
 	Version        string            `json:"version"`
 
 	IsAuthenticatedUser bool         `json:"isAuthenticatedUser"`
-	CurrentUser         *CurrentUser `json:"CurrentUser"`
+	CurrentUser         *CurrentUser `json:"currentUser"`
 
 	SentryDSN     *string               `json:"sentryDSN"`
 	OpenTelemetry *schema.OpenTelemetry `json:"openTelemetry"`
@@ -330,7 +338,7 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 
 	return &CurrentUser{
 		AvatarURL:           derefString(userResolver.AvatarURL()),
-		CanSignOut:          canSignOut,
+		Session:             &UserSession{canSignOut},
 		DatabaseID:          userResolver.DatabaseID(),
 		DisplayName:         derefString(userResolver.DisplayName()),
 		Emails:              resolveUserEmails(ctx, userResolver),
@@ -355,14 +363,15 @@ func derefString(s *string) string {
 	return *s
 }
 
-func resolveUserOrganizations(ctx context.Context, user *graphqlbackend.UserResolver) []*UserOrganization {
+func resolveUserOrganizations(ctx context.Context, user *graphqlbackend.UserResolver) *UserOrganizationsConnection {
 	orgs, err := user.Organizations(ctx)
 	if err != nil {
 		return nil
 	}
-	userOrganizations := make([]*UserOrganization, 0, len(orgs.Nodes()))
+	userOrganizations := make([]UserOrganization, 0, len(orgs.Nodes()))
 	for _, org := range orgs.Nodes() {
-		userOrganizations = append(userOrganizations, &UserOrganization{
+		userOrganizations = append(userOrganizations, UserOrganization{
+			Typename:    "Org",
 			ID:          org.ID(),
 			Name:        org.Name(),
 			DisplayName: org.DisplayName(),
@@ -370,7 +379,10 @@ func resolveUserOrganizations(ctx context.Context, user *graphqlbackend.UserReso
 			SettingsURL: org.SettingsURL(),
 		})
 	}
-	return userOrganizations
+	return &UserOrganizationsConnection{
+		Typename: "OrgConnection",
+		Nodes:    userOrganizations,
+	}
 }
 
 func resolveUserEmails(ctx context.Context, user *graphqlbackend.UserResolver) []UserEmail {

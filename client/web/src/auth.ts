@@ -6,7 +6,6 @@ import { AuthenticatedUser as SharedAuthenticatedUser, currentAuthStateQuery } f
 import { CurrentAuthStateResult } from '@sourcegraph/shared/src/graphql-operations'
 
 import { requestGraphQL } from './backend/graphql'
-import { JsContextCurrentUser } from './jscontext'
 
 /**
  * Always represents the latest state of the currently authenticated user.
@@ -22,7 +21,7 @@ export const authenticatedUser = new ReplaySubject<AuthenticatedUser | null>(1)
  *
  * TODO: migrate the `currentAuthStateQuery` to Apollo Client and then user pre-loaded to initialize Apollo cache.
  */
-export const authenticatedUserValue = jsContextCurrentUserToAuthenticatedUser(window.context.CurrentUser)
+export const authenticatedUserValue = window.context.currentUser || null
 authenticatedUser.next(authenticatedUserValue)
 
 export type AuthenticatedUser = SharedAuthenticatedUser
@@ -54,52 +53,3 @@ export function refreshAuthenticatedUser(): Observable<never> {
 export const authRequired = authenticatedUser.pipe(
     map(user => user === null && typeof window !== 'undefined' && !window.context?.sourcegraphDotComMode)
 )
-
-/**
- * Convert `JsContextCurrentUser` to `AuthenticatedUser` received from the GraphQL query `currentAuthStateQuery`.
- * Using pre-loaded user information allows us to skip this query on the inital render of the application.
- */
-function jsContextCurrentUserToAuthenticatedUser(user: JsContextCurrentUser): AuthenticatedUser | null {
-    if (!user) {
-        return null
-    }
-
-    return {
-        __typename: 'User',
-        id: user.ID,
-        databaseID: user.DatabaseID,
-        username: user.Username,
-        avatarURL: user.AvatarURL,
-        displayName: user.DisplayName,
-        siteAdmin: user.SiteAdmin,
-        tags: user.Tags,
-        url: user.URL,
-        settingsURL: user.SettingsURL,
-        organizations: {
-            __typename: 'OrgConnection',
-            nodes: user.Organizations.map(org => ({
-                __typename: 'Org',
-                id: org.ID,
-                name: org.Name,
-                displayName: org.DisplayName,
-                url: org.URL,
-                settingsURL: org.SettingsURL,
-            })),
-        },
-        session: {
-            canSignOut: user.CanSignOut,
-        },
-        viewerCanAdminister: user.ViewerCanAdminister,
-        tosAccepted: user.TosAccepted,
-        searchable: user.Searchable,
-        emails: user.Emails.map(emailItem => ({
-            email: emailItem.Email,
-            verified: emailItem.Verified,
-            isPrimary: emailItem.IsPrimary,
-        })),
-        latestSettings: {
-            id: user.LatestSettings.ID,
-            contents: user.LatestSettings.Contents,
-        },
-    }
-}

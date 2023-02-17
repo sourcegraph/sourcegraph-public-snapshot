@@ -1,3 +1,4 @@
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 
 export type DeployType = 'kubernetes' | 'docker-container' | 'docker-compose' | 'pure-docker' | 'dev' | 'helm'
@@ -23,38 +24,6 @@ export interface AuthProvider {
     serviceID: string
 }
 
-export interface JsContextCurrentUser {
-    ID: string
-    DatabaseID: number
-    Username: string
-    AvatarURL: string
-    DisplayName: string
-    SiteAdmin: boolean
-    URL: string
-    SettingsURL: string
-    ViewerCanAdminister: boolean
-    Tags: string[]
-    TosAccepted: boolean
-    Searchable: boolean
-    Organizations: {
-        ID: string
-        Name: string
-        DisplayName: string
-        URL: string
-        SettingsURL: string
-    }[]
-    CanSignOut: boolean
-    Emails: {
-        Email: string
-        IsPrimary: boolean
-        Verified: boolean
-    }[]
-    LatestSettings: {
-        ID: number
-        Contents: string
-    }
-}
-
 export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'experimentalFeatures'> {
     xhrHeaders: { [key: string]: string }
     userAgentIsBot: boolean
@@ -63,7 +32,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
      * Whether the user is authenticated. Use authenticatedUser in ./auth.ts to obtain information about the user.
      */
     readonly isAuthenticatedUser: boolean
-    readonly CurrentUser: JsContextCurrentUser
+    readonly currentUser?: AuthenticatedUser
 
     readonly sentryDSN: string | null
 
