@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "background",
@@ -27,6 +27,33 @@ go_library(
         "//internal/types",
         "//lib/errors",
         "//schema",
+        "@com_github_derision_test_glock//:glock",
         "@com_github_json_iterator_go//:go",
+    ],
+)
+
+go_test(
+    name = "background_test",
+    srcs = [
+        "job_cratesyncer_test.go",
+        "mocks_test.go",
+    ],
+    embed = [":background"],
+    deps = [
+        "//internal/api",
+        "//internal/authz",
+        "//internal/codeintel/dependencies/shared",
+        "//internal/conf/reposource",
+        "//internal/database",
+        "//internal/encryption",
+        "//internal/gitserver",
+        "//internal/gitserver/gitdomain",
+        "//internal/gitserver/protocol",
+        "//internal/observation",
+        "//internal/types",
+        "//lib/errors",
+        "//schema",
+        "@com_github_derision_test_glock//:glock",
+        "@org_golang_x_exp//slices",
     ],
 )
