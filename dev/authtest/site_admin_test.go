@@ -450,8 +450,8 @@ mutation {
 			t.Run(test.name, func(t *testing.T) {
 				err := userClient.GraphQL("", test.query, test.variables, nil)
 				got := fmt.Sprintf("%v", err)
-				if !strings.Contains(got, "must be authenticated as the authorized user or site admin") {
-					t.Fatalf(`Want "must be authenticated as the authorized user or site admin" error but got %q`, got)
+				if !strings.Contains(got, auth.ErrMustBeSiteAdminOrSameUser.Error()) {
+					t.Fatalf(`Want "%s" error but got "%q"`, auth.ErrMustBeSiteAdminOrSameUser.Error(), got)
 				}
 			})
 		}
