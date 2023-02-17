@@ -172,7 +172,7 @@ export function massageIndexerSupportMetadata(data: UseCodeIntelStatusPayload): 
     const recentIndexes = data.recentIndexes.flatMap(indexes => indexes.indexes)
     const indexesByIndexerName = groupBy<LsifIndexFields, string>(recentIndexes, getIndexerName)
     const availableIndexers = data.availableIndexers.reduce<Record<string, { roots: string[]; url: string }>>(
-        (acc, { index, roots, url }) => ({ ...acc, [index]: { roots, url } }),
+        (acc, { indexer: { name, url }, roots }) => ({ ...acc, [name]: { roots, url } }),
         {}
     )
 
@@ -195,7 +195,7 @@ export function massageIndexerSupportMetadata(data: UseCodeIntelStatusPayload): 
     const indexerNames = [
         ...new Set([
             ...allRecentIndexers.map(indexer => indexer.name),
-            ...data.availableIndexers.map(({ index: name }) => name),
+            ...data.availableIndexers.map(({ indexer: { name } }) => name),
         ]),
     ].sort()
 

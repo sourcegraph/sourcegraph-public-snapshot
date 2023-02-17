@@ -1,6 +1,7 @@
 package sharedresolvers
 
 import (
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -8,9 +9,8 @@ import (
 )
 
 type InferredAvailableIndexers struct {
-	Index string
-	Roots []string
-	URL   string
+	Indexer types.CodeIntelIndexer
+	Roots   []string
 }
 
 type repositorySummaryResolver struct {
@@ -63,7 +63,7 @@ func (r *repositorySummaryResolver) RecentUploads() []resolverstubs.LSIFUploadsW
 func (r *repositorySummaryResolver) AvailableIndexers() []resolverstubs.InferredAvailableIndexersResolver {
 	resolvers := make([]resolverstubs.InferredAvailableIndexersResolver, 0, len(r.availableIndexers))
 	for _, indexer := range r.availableIndexers {
-		resolvers = append(resolvers, resolverstubs.NewInferredAvailableIndexersResolver(indexer.Index, indexer.Roots, indexer.URL))
+		resolvers = append(resolvers, resolverstubs.NewInferredAvailableIndexersResolver(types.NewCodeIntelIndexerResolverFrom(indexer.Indexer), indexer.Roots))
 	}
 	return resolvers
 }
