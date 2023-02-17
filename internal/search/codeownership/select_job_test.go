@@ -163,9 +163,6 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		})
 		autogold.Want("owner matches are as expected", want).Equal(t, matches)
 	})
-	t.Run("deduplicates owner matches", func(t *testing.T) {
-		// See result/owner.go:55 for comment.
-	})
 }
 
 func newTestUser(username string) *types.User {
