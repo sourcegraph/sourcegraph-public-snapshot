@@ -136,3 +136,11 @@
   is_enterprise: true
   introduced_version_major: 4
   introduced_version_minor: 5
+- id: 22
+  team: batch-changes
+  component: frontend-db.batch_specs
+  description: Re-ID empty batch specs belonging to draft batch changes.
+  non_destructive: true
+  is_enterprise: true
+  introduced_version_major: 4
+  introduced_version_minor: 5
