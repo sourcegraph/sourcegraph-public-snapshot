@@ -64,15 +64,10 @@ async function readLineNoCache(prompt: string): Promise<string> {
 export async function verifyWithInput(prompt: string): Promise<void> {
     await readLineNoCache(chalk.yellow(`${prompt}\nInput yes to confirm: `)).then(val => {
         if (val !== 'yes') {
-            throw new Error()
+            console.log(chalk.red('Aborting!'))
+            process.exit(0)
         }
     })
-}
-
-export function getWeekNumber(date: Date): number {
-    const firstJan = new Date(date.getFullYear(), 0, 1)
-    const day = 86400000
-    return Math.ceil(((date.valueOf() - firstJan.valueOf()) / day + firstJan.getDay() + 1) / 7)
 }
 
 export async function ensureDocker(): Promise<execa.ExecaReturnValue<string>> {
@@ -206,13 +201,13 @@ export async function getContainerRegistryCredential(registryHostname: string): 
     return credential
 }
 
-export type ContentFunc = (previousVersion: string, nextVersion: string) => string
+export type ContentFunc = (previousVersion?: string, nextVersion?: string) => string
 
 const upgradeContentGenerators: { [s: string]: ContentFunc } = {
-    docker_compose: (previousVersion: string, nextVersion: string) => '',
-    kubernetes: (previousVersion: string, nextVersion: string) => '',
-    server: (previousVersion: string, nextVersion: string) => '',
-    pure_docker: (previousVersion: string, nextVersion: string) => {
+    docker_compose: () => '',
+    kubernetes: () => '',
+    server: () => '',
+    pure_docker: (previousVersion?: string, nextVersion?: string) => {
         const compare = `compare/v${previousVersion}...v${nextVersion}`
         return `As a template, perform the same actions as the following diff in your own deployment: [\`Upgrade to v${nextVersion}\`](https://github.com/sourcegraph/deploy-sourcegraph-docker/${compare})
 \nFor non-standard replica builds: 
@@ -272,6 +267,24 @@ export const updateUpgradeGuides = (previous: string, next: string): EditFunc =>
                 updateContents = updateContents.replace(prevReleaseHeader, content)
             }
             writeFileSync(fullPath, updateContents)
+        }
+    }
+}
+
+export async function retryInput(
+    prompt: string,
+    delegate: (val: string) => boolean,
+    errorMessage?: string
+): Promise<string> {
+    while (true) {
+        const val = await readLine(prompt).then(value => value)
+        if (delegate(val)) {
+            return val
+        }
+        if (errorMessage) {
+            console.log(chalk.red(errorMessage))
+        } else {
+            console.log(chalk.red('invalid input'))
         }
     }
 }

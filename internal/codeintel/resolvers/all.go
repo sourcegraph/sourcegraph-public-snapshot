@@ -77,6 +77,7 @@ type CodeIntelRepositorySummaryResolver interface {
 	LastUploadRetentionScan() *gqlutil.DateTime
 	LastIndexScan() *gqlutil.DateTime
 	AvailableIndexers() []InferredAvailableIndexersResolver
+	LimitError() *string
 }
 
 type PreciseIndexesQueryArgs struct {
@@ -237,18 +238,29 @@ type PreciseSupportResolver interface {
 }
 
 type CodeIntelIndexerResolver interface {
+	Key() string
 	Name() string
 	URL() string
 }
 
 type IndexConfigurationResolver interface {
 	Configuration(ctx context.Context) (*string, error)
-	InferredConfiguration(ctx context.Context) (*string, error)
+	InferredConfiguration(ctx context.Context) (InferredConfigurationResolver, error)
+}
+
+type InferredConfigurationResolver interface {
+	Configuration() string
+	LimitError() *string
 }
 
 type GitTreeCodeIntelSupportResolver interface {
 	SearchBasedSupport(context.Context) (*[]GitTreeSearchBasedCoverage, error)
-	PreciseSupport(context.Context) (*[]GitTreePreciseCoverage, error)
+	PreciseSupport(context.Context) (GitTreePreciseCoverageErrorResolver, error)
+}
+
+type GitTreePreciseCoverageErrorResolver interface {
+	Coverage() []GitTreePreciseCoverage
+	LimitError() *string
 }
 
 type GitTreeSearchBasedCoverage interface {
@@ -716,33 +728,39 @@ type PreviewRepositoryFilterArgs struct {
 }
 
 type InferredAvailableIndexersResolver interface {
+	Indexer() CodeIntelIndexerResolver
 	Roots() []string
-	Index() string
-	URL() string
 }
 
 type inferredAvailableIndexersResolver struct {
-	roots []string
-	index string
-	url   string
+	indexer CodeIntelIndexerResolver
+	roots   []string
 }
 
-func NewInferredAvailableIndexersResolver(index string, roots []string, url string) InferredAvailableIndexersResolver {
+func NewInferredAvailableIndexersResolver(indexer CodeIntelIndexerResolver, roots []string) InferredAvailableIndexersResolver {
 	return &inferredAvailableIndexersResolver{
-		index: index,
-		roots: roots,
-		url:   url,
+		indexer: indexer,
+		roots:   roots,
 	}
+}
+
+func (r *inferredAvailableIndexersResolver) Indexer() CodeIntelIndexerResolver {
+	return r.indexer
 }
 
 func (r *inferredAvailableIndexersResolver) Roots() []string {
 	return r.roots
 }
 
-func (r *inferredAvailableIndexersResolver) Index() string {
-	return r.index
+type codeIntelIndexerResolverResolver struct {
+	name string
+	url  string
 }
 
-func (r *inferredAvailableIndexersResolver) URL() string {
+func (r *codeIntelIndexerResolverResolver) Name() string {
+	return r.name
+}
+
+func (r *codeIntelIndexerResolverResolver) URL() string {
 	return r.url
 }
