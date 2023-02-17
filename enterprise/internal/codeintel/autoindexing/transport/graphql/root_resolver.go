@@ -362,6 +362,13 @@ func (r *rootResolver) GetLastIndexScanForRepository(ctx context.Context, reposi
 	return r.autoindexSvc.GetLastIndexScanForRepository(ctx, repositoryID)
 }
 
+func (r *rootResolver) CodeIntelSummary(ctx context.Context) (_ resolverstubs.CodeIntelSummaryResolver, err error) {
+	ctx, _, endObservation := r.operations.summary.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	return sharedresolvers.NewSummaryResolver(r.autoindexSvc), nil
+}
+
 func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ resolverstubs.CodeIntelRepositorySummaryResolver, err error) {
 	ctx, errTracer, endObservation := r.operations.repositorySummary.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repoID", string(id)),
@@ -379,11 +386,6 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 		return nil, err
 	}
 
-	recentIndexes, err := r.autoindexSvc.GetRecentIndexesSummary(ctx, repoID)
-	if err != nil {
-		return nil, err
-	}
-
 	lastIndexScan, err := r.autoindexSvc.GetLastIndexScanForRepository(ctx, repoID)
 	if err != nil {
 		return nil, err
@@ -394,9 +396,18 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 		return nil, err
 	}
 
+	recentIndexes, err := r.autoindexSvc.GetRecentIndexesSummary(ctx, repoID)
+	if err != nil {
+		return nil, err
+	}
+
 	// Create blocklist for indexes that have already been uploaded.
 	blocklist := map[string]struct{}{}
 	for _, u := range recentUploads {
+		key := shared.GetKeyForLookup(u.Indexer, u.Root)
+		blocklist[key] = struct{}{}
+	}
+	for _, u := range recentIndexes {
 		key := shared.GetKeyForLookup(u.Indexer, u.Root)
 		blocklist[key] = struct{}{}
 	}
