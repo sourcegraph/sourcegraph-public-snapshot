@@ -236,7 +236,7 @@ func (m *mockSymbolsServer) Search(ctx context.Context, r *proto.SearchRequest) 
 		return m.mockSearchGRPC(ctx, r)
 	}
 
-	return nil, errors.Newf("internalgrpc method %q not implemented", "Search")
+	return nil, errors.Newf("grpc: method %q not implemented", "Search")
 }
 
 func (m *mockSymbolsServer) LocalCodeIntel(ctx context.Context, r *proto.LocalCodeIntelRequest) (*proto.LocalCodeIntelResponse, error) {
@@ -244,7 +244,7 @@ func (m *mockSymbolsServer) LocalCodeIntel(ctx context.Context, r *proto.LocalCo
 		return m.LocalCodeIntel(ctx, r)
 	}
 
-	return nil, errors.Newf("internalgrpc method %q not implemented", "LocalCodeIntel")
+	return nil, errors.Newf("grpc: method %q not implemented", "LocalCodeIntel")
 }
 
 func (m *mockSymbolsServer) ListLanguages(ctx context.Context, r *proto.ListLanguagesRequest) (*proto.ListLanguagesResponse, error) {
@@ -252,7 +252,7 @@ func (m *mockSymbolsServer) ListLanguages(ctx context.Context, r *proto.ListLang
 		return m.mockListLanguagesGRPC(ctx, r)
 	}
 
-	return nil, errors.Newf("internalgrpc method %q not implemented", "ListLanguages")
+	return nil, errors.Newf("grpc: method %q not implemented", "ListLanguages")
 }
 
 func (m *mockSymbolsServer) SymbolInfo(ctx context.Context, r *proto.SymbolInfoRequest) (*proto.SymbolInfoResponse, error) {
@@ -260,7 +260,7 @@ func (m *mockSymbolsServer) SymbolInfo(ctx context.Context, r *proto.SymbolInfoR
 		return m.mockSymbolInfoGRPC(ctx, r)
 	}
 
-	return nil, errors.Newf("internalgrpc method %q not implemented", "SymbolInfo")
+	return nil, errors.Newf("grpc: method %q not implemented", "SymbolInfo")
 }
 
 func (m *mockSymbolsServer) Healthz(ctx context.Context, r *proto.HealthzRequest) (*proto.HealthzResponse, error) {
@@ -268,7 +268,7 @@ func (m *mockSymbolsServer) Healthz(ctx context.Context, r *proto.HealthzRequest
 		return m.mockHealthzGRPC(ctx, r)
 	}
 
-	return nil, errors.Newf("internalgrpc method %q not implemented", "Healthz")
+	return nil, errors.Newf("grpc: method %q not implemented", "Healthz")
 }
 
 var _ proto.SymbolsServiceServer = &mockSymbolsServer{}
