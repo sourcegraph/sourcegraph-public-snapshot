@@ -47,6 +47,7 @@ go_library(
     deps = [
         "//dev/ci/runtype",
         "//dev/sg/adr",
+        "//dev/sg/buf",
         "//dev/sg/dependencies",
         "//dev/sg/internal/analytics",
         "//dev/sg/internal/background",
@@ -136,7 +137,11 @@ go_test(
         "sg_start_test.go",
         "suggest_test.go",
     ],
+    # Required by func findRoot() to check if sg is running in sourcegraph/sourcegraph
+    data = ["//:go.mod"],
     embed = [":sg_lib"],
+    # HOME is required to be set to start sg
+    env = {"HOME": "/tmp"},
     deps = [
         "//dev/sg/internal/run",
         "//dev/sg/internal/sgconf",

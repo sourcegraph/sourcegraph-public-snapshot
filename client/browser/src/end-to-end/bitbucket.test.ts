@@ -184,6 +184,7 @@ describe('Sourcegraph browser extension on Bitbucket Server', () => {
         getDriver: () => driver,
         url: `${BITBUCKET_BASE_URL}/projects/SOURCEGRAPH/repos/jsonrpc2/browse/call_opt.go?until=4fb7cd90793ee6ab445f466b900e6bffb9b63d78&untilPath=call_opt.go`,
         repoName: `${REPO_PATH_PREFIX}/SOURCEGRAPH/jsonrpc2`,
+        commitID: '4fb7cd90793ee6ab445f466b900e6bffb9b63d78',
         sourcegraphBaseUrl,
         getLineSelector: lineNumber => `.line:nth-child(${lineNumber})`,
     })

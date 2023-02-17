@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { partition } from 'lodash'
 import { Navigate, useLocation, useSearchParams } from 'react-router-dom-v5-compat'
 
-import { Alert, Icon, Text, Link, Button, ErrorAlert } from '@sourcegraph/wildcard'
+import { Alert, Icon, Text, Link, Button, ErrorAlert, AnchorLink } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
@@ -96,7 +96,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                                 to={provider.authenticationURL}
                                 display="block"
                                 variant={showBuiltInAuthForm ? 'secondary' : 'primary'}
-                                as={Link}
+                                as={AnchorLink}
                             >
                                 {provider.serviceType === 'github' && <Icon aria-hidden={true} svgPath={mdiGithub} />}
                                 {provider.serviceType === 'gitlab' && <Icon aria-hidden={true} svgPath={mdiGitlab} />}

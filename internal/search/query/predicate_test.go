@@ -138,6 +138,10 @@ func TestRepoHasKVPPredicate(t *testing.T) {
 		valid := []test{
 			{`key:value`, `key:value`, &RepoHasKVPPredicate{Key: "key", Value: "value", Negated: false}},
 			{`empty string value`, `key:`, &RepoHasKVPPredicate{Key: "key", Value: "", Negated: false}},
+			{`quoted special characters`, `"key:colon":"value:colon"`, &RepoHasKVPPredicate{Key: "key:colon", Value: "value:colon", Negated: false}},
+			{`escaped quotes`, `"key\"quote":"value\"quote"`, &RepoHasKVPPredicate{Key: `key"quote`, Value: `value"quote`, Negated: false}},
+			{`space padding`, `  key:value  `, &RepoHasKVPPredicate{Key: `key`, Value: `value`, Negated: false}},
+			{`single quoted`, `'  key:':'value : '`, &RepoHasKVPPredicate{Key: `  key:`, Value: `value : `, Negated: false}},
 		}
 
 		for _, tc := range valid {
@@ -159,6 +163,8 @@ func TestRepoHasKVPPredicate(t *testing.T) {
 			{`no key`, `:value`, nil},
 			{`no key or value`, `:`, nil},
 			{`invalid syntax`, `key-value`, nil},
+			{`content outside of qutoes`, `key:"quoted value" abc`, nil},
+			{`bonus colons`, `key:value:other`, nil},
 		}
 
 		for _, tc := range invalid {

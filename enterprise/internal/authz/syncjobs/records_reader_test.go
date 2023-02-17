@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -19,15 +20,15 @@ func TestSyncJobRecordsRead(t *testing.T) {
 	// Write multiple records
 	s := NewRecordsStore(logtest.Scoped(t), configWithRecordsLimit(0))
 	s.cache = c
-	s.Record("repo", 12, []ProviderStatus{{
+	s.Record("repo", 12, []database.PermissionSyncCodeHostState{{
 		ProviderID:   "https://github.com",
 		ProviderType: "github",
 	}}, errors.New("oh no"))
-	s.Record("repo", 15, []ProviderStatus{{
+	s.Record("repo", 15, []database.PermissionSyncCodeHostState{{
 		ProviderID:   "https://github.com",
 		ProviderType: "github",
 	}}, nil)
-	s.Record("user", 6, []ProviderStatus{{
+	s.Record("user", 6, []database.PermissionSyncCodeHostState{{
 		ProviderID:   "https://github.com",
 		ProviderType: "github",
 	}}, nil)
