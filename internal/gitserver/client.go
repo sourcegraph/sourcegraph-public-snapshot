@@ -730,7 +730,7 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 		return false, err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("grpc", false) {
+	if internalgrpc.IsGRPCEnabled(ctx) {
 		conn, err := grpc.DialContext(ctx, addrForRepo, defaults.DialOptions()...)
 		if err != nil {
 			return false, err
