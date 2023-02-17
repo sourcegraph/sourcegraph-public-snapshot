@@ -61,7 +61,7 @@ Customized machine images allow you to spin up a preconfigured and customized So
 
 The [install-script](single-node/script.md) is recommended for on-premises deployments to unsupported cloud environments. You can also use it to set up Linux VMs for your own machine images.
 
->NOTE: Deploying with machine images require the necessary technical expertise and resources to maintain and manage their own infrastructure.
+>NOTE: Deploying with machine images requires technical expertise and the ability to maintain and manage your own infrastructure.
 
 ### [Kubernetes](kubernetes/index.md)
 
