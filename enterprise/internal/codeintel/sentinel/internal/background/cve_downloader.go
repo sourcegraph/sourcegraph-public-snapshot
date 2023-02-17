@@ -53,18 +53,25 @@ type Vulnerability struct {
 	CVSSVector             string
 	CVSSScore              string
 	PublishedAt            time.Time
-	PackagesAffected       []PackagesAffected
+	AffectedPackages       []AffectedPackage
 }
 
 // Data that varies across instances of a vulnerability
-// We could consider flattening this when storing in the db
-type PackagesAffected struct {
+// Need to decide if this will be flat inside Vulnerability (and have multiple duplicate vulns)
+// or a separate struct/table
+type AffectedPackage struct {
 	PackageName       string
 	Language          string
 	Namespace         string
 	VersionConstraint []string
 	Fixed             bool
 	FixedIn           string
+	AffectedSymbols   []AffectedSymbol
+}
+
+type AffectedSymbol struct {
+	Path    string
+	Symbols []string
 }
 
 type GHSAVulnerability struct {
@@ -102,11 +109,70 @@ type GHSAVulnerability struct {
 	} `json:"database_specific"`
 }
 
-func (matcher *CveDownloader) handle(ctx context.Context, metrics *Metrics, useLocalCache bool) (vulns []Vulnerability, err error) {
-	return handleGithub(ctx, metrics, useLocalCache)
+// Open Source Vulnerability format
+// https://ossf.github.io/osv-schema/
+type OSV struct {
+	SchemaVersion string    `json:"schema_version"`
+	ID            string    `json:"id"`
+	Modified      time.Time `json:"modified"`
+	Published     time.Time `json:"published"`
+	Withdrawn     time.Time `json:"withdrawn"`
+	Aliases       []string  `json:"aliases"`
+	Related       []string  `json:"related"`
+	Summary       string    `json:"summary"`
+	Details       string    `json:"details"`
+	Severity      []struct {
+		Type  string `json:"type"`
+		Score string `json:"score"`
+	} `json:"severity"`
+	Affected []struct {
+		Package struct {
+			Ecosystem string `json:"ecosystem"`
+			Name      string `json:"name"`
+			Purl      string `json:"purl"`
+		} `json:"package"`
+		Ranges []struct {
+			Type   string `json:"type"`
+			Repo   string `json:"repo"`
+			Events []struct {
+				Introduced   string `json:"introduced"`
+				Fixed        string `json:"fixed"`
+				LastAffected string `json:"last_affected"`
+				Limit        string `json:"limit"`
+			} `json:"events"`
+			DatabaseSpecific interface{} `json:"database_specific"`
+		} `json:"ranges"`
+		Versions []string `json:"versions"`
+		// EcosystemSpecific interface{} `json:"ecosystem_specific"`
+		EcosystemSpecific GoVulnDBAffectedEcosystemSpecific `json:"ecosystem_specific"`
+		// DatabaseSpecific  interface{}       `json:"database_specific"`
+		DatabaseSpecific map[string]string `json:"database_specific"` // TODO: Currently hardcoding GoVulndb format
+	} `json:"affected"`
+	References []struct {
+		Type string `json:"type"`
+		URL  string `json:"url"`
+	} `json:"references"`
+	Credits []struct {
+		Name    string   `json:"name"`
+		Contact []string `json:"contact"`
+	} `json:"credits"`
+	DatabaseSpecific interface{} `json:"database_specific"`
 }
 
-func handleGithub(ctx context.Context, metrics *Metrics, useLocalCache bool) (vulns []Vulnerability, err error) {
+type GoVulnDBAffectedcDatabaseSpecific map[string]string
+
+type GoVulnDBAffectedEcosystemSpecific struct {
+	Imports []struct {
+		Path    string   `json:"path"`
+		Symbols []string `json:"symbols"`
+	} `json:"imports"`
+}
+
+func (matcher *CveDownloader) handle(ctx context.Context, metrics *Metrics, useLocalCache bool) (vulns []Vulnerability, err error) {
+	return HandleGithub(ctx, metrics, useLocalCache)
+}
+
+func HandleGithub(ctx context.Context, metrics *Metrics, useLocalCache bool) (vulns []Vulnerability, err error) {
 	var ghsaReader io.ReadCloser
 
 	if useLocalCache {
@@ -218,10 +284,10 @@ func ghsaToVuln(g GHSAVulnerability) (vuln Vulnerability, err error) {
 	// g.Affected contains an array of packages that are affected by this vulnerability
 	// Each package may also contain an array of version ranges that indicate when the vulnerability was
 	//	introduced or resolved
-	var pas []PackagesAffected
+	var pas []AffectedPackage
 	for _, affected := range g.Affected {
 		// Information that will be the same for all instances
-		var affectedBase PackagesAffected
+		var affectedBase AffectedPackage
 		affectedBase.PackageName = affected.Package.Name
 		affectedBase.Namespace = "github:" + affected.Package.Ecosystem
 		affectedBase.Language = githubEcosystemToLanguage(affected.Package.Ecosystem)
@@ -261,7 +327,7 @@ func ghsaToVuln(g GHSAVulnerability) (vuln Vulnerability, err error) {
 			pas = append(pas, a)
 		}
 
-		v.PackagesAffected = pas
+		v.AffectedPackages = pas
 	}
 
 	vuln = v
@@ -296,4 +362,94 @@ func githubEcosystemToLanguage(ecosystem string) (language string) {
 	}
 
 	return language
+}
+
+func HandleGoVulnDb(ctx context.Context, metrics *Metrics, useLocalCache bool) (vulns []Vulnerability, err error) {
+	// TODO: Fetch database
+
+	// Open test directory of json files
+	path := "./go-vulndb/"
+	fileList, err := ioutil.ReadDir(path)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, file := range fileList {
+		if filepath.Ext(file.Name()) != ".json" {
+			continue
+		}
+
+		fullPath := filepath.Join(path, file.Name())
+
+		fmt.Printf("Walking %s\n", file.Name())
+
+		r, err := os.Open(fullPath)
+		if err != nil {
+			return nil, err
+		}
+		defer r.Close()
+
+		var osvVuln OSV
+
+		if err := json.NewDecoder(r).Decode(&osvVuln); err != nil {
+			return nil, err
+		}
+
+		v, err := osvToVuln(osvVuln)
+		if err != nil {
+			return nil, err
+		}
+
+		out, err := json.MarshalIndent(v, "", "  ")
+		if err != nil {
+			return nil, err
+		}
+		fmt.Printf("%s\n\n", string(out))
+	}
+
+	return
+}
+
+func osvToVuln(o OSV) (vuln Vulnerability, err error) {
+	v := Vulnerability{
+		ID:          o.ID,
+		Summary:     o.Summary,
+		Description: o.Details,
+		PublishedAt: o.Published,
+		// CWEs:                   o.DatabaseSpecific.CWEIDs,
+		RelatedVulnerabilities: append(o.Aliases, o.Related...),
+		DataSource:             o.ID,
+	}
+
+	for _, reference := range o.References {
+		v.URLs = append(v.URLs, reference.URL)
+	}
+
+	var pas []AffectedPackage
+	for _, affected := range o.Affected {
+		var pa AffectedPackage
+
+		pa.PackageName = affected.Package.Name
+		pa.Language = affected.Package.Ecosystem
+		pa.Namespace = "govulndb" // TODO:
+
+		v.DataSource = affected.DatabaseSpecific["url"]
+
+		for _, r := range affected.Ranges {
+
+		}
+
+		for _, i := range affected.EcosystemSpecific.Imports {
+			pa.AffectedSymbols = append(pa.AffectedSymbols, AffectedSymbol{
+				Path:    i.Path,
+				Symbols: i.Symbols,
+			})
+		}
+
+		pas = append(pas, pa)
+	}
+
+	v.AffectedPackages = pas
+
+	return v, nil
 }
