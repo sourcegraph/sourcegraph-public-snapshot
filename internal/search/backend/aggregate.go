@@ -2,7 +2,6 @@ package backend
 
 import (
 	"sync"
-	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -82,24 +81,17 @@ func (c *collectSender) Done() (_ *zoekt.SearchResult, ok bool) {
 }
 
 // newFlushCollectSender creates a sender which will collect and rank results
-// until opts.flushWallTime. After that it will stream each result as it is
+// until a stopping condition. After that it will stream each result as it is
 // sent.
 func newFlushCollectSender(opts *zoekt.SearchOptions, maxSizeBytes int, sender zoekt.Sender) (zoekt.Sender, func()) {
-	// We don't need to do any collecting, so just pass back the sender to use
-	// directly.
-	if opts.FlushWallTime == 0 {
-		return sender, func() {}
-	}
-
 	// We transition through 3 states
 	// 1. collectSender != nil: collect results via collectSender
-	// 2. timerFired: send collected results and mark collectSender nil
+	// 2. stopping condition hit
 	// 3. collectSender == nil: directly use sender
 
 	var (
 		mu            sync.Mutex
 		collectSender = newCollectSender(opts)
-		timerCancel   = make(chan struct{})
 	)
 
 	// stopCollectingAndFlush will send what we have collected and all future
@@ -117,23 +109,7 @@ func newFlushCollectSender(opts *zoekt.SearchOptions, maxSizeBytes int, sender z
 
 		// From now on use sender directly
 		collectSender = nil
-
-		// Stop timer goroutine if it is still running.
-		close(timerCancel)
 	}
-
-	// Wait flushWallTime to call stopCollecting.
-	go func() {
-		timer := time.NewTimer(opts.FlushWallTime)
-		select {
-		case <-timerCancel:
-			timer.Stop()
-		case <-timer.C:
-			mu.Lock()
-			stopCollectingAndFlush(zoekt.FlushReasonTimerExpired)
-			mu.Unlock()
-		}
-	}()
 
 	return stream.SenderFunc(func(event *zoekt.SearchResult) {
 			mu.Lock()
