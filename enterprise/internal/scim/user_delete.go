@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -15,14 +14,12 @@ import (
 
 // Delete removes the resource with corresponding ID.
 func (h *UserResourceHandler) Delete(r *http.Request, id string) error {
-	logger := h.observationCtx.Logger.Scoped("DeleteUsers", "SCIM delete user").With(log.String("user", id))
-
 	// Find user
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
 		return errors.Wrap(err, "parse user ID")
 	}
-	user, err := findUser(r.Context(), h.db, idInt, logger)
+	user, err := findUser(r.Context(), h.db, idInt)
 	if err != nil {
 		return err
 	}
@@ -54,7 +51,7 @@ func (h *UserResourceHandler) Delete(r *http.Request, id string) error {
 }
 
 // findUser finds the user with the given ID. If the user does not exist, it returns an empty user.
-func findUser(ctx context.Context, db database.DB, id int, logger log.Logger) (types.UserForSCIM, error) {
+func findUser(ctx context.Context, db database.DB, id int) (types.UserForSCIM, error) {
 	users, err := db.Users().ListForSCIM(ctx, &database.UsersListOptions{
 		UserIDs: []int32{int32(id)},
 	})
@@ -62,13 +59,9 @@ func findUser(ctx context.Context, db database.DB, id int, logger log.Logger) (t
 		return types.UserForSCIM{}, errors.Wrap(err, "list users by IDs")
 	}
 	if len(users) == 0 {
-		logger.Info("no match found for", log.Int("userID", id"))
 		return types.UserForSCIM{}, nil
 	} else if len(users) > 1 {
-		logger.Error("duplicate IDs found - that should not happen")
 		return types.UserForSCIM{}, errors.New("multiple users match the find criteria")
-	} else {
-		logger.Debug("findUsers found exactly 1 result")
 	}
 	if users[0].SCIMExternalID == "" {
 		return types.UserForSCIM{}, errors.New("cannot delete user because it has no SCIM external ID set")
