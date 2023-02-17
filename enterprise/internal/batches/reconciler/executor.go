@@ -130,6 +130,7 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 		if err != nil {
 			return err
 		}
+
 	}
 
 	events, err := e.ch.Events()
@@ -143,6 +144,8 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 		log15.Error("UpsertChangesetEvents", "err", err)
 		return err
 	}
+
+	e.ch.PreviousFailureMessage = nil
 
 	return e.tx.UpdateChangeset(ctx, e.ch)
 }
