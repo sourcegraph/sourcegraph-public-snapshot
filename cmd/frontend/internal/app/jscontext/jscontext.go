@@ -51,40 +51,40 @@ type authPasswordPolicy struct {
 	RequireUpperAndLowerCase  bool `json:"requireUpperAndLowerCase"`
 }
 type UserLatestSettings struct {
-	ID       int32                      // the unique ID of this settings value
-	Contents graphqlbackend.JSONCString // the raw JSON (with comments and trailing commas allowed)
+	ID       int32                      `json:"id"`       // the unique ID of this settings value
+	Contents graphqlbackend.JSONCString `json:"contents"` // the raw JSON (with comments and trailing commas allowed)
 }
 type UserOrganization struct {
-	ID          graphql.ID
-	Name        string
-	DisplayName *string
-	URL         string
-	SettingsURL *string
+	ID          graphql.ID `json:"id"`
+	Name        string     `json:"name"`
+	DisplayName *string    `json:"displayName"`
+	URL         string     `json:"url"`
+	SettingsURL *string    `json:"settingsURL"`
 }
 type UserEmail struct {
-	Email     string
-	IsPrimary bool
-	Verified  bool
+	Email     string `json:"email"`
+	IsPrimary bool   `json:"isPrimary"`
+	Verified  bool   `json:"verified"`
 }
 
 type CurrentUser struct {
-	ID                  graphql.ID
-	DatabaseID          int32
-	Username            string
-	AvatarURL           string
-	DisplayName         string
-	SiteAdmin           bool
-	URL                 string
-	SettingsURL         string
-	ViewerCanAdminister bool
-	Tags                []string
-	TosAccepted         bool
-	Searchable          bool
+	ID                  graphql.ID `json:"id"`
+	DatabaseID          int32      `json:"databaseID"`
+	Username            string     `json:"username"`
+	AvatarURL           string     `json:"avatarURL"`
+	DisplayName         string     `json:"displayName"`
+	SiteAdmin           bool       `json:"siteAdmin"`
+	URL                 string     `json:"url"`
+	SettingsURL         string     `json:"settingsURL"`
+	ViewerCanAdminister bool       `json:"viewerCanAdminister"`
+	Tags                []string   `json:"tags"`
+	TosAccepted         bool       `json:"tosAccepted"`
+	Searchable          bool       `json:"searchable"`
 
-	Organizations  []*UserOrganization
-	CanSignOut     *bool
-	Emails         []UserEmail
-	LatestSettings *UserLatestSettings
+	Organizations  []*UserOrganization `json:"organizations"`
+	CanSignOut     *bool               `json:"canSignOut"`
+	Emails         []UserEmail         `json:"emails"`
+	LatestSettings *UserLatestSettings `json:"latestSettings"`
 }
 
 // JSContext is made available to JavaScript code via the
