@@ -497,6 +497,8 @@ cc @${config.captainGitHubUsername}
                             // Update Sourcegraph versions in installation guides
                             `find ./doc/admin/deploy/ -type f -name '*.md' -exec ${sed} -i -E 's/SOURCEGRAPH_VERSION="v${versionRegex}"/SOURCEGRAPH_VERSION="v${release.version}"/g' {} +`,
                             `find ./doc/admin/deploy/ -type f -name '*.md' -exec ${sed} -i -E 's/--version ${versionRegex}/--version ${release.version}/g' {} +`,
+                            `${sed} -i -E 's/${versionRegex}/${release.version}/g' ./doc/admin/deploy_executors_kubernetes.md`,
+
                             // Update fork variables in installation guides
                             `find ./doc/admin/deploy/ -type f -name '*.md' -exec ${sed} -i -E "s/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${versionRegex}'/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${release.version}'/g" {} +`,
 
