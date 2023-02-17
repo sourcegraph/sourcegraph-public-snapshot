@@ -27,3 +27,12 @@
     background-color: var(--warning) !important;
     color: var(--white) !important;
 }
+
+.error-content {
+    max-width: 600px;
+}
+
+.alert-overflow {
+    max-height: 300px;
+    overflow-y: auto;
+}

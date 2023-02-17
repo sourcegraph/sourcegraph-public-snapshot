@@ -1,10 +1,26 @@
-import React from 'react'
+import React, { useState } from 'react'
 
-import { mdiCog, mdiFileDocumentOutline } from '@mdi/js'
+import { mdiCog, mdiClose, mdiFileDocumentOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
-import { Alert, Badge, Button, Icon, Link, LoadingSpinner, Tooltip, LinkOrSpan } from '@sourcegraph/wildcard'
+import {
+    Alert,
+    Badge,
+    Button,
+    Icon,
+    Link,
+    H4,
+    LoadingSpinner,
+    Tooltip,
+    LinkOrSpan,
+    PopoverTrigger,
+    PopoverContent,
+    PopoverTail,
+    Popover,
+    Position,
+    MenuDivider,
+} from '@sourcegraph/wildcard'
 
 import { SiteAdminRepositoryFields } from '../graphql-operations'
 
@@ -25,6 +41,12 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
         status = 'cloning'
     } else if (node.mirrorInfo.lastError) {
         status = 'failed'
+    }
+
+    const [closeErrorPopover, setCloseErrorPopover] = useState(false)
+
+    const onDismiss = () => {
+        setCloseErrorPopover(true)
     }
 
     return (
@@ -70,10 +92,42 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                             </Button>
                         </Tooltip>
                     )}
+                    {/* TODO: add X-out btn, error bg scroll */}
                     {node.mirrorInfo.lastError && (
-                        <Button to={`/${node.name}/-/settings/mirror`} variant="secondary" size="sm" as={Link}>
-                            <Icon aria-hidden={true} svgPath={mdiFileDocumentOutline} /> See errors
-                        </Button>
+                        <Popover isOpen={closeErrorPopover ? false : null}>
+                            <PopoverTrigger as={Button} variant="secondary" size="sm" aria-label="See errors">
+                                <Icon aria-hidden={true} svgPath={mdiFileDocumentOutline} /> See errors
+                            </PopoverTrigger>
+
+                            <PopoverContent position={Position.bottom} className={styles.errorContent}>
+                                <div>
+                                    <H4 className="m-2">
+                                        <Badge
+                                            className={classNames(
+                                                styles[status as keyof typeof styles],
+                                                'py-0 px-1 mr-2 text-uppercase font-weight-normal'
+                                            )}
+                                        >
+                                            {status}
+                                        </Badge>
+                                        <ExternalRepositoryIcon externalRepo={node.externalRepository} />
+                                        <RepoLink repoName={node.name} to={null} />
+                                    </H4>
+
+                                    <Button aria-label="Dismiss error" variant="icon" onClick={onDismiss}>
+                                        <Icon aria-hidden={true} svgPath={mdiClose} />
+                                    </Button>
+                                </div>
+
+                                <MenuDivider />
+
+                                <Alert variant="warning" className={classNames('mx-2 mt-2', styles.alertOverflow)}>
+                                    <H4>Error syncing repository:</H4>
+                                    {node.mirrorInfo.lastError}
+                                </Alert>
+                            </PopoverContent>
+                            <PopoverTail size="sm" />
+                        </Popover>
                     )}
                 </div>
             </div>
