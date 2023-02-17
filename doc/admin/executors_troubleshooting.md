@@ -13,9 +13,9 @@ The Executor host VMs are configured to automatically tear themselves down once 
 The VM should now persist after all jobs are satisfied.
 
 ## Creating a Debug Firecracker VM
-To create a temporary Firecracker VM for debugging purposes:
-
 > NOTE: if the host VM is provisioned with the [Sourcegraph terraform modules](https://docs.sourcegraph.com/admin/deploy_executors_terraform), the VMs may be configured to sotp automatically. Refer to [Disabling the auto-deletion of Executor VMs](#disabling-the-auto-deletion-of-executor-vms) for information to prevent this.
+
+To create a temporary Firecracker VM for debugging purposes:
 
 1. `ssh` into the host VM
 1. `sudo su` to become the `root` user
@@ -32,6 +32,8 @@ To create a temporary Firecracker VM for debugging purposes:
 If a server-side batch change fails unexpectedly, it's possible to recreate the generated Firecracker VM from the batch change execution.
 
 > NOTE: if the host VM is provisioned with the [Sourcegraph terraform modules](https://docs.sourcegraph.com/admin/deploy_executors_terraform), the VMs may be configured to stop automatically. Refer to [Disabling the auto-deletion of Executor VMs](#disabling-the-auto-deletion-of-executor-vms) for information to prevent this.
+
+To recreate a batch change execution firecracker vm:
 
 1. Navigate to the failed execution page of the Batch Change
 1. Select a failed Workspace on the left and click the `Diagnostics` link on the right pane
