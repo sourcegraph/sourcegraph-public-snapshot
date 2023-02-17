@@ -24,8 +24,8 @@ type Runtime interface {
 	GetCommands(ws workspace.Workspace, steps []types.DockerStep) ([]command.Spec, error)
 }
 
-// NewRuntime creates the runtime based on the configured environment.
-func NewRuntime(
+// New creates the runtime based on the configured environment.
+func New(
 	logger log.Logger,
 	ops *command.Operations,
 	filesStore workspace.FilesStore,
@@ -35,7 +35,7 @@ func NewRuntime(
 ) (Runtime, error) {
 	err := util.ValidateDockerTools(runner)
 	if err != nil {
-		var errMissingTools util.ErrMissingTools
+		var errMissingTools *util.ErrMissingTools
 		if errors.As(err, &errMissingTools) {
 			logger.Warn("runtime 'docker' is not supported: missing required tools", log.Strings("dockerTools", errMissingTools.Tools))
 		} else {
