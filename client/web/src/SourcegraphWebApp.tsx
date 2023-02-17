@@ -40,6 +40,7 @@ import {
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { FeedbackText, setLinkComponent, RouterLink, WildcardThemeContext, WildcardTheme } from '@sourcegraph/wildcard'
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
@@ -66,6 +67,7 @@ import type { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import type { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import type { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import type { LayoutRouteProps, LegacyLayoutRouteComponentProps } from './routes'
+import { PageRoutes } from './routes.constants'
 import { parseSearchURL, SearchAggregationProps } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
@@ -87,6 +89,8 @@ import { UserSessionStores } from './UserSessionStores'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
 
 import styles from './LegacySourcegraphWebApp.module.scss'
+
+const RepoContainer = lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer')
 
 interface SourcegraphWebAppProps
     extends CodeIntelligenceProps,
@@ -401,15 +405,29 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
                     themeProps={themeProps}
                 />
             ),
-            children: props.routes
-                .map(
-                    ({ condition = () => true, render, path }) =>
-                        condition(context) && {
-                            path: path.slice(1), // remove leading slash
-                            element: render(context),
-                        }
-                )
-                .filter(isTruthy),
+            children: [
+                ...props.routes
+                    // Remove routes that are already migrated
+                    .filter(route => route.path !== PageRoutes.RepoContainer)
+                    .map(
+                        ({ condition = () => true, render, path }) =>
+                            condition(context) && {
+                                path: path.slice(1), // remove leading slash
+                                element: render(context),
+                            }
+                    )
+                    .filter(isTruthy),
+
+                {
+                    path: '*',
+                    element: <RepoContainer {...context} />,
+                    // In RR6, the useMatches hook will only give you the location that is matched
+                    // by the path rule and not the path rule instead. Since we need to be able to
+                    // detect if we're inside the repo container reliably inside the Layout, we
+                    // expose this information in the handle object instead.
+                    handle: { isRepoContainer: true },
+                },
+            ],
         },
     ])
 
