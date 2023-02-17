@@ -34,7 +34,7 @@ func cloneRepo(
 	commandRunner command.Runner,
 	options CloneOptions,
 	operations *command.Operations,
-) (err error) {
+) error {
 	repoPath := workspaceDir
 	if job.RepositoryDirectory != "" {
 		repoPath = filepath.Join(workspaceDir, job.RepositoryDirectory)
@@ -165,7 +165,7 @@ func cloneRepo(
 	})
 
 	for _, spec := range gitCommands {
-		if err := commandRunner.Run(ctx, spec); err != nil {
+		if err = commandRunner.Run(ctx, spec); err != nil {
 			return errors.Wrap(err, fmt.Sprintf("failed %s", spec.Key))
 		}
 	}
