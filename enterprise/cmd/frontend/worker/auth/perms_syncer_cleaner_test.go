@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/stretchr/testify/require"
 )
@@ -39,11 +40,24 @@ func TestPermsSyncerWorkerCleaner(t *testing.T) {
 	user, err := db.Users().Create(ctx, database.NewUser{Username: "horse"})
 	require.NoError(t, err)
 
+	// Create repos.
+	repo1 := types.Repo{Name: "test-repo-1", ID: 101}
+	err = db.Repos().Create(ctx, &repo1)
+	require.NoError(t, err)
+
+	repo2 := types.Repo{Name: "test-repo-2", ID: 102}
+	err = db.Repos().Create(ctx, &repo2)
+	require.NoError(t, err)
+
+	repo3 := types.Repo{Name: "test-repo-3", ID: 103}
+	err = db.Repos().Create(ctx, &repo3)
+	require.NoError(t, err)
+
 	// Adding some jobs for user and repos.
 	addSyncJobs(t, ctx, db, "user_id", int(user.ID))
-	addSyncJobs(t, ctx, db, "repository_id", 1)
-	addSyncJobs(t, ctx, db, "repository_id", 2)
-	addSyncJobs(t, ctx, db, "repository_id", 3)
+	addSyncJobs(t, ctx, db, "repository_id", int(repo1.ID))
+	addSyncJobs(t, ctx, db, "repository_id", int(repo2.ID))
+	addSyncJobs(t, ctx, db, "repository_id", int(repo3.ID))
 
 	// We should have 20 jobs now.
 	jobs, err := store.List(ctx, database.ListPermissionSyncJobOpts{})
@@ -53,11 +67,11 @@ func TestPermsSyncerWorkerCleaner(t *testing.T) {
 	// Now let's run cleaner function and preserve a history of last 2 items per
 	// user/repo. Queued and processing items aren't considered to be history. We
 	// should end up with 1 deleted job per repo/user which gives us a total of 4
-	// deleted jobs (all "completed" jobs, effectively).
+	// deleted jobs (all "errored" jobs, effectively, as we are deleting the oldest ones first).
 	cleanedJobsNumber, err = cleanJobs(ctx, db)
 	require.NoError(t, err)
 	require.Equal(t, int64(4), cleanedJobsNumber)
-	assertThereAreNoJobsWithState(t, ctx, store, "completed")
+	assertThereAreNoJobsWithState(t, ctx, store, "errored")
 
 	// Now let's make the history even shorter.
 	historySize = 0
@@ -66,7 +80,7 @@ func TestPermsSyncerWorkerCleaner(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(8), cleanedJobsNumber)
 	assertThereAreNoJobsWithState(t, ctx, store, "failed")
-	assertThereAreNoJobsWithState(t, ctx, store, "errored")
+	assertThereAreNoJobsWithState(t, ctx, store, "completed")
 
 	// This way we should only have "queued" and "processing" jobs, let's check the
 	// number, we should have 8 now.
@@ -86,9 +100,27 @@ var states = []string{"queued", "processing", "errored", "failed", "completed"}
 func addSyncJobs(t *testing.T, ctx context.Context, db database.DB, repoOrUser string, id int) {
 	t.Helper()
 	for _, state := range states {
-		insertQuery := "INSERT INTO permission_sync_jobs(reason, state, %s) VALUES('', '%s', %d)"
-		_, err := db.ExecContext(ctx, fmt.Sprintf(insertQuery, repoOrUser, state, id))
+		insertQuery := "INSERT INTO permission_sync_jobs(reason, state, finished_at, %s) VALUES('', '%s', %s, %d)"
+		_, err := db.ExecContext(ctx, fmt.Sprintf(insertQuery, repoOrUser, state, getFinishedAt(state), id))
 		require.NoError(t, err)
+	}
+}
+
+// getFinishedAt returns `finished_at` column for inserting test jobs.
+//
+// Time is mapped to status, from oldest to newest: errored->failed->completed.
+//
+// Queued and processing jobs doesn't have a `finished_at` value, hence NULL.
+func getFinishedAt(state string) string {
+	switch state {
+	case "errored":
+		return "NOW() - INTERVAL '5 HOURS'"
+	case "failed":
+		return "NOW() - INTERVAL '2 HOURS'"
+	case "completed":
+		return "NOW() - INTERVAL '1 HOUR'"
+	default:
+		return "NULL"
 	}
 }
 

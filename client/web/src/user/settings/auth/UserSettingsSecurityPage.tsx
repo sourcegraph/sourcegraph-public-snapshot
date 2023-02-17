@@ -78,13 +78,13 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
         return []
     }
 
-    const { data, loading } = useQuery<UserExternalAccountsResult, UserExternalAccountsWithAccountDataVariables>(
-        USER_EXTERNAL_ACCOUNTS,
-        {
-            variables: { username: props.user.username },
-            onError: handleError,
-        }
-    )
+    const { data, loading, refetch } = useQuery<
+        UserExternalAccountsResult,
+        UserExternalAccountsWithAccountDataVariables
+    >(USER_EXTERNAL_ACCOUNTS, {
+        variables: { username: props.user.username },
+        onError: handleError,
+    })
 
     let newPasswordConfirmationField: HTMLInputElement | null = null
     const setNewPasswordConfirmationField = (element: HTMLInputElement | null): void => {
@@ -106,6 +106,12 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
     const onAccountRemoval = (removeId: string, name: string): void => {
         // keep every account that doesn't match removeId
         setAccounts({ fetched: accounts.fetched?.filter(({ id }) => id !== removeId), lastRemoved: name })
+    }
+
+    const onAccountAdd = (): void => {
+        refetch({ username: props.user.username })
+            .then(() => {})
+            .catch(handleError)
     }
 
     const onOldPasswordFieldChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
@@ -207,6 +213,7 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
                         authProviders={props.context.authProviders}
                         onDidError={handleError}
                         onDidRemove={onAccountRemoval}
+                        onDidAdd={onAccountAdd}
                     />
                 </Container>
             )}

@@ -14,6 +14,7 @@
 
 - [`sg` - the Sourcegraph developer tool](./sg/index.md)
   - [Full `sg` reference](./sg/reference.md)
+- [Using Bazel](./bazel.md)
 - [Developing the web clients](web/index.md)
   - [Developing the web app](web/web_app.md)
   - [Developing the code host integrations](web/code_host_integrations.md)
@@ -37,8 +38,8 @@
 - [Developing a worker](workers.md)
 - [Developing an out-of-band migration](oobmigrations.md)
 - [Developing a background routine](backgroundroutine.md)
-- [Code host connections on local dev environment](code-host.md)
 - [Building p4-fusion](./build_p4_fusion.md)
+- [The `gitserver` API](./gitserver-api.md)
 
 ## [Languages](languages/index.md)
 

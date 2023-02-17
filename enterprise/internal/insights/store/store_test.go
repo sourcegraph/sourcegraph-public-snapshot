@@ -66,7 +66,7 @@ SELECT time,
 		t.Fatal(err)
 	}
 
-	time := func(s string) *time.Time {
+	parseTime := func(s string) *time.Time {
 		v, err := time.Parse(time.RFC3339, s)
 		if err != nil {
 			t.Fatal(err)
@@ -81,19 +81,19 @@ SELECT time,
 			t.Fatal(err)
 		}
 		t.Log(points)
-		autogold.Want("SeriesPoints(2).len", int(16)).Equal(t, len(points))
+		autogold.Want("SeriesPoints(2).len", 16).Equal(t, len(points))
 	})
 
 	t.Run("subset of data", func(t *testing.T) {
 		// Confirm we can get a subset of data points.
 		points, err = store.SeriesPoints(ctx, SeriesPointsOpts{
-			From: time("2020-03-01T00:00:00Z"),
-			To:   time("2020-06-01T00:00:00Z"),
+			From: parseTime("2020-03-01T00:00:00Z"),
+			To:   parseTime("2020-06-01T00:00:00Z"),
 		})
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("SeriesPoints(3).len", int(0)).Equal(t, len(points))
+		autogold.Want("SeriesPoints(3).len", 0).Equal(t, len(points))
 	})
 
 	t.Run("latest 3 points", func(t *testing.T) {
@@ -104,7 +104,7 @@ SELECT time,
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("SeriesPoints(4).len", int(3)).Equal(t, len(points))
+		autogold.Want("SeriesPoints(4).len", 3).Equal(t, len(points))
 	})
 
 	t.Run("include list", func(t *testing.T) {
@@ -196,7 +196,7 @@ func TestCountData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("first", int(0)).Equal(t, numDataPoints)
+	autogold.Want("first", 0).Equal(t, numDataPoints)
 
 	// How many data points on 03-01?
 	numDataPoints, err = store.CountData(ctx, CountDataOpts{
@@ -206,7 +206,7 @@ func TestCountData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("second", int(1)).Equal(t, numDataPoints)
+	autogold.Want("second", 1).Equal(t, numDataPoints)
 
 	// How many data points from 03-01 to 03-04?
 	numDataPoints, err = store.CountData(ctx, CountDataOpts{
@@ -216,7 +216,7 @@ func TestCountData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("third", int(5)).Equal(t, numDataPoints)
+	autogold.Want("third", 5).Equal(t, numDataPoints)
 }
 
 func TestRecordSeriesPoints(t *testing.T) {

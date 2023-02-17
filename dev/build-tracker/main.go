@@ -18,7 +18,7 @@ var ErrInvalidToken = errors.New("buildkite token is invalid")
 var ErrInvalidHeader = errors.New("Header of request is invalid")
 var ErrUnwantedEvent = errors.New("Unwanted event received")
 
-var nowFunc func() time.Time = time.Now
+var nowFunc = time.Now
 
 // CleanUpInterval determines how often the old build cleaner should run
 var CleanUpInterval = 5 * time.Minute
@@ -229,29 +229,31 @@ func (s *Server) notifyIfFailed(build *Build) error {
 	return nil
 }
 
-func (s *Server) startOldBuildCleaner(every, window time.Duration) func() {
+func (s *Server) deleteOldBuilds(window time.Duration) {
+	oldBuilds := make([]int, 0)
+	now := nowFunc()
+	for _, b := range s.store.FinishedBuilds() {
+		finishedAt := *b.FinishedAt
+		delta := now.Sub(finishedAt.Time)
+		if delta >= window {
+			s.logger.Debug("build past age window", log.Int("buildNumber", *b.Number), log.Time("FinishedAt", finishedAt.Time), log.Duration("window", window))
+			oldBuilds = append(oldBuilds, *b.Number)
+		}
+	}
+	s.logger.Info("deleting old builds", log.Int("oldBuildCount", len(oldBuilds)))
+	s.store.DelByBuildNumber(oldBuilds...)
+}
+
+func (s *Server) startCleaner(every, window time.Duration) func() {
 	ticker := time.NewTicker(every)
 	done := make(chan interface{})
 
-	// We could technically remove  the builds immediately after we've sent a notification for or it, or the build has passed.
-	// But we keep builds a little longer and prediodically clean them out so that we can in future allow possibly querying
-	// of builds and other use cases, like retrying a build etc.
 	go func() {
 		for {
 			select {
 			case <-ticker.C:
-				oldBuilds := make([]int, 0)
-				now := nowFunc()
-				for _, b := range s.store.FinishedBuilds() {
-					finishedAt := *b.FinishedAt
-					delta := now.Sub(finishedAt.Time)
-					if delta >= window {
-						s.logger.Debug("build past age window", log.Int("buildNumber", *b.Number), log.Time("FinishedAt", finishedAt.Time), log.Duration("window", window))
-						oldBuilds = append(oldBuilds, *b.Number)
-					}
-				}
-				s.logger.Info("deleting old builds", log.Int("oldBuildCount", len(oldBuilds)))
-				s.store.DelByBuildNumber(oldBuilds...)
+				s.deleteOldBuilds(window)
+				s.notifyClient.cacheCleanup(int(BuildExpiryWindow.Hours()))
 			case <-done:
 				ticker.Stop()
 				return
@@ -303,7 +305,7 @@ func main() {
 	logger.Info("config loaded from environment", log.Object("config", log.String("SlackChannel", serverConf.SlackChannel), log.Bool("Production", serverConf.Production)))
 	server := NewServer(logger, *serverConf)
 
-	stopFn := server.startOldBuildCleaner(CleanUpInterval, BuildExpiryWindow)
+	stopFn := server.startCleaner(CleanUpInterval, BuildExpiryWindow)
 	defer stopFn()
 
 	if server.config.Production {

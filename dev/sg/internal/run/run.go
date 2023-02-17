@@ -41,7 +41,7 @@ func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cm
 	}
 	go monitor.run(pathChanges)
 
-	root, err := root.RepositoryRoot()
+	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cm
 	// binaries get installed to <repository-root>/.bin. If the binary is installed with go build, then go
 	// will create .bin directory. Some binaries (like docsite) get downloaded instead of built and therefore
 	// need the directory to exist before hand.
-	binDir := filepath.Join(root, ".bin")
+	binDir := filepath.Join(repoRoot, ".bin")
 	if err := os.Mkdir(binDir, 0755); err != nil && !os.IsExist(err) {
 		return err
 	}
@@ -69,7 +69,7 @@ func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cm
 		failures:         failures,
 		installed:        installed,
 		okayToStart:      okayToStart,
-		repositoryRoot:   root,
+		repositoryRoot:   repoRoot,
 		parentEnv:        parentEnv,
 	}
 
@@ -695,7 +695,7 @@ var watchIgnorePatterns = []*regexp.Regexp{
 }
 
 func watch() (<-chan string, error) {
-	root, err := root.RepositoryRoot()
+	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
 		return nil, err
 	}
@@ -703,7 +703,7 @@ func watch() (<-chan string, error) {
 	paths := make(chan string)
 	events := make(chan notify.EventInfo, 1)
 
-	if err := notify.Watch(root+"/...", events, notify.All); err != nil {
+	if err := notify.Watch(repoRoot+"/...", events, notify.All); err != nil {
 		return nil, err
 	}
 
@@ -713,7 +713,7 @@ func watch() (<-chan string, error) {
 
 	outer:
 		for event := range events {
-			path := strings.TrimPrefix(strings.TrimPrefix(event.Path(), root), "/")
+			path := strings.TrimPrefix(strings.TrimPrefix(event.Path(), repoRoot), "/")
 
 			for _, pattern := range watchIgnorePatterns {
 				if pattern.MatchString(path) {
@@ -729,7 +729,7 @@ func watch() (<-chan string, error) {
 }
 
 func Test(ctx context.Context, cmd Command, args []string, parentEnv map[string]string) error {
-	root, err := root.RepositoryRoot()
+	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
 		return err
 	}
@@ -759,12 +759,12 @@ func Test(ctx context.Context, cmd Command, args []string, parentEnv map[string]
 	}
 
 	c := exec.CommandContext(commandCtx, "bash", "-c", strings.Join(cmdArgs, " "))
-	c.Dir = root
+	c.Dir = repoRoot
 	c.Env = makeEnv(parentEnv, secretsEnv, cmd.Env)
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 
-	std.Out.WriteLine(output.Styledf(output.StylePending, "Running %s in %q...", c, root))
+	std.Out.WriteLine(output.Styledf(output.StylePending, "Running %s in %q...", c, repoRoot))
 
 	return c.Run()
 }

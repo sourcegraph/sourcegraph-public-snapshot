@@ -90,13 +90,13 @@ func (r *GitTreeEntryResolver) Repository() resolverstubs.RepositoryResolver {
 }
 
 func (r *GitTreeEntryResolver) CanonicalURL() string {
-	url := r.commit.canonicalRepoRevURL()
-	return r.urlPath(url).String()
+	canonicalURL := r.commit.canonicalRepoRevURL()
+	return r.urlPath(canonicalURL).String()
 }
 
 func (r *GitTreeEntryResolver) IsRoot() bool {
-	path := path.Clean(r.Path())
-	return path == "/" || path == "." || path == ""
+	cleanedPath := path.Clean(r.Path())
+	return cleanedPath == "/" || cleanedPath == "." || cleanedPath == ""
 }
 
 func (r *GitTreeEntryResolver) IsDirectory() bool { return r.stat.Mode().IsDir() }

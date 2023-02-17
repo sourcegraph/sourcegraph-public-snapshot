@@ -1,6 +1,6 @@
 <a href="https://about.sourcegraph.com/sourcegraph-4" target="_blank">
   <picture>
-    <source srcset="https://p21.p4.n0.cdn.getcloudapp.com/items/xQuxo7AA/a9e1873b-c7b2-4295-b96a-dd21c992eb63.svg" alt="Sourcegraph 4.0" width="100%" media="(prefers-color-scheme: dark)">
+    <source srcset="https://p21.p4.n0.cdn.getcloudapp.com/items/xQuxo7AA/a9e1873b-c7b2-4295-b96a-dd21c992eb63.svg" media="(prefers-color-scheme: dark)">
     <img src="https://p21.p4.n0.cdn.getcloudapp.com/items/ApuDmzGr/822118fe-e5e6-4f37-8c17-8b406437ad03.svg" alt="Sourcegraph 4.0" width="100%">
   </picture>
 </a>

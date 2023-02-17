@@ -44,6 +44,9 @@ type MockStore struct {
 	// GetUnsafeDBFunc is an instance of a mock function object controlling
 	// the behavior of the method GetUnsafeDB.
 	GetUnsafeDBFunc *StoreGetUnsafeDBFunc
+	// RepoCountFunc is an instance of a mock function object controlling
+	// the behavior of the method RepoCount.
+	RepoCountFunc *StoreRepoCountFunc
 	// SelectPoliciesForRepositoryMembershipUpdateFunc is an instance of a
 	// mock function object controlling the behavior of the method
 	// SelectPoliciesForRepositoryMembershipUpdate.
@@ -89,6 +92,11 @@ func NewMockStore() *MockStore {
 		},
 		GetUnsafeDBFunc: &StoreGetUnsafeDBFunc{
 			defaultHook: func() (r0 database.DB) {
+				return
+			},
+		},
+		RepoCountFunc: &StoreRepoCountFunc{
+			defaultHook: func(context.Context) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -144,6 +152,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.GetUnsafeDB")
 			},
 		},
+		RepoCountFunc: &StoreRepoCountFunc{
+			defaultHook: func(context.Context) (int, error) {
+				panic("unexpected invocation of MockStore.RepoCount")
+			},
+		},
 		SelectPoliciesForRepositoryMembershipUpdateFunc: &StoreSelectPoliciesForRepositoryMembershipUpdateFunc{
 			defaultHook: func(context.Context, int) ([]types.ConfigurationPolicy, error) {
 				panic("unexpected invocation of MockStore.SelectPoliciesForRepositoryMembershipUpdate")
@@ -183,6 +196,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		GetUnsafeDBFunc: &StoreGetUnsafeDBFunc{
 			defaultHook: i.GetUnsafeDB,
+		},
+		RepoCountFunc: &StoreRepoCountFunc{
+			defaultHook: i.RepoCount,
 		},
 		SelectPoliciesForRepositoryMembershipUpdateFunc: &StoreSelectPoliciesForRepositoryMembershipUpdateFunc{
 			defaultHook: i.SelectPoliciesForRepositoryMembershipUpdate,
@@ -856,6 +872,110 @@ func (c StoreGetUnsafeDBFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreGetUnsafeDBFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// StoreRepoCountFunc describes the behavior when the RepoCount method of
+// the parent MockStore instance is invoked.
+type StoreRepoCountFunc struct {
+	defaultHook func(context.Context) (int, error)
+	hooks       []func(context.Context) (int, error)
+	history     []StoreRepoCountFuncCall
+	mutex       sync.Mutex
+}
+
+// RepoCount delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockStore) RepoCount(v0 context.Context) (int, error) {
+	r0, r1 := m.RepoCountFunc.nextHook()(v0)
+	m.RepoCountFunc.appendCall(StoreRepoCountFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the RepoCount method of
+// the parent MockStore instance is invoked and the hook queue is empty.
+func (f *StoreRepoCountFunc) SetDefaultHook(hook func(context.Context) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepoCount method of the parent MockStore instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *StoreRepoCountFunc) PushHook(hook func(context.Context) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreRepoCountFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreRepoCountFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *StoreRepoCountFunc) nextHook() func(context.Context) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreRepoCountFunc) appendCall(r0 StoreRepoCountFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreRepoCountFuncCall objects describing
+// the invocations of this function.
+func (f *StoreRepoCountFunc) History() []StoreRepoCountFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreRepoCountFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreRepoCountFuncCall is an object that describes an invocation of
+// method RepoCount on an instance of MockStore.
+type StoreRepoCountFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreRepoCountFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreRepoCountFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // StoreSelectPoliciesForRepositoryMembershipUpdateFunc describes the

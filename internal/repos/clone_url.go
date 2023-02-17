@@ -203,8 +203,8 @@ func githubCloneURL(logger log.Logger, repo *github.Repository, cfg *schema.GitH
 		}
 		baseURL = extsvc.NormalizeBaseURL(baseURL)
 		originalHostname := baseURL.Hostname()
-		url := fmt.Sprintf("git@%s:%s.git", originalHostname, repo.NameWithOwner)
-		return url, nil
+		cloneUrl := fmt.Sprintf("git@%s:%s.git", originalHostname, repo.NameWithOwner)
+		return cloneUrl, nil
 	}
 
 	if repo.URL == "" {

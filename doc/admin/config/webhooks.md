@@ -33,7 +33,7 @@ The incoming webhook will be configured to accept events from a specific code ho
    1. **Code host type**: Select from the dropdown. This will be filtered based on code host connections added on your instance.
    1. **Code host URN**: The URN for the code host. Again, this will be filtered by code host connections added on your instance.
    1. **Secret**: An arbitrary shared secret between Sourcegraph and the code host. A default value is provided, but you are free to change it.
-       > NOTE: Secrets are not supported for BitBucket cloud
+       > NOTE: Secrets are not supported for Bitbucket cloud
 4. Click **Create**
 
 The incoming webhook will now be created, and you will be redirected to a page showing more details.

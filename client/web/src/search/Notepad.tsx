@@ -21,9 +21,11 @@ import {
 } from '@mdi/js'
 import classNames from 'classnames'
 import type { LocationDescriptorObject } from 'history'
+import { useNavigate } from 'react-router-dom-v5-compat'
+import * as uuid from 'uuid'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
-import { isMacPlatform } from '@sourcegraph/common'
+import { isMacPlatform, logger } from '@sourcegraph/common'
 import { HighlightLineRange, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendContextFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
@@ -32,6 +34,9 @@ import { buildSearchURLQuery, toPrettyBlobURL } from '@sourcegraph/shared/src/ut
 import { Button, Link, TextArea, Icon, H2, H3, Text, createLinkUrl, useMatchMedia } from '@sourcegraph/wildcard'
 
 import { BlockInput } from '../notebooks'
+import { createNotebook } from '../notebooks/backend'
+import { blockToGQLInput } from '../notebooks/serialize'
+import { EnterprisePageRoutes } from '../routes.constants'
 import {
     addNotepadEntry,
     NotepadEntry,
@@ -88,12 +93,12 @@ export const NotepadIcon: React.FunctionComponent<React.PropsWithChildren<unknow
 
 export interface NotepadContainerProps {
     initialOpen?: boolean
-    onCreateNotebook: (blocks: BlockInput[]) => void
+    userId?: string
 }
 
 export const NotepadContainer: React.FunctionComponent<React.PropsWithChildren<NotepadContainerProps>> = ({
     initialOpen,
-    onCreateNotebook,
+    userId,
 }) => {
     const newEntry = useNotepadState(state => state.addableEntry)
     const entries = useNotepadState(state => state.entries)
@@ -107,9 +112,9 @@ export const NotepadContainer: React.FunctionComponent<React.PropsWithChildren<N
             <Notepad
                 className={styles.fixed}
                 initialOpen={initialOpen}
-                onCreateNotebook={onCreateNotebook}
                 newEntry={newEntry}
                 entries={entries}
+                userId={userId}
                 restorePreviousSession={canRestore ? restorePreviousSession : undefined}
                 addEntry={addNotepadEntry}
                 removeEntry={removeFromNotepad}
@@ -123,7 +128,6 @@ export const NotepadContainer: React.FunctionComponent<React.PropsWithChildren<N
 export interface NotepadProps {
     className?: string
     initialOpen?: boolean
-    onCreateNotebook: (blocks: BlockInput[]) => void
     newEntry?: NotepadEntryInput | null
     entries: NotepadEntry[]
     addEntry: typeof addNotepadEntry
@@ -132,19 +136,22 @@ export interface NotepadProps {
     // This is only used in our CTA to prevent notes from being rendered as
     // selected
     selectable?: boolean
+    userId?: string
 }
 
 export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadProps>> = ({
     className,
     initialOpen = false,
-    onCreateNotebook,
     entries,
     restorePreviousSession,
     addEntry,
     removeEntry,
     newEntry,
     selectable = true,
+    userId,
 }) => {
+    const navigate = useNavigate()
+
     const [open, setOpen] = useState(initialOpen)
     const [selectedEntries, setSelectedEntries] = useState<number[]>([])
     const isMacPlatform_ = useMemo(isMacPlatform, [])
@@ -206,7 +213,11 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
         [reversedEntries, selectedEntries, setSelectedEntries, removeEntry]
     )
 
-    const createNotebook = useCallback(() => {
+    const handleCreateNotebook = useCallback(() => {
+        if (!userId) {
+            return
+        }
+
         const blocks: BlockInput[] = []
         for (const entry of entries) {
             if (entry.annotation) {
@@ -232,8 +243,21 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                     break
             }
         }
-        onCreateNotebook(blocks)
-    }, [entries, onCreateNotebook])
+
+        createNotebook({
+            notebook: {
+                title: 'New Notebook',
+                blocks: blocks.map(block => blockToGQLInput({ id: uuid.v4(), ...block })),
+                public: false,
+                namespace: userId,
+            },
+        })
+            .toPromise()
+            .then(createdNotebook => {
+                navigate(EnterprisePageRoutes.Notebook.replace(':id', createdNotebook.id))
+            })
+            .catch(logger.error)
+    }, [entries, userId, navigate])
 
     const toggleOpen = useCallback(() => {
         setOpen(open => {
@@ -450,7 +474,7 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                     )}
                     <div className="p-2 d-flex align-items-center">
                         <Button
-                            onClick={createNotebook}
+                            onClick={handleCreateNotebook}
                             variant="primary"
                             size="sm"
                             disabled={entries.length === 0}

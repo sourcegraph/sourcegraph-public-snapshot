@@ -42,7 +42,7 @@ func ScanInt32Array(s dbutil.Scanner) ([]int32, error) {
 		return nil, err
 	}
 
-	return []int32(value), nil
+	return value, nil
 }
 
 var (

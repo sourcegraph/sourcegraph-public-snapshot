@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/go-diff/diff"
+	godiff "github.com/sourcegraph/go-diff/diff"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
@@ -104,13 +104,13 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 		label               string
 		extraGitCommands    []string
 		expectedDiffFiles   []string
-		expectedFileStat    *diff.Stat
+		expectedFileStat    *godiff.Stat
 		rangeOverAllCommits bool
 	}{
 		{
 			label:               "adding files",
 			expectedDiffFiles:   []string{"file1", "file3", "file3.3"},
-			expectedFileStat:    &diff.Stat{Added: 3},
+			expectedFileStat:    &godiff.Stat{Added: 3},
 			rangeOverAllCommits: true,
 		},
 		{
@@ -121,7 +121,7 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 				makeGitCommit("rename", 7),
 			},
 			expectedDiffFiles: []string{"file_can_access"},
-			expectedFileStat:  &diff.Stat{Added: 1},
+			expectedFileStat:  &godiff.Stat{Added: 1},
 		},
 		{
 			label: "file modified",
@@ -133,7 +133,7 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 				makeGitCommit("edit_files", 7),
 			},
 			expectedDiffFiles: []string{"file1"}, // file2 is updated but user doesn't have access
-			expectedFileStat:  &diff.Stat{Changed: 1},
+			expectedFileStat:  &godiff.Stat{Changed: 1},
 		},
 		{
 			label: "diff for commit w/ no access returns empty result",
@@ -143,7 +143,7 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 				makeGitCommit("no_access", 7),
 			},
 			expectedDiffFiles: []string{},
-			expectedFileStat:  &diff.Stat{},
+			expectedFileStat:  &godiff.Stat{},
 		},
 	}
 	for _, tc := range testCases {
@@ -166,7 +166,7 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 			}
 			defer iter.Close()
 
-			stat := &diff.Stat{}
+			stat := &godiff.Stat{}
 			fileNames := make([]string, 0, 3)
 			for {
 				file, err := iter.Next()
@@ -178,10 +178,10 @@ func TestDiffWithSubRepoFiltering(t *testing.T) {
 
 				fileNames = append(fileNames, file.NewName)
 
-				fs := file.Stat()
-				stat.Added += fs.Added
-				stat.Changed += fs.Changed
-				stat.Deleted += fs.Deleted
+				fileStat := file.Stat()
+				stat.Added += fileStat.Added
+				stat.Changed += fileStat.Changed
+				stat.Deleted += fileStat.Deleted
 			}
 			if diff := cmp.Diff(fileNames, tc.expectedDiffFiles); diff != "" {
 				t.Fatal(diff)
@@ -3215,7 +3215,7 @@ func TestStreamBlameFile(t *testing.T) {
 		checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
 			return authz.None, nil
 		})
-		hr, err := streamBlameFileCmd(ctx, checker, api.RepoName("foobar"), "README.md", nil, func(_ []string) GitCommand { return nil })
+		hr, err := streamBlameFileCmd(ctx, checker, "foobar", "README.md", nil, func(_ []string) GitCommand { return nil })
 		if hr != nil {
 			t.Fatalf("expected nil HunkReader")
 		}
@@ -3231,18 +3231,18 @@ func TestStreamBlameFile(t *testing.T) {
 func TestBlameHunkReader(t *testing.T) {
 	t.Run("OK matching hunks", func(t *testing.T) {
 		rc := io.NopCloser(strings.NewReader(testGitBlameOutputIncremental))
-		reader := newBlameHunkReader(context.Background(), rc)
+		reader := newBlameHunkReader(rc)
+		defer reader.Close()
 
 		hunks := []*Hunk{}
 		for {
-			hunk, done, err := reader.Read()
-			if err != nil {
+			hunk, err := reader.Read()
+			if errors.Is(err, io.EOF) {
+				break
+			} else if err != nil {
 				t.Fatalf("blameHunkReader.Read failed: %s", err)
 			}
-			if done {
-				break
-			}
-			hunks = append(hunks, hunk...)
+			hunks = append(hunks, hunk)
 		}
 
 		sortFn := func(x []*Hunk) func(i, j int) bool {
@@ -3270,15 +3270,15 @@ func TestBlameHunkReader(t *testing.T) {
 
 	t.Run("OK parsing hunks", func(t *testing.T) {
 		rc := io.NopCloser(strings.NewReader(testGitBlameOutputIncremental2))
-		reader := newBlameHunkReader(context.Background(), rc)
+		reader := newBlameHunkReader(rc)
+		defer reader.Close()
 
 		for {
-			_, done, err := reader.Read()
-			if err != nil {
-				t.Fatalf("blameHunkReader.Read failed: %s", err)
-			}
-			if done {
+			_, err := reader.Read()
+			if errors.Is(err, io.EOF) {
 				break
+			} else if err != nil {
+				t.Fatalf("blameHunkReader.Read failed: %s", err)
 			}
 		}
 	})

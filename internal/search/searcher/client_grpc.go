@@ -8,16 +8,16 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/proto"
+	"google.golang.org/grpc"
+
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	grpcdefaults "github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 // Search searches repo@commit with p.
@@ -82,17 +82,13 @@ func SearchGRPC(
 			return false, errors.Wrap(err, "failed to parse URL")
 		}
 
-		var opts []grpc.DialOption
-		opts = append(opts, grpcdefaults.DialOptions()...)
-		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-
-		clientConn, err := grpc.DialContext(ctx, parsed.Host, opts...)
+		clientConn, err := grpc.DialContext(ctx, parsed.Host, defaults.DialOptions()...)
 		if err != nil {
 			return false, err
 		}
 		defer clientConn.Close()
 
-		client := proto.NewSearcherClient(clientConn)
+		client := proto.NewSearcherServiceClient(clientConn)
 		resp, err := client.Search(ctx, r)
 		if err != nil {
 			return false, err

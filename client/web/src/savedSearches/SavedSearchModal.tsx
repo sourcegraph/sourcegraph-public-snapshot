@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
+import type { NavigateFunction } from 'react-router-dom-v5-compat'
 
 import { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import { Button, Modal, Select, H3, Form } from '@sourcegraph/wildcard'
@@ -11,11 +11,10 @@ import { AuthenticatedUser } from '../auth'
 import styles from './SavedSearchModal.module.scss'
 
 interface Props extends SearchPatternTypeProps {
-    location: H.Location
-    history: H.History
     authenticatedUser: AuthenticatedUser | null
     query?: string
     onDidCancel: () => void
+    navigate: NavigateFunction
 }
 
 enum UserOrOrg {
@@ -104,7 +103,7 @@ export class SavedSearchModal extends React.Component<Props, State> {
     private onSubmit = (): void => {
         if (this.props.query && this.props.authenticatedUser) {
             const encodedQuery = encodeURIComponent(this.props.query)
-            this.props.history.push(
+            this.props.navigate(
                 this.state.saveLocation.toLowerCase() === 'user'
                     ? `/users/${this.props.authenticatedUser.username}/searches/add?query=${encodedQuery}&patternType=${this.props.patternType}`
                     : `/organizations/${this.state.organization!}/searches/add?query=${encodedQuery}&patternType=${

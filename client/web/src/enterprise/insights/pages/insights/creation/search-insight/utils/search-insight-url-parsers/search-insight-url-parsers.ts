@@ -16,7 +16,7 @@ export function decodeSearchInsightUrl(queryParameters: string): Partial<CreateI
             return {
                 title: title ?? '',
                 repoQuery: { query: repoQuery ?? '' },
-                repositories: repositories ?? '',
+                repositories: repositories?.split(',') ?? [],
                 series: editableSeries,
                 repoMode: repoQuery ? 'search-query' : 'urls-list',
             }
@@ -44,9 +44,14 @@ export function encodeSearchInsightUrl(values: Partial<SearchInsightURLValues>):
 
         switch (key) {
             case 'title':
-            case 'repoQuery':
-            case 'repositories': {
+            case 'repoQuery': {
                 parameters.set(key, encodeURIComponent(fields[key].toString()))
+                break
+            }
+            case 'repositories': {
+                const encodedRepoURLs = fields[key].join(',')
+                parameters.set(key, encodedRepoURLs)
+
                 break
             }
             case 'series': {

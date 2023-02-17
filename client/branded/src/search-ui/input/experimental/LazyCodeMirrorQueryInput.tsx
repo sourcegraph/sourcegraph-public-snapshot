@@ -2,10 +2,10 @@ import React from 'react'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { CodeMirrorQueryInputWrapperProps } from './CodeMirrorQueryInputWrapper'
+import type { CodeMirrorQueryInputWrapperProps } from './CodeMirrorQueryInputWrapper'
 
 const CodeMirrorQueryInput = lazyComponent(() => import('./CodeMirrorQueryInputWrapper'), 'CodeMirrorQueryInputWrapper')
 
-export const LazyCodeMirrorQueryInput: React.FunctionComponent<CodeMirrorQueryInputWrapperProps> = props => (
-    <CodeMirrorQueryInput {...props} />
-)
+export const LazyCodeMirrorQueryInput: React.FunctionComponent<
+    React.PropsWithChildren<CodeMirrorQueryInputWrapperProps>
+> = props => <CodeMirrorQueryInput {...props} />

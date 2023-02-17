@@ -73,8 +73,8 @@ func TestIntegration(t *testing.T) {
 					continue
 				}
 
-				context := NewIssueContext(trackingIssue, trackingIssues, issues, pullRequests)
-				if _, ok := trackingIssue.UpdateBody(RenderTrackingIssue(context)); !ok {
+				issueContext := NewIssueContext(trackingIssue, trackingIssues, issues, pullRequests)
+				if _, ok := trackingIssue.UpdateBody(RenderTrackingIssue(issueContext)); !ok {
 					t.Fatal("failed to patch issue")
 				}
 

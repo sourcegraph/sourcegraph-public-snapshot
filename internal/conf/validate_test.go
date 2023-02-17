@@ -138,7 +138,7 @@ func TestValidateSettings(t *testing.T) {
 }
 
 func TestDoValidate(t *testing.T) {
-	schema := schema.SiteSchemaJSON
+	siteSchemaJSON := schema.SiteSchemaJSON
 
 	tests := map[string]struct {
 		input        string
@@ -159,7 +159,7 @@ func TestDoValidate(t *testing.T) {
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			problems := doValidate([]byte(test.input), schema)
+			problems := doValidate([]byte(test.input), siteSchemaJSON)
 			if !reflect.DeepEqual(problems, test.wantProblems) {
 				t.Errorf("got problems %v, want %v", problems, test.wantProblems)
 			}

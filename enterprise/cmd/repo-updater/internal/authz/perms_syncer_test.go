@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -162,10 +161,10 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
 	perms := edb.NewMockPermsStore()
-	perms.SetUserPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPermissions) error {
+	perms.SetUserPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPermissions) (*database.SetPermissionsResult, error) {
 		wantIDs := []int32{1, 2, 3, 4}
 		assert.Equal(t, wantIDs, p.GenerateSortedIDsSlice())
-		return nil
+		return nil, nil
 	})
 
 	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
@@ -176,7 +175,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		}, nil
 	}
 
-	providers, err := s.syncUserPerms(context.Background(), 1, true, authz.FetchPermsOptions{})
+	_, providers, err := s.syncUserPerms(context.Background(), 1, true, authz.FetchPermsOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -237,10 +236,10 @@ func TestPermsSyncer_syncUserPerms_touchUserPermissions(t *testing.T) {
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
 	perms := edb.NewMockPermsStore()
-	perms.SetUserPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPermissions) error {
+	perms.SetUserPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPermissions) (*database.SetPermissionsResult, error) {
 		wantIDs := []int32{1, 2, 3, 4, 5}
 		assert.Equal(t, wantIDs, p.GenerateSortedIDsSlice())
-		return nil
+		return nil, nil
 	})
 	perms.TouchUserPermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32) error {
 		return nil
@@ -249,7 +248,7 @@ func TestPermsSyncer_syncUserPerms_touchUserPermissions(t *testing.T) {
 	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
 
 	t.Run("fetchUserPermsViaExternalAccounts", func(t *testing.T) {
-		_, err := s.syncUserPerms(context.Background(), 1, true, authz.FetchPermsOptions{})
+		_, _, err := s.syncUserPerms(context.Background(), 1, true, authz.FetchPermsOptions{})
 		if err == nil {
 			t.Fatal("expected an error")
 		}
@@ -318,10 +317,10 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
 	perms := edb.NewMockPermsStore()
-	perms.SetUserPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPermissions) error {
+	perms.SetUserPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPermissions) (*database.SetPermissionsResult, error) {
 		wantIDs := []int32{}
 		assert.Equal(t, wantIDs, p.GenerateSortedIDsSlice())
-		return nil
+		return nil, nil
 	})
 
 	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
@@ -331,7 +330,7 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 		return nil, context.DeadlineExceeded
 	}
 
-	providers, err := s.syncUserPerms(context.Background(), 1, true, authz.FetchPermsOptions{})
+	_, providers, err := s.syncUserPerms(context.Background(), 1, true, authz.FetchPermsOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -386,10 +385,10 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
 	perms := edb.NewMockPermsStore()
-	perms.SetUserPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPermissions) error {
+	perms.SetUserPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPermissions) (*database.SetPermissionsResult, error) {
 		assert.Equal(t, int32(1), p.UserID)
 		assert.Equal(t, []int32{1}, p.GenerateSortedIDsSlice())
-		return nil
+		return nil, nil
 	})
 
 	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
@@ -417,7 +416,7 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 				}, test.fetchErr
 			}
 
-			_, err := s.syncUserPerms(context.Background(), 1, test.noPerms, authz.FetchPermsOptions{})
+			_, _, err := s.syncUserPerms(context.Background(), 1, test.noPerms, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -476,7 +475,7 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 			return nil, &github.APIError{Code: http.StatusUnauthorized}
 		}
 
-		_, err := s.syncUserPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
+		_, _, err := s.syncUserPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -489,7 +488,7 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 			return nil, gitlab.NewHTTPError(http.StatusForbidden, nil)
 		}
 
-		_, err := s.syncUserPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
+		_, _, err := s.syncUserPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -506,7 +505,7 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 			}
 		}
 
-		_, err := s.syncUserPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
+		_, _, err := s.syncUserPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -575,7 +574,7 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 		}, nil
 	}
 
-	_, err := s.syncUserPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
+	_, _, err := s.syncUserPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -653,7 +652,7 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 		}, nil
 	}
 
-	_, err := s.syncUserPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
+	_, _, err := s.syncUserPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -691,7 +690,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		perms := edb.NewMockPermsStore()
 		s := newPermsSyncer(reposStore, perms)
 
-		_, err := s.syncRepoPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
+		_, _, err := s.syncRepoPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -744,15 +743,15 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		perms := edb.NewMockPermsStore()
 		perms.TransactFunc.SetDefaultReturn(perms, nil)
 		perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]int32{"user": 1}, nil)
-		perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) error {
+		perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
 			assert.Equal(t, int32(1), p.RepoID)
 			assert.Equal(t, []int32{1}, p.GenerateSortedIDsSlice())
-			return nil
+			return nil, nil
 		})
 
 		s := newPermsSyncer(reposStore, perms)
 
-		_, err := s.syncRepoPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
+		_, _, err := s.syncRepoPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -775,15 +774,15 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		perms := edb.NewMockPermsStore()
 		perms.TransactFunc.SetDefaultReturn(perms, nil)
 		perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]int32{"user": 1}, nil)
-		perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) error {
+		perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
 			assert.Equal(t, int32(1), p.RepoID)
 			assert.Equal(t, []int32{1}, p.GenerateSortedIDsSlice())
-			return nil
+			return nil, nil
 		})
 
 		s := newPermsSyncer(reposStore, perms)
 
-		_, err := s.syncRepoPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
+		_, _, err := s.syncRepoPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -820,10 +819,10 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	perms := edb.NewMockPermsStore()
 	perms.TransactFunc.SetDefaultReturn(perms, nil)
 	perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]int32{"user": 1}, nil)
-	perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) error {
+	perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
 		assert.Equal(t, int32(1), p.RepoID)
 		assert.Equal(t, []int32{1}, p.GenerateSortedIDsSlice())
-		return nil
+		return nil, nil
 	})
 	perms.SetRepoPendingPermissionsFunc.SetDefaultHook(func(_ context.Context, accounts *extsvc.Accounts, _ *authz.RepoPermissions) error {
 		wantAccounts := &extsvc.Accounts{
@@ -858,53 +857,12 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 				return []extsvc.AccountID{"user", "pending_user"}, test.fetchErr
 			}
 
-			_, err := s.syncRepoPerms(context.Background(), 1, test.noPerms, authz.FetchPermsOptions{})
+			_, _, err := s.syncRepoPerms(context.Background(), 1, test.noPerms, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
 		})
 	}
-}
-
-func TestPermsSyncer_waitForRateLimit(t *testing.T) {
-	ctx := context.Background()
-	t.Run("no rate limit registry", func(t *testing.T) {
-		s := NewPermsSyncer(logtest.Scoped(t), nil, nil, nil, nil, nil)
-
-		ctx, cancel := context.WithTimeout(ctx, time.Second)
-		defer cancel()
-		err := s.waitForRateLimit(ctx, "https://github.com/", 100000, "user")
-		if err != nil {
-			t.Fatal(err)
-		}
-	})
-
-	t.Run("enough quota available", func(t *testing.T) {
-		rateLimiterRegistry := ratelimit.NewRegistry()
-		s := NewPermsSyncer(logtest.Scoped(t), nil, nil, nil, nil, rateLimiterRegistry)
-
-		ctx, cancel := context.WithTimeout(ctx, time.Second)
-		defer cancel()
-		err := s.waitForRateLimit(ctx, "https://github.com/", 1, "user")
-		if err != nil {
-			t.Fatal(err)
-		}
-	})
-
-	t.Run("not enough quota available", func(t *testing.T) {
-		rateLimiterRegistry := ratelimit.NewRegistry()
-		l := rateLimiterRegistry.Get("extsvc:github:1")
-		l.SetLimit(1)
-		l.SetBurst(1)
-		s := NewPermsSyncer(logtest.Scoped(t), nil, nil, nil, nil, rateLimiterRegistry)
-
-		ctx, cancel := context.WithTimeout(ctx, time.Second)
-		defer cancel()
-		err := s.waitForRateLimit(ctx, "extsvc:github:1", 10, "user")
-		if err == nil {
-			t.Fatalf("err: want %v but got nil", context.Canceled)
-		}
-	})
 }
 
 func TestPermsSyncer_syncPerms(t *testing.T) {

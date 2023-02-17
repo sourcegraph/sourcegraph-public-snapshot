@@ -367,7 +367,7 @@ func (c *Dashboard) RenderPrometheusRules(injectLabelMatchers []*labels.Matcher)
 							c.Name, o.Name, level, err)
 					}
 
-					labels := map[string]string{
+					labelMap := map[string]string{
 						"name":         o.Name,
 						"level":        level,
 						"service_name": c.Name,
@@ -380,9 +380,9 @@ func (c *Dashboard) RenderPrometheusRules(injectLabelMatchers []*labels.Matcher)
 					}
 					// Inject labels as fixed values for alert rules
 					for _, l := range injectLabelMatchers {
-						labels[l.Name] = l.Value
+						labelMap[l.Name] = l.Value
 					}
-					group.appendRow(alertQuery, labels, a.duration)
+					group.appendRow(alertQuery, labelMap, a.duration)
 				}
 			}
 		}

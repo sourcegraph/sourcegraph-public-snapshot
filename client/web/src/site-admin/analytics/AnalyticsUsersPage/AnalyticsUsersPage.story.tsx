@@ -692,6 +692,6 @@ const USER_ANALYTICS_QUERY_MOCK: MockedResponse<UsersStatisticsResult> = {
 
 export const AnalyticsUsersPageExample: Story = () => (
     <MockedTestProvider mocks={[USER_ANALYTICS_QUERY_MOCK]}>
-        <AnalyticsUsersPage history={{} as any} location={{} as any} match={{} as any} />
+        <AnalyticsUsersPage />
     </MockedTestProvider>
 )

@@ -43,10 +43,9 @@ export function getSearchContextCreateAction(
 export function getInsightsCreateAction(
     query: string | undefined,
     patternType: SearchPatternType,
-    authenticatedUser: Pick<AuthenticatedUser, 'id'> | null,
     enableCodeInsights: boolean | undefined
 ): CreateAction | null {
-    if (!enableCodeInsights || !query || !authenticatedUser) {
+    if (!enableCodeInsights || !query) {
         return null
     }
 

@@ -119,7 +119,7 @@ func (e *userEmails) Add(ctx context.Context, userID int32, email string) error 
 
 // Remove removes the e-mail from the specified user. Perforce external accounts
 // using the e-mail will also be removed.
-func (e *userEmails) Remove(ctx context.Context, userID int32, email string) (err error) {
+func (e *userEmails) Remove(ctx context.Context, userID int32, email string) error {
 	logger := e.logger.Scoped("UserEmails.Remove", "handles removal of user emails")
 
 	// 🚨 SECURITY: Only the authenticated user and site admins can remove email
@@ -128,42 +128,38 @@ func (e *userEmails) Remove(ctx context.Context, userID int32, email string) (er
 		return err
 	}
 
-	tx, err := e.db.Transact(ctx)
+	err := e.db.WithTransact(ctx, func(tx database.DB) error {
+		if err := tx.UserEmails().Remove(ctx, userID, email); err != nil {
+			return errors.Wrap(err, "removing user e-mail")
+		}
+
+		// 🚨 SECURITY: If an email is removed, invalidate any existing password reset
+		// tokens that may have been sent to that email.
+		if err := tx.Users().DeletePasswordResetCode(ctx, userID); err != nil {
+			return errors.Wrap(err, "deleting reset codes")
+		}
+
+		if err := deleteStalePerforceExternalAccounts(ctx, tx, userID, email); err != nil {
+			return errors.Wrap(err, "removing stale perforce external account")
+		}
+
+		if conf.CanSendEmail() {
+			svc := NewUserEmailsService(tx, logger)
+			if err := svc.SendUserEmailOnFieldUpdate(ctx, userID, "removed an email"); err != nil {
+				logger.Warn("Failed to send email to inform user of email removal", log.Error(err))
+			}
+		}
+
+		return nil
+	})
 	if err != nil {
-		return errors.Wrap(err, "starting transaction")
-	}
-	defer func() {
-		err = tx.Done(err)
-		if err != nil {
-			return
-		}
-
-		// Eagerly attempt to sync permissions again. This needs to happen _after_ the
-		// transaction has committed so that it takes into account any changes triggered
-		// by the removal of the e-mail.
-		triggerPermissionsSync(ctx, logger, e.db, userID, permssync.ReasonUserEmailRemoved)
-	}()
-
-	if err := tx.UserEmails().Remove(ctx, userID, email); err != nil {
-		return errors.Wrap(err, "removing user e-mail")
+		return err
 	}
 
-	// 🚨 SECURITY: If an email is removed, invalidate any existing password reset
-	// tokens that may have been sent to that email.
-	if err := tx.Users().DeletePasswordResetCode(ctx, userID); err != nil {
-		return errors.Wrap(err, "deleting reset codes")
-	}
-
-	if err := deleteStalePerforceExternalAccounts(ctx, tx, userID, email); err != nil {
-		return errors.Wrap(err, "removing stale perforce external account")
-	}
-
-	if conf.CanSendEmail() {
-		svc := NewUserEmailsService(tx, logger)
-		if err := svc.SendUserEmailOnFieldUpdate(ctx, userID, "removed an email"); err != nil {
-			logger.Warn("Failed to send email to inform user of email removal", log.Error(err))
-		}
-	}
+	// Eagerly attempt to sync permissions again. This needs to happen _after_ the
+	// transaction has committed so that it takes into account any changes triggered
+	// by the removal of the e-mail.
+	triggerPermissionsSync(ctx, logger, e.db, userID, database.ReasonUserEmailRemoved)
 
 	return nil
 }
@@ -195,7 +191,7 @@ func (e *userEmails) SetPrimaryEmail(ctx context.Context, userID int32, email st
 // SetVerified sets the supplied e-mail as the verified email for the given user.
 // If verified is false, Perforce external accounts using the e-mail will be
 // removed.
-func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string, verified bool) (err error) {
+func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string, verified bool) error {
 	logger := e.logger.Scoped("UserEmails.SetVerified", "handles setting e-mail as verified")
 
 	// 🚨 SECURITY: Only site admins (NOT users themselves) can manually set email
@@ -205,40 +201,36 @@ func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string
 		return err
 	}
 
-	tx, err := e.db.Transact(ctx)
-	if err != nil {
-		return errors.Wrap(err, "starting transaction")
-	}
-	defer func() {
-		err = tx.Done(err)
-		if err != nil {
-			return
+	err := e.db.WithTransact(ctx, func(tx database.DB) error {
+		if err := tx.UserEmails().SetVerified(ctx, userID, email, verified); err != nil {
+			return err
 		}
 
-		// Eagerly attempt to sync permissions again. This needs to happen _after_ the
-		// transaction has committed so that it takes into account any changes triggered
-		// by changes in the verification status of the e-mail.
-		triggerPermissionsSync(ctx, logger, e.db, userID, permssync.ReasonUserEmailVerified)
-	}()
+		if !verified {
+			if err := deleteStalePerforceExternalAccounts(ctx, tx, userID, email); err != nil {
+				return errors.Wrap(err, "removing stale perforce external account")
+			}
+			return nil
+		}
 
-	if err := tx.UserEmails().SetVerified(ctx, userID, email, verified); err != nil {
+		if err := tx.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
+			UserID: userID,
+			Perm:   authz.Read,
+			Type:   authz.PermRepos,
+		}); err != nil {
+			logger.Error("schemaResolver.SetUserEmailVerified: failed to grant user pending permissions", log.Int32("userID", userID), log.Error(err))
+		}
+
+		return nil
+	})
+	if err != nil {
 		return err
 	}
 
-	if !verified {
-		if err := deleteStalePerforceExternalAccounts(ctx, tx, userID, email); err != nil {
-			return errors.Wrap(err, "removing stale perforce external account")
-		}
-		return nil
-	}
-
-	if err := tx.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
-		UserID: userID,
-		Perm:   authz.Read,
-		Type:   authz.PermRepos,
-	}); err != nil {
-		logger.Error("schemaResolver.SetUserEmailVerified: failed to grant user pending permissions", log.Int32("userID", userID), log.Error(err))
-	}
+	// Eagerly attempt to sync permissions again. This needs to happen _after_ the
+	// transaction has committed so that it takes into account any changes triggered
+	// by changes in the verification status of the e-mail.
+	triggerPermissionsSync(ctx, logger, e.db, userID, database.ReasonUserEmailVerified)
 
 	return nil
 }
@@ -470,7 +462,7 @@ Please verify your email address on Sourcegraph ({{.Host}}) by clicking this lin
 
 // triggerPermissionsSync is a helper that attempts to schedule a new permissions
 // sync for the given user.
-func triggerPermissionsSync(ctx context.Context, logger log.Logger, db database.DB, userID int32, reason string) {
+func triggerPermissionsSync(ctx context.Context, logger log.Logger, db database.DB, userID int32, reason database.PermissionSyncJobReason) {
 	permssync.SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{
 		UserIDs: []int32{userID},
 		Reason:  reason,

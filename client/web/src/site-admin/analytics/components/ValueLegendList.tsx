@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react'
 
 import classNames from 'classnames'
-import { useLocation } from 'react-router'
+import { useLocation } from 'react-router-dom-v5-compat'
 
 import { Link, Text, Tooltip } from '@sourcegraph/wildcard'
 
@@ -17,6 +17,7 @@ interface ValueLegendItemProps {
     tooltip?: string
     className?: string
     filter?: { name: string; value: string }
+    onClick?: () => any
 }
 
 export const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({
@@ -26,6 +27,7 @@ export const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({
     tooltip,
     className,
     filter,
+    onClick,
 }) => {
     const formattedNumber = useMemo(() => (typeof value === 'number' ? formatNumber(value) : value), [value])
     const unformattedNumber = `${value}`
@@ -53,9 +55,9 @@ export const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({
                         {formattedNumber}
                     </Link>
                 ) : (
-                    <span style={{ color }} className={styles.count}>
+                    <Text as="span" alignment="center" style={{ color }} className={styles.count} onClick={onClick}>
                         {formattedNumber}
-                    </span>
+                    </Text>
                 )}
             </Tooltip>
             <Tooltip content={tooltip}>
@@ -72,6 +74,7 @@ export const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({
                         as="span"
                         alignment="center"
                         className={classNames(styles.textWrap, tooltip && 'cursor-pointer', 'text-muted')}
+                        onClick={onClick}
                     >
                         {description}
                         {tooltip && <span className={styles.linkColor}>*</span>}

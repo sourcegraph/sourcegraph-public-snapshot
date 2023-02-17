@@ -64,11 +64,11 @@ func (r *computeMatchResolver) Range() gql.RangeResolver {
 }
 
 func (r *computeMatchResolver) Environment() []gql.ComputeEnvironmentEntryResolver {
-	var result []gql.ComputeEnvironmentEntryResolver
+	var resolvers []gql.ComputeEnvironmentEntryResolver
 	for variable, value := range r.m.Environment {
-		result = append(result, newEnvironmentEntryResolver(variable, value))
+		resolvers = append(resolvers, newEnvironmentEntryResolver(variable, value))
 	}
-	return result
+	return resolvers
 }
 
 func newEnvironmentEntryResolver(variable string, value compute.Data) *computeEnvironmentEntryResolver {
@@ -214,8 +214,8 @@ func toResultResolverList(ctx context.Context, cmd compute.Command, matches []re
 
 		repoResolver := getRepoResolver(m.RepoName(), "")
 		path, commit := pathAndCommitFromResult(m)
-		result := toComputeResultResolver(computeResult, repoResolver, path, commit)
-		results = append(results, result)
+		resolver := toComputeResultResolver(computeResult, repoResolver, path, commit)
+		results = append(results, resolver)
 	}
 	return results, nil
 }

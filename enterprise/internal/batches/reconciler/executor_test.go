@@ -1138,30 +1138,30 @@ func TestHandleArchivedRepo(t *testing.T) {
 		ch := &btypes.Changeset{ExternalState: btypes.ChangesetExternalStateDraft}
 		repo := &types.Repo{Archived: false}
 
-		store := repos.NewMockStore()
-		store.UpdateRepoFunc.SetDefaultReturn(repo, nil)
+		mockStore := repos.NewMockStore()
+		mockStore.UpdateRepoFunc.SetDefaultReturn(repo, nil)
 
-		err := handleArchivedRepo(ctx, store, repo, ch)
+		err := handleArchivedRepo(ctx, mockStore, repo, ch)
 		assert.NoError(t, err)
 		assert.True(t, repo.Archived)
 		assert.Equal(t, btypes.ChangesetExternalStateReadOnly, ch.ExternalState)
-		assert.NotEmpty(t, store.UpdateRepoFunc.History())
+		assert.NotEmpty(t, mockStore.UpdateRepoFunc.History())
 	})
 
 	t.Run("store error", func(t *testing.T) {
 		ch := &btypes.Changeset{ExternalState: btypes.ChangesetExternalStateDraft}
 		repo := &types.Repo{Archived: false}
 
-		store := repos.NewMockStore()
+		mockStore := repos.NewMockStore()
 		want := errors.New("")
-		store.UpdateRepoFunc.SetDefaultReturn(nil, want)
+		mockStore.UpdateRepoFunc.SetDefaultReturn(nil, want)
 
-		have := handleArchivedRepo(ctx, store, repo, ch)
+		have := handleArchivedRepo(ctx, mockStore, repo, ch)
 		assert.Error(t, have)
 		assert.ErrorIs(t, have, want)
 		assert.True(t, repo.Archived)
 		assert.Equal(t, btypes.ChangesetExternalStateDraft, ch.ExternalState)
-		assert.NotEmpty(t, store.UpdateRepoFunc.History())
+		assert.NotEmpty(t, mockStore.UpdateRepoFunc.History())
 	})
 }
 

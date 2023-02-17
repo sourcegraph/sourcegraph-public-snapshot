@@ -16,10 +16,10 @@ go_library(
     deps = [
         "//enterprise/cmd/executor/internal/config",
         "//enterprise/internal/executor",
+        "//internal/executor",
         "//internal/lazyregexp",
         "//internal/metrics",
         "//internal/observation",
-        "//internal/workerutil",
         "//lib/errors",
         "@com_github_inconshreveable_log15//:log15",
         "@com_github_kballard_go_shellquote//:go-shellquote",
@@ -44,8 +44,8 @@ go_test(
     embed = [":command"],
     deps = [
         "//enterprise/internal/executor",
+        "//internal/executor",
         "//internal/observation",
-        "//internal/workerutil",
         "//lib/errors",
         "@com_github_google_go_cmp//cmp",
         "@com_github_inconshreveable_log15//:log15",

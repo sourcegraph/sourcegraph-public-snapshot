@@ -233,6 +233,11 @@ func (r *NodeResolver) ToLSIFIndex() (resolverstubs.LSIFIndexResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToPreciseIndex() (resolverstubs.PreciseIndexResolver, bool) {
+	n, ok := r.Node.(resolverstubs.PreciseIndexResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToCodeIntelligenceConfigurationPolicy() (resolverstubs.CodeIntelligenceConfigurationPolicyResolver, bool) {
 	n, ok := r.Node.(resolverstubs.CodeIntelligenceConfigurationPolicyResolver)
 	return n, ok
@@ -326,5 +331,20 @@ func (r *NodeResolver) ToPermissionsSyncJob() (PermissionsSyncJobResolver, bool)
 
 func (r *NodeResolver) ToOutboundWebhook() (OutboundWebhookResolver, bool) {
 	n, ok := r.Node.(OutboundWebhookResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToTeam() (*TeamResolver, bool) {
+	n, ok := r.Node.(*TeamResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToRole() (RoleResolver, bool) {
+	n, ok := r.Node.(RoleResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToPermission() (PermissionResolver, bool) {
+	n, ok := r.Node.(PermissionResolver)
 	return n, ok
 }

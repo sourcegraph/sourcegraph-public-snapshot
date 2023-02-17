@@ -677,7 +677,10 @@ func getProjectRoot(program Node) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		root = root[:len(root)-len(pkg)]
+
+		if len(root) > len(pkg) {
+			root = root[:len(root)-len(pkg)]
+		}
 	}
 	return root, nil
 }

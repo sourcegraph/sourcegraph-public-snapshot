@@ -1,7 +1,5 @@
 import * as React from 'react'
 
-import * as H from 'history'
-
 import { Connection } from './ConnectionType'
 import { ConnectionList, ConnectionSummary, ShowMoreButton, SummaryContainer } from './ui'
 import { hasDisplayName, hasID, hasNextPage } from './utils'
@@ -92,8 +90,6 @@ interface ConnectionNodesProps<C extends Connection<N>, N, NP = {}, HP = {}>
         ConnectionNodesState {
     /** The fetched connection data or an error (if an error occurred). */
     connection: C
-
-    location: H.Location
 
     onShowMore: () => void
 }

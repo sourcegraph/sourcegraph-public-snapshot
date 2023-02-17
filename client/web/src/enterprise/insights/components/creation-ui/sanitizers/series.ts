@@ -5,7 +5,7 @@ export function getSanitizedLine(line: SearchBasedInsightSeries): SearchBasedIns
         id: line.id,
         name: line.name.trim(),
         stroke: line.stroke,
-        // Query field is a reg exp field for code insight query setting
+        // Query field is a regexp field for code insight query setting
         // Native html input element adds escape symbols by itself
         // to prevent this behavior below we replace double escaping
         // with just one series of escape characters e.g. - //

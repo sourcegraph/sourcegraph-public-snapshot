@@ -1,6 +1,5 @@
 import React, { useState, useCallback } from 'react'
 
-import * as H from 'history'
 import { map, tap } from 'rxjs/operators'
 
 import { Alert } from '@sourcegraph/wildcard'
@@ -12,8 +11,6 @@ import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileD
 
 export interface ChangesetFileDiffProps {
     changesetID: Scalars['ID']
-    history: H.History
-    location: H.Location
     repositoryID: Scalars['ID']
     repositoryName: string
     updateOnChange?: string
@@ -23,8 +20,6 @@ export interface ChangesetFileDiffProps {
 
 export const ChangesetFileDiff: React.FunctionComponent<React.PropsWithChildren<ChangesetFileDiffProps>> = ({
     changesetID,
-    history,
-    location,
     repositoryID,
     updateOnChange,
     queryExternalChangesetWithFileDiffs = _queryExternalChangesetWithFileDiffs,
@@ -72,7 +67,6 @@ export const ChangesetFileDiff: React.FunctionComponent<React.PropsWithChildren<
             queryConnection={queryFileDiffs}
             nodeComponent={FileDiffNode}
             nodeComponentProps={{
-                location,
                 persistLines: true,
                 lineNumbers: true,
             }}
@@ -80,8 +74,6 @@ export const ChangesetFileDiff: React.FunctionComponent<React.PropsWithChildren<
             defaultFirst={15}
             hideSearch={true}
             noSummaryIfAllNodesVisible={true}
-            history={history}
-            location={location}
             useURLQuery={false}
             cursorPaging={true}
             withCenteredSummary={true}

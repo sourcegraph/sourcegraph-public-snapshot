@@ -47,24 +47,22 @@ export const Basic: Story = () => (
     <Tree
         data={folder}
         defaultExpandedIds={[0, 1, 4, 5, 7]}
-        renderNode={({ element, isBranch, isExpanded, handleSelect }): React.ReactNode => (
-            <>
+        renderNode={({ element, isBranch, isExpanded, handleSelect, props }): React.ReactNode => (
+            <Link
+                {...props}
+                to="#"
+                onClick={event => {
+                    event.preventDefault()
+                    handleSelect(event)
+                }}
+            >
                 <Icon
                     svgPath={isBranch ? (isExpanded ? mdiFolderOpenOutline : mdiFolderOutline) : mdiFileDocumentOutline}
                     className={classNames('mr-1', styles.icon)}
                     aria-hidden={true}
                 />
-                <Link
-                    to="#"
-                    tabIndex={-1}
-                    onClick={event => {
-                        event.preventDefault()
-                        handleSelect(event)
-                    }}
-                >
-                    {element.name}
-                </Link>
-            </>
+                {element.name}
+            </Link>
         )}
     />
 )

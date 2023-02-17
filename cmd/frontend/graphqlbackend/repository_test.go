@@ -164,8 +164,12 @@ func TestRepositoryLabel(t *testing.T) {
 				ID:   api.RepoID(0),
 			},
 		}
-		result, _ := r.Label()
-		return result.HTML()
+		markdown, _ := r.Label()
+		html, err := markdown.HTML()
+		if err != nil {
+			t.Fatal(err)
+		}
+		return html
 	}
 
 	autogold.Want("encodes spaces for URL in HTML", `<p><a href="/repo%20with%20spaces" rel="nofollow">repo with spaces</a></p>
