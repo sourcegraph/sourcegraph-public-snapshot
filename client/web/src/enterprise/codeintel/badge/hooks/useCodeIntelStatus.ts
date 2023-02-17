@@ -191,7 +191,10 @@ export function massageIndexerSupportMetadata(data: UseCodeIntelStatusPayload): 
         ).values(),
     ].map(indexers => indexers[0])
 
-    const allIndexers = [...allRecentIndexers, ...data.availableIndexers.map(({ index: name, url }) => ({ name, url }))]
+    const allIndexers = [
+        ...allRecentIndexers,
+        ...data.availableIndexers.map(({ indexer: { name, url } }) => ({ name, url })),
+    ]
     const indexerNames = [
         ...new Set([
             ...allRecentIndexers.map(indexer => indexer.name),
