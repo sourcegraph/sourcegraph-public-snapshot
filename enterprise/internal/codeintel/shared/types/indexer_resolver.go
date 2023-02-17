@@ -10,6 +10,12 @@ type codeIntelIndexerResolver struct {
 }
 
 func NewCodeIntelIndexerResolver(name string) CodeIntelIndexerResolver {
+	for _, indexer := range AllIndexers {
+		if indexer.Name == name {
+			return NewCodeIntelIndexerResolverFrom(indexer)
+		}
+	}
+
 	return NewCodeIntelIndexerResolverFrom(CodeIntelIndexer{Name: name})
 }
 
