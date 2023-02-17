@@ -13,9 +13,9 @@ type KEYBOARD_SHORTCUT_IDENTIFIERS =
     | 'fuzzyFinderSymbols'
     | 'fuzzyFinderFiles'
     | 'copyFullQuery'
-    | 'blobCode'
-    | 'blobReferences'
-    | 'blobHistory'
+    | 'focusCodeEditor'
+    | 'focusFileTree'
+    | 'focusSymbols'
 
 export type KEYBOARD_SHORTCUT_MAPPING = Record<KEYBOARD_SHORTCUT_IDENTIFIERS, KeyboardShortcut>
 
@@ -65,5 +65,17 @@ export const KEYBOARD_SHORTCUTS: KEYBOARD_SHORTCUT_MAPPING = {
     copyFullQuery: {
         title: 'Copy full query',
         keybindings: [{ held: ['Mod', 'Shift'], ordered: ['c'] }],
+    },
+    focusCodeEditor: {
+        title: 'Focus editor',
+        keybindings: [{ ordered: ['c'] }],
+    },
+    focusFileTree: {
+        title: 'Focus file tree',
+        keybindings: [{ ordered: ['f'] }],
+    },
+    focusSymbols: {
+        title: 'Focus symbols',
+        keybindings: [{ ordered: ['s'] }],
     },
 }

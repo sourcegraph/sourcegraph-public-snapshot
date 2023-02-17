@@ -17,6 +17,7 @@ import {
 } from '@sourcegraph/common'
 import { editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -196,6 +197,8 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     const navigate = useNavigate()
     const location = useLocation()
 
+    const focusCodeEditorShortcut = useKeyboardShortcut('focusCodeEditor')
+
     const [useFileSearch, setUseFileSearch] = useLocalStorage('blob.overrideBrowserFindOnPage', true)
 
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
@@ -334,6 +337,10 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     })
     editorRef.current = editor
 
+    const focusCodeEditor = useCallback(() => {
+        editor?.contentDOM.focus()
+    }, [editor])
+
     // Sync editor store with global Zustand store API
     useEffect(() => setBlobEditView(editor ?? null), [editor])
 
@@ -364,7 +371,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                     // on the blob view with the mouse.
                     // NOTE: this focus statment does not seem to have an effect
                     // when using macOS VoiceOver.
-                    editor.contentDOM.focus({ preventScroll: true })
+                    focusCodeEditor()
                 }
             }
         }
@@ -455,6 +462,9 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             {overrideBrowserSearchKeybinding && useFileSearch && (
                 <Shortcut ordered={['f']} held={['Mod']} onMatch={openSearch} ignoreInput={true} />
             )}
+            {focusCodeEditorShortcut?.keybindings.map((keybinding, index) => (
+                <Shortcut key={index} {...keybinding} onMatch={focusCodeEditor} />
+            ))}
         </>
     )
 }
