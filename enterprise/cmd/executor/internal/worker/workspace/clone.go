@@ -12,12 +12,11 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-const SchemeExecutorToken = "token-executor"
 
 // These env vars should be set for git commands. We want to make sure it never hangs on interactive input.
 var gitStdEnv = []string{
@@ -242,16 +241,22 @@ func newReverseProxy(upstream *url.URL, accessToken string, jobToken string, exe
 
 		// If there is no token set, we may be talking with a version of Sourcegraph that is behind.
 		if len(jobToken) > 0 {
-			req.Header.Set("Authorization", fmt.Sprintf("%s %s", "Bearer", jobToken))
+			req.Header.Set(
+				apiclient.HeaderAuthorization,
+				fmt.Sprintf("%s %s", apiclient.AuthenticationSchemeBearer, jobToken),
+			)
 		} else {
-			req.Header.Set("Authorization", fmt.Sprintf("%s %s", SchemeExecutorToken, accessToken))
+			req.Header.Set(
+				apiclient.HeaderAuthorization,
+				fmt.Sprintf("%s %s", apiclient.AuthenticationSchemeExecutorToken, accessToken),
+			)
 		}
-		req.Header.Set("X-Sourcegraph-Actor-UID", "internal")
-		req.Header.Set("X-Sourcegraph-Job-ID", strconv.Itoa(jobId))
+		req.Header.Set(apiclient.HeaderActorUID, "internal")
+		req.Header.Set(apiclient.HeaderJobID, strconv.Itoa(jobId))
 		// When using the reverse proxy, setting the username on req.User is not respected. If a username must be set,
 		// you have to use .SetBasicAuth(). However, this will set the Authorization using the username + password.
 		// So to avoid confusion, set the executor name in a specific HTTP header.
-		req.Header.Set("X-Sourcegraph-Executor-Name", executorName)
+		req.Header.Set(apiclient.HeaderExecutorName, executorName)
 	}
 	return proxy
 }

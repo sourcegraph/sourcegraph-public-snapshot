@@ -17,12 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
-// schemeExecutorToken is the special type of token to communicate with the executor endpoints.
-const schemeExecutorToken = "token-executor"
-
-// schemeJobToken is the special type of token to communicate with the job endpoints.
-const schemeJobToken = "Bearer"
-
 // BaseClient is an abstract HTTP API-backed data access layer. Instances of this
 // struct should not be used directly, but should be used compositionally by other
 // stores that implement logic specific to a domain.
@@ -185,7 +179,7 @@ func (c *BaseClient) NewJSONRequest(method, path string, payload any) (*http.Req
 		return nil, err
 	}
 
-	r.Header.Add("Authorization", fmt.Sprintf("%s %s", schemeExecutorToken, c.options.EndpointOptions.Token))
+	r.Header.Add(HeaderAuthorization, fmt.Sprintf("%s %s", AuthenticationSchemeExecutorToken, c.options.EndpointOptions.Token))
 	return r, nil
 }
 
@@ -231,10 +225,20 @@ func newJSONRequest(method string, url *url.URL, payload any) (*http.Request, er
 func (c *BaseClient) addHeaders(jobId int, token string, r *http.Request) {
 	// If there is no token set, we may be talking with a version of Sourcegraph that is behind.
 	if len(token) > 0 {
-		r.Header.Add("Authorization", fmt.Sprintf("%s %s", schemeJobToken, token))
+		r.Header.Set(
+			HeaderAuthorization,
+			fmt.Sprintf("%s %s", AuthenticationSchemeBearer, token),
+		)
 	} else {
-		r.Header.Add("Authorization", fmt.Sprintf("%s %s", schemeExecutorToken, c.options.EndpointOptions.Token))
+		r.Header.Set(
+			HeaderAuthorization,
+			fmt.Sprintf("%s %s", AuthenticationSchemeExecutorToken, c.options.EndpointOptions.Token),
+		)
 	}
-	r.Header.Add("X-Sourcegraph-Job-ID", strconv.Itoa(jobId))
-	r.Header.Add("X-Sourcegraph-Executor-Name", c.options.ExecutorName)
+	r.Header.Set(HeaderActorUID, "internal")
+	r.Header.Set(HeaderJobID, strconv.Itoa(jobId))
+	// When using the reverse proxy, setting the username on req.User is not respected. If a username must be set,
+	// you have to use .SetBasicAuth(). However, this will set the Authorization using the username + password.
+	// So to avoid confusion, set the executor name in a specific HTTP header.
+	r.Header.Set(HeaderExecutorName, c.options.ExecutorName)
 }
