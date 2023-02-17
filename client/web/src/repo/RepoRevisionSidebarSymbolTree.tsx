@@ -4,14 +4,13 @@ import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
-import { SymbolNodeFields } from 'src/graphql-operations'
-import { useExperimentalFeatures } from 'src/stores'
 import { parseBrowserRepoURL } from 'src/util/url'
 
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { Tree, Link, flattenTree, TreeNode } from '@sourcegraph/wildcard'
 
-import { SymbolKind as SymbolKindEnum } from '../graphql-operations'
+import { SymbolNodeFields, SymbolKind as SymbolKindEnum } from '../graphql-operations'
+import { useExperimentalFeatures } from '../stores'
 
 import type { SymbolPlaceholder, SymbolWithChildren } from './RepoRevisionSidebarSymbols'
 
