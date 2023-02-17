@@ -23,10 +23,14 @@ To enable Perforce code host connections, a site admin must:
       // ...
     }
     ```
+    It is highly recommended that you also enable [file-level permissions](#file-level-permissions) (step 1) at this time.
+    <br/>**Save your changes before continuing**.
 
 1. Go to **Site admin > Manage code hosts > Add code host**
 
-1. Select **Perforce**.
+    you may need to manually refresh the page in order to display the **Perforce** option.
+
+1. Scroll down the list of supported code hosts and select **Perforce**.
 
 1. Configure which depots are mirrored/synchronized as Git repositories to Sourcegraph:
 
@@ -128,15 +132,8 @@ Since that would override the permissions for the `//depot/Talkhouse/rel1.0/back
 
 #### Wildcards
 
-In the default configuration Sourcegraph provides limited support for `*` and `...` paths ("wildcards") in [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html). For example, the following can be supported using [the workaround described in repository permissions](#syncing-subdirectories-to-match-permission-boundaries):
-
-```sh
-write user alice * //TestDepot/...
-write user alice * //TestDepot/*/spec/...
-write user alice * //TestDepot/.../spec/...
-```
-
-But permissions are only enforced per repository and **not per file**. For that you need to configure [file-level permissions](#file-level-permissions).
+[File-level permissions](#file-level-permissions) can handle wildcards in the protections table.
+If file-level permissions is not enabled, Sourcegraph provides limited support for `*` and `...` paths, so the workaround of [adding sub-folders as separate repositories](#syncing-subdirectories-to-match-permission-boundaries) for the paths that employ wildcards needs to be followed.
 
 ### File-level permissions
 
@@ -178,7 +175,7 @@ To enable file-level permissions:
 
 ## Configuration
 
-<div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/perforce.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/perforce.schema.json) to see rendered content.</div>
+<div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/perforce.schema.json">[View page on docs.sourcegraph.com](../../admin/external_service/perforce.schema.json) to see rendered content.</div>
 
 ## Known issues and limitations
 
