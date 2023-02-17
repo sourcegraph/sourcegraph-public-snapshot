@@ -2,6 +2,7 @@ import { ChangeEvent, FC, PropsWithChildren, ReactElement, useId } from 'react'
 
 import { mdiAlertCircle, mdiCheckCircle, mdiHelp, mdiMoonNew, mdiTimerSand } from '@mdi/js'
 import classNames from 'classnames'
+import { timeFormat } from 'd3-time-format'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import {
@@ -22,6 +23,8 @@ import { InsightJob, InsightQueueItemState } from '../../../../../graphql-operat
 import { formatFilter } from '../job-filters'
 
 import styles from './CodeInsightsJobCard.module.scss'
+
+const formatDate = timeFormat('%Y-%m-%d %H:%M:%S')
 
 interface CodeInsightsJobCardProps {
     job: InsightJob
@@ -55,9 +58,9 @@ export function CodeInsightsJobCard(props: CodeInsightsJobCardProps): ReactEleme
     const details = [
         queuePosition !== null && `Queue position: ${queuePosition}`,
         cost !== null && `Cost: ${cost}`,
-        createdAt !== null && `Created at: ${createdAt}`,
-        startedAt !== null && `Started at: ${startedAt}`,
-        completedAt !== null && `Completed at: ${completedAt}`,
+        createdAt !== null && `Created at: ${formatDate(new Date(createdAt))}`,
+        startedAt !== null && `Started at: ${formatDate(new Date(startedAt))}`,
+        completedAt !== null && `Completed at: ${formatDate(new Date(completedAt))}`,
     ].filter(item => item)
 
     return (
@@ -83,23 +86,21 @@ export function CodeInsightsJobCard(props: CodeInsightsJobCardProps): ReactEleme
                 </header>
 
                 <span className={styles.insightJobMainInfo}>
-                    {percentComplete !== null && <span>Сompleted by: {percentComplete}%</span>}
+                    {percentComplete !== null && <span>{percentComplete}% completed</span>}
                     <span className={styles.insightJobQueryBlock}>
                         Series query:{' '}
                         <SyntaxHighlightedSearchQuery query={seriesSearchQuery} className={styles.insightJobQuery} />
-                        {errors && errors.length > 0 && (
-                            <>
-                                {', '} <InsightJobErrors errors={errors} />
-                            </>
-                        )}
                     </span>
                 </span>
 
                 {details.length > 0 && <small className="mt-1 text-muted">{details.join(', ')}</small>}
             </div>
             <div className={styles.insightJobState}>
-                <InsightJobStatusIcon status={state} className={StatusClasses[state]} />
-                {formatFilter(state)}
+                <span className={styles.insightJobStateIcon}>
+                    <InsightJobStatusIcon status={state} className={StatusClasses[state]} />
+                    {formatFilter(state)}
+                </span>
+                {errors && errors.length > 0 && <InsightJobErrors errors={errors} />}
             </div>
         </li>
     )
@@ -160,8 +161,8 @@ const InsightJobErrors: FC<InsightJobErrorsProps> = props => {
 
     return (
         <Popover>
-            <PopoverTrigger as={Button} size="sm" outline={false} variant="danger" className={styles.errorsTrigger}>
-                Errors
+            <PopoverTrigger as={Button} size="sm" outline={true} variant="danger" className={styles.errorsTrigger}>
+                Show errors log
             </PopoverTrigger>
             <PopoverContent className={styles.errorsContent} focusLocked={false}>
                 {errors.map(error => (
