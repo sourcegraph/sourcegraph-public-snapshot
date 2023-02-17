@@ -13,7 +13,7 @@ def embed_repos(repos_path: str, output_dir: str):
     for repo in repos:
         print("Embedding", repo)
         temp_dir = tempfile.mkdtemp()
-        codebase_id = repo.strip("https://")
+        codebase_id = repo[len("https://") :]
 
         subprocess.run(["git", "clone", "--depth=1", repo, temp_dir])
 
