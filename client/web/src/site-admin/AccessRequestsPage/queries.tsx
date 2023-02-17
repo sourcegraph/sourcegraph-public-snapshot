@@ -55,8 +55,8 @@ export const APPROVE_ACCESS_REQUEST = gql`
 /**
  * GraphQL mutation for creating a user.
  */
-export const CREATE_USER = gql`
-    mutation CreateUser($username: String!, $email: String) {
+export const ACCESS_REQUEST_CREATE_USER = gql`
+    mutation AccessRequestCreateUser($username: String!, $email: String) {
         createUser(username: $username, email: $email, verifiedEmail: false) {
             resetPasswordURL
         }

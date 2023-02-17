@@ -14,8 +14,8 @@ import {
     ApproveAccessRequestVariables,
     DoesUsernameExistResult,
     DoesUsernameExistVariables,
-    CreateUserResult,
-    CreateUserVariables,
+    AccessRequestCreateUserResult,
+    AccessRequestCreateUserVariables,
 } from '../../graphql-operations'
 import { useURLSyncedState } from '../../hooks'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -24,7 +24,7 @@ import { DropdownPagination } from '../components/DropdownPagination'
 
 import {
     APPROVE_ACCESS_REQUEST,
-    CREATE_USER,
+    ACCESS_REQUEST_CREATE_USER,
     DOES_USERNAME_EXIST,
     PENDING_ACCESS_REQUESTS_LIST,
     REJECT_ACCESS_REQUEST,
@@ -132,7 +132,9 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
         username: string
     }>()
 
-    const [createUser] = useMutation<CreateUserResult, CreateUserVariables>(CREATE_USER)
+    const [createUser] = useMutation<AccessRequestCreateUserResult, AccessRequestCreateUserVariables>(
+        ACCESS_REQUEST_CREATE_USER
+    )
 
     const [approveAccessRequest] = useMutation<ApproveAccessRequestResult, ApproveAccessRequestVariables>(
         APPROVE_ACCESS_REQUEST
