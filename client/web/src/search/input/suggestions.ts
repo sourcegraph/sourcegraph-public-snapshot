@@ -14,6 +14,7 @@ import {
     filterValueRenderer,
     shortenPath,
     combineResults,
+    defaultLanguages,
 } from '@sourcegraph/branded/src/search-ui/experimental'
 import { getParsedQuery } from '@sourcegraph/branded/src/search-ui/input/codemirror/parsedQuery'
 import { isDefined } from '@sourcegraph/common'
@@ -21,8 +22,9 @@ import { gql } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { regexInsertText } from '@sourcegraph/shared/src/search/query/completion-utils'
-import { FILTERS, FilterType } from '@sourcegraph/shared/src/search/query/filters'
+import { FILTERS, FilterType, ResolvedFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { Node, OperatorKind } from '@sourcegraph/shared/src/search/query/parser'
+import { selectorHasFields } from '@sourcegraph/shared/src/search/query/selectFilter'
 import { CharacterRange, Filter, PatternKind, Token } from '@sourcegraph/shared/src/search/query/token'
 import { isFilterOfType, resolveFilterMemoized } from '@sourcegraph/shared/src/search/query/utils'
 import { getSymbolIconSVGPath } from '@sourcegraph/shared/src/symbols/symbolIcons'
@@ -318,7 +320,7 @@ const filterSuggestions: InternalSource = ({ tokens, token, position }) => {
 
     if (!token || token.type === 'whitespace') {
         const filters = DEFAULT_FILTERS
-            // Add related filters
+            // Show related filters
             .concat(
                 tokens.flatMap(token => {
                     if (token.type !== 'filter') {
@@ -368,18 +370,23 @@ function filterValueSuggestions(caches: Caches): InternalSource {
             return null
         }
         const resolvedFilter = resolveFilterMemoized(token.field.value)
+
+        if (!resolvedFilter) {
+            return null
+        }
+
         const value = token.value?.value ?? ''
         const from = token.value?.range.start ?? token.range.end
         const to = token.value?.range.end
 
-        switch (resolvedFilter?.definition.suggestions) {
+        switch (resolvedFilter.definition.suggestions) {
             case 'repo': {
                 return caches.repo.query(
                     value,
                     entries => [
                         {
                             title: 'Repositories',
-                            options: entries.slice(0, 25).map(item => toRepoCompletion(item, from, to)),
+                            options: entries.slice(0, 12).map(item => toRepoCompletion(item, from, to)),
                         },
                     ],
                     parsedQuery,
@@ -393,7 +400,7 @@ function filterValueSuggestions(caches: Caches): InternalSource {
                     entries => [
                         {
                             title: 'Files',
-                            options: entries.map(item => toFileCompletion(item, from, to)).slice(0, 25),
+                            options: entries.map(item => toFileCompletion(item, from, to)).slice(0, 12),
                         },
                     ],
                     parsedQuery,
@@ -402,14 +409,14 @@ function filterValueSuggestions(caches: Caches): InternalSource {
             }
 
             default: {
-                switch (resolvedFilter?.type) {
+                switch (resolvedFilter.type) {
                     // Some filters are not defined to have dynamic suggestions,
                     // we need to handle these here explicitly. We can't change
                     // the filter definition without breaking the current
                     // search input.
                     case FilterType.context:
                         return caches.context.query(value, entries => {
-                            entries = value.trim() === '' ? entries.slice(0, 10) : entries
+                            entries = value.trim() === '' ? entries.slice(0, 12) : entries
                             return [
                                 {
                                     title: 'Search contexts',
@@ -419,7 +426,7 @@ function filterValueSuggestions(caches: Caches): InternalSource {
                             ]
                         })
                     default: {
-                        const suggestions = staticFilterValueSuggestions(token)
+                        const suggestions = staticFilterValueSuggestions(token, resolvedFilter)
                         return suggestions ? { result: [suggestions] } : null
                     }
                 }
@@ -428,30 +435,86 @@ function filterValueSuggestions(caches: Caches): InternalSource {
     }
 }
 
-function staticFilterValueSuggestions(token?: Token): Group | null {
-    if (token?.type !== 'filter') {
+const filterValueFzfOptions: Partial<Record<FilterType, Partial<FzfOptions<Option>>>> = {
+    [FilterType.lang]: {
+        fuzzy: 'v2',
+    },
+}
+
+function staticFilterValueSuggestions(
+    token: Extract<Token, { type: 'filter' }>,
+    resolvedFilter: NonNullable<ResolvedFilter>
+): Group | null {
+    if (!resolvedFilter.definition.discreteValues) {
         return null
     }
 
-    const resolvedFilter = resolveFilterMemoized(token.field.value)
-    if (!resolvedFilter?.definition.discreteValues) {
-        return null
+    const value = token.value?.value ?? ''
+    const from = token.value?.range.start ?? token.range.end
+    const to = token.value?.range.end
+
+    let options: Option[]
+    if (resolvedFilter.type === FilterType.select) {
+        // The some select filter values have multiple subfields, e.g.
+        // "symbol.class". To provide a balanced list of suggestions and
+        // ergonomics we show subfields only if the value already contains a
+        // "top-level" value (e.g. "symbol" or "commit"). To make this work
+        // selecting a top-level value with subfields should _not_ append a space
+        // for starting a new token. This is what `selectorHasFields` determines
+        // below.
+        // At the same time, if we already show all subfields (including the
+        // top-level value), then selecting any of the values should also append
+        // a space. This is handled by the `includesSubFieldValues` check.
+        //
+        // Examples:
+        // - Selecting "repo" will append "repo " (repo has no subfields)
+        // - Selecting "symbol" will append "symbol", which in turn will list
+        //   all "symbol" related values (including "symbol" itself)
+        // - Selecting any of the "symbol..." values inserts that value
+        //   including a trailing space because all of them are "terminal"
+        //   values at this point.
+        const values = resolvedFilter.definition.discreteValues(token.value, false)
+        const includesSubFieldValues = values.some(value => value.label.includes('.'))
+
+        options = values.map(({ label }) => ({
+            label,
+            action: {
+                type: 'completion',
+                from,
+                to,
+                insertValue: selectorHasFields(label) && !includesSubFieldValues ? label : label + ' ',
+            },
+        }))
+    } else if (resolvedFilter.type === FilterType.lang && !value) {
+        // We show a shorter default languages list than the current query
+        // input.
+        options = defaultLanguages.map(label => ({
+            label,
+            action: {
+                type: 'completion',
+                from,
+                to,
+            },
+        }))
+    } else {
+        options = resolvedFilter.definition.discreteValues(token.value, false).map(value => ({
+            label: value.label,
+            action: {
+                type: 'completion',
+                from,
+                to,
+                insertValue: (value.insertText ?? value.label) + ' ',
+            },
+        }))
     }
 
-    const value = token.value
-    let options: Option[] = resolvedFilter.definition.discreteValues(token.value, false).map(value => ({
-        label: value.label,
-        action: {
-            type: 'completion',
-            from: token.value?.range.start ?? token.range.end,
-            to: token.value?.range.end,
-            insertValue: (value.insertText ?? value.label) + ' ',
-        },
-    }))
-
-    if (value && value.value !== '') {
-        const fzf = new Fzf(options, { selector: option => option.label })
-        options = fzf.find(value.value).map(match => ({ ...match.item, matches: match.positions }))
+    if (value) {
+        const fzf = new Fzf(options, {
+            selector: option => option.label,
+            fuzzy: false,
+            ...filterValueFzfOptions[resolvedFilter.type],
+        })
+        options = fzf.find(value).map(match => ({ ...match.item, matches: match.positions }))
     }
 
     // TODO: Determine appropriate title
@@ -590,17 +653,21 @@ export interface SuggestionsSourceConfig
     isSourcegraphDotCom?: boolean
 }
 
+let sharedCaches: Caches | null = null
+
 /**
- * Main function of this module. It creates a suggestion source which internally
- * delegates to other sources.
+ * Initializes and persists suggestion caches.
  */
-export const createSuggestionsSource = ({
+function createCaches({
     platformContext,
     authenticatedUser,
     fetchSearchContexts,
     getUserSearchContextNamespaces,
-    isSourcegraphDotCom,
-}: SuggestionsSourceConfig): Source => {
+}: SuggestionsSourceConfig): Caches {
+    if (sharedCaches) {
+        return sharedCaches
+    }
+
     const cleanRegex = (value: string): string => value.replace(/^\^|\\\.|\$$/g, '')
 
     const repoFzfOptions: FzfOptions<Repo> = {
@@ -630,7 +697,7 @@ export const createSuggestionsSource = ({
     const symbolFilters: Set<FilterType> = new Set([...fileFilters, FilterType.file])
 
     // TODO: Initialize outside to persist cache across page navigation
-    const caches: Caches = {
+    return (sharedCaches = {
         repo: new Cache({
             // Repo queries are scoped to context: filters
             dataCacheKey: (parsedQuery, position) =>
@@ -671,7 +738,7 @@ export const createSuggestionsSource = ({
                 }
 
                 const response = await fetchSearchContexts({
-                    first: 50,
+                    first: 20,
                     query: value,
                     platformContext,
                     namespaces: getUserSearchContextNamespaces(authenticatedUser),
@@ -788,7 +855,16 @@ export const createSuggestionsSource = ({
                 return fzf.find(query)
             },
         }),
-    }
+    })
+}
+
+/**
+ * Main function of this module. It creates a suggestion source which internally
+ * delegates to other sources.
+ */
+export const createSuggestionsSource = (config: SuggestionsSourceConfig): Source => {
+    const { isSourcegraphDotCom } = config
+    const caches = createCaches(config)
 
     const sources: InternalSource[] = [
         filterValueSuggestions(caches),

@@ -122,7 +122,7 @@ _Note: Enterprise Feature_
 
 Automate changes to your codebase. Reduce effort, reduce errors and enable developers to focus on high value work.
 
-Read the [batch changes documentation](../batch_changes/index.md) to learn more, including useful how-to guides. Want a video tutorial? Check out this batch change tutorial](https://www.youtube.com/watch?v=eOmiyXIWTCw)
+Read the [batch changes documentation](../batch_changes/index.md) to learn more, including useful how-to guides. Want a video tutorial? Check out this [batch change tutorial](https://www.youtube.com/watch?v=eOmiyXIWTCw)
 
 ---
 

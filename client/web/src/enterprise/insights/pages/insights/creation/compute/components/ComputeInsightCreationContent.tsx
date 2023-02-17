@@ -173,7 +173,11 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                 <hr aria-hidden={true} className="my-4 w-100" />
 
                 <FormGroup name="map result" title="Map result">
-                    <ComputeInsightMapPicker series={validSeries} {...groupBy.input} />
+                    <ComputeInsightMapPicker
+                        series={validSeries}
+                        value={groupBy.input.value}
+                        onChange={groupBy.input.onChange}
+                    />
                 </FormGroup>
 
                 <hr aria-hidden={true} className="my-4 w-100" />

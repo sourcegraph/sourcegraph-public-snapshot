@@ -737,7 +737,7 @@ func streamBlameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChec
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed", args))
 	}
 
-	return newBlameHunkReader(ctx, rc), nil
+	return newBlameHunkReader(rc), nil
 }
 
 // BlameFile returns Git blame information about a file.

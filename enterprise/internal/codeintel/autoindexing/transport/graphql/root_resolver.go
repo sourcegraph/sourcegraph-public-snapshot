@@ -361,34 +361,6 @@ func (r *rootResolver) GetLastIndexScanForRepository(ctx context.Context, reposi
 	return r.autoindexSvc.GetLastIndexScanForRepository(ctx, repositoryID)
 }
 
-func (r *rootResolver) InferedIndexConfiguration(ctx context.Context, repositoryID int, commit string) (_ *config.IndexConfiguration, _ bool, err error) {
-	ctx, _, endObservation := r.operations.inferedIndexConfiguration.With(ctx, &err, observation.Args{
-		LogFields: []log.Field{log.Int("repositoryID", repositoryID), log.String("commit", commit)},
-	})
-	defer endObservation(1, observation.Args{})
-
-	maybeConfig, _, err := r.autoindexSvc.InferIndexConfiguration(ctx, repositoryID, commit, true)
-	if err != nil || maybeConfig == nil {
-		return nil, false, err
-	}
-
-	return maybeConfig, true, nil
-}
-
-func (r *rootResolver) InferedIndexConfigurationHints(ctx context.Context, repositoryID int, commit string) (_ []config.IndexJobHint, err error) {
-	ctx, _, endObservation := r.operations.inferedIndexConfigurationHints.With(ctx, &err, observation.Args{
-		LogFields: []log.Field{log.Int("repositoryID", repositoryID), log.String("commit", commit)},
-	})
-	defer endObservation(1, observation.Args{})
-
-	_, hints, err := r.autoindexSvc.InferIndexConfiguration(ctx, repositoryID, commit, true)
-	if err != nil {
-		return nil, err
-	}
-
-	return hints, nil
-}
-
 func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ resolverstubs.CodeIntelRepositorySummaryResolver, err error) {
 	ctx, errTracer, endObservation := r.operations.repositorySummary.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repoID", string(id)),

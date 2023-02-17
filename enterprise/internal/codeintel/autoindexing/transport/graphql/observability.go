@@ -22,10 +22,6 @@ type operations struct {
 	indexConfiguration            *observation.Operation
 	updateIndexConfiguration      *observation.Operation
 
-	// Index Configuration
-	inferedIndexConfiguration      *observation.Operation
-	inferedIndexConfigurationHints *observation.Operation
-
 	// Language Support
 	requestLanguageSupport    *observation.Operation
 	requestedLanguageSupport  *observation.Operation
@@ -74,10 +70,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		lsifIndexesByRepo:             op("LsifIndexesByRepo"),
 		indexConfiguration:            op("IndexConfiguration"),
 		updateIndexConfiguration:      op("UpdateIndexConfiguration"),
-
-		// Index Configuration
-		inferedIndexConfiguration:      op("InferedIndexConfiguration"),
-		inferedIndexConfigurationHints: op("InferedIndexConfigurationHints"),
 
 		// Language Support
 		requestLanguageSupport:    op("RequestLanguageSupport"),

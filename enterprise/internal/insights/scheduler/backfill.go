@@ -319,6 +319,7 @@ type BackfillQueueItem struct {
 	ID                  int
 	InsightTitle        string
 	SeriesID            int
+	InsightUniqueID     string
 	SeriesLabel         string
 	SeriesSearchQuery   string
 	BackfillState       string
@@ -401,6 +402,7 @@ func scanAllBackfillQueueItems(rows *sql.Rows, queryErr error) (_ []BackfillQueu
 			&temp.ID,
 			&temp.InsightTitle,
 			&temp.SeriesID,
+			&temp.InsightUniqueID,
 			&temp.SeriesLabel,
 			&temp.SeriesSearchQuery,
 			&temp.BackfillState,
@@ -456,8 +458,8 @@ const (
 
 var backfillQueueSQL = `
 WITH job_queue as (
-    select backfill_id, state, row_number() over () queue_position
-    from insights_jobs_backfill_in_progress where state = 'queued' order by estimated_cost, backfill_id
+    select backfill_id, state, row_number() over (ORDER BY estimated_cost, backfill_id)  queue_position
+    from insights_jobs_backfill_in_progress where state = 'queued'
 ),
 errors as (
     select repo_iterator_id, array_agg(err_msg) error_messages
@@ -475,6 +477,7 @@ END backfill_state
 select isb.id,
        title,
        s.id,
+	   iv.unique_id insight_id,
        label,
        query,
        state.backfill_state,
