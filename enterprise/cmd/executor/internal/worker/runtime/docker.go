@@ -22,6 +22,7 @@ func (d *dockerRuntime) Name() string {
 }
 
 func (d *dockerRuntime) PrepareWorkspace(ctx context.Context, logger command.Logger, job types.Job) (workspace.Workspace, error) {
+	// We can pass empty options as they are not used in the Docker path.
 	hostRunner := command.NewRunner("", logger, command.Options{}, nil)
 	return workspace.NewDockerWorkspace(
 		ctx,
