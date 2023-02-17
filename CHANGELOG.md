@@ -28,6 +28,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Batch Changes: Log outputs from execution steps are now paginated in the web interface. [#46335](https://github.com/sourcegraph/sourcegraph/pull/46335)
 - Monitoring: the searcher dashboard now contains more detailed request metrics as well as information on interactions with the local cache (via gitserver). [#47654](https://github.com/sourcegraph/sourcegraph/pull/47654)
 - Renders GitHub pull request references in the commit list. [#47593](https://github.com/sourcegraph/sourcegraph/pull/47593)
+- Added a new background permissions syncer & scheduler which is backed by database, unlike the old one having an in-memory processing queue. The new system is enabled by default, but can be disabled and reverted to the old one using the feature flag `database-permission-sync-worker` set to `false`. [#47783](https://github.com/sourcegraph/sourcegraph/pull/47783)
 
 ### Changed
 

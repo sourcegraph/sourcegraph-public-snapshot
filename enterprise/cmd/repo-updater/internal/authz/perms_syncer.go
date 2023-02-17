@@ -910,7 +910,6 @@ func (s *PermsSyncer) syncPerms(ctx context.Context, syncGroups map[requestType]
 
 func (s *PermsSyncer) runSync(ctx context.Context) {
 	logger := s.logger.Scoped("runSync", "routine to start processing the sync request queue")
-	defer logger.Info("stopped")
 
 	userMaxConcurrency := syncUsersMaxConcurrency()
 	logger.Debug("started", log.Int("syncUsersMaxConcurrency", userMaxConcurrency))
@@ -1130,9 +1129,6 @@ func (s *PermsSyncer) isDisabled() bool { return PermissionSyncingDisabled() }
 func (s *PermsSyncer) runSchedule(ctx context.Context) {
 	logger := s.logger.Scoped("runSchedule", "periodically queue old records for sync")
 
-	logger.Info("started")
-	defer logger.Info("stopped")
-
 	ticker := time.NewTicker(s.scheduleInterval)
 	defer ticker.Stop()
 
@@ -1144,7 +1140,7 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 		}
 
 		if s.isDisabled() || permssync.PermissionSyncWorkerEnabled(ctx, s.db, logger) {
-			logger.Info("disabled")
+			logger.Debug("old scheduler disabled due to either permission syncing disabled or new scheduler enabled")
 			continue
 		}
 
@@ -1154,7 +1150,7 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 			continue
 		}
 
-		logger.Info("scheduling permission syncs", log.Int("users", len(schedule.Users)), log.Int("repos", len(schedule.Repos)))
+		logger.Debug("scheduling permission syncs", log.Int("users", len(schedule.Users)), log.Int("repos", len(schedule.Repos)))
 
 		s.scheduleUsers(ctx, schedule.Users...)
 		s.scheduleRepos(ctx, schedule.Repos...)

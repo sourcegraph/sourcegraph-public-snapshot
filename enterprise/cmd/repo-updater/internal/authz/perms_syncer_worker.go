@@ -74,7 +74,7 @@ func (h *permsSyncerWorker) Handle(ctx context.Context, _ log.Logger, record *da
 		reqID = int32(record.RepositoryID)
 	}
 
-	h.logger.Info(
+	h.logger.Debug(
 		"Handling permission sync job",
 		log.String("type", reqType.String()),
 		log.Int32("id", reqID),
@@ -107,7 +107,8 @@ func (h *permsSyncerWorker) handlePermsSync(ctx context.Context, reqType request
 	} else {
 		h.logger.Debug("succeeded in syncing permissions", providerStates.SummaryField())
 
-		// NOTE(naman): here we are saving permissions added, removed and found results to the job record
+		// NOTE(naman): here we are saving permissions added, removed and found results
+		// as well as the code host sync status to the job record.
 		if result != nil {
 			err = h.jobsStore.SaveSyncResult(ctx, recordID, result, providerStates)
 			if err != nil {
