@@ -89,7 +89,7 @@ func TestUsers_ValidUsernames(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			valid := true
 			if _, err := db.Users().Create(ctx, NewUser{Username: test.name}); err != nil {
-				var e errCannotCreateUser
+				var e ErrCannotCreateUser
 				if errors.As(err, &e) && (e.Code() == "users_username_max_length" || e.Code() == "users_username_valid_chars") {
 					valid = false
 				} else {
@@ -147,7 +147,7 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 		EmailVerificationCode: "c3",
 		FailIfNotInitialUser:  true,
 	})
-	if want := (errCannotCreateUser{"site_already_initialized"}); !errors.Is(err, want) {
+	if want := (ErrCannotCreateUser{"site_already_initialized"}); !errors.Is(err, want) {
 		t.Fatalf("got error %v, want %v", err, want)
 	}
 
@@ -183,7 +183,7 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 		EmailVerificationCode: "c5",
 		FailIfNotInitialUser:  true,
 	})
-	if want := (errCannotCreateUser{"initial_site_admin_must_be_first_user"}); !errors.Is(err, want) {
+	if want := (ErrCannotCreateUser{"initial_site_admin_must_be_first_user"}); !errors.Is(err, want) {
 		t.Fatalf("got error %v, want %v", err, want)
 	}
 }
@@ -1156,6 +1156,42 @@ func TestUsers_SetTag(t *testing.T) {
 		}
 		checkTags(t, u.ID, []string{})
 		checkUsersWithTag(t, "t2", []int32{})
+	})
+}
+
+func TestUsers_SetIsSiteAdmin(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// Create user.
+	u, err := db.Users().Create(ctx, NewUser{Username: "u"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("promoting to site admin", func(t *testing.T) {
+		err := db.Users().SetIsSiteAdmin(ctx, u.ID, true)
+		require.NoError(t, err)
+
+		// check that site admin role has been assigned to user
+		ur, err := db.UserRoles().GetByUserID(ctx, GetUserRoleOpts{UserID: u.ID})
+		require.NoError(t, err)
+		require.Len(t, ur, 1)
+	})
+
+	t.Run("revoking site admin", func(t *testing.T) {
+		err := db.Users().SetIsSiteAdmin(ctx, u.ID, false)
+		require.NoError(t, err)
+
+		// check that site admin role has been assigned to user
+		ur, err := db.UserRoles().GetByUserID(ctx, GetUserRoleOpts{UserID: u.ID})
+		require.NoError(t, err)
+		require.Len(t, ur, 0)
 	})
 }
 

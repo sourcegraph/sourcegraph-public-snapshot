@@ -79,7 +79,7 @@ func Test_KeyedCollectionScannerOrdered(t *testing.T) {
 	})
 
 	m := &OrderedMap[int, reducee]{m: orderedmap.New[int, reducee]()}
-	NewKeyedCollectionScanner[*OrderedMap[int, reducee], int, reduceeRow, reducee](m, func(s dbutil.Scanner) (int, reduceeRow, error) {
+	NewKeyedCollectionScanner[int, reduceeRow, reducee](m, func(s dbutil.Scanner) (int, reduceeRow, error) {
 		var red reduceeRow
 		err := s.Scan(&red.ID, &red.Value)
 		return red.ID, red, err

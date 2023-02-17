@@ -2,11 +2,10 @@ package enforcement
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/log/logtest"
+	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -15,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -129,20 +127,16 @@ func TestEnforcement_PreCreateUser(t *testing.T) {
 }
 
 func TestEnforcement_AfterCreateUser(t *testing.T) {
-	logger := logtest.Scoped(t)
-
 	tests := []struct {
-		name                  string
-		setup                 func(t *testing.T)
-		license               *license.Info
-		wantCalledExecContext bool
-		wantSiteAdmin         bool
+		name         string
+		setup        func(t *testing.T)
+		license      *license.Info
+		setSiteAdmin bool
 	}{
 		{
-			name:                  "with a valid license",
-			license:               &license.Info{UserCount: 10},
-			wantCalledExecContext: false,
-			wantSiteAdmin:         false,
+			name:         "with a valid license",
+			license:      &license.Info{UserCount: 10},
+			setSiteAdmin: false,
 		},
 		{
 			name: "dotcom mode should always do nothing",
@@ -153,14 +147,12 @@ func TestEnforcement_AfterCreateUser(t *testing.T) {
 					envvar.MockSourcegraphDotComMode(orig)
 				})
 			},
-			wantCalledExecContext: false,
-			wantSiteAdmin:         false,
+			setSiteAdmin: false,
 		},
 		{
-			name:                  "free license sets new user to be site admin",
-			license:               &licensing.GetFreeLicenseInfo().Info,
-			wantCalledExecContext: true,
-			wantSiteAdmin:         true,
+			name:         "free license sets new user to be site admin",
+			license:      &licensing.GetFreeLicenseInfo().Info,
+			setSiteAdmin: true,
 		},
 	}
 	for _, test := range tests {
@@ -174,40 +166,22 @@ func TestEnforcement_AfterCreateUser(t *testing.T) {
 			}
 			defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 
-			calledExecContext := false
-			db := &fakeDB{
-				execContext: func(ctx context.Context, query string, args ...any) (sql.Result, error) {
-					calledExecContext = true
-					return nil, nil
-				},
-			}
+			db, usersStore := mockDBAndStores(t)
 			user := new(types.User)
 
 			hook := NewAfterCreateUserHook()
 			if hook != nil {
-				err := NewAfterCreateUserHook()(context.Background(), database.NewDBWith(logger, basestore.NewWithHandle(db)), user)
+				err := NewAfterCreateUserHook()(context.Background(), db, user)
 				if err != nil {
 					t.Fatal(err)
 				}
 			}
 
-			if test.wantCalledExecContext != calledExecContext {
-				t.Errorf("calledExecContext: want %v but got %v", test.wantCalledExecContext, calledExecContext)
-			}
-			if test.wantSiteAdmin != user.SiteAdmin {
-				t.Errorf("siteAdmin: want %v but got %v", test.wantSiteAdmin, user.SiteAdmin)
+			if test.setSiteAdmin {
+				mockrequire.CalledOnce(t, usersStore.SetIsSiteAdminFunc)
 			}
 		})
 	}
-}
-
-type fakeDB struct {
-	basestore.TransactableHandle
-	execContext func(ctx context.Context, query string, args ...any) (sql.Result, error)
-}
-
-func (db *fakeDB) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
-	return db.execContext(ctx, query, args...)
 }
 
 func TestEnforcement_PreSetUserIsSiteAdmin(t *testing.T) {
@@ -253,4 +227,16 @@ func TestEnforcement_PreSetUserIsSiteAdmin(t *testing.T) {
 			}
 		})
 	}
+}
+
+func mockDBAndStores(t *testing.T) (*database.MockDB, *database.MockUserStore) {
+	t.Helper()
+
+	usersStore := database.NewMockUserStore()
+	usersStore.SetIsSiteAdminFunc.SetDefaultReturn(nil)
+
+	db := database.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(usersStore)
+
+	return db, usersStore
 }

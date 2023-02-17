@@ -201,14 +201,6 @@
             "pointer": true
           }
         },
-        "homepageUserInvitation": {
-          "description": "Shows a panel to invite collaborators to Sourcegraph on home page.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "goCodeCheckerTemplates": {
           "description": "Shows a panel with code insights templates for go code checker results.",
           "type": "boolean",

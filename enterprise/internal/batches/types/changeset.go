@@ -257,7 +257,8 @@ type Changeset struct {
 	ExternalServiceType string
 	// ExternalBranch should always be prefixed with refs/heads/. Call git.EnsureRefPrefix before setting this value.
 	ExternalBranch string
-	// ExternalForkNamespace is only set if the changeset is opened on a fork.
+	// ExternalForkName[space] is only set if the changeset is opened on a fork.
+	ExternalForkName      string
 	ExternalForkNamespace string
 	ExternalDeletedAt     time.Time
 	ExternalUpdatedAt     time.Time
@@ -383,8 +384,10 @@ func (c *Changeset) SetMetadata(meta any) error {
 
 		if pr.BaseRepository.ID != pr.HeadRepository.ID {
 			c.ExternalForkNamespace = pr.HeadRepository.Owner.Login
+			c.ExternalForkName = pr.HeadRepository.Name
 		} else {
 			c.ExternalForkNamespace = ""
+			c.ExternalForkName = ""
 		}
 	case *bitbucketserver.PullRequest:
 		c.Metadata = pr
@@ -395,8 +398,10 @@ func (c *Changeset) SetMetadata(meta any) error {
 
 		if pr.FromRef.Repository.ID != pr.ToRef.Repository.ID {
 			c.ExternalForkNamespace = pr.FromRef.Repository.Project.Key
+			c.ExternalForkName = pr.FromRef.Repository.Slug
 		} else {
 			c.ExternalForkNamespace = ""
+			c.ExternalForkName = ""
 		}
 	case *gitlab.MergeRequest:
 		c.Metadata = pr
@@ -405,6 +410,7 @@ func (c *Changeset) SetMetadata(meta any) error {
 		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.SourceBranch)
 		c.ExternalUpdatedAt = pr.UpdatedAt.Time
 		c.ExternalForkNamespace = pr.SourceProjectNamespace
+		c.ExternalForkName = pr.SourceProjectName
 	case *bbcs.AnnotatedPullRequest:
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(pr.ID, 10)
@@ -418,8 +424,10 @@ func (c *Changeset) SetMetadata(meta any) error {
 				return errors.Wrap(err, "determining fork namespace")
 			}
 			c.ExternalForkNamespace = namespace
+			c.ExternalForkName = pr.Source.Repo.Name
 		} else {
 			c.ExternalForkNamespace = ""
+			c.ExternalForkName = ""
 		}
 	case *azuredevops2.AzureDevOpsAnnotatedPullRequest:
 		c.Metadata = pr

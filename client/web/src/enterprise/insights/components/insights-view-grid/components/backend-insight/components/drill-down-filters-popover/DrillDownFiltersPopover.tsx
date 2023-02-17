@@ -12,10 +12,11 @@ import {
     PopoverTail,
     Position,
     createRectangle,
+    FormChangeEvent,
+    SubmissionResult,
 } from '@sourcegraph/wildcard'
 
 import { InsightFilters } from '../../../../../../core'
-import { FormChangeEvent, SubmissionResult } from '../../../../../form/hooks/useForm'
 import {
     DrillDownFiltersFormValues,
     DrillDownInsightCreationForm,

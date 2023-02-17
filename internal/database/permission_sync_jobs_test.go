@@ -61,20 +61,7 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 	opts = PermissionSyncJobOpts{Priority: LowPriorityPermissionSync, InvalidateCaches: true, ProcessAfter: processAfter, Reason: ReasonManualUserSync}
 	err = store.CreateUserSyncJob(ctx, user2.ID, opts)
 	require.NoError(t, err)
-	codeHostStates := []PermissionSyncCodeHostState{
-		{
-			ProviderID:   "ID",
-			ProviderType: "Type",
-			Status:       "SUCCESS",
-			Message:      "successful success",
-		},
-		{
-			ProviderID:   "ID",
-			ProviderType: "Type",
-			Status:       "ERROR",
-			Message:      "unsuccessful unsuccess :(",
-		},
-	}
+	codeHostStates := getSampleCodeHostStates()
 	_, err = db.ExecContext(ctx, "UPDATE permission_sync_jobs SET code_host_states=array["+
 		"'{\"provider_id\":\"ID\",\"provider_type\":\"Type\",\"status\":\"SUCCESS\",\"message\":\"successful success\"}',"+
 		"'{\"provider_id\":\"ID\",\"provider_type\":\"Type\",\"status\":\"ERROR\",\"message\":\"unsuccessful unsuccess :(\"}'"+
@@ -397,21 +384,25 @@ func TestPermissionSyncJobs_SaveSyncResult(t *testing.T) {
 		Found:   5,
 	}
 
+	// Creating code host states.
+	codeHostStates := getSampleCodeHostStates()
 	// Adding a job.
 	err = store.CreateRepoSyncJob(ctx, repo1.ID, PermissionSyncJobOpts{Reason: ReasonManualUserSync})
 	require.NoError(t, err)
 
 	// Saving result should be successful.
-	err = store.SaveSyncResult(ctx, 1, &result)
+	err = store.SaveSyncResult(ctx, 1, &result, codeHostStates)
 	require.NoError(t, err)
 
 	// Checking that all the results are set.
 	jobs, err := store.List(ctx, ListPermissionSyncJobOpts{RepoID: int(repo1.ID)})
 	require.NoError(t, err)
 	require.Len(t, jobs, 1)
-	require.Equal(t, 1, jobs[0].PermissionsAdded)
-	require.Equal(t, 2, jobs[0].PermissionsRemoved)
-	require.Equal(t, 5, jobs[0].PermissionsFound)
+	theJob := jobs[0]
+	require.Equal(t, 1, theJob.PermissionsAdded)
+	require.Equal(t, 2, theJob.PermissionsRemoved)
+	require.Equal(t, 5, theJob.PermissionsFound)
+	require.Equal(t, codeHostStates, theJob.CodeHostStates)
 }
 
 func TestPermissionSyncJobs_CascadeOnRepoDelete(t *testing.T) {
@@ -594,4 +585,22 @@ func reverse(jobs []*PermissionSyncJob) []*PermissionSyncJob {
 		reversed = append(reversed, jobs[len(jobs)-i-1])
 	}
 	return reversed
+}
+
+func getSampleCodeHostStates() []PermissionSyncCodeHostState {
+	return []PermissionSyncCodeHostState{
+		{
+			ProviderID:   "ID",
+			ProviderType: "Type",
+			Status:       "SUCCESS",
+			Message:      "successful success",
+		},
+		{
+			ProviderID:   "ID",
+			ProviderType: "Type",
+			Status:       "ERROR",
+			Message:      "unsuccessful unsuccess :(",
+		},
+	}
+
 }

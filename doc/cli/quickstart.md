@@ -70,3 +70,21 @@ You've run your first search from the command line! 🎉🎉
 You can now explore the [range of commands `src` provides](references/index.md), including the extensive support for [batch changes](../../batch_changes/index.md).
 
 To learn what else you can do with `src`, see "[CLI](index.md)" in the Sourcegraph documentation.
+
+## Troubleshooting
+If you run into authentication issues, the `frontend` container is the best place to check for useful logs. 
+
+### Gzip Error on Apache Proxies
+If you are running `src login` through an apache proxy, you may run into the following error in your frontend logs:
+```bash
+"error":"gzip: invalid header"
+```
+Please check your `httpd.conf` for the following:
+```
+<Location>
+  ... 
+  SetInputFilter DEFLATE
+  ...
+</Location>
+```
+If this is present, you will need to delete `SetInputFilter DEFLATE`. If not, it will result in sending an unexpected response back to `src`, which will, in turn, be rejected. 

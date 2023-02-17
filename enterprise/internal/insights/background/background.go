@@ -83,7 +83,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 			InsightStore:            insightsStore,
 			CommitClient:            gitserver.NewGitCommitClient(),
 			SearchPlanWorkerLimit:   1,
-			SearchRunnerWorkerLimit: 5, // TODO: move these to settings
+			SearchRunnerWorkerLimit: 1, // TODO: this can scale with the number of searcher endpoints
 			SearchRateLimiter:       searchRateLimiter,
 			HistoricRateLimiter:     historicRateLimiter,
 		}
