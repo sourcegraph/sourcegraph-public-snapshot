@@ -42,7 +42,7 @@ export const CodeInsightsJobs: FC = () => {
         query: GET_CODE_INSIGHTS_JOBS,
         variables: { orderBy, states: selectedFilters, search },
         getConnection: ({ data }) => data?.insightAdminBackfillQueue,
-        options: { pollInterval: 10000 },
+        options: { pollInterval: 10000, pageSize: 15 },
     })
 
     const handleJobSelect = (event: ChangeEvent<HTMLInputElement>, jobId: string): void => {

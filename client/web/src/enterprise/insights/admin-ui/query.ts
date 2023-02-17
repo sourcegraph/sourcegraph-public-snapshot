@@ -24,10 +24,19 @@ export const GET_CODE_INSIGHTS_JOBS = gql`
     query GetCodeInsightsJobs(
         $after: String
         $search: String
+        $first: Int
+        $last: Int
         $orderBy: BackfillQueueOrderBy
         $states: [InsightQueueItemState!]
     ) {
-        insightAdminBackfillQueue(first: 10, after: $after, textSearch: $search, orderBy: $orderBy, states: $states) {
+        insightAdminBackfillQueue(
+            first: $first
+            after: $after
+            textSearch: $search
+            orderBy: $orderBy
+            states: $states
+            last: $last
+        ) {
             nodes {
                 ...InsightJob
             }
