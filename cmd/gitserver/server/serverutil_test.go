@@ -9,9 +9,10 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestGetTlsExternal(t *testing.T) {
@@ -91,11 +92,9 @@ func TestConfigureRemoteGitCommand(t *testing.T) {
 			expectedArgs: []string{"git", "-c", "credential.helper=", "-c", "protocol.version=2", "fetch"},
 		},
 		{
-			input:       exec.Command("git", "ls-remote"),
-			expectedEnv: expectedEnv,
-
-			// Don't use protocol.version=2 for ls-remote because it hurts perf.
-			expectedArgs: []string{"git", "-c", "credential.helper=", "ls-remote"},
+			input:        exec.Command("git", "ls-remote"),
+			expectedEnv:  expectedEnv,
+			expectedArgs: []string{"git", "-c", "credential.helper=", "-c", "protocol.version=2", "ls-remote"},
 		},
 
 		// tlsConfig tests
@@ -105,7 +104,7 @@ func TestConfigureRemoteGitCommand(t *testing.T) {
 				SSLNoVerify: true,
 			},
 			expectedEnv:  append(expectedEnv, "GIT_SSL_NO_VERIFY=true"),
-			expectedArgs: []string{"git", "-c", "credential.helper=", "ls-remote"},
+			expectedArgs: []string{"git", "-c", "credential.helper=", "-c", "protocol.version=2", "ls-remote"},
 		},
 		{
 			input: exec.Command("git", "ls-remote"),
@@ -113,7 +112,7 @@ func TestConfigureRemoteGitCommand(t *testing.T) {
 				SSLCAInfo: "/tmp/foo.certs",
 			},
 			expectedEnv:  append(expectedEnv, "GIT_SSL_CAINFO=/tmp/foo.certs"),
-			expectedArgs: []string{"git", "-c", "credential.helper=", "ls-remote"},
+			expectedArgs: []string{"git", "-c", "credential.helper=", "-c", "protocol.version=2", "ls-remote"},
 		},
 		// Allow absolute git commands
 		{
@@ -122,7 +121,7 @@ func TestConfigureRemoteGitCommand(t *testing.T) {
 				SSLCAInfo: "/tmp/foo.certs",
 			},
 			expectedEnv:  append(expectedEnv, "GIT_SSL_CAINFO=/tmp/foo.certs"),
-			expectedArgs: []string{"/foo/bar/git", "-c", "credential.helper=", "ls-remote"},
+			expectedArgs: []string{"/foo/bar/git", "-c", "credential.helper=", "-c", "protocol.version=2", "ls-remote"},
 		},
 	}
 
