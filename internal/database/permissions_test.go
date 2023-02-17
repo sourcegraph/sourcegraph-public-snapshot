@@ -346,7 +346,7 @@ func seedPermissionDataForList(ctx context.Context, t *testing.T, store Permissi
 	t.Helper()
 
 	perms, totalPerms := createTestPermissions(ctx, t, store)
-	user := createTestUserForUserRole(ctx, "test@test.com", "test-user-1", t, db)
+	user := createTestUserWithoutRoles(t, db, "test-user-1", false)
 	role, err := createTestRole(ctx, "TEST-ROLE", false, t, db.Roles())
 	require.NoError(t, err)
 
