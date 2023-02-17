@@ -142,6 +142,7 @@ FOR spec IN
 				AND spec_id != min_id
 				-- We only need to re-id the empty ones.
 				AND is_empty
+			LIMIT 500
 	)
 	SELECT * FROM to_be_reordered_specs
 	LOOP
