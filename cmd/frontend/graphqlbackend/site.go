@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -268,7 +269,12 @@ func (r *upgradeReadinessResolver) SchemaDrift(ctx context.Context) (string, err
 
 	var version string
 	v, patch, ok, err := cliutil.GetServiceVersion(ctx, runner)
-	if err != nil || !ok {
+	if err != nil {
+		return "", errors.Wrap(err, "get service version")
+	} else if !ok {
+		return "", errors.New("invalid service version")
+	}
+	if v.Dev {
 		version = "dev"
 	} else {
 		version = v.GitTagWithPatch(patch)
@@ -284,4 +290,41 @@ func (r *upgradeReadinessResolver) SchemaDrift(ctx context.Context) (string, err
 		return "", errors.Wrap(err, "check drift")
 	}
 	return "", nil
+}
+
+// isRequiredOutOfBandMigration returns true if a OOB migration is deprecated not
+// after the given version and not yet completed.
+func isRequiredOutOfBandMigration(version oobmigration.Version, m oobmigration.Migration) bool {
+	if m.Deprecated == nil {
+		return false
+	}
+	return oobmigration.CompareVersions(*m.Deprecated, version) != oobmigration.VersionOrderAfter && m.Progress < 1
+}
+
+func (r *upgradeReadinessResolver) RequiredOutOfBandMigrations(ctx context.Context) ([]*outOfBandMigrationResolver, error) {
+	observationCtx := observation.NewContext(r.logger)
+	runner, err := migratorshared.NewRunnerWithSchemas(observationCtx, r.logger, schemas.SchemaNames, schemas.Schemas)
+	if err != nil {
+		return nil, errors.Wrap(err, "new runner")
+	}
+
+	version, _, ok, err := cliutil.GetServiceVersion(ctx, runner)
+	if err != nil {
+		return nil, errors.Wrap(err, "get service version")
+	} else if !ok {
+		return nil, errors.New("invalid service version")
+	}
+
+	migrations, err := oobmigration.NewStoreWithDB(r.db).List(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var requiredMigrations []*outOfBandMigrationResolver
+	for _, m := range migrations {
+		if isRequiredOutOfBandMigration(version, m) {
+			requiredMigrations = append(requiredMigrations, &outOfBandMigrationResolver{m})
+		}
+	}
+	return requiredMigrations, nil
 }

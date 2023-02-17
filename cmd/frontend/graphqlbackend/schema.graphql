@@ -6863,6 +6863,10 @@ type UpgradeReadiness {
     The schema drift details.
     """
     schemaDrift: String!
+    """
+    The list of deprecated-but-unfinished out-of-band migrations.
+    """
+    requiredOutOfBandMigrations: [OutOfBandMigration!]!
 }
 
 """
