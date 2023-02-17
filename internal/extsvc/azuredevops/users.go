@@ -6,8 +6,11 @@ import (
 	"net/url"
 )
 
-// AzureServicesProfile is used to return information about the authorized user, should only be used for Azure Services (https://dev.azure.com)
-func (c *Client) AzureServicesProfile(ctx context.Context) (Profile, error) {
+// GetAuthorizedProfile is used to return information about the currently authorized user. Should
+// only be used for Azure Services (https://dev.azure.com).
+func (c *Client) GetAuthorizedProfile(ctx context.Context) (Profile, error) {
+	// See this link in the docs where the "/me" is documented in the URI parameters:
+	// https://learn.microsoft.com/en-us/rest/api/azure/devops/profile/profiles/get?source=recommendations&view=azure-devops-rest-7.0&tabs=HTTP#uri-parameters
 	reqURL := url.URL{Path: "/_apis/profile/profiles/me"}
 
 	req, err := http.NewRequest("GET", reqURL.String(), nil)

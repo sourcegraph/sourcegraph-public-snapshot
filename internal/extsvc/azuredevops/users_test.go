@@ -11,7 +11,7 @@ func TestClient_AzureServicesProfile(t *testing.T) {
 	cli, save := NewTestClient(t, "AzureServicesProfile", *update)
 	t.Cleanup(save)
 
-	resp, err := cli.AzureServicesProfile(context.Background())
+	resp, err := cli.GetAuthorizedProfile(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
