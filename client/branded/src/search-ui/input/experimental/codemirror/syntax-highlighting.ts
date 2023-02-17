@@ -25,7 +25,6 @@ export const filterHighlight = [
         '.sg-context-filter': {
             borderRadius: '3px',
             border: '1px solid var(--border-color)',
-            padding: '0.125rem 0',
         },
         '.sg-clear-filter > button': {
             border: 'none',

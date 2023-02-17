@@ -52,7 +52,7 @@ export interface DrillDownFiltersFormValues {
     excludeRepoRegexp: string
     seriesDisplayOptions: {
         numSamples: number | null
-        limit: number
+        limit: number | null
         sortOptions: {
             mode: SeriesSortMode
             direction: SeriesSortDirection
@@ -363,7 +363,7 @@ export function hasActiveFilters(filters: DrillDownFiltersFormValues): boolean {
     const { numSamples, sortOptions, limit } = seriesDisplayOptions
     const hasDisplayOptionChanged =
         numSamples !== null ||
-        limit !== 20 ||
+        limit !== null ||
         sortOptions.mode !== SeriesSortMode.RESULT_COUNT ||
         sortOptions.direction !== SeriesSortDirection.DESC
 

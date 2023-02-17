@@ -23,6 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GitserverServiceClient interface {
 	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error)
+	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (GitserverService_SearchClient, error)
 }
 
 type gitserverServiceClient struct {
@@ -65,11 +66,44 @@ func (x *gitserverServiceExecClient) Recv() (*ExecResponse, error) {
 	return m, nil
 }
 
+func (c *gitserverServiceClient) Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (GitserverService_SearchClient, error) {
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[1], "/gitserver.v1.GitserverService/Search", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &gitserverServiceSearchClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type GitserverService_SearchClient interface {
+	Recv() (*SearchResponse, error)
+	grpc.ClientStream
+}
+
+type gitserverServiceSearchClient struct {
+	grpc.ClientStream
+}
+
+func (x *gitserverServiceSearchClient) Recv() (*SearchResponse, error) {
+	m := new(SearchResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // GitserverServiceServer is the server API for GitserverService service.
 // All implementations must embed UnimplementedGitserverServiceServer
 // for forward compatibility
 type GitserverServiceServer interface {
 	Exec(*ExecRequest, GitserverService_ExecServer) error
+	Search(*SearchRequest, GitserverService_SearchServer) error
 	mustEmbedUnimplementedGitserverServiceServer()
 }
 
@@ -79,6 +113,9 @@ type UnimplementedGitserverServiceServer struct {
 
 func (UnimplementedGitserverServiceServer) Exec(*ExecRequest, GitserverService_ExecServer) error {
 	return status.Errorf(codes.Unimplemented, "method Exec not implemented")
+}
+func (UnimplementedGitserverServiceServer) Search(*SearchRequest, GitserverService_SearchServer) error {
+	return status.Errorf(codes.Unimplemented, "method Search not implemented")
 }
 func (UnimplementedGitserverServiceServer) mustEmbedUnimplementedGitserverServiceServer() {}
 
@@ -114,6 +151,27 @@ func (x *gitserverServiceExecServer) Send(m *ExecResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _GitserverService_Search_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(SearchRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(GitserverServiceServer).Search(m, &gitserverServiceSearchServer{stream})
+}
+
+type GitserverService_SearchServer interface {
+	Send(*SearchResponse) error
+	grpc.ServerStream
+}
+
+type gitserverServiceSearchServer struct {
+	grpc.ServerStream
+}
+
+func (x *gitserverServiceSearchServer) Send(m *SearchResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // GitserverService_ServiceDesc is the grpc.ServiceDesc for GitserverService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -125,6 +183,11 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Exec",
 			Handler:       _GitserverService_Exec_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "Search",
+			Handler:       _GitserverService_Search_Handler,
 			ServerStreams: true,
 		},
 	},

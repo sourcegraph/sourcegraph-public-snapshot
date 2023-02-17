@@ -503,6 +503,24 @@ export function codeIntelTooltipsExtension(): Extension {
         pinManager,
         tooltipStyles,
 
+        ViewPlugin.define(view => ({
+            update(update: ViewUpdate) {
+                if (update.viewportChanged) {
+                    /**
+                     * When the focused occurrence is outside the viewport, it is removed from the DOM.
+                     * Ensure the editor remains focused when this happens for keyboard navigation to work.
+                     */
+                    view.requestMeasure({
+                        read(view: EditorView) {
+                            if (!view.contentDOM.contains(document.activeElement)) {
+                                view.contentDOM.focus()
+                            }
+                        },
+                    })
+                }
+            },
+        })),
+
         EditorView.domEventHandlers({
             click(event, view) {
                 // Close selected (focused) code-intel tooltip on click outside.
