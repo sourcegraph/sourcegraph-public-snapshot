@@ -388,7 +388,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 		}
 
 		db := NewDBWith(u.logger, u)
-		if _, err := db.UserRoles().BulkAssignSystemRolesToUser(ctx, BulkAssignSystemRolesToUserOpts{
+		if err := db.UserRoles().BulkAssignSystemRolesToUser(ctx, BulkAssignSystemRolesToUserOpts{
 			UserID: user.ID,
 			Roles:  roles,
 		}); err != nil {
