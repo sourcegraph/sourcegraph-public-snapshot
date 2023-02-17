@@ -66,7 +66,7 @@ The new `kustomization.yaml` file will be used to configure your deployment.
 
 Replace `sourcegraph` with a namespace that matches the existing namespace for your current instance. 
 
-Set it to `default` to deploy to the default namespace.
+You may set `namespace: default` to deploy to the default namespace.
 
   ```yaml
   # instances/my-sourcegraph/kustomization.yaml

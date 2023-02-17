@@ -4,7 +4,7 @@ This section is aimed at providing high-level guidance on deploying Sourcegraph 
 
 ## Overview
 
-The installation steps below will walk you through the steps using our quick-start overlay for Elastic Kubernetes Service (EKS) to deploy Sourcegraph.
+The installation instructions below will guide you through deploying Sourcegraph on Elastic Kubernetes Service (EKS) with our quick-start overlay.
 
 The overlay will:
 
@@ -55,7 +55,7 @@ Namespace:        default
 Address:          12.345.678.0
 ```
 
-Once the load balancer is ready, you can access your new Sourcegraph instance at the returned IP address in your browser via HTTP. Accessing the IP address with HTTPS returns errors because TLS must be enabled first.
+Once the load balancer is ready, you can access your new Sourcegraph instance at the returned IP address in your browser via HTTP. Accessing the IP address with HTTPS will return errors because TLS must be enabled first.
 
 It might take about 10 minutes for the load balancer to be fully ready. In the meantime, you can access Sourcegraph using the port forward method as described below.
 
@@ -94,7 +94,7 @@ components:
 
 #### Enable TLS
 
-Once you have created a new overlay using the kustomization file from our quick-start overlay for AWS EKS, we strongly recommend you to: 
+Once you have created a new overlay using the kustomization file from our quick-start overlay for AWS EKS, we strongly recommend that you:
 - create a DNS A record for your Sourcegraph instance domain
 - enable TLS is highly recommended. 
 

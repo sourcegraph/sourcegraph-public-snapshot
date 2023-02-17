@@ -4,7 +4,7 @@ This section is aimed at providing high-level guidance on deploying Sourcegraph 
 
 ## Overview
 
-The installation steps below will walk you through the steps using our examples overlay for GKE to deploy the Sourcegraph.
+The installation guide below will walk you through deploying Sourcegraph on Google Kubernetes Engine (GKE) using our GKE example overlay.
 
 The GKE overlay will:
 
