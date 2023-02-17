@@ -309,7 +309,7 @@ patches:
 
 ### Custom resources allocation
 
-> WARNING: Only available in v4.5.0 or above
+> WARNING: Only available in version 4.5.0 or above
 
 In cases where custom resource allocation is necessary, it is important to follow the instructions provided below:
 
