@@ -62,13 +62,13 @@ func findUser(ctx context.Context, db database.DB, id int, logger log.Logger) (t
 		return types.UserForSCIM{}, errors.Wrap(err, "list users by IDs")
 	}
 	if len(users) == 0 {
-		logger.Info("requested users to delete do not exist")
+		logger.Info("no match found for", log.Int("userID", id"))
 		return types.UserForSCIM{}, nil
 	} else if len(users) > 1 {
-		logger.Error("requested users to delete have duplicate IDs—that should not happen")
-		return types.UserForSCIM{}, errors.New("requested users to delete have duplicate IDs")
+		logger.Error("duplicate IDs found - that should not happen")
+		return types.UserForSCIM{}, errors.New("multiple users match the find criteria")
 	} else {
-		logger.Debug("attempting to delete requested users")
+		logger.Debug("findUsers found exactly 1 result")
 	}
 	if users[0].SCIMExternalID == "" {
 		return types.UserForSCIM{}, errors.New("cannot delete user because it has no SCIM external ID set")
