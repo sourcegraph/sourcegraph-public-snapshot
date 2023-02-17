@@ -29,11 +29,19 @@ import { RepoMirrorInfo } from './components/RepoMirrorInfo'
 
 import styles from './RepositoryNode.module.scss'
 
+const RepositoryStatusBadge: React.FunctionComponent<{ status: string }> = ({ status }) => (
+    <Badge className={classNames(styles[status as keyof typeof styles], 'py-0 px-1 text-uppercase font-weight-normal')}>
+        {status}
+    </Badge>
+)
+
 interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
 }
 
 export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({ node }) => {
+    const [isPopoverOpen, setIsPopoverOpen] = useState(false)
+
     let status = 'queued'
     if (node.mirrorInfo.cloned && !node.mirrorInfo.lastError) {
         status = 'cloned'
@@ -41,12 +49,6 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
         status = 'cloning'
     } else if (node.mirrorInfo.lastError) {
         status = 'failed'
-    }
-
-    const [closeErrorPopover, setCloseErrorPopover] = useState(false)
-
-    const onDismiss = () => {
-        setCloseErrorPopover(true)
     }
 
     return (
@@ -58,14 +60,7 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
             <div className="d-flex align-items-center justify-content-between">
                 <div className="d-flex col-7 pl-0">
                     <div className={classNames('d-flex col-2 px-0 justify-content-between h-100', styles.badgeWrapper)}>
-                        <Badge
-                            className={classNames(
-                                styles[status as keyof typeof styles],
-                                'py-0 px-1 text-uppercase font-weight-normal'
-                            )}
-                        >
-                            {status}
-                        </Badge>
+                        <RepositoryStatusBadge status={status} />
                         {node.mirrorInfo.cloneInProgress && <LoadingSpinner />}
                     </div>
 
@@ -92,36 +87,36 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                             </Button>
                         </Tooltip>
                     )}
-                    {/* TODO: add X-out btn, error bg scroll */}
                     {node.mirrorInfo.lastError && (
-                        <Popover isOpen={closeErrorPopover ? false : null}>
+                        <Popover isOpen={isPopoverOpen} onOpenChange={event => setIsPopoverOpen(event.isOpen)}>
                             <PopoverTrigger as={Button} variant="secondary" size="sm" aria-label="See errors">
                                 <Icon aria-hidden={true} svgPath={mdiFileDocumentOutline} /> See errors
                             </PopoverTrigger>
 
                             <PopoverContent position={Position.bottom} className={styles.errorContent}>
-                                <div>
+                                <div className="d-flex">
                                     <H4 className="m-2">
-                                        <Badge
-                                            className={classNames(
-                                                styles[status as keyof typeof styles],
-                                                'py-0 px-1 mr-2 text-uppercase font-weight-normal'
-                                            )}
-                                        >
-                                            {status}
-                                        </Badge>
-                                        <ExternalRepositoryIcon externalRepo={node.externalRepository} />
+                                        <RepositoryStatusBadge status={status} />
+                                        <ExternalRepositoryIcon
+                                            externalRepo={node.externalRepository}
+                                            className="mx-2"
+                                        />
                                         <RepoLink repoName={node.name} to={null} />
                                     </H4>
 
-                                    <Button aria-label="Dismiss error" variant="icon" onClick={onDismiss}>
+                                    <Button
+                                        aria-label="Dismiss error"
+                                        variant="icon"
+                                        className="ml-auto mr-2"
+                                        onClick={() => setIsPopoverOpen(false)}
+                                    >
                                         <Icon aria-hidden={true} svgPath={mdiClose} />
                                     </Button>
                                 </div>
 
                                 <MenuDivider />
 
-                                <Alert variant="warning" className={classNames('mx-2 mt-2', styles.alertOverflow)}>
+                                <Alert variant="warning" className={classNames('m-2', styles.alertOverflow)}>
                                     <H4>Error syncing repository:</H4>
                                     {node.mirrorInfo.lastError}
                                 </Alert>
