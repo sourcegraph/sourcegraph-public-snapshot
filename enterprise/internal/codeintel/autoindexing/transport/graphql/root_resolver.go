@@ -8,6 +8,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -401,18 +402,27 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 	}
 
 	commit := "HEAD"
+	var limitErr error
+
 	indexJobs, err := r.autoindexSvc.InferIndexJobsFromRepositoryStructure(ctx, repoID, commit, false)
 	if err != nil {
-		return nil, err
+		if !errors.As(err, &inference.LimitError{}) {
+			return nil, err
+		}
+
+		limitErr = errors.Append(limitErr, err)
 	}
-
-	availableIndexersMap := map[string]shared.AvailableIndexer{}
-	inferredAvailableIndexers := shared.PopulateInferredAvailableIndexers(indexJobs, blocklist, availableIndexersMap)
-
 	indexJobHints, err := r.autoindexSvc.InferIndexJobHintsFromRepositoryStructure(ctx, repoID, commit)
 	if err != nil {
-		return nil, err
+		if !errors.As(err, &inference.LimitError{}) {
+			return nil, err
+		}
+
+		limitErr = errors.Append(limitErr, err)
 	}
+
+	inferredAvailableIndexers := map[string]shared.AvailableIndexer{}
+	inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobs, blocklist, inferredAvailableIndexers)
 	inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
 
 	inferredAvailableIndexersResolver := make([]sharedresolvers.InferredAvailableIndexers, 0, len(inferredAvailableIndexers))
@@ -436,7 +446,16 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 	// the same graphQL request, not across different request.
 	prefetcher := sharedresolvers.NewPrefetcher(r.autoindexSvc, r.uploadSvc)
 
-	return sharedresolvers.NewRepositorySummaryResolver(r.autoindexSvc, r.uploadSvc, r.policySvc, summary, inferredAvailableIndexersResolver, prefetcher, errTracer), nil
+	return sharedresolvers.NewRepositorySummaryResolver(
+		r.autoindexSvc,
+		r.uploadSvc,
+		r.policySvc,
+		summary,
+		inferredAvailableIndexersResolver,
+		limitErr,
+		prefetcher,
+		errTracer,
+	), nil
 }
 
 func (r *rootResolver) GetSupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (_ bool, _ string, err error) {

@@ -895,6 +895,11 @@ type CodeIntelRepositorySummary {
     The additionally available indexers that could be indexed but haven't been indexed.
     """
     availableIndexers: [InferredAvailableIndexers!]!
+
+    """
+    If inference of the repository contents hit a limit its error description will available here.
+    """
+    limitError: String
 }
 
 """
@@ -1824,9 +1829,24 @@ type IndexConfiguration {
     configuration: String
 
     """
-    The raw JSON-encoded index configuration as infered by the auto-indexer.
+    The raw JSON-encoded index configuration as inferred by the auto-indexer.
     """
-    inferredConfiguration: String
+    inferredConfiguration: InferredConfiguration
+}
+
+"""
+A wrapper around inferred configuration and a possible limit error.
+"""
+type InferredConfiguration {
+    """
+    The raw JSON-encoded inferred index configuration.
+    """
+    configuration: String!
+
+    """
+    If inference of the repository contents hit a limit its error description will available here.
+    """
+    limitError: String
 }
 
 """
@@ -1841,7 +1861,7 @@ type GitTreeCodeIntelInfo {
     Precise coverage based on inference derived from the directory
     structure and its files.
     """
-    preciseSupport: [GitTreePreciseCoverage!]
+    preciseSupport: GitTreePreciseCoverageError
 }
 
 """
@@ -1850,7 +1870,7 @@ Search-based code-intel support coverage grouped by related files.
 type GitTreeSearchBasedCoverage {
     """
     The files comprising this grouping of search-based support.
-    Each grouping consists of all the files of the same langauge e.g.
+    Each grouping consists of all the files of the same language e.g.
     all .go files in one group, all .kt and .kts files in another.
     """
     coveredPaths: [String!]!
@@ -1858,6 +1878,22 @@ type GitTreeSearchBasedCoverage {
     Overview of the level of support for this group of files.
     """
     support: SearchBasedCodeIntelSupport!
+}
+
+"""
+A wrapper around inference coverage and a possible limit error.
+"""
+type GitTreePreciseCoverageError {
+    """
+    Precise coverage based on inference derived from the directory
+    structure and its files.
+    """
+    coverage: [GitTreePreciseCoverage!]!
+
+    """
+    If inference of the repository contents hit a limit its error description will available here.
+    """
+    limitError: String
 }
 
 """
