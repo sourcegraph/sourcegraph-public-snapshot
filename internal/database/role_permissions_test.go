@@ -47,6 +47,7 @@ func TestRolePermissionAssign(t *testing.T) {
 			RoleID:       r.ID,
 			PermissionID: p.ID,
 		})
+		require.NoError(t, err)
 		require.NotNil(t, rp)
 		require.Equal(t, rp.RoleID, r.ID)
 		require.Equal(t, rp.PermissionID, p.ID)
@@ -94,6 +95,7 @@ func TestRolePermissionAssignToSystemRole(t *testing.T) {
 		rps, err := store.GetByPermissionID(ctx, GetRolePermissionOpts{
 			PermissionID: p.ID,
 		})
+		require.NoError(t, err)
 		require.NotNil(t, rps)
 		require.Len(t, rps, 1)
 
@@ -139,6 +141,7 @@ func TestRolePermissionBulkAssignPermissionsToSystemRoles(t *testing.T) {
 		rps, err := store.GetByPermissionID(ctx, GetRolePermissionOpts{
 			PermissionID: p.ID,
 		})
+		require.NoError(t, err)
 		require.NotNil(t, rps)
 		require.Len(t, rps, len(systemRoles))
 
