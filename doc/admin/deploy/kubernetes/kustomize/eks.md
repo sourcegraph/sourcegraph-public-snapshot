@@ -121,7 +121,7 @@ components:
 - ../../components/clusters/aws/mange-cert
 ```
 
-Step 2: Set the `AWS_MANAGED_CERT_ARN` variable with the `ARN of your AWS-managed TLS certificate` under the [BUILD CONFIGURATIONS](index.md#build-configurations) section:
+Step 2: Set the `AWS_MANAGED_CERT_ARN` variable with the `ARN of your AWS-managed TLS certificate` under the [BUILD CONFIGURATIONS](index.md#buildconfig-yaml) section:
 
 ```yaml
 # overlays/$INSTANCE_NAME/kustomization.yaml

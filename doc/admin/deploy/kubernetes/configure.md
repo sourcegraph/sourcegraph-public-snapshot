@@ -38,7 +38,7 @@ This guide will demonstrate how to customize your Sourcegraph deployment using K
 
 To ensure optimal performance and functionality of your Sourcegraph deployment, it is recommended to use components pre-configured by us in your overlay. These components include settings that have been specifically designed and tested for Sourcegraph and do not require any additional configuration changes.
 
-Be sure to understand how each component and it's dependencies work before combining components in your overlay file. Review all component configuration settings and resources to ensure components are compatible and work together properly. Remember that some components may depend on others, so disable components carefully.
+Before combining components in your kustomization file, be sure to understand how each component and its dependencies work. Carefully review all component configurations and resources to ensure full compatibility and proper interaction between components. Note that some components depend on others, so disable/remove components cautiously.
 
 Following these guidelines will help you create a seamless deployment and avoid conflicts.
 
@@ -87,9 +87,11 @@ components:
 RBAC must be enabled in your cluster for the frontend to communicate with other services through the Kubernetes API. To enable service discovery for the frontend service, Include the following component as the **last** component in your `kustomization.yaml` file:
 
 ```yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
 components:
-...
-# IMPORTANT: Include as the last component
+# ...
+# ...
+# IMPORTANT: Include this as the last component
 - ../../components/enable/service-discovery
 ```
 
@@ -318,7 +320,7 @@ In cases where custom resource allocation is necessary, it is important to follo
 $ cp -R components/custom/resources instances/$INSTANCE_NAME/custom-resources
 ```
 
-**Step 2**: In the copied version of the `resources.yaml` file, located in the `configs subdirectory` of the `custom-resources` directory, uncomment the desired service and update the resource values as necessary.
+**Step 2**: In the newly copied `instances/$INSTANCE_NAME/custom-resources/kustomization` file, uncomment the desired service and update the resource values as necessary.
 
 **Step 3**: In the `instances/$INSTANCE_NAME/kustomization.yaml` file, include the `custom-resources component` in the components list.
 
@@ -328,7 +330,7 @@ components:
 - custom-resources
 ```
 
-> WARNING: If service-discovery is not enabled for the sourcegraph-frontend service, the endpoint-update.yaml file within the patches subdirectory is responsible for updating the relevant variables for the frontend to generate the endpoint addresses for each service replica. It should not be removed at any point.
+> WARNING: If *service-discovery* is not enabled for the sourcegraph-frontend service, the `instances/$INSTANCE_NAME/custom-resources/endpoint-update.yaml` file within the patches subdirectory is responsible for updating the relevant variables for the frontend to generate the endpoint addresses for each service replica. It should not be removed at any point.
 
 ### Remove securityContext
 
@@ -468,7 +470,7 @@ To use an **existing** storage class provided by other cloud providers:
     - ../../components/storage-class/update-class-name
   ```
 
-**Step 2**: Enter the value for the existing storage class under the **literals** list for [BUILD CONFIGURATIONS](kustomize/index.md#build-configurations) within the *configMapGenerator* section using the `STORAGECLASS_NAME` config key
+**Step 2**: Enter the value of your existing storage class name in your [buildConfig.yaml file](kustomize/index.md#buildconfig-yaml) using the `STORAGECLASS_NAME` config key
 
 Example, add `STORAGECLASS_NAME=sourcegraph` if `sourcegraph` is the name for the existing storage class:
 
@@ -499,21 +501,20 @@ To updates the `storageClassName` field for all associated resources:
     - ../../components/storage-class/update-class-name
   ```
 
-**Step 2**: Enter the value for the existing storage class under the **literals** list for [BUILD CONFIGURATIONS](kustomize/index.md#build-configurations) within the *configMapGenerator* section using the `STORAGECLASS_NAME` config key
+**Step 2**: Enter the value of your existing storage class name in your [buildConfig.yaml](kustomize/index.md#buildconfig-yaml) file using the `STORAGECLASS_NAME` config key
 
 Example, add `STORAGECLASS_NAME=sourcegraph` if `sourcegraph` is the name for the existing storage class:
 
   ```yaml
-  # instances/$INSTANCE_NAME/kustomization.yaml
-  components:
-    # Update storageClassName to the STORAGECLASS_NAME value set below
-    - ../../components/storage-class/update-class-name
-  ...
-  configMapGenerator:
-  - name: sourcegraph-kustomize-env
-    behavior: merge
-    literals:
-      - STORAGECLASS_NAME=sourcegraph # -- [ACTION] Set storage class name here
+  # instances/$INSTANCE_NAME/buildConfig.yaml
+  apiVersion: v1
+  kind: SourcegraphKustomizeConfig
+  metadata:
+    labels:
+      deploy: sourcegraph-kustomize
+    name: sourcegraph-kustomize-config
+  data:
+    STORAGECLASS_NAME: sourcegraph # -- [ACTION] Set storage class name here
   ```
 
   The `storage-class/update-class-name` component updates the `storageClassName` field for all associated resources to the `STORAGECLASS_NAME` value set in step 2.
@@ -530,19 +531,21 @@ components:
 - ../../components/storage-class/cloud
 ```
 
-Update the following variables under the [BUILD CONFIGURATIONS](kustomize/index.md#build-configurations) section in your overlay. Replace them with the correct values according to the instructions provided by your cloud provider:
+Update the following variables in your [buildConfig.yaml](kustomize/index.md#buildconfig-yaml) file. Replace them with the correct values according to the instructions provided by your cloud provider:
 
 ```yaml
-# instances/$INSTANCE_NAME/kustomization.yaml > [BUILD CONFIGURATIONS]
-configMapGenerator:
-  # Handle updating configs using env vars for kustomize
-  - name: sourcegraph-kustomize-env
-    behavior: merge
-    literals:
-      ...
-      - STORAGECLASS_NAME=STORAGECLASS_NAME
-      - STORAGECLASS_PROVISIONER=STORAGECLASS_PROVISIONER
-      - STORAGECLASS_PARAM_TYPE=STORAGECLASS_PARAM_TYPE
+# instances/$INSTANCE_NAME/buildConfig.yaml
+apiVersion: v1
+kind: SourcegraphKustomizeConfig
+metadata:
+  labels:
+    deploy: sourcegraph-kustomize
+  name: sourcegraph-kustomize-config
+data:
+  # -- [ACTION] Set values below
+  STORAGECLASS_NAME: STORAGECLASS_NAME
+  STORAGECLASS_PROVISIONER: STORAGECLASS_PROVISIONER
+  STORAGECLASS_PARAM_TYPE: STORAGECLASS_PARAM_TYPE
 ```
 
 > IMPORTANT: Make sure to create the storage class in your cluster before deploying Sourcegraph
@@ -625,7 +628,7 @@ data:
 # the data is abbreviated in this example
 ```
 
-**Step 3**: Configure the TLS settings on your Ingress by adding the following variables under the [BUILD CONFIGURATIONS](kustomize/index.md#build-configurations) section:
+**Step 3**: Configure the TLS settings of your Ingress by adding the following variables to your [buildConfig.yaml](kustomize/index.md#buildconfig-yaml) file:
 
 - **TLS_HOST**: your domain name
 - **TLS_INGRESS_CLASS_NAME**: ingress class name required by your cluster-issuer
@@ -634,16 +637,18 @@ data:
 Example:
 
 ```yaml
-# instances/$INSTANCE_NAME/kustomization.yaml > [BUILD CONFIGURATIONS]
-configMapGenerator:
-  # Handle updating configs using env vars for kustomize
-  - name: sourcegraph-kustomize-env
-    behavior: merge
-    literals:
-      ...
-      - TLS_HOST=sourcegraph.company.com
-      - TLS_INGRESS_CLASS_NAME=example-ingress-class-name
-      - TLS_CLUSTER_ISSUER=letsencrypt
+# instances/$INSTANCE_NAME/buildConfig.yaml
+apiVersion: v1
+kind: SourcegraphKustomizeConfig
+metadata:
+  labels:
+    deploy: sourcegraph-kustomize
+  name: sourcegraph-kustomize-config
+data:
+  # -- [ACTION] Set values below
+  TLS_HOST: sourcegraph.company.com
+  TLS_INGRESS_CLASS_NAME: example-ingress-class-name
+  TLS_CLUSTER_ISSUER: letsencrypt
 ```
 
 Step 4: Include the tls component:
@@ -656,7 +661,7 @@ components:
 
 ### TLS with Let’s Encrypt
 
-Alternatively, you can configure [cert-manager with Let’s Encrypt](https://cert-manager.io/docs/configuration/acme/) in your cluster. Then, follow the steps listed above for configuring TLS certificate via TLS Secrets manually. However, when adding the variables to the BUILD CONFIGURATIONS section, set **TLS_CLUSTER_ISSUER=letsencrypt** to include the cert-manager with Let's Encrypt.
+Alternatively, you can configure [cert-manager with Let’s Encrypt](https://cert-manager.io/docs/configuration/acme/) in your cluster. Then, follow the steps listed above for configuring TLS certificate via TLS Secrets manually. However, when adding the variables to the [buildConfig.yaml](kustomize/index.md#buildconfig-yaml) file, set **TLS_CLUSTER_ISSUER=letsencrypt** to include the cert-manager with Let's Encrypt.
 
 ---
 
@@ -700,16 +705,19 @@ components:
 
 To configure the hostname for your Sourcegraph ingress, follow these steps:
 
-**Step 1**: Under the [BUILD CONFIGURATIONS](kustomize/index.md#build-configurations) section, include the `HOST_DOMAIN` variable and set it to your desired hostname, for example:
+**Step 1**: In your [buildConfig.yaml](kustomize/index.md#buildconfig-yaml) file, include the `HOST_DOMAIN` variable and set it to your desired hostname, for example:
 
 ```yaml
-# instances/$INSTANCE_NAME/kustomization.yaml > [BUILD CONFIGURATIONS]
-configMapGenerator:
-  # Handle updating configs using env vars for kustomize
-  - name: sourcegraph-kustomize-env
-    behavior: merge
-    literals:
-      - HOST_DOMAIN=sourcegraph.company.com
+# instances/$INSTANCE_NAME/buildConfig.yaml
+apiVersion: v1
+kind: SourcegraphKustomizeConfig
+metadata:
+  labels:
+    deploy: sourcegraph-kustomize
+  name: sourcegraph-kustomize-config
+data:
+  # -- [ACTION] Set values below
+  HOST_DOMAIN: sourcegraph.company.com
 ```
 
 **Step 2**: Include the hostname component in your components.
@@ -764,7 +772,7 @@ $ cp components/patches/frontend-ingress-annotations.yaml instances/$INSTANCE_NA
 
 **Step 3**: Add the additional annotations at the end of the new patch file 
 
-**Step 4**: Include the patch file in your overlay under `patchesStrategicMerge`:
+**Step 4**: Include the patch file in your overlay under `patches`:
    
   ```yaml
   # instances/$INSTANCE_NAME/kustomization.yaml
@@ -878,7 +886,8 @@ To update the environment variables for the **sourcegraph-frontend** service, ad
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
-...
+components:
+# ...
 configMapGenerator:
   - name: sourcegraph-frontend-env
     behavior: merge
@@ -905,6 +914,7 @@ To connect Sourcegraph to an existing PostgreSQL instance, add the relevant envi
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
+components:
 ...
 configMapGenerator:
   - name: sourcegraph-frontend-env
@@ -945,18 +955,20 @@ components:
 - ../../components/services/redis
 ```
 
-**Step 2**: Add add the new environment variables to the end of the *FRONTEND ENV VARS* section on the bottom of your [kustomization file](kustomize/index.md#kustomizationyaml). For example:
+**Step 2**: Set the following variable in your [buildConfig.yaml](kustomize/index.md#buildconfig-yaml) file:
 
 ```yaml
-# instances/$INSTANCE_NAME/kustomization.yaml
-...
-configMapGenerator:
-  - name: sourcegraph-frontend-env
-    behavior: merge
-    literals: 
-      - DEPLOY_TYPE=kustomize
-      - REDIS_CACHE_ENDPOINT=REDIS_CACHE_DSN
-      - REDIS_STORE_ENDPOINT=REDIS_STORE_DSN
+# instances/$INSTANCE_NAME/buildConfig.yaml
+apiVersion: v1
+kind: SourcegraphKustomizeConfig
+metadata:
+  labels:
+    deploy: sourcegraph-kustomize
+  name: sourcegraph-kustomize-config
+data:
+  # -- [ACTION] Set values below
+  REDIS_CACHE_ENDPOINT: REDIS_CACHE_DSN
+  REDIS_STORE_ENDPOINT: REDIS_STORE_DSN
 ```
 
 > WARNING: You must restart frontend for the updated values to be activiated
@@ -1049,7 +1061,7 @@ This will cause Prometheus to drop all metrics *from cAdvisor* that are not from
 
 ## Private registry
 
-To update all image names with your private registry, eg. `index.docker.io/sourcegraph/service_name` to `your.private.registry.com/sourcegraph/service_name`, include the `private-registry` component:
+**Step 1** To update all image names with your private registry, eg. `index.docker.io/sourcegraph/service_name` to `your.private.registry.com/sourcegraph/service_name`, include the `private-registry` component:
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
@@ -1057,17 +1069,19 @@ components:
 - ../../components/enable/private-registry
 ```
 
-Set the `PRIVATE_REGISTRY` variable under the [BUILD CONFIGURATIONS](kustomize/index.md#build-configurations) section:
+**Step 2** Add the `PRIVATE_REGISTRY` variable to your [buildConfig.yaml](kustomize/index.md#buildconfig-yaml) file. For example:
 
 ```yaml
-# instances/$INSTANCE_NAME/kustomization.yaml > [BUILD CONFIGURATIONS]
-configMapGenerator:
-  # Handle updating configs using env vars for kustomize
-  - name: sourcegraph-kustomize-env
-    behavior: merge
-    literals:
-      ...
-      - PRIVATE_REGISTRY=your.private.registry.com
+# instances/$INSTANCE_NAME/buildConfig.yaml
+apiVersion: v1
+kind: SourcegraphKustomizeConfig
+metadata:
+  labels:
+    deploy: sourcegraph-kustomize
+  name: sourcegraph-kustomize-config
+data:
+  # -- [ACTION] Set values below
+  PRIVATE_REGISTRY: your.private.registry.com
 ```
 
 ---

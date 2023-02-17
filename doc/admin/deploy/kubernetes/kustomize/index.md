@@ -39,6 +39,7 @@ Here is the file structure:
 ├── examples
 └── instances
     └── template
+        └── buildConfig.template.yaml
         └── kustomization.template.yaml
 
 ```
@@ -95,9 +96,11 @@ File structure:
 └── instances
   ├── $INSTANCE_NAME
   │   ├── kustomization.yaml
+  │   ├── buildConfig.yaml
   │   └── patches
-  │       └── config files go here...
+  │       └── additional config files go here...
   └── template
+      └── buildConfig.template.yaml
       └── kustomization.template.yaml
 ```
 
@@ -109,9 +112,17 @@ The [kustomization.yaml file](#kustomization-yaml) is a fundamental element of a
 
 To correctly configure your Sourcegraph deployment, it is crucial to create an overlay using the `kustomization.template.yaml` file provided. This [kustomization.yaml file](#kustomization-yaml) is specifically designed for Sourcegraph deployments, making the configuration process more manageable. The file includes various options and sections, allowing for the creation of a Sourcegraph instance that is tailored to the specific environment. These sections include:
 
-### BUILD CONFIGURATIONS
+### buildConfig.yaml
 
-Certain components may require additional input from users to construct the overlay for Sourcegraph deployments. These inputs are typically configurations that are specific to the user's environment, use case, or preferences. The `BUILD CONFIGURATIONS` section should only be updated when instructed by the components defined in the overlay. This is because not all components require additional configurations and some may even have default values that are suitable for most use cases. Updating the section unnecessarily can cause errors or unexpected behavior. Always refer to the component's documentation or the comments in the [kustomization.yaml file](#kustomization-yaml) before making changes to this section.
+Some Kustomize components may require additional configuration. These inputs typically specify environment/use-case-specific settings. For example, the name of your private registry to update images.
+Only copy the `buildConfig.yaml` file into your overlay instance directory if a component's documentation explicitly instructs you to do so. Not all components need extra configuration, and some have suitable defaults.
+Modifying `buildConfig.yaml` unnecessarily can cause errors or unintended behavior. Always check the [configuration docs](../configure.md) or comments in [kustomization.yaml](#kustomization-yaml) before changing this file.
+
+When needed, copy the `buildConfig.template.yaml` file from the `instances/template` directory to the new directory created in step 1, and rename it to `buildConfig.yaml`.
+
+```bash
+$ cp instances/template/buildConfig.template.yaml instances/$INSTANCE_NAME/buildConfig.yaml
+```
 
 ### patches directory
 
@@ -128,7 +139,7 @@ This will ensure the files are in the correct location for the configuration pro
 
 ### Create a Sourcegraph overlay
 
-The [kustomization.template.yaml](#template) file found in the instances/template directory serves as a starting point for creating a custom overlay for your deployment. This template file includes a list of components that are commonly used in Sourcegraph deployments. To create a new overlay, you can copy this template file to the desired overlay directory (e.g. instances/production) and name it kustomization.yaml. Then, you can enable or disable specific components by commenting or uncommenting them in the overlay file. This allows you to customize your deployment to suit your specific needs.
+The [kustomization.template.yaml](#template) file found in the `instances/template` directory serves as a starting point for creating a custom overlay for your deployment. This template file includes a list of components that are commonly used in Sourcegraph deployments. To create a new overlay, you can copy this template file to the desired overlay directory (e.g. instances/production) and name it kustomization.yaml. Then, you can enable or disable specific components by commenting or uncommenting them in the overlay file. This allows you to customize your deployment to suit your specific needs.
 
 
 **Step 1**: Create a new directory within the `overlays` subdirectory. 
