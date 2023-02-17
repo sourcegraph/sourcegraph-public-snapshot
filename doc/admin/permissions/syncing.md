@@ -1,4 +1,6 @@
-# Repository permissions
+## Permission syncing
+
+TODO: @milan this is just copy & paste, need to rewrite this
 
 Sourcegraph can be configured to enforce repository permissions from code hosts. The currently supported methods are:
 
@@ -466,6 +468,95 @@ Overall, one entry of `user_pending_permissions` table means that _"There is a u
 #### Repo pending permissions
 
 [`repo_pending_permissions` table](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/database/schema.md#table-public-repo-pending-permissions) maps `user_pending_permissions` entities to repo ID along with the permission type (currently only `read` is supported). Each row of the table maps a repo ID to an array of `user_pending_permissions` entries. It is designed as an inverted `user_pending_permissions` for more performant CRUD operations (see the DB migration description in [this commit](https://github.com/sourcegraph/sourcegraph/compare/0705aa790d31fcd51713f4432496cc6bbb49cce8...bc30ae1186cf7a491ef21a5c00cb2f565288dfbb#diff-150f6343be1e4395dbf2188cd35b4dd793459fabfe319c1bfcceb92e05847572)).
+
+## Explicit permissions API
+
+Sourcegraph exposes a set of GraphQL APIs to explicitly set repository permissions as an alternative to the code-host-specific repository permissions sync mechanisms.
+
+To enable the permissions API, add the following to the [site configuration](../config/site_config.md):
+
+```json
+"permissions.userMapping": {
+    "enabled": true,
+    "bindID": "email"
+}
+```
+
+The `bindID` value specifies how to uniquely identify users when setting permissions:
+
+- `email`: You can [set permissions](#setting-repository-permissions-for-users) for users by specifying their email addresses (which must be verified emails associated with their Sourcegraph user account).
+- `username`: You can [set permissions](#setting-repository-permissions-for-users) for users by specifying their Sourcegraph usernames.
+
+If the permissions API is enabled, all other repository permissions mechanisms are disabled.
+
+After you enable the permissions API, you must [set permissions](#setting-repository-permissions-for-users) to allow users to view repositories (site admins bypass all permissions checks and can always view all repositories).
+
+> NOTE: If you were previously using [background permissions syncing](#background-permissions-syncing), e.g. using [GitHub permissions](#github), then those permissions are used as the initial state after enabling explicit permissions. Otherwise, the initial state is for all repositories to have an empty set of authorized users, so users will not be able to view any repositories.
+
+<span class="virtual-br"></span>
+
+> NOTE: If you're using Sourcegraph with multiple code hosts, it's not possible to use the explicit permissions API for some repositories and inherit code host permissions for others. (See [RFC 626: Permissions mechanisms in parallel](https://docs.google.com/document/d/1nWbmfM5clAH4pi_4tEt6zDtqN1-z1DuHlQ7A5KAijf8/edit#) for a design document about future support for this situation.)
+
+### Setting a repository as unrestricted
+
+Sometimes it can be useful to mark a repository as `unrestricted`, meaning that it is available to all Sourcegraph users. This can be done with the `setRepositoryPermissionsUnrestricted` mutation. Marking a repository as unrestricted will disregard any previously set explicit or synced permissions. Setting `unrestricted` back to `false` will restore the previous behaviour.
+
+For example:
+
+```graphql
+mutation {
+  setRepositoryPermissionsUnrestricted(repositories: ["<repo ID>", "<repo ID>", "<repo ID>"], unrestricted: true)
+}
+```
+
+### Setting repository permissions for users
+
+Setting the permissions for a repository can be accomplished with 2 [GraphQL API](../../api/graphql.md) calls.
+
+First, obtain the ID of the repository from its name:
+
+```graphql
+query {
+  repository(name: "github.com/owner/repo") {
+    id
+  }
+}
+```
+
+Next, set the list of users allowed to view the repository:
+
+```graphql
+mutation {
+  setRepositoryPermissionsForUsers(
+    repository: "<repo ID>",
+    userPermissions: [
+      { bindID: "user@example.com" }
+    ]) {
+    alwaysNil
+  }
+}
+```
+
+Now, only the users specified in the `userPermissions` parameter will be allowed to view the repository. Sourcegraph automatically enforces these permissions for all operations. (Site admins bypass all permissions checks and can always view all repositories.)
+
+You can call `setRepositoryPermissionsForUsers` repeatedly to set permissions for each repository, and whenever you want to change the list of authorized users.
+
+### Listing a user's authorized repositories
+
+You may query the set of repositories visible to a particular user with the `authorizedUserRepositories` [GraphQL API](../../api/graphql.md) mutation, which accepts a `username` or `email` parameter to specify the user:
+
+```graphql
+query {
+  authorizedUserRepositories(email: "user@example.com", first: 100) {
+    nodes {
+      name
+    }
+    totalCount
+  }
+}
+```
+
+<br />
 
 ### Bitbucket project based permissions
 

@@ -1,8 +1,7 @@
-# User authentication (SSO)
+# User authentication
 
 Sourcegraph supports the following ways for users to sign in:
 
-- [Guidance](#guidance)
 - [Builtin password authentication](#builtin-password-authentication)
 - [GitHub](#github)
 - [GitLab](#gitlab)
@@ -18,7 +17,7 @@ Sourcegraph supports the following ways for users to sign in:
 
 The authentication provider is configured in the [`auth.providers`](../config/site_config.md#authentication-providers) site configuration option.
 
-## Guidance
+## Recommendations
 
 If you are unsure which auth provider is right for you, we recommend applying the following rules in
 order:
