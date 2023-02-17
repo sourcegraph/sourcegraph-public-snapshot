@@ -37,9 +37,10 @@ const MATCHES_TO_SYNTAX_KINDS: &[(&str, SyntaxKind)] = &[
     ("constant.null",           SyntaxKind::IdentifierNull),
     ("float",                   SyntaxKind::NumericLiteral),
     ("function",                SyntaxKind::IdentifierFunction),
-    ("function.builtin",        SyntaxKind::IdentifierBuiltin),
-    ("identifier",              SyntaxKind::Identifier),
     ("identifier.function",     SyntaxKind::IdentifierFunction),
+    ("function.builtin",        SyntaxKind::IdentifierBuiltin),
+    ("identifier.builtin",      SyntaxKind::IdentifierBuiltin),
+    ("identifier",              SyntaxKind::Identifier),
     ("identifier.attribute",    SyntaxKind::IdentifierAttribute),
     ("tag.attribute",           SyntaxKind::TagAttribute),
     ("include",                 SyntaxKind::IdentifierKeyword),
@@ -147,7 +148,29 @@ macro_rules! create_configurations {
 
 lazy_static::lazy_static! {
     static ref CONFIGURATIONS: HashMap<&'static str, HighlightConfiguration> = {
-        create_configurations!( go, sql, c_sharp, jsonnet, python, rust, ruby, java, scala, xlsg, javascript )
+        create_configurations!(
+            c,
+            cpp,
+            c_sharp,
+            go,
+            java,
+            javascript,
+            jsonnet,
+            python,
+            ruby,
+            rust,
+            scala,
+            sql,
+            xlsg
+        )
+    };
+}
+
+// Handle special cases where syntect language names don't match treesitter names.
+pub fn treesitter_language(syntect_language: &str) -> &str {
+    return match syntect_language {
+        "c++" => "cpp",
+        _ => syntect_language,
     };
 }
 
@@ -563,7 +586,12 @@ SELECT * FROM my_table
                 code: contents.clone(),
             });
 
-            let document = index_language(filetype, &contents).unwrap();
+            let indexed = index_language(filetype, &contents);
+            if indexed.is_err() {
+                // assert failure
+                panic!("unknown filetype {:?}", filetype);
+            }
+            let document = indexed.unwrap();
             insta::assert_snapshot!(
                 filepath
                     .to_str()

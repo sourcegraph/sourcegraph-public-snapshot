@@ -137,18 +137,21 @@ var enryLanguageMappings = map[string]string{
 }
 
 var supportedFiletypes = map[string]struct{}{
-	"go":         {},
+	"c":          {},
 	"c_sharp":    {},
-	"jsonnet":    {},
-	"javascript": {},
-	"jsx":        {},
-	"typescript": {},
-	"tsx":        {},
+	"cpp":        {},
+	"c++":        {},
+	"go":         {},
 	"java":       {},
-	"scala":      {},
+	"javascript": {},
+	"jsonnet":    {},
+	"jsx":        {},
+	"python":     {},
 	"ruby":       {},
 	"rust":       {},
-	"python":     {},
+	"scala":      {},
+	"tsx":        {},
+	"typescript": {},
 	"xlsg":       {},
 }
 
