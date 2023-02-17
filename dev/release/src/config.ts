@@ -127,7 +127,7 @@ function releaseDates(releaseDate: DateTime): ReleaseDates {
     releaseDate = releaseDate.set({ hour: 10 })
     return {
         codeFreezeDate: releaseDate.plus({ days: -7 }).toString(),
-        securityApprovalDate: releaseDate.plus({ days: -7 }).toString(),
+        securityApprovalDate: releaseDaste.plus({ days: -7 }).toString(),
         releaseDate: releaseDate.toString(),
     }
 }

@@ -10,6 +10,7 @@ import fetch from 'node-fetch'
 import * as semver from 'semver'
 
 import { cacheFolder, changelogURL, formatDate, getContainerRegistryCredential, readLine, timezoneLink } from './util'
+import chalk from "chalk";
 
 const mkdtemp = promisify(original_mkdtemp)
 let githubPAT: string
@@ -452,6 +453,10 @@ export async function createChangesets(options: ChangesetsOptions): Promise<Crea
     // to re-run changesets, which force push changes to a PR branch.
     for (const change of options.changes) {
         const repository = `${change.owner}/${change.repo}`
+        if (change.edits.length === 0) {
+            console.log(chalk.yellow(`No edits found - skipping repo ${repository}!`))
+            continue
+        }
         console.log(`${repository}: Preparing change for on '${change.base}' to '${change.head}'`)
         await createBranchWithChanges(octokit, { ...change, dryRun: options.dryRun })
     }

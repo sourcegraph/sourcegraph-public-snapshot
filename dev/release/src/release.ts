@@ -635,6 +635,10 @@ cc @${release.captainGitHubUsername}
                                 ? `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version.version}"' enterprise/dev/ci/internal/ci/*.go`
                                 : 'echo "Skipping minimumUpgradeableVersion bump on patch release"',
                             updateUpgradeGuides(release.previous.version, release.version.version),
+
+                            // we skip the src-cli constant upgrade for patch releases
+                            notPatchRelease ? `comby -in-place 'const MinimumVersion = ":[1]"' "const MinimumVersion = \\"${release.version.version}\\"" internal/src-cli/consts.go` : 'echo "Skipping src-cli constant upgrade on patch release"',
+                            notPatchRelease ? 'go generate ./doc/cli/references' : 'Skipping src-cli docs on patch releases'
                         ],
                         ...prBodyAndDraftState(
                             ((): string[] => {
@@ -743,6 +747,18 @@ cc @${release.captainGitHubUsername}
                         ],
                         ...prBodyAndDraftState([]),
                     },
+                    // {
+                    //     owner: 'sourcegraph',
+                    //     repo: 'src-cli',
+                    //     base: 'main',
+                    //     head: `release/${release.branch}`,
+                    //     commitMessage: defaultPRMessage,
+                    //     title: defaultPRMessage,
+                    //     edits: notPatchRelease ? [
+                    //         `comby -in-place 'const MinimumVersion = ":[1]"' "const MinimumVersion = \\"${release.version.version}\\"" internal/src-cli/consts.go`,
+                    //     ] : [], // we are skipping patches for src-cli because they are typically out of band
+                    //     ...prBodyAndDraftState([]),
+                    // },
                 ],
                 dryRun: config.dryRun.changesets,
             })
@@ -1114,8 +1130,28 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
     {
         id: '_test:config',
         description: 'Test release configuration loading',
-        run: config => {
-            console.log(JSON.stringify(config, null, 2))
+        run: async config => {
+            // console.log(JSON.stringify(config, null, 2))
+            const release = await getActiveRelease(config)
+            const notPatchRelease = release.version.patch === 0
+            console.log(release.version)
+            const changes = await createChangesets({
+                requiredCommands: ['comby'],
+                changes:[
+                    {
+                        owner: 'sourcegraph',
+                        repo: 'sourcegraph',
+                        base: 'main',
+                        head: `release/${release.branch}`,
+                        commitMessage: 'message',
+                        title: 'message',
+                        edits: [
+                            notPatchRelease ? `comby -in-place 'const MinimumVersion = ":[1]"' "const MinimumVersion = \\"${release.version.version}\\"" internal/src-cli/consts.go` : 'echo "Skipping src-cli constant upgrade on patch release"',
+                            notPatchRelease ? 'go generate ./doc/cli/references' : 'Skipping src-cli docs on patch releases'
+                        ]
+                    }
+                ], dryRun: true})
+            console.log(changes)
         },
     },
     {
