@@ -125,17 +125,11 @@ def batch_iterator(iterator, batch_size: int) -> List:
         yield batch
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--codebase-id", dest="codebase_id")
-    parser.add_argument("--codebase-path", dest="codebase_path")
-    parser.add_argument("--output-dir", dest="output_dir")
-    args = parser.parse_args()
-
+def embed_codebase(codebase_id: str, codebase_path: str, output_dir: str):
     embeddings_metadata, embeddings = [], []
 
     t_start = time.time()
-    for batch in batch_iterator(stream_file_chunks(args.codebase_path), 512):
+    for batch in batch_iterator(stream_file_chunks(codebase_path), 512):
         t_batch_start = time.time()
         batch_embeddings = get_embeddings(
             [chunk["text"] for chunk in batch], engine=EMBEDDING_ENGINE
@@ -146,14 +140,22 @@ if __name__ == "__main__":
 
     print("Total embedding time:", time.time() - t_start)
 
-    fs_safe_codebase_id = get_filesystem_safe_codebase_id(args.codebase_id)
+    fs_safe_codebase_id = get_filesystem_safe_codebase_id(codebase_id)
     embeddings_metadata_path = os.path.join(
-        args.output_dir, f"{fs_safe_codebase_id}_embeddings_metadata.json"
+        output_dir, f"{fs_safe_codebase_id}_embeddings_metadata.json"
     )
     with open(embeddings_metadata_path, "w", encoding="utf-8") as f:
         json.dump(embeddings_metadata, f)
 
-    embeddings_path = os.path.join(
-        args.output_dir, f"{fs_safe_codebase_id}_embeddings.npy"
-    )
+    embeddings_path = os.path.join(output_dir, f"{fs_safe_codebase_id}_embeddings.npy")
     np.save(embeddings_path, np.array(embeddings))
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--codebase-id", dest="codebase_id")
+    parser.add_argument("--codebase-path", dest="codebase_path")
+    parser.add_argument("--output-dir", dest="output_dir")
+    args = parser.parse_args()
+
+    embed_codebase(args.codebase_id, args.codebase_path, args.output_dir)
