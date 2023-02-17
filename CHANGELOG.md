@@ -40,6 +40,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Expiration of licenses is now handled differently. When a license is expired promotion to site-admin is disabled, license-specific features are disabled (exceptions being SSO & permission syncing), grace period has been replaced with a 7-day-before-expiration warning. [#47251](https://github.com/sourcegraph/sourcegraph/pull/47251)
 - Searcher will now timeout searches in 2 hours instead of 10 minutes. This timeout was raised for batch use cases (such as code insights) searching old revisions in very large repositories. This limit can be tuned with the environment variable `PROCESSING_TIMEOUT`. [#47469](https://github.com/sourcegraph/sourcegraph/pull/47469)
 - Zoekt now bypasses the regex engine for queries that are common in the context of search-based code intelligence, such as `\bLITERAL\b case:yes`. This can lead to a significant speed-up for "Find references" and "Find implementations" if precise code intelligence is not available. [zoekt#526](https://github.com/sourcegraph/zoekt/pull/526)
+- The Sourcegraph Free license has undergone a number of changes. Please contact support@sourcegraph.com if you have any questions or concerns. [#46504](https://github.com/sourcegraph/sourcegraph/pull/46504)
 
 ### Fixed
 
