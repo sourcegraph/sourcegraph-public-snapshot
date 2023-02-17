@@ -34,7 +34,7 @@ func cloneRepo(
 	commandRunner command.Runner,
 	options CloneOptions,
 	operations *command.Operations,
-) error {
+) (err error) {
 	repoPath := workspaceDir
 	if job.RepositoryDirectory != "" {
 		repoPath = filepath.Join(workspaceDir, job.RepositoryDirectory)
