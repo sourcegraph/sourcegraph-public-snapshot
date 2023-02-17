@@ -1,3 +1,5 @@
+<!-- Link back any new sections to doc/dev/index.md as well -->
+
 # Background information
 
 ## Overview
