@@ -8,10 +8,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
+
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 )
 
 // MultiplexHandlers takes a gRPC server and a plain HTTP handler and multiplexes the
