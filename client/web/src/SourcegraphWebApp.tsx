@@ -218,8 +218,9 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
     )
 
     const selectedSearchContextSpecRef = useRef(selectedSearchContextSpec)
-    selectedSearchContextSpecRef.current = selectedSearchContextSpec
-
+    useEffect(() => {
+        selectedSearchContextSpecRef.current = selectedSearchContextSpec
+    }, [selectedSearchContextSpec])
     const getSelectedSearchContextSpec = useCallback(
         (): string | undefined =>
             getExperimentalFeatures().showSearchContext ? selectedSearchContextSpecRef.current ?? undefined : undefined,
