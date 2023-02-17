@@ -59,7 +59,7 @@ export function testSingleFilePage({
                             )?.href
                     ),
                     new URL(
-                        `${sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go`
+                        `${sourcegraphBaseUrl}/${repoName}@6864d8cc6d35a79f50745f8990cb4d594a8036f4/-/blob/call_opt.go`
                     ).href
                 )
             })
