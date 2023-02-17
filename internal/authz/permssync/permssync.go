@@ -21,8 +21,7 @@ func PermissionSyncWorkerEnabled(ctx context.Context, db database.DB, logger log
 		return true
 	}
 
-	value, ok := globalFeatureFlags[featureFlagName]
-	if ok {
+	if value, ok := globalFeatureFlags[featureFlagName]; ok {
 		return value
 	}
 

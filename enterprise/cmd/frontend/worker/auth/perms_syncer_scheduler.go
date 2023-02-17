@@ -82,7 +82,7 @@ func (p *permissionSyncJobScheduler) Routines(_ context.Context, observationCtx 
 			goroutine.HandlerFunc(
 				func(ctx context.Context) error {
 					if !permssync.PermissionSyncWorkerEnabled(ctx, db, logger) || permissionSyncingDisabled() {
-						logger.Debug("disabled")
+						logger.Debug("new scheduler disabled due to either permission syncing disabled or feature flag not enabled")
 						return nil
 					}
 

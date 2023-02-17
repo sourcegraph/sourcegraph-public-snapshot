@@ -1130,9 +1130,6 @@ func (s *PermsSyncer) isDisabled() bool { return PermissionSyncingDisabled() }
 func (s *PermsSyncer) runSchedule(ctx context.Context) {
 	logger := s.logger.Scoped("runSchedule", "periodically queue old records for sync")
 
-	logger.Debug("started")
-	defer logger.Debug("stopped")
-
 	ticker := time.NewTicker(s.scheduleInterval)
 	defer ticker.Stop()
 
@@ -1144,7 +1141,7 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 		}
 
 		if s.isDisabled() || permssync.PermissionSyncWorkerEnabled(ctx, s.db, logger) {
-			logger.Debug("disabled")
+			logger.Debug("old scheduler disabled due to either permission syncing disabled or new schduler enabled")
 			continue
 		}
 
