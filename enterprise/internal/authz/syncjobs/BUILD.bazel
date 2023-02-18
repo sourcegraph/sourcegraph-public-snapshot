@@ -11,6 +11,7 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//internal/conf/conftypes",
+        "//internal/database",
         "//internal/rcache",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
@@ -27,6 +28,7 @@ go_test(
     embed = [":syncjobs"],
     deps = [
         "//internal/conf/conftypes",
+        "//internal/database",
         "//lib/errors",
         "//schema",
         "@com_github_hexops_autogold//:autogold",
