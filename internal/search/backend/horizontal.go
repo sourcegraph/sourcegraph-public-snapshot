@@ -211,8 +211,8 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 
 	siteConfig := newRankingSiteConfig(conf.Get().SiteConfiguration)
 
-	streamer, flushAll := newFlushCollectSender(opts, siteConfig.maxSizeBytes, streamer)
-	defer flushAll()
+	flushSender := newFlushCollectSender(opts, siteConfig.maxSizeBytes, streamer)
+	defer flushSender.Flush()
 
 	// During re-balancing a repository can appear on more than one replica.
 	var mu sync.Mutex

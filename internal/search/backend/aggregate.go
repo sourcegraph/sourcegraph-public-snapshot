@@ -6,7 +6,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/zoekt"
-	"github.com/sourcegraph/zoekt/stream"
 )
 
 var (
@@ -80,55 +79,60 @@ func (c *collectSender) Done() (_ *zoekt.SearchResult, ok bool) {
 	return agg, true
 }
 
+type FlushCollectSender struct {
+	mu            sync.Mutex
+	maxSizeBytes  int
+	collectSender *collectSender
+	sender        zoekt.Sender
+}
+
 // newFlushCollectSender creates a sender which will collect and rank results
 // until a stopping condition. After that it will stream each result as it is
 // sent.
-func newFlushCollectSender(opts *zoekt.SearchOptions, maxSizeBytes int, sender zoekt.Sender) (zoekt.Sender, func()) {
-	// We transition through 3 states
-	// 1. collectSender != nil: collect results via collectSender
-	// 2. stopping condition hit
-	// 3. collectSender == nil: directly use sender
+func newFlushCollectSender(opts *zoekt.SearchOptions, maxSizeBytes int, sender zoekt.Sender) *FlushCollectSender {
+	return &FlushCollectSender{maxSizeBytes: maxSizeBytes, collectSender: newCollectSender(opts), sender: sender}
+}
 
-	var (
-		mu            sync.Mutex
-		collectSender = newCollectSender(opts)
-	)
+// Send consumes a search event. We transition through 3 states
+// 1. collectSender != nil: collect results via collectSender
+// 2. stopping condition hit
+// 3. collectSender == nil: directly use sender
+func (f *FlushCollectSender) Send(event *zoekt.SearchResult) {
+	f.mu.Lock()
+	if f.collectSender != nil {
+		f.collectSender.Send(event)
 
-	// stopCollectingAndFlush will send what we have collected and all future
-	// sends will go via sender directly.
-	stopCollectingAndFlush := func(reason zoekt.FlushReason) {
-		if collectSender == nil {
-			return
+		// Protect against too large aggregates. This should be the exception and only
+		// happen for queries yielding an extreme number of results.
+		if f.maxSizeBytes >= 0 && f.collectSender.sizeBytes > uint64(f.maxSizeBytes) {
+			f.stopCollectingAndFlush(zoekt.FlushReasonMaxSize)
+
 		}
+	} else {
+		f.sender.Send(event)
+	}
+	f.mu.Unlock()
+}
 
-		if agg, ok := collectSender.Done(); ok {
-			metricFinalAggregateSize.WithLabelValues(reason.String()).Observe(float64(len(agg.Files)))
-			agg.FlushReason = reason
-			sender.Send(agg)
-		}
-
-		// From now on use sender directly
-		collectSender = nil
+// stopCollectingAndFlush will send what we have collected and all future
+// sends will go via sender directly.
+func (f *FlushCollectSender) stopCollectingAndFlush(reason zoekt.FlushReason) {
+	if f.collectSender == nil {
+		return
 	}
 
-	return stream.SenderFunc(func(event *zoekt.SearchResult) {
-			mu.Lock()
-			if collectSender != nil {
-				collectSender.Send(event)
+	if agg, ok := f.collectSender.Done(); ok {
+		metricFinalAggregateSize.WithLabelValues(reason.String()).Observe(float64(len(agg.Files)))
+		agg.FlushReason = reason
+		f.sender.Send(agg)
+	}
 
-				// Protect against too large aggregates. This should be the exception and only
-				// happen for queries yielding an extreme number of results.
-				if maxSizeBytes >= 0 && collectSender.sizeBytes > uint64(maxSizeBytes) {
-					stopCollectingAndFlush(zoekt.FlushReasonMaxSize)
+	// From now on use sender directly
+	f.collectSender = nil
+}
 
-				}
-			} else {
-				sender.Send(event)
-			}
-			mu.Unlock()
-		}), func() {
-			mu.Lock()
-			stopCollectingAndFlush(zoekt.FlushReasonFinalFlush)
-			mu.Unlock()
-		}
+func (f *FlushCollectSender) Flush() {
+	f.mu.Lock()
+	f.stopCollectingAndFlush(zoekt.FlushReasonFinalFlush)
+	f.mu.Unlock()
 }
