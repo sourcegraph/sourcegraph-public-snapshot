@@ -1,11 +1,11 @@
-# Import Aspect recommended Bazel settings for all projects
-import %workspace%/.aspect/bazelrc/common.bazelrc
+# Import Aspect bazelrc presets
 
-# Import Aspect recommended Bazel 6 only settings for all projects
-import %workspace%/.aspect/bazelrc/common6.bazelrc
-
-# Import Aspect recommended Bazel settings for JavaScript projects
+import %workspace%/.aspect/bazelrc/bazel6.bazelrc
+import %workspace%/.aspect/bazelrc/convenience.bazelrc
+import %workspace%/.aspect/bazelrc/correctness.bazelrc
+import %workspace%/.aspect/bazelrc/debug.bazelrc
 import %workspace%/.aspect/bazelrc/javascript.bazelrc
+import %workspace%/.aspect/bazelrc/performance.bazelrc
 
 ### YOUR PROJECT SPECIFIC SETTINGS GO HERE ###
 
