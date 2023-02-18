@@ -87,7 +87,10 @@ func TestEmptySpecIDMigrator(t *testing.T) {
 		for _, id := range tc.initialEmptyIDs {
 			emptySpec := bt.CreateEmptyBatchSpec(t, ctx, s, tc.bcName, user.ID, 0)
 			if id != emptySpec.ID {
-				s.Query(ctx, sqlf.Sprintf("UPDATE batch_specs SET id = %d WHERE id = %d", id, emptySpec.ID))
+				err = s.Exec(ctx, sqlf.Sprintf("UPDATE batch_specs SET id = %d WHERE id = %d", id, emptySpec.ID))
+				if err != nil {
+					t.Fatal(err)
+				}
 			}
 		}
 
@@ -103,7 +106,10 @@ func TestEmptySpecIDMigrator(t *testing.T) {
 		for _, id := range tc.nonEmptyIDs {
 			spec := bt.CreateBatchSpec(t, ctx, s, tc.bcName, user.ID, 0)
 			if id != spec.ID {
-				s.Query(ctx, sqlf.Sprintf("UPDATE batch_specs SET id = %d WHERE id = %d", id, spec.ID))
+				err = s.Exec(ctx, sqlf.Sprintf("UPDATE batch_specs SET id = %d WHERE id = %d", id, spec.ID))
+				if err != nil {
+					t.Fatal(err)
+				}
 			}
 		}
 	}
