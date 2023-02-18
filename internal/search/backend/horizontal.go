@@ -211,7 +211,7 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 
 	siteConfig := newRankingSiteConfig(conf.Get().SiteConfiguration)
 
-	flushSender := newFlushCollectSender(opts, siteConfig.maxSizeBytes, streamer)
+	flushSender := newFlushCollectSender(opts, endpoints, siteConfig.maxSizeBytes, streamer)
 	defer flushSender.Flush()
 
 	// During re-balancing a repository can appear on more than one replica.
@@ -236,14 +236,15 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 				sr.Files = dedupper.Dedup(endpoint, sr.Files)
 				mu.Unlock()
 
-				streamer.Send(sr)
+				flushSender.Send(endpoint, sr)
 			}))
 
 			if isZoektRolloutError(ctx, err) {
-				streamer.Send(crashEvent())
+				flushSender.Send(endpoint, crashEvent())
 				err = nil
 			}
 
+			flushSender.SendDone(endpoint)
 			ch <- err
 		}(endpoint, c)
 	}
