@@ -1,8 +1,8 @@
 # Deploying Sourcegraph executors using Docker Compose
 
-<aside class="beta">
+<aside class="experimental">
 <p>
-<span class="badge badge-beta">Beta</span> This feature is in beta and might change in the future.
+<span class="badge badge-experimental">Experimental</span> This deployment is experimental and may change in the future.
 </p>
 
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
@@ -17,6 +17,9 @@ A [docker-compose file](https://github.com/sourcegraph/deploy-sourcegraph-docker
   - Install [Docker Compose](https://docs.docker.com/compose/) on the server
   - Minimum Docker [v20.10.0](https://docs.docker.com/engine/release-notes/#20100) and Docker Compose [v1.29.0](https://docs.docker.com/compose/release-notes/#1290)
   - Docker Swarm mode is **not** supported
+  - Clone the [deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker)
+  - Edit the `deploy-sourcegraph-docker/docker-compose/executors/executor.docker-compose.yaml` and update the environment variables
+  - Follow the instructions in the `README.md` for more specific deployment instructions.
 
 ## Note
 

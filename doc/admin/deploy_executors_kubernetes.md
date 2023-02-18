@@ -1,8 +1,8 @@
 # Deploying Sourcegraph executors on Kubernetes
 
-<aside class="beta">
+<aside class="experimental">
 <p>
-<span class="badge badge-beta">Beta</span> This feature is in beta and might change in the future.
+<span class="badge badge-experimental">Experimental</span> This deployment is experimental and may change in the future.
 </p>
 
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
@@ -27,7 +27,7 @@ Ensure you have the following tools installed:
 2. Run `cd deploy-sourcegraph/configure/executors`.
 3. Configure the [Executor environment variables](https://docs.sourcegraph.com/admin/deploy_executors_binary#step-2-setup-environment-variables) in the `executor/executor.deployment.yaml` file.
 4. Run  `kubectl apply -f . --recursive` to deploy all components.
-5. Confirm executors are working are working by checking the _Executors_ page under _Site Admin_ > _Maintenance_.
+5. Confirm executors are working are working by checking the _Executors_ page under _Site Admin_ > _Executors_ > _Instances_ .
 
 #### Deployment via Helm
 
@@ -36,7 +36,7 @@ Ensure you have the following tools installed:
 3. Edit the `values.yaml` with any other customizations you may require.
 4. Run the following command:
    1. `helm upgrade --install -f values.yaml --version 4.4.2 sg-executor sourcegraph/sourcegraph-executor`
-5. Confirm executors are working are working by checking the _Executors_ page under _Site Admin_ > _Maintenance_.
+5. Confirm executors are working are working by checking the _Executors_ page under _Site Admin_ > _Executors_ > _Instances_ .
 
 
 For more information on the components being deployed see the [Executors readme](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/executors/README.md).
