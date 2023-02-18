@@ -46,7 +46,7 @@ func TestRoleResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = db.RolePermissions().Assign(ctx, database.AssignRolePermissionOpts{
+	err = db.RolePermissions().Assign(ctx, database.AssignRolePermissionOpts{
 		RoleID:       role.ID,
 		PermissionID: perm.ID,
 	})

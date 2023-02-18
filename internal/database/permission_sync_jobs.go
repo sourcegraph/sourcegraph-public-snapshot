@@ -2,8 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql/driver"
-	"encoding/json"
 	"strconv"
 	"time"
 
@@ -90,7 +88,7 @@ type PermissionSyncJobStore interface {
 	List(ctx context.Context, opts ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error)
 	Count(ctx context.Context) (int, error)
 	CancelQueuedJob(ctx context.Context, reason string, id int) error
-	SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult, codeHostStates []PermissionSyncCodeHostState) error
+	SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult, codeHostStatuses CodeHostStatusesSet) error
 }
 
 type permissionSyncJobStore struct {
@@ -291,7 +289,7 @@ type SetPermissionsResult struct {
 	Found   int
 }
 
-func (s *permissionSyncJobStore) SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult, states []PermissionSyncCodeHostState) error {
+func (s *permissionSyncJobStore) SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult, statuses CodeHostStatusesSet) error {
 	q := sqlf.Sprintf(`
 		UPDATE permission_sync_jobs
 		SET
@@ -300,7 +298,7 @@ func (s *permissionSyncJobStore) SaveSyncResult(ctx context.Context, id int, res
 			permissions_found = %d,
 			code_host_states = %s
 		WHERE id = %d
-		`, result.Added, result.Removed, result.Found, pq.Array(states), id)
+		`, result.Added, result.Removed, result.Found, pq.Array(statuses), id)
 
 	_, err := s.ExecResult(ctx, q)
 	return err
@@ -445,29 +443,6 @@ type PermissionSyncJob struct {
 	PermissionsRemoved int
 	PermissionsFound   int
 	CodeHostStates     []PermissionSyncCodeHostState
-}
-
-// PermissionSyncCodeHostState describes the state of a provider during an authz sync job.
-type PermissionSyncCodeHostState struct {
-	ProviderID   string `json:"provider_id"`
-	ProviderType string `json:"provider_type"`
-
-	// Status is one of "ERROR" or "SUCCESS"
-	Status  string `json:"status"`
-	Message string `json:"message"`
-}
-
-func (e *PermissionSyncCodeHostState) Scan(value any) error {
-	b, ok := value.([]byte)
-	if !ok {
-		return errors.Errorf("value is not []byte: %T", value)
-	}
-
-	return json.Unmarshal(b, &e)
-}
-
-func (e PermissionSyncCodeHostState) Value() (driver.Value, error) {
-	return json.Marshal(e)
 }
 
 func (j *PermissionSyncJob) RecordID() int { return j.ID }

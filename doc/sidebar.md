@@ -11,6 +11,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
 -->
 
 - [Home](index.md)
+- [Getting started](getting-started/index.md)
 - [Tutorials](tutorials/index.md)
 - [Code search](code_search/index.md)
   - [Tutorials](code_search/tutorials/index.md)

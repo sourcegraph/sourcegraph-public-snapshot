@@ -193,9 +193,11 @@ function createEditor(
                         fontFamily: 'var(--code-font-family)',
                         fontSize: 'var(--code-font-size)',
                         color: 'var(--search-query-text-color)',
+                        padding: 0,
+                        paddingLeft: '0.25rem',
                     },
                     '.cm-line': {
-                        paddingLeft: '0.25rem',
+                        padding: 0,
                     },
                 }),
                 querySettingsCompartment.of(queryExtensions),

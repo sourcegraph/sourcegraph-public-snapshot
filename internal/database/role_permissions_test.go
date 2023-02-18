@@ -23,25 +23,27 @@ func TestRolePermissionAssign(t *testing.T) {
 	r, p := createRoleAndPermission(ctx, t, db)
 
 	t.Run("without permission id", func(t *testing.T) {
-		rp, err := store.Assign(ctx, AssignRolePermissionOpts{
+		err := store.Assign(ctx, AssignRolePermissionOpts{
 			RoleID: r.ID,
 		})
-		require.Nil(t, rp)
-		require.Error(t, err)
-		require.Equal(t, err.Error(), "missing permission id")
+		require.ErrorContains(t, err, "missing permission id")
 	})
 
 	t.Run("without role id", func(t *testing.T) {
-		rp, err := store.Assign(ctx, AssignRolePermissionOpts{
+		err := store.Assign(ctx, AssignRolePermissionOpts{
 			PermissionID: p.ID,
 		})
-		require.Nil(t, rp)
-		require.Error(t, err)
-		require.Equal(t, err.Error(), "missing role id")
+		require.ErrorContains(t, err, "missing role id")
 	})
 
-	t.Run("with correct args", func(t *testing.T) {
-		rp, err := store.Assign(ctx, AssignRolePermissionOpts{
+	t.Run("success", func(t *testing.T) {
+		err := store.Assign(ctx, AssignRolePermissionOpts{
+			RoleID:       r.ID,
+			PermissionID: p.ID,
+		})
+		require.NoError(t, err)
+
+		rp, err := store.GetByRoleIDAndPermissionID(ctx, GetRolePermissionOpts{
 			RoleID:       r.ID,
 			PermissionID: p.ID,
 		})
@@ -49,6 +51,13 @@ func TestRolePermissionAssign(t *testing.T) {
 		require.NotNil(t, rp)
 		require.Equal(t, rp.RoleID, r.ID)
 		require.Equal(t, rp.PermissionID, p.ID)
+
+		// This shouldn't fail the second time since we're upserting.
+		err = store.Assign(ctx, AssignRolePermissionOpts{
+			RoleID:       r.ID,
+			PermissionID: p.ID,
+		})
+		require.NoError(t, err)
 	})
 }
 
@@ -63,29 +72,39 @@ func TestRolePermissionAssignToSystemRole(t *testing.T) {
 	_, p := createRoleAndPermission(ctx, t, db)
 
 	t.Run("without permission id", func(t *testing.T) {
-		rp, err := store.AssignToSystemRole(ctx, AssignToSystemRoleOpts{
+		err := store.AssignToSystemRole(ctx, AssignToSystemRoleOpts{
 			Role: types.SiteAdministratorSystemRole,
 		})
-		require.Nil(t, rp)
 		require.ErrorContains(t, err, "permission id is required")
 	})
 
 	t.Run("without role", func(t *testing.T) {
-		rp, err := store.AssignToSystemRole(ctx, AssignToSystemRoleOpts{
+		err := store.AssignToSystemRole(ctx, AssignToSystemRoleOpts{
 			PermissionID: p.ID,
 		})
-		require.Nil(t, rp)
 		require.ErrorContains(t, err, "role is required")
 	})
 
 	t.Run("success", func(t *testing.T) {
-		rp, err := store.AssignToSystemRole(ctx, AssignToSystemRoleOpts{
+		err := store.AssignToSystemRole(ctx, AssignToSystemRoleOpts{
 			PermissionID: p.ID,
 			Role:         types.SiteAdministratorSystemRole,
 		})
 		require.NoError(t, err)
-		require.NotNil(t, rp)
-		require.Equal(t, rp.PermissionID, p.ID)
+
+		rps, err := store.GetByPermissionID(ctx, GetRolePermissionOpts{
+			PermissionID: p.ID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, rps)
+		require.Len(t, rps, 1)
+
+		// This shouldn't fail the second time since we're upserting.
+		err = store.AssignToSystemRole(ctx, AssignToSystemRoleOpts{
+			PermissionID: p.ID,
+			Role:         types.SiteAdministratorSystemRole,
+		})
+		require.NoError(t, err)
 	})
 }
 
@@ -100,28 +119,38 @@ func TestRolePermissionBulkAssignPermissionsToSystemRoles(t *testing.T) {
 	_, p := createRoleAndPermission(ctx, t, db)
 
 	t.Run("without permission id", func(t *testing.T) {
-		rp, err := store.BulkAssignPermissionsToSystemRoles(ctx, BulkAssignPermissionsToSystemRolesOpts{})
-		require.Nil(t, rp)
+		err := store.BulkAssignPermissionsToSystemRoles(ctx, BulkAssignPermissionsToSystemRolesOpts{})
 		require.ErrorContains(t, err, "permission id is required")
 	})
 
 	t.Run("without roles", func(t *testing.T) {
-		rp, err := store.BulkAssignPermissionsToSystemRoles(ctx, BulkAssignPermissionsToSystemRolesOpts{
+		err := store.BulkAssignPermissionsToSystemRoles(ctx, BulkAssignPermissionsToSystemRolesOpts{
 			PermissionID: p.ID,
 		})
-		require.Nil(t, rp)
 		require.ErrorContains(t, err, "roles are required")
 	})
 
 	t.Run("success", func(t *testing.T) {
 		systemRoles := []types.SystemRole{types.SiteAdministratorSystemRole, types.UserSystemRole}
-		rp, err := store.BulkAssignPermissionsToSystemRoles(ctx, BulkAssignPermissionsToSystemRolesOpts{
+		err := store.BulkAssignPermissionsToSystemRoles(ctx, BulkAssignPermissionsToSystemRolesOpts{
 			PermissionID: p.ID,
 			Roles:        systemRoles,
 		})
 		require.NoError(t, err)
-		require.NotNil(t, rp)
-		require.Len(t, rp, len(systemRoles))
+
+		rps, err := store.GetByPermissionID(ctx, GetRolePermissionOpts{
+			PermissionID: p.ID,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, rps)
+		require.Len(t, rps, len(systemRoles))
+
+		// This shouldn't fail the second time since we're upserting.
+		err = store.BulkAssignPermissionsToSystemRoles(ctx, BulkAssignPermissionsToSystemRolesOpts{
+			PermissionID: p.ID,
+			Roles:        systemRoles,
+		})
+		require.NoError(t, err)
 	})
 }
 
@@ -132,7 +161,7 @@ func TestRolePermissionGetByRoleIDAndPermissionID(t *testing.T) {
 	store := db.RolePermissions()
 
 	r, p := createRoleAndPermission(ctx, t, db)
-	_, err := store.Assign(ctx, AssignRolePermissionOpts{
+	err := store.Assign(ctx, AssignRolePermissionOpts{
 		RoleID:       r.ID,
 		PermissionID: p.ID,
 	})
@@ -171,7 +200,7 @@ func TestRolePermissionGetByRoleIDAndPermissionID(t *testing.T) {
 		require.Equal(t, err, &RolePermissionNotFoundErr{PermissionID: pid, RoleID: rid})
 	})
 
-	t.Run("with correct args", func(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
 		rp, err := store.GetByRoleIDAndPermissionID(ctx, GetRolePermissionOpts{
 			PermissionID: p.ID,
 			RoleID:       r.ID,
@@ -194,7 +223,7 @@ func TestRolePermissionGetByRoleID(t *testing.T) {
 	totalRolePermissions := 5
 	for i := 1; i <= totalRolePermissions; i++ {
 		p := createTestPermissionForRolePermission(ctx, fmt.Sprintf("action-%d", i), t, db)
-		_, err := store.Assign(ctx, AssignRolePermissionOpts{
+		err := store.Assign(ctx, AssignRolePermissionOpts{
 			RoleID:       r.ID,
 			PermissionID: p.ID,
 		})
@@ -237,7 +266,7 @@ func TestRolePermissionGetByPermissionID(t *testing.T) {
 	totalRolePermissions := 5
 	for i := 1; i <= totalRolePermissions; i++ {
 		r := createTestRoleForRolePermission(ctx, fmt.Sprintf("TEST ROLE-%d", i), t, db)
-		_, err := store.Assign(ctx, AssignRolePermissionOpts{
+		err := store.Assign(ctx, AssignRolePermissionOpts{
 			RoleID:       r.ID,
 			PermissionID: p.ID,
 		})
@@ -279,7 +308,7 @@ func TestRolePermissionDelete(t *testing.T) {
 
 	r, p := createRoleAndPermission(ctx, t, db)
 
-	_, err := store.Assign(ctx, AssignRolePermissionOpts{
+	err := store.Assign(ctx, AssignRolePermissionOpts{
 		RoleID:       r.ID,
 		PermissionID: p.ID,
 	})
