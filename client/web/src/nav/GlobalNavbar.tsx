@@ -16,7 +16,6 @@ import { SearchContextInputProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { buildGetStartedURL, buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, ButtonLink, useWindowSize } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -262,27 +261,23 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
 
                             {isSourcegraphDotCom && (
                                 <NavAction>
-                                    <Link
-                                        className={classNames('font-weight-medium', styles.link)}
-                                        to="/help"
-                                        target="_blank"
-                                    >
+                                    <Link className={styles.link} to="/help" target="_blank">
                                         Docs
                                     </Link>
                                 </NavAction>
                             )}
                         </>
                     )}
-                    {props.authenticatedUser && isSourcegraphDotCom && (
-                        <ButtonLink
-                            variant="secondary"
-                            outline={true}
-                            to={buildCloudTrialURL(props.authenticatedUser)}
-                            size="sm"
-                            onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NavBarLoggedIn' })}
-                        >
-                            Search private code
-                        </ButtonLink>
+                    {isSourcegraphDotCom && (
+                        <NavAction>
+                            <Link
+                                to="https://about.sourcegraph.com"
+                                className={styles.link}
+                                onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NavBarLoggedIn' })}
+                            >
+                                Enterprise
+                            </Link>
+                        </NavAction>
                     )}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
                     {props.authenticatedUser && extensionsController !== null && enableLegacyExtensions && (
@@ -317,14 +312,11 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                     >
                                         Sign in
                                     </Button>
-                                    <ButtonLink
-                                        to={buildGetStartedURL(isSourcegraphDotCom, props.authenticatedUser)}
-                                        variant="primary"
-                                        size="sm"
-                                        onClick={() => eventLogger.log('ClickedOnTopNavTrialButton')}
-                                    >
-                                        Sign up
-                                    </ButtonLink>
+                                    {!isSourcegraphDotCom && (
+                                        <ButtonLink to="/sign-up" variant="primary" size="sm">
+                                            Sign up
+                                        </ButtonLink>
+                                    )}
                                 </div>
                             </NavAction>
                         </>
