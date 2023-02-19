@@ -58,7 +58,7 @@ describe('UserNavItem', () => {
                         showKeyboardShortcutsHelp={() => undefined}
                         themePreference={ThemePreference.Light}
                         authenticatedUser={USER}
-                        showDotComMarketing={true}
+                        isSourcegraphDotCom={true}
                         codeHostIntegrationMessaging="browser-extension"
                         showFeedbackModal={() => undefined}
                     />
@@ -75,7 +75,7 @@ describe('UserNavItem', () => {
                 showKeyboardShortcutsHelp={() => undefined}
                 themePreference={ThemePreference.Light}
                 authenticatedUser={USER}
-                showDotComMarketing={true}
+                isSourcegraphDotCom={true}
                 codeHostIntegrationMessaging="browser-extension"
                 showFeedbackModal={() => undefined}
             />

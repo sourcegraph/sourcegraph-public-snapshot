@@ -39,7 +39,6 @@ import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { useNavbarQueryState } from '../stores'
 import { ThemePreferenceProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
-import { showDotComMarketing } from '../util/features'
 
 import { NavDropdown, NavDropdownItem } from './NavBar/NavDropdown'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
@@ -261,7 +260,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 </Link>
                             </NavAction>
 
-                            {showDotComMarketing && (
+                            {isSourcegraphDotCom && (
                                 <NavAction>
                                     <Link
                                         className={classNames('font-weight-medium', styles.link)}
@@ -335,7 +334,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 {...props}
                                 isLightTheme={isLightTheme}
                                 authenticatedUser={props.authenticatedUser}
-                                showDotComMarketing={showDotComMarketing}
+                                isSourcegraphDotCom={isSourcegraphDotCom}
                                 codeHostIntegrationMessaging={
                                     (!isErrorLike(props.settingsCascade.final) &&
                                         props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
