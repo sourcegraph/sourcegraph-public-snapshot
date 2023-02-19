@@ -2,11 +2,11 @@ import { FC } from 'react'
 
 import { RouterProvider, createMemoryRouter, MemoryRouterProps } from 'react-router-dom'
 
+import { ThemeContext, ThemeSetting } from '@sourcegraph/shared/src/new-theme'
 import { MockedStoryProvider, MockedStoryProviderProps } from '@sourcegraph/shared/src/stories'
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { WildcardThemeContext } from '@sourcegraph/wildcard'
-import { usePrependStyles, useTheme } from '@sourcegraph/wildcard/src/stories'
+import { usePrependStyles, useStorybookTheme } from '@sourcegraph/wildcard/src/stories'
 
 import { SourcegraphContext } from '../jscontext'
 import { setExperimentalFeaturesForTesting } from '../stores/experimentalFeatures'
@@ -21,7 +21,9 @@ if (!window.context) {
     window.context = {} as SourcegraphContext & Mocha.SuiteFunction
 }
 
-export type WebStoryChildrenProps = ThemeProps & BreadcrumbSetters & BreadcrumbsProps & TelemetryProps
+export type WebStoryChildrenProps =  BreadcrumbSetters & BreadcrumbsProps & TelemetryProps & {
+    isLightTheme: boolean
+}
 
 export interface WebStoryProps
     extends Omit<MemoryRouterProps, 'children'>,
@@ -42,7 +44,7 @@ export const WebStory: FC<WebStoryProps> = ({
     initialEntries = ['/'],
     initialIndex = 1,
 }) => {
-    const isLightTheme = useTheme()
+    const isLightTheme = useStorybookTheme()
     const breadcrumbSetters = useBreadcrumbs()
 
     usePrependStyles('web-styles', webStyles)
@@ -69,7 +71,9 @@ export const WebStory: FC<WebStoryProps> = ({
     return (
         <MockedStoryProvider mocks={mocks} useStrictMocking={useStrictMocking}>
             <WildcardThemeContext.Provider value={{ isBranded: true }}>
-                <RouterProvider router={router} />
+                <ThemeContext.Provider value={{ themeSetting: isLightTheme ? ThemeSetting.Light : ThemeSetting.Dark }}>
+                    <RouterProvider router={router} />
+                </ThemeContext.Provider>
             </WildcardThemeContext.Provider>
         </MockedStoryProvider>
     )

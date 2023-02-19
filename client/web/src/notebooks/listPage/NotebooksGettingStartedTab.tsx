@@ -10,10 +10,10 @@ import { Container, Icon, Link, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { CallToActionBanner } from '../../components/CallToActionBanner'
 import { EnterprisePageRoutes } from '../../routes.constants'
-import { useTheme, ThemePreference } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import styles from './NotebooksGettingStartedTab.module.scss'
+import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme';
 
 interface NotebooksGettingStartedTabProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
@@ -69,7 +69,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
         return canAutoplay ? { autoPlay: true, loop: true, controls: false } : { controls: true }
     }, [])
 
-    const isLightTheme = useTheme().enhancedThemePreference === ThemePreference.Light
+    const isLightTheme = useIsLightTheme()
 
     return (
         <>

@@ -10,7 +10,6 @@ import { pluralize } from '@sourcegraph/common'
 import { createQueryExampleFromString, updateQueryWithFilterAndExample } from '@sourcegraph/shared/src/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { PathMatch, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, Label, useObservable } from '@sourcegraph/wildcard'
 
 import { BlockProps } from '../..'
@@ -20,8 +19,7 @@ import { blockKeymap, focusEditor } from '../../codemirror-utils'
 import styles from './SearchTypeSuggestionsInput.module.scss'
 
 interface SearchTypeSuggestionsInputProps<S extends SymbolMatch | PathMatch>
-    extends ThemeProps,
-        Pick<BlockProps, 'onRunBlock'> {
+    extends Pick<BlockProps, 'onRunBlock'> {
     id: string
     label: string
     queryPrefix: string
@@ -43,7 +41,6 @@ export const SearchTypeSuggestionsInput = <S extends SymbolMatch | PathMatch>({
     queryPrefix,
     queryInput,
     setQueryInput,
-    isLightTheme,
     fetchSuggestions,
     countSuggestions,
     renderSuggestions,
@@ -119,7 +116,6 @@ export const SearchTypeSuggestionsInput = <S extends SymbolMatch | PathMatch>({
                 </div>
                 <CodeMirrorQueryInput
                     value={queryInput}
-                    isLightTheme={isLightTheme}
                     onEditorCreated={onEditorCreatedLocal}
                     patternType={SearchPatternType.standard}
                     interpretComments={true}

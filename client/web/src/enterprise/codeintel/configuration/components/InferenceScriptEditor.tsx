@@ -1,5 +1,6 @@
 import { FunctionComponent, useCallback, useMemo, useState } from 'react'
 
+import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme';
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, PageHeader, screenReaderAnnounce, ErrorAlert } from '@sourcegraph/wildcard'
 
@@ -7,7 +8,6 @@ import { AuthenticatedUser } from '../../../../auth'
 import { PageTitle } from '../../../../components/PageTitle'
 import { SaveToolbar, SaveToolbarProps, SaveToolbarPropsGenerator } from '../../../../components/SaveToolbar'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../../settings/DynamicallyImportedMonacoSettingsEditor'
-import { ThemePreference, useTheme } from '../../../../theme'
 import { INFERENCE_SCRIPT, useInferenceScript } from '../hooks/useInferenceScript'
 import { useUpdateInferenceScript } from '../hooks/useUpdateInferenceScript'
 
@@ -37,7 +37,7 @@ export const InferenceScriptEditor: FunctionComponent<InferenceScriptEditorProps
     )
 
     const [dirty, setDirty] = useState<boolean>()
-    const isLightTheme = useTheme().enhancedThemePreference === ThemePreference.Light
+    const isLightTheme = useIsLightTheme()
 
     const customToolbar = useMemo<{
         saveToolbar: FunctionComponent<SaveToolbarProps>

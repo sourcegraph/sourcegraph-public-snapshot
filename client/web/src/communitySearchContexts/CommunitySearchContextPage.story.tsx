@@ -15,7 +15,7 @@ import { NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/testing/searchTes
 import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
 import { SearchPatternType } from '../graphql-operations'
-import { ThemePreference } from '../theme'
+import { useExperimentalFeatures } from '../stores'
 
 import { cncf } from './cncf'
 import { CommunitySearchContextPage, CommunitySearchContextPageProps } from './CommunitySearchContextPage'
@@ -138,7 +138,6 @@ export const Temporal: Story = () => (
             <CommunitySearchContextPage
                 {...webProps}
                 {...commonProps()}
-                themePreference={webProps.isLightTheme ? ThemePreference.Light : ThemePreference.Dark}
             />
         )}
     </WebStory>
@@ -151,7 +150,6 @@ export const CNCFStory: Story = () => (
                 {...webProps}
                 {...commonProps()}
                 communitySearchContextMetadata={cncf}
-                themePreference={webProps.isLightTheme ? ThemePreference.Light : ThemePreference.Dark}
             />
         )}
     </WebStory>

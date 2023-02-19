@@ -11,7 +11,6 @@ import classNames from 'classnames'
 
 import { changeListener } from '@sourcegraph/branded'
 import { useCodeMirror, editorHeight } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Icon, Markdown } from '@sourcegraph/wildcard'
 
 import { BlockProps, MarkdownBlock } from '../..'
@@ -82,7 +81,7 @@ const staticExtensions: Extension[] = [
     editorHeight({ maxHeight: '60rem' }),
 ]
 
-interface NotebookMarkdownBlockProps extends BlockProps<MarkdownBlock>, ThemeProps {
+interface NotebookMarkdownBlockProps extends BlockProps<MarkdownBlock> {
     isEmbedded?: boolean
 }
 
@@ -93,7 +92,6 @@ export const NotebookMarkdownBlock: React.FunctionComponent<React.PropsWithChild
             input,
             output,
             isSelected,
-            isLightTheme,
             isReadOnly,
             isEmbedded,
             onBlockInputChange,

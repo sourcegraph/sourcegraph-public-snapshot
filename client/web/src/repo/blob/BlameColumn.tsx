@@ -13,7 +13,6 @@ import styles from './BlameColumn.module.scss'
 interface BlameColumnProps {
     isBlameVisible?: boolean
     blameHunks?: { current: BlameHunk[] | undefined; firstCommitDate: Date | undefined }
-    isLightTheme: boolean
     codeViewElements: ReplaySubject<HTMLElement | null>
 }
 
@@ -26,7 +25,7 @@ const selectRow = (line: number): void => getRowByLine(line)?.classList.add('hig
 const deselectRow = (line: number): void => getRowByLine(line)?.classList.remove('highlighted')
 
 export const BlameColumn = React.memo<BlameColumnProps>(
-    ({ isBlameVisible, codeViewElements, blameHunks, isLightTheme }) => {
+    ({ isBlameVisible, codeViewElements, blameHunks }) => {
         const navigate = useNavigate()
         /**
          * Array to store the DOM element and the blame hunk to render in it.
@@ -130,7 +129,6 @@ export const BlameColumn = React.memo<BlameColumnProps>(
                             onSelect={selectRow}
                             onDeselect={deselectRow}
                             firstCommitDate={blameHunks?.firstCommitDate}
-                            isLightTheme={isLightTheme}
                             hideRecency={true}
                         />,
                         // The classname can contain a +, so we would either need to escape it (boo!),
