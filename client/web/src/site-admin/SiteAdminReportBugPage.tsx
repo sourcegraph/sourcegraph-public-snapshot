@@ -3,8 +3,8 @@ import React, { useMemo } from 'react'
 import { mapValues, values } from 'lodash'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
-import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, useObservable, Alert, Link, H2, Text } from '@sourcegraph/wildcard'
 
 import awsCodeCommitJSON from '../../../../schema/aws_codecommit.schema.json'

@@ -6,11 +6,11 @@ import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
 import { SearchBox } from '@sourcegraph/branded'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme'
 import { getUserSearchContextNamespaces, QueryState, SearchMode } from '@sourcegraph/shared/src/search'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import { appendContextFilter, sanitizeQueryForTelemetry } from '@sourcegraph/shared/src/search/query/transformer'
 import { LATEST_VERSION, SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 
 import { SearchPatternType } from '../../graphql-operations'

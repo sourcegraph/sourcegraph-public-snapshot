@@ -4,7 +4,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Button, Icon, LoadingSpinner, H3, H4, Alert } from '@sourcegraph/wildcard'

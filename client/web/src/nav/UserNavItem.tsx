@@ -4,8 +4,8 @@ import { mdiChevronDown, mdiChevronUp, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
-import { useTheme, ThemeSetting } from '@sourcegraph/shared/src/new-theme'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
+import { useTheme, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import {
     Menu,
     MenuButton,

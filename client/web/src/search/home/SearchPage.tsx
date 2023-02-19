@@ -5,12 +5,12 @@ import classNames from 'classnames'
 
 import { QueryExamples } from '@sourcegraph/branded/src/search-ui/components/QueryExamples'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { QueryState, SearchContextInputProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Icon, Link, Tooltip, useWindowSize, VIEWPORT_SM } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'

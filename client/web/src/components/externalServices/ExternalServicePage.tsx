@@ -8,7 +8,7 @@ import { Subject } from 'rxjs'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Alert, Button, Container, ErrorAlert, H2, Icon, Link, PageHeader, Tooltip } from '@sourcegraph/wildcard'
 
 import { ExternalServiceResult, ExternalServiceVariables } from '../../graphql-operations'

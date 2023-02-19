@@ -3,7 +3,7 @@ import { FC, Suspense, useEffect, useLayoutEffect, useMemo } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
 import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/createSyncLoadedController'
-import { useTheme, Theme, ThemeSetting } from '@sourcegraph/shared/src/new-theme'
+import { useTheme, Theme, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Alert, LoadingSpinner, setLinkComponent, WildcardTheme, WildcardThemeContext } from '@sourcegraph/wildcard'
 

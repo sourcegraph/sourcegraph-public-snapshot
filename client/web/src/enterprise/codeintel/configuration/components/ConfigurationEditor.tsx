@@ -2,8 +2,8 @@ import { FunctionComponent, useCallback, useMemo, useState } from 'react'
 
 import { editor } from 'monaco-editor'
 
-import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, screenReaderAnnounce, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'

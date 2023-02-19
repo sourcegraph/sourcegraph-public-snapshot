@@ -6,6 +6,7 @@ import classNames from 'classnames'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Container, Icon, Link, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { CallToActionBanner } from '../../components/CallToActionBanner'
@@ -13,7 +14,6 @@ import { EnterprisePageRoutes } from '../../routes.constants'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import styles from './NotebooksGettingStartedTab.module.scss'
-import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme'
 
 interface NotebooksGettingStartedTabProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null

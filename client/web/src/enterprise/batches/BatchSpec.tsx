@@ -4,7 +4,7 @@ import { mdiFileDownload } from '@mdi/js'
 import { kebabCase } from 'lodash'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Link, Icon, Text, Tooltip, Button, AnchorLink } from '@sourcegraph/wildcard'
 
 import { BatchChangeFields } from '../../graphql-operations'

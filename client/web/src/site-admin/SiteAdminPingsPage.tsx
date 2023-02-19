@@ -15,7 +15,7 @@ import {
     defaultEditorTheme,
     jsonHighlighting,
 } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
-import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, H2, H3, Text, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'

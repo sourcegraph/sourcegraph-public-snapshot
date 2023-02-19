@@ -3,8 +3,8 @@ import React, { useEffect } from 'react'
 import classNames from 'classnames'
 import { Navigate, useLocation } from 'react-router-dom'
 
-import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Link, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'

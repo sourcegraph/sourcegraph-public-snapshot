@@ -9,7 +9,6 @@ import { SearchBox, Toggles } from '@sourcegraph/branded'
 // eslint-disable-next-line no-restricted-imports
 import { LazyCodeMirrorQueryInput } from '@sourcegraph/branded/src/search-ui/experimental'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
-import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import {
@@ -24,6 +23,7 @@ import {
 } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Form } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'

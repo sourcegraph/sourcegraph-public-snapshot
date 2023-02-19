@@ -1,6 +1,6 @@
 import { mdiCodeGreaterThan } from '@mdi/js'
 
-import { Theme, ThemeSetting } from '@sourcegraph/shared/src/new-theme'
+import { Theme, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import { Icon } from '@sourcegraph/wildcard'
 
 import { FuzzyFSM, newFuzzyFSMFromValues } from './FuzzyFsm'

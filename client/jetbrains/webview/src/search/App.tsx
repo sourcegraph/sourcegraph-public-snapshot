@@ -4,7 +4,6 @@ import { Observable, of, Subscription } from 'rxjs'
 
 import { requestGraphQLCommon } from '@sourcegraph/http-client'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { ThemeContext, ThemeSetting } from '@sourcegraph/shared/src/new-theme'
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { fetchSearchContexts, getUserSearchContextNamespaces, QueryState } from '@sourcegraph/shared/src/search'
 import {
@@ -18,6 +17,7 @@ import {
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeContext, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import { useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../graphql-operations'

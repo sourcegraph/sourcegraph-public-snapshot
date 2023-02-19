@@ -4,8 +4,8 @@ import { ApolloClient } from '@apollo/client'
 import * as H from 'history'
 
 import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
-import { useTheme } from '@sourcegraph/shared/src/new-theme'
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import { useTheme } from '@sourcegraph/shared/src/theme'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { useSessionStorage } from '@sourcegraph/wildcard'
 

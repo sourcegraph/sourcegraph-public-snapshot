@@ -5,9 +5,9 @@ import { BrowserRouter } from 'react-router-dom'
 import { EMPTY, NEVER } from 'rxjs'
 import { useDarkMode } from 'storybook-dark-mode'
 
-import { ThemeContext, ThemeSetting } from '@sourcegraph/shared/src/new-theme'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeContext, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import { WildcardThemeContext } from '@sourcegraph/wildcard'
 import { usePrependStyles } from '@sourcegraph/wildcard/src/stories'
 

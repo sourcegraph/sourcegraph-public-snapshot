@@ -2,9 +2,9 @@ import { FC } from 'react'
 
 import { RouterProvider, createMemoryRouter, MemoryRouterProps } from 'react-router-dom'
 
-import { ThemeContext, ThemeSetting } from '@sourcegraph/shared/src/new-theme'
 import { MockedStoryProvider, MockedStoryProviderProps } from '@sourcegraph/shared/src/stories'
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeContext, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import { WildcardThemeContext } from '@sourcegraph/wildcard'
 import { usePrependStyles, useStorybookTheme } from '@sourcegraph/wildcard/src/stories'
 

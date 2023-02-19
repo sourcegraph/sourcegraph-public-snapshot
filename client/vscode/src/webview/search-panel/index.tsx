@@ -8,8 +8,8 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { ThemeSetting, ThemeContext } from '@sourcegraph/shared/src/new-theme'
 import { ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
+import { ThemeSetting, ThemeContext } from '@sourcegraph/shared/src/theme'
 import { AnchorLink, setLinkComponent, useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import { ExtensionCoreAPI } from '../../contract'

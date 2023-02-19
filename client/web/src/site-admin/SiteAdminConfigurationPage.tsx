@@ -7,9 +7,9 @@ import { Subject, Subscription } from 'rxjs'
 import { delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
 
 import { logger } from '@sourcegraph/common'
-import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme'
 import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     Button,
     LoadingSpinner,

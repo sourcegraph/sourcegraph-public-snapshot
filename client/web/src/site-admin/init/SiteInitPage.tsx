@@ -3,7 +3,7 @@ import React from 'react'
 import { Navigate } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
-import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { CardBody, Card, H2, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'

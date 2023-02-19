@@ -1,9 +1,9 @@
 import * as React from 'react'
 
-import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
