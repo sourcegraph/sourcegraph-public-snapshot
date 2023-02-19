@@ -6,6 +6,7 @@ import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
 import { SearchBox } from '@sourcegraph/branded'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme';
 import { getUserSearchContextNamespaces, QueryState, SearchMode } from '@sourcegraph/shared/src/search'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import { appendContextFilter, sanitizeQueryForTelemetry } from '@sourcegraph/shared/src/search/query/transformer'
@@ -30,10 +31,11 @@ export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<Sea
     authenticatedUser,
     platformContext,
     settingsCascade,
-    theme,
     context,
     instanceURL,
 }) => {
+    const isLightTheme = useIsLightTheme()
+
     // Toggling case sensitivity or pattern type does NOT trigger a new search on home view.
     const [caseSensitive, setCaseSensitivity] = useState(false)
     const [patternType, setPatternType] = useState(SearchPatternType.standard)
@@ -152,7 +154,7 @@ export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<Sea
 
     return (
         <div className="d-flex flex-column align-items-center">
-            <BrandHeader theme={theme} />
+            <BrandHeader isLightTheme={isLightTheme} />
 
             <div className={styles.homeSearchBoxContainer}>
                 {/* eslint-disable-next-line react/forbid-elements */}
@@ -186,7 +188,6 @@ export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<Sea
                         fetchStreamSuggestions={fetchStreamSuggestions}
                         settingsCascade={settingsCascade}
                         globbing={globbing}
-                        isLightTheme={theme === 'theme-light'}
                         telemetryService={platformContext.telemetryService}
                         platformContext={platformContext}
                         className={classNames('flex-grow-1 flex-shrink-past-contents', styles.searchBox)}
@@ -195,11 +196,7 @@ export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<Sea
                     />
                 </form>
 
-                <HomeFooter
-                    isLightTheme={theme === 'theme-light'}
-                    setQuery={setUserQueryState}
-                    telemetryService={platformContext.telemetryService}
-                />
+                <HomeFooter setQuery={setUserQueryState} telemetryService={platformContext.telemetryService}/>
             </div>
         </div>
     )
