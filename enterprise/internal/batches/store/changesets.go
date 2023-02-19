@@ -964,6 +964,7 @@ func (s *Store) UpdateChangesetsForApply(ctx context.Context, cs []*btypes.Chang
 				c.NumFailures,
 				c.Closing,
 				c.SyncErrorMessage,
+				c.PreviousFailureMessage,
 			); err != nil {
 				return err
 			}
