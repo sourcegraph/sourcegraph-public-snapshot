@@ -18,8 +18,7 @@ import { blockKeymap, focusEditor } from '../../codemirror-utils'
 
 import styles from './SearchTypeSuggestionsInput.module.scss'
 
-interface SearchTypeSuggestionsInputProps<S extends SymbolMatch | PathMatch>
-    extends Pick<BlockProps, 'onRunBlock'> {
+interface SearchTypeSuggestionsInputProps<S extends SymbolMatch | PathMatch> extends Pick<BlockProps, 'onRunBlock'> {
     id: string
     label: string
     queryPrefix: string

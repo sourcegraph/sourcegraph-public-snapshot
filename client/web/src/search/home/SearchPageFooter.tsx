@@ -59,7 +59,11 @@ interface SearchPageFooterProps extends TelemetryProps {
     isSourcegraphDotCom: boolean
 }
 
-export const SearchPageFooter: React.FC<SearchPageFooterProps> = ({ isLightTheme, telemetryService, isSourcegraphDotCom }) => {
+export const SearchPageFooter: React.FC<SearchPageFooterProps> = ({
+    isLightTheme,
+    telemetryService,
+    isSourcegraphDotCom,
+}) => {
     const logLinkClicked = (name: string): void => {
         telemetryService.log('HomepageFooterCTASelected', { name }, { name })
     }

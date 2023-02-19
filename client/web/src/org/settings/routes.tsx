@@ -1,6 +1,6 @@
-import { FC } from 'react';
+import { FC } from 'react'
 
-import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme';
+import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Text } from '@sourcegraph/wildcard'
 
@@ -14,7 +14,7 @@ const SettingsArea = lazyComponent(() => import('../../settings/SettingsArea'), 
 export const orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[] = [
     {
         path: '',
-        render: props => <SettingsAreaIndexPage {...props}/>,
+        render: props => <SettingsAreaIndexPage {...props} />,
     },
     {
         path: 'profile',
@@ -26,7 +26,7 @@ export const orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[] = [
     },
 ]
 
-interface SettingsAreaIndexPageProps extends OrgSettingsAreaRouteContext{}
+interface SettingsAreaIndexPageProps extends OrgSettingsAreaRouteContext {}
 
 const SettingsAreaIndexPage: FC<SettingsAreaIndexPageProps> = props => {
     const isLightTheme = useIsLightTheme()
@@ -45,15 +45,12 @@ const SettingsAreaIndexPage: FC<SettingsAreaIndexPageProps> = props => {
                             </SiteAdminAlert>
                         )}
                         <Text>
-                            Organization settings apply to all members. User settings override organization
-                            settings.
+                            Organization settings apply to all members. User settings override organization settings.
                         </Text>
                     </>
                 }
             />
-            {props.isSourcegraphDotCom && props.org.viewerIsMember && props.showOrgDeletion && (
-                <DeleteOrg {...props} />
-            )}
+            {props.isSourcegraphDotCom && props.org.viewerIsMember && props.showOrgDeletion && <DeleteOrg {...props} />}
         </div>
     )
 }

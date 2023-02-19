@@ -6,7 +6,7 @@ import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
 import { SearchBox } from '@sourcegraph/branded'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme';
+import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme'
 import { getUserSearchContextNamespaces, QueryState, SearchMode } from '@sourcegraph/shared/src/search'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import { appendContextFilter, sanitizeQueryForTelemetry } from '@sourcegraph/shared/src/search/query/transformer'
@@ -196,7 +196,7 @@ export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<Sea
                     />
                 </form>
 
-                <HomeFooter setQuery={setUserQueryState} telemetryService={platformContext.telemetryService}/>
+                <HomeFooter setQuery={setUserQueryState} telemetryService={platformContext.telemetryService} />
             </div>
         </div>
     )

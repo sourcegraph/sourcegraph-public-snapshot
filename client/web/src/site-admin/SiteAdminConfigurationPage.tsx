@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { FC } from 'react';
+import { FC } from 'react'
 
 import classNames from 'classnames'
 import * as jsonc from 'jsonc-parser'
@@ -7,7 +7,7 @@ import { Subject, Subscription } from 'rxjs'
 import { delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
 
 import { logger } from '@sourcegraph/common'
-import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme';
+import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme'
 import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -227,7 +227,7 @@ interface State {
 const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
 
 export const SiteAdminConfigurationPage: FC<TelemetryProps> = props => (
-    <SiteAdminConfigurationContent {...props} isLightTheme={useIsLightTheme()}/>
+    <SiteAdminConfigurationContent {...props} isLightTheme={useIsLightTheme()} />
 )
 
 /**

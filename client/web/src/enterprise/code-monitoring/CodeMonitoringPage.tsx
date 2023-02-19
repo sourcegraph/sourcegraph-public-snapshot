@@ -186,7 +186,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                     </div>
 
                     {currentTab === 'getting-started' && (
-                        <CodeMonitoringGettingStarted authenticatedUser={authenticatedUser}/>
+                        <CodeMonitoringGettingStarted authenticatedUser={authenticatedUser} />
                     )}
 
                     {currentTab === 'logs' && <CodeMonitoringLogs />}

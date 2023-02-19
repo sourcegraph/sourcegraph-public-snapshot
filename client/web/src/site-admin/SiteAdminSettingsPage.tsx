@@ -29,8 +29,8 @@ export const SiteAdminSettingsPage: React.FunctionComponent<React.PropsWithChild
                 authenticatedUser={props.authenticatedUser}
                 extraHeader={
                     <Text>
-                        Global settings apply to all organizations and users. Settings for a user or organization override
-                        global settings.
+                        Global settings apply to all organizations and users. Settings for a user or organization
+                        override global settings.
                     </Text>
                 }
             />

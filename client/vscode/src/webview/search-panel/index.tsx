@@ -8,7 +8,7 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { ThemeSetting, ThemeContext } from '@sourcegraph/shared/src/new-theme';
+import { ThemeSetting, ThemeContext } from '@sourcegraph/shared/src/new-theme'
 import { ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
 import { AnchorLink, setLinkComponent, useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 
@@ -66,8 +66,8 @@ const Main: React.FC<React.PropsWithChildren<unknown>> = () => {
         theme !== undefined &&
         settingsCascade !== undefined
 
-    const themeSetting = useMemo(() =>
-            ({ themeSetting: theme === 'theme-light' ? ThemeSetting.Light : ThemeSetting.Dark}),
+    const themeSetting = useMemo(
+        () => ({ themeSetting: theme === 'theme-light' ? ThemeSetting.Light : ThemeSetting.Dark }),
         [theme]
     )
 
@@ -95,7 +95,6 @@ const Main: React.FC<React.PropsWithChildren<unknown>> = () => {
                 <ThemeContext.Provider value={themeSetting}>
                     <SearchHomeView {...webviewPageProps} context={state.context} />
                 </ThemeContext.Provider>
-
             </WebviewPageContext.Provider>
         )
     }

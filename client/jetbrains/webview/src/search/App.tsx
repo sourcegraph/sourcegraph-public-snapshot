@@ -237,8 +237,8 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
         [lastSearch, matches, onOpen, onPreviewChange, onPreviewClear, settingsCascade]
     )
 
-    const themeValue = useMemo(() =>
-        ({ themeSetting: isDarkTheme ? ThemeSetting.Dark : ThemeSetting.Light }),
+    const themeValue = useMemo(
+        () => ({ themeSetting: isDarkTheme ? ThemeSetting.Dark : ThemeSetting.Light }),
         [isDarkTheme]
     )
 

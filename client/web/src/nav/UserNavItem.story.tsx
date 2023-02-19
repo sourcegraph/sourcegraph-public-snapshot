@@ -89,7 +89,7 @@ export const SiteAdmin: Story = args => {
         <OpenByDefaultWrapper>
             {({ menuButtonRef }) => (
                 <WebStory>
-                    {webProps => (<UserNavItem {...props} {...webProps} menuButtonRef={menuButtonRef}/>)}
+                    {webProps => <UserNavItem {...props} {...webProps} menuButtonRef={menuButtonRef} />}
                 </WebStory>
             )}
         </OpenByDefaultWrapper>

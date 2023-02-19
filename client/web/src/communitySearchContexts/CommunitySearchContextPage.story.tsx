@@ -133,24 +133,13 @@ const commonProps = () =>
     })
 
 export const Temporal: Story = () => (
-    <WebStory>
-        {webProps => (
-            <CommunitySearchContextPage
-                {...webProps}
-                {...commonProps()}
-            />
-        )}
-    </WebStory>
+    <WebStory>{webProps => <CommunitySearchContextPage {...webProps} {...commonProps()} />}</WebStory>
 )
 
 export const CNCFStory: Story = () => (
     <WebStory>
         {webProps => (
-            <CommunitySearchContextPage
-                {...webProps}
-                {...commonProps()}
-                communitySearchContextMetadata={cncf}
-            />
+            <CommunitySearchContextPage {...webProps} {...commonProps()} communitySearchContextMetadata={cncf} />
         )}
     </WebStory>
 )

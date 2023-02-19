@@ -10,7 +10,7 @@ import { catchError, delay, startWith, switchMap } from 'rxjs/operators'
 import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme';
+import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'

@@ -13,7 +13,7 @@ import { EnterprisePageRoutes } from '../../routes.constants'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import styles from './NotebooksGettingStartedTab.module.scss'
-import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme';
+import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme'
 
 interface NotebooksGettingStartedTabProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null

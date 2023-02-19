@@ -64,9 +64,12 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
         []
     )
 
-    const onThemeChange: ChangeEventHandler<HTMLSelectElement> = useCallback(event => {
-        setThemeSetting(event.target.value as ThemeSetting)
-    }, [setThemeSetting])
+    const onThemeChange: ChangeEventHandler<HTMLSelectElement> = useCallback(
+        event => {
+            setThemeSetting(event.target.value as ThemeSetting)
+        },
+        [setThemeSetting]
+    )
 
     const onThemeCycle = useCallback((): void => {
         setThemeSetting(themeSetting === ThemeSetting.Dark ? ThemeSetting.Light : ThemeSetting.Dark)
@@ -93,13 +96,17 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                         >
                             <div className="position-relative">
                                 <div className="align-items-center d-flex">
-                                    <UserAvatar user={authenticatedUser} className={styles.avatar}/>
+                                    <UserAvatar user={authenticatedUser} className={styles.avatar} />
                                     <Icon svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} aria-hidden={true} />
                                 </div>
                             </div>
                         </MenuButton>
 
-                        <MenuList position={Position.bottomEnd} className={styles.dropdownMenu} aria-label="User. Open menu">
+                        <MenuList
+                            position={Position.bottomEnd}
+                            className={styles.dropdownMenu}
+                            aria-label="User. Open menu"
+                        >
                             <MenuHeader className={styles.dropdownHeader}>
                                 Signed in as <strong>@{authenticatedUser.username}</strong>
                             </MenuHeader>

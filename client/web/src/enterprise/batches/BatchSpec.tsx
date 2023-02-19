@@ -30,11 +30,7 @@ export interface BatchSpecProps {
     className?: string
 }
 
-export const BatchSpec: React.FunctionComponent<BatchSpecProps> = ({
-    originalInput,
-    className,
-    name,
-}) => {
+export const BatchSpec: React.FunctionComponent<BatchSpecProps> = ({ originalInput, className, name }) => {
     const isLightTheme = useIsLightTheme()
     // JSON is valid YAML, so the input might be JSON. In that case, we'll highlight and indent it
     // as JSON. This is especially nice when the input is a "minified" (no extraneous whitespace)

@@ -61,18 +61,12 @@ export const SearchBoxStory: Story = () => (
 
                 <H2>Regexp enabled</H2>
                 <div className="w-100 d-flex my-2">
-                    <SearchBox
-                        {...defaultProps}
-                        patternType={SearchPatternType.regexp}
-                    />
+                    <SearchBox {...defaultProps} patternType={SearchPatternType.regexp} />
                 </div>
 
                 <H2>Structural enabled</H2>
                 <div className="w-100 d-flex my-2">
-                    <SearchBox
-                        {...defaultProps}
-                        patternType={SearchPatternType.structural}
-                    />
+                    <SearchBox {...defaultProps} patternType={SearchPatternType.structural} />
                 </div>
 
                 <H2>Case sensitivity enabled</H2>
@@ -82,11 +76,7 @@ export const SearchBoxStory: Story = () => (
 
                 <H2>With search contexts</H2>
                 <div className="w-100 d-flex my-2">
-                    <SearchBox
-                        {...defaultProps}
-                        showSearchContext={true}
-                        selectedSearchContextSpec="global"
-                    />
+                    <SearchBox {...defaultProps} showSearchContext={true} selectedSearchContextSpec="global" />
                 </div>
 
                 <H2>With search contexts, user context selected</H2>

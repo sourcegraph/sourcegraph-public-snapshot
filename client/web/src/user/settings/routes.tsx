@@ -1,16 +1,16 @@
-import { FC } from 'react';
+import { FC } from 'react'
 
 import { Navigate } from 'react-router-dom'
 
 import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context';
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings';
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService';
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Text } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth';
-import { UserSettingsAreaUserFields } from '../../graphql-operations';
+import { AuthenticatedUser } from '../../auth'
+import { UserSettingsAreaUserFields } from '../../graphql-operations'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 
 import { UserSettingsAreaRoute } from './UserSettingsArea'
@@ -25,7 +25,7 @@ const UserSettingsSecurityPage = lazyComponent(
 export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {
         path: '',
-        render: props => <UserSettingAreaIndexPage {...props}/>
+        render: props => <UserSettingAreaIndexPage {...props} />,
     },
     {
         path: 'profile',

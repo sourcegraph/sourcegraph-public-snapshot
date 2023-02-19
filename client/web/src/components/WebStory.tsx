@@ -21,9 +21,11 @@ if (!window.context) {
     window.context = {} as SourcegraphContext & Mocha.SuiteFunction
 }
 
-export type WebStoryChildrenProps =  BreadcrumbSetters & BreadcrumbsProps & TelemetryProps & {
-    isLightTheme: boolean
-}
+export type WebStoryChildrenProps = BreadcrumbSetters &
+    BreadcrumbsProps &
+    TelemetryProps & {
+        isLightTheme: boolean
+    }
 
 export interface WebStoryProps
     extends Omit<MemoryRouterProps, 'children'>,

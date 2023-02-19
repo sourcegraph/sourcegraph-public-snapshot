@@ -1,6 +1,6 @@
-import { createContext, useCallback, useContext, useSyncExternalStore } from 'react';
+import { createContext, useCallback, useContext, useSyncExternalStore } from 'react'
 
-import { useTemporarySetting } from './settings/temporary';
+import { useTemporarySetting } from './settings/temporary'
 
 /**
  * Enum with possible users theme settings, it might be dark or light
@@ -32,7 +32,7 @@ interface ThemeContextData {
  */
 export const ThemeContext = createContext<ThemeContextData>({
     themeSetting: null,
-    onThemeSettingChanging: undefined
+    onThemeSettingChanging: undefined,
 })
 
 interface useThemeApi {
@@ -66,18 +66,21 @@ export function useTheme(): useThemeApi {
 
     // Prefer context value over internal value and setter
     const themeSetting = contextThemeSetting ?? userThemeSetting
-    const handleSetThemeSetting = useCallback((themeSetting: ThemeSetting) => {
-        if (onThemeSettingChanging) {
-            onThemeSettingChanging(themeSetting)
-        } else {
-            setUserThemeSetting(themeSetting)
-        }
-    }, [setUserThemeSetting, onThemeSettingChanging])
+    const handleSetThemeSetting = useCallback(
+        (themeSetting: ThemeSetting) => {
+            if (onThemeSettingChanging) {
+                onThemeSettingChanging(themeSetting)
+            } else {
+                setUserThemeSetting(themeSetting)
+            }
+        },
+        [setUserThemeSetting, onThemeSettingChanging]
+    )
 
     return {
-        theme: themeSetting === ThemeSetting.System ? systemTheme : themeSetting as unknown as Theme,
+        theme: themeSetting === ThemeSetting.System ? systemTheme : (themeSetting as unknown as Theme),
         themeSetting: userThemeSetting,
-        setThemeSetting: handleSetThemeSetting
+        setThemeSetting: handleSetThemeSetting,
     }
 }
 
@@ -93,13 +96,13 @@ export function useIsLightTheme(): boolean {
 
 type Unsubscribe = () => void
 
-function subscribeToSystemTheme(callback: () => void): Unsubscribe  {
+function subscribeToSystemTheme(callback: () => void): Unsubscribe {
     const matchMedia = window.matchMedia('(prefers-color-scheme: dark)')
-    matchMedia.addEventListener('change', callback);
+    matchMedia.addEventListener('change', callback)
 
     return () => {
-        matchMedia.removeEventListener('change', callback);
-    };
+        matchMedia.removeEventListener('change', callback)
+    }
 }
 
 function getSystemThemeSnapshot(): Theme {
@@ -111,10 +114,7 @@ function getSystemThemeSnapshot(): Theme {
 }
 
 function useUserThemeSetting(): [ThemeSetting, (setting: ThemeSetting) => void] {
-    const [userThemeSetting, setThemeSetting] = useTemporarySetting(
-        'user.themePreference',
-        ThemeSetting.System
-    )
+    const [userThemeSetting, setThemeSetting] = useTemporarySetting('user.themePreference', ThemeSetting.System)
 
     return [readStoredThemePreference(userThemeSetting), setThemeSetting]
 }
@@ -132,4 +132,3 @@ function readStoredThemePreference(value?: string): ThemeSetting {
             return ThemeSetting.System
     }
 }
-

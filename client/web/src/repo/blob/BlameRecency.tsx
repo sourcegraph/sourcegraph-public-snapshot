@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 
 import subYears from 'date-fns/subYears'
 
-import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme';
+import { useIsLightTheme } from '@sourcegraph/shared/src/new-theme'
 
 // We use an exponential scale to get more diverse colors for more recent changes.
 //

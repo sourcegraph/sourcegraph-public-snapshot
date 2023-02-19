@@ -24,7 +24,9 @@ import editorStyles from '../edit/EditBatchSpecPage.module.scss'
 
 interface ReadOnlyBatchSpecFormProps {}
 
-export const ReadOnlyBatchSpecForm: React.FunctionComponent<React.PropsWithChildren<ReadOnlyBatchSpecFormProps>> = () => {
+export const ReadOnlyBatchSpecForm: React.FunctionComponent<
+    React.PropsWithChildren<ReadOnlyBatchSpecFormProps>
+> = () => {
     const { batchChange, batchSpec, setActionsError } = useBatchSpecContext<BatchSpecExecutionFields>()
 
     return (

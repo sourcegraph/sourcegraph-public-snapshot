@@ -70,12 +70,7 @@ export const RepositoryCompareArea: FC<RepositoryCompareAreaProps> = props => {
             {spec === null ? (
                 <Alert variant="danger">Invalid comparison specifier</Alert>
             ) : (
-                <RepositoryCompareOverviewPage
-                    {...commonProps}
-                    path={path}
-                    location={location}
-                    navigate={navigate}
-                />
+                <RepositoryCompareOverviewPage {...commonProps} path={path} location={location} navigate={navigate} />
             )}
         </div>
     )

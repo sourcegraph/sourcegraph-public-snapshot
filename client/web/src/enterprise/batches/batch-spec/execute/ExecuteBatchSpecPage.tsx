@@ -233,7 +233,7 @@ const MemoizedExecuteBatchSpecContent: FC<MemoizedExecuteBatchSpecContentProps> 
                         element={
                             <>
                                 <TabBar activeTabKey="execution" tabsConfig={tabsConfig} matchURL={executionURL} />
-                                <ExecutionWorkspaces queryWorkspacesList={queryWorkspacesList}/>
+                                <ExecutionWorkspaces queryWorkspacesList={queryWorkspacesList} />
                             </>
                         }
                     />
@@ -242,7 +242,7 @@ const MemoizedExecuteBatchSpecContent: FC<MemoizedExecuteBatchSpecContentProps> 
                         element={
                             <>
                                 <TabBar activeTabKey="execution" tabsConfig={tabsConfig} matchURL={executionURL} />
-                                <ExecutionWorkspaces queryWorkspacesList={queryWorkspacesList}/>
+                                <ExecutionWorkspaces queryWorkspacesList={queryWorkspacesList} />
                             </>
                         }
                     />
