@@ -27,7 +27,7 @@ if (!usersPath) {
 const port = process.env.CODY_PORT || '8080'
 
 const claudeBackend = new ClaudeBackend(anthropicApiKey, {
-	model: 'claude-v0',
+	model: 'claude-v1',
 	temperature: 0.2,
 	stop_sequences: ['\n\nHuman:'],
 	max_tokens_to_sample: 1000,
