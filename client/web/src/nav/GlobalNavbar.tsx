@@ -273,9 +273,9 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             <Link
                                 to="https://about.sourcegraph.com"
                                 className={styles.link}
-                                onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NavBarLoggedIn' })}
+                                onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'NavBar' })}
                             >
-                                Enterprise
+                                {props.authenticatedUser && 'Get '} Enterprise
                             </Link>
                         </NavAction>
                     )}

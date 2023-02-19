@@ -77,7 +77,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                     <div className="mt-3">
                         <Link
                             to="https://about.sourcegraph.com"
-                            onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'HomeAboveSearch' })}
+                            onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'HomeAboveSearch' })}
                         >
                             Get Sourcegraph Enterprise <Icon svgPath={mdiArrowRight} aria-hidden={true} />
                         </Link>
