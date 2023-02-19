@@ -28,7 +28,6 @@ const defaultProps: SearchBoxProps = {
         final: null,
         subjects: null,
     },
-    isLightTheme: false,
     globbing: false,
     queryState: { query: 'hello repo:test' },
     isSourcegraphDotCom: false,
@@ -57,7 +56,7 @@ export const SearchBoxStory: Story = () => (
             <div>
                 <H2>Default</H2>
                 <div className="w-100 d-flex my-2">
-                    <SearchBox {...defaultProps} isLightTheme={props.isLightTheme} />
+                    <SearchBox {...defaultProps} />
                 </div>
 
                 <H2>Regexp enabled</H2>
@@ -65,7 +64,6 @@ export const SearchBoxStory: Story = () => (
                     <SearchBox
                         {...defaultProps}
                         patternType={SearchPatternType.regexp}
-                        isLightTheme={props.isLightTheme}
                     />
                 </div>
 
@@ -74,13 +72,12 @@ export const SearchBoxStory: Story = () => (
                     <SearchBox
                         {...defaultProps}
                         patternType={SearchPatternType.structural}
-                        isLightTheme={props.isLightTheme}
                     />
                 </div>
 
                 <H2>Case sensitivity enabled</H2>
                 <div className="w-100 d-flex my-2">
-                    <SearchBox {...defaultProps} caseSensitive={true} isLightTheme={props.isLightTheme} />
+                    <SearchBox {...defaultProps} caseSensitive={true} />
                 </div>
 
                 <H2>With search contexts</H2>
@@ -88,7 +85,6 @@ export const SearchBoxStory: Story = () => (
                     <SearchBox
                         {...defaultProps}
                         showSearchContext={true}
-                        isLightTheme={props.isLightTheme}
                         selectedSearchContextSpec="global"
                     />
                 </div>
@@ -98,7 +94,6 @@ export const SearchBoxStory: Story = () => (
                     <SearchBox
                         {...defaultProps}
                         showSearchContext={true}
-                        isLightTheme={props.isLightTheme}
                         selectedSearchContextSpec="@username/test-version-1.5"
                     />
                 </div>
@@ -108,7 +103,6 @@ export const SearchBoxStory: Story = () => (
                     <SearchBox
                         {...defaultProps}
                         showSearchContext={true}
-                        isLightTheme={props.isLightTheme}
                         queryState={{ query: 'hello context:global' }}
                         selectedSearchContextSpec="@username"
                     />
