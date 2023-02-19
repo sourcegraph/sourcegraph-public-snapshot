@@ -18,6 +18,8 @@ export interface ThemeProps {
  * value synchronously can use initialValue.
  *
  * @param window_ The global window object (or a mock in tests).
+ *
+ * @deprecated Use useTheme and useSystemTheme instead.
  */
 export const observeSystemIsLightTheme = (
     window_: Pick<Window, 'matchMedia'> = window
