@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -372,7 +373,7 @@ func HandleGoVulnDb(ctx context.Context, metrics *Metrics, useLocalCache bool) (
 
 	// Open test directory of json files
 	path := "./go-vulndb/"
-	fileList, err := ioutil.ReadDir(path)
+	fileList, err := os.ReadDir(path)
 	if err != nil {
 		return nil, err
 	}
@@ -441,7 +442,7 @@ func osvToVuln(o OSV) (vuln Vulnerability, err error) {
 		v.DataSource = affected.DatabaseSpecific["url"]
 
 		for _, r := range affected.Ranges {
-
+			_ = r
 		}
 
 		for _, i := range affected.EcosystemSpecific.Imports {
