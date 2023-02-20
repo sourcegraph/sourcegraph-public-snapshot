@@ -1,17 +1,182 @@
-## Permission syncing
+# Permission syncing
 
-TODO: @milan this is just copy & paste, need to rewrite this
+Permission syncing is a polling mechanism, that periodically checks via an API call to the code host to determine, what are the permissions of a specific entity.
+From the point of view of which entity we ask for, we do have 2 ways to sync permissions and both are on by default, resulting in double polling:
 
-Sourcegraph can be configured to enforce repository permissions from code hosts. The currently supported methods are:
+- **user-centric** permission syncing, where we ask the code host for a list of repositories that a specific user has read access to
+- **repo-centric** permission syncing, where we ask the code host for a list of users that can access a specific repository
 
-- [GitHub / GitHub Enterprise](#github)
-- [GitLab](#gitlab)
-- [Bitbucket Server / Bitbucket Data Center](#bitbucket-server-bitbucket-data-center)
-- [Gerrit](#gerrit) <span class="badge badge-beta">Beta</span>
-- [Unified SSO](https://unknwon.io/posts/200915_setup-sourcegraph-gitlab-keycloak/)
-- [Explicit permissions API](#explicit-permissions-api)
+Sourcegraph collects this information and stores it in internal database. 
 
-For most supported repository permissions enforcement methods, Sourcegraph [syncs permissions in the background](#background-permissions-syncing).
+To see which code hosts support permission syncing, please refer to [Supported code hosts table](../index.md#supported-code-hosts)
+## How it works
+
+### Periodic sync
+
+The permission syncing mechanism can be divided into 2 processes:
+
+1. The job scheduler <span class="badge badge-note">migrated to a database backed worker in v4.5</span>
+2. The permission sync job
+
+There is a scheduler and job queue for both user-centric and repo-centric sync jobs, both run in parallel.
+
+### On-demand sync
+
+Besides periodic schedule of jobs, we also have a way to request permission sync for a user or repository on-demand. 
+This is useful for example when a new user is added to Sourcegraph.
+
+To do that, the following GraphQL request needs to be made:
+```graphql
+mutation {
+    scheduleUserPermissionsSync(user: "user") {
+        alwaysNil
+    }
+}
+```
+
+Or in the case of adding a repository, the following request is made:
+```graphql
+mutation {
+    scheduleRepositoryPermissionsSync(repository: "repository") {
+        alwaysNil
+    }
+}
+```
+
+**Example**:
+- User `bob` is added to Sourcegraph.
+- `bob` has access to repositories `horsegraph/global` and `horsegraph/bob` on the code host.
+- an on-demand request is made to sync repository permissions of `bob`, this job is added to the queue with high priority, so it will be processed
+  quicker than jobs with lower priority
+- by the time `bob` actually logs into sourcegraph, the permissions should already be synced with this on-demand job.
+
+### Scheduling
+
+A variety of heuristics are used to determine when a user or a repository should be scheduled for a permissions sync to ensure the permissions data Sourcegraph has is up to date.
+
+Permissions syncs are regularly scheduled in these scenarios
+
+- When a user or repository is created [as seen above](#on-demand-sync)
+- When certain interactions happen, such as when a user logs in or a repository is visited
+- When a user or repository does not have permissions in the database
+- When a user or repository permissions are stale (i.e. some amount of time has passed since the last sync for a user or repository)
+  - in this case, Sourcegraph schedules a certain amount of users/repositories with oldest permissions on each scheduling interval.
+
+When a sync job is scheduled, it is added to a priority queue that is steadily processed.
+To avoid overloading the code host a sync job [might not be processed immediately](#sync-duration) and depending on the code host, might be heavily rate limited. 
+
+Priority queue is needed to process the sync jobs in the order of most important first. E.g.:
+- on-demand sync is high priority
+- sync of entities with no permissions is high priority
+- sync of oldest permissions is normal priority, since we already do have some permissions in the system
+
+### Mapping code host identifiers
+
+To identify which Sourcegraph users or repositories the permissions relate to, we need to map the users identifiers from code host with userIDs on Sourcegraph and similarly for repository identifiers from code host to repoIDs on Sourcegraph side. 
+
+> WARNING: For this process to work correctly, the user needs to have an external account from code host mapped to the user account on sourcegraph, otherwise the code host identifier cannot be matched and repository permissions cannot be enforced. 
+
+This is the main reason to require users to connect to their code host. This can be done on the Account security settings page: `/users/$USER/settings/security`.
+
+### Entities that do not exist on Sourcegraph
+
+There might be cases, when the identifiers on the code host do not match any user or repository on Sourcegraph side. 
+In that case, Sourcegraph still stores the permission information in the internal database as **pending permissions**
+In case that an entity with the same code host identifier is added later, Sourcegraph applies these pending permissions.
+
+> NOTE: Sourcegraph only keeps pending permissions for repositories that were added to Sourcegraph. We will never store information about repositories that are not shared with us.
+
+If everything works correctly in such a case, [on-demand sync request](#on-demand-sync) is not strictly needed. 
+But the permissions of the entity might have changed in the time since the last sync of these pending permissions, 
+so it is safer to make the request anyway to keep the permissions as fresh as possible
+
+## Checking permissions sync state
+
+The state of an user or repository's permissions can be checked in the UI by:
+
+- For users: navigating to `/users/$USER/settings/permissions`
+- For repositories: navigating to `/$CODEHOST/$REPO/-/settings/permissions`
+
+The GraphQL API can also be used:
+
+```graphql
+query {
+  user(username: "user") {
+    permissionsInfo {
+      syncedAt
+      updatedAt
+    }
+  }
+}
+```
+
+Or for the sake of repository:
+```graphql
+query {
+  repository(name: "repository") {
+    permissionsInfo {
+      syncedAt
+      updatedAt
+    }
+  }
+}
+```
+
+In the GraphQL API, `syncedAt` indicates the last complete sync and `updatedAt` indicates the last incremental sync. If `syncedAt` is more recent than `updatedAt`, the user or repository is in a state of complete sync - [learn more](#complete-sync-vs-incremental-sync).
+
+## Sync duration
+
+When syncing permissions from code hosts with large numbers of users and repositories, it can take a lot of time to complete syncing all permissions from a code host for every user and every repository. Typically due to internal rate limits imposed by Sourcegraph and external rate limits imposed by the code host, it can be hours or days. 
+
+Let's call the time difference between applying the change on code host and the change taking effect on Sourcegraph as **lag time**. 
+For security reasons, we strive to make the lag time as low as possible. 
+
+However given the way the system works, we need to be aware of the worst case:
+
+> IMPORTANT: If there is a change in permissions on the code host, in the worst case the lag time is as long as the time it takes to completely sync all user or repository permissions.
+
+For initial setup of instance, when the initial sync for all repositories and users is running, users will gradually see more and more search results from repositories they have access to.
+
+To calculate how long a full sync takes, it is important to take into consideration many factors - how quickly we fill the sync job queue, how is internal rate limiter and external rate limiter configured, etc. But in general, we need to make the following amount of requests to fully sync all the user-centric permissions (and we double poll, so double the number for repo-centric sync jobs):
+
+$$request_count = (users * repositories) \over per_page_items$$
+
+**Example:**
+
+There are `10 000` users, `40 000` repositories and the github.com API is paginated on `100` items per page.
+We need to make `4M` requests. To cover both user-centric and repo-centric case, it means `8M` requests.
+Github.com has an API rate limit of `5000` requests per hour. In that case, complete permission sync of all users takes $4M requests / 5000  = 800 hours$. 
+
+33 days on a complete cycle of permission sync is not great, it can potentially mean 33 days of lag time mentioned above. Even if we let permission sync consume all the rate limit and we stagger our requests perfectly, which is rarely the case. Depending on the code host, the rate limit might be much higher. 
+
+> IMPORTANT: For permission syncing to be quicker, the code host needs to be able to handle a lot more requests per hour.
+
+> IMPORTANT: Hence why we recommend configuring webhooks for permission syncing on GitHub which makes lag time much smaller.
+
+## Configuration
+There are variety of options in the site configuration to tune how the permissions sync requests are scheduled and processed:
+
+```json
+{
+  // Time interval (in seconds) of how often each component picks up authorization changes in external services.
+  "permissions.syncScheduleInterval": 15,
+  // Number of user permissions to schedule for syncing in single scheduler iteration.
+  "permissions.syncOldestUsers": 10,
+  // Number of repo permissions to schedule for syncing in single scheduler iteration.
+  "permissions.syncOldestRepos": 10,
+  // Don't sync a user's permissions if they have synced within the last n seconds.
+  "permissions.syncUsersBackoffSeconds": 60,
+  // Don't sync a repo's permissions if it has synced within the last n seconds.
+  "permissions.syncReposBackoffSeconds": 60,
+  // The maximum number of user-centric permissions syncing jobs that can be spawned concurrently.
+  // Service restart is required to take effect for changes.
+  "permissions.syncUsersMaxConcurrency": 1,
+}
+```
+
+> WARNING: ======= OLD PART FROM HERE ON ========
+
+# OLD FART
 
 If the Sourcegraph instance is configured to sync repositories from multiple code hosts, setting up permissions for each code host will make repository permissions apply holistically on Sourcegraph, so long as users log in from each code host - [learn more](#permissions-for-multiple-code-hosts).
 
@@ -19,7 +184,7 @@ If the Sourcegraph instance is configured to sync repositories from multiple cod
 
 <span class="virtual-br"></span>
 
-> WARNING: It can take some time to complete [backgroung mirroring of repository permissions](#background-permissions-syncing) from a code host. [Learn more](#permissions-sync-duration).
+> WARNING: It can take some time to complete [backgroung mirroring of repository permissions](#background-permissions-syncing) from a code host. [Learn more](#sync-duration).
 
 <span class="virtual-br"></span>
 
@@ -48,7 +213,7 @@ A [token that has the prerequisite scopes](../external_service/github.md#github-
 
 <span class="virtual-br"></span>
 
-> WARNING: It can take some time to complete [backgroung mirroring of repository permissions](#background-permissions-syncing) from a code host. [Learn more](#permissions-sync-duration).
+> WARNING: It can take some time to complete [backgroung mirroring of repository permissions](#background-permissions-syncing) from a code host. [Learn more](#sync-duration).
 
 ### Trigger permissions sync from GitHub webhooks
 
@@ -73,7 +238,7 @@ The events we consume are:
 
 For GitHub providers, Sourcegraph can leverage caching of GitHub [team](https://docs.github.com/en/organizations/managing-access-to-your-organizations-repositories/managing-team-access-to-an-organization-repository) and [organization](https://docs.github.com/en/organizations/managing-access-to-your-organizations-repositories/repository-permission-levels-for-an-organization) permissions - [learn more about permissions caching](#permissions-caching).
 
-> NOTE: You should only try this if your GitHub setup makes extensive use of GitHub teams and organizations to distribute access to repositories and your number of `users * repos` is greater than 250,000 (which roughly corresponds to the scale at which [GitHub rate limits might become an issue](#permissions-sync-duration)).
+> NOTE: You should only try this if your GitHub setup makes extensive use of GitHub teams and organizations to distribute access to repositories and your number of `users * repos` is greater than 250,000 (which roughly corresponds to the scale at which [GitHub rate limits might become an issue](#sync-duration)).
 <!-- 5,000 requests an hour * 100 items per page / 2-way sync = approx. 250,000 items before hitting a limit -->
 
 This caching behaviour can be enabled via the `authorization.groupsCacheTTL` field:
@@ -123,7 +288,7 @@ GitLab permissions can be configured in three ways:
 3. Assume username equivalency between Sourcegraph and GitLab (warning: this is generally unsafe and
    should only be used if you are using strictly `http-header` authentication).
 
-> WARNING: It can take some time to complete [backgroung mirroring of repository permissions](#background-permissions-syncing) from a code host. [Learn more](#permissions-sync-duration).
+> WARNING: It can take some time to complete [backgroung mirroring of repository permissions](#background-permissions-syncing) from a code host. [Learn more](#sync-duration).
 
 ### OAuth application
 
@@ -200,7 +365,7 @@ because Sourcegraph usernames are mutable.
 
 Enforcing Bitbucket Server / Bitbucket Data Center permissions can be configured via the `authorization` setting in its configuration.
 
-> WARNING: It can take some time to complete [backgroung mirroring of repository permissions](#background-permissions-syncing) from a code host. [Learn more](#permissions-sync-duration).
+> WARNING: It can take some time to complete [backgroung mirroring of repository permissions](#background-permissions-syncing) from a code host. [Learn more](#sync-duration).
 
 ### Prerequisites
 
@@ -301,7 +466,7 @@ Both types of sync happen [repeatedly and continuously based on a variety of eve
 
 Background permissions syncing enables:
 
-1. More predictable load on the code host API due to maintaining a schedule of permission updates, though this can mean it [can take a long time for a sync to complete](#permissions-sync-duration).
+1. More predictable load on the code host API due to maintaining a schedule of permission updates, though this can mean it [can take a long time for a sync to complete](#sync-duration).
 2. Permissions are quickly synced for new repositories and users added to the Sourcegraph instance.
 3. Users who sign up on the Sourcegraph instance can immediately get search results from some repositories they have access to on the code host as we begin to [incrementally sync](#complete-sync-vs-incremental-sync) their permissions.
 
@@ -358,7 +523,7 @@ For example, permissions syncs may be scheduled:
 - When a relevant [webhook is configured and received](#triggering-syncs-with-webhooks)
 - When a [manual sync is scheduled](#manually-scheduling-a-sync)
 
-When a sync is scheduled, it is added to a queue that is steadily processed to avoid overloading the code host—a sync [might not happen immediately](#permissions-sync-duration). Prioritization of permissions sync also happens to, for example, ensure users or repositories with no permissions get processed first.
+When a sync is scheduled, it is added to a queue that is steadily processed to avoid overloading the code host—a sync [might not happen immediately](#sync-duration). Prioritization of permissions sync also happens to, for example, ensure users or repositories with no permissions get processed first.
 
 There are variety of options in the site configuration to tune how the permissions sync requests are scheduled and processed:
 
@@ -401,9 +566,12 @@ mutation {
 }
 ```
 
-### Permissions sync duration
+## Permissions sync duration
 
-When syncing permissions from code hosts with large numbers of users and repositories, it can take some time to complete mirroring repository permissions from a code host for every user and every repository, typically due to rate limits on a code host that limits how quickly Sourcegraph can query for repository permissions. This is generally not a problem for fresh installations, since admins should only make the instance available after it's ready, but for existing installations, active users may not see the repositories they expect in search results because the initial permissions syncing hasn't finished yet.
+When syncing permissions from code hosts with large numbers of users and repositories, it can take a lot of time to complete syncing all permissions from a code host for every user and every repository. Typically due to internal rate limits imposed by Sourcegraph and external rate limits imposed by the code host, it can be hours or days. 
+
+
+This is generally not a problem for fresh installations, since admins should only make the instance available after it's ready, but for existing installations, active users may not see the repositories they expect in search results because the initial permissions syncing hasn't finished yet.
 
 Since Sourcegraph [syncs permissions in the background](#background-permissions-syncing), while the initial sync for all repositories and users is happening, users will [gradually see more and more search results](#complete-sync-vs-incremental-sync) from repositories they have access to.
 
@@ -411,7 +579,7 @@ To further mitigate long sync times and API request load, Sourcegraph can also l
 
 ### Provider-specific optimizations
 
-Each provider can implement optimizations to improve [sync performance](#permissions-sync-duration) and [up-to-dateness of permissions](#triggering-syncs-with-webhooks)—please refer to the relevant provider documentation on this page for more details.
+Each provider can implement optimizations to improve [sync performance](#sync-duration) and [up-to-dateness of permissions](#triggering-syncs-with-webhooks)—please refer to the relevant provider documentation on this page for more details.
 
 #### Triggering syncs with webhooks
 
