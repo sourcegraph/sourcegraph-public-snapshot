@@ -424,6 +424,162 @@ extend type Query {
     only the value set via UI/GraphQL.
     """
     codeIntelligenceInferenceScript: String!
+
+    """
+    TODO
+    """
+    vulnerabilities(
+        """
+        TODO
+        """
+        first: Int
+    ): VulnerabilityConnection!
+
+    """
+    TODO
+    """
+    vulnerabilityMatches(
+        """
+        TODO
+        """
+        first: Int
+    ): VulnerabilityMatchConnection!
+}
+
+"""
+TODO
+"""
+type VulnerabilityConnection {
+    """
+    TODO
+    """
+    nodes: [Vulnerability!]!
+
+    """
+    TODO
+    """
+    totalCount: Int
+
+    """
+    TODO
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+TODO
+"""
+type VulnerabilityMatchConnection {
+    """
+    TODO
+    """
+    nodes: [VulnerabilityMatch!]!
+
+    """
+    TODO
+    """
+    totalCount: Int
+
+    """
+    TODO
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+TODO
+"""
+type Vulnerability {
+    # id: ID!
+
+    """
+    TODO
+    """
+    sourceID: String!
+
+    """
+    TODO
+    """
+    summary: String!
+
+    """
+    TODO
+    """
+    details: String!
+
+    """
+    TODO
+    """
+    cpes: [String!]!
+
+    """
+    TODO
+    """
+    cwes: [String!]!
+
+    """
+    TODO
+    """
+    aliases: [String!]!
+
+    """
+    TODO
+    """
+    related: [String!]!
+
+    """
+    TODO
+    """
+    dataSource: String!
+
+    """
+    TODO
+    """
+    urls: [String!]!
+
+    """
+    TODO
+    """
+    severity: String!
+
+    """
+    TODO
+    """
+    cVSSVector: String!
+
+    """
+    TODO
+    """
+    cVSSScore: String!
+
+    """
+    TODO
+    """
+    published: DateTime!
+
+    """
+    TODO
+    """
+    modified: DateTime
+
+    """
+    TODO
+    """
+    withdrawn: DateTime
+
+    # AffectedPackages : []AffectedPackage
+}
+
+"""
+TODO
+"""
+type VulnerabilityMatch {
+    # TODO - more
+
+    """
+    TODO
+    """
+    sourceID: String!
 }
 
 """

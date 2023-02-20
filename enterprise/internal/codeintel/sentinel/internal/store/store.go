@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -21,8 +22,9 @@ import (
 )
 
 type Store interface {
-	Foo(ctx context.Context) error
+	GetVulnerabilities(ctx context.Context, args shared.GetVulnerabilitiesArgs) ([]shared.Vulnerability, error)
 	InsertVulnerabilities(ctx context.Context, vulnerabilities []shared.Vulnerability) error
+	GetVulnerabilityMatches(ctx context.Context, args shared.GetVulnerabilityMatchesArgs) ([]shared.VulnerabilityMatch, error)
 	ScanMatches(ctx context.Context) error
 }
 
@@ -41,10 +43,80 @@ func New(observationCtx *observation.Context, db database.DB) Store {
 	}
 }
 
-func (s *store) Foo(ctx context.Context) (err error) {
+func (s *store) GetVulnerabilities(ctx context.Context, args shared.GetVulnerabilitiesArgs) (_ []shared.Vulnerability, err error) {
+	vulnerabilities, err := scanVulnerabilities(s.db.Query(ctx, sqlf.Sprintf(getVulnerabilitiesQuery)))
+	if err != nil {
+		return nil, err
+	}
+
 	// TODO
-	return nil
+	fmt.Printf("> %v\n", vulnerabilities)
+	return nil, nil
 }
+
+const getVulnerabilitiesQuery = `
+SELECT
+	id,
+	source_id,
+	summary,
+	details,
+	cpes,
+	cwes,
+	aliases,
+	related,
+	data_source,
+	urls,
+	severity,
+	cvss_vector,
+	cvss_score,
+	published,
+	modified,
+	withdrawn
+FROM vulnerabilities
+`
+
+var scanVulnerabilities = basestore.NewSliceScanner(func(s dbutil.Scanner) (v shared.Vulnerability, _ error) {
+	if err := s.Scan(
+		&v.ID,
+		&v.SourceID,
+		&v.Summary,
+		&v.Details,
+		&v.CPEs,
+		&v.CWEs,
+		&v.Aliases,
+		&v.Related,
+		&v.DataSource,
+		&v.URLs,
+		&v.Severity,
+		&v.CVSSVector,
+		&v.CVSSScore,
+		&v.Published,
+		&v.Modified,
+		&v.Withdrawn,
+	); err != nil {
+		return shared.Vulnerability{}, err
+	}
+
+	return v, nil
+})
+
+// CREATE TABLE IF NOT EXISTS vulnerability_affected_packages (
+// 	id                  SERIAL PRIMARY KEY,
+// 	vulnerability_id    INT NOT NULL,
+// 	package_name        TEXT NOT NULL,
+// 	language            TEXT NOT NULL,
+// 	namespace           TEXT NOT NULL,
+// 	version_constraint  TEXT[] NOT NULL,
+// 	fixed               boolean NOT NULL,
+// 	fixed_in            TEXT NOT NULL,
+// );
+
+// CREATE TABLE IF NOT EXISTS vulnerability_affected_symbols (
+// 	id                                 SERIAL PRIMARY KEY,
+// 	vulnerability_affected_package_id  INT NOT NULL,
+// 	path                               TEXT NOT NULL,
+// 	symbols                            TEXT[] NOT NULL,
+// );
 
 func (s *store) InsertVulnerabilities(ctx context.Context, vulnerabilities []shared.Vulnerability) (err error) {
 	ctx, _, endObservation := s.operations.insertVulnerabilities.With(ctx, &err, observation.Args{})
@@ -316,6 +388,11 @@ SELECT c.id, c.path, c.symbols FROM candidates c
 -- TODO - update instead
 ON CONFLICT DO NOTHING
 `
+
+func (s *store) GetVulnerabilityMatches(ctx context.Context, args shared.GetVulnerabilityMatchesArgs) ([]shared.VulnerabilityMatch, error) {
+	// TODO
+	return nil, errors.New("unimplemented")
+}
 
 func (s *store) ScanMatches(ctx context.Context) (err error) {
 	ctx, _, endObservation := s.operations.scanMatches.With(ctx, &err, observation.Args{})

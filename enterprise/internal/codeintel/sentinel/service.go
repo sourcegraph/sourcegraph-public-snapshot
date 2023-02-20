@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/internal/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -22,11 +23,10 @@ func newService(
 	}
 }
 
-func (s *Service) Foo(ctx context.Context) (err error) {
-	ctx, _, endObservation := s.operations.foo.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+func (s *Service) GetVulnerabilities(ctx context.Context, args shared.GetVulnerabilitiesArgs) ([]shared.Vulnerability, error) {
+	return s.store.GetVulnerabilities(ctx, args)
+}
 
-	// TODO
-	_ = ctx
-	return nil
+func (s *Service) GetVulnerabilityMatches(ctx context.Context, args shared.GetVulnerabilityMatchesArgs) ([]shared.VulnerabilityMatch, error) {
+	return s.store.GetVulnerabilityMatches(ctx, args)
 }

@@ -23,7 +23,52 @@ type RootResolver interface {
 }
 
 type SentinelServiceResolver interface {
-	Foo(ctx context.Context) error
+	Vulnerabilities(ctx context.Context, args GetVulnerabilitiesArgs) (VulnerabilityConnectionResolver, error)
+	VulnerabilityMatches(ctx context.Context, args GetVulnerabilityMatchesArgs) (VulnerabilityMatchConnectionResolver, error)
+}
+
+type GetVulnerabilitiesArgs struct {
+	First *int
+	// TODO
+}
+
+type GetVulnerabilityMatchesArgs struct {
+	First *int
+	// TODO
+}
+
+type VulnerabilityConnectionResolver interface {
+	Nodes() []VulnerabilityResolver
+	TotalCount() *int32
+	PageInfo() PageInfo
+}
+
+type VulnerabilityResolver interface {
+	SourceID() string
+	Summary() string
+	Details() string
+	CPEs() []string
+	CWEs() []string
+	Aliases() []string
+	Related() []string
+	DataSource() string
+	URLs() []string
+	Severity() string
+	CVSSVector() string
+	CVSSScore() string
+	Published() gqlutil.DateTime
+	Modified() *gqlutil.DateTime
+	Withdrawn() *gqlutil.DateTime
+}
+
+type VulnerabilityMatchConnectionResolver interface {
+	Nodes() []VulnerabilityMatchResolver
+	TotalCount() *int32
+	PageInfo() PageInfo
+}
+
+type VulnerabilityMatchResolver interface {
+	SourceID() string
 }
 
 type CodeNavServiceResolver interface {

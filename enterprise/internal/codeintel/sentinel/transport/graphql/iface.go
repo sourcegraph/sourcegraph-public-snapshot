@@ -1,7 +1,12 @@
 package graphql
 
-import "context"
+import (
+	"context"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
+)
 
 type Service interface {
-	Foo(ctx context.Context) error
+	GetVulnerabilities(ctx context.Context, args shared.GetVulnerabilitiesArgs) ([]shared.Vulnerability, error)
+	GetVulnerabilityMatches(ctx context.Context, args shared.GetVulnerabilityMatchesArgs) ([]shared.VulnerabilityMatch, error)
 }

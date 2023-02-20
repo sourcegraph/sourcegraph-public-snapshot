@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"errors"
 
 	"github.com/opentracing/opentracing-go/log"
 
@@ -22,12 +23,16 @@ func NewRootResolver(observationCtx *observation.Context, sentinelSvc *sentinel.
 	}
 }
 
-func (r *rootResolver) Foo(ctx context.Context) (err error) {
-	ctx, traceErrs, endObservation := r.operations.foo.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+func (r *rootResolver) Vulnerabilities(ctx context.Context, args resolverstubs.GetVulnerabilitiesArgs) (_ resolverstubs.VulnerabilityConnectionResolver, err error) {
+	ctx, _, endObservation := r.operations.getVulnerabilities.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	// ToDO
-	_ = ctx
-	_ = traceErrs
-	return nil
+	return nil, errors.New("unimplemented") // TODO
+}
+
+func (r *rootResolver) VulnerabilityMatches(ctx context.Context, args resolverstubs.GetVulnerabilityMatchesArgs) (_ resolverstubs.VulnerabilityMatchConnectionResolver, err error) {
+	ctx, _, endObservation := r.operations.getMatches.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	return nil, errors.New("unimplemented") // TODO
 }

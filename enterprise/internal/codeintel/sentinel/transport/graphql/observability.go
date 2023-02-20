@@ -8,7 +8,8 @@ import (
 )
 
 type operations struct {
-	foo *observation.Operation
+	getVulnerabilities *observation.Operation
+	getMatches         *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -28,6 +29,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		foo: op("Foo"),
+		getVulnerabilities: op("Vulnerabilities"),
+		getMatches:         op("Matches"),
 	}
 }

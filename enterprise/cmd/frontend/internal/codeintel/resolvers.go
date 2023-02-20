@@ -50,8 +50,12 @@ func (r *Resolver) NodeResolvers() map[string]gql.NodeByIDFunc {
 	}
 }
 
-func (r *Resolver) Foo(ctx context.Context) (err error) {
-	return r.SentinelRootResolver.Foo(ctx)
+func (r *Resolver) Vulnerabilities(ctx context.Context, args resolverstubs.GetVulnerabilitiesArgs) (_ resolverstubs.VulnerabilityConnectionResolver, err error) {
+	return r.SentinelRootResolver.Vulnerabilities(ctx, args)
+}
+
+func (r *Resolver) VulnerabilityMatches(ctx context.Context, args resolverstubs.GetVulnerabilityMatchesArgs) (_ resolverstubs.VulnerabilityMatchConnectionResolver, err error) {
+	return r.SentinelRootResolver.VulnerabilityMatches(ctx, args)
 }
 
 func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ resolverstubs.LSIFUploadResolver, err error) {

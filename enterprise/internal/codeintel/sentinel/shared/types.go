@@ -2,6 +2,14 @@ package shared
 
 import "time"
 
+type GetVulnerabilitiesArgs struct {
+	// TODO
+}
+
+type GetVulnerabilityMatchesArgs struct {
+	// TODO
+}
+
 type Vulnerability struct {
 	ID               int    // internal ID
 	SourceID         string // external ID
@@ -38,4 +46,8 @@ type AffectedPackage struct {
 type AffectedSymbol struct {
 	Path    string   `json:"path"`
 	Symbols []string `json:"symbols"`
+}
+
+type VulnerabilityMatch struct {
+	// TODO
 }
