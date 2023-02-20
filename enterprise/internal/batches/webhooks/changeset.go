@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graphql-go/graphql/gqlerrors"
 
-	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -79,7 +79,7 @@ type gqlChangesetResponse struct {
 			ID           graphql.ID `json:"id"`
 			ExternalID   string     `json:"externalId"`
 			BatchChanges struct {
-				Nodes struct {
+				Nodes []struct {
 					ID graphql.ID `json:"id"`
 				} `json:"nodes"`
 			} `json:"batchChanges"`
@@ -107,6 +107,7 @@ type gqlChangesetResponse struct {
 			SyncerError   *string `json:"syncerError"`
 		}
 	}
+	Errors []gqlerrors.FormattedError
 }
 
 func marshalChangeset(ctx context.Context, id graphql.ID) ([]byte, error) {
@@ -136,7 +137,7 @@ func marshalChangeset(ctx context.Context, id graphql.ID) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 
-	var res gqlBatchChangeResponse
+	var res gqlChangesetResponse
 
 	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
 		return nil, errors.Wrap(err, "decode response")
@@ -152,25 +153,45 @@ func marshalChangeset(ctx context.Context, id graphql.ID) ([]byte, error) {
 
 	node := res.Data.Node
 
+	var batchChangeIDs []graphql.ID
+	for _, bc := range node.BatchChanges.Nodes {
+		batchChangeIDs = append(batchChangeIDs, bc.ID)
+	}
+
+	var labels []string
+	for _, label := range node.Labels {
+		labels = append(labels, label.Text)
+	}
+
+	var authorName *string
+	if node.Author != nil {
+		authorName = &node.Author.Name
+	}
+
+	var externalURL *string
+	if node.ExternalURL != nil {
+		externalURL = &node.ExternalURL.URL
+	}
+
 	return json.Marshal(changeset{
-		ID:                  node.ID,
-		ExternalID:          node.ExternalID,
-		BatchChangeIDs:      batchChangeIDs,
-		OwningBatchChangeID: nullableMap(cs.OwnedByBatchChangeID, bgql.MarshalBatchChangeID),
-		RepositoryID:        bgql.MarshalRepoID(cs.RepoID),
-		CreatedAt:           cs.CreatedAt,
-		UpdatedAt:           cs.UpdatedAt,
-		Title:               title,
-		Body:                body,
-		AuthorName:          authorName,
-		State:               string(cs.State),
-		Labels:              labelNames,
-		ExternalURL:         externalURL,
-		ForkNamespace:       nullable(cs.ExternalForkNamespace),
-		ForkName:            nullable(cs.ExternalForkName),
-		ReviewState:         nullable(string(cs.ExternalReviewState)),
-		CheckState:          nullable(string(cs.ExternalCheckState)),
-		Error:               cs.FailureMessage,
-		SyncerError:         cs.SyncErrorMessage,
+		ID:             node.ID,
+		ExternalID:     node.ExternalID,
+		BatchChangeIDs: batchChangeIDs,
+		// OwningBatchChangeID: ,
+		RepositoryID: node.Repository.ID,
+		CreatedAt:    node.CreatedAt,
+		UpdatedAt:    node.UpdatedAt,
+		Title:        node.Title,
+		Body:         node.Body,
+		AuthorName:   authorName,
+		State:        node.State,
+		Labels:       labels,
+		ExternalURL:  externalURL,
+		// ForkName: ,
+		ForkNamespace: node.ForkNamespace,
+		ReviewState:   node.ReviewState,
+		CheckState:    node.CheckState,
+		Error:         node.Error,
+		SyncerError:   node.SyncerError,
 	})
 }
