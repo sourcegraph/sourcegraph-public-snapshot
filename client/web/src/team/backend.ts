@@ -1,5 +1,6 @@
-import { gql, useMutation } from '@sourcegraph/http-client'
 import { MutationTuple } from '@apollo/client'
+
+import { gql, useMutation } from '@sourcegraph/http-client'
 
 import { CreateTeamResult, CreateTeamVariables } from '../graphql-operations'
 

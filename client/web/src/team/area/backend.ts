@@ -1,5 +1,7 @@
-import { QueryResult } from '@apollo/client'
+import { MutationTuple, QueryResult } from '@apollo/client'
+
 import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
+
 import {
     TeamResult,
     TeamVariables,
@@ -45,7 +47,7 @@ export function useTeam(name: string): QueryResult<TeamResult, TeamVariables> {
     )
 }
 
-export function useChangeTeamDisplayName() {
+export function useChangeTeamDisplayName(): MutationTuple<ChangeTeamDisplayNameResult, ChangeTeamDisplayNameVariables> {
     return useMutation<ChangeTeamDisplayNameResult, ChangeTeamDisplayNameVariables>(
         gql`
             mutation ChangeTeamDisplayName($id: ID!, $displayName: String) {

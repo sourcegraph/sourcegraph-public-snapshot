@@ -1,5 +1,7 @@
 import { QueryResult } from '@apollo/client'
+
 import { gql, useQuery } from '@sourcegraph/http-client'
+
 import { UserSelectSearchResult, UserSelectSearchVariables } from '../../../graphql-operations'
 
 const USER_SELECT_SEARCH_FIELDS = gql`

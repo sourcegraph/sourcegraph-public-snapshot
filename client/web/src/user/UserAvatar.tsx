@@ -26,7 +26,6 @@ interface Props {
 /**
  * UserAvatar displays the avatar of a user.
  */
-// eslint-disable-next-line react/display-name
 export const UserAvatar = React.forwardRef(
     (
         {

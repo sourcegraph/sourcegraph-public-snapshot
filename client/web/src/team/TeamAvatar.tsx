@@ -2,9 +2,11 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 
-import styles from './TeamAvatar.module.scss'
-import { Maybe } from '../graphql-operations'
 import { ForwardReferenceComponent, Icon } from '@sourcegraph/wildcard'
+
+import { Maybe } from '../graphql-operations'
+
+import styles from './TeamAvatar.module.scss'
 
 export interface TeamAvatarProps {
     team: {
@@ -27,7 +29,6 @@ export interface TeamAvatarProps {
 /**
  * TeamAvatar displays the avatar of a team.
  */
-// eslint-disable-next-line react/display-name
 export const TeamAvatar = React.forwardRef(
     (
         {

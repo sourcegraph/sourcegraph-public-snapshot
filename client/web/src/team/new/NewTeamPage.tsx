@@ -5,13 +5,14 @@ import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
 import { Container, PageHeader, Link, Input, ErrorAlert, Form, Label } from '@sourcegraph/wildcard'
 
 import { TEAM_DISPLAY_NAME_MAX_LENGTH, TEAM_NAME_MAX_LENGTH, VALID_TEAM_NAME_REGEXP } from '..'
+import { LoaderButton } from '../../components/LoaderButton'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { useCreateTeam } from '../backend'
 
-import styles from './NewTeamPage.module.scss'
-import { LoaderButton } from '../../components/LoaderButton'
 import { ParentTeamSelect } from './team-select/ParentTeamSelect'
+
+import styles from './NewTeamPage.module.scss'
 
 export interface NewTeamPageProps {}
 
@@ -54,16 +55,19 @@ export const NewTeamPage: React.FunctionComponent<React.PropsWithChildren<NewTea
                     displayName: displayName !== '' ? displayName : null,
                     parentTeam: parentTeam !== '' ? parentTeam : null,
                 },
+            }).catch(error => {
+                // eslint-disable-next-line no-console
+                console.error(error)
             })
         },
-        [displayName, navigate, name]
+        [displayName, name, createTeam, parentTeam]
     )
 
     useEffect(() => {
         if (createTeamResult) {
             navigate(createTeamResult.createTeam.url)
         }
-    }, [createTeamResult])
+    }, [createTeamResult, navigate])
 
     return (
         <Page className={styles.newTeamPage}>

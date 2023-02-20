@@ -3,9 +3,10 @@ import React, { useCallback, useState } from 'react'
 import { logger } from '@sourcegraph/common'
 import { Button, H3, Modal, ErrorAlert, Form, Label } from '@sourcegraph/wildcard'
 
-import { useAddTeamMembers } from './backend'
-import { Scalars } from '../../graphql-operations'
 import { LoaderButton } from '../../components/LoaderButton'
+import { Scalars } from '../../graphql-operations'
+
+import { useAddTeamMembers } from './backend'
 import { UserSelect } from './user-select/UserSelect'
 
 export interface AddTeamMemberModalProps {
@@ -45,7 +46,7 @@ export const AddTeamMemberModal: React.FunctionComponent<React.PropsWithChildren
                 logger.error(error)
             }
         },
-        [afterAdd, teamID, selectedMembers]
+        [afterAdd, teamID, selectedMembers, addMembers]
     )
 
     return (

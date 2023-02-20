@@ -1,3 +1,9 @@
+import React, { ButtonHTMLAttributes, forwardRef, useEffect, useState } from 'react'
+
+import classNames from 'classnames'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
+import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
+
 import {
     ComboboxOptionText,
     Combobox,
@@ -15,12 +21,10 @@ import {
     Button,
     createRectangle,
 } from '@sourcegraph/wildcard'
-import classNames from 'classnames'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
-import React, { ButtonHTMLAttributes, forwardRef, useEffect, useState } from 'react'
+
 import { ParentTeamSelectSearchFields } from '../../../graphql-operations'
 import { TeamAvatar } from '../../TeamAvatar'
+
 import { useParentTeamSelectSearch } from './backend'
 
 import styles from './ParentTeamSelect.module.scss'
@@ -48,7 +52,7 @@ export const ParentTeamSelect: React.FunctionComponent<ParentTeamSelectProps> = 
         setOpen(event.isOpen)
     }
 
-    const handleSelect = (parentTeam: ParentTeamSelectSearchFields | undefined) => {
+    const handleSelect = (parentTeam: ParentTeamSelectSearchFields | undefined): void => {
         setParentTeam(parentTeam)
         setOpen(false)
         onSelect(parentTeam?.name || null)
@@ -85,7 +89,7 @@ export const ParentTeamSelectContent: React.FunctionComponent<ParentTeamSelectCo
 
     const { data, loading, error } = useParentTeamSelectSearch(search)
 
-    const selectHandler = (name: string) => {
+    const selectHandler = (name: string): void => {
         const team = data?.teams.nodes.find(team => team.name === name)
         if (team) {
             onSelect(team)
@@ -94,6 +98,7 @@ export const ParentTeamSelectContent: React.FunctionComponent<ParentTeamSelectCo
 
     useEffect(() => {
         if (error) {
+            // eslint-disable-next-line no-console
             console.error(error)
         }
     }, [error])
@@ -130,16 +135,14 @@ interface TeamOptionProps {
     index: number
 }
 
-const TeamOption: React.FunctionComponent<TeamOptionProps> = ({ item, index }) => {
-    return (
-        <ComboboxOption value={item.name} index={index} className={styles.comboboxOption}>
-            <TeamAvatar inline={true} team={item} className="mr-2" />{' '}
-            <span>
-                <ComboboxOptionText />
-            </span>
-        </ComboboxOption>
-    )
-}
+const TeamOption: React.FunctionComponent<TeamOptionProps> = ({ item, index }) => (
+    <ComboboxOption value={item.name} index={index} className={styles.comboboxOption}>
+        <TeamAvatar inline={true} team={item} className="mr-2" />{' '}
+        <span>
+            <ComboboxOptionText />
+        </span>
+    </ComboboxOption>
+)
 
 interface ParentTeamSelectButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     title: string | undefined

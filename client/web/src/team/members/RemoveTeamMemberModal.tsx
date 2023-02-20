@@ -3,9 +3,10 @@ import React, { useCallback } from 'react'
 import { logger } from '@sourcegraph/common'
 import { Button, H3, Modal, ErrorAlert } from '@sourcegraph/wildcard'
 
-import { useRemoveTeamMembers } from './backend'
-import { ListTeamMemberFields, Scalars } from '../../graphql-operations'
 import { LoaderButton } from '../../components/LoaderButton'
+import { ListTeamMemberFields, Scalars } from '../../graphql-operations'
+
+import { useRemoveTeamMembers } from './backend'
 
 export interface RemoveTeamMemberModalProps {
     teamID: Scalars['ID']
@@ -40,7 +41,7 @@ export const RemoveTeamMemberModal: React.FunctionComponent<React.PropsWithChild
                 logger.error(error)
             }
         },
-        [afterRemove, teamID, member.id]
+        [afterRemove, teamID, member.id, removeMembers]
     )
 
     return (

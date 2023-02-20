@@ -1,8 +1,9 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiPlus } from '@mdi/js'
+
 import { Button, Container, Icon, useDebounce } from '@sourcegraph/wildcard'
 
-import { useTeamMembers } from './backend'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -13,10 +14,11 @@ import {
     ShowMoreButton,
     ConnectionForm,
 } from '../../components/FilteredConnection/ui'
-import { TeamMemberNode } from './TeamMemberNode'
 import { Scalars } from '../../graphql-operations'
-import { mdiPlus } from '@mdi/js'
+
 import { AddTeamMemberModal } from './AddTeamMemberModal'
+import { useTeamMembers } from './backend'
+import { TeamMemberNode } from './TeamMemberNode'
 
 interface Props {
     teamID: Scalars['ID']
@@ -38,7 +40,7 @@ export const TeamMemberListPage: React.FunctionComponent<React.PropsWithChildren
     const [searchValue, setSearchValue] = useState('')
     const query = useDebounce(searchValue, 200)
 
-    const { fetchMore, hasNextPage, loading, refetchAll, connection, error } = useTeamMembers(teamName)(query)
+    const { fetchMore, hasNextPage, loading, refetchAll, connection, error } = useTeamMembers(teamName, query)
 
     const onClickAdd = useCallback<React.MouseEventHandler>(event => {
         event.preventDefault()

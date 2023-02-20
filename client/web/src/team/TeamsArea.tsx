@@ -1,11 +1,13 @@
-import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import * as React from 'react'
 
 import { Routes, Route } from 'react-router-dom-v5-compat'
 
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+
 import { AuthenticatedUser } from '../auth'
 import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
 import { NotFoundPage } from '../components/HeroPage'
+
 import type { TeamAreaProps } from './area/TeamArea'
 import type { TeamListPageProps } from './list/TeamListPage'
 import type { NewTeamPageProps } from './new/NewTeamPage'

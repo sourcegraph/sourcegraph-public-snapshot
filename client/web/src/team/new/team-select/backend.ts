@@ -1,5 +1,7 @@
 import { QueryResult } from '@apollo/client'
+
 import { gql, useQuery } from '@sourcegraph/http-client'
+
 import { ParentTeamSelectSearchResult, ParentTeamSelectSearchVariables } from '../../../graphql-operations'
 
 const PARENT_TEAM_SELECT_SEARCH_FIELDS = gql`

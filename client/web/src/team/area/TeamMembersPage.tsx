@@ -1,6 +1,7 @@
 import { Page } from '../../components/Page'
 import { TeamAreaTeamFields } from '../../graphql-operations'
 import { TeamMemberListPage } from '../members/TeamMemberListPage'
+
 import { TeamHeader } from './TeamHeader'
 
 export interface TeamMembersPageProps {
@@ -8,8 +9,7 @@ export interface TeamMembersPageProps {
     team: TeamAreaTeamFields
 }
 
-export const TeamMembersPage: React.FunctionComponent<TeamMembersPageProps> = ({ team }) => {
-    return (
+export const TeamMembersPage: React.FunctionComponent<TeamMembersPageProps> = ({ team }) => (
         <Page>
             <TeamHeader team={team} className="mb-3" />
             <div className="container">
@@ -21,4 +21,3 @@ export const TeamMembersPage: React.FunctionComponent<TeamMembersPageProps> = ({
             </div>
         </Page>
     )
-}

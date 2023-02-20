@@ -4,6 +4,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, Routes, useLocation, useParams } from 'react-router-dom-v5-compat'
 
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { LoadingSpinner, ErrorMessage } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -13,10 +14,9 @@ import { TeamAreaTeamFields } from '../../graphql-operations'
 import { RouteV6Descriptor } from '../../util/contributions'
 
 import { useTeam } from './backend'
-import type { TeamProfilePageProps } from './TeamProfilePage'
-import type { TeamMembersPageProps } from './TeamMembersPage'
 import type { TeamChildTeamsPageProps } from './TeamChildTeamsPage'
-import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+import type { TeamMembersPageProps } from './TeamMembersPage'
+import type { TeamProfilePageProps } from './TeamProfilePage'
 
 const TeamProfilePage = lazyComponent<TeamProfilePageProps, 'TeamProfilePage'>(
     () => import('./TeamProfilePage'),
@@ -83,7 +83,7 @@ export const TeamArea: React.FunctionComponent<TeamAreaProps> = ({ authenticated
     }
 
     const context: TeamAreaRouteContext = {
-        authenticatedUser: authenticatedUser,
+        authenticatedUser,
         team: data.team,
         onTeamUpdate: refetch,
     }

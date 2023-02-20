@@ -1,5 +1,7 @@
 import { MutationTuple } from '@apollo/client'
+
 import { dataOrThrowErrors, gql, useMutation } from '@sourcegraph/http-client'
+
 import {
     useShowMorePagination,
     UseShowMorePaginationResult,
@@ -49,30 +51,30 @@ const LIST_TEAM_MEMBERS = gql`
 `
 
 export function useTeamMembers(
-    teamName: string
-): (search: string | null) => UseShowMorePaginationResult<ListTeamMembersResult, ListTeamMemberFields> {
-    return (search: string | null) =>
-        useShowMorePagination<ListTeamMembersResult, ListTeamMembersVariables, ListTeamMemberFields>({
-            query: LIST_TEAM_MEMBERS,
-            variables: {
-                after: null,
-                first: 15,
-                search,
-                teamName,
-            },
-            options: {
-                fetchPolicy: 'network-only',
-            },
-            getConnection: result => {
-                const data = dataOrThrowErrors(result)
+    teamName: string,
+    search: string | null
+): UseShowMorePaginationResult<ListTeamMembersResult, ListTeamMemberFields> {
+    return useShowMorePagination<ListTeamMembersResult, ListTeamMembersVariables, ListTeamMemberFields>({
+        query: LIST_TEAM_MEMBERS,
+        variables: {
+            after: null,
+            first: 15,
+            search,
+            teamName,
+        },
+        options: {
+            fetchPolicy: 'network-only',
+        },
+        getConnection: result => {
+            const data = dataOrThrowErrors(result)
 
-                if (!data.team) {
-                    throw new Error(`Team ${teamName} not found`)
-                }
+            if (!data.team) {
+                throw new Error(`Team ${teamName} not found`)
+            }
 
-                return data.team.members
-            },
-        })
+            return data.team.members
+        },
+    })
 }
 
 const REMOVE_TEAM_MEMBERS = gql`

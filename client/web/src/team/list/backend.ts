@@ -1,5 +1,7 @@
 import { MutationTuple } from '@apollo/client'
+
 import { dataOrThrowErrors, gql, useMutation } from '@sourcegraph/http-client'
+
 import {
     useShowMorePagination,
     UseShowMorePaginationResult,
@@ -75,49 +77,46 @@ const LIST_TEAMS_OF_PARENT = gql`
     ${LIST_TEAM_FIELDS}
 `
 
-export function useTeams(): (search: string | null) => UseShowMorePaginationResult<ListTeamsResult, ListTeamFields> {
-    return (search: string | null) =>
-        useShowMorePagination<ListTeamsResult, ListTeamsVariables, ListTeamFields>({
-            query: LIST_TEAMS,
-            variables: {
-                after: null,
-                first: 15,
-                search,
-            },
-            options: {
-                fetchPolicy: 'cache-and-network',
-            },
-            getConnection: result => {
-                return dataOrThrowErrors(result).teams
-            },
-        })
+export function useTeams(search: string | null): UseShowMorePaginationResult<ListTeamsResult, ListTeamFields> {
+    return useShowMorePagination<ListTeamsResult, ListTeamsVariables, ListTeamFields>({
+        query: LIST_TEAMS,
+        variables: {
+            after: null,
+            first: 15,
+            search,
+        },
+        options: {
+            fetchPolicy: 'cache-and-network',
+        },
+        getConnection: result => dataOrThrowErrors(result).teams,
+    })
 }
 
 export function useChildTeams(
-    parentTeam: string
-): (search: string | null) => UseShowMorePaginationResult<ListTeamsOfParentResult, ListTeamFields> {
-    return (search: string | null) =>
-        useShowMorePagination<ListTeamsOfParentResult, ListTeamsOfParentVariables, ListTeamFields>({
-            query: LIST_TEAMS_OF_PARENT,
-            variables: {
-                teamName: parentTeam,
-                after: null,
-                first: 15,
-                search,
-            },
-            options: {
-                fetchPolicy: 'cache-and-network',
-            },
-            getConnection: result => {
-                const { team } = dataOrThrowErrors(result)
+    parentTeam: string,
+    search: string | null
+): UseShowMorePaginationResult<ListTeamsOfParentResult, ListTeamFields> {
+    return useShowMorePagination<ListTeamsOfParentResult, ListTeamsOfParentVariables, ListTeamFields>({
+        query: LIST_TEAMS_OF_PARENT,
+        variables: {
+            teamName: parentTeam,
+            after: null,
+            first: 15,
+            search,
+        },
+        options: {
+            fetchPolicy: 'cache-and-network',
+        },
+        getConnection: result => {
+            const { team } = dataOrThrowErrors(result)
 
-                if (!team) {
-                    throw new Error(`Parent team ${parentTeam} not found`)
-                }
+            if (!team) {
+                throw new Error(`Parent team ${parentTeam} not found`)
+            }
 
-                return team.childTeams
-            },
-        })
+            return team.childTeams
+        },
+    })
 }
 
 const DELETE_TEAM = gql`

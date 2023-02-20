@@ -7,8 +7,9 @@ import { Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { ListTeamMemberFields, Scalars } from '../../graphql-operations'
 
-import styles from './TeamMemberNode.module.scss'
 import { RemoveTeamMemberModal } from './RemoveTeamMemberModal'
+
+import styles from './TeamMemberNode.module.scss'
 
 export interface TeamMemberNodeProps {
     viewerCanAdminister: boolean

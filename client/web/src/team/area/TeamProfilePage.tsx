@@ -1,11 +1,15 @@
+import { useCallback, useState } from 'react'
+
 import { mdiPencil } from '@mdi/js'
+
 import { logger } from '@sourcegraph/common'
 import { Button, ErrorAlert, Form, H2, H3, Icon, Input, Label, Modal, Text } from '@sourcegraph/wildcard'
-import { useCallback, useState } from 'react'
+
 import { TEAM_DISPLAY_NAME_MAX_LENGTH } from '..'
 import { LoaderButton } from '../../components/LoaderButton'
 import { Page } from '../../components/Page'
 import { Scalars, TeamAreaTeamFields } from '../../graphql-operations'
+
 import { useChangeTeamDisplayName } from './backend'
 import { TeamHeader } from './TeamHeader'
 
@@ -109,7 +113,7 @@ const EditTeamDisplayNameModal: React.FunctionComponent<React.PropsWithChildren<
                 logger.error(error)
             }
         },
-        [afterEdit, teamID, displayName]
+        [afterEdit, teamID, displayName, editTeam]
     )
 
     return (

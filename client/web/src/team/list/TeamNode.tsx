@@ -6,14 +6,15 @@ import classNames from 'classnames'
 import { pluralize } from '@sourcegraph/common'
 import { Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
+import { Collapsible } from '../../components/Collapsible'
 import { ListTeamFields } from '../../graphql-operations'
+import { TeamAvatar } from '../TeamAvatar'
 
-import styles from './TeamNode.module.scss'
+import { useChildTeams } from './backend'
 import { DeleteTeamModal } from './DeleteTeamModal'
 import { TeamList } from './TeamListPage'
-import { Collapsible } from '../../components/Collapsible'
-import { useChildTeams } from './backend'
-import { TeamAvatar } from '../TeamAvatar'
+
+import styles from './TeamNode.module.scss'
 
 export interface TeamNodeProps {
     node: ListTeamFields
@@ -76,8 +77,7 @@ interface NodeContentProps {
     className?: string
 }
 
-const NodeContent: React.FunctionComponent<NodeContentProps> = ({ node, onClickDelete, className }) => {
-    return (
+const NodeContent: React.FunctionComponent<NodeContentProps> = ({ node, onClickDelete, className }) => (
         <div className={classNames(className)}>
             <div>
                 <TeamAvatar team={node} className="mr-2" />
@@ -108,7 +108,6 @@ const NodeContent: React.FunctionComponent<NodeContentProps> = ({ node, onClickD
             </div>
         </div>
     )
-}
 
 const ChildTeamList: React.FunctionComponent<{ parentTeam: string }> = ({ parentTeam }) => {
     const connectionFunction = useChildTeams(parentTeam)

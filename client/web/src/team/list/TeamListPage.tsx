@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
 
 import { mdiPlus } from '@mdi/js'
+import classNames from 'classnames'
 
 import { Button, Link, Icon, PageHeader, Container, useDebounce } from '@sourcegraph/wildcard'
 
-import { useChildTeams, useTeams } from './backend'
-import { Page } from '../../components/Page'
+import { UseShowMorePaginationResult } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -16,11 +16,12 @@ import {
     ShowMoreButton,
     ConnectionForm,
 } from '../../components/FilteredConnection/ui'
+import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { TeamNode } from './TeamNode'
-import { UseShowMorePaginationResult } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import { ListTeamFields, ListTeamsOfParentResult, ListTeamsResult } from '../../graphql-operations'
-import classNames from 'classnames'
+
+import { useChildTeams, useTeams } from './backend'
+import { TeamNode } from './TeamNode'
 
 export interface TeamListPageProps {}
 
@@ -28,7 +29,10 @@ export interface TeamListPageProps {}
  * A page displaying the teams on this site.
  */
 export const TeamListPage: React.FunctionComponent<React.PropsWithChildren<TeamListPageProps>> = () => {
-    const connection = useTeams()
+    const [searchValue, setSearchValue] = useState('')
+    const query = useDebounce(searchValue, 200)
+
+    const connection = useTeams(query)
 
     return (
         <Page className="mb-3">
@@ -52,7 +56,7 @@ export const TeamListPage: React.FunctionComponent<React.PropsWithChildren<TeamL
             />
 
             <Container className="mb-3">
-                <TeamList connectionFunction={connection} />
+                <TeamList searchValue={searchValue} setSearchValue={setSearchValue} query={query} {...connection} />
             </Container>
         </Page>
     )
@@ -68,7 +72,10 @@ export interface ChildTeamListPageProps {
 export const ChildTeamListPage: React.FunctionComponent<React.PropsWithChildren<ChildTeamListPageProps>> = ({
     parentTeam,
 }) => {
-    const connection = useChildTeams(parentTeam)
+    const [searchValue, setSearchValue] = useState('')
+    const query = useDebounce(searchValue, 200)
+
+    const connection = useChildTeams(parentTeam, query)
 
     return (
         <>
@@ -78,52 +85,58 @@ export const ChildTeamListPage: React.FunctionComponent<React.PropsWithChildren<
                 </Button>
             </div>
             <Container className="mb-3">
-                <TeamList connectionFunction={connection} />
+                <TeamList searchValue={searchValue} setSearchValue={setSearchValue} query={query} {...connection} />
             </Container>
         </>
     )
 }
 
-export const TeamList: React.FunctionComponent<{
-    connectionFunction: (
-        search: string | null
-    ) => UseShowMorePaginationResult<ListTeamsResult | ListTeamsOfParentResult, ListTeamFields>
+interface TeamListProps extends UseShowMorePaginationResult<ListTeamsResult | ListTeamsOfParentResult, ListTeamFields> {
+    searchValue: string
+    setSearchValue: (value: string) => void
+    query: string
     className?: string
-}> = ({ connectionFunction, className }) => {
-    const [searchValue, setSearchValue] = useState('')
-    const query = useDebounce(searchValue, 200)
-
-    const { fetchMore, hasNextPage, loading, refetchAll, connection, error } = connectionFunction(query)
-
-    return (
-        <ConnectionContainer className={classNames(className)}>
-            <ConnectionForm
-                inputValue={searchValue}
-                onInputChange={event => setSearchValue(event.target.value)}
-                inputPlaceholder="Search teams"
-            />
-
-            {error && <ConnectionError errors={[error.message]} />}
-            {loading && !connection && <ConnectionLoading />}
-            <ConnectionList as="ul" className="list-group" aria-label="Teams">
-                {connection?.nodes?.map(node => (
-                    <TeamNode key={node.id} node={node} refetchAll={refetchAll} />
-                ))}
-            </ConnectionList>
-            {connection && (
-                <SummaryContainer className="mt-2">
-                    <ConnectionSummary
-                        first={15}
-                        centered={true}
-                        connection={connection}
-                        noun="team"
-                        pluralNoun="teams"
-                        hasNextPage={hasNextPage}
-                        connectionQuery={query}
-                    />
-                    {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
-                </SummaryContainer>
-            )}
-        </ConnectionContainer>
-    )
 }
+
+export const TeamList: React.FunctionComponent<TeamListProps> = ({
+    fetchMore,
+    hasNextPage,
+    loading,
+    refetchAll,
+    connection,
+    error,
+    searchValue,
+    setSearchValue,
+    query,
+    className,
+}) => (
+    <ConnectionContainer className={classNames(className)}>
+        <ConnectionForm
+            inputValue={searchValue}
+            onInputChange={event => setSearchValue(event.target.value)}
+            inputPlaceholder="Search teams"
+        />
+
+        {error && <ConnectionError errors={[error.message]} />}
+        {loading && !connection && <ConnectionLoading />}
+        <ConnectionList as="ul" className="list-group" aria-label="Teams">
+            {connection?.nodes?.map(node => (
+                <TeamNode key={node.id} node={node} refetchAll={refetchAll} />
+            ))}
+        </ConnectionList>
+        {connection && (
+            <SummaryContainer className="mt-2">
+                <ConnectionSummary
+                    first={15}
+                    centered={true}
+                    connection={connection}
+                    noun="team"
+                    pluralNoun="teams"
+                    hasNextPage={hasNextPage}
+                    connectionQuery={query}
+                />
+                {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
+            </SummaryContainer>
+        )}
+    </ConnectionContainer>
+)

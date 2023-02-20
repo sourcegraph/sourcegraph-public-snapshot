@@ -3,9 +3,10 @@ import React, { useCallback } from 'react'
 import { logger } from '@sourcegraph/common'
 import { Button, H3, Modal, ErrorAlert } from '@sourcegraph/wildcard'
 
-import { useDeleteTeam } from './backend'
-import { ListTeamFields } from '../../graphql-operations'
 import { LoaderButton } from '../../components/LoaderButton'
+import { ListTeamFields } from '../../graphql-operations'
+
+import { useDeleteTeam } from './backend'
 
 export interface DeleteTeamModalProps {
     team: ListTeamFields

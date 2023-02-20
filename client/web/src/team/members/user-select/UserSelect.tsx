@@ -1,3 +1,5 @@
+import React, { useEffect, useState } from 'react'
+
 import {
     MultiCombobox,
     MultiComboboxInput,
@@ -6,9 +8,10 @@ import {
     MultiComboboxOption,
     ComboboxOptionText,
 } from '@sourcegraph/wildcard'
-import React, { useEffect, useState } from 'react'
+
 import { Scalars, UserSelectSearchFields } from '../../../graphql-operations'
 import { UserAvatar } from '../../../user/UserAvatar'
+
 import { useUserSelectSearch } from './backend'
 
 import styles from './UserSelect.module.scss'
@@ -31,12 +34,13 @@ export const UserSelect: React.FunctionComponent<UserSelectProps> = ({
 
     useEffect(() => {
         setSelectedMembers(selectedItems.map(item => item.id))
-    }, [selectedItems])
+    }, [selectedItems, setSelectedMembers])
 
     const { data, loading, error } = useUserSelectSearch(search)
 
     useEffect(() => {
         if (error) {
+            // eslint-disable-next-line no-console
             console.error(error)
         }
     }, [error])
@@ -78,10 +82,8 @@ interface UserOptionProps {
     index: number
 }
 
-const UserOption: React.FunctionComponent<UserOptionProps> = ({ item, index }) => {
-    return (
-        <MultiComboboxOption value={item.username} index={index} className={styles.userOption}>
-            <UserAvatar inline={true} user={item} className="mr-2" /> <ComboboxOptionText />
-        </MultiComboboxOption>
-    )
-}
+const UserOption: React.FunctionComponent<UserOptionProps> = ({ item, index }) => (
+    <MultiComboboxOption value={item.username} index={index} className={styles.userOption}>
+        <UserAvatar inline={true} user={item} className="mr-2" /> <ComboboxOptionText />
+    </MultiComboboxOption>
+)
