@@ -29,7 +29,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
--
+- The LSIF upload endpoint is no longer supported and has been replaced by a diagnostic error page. src-cli v4.5+ will translate all local LSIF files to SCIP prior to upload. [#47547](https://github.com/sourcegraph/sourcegraph/pull/47547)
 
 ## 4.5.0
 
