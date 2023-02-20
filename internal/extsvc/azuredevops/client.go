@@ -5,14 +5,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+
+	"github.com/goware/urlx"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
-	"io"
-	"net/http"
-	"net/url"
 )
 
 const (
@@ -40,15 +41,12 @@ type Client interface {
 	ForkRepository(ctx context.Context, org string, input ForkRepositoryInput) (Repository, error)
 	GetRepositoryBranch(ctx context.Context, args OrgProjectRepoArgs, branchName string) (Ref, error)
 	GetProject(ctx context.Context, org, project string) (Project, error)
-	AzureServicesProfile(ctx context.Context) (Profile, error)
+	GetAuthorizedProfile(ctx context.Context) (Profile, error)
 }
 
 type client struct {
 	// HTTP Client used to communicate with the API.
 	httpClient httpcli.Doer
-
-	// Config is the code host connection config for this client.
-	Config *schema.AzureDevOpsConnection
 
 	// URL is the base URL of AzureDevOps.
 	URL *url.URL
@@ -62,8 +60,8 @@ type client struct {
 // NewClient returns an authenticated AzureDevOps API client with
 // the provided configuration. If a nil httpClient is provided, http.DefaultClient
 // will be used.
-func NewClient(urn string, config *schema.AzureDevOpsConnection, httpClient httpcli.Doer) (Client, error) {
-	u, err := url.Parse(config.Url)
+func NewClient(urn string, url string, auth auth.Authenticator, httpClient httpcli.Doer) (Client, error) {
+	u, err := urlx.Parse(url)
 	if err != nil {
 		return nil, err
 	}
@@ -74,13 +72,9 @@ func NewClient(urn string, config *schema.AzureDevOpsConnection, httpClient http
 
 	return &client{
 		httpClient: httpClient,
-		Config:     config,
 		URL:        u,
 		rateLimit:  ratelimit.DefaultRegistry.Get(urn),
-		auth: &auth.BasicAuth{
-			Username: config.Username,
-			Password: config.Token,
-		},
+		auth:       auth,
 	}, nil
 }
 

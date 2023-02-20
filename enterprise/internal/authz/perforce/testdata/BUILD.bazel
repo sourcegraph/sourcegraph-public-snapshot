@@ -1,0 +1,5 @@
+filegroup(
+    name = "data",
+    srcs = glob(["**/**"]),
+    visibility = ["//enterprise/internal/authz/perforce:__subpackages__"],
+)

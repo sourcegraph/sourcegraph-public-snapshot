@@ -3,12 +3,10 @@ package auth
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
-	"github.com/sergi/go-diff/diffmatchpatch"
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -19,12 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-func init() {
-	spew.Config.DisablePointerAddresses = true
-	spew.Config.SortKeys = true
-	spew.Config.SpewKeys = true
-}
 
 // TestGetAndSaveUser ensures the correctness of the GetAndSaveUser function.
 //
@@ -300,7 +292,7 @@ func TestGetAndSaveUser(t *testing.T) {
 			innerCases: []innerCase{{
 				op:         getNonExistentUserCreateIfNotExistOp,
 				expSafeErr: "Unable to create a new user account due to a unexpected error. Ask a site admin for help.",
-				expErr:     unexpectedErr,
+				expErr:     errors.Wrapf(unexpectedErr, `username: "nonexistent", email: "nonexistent@example.com"`),
 			}},
 		},
 		{
@@ -395,23 +387,29 @@ func TestGetAndSaveUser(t *testing.T) {
 						op := c.op
 						op.CreateIfNotExist = createIfNotExist
 						userID, safeErr, err := GetAndSaveUser(ctx, m.DB(), op)
-						for _, v := range []struct {
-							label string
-							got   any
-							want  any
-						}{
-							{"userID", userID, c.expUserID},
-							{"safeErr", safeErr, c.expSafeErr},
-							{"err", err, c.expErr},
-							{"savedExtAccts (side-effect)", m.savedExtAccts, c.expSavedExtAccts},
-							{"updatedUsers (side-effect)", m.updatedUsers, c.expUpdatedUsers},
-							{"createdUsers (side-effect)", m.createdUsers, c.expCreatedUsers},
-						} {
-							if label, got, want := v.label, v.got, v.want; !reflect.DeepEqual(got, want) {
-								dmp := diffmatchpatch.New()
-								t.Errorf("%s: got != want\n%#v != %#v\ndiff(got, want):\n%s",
-									label, got, want, dmp.DiffPrettyText(dmp.DiffMain(spew.Sdump(want), spew.Sdump(got), false)))
-							}
+
+						if userID != c.expUserID {
+							t.Errorf("mismatched userID, want: %v, but got %v", c.expUserID, userID)
+						}
+
+						if diff := cmp.Diff(safeErr, c.expSafeErr); diff != "" {
+							t.Errorf("mismatched safeErr, got != want, diff(-got, +want):\n%s", diff)
+						}
+
+						if !errors.Is(err, c.expErr) {
+							t.Errorf("mismatched errors, want %#v, but got %#v", c.expErr, err)
+						}
+
+						if diff := cmp.Diff(m.savedExtAccts, c.expSavedExtAccts); diff != "" {
+							t.Errorf("mismatched side-effect savedExtAccts, got != want, diff(-got, +want):\n%s", diff)
+						}
+
+						if diff := cmp.Diff(m.updatedUsers, c.expUpdatedUsers); diff != "" {
+							t.Errorf("mismatched side-effect updatedUsers, got != want, diff(-got, +want):\n%s", diff)
+						}
+
+						if diff := cmp.Diff(m.createdUsers, c.expCreatedUsers); diff != "" {
+							t.Errorf("mismatched side-effect createdUsers, got != want, diff(-got, +want):\n%s", diff)
 						}
 
 						if c.expCalledGrantPendingPermissions != m.calledGrantPendingPermissions {

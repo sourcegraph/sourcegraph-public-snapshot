@@ -49,7 +49,7 @@ func NewAzureDevOpsSource(ctx context.Context, logger log.Logger, svc *types.Ext
 		return nil, err
 	}
 
-	cli, err := azuredevops.NewClient(svc.URN(), &c, httpCli)
+	cli, err := azuredevops.NewClient(svc.URN(), c.Url, &auth.BasicAuth{Username: c.Username, Password: c.Token}, httpCli)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func NewAzureDevOpsSource(ctx context.Context, logger log.Logger, svc *types.Ext
 // to actually only return true if the source can serve requests.
 func (s *AzureDevOpsSource) CheckConnection(ctx context.Context) error {
 	if s.cli.IsAzureDevOpsServices() {
-		_, err := s.cli.AzureServicesProfile(ctx)
+		_, err := s.cli.GetAuthorizedProfile(ctx)
 		return err
 	}
 	// If this isn't Azure DevOps Services, i.e. not https://dev.azure.com, return

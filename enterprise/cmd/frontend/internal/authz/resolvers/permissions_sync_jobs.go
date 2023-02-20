@@ -6,6 +6,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -68,16 +69,22 @@ func (j permissionsSyncJobResolver) Status() string  { return j.s.Status }
 func (j permissionsSyncJobResolver) Message() string { return j.s.Message }
 func (j permissionsSyncJobResolver) Providers() (providers []graphqlbackend.PermissionsProviderStateResolver, err error) {
 	for _, p := range j.s.Providers {
-		providers = append(providers, permissionsProviderStatusResolver{ProviderStatus: p})
+		providers = append(providers, permissionsProviderStatusResolver{PermissionSyncCodeHostState: p})
 	}
 	return
 }
 
-type permissionsProviderStatusResolver struct{ syncjobs.ProviderStatus }
+type permissionsProviderStatusResolver struct {
+	database.PermissionSyncCodeHostState
+}
 
 var _ graphqlbackend.PermissionsProviderStateResolver = permissionsProviderStatusResolver{}
 
-func (p permissionsProviderStatusResolver) ID() string      { return p.ProviderID }
-func (p permissionsProviderStatusResolver) Type() string    { return p.ProviderType }
-func (p permissionsProviderStatusResolver) Status() string  { return p.ProviderStatus.Status }
-func (p permissionsProviderStatusResolver) Message() string { return p.ProviderStatus.Message }
+func (p permissionsProviderStatusResolver) ID() string   { return p.ProviderID }
+func (p permissionsProviderStatusResolver) Type() string { return p.ProviderType }
+func (p permissionsProviderStatusResolver) Status() string {
+	return p.PermissionSyncCodeHostState.Status
+}
+func (p permissionsProviderStatusResolver) Message() string {
+	return p.PermissionSyncCodeHostState.Message
+}
