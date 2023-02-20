@@ -11,9 +11,12 @@ import (
 
 // New creates a set of fakes currently available to database stores.
 func New() Fakes {
+	teams := &Teams{}
+	users := &Users{}
+	teams.users = users
 	return Fakes{
-		TeamStore: &Teams{},
-		UserStore: &Users{},
+		TeamStore: teams,
+		UserStore: users,
 	}
 }
 

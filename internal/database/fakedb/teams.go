@@ -18,6 +18,7 @@ type Teams struct {
 	list       []*types.Team
 	members    orderedTeamMembers
 	lastUsedID int32
+	users      *Users
 }
 
 // ListAllTeams returns all stsored teams. It is meant to be used
@@ -148,11 +149,8 @@ func (teams *Teams) CountTeamMembers(ctx context.Context, opts database.ListTeam
 	return int32(len(ms)), err
 }
 
-func (teams *Teams) ListTeamMembers(_ context.Context, opts database.ListTeamMembersOpts) (selected []*types.TeamMember, next *database.TeamMemberListCursor, err error) {
+func (teams *Teams) ListTeamMembers(ctx context.Context, opts database.ListTeamMembersOpts) (selected []*types.TeamMember, next *database.TeamMemberListCursor, err error) {
 	sort.Sort(teams.members)
-	if opts.Search != "" {
-		return nil, nil, errors.New("Teams does not suppor Search parameter in ListTeamMembers yet")
-	}
 	for _, m := range teams.members {
 		if opts.Cursor.TeamID > m.TeamID {
 			continue
@@ -162,6 +160,24 @@ func (teams *Teams) ListTeamMembers(_ context.Context, opts database.ListTeamMem
 		}
 		if opts.TeamID != 0 && opts.TeamID != m.TeamID {
 			continue
+		}
+		if opts.Search != "" {
+			if teams.users == nil {
+				return nil, nil, errors.New("fakeTeamsDB needs reference to fakeUsersDB for ListTeamMembersOpts.Search")
+			}
+			u, err := teams.users.GetByID(ctx, m.UserID)
+			if err != nil {
+				return nil, nil, err
+			}
+			if u == nil {
+				continue
+			}
+			search := strings.ToLower(opts.Search)
+			username := strings.ToLower(u.Username)
+			displayName := strings.ToLower(u.DisplayName)
+			if !strings.Contains(username, search) && !strings.Contains(displayName, search) {
+				continue
+			}
 		}
 		selected = append(selected, m)
 	}
@@ -176,4 +192,16 @@ func (teams *Teams) ListTeamMembers(_ context.Context, opts database.ListTeamMem
 		}
 	}
 	return selected, next, nil
+}
+
+func (teams *Teams) CreateTeamMember(ctx context.Context, members ...*types.TeamMember) error {
+	for _, existingMember := range teams.members {
+		for _, newMember := range members {
+			if *existingMember == *newMember {
+				return errors.Newf("Member teamID=%d userID=%d already exists.", newMember.TeamID, newMember.UserID)
+			}
+		}
+	}
+	teams.members = append(teams.members, members...)
+	return nil
 }
