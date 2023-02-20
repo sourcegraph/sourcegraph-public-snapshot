@@ -127,6 +127,10 @@ func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *resolver
 	return r.autoIndexingRootResolver.QueueAutoIndexJobsForRepo(ctx, args)
 }
 
+func (r *Resolver) InferAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.InferAutoIndexJobsForRepoArgs) (_ []resolverstubs.AutoIndexJobDescriptionResolver, err error) {
+	return r.autoIndexingRootResolver.InferAutoIndexJobsForRepo(ctx, args)
+}
+
 func (r *Resolver) RequestLanguageSupport(ctx context.Context, args *resolverstubs.RequestLanguageSupportArgs) (_ *resolverstubs.EmptyResponse, err error) {
 	return r.autoIndexingRootResolver.RequestLanguageSupport(ctx, args)
 }
@@ -165,6 +169,10 @@ func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context
 
 func (r *Resolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context, args *resolverstubs.DeleteCodeIntelligenceConfigurationPolicyArgs) (_ *resolverstubs.EmptyResponse, err error) {
 	return r.policiesRootResolver.DeleteCodeIntelligenceConfigurationPolicy(ctx, args)
+}
+
+func (r *Resolver) CodeIntelSummary(ctx context.Context) (_ resolverstubs.CodeIntelSummaryResolver, err error) {
+	return r.autoIndexingRootResolver.CodeIntelSummary(ctx)
 }
 
 func (r *Resolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ resolverstubs.CodeIntelRepositorySummaryResolver, err error) {

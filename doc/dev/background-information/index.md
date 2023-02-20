@@ -1,3 +1,5 @@
+<!-- Link back any new sections to doc/dev/index.md as well -->
+
 # Background information
 
 ## Overview
@@ -40,6 +42,10 @@
 - [Developing a background routine](backgroundroutine.md)
 - [Building p4-fusion](./build_p4_fusion.md)
 - [The `gitserver` API](./gitserver-api.md)
+
+## Git
+
+- [`git gc` and its modes of operations in Sourcegraph](./git_gc.md)
 
 ## [Languages](languages/index.md)
 

@@ -193,15 +193,6 @@ func dbAddUserAction(cmd *cli.Context) error {
 			return err
 		}
 
-		// tx.Users().SetIsSiteAdmin assigns the `SITE_ADMINISTRATOR` role to the created user, we also need to
-		// assign the `USER` role to the created user.
-		if _, err = tx.UserRoles().AssignSystemRole(ctx, database.AssignSystemRoleOpts{
-			UserID: user.ID,
-			Role:   types.UserSystemRole,
-		}); err != nil {
-			return err
-		}
-
 		// Report back the new user information.
 		std.Out.WriteSuccessf(
 			// the space after the last %s is so the user can select the password easily in the shell to copy it.

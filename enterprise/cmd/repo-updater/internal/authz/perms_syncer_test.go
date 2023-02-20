@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/syncjobs"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -179,7 +178,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, []syncjobs.ProviderStatus{{
+	assert.Equal(t, database.CodeHostStatusesSet{{
 		ProviderID:   "https://gitlab.com/",
 		ProviderType: "gitlab",
 		Status:       "SUCCESS",
@@ -334,7 +333,7 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, []syncjobs.ProviderStatus{{
+	assert.Equal(t, database.CodeHostStatusesSet{{
 		ProviderID:   "https://gitlab.com/",
 		ProviderType: "gitlab",
 		Status:       "ERROR",

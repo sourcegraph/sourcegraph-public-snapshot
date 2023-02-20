@@ -23,22 +23,22 @@ type OwnResolver interface {
 }
 
 type OwnershipConnectionResolver interface {
-	TotalCount() int32
-	PageInfo() *graphqlutil.PageInfo
-	Nodes() []OwnershipResolver
+	TotalCount(context.Context) (int32, error)
+	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
+	Nodes(context.Context) ([]OwnershipResolver, error)
 }
 
 type Ownable interface {
-	ToGitBlob() (*GitTreeEntryResolver, bool)
+	ToGitBlob(context.Context) (*GitTreeEntryResolver, bool)
 }
 
 type OwnershipResolver interface {
-	Owner() OwnerResolver
-	Reasons() []OwnershipReasonResolver
+	Owner(context.Context) (OwnerResolver, error)
+	Reasons(context.Context) ([]OwnershipReasonResolver, error)
 }
 
 type OwnerResolver interface {
-	OwnerField() string
+	OwnerField(context.Context) (string, error)
 
 	ToPerson() (*PersonResolver, bool)
 	ToUser() (*UserResolver, bool)
@@ -50,8 +50,8 @@ type OwnershipReasonResolver interface {
 }
 
 type CodeownersFileEntryResolver interface {
-	Title() string
-	Description() string
-	CodeownersFile() FileResolver
-	RuleLineMatch() int32
+	Title(context.Context) (string, error)
+	Description(context.Context) (string, error)
+	CodeownersFile(context.Context) (FileResolver, error)
+	RuleLineMatch(context.Context) (int32, error)
 }

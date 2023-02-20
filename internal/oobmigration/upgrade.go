@@ -19,8 +19,8 @@ func scheduleUpgrade(from, to Version, migrations []yamlMigration) ([]MigrationI
 
 		interval := migrationInterval{
 			id:         m.ID,
-			introduced: Version{m.IntroducedVersionMajor, m.IntroducedVersionMinor},
-			deprecated: Version{*m.DeprecatedVersionMajor, *m.DeprecatedVersionMinor},
+			introduced: Version{Major: m.IntroducedVersionMajor, Minor: m.IntroducedVersionMinor},
+			deprecated: Version{Major: *m.DeprecatedVersionMajor, Minor: *m.DeprecatedVersionMinor},
 		}
 
 		// Only add intervals that are deprecated within the migration range: `from < deprecated <= to`

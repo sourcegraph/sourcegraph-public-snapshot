@@ -125,6 +125,13 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 	if !user.SiteAdmin {
 		t.Fatal("!user.SiteAdmin")
 	}
+	ur, err := getUserRoles(ctx, db, user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ur) != 2 {
+		t.Fatalf("expected user to be assigned two roles (USER and SITE_ADMINISTRATOR), got %d", len(ur))
+	}
 
 	// Creating a non-site-admin now that the site has already been initialized.
 	u2, err := db.Users().Create(ctx, NewUser{
@@ -139,6 +146,14 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 	if u2.SiteAdmin {
 		t.Fatal("want u2 not site admin because site is already initialized")
 	}
+	ur, err = getUserRoles(ctx, db, u2.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ur) != 1 {
+		t.Fatalf("expected user to be assigned one role, got %d", len(ur))
+	}
+
 	// Similar to the above, but expect an error because we pass FailIfNotInitialUser: true.
 	_, err = db.Users().Create(ctx, NewUser{
 		Email:                 "a3@a3.com",
@@ -172,6 +187,14 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 	if u4.SiteAdmin {
 		t.Fatal("want u4 not site admin because site is already initialized")
 	}
+	ur, err = getUserRoles(ctx, db, u4.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ur) != 1 {
+		t.Fatalf("expected user to be assigned one role, got %d", len(ur))
+	}
+
 	// Similar to the above, but expect an error because we pass FailIfNotInitialUser: true.
 	if _, err := db.ExecContext(ctx, "UPDATE site_config SET initialized=false"); err != nil {
 		t.Fatal(err)
@@ -1168,30 +1191,61 @@ func TestUsers_SetIsSiteAdmin(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	// Create user.
-	u, err := db.Users().Create(ctx, NewUser{Username: "u"})
+	adminUser, err := db.Users().Create(ctx, NewUser{Username: "u"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Create user. This user will have a `SiteAdmin` value of false because
+	// Global state hasn't been initialized at this point, so technically this is the
+	// first user.
+	if !adminUser.SiteAdmin {
+		t.Fatalf("expected site admin to be created")
+	}
+
+	regularUser, err := db.Users().Create(ctx, NewUser{Username: "u2"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	t.Run("promoting to site admin", func(t *testing.T) {
-		err := db.Users().SetIsSiteAdmin(ctx, u.ID, true)
+	t.Run("revoking site admin role for a site admin", func(t *testing.T) {
+		// Confirm that the user has only two roles assigned to them.
+		ur, err := db.UserRoles().GetByUserID(ctx, GetUserRoleOpts{UserID: adminUser.ID})
+		require.NoError(t, err)
+		require.Len(t, ur, 2)
+
+		err = db.Users().SetIsSiteAdmin(ctx, adminUser.ID, false)
 		require.NoError(t, err)
 
-		// check that site admin role has been assigned to user
-		ur, err := db.UserRoles().GetByUserID(ctx, GetUserRoleOpts{UserID: u.ID})
+		// check that site admin role has been revoked for user
+		ur, err = db.UserRoles().GetByUserID(ctx, GetUserRoleOpts{UserID: adminUser.ID})
 		require.NoError(t, err)
+		// Since we've revoked the SITE_ADMINISTRATOR role, the user should still have the
+		// USER role assigned to them.
 		require.Len(t, ur, 1)
+
+		u, err := db.Users().GetByID(ctx, regularUser.ID)
+		require.NoError(t, err)
+		require.False(t, u.SiteAdmin)
 	})
 
-	t.Run("revoking site admin", func(t *testing.T) {
-		err := db.Users().SetIsSiteAdmin(ctx, u.ID, false)
+	t.Run("promoting a regular user to site admin", func(t *testing.T) {
+		// Confirm that the user has only one role assigned to them.
+		ur, err := db.UserRoles().GetByUserID(ctx, GetUserRoleOpts{UserID: regularUser.ID})
+		require.NoError(t, err)
+		require.Len(t, ur, 1)
+
+		err = db.Users().SetIsSiteAdmin(ctx, regularUser.ID, true)
 		require.NoError(t, err)
 
 		// check that site admin role has been assigned to user
-		ur, err := db.UserRoles().GetByUserID(ctx, GetUserRoleOpts{UserID: u.ID})
+		ur, err = db.UserRoles().GetByUserID(ctx, GetUserRoleOpts{UserID: regularUser.ID})
 		require.NoError(t, err)
-		require.Len(t, ur, 0)
+		// The user should have both USER role and SITE_ADMINISTRATOR role assigned to them.
+		require.Len(t, ur, 2)
+
+		u, err := db.Users().GetByID(ctx, regularUser.ID)
+		require.NoError(t, err)
+		require.True(t, u.SiteAdmin)
 	})
 }
 
@@ -1202,4 +1256,8 @@ func normalizeUsers(users []*types.User) []*types.User {
 		u.InvalidatedSessionsAt = u.InvalidatedSessionsAt.Local().Round(time.Second)
 	}
 	return users
+}
+
+func getUserRoles(ctx context.Context, db DB, userID int32) ([]*types.UserRole, error) {
+	return db.UserRoles().GetByUserID(ctx, GetUserRoleOpts{UserID: userID})
 }

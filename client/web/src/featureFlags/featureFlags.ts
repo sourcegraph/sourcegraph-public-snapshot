@@ -19,6 +19,7 @@ export type FeatureFlagName =
     | 'accessible-file-tree'
     | 'accessible-symbol-tree'
     | 'accessible-file-tree-always-load-ancestors'
+    | 'search-ownership'
     | 'cody'
 
 interface OrgFlagOverride {
