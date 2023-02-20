@@ -3490,7 +3490,7 @@ type PackageRepoReference {
     The ecosystem/package-manager/indexer scheme under which this package repo
     reference is uniquely identified e.g. npm/python/rust-analyzer
     """
-    scheme: String!
+    scheme: PackageRepoReferenceKind!
 
     """
     The name of the package, in a format relevant to the specific ecosystem e.g.
