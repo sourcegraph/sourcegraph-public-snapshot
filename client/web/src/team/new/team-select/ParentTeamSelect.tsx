@@ -19,7 +19,7 @@ import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import React, { ButtonHTMLAttributes, forwardRef, useEffect, useState } from 'react'
-import { ParentTeamSelectSearchFields, Scalars } from '../../../graphql-operations'
+import { ParentTeamSelectSearchFields } from '../../../graphql-operations'
 import { TeamAvatar } from '../../TeamAvatar'
 import { useParentTeamSelectSearch } from './backend'
 

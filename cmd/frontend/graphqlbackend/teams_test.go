@@ -1378,8 +1378,8 @@ func TestMembersAdd(t *testing.T) {
 			}
 		}`,
 		Variables: map[string]any{
-			"existingAndAddedId": string(relay.MarshalID("TeamMember", userExistingAndAddedID)),
-			"addedId":            string(relay.MarshalID("TeamMember", userAddedID)),
+			"existingAndAddedId": string(relay.MarshalID("User", userExistingAndAddedID)),
+			"addedId":            string(relay.MarshalID("User", userAddedID)),
 		},
 	})
 }

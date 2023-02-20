@@ -1,7 +1,6 @@
 import { QueryResult } from '@apollo/client'
 import { gql, useMutation, useQuery } from '@sourcegraph/http-client'
 import {
-    Scalars,
     TeamResult,
     TeamVariables,
     ChangeTeamDisplayNameResult,
