@@ -17,8 +17,7 @@ import (
 )
 
 const (
-	azureDevOpsServicesURL = "https://dev.azure.com/"
-	// TODO: @varsanojidan look into which API version/s we want to support.
+	azureDevOpsServicesURL  = "https://dev.azure.com/"
 	apiVersion              = "7.0"
 	continuationTokenHeader = "x-ms-continuationtoken"
 )

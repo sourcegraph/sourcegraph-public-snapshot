@@ -46,7 +46,7 @@ func NewAzureDevOpsSource(ctx context.Context, svc *types.ExternalService, cf *h
 		return nil, errors.Wrap(err, "creating external client")
 	}
 
-	client, err := azuredevops.NewClient(svc.URN(), &c, cli)
+	client, err := azuredevops.NewClient(svc.URN(), c.Url, &auth.BasicAuth{Username: c.Username, Password: c.Token}, cli)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating Azure DevOps client")
 	}
@@ -75,7 +75,7 @@ func (s AzureDevOpsSource) WithAuthenticator(a auth.Authenticator) (ChangesetSou
 // ValidateAuthenticator validates the currently set authenticator is usable.
 // Returns an error, when validating the Authenticator yielded an error.
 func (s AzureDevOpsSource) ValidateAuthenticator(ctx context.Context) error {
-	_, err := s.client.AzureServicesProfile(ctx)
+	_, err := s.client.GetAuthorizedProfile(ctx)
 	return err
 }
 
