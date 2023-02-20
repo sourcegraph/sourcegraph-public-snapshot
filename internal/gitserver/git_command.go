@@ -173,7 +173,7 @@ type RemoteGitCommand struct {
 
 type execer interface {
 	httpPost(ctx context.Context, repo api.RepoName, op string, payload any) (resp *http.Response, err error)
-	AddrForRepo(ctx context.Context, repo api.RepoName) (string, error)
+	AddrForRepo(repo api.RepoName) string
 }
 
 // DividedOutput runs the command and returns its standard output and standard error.
