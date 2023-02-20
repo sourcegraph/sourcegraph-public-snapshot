@@ -1,5 +1,5 @@
 .form {
-    // Since this form is rendered withing container with padding
+    // Since this form is rendered within container with padding
     // but we want to render some element without this padding we stretch
     // the form and control padding on form level instead.
     margin: -1rem;
