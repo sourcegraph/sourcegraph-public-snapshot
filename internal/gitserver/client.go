@@ -35,7 +35,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -76,7 +75,7 @@ var _ Client = &clientImplementor{}
 func NewClient() Client {
 	return &clientImplementor{
 		logger:      sglog.Scoped("NewClient", "returns a new gitserver.Client"),
-		picker:      newConfPicker(),
+		addrs:       NewGitserverAddressesFromConf,
 		httpClient:  defaultDoer,
 		HTTPLimiter: defaultLimiter,
 		// Use the binary name for userAgent. This should effectively identify
@@ -93,7 +92,7 @@ func NewTestClient(cli httpcli.Doer, addrs []string) Client {
 	logger := sglog.Scoped("NewTestClient", "Test New client")
 	return &clientImplementor{
 		logger:      logger,
-		picker:      newTestPicker(addrs),
+		addrs:       func() GitServerAddresses { return newTestGitserverAddresses(addrs) },
 		httpClient:  cli,
 		HTTPLimiter: parallel.NewRun(500),
 		// Use the binary name for userAgent. This should effectively identify
@@ -190,7 +189,8 @@ type clientImplementor struct {
 	// logger is used for all logging and logger creation
 	logger sglog.Logger
 
-	picker addrPicker
+	// addrs is a function that returns the current set of gitserver addresses
+	addrs func() GitServerAddresses
 
 	// operations are used for internal observability
 	operations *operations
@@ -432,30 +432,11 @@ type Client interface {
 }
 
 func (c *clientImplementor) Addrs() []string {
-	return c.picker.addrs()
+	return c.addrs().Addresses
 }
 
 func (c *clientImplementor) AddrForRepo(repo api.RepoName) string {
-	return c.picker.addrForRepo(c.userAgent, repo)
-}
-
-var addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_gitserver_addr_for_repo_invoked",
-	Help: "Number of times gitserver.AddrForRepo was invoked",
-}, []string{"user_agent"})
-
-// AddrForRepo returns the gitserver address to use for the given repo name.
-// It should never be called with a nil addresses pointer.
-func AddrForRepo(userAgent string, repo api.RepoName, addresses GitServerAddresses) string {
-	addrForRepoInvoked.WithLabelValues(userAgent).Inc()
-
-	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
-	rs := string(repo)
-	if repoPinned, addr := getPinnedRepoAddr(rs, addresses.PinnedServers); repoPinned {
-		return addr
-	}
-
-	return addrForKey(rs, addresses.Addresses)
+	return c.addrs().AddrForRepo(c.userAgent, repo)
 }
 
 // ArchiveOptions contains options for the Archive func.
@@ -1427,13 +1408,6 @@ func revsToGitArgs(revSpecs []protocol.RevisionSpecifier) []string {
 	return args
 }
 
-// getPinnedRepoAddr returns true and gitserver address if given repo is pinned.
-// Otherwise, if repo is not pinned -- false and empty string are returned
-func getPinnedRepoAddr(repo string, pinnedServers map[string]string) (bool, string) {
-	pinned, found := pinnedServers[repo]
-	return found, pinned
-}
-
 // readResponseBody will attempt to read the body of the HTTP response and return it as a
 // string. However, in the unlikely scenario that it fails to read the body, it will encode and
 // return the error message as a string.
@@ -1458,12 +1432,4 @@ func readResponseBody(body io.Reader) string {
 	// strings.TrimSpace, see attached screenshots in this pull request:
 	// https://github.com/sourcegraph/sourcegraph/pull/39358.
 	return strings.TrimSpace(string(content))
-}
-
-func pinnedReposFromConfig() map[string]string {
-	cfg := conf.Get()
-	if cfg.ExperimentalFeatures != nil && cfg.ExperimentalFeatures.GitServerPinnedRepos != nil {
-		return cfg.ExperimentalFeatures.GitServerPinnedRepos
-	}
-	return map[string]string{}
 }
