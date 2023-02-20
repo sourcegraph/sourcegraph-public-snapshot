@@ -627,7 +627,7 @@ func (s *Server) Handler() http.Handler {
 // background goroutine.
 func (s *Server) Janitor(ctx context.Context, interval time.Duration) {
 	for {
-		gitserverAddrs := currentGitserverAddresses()
+		gitserverAddrs := gitserver.NewGitserverAddressesFromConf()
 		s.cleanupRepos(actor.WithInternalActor(ctx), gitserverAddrs)
 		time.Sleep(interval)
 	}
@@ -641,7 +641,7 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 	var previousAddrs string
 	var previousPinned string
 	for {
-		gitServerAddrs := currentGitserverAddresses()
+		gitServerAddrs := gitserver.NewGitserverAddressesFromConf()
 		addrs := gitServerAddrs.Addresses
 		// We turn addrs into a string here for easy comparison and storage of previous
 		// addresses since we'd need to take a copy of the slice anyway.
@@ -670,18 +670,6 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 
 func (s *Server) addrForRepo(repoName api.RepoName, gitServerAddrs gitserver.GitServerAddresses) string {
 	return gitServerAddrs.AddrForRepo(filepath.Base(os.Args[0]), repoName)
-}
-
-func currentGitserverAddresses() gitserver.GitServerAddresses {
-	cfg := conf.Get()
-	gitServerAddrs := gitserver.GitServerAddresses{
-		Addresses: cfg.ServiceConnectionConfig.GitServers,
-	}
-	if cfg.ExperimentalFeatures != nil {
-		gitServerAddrs.PinnedServers = cfg.ExperimentalFeatures.GitServerPinnedRepos
-	}
-
-	return gitServerAddrs
 }
 
 // StartClonePipeline clones repos asynchronously. It creates a producer-consumer
