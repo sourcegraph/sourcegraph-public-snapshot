@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import FileAlertIcon from 'mdi-react/FileAlertIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import ReactDOM from 'react-dom'
+import { createPortal } from 'react-dom'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom-v5-compat'
 import { Observable, of } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
@@ -603,7 +603,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                 </TraceSpanProvider>
             )}
             {parseQueryAndHash(location.search, location.hash).viewState &&
-                ReactDOM.createPortal(
+                createPortal(
                     <Panel
                         className={styles.panel}
                         position="bottom"
