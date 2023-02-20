@@ -196,19 +196,16 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
 
     const [showPageTitle] = useState(true)
 
-    // TODO: Implement an API to fetch this information.
-    const isFork = false
-
     const RootHeaderSection = (): React.ReactElement => (
         <>
             <div className="d-flex flex-wrap justify-content-between px-0">
                 <div className={styles.header}>
                     <PageHeader className="mb-3 test-tree-page-title">
                         <PageHeader.Heading as="h2" styleAs="h1">
-                            <PageHeader.Breadcrumb icon={isFork ? mdiSourceFork : mdiSourceRepository}>
+                            <PageHeader.Breadcrumb icon={repo?.isFork ? mdiSourceFork : mdiSourceRepository}>
                                 {displayRepoName(repo?.name || '')}
                             </PageHeader.Breadcrumb>
-                            {isFork && (
+                            {repo?.isFork && (
                                 <Badge variant="outlineSecondary" className="mr-2 mt-2">
                                     Fork
                                 </Badge>
