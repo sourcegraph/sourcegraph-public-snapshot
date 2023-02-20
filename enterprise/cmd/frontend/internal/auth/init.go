@@ -30,15 +30,15 @@ import (
 // Init must be called by the frontend to initialize the auth middlewares.
 func Init(logger log.Logger, db database.DB) {
 	logger = logger.Scoped("auth", "provides enterprise authentication middleware")
-	openidconnect.Init()
-	sourcegraphoperator.Init()
-	saml.Init()
-	httpheader.Init()
-	githuboauth.Init(logger, db)
-	gitlaboauth.Init(logger, db)
+	azureoauth.Init(logger, db)
 	bitbucketcloudoauth.Init(logger, db)
 	gerrit.Init()
-	azureoauth.Init(logger, db)
+	githuboauth.Init(logger, db)
+	gitlaboauth.Init(logger, db)
+	httpheader.Init()
+	openidconnect.Init()
+	saml.Init()
+	sourcegraphoperator.Init()
 
 	// Register enterprise auth middleware
 	auth.RegisterMiddlewares(
