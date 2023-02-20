@@ -4,7 +4,29 @@ import (
 	"github.com/gobwas/glob"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+func NewAllowBlockLists(rawConfig []any) (allowlist, blocklist []PackageMatcher, err error) {
+	for _, block := range rawConfig {
+		block := block.(map[string]interface{})
+		if packageGlob, ok := block["packageGlob"]; ok {
+			matcher, err := NewPackageNameGlob(packageGlob.(string))
+			if err != nil {
+				return nil, nil, errors.Wrapf(err, "error building glob matcher for %q", packageGlob)
+			}
+			blocklist = append(blocklist, matcher)
+		} else {
+			matcher, err := NewVersionGlob(block["package"].(string), block["versionGlob"].(string))
+			if err != nil {
+				return nil, nil, errors.Wrapf(err, "error building glob matcher for %q %q", block["package"], block["versionGlob"])
+			}
+			blocklist = append(blocklist, matcher)
+		}
+	}
+
+	return
+}
 
 type PackageMatcher interface {
 	Matches(pkg, version string) bool
@@ -47,7 +69,7 @@ func (v versionGlob) Matches(pkg, version string) bool {
 	return pkg == v.packageName && v.g.Match(version)
 }
 
-func IsPackageAllowed(pkgName reposource.PackageName, allowList, blockList []PackageMatcher) bool {
+func IsPackageAllowed(pkgName reposource.PackageName, allowList, blockList []PackageMatcher) (allowed bool) {
 	// blocklist takes priority
 	for _, block := range blockList {
 		// non-all-encompassing version globs don't apply to unversioned packages,
@@ -74,7 +96,7 @@ func IsPackageAllowed(pkgName reposource.PackageName, allowList, blockList []Pac
 	return isAllowed
 }
 
-func IsVersionedPackageAllowed(pkgName reposource.PackageName, version string, allowList, blockList []PackageMatcher) bool {
+func IsVersionedPackageAllowed(pkgName reposource.PackageName, version string, allowList, blockList []PackageMatcher) (allowed bool) {
 	// blocklist takes priority
 	for _, block := range blockList {
 		if _, ok := block.(versionGlob); ok && version == "" {

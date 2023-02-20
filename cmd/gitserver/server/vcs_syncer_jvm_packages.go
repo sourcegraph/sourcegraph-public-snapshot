@@ -14,6 +14,8 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/unpack"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -45,6 +47,11 @@ func NewJVMPackagesSyncer(connection *schema.JVMPackagesConnection, svc *depende
 		configDeps = connection.Maven.Dependencies
 	}
 
+	allowList, blockList, err := repos.NewAllowBlockLists(connection.Maven.Blocklist)
+	if err != nil {
+		panic(fmt.Sprintf("failed to build allow/block lists: %v", err))
+	}
+
 	return &vcsPackagesSyncer{
 		logger:      log.Scoped("JVMPackagesSyncer", "sync JVM packages"),
 		typ:         "jvm_packages",
@@ -52,6 +59,8 @@ func NewJVMPackagesSyncer(connection *schema.JVMPackagesConnection, svc *depende
 		placeholder: placeholder,
 		svc:         svc,
 		configDeps:  configDeps,
+		allowList:   allowList,
+		blockList:   blockList,
 		source:      &jvmPackagesSyncer{config: connection, fetch: coursier.FetchSources},
 	}
 }

@@ -30,16 +30,9 @@ func NewJVMPackagesSource(ctx context.Context, svc *types.ExternalService) (*Pac
 		configDeps = c.Maven.Dependencies
 	}
 
-	var allowList, blockList []PackageMatcher
-	for _, block := range c.Maven.Blocklist {
-		block := block.(map[string]string)
-		if packageGlob, ok := block["packageGlob"]; ok {
-			matcher, err := NewPackageNameGlob(packageGlob)
-			if err != nil {
-				return nil, errors.Wrapf(err, "error building glob matcher for %q", packageGlob)
-			}
-			blockList = append(blockList, matcher)
-		}
+	allowList, blockList, err := NewAllowBlockLists(c.Maven.Blocklist)
+	if err != nil {
+		return nil, err
 	}
 
 	return &PackagesSource{

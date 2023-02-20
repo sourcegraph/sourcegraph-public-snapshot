@@ -148,20 +148,24 @@ func (s *vcsPackagesSyncer) fetchRevspec(ctx context.Context, name reposource.Pa
 		// Invalid version. Silently ignore error, see comment above why.
 		return nil
 	}
+
+	if !repos.IsVersionedPackageAllowed(dep.PackageSyntax(), dep.PackageVersion(), s.allowList, s.blockList) {
+		return nil
+	}
+
 	err = s.gitPushDependencyTag(ctx, string(dir), dep)
 	if err != nil {
 		// Package could not be downloaded. Silently ignore error, see comment above why.
 		return nil
 	}
 
-	_, _, err = s.svc.InsertPackageRepoRefs(ctx, []dependencies.MinimalPackageRepoRef{
+	if _, _, err = s.svc.InsertPackageRepoRefs(ctx, []dependencies.MinimalPackageRepoRef{
 		{
 			Scheme:   dep.Scheme(),
 			Name:     dep.PackageSyntax(),
 			Versions: []string{dep.PackageVersion()},
 		},
-	})
-	if err != nil {
+	}); err != nil {
 		// We don't want to ignore when writing to the database failed, since
 		// we've already downloaded the package successfully.
 		return err
