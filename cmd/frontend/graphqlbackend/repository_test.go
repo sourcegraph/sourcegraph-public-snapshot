@@ -8,7 +8,7 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -172,7 +172,7 @@ func TestRepositoryLabel(t *testing.T) {
 		return html
 	}
 
-	autogold.Want("encodes spaces for URL in HTML", `<p><a href="/repo%20with%20spaces" rel="nofollow">repo with spaces</a></p>
+	autogold.Expect(`<p><a href="/repo%20with%20spaces" rel="nofollow">repo with spaces</a></p>
 `).Equal(t, test("repo with spaces"))
 }
 
