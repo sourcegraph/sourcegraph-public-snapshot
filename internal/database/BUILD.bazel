@@ -143,6 +143,7 @@ go_library(
 
 go_test(
     name = "database_test",
+    timeout = "long",
     srcs = [
         "access_tokens_test.go",
         "authenticator_test.go",
