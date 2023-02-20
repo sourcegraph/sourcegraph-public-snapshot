@@ -54,7 +54,7 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
         case 'azuredevops':
             accountConnection = (
                 <>
-                    {account.external?.displayName}(@{account.external?.login})
+                    {account.external?.displayName} (@{account.external?.login})
                 </>
             )
             break
@@ -63,14 +63,14 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
                 <>
                     {account.external?.url ? (
                         <>
-                            {account.external.displayName}(
+                            {account.external.displayName} (
                             <Link to={account.external.url} target="_blank" rel="noopener noreferrer">
                                 @{account.external.login}
                             </Link>
                             )
                         </>
                     ) : (
-                        (accountConnection = 'Not connected')
+                        'Not connected'
                     )}
                 </>
             )
