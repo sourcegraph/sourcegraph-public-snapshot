@@ -52,6 +52,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     debug: boolean
 
     sourcegraphDotComMode: boolean
+    sourcegraphAppMode: boolean
 
     /**
      * siteID is the identifier of the Sourcegraph site.
