@@ -4,7 +4,6 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -59,18 +58,11 @@ func TestNormalizeUsername(t *testing.T) {
 				t.Errorf("Expected %q to normalize to %q, but got %q", tc.in, tc.out, out)
 			}
 
-			if !isValidUsername(out) {
+			if !IsValidUsername(out) {
 				t.Errorf("Normalization succeeded, but output %q is still not a valid username", out)
 			}
 		}
 	}
-}
-
-// Equivalent to `^\w(?:\w|[-.](?=\w))*-?$` which we have in the DB constraint, but without a lookahead
-var validUsername = lazyregexp.New(`^\w(?:(?:[\w.-]\w|\w)*-?|)$`)
-
-func isValidUsername(name string) bool {
-	return validUsername.MatchString(name) && len(name) <= 255 // (255 is the max length of a username in the database
 }
 
 func Test_AddRandomSuffixToMakeUnique(t *testing.T) {
@@ -101,7 +93,35 @@ func Test_AddRandomSuffixToMakeUnique(t *testing.T) {
 			out, err := AddRandomSuffix(tc.username)
 			assert.NoError(t, err, tc.username)
 			assert.Len(t, out, tc.wantLength)
-			assert.True(t, isValidUsername(out))
+			assert.True(t, IsValidUsername(out))
 		}
+	}
+}
+
+func Test_IsValidUsername(t *testing.T) {
+	// generate a string of the length 255, with all "a"s
+	username255 := string(make([]byte, 255))
+	for i := range username255 {
+		username255 = username255[:i] + "a" + username255[i+1:]
+	}
+
+	testCases := []struct {
+		username string
+		want     bool
+	}{
+		{username: "username", want: true},
+		{username: "user.name", want: true},
+		{username: "username-", want: true},
+		{username: username255, want: true},
+		{username: "", want: false},
+		{username: "user@name", want: false},
+		{username: "username--", want: false},
+		{username: ".username", want: false},
+		{username: "user!name", want: false},
+		{username: username255 + "a", want: false},
+	}
+
+	for _, tc := range testCases {
+		assert.Equal(t, tc.want, IsValidUsername(tc.username), tc.username)
 	}
 }

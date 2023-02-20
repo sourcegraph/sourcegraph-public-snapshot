@@ -123,3 +123,12 @@ func AddRandomSuffix(username string) (string, error) {
 	}
 	return username + "-" + string(b), nil
 }
+
+// Equivalent to `^\w(?:\w|[-.](?=\w))*-?$` which we have in the DB constraint, but without a lookahead
+var validUsername = lazyregexp.New(`^\w(?:(?:[\w.-]\w|\w)*-?|)$`)
+
+// IsValidUsername returns true if the username matches the constraints in the database.
+func IsValidUsername(name string) bool {
+	return validUsername.MatchString(name) && len(name) <= 255
+}
+
