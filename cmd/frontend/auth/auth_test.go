@@ -1,6 +1,10 @@
 package auth
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+)
 
 func TestNormalizeUsername(t *testing.T) {
 	testCases := []struct {
@@ -24,6 +28,11 @@ func TestNormalizeUsername(t *testing.T) {
 		{in: "bob_", out: "bob_"},
 		{in: "bob__", out: "bob__"},
 		{in: "user_@name", out: "user_"},
+		{in: "user_@name", out: "user_"},
+		{in: "user_@name", out: "user_"},
+		{in: "1", out: "1"},
+		{in: "a", out: "a"},
+		{in: "a-", out: "a-"},
 		{in: "--username-", hasErr: true},
 		{in: "bob.!bob", hasErr: true},
 		{in: "bob@@bob", hasErr: true},
@@ -31,6 +40,8 @@ func TestNormalizeUsername(t *testing.T) {
 		{in: ".username", hasErr: true},
 		{in: "user..name", hasErr: true},
 		{in: "user.-name", hasErr: true},
+		{in: ".", hasErr: true},
+		{in: "-", hasErr: true},
 	}
 
 	for _, tc := range testCases {
