@@ -321,41 +321,94 @@ func (s *store) ScanMatches(ctx context.Context) (err error) {
 	ctx, _, endObservation := s.operations.scanMatches.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	// TODO - insert instead of returning
-	matches, err := scanFilteredVulnerabilityMatches(s.db.Query(ctx, sqlf.Sprintf(scanMatchesQuery)))
+	tx, err := s.db.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	matches, err := scanFilteredVulnerabilityMatches(tx.Query(ctx, sqlf.Sprintf(scanMatchesQuery)))
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("> %v\n", matches)
+	if err := tx.Exec(ctx, sqlf.Sprintf(scanMatchesTemporaryTableQuery)); err != nil {
+		return err
+	}
+
+	if err := batch.WithInserter(
+		ctx,
+		tx.Handle(),
+		"t_vulnerability_affected_packages",
+		batch.MaxNumPostgresParameters,
+		[]string{
+			"upload_id",
+			"vulnerability_affected_package_id",
+		},
+		func(inserter *batch.Inserter) error {
+			for _, match := range matches {
+				if err := inserter.Insert(
+					ctx,
+					match.UploadID,
+					match.VulnerabilityAffectedPackageID,
+				); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		},
+	); err != nil {
+		return err
+	}
+
+	if err := tx.Exec(ctx, sqlf.Sprintf(scanMatchesUpdateQuery)); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 const scanMatchesQuery = `
 SELECT
 	r.dump_id,
+	vap.id,
 	r.version,
-	vap.vulnerability_id,
 	vap.version_constraint
 FROM vulnerability_affected_packages vap
--- TODO - refine this match
 JOIN lsif_references r ON r.name LIKE vap.package_name
+-- TODO - refine this match
 WHERE
+	(r.scheme = 'gomod' AND vap.language = 'go') OR
+	(r.scheme = 'npm' AND vap.language = 'Javascript')
 	-- TODO - java mapping
-	-- r.scheme = 'gomod' AND vap.language = 'go'
-	r.scheme = 'npm' AND vap.language = 'Javascript'
+`
+
+const scanMatchesTemporaryTableQuery = `
+CREATE TEMPORARY TABLE t_vulnerability_affected_packages (
+	upload_id                          INT NOT NULL,
+	vulnerability_affected_package_id  INT NOT NULL
+) ON COMMIT DROP
+`
+
+const scanMatchesUpdateQuery = `
+INSERT INTO vulnerability_match (upload_id, vulnerability_affected_package_id)
+SELECT upload_id, vulnerability_affected_package_id FROM t_vulnerability_affected_packages
+ON CONFLICT DO NOTHING
 `
 
 type VulnerabilityMatch struct {
-	UploadID        int
-	VulnerabilityID int
+	UploadID                       int
+	VulnerabilityAffectedPackageID int
 }
 
 var scanFilteredVulnerabilityMatches = basestore.NewFilteredSliceScanner(func(s dbutil.Scanner) (m VulnerabilityMatch, _ bool, _ error) {
-	var version string
-	var versionConstraints []string
+	var (
+		version            string
+		versionConstraints []string
+	)
 
-	if err := s.Scan(&m.UploadID, &version, &m.VulnerabilityID, pq.Array(&versionConstraints)); err != nil {
+	if err := s.Scan(&m.UploadID, &m.VulnerabilityAffectedPackageID, &version, pq.Array(&versionConstraints)); err != nil {
 		return VulnerabilityMatch{}, false, err
 	}
 
@@ -377,5 +430,5 @@ func versionMatchesConstraints(version string, constraints []string) bool {
 		return false
 	}
 
-	return constraint.Check(v)
+	return constraint.Check(v) || true // TODO - true only for testing
 }
