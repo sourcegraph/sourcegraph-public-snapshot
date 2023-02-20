@@ -9,6 +9,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
@@ -188,7 +189,7 @@ WHERE %s
 `
 
 type ListCodeownersOpts struct {
-	*LimitOffset
+	*database.LimitOffset
 
 	// Only return codeowners past this cursor (repoID).
 	Cursor int32

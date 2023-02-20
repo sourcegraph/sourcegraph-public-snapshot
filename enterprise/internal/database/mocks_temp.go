@@ -12,16 +12,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
-
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/schema"
+	sqlf "github.com/keegancsmith/sqlf"
+	api "github.com/sourcegraph/sourcegraph/internal/api"
+	authz "github.com/sourcegraph/sourcegraph/internal/authz"
+	database "github.com/sourcegraph/sourcegraph/internal/database"
+	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	encryption "github.com/sourcegraph/sourcegraph/internal/encryption"
+	extsvc "github.com/sourcegraph/sourcegraph/internal/extsvc"
+	result "github.com/sourcegraph/sourcegraph/internal/search/result"
+	schema "github.com/sourcegraph/sourcegraph/schema"
 )
 
 // MockCodeMonitorStore is a mock implementation of the CodeMonitorStore

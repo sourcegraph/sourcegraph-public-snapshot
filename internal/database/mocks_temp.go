@@ -12,21 +12,19 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/zoekt"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/temporarysettings"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	uuid "github.com/google/uuid"
+	sqlf "github.com/keegancsmith/sqlf"
+	api "github.com/sourcegraph/sourcegraph/internal/api"
+	conf "github.com/sourcegraph/sourcegraph/internal/conf"
+	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	encryption "github.com/sourcegraph/sourcegraph/internal/encryption"
+	extsvc "github.com/sourcegraph/sourcegraph/internal/extsvc"
+	auth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	featureflag "github.com/sourcegraph/sourcegraph/internal/featureflag"
+	temporarysettings "github.com/sourcegraph/sourcegraph/internal/temporarysettings"
+	types "github.com/sourcegraph/sourcegraph/internal/types"
+	schema "github.com/sourcegraph/sourcegraph/schema"
+	zoekt "github.com/sourcegraph/zoekt"
 )
 
 // MockAccessTokenStore is a mock implementation of the AccessTokenStore
@@ -3758,9 +3756,6 @@ type MockDB struct {
 	// object controlling the behavior of the method
 	// BitbucketProjectPermissions.
 	BitbucketProjectPermissionsFunc *DBBitbucketProjectPermissionsFunc
-	// CodeownersFunc is an instance of a mock function object controlling
-	// the behavior of the method Codeowners.
-	CodeownersFunc *DBCodeownersFunc
 	// ConfFunc is an instance of a mock function object controlling the
 	// behavior of the method Conf.
 	ConfFunc *DBConfFunc
@@ -3917,11 +3912,6 @@ func NewMockDB() *MockDB {
 		},
 		BitbucketProjectPermissionsFunc: &DBBitbucketProjectPermissionsFunc{
 			defaultHook: func() (r0 BitbucketProjectPermissionsStore) {
-				return
-			},
-		},
-		CodeownersFunc: &DBCodeownersFunc{
-			defaultHook: func() (r0 database.CodeownersStore) {
 				return
 			},
 		},
@@ -4177,11 +4167,6 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.BitbucketProjectPermissions")
 			},
 		},
-		CodeownersFunc: &DBCodeownersFunc{
-			defaultHook: func() database.CodeownersStore {
-				panic("unexpected invocation of MockDB.Codeowners")
-			},
-		},
 		ConfFunc: &DBConfFunc{
 			defaultHook: func() ConfStore {
 				panic("unexpected invocation of MockDB.Conf")
@@ -4427,9 +4412,6 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		BitbucketProjectPermissionsFunc: &DBBitbucketProjectPermissionsFunc{
 			defaultHook: i.BitbucketProjectPermissions,
-		},
-		CodeownersFunc: &DBCodeownersFunc{
-			defaultHook: i.Codeowners,
 		},
 		ConfFunc: &DBConfFunc{
 			defaultHook: i.Conf,
@@ -4866,104 +4848,6 @@ func (c DBBitbucketProjectPermissionsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBBitbucketProjectPermissionsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// DBCodeownersFunc describes the behavior when the Codeowners method of the
-// parent MockDB instance is invoked.
-type DBCodeownersFunc struct {
-	defaultHook func() database.CodeownersStore
-	hooks       []func() database.CodeownersStore
-	history     []DBCodeownersFuncCall
-	mutex       sync.Mutex
-}
-
-// Codeowners delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockDB) Codeowners() database.CodeownersStore {
-	r0 := m.CodeownersFunc.nextHook()()
-	m.CodeownersFunc.appendCall(DBCodeownersFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the Codeowners method of
-// the parent MockDB instance is invoked and the hook queue is empty.
-func (f *DBCodeownersFunc) SetDefaultHook(hook func() database.CodeownersStore) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Codeowners method of the parent MockDB instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *DBCodeownersFunc) PushHook(hook func() database.CodeownersStore) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *DBCodeownersFunc) SetDefaultReturn(r0 database.CodeownersStore) {
-	f.SetDefaultHook(func() database.CodeownersStore {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *DBCodeownersFunc) PushReturn(r0 database.CodeownersStore) {
-	f.PushHook(func() database.CodeownersStore {
-		return r0
-	})
-}
-
-func (f *DBCodeownersFunc) nextHook() func() database.CodeownersStore {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBCodeownersFunc) appendCall(r0 DBCodeownersFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBCodeownersFuncCall objects describing the
-// invocations of this function.
-func (f *DBCodeownersFunc) History() []DBCodeownersFuncCall {
-	f.mutex.Lock()
-	history := make([]DBCodeownersFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBCodeownersFuncCall is an object that describes an invocation of method
-// Codeowners on an instance of MockDB.
-type DBCodeownersFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 database.CodeownersStore
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBCodeownersFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBCodeownersFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
