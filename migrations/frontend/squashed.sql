@@ -1715,7 +1715,9 @@ CREATE TABLE codeowners (
     id integer NOT NULL,
     contents text,
     contents_proto json,
-    repo_id integer
+    repo_id integer,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 CREATE SEQUENCE codeowners_id_seq

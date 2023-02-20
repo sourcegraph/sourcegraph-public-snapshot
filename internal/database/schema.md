@@ -957,12 +957,14 @@ Foreign-key constraints:
 
 # Table "public.codeowners"
 ```
-     Column     |  Type   | Collation | Nullable |                Default                 
-----------------+---------+-----------+----------+----------------------------------------
- id             | integer |           | not null | nextval('codeowners_id_seq'::regclass)
- contents       | text    |           |          | 
- contents_proto | json    |           |          | 
- repo_id        | integer |           |          | 
+     Column     |           Type           | Collation | Nullable |                Default                 
+----------------+--------------------------+-----------+----------+----------------------------------------
+ id             | integer                  |           | not null | nextval('codeowners_id_seq'::regclass)
+ contents       | text                     |           |          | 
+ contents_proto | json                     |           |          | 
+ repo_id        | integer                  |           |          | 
+ created_at     | timestamp with time zone |           | not null | now()
+ updated_at     | timestamp with time zone |           | not null | now()
 Indexes:
     "codeowners_pkey" PRIMARY KEY, btree (id)
     "codeowners_repo_id_key" UNIQUE CONSTRAINT, btree (repo_id)
