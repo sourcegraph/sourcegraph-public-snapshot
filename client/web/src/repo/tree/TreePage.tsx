@@ -55,7 +55,7 @@ import { TreePageContent } from './TreePageContent'
 
 import styles from './TreePage.module.scss'
 
-interface Props
+export interface Props
     extends SettingsCascadeProps<Settings>,
         ExtensionsControllerProps,
         PlatformContextProps,
@@ -206,7 +206,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                 {displayRepoName(repo?.name || '')}
                             </PageHeader.Breadcrumb>
                             {repo?.isFork && (
-                                <Badge variant="outlineSecondary" className="mr-2 mt-2">
+                                <Badge variant="outlineSecondary" className="mr-2 mt-2" data-testid="repo-fork-badge">
                                     Fork
                                 </Badge>
                             )}
