@@ -51,25 +51,25 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
         case 'saml':
         case 'gerrit':
             accountConnection = account.external?.displayName || 'Not connected'
+        case 'azuredevops':
+            accountConnection = (<>{account.external?.displayName}(@{account.external?.login})</>)
             break
         default:
-            if (account.external?.displayName) {
-                accountConnection = (
-                    <>
-                        {account.external.displayName} (
-                        {account.external?.url ? (
+            accountConnection = (
+                <>
+                    {account.external?.url ? (
+                        <>
+                            {account.external.displayName}(
                             <Link to={account.external.url} target="_blank" rel="noopener noreferrer">
                                 @{account.external.login}
                             </Link>
-                        ) : (
-                            <>@{account.external.login}</>
-                        )}
-                        )
-                    </>
-                )
-            } else {
-                accountConnection = 'Not connected'
-            }
+                            )
+                        </>
+                    ) : (
+                        accountConnection = 'Not connected'
+                    )}
+                </>
+            )
     }
 
     return (
