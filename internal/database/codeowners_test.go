@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
@@ -30,15 +29,25 @@ func TestCodeowners_CreateUpdate(t *testing.T) {
 		}
 	})
 
+	t.Run("create codeowners duplicate errors", func(t *testing.T) {
+		codeowners := newCodeownersFile("*", "everyone", api.RepoID(200))
+		if err := store.CreateCodeownersFile(ctx, codeowners); err != nil {
+			t.Fatal(err)
+		}
+		secondErr := store.CreateCodeownersFile(ctx, codeowners)
+		if secondErr == nil {
+			t.Fatal("expect duplicate codeowners to error")
+		}
+		require.ErrorAs(t, ErrCodeownersFileAlreadyExists, &secondErr)
+	})
+
 	t.Run("update codeowners file", func(t *testing.T) {
 		codeowners := newCodeownersFile("*", "everyone", api.RepoID(102))
 		if err := store.CreateCodeownersFile(ctx, codeowners); err != nil {
 			t.Fatal(err)
 		}
-		updatedAt := time.Now()
 		codeowners = newCodeownersFile("*", "notEveryone", api.RepoID(102))
-		codeowners.UpdatedAt = updatedAt
-		if err := store.CreateCodeownersFile(ctx, codeowners); err != nil {
+		if err := store.UpdateCodeownersFile(ctx, codeowners); err != nil {
 			t.Fatal(err)
 		}
 	})

@@ -2,8 +2,10 @@ package database
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -20,6 +22,7 @@ type CodeownersStore interface {
 	Done(error) error
 
 	CreateCodeownersFile(ctx context.Context, codeowners *types.CodeownersFile) error
+	UpdateCodeownersFile(ctx context.Context, codeowners *types.CodeownersFile) error
 	GetCodeownersForRepo(ctx context.Context, id api.RepoID) (*types.CodeownersFile, error)
 	DeleteCodeownersForRepo(ctx context.Context, id api.RepoID) error
 	ListCodeowners(ctx context.Context) ([]*types.CodeownersFile, error)
@@ -28,6 +31,20 @@ type CodeownersStore interface {
 type codeownersStore struct {
 	*basestore.Store
 }
+
+type CodeownersFileNotFoundError struct {
+	args any
+}
+
+func (e CodeownersFileNotFoundError) Error() string {
+	return fmt.Sprintf("codeowners file not found: %v", e.args)
+}
+
+func (CodeownersFileNotFoundError) NotFound() bool {
+	return true
+}
+
+var ErrCodeownersFileAlreadyExists = errors.New("codeowners file has already been ingested for this repository")
 
 func (s *codeownersStore) CreateCodeownersFile(ctx context.Context, file *types.CodeownersFile) error {
 	return s.WithTransact(ctx, func(tx CodeownersStore) error {
@@ -48,9 +65,14 @@ func (s *codeownersStore) CreateCodeownersFile(ctx context.Context, file *types.
 			file.UpdatedAt,
 		)
 
-		_, err := tx.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-		if err != nil {
-			return err
+		if _, err := tx.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+			var e *pgconn.PgError
+			if errors.As(err, &e) {
+				switch e.ConstraintName {
+				case "repo_id_unique":
+					return ErrCodeownersFileAlreadyExists
+				}
+			}
 		}
 		return nil
 	})
@@ -68,8 +90,42 @@ const createCodeownersQueryFmtStr = `
 INSERT INTO codeowners 
 (%s)
 VALUES (%s, %s, %s, %s, %s)
-ON CONFLICT (repo_id) 
-DO UPDATE SET contents = EXCLUDED.contents, contents_proto = EXCLUDED.contents_proto, updated_at = EXCLUDED.updated_at
+`
+
+func (s *codeownersStore) UpdateCodeownersFile(ctx context.Context, file *types.CodeownersFile) error {
+	return s.WithTransact(ctx, func(tx CodeownersStore) error {
+		if file.UpdatedAt.IsZero() {
+			file.UpdatedAt = timeutil.Now()
+		}
+
+		conds := []*sqlf.Query{
+			sqlf.Sprintf("repo_id = %s", file.RepoID),
+		}
+
+		q := sqlf.Sprintf(
+			updateCodeownersQueryFmtStr,
+			file.Contents,
+			file.Proto,
+			file.UpdatedAt,
+			sqlf.Join(conds, "AND"),
+		)
+
+		_, err := tx.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+}
+
+const updateCodeownersQueryFmtStr = `
+UPDATE codeowners 
+SET 
+    contents = %s,
+    contents_proto = %s,
+    updated_at = %s
+WHERE 
+    %s
 `
 
 func (s *codeownersStore) GetCodeownersForRepo(ctx context.Context, id api.RepoID) (*types.CodeownersFile, error) {
@@ -83,7 +139,7 @@ func (s *codeownersStore) GetCodeownersForRepo(ctx context.Context, id api.RepoI
 		return nil, err
 	}
 	if len(codeownersFiles) != 1 {
-		return nil, errors.New("add a not found error")
+		return nil, CodeownersFileNotFoundError{args: id}
 	}
 	return codeownersFiles[0], nil
 }
