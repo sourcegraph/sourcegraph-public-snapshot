@@ -788,7 +788,7 @@ func mockAzureDevOpsPullRequest(repo *azuredevops.Repository) *azuredevops.PullR
 }
 
 func annotateChangesetWithPullRequest(cs *Changeset, pr *azuredevops.PullRequest) {
-	cs.Metadata = &azuredevops2.AzureDevOpsAnnotatedPullRequest{
+	cs.Metadata = &azuredevops2.AnnotatedPullRequest{
 		PullRequest: pr,
 		Statuses:    []*azuredevops.PullRequestBuildStatus{},
 	}

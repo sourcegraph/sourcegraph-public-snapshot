@@ -2,6 +2,8 @@ package state
 
 import (
 	"context"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
+	azuredevops2 "github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"io"
 	"sort"
 	"strings"
@@ -112,6 +114,8 @@ func computeCheckState(c *btypes.Changeset, events ChangesetEvents) btypes.Chang
 
 	case *bbcs.AnnotatedPullRequest:
 		return computeBitbucketCloudBuildState(c.UpdatedAt, m, events)
+	case *azuredevops.AnnotatedPullRequest:
+		return computeAzureDevOpsBuildState(c.UpdatedAt, m, events)
 	}
 
 	return btypes.ChangesetCheckStateUnknown
@@ -245,6 +249,37 @@ func parseBitbucketCloudBuildState(s bitbucketcloud.PullRequestStatusState) btyp
 	case bitbucketcloud.PullRequestStatusStateInProgress:
 		return btypes.ChangesetCheckStatePending
 	case bitbucketcloud.PullRequestStatusStateSuccessful:
+		return btypes.ChangesetCheckStatePassed
+	default:
+		return btypes.ChangesetCheckStateUnknown
+	}
+}
+
+func computeAzureDevOpsBuildState(lastSynced time.Time, apr *azuredevops.AnnotatedPullRequest, events []*btypes.ChangesetEvent) btypes.ChangesetCheckState {
+	stateMap := make(map[int]btypes.ChangesetCheckState)
+
+	// States from last sync.
+	for _, status := range apr.Statuses {
+		stateMap[status.ID] = parseAzureDevOpsdBuildState(status.State)
+	}
+
+	// TODO: @varsanojidan handle events.
+
+	states := make([]btypes.ChangesetCheckState, 0, len(stateMap))
+	for _, v := range stateMap {
+		states = append(states, v)
+	}
+
+	return combineCheckStates(states)
+}
+
+func parseAzureDevOpsdBuildState(s azuredevops2.PullRequestStatusState) btypes.ChangesetCheckState {
+	switch s {
+	case azuredevops2.PullRequestBuildStatusStateError, azuredevops2.PullRequestBuildStatusStateNotApplicable, azuredevops2.PullRequestBuildStatusStateNotSet:
+		return btypes.ChangesetCheckStateFailed
+	case azuredevops2.PullRequestBuildStatusStatePending:
+		return btypes.ChangesetCheckStatePending
+	case azuredevops2.PullRequestBuildStatusStateSucceeded:
 		return btypes.ChangesetCheckStatePassed
 	default:
 		return btypes.ChangesetCheckStateUnknown

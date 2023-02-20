@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	azuredevops2 "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"sort"
 	"strconv"
 	"strings"
@@ -1444,6 +1446,11 @@ func ScanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 		m := new(bbcs.AnnotatedPullRequest)
 		// Ensure the inner PR is initialized, it should never be nil.
 		m.PullRequest = &bitbucketcloud.PullRequest{}
+		t.Metadata = m
+	case extsvc.TypeAzureDevOps:
+		m := new(azuredevops2.AnnotatedPullRequest)
+		// Ensure the inner PR is initialized, it should never be nil.
+		m.PullRequest = &azuredevops.PullRequest{}
 		t.Metadata = m
 	default:
 		return errors.New("unknown external service type")

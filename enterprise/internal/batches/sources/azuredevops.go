@@ -325,7 +325,7 @@ func (s AzureDevOpsSource) checkAndCopy(targetRepo *types.Repo, fork *azuredevop
 	return forkRepo, nil
 }
 
-func (s AzureDevOpsSource) annotatePullRequest(ctx context.Context, repo *azuredevops.Repository, pr *azuredevops.PullRequest) (*azuredevops2.AzureDevOpsAnnotatedPullRequest, error) {
+func (s AzureDevOpsSource) annotatePullRequest(ctx context.Context, repo *azuredevops.Repository, pr *azuredevops.PullRequest) (*azuredevops2.AnnotatedPullRequest, error) {
 	org, err := repo.GetOrganization()
 	if err != nil {
 		return nil, err
@@ -345,7 +345,7 @@ func (s AzureDevOpsSource) annotatePullRequest(ctx context.Context, repo *azured
 		statuses = append(statuses, &status)
 	}
 
-	return &azuredevops2.AzureDevOpsAnnotatedPullRequest{
+	return &azuredevops2.AnnotatedPullRequest{
 		PullRequest: pr,
 		Statuses:    statuses,
 	}, nil

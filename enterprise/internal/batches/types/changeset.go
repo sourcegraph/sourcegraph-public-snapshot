@@ -429,7 +429,7 @@ func (c *Changeset) SetMetadata(meta any) error {
 			c.ExternalForkNamespace = ""
 			c.ExternalForkName = ""
 		}
-	case *azuredevops2.AzureDevOpsAnnotatedPullRequest:
+	case *azuredevops2.AnnotatedPullRequest:
 		c.Metadata = pr
 		c.ExternalID = strconv.Itoa(pr.ID)
 		c.ExternalServiceType = extsvc.TypeAzureDevOps
@@ -439,8 +439,10 @@ func (c *Changeset) SetMetadata(meta any) error {
 
 		if pr.ForkSource != nil {
 			c.ExternalForkNamespace = pr.ForkSource.Repository.Namespace()
+			c.ExternalForkName = pr.ForkSource.Repository.Name
 		} else {
 			c.ExternalForkNamespace = ""
+			c.ExternalForkName = ""
 		}
 
 	default:
@@ -470,7 +472,7 @@ func (c *Changeset) Title() (string, error) {
 		return m.Title, nil
 	case *bbcs.AnnotatedPullRequest:
 		return m.Title, nil
-	case *azuredevops2.AzureDevOpsAnnotatedPullRequest:
+	case *azuredevops2.AnnotatedPullRequest:
 		return m.Title, nil
 	default:
 		return "", errors.New("unknown changeset type")
@@ -491,7 +493,7 @@ func (c *Changeset) AuthorName() (string, error) {
 		return m.Author.Username, nil
 	case *bbcs.AnnotatedPullRequest:
 		return m.Author.Username, nil
-	case *azuredevops2.AzureDevOpsAnnotatedPullRequest:
+	case *azuredevops2.AnnotatedPullRequest:
 		return m.CreatedBy.UniqueName, nil
 	default:
 		return "", errors.New("unknown changeset type")
@@ -520,7 +522,7 @@ func (c *Changeset) AuthorEmail() (string, error) {
 		// Bitbucket Cloud does not provide the e-mail of the author under any
 		// circumstances.
 		return "", nil
-	case *azuredevops2.AzureDevOpsAnnotatedPullRequest:
+	case *azuredevops2.AnnotatedPullRequest:
 		return m.CreatedBy.UniqueName, nil
 	default:
 		return "", errors.New("unknown changeset type")
@@ -540,7 +542,7 @@ func (c *Changeset) ExternalCreatedAt() time.Time {
 		return m.CreatedAt.Time
 	case *bbcs.AnnotatedPullRequest:
 		return m.CreatedOn
-	case *azuredevops2.AzureDevOpsAnnotatedPullRequest:
+	case *azuredevops2.AnnotatedPullRequest:
 		return m.CreationDate
 	default:
 		return time.Time{}
@@ -558,7 +560,7 @@ func (c *Changeset) Body() (string, error) {
 		return m.Description, nil
 	case *bbcs.AnnotatedPullRequest:
 		return m.Rendered.Description.Raw, nil
-	case *azuredevops2.AzureDevOpsAnnotatedPullRequest:
+	case *azuredevops2.AnnotatedPullRequest:
 		return m.Description, nil
 	default:
 		return "", errors.New("unknown changeset type")
@@ -605,7 +607,7 @@ func (c *Changeset) URL() (s string, err error) {
 		// pull request ID, but since the link _should_ be there, we'll error
 		// instead.
 		return "", errors.New("Bitbucket Cloud pull request does not have a html link")
-	case *azuredevops2.AzureDevOpsAnnotatedPullRequest:
+	case *azuredevops2.AnnotatedPullRequest:
 		return m.URL, nil
 	default:
 		return "", errors.New("unknown changeset type")
@@ -779,6 +781,7 @@ func (c *Changeset) Events() (events []*ChangesetEvent, err error) {
 				Metadata:    status,
 			})
 		}
+		// TODO: @varsanojida Add for ADO.
 	}
 	return events, nil
 }
@@ -796,8 +799,8 @@ func (c *Changeset) HeadRefOid() (string, error) {
 		return m.DiffRefs.HeadSHA, nil
 	case *bbcs.AnnotatedPullRequest:
 		return m.Source.Commit.Hash, nil
-	case *azuredevops2.AzureDevOpsAnnotatedPullRequest:
-		return m.LastMergeSourceCommit.CommitID, nil
+	case *azuredevops2.AnnotatedPullRequest:
+		return "", nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -815,7 +818,7 @@ func (c *Changeset) HeadRef() (string, error) {
 		return "refs/heads/" + m.SourceBranch, nil
 	case *bbcs.AnnotatedPullRequest:
 		return "refs/heads/" + m.Source.Branch.Name, nil
-	case *azuredevops2.AzureDevOpsAnnotatedPullRequest:
+	case *azuredevops2.AnnotatedPullRequest:
 		return m.SourceRefName, nil
 	default:
 		return "", errors.New("unknown changeset type")
@@ -835,6 +838,8 @@ func (c *Changeset) BaseRefOid() (string, error) {
 		return m.DiffRefs.BaseSHA, nil
 	case *bbcs.AnnotatedPullRequest:
 		return m.Destination.Commit.Hash, nil
+	case *azuredevops2.AnnotatedPullRequest:
+		return "", nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -852,6 +857,8 @@ func (c *Changeset) BaseRef() (string, error) {
 		return "refs/heads/" + m.TargetBranch, nil
 	case *bbcs.AnnotatedPullRequest:
 		return "refs/heads/" + m.Destination.Branch.Name, nil
+	case *azuredevops2.AnnotatedPullRequest:
+		return m.TargetRefName, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
