@@ -1,9 +1,10 @@
 package txemail
 
 import (
+	"strconv"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/jordan-wright/email"
 	"github.com/stretchr/testify/require"
 
@@ -24,7 +25,7 @@ func TestParseTemplate(t *testing.T) {
 		B: `B`,
 	}
 
-	for _, tc := range []struct {
+	for i, tc := range []struct {
 		template txtypes.Templates
 		want     autogold.Value
 	}{
@@ -38,7 +39,7 @@ func TestParseTemplate(t *testing.T) {
 {{.A}} html body <span class="{{.B}}" />
 `,
 			},
-			want: autogold.Want("all fields provided", assertEmail{
+			want: autogold.Expect(assertEmail{
 				Subject: "A subject B", Text: "A text body B",
 				HTML: `A html body <span class="B" />`,
 			}),
@@ -51,13 +52,13 @@ func TestParseTemplate(t *testing.T) {
 {{.A}} html body <span class="{{.B}}" />
 `,
 			},
-			want: autogold.Want("text not provided", assertEmail{
+			want: autogold.Expect(assertEmail{
 				Subject: "A subject B", Text: "A html body",
 				HTML: `A html body <span class="B" />`,
 			}),
 		},
 	} {
-		t.Run(tc.want.Name(), func(t *testing.T) {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			pt, err := ParseTemplate(tc.template)
 			require.NoError(t, err)
 

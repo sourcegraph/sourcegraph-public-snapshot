@@ -1,9 +1,10 @@
 package txemail
 
 import (
+	"strconv"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -13,7 +14,7 @@ type mockSiteConf schema.SiteConfiguration
 func (m mockSiteConf) SiteConfig() schema.SiteConfiguration { return schema.SiteConfiguration(m) }
 
 func TestValidateSiteConfigTemplates(t *testing.T) {
-	for _, tt := range []struct {
+	for i, tt := range []struct {
 		conf mockSiteConf
 		want autogold.Value
 	}{
@@ -21,13 +22,13 @@ func TestValidateSiteConfigTemplates(t *testing.T) {
 			conf: mockSiteConf{
 				EmailTemplates: nil,
 			},
-			want: autogold.Want("no email.templates", []string{}),
+			want: autogold.Expect([]string{}),
 		},
 		{
 			conf: mockSiteConf{
 				EmailTemplates: &schema.EmailTemplates{},
 			},
-			want: autogold.Want("no templates in email.templates", []string{}),
+			want: autogold.Expect([]string{}),
 		},
 		{
 			conf: mockSiteConf{
@@ -39,7 +40,7 @@ func TestValidateSiteConfigTemplates(t *testing.T) {
 					},
 				},
 			},
-			want: autogold.Want("incomplete template", []string{"`email.templates.setPassword` is invalid: fields 'subject' and 'html' are required"}),
+			want: autogold.Expect([]string{"`email.templates.setPassword` is invalid: fields 'subject' and 'html' are required"}),
 		},
 		{
 			conf: mockSiteConf{
@@ -51,7 +52,7 @@ func TestValidateSiteConfigTemplates(t *testing.T) {
 					},
 				},
 			},
-			want: autogold.Want("text field is autofilled", []string{}),
+			want: autogold.Expect([]string{}),
 		},
 		{
 			conf: mockSiteConf{
@@ -63,7 +64,7 @@ func TestValidateSiteConfigTemplates(t *testing.T) {
 					},
 				},
 			},
-			want: autogold.Want("broken template", []string{"`email.templates.setPassword` is invalid: template: :1: unclosed action"}),
+			want: autogold.Expect([]string{"`email.templates.setPassword` is invalid: template: :1: unclosed action"}),
 		},
 		{
 			conf: mockSiteConf{
@@ -75,10 +76,10 @@ func TestValidateSiteConfigTemplates(t *testing.T) {
 					},
 				},
 			},
-			want: autogold.Want("complete template", []string{}),
+			want: autogold.Expect([]string{}),
 		},
 	} {
-		t.Run(tt.want.Name(), func(t *testing.T) {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			problems := validateSiteConfigTemplates(tt.conf)
 			tt.want.Equal(t, problems.Messages())
 		})
