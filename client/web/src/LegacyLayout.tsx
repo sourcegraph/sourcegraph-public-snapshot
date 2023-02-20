@@ -15,6 +15,7 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps, SettingsSubjectCommonFields } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { FeedbackPrompt, LoadingSpinner, Panel } from '@sourcegraph/wildcard'
 
@@ -50,7 +51,6 @@ import type { LegacyLayoutRouteComponentProps, LayoutRouteProps } from './routes
 import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
 import { parseSearchURLQuery, SearchAggregationProps, SearchStreamingProps } from './search'
 import { NotepadContainer } from './search/Notepad'
-import { SetupWizard } from './setup-wizard'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { useExperimentalFeatures } from './stores'
@@ -63,6 +63,8 @@ import { getExperimentalFeatures } from './util/get-experimental-features'
 import { parseBrowserRepoURL } from './util/url'
 
 import styles from './Layout.module.scss'
+
+const LazySetupWizard = lazyComponent(() => import('./setup-wizard'), 'SetupWizard')
 
 export interface LegacyLayoutProps
     extends SettingsCascadeProps<Settings>,
@@ -196,7 +198,17 @@ export const LegacyLayout: React.FunctionComponent<React.PropsWithChildren<Legac
     } satisfies Omit<LegacyLayoutRouteComponentProps, 'location' | 'history' | 'match' | 'staticContext'>
 
     if (isSetupWizardPage) {
-        return <SetupWizard />
+        return (
+            <Suspense
+                fallback={
+                    <div className="flex flex-1">
+                        <LoadingSpinner className="m-2" />
+                    </div>
+                }
+            >
+                <LazySetupWizard />
+            </Suspense>
+        )
     }
 
     return (

@@ -15,6 +15,7 @@ import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps, SettingsSubjectCommonFields } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { FeedbackPrompt, LoadingSpinner, Panel } from '@sourcegraph/wildcard'
 
@@ -39,13 +40,14 @@ import type { NotebookProps } from './notebooks'
 import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
 import { parseSearchURLQuery, SearchAggregationProps, SearchStreamingProps } from './search'
 import { NotepadContainer } from './search/Notepad'
-import { SetupWizard } from './setup-wizard'
 import { useExperimentalFeatures } from './stores'
 import { ThemePreferenceProps, useTheme } from './theme'
 import { getExperimentalFeatures } from './util/get-experimental-features'
 import { parseBrowserRepoURL } from './util/url'
 
 import styles from './Layout.module.scss'
+
+const LazySetupWizard = lazyComponent(() => import('./setup-wizard'), 'SetupWizard')
 
 export interface LegacyLayoutProps
     extends SettingsCascadeProps<Settings>,
@@ -152,7 +154,17 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     }
 
     if (isSetupWizardPage) {
-        return <SetupWizard />
+        return (
+            <Suspense
+                fallback={
+                    <div className="flex flex-1">
+                        <LoadingSpinner className="m-2" />
+                    </div>
+                }
+            >
+                <LazySetupWizard />
+            </Suspense>
+        )
     }
 
     return (
