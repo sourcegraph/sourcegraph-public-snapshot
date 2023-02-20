@@ -177,6 +177,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
         codeScaleLimit?: string
         codeScaleCloseToLimit?: boolean
         codeScaleExceededLimit?: boolean
+        knownLicenseTags?: string[]
     }
 
     /** Prompt users with browsers that would crash to download a modern browser. */
