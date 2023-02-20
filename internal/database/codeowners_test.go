@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestCodeowners_CreateUpdate(t *testing.T) {
+func TestCodeowners_CreateUpdateDelete(t *testing.T) {
 	ctx := context.Background()
 
 	logger := logtest.NoOp(t)
@@ -58,6 +58,25 @@ func TestCodeowners_CreateUpdate(t *testing.T) {
 		err := store.UpdateCodeownersFile(ctx, codeowners)
 		if err == nil {
 			t.Fatal("expected not found error")
+		}
+		require.ErrorAs(t, CodeownersFileNotFoundError{}, &err)
+	})
+
+	t.Run("delete", func(t *testing.T) {
+		repoID := api.RepoID(10)
+		codeowners := newCodeownersFile("*", "everyone", repoID)
+		if err := store.CreateCodeownersFile(ctx, codeowners); err != nil {
+			t.Fatal(err)
+		}
+		if err := store.DeleteCodeownersForRepo(ctx, repoID); err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("delete non existent codeowners file", func(t *testing.T) {
+		err := store.DeleteCodeownersForRepo(ctx, api.RepoID(9000))
+		if err == nil {
+			t.Fatal("did not return useful not found information")
 		}
 		require.ErrorAs(t, CodeownersFileNotFoundError{}, &err)
 	})

@@ -159,9 +159,32 @@ LIMIT 1
 `
 
 func (s *codeownersStore) DeleteCodeownersForRepo(ctx context.Context, id api.RepoID) error {
-	//TODO implement me
-	panic("implement me")
+	return s.WithTransact(ctx, func(tx CodeownersStore) error {
+		conds := []*sqlf.Query{
+			sqlf.Sprintf("repo_id = %s", id),
+		}
+
+		q := sqlf.Sprintf(deleteCodeownersFileQueryFmtStr, sqlf.Join(conds, "AND"))
+
+		res, err := tx.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		if err != nil {
+			return err
+		}
+		rows, err := res.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if rows == 0 {
+			return CodeownersFileNotFoundError{args: conds}
+		}
+		return nil
+	})
 }
+
+const deleteCodeownersFileQueryFmtStr = `
+DELETE FROM codeowners 
+WHERE %s
+`
 
 func (s *codeownersStore) ListCodeowners(ctx context.Context) ([]*types.CodeownersFile, error) {
 	//TODO implement me
