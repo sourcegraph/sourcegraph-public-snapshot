@@ -68,46 +68,33 @@ func handleRequestAccess(logger log.Logger, db database.DB, w http.ResponseWrite
 	}
 
 	// Create the access_request.
-	_, err := db.AccessRequests().Create(r.Context(), &types.AccessRequest{
+	accessRequest := types.AccessRequest{
 		Name:           data.Name,
 		Email:          data.Email,
 		AdditionalInfo: data.AdditionalInfo,
-	})
-	if err != nil {
-		var (
-			message    string
-			statusCode int
-		)
-		switch {
-		case database.IsAccessRequestUserWithEmailExists(err):
-			// TODO: clarify how to handle this error, since this will be shown to unauthenticated user
-			message = "A user with this email already exists."
-			statusCode = http.StatusConflict
-		case database.IsAccessRequestWithEmailExists(err):
-			// TODO: clarify how to handle this error, since this will be shown to unauthenticated user
-			message = "An access request was already created previously."
-			statusCode = http.StatusConflict
-		case errcode.PresentationMessage(err) != "":
-			message = errcode.PresentationMessage(err)
-			statusCode = http.StatusConflict
-		default:
-			// Do not show non-allowed error messages to user, in case they contain sensitive or confusing
-			// information.
-			message = "Request access failed unexpectedly."
-			statusCode = http.StatusInternalServerError
+	}
+	_, err := db.AccessRequests().Create(r.Context(), &accessRequest)
+	if err == nil {
+		w.WriteHeader(http.StatusCreated)
+		if err = usagestats.LogBackendEvent(db, sgactor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "CreateAccessRequestSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
+			logger.Warn("Failed to log event CreateAccessRequestSucceeded", log.Error(err))
 		}
-		logger.Error("Error in access request.", log.String("email", data.Email), log.String("name", data.Name), log.Error(err))
-		http.Error(w, message, statusCode)
-
-		if err = usagestats.LogBackendEvent(db, sgactor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "AccessRequestFailed", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
-			logger.Warn("Failed to log event AccessRequestFailed", log.Error(err))
-		}
-
 		return
 	}
+	logger.Error("Error in access request.", log.String("email", data.Email), log.String("name", data.Name), log.Error(err))
+	if database.IsAccessRequestUserWithEmailExists(err) || database.IsAccessRequestWithEmailExists(err) {
+		// 🚨 SECURITY: We don't show an error message when the user or access request with the same e-mail address exists
+		// as to not leak the existence of a given e-mail address in the database.
+		w.WriteHeader(http.StatusCreated)
+	} else if errcode.PresentationMessage(err) != "" {
+		http.Error(w, errcode.PresentationMessage(err), http.StatusConflict)
+	} else {
+		// Do not show non-allowed error messages to user, in case they contain sensitive or confusing
+		// information.
+		http.Error(w, "Request access failed unexpectedly.", http.StatusInternalServerError)
+	}
 
-	w.WriteHeader(http.StatusCreated)
-	if err = usagestats.LogBackendEvent(db, sgactor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "CreateAccessRequestSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
-		logger.Warn("Failed to log event CreateAccessRequestSucceeded", log.Error(err))
+	if err = usagestats.LogBackendEvent(db, sgactor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "AccessRequestFailed", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
+		logger.Warn("Failed to log event AccessRequestFailed", log.Error(err))
 	}
 }

@@ -74,11 +74,11 @@ func TestAccessRequests_Update(t *testing.T) {
 	store := db.AccessRequests()
 
 	t.Run("non-existent access request", func(t *testing.T) {
-		nonExistentRoleID := int32(1234)
-		updated, err := store.Update(ctx, &types.AccessRequest{ID: nonExistentRoleID, Status: types.AccessRequestStatusApproved})
+		nonExistentAccessRequestID := int32(1234)
+		updated, err := store.Update(ctx, &types.AccessRequest{ID: nonExistentAccessRequestID, Status: types.AccessRequestStatusApproved})
 		assert.Error(t, err)
 		assert.Nil(t, updated)
-		assert.Equal(t, err, &errAccessRequestNotFound{ID: nonExistentRoleID})
+		assert.Equal(t, err, &ErrAccessRequestNotFound{ID: nonExistentAccessRequestID})
 	})
 
 	t.Run("existing access request", func(t *testing.T) {
@@ -103,16 +103,38 @@ func TestAccessRequests_GetByID(t *testing.T) {
 	store := db.AccessRequests()
 
 	t.Run("non-existing access request", func(t *testing.T) {
-		nonExistentRoleID := int32(1234)
-		accessRequest, err := store.GetByID(ctx, nonExistentRoleID)
+		nonExistentAccessRequestID := int32(1234)
+		accessRequest, err := store.GetByID(ctx, nonExistentAccessRequestID)
 		assert.Error(t, err)
 		assert.Nil(t, accessRequest)
-		assert.Equal(t, err, &errAccessRequestNotFound{ID: nonExistentRoleID})
+		assert.Equal(t, err, &ErrAccessRequestNotFound{ID: nonExistentAccessRequestID})
 	})
 	t.Run("existing access request", func(t *testing.T) {
 		createdAccessRequest, err := store.Create(ctx, &types.AccessRequest{Email: "a1@example.com", Name: "a1", AdditionalInfo: "af1"})
 		assert.NoError(t, err)
 		accessRequest, err := store.GetByID(ctx, createdAccessRequest.ID)
+		assert.NoError(t, err)
+		assert.Equal(t, accessRequest, createdAccessRequest)
+	})
+}
+
+func TestAccessRequests_GetByEmail(t *testing.T) {
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := db.AccessRequests()
+
+	t.Run("non-existing access request", func(t *testing.T) {
+		nonExistingAccessRequestEmail := "non-existing@example"
+		accessRequest, err := store.GetByEmail(ctx, nonExistingAccessRequestEmail)
+		assert.Error(t, err)
+		assert.Nil(t, accessRequest)
+		assert.Equal(t, err, &ErrAccessRequestNotFound{Email: nonExistingAccessRequestEmail})
+	})
+	t.Run("existing access request", func(t *testing.T) {
+		createdAccessRequest, err := store.Create(ctx, &types.AccessRequest{Email: "a1@example.com", Name: "a1", AdditionalInfo: "af1"})
+		assert.NoError(t, err)
+		accessRequest, err := store.GetByEmail(ctx, createdAccessRequest.Email)
 		assert.NoError(t, err)
 		assert.Equal(t, accessRequest, createdAccessRequest)
 	})

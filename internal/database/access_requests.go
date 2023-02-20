@@ -19,37 +19,42 @@ const (
 	errorCodeAccessRequestWithEmailExists = "err_access_request_with_such_email_exists"
 )
 
-// errCannotCreateAccessRequest is the error that is returned when a request_access cannot be added to the DB due to a constraint.
-type errCannotCreateAccessRequest struct {
+// ErrCannotCreateAccessRequest is the error that is returned when a request_access cannot be added to the DB due to a constraint.
+type ErrCannotCreateAccessRequest struct {
 	code string
 }
 
-func (err errCannotCreateAccessRequest) Error() string {
+func (err ErrCannotCreateAccessRequest) Error() string {
 	return fmt.Sprintf("cannot create user: %v", err.code)
 }
 
-// errAccessRequestNotFound is the error that is returned when a request_access cannot be found in the DB.
-type errAccessRequestNotFound struct {
-	ID int32
+// ErrAccessRequestNotFound is the error that is returned when a request_access cannot be found in the DB.
+type ErrAccessRequestNotFound struct {
+	ID    int32
+	Email string
 }
 
-func (e *errAccessRequestNotFound) Error() string {
+func (e *ErrAccessRequestNotFound) Error() string {
+	if e.Email != "" {
+		return fmt.Sprintf("access_request with email %q not found", e.Email)
+	}
+
 	return fmt.Sprintf("access_request with ID %d not found", e.ID)
 }
 
-func (e *errAccessRequestNotFound) NotFound() bool {
+func (e *ErrAccessRequestNotFound) NotFound() bool {
 	return true
 }
 
 // IsAccessRequestUserWithEmailExists reports whether err is an error indicating that the access request email was already taken by a signed in user.
 func IsAccessRequestUserWithEmailExists(err error) bool {
-	var e errCannotCreateAccessRequest
+	var e ErrCannotCreateAccessRequest
 	return errors.As(err, &e) && e.code == errorCodeUserWithEmailExists
 }
 
 // IsAccessRequestWithEmailExists reports whether err is an error indicating that the access request was already created.
 func IsAccessRequestWithEmailExists(err error) bool {
-	var e errCannotCreateAccessRequest
+	var e ErrCannotCreateAccessRequest
 	return errors.As(err, &e) && e.code == errorCodeAccessRequestWithEmailExists
 }
 
@@ -129,6 +134,7 @@ type AccessRequestStore interface {
 	Create(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
 	Update(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
 	GetByID(context.Context, int32) (*types.AccessRequest, error)
+	GetByEmail(context.Context, string) (*types.AccessRequest, error)
 	Count(context.Context, *AccessRequestsFilterOptions) (int, error)
 	List(context.Context, *AccessRequestsFilterAndListOptions) (_ []*types.AccessRequest, err error)
 }
@@ -186,7 +192,7 @@ func (s *accessRequestStore) Create(ctx context.Context, accessRequest *types.Ac
 		return nil, err
 	}
 	if exists {
-		return nil, errCannotCreateAccessRequest{errorCodeUserWithEmailExists}
+		return nil, ErrCannotCreateAccessRequest{errorCodeUserWithEmailExists}
 	}
 
 	// We don't allow adding a new request_access with an email address that has already been used
@@ -195,7 +201,7 @@ func (s *accessRequestStore) Create(ctx context.Context, accessRequest *types.Ac
 		return nil, err
 	}
 	if exists {
-		return nil, errCannotCreateAccessRequest{errorCodeAccessRequestWithEmailExists}
+		return nil, ErrCannotCreateAccessRequest{errorCodeAccessRequestWithEmailExists}
 	}
 
 	// Continue with creating the new access request.
@@ -222,7 +228,21 @@ func (s *accessRequestStore) GetByID(ctx context.Context, id int32) (*types.Acce
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, &errAccessRequestNotFound{ID: id}
+			return nil, &ErrAccessRequestNotFound{ID: id}
+		}
+		return nil, err
+	}
+
+	return node, nil
+}
+
+func (s *accessRequestStore) GetByEmail(ctx context.Context, email string) (*types.AccessRequest, error) {
+	row := s.QueryRow(ctx, sqlf.Sprintf("SELECT %s FROM access_requests WHERE email = %s", sqlf.Join(accessRequestColumns, ","), email))
+	node, err := scanAccessRequest(row)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &ErrAccessRequestNotFound{Email: email}
 		}
 		return nil, err
 	}
@@ -236,7 +256,7 @@ func (s *accessRequestStore) Update(ctx context.Context, accessRequest *types.Ac
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, &errAccessRequestNotFound{ID: accessRequest.ID}
+			return nil, &ErrAccessRequestNotFound{ID: accessRequest.ID}
 		}
 		return nil, errors.Wrap(err, "scanning access_request")
 	}

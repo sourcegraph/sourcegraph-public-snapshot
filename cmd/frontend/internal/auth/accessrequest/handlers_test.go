@@ -2,6 +2,7 @@ package accessrequest
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -13,20 +14,19 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestRequestAccess(t *testing.T) {
-	logger := logtest.NoOp(t)
-	users := database.NewMockUserStore()
-	accessRequests := database.NewMockAccessRequestStore()
-	db := database.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
-	db.AccessRequestsFunc.SetDefaultReturn(accessRequests)
-	db.EventLogsFunc.SetDefaultReturn(database.NewMockEventLogStore())
-	db.SecurityEventLogsFunc.SetDefaultReturn(database.NewMockSecurityEventLogsStore())
-	db.UserEmailsFunc.SetDefaultReturn(database.NewMockUserEmailsStore())
+	if testing.Short() {
+		t.Skip()
+	}
 
+	logger := logtest.NoOp(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	handler := HandleRequestAccess(logger, db)
 
 	t.Run("experimental feature disabled", func(t *testing.T) {
@@ -90,13 +90,55 @@ func TestRequestAccess(t *testing.T) {
 		assert.Equal(t, http.StatusUnprocessableEntity, res.Code)
 	})
 
+	t.Run("existing user's email", func(t *testing.T) {
+		// test that no explicit error is returned if the email is already in the users table
+		newUser := database.NewUser{
+			Username:        "u1",
+			Email:           "u1@example.com",
+			EmailIsVerified: true,
+		}
+		db.Users().Create(context.Background(), newUser)
+		req, err := http.NewRequest(http.MethodPost, "/-/request-access", strings.NewReader(fmt.Sprintf(`{"email": "%s", "name": "u1", "additionalInfo": "u1"}`, newUser.Email)))
+		require.NoError(t, err)
+		res := httptest.NewRecorder()
+		handler(res, req)
+		assert.Equal(t, http.StatusCreated, res.Code)
+
+		_, err = db.AccessRequests().GetByEmail(context.Background(), newUser.Email)
+		require.Error(t, err)
+		require.Equal(t, errcode.IsNotFound(err), true)
+	})
+
+	t.Run("existing access requests's email", func(t *testing.T) {
+		// test that no explicit error is returned if the email is already in the access requests table
+		accessRequest := types.AccessRequest{
+			Name:  "a1",
+			Email: "a1@example.com",
+		}
+		db.AccessRequests().Create(context.Background(), &accessRequest)
+		_, err := db.AccessRequests().GetByEmail(context.Background(), accessRequest.Email)
+		require.NoError(t, err)
+
+		req, err := http.NewRequest(http.MethodPost, "/-/request-access", strings.NewReader(fmt.Sprintf(`{"email": "%s", "name": "%s", "additionalInfo": "%s"}`, accessRequest.Email, accessRequest.Name, accessRequest.AdditionalInfo)))
+		require.NoError(t, err)
+		res := httptest.NewRecorder()
+		handler(res, req)
+		assert.Equal(t, http.StatusCreated, res.Code)
+	})
+
 	t.Run("correct inputs", func(t *testing.T) {
-		req, err := http.NewRequest(http.MethodPost, "/-/request-access", strings.NewReader(`{"email": "a1@example.com", "name": "a1", "additionalInfo": "a1"}`))
+		req, err := http.NewRequest(http.MethodPost, "/-/request-access", strings.NewReader(`{"email": "a2@example.com", "name": "a2", "additionalInfo": "af2"}`))
 		req = req.WithContext(context.Background())
 		require.NoError(t, err)
 
 		res := httptest.NewRecorder()
 		handler(res, req)
 		assert.Equal(t, http.StatusCreated, res.Code)
+
+		accessRequest, err := db.AccessRequests().GetByEmail(context.Background(), "a2@example.com")
+		require.NoError(t, err)
+		assert.Equal(t, "a2", accessRequest.Name)
+		assert.Equal(t, "a2@example.com", accessRequest.Email)
+		assert.Equal(t, "af2", accessRequest.AdditionalInfo)
 	})
 }
