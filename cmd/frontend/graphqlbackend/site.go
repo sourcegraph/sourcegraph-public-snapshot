@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -247,6 +248,12 @@ func (r *siteResolver) UpgradeReadiness(ctx context.Context) (*upgradeReadinessR
 type upgradeReadinessResolver struct {
 	logger log.Logger
 	db     database.DB
+
+	initOnce sync.Once
+	initErr  error
+	runner   cliutil.Runner
+	version  oobmigration.Version
+	patch    int
 }
 
 var schemaFactories = append(
@@ -260,20 +267,34 @@ var schemaFactories = append(
 	),
 )
 
+func (r *upgradeReadinessResolver) init(ctx context.Context) (_ cliutil.Runner, _ oobmigration.Version, patch int, _ error) {
+	r.initOnce.Do(func() {
+		r.runner, r.version, r.patch, r.initErr = func() (_ cliutil.Runner, _ oobmigration.Version, patch int, _ error) {
+			observationCtx := observation.NewContext(r.logger)
+			runner, err := migratorshared.NewRunnerWithSchemas(observationCtx, r.logger, schemas.SchemaNames, schemas.Schemas)
+			if err != nil {
+				return nil, oobmigration.Version{}, 0, errors.Wrap(err, "new runner")
+			}
+
+			version, patch, ok, err := cliutil.GetServiceVersion(ctx, runner)
+			if err != nil {
+				return nil, oobmigration.Version{}, 0, errors.Wrap(err, "get service version")
+			} else if !ok {
+				return nil, oobmigration.Version{}, 0, errors.New("invalid service version")
+			}
+			return runner, version, patch, nil
+		}()
+	})
+	return r.runner, r.version, r.patch, r.initErr
+}
+
 func (r *upgradeReadinessResolver) SchemaDrift(ctx context.Context) (string, error) {
-	observationCtx := observation.NewContext(r.logger)
-	runner, err := migratorshared.NewRunnerWithSchemas(observationCtx, r.logger, schemas.SchemaNames, schemas.Schemas)
+	runner, v, patch, err := r.init(ctx)
 	if err != nil {
-		return "", errors.Wrap(err, "new runner")
+		return "", err
 	}
 
 	var version string
-	v, patch, ok, err := cliutil.GetServiceVersion(ctx, runner)
-	if err != nil {
-		return "", errors.Wrap(err, "get service version")
-	} else if !ok {
-		return "", errors.New("invalid service version")
-	}
 	if v.Dev {
 		version = "dev"
 	} else {
@@ -302,17 +323,9 @@ func isRequiredOutOfBandMigration(version oobmigration.Version, m oobmigration.M
 }
 
 func (r *upgradeReadinessResolver) RequiredOutOfBandMigrations(ctx context.Context) ([]*outOfBandMigrationResolver, error) {
-	observationCtx := observation.NewContext(r.logger)
-	runner, err := migratorshared.NewRunnerWithSchemas(observationCtx, r.logger, schemas.SchemaNames, schemas.Schemas)
+	_, version, _, err := r.init(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "new runner")
-	}
-
-	version, _, ok, err := cliutil.GetServiceVersion(ctx, runner)
-	if err != nil {
-		return nil, errors.Wrap(err, "get service version")
-	} else if !ok {
-		return nil, errors.New("invalid service version")
+		return nil, err
 	}
 
 	migrations, err := oobmigration.NewStoreWithDB(r.db).List(ctx)

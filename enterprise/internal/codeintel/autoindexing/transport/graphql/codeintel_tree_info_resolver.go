@@ -67,7 +67,7 @@ func (r *codeIntelTreeInfoResolver) SearchBasedSupport(ctx context.Context) (*[]
 
 func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) (resolverstubs.GitTreePreciseCoverageErrorResolver, error) {
 	var limitErr error
-	configurations, hints, err := r.autoindexSvc.InferIndexConfiguration(ctx, int(r.repo.ID), r.commit, true)
+	configurations, hints, err := r.autoindexSvc.InferIndexConfiguration(ctx, int(r.repo.ID), r.commit, "", true)
 	if err != nil {
 		if errors.As(err, &inference.LimitError{}) {
 			limitErr = err

@@ -27,7 +27,7 @@ const (
 	PlanFree1 Plan = "free-1"
 )
 
-var allPlans = []Plan{
+var AllPlans = []Plan{
 	PlanOldEnterpriseStarter,
 	PlanOldEnterprise,
 	PlanTeam0,
@@ -83,6 +83,20 @@ const (
 	// FeatureCodeInsights is whether Code Insights on this Sourcegraph instance has been purchased.
 	FeatureCodeInsights BasicFeature = "code-insights"
 )
+
+var AllFeatures = []Feature{
+	FeatureSSO,
+	FeatureACLs,
+	FeatureExplicitPermissionsAPI,
+	FeatureExtensionRegistry,
+	FeatureRemoteExtensionsAllowDisallow,
+	FeatureBranding,
+	FeatureCampaigns,
+	FeatureMonitoring,
+	FeatureBackupAndRestore,
+	FeatureCodeInsights,
+	&FeatureBatchChanges{},
+}
 
 type PlanDetails struct {
 	Features []Feature

@@ -216,13 +216,7 @@ interface ParsedSearchURLAndContext extends ParsedSearchURL {
     /**
      * Search context extracted from query.
      */
-    searchContextSpec: string | undefined
-    /**
-     * Cleaned up query (if search contexts are enabled and URL query contains a
-     * search context, this property contains the query without the context
-     * filter)
-     */
-    processedQuery: string
+    searchContextSpec: ReturnType<typeof getGlobalSearchContextFilter> | undefined
 }
 
 /**
@@ -235,15 +229,9 @@ interface ParsedSearchURLAndContext extends ParsedSearchURL {
  */
 export function getQueryStateFromLocation({
     location,
-    showSearchContext,
     isSearchContextAvailable,
 }: {
     location: Observable<Location>
-    /**
-     * Whether or not the search context should be shown or not.
-     * This is enabled on enterprise instances
-     */
-    showSearchContext: boolean
     /**
      * Resolves to true if the provided search context exists for the user.
      */
@@ -282,15 +270,10 @@ export function getQueryStateFromLocation({
         map(locationAndContextInformation => {
             const { parsedSearchURL, isSearchContextAvailable } = locationAndContextInformation
             const query = parsedSearchURL.query ?? ''
-            const globalSearchContextSpec = memoizedGetGlobalSearchContextSpec(query)
-            const cleanQuery =
-                // If a global search context spec is available to the user, we omit it from the
-                // query and move it to the search contexts dropdown
-                globalSearchContextSpec && isSearchContextAvailable && showSearchContext
-                    ? omitFilter(query, globalSearchContextSpec.filter)
-                    : query
-
-            return { ...parsedSearchURL, searchContextSpec: globalSearchContextSpec?.spec, processedQuery: cleanQuery }
+            const globalSearchContextSpec = isSearchContextAvailable
+                ? memoizedGetGlobalSearchContextSpec(query)
+                : undefined
+            return { ...parsedSearchURL, searchContextSpec: globalSearchContextSpec }
         })
     )
 }

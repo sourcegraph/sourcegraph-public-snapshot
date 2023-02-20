@@ -150,11 +150,14 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		return []*extsvc.Account{&extAccount}, nil
 	})
 
+	featureFlags := database.NewMockFeatureFlagStore()
+
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
+	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
@@ -301,6 +304,7 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 		}
 		return []*extsvc.Account{&extAccount}, nil
 	})
+	featureFlags := database.NewMockFeatureFlagStore()
 
 	subRepoPerms := edb.NewMockSubRepoPermsStore()
 	subRepoPerms.GetByUserAndServiceFunc.SetDefaultReturn(nil, nil)
@@ -311,6 +315,7 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
 	db.SubRepoPermsFunc.SetDefaultReturn(subRepoPerms)
+	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
@@ -374,11 +379,14 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 	externalAccounts := database.NewMockUserExternalAccountsStore()
 	externalAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{&extAccount}, nil)
 
+	featureFlags := database.NewMockFeatureFlagStore()
+
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
+	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
@@ -463,6 +471,7 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
+	db.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
 
 	reposStore := repos.NewMockStore()
 
@@ -551,12 +560,15 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 	externalAccounts := database.NewMockUserExternalAccountsStore()
 	externalAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{&extAccount}, nil)
 
+	featureFlags := database.NewMockFeatureFlagStore()
+
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
+	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
@@ -619,6 +631,8 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 
 	subRepoPerms := edb.NewMockSubRepoPermsStore()
 
+	featureFlags := database.NewMockFeatureFlagStore()
+
 	db := edb.NewMockEnterpriseDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
@@ -626,6 +640,7 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
 	db.SubRepoPermsFunc.SetDefaultReturn(subRepoPerms)
+	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
@@ -661,8 +676,11 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 
 func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	mockRepos := database.NewMockRepoStore()
+	mockFeatureFlags := database.NewMockFeatureFlagStore()
+
 	db := database.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(mockRepos)
+	db.FeatureFlagsFunc.SetDefaultReturn(mockFeatureFlags)
 
 	newPermsSyncer := func(reposStore repos.Store, perms edb.PermsStore) *PermsSyncer {
 		return NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
@@ -741,7 +759,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 
 		perms := edb.NewMockPermsStore()
 		perms.TransactFunc.SetDefaultReturn(perms, nil)
-		perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]int32{"user": 1}, nil)
+		perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]authz.UserIDWithExternalAccountID{"user": {UserID: 1, ExternalAccountID: 1}}, nil)
 		perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
 			assert.Equal(t, int32(1), p.RepoID)
 			assert.Equal(t, []int32{1}, p.GenerateSortedIDsSlice())
@@ -772,7 +790,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 
 		perms := edb.NewMockPermsStore()
 		perms.TransactFunc.SetDefaultReturn(perms, nil)
-		perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]int32{"user": 1}, nil)
+		perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]authz.UserIDWithExternalAccountID{"user": {UserID: 1, ExternalAccountID: 1}}, nil)
 		perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
 			assert.Equal(t, int32(1), p.RepoID)
 			assert.Equal(t, []int32{1}, p.GenerateSortedIDsSlice())
@@ -817,7 +835,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 
 	perms := edb.NewMockPermsStore()
 	perms.TransactFunc.SetDefaultReturn(perms, nil)
-	perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]int32{"user": 1}, nil)
+	perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]authz.UserIDWithExternalAccountID{"user": {UserID: 1, ExternalAccountID: 1}}, nil)
 	perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) (*database.SetPermissionsResult, error) {
 		assert.Equal(t, int32(1), p.RepoID)
 		assert.Equal(t, []int32{1}, p.GenerateSortedIDsSlice())

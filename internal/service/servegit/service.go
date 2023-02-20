@@ -20,12 +20,12 @@ type Config struct {
 }
 
 func (c *Config) Load() {
-	defaultReposRoot := ""
-	if pwd, err := os.Getwd(); err == nil {
-		defaultReposRoot = pwd
+	// We bypass BaseConfig since it doesn't handle variables being empty.
+	if src, ok := os.LookupEnv("SRC"); ok {
+		c.ReposRoot = src
+	} else if pwd, err := os.Getwd(); err == nil {
+		c.ReposRoot = pwd
 	}
-
-	c.ReposRoot = c.Get("SRC", defaultReposRoot, "Root dir containing repos.")
 
 	url, err := url.Parse(c.Get("SRC_SERVE_GIT_URL", "http://127.0.0.1:3434", "URL that servegit should listen on."))
 	if err != nil {
