@@ -159,9 +159,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                 ? { type: GitObjectType.GIT_TAG, pattern: '*' }
                 : { type: GitObjectType.GIT_COMMIT }
 
-        const repoDefaults = repo
-            ? { repository: repo, name: `Custom policy for ${displayRepoName(repo.name)}` }
-            : { name: 'Custom global policy' }
+        const repoDefaults = repo ? { repository: repo } : {}
         const typeDefaults = policyConfig?.type === GitObjectType.GIT_UNKNOWN ? defaultTypes : {}
         const configWithDefaults = policyConfig && { ...policyConfig, ...repoDefaults, ...typeDefaults }
 

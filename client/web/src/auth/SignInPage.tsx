@@ -139,7 +139,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                         )}
                     </Text>
                 ) : (
-                    <Text className="text-muted">Need an account? Contact your site admin</Text>
+                    <Text className="text-muted">Need an account? Contact your site admin.</Text>
                 )}
             </div>
         )

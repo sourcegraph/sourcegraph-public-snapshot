@@ -129,8 +129,8 @@ func TestResolveOwnersWithType(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, []codeowners.ResolvedOwner{
 			&codeowners.Person{
-				User:            testUser,
-				OwnerIdentifier: handle,
+				User:   testUser,
+				Handle: handle,
 			},
 		}, got)
 	})
@@ -153,8 +153,8 @@ func TestResolveOwnersWithType(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, []codeowners.ResolvedOwner{
 			&codeowners.Person{
-				User:            testUser,
-				OwnerIdentifier: email,
+				User:  testUser,
+				Email: email,
 			},
 		}, got)
 	})
@@ -178,8 +178,8 @@ func TestResolveOwnersWithType(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, []codeowners.ResolvedOwner{
 			&codeowners.Team{
-				Team:            testTeam,
-				OwnerIdentifier: handle,
+				Team:   testTeam,
+				Handle: handle,
 			},
 		}, got)
 	})
@@ -250,9 +250,9 @@ func TestResolveOwnersWithType(t *testing.T) {
 		got, err := ownService.ResolveOwnersWithType(context.Background(), owners)
 		require.NoError(t, err)
 		want := []codeowners.ResolvedOwner{
-			&codeowners.Person{User: testUserWithHandle, OwnerIdentifier: userHandle},
-			&codeowners.Person{User: testUserWithEmail, OwnerIdentifier: userEmail},
-			&codeowners.Team{Team: testTeamWithHandle, OwnerIdentifier: teamHandle},
+			&codeowners.Person{User: testUserWithHandle, Handle: userHandle},
+			&codeowners.Person{User: testUserWithEmail, Email: userEmail},
+			&codeowners.Team{Team: testTeamWithHandle, Handle: teamHandle},
 			testUnknownOwner,
 		}
 		sort.Slice(want, func(x, j int) bool {
@@ -283,8 +283,8 @@ func TestResolveOwnersWithType(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, []codeowners.ResolvedOwner{
 			&codeowners.Person{
-				User:            testUser,
-				OwnerIdentifier: email,
+				User:  testUser,
+				Email: email,
 			},
 		}, got)
 		// do it again
@@ -292,8 +292,8 @@ func TestResolveOwnersWithType(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, []codeowners.ResolvedOwner{
 			&codeowners.Person{
-				User:            testUser,
-				OwnerIdentifier: email,
+				User:  testUser,
+				Email: email,
 			},
 		}, got)
 	})
@@ -352,8 +352,9 @@ func newTestTeam(teamName string) *types.Team {
 	}
 }
 
+// an unknown owner is just a person with no user set
 func newTestUnknownOwner(handle, email string) codeowners.ResolvedOwner {
-	return &codeowners.UnknownOwner{
+	return &codeowners.Person{
 		Handle: handle,
 		Email:  email,
 	}
