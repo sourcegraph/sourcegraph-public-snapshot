@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sort"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -714,6 +713,7 @@ func TestFilterRecordsingsByRepo(t *testing.T) {
 		DependentFrames: nil,
 	}
 	testCases := []struct {
+		name       string
 		job        SearchJob
 		series     types.InsightSeries
 		repoList   []*dbtypes.Repo
@@ -721,6 +721,7 @@ func TestFilterRecordsingsByRepo(t *testing.T) {
 		want       autogold.Value
 	}{
 		{
+			name:       "AllReposEmptySlice",
 			job:        testJob,
 			series:     types.InsightSeries{Repositories: []string{}},
 			repoList:   allRepos,
@@ -738,6 +739,7 @@ func TestFilterRecordsingsByRepo(t *testing.T) {
 			}),
 		},
 		{
+			name:       "AllReposNil",
 			job:        testJob,
 			series:     types.InsightSeries{Repositories: nil},
 			repoList:   allRepos,
@@ -755,6 +757,7 @@ func TestFilterRecordsingsByRepo(t *testing.T) {
 			}),
 		},
 		{
+			name:       "OddRepos",
 			job:        testJob,
 			series:     types.InsightSeries{Repositories: []string{string(repo1.Name), string(repo3.Name)}},
 			repoList:   oddRepos,
@@ -767,6 +770,7 @@ func TestFilterRecordsingsByRepo(t *testing.T) {
 			}),
 		},
 		{
+			name:       "Repo4NotFound",
 			job:        testJob,
 			series:     types.InsightSeries{Repositories: []string{string(repo2.Name), string(repo4.Name)}},
 			repoList:   []*dbtypes.Repo{repo2},
@@ -777,8 +781,8 @@ func TestFilterRecordsingsByRepo(t *testing.T) {
 			}),
 		},
 	}
-	for i, tc := range testCases {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
 			mockRepoStore := database.NewMockRepoStore()
 			mockRepoStore.ListFunc.SetDefaultReturn(tc.repoList, nil)
 

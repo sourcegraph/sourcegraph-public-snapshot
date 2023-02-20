@@ -3,7 +3,6 @@ package backfillv2
 import (
 	"context"
 	"database/sql"
-	"strconv"
 	"testing"
 	"time"
 
@@ -201,6 +200,7 @@ Test cases for migrator
 */
 
 type testCase struct {
+	name   string
 	series InsightSeries
 	want   autogold.Value
 }
@@ -275,6 +275,7 @@ func TestBackfillV2Migrator(t *testing.T) {
 	yearAgo := clock.Now().AddDate(-1, 0, 0)
 	cases := []testCase{
 		{
+			name:   "Not backfilled all repos search insight",
 			series: newSearchSeries(ms, "a", now, nil, false, nil),
 			want: autogold.Expect(SeriesValidate{
 				SeriesID: "a", CreatedAt: "2022-04-15 01:00:00",
@@ -285,6 +286,7 @@ func TestBackfillV2Migrator(t *testing.T) {
 			}),
 		},
 		{
+			name:   "Not backfilled named repos search insight",
 			series: newSearchSeries(ms, "b", now, nil, false, []string{"repoA", "repoB"}),
 			want: autogold.Expect(SeriesValidate{
 				SeriesID: "b", CreatedAt: "2022-04-15 01:00:00",
@@ -295,6 +297,7 @@ func TestBackfillV2Migrator(t *testing.T) {
 			}),
 		},
 		{
+			name:   "Recent Backfilled all repos search insight",
 			series: newSearchSeries(ms, "c", recent, &recent, false, nil),
 			want: autogold.Expect(SeriesValidate{
 				SeriesID: "c", CreatedAt: "2022-04-05 01:00:00",
@@ -305,6 +308,7 @@ func TestBackfillV2Migrator(t *testing.T) {
 			}),
 		},
 		{
+			name:   "Recent Backfilled named repos search insight",
 			series: newSearchSeries(ms, "d", recent, &recent, false, []string{"repoA", "repoB"}),
 			want: autogold.Expect(SeriesValidate{
 				SeriesID: "d", CreatedAt: "2022-04-05 01:00:00",
@@ -315,6 +319,7 @@ func TestBackfillV2Migrator(t *testing.T) {
 			}),
 		},
 		{
+			name:   "Older Backfilled all repos search insight",
 			series: newSearchSeries(ms, "e", yearAgo, &yearAgo, false, nil),
 			want: autogold.Expect(SeriesValidate{
 				SeriesID: "e", CreatedAt: "2021-04-15 01:00:00",
@@ -325,6 +330,7 @@ func TestBackfillV2Migrator(t *testing.T) {
 			}),
 		},
 		{
+			name:   "Recent JIT search insight",
 			series: newSearchSeries(ms, "f", recent, nil, true, []string{"repoA", "repoB"}),
 			want: autogold.Expect(SeriesValidate{
 				SeriesID: "f", CreatedAt: "2022-04-15 01:00:00",
@@ -335,6 +341,7 @@ func TestBackfillV2Migrator(t *testing.T) {
 			}),
 		},
 		{
+			name:   "Older JIT search insight",
 			series: newSearchSeries(ms, "g", yearAgo, nil, true, []string{"repoA", "repoB"}),
 			want: autogold.Expect(SeriesValidate{
 				SeriesID: "g", CreatedAt: "2022-04-15 01:00:00",
@@ -345,6 +352,7 @@ func TestBackfillV2Migrator(t *testing.T) {
 			}),
 		},
 		{
+			name:   "Older JIT capture group insight",
 			series: newCGSeries(ms, "h", yearAgo, nil, true, []string{"repoA", "repoB"}),
 			want: autogold.Expect(SeriesValidate{
 				SeriesID: "h", CreatedAt: "2022-04-15 01:00:00",
@@ -355,6 +363,7 @@ func TestBackfillV2Migrator(t *testing.T) {
 			}),
 		},
 		{
+			name:   "Recent backfilled capture group insight",
 			series: newCGSeries(ms, "i", recent, &recent, false, []string{"repoA", "repoB"}),
 			want: autogold.Expect(SeriesValidate{
 				SeriesID: "i", CreatedAt: "2022-04-05 01:00:00",
@@ -365,6 +374,7 @@ func TestBackfillV2Migrator(t *testing.T) {
 			}),
 		},
 		{
+			name:   "Recent search insight with new backfill completed",
 			series: newSearchSeriesWithBackfill(ms, mb, "m", recent, &recent, false, nil, "complete"),
 			want: autogold.Expect(SeriesValidate{
 				SeriesID: "m", CreatedAt: "2022-04-05 01:00:00",
@@ -375,6 +385,7 @@ func TestBackfillV2Migrator(t *testing.T) {
 			}),
 		},
 		{
+			name:   "Recent search insight with new backfill new",
 			series: newSearchSeriesWithBackfill(ms, mb, "n", recent, &recent, false, nil, "new"),
 			want: autogold.Expect(SeriesValidate{
 				SeriesID: "n", CreatedAt: "2022-04-05 01:00:00",
@@ -387,6 +398,7 @@ func TestBackfillV2Migrator(t *testing.T) {
 	}
 	caesNoMigrate := []testCase{
 		{
+			name:   "Recent Lang Stats insight",
 			series: newLangStats(ms, "j", recent, nil, "repoA"),
 			want: autogold.Expect(SeriesValidate{
 				SeriesID: "j", CreatedAt: "2022-04-05 01:00:00",
@@ -396,6 +408,7 @@ func TestBackfillV2Migrator(t *testing.T) {
 			}),
 		},
 		{
+			name:   "Recent Group By insight",
 			series: newGroupBySeries(ms, "k", recent, &recent, false, "repoA"),
 			want: autogold.Expect(SeriesValidate{
 				SeriesID: "k", CreatedAt: "2022-04-05 01:00:00",
@@ -405,6 +418,7 @@ func TestBackfillV2Migrator(t *testing.T) {
 			}),
 		},
 		{
+			name:   "Older Group By insight",
 			series: newGroupBySeries(ms, "l", yearAgo, &yearAgo, false, "repoA"),
 			want: autogold.Expect(SeriesValidate{
 				SeriesID: "l", CreatedAt: "2021-04-15 01:00:00",
@@ -434,8 +448,8 @@ func TestBackfillV2Migrator(t *testing.T) {
 	assert.NoError(t, err)
 
 	totalCases := append(cases, caesNoMigrate...)
-	for i, c := range totalCases {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
+	for _, c := range totalCases {
+		t.Run(c.name, func(t *testing.T) {
 			got := results[c.series.SeriesID]
 			c.want.Equal(t, got)
 		})

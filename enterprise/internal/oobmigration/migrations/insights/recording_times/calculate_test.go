@@ -1,7 +1,6 @@
 package recording_times
 
 import (
-	"strconv"
 	"testing"
 	"time"
 
@@ -43,16 +42,19 @@ func Test_calculateRecordingTimes(t *testing.T) {
 	}
 
 	testCases := []struct {
+		name           string
 		lastRecordedAt time.Time
 		interval       timeInterval
 		existingTimes  []time.Time
 		want           autogold.Value
 	}{
 		{
+			name:     "no existing times returns all generated times",
 			interval: defaultInterval,
 			want:     autogold.Expect(stringDefaultTimes),
 		},
 		{
+			name:           "no existing times and lastRecordedAt returns generated times",
 			interval:       defaultInterval,
 			lastRecordedAt: createdAt.AddDate(0, 5, 3),
 			want: autogold.Expect(append(
@@ -63,6 +65,7 @@ func Test_calculateRecordingTimes(t *testing.T) {
 			),
 		},
 		{
+			name:          "oldest existing point after oldest expected point",
 			interval:      timeInterval{unit: week, value: 2},
 			existingTimes: []time.Time{time.Date(2022, 11, 2, 1, 0, 0, 0, time.UTC)}, // existing point within half an interval
 			want: autogold.Expect([]string{
@@ -81,6 +84,7 @@ func Test_calculateRecordingTimes(t *testing.T) {
 			}),
 		},
 		{
+			name:     "newest existing point before newest expected point",
 			interval: timeInterval{unit: hour, value: 2},
 			existingTimes: []time.Time{
 				time.Date(2022, 10, 31, 2, 1, 0, 0, time.UTC),
@@ -110,6 +114,7 @@ func Test_calculateRecordingTimes(t *testing.T) {
 			}),
 		},
 		{
+			name:     "oldest expected before oldest existing and newest existing before newest expected",
 			interval: timeInterval{unit: hour, value: 2},
 			existingTimes: []time.Time{
 				time.Date(2022, 10, 31, 8, 1, 0, 0, time.UTC),
@@ -136,6 +141,7 @@ func Test_calculateRecordingTimes(t *testing.T) {
 			}),
 		},
 		{
+			name:     "all existing points are reused with valleys",
 			interval: timeInterval{unit: hour, value: 2},
 			existingTimes: []time.Time{
 				time.Date(2022, 10, 31, 2, 1, 0, 0, time.UTC),
@@ -165,8 +171,8 @@ func Test_calculateRecordingTimes(t *testing.T) {
 			}),
 		},
 	}
-	for i, tc := range testCases {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
 			calculated := calculateRecordingTimes(createdAt, tc.lastRecordedAt, tc.interval, tc.existingTimes)
 			tc.want.Equal(t, stringify(calculated))
 		})
@@ -182,12 +188,14 @@ func Test_buildRecordingTimes(t *testing.T) {
 	}
 
 	testCases := []struct {
+		name      string
 		numPoints int
 		interval  timeInterval
 		startTime time.Time
 		want      autogold.Value
 	}{
 		{
+			name:      "one point",
 			numPoints: 1,
 			interval:  timeInterval{month, 1},
 			startTime: startTime,
@@ -196,6 +204,7 @@ func Test_buildRecordingTimes(t *testing.T) {
 			}),
 		},
 		{
+			name:      "two points 1 month intervals",
 			numPoints: 2,
 			interval:  timeInterval{month, 1},
 			startTime: startTime,
@@ -205,6 +214,7 @@ func Test_buildRecordingTimes(t *testing.T) {
 			}),
 		},
 		{
+			name:      "6 points 1 month intervals",
 			numPoints: 6,
 			interval:  timeInterval{month, 1},
 			startTime: startTime,
@@ -218,6 +228,7 @@ func Test_buildRecordingTimes(t *testing.T) {
 			}),
 		},
 		{
+			name:      "12 points 2 week intervals",
 			numPoints: 12,
 			interval:  timeInterval{week, 2},
 			startTime: startTime,
@@ -237,6 +248,7 @@ func Test_buildRecordingTimes(t *testing.T) {
 			}),
 		},
 		{
+			name:      "6 points 2 day intervals",
 			numPoints: 6,
 			interval:  timeInterval{day, 2},
 			startTime: startTime,
@@ -250,6 +262,7 @@ func Test_buildRecordingTimes(t *testing.T) {
 			}),
 		},
 		{
+			name:      "6 points 2 hour intervals",
 			numPoints: 6,
 			interval:  timeInterval{hour, 2},
 			startTime: startTime,
@@ -263,6 +276,7 @@ func Test_buildRecordingTimes(t *testing.T) {
 			}),
 		},
 		{
+			name:      "6 points 1 year intervals",
 			numPoints: 6,
 			interval:  timeInterval{year, 1},
 			startTime: startTime,
@@ -276,8 +290,8 @@ func Test_buildRecordingTimes(t *testing.T) {
 			}),
 		},
 	}
-	for i, tc := range testCases {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
 			tc.want.Equal(t, buildFrameTest(tc.numPoints, tc.interval, tc.startTime))
 		})
 	}
@@ -287,12 +301,14 @@ func Test_buildRecordingTimesBetween(t *testing.T) {
 	fromTime := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
 
 	testCases := []struct {
+		name     string
 		from     time.Time
 		to       time.Time
 		interval timeInterval
 		want     autogold.Value
 	}{
 		{
+			"one month at 1 week intervals",
 			fromTime,
 			fromTime.AddDate(0, 1, 0),
 			timeInterval{week, 1},
@@ -305,6 +321,7 @@ func Test_buildRecordingTimesBetween(t *testing.T) {
 			}),
 		},
 		{
+			"6 months at 4 week intervals",
 			fromTime,
 			fromTime.AddDate(0, 6, 0),
 			timeInterval{week, 4},
@@ -319,8 +336,8 @@ func Test_buildRecordingTimesBetween(t *testing.T) {
 			}),
 		},
 	}
-	for i, tc := range testCases {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
 			got := buildRecordingTimesBetween(tc.from, tc.to, tc.interval)
 			tc.want.Equal(t, convert(got))
 		})
@@ -330,38 +347,43 @@ func Test_buildRecordingTimesBetween(t *testing.T) {
 func Test_withinHalfAnInterval(t *testing.T) {
 	someInterval := timeInterval{month, 1}
 	testCases := []struct {
+		name              string
 		possiblyLaterTime time.Time
 		earlierTime       time.Time
 		interval          timeInterval
 		want              autogold.Value
 	}{
 		{
+			name:              "time is close after existing",
 			possiblyLaterTime: time.Date(2022, 11, 23, 12, 10, 0, 0, time.UTC),
 			earlierTime:       time.Date(2022, 11, 22, 12, 10, 0, 0, time.UTC),
 			interval:          someInterval,
 			want:              autogold.Expect(true),
 		},
 		{
+			name:              "time is before existing",
 			possiblyLaterTime: time.Date(2022, 11, 21, 12, 10, 0, 0, time.UTC),
 			earlierTime:       time.Date(2022, 11, 22, 12, 10, 0, 0, time.UTC),
 			interval:          someInterval,
 			want:              autogold.Expect(false),
 		},
 		{
+			name:              "hourly interval has smaller allowance",
 			possiblyLaterTime: time.Date(2022, 11, 22, 13, 10, 0, 0, time.UTC),
 			earlierTime:       time.Date(2022, 11, 22, 12, 0, 0, 0, time.UTC),
 			interval:          timeInterval{"hour", 2},
 			want:              autogold.Expect(false),
 		},
 		{
+			name:              "later time is too far ahead",
 			possiblyLaterTime: time.Date(2022, 12, 29, 12, 10, 0, 0, time.UTC),
 			earlierTime:       time.Date(2022, 11, 22, 13, 10, 0, 0, time.UTC),
 			interval:          someInterval,
 			want:              autogold.Expect(false),
 		},
 	}
-	for i, tc := range testCases {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
 			got := withinHalfAnInterval(tc.earlierTime, tc.possiblyLaterTime, tc.interval)
 			tc.want.Equal(t, got)
 		})

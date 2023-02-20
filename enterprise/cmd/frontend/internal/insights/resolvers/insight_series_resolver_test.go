@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"testing"
 	"time"
 
@@ -122,6 +121,7 @@ func fakeIncompleteGetter() GetIncompleteDatapointsFunc {
 
 func TestInsightSeriesStatusResolver_IsLoadingData(t *testing.T) {
 	type isLoadingTestCase struct {
+		name         string
 		backfills    []scheduler.SeriesBackfill
 		backfillsErr error
 		queueStatus  queryrunner.JobsStatus
@@ -134,26 +134,31 @@ func TestInsightSeriesStatusResolver_IsLoadingData(t *testing.T) {
 
 	cases := []isLoadingTestCase{
 		{
+			name:      "completed backvillv2",
 			backfills: []scheduler.SeriesBackfill{{State: scheduler.BackfillStateCompleted}},
 			series:    types.InsightViewSeries{BackfillQueuedAt: &recentTime},
 			want:      autogold.Expect("loading:false error:"),
 		},
 		{
+			name:      "completed backfillv1",
 			backfills: []scheduler.SeriesBackfill{},
 			series:    types.InsightViewSeries{BackfillQueuedAt: &recentTime},
 			want:      autogold.Expect("loading:false error:"),
 		},
 		{
+			name:      "new backfillv2",
 			backfills: []scheduler.SeriesBackfill{{State: scheduler.BackfillStateNew}},
 			series:    types.InsightViewSeries{BackfillQueuedAt: &recentTime},
 			want:      autogold.Expect("loading:true error:"),
 		},
 		{
+			name:      "in process backfillv2",
 			backfills: []scheduler.SeriesBackfill{{State: scheduler.BackfillStateProcessing}},
 			series:    types.InsightViewSeries{BackfillQueuedAt: &recentTime},
 			want:      autogold.Expect("loading:true error:"),
 		},
 		{
+			name:      "in process backfillv1",
 			backfills: []scheduler.SeriesBackfill{},
 			queueStatus: queryrunner.JobsStatus{
 				Queued:     10,
@@ -164,11 +169,13 @@ func TestInsightSeriesStatusResolver_IsLoadingData(t *testing.T) {
 			want:   autogold.Expect("loading:true error:"),
 		},
 		{
+			name:      "failed backfillv2",
 			backfills: []scheduler.SeriesBackfill{{State: scheduler.BackfillStateFailed}},
 			series:    types.InsightViewSeries{BackfillQueuedAt: &recentTime},
 			want:      autogold.Expect("loading:false error:"),
 		},
 		{
+			name:      "failed backfillv1",
 			backfills: []scheduler.SeriesBackfill{},
 			queueStatus: queryrunner.JobsStatus{
 				Failed: 10,
@@ -177,6 +184,7 @@ func TestInsightSeriesStatusResolver_IsLoadingData(t *testing.T) {
 			want:   autogold.Expect("loading:false error:"),
 		},
 		{
+			name:      "completed but snapshotting backfillv2",
 			backfills: []scheduler.SeriesBackfill{{State: scheduler.BackfillStateCompleted}},
 			queueStatus: queryrunner.JobsStatus{
 				Queued: 1,
@@ -185,12 +193,14 @@ func TestInsightSeriesStatusResolver_IsLoadingData(t *testing.T) {
 			want:   autogold.Expect("loading:true error:"),
 		},
 		{
+			name:         "error loading backfill",
 			backfills:    []scheduler.SeriesBackfill{},
 			backfillsErr: errors.New("backfill error"),
 			series:       types.InsightViewSeries{BackfillQueuedAt: &recentTime},
 			want:         autogold.Expect("loading:false error:LoadSeriesBackfills: backfill error"),
 		},
 		{
+			name:      "error loading queue status",
 			backfills: []scheduler.SeriesBackfill{},
 			queueErr:  errors.New("error loading queue status"),
 			series:    types.InsightViewSeries{BackfillQueuedAt: &recentTime},
@@ -198,8 +208,8 @@ func TestInsightSeriesStatusResolver_IsLoadingData(t *testing.T) {
 		},
 	}
 
-	for i, tc := range cases {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
 			statusGetter := fakeStatusGetter(&tc.queueStatus, tc.queueErr)
 			backfillGetter := fakeBackfillGetter(tc.backfills, tc.backfillsErr)
 			statusResolver := newStatusResolver(statusGetter, backfillGetter, fakeIncompleteGetter(), tc.series)

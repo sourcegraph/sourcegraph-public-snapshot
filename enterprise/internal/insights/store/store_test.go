@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"sort"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -745,6 +744,7 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 	afterNow := now.AddDate(0, 0, 1)
 
 	testCases := []struct {
+		name     string
 		insert   *types.InsightSeriesRecordingTimes
 		getFor   int
 		getFrom  *time.Time
@@ -753,43 +753,50 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 		want     autogold.Value
 	}{
 		{
+			name:   "get all recording times for series1",
 			getFor: 1,
 			want:   autogold.Expect(stringifyTimes(series1Times)),
 		},
 		{
+			name:   "duplicates are not inserted",
 			insert: &types.InsightSeriesRecordingTimes{InsightSeriesID: 1, RecordingTimes: makeRecordings([]time.Time{now}, true)},
 			getFor: 1,
 			want:   autogold.Expect(stringifyTimes(series1Times)),
 		},
 		{
+			name:   "UTC is always used",
 			insert: &types.InsightSeriesRecordingTimes{InsightSeriesID: 2, RecordingTimes: makeRecordings([]time.Time{now.Local()}, true)},
 			getFor: 2,
 			want:   autogold.Expect(stringifyTimes(series2Times)),
 		},
 		{
+			name:    "gets subset of series 2 recording times",
 			getFor:  2,
 			getFrom: &now,
 			want:    autogold.Expect(stringifyTimes(series2Times[:2])),
 		},
 		{
+			name:   "gets subset of series 1 recording times",
 			getFor: 1,
 			getTo:  &now,
 			want:   autogold.Expect(stringifyTimes(series1Times[:1])),
 		},
 		{
+			name:    "gets subset from and to",
 			getFor:  2,
 			getFrom: &oldTime,
 			getTo:   &afterNow,
 			want:    autogold.Expect(stringifyTimes(append(series2Times[:1], series2Times[2]))),
 		},
 		{
+			name:     "gets all times after",
 			getFor:   1,
 			getAfter: &now,
 			want:     autogold.Expect(stringifyTimes(series1Times[1:])),
 		},
 	}
-	for i, tc := range testCases {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
 			if tc.insert != nil {
 				if err := timeseriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{*tc.insert}); err != nil {
 					t.Fatal(err)
@@ -839,18 +846,21 @@ func Test_coalesceZeroValues(t *testing.T) {
 	}
 
 	testCases := []struct {
+		name           string
 		points         map[string]*SeriesPoint
 		recordingTimes []time.Time
 		captureValues  map[string]struct{}
 		want           autogold.Value
 	}{
 		{
+			"empty returns empty",
 			nil,
 			nil,
 			nil,
 			autogold.Expect([]string{}),
 		},
 		{
+			"empty recording times returns empty",
 			map[string]*SeriesPoint{
 				"2020-01-01 00:00:00 +0000 UTC": {"seriesID", testTime, 12, nil},
 			},
@@ -859,6 +869,7 @@ func Test_coalesceZeroValues(t *testing.T) {
 			autogold.Expect([]string{}),
 		},
 		{
+			"augment one data point",
 			map[string]*SeriesPoint{
 				"2020-01-01 00:00:00 +0000 UTC": {"seriesID", testTime, 1, nil},
 			},
@@ -870,6 +881,7 @@ func Test_coalesceZeroValues(t *testing.T) {
 			}),
 		},
 		{
+			"augment capture data points",
 			map[string]*SeriesPoint{
 				"2020-01-01 00:00:00 +0000 UTCone":   {"1", testTime, 1, capture("one")},
 				"2020-01-01 00:00:00 +0000 UTCtwo":   {"1", testTime, 2, capture("two")},
@@ -888,6 +900,7 @@ func Test_coalesceZeroValues(t *testing.T) {
 			}),
 		},
 		{
+			"augment data point in the past",
 			map[string]*SeriesPoint{
 				"2020-01-01 00:00:00 +0000 UTC": {"1", testTime, 11, nil},
 				"2020-01-02 00:00:00 +0000 UTC": {"1", testTime.AddDate(0, 0, 1), 22, nil},
@@ -901,8 +914,8 @@ func Test_coalesceZeroValues(t *testing.T) {
 			}),
 		},
 	}
-	for i, tc := range testCases {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
 			got := coalesceZeroValues("1", tc.points, tc.captureValues, makeRecordingTimes(tc.recordingTimes))
 			tc.want.Equal(t, stringify(got))
 		})

@@ -1,7 +1,6 @@
 package txemail
 
 import (
-	"strconv"
 	"testing"
 
 	"github.com/hexops/autogold/v2"
@@ -25,11 +24,13 @@ func TestParseTemplate(t *testing.T) {
 		B: `B`,
 	}
 
-	for i, tc := range []struct {
+	for _, tc := range []struct {
+		name     string
 		template txtypes.Templates
 		want     autogold.Value
 	}{
 		{
+			name: "all fields provided",
 			template: txtypes.Templates{
 				Subject: `{{.A}} subject {{.B}}`,
 				Text: `
@@ -45,6 +46,7 @@ func TestParseTemplate(t *testing.T) {
 			}),
 		},
 		{
+			name: "text not provided",
 			template: txtypes.Templates{
 				Subject: `{{.A}} subject {{.B}}`,
 				Text:    "",
@@ -58,7 +60,7 @@ func TestParseTemplate(t *testing.T) {
 			}),
 		},
 	} {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			pt, err := ParseTemplate(tc.template)
 			require.NoError(t, err)
 
