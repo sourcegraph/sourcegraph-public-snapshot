@@ -1713,9 +1713,9 @@ ALTER SEQUENCE codeintel_ranking_exports_id_seq OWNED BY codeintel_ranking_expor
 
 CREATE TABLE codeowners (
     id integer NOT NULL,
-    contents text,
-    contents_proto json,
-    repo_id integer,
+    contents text NOT NULL,
+    contents_proto json NOT NULL,
+    repo_id integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );

@@ -960,9 +960,9 @@ Foreign-key constraints:
      Column     |           Type           | Collation | Nullable |                Default                 
 ----------------+--------------------------+-----------+----------+----------------------------------------
  id             | integer                  |           | not null | nextval('codeowners_id_seq'::regclass)
- contents       | text                     |           |          | 
- contents_proto | json                     |           |          | 
- repo_id        | integer                  |           |          | 
+ contents       | text                     |           | not null | 
+ contents_proto | json                     |           | not null | 
+ repo_id        | integer                  |           | not null | 
  created_at     | timestamp with time zone |           | not null | now()
  updated_at     | timestamp with time zone |           | not null | now()
 Indexes:
