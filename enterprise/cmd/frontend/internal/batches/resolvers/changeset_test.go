@@ -373,7 +373,7 @@ func TestChangesetResolver(t *testing.T) {
 				Typename:      "ExternalChangeset",
 				ExternalID:    "98765",
 				ForkNamespace: "user",
-				ForkName:      "user",
+				ForkName:      "my-fork",
 				Repository:    apitest.Repository{Name: string(repo.Name)},
 				Labels:        []apitest.Label{},
 				State:         string(btypes.ChangesetStateProcessing),
