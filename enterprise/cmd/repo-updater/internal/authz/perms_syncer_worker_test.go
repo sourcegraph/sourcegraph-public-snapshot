@@ -262,7 +262,7 @@ loop:
 		for _, job := range jobs {
 			// We don't check job with ID=3 because it is a repo sync job which is not
 			// processed by current worker.
-			if job.ID != 4 && (job.State == database.PermissionSyncJobStateQueued || job.State == database.PermissionSyncJobStateCompleted) {
+			if job.ID != 4 && (job.State == database.PermissionSyncJobStateQueued || job.State == database.PermissionSyncJobStateProcessing) {
 				// wait and retry
 				time.Sleep(500 * time.Millisecond)
 				continue loop
