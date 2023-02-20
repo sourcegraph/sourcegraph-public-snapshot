@@ -154,7 +154,7 @@ func marshalChangeset(ctx context.Context, id graphql.ID) ([]byte, error) {
 
 	return json.Marshal(changeset{
 		ID:                  node.ID,
-		ExternalID:          node.E,
+		ExternalID:          node.ExternalID,
 		BatchChangeIDs:      batchChangeIDs,
 		OwningBatchChangeID: nullableMap(cs.OwnedByBatchChangeID, bgql.MarshalBatchChangeID),
 		RepositoryID:        bgql.MarshalRepoID(cs.RepoID),
