@@ -116,6 +116,25 @@ interface RepoRevisionBreadcrumbProps extends Pick<RepoRevisionContainerProps, '
     resolvedRevision: ResolvedRevision | undefined
 }
 
+type RepoType = 'repo' | 'packageRepo'
+
+const packageIds = new Set([
+    'npmPackages',
+    'jvmPackages',
+    'pythonPackages',
+    'rustPackages',
+    'rubyPackages',
+    'goModules',
+])
+
+const getRepoType = (repo: RepositoryFields): RepoType => {
+    if (packageIds.has(repo.externalRepository.serviceID)) {
+        return 'packageRepo'
+    }
+
+    return 'repo'
+}
+
 export const RepoRevisionContainerBreadcrumb: FC<RepoRevisionBreadcrumbProps> = props => {
     const { revision, resolvedRevision, repoName, repo } = props
 
