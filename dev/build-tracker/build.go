@@ -17,9 +17,10 @@ type Build struct {
 	// Pipeline is a wrapped buildkite.Pipeline that is running this build.
 	Pipeline *Pipeline `json:"pipeline"`
 
-	// Jobs is a map that keeps track of all the buildkite.Jobs associated with this build.
-	// Each job is wrapped to allow for safer access to fields of the buildkite.Jobs. The name of the job is used as the key
-	Jobs map[string]Job `json:"jobs"`
+	// steps is a map that keeps track of all the buildkite.Jobs associated with this build.
+	// Each step keeps track of jobs associated with that step. Every job is wrapped to allow
+	// for safer access to fields of the buildkite.Jobs. The name of the job is used as the key
+	Steps map[string]*Step `json:"steps"`
 
 	// ConsecutiveFailure indicates whether this build is the nth consecutive failure.
 	ConsecutiveFailure int `json:"consecutiveFailures"`
@@ -30,6 +31,19 @@ type Build struct {
 	// Mutex is used to to control and stop other changes being made to the build.
 	sync.Mutex
 }
+
+type Step struct {
+	Name string
+	Jobs []*Job
+}
+
+type StepState string
+
+const (
+	Passed StepState = "Passed"
+	Failed StepState = "Failed"
+	Fixed  StepState = "Fixed"
+)
 
 // GroupJobFilter has a filter with an associated group. Jobs matching the Filter can be considered as part of the group
 type GroupJobFilter struct {
@@ -42,6 +56,40 @@ var FailedJobFilter = GroupJobFilter{Group: "failed", Filter: func(j *Job) bool 
 
 // FixedJobFilter filters jobs that are considered fixed and the group is "fixed"
 var FixedJobFilter = GroupJobFilter{Group: "fixed", Filter: func(j *Job) bool { return j.fixed }}
+
+func NewStep(name string) *Step {
+	return &Step{
+		Name: name,
+		Jobs: make([]*Job, 0),
+	}
+}
+
+func (s *Step) ResolveState() StepState {
+	// If we have no jobs for some reason, then we regard it as the StepState as Passed ... cannot have a Failed StepState
+	// if we have no jobs!
+	if len(s.Jobs) == 0 {
+		return Passed
+	}
+	// we assume the first job is in a failed state
+	startState := StepState(s.Jobs[0].state())
+	if startState != Failed {
+		// warn
+	}
+	// lastState is the final State
+	lastState := startState
+	if len(s.Jobs) > 1 {
+		lastState = StepState(s.Jobs[len(s.Jobs)-1].state())
+	}
+	if startState == Failed && lastState == Passed {
+		return Fixed
+	}
+
+	return lastState
+}
+
+func (s *Step) LastJob() *Job {
+	return s.Jobs[len(s.Jobs)-1]
+}
 
 // updateFromEvent updates the current build with the build and pipeline from the event.
 func (b *Build) updateFromEvent(e *Event) {
@@ -107,33 +155,31 @@ func (b *Build) message() string {
 	return strp(b.Message)
 }
 
-func (b *Build) filterJobs(filters ...GroupJobFilter) map[string][]*Job {
-	result := map[string][]*Job{}
-	for _, j := range b.Jobs {
-		j := j
-		for _, f := range filters {
-			add := f.Filter(&j)
-			if add {
-				jobs, ok := result[f.Group]
-				if !ok {
-					jobs = []*Job{}
-				}
-				jobs = append(jobs, &j)
-				result[f.Group] = jobs
-			}
+func (b *Build) findFailedSteps() []*Step {
+	results := []*Step{}
+
+	for _, step := range b.Steps {
+		if state := step.ResolveState(); state == Failed {
+			results = append(results, step)
 		}
 	}
-
-	return result
+	return []*Step{}
 }
 
-func (b *Build) failedJobs() []*Job {
-	results := b.filterJobs(FailedJobFilter)
+func (b *Build) GroupIntoStepStates() map[StepState][]*Step {
+	groups := make(map[StepState][]*Step)
 
-	if items, ok := results[FailedJobFilter.Group]; ok {
-		return items
+	for _, step := range b.Steps {
+		state := step.ResolveState()
+
+		items, ok := groups[state]
+		if !ok {
+			items = make([]*Step, 0)
+		}
+		groups[state] = append(items, step)
 	}
-	return []*Job{}
+
+	return groups
 }
 
 func (b *Build) hasNotification() bool {
@@ -198,7 +244,7 @@ func (b *Event) build() *Build {
 	return &Build{
 		Build:    b.Build,
 		Pipeline: b.pipeline(),
-		Jobs:     make(map[string]Job),
+		Steps:    make(map[string]*Step),
 	}
 }
 
@@ -289,25 +335,28 @@ func (s *BuildStore) Add(event *Event) {
 
 	// Keep track of the job, if there is one
 	newJob := event.job()
-	if newJob.name() != "" {
-		// we get the oldJob so that we can check if the new job fixed the failure
-		oldJob, ok := build.Jobs[newJob.name()]
-		if ok {
-			// if the old job failed and the new job (with the same name) has succeeded, it means
-			// this is an updated job and the job was retried and got fixed, so we marked the job as fixed
-			newJob.fixed = oldJob.failed() && newJob.Retried && !newJob.failed()
+	stepName := newJob.name()
+	if stepName != "" {
+		step, ok := build.Steps[stepName]
+		// We don't know about this step, so it must be a new one
+		if !ok {
+			step = NewStep(stepName)
+			build.Steps[step.Name] = step
 		}
-		build.Jobs[newJob.name()] = *newJob
-		s.logger.Debug("job added",
+		step.Jobs = append(step.Jobs, newJob)
+		s.logger.Debug("job added to step",
 			log.Int("buildNumber", event.buildNumber()),
-			log.Object("job", log.String("name", newJob.name()), log.String("id", newJob.id())),
-			log.Int("totalJobs", len(build.Jobs)),
+			log.Object("step", log.String("name", step.Name),
+				log.Object("job", log.String("state", newJob.state()), log.String("id", newJob.id())),
+				log.Int("totalJobs", len(step.Jobs)),
+			),
+			log.Int("totalSteps", len(step.Jobs)),
 		)
 	} else {
-		s.logger.Warn("job has no name - not added",
+		s.logger.Warn("job for step has no name - not added",
 			log.Int("buildNumber", event.buildNumber()),
 			log.Object("job", log.String("name", newJob.name()), log.String("id", newJob.id())),
-			log.Int("totalJobs", len(build.Jobs)),
+			log.Int("totalSteps", len(build.Steps)),
 		)
 	}
 

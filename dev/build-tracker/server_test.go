@@ -170,7 +170,7 @@ func TestShouldNotify(t *testing.T) {
 		Build: buildkite.Build{
 			Number: &num,
 		},
-		Jobs: map[string]Job{},
+		Steps: map[string]*Step{},
 	}
 	newEvent := func(name, job, state string) *Event {
 		return &Event{

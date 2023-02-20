@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/team"
 )
 
-const JobShowLimit = 5
+const StepShowLimit = 5
 
 type cacheItem[T any] struct {
 	Value     T
@@ -36,6 +36,22 @@ type NotificationClient struct {
 	logger              log.Logger
 	channel             string
 }
+
+type Notification struct {
+	BuildNumber        int
+	ConsequtiveFailure int
+	Message            string
+	Commit             string
+	Teammate           *team.Teammate
+	Fixed              []JobItem
+	Failed             []JobItem
+}
+
+type JobItem struct {
+	Name   string
+	LogURL string
+}
+
 type SlackNotification struct {
 	// SentAt is the time the notification got sent.
 	SentAt time.Time
@@ -171,39 +187,45 @@ func slackMention(teammate *team.Teammate) string {
 	return fmt.Sprintf("<@%s>", teammate.SlackID)
 }
 
+func createStepsSection(state StepState, steps []*Step, stepShowLimit int) string {
+	if len(steps) == 0 {
+		return ""
+	}
+	section := fmt.Sprintf("*%s jobs:*\n\n", state)
+	// if there are more than JobShowLimit of failed jobs, we cannot print all of it
+	// since the message will to big and slack will reject the message with "invalid_blocks"
+	if len(steps) > StepShowLimit {
+		section = fmt.Sprintf("* %d %s jobs (showing %d):*\n\n", len(steps), state, StepShowLimit)
+	}
+	for i := 0; i < StepShowLimit && i < len(steps); i++ {
+		s := steps[i]
+		section += fmt.Sprintf("• %s", s.Name)
+		j := s.LastJob()
+		if j.hasTimedOut() {
+			section += " (Timed out)"
+		}
+		if j.WebURL != "" {
+			section += fmt.Sprintf(" - <%s|logs>", j.WebURL)
+		}
+		section += "\n"
+	}
+
+	return section
+}
+
 func (c *NotificationClient) createMessageBlocks(logger log.Logger, build *Build) ([]slack.Block, error) {
 	msg, _, _ := strings.Cut(build.message(), "\n")
 	msg += fmt.Sprintf(" (%s)", build.commit()[:7])
 
-	failedSection := fmt.Sprintf("> %s\n\n", commitLink(msg, build.commit()))
+	section := fmt.Sprintf("> %s\n\n", commitLink(msg, build.commit()))
 
 	// create a bulleted list of all the failed jobs
 	//
-	filteredJobs := build.filterJobs(FailedJobFilter, FixedJobFilter)
+	stepGroups := build.GroupIntoStepStates()
+	stepSection := createStepsSection(Fixed, stepGroups[Fixed], StepShowLimit)
+	stepSection += createStepsSection(Failed, stepGroups[Failed], StepShowLimit)
 
-	jobSection := ""
-	for group, groupJobs := range filteredJobs {
-		jobSection = fmt.Sprintf("*%s jobs:*\n\n", group)
-		// if there are more than JobShowLimit of failed jobs, we cannot print all of it
-		// since the message will to big and slack will reject the message with "invalid_blocks"
-		if len(groupJobs) > JobShowLimit {
-			jobSection = fmt.Sprintf("* %d %s jobs (showing %d):*\n\n", len(groupJobs), group, JobShowLimit)
-		}
-		logger.Info("group job count on build", log.String("group", group), log.Int("jobs", len(groupJobs)))
-		for i := 0; i < JobShowLimit && i < len(groupJobs); i++ {
-			j := groupJobs[i]
-			jobSection += fmt.Sprintf("• %s", *j.Name)
-			if j.hasTimedOut() {
-				jobSection += " (Timed out)"
-			}
-			if j.WebURL != "" {
-				jobSection += fmt.Sprintf(" - <%s|logs>", j.WebURL)
-			}
-			jobSection += "\n"
-		}
-	}
-
-	failedSection += jobSection
+	section += stepSection
 
 	logger.Debug("getting teammate information using commit", log.String("commit", build.commit()))
 	teammate, err := c.getTeammateForBuild(build)
@@ -229,7 +251,7 @@ func (c *NotificationClient) createMessageBlocks(logger log.Logger, build *Build
 		slack.NewHeaderBlock(
 			slack.NewTextBlockObject(slack.PlainTextType, generateSlackHeader(build), true, false),
 		),
-		slack.NewSectionBlock(&slack.TextBlockObject{Type: slack.MarkdownType, Text: failedSection}, nil, nil),
+		slack.NewSectionBlock(&slack.TextBlockObject{Type: slack.MarkdownType, Text: section}, nil, nil),
 		slack.NewSectionBlock(
 			nil,
 			[]*slack.TextBlockObject{
