@@ -44,14 +44,6 @@ var packageSchemeToExternalServiceMap = map[string]string{
 	dependencies.RubyPackagesScheme:   extsvc.KindRubyPackages,
 }
 
-func mapExternalServiceToPackageScheme(externalService string) (string, error) {
-	packageScheme, ok := externalServiceToPackageSchemeMap[externalService]
-	if !ok {
-		return "", errors.Errorf("unknown external service %q", externalService)
-	}
-	return packageScheme, nil
-}
-
 func (r *schemaResolver) PackageRepoReferences(ctx context.Context, args *PackageRepoReferenceConnectionArgs) (_ *packageRepoReferenceConnectionResolver, err error) {
 	depsService := dependencies.NewService(observation.NewContext(r.logger), r.db)
 
