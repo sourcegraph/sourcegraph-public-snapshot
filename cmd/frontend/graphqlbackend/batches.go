@@ -756,6 +756,7 @@ type ChangesetResolver interface {
 	// State returns a value of type *btypes.ChangesetState.
 	State() string
 	BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
+	OwnedByBatchChange() *graphql.ID
 
 	ToExternalChangeset() (ExternalChangesetResolver, bool)
 	ToHiddenExternalChangeset() (HiddenExternalChangesetResolver, bool)

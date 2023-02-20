@@ -194,7 +194,7 @@ func (r *changesetResolver) BatchChanges(ctx context.Context, args *graphqlbacke
 
 // This points to the Batch Change that can close or open this changeset on its codehost. If this is nil,
 // then the changeset is imported.
-func (r *changesetResolver) OwnedByBatchChange(ctx context.Context) *graphql.ID {
+func (r *changesetResolver) OwnedByBatchChange() *graphql.ID {
 	if batchChangeID := r.changeset.OwnedByBatchChangeID; batchChangeID != 0 {
 		bcID := bgql.MarshalBatchChangeID(batchChangeID)
 		return &bcID
