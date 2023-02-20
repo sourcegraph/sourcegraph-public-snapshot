@@ -9113,6 +9113,11 @@ type Team implements Node {
     url: String!
 
     """
+    URL to an avatar of this team.
+    """
+    avatarURL: String
+
+    """
     A human readable name substitute for the name. Null, if not defined.
     """
     displayName: String

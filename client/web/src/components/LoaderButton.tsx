@@ -26,7 +26,8 @@ export const LoaderButton: React.FunctionComponent<React.PropsWithChildren<Parti
             </>
         ) : icon ? (
             <>
-                {icon}&nbsp;{label}
+                {icon}
+                {label && <>&nbsp;{label}</>}
             </>
         ) : (
             label

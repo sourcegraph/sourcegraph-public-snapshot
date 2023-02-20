@@ -115,6 +115,9 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                             <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
                                 Saved searches
                             </MenuLink>
+                            <MenuLink as={Link} to="/teams">
+                                Teams
+                            </MenuLink>
                             <MenuDivider />
                             <div className="px-2 py-1">
                                 <div className="d-flex align-items-center">

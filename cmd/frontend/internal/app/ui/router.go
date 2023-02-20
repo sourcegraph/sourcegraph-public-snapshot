@@ -56,6 +56,7 @@ const (
 	routeBlob                    = "blob"
 	routeRaw                     = "raw"
 	routeOrganizations           = "org"
+	routeTeams                   = "team"
 	routeSettings                = "settings"
 	routeSiteAdmin               = "site-admin"
 	routeAPIConsole              = "api-console"
@@ -153,6 +154,7 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/contexts").Methods("GET").Name(routeContexts)
 	r.PathPrefix("/notebooks").Methods("GET").Name(routeNotebooks)
 	r.PathPrefix("/organizations").Methods("GET").Name(routeOrganizations)
+	r.PathPrefix("/teams").Methods("GET").Name(routeTeams)
 	r.PathPrefix("/settings").Methods("GET").Name(routeSettings)
 	r.PathPrefix("/site-admin").Methods("GET").Name(routeSiteAdmin)
 	r.Path("/password-reset").Methods("GET").Name(uirouter.RoutePasswordReset)
@@ -254,6 +256,7 @@ func initRouter(db database.DB, router *mux.Router) {
 	router.Get(uirouter.RouteUnlockAccount).Handler(brandedNoIndex("Unlock Your Account"))
 	router.Get(routeWelcome).Handler(brandedNoIndex("Welcome"))
 	router.Get(routeOrganizations).Handler(brandedNoIndex("Organization"))
+	router.Get(routeTeams).Handler(brandedNoIndex("Team"))
 	router.Get(routeSettings).Handler(brandedNoIndex("Settings"))
 	router.Get(routeSiteAdmin).Handler(brandedNoIndex("Admin"))
 	router.Get(uirouter.RoutePasswordReset).Handler(brandedNoIndex("Reset password"))
