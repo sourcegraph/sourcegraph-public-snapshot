@@ -12,6 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
+	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -270,7 +271,9 @@ func (s *PermsSyncer) listPrivateRepoNamesBySpecs(ctx context.Context, repoSpecs
 }
 
 type fetchUserPermsViaExternalAccountsResults struct {
-	repoIDs      []uint32
+	// A map from external account ID to a list of repository IDs. This stores the repository IDs that the user has access to for each external account.
+	repoPerms map[int32][]int32
+	// A map from external repository spec to sub-repository permissions. This stores the permissions for sub-repositories of private repositories.
 	subRepoPerms map[api.ExternalRepoSpec]*authz.SubRepoPermissions
 
 	providerStates database.CodeHostStatusesSet
@@ -372,10 +375,14 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 		accts = append(accts, acct)
 	}
 
-	var repoSpecs, includeContainsSpecs, excludeContainsSpecs []api.ExternalRepoSpec
 	results.subRepoPerms = make(map[api.ExternalRepoSpec]*authz.SubRepoPermissions)
+	results.repoPerms = make(map[int32][]int32, len(accts))
+
+	unifiedPermsEnabled := UnifiedUserRepoPermsEnabled(ctx, s.db)
 
 	for _, acct := range accts {
+		var repoSpecs, includeContainsSpecs, excludeContainsSpecs []api.ExternalRepoSpec
+
 		acctLogger := logger.With(log.Int32("acct.ID", acct.ID))
 
 		provider := byServiceID[acct.ServiceID]
@@ -446,16 +453,28 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 					extPerms.SubRepoPermissions[extsvc.RepoID(k.ID)] = &v
 				}
 
-				// Load last synced repos for this user and provider
-				currentRepos, err := s.permsStore.FetchReposByUserAndExternalService(ctx, user.ID, provider.ServiceType(), provider.ServiceID())
-				if err != nil {
-					return results, errors.Wrap(err, "fetching existing repo permissions")
+				// Load last synced repos for this user and account from user_repo_permissions table
+				var currentRepos []api.RepoID
+				if unifiedPermsEnabled {
+					currentRepos, err = s.permsStore.FetchReposByExternalAccount(ctx, acct.ID)
+					if err != nil {
+						return results, errors.Wrap(err, "fetching existing repo permissions")
+					}
 				}
-				for _, id := range currentRepos {
-					results.repoIDs = append(results.repoIDs, uint32(id))
+				// Use the old user_permissions table if feature flag is off or no repos found.
+				// We need to do this because data might not have been migrated to the new table yet.
+				// TODO: refactor to be bulletproof once we have the OOB migration ready
+				if len(currentRepos) == 0 {
+					currentRepos, err = s.permsStore.FetchReposByUserAndExternalService(ctx, user.ID, provider.ServiceType(), provider.ServiceID())
+					if err != nil {
+						return results, errors.Wrap(err, "fetching existing repo permissions")
+					}
+				}
+				// Put all the repo IDs into the results
+				for _, repoID := range currentRepos {
+					results.repoPerms[acct.ID] = append(results.repoPerms[acct.ID], int32(repoID))
 				}
 
-				continue
 			}
 
 			// Process partial results if this is an initial fetch.
@@ -482,6 +501,12 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 					ServiceID:   provider.ServiceID(),
 				},
 			)
+		}
+
+		// Get corresponding internal database IDs
+		repoNames, err := s.listPrivateRepoNamesBySpecs(ctx, repoSpecs)
+		if err != nil {
+			return results, errors.Wrap(err, "list private repositories by exact matching")
 		}
 
 		// Record any sub-repository permissions
@@ -515,41 +540,60 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 				},
 			)
 		}
-	}
 
-	// Get corresponding internal database IDs
-	repoNames, err := s.listPrivateRepoNamesBySpecs(ctx, repoSpecs)
-	if err != nil {
-		return results, errors.Wrap(err, "list external repositories by exact matching")
-	}
-
-	// Exclusions are relative to inclusions, so if there is no inclusion, exclusion
-	// are meaningless and no need to trigger a DB query.
-	if len(includeContainsSpecs) > 0 {
-		rs, err := s.reposStore.RepoStore().ListMinimalRepos(ctx,
-			database.ReposListOptions{
-				ExternalRepoIncludeContains: includeContainsSpecs,
-				ExternalRepoExcludeContains: excludeContainsSpecs,
-				OnlyPrivate:                 true,
-			},
-		)
-		if err != nil {
-			return results, errors.Wrap(err, "list external repositories by contains matching")
+		// Exclusions are relative to inclusions, so if there is no inclusion, exclusion
+		// are meaningless and no need to trigger a DB query.
+		if len(includeContainsSpecs) > 0 {
+			rs, err := s.reposStore.RepoStore().ListMinimalRepos(ctx,
+				database.ReposListOptions{
+					ExternalRepoIncludeContains: includeContainsSpecs,
+					ExternalRepoExcludeContains: excludeContainsSpecs,
+					OnlyPrivate:                 true,
+				},
+			)
+			if err != nil {
+				return results, errors.Wrap(err, "list external repositories by contains matching")
+			}
+			repoNames = append(repoNames, rs...)
 		}
-		repoNames = append(repoNames, rs...)
-	}
 
-	// repoIDs represents repos the user is allowed to read
-	if len(results.repoIDs) == 0 {
-		// We may already have some repos if we hit a temporary error above in which case
-		// we don't want to clear it out
-		results.repoIDs = make([]uint32, 0, len(repoNames))
-	}
-	for _, r := range repoNames {
-		results.repoIDs = append(results.repoIDs, uint32(r.ID))
+		// repoIDs represents repos the user is allowed to read
+		if len(results.repoPerms[acct.ID]) == 0 {
+			// We may already have some repos if we hit a temporary error above in which case
+			// we don't want to clear it out
+			results.repoPerms[acct.ID] = make([]int32, 0, len(repoNames))
+		}
+		for _, r := range repoNames {
+			results.repoPerms[acct.ID] = append(results.repoPerms[acct.ID], int32(r.ID))
+		}
 	}
 
 	return results, nil
+}
+
+func (s *PermsSyncer) saveUserPermsForAccount(ctx context.Context, userID int32, acctID int32, repoIDs []int32) error {
+	logger := s.logger.Scoped("saveUserPermsForAccount", "saves permissions per external account").With(
+		log.Object("user",
+			log.Int32("ID", userID),
+			log.Int32("ExternalAccountID", acctID)),
+	)
+
+	// NOTE: Please read the docstring of permsUpdateLock field for reasoning of the lock.
+	s.permsUpdateLock.Lock()
+	// Save new permissions to database
+	defer s.permsUpdateLock.Unlock()
+
+	err := s.permsStore.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{
+		UserID:            userID,
+		ExternalAccountID: acctID,
+	}, repoIDs)
+
+	if err != nil {
+		logger.Warn("saving perms to DB", log.Error(err))
+		return err
+	}
+
+	return nil
 }
 
 // syncUserPerms processes permissions syncing request in user-centric way. When `noPerms` is true,
@@ -595,14 +639,26 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 
 	// Save new permissions to database
 	p := &authz.UserPermissions{
-		UserID: user.ID,
+		UserID: userID,
 		Perm:   authz.Read, // Note: We currently only support read for repository permissions.
 		Type:   authz.PermRepos,
 		IDs:    map[int32]struct{}{},
 	}
 
-	for i := range results.repoIDs {
-		p.IDs[int32(results.repoIDs[i])] = struct{}{}
+	// Get the value of feature flag to store in the unified user_repo_permissions table
+	unifiedEnabled := UnifiedUserRepoPermsEnabled(ctx, s.db)
+
+	for acctID, repoIDs := range results.repoPerms {
+		if unifiedEnabled {
+			err = s.saveUserPermsForAccount(ctx, userID, acctID, repoIDs)
+			if err != nil {
+				return result, providerStates, errors.Wrapf(err, "set user repo permissions for user %q (id: %d, external_account_id: %d)", user.Username, user.ID, acctID)
+			}
+		}
+
+		for _, repoID := range repoIDs {
+			p.IDs[repoID] = struct{}{}
+		}
 	}
 
 	// Set sub-repository permissions
@@ -643,6 +699,16 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	}
 
 	return result, providerStates, nil
+}
+
+const userRepoPermsFlagName = "unified-user-repo-perms"
+
+func UnifiedUserRepoPermsEnabled(ctx context.Context, db database.DB) bool {
+	featureFlag, err := db.FeatureFlags().GetFeatureFlag(ctx, userRepoPermsFlagName)
+	if featureFlag == nil || err != nil {
+		return false
+	}
+	return featureFlag.Bool.Value
 }
 
 // syncRepoPerms processes permissions syncing request in repository-centric way.
@@ -694,7 +760,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	}
 
 	pendingAccountIDsSet := make(map[string]struct{})
-	accountIDsToUserIDs := make(map[string]int32) // Account ID -> User ID
+	accountIDsToUserIDs := make(map[string]authz.UserIDWithExternalAccountID) // User External Account ID -> User ID
 
 	extAccountIDs, err := provider.FetchRepoPerms(ctx, &extsvc.Repository{
 		URI:              repo.URI,
@@ -774,10 +840,9 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		Perm:    authz.Read, // Note: We currently only support read for repository permissions.
 		UserIDs: map[int32]struct{}{},
 	}
-
-	for aid, uid := range accountIDsToUserIDs {
+	for aid, perm := range accountIDsToUserIDs {
 		// Add existing user to permissions
-		p.UserIDs[uid] = struct{}{}
+		p.UserIDs[perm.UserID] = struct{}{}
 
 		// Remove existing user from the set of pending users
 		delete(pendingAccountIDsSet, aid)
@@ -798,6 +863,11 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	}
 	defer func() { err = txs.Done(err) }()
 
+	if UnifiedUserRepoPermsEnabled(ctx, s.db) {
+		if err = txs.SetRepoPerms(ctx, int32(repoID), maps.Values(accountIDsToUserIDs)); err != nil {
+			return result, providerStates, errors.Wrapf(err, "set user repo permissions for repository %q (id: %d)", repo.Name, repo.ID)
+		}
+	}
 	result, err = txs.SetRepoPermissions(ctx, p)
 	if err != nil {
 		return result, providerStates, errors.Wrapf(err, "set repository permissions for repository %q (id: %d)", repo.Name, repo.ID)
