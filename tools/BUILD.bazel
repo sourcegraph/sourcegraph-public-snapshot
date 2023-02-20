@@ -13,3 +13,11 @@ sh_binary(
         "@bazel_tools//src/conditions:darwin_arm64": ["@shfmt_darwin_arm64//file:downloaded"],
     }),
 )
+
+sh_binary(
+   name = "packer",
+    srcs = select({
+        "@bazel_tools//src/conditions:darwin_x86_64": ["@packer_darwin_amd64//:packer_binary"],
+        "@bazel_tools//src/conditions:darwin_arm64": ["@packer_darwin_arm64//:packer_binary"],
+    }),
+)

@@ -1,4 +1,4 @@
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file", "http_archive")
 
 def tools_dependencies():
     http_file(
@@ -19,7 +19,7 @@ def tools_dependencies():
     http_file(
       name = "shfmt_darwin_amd64",
       urls = ["https://github.com/mvdan/sh/releases/download/v3.6.0/shfmt_v3.6.0_darwin_amd64"],
-      sha256 = "633f242246ee0a866c5f5df25cbf61b6af0d5e143555aca32950059cf13d91e0",
+      sha256 = "b8c9c025b498e2816b62f0b717f6032e9ab49e725a45b8205f52f66318f17185",
       executable = True,
     )
     http_file(
@@ -27,5 +27,27 @@ def tools_dependencies():
       urls = ["https://github.com/mvdan/sh/releases/download/v3.6.0/shfmt_v3.6.0_darwin_arm64"],
       sha256 = "633f242246ee0a866c5f5df25cbf61b6af0d5e143555aca32950059cf13d91e0",
       executable = True,
+    )
+
+    packer_build_file_content = """
+filegroup(
+    name = "packer_binary",
+    srcs = ["packer"],
+    visibility = ["//visibility:public"],
+)
+    """
+
+    http_archive(
+      name = "packer_darwin_arm64",
+      urls = ["https://releases.hashicorp.com/packer/1.8.6/packer_1.8.6_darwin_arm64.zip"],
+      sha256 = "d7497f1ba3c6221feb4a38a960626afbc4eb26552fc40d941bff57cc2b83bd59",
+      build_file_content = packer_build_file_content,
+    )
+
+    http_archive(
+      name = "packer_darwin_amd64",
+      urls = ["https://releases.hashicorp.com/packer/1.8.6/packer_1.8.6_darwin_amd64.zip"],
+      sha256 = "0647038561ac14e87bae81e578d575755598346ed3e272ac98cb2949ca4cd852",
+      build_file_content = packer_build_file_content,
     )
 

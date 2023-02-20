@@ -4,9 +4,9 @@ fd 8.6.0 # no need
 shfmt 3.5.0 # done
 shellcheck 0.7.1 # https://github.com/aignas/rules_shellcheck
 kubectl 1.21.7 # done
-github-cli 2.0.0
-packer 1.8.3
-trivy 0.30.3
+github-cli 2.0.0 # unused
+packer 1.8.3 # done
+trivy 0.30.3 # postpone
 kustomize 4.5.7
 awscli 2.4.7
 python system
