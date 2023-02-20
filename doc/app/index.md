@@ -72,6 +72,16 @@ If it doesn't start, make sure:
 * We're working on eliminating the `src` CLI and Docker dependencies
 * macOS binaries are not code-signed yet, so you may need to right-click -> open the binary if you do not use Homebrew.
 
+### Upgrading
+
+**On macOS:** upgrade using Homebrew:
+
+```
+brew update && brew upgrade sourcegraph/sourcegraph-app/sourcegraph
+```
+
+**On Linux:** we do not have a PPA yet, so you will need to rerun the installation steps above to get the latest version.
+
 ## Feedback
 
 You can provide feedback and get help in our [Discord](https://discord.com/invite/s2qDtYGnAE) or tweet [@sourcegraph](https://twitter.com/sourcegraph).
