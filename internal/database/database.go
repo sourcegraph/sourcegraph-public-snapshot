@@ -64,7 +64,6 @@ type DB interface {
 	ExecutorSecretAccessLogs() ExecutorSecretAccessLogStore
 	ZoektRepos() ZoektReposStore
 	Teams() TeamStore
-	Codeowners() CodeownersStore
 
 	WithTransact(context.Context, func(tx DB) error) error
 }
@@ -293,8 +292,4 @@ func (d *db) ZoektRepos() ZoektReposStore {
 
 func (d *db) Teams() TeamStore {
 	return TeamsWith(d.Store)
-}
-
-func (d *db) Codeowners() CodeownersStore {
-	return CodeownersWith(d.Store)
 }

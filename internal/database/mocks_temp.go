@@ -12,19 +12,21 @@ import (
 	"sync"
 	"time"
 
-	uuid "github.com/google/uuid"
-	sqlf "github.com/keegancsmith/sqlf"
-	api "github.com/sourcegraph/sourcegraph/internal/api"
-	conf "github.com/sourcegraph/sourcegraph/internal/conf"
-	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	encryption "github.com/sourcegraph/sourcegraph/internal/encryption"
-	extsvc "github.com/sourcegraph/sourcegraph/internal/extsvc"
-	auth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	featureflag "github.com/sourcegraph/sourcegraph/internal/featureflag"
-	temporarysettings "github.com/sourcegraph/sourcegraph/internal/temporarysettings"
-	types "github.com/sourcegraph/sourcegraph/internal/types"
-	schema "github.com/sourcegraph/sourcegraph/schema"
-	zoekt "github.com/sourcegraph/zoekt"
+	"github.com/google/uuid"
+	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/zoekt"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/temporarysettings"
+	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // MockAccessTokenStore is a mock implementation of the AccessTokenStore
@@ -3919,7 +3921,7 @@ func NewMockDB() *MockDB {
 			},
 		},
 		CodeownersFunc: &DBCodeownersFunc{
-			defaultHook: func() (r0 CodeownersStore) {
+			defaultHook: func() (r0 database.CodeownersStore) {
 				return
 			},
 		},
@@ -4176,7 +4178,7 @@ func NewStrictMockDB() *MockDB {
 			},
 		},
 		CodeownersFunc: &DBCodeownersFunc{
-			defaultHook: func() CodeownersStore {
+			defaultHook: func() database.CodeownersStore {
 				panic("unexpected invocation of MockDB.Codeowners")
 			},
 		},
@@ -4870,15 +4872,15 @@ func (c DBBitbucketProjectPermissionsFuncCall) Results() []interface{} {
 // DBCodeownersFunc describes the behavior when the Codeowners method of the
 // parent MockDB instance is invoked.
 type DBCodeownersFunc struct {
-	defaultHook func() CodeownersStore
-	hooks       []func() CodeownersStore
+	defaultHook func() database.CodeownersStore
+	hooks       []func() database.CodeownersStore
 	history     []DBCodeownersFuncCall
 	mutex       sync.Mutex
 }
 
 // Codeowners delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockDB) Codeowners() CodeownersStore {
+func (m *MockDB) Codeowners() database.CodeownersStore {
 	r0 := m.CodeownersFunc.nextHook()()
 	m.CodeownersFunc.appendCall(DBCodeownersFuncCall{r0})
 	return r0
@@ -4886,7 +4888,7 @@ func (m *MockDB) Codeowners() CodeownersStore {
 
 // SetDefaultHook sets function that is called when the Codeowners method of
 // the parent MockDB instance is invoked and the hook queue is empty.
-func (f *DBCodeownersFunc) SetDefaultHook(hook func() CodeownersStore) {
+func (f *DBCodeownersFunc) SetDefaultHook(hook func() database.CodeownersStore) {
 	f.defaultHook = hook
 }
 
@@ -4894,7 +4896,7 @@ func (f *DBCodeownersFunc) SetDefaultHook(hook func() CodeownersStore) {
 // Codeowners method of the parent MockDB instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *DBCodeownersFunc) PushHook(hook func() CodeownersStore) {
+func (f *DBCodeownersFunc) PushHook(hook func() database.CodeownersStore) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -4902,20 +4904,20 @@ func (f *DBCodeownersFunc) PushHook(hook func() CodeownersStore) {
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *DBCodeownersFunc) SetDefaultReturn(r0 CodeownersStore) {
-	f.SetDefaultHook(func() CodeownersStore {
+func (f *DBCodeownersFunc) SetDefaultReturn(r0 database.CodeownersStore) {
+	f.SetDefaultHook(func() database.CodeownersStore {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *DBCodeownersFunc) PushReturn(r0 CodeownersStore) {
-	f.PushHook(func() CodeownersStore {
+func (f *DBCodeownersFunc) PushReturn(r0 database.CodeownersStore) {
+	f.PushHook(func() database.CodeownersStore {
 		return r0
 	})
 }
 
-func (f *DBCodeownersFunc) nextHook() func() CodeownersStore {
+func (f *DBCodeownersFunc) nextHook() func() database.CodeownersStore {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -4950,7 +4952,7 @@ func (f *DBCodeownersFunc) History() []DBCodeownersFuncCall {
 type DBCodeownersFuncCall struct {
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 CodeownersStore
+	Result0 database.CodeownersStore
 }
 
 // Args returns an interface slice containing the arguments of this

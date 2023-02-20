@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -20,7 +21,7 @@ func TestCodeowners_CreateUpdateDelete(t *testing.T) {
 	ctx := context.Background()
 
 	logger := logtest.NoOp(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 
 	store := db.Codeowners()
 
@@ -87,7 +88,7 @@ func TestCodeowners_GetList(t *testing.T) {
 	ctx := context.Background()
 
 	logger := logtest.NoOp(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 
 	store := db.Codeowners()
 
@@ -151,7 +152,7 @@ func TestCodeowners_GetList(t *testing.T) {
 		var lastCursor int32
 		for i := 0; i < len(all); i++ {
 			t.Run(fmt.Sprintf("list codeowners n#%d", i), func(t *testing.T) {
-				opts := ListCodeownersOpts{LimitOffset: &LimitOffset{Limit: 1}, Cursor: lastCursor}
+				opts := ListCodeownersOpts{LimitOffset: &database.LimitOffset{Limit: 1}, Cursor: lastCursor}
 				cf, c, err := store.ListCodeowners(ctx, opts)
 				if err != nil {
 					t.Fatal(err)
