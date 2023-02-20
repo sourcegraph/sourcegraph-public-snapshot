@@ -56,6 +56,17 @@ func TestNormalizeUsername(t *testing.T) {
 			} else if out != tc.out {
 				t.Errorf("Expected %q to normalize to %q, but got %q", tc.in, tc.out, out)
 			}
+
+			if !isValidUsername(out) {
+				t.Errorf("Normalization succeeded, but output %q is still not a valid username", out)
+			}
 		}
 	}
 }
+
+func isValidUsername(name string) bool {
+	return validUsername.MatchString(name) && len(name) <= 255 // (255 is the max length of a username in the database
+}
+
+// Equivalent to `^\w(?:\w|[-.](?=\w))*-?$` which we have in the DB constraint, but without a lookahead
+var validUsername = lazyregexp.New(`^\w(?:(?:[\w.-]\w|\w)*-?|)$`)
