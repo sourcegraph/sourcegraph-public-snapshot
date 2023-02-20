@@ -218,7 +218,7 @@ func (o *OrgResolver) settingsSubject() api.SettingsSubject {
 	return api.SettingsSubject{Org: &o.org.ID}
 }
 
-func (o *OrgResolver) LatestSettings(ctx context.Context) (*SettingsResolver, error) {
+func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
 	// 🚨 SECURITY: Only organization members and site admins (not on cloud) may access the settings,
 	// because they may contain secrets or other sensitive data.
 	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err != nil {
@@ -232,7 +232,7 @@ func (o *OrgResolver) LatestSettings(ctx context.Context) (*SettingsResolver, er
 	if settings == nil {
 		return nil, nil
 	}
-	return &SettingsResolver{o.db, &settingsSubject{org: o}, settings, nil}, nil
+	return &settingsResolver{o.db, &settingsSubject{org: o}, settings, nil}, nil
 }
 
 func (o *OrgResolver) SettingsCascade() *settingsCascade {

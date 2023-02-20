@@ -72,14 +72,14 @@ type UserEmail struct {
 	Verified  bool   `json:"verified"`
 }
 type UserSession struct {
-	CanSignOut *bool `json:"canSignOut"`
+	CanSignOut bool `json:"canSignOut"`
 }
 
 type CurrentUser struct {
 	ID                  graphql.ID `json:"id"`
 	DatabaseID          int32      `json:"databaseID"`
 	Username            string     `json:"username"`
-	AvatarURL           string     `json:"avatarURL"`
+	AvatarURL           *string    `json:"avatarURL"`
 	DisplayName         string     `json:"displayName"`
 	SiteAdmin           bool       `json:"siteAdmin"`
 	URL                 string     `json:"url"`
@@ -320,6 +320,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 // createCurrentUser creates CurrentUser object which contains of types.User
 // properties along with some extra data such as user emails, organisations,
 // session information, etc.
+//
+// We return a nil CurrentUser object on any error.
 func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *CurrentUser {
 	if user == nil {
 		return nil
@@ -327,18 +329,27 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 
 	userResolver := graphqlbackend.NewUserResolver(db, user)
 
-	siteAdmin, _ := userResolver.SiteAdmin(ctx)
-	canAdminister, _ := userResolver.ViewerCanAdminister(ctx)
-	tags, _ := userResolver.Tags(ctx)
+	siteAdmin, err := userResolver.SiteAdmin(ctx)
+	if err != nil {
+		return nil
+	}
+	canAdminister, err := userResolver.ViewerCanAdminister(ctx)
+	if err != nil {
+		return nil
+	}
+	tags, err := userResolver.Tags(ctx)
+	if err != nil {
+		return nil
+	}
 
-	canSignOut := new(bool)
-	if session, err := userResolver.Session(ctx); err == nil {
-		*canSignOut = session.CanSignOut()
+	session, err := userResolver.Session(ctx)
+	if err != nil && session == nil {
+		return nil
 	}
 
 	return &CurrentUser{
-		AvatarURL:           derefString(userResolver.AvatarURL()),
-		Session:             &UserSession{canSignOut},
+		AvatarURL:           userResolver.AvatarURL(),
+		Session:             &UserSession{session.CanSignOut()},
 		DatabaseID:          userResolver.DatabaseID(),
 		DisplayName:         derefString(userResolver.DisplayName()),
 		Emails:              resolveUserEmails(ctx, userResolver),

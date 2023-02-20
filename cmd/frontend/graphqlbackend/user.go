@@ -170,7 +170,7 @@ func (r *UserResolver) settingsSubject() api.SettingsSubject {
 	return api.SettingsSubject{User: &r.user.ID}
 }
 
-func (r *UserResolver) LatestSettings(ctx context.Context) (*SettingsResolver, error) {
+func (r *UserResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
 	// 🚨 SECURITY: Only the authenticated user can view their settings on
 	// Sourcegraph.com.
 	if envvar.SourcegraphDotComMode() {
@@ -192,7 +192,7 @@ func (r *UserResolver) LatestSettings(ctx context.Context) (*SettingsResolver, e
 	if settings == nil {
 		return nil, nil
 	}
-	return &SettingsResolver{r.db, &settingsSubject{user: r}, settings, nil}, nil
+	return &settingsResolver{r.db, &settingsSubject{user: r}, settings, nil}, nil
 }
 
 func (r *UserResolver) SettingsCascade() *settingsCascade {
@@ -210,11 +210,11 @@ func (r *UserResolver) SiteAdmin(ctx context.Context) (bool, error) {
 	return r.user.SiteAdmin, nil
 }
 
-func (r *UserResolver) TosAccepted(ctx context.Context) bool {
+func (r *UserResolver) TosAccepted(_ context.Context) bool {
 	return r.user.TosAccepted
 }
 
-func (r *UserResolver) Searchable(ctx context.Context) bool {
+func (r *UserResolver) Searchable(_ context.Context) bool {
 	return r.user.Searchable
 }
 
@@ -292,7 +292,7 @@ func CurrentUser(ctx context.Context, db database.DB) (*UserResolver, error) {
 	return NewUserResolver(db, user), nil
 }
 
-func (r *UserResolver) Organizations(ctx context.Context) (*OrgConnectionStaticResolver, error) {
+func (r *UserResolver) Organizations(ctx context.Context) (*orgConnectionStaticResolver, error) {
 	// 🚨 SECURITY: Only the user and admins are allowed to access the user's
 	// organisations.
 	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
@@ -302,7 +302,7 @@ func (r *UserResolver) Organizations(ctx context.Context) (*OrgConnectionStaticR
 	if err != nil {
 		return nil, err
 	}
-	c := OrgConnectionStaticResolver{nodes: make([]*OrgResolver, len(orgs))}
+	c := orgConnectionStaticResolver{nodes: make([]*OrgResolver, len(orgs))}
 	for i, org := range orgs {
 		c.nodes[i] = &OrgResolver{r.db, org}
 	}
@@ -526,7 +526,7 @@ func (r *UserResolver) Monitors(ctx context.Context, args *ListMonitorsArgs) (Mo
 	return EnterpriseResolvers.codeMonitorsResolver.Monitors(ctx, r.user.ID, args)
 }
 
-func (r *UserResolver) Teams(ctx context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {
+func (r *UserResolver) Teams(_ context.Context, _ *ListTeamsArgs) (*teamConnectionResolver, error) {
 	return &teamConnectionResolver{}, nil
 }
 

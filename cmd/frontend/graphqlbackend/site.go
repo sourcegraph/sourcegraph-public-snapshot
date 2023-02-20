@@ -82,7 +82,7 @@ func (r *siteResolver) settingsSubject() api.SettingsSubject {
 	return api.SettingsSubject{Site: true}
 }
 
-func (r *siteResolver) LatestSettings(ctx context.Context) (*SettingsResolver, error) {
+func (r *siteResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
 	settings, err := r.db.Settings().GetLatest(ctx, r.settingsSubject())
 	if err != nil {
 		return nil, err
@@ -90,7 +90,7 @@ func (r *siteResolver) LatestSettings(ctx context.Context) (*SettingsResolver, e
 	if settings == nil {
 		return nil, nil
 	}
-	return &SettingsResolver{r.db, &settingsSubject{site: r}, settings, nil}, nil
+	return &settingsResolver{r.db, &settingsSubject{site: r}, settings, nil}, nil
 }
 
 func (r *siteResolver) SettingsCascade() *settingsCascade {

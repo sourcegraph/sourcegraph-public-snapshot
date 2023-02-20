@@ -13,35 +13,35 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type SettingsResolver struct {
+type settingsResolver struct {
 	db       database.DB
 	subject  *settingsSubject
 	settings *api.Settings
 	user     *types.User
 }
 
-func (o *SettingsResolver) ID() int32 {
+func (o *settingsResolver) ID() int32 {
 	return o.settings.ID
 }
 
-func (o *SettingsResolver) Subject() *settingsSubject {
+func (o *settingsResolver) Subject() *settingsSubject {
 	return o.subject
 }
 
 // Deprecated: Use the Contents field instead.
-func (o *SettingsResolver) Configuration() *configurationResolver {
+func (o *settingsResolver) Configuration() *configurationResolver {
 	return &configurationResolver{contents: o.settings.Contents}
 }
 
-func (o *SettingsResolver) Contents() JSONCString {
+func (o *settingsResolver) Contents() JSONCString {
 	return JSONCString(o.settings.Contents)
 }
 
-func (o *SettingsResolver) CreatedAt() gqlutil.DateTime {
+func (o *settingsResolver) CreatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: o.settings.CreatedAt}
 }
 
-func (o *SettingsResolver) Author(ctx context.Context) (*UserResolver, error) {
+func (o *settingsResolver) Author(ctx context.Context) (*UserResolver, error) {
 	if o.settings.AuthorUserID == nil {
 		return nil, nil
 	}

@@ -63,12 +63,12 @@ func (r *orgConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	return int32(count), err
 }
 
-type OrgConnectionStaticResolver struct {
+type orgConnectionStaticResolver struct {
 	nodes []*OrgResolver
 }
 
-func (r *OrgConnectionStaticResolver) Nodes() []*OrgResolver { return r.nodes }
-func (r *OrgConnectionStaticResolver) TotalCount() int32     { return int32(len(r.nodes)) }
-func (r *OrgConnectionStaticResolver) PageInfo() *graphqlutil.PageInfo {
+func (r *orgConnectionStaticResolver) Nodes() []*OrgResolver { return r.nodes }
+func (r *orgConnectionStaticResolver) TotalCount() int32     { return int32(len(r.nodes)) }
+func (r *orgConnectionStaticResolver) PageInfo() *graphqlutil.PageInfo {
 	return graphqlutil.HasNextPage(false)
 }
