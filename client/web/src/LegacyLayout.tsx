@@ -276,7 +276,7 @@ export const LegacyLayout: React.FunctionComponent<React.PropsWithChildren<Legac
                     </AppRouterContainer>
 
                     {/**
-                     * The portal root is inside the suspense boudnary so that it doesn't render
+                     * The portal root is inside the suspense boundary so that it doesn't render
                      * when the app is loading.
                      */}
                     <div className="panel-react-portal" />

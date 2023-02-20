@@ -222,7 +222,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     </AppRouterContainer>
 
                     {/**
-                     * The portal root is inside the suspense boudnary so that it doesn't render
+                     * The portal root is inside the suspense boundary so that it doesn't render
                      * when the app is loading.
                      */}
                     <div className="panel-react-portal" />
