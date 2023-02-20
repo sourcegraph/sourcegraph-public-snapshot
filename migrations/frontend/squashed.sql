@@ -4008,6 +4008,73 @@ CREATE TABLE versions (
     first_version text NOT NULL
 );
 
+CREATE TABLE vulnerabilities (
+    id integer NOT NULL,
+    source_id text NOT NULL,
+    summary text NOT NULL,
+    details text NOT NULL,
+    cpes text[] NOT NULL,
+    cwes text[] NOT NULL,
+    aliases text[] NOT NULL,
+    related text[] NOT NULL,
+    data_source text NOT NULL,
+    urls text[] NOT NULL,
+    severity text NOT NULL,
+    cvss_vector text NOT NULL,
+    cvss_score text NOT NULL,
+    published timestamp with time zone,
+    modified timestamp with time zone NOT NULL,
+    withdrawn timestamp with time zone NOT NULL
+);
+
+CREATE SEQUENCE vulnerabilities_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE vulnerabilities_id_seq OWNED BY vulnerabilities.id;
+
+CREATE TABLE vulnerability_affected_packages (
+    id integer NOT NULL,
+    vulnerability_id integer NOT NULL,
+    package_name text NOT NULL,
+    language text NOT NULL,
+    namespace text NOT NULL,
+    version_constraint text[] NOT NULL,
+    fixed boolean NOT NULL,
+    fixed_in text NOT NULL
+);
+
+CREATE SEQUENCE vulnerability_affected_packages_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE vulnerability_affected_packages_id_seq OWNED BY vulnerability_affected_packages.id;
+
+CREATE TABLE vulnerability_affected_symbols (
+    id integer NOT NULL,
+    vulnerability_affected_package_id integer NOT NULL,
+    path text NOT NULL,
+    symbols text[] NOT NULL
+);
+
+CREATE SEQUENCE vulnerability_affected_symbols_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE vulnerability_affected_symbols_id_seq OWNED BY vulnerability_affected_symbols.id;
+
 CREATE TABLE webhook_logs (
     id bigint NOT NULL,
     received_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -4245,6 +4312,12 @@ ALTER TABLE ONLY user_pending_permissions ALTER COLUMN id SET DEFAULT nextval('u
 ALTER TABLE ONLY user_repo_permissions ALTER COLUMN id SET DEFAULT nextval('user_repo_permissions_id_seq'::regclass);
 
 ALTER TABLE ONLY users ALTER COLUMN id SET DEFAULT nextval('users_id_seq'::regclass);
+
+ALTER TABLE ONLY vulnerabilities ALTER COLUMN id SET DEFAULT nextval('vulnerabilities_id_seq'::regclass);
+
+ALTER TABLE ONLY vulnerability_affected_packages ALTER COLUMN id SET DEFAULT nextval('vulnerability_affected_packages_id_seq'::regclass);
+
+ALTER TABLE ONLY vulnerability_affected_symbols ALTER COLUMN id SET DEFAULT nextval('vulnerability_affected_symbols_id_seq'::regclass);
 
 ALTER TABLE ONLY webhook_logs ALTER COLUMN id SET DEFAULT nextval('webhook_logs_id_seq'::regclass);
 
@@ -4663,6 +4736,15 @@ ALTER TABLE ONLY users
 
 ALTER TABLE ONLY versions
     ADD CONSTRAINT versions_pkey PRIMARY KEY (service);
+
+ALTER TABLE ONLY vulnerabilities
+    ADD CONSTRAINT vulnerabilities_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY vulnerability_affected_packages
+    ADD CONSTRAINT vulnerability_affected_packages_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY vulnerability_affected_symbols
+    ADD CONSTRAINT vulnerability_affected_symbols_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY webhook_logs
     ADD CONSTRAINT webhook_logs_pkey PRIMARY KEY (id);
@@ -5086,6 +5168,12 @@ CREATE INDEX users_created_at_idx ON users USING btree (created_at);
 
 CREATE UNIQUE INDEX users_username ON users USING btree (username) WHERE (deleted_at IS NULL);
 
+CREATE UNIQUE INDEX vulnerabilities_source_id ON vulnerabilities USING btree (source_id);
+
+CREATE UNIQUE INDEX vulnerability_affected_packages_vulnerability_id_package_name ON vulnerability_affected_packages USING btree (vulnerability_id, package_name);
+
+CREATE UNIQUE INDEX vulnerability_affected_symbols_vulnerability_affected_package_i ON vulnerability_affected_symbols USING btree (vulnerability_affected_package_id, path);
+
 CREATE INDEX webhook_logs_external_service_id_idx ON webhook_logs USING btree (external_service_id);
 
 CREATE INDEX webhook_logs_received_at_idx ON webhook_logs USING btree (received_at);
@@ -5378,6 +5466,12 @@ ALTER TABLE ONLY feature_flag_overrides
 
 ALTER TABLE ONLY feature_flag_overrides
     ADD CONSTRAINT feature_flag_overrides_namespace_user_id_fkey FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY vulnerability_affected_packages
+    ADD CONSTRAINT fk_vulnerabilities FOREIGN KEY (vulnerability_id) REFERENCES vulnerabilities(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY vulnerability_affected_symbols
+    ADD CONSTRAINT fk_vulnerability_affected_packages FOREIGN KEY (vulnerability_affected_package_id) REFERENCES vulnerability_affected_packages(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY gitserver_repos
     ADD CONSTRAINT gitserver_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;

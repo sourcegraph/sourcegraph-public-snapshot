@@ -3604,6 +3604,72 @@ Triggers:
 
 ```
 
+# Table "public.vulnerabilities"
+```
+   Column    |           Type           | Collation | Nullable |                   Default                   
+-------------+--------------------------+-----------+----------+---------------------------------------------
+ id          | integer                  |           | not null | nextval('vulnerabilities_id_seq'::regclass)
+ source_id   | text                     |           | not null | 
+ summary     | text                     |           | not null | 
+ details     | text                     |           | not null | 
+ cpes        | text[]                   |           | not null | 
+ cwes        | text[]                   |           | not null | 
+ aliases     | text[]                   |           | not null | 
+ related     | text[]                   |           | not null | 
+ data_source | text                     |           | not null | 
+ urls        | text[]                   |           | not null | 
+ severity    | text                     |           | not null | 
+ cvss_vector | text                     |           | not null | 
+ cvss_score  | text                     |           | not null | 
+ published   | timestamp with time zone |           |          | 
+ modified    | timestamp with time zone |           | not null | 
+ withdrawn   | timestamp with time zone |           | not null | 
+Indexes:
+    "vulnerabilities_pkey" PRIMARY KEY, btree (id)
+    "vulnerabilities_source_id" UNIQUE, btree (source_id)
+Referenced by:
+    TABLE "vulnerability_affected_packages" CONSTRAINT "fk_vulnerabilities" FOREIGN KEY (vulnerability_id) REFERENCES vulnerabilities(id) ON DELETE CASCADE
+
+```
+
+# Table "public.vulnerability_affected_packages"
+```
+       Column       |  Type   | Collation | Nullable |                           Default                           
+--------------------+---------+-----------+----------+-------------------------------------------------------------
+ id                 | integer |           | not null | nextval('vulnerability_affected_packages_id_seq'::regclass)
+ vulnerability_id   | integer |           | not null | 
+ package_name       | text    |           | not null | 
+ language           | text    |           | not null | 
+ namespace          | text    |           | not null | 
+ version_constraint | text[]  |           | not null | 
+ fixed              | boolean |           | not null | 
+ fixed_in           | text    |           | not null | 
+Indexes:
+    "vulnerability_affected_packages_pkey" PRIMARY KEY, btree (id)
+    "vulnerability_affected_packages_vulnerability_id_package_name" UNIQUE, btree (vulnerability_id, package_name)
+Foreign-key constraints:
+    "fk_vulnerabilities" FOREIGN KEY (vulnerability_id) REFERENCES vulnerabilities(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "vulnerability_affected_symbols" CONSTRAINT "fk_vulnerability_affected_packages" FOREIGN KEY (vulnerability_affected_package_id) REFERENCES vulnerability_affected_packages(id) ON DELETE CASCADE
+
+```
+
+# Table "public.vulnerability_affected_symbols"
+```
+              Column               |  Type   | Collation | Nullable |                          Default                           
+-----------------------------------+---------+-----------+----------+------------------------------------------------------------
+ id                                | integer |           | not null | nextval('vulnerability_affected_symbols_id_seq'::regclass)
+ vulnerability_affected_package_id | integer |           | not null | 
+ path                              | text    |           | not null | 
+ symbols                           | text[]  |           | not null | 
+Indexes:
+    "vulnerability_affected_symbols_pkey" PRIMARY KEY, btree (id)
+    "vulnerability_affected_symbols_vulnerability_affected_package_i" UNIQUE, btree (vulnerability_affected_package_id, path)
+Foreign-key constraints:
+    "fk_vulnerability_affected_packages" FOREIGN KEY (vulnerability_affected_package_id) REFERENCES vulnerability_affected_packages(id) ON DELETE CASCADE
+
+```
+
 # Table "public.webhook_logs"
 ```
        Column        |           Type           | Collation | Nullable |                 Default                  

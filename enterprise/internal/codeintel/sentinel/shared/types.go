@@ -36,6 +36,6 @@ type AffectedPackage struct {
 }
 
 type AffectedSymbol struct {
-	Path    string
-	Symbols []string
+	Path    string   `json:"path"`
+	Symbols []string `json:"symbols"`
 }

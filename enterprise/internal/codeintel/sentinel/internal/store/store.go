@@ -2,14 +2,15 @@ package store
 
 import (
 	"context"
-	"errors"
-	"fmt"
+	"encoding/json"
 
+	"github.com/keegancsmith/sqlf"
 	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -42,10 +43,269 @@ func (s *store) InsertVulnerabilities(ctx context.Context, vulnerabilities []sha
 	ctx, _, endObservation := s.operations.insertVulnerabilities.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	for _, v := range vulnerabilities {
-		fmt.Printf("INSERT %s...\n", v.SourceID)
+	tx, err := s.db.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if err := tx.Exec(ctx, sqlf.Sprintf(insertVulnerabilitiesTemporaryVulnerabilitiesTableQuery)); err != nil {
+		return err
+	}
+	if err := tx.Exec(ctx, sqlf.Sprintf(insertVulnerabilitiesTemporaryVulnerabilityAffectedPackagesTableQuery)); err != nil {
+		return err
 	}
 
-	// TODO
-	return errors.New("unimplemented")
+	if err := batch.WithInserter(
+		ctx,
+		tx.Handle(),
+		"t_vulnerabilities",
+		batch.MaxNumPostgresParameters,
+		[]string{
+			"source_id",
+			"summary",
+			"details",
+			"cpes",
+			"cwes",
+			"aliases",
+			"related",
+			"data_source",
+			"urls",
+			"severity",
+			"cvss_vector",
+			"cvss_score",
+			"published",
+			"modified",
+			"withdrawn",
+		},
+		func(inserter *batch.Inserter) error {
+			for _, v := range vulnerabilities {
+				if v.CPEs == nil {
+					v.CPEs = []string{}
+				}
+				if v.CWEs == nil {
+					v.CWEs = []string{}
+				}
+				if v.Aliases == nil {
+					v.Aliases = []string{}
+				}
+				if v.Related == nil {
+					v.Related = []string{}
+				}
+				if v.URLs == nil {
+					v.URLs = []string{}
+				}
+
+				if err := inserter.Insert(
+					ctx,
+					v.SourceID,
+					v.Summary,
+					v.Details,
+					v.CPEs,
+					v.CWEs,
+					v.Aliases,
+					v.Related,
+					v.DataSource,
+					v.URLs,
+					v.Severity,
+					v.CVSSVector,
+					v.CVSSScore,
+					v.Published,
+					v.Modified,
+					v.Withdrawn,
+				); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		}); err != nil {
+		return err
+	}
+
+	if err := batch.WithInserter(
+		ctx,
+		tx.Handle(),
+		"t_vulnerability_affected_packages",
+		batch.MaxNumPostgresParameters,
+		[]string{
+			"source_id",
+			"package_name",
+			"language",
+			"namespace",
+			"version_constraint",
+			"fixed",
+			"fixed_in",
+			"affected_symbols",
+		},
+		func(inserter *batch.Inserter) error {
+			for _, v := range vulnerabilities {
+				for _, ap := range v.AffectedPackages {
+					if ap.VersionConstraint == nil {
+						ap.VersionConstraint = []string{}
+					}
+					if ap.AffectedSymbols == nil {
+						ap.AffectedSymbols = []shared.AffectedSymbol{}
+					}
+
+					serialized, err := json.Marshal(ap.AffectedSymbols)
+					if err != nil {
+						return err
+					}
+
+					if err := inserter.Insert(
+						ctx,
+						v.SourceID,
+						ap.PackageName,
+						ap.Language,
+						ap.Namespace,
+						ap.VersionConstraint,
+						ap.Fixed,
+						ap.FixedIn,
+						serialized,
+					); err != nil {
+						return err
+					}
+				}
+			}
+
+			return nil
+		}); err != nil {
+		return err
+	}
+
+	if err := tx.Exec(ctx, sqlf.Sprintf(insertVulnerabilitiesUpdateQuery)); err != nil {
+		return err
+	}
+	if err := tx.Exec(ctx, sqlf.Sprintf(insertVulnerabilitiesAffectedPackagesUpdateQuery)); err != nil {
+		return err
+	}
+	if err := tx.Exec(ctx, sqlf.Sprintf(insertVulnerabilitiesAffectedSymbolsUpdateQuery)); err != nil {
+		return err
+	}
+
+	return nil
 }
+
+const insertVulnerabilitiesTemporaryVulnerabilitiesTableQuery = `
+CREATE TEMPORARY TABLE t_vulnerabilities (
+	source_id    TEXT NOT NULL,
+	summary      TEXT NOT NULL,
+	details      TEXT NOT NULL,
+	cpes         TEXT[] NOT NULL,
+	cwes         TEXT[] NOT NULL,
+	aliases      TEXT[] NOT NULL,
+	related      TEXT[] NOT NULL,
+	data_source  TEXT NOT NULL,
+	urls         TEXT[] NOT NULL,
+	severity     TEXT NOT NULL,
+	cvss_vector  TEXT NOT NULL,
+	cvss_score   TEXT NOT NULL,
+	published    TIMESTAMP WITH TIME ZONE,
+	modified     TIMESTAMP WITH TIME ZONE NOT NULL,
+	withdrawn    TIMESTAMP WITH TIME ZONE NOT NULL
+) ON COMMIT DROP
+`
+
+const insertVulnerabilitiesTemporaryVulnerabilityAffectedPackagesTableQuery = `
+CREATE TEMPORARY TABLE t_vulnerability_affected_packages (
+	source_id           TEXT NOT NULL,
+	package_name        TEXT NOT NULL,
+	language            TEXT NOT NULL,
+	namespace           TEXT NOT NULL,
+	version_constraint  TEXT[] NOT NULL,
+	fixed               boolean NOT NULL,
+	fixed_in            TEXT NOT NULL,
+	affected_symbols    JSON NOT NULL
+) ON COMMIT DROP
+`
+
+const insertVulnerabilitiesUpdateQuery = `
+INSERT INTO vulnerabilities (
+	source_id,
+	summary,
+	details,
+	cpes,
+	cwes,
+	aliases,
+	related,
+	data_source,
+	urls,
+	severity,
+	cvss_vector,
+	cvss_score,
+	published,
+	modified,
+	withdrawn
+)
+SELECT
+	source_id,
+	summary,
+	details,
+	cpes,
+	cwes,
+	aliases,
+	related,
+	data_source,
+	urls,
+	severity,
+	cvss_vector,
+	cvss_score,
+	published,
+	modified,
+	withdrawn
+FROM t_vulnerabilities
+
+-- TODO - update instead
+ON CONFLICT DO NOTHING
+`
+
+const insertVulnerabilitiesAffectedPackagesUpdateQuery = `
+INSERT INTO vulnerability_affected_packages(
+	vulnerability_id,
+	package_name,
+	language,
+	namespace,
+	version_constraint,
+	fixed,
+	fixed_in
+)
+SELECT
+	(SELECT v.id FROM vulnerabilities v WHERE v.source_id = vap.source_id),
+	package_name,
+	language,
+	namespace,
+	version_constraint,
+	fixed,
+	fixed_in
+FROM t_vulnerability_affected_packages vap
+
+-- TODO - update instead
+ON CONFLICT DO NOTHING
+`
+
+const insertVulnerabilitiesAffectedSymbolsUpdateQuery = `
+WITH
+json_candidates AS (
+	SELECT
+		vap.id,
+		json_array_elements(tvap.affected_symbols) AS affected_symbol
+	FROM t_vulnerability_affected_packages tvap
+	JOIN vulnerability_affected_packages vap ON vap.package_name = tvap.package_name
+	JOIN vulnerabilities v ON v.id = vap.vulnerability_id
+	WHERE
+		v.source_id = tvap.source_id
+),
+candidates AS (
+	SELECT
+		c.id,
+		c.affected_symbol->'path'::text AS path,
+		ARRAY(SELECT json_array_elements_text(c.affected_symbol->'symbols'))::text[] AS symbols
+	FROM json_candidates c
+)
+INSERT INTO vulnerability_affected_symbols(vulnerability_affected_package_id, path, symbols)
+SELECT c.id, c.path, c.symbols FROM candidates c
+
+-- TODO - update instead
+ON CONFLICT DO NOTHING
+`
