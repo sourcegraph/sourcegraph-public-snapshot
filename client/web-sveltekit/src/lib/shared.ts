@@ -43,6 +43,7 @@ export { QueryChangeSource, type QueryState } from '@sourcegraph/shared/src/sear
 export { migrateLocalStorageToTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/migrateLocalStorageToTemporarySettings'
 export type { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 export { SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
+export { type FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
 
 // Copies of non-reusable code
 

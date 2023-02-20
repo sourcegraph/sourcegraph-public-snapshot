@@ -12,11 +12,12 @@
     import Header from './Header.svelte'
     import './styles.scss'
     import type { LayoutData } from './$types'
+    import { setExperimentalFeaturesFromSettings } from '$lib/web'
 
     export let data: LayoutData
 
     const user = writable(data.user ?? null)
-    const settings = writable(data.settings)
+    const settings = writable(isErrorLike(data.settings) ? null : data.settings.final)
     const platformContext = writable(data.platformContext)
     const isLightTheme = browser ? readableObservable(observeSystemIsLightTheme(window).observable) : readable(true)
     // It's OK to set the temporary storage during initialization time because
@@ -43,8 +44,11 @@
     })
 
     $: $user = data.user ?? null
-    $: $settings = data.settings
+    $: $settings = isErrorLike(data.settings) ? null : data.settings.final
     $: $platformContext = data.platformContext
+    // Sync React stores
+    $: setExperimentalFeaturesFromSettings(data.settings)
+
 
     $: if (browser) {
         document.documentElement.classList.toggle('theme-light', $isLightTheme)
@@ -65,7 +69,7 @@
     </main>
 </div>
 
-<style>
+<style lang="scss">
     .app {
         display: flex;
         flex-direction: column;
@@ -78,6 +82,6 @@
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
-        overflow: hidden;
+        overflow: auto;
     }
 </style>
