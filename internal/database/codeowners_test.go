@@ -30,7 +30,7 @@ func TestCodeowners_CreateUpdateDelete(t *testing.T) {
 		}
 	})
 
-	t.Run("create codeowners duplicate errors", func(t *testing.T) {
+	t.Run("create codeowners duplicate error", func(t *testing.T) {
 		codeowners := newCodeownersFile("*", "everyone", api.RepoID(200))
 		if err := store.CreateCodeownersFile(ctx, codeowners); err != nil {
 			t.Fatal(err)

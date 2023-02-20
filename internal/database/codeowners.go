@@ -69,10 +69,11 @@ func (s *codeownersStore) CreateCodeownersFile(ctx context.Context, file *types.
 			var e *pgconn.PgError
 			if errors.As(err, &e) {
 				switch e.ConstraintName {
-				case "repo_id_unique":
+				case "codeowners_repo_id_key":
 					return ErrCodeownersFileAlreadyExists
 				}
 			}
+			return err
 		}
 		return nil
 	})
