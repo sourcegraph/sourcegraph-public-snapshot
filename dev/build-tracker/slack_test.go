@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
@@ -419,37 +419,42 @@ func TestGenerateHeader(t *testing.T) {
 		return &v
 	}
 	for _, tc := range []struct {
+		name  string
 		build *Build
 		want  autogold.Value // use 'go test -update' to update
 	}{
 		{
+			name: "first failure",
 			build: &Build{
 				Build: buildkite.Build{
 					Number: intp(100),
 				},
 				ConsecutiveFailure: 0,
 			},
-			want: autogold.Want("first failure", ":red_circle: Build 100 failed"),
+			want: autogold.Expect(":red_circle: Build 100 failed"),
 		},
 		{
+			name: "second failure",
 			build: &Build{
 				Build: buildkite.Build{
 					Number: intp(100),
 				},
 				ConsecutiveFailure: 1,
 			},
-			want: autogold.Want("second failure", ":red_circle: Build 100 failed"),
+			want: autogold.Expect(":red_circle: Build 100 failed"),
 		},
 		{
+			name: "fifth failure",
 			build: &Build{
 				Build: buildkite.Build{
 					Number: intp(100),
 				},
 				ConsecutiveFailure: 4,
 			},
-			want: autogold.Want("fifth failure", ":red_circle: Build 100 failed (:bangbang: 4th failure)"),
+			want: autogold.Expect(":red_circle: Build 100 failed (:bangbang: 4th failure)"),
 		},
 		{
+			name: "fifth failure (fixed)",
 			build: &Build{
 				Build: buildkite.Build{
 					Number: intp(100),
@@ -457,10 +462,10 @@ func TestGenerateHeader(t *testing.T) {
 				ConsecutiveFailure: 4,
 				Notification:       &SlackNotification{},
 			},
-			want: autogold.Want("fifth failure", ":green_circle: Build 100 fixed"),
+			want: autogold.Expect(":green_circle: Build 100 fixed"),
 		},
 	} {
-		t.Run(tc.want.Name(), func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			got := generateSlackHeader(tc.build)
 			tc.want.Equal(t, got)
 		})
