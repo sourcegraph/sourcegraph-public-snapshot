@@ -84,7 +84,7 @@ func NormalizeUsername(name string) (string, error) {
 	name = disallowedCharacter.ReplaceAllString(name, "-")
 
 	// Replace all consecutive dashes and periods with a single dash.
-	name = consecutivePeriodsSlashes.ReplaceAllString(name, "-")
+	name = consecutivePeriodsDashes.ReplaceAllString(name, "-")
 
 	// Trim leading and trailing dashes and periods.
 	name = sequencesToTrim.ReplaceAllString(name, "")
@@ -101,9 +101,9 @@ func NormalizeUsername(name string) (string, error) {
 }
 
 var (
-	disallowedCharacter       = lazyregexp.New(`[^\w\-\.]`)
-	consecutivePeriodsSlashes = lazyregexp.New(`[\-\.]{2,}`)
-	sequencesToTrim           = lazyregexp.New(`(^[\-\.])|(\.$)|`)
+	disallowedCharacter      = lazyregexp.New(`[^\w\-\.]`)
+	consecutivePeriodsDashes = lazyregexp.New(`[\-\.]{2,}`)
+	sequencesToTrim          = lazyregexp.New(`(^[\-\.])|(\.$)|`)
 )
 
 // AddRandomSuffix appends a random 5-character lowercase alphabetical suffix (like "-lbwwt")
