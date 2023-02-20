@@ -37,7 +37,7 @@ export interface SourcegraphService {
     Search: SearchService
 }
 
-class SourcegraphClient implements SourcegraphService, UserService, SearchService {
+export class SourcegraphClient implements SourcegraphService, UserService, SearchService {
     private client: BaseClient
     Users: UserService = this
     Search: SearchService = this
@@ -56,19 +56,19 @@ class SourcegraphClient implements SourcegraphService, UserService, SearchServic
     async currentUsername(): Promise<string> {
         const q = new UserQuery()
 
-        const data = await this.client.fetch(q)
-        return data[0]
+        const result = await this.client.fetch(q)
+        return result
     }
 
     async getAuthenticatedUser(): Promise<AuthenticatedUser> {
         const q = new AuthenticatedUserQuery()
-        const data = await this.client.fetch(q)
-        return data
+        const result = await this.client.fetch(q)
+        return result
     }
 }
 
-class BaseClient {
-    private static client: GraphQLClient
+export class BaseClient {
+    private client?: GraphQLClient
     constructor(baseUrl: string, token: string, sudoUsername: string) {
         const authz =
             sudoUsername?.length > 0 ? `token - sudo user = "${sudoUsername}", token = "${token}"` : `token ${token}`
@@ -77,21 +77,20 @@ class BaseClient {
             Authorization: authz,
         }
 
-        if (!BaseClient.client) {
+        if (!this.client) {
             getGraphQLClient({
                 baseUrl: baseUrl,
                 headers: headers,
                 isAuthenticated: true,
                 cache: generateCache(),
             }).then(client => {
-                BaseClient.client = client
+                this.client = client
             })
         }
     }
 
     async fetch<T>(query: Query<T>): Promise<T> {
-        const client = BaseClient.client
-        const { data } = await client.query({
+        const { data } = await this.client.query({
             query: query.gql(),
             variables: query.vars(),
         })

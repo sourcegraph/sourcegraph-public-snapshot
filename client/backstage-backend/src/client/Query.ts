@@ -89,6 +89,7 @@ export class UserQuery implements Query<string> {
     marshal(data: any): string {
         if ('currentUser' in data) {
             const { currentUser } = data
+            console.log(currentUser.username)
             return currentUser.username
         }
         throw new Error('username not found')
