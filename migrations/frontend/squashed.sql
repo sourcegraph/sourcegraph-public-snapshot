@@ -1711,6 +1711,23 @@ CREATE SEQUENCE codeintel_ranking_exports_id_seq
 
 ALTER SEQUENCE codeintel_ranking_exports_id_seq OWNED BY codeintel_ranking_exports.id;
 
+CREATE TABLE codeowners (
+    id integer NOT NULL,
+    contents text,
+    contents_proto json,
+    repo_id integer
+);
+
+CREATE SEQUENCE codeowners_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE codeowners_id_seq OWNED BY codeowners.id;
+
 CREATE TABLE configuration_policies_audit_logs (
     log_timestamp timestamp with time zone DEFAULT clock_timestamp(),
     record_deleted_at timestamp with time zone,
@@ -4148,6 +4165,8 @@ ALTER TABLE ONLY codeintel_path_rank_inputs ALTER COLUMN id SET DEFAULT nextval(
 
 ALTER TABLE ONLY codeintel_ranking_exports ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_exports_id_seq'::regclass);
 
+ALTER TABLE ONLY codeowners ALTER COLUMN id SET DEFAULT nextval('codeowners_id_seq'::regclass);
+
 ALTER TABLE ONLY configuration_policies_audit_logs ALTER COLUMN sequence SET DEFAULT nextval('configuration_policies_audit_logs_seq'::regclass);
 
 ALTER TABLE ONLY critical_and_site_config ALTER COLUMN id SET DEFAULT nextval('critical_and_site_config_id_seq'::regclass);
@@ -4380,6 +4399,12 @@ ALTER TABLE ONLY codeintel_path_rank_inputs
 
 ALTER TABLE ONLY codeintel_ranking_exports
     ADD CONSTRAINT codeintel_ranking_exports_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY codeowners
+    ADD CONSTRAINT codeowners_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY codeowners
+    ADD CONSTRAINT codeowners_repo_id_key UNIQUE (repo_id);
 
 ALTER TABLE ONLY critical_and_site_config
     ADD CONSTRAINT critical_and_site_config_pkey PRIMARY KEY (id);

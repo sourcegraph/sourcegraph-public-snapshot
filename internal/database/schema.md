@@ -955,6 +955,20 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.codeowners"
+```
+     Column     |  Type   | Collation | Nullable |                Default                 
+----------------+---------+-----------+----------+----------------------------------------
+ id             | integer |           | not null | nextval('codeowners_id_seq'::regclass)
+ contents       | text    |           |          | 
+ contents_proto | json    |           |          | 
+ repo_id        | integer |           |          | 
+Indexes:
+    "codeowners_pkey" PRIMARY KEY, btree (id)
+    "codeowners_repo_id_key" UNIQUE CONSTRAINT, btree (repo_id)
+
+```
+
 # Table "public.configuration_policies_audit_logs"
 ```
        Column       |           Type           | Collation | Nullable |                          Default                           
