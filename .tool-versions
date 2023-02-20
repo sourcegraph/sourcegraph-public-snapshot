@@ -7,7 +7,7 @@ kubectl 1.21.7 # done
 github-cli 2.0.0 # unused
 packer 1.8.3 # done
 trivy 0.30.3 # postpone
-kustomize 4.5.7
+kustomize 4.5.7 # postpone, possibly delete (use kubctl -k ?)
 awscli 2.4.7
 python system
 rust 1.62.0
