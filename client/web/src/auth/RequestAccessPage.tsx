@@ -145,7 +145,7 @@ export const RequestAccessPage: React.FunctionComponent<React.PropsWithChildren<
     const isRequestAccessAllowed = checkIsRequestAccessAllowed(
         context.sourcegraphDotComMode,
         context.allowSignup,
-        context.experimentalFeatures.accessRequests
+        context.experimentalFeatures['accessRequests.enabled']
     )
 
     if (authenticatedUser) {

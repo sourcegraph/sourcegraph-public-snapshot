@@ -22,7 +22,7 @@ export const AccessRequestsGlobalNavItem: React.FunctionComponent<AccessRequests
     const isRequestAccessAllowed = checkIsRequestAccessAllowed(
         props.isSourcegraphDotCom,
         props.context.allowSignup,
-        props.context.experimentalFeatures.accessRequests
+        props.context.experimentalFeatures['accessRequests.enabled']
     )
 
     const { data } = useQuery<AccessRequestsCountResult, AccessRequestsCountVariables>(ACCESS_REQUESTS_COUNT, {

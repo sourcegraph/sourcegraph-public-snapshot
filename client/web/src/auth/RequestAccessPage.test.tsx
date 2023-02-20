@@ -96,9 +96,7 @@ describe('RequestAccessPage', () => {
         test('if experimentalFeatures.accessRequests.enabled=false', () => {
             const { history } = renderPage({
                 experimentalFeatures: {
-                    accessRequests: {
-                        enabled: false,
-                    },
+                    'accessRequests.enabled': false,
                 },
             })
             expect(history.location.pathname).toBe('/sign-in')

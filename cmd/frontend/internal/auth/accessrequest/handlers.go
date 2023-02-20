@@ -23,12 +23,15 @@ import (
 func HandleRequestAccess(logger log.Logger, db database.DB) http.HandlerFunc {
 	logger = logger.Scoped("HandleRequestAccess", "request access request handler")
 	return func(w http.ResponseWriter, r *http.Request) {
-		if handleEnabledCheck(logger, w) {
+		if !accessRequestsFeatureEnabled(logger, w) {
+			logger.Error("experimental feature accessRequests is disabled, but received request")
+			http.Error(w, "experimental feature accessRequests is disabled, but received request", http.StatusForbidden)
 			return
 		}
 		// Check whether builtin signup is enabled.
 		builtInAuthProvider, _ := userpasswd.GetProviderConfig()
 		if builtInAuthProvider != nil && builtInAuthProvider.AllowSignup {
+			logger.Error("signup is enabled, but received access request")
 			http.Error(w, "Use sign up instead.", http.StatusConflict)
 			return
 		}
@@ -36,16 +39,10 @@ func HandleRequestAccess(logger log.Logger, db database.DB) http.HandlerFunc {
 	}
 }
 
-// handleEnabledCheck checks whether request access experimental feature is explicitly disabled
-func handleEnabledCheck(logger log.Logger, w http.ResponseWriter) (handled bool) {
+// accessRequestsFeatureEnabled checks whether request access experimental feature is explicitly disabled
+func accessRequestsFeatureEnabled(logger log.Logger, w http.ResponseWriter) (handled bool) {
 	experimentalFeatures := conf.Get().ExperimentalFeatures
-	if experimentalFeatures != nil && experimentalFeatures.AccessRequests != nil && !experimentalFeatures.AccessRequests.Enabled {
-		logger.Error("experimental feature accessRequests is disabled, but received request")
-		http.Error(w, "experimental feature accessRequests is disabled, but received request", http.StatusForbidden)
-		return true
-	}
-
-	return false
+	return experimentalFeatures == nil || experimentalFeatures.AccessRequestsEnabled == nil || *experimentalFeatures.AccessRequestsEnabled
 }
 
 type requestAccessData struct {

@@ -44,7 +44,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     const isRequestAccessAllowed = checkIsRequestAccessAllowed(
         props.isSourcegraphDotCom,
         props.context.allowSignup,
-        props.context.experimentalFeatures.accessRequests
+        props.context.experimentalFeatures['accessRequests.enabled']
     )
 
     if (props.authenticatedUser) {

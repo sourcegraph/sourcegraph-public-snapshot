@@ -110,7 +110,7 @@ export const usersGroup: SiteAdminSideBarGroup = {
                 checkIsRequestAccessAllowed(
                     context.isSourcegraphDotCom,
                     window.context.allowSignup,
-                    window.context.experimentalFeatures.accessRequests
+                    window.context.experimentalFeatures['accessRequests.enabled']
                 ),
         },
         {

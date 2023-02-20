@@ -489,16 +489,12 @@
             "pointer": true
           }
         },
-        "accessRequests": {
-          "description": "Allow users to request access to the instance if signup is disabled",
-          "type": "object",
-          "properties": {
-            "enabled": {
-              "description": "Whether to enable this feature or not",
-              "type": "boolean",
-              "default": true
-            }
-          }
+        "accessRequests.enabled": {
+          "description": "Enables/disables the request access feature, which allows users to request access if built-in signup is disabled.",
+          "type": "boolean",
+          "!go": { "pointer": true },
+          "group": "AccessRequests",
+          "default": true
         }
       },
       "examples": [
