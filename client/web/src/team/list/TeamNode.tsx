@@ -4,7 +4,7 @@ import { mdiAccount, mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
 
 import { pluralize } from '@sourcegraph/common'
-import { Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Tooltip, useDebounce } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../components/Collapsible'
 import { ListTeamFields } from '../../graphql-operations'
@@ -78,40 +78,50 @@ interface NodeContentProps {
 }
 
 const NodeContent: React.FunctionComponent<NodeContentProps> = ({ node, onClickDelete, className }) => (
-        <div className={classNames(className)}>
-            <div>
-                <TeamAvatar team={node} className="mr-2" />
-                <Link to={node.url}>
-                    <strong>{node.name}</strong>
-                </Link>
-                <br />
-                <span className="text-muted">{node.displayName}</span>
-            </div>
-            <div>
-                <Tooltip content="Team members">
-                    <Button to={`${node.url}/members`} variant="secondary" size="sm" as={Link}>
-                        <Icon aria-hidden={true} svgPath={mdiAccount} /> {node.members.totalCount}{' '}
-                        {pluralize('member', node.members.totalCount)}
-                    </Button>
-                </Tooltip>{' '}
-                <Tooltip content="Delete team">
-                    <Button
-                        aria-label="Delete team"
-                        onClick={onClickDelete}
-                        disabled={!node.viewerCanAdminister}
-                        variant="danger"
-                        size="sm"
-                    >
-                        <Icon aria-hidden={true} svgPath={mdiDelete} />
-                    </Button>
-                </Tooltip>
-            </div>
+    <div className={classNames(className)}>
+        <div>
+            <TeamAvatar team={node} className="mr-2" />
+            <Link to={node.url}>
+                <strong>{node.name}</strong>
+            </Link>
+            <br />
+            <span className="text-muted">{node.displayName}</span>
         </div>
-    )
+        <div>
+            <Tooltip content="Team members">
+                <Button to={`${node.url}/members`} variant="secondary" size="sm" as={Link}>
+                    <Icon aria-hidden={true} svgPath={mdiAccount} /> {node.members.totalCount}{' '}
+                    {pluralize('member', node.members.totalCount)}
+                </Button>
+            </Tooltip>{' '}
+            <Tooltip content="Delete team">
+                <Button
+                    aria-label="Delete team"
+                    onClick={onClickDelete}
+                    disabled={!node.viewerCanAdminister}
+                    variant="danger"
+                    size="sm"
+                >
+                    <Icon aria-hidden={true} svgPath={mdiDelete} />
+                </Button>
+            </Tooltip>
+        </div>
+    </div>
+)
 
 const ChildTeamList: React.FunctionComponent<{ parentTeam: string }> = ({ parentTeam }) => {
-    const connectionFunction = useChildTeams(parentTeam)
+    const [searchValue, setSearchValue] = useState('')
+    const query = useDebounce(searchValue, 200)
+
+    const connection = useChildTeams(parentTeam, query)
+
     return (
-        <TeamList connectionFunction={connectionFunction} className={classNames(styles.childTeams, 'py-2 pl-3 pr-2')} />
+        <TeamList
+            searchValue={searchValue}
+            setSearchValue={setSearchValue}
+            query={query}
+            {...connection}
+            className={classNames(styles.childTeams, 'py-2 pl-3 pr-2')}
+        />
     )
 }
