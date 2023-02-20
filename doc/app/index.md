@@ -49,7 +49,9 @@ Start Sourcegraph by running the following in a terminal:
 sourcegraph
 ```
 
-Navigate to http://localhost:3080 and you can add your remote repositories from there (we're still working on ability to add local code.)
+Navigate to http://localhost:3080 in your browser.
+
+Sourcegraph will automatically add any repositories found below the directory you run `sourcegraph` - you can also add your remote repositories from the UI.
 
 ### Troubleshooting
 
@@ -68,7 +70,7 @@ If it doesn't start, make sure:
 
 ### Known issues
 
-* Can't add local code yet, only remote code
+* We're working on improving the "add local code" experience
 * We're working on eliminating the `src` CLI and Docker dependencies
 * macOS binaries are not code-signed yet, so you may need to right-click -> open the binary if you do not use Homebrew.
 
