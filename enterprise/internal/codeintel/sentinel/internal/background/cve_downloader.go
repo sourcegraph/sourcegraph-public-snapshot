@@ -40,20 +40,23 @@ const advisoryDatabaseURL = "https://github.com/github/advisory-database/archive
 
 type Vulnerability struct {
 	// Data that's consistent across all instances of a vulnerability
-	SGVulnID               int
-	ID                     string
-	Summary                string
-	Description            string
-	CPEs                   []string
-	CWEs                   []string
-	RelatedVulnerabilities []string
-	DataSource             string
-	URLs                   []string
-	Severity               string
-	CVSSVector             string
-	CVSSScore              string
-	PublishedAt            time.Time
-	AffectedPackages       []AffectedPackage
+	SGVulnID         int
+	ID               string
+	Summary          string
+	Details          string
+	CPEs             []string
+	CWEs             []string
+	Aliases          []string
+	Related          []string
+	DataSource       string
+	URLs             []string
+	Severity         string
+	CVSSVector       string
+	CVSSScore        string
+	Published        time.Time
+	Modified         time.Time
+	Withdrawn        time.Time
+	AffectedPackages []AffectedPackage
 }
 
 // Data that varies across instances of a vulnerability
@@ -259,14 +262,14 @@ func ghsaToVuln(g GHSAVulnerability) (vuln Vulnerability, err error) {
 
 	// Set up base vulnerability with common properties
 	v := Vulnerability{
-		ID:                     g.ID,
-		Summary:                g.Summary,
-		Description:            g.Details,
-		PublishedAt:            g.DatabaseSpecific.NVDPublishedAt,
-		CWEs:                   g.DatabaseSpecific.CWEIDs,
-		RelatedVulnerabilities: g.Aliases,
-		DataSource:             "https://github.com/advisories/" + g.ID,
-		Severity:               g.DatabaseSpecific.Severity,
+		ID:         g.ID,
+		Summary:    g.Summary,
+		Details:    g.Details,
+		Published:  g.DatabaseSpecific.NVDPublishedAt,
+		CWEs:       g.DatabaseSpecific.CWEIDs,
+		Aliases:    g.Aliases,
+		DataSource: "https://github.com/advisories/" + g.ID,
+		Severity:   g.DatabaseSpecific.Severity,
 	}
 
 	if len(g.Severity) > 0 && g.Severity[0].Score != "" {
@@ -412,13 +415,15 @@ func HandleGoVulnDb(ctx context.Context, metrics *Metrics, useLocalCache bool) (
 
 func osvToVuln(o OSV) (vuln Vulnerability, err error) {
 	v := Vulnerability{
-		ID:          o.ID,
-		Summary:     o.Summary,
-		Description: o.Details,
-		PublishedAt: o.Published,
+		ID:        o.ID,
+		Summary:   o.Summary,
+		Details:   o.Details,
+		Published: o.Published,
+		Modified:  o.Modified,
+		Withdrawn: o.Withdrawn,
 		// CWEs:                   o.DatabaseSpecific.CWEIDs,
-		RelatedVulnerabilities: append(o.Aliases, o.Related...),
-		DataSource:             o.ID,
+		Related: o.Related,
+		Aliases: o.Aliases,
 	}
 
 	for _, reference := range o.References {
