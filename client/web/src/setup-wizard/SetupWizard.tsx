@@ -31,7 +31,7 @@ const SETUP_STEPS: StepConfiguration[] = [
     },
 ]
 
-export const SetupWizard: FC = props => {
+export const SetupWizard: FC = () => {
     const [activeStepId, setStepId, status] = useTemporarySetting('setup.activeStepId')
 
     const handleStepChange = useCallback(
