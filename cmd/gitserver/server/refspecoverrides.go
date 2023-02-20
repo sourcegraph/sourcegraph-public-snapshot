@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"os"
 	"os/exec"
 	"strings"
 
@@ -23,10 +22,5 @@ func useRefspecOverrides() bool {
 // HACK(keegancsmith) workaround to experiment with cloning less in a large
 // monorepo. https://github.com/sourcegraph/customer/issues/19
 func refspecOverridesFetchCmd(ctx context.Context, remoteURL *vcs.URL) *exec.Cmd {
-	// Perform automatic repository maintenance at the end of fetch
-	gc := "--auto-gc"
-	if e := os.Getenv("SRC_ENABLE_GC_AUTO"); e == "false" {
-		gc = "--no-auto-gc"
-	}
-	return exec.CommandContext(ctx, "git", append([]string{"fetch", gc, "--progress", "--prune", remoteURL.String()}, refspecOverrides...)...)
+	return exec.CommandContext(ctx, "git", append([]string{"fetch", "--progress", "--prune", remoteURL.String()}, refspecOverrides...)...)
 }

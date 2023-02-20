@@ -103,13 +103,7 @@ func (s *GitRepoSyncer) fetchCommand(ctx context.Context, remoteURL *vcs.URL) (c
 	} else if useRefspecOverrides() {
 		cmd = refspecOverridesFetchCmd(ctx, remoteURL)
 	} else {
-		// Perform automatic repository maintenance at the end of fetch
-		gc := "--auto-gc"
-		if e := os.Getenv("SRC_ENABLE_GC_AUTO"); e == "false" {
-			gc = "--no-auto-gc"
-		}
 		cmd = exec.CommandContext(ctx, "git", "fetch",
-			gc,
 			"--progress", "--prune", remoteURL.String(),
 			// Normal git refs
 			"+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*",
