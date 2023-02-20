@@ -113,12 +113,13 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     const needsSiteInit = window.context?.needsSiteInit
     const disableFeedbackSurvey = window.context?.disableFeedbackSurvey
     const isSiteInit = location.pathname === PageRoutes.SiteAdminInit
-    const isSignInOrUp =
-        routeMatch === PageRoutes.SignIn ||
-        routeMatch === PageRoutes.SignUp ||
-        routeMatch === PageRoutes.PasswordReset ||
-        routeMatch === PageRoutes.Welcome ||
-        routeMatch === PageRoutes.RequestAccess
+    const isSignInOrUp = [
+        PageRoutes.SignIn,
+        PageRoutes.SignUp,
+        PageRoutes.PasswordReset,
+        PageRoutes.Welcome,
+        PageRoutes.RequestAccess,
+    ].includes(routeMatch)
 
     const themeState = useTheme()
     const themeStateRef = useRef(themeState)

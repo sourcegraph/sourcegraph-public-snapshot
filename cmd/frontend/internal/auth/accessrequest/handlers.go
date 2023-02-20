@@ -2,7 +2,6 @@ package accessrequest
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/sourcegraph/log"
 
@@ -37,16 +36,15 @@ func HandleRequestAccess(logger log.Logger, db database.DB) http.HandlerFunc {
 	}
 }
 
-// HandleRequestAccessEnabledCheck checks whether request access experimental feature is explicitly disabled
+// handleEnabledCheck checks whether request access experimental feature is explicitly disabled
 func handleEnabledCheck(logger log.Logger, w http.ResponseWriter) (handled bool) {
 	experimentalFeatures := conf.Get().ExperimentalFeatures
 	if experimentalFeatures != nil && experimentalFeatures.AccessRequests != nil && !experimentalFeatures.AccessRequests.Enabled {
-		logger.Error("Request access is disabled.")
-		http.Error(w, "Request access is disabled.", http.StatusConflict)
+		logger.Error("experimental feature accessRequests is disabled, but received request")
+		http.Error(w, "experimental feature accessRequests is disabled, but received request", http.StatusForbidden)
 		return true
 	}
 
-	// test whether
 	return false
 }
 
@@ -58,20 +56,14 @@ type requestAccessData struct {
 
 // handleRequestAccess handles submission of the request access form.
 func handleRequestAccess(logger log.Logger, db database.DB, w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
-		return
-	}
 	var data requestAccessData
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 		http.Error(w, "could not decode request body", http.StatusBadRequest)
 		return
 	}
 
-	const defaultErrorMessage = "Request access failed unexpectedly."
-
 	if err := userpasswd.CheckEmailFormat(data.Email); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
 
@@ -101,7 +93,7 @@ func handleRequestAccess(logger log.Logger, db database.DB, w http.ResponseWrite
 		default:
 			// Do not show non-allowed error messages to user, in case they contain sensitive or confusing
 			// information.
-			message = defaultErrorMessage
+			message = "Request access failed unexpectedly."
 			statusCode = http.StatusInternalServerError
 		}
 		logger.Error("Error in access request.", log.String("email", data.Email), log.String("name", data.Name), log.Error(err))

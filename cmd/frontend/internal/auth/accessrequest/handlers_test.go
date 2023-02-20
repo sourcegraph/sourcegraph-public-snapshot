@@ -46,8 +46,8 @@ func TestRequestAccess(t *testing.T) {
 
 		res := httptest.NewRecorder()
 		handler(res, req)
-		assert.Equal(t, http.StatusConflict, res.Code)
-		assert.Equal(t, "Request access is disabled.\n", res.Body.String())
+		assert.Equal(t, http.StatusForbidden, res.Code)
+		assert.Equal(t, "experimental feature accessRequests is disabled, but received request\n", res.Body.String())
 	})
 
 	t.Run("builtin signup enabled", func(t *testing.T) {
@@ -80,14 +80,14 @@ func TestRequestAccess(t *testing.T) {
 		require.NoError(t, err)
 		res := httptest.NewRecorder()
 		handler(res, req)
-		assert.Equal(t, http.StatusBadRequest, res.Code)
+		assert.Equal(t, http.StatusUnprocessableEntity, res.Code)
 
 		// test empty email
 		req, err = http.NewRequest(http.MethodPost, "/-/request-access", strings.NewReader(`{"name": "a1", "additionalInfo": "a1"}}`))
 		require.NoError(t, err)
 		res = httptest.NewRecorder()
 		handler(res, req)
-		assert.Equal(t, http.StatusBadRequest, res.Code)
+		assert.Equal(t, http.StatusUnprocessableEntity, res.Code)
 	})
 
 	t.Run("correct inputs", func(t *testing.T) {

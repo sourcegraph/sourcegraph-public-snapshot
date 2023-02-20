@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -29,9 +28,6 @@ func TestAccessRequestsQuery_All(t *testing.T) {
 		return mockStore
 	}
 
-	if testing.Short() {
-		t.Skip()
-	}
 	t.Parallel()
 
 	t.Run("non-admin user", func(t *testing.T) {
@@ -102,7 +98,7 @@ func TestAccessRequestsMutation_SetAccessRequestStatus(t *testing.T) {
 			if id == existing.ID {
 				return existing, nil
 			}
-			return nil, errors.New(fmt.Sprintf("access request with id %d not found", id))
+			return nil, errors.Newf("access request with id %d not found", id)
 		})
 		mockStore.UpdateFunc.SetDefaultHook(func(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
 			require.Equal(t, &want, &accessRequest)
@@ -111,9 +107,6 @@ func TestAccessRequestsMutation_SetAccessRequestStatus(t *testing.T) {
 		return mockStore
 	}
 
-	if testing.Short() {
-		t.Skip()
-	}
 	t.Parallel()
 
 	t.Run("non-admin user", func(t *testing.T) {

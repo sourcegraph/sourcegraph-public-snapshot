@@ -148,11 +148,14 @@ export const LegacyLayout: React.FunctionComponent<React.PropsWithChildren<Legac
     const disableFeedbackSurvey = window.context?.disableFeedbackSurvey
     const isSiteInit = location.pathname === PageRoutes.SiteAdminInit
     const isSignInOrUp =
-        routeMatch === PageRoutes.SignIn ||
-        routeMatch === PageRoutes.SignUp ||
-        routeMatch === PageRoutes.PasswordReset ||
-        routeMatch === PageRoutes.Welcome ||
-        routeMatch === PageRoutes.RequestAccess
+        routeMatch &&
+        [
+            PageRoutes.SignIn,
+            PageRoutes.SignUp,
+            PageRoutes.PasswordReset,
+            PageRoutes.Welcome,
+            PageRoutes.RequestAccess,
+        ].includes(routeMatch as PageRoutes)
 
     const themeProps = useThemeProps()
     const themeState = useTheme()

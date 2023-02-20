@@ -9375,7 +9375,7 @@ enum AccessRequestOrderBy {
 """
 A list of access requests
 """
-type AccessRequests {
+type AccessRequestConnection {
     """
     Total count of access requests
     """
@@ -9461,7 +9461,7 @@ extend type Query {
     """
     List access requests.
     """
-    accessRequests(status: AccessRequestStatus): AccessRequests!
+    accessRequests(status: AccessRequestStatus): AccessRequestConnection!
 }
 
 extend type Mutation {

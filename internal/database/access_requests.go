@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -144,31 +145,43 @@ func AccessRequestsWith(other basestore.ShareableStore, logger log.Logger) Acces
 
 const (
 	accessRequestInsertQuery = `
-		INSERT INTO
-			access_requests (name, email, additional_info)
+		INSERT INTO access_requests (%s)
 		VALUES ( %s, %s, %s )
-		RETURNING id, created_at, updated_at, name, email, status, additional_info
-		`
+		RETURNING %s`
 	accessRequestListQuery = `
-		SELECT
-			id, created_at, updated_at, name, email, status, additional_info
-		FROM
-			access_requests
+		SELECT %s
+		FROM access_requests
 		WHERE (%s)
 		ORDER BY %s
-		LIMIT %s
-		`
+		LIMIT %s`
 	accessRequestUpdateQuery = `
 		UPDATE access_requests
 		SET status = %s
 		WHERE id = %s
-		RETURNING id, created_at, updated_at, name, email, status, additional_info`
+		RETURNING %s`
+)
+
+var (
+	accessRequestColumns = []*sqlf.Query{
+		sqlf.Sprintf("id"),
+		sqlf.Sprintf("created_at"),
+		sqlf.Sprintf("updated_at"),
+		sqlf.Sprintf("name"),
+		sqlf.Sprintf("email"),
+		sqlf.Sprintf("status"),
+		sqlf.Sprintf("additional_info"),
+	}
+	accessRequestInsertColumns = []*sqlf.Query{
+		sqlf.Sprintf("name"),
+		sqlf.Sprintf("email"),
+		sqlf.Sprintf("additional_info"),
+	}
 )
 
 func (s *accessRequestStore) Create(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
 	// We don't allow adding a new request_access with an email address that has already been
 	// verified by another user.
-	exists, _, err := basestore.ScanFirstBool(s.Query(ctx, sqlf.Sprintf("SELECT TRUE WHERE EXISTS (SELECT FROM user_emails WHERE email = %s AND verified_at IS NOT NULL)", accessRequest.Email)))
+	exists, _, err := basestore.ScanFirstBool(s.Query(ctx, sqlf.Sprintf("SELECT TRUE FROM user_emails WHERE email = %s AND verified_at IS NOT NULL", accessRequest.Email)))
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +190,7 @@ func (s *accessRequestStore) Create(ctx context.Context, accessRequest *types.Ac
 	}
 
 	// We don't allow adding a new request_access with an email address that has already been used
-	exists, _, err = basestore.ScanFirstBool(s.Query(ctx, sqlf.Sprintf("SELECT TRUE WHERE EXISTS (SELECT FROM access_requests WHERE email = %s)", accessRequest.Email)))
+	exists, _, err = basestore.ScanFirstBool(s.Query(ctx, sqlf.Sprintf("SELECT TRUE FROM access_requests WHERE email = %s", accessRequest.Email)))
 	if err != nil {
 		return nil, err
 	}
@@ -188,54 +201,52 @@ func (s *accessRequestStore) Create(ctx context.Context, accessRequest *types.Ac
 	// Continue with creating the new access request.
 	q := sqlf.Sprintf(
 		accessRequestInsertQuery,
+		sqlf.Join(accessRequestInsertColumns, ","),
 		accessRequest.Name,
 		accessRequest.Email,
 		accessRequest.AdditionalInfo,
+		sqlf.Join(accessRequestColumns, ","),
 	)
-	var data types.AccessRequest
 
-	if err := s.QueryRow(ctx, q).Scan(&data.ID, &data.CreatedAt, &data.UpdatedAt, &data.Name, &data.Email, &data.Status, &data.AdditionalInfo); err != nil {
+	data, err := scanAccessRequest(s.QueryRow(ctx, q))
+	if err != nil {
 		return nil, errors.Wrap(err, "scanning access_request")
 	}
 
-	return &data, nil
+	return data, nil
 }
 
 func (s *accessRequestStore) GetByID(ctx context.Context, id int32) (*types.AccessRequest, error) {
-	row := s.QueryRow(ctx, sqlf.Sprintf("SELECT id, created_at, updated_at, name, email, status, additional_info FROM access_requests WHERE id = %s", id))
-	var node types.AccessRequest
+	row := s.QueryRow(ctx, sqlf.Sprintf("SELECT %s FROM access_requests WHERE id = %s", sqlf.Join(accessRequestColumns, ","), id))
+	node, err := scanAccessRequest(row)
 
-	if err := row.Scan(&node.ID, &node.CreatedAt, &node.UpdatedAt, &node.Name, &node.Email, &node.Status, &node.AdditionalInfo); err != nil {
+	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, &errAccessRequestNotFound{ID: id}
 		}
 		return nil, err
 	}
 
-	return &node, nil
+	return node, nil
 }
 
 func (s *accessRequestStore) Update(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
-	q := sqlf.Sprintf(accessRequestUpdateQuery, accessRequest.Status, accessRequest.ID)
-	var updated types.AccessRequest
+	q := sqlf.Sprintf(accessRequestUpdateQuery, accessRequest.Status, accessRequest.ID, sqlf.Join(accessRequestColumns, ","))
+	updated, err := scanAccessRequest(s.QueryRow(ctx, q))
 
-	if err := s.QueryRow(ctx, q).Scan(&updated.ID, &updated.CreatedAt, &updated.UpdatedAt, &updated.Name, &updated.Email, &updated.Status, &updated.AdditionalInfo); err != nil {
+	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &errAccessRequestNotFound{ID: accessRequest.ID}
 		}
 		return nil, errors.Wrap(err, "scanning access_request")
 	}
 
-	return &updated, nil
+	return updated, nil
 }
 
 func (s *accessRequestStore) Count(ctx context.Context, opt *AccessRequestsFilterOptions) (int, error) {
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM access_requests WHERE (%s)", sqlf.Join(opt.sqlConditions(), ") AND ("))
-	var count int
-	if err := s.QueryRow(ctx, q).Scan(&count); err != nil {
-		return 0, err
-	}
-	return count, nil
+	return basestore.ScanInt(s.QueryRow(ctx, q))
 }
 
 func (s *accessRequestStore) List(ctx context.Context, opt *AccessRequestsFilterAndListOptions) ([]*types.AccessRequest, error) {
@@ -244,25 +255,25 @@ func (s *accessRequestStore) List(ctx context.Context, opt *AccessRequestsFilter
 		return nil, err
 	}
 
-	query := sqlf.Sprintf(accessRequestListQuery, sqlf.Join(opt.sqlConditions(), ") AND ("), orderBy, opt.sqlLimit())
+	query := sqlf.Sprintf(accessRequestListQuery,
+		sqlf.Join(accessRequestColumns, ","),
+		sqlf.Join(opt.sqlConditions(), ") AND ("), orderBy, opt.sqlLimit())
 
-	rows, err := s.Query(ctx, query)
+	nodes, err := scanAccessRequests(s.Query(ctx, query))
 	if err != nil {
 		return nil, err
 	}
 
-	defer rows.Close()
-
-	nodes := make([]*types.AccessRequest, 0)
-	for rows.Next() {
-		var node types.AccessRequest
-
-		if err := rows.Scan(&node.ID, &node.CreatedAt, &node.UpdatedAt, &node.Name, &node.Email, &node.Status, &node.AdditionalInfo); err != nil {
-			return nil, err
-		}
-
-		nodes = append(nodes, &node)
-	}
-
 	return nodes, nil
 }
+
+func scanAccessRequest(sc dbutil.Scanner) (*types.AccessRequest, error) {
+	var accessRequest types.AccessRequest
+	if err := sc.Scan(&accessRequest.ID, &accessRequest.CreatedAt, &accessRequest.UpdatedAt, &accessRequest.Name, &accessRequest.Email, &accessRequest.Status, &accessRequest.AdditionalInfo); err != nil {
+		return nil, err
+	}
+
+	return &accessRequest, nil
+}
+
+var scanAccessRequests = basestore.NewSliceScanner(scanAccessRequest)
