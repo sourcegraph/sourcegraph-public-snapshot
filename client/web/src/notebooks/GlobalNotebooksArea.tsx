@@ -40,21 +40,19 @@ export interface GlobalNotebooksAreaProps
 export const GlobalNotebooksArea: FC<React.PropsWithChildren<GlobalNotebooksAreaProps>> = ({
     authenticatedUser,
     ...outerProps
-}) => {
-    return (
-        <Routes>
-            <Route index={true} element={<NotebooksListPage authenticatedUser={authenticatedUser} {...outerProps} />} />
-            <Route
-                path="new"
-                element={
-                    authenticatedUser ? (
-                        <CreateNotebookPage authenticatedUser={authenticatedUser} {...outerProps} />
-                    ) : (
-                        <Navigate to={EnterprisePageRoutes.Notebooks} replace={true} />
-                    )
-                }
-            />
-            <Route path=":id" element={<NotebookPage authenticatedUser={authenticatedUser} {...outerProps} />} />
-        </Routes>
-    )
-}
+}) => (
+    <Routes>
+        <Route index={true} element={<NotebooksListPage authenticatedUser={authenticatedUser} {...outerProps} />} />
+        <Route
+            path="new"
+            element={
+                authenticatedUser ? (
+                    <CreateNotebookPage authenticatedUser={authenticatedUser} {...outerProps} />
+                ) : (
+                    <Navigate to={EnterprisePageRoutes.Notebooks} replace={true} />
+                )
+            }
+        />
+        <Route path=":id" element={<NotebookPage authenticatedUser={authenticatedUser} {...outerProps} />} />
+    </Routes>
+)
