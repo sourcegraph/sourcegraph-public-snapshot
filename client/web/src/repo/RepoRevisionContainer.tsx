@@ -116,7 +116,7 @@ interface RepoRevisionBreadcrumbProps extends Pick<RepoRevisionContainerProps, '
     resolvedRevision: ResolvedRevision | undefined
 }
 
-type RepoType = 'repo' | 'packageRepo'
+export type RepoType = 'repo' | 'packageRepo'
 
 const packageIds = new Set([
     'npmPackages',
@@ -127,8 +127,8 @@ const packageIds = new Set([
     'goModules',
 ])
 
-const getRepoType = (repo: RepositoryFields): RepoType => {
-    if (packageIds.has(repo.externalRepository.serviceID)) {
+const getRepoType = (repo?: RepositoryFields): RepoType => {
+    if (repo && packageIds.has(repo.externalRepository.serviceID)) {
         return 'packageRepo'
     }
 
@@ -140,6 +140,7 @@ export const RepoRevisionContainerBreadcrumb: FC<RepoRevisionBreadcrumbProps> = 
 
     const [popoverOpen, setPopoverOpen] = useState(false)
     const togglePopover = useCallback(() => setPopoverOpen(previous => !previous), [])
+    const repoType = getRepoType(repo)
 
     const revisionLabel = (revision && revision === resolvedRevision?.commitID
         ? resolvedRevision?.commitID.slice(0, 7)
@@ -173,6 +174,7 @@ export const RepoRevisionContainerBreadcrumb: FC<RepoRevisionBreadcrumbProps> = 
                     <RevisionsPopover
                         repoId={repo?.id}
                         repoName={repoName}
+                        repoType={repoType}
                         defaultBranch={resolvedRevision?.defaultBranch}
                         currentRev={revision}
                         currentCommitID={resolvedRevision?.commitID}

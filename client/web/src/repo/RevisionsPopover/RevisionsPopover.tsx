@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 
 import { mdiClose } from '@mdi/js'
 
@@ -14,6 +14,7 @@ import { RevisionsPopoverCommits } from './RevisionsPopoverCommits'
 import { RevisionsPopoverReferences } from './RevisionsPopoverReferences'
 
 import styles from './RevisionsPopover.module.scss'
+import { RepoType } from '../RepoRevisionContainer'
 
 export interface RevisionsPopoverProps {
     repoId: Scalars['ID']
@@ -41,6 +42,8 @@ export interface RevisionsPopoverProps {
      * The selected revision node. Should be used to trigger side effects from clicking a node, e.g. calling `eventLogger`.
      */
     onSelect?: (node: GitRefFields | GitCommitAncestorFields) => void
+
+    repoType: RepoType
 }
 
 type RevisionsPopoverTabID = 'branches' | 'tags' | 'commits'
@@ -56,38 +59,36 @@ interface RevisionsPopoverTab {
 
 const LAST_TAB_STORAGE_KEY = 'RevisionsPopover.lastTab'
 
-const TABS: RevisionsPopoverTab[] = [
-    {
-        id: 'branches',
-        label: 'Branches',
-        noun: 'branch',
-        pluralNoun: 'branches',
-        type: GitRefType.GIT_BRANCH,
-        description: 'Find a revision from the listed branches',
-    },
-    {
-        id: 'tags',
-        label: 'Tags',
-        noun: 'tag',
-        pluralNoun: 'tags',
-        type: GitRefType.GIT_TAG,
-        description: 'Find a revision from the listed tags',
-    },
-    {
-        id: 'commits',
-        label: 'Commits',
-        noun: 'commit',
-        pluralNoun: 'commits',
-        description: 'Find a revision from the listed commits',
-    },
-]
+const BRANCHES_TAB: RevisionsPopoverTab = {
+    id: 'branches',
+    label: 'Branches',
+    noun: 'branch',
+    pluralNoun: 'branches',
+    type: GitRefType.GIT_BRANCH,
+    description: 'Find a revision from the listed branches',
+}
+const TAGS_TAB: RevisionsPopoverTab = {
+    id: 'tags',
+    label: 'Tags',
+    noun: 'tag',
+    pluralNoun: 'tags',
+    type: GitRefType.GIT_TAG,
+    description: 'Find a revision from the listed tags',
+}
+const COMMITS_TAB: RevisionsPopoverTab = {
+    id: 'commits',
+    label: 'Commits',
+    noun: 'commit',
+    pluralNoun: 'commits',
+    description: 'Find a revision from the listed commits',
+}
 
 /**
  * A popover that displays a searchable list of revisions (grouped by type) for
  * the current repository.
  */
 export const RevisionsPopover: React.FunctionComponent<React.PropsWithChildren<RevisionsPopoverProps>> = props => {
-    const { getPathFromRevision = replaceRevisionInURL } = props
+    const { getPathFromRevision = replaceRevisionInURL, repoType } = props
 
     useEffect(() => {
         eventLogger.logViewEvent('RevisionsPopover')
@@ -96,11 +97,19 @@ export const RevisionsPopover: React.FunctionComponent<React.PropsWithChildren<R
     const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
 
+    const tabs = useMemo(() => {
+        if (repoType === 'packageRepo') {
+            return [TAGS_TAB]
+        }
+
+        return [BRANCHES_TAB, TAGS_TAB, COMMITS_TAB]
+    }, [repoType])
+
     return (
         <ConnectionPopoverTabs
             className={styles.revisionsPopover}
             data-testid="revisions-popover"
-            defaultIndex={tabIndex}
+            defaultIndex={tabs.length === 1 ? 0 : tabIndex}
             onChange={handleTabsChange}
         >
             <TabList
@@ -116,14 +125,14 @@ export const RevisionsPopover: React.FunctionComponent<React.PropsWithChildren<R
                     </Button>
                 }
             >
-                {TABS.map(({ label, id }) => (
+                {tabs.map(({ label, id }) => (
                     <Tab key={id} data-tab-content={id}>
                         <span className="tablist-wrapper--tab-label">{label}</span>
                     </Tab>
                 ))}
             </TabList>
             <TabPanels>
-                {TABS.map(tab => (
+                {tabs.map(tab => (
                     <TabPanel key={tab.id} tabIndex={-1}>
                         {tab.type ? (
                             <RevisionsPopoverReferences
