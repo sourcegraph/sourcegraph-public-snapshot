@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -9,11 +10,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -61,9 +64,7 @@ func (r *schemaResolver) PackageRepoReferences(ctx context.Context, args *Packag
 		opts.Name = reposource.PackageName(*args.Name)
 	}
 
-	if args.First != nil {
-		opts.Limit = int(*args.First)
-	}
+	opts.Limit = int(args.GetFirst())
 
 	if args.After != nil {
 		if opts.After, err = graphqlutil.DecodeIntCursor(args.After); err != nil {
@@ -220,4 +221,129 @@ func dependencyRepoToRepoName(dep dependencies.PackageRepoReference) (repoName a
 	}
 
 	return repoName, nil
+}
+
+type packageMatcher struct {
+	PackageReferenceKind string
+	NameMatcher          *struct {
+		PackageGlob string
+	}
+	VersionMatcher *struct {
+		PackageName string
+		VersionGlob string
+	}
+}
+
+func (r *schemaResolver) PackageReposMatches(ctx context.Context, args struct {
+	Matcher packageMatcher
+	graphqlutil.ConnectionArgs
+	After *string
+},
+) (*packageRepoReferenceConnectionResolver, error) {
+	if args.Matcher.NameMatcher == nil && args.Matcher.VersionMatcher == nil {
+		return nil, errors.New("must provide either nameMatcher or versionMatcher")
+	}
+
+	kinds := []string{args.Matcher.PackageReferenceKind}
+
+	extsvcs, err := r.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{Kinds: kinds})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list external services")
+	}
+
+	if len(extsvcs) == 0 {
+		return nil, errors.Newf("no external service configured of kind %q", args.Matcher.PackageReferenceKind)
+	}
+
+	var (
+		matcher     repos.PackageMatcher
+		nameToMatch string
+	)
+	if args.Matcher.NameMatcher != nil {
+		matcher, err = repos.NewPackageNameGlob(args.Matcher.NameMatcher.PackageGlob)
+	} else {
+		matcher, err = repos.NewVersionGlob(args.Matcher.VersionMatcher.PackageName, args.Matcher.VersionMatcher.VersionGlob)
+		nameToMatch = args.Matcher.VersionMatcher.PackageName
+	}
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to compile glob")
+	}
+
+	limit := int(args.GetFirst())
+
+	var after int
+	if args.After != nil {
+		if after, err = graphqlutil.DecodeIntCursor(args.After); err != nil {
+			return nil, err
+		}
+	}
+
+	packageRepoScheme := externalServiceToPackageSchemeMap[args.Matcher.PackageReferenceKind]
+
+	depsService := dependencies.NewService(observation.NewContext(r.logger), r.db)
+
+	matchingPkgs := make([]shared.PackageRepoReference, 0, limit)
+	if args.Matcher.NameMatcher != nil {
+		lastID := after
+
+	gather:
+		for limit == 0 || len(matchingPkgs) < limit {
+			fmt.Println(limit == 0, len(matchingPkgs) < limit)
+			pkgs, _, err := depsService.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
+				Scheme: packageRepoScheme,
+				After:  lastID,
+				Limit:  limit,
+			})
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to list package repo references")
+			}
+
+			if len(pkgs) == 0 {
+				break
+			}
+
+			lastID = pkgs[len(pkgs)-1].ID
+
+			for _, pkg := range pkgs {
+				if matcher.Matches(string(pkg.Name), "") {
+					pkg.Versions = nil
+					matchingPkgs = append(matchingPkgs, pkg)
+				}
+				if limit != 0 && len(matchingPkgs) == limit {
+					break gather
+				}
+			}
+		}
+	} else {
+		pkgs, _, err := depsService.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
+			Scheme:        packageRepoScheme,
+			Name:          reposource.PackageName(nameToMatch),
+			ExactNameOnly: true,
+			Limit:         1,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to list package repo references")
+		}
+
+		if len(pkgs) == 0 {
+			return nil, errors.Newf("package repo reference not found for name %q", nameToMatch)
+		}
+
+		pkg := pkgs[0]
+		versions := pkg.Versions[:0]
+		for _, version := range pkg.Versions {
+			if matcher.Matches(string(pkg.Name), version.Version) {
+				versions = append(versions, version)
+			}
+		}
+		pkg.Versions = versions
+		matchingPkgs = append(matchingPkgs, pkg)
+	}
+
+	return &packageRepoReferenceConnectionResolver{
+		db:   r.db,
+		deps: matchingPkgs,
+		// bit of a lie lol
+		total: len(matchingPkgs),
+	}, nil
 }
