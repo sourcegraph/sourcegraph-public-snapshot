@@ -60,7 +60,7 @@ func composeMiddleware(middlewares ...*Middleware) *Middleware {
 
 // NormalizeUsername normalizes a proposed username into a format that meets Sourcegraph's
 // username formatting rules (based on, but not identical to
-// https://help.github.com/enterprise/2.11/admin/guides/user-management/using-ldap/#username-considerations-with-ldap):
+// https://web.archive.org/web/20180215000330/https://help.github.com/enterprise/2.11/admin/guides/user-management/using-ldap):
 //
 // - Any characters not in `[a-zA-Z0-9-._]` are replaced with `-`
 // - Usernames with exactly one `@` character are interpreted as an email address, so the username will be extracted by truncating at the `@` character.
@@ -131,4 +131,3 @@ var validUsername = lazyregexp.New(`^\w(?:(?:[\w.-]\w|\w)*-?|)$`)
 func IsValidUsername(name string) bool {
 	return validUsername.MatchString(name) && len(name) <= 255
 }
-
