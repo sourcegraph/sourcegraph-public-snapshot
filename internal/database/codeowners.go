@@ -110,9 +110,16 @@ func (s *codeownersStore) UpdateCodeownersFile(ctx context.Context, file *types.
 			sqlf.Join(conds, "AND"),
 		)
 
-		_, err := tx.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		res, err := tx.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 		if err != nil {
 			return err
+		}
+		rows, err := res.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if rows == 0 {
+			return CodeownersFileNotFoundError{args: file.RepoID}
 		}
 		return nil
 	})

@@ -52,6 +52,15 @@ func TestCodeowners_CreateUpdate(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
+
+	t.Run("update non existent codeowners file", func(t *testing.T) {
+		codeowners := newCodeownersFile("*", "notEveryone", api.RepoID(33))
+		err := store.UpdateCodeownersFile(ctx, codeowners)
+		if err == nil {
+			t.Fatal("expected not found error")
+		}
+		require.ErrorAs(t, CodeownersFileNotFoundError{}, &err)
+	})
 }
 
 func TestCodeowners_Get(t *testing.T) {
