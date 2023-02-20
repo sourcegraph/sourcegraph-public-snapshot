@@ -537,7 +537,7 @@ func (a *archiveReader) Close() error {
 
 // archiveURL returns a URL from which an archive of the given Git repository can
 // be downloaded from.
-func (c *clientImplementor) archiveURL(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (*url.URL, error) {
+func (c *clientImplementor) archiveURL(repo api.RepoName, opt ArchiveOptions) *url.URL {
 	q := url.Values{
 		"repo":    {string(repo)},
 		"treeish": {opt.Treeish},
@@ -554,7 +554,7 @@ func (c *clientImplementor) archiveURL(ctx context.Context, repo api.RepoName, o
 		Host:     addrForRepo,
 		Path:     "/archive",
 		RawQuery: q.Encode(),
-	}, nil
+	}
 }
 
 type badRequestError struct{ error }
