@@ -11,12 +11,6 @@
     isolation: isolate;
 }
 
-.panel {
-    isolation: isolate;
-    min-height: 6rem;
-    max-height: calc(100% - 3rem);
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    background-color: var(--color-bg-1);
+:global(.panel-react-portal) {
+    display: contents;
 }

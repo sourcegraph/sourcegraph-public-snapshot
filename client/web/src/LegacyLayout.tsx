@@ -4,7 +4,6 @@ import classNames from 'classnames'
 import { matchPath, useLocation, Route, Routes, Navigate } from 'react-router-dom-v5-compat'
 import { Observable } from 'rxjs'
 
-import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
 import { isMacPlatform } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -15,8 +14,7 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps, SettingsSubjectCommonFields } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { FeedbackPrompt, LoadingSpinner, Panel } from '@sourcegraph/wildcard'
+import { FeedbackPrompt, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from './auth'
 import type { BatchChangesProps } from './batches'
@@ -60,7 +58,6 @@ import type { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import type { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import type { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { getExperimentalFeatures } from './util/get-experimental-features'
-import { parseBrowserRepoURL } from './util/url'
 
 import styles from './Layout.module.scss'
 
@@ -277,25 +274,14 @@ export const LegacyLayout: React.FunctionComponent<React.PropsWithChildren<Legac
                             )}
                         </Routes>
                     </AppRouterContainer>
+
+                    {/**
+                     * The portal root is inside the suspense boudnary so that it doesn't render
+                     * when the app is loading.
+                     */}
+                    <div className="panel-react-portal" />
                 </Suspense>
             </ErrorBoundary>
-            {parseQueryAndHash(location.search, location.hash).viewState && location.pathname !== PageRoutes.SignIn && (
-                <Panel
-                    className={styles.panel}
-                    position="bottom"
-                    defaultSize={350}
-                    storageKey="panel-size"
-                    ariaLabel="References panel"
-                    id="references-panel"
-                >
-                    <TabbedPanelContent
-                        {...props}
-                        {...themeProps}
-                        repoName={`git://${parseBrowserRepoURL(location.pathname).repoName}`}
-                        fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
-                    />
-                </Panel>
-            )}
             <GlobalContributions
                 key={3}
                 extensionsController={props.extensionsController}
