@@ -756,7 +756,6 @@ type ChangesetResolver interface {
 	// State returns a value of type *btypes.ChangesetState.
 	State() string
 	BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
-	OwnedByBatchChange() *graphql.ID
 
 	ToExternalChangeset() (ExternalChangesetResolver, bool)
 	ToHiddenExternalChangeset() (HiddenExternalChangesetResolver, bool)
@@ -782,6 +781,8 @@ type ExternalChangesetResolver interface {
 	Body(context.Context) (*string, error)
 	Author() (*PersonResolver, error)
 	ExternalURL() (*externallink.Resolver, error)
+
+	OwnedByBatchChange() *graphql.ID
 
 	// If the changeset is a fork, this corresponds to the namespace of the fork.
 	ForkNamespace() *string
