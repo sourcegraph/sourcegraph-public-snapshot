@@ -4,10 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	logger "github.com/sourcegraph/log"
+
+	gv "github.com/hashicorp/go-version"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -335,6 +338,7 @@ SELECT
 	vap.vulnerability_id,
 	vap.version_constraint
 FROM vulnerability_affected_packages vap
+-- TODO - refine this match
 JOIN lsif_references r ON r.name LIKE vap.package_name
 WHERE
 	-- TODO - java mapping
@@ -359,7 +363,19 @@ var scanFilteredVulnerabilityMatches = basestore.NewFilteredSliceScanner(func(s 
 })
 
 func versionMatchesConstraints(version string, constraints []string) bool {
-	// TODO - actually compare constraints
-	fmt.Printf("> %v %v\n", version, constraints)
-	return true
+	v, err := gv.NewVersion(version)
+	if err != nil {
+		// TODO - log like an adult, you idiot.
+		fmt.Printf("CANNOT PARSE VERSION: %q\n", version)
+		return false
+	}
+
+	constraint, err := gv.NewConstraint(strings.Join(constraints, ","))
+	if err != nil {
+		// TODO - log like an adult, you idiot.
+		fmt.Printf("CANNOT PARSE CONSTRAINT: %q\n", version)
+		return false
+	}
+
+	return constraint.Check(v)
 }
