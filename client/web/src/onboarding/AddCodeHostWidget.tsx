@@ -22,12 +22,22 @@ const EXTERNAL_SERVICES_TOTAL_COUNT = gql`
     }
 `
 
+export function getShouldShowAddCodeHostWidget(
+    isAddCodeHostWidgetEnabled?: boolean,
+    isSiteAdmin?: boolean,
+    externalServicesCount?: number
+): boolean {
+    return !!isAddCodeHostWidgetEnabled && !!isSiteAdmin && externalServicesCount === 0
+}
+
 export function useShouldShowAddCodeHostWidget(authenticatedUser: AuthenticatedUser | null): boolean | undefined {
     const [isAddCodeHostWidgetEnabled] = useFeatureFlag('plg-enable-add-codehost-widget', false)
     const { data } = useQuery<ExternalServicesTotalCountResult>(EXTERNAL_SERVICES_TOTAL_COUNT, {})
 
-    return (
-        isAddCodeHostWidgetEnabled && authenticatedUser?.siteAdmin && !!data && data.externalServices.totalCount === 0
+    return getShouldShowAddCodeHostWidget(
+        isAddCodeHostWidgetEnabled,
+        authenticatedUser?.siteAdmin,
+        data?.externalServices?.totalCount
     )
 }
 

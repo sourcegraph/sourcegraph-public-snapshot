@@ -2,7 +2,7 @@ import React, { createContext, useEffect } from 'react'
 
 import { logger } from '@sourcegraph/common'
 
-import { requestGraphQL } from '../backend/graphql'
+import { getWebGraphQLClient, requestGraphQL } from '../backend/graphql'
 
 import { removeFeatureFlagOverride, setFeatureFlagOverride } from './lib/feature-flag-local-overrides'
 import { FeatureFlagClient } from './lib/FeatureFlagClient'
@@ -50,7 +50,7 @@ const FeatureFlagsLocalOverrideAgent = React.memo(() => {
 const MINUTE = 60000
 
 const featureFlagsContextValue = {
-    client: new FeatureFlagClient(requestGraphQL, MINUTE * 10),
+    client: new FeatureFlagClient(getWebGraphQLClient, MINUTE * 10),
 } satisfies FeatureFlagsContextValue
 
 interface FeatureFlagsProviderProps {

@@ -3,7 +3,7 @@ import 'focus-visible'
 import * as React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { ApolloProvider } from '@apollo/client'
+import { ApolloProvider, SuspenseCache } from '@apollo/client'
 import ServerIcon from 'mdi-react/ServerIcon'
 import { RouterProvider, createBrowserRouter } from 'react-router-dom'
 import { combineLatest, from, Subscription, fromEvent, of, Subject, Observable } from 'rxjs'
@@ -122,6 +122,13 @@ const WILDCARD_THEME: WildcardTheme = {
 setLinkComponent(RouterLink)
 
 export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
+    useEffect(() => {
+        console.log('SourcegraphWebApp mount')
+        return () => {
+            console.log('SourcegraphWebApp unmount')
+        }
+    }, [])
+
     const [subscriptions] = useState(() => new Subscription())
     const [userRepositoriesUpdates] = useState(() => new Subject<void>())
     const [platformContext] = useState(() => createPlatformContext())
@@ -364,6 +371,16 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
         return null
     }
 
+    console.log('SourcegraphWebApp render')
+
+    /**
+     * Because the SourcegraphWebApp re-renderes multiple times we re-create BrowserRouter multiple times,
+     * which results into loader function being called multiple time. ;(
+     *
+     * We should move all the data updates out of this component, ideally outside of React.
+     * We can leverage `useOutletContext` to pass data from application shell component to
+     * page components and avoid re-recreating the router.
+     */
     const router = createBrowserRouter([
         {
             element: (
@@ -403,10 +420,11 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
             ),
             children: props.routes
                 .map(
-                    ({ condition = () => true, render, path }) =>
+                    ({ condition = () => true, element, loader, render, path }) =>
                         condition(context) && {
                             path: path.slice(1), // remove leading slash
-                            element: render(context),
+                            element: element || render(context),
+                            loader,
                         }
                 )
                 .filter(isTruthy),
@@ -418,7 +436,7 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
             components={[
                 // `ComponentsComposer` provides children via `React.cloneElement`.
                 /* eslint-disable react/no-children-prop, react/jsx-key */
-                <ApolloProvider client={graphqlClient} children={undefined} />,
+                <ApolloProvider client={graphqlClient} children={undefined} suspenseCache={suspenseCache} />,
                 <WildcardThemeContext.Provider value={WILDCARD_THEME} />,
                 <ErrorBoundary location={null} />,
                 <TraceSpanProvider name={SharedSpanName.AppMount} />,
@@ -435,3 +453,6 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
         </ComponentsComposer>
     )
 }
+
+// TODO: move to graphql backend.ts file
+const suspenseCache = new SuspenseCache()

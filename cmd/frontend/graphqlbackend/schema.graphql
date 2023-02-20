@@ -1633,7 +1633,7 @@ type Query {
     Evaluates a feature flag for the current user
     Returns null if feature flag does not exist
     """
-    evaluateFeatureFlag(flagName: String!): Boolean
+    evaluateFeatureFlag(flagName: String!): EvaluatedFeatureFlag!
 
     """
     Retrieve all evaluated feature flags for the current user
@@ -2153,7 +2153,12 @@ type FeatureFlagOverride {
 An evaluated feature flag is any feature flag (static or random) that has been evaluated to
 a concrete value for a given viewer.
 """
-type EvaluatedFeatureFlag {
+type EvaluatedFeatureFlag implements Node {
+    """
+    The unique identifier of this feature flag.
+    """
+    id: ID!
+
     """
     The name of the feature flag
     """

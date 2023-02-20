@@ -115,8 +115,14 @@ func unmarshalOverrideID(id graphql.ID) (spec overrideSpec, err error) {
 }
 
 type EvaluatedFeatureFlagResolver struct {
+	id    graphql.ID
 	name  string
 	value bool
+}
+
+// We need unique node IDs to enable proper client side cache!
+func (e *EvaluatedFeatureFlagResolver) ID() graphql.ID {
+	return MarshalFeatureFlagID(e.name)
 }
 
 func (e *EvaluatedFeatureFlagResolver) Name() string {
@@ -127,14 +133,17 @@ func (e *EvaluatedFeatureFlagResolver) Value() bool {
 	return e.value
 }
 
+func MarshalFeatureFlagID(id string) graphql.ID { return relay.MarshalID("FeatureFlag", id) }
+
 func (r *schemaResolver) EvaluateFeatureFlag(ctx context.Context, args *struct {
 	FlagName string
-}) *bool {
+}) *EvaluatedFeatureFlagResolver {
 	flagSet := featureflag.FromContext(ctx)
 	if v, ok := flagSet.GetBool(args.FlagName); ok {
-		return &v
+		return &EvaluatedFeatureFlagResolver{id: MarshalFeatureFlagID(args.FlagName), name: args.FlagName, value: v}
 	}
-	return nil
+
+	return &EvaluatedFeatureFlagResolver{id: MarshalFeatureFlagID(args.FlagName), name: args.FlagName, value: false}
 }
 
 func (r *schemaResolver) EvaluatedFeatureFlags(ctx context.Context) []*EvaluatedFeatureFlagResolver {
@@ -144,7 +153,7 @@ func (r *schemaResolver) EvaluatedFeatureFlags(ctx context.Context) []*Evaluated
 func evaluatedFlagsToResolvers(input map[string]bool) []*EvaluatedFeatureFlagResolver {
 	res := make([]*EvaluatedFeatureFlagResolver, 0, len(input))
 	for k, v := range input {
-		res = append(res, &EvaluatedFeatureFlagResolver{name: k, value: v})
+		res = append(res, &EvaluatedFeatureFlagResolver{id: MarshalFeatureFlagID(k), name: k, value: v})
 	}
 	return res
 }

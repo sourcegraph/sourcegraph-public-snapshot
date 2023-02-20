@@ -18,7 +18,7 @@ import { enterpriseRepoRevisionContainerRoutes } from './repo/enterpriseRepoRevi
 import { enterpriseRepoHeaderActionButtons } from './repo/repoHeaderActionButtons'
 import { enterpriseRepoSettingsAreaRoutes } from './repo/settings/routes'
 import { enterpriseRepoSettingsSidebarGroups } from './repo/settings/sidebaritems'
-import { enterpriseRoutes } from './routes'
+import { enterpriseRoutes } from './storm/routes'
 import { enterpriseSiteAdminOverviewComponents } from './site-admin/overview/overviewComponents'
 import { enterpriseSiteAdminAreaRoutes } from './site-admin/routes'
 import { enterpriseSiteAdminSidebarGroups } from './site-admin/sidebaritems'

@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 
 import {
     gql as apolloGql,
+    useSuspenseQuery_experimental,
     useQuery as useApolloQuery,
     useMutation as useApolloMutation,
     useLazyQuery as useApolloLazyQuery,
@@ -34,6 +35,7 @@ export const getDocumentNode = (document: RequestDocument): DocumentNode => {
 const useDocumentNode = (document: RequestDocument): DocumentNode =>
     useMemo(() => getDocumentNode(document), [document])
 
+// TODO: fix Typescript errors caused by @apollo/client upgrade
 export interface QueryHookOptions<TData = any, TVariables = OperationVariables>
     extends Omit<ApolloQueryHookOptions<TData, TVariables>, 'context'> {
     /**
@@ -59,6 +61,16 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
     const documentNode = useDocumentNode(query)
     return useApolloQuery(documentNode, options)
 }
+
+export function useSuspenseQuery<TData = any, TVariables extends OperationVariables = OperationVariables>(
+    query: RequestDocument,
+    options: QueryHookOptions<TData, TVariables>
+): QueryResult<TData, TVariables> {
+    const documentNode = useDocumentNode(query)
+
+    return useSuspenseQuery_experimental(documentNode, options)
+}
+
 export function useLazyQuery<TData = any, TVariables = OperationVariables>(
     query: RequestDocument,
     options: QueryHookOptions<TData, TVariables>

@@ -348,3 +348,8 @@ func (r *NodeResolver) ToPermission() (PermissionResolver, bool) {
 	n, ok := r.Node.(PermissionResolver)
 	return n, ok
 }
+
+func (r *NodeResolver) ToEvaluatedFeatureFlag() (*EvaluatedFeatureFlagResolver, bool) {
+	n, ok := r.Node.(*EvaluatedFeatureFlagResolver)
+	return n, ok
+}
