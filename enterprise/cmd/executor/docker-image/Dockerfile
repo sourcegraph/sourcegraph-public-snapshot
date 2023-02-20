@@ -21,8 +21,7 @@ ENV EXECUTOR_USE_FIRECRACKER=false
 RUN apk add --no-cache \
     # Minimal version requirement to address vulnerabilities
     # https://github.blog/2023-02-14-git-security-vulnerabilities-announced-3/
-    # backported fix for 3.14 https://security.alpinelinux.org/vuln/CVE-2023-22490
-    'git>=2.32.6-r0' \
+    'git>=2.39.2-r0' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main \
     docker \
     ca-certificates
 
