@@ -1862,6 +1862,10 @@ type TeamMember struct {
 }
 
 type CodeownersFile struct {
+	CreatedAt time.Time
+	UpdatedAt time.Time
+
+	RepoID   api.RepoID
 	Contents string
 	Proto    *codeownerspb.File
 }

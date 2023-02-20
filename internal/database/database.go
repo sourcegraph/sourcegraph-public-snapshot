@@ -293,3 +293,7 @@ func (d *db) ZoektRepos() ZoektReposStore {
 func (d *db) Teams() TeamStore {
 	return TeamsWith(d.Store)
 }
+
+func (d *db) Codeowners() CodeownersStore {
+	return CodeownersWith(d.Store)
+}
