@@ -345,7 +345,7 @@ func backfillWhere(args BackfillQueueArgs) []*sqlf.Query {
 	where := []*sqlf.Query{sqlf.Sprintf("s.deleted_at IS NULL")}
 	if args.TextSearch != nil && len(*args.TextSearch) > 0 {
 		likeStr := "%" + *args.TextSearch + "%"
-		where = append(where, sqlf.Sprintf("(title LIKE %s OR label LIKE %s)", likeStr, likeStr))
+		where = append(where, sqlf.Sprintf("(title ILIKE %s OR label ILIKE %s)", likeStr, likeStr))
 	}
 
 	if args.States != nil && len(*args.States) > 0 {
@@ -374,9 +374,16 @@ func (s *BackfillStore) GetBackfillQueueInfo(ctx context.Context, args BackfillQ
 		pagination = *args.PaginationArgs
 	}
 	p := pagination.SQL()
-	// Add in pagination where clause
-	if p.Where != nil {
-		where = append(where, p.Where)
+
+	// The underlying pagination helper makes the assumption that any sorted column is both non null and unique
+	// therefore we can't use the where clause it generates.  Below builds the correct where from the before or after
+	// from the cursor
+
+	if pagination.After != nil {
+		where = append(where, sqlf.Sprintf("isb.id > %s", *pagination.After))
+	}
+	if pagination.Before != nil {
+		where = append(where, sqlf.Sprintf(" isb.id < %s", *pagination.Before))
 	}
 	query := sqlf.Sprintf(backfillQueueSQL, sqlf.Sprintf("WHERE %s", sqlf.Join(where, " AND ")))
 	query = p.AppendOrderToQuery(query)
@@ -482,7 +489,7 @@ select isb.id,
        query,
        state.backfill_state,
        round(ri.percent_complete *100) percent_complete,
-       isb.estimated_cost,
+       round(isb.estimated_cost),
        ri.runtime_duration runtime_duration,
        ri.created_at backfill_created_at,
        ri.started_at backfill_started_at,

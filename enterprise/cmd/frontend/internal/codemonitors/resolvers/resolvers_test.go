@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -207,7 +208,7 @@ func TestIsAllowedToEdit(t *testing.T) {
 		}
 
 		_, err = r.UpdateCodeMonitor(ctx, args)
-		require.EqualError(t, err, "update namespace: must be authenticated as the authorized user or site admin")
+		require.EqualError(t, err, fmt.Sprintf("update namespace: %s", auth.ErrMustBeSiteAdminOrSameUser.Error()))
 	})
 }
 

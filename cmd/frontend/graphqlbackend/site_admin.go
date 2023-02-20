@@ -185,6 +185,7 @@ func (r *schemaResolver) DeleteUsers(ctx context.Context, args *struct {
 	// NOTE: Practically, we don't reuse the ID for any new users, and the situation of left-over pending permissions
 	// is possible but highly unlikely. Therefore, there is no need to roll back user deletion even if this step failed.
 	// This call is purely for the purpose of cleanup.
+	// TODO: Add user deletion and this to a transaction. See SCIM's user_delete.go for an example.
 	if err := r.db.Authz().RevokeUserPermissionsList(ctx, revokeUserPermissionsArgsList); err != nil {
 		return nil, err
 	}

@@ -12,7 +12,7 @@ import (
 const testPlan Plan = "test"
 
 func init() {
-	allPlans = append(allPlans, testPlan)
+	AllPlans = append(AllPlans, testPlan)
 }
 
 func TestPlan_isKnown(t *testing.T) {

@@ -353,15 +353,15 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 	t.Cleanup(reset)
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 123})
 
-	t.Run("authenticated as non-admin", func(t *testing.T) {
+	t.Run("authenticated as non-admin and not the same user", func(t *testing.T) {
 		users := database.NewStrictMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 123}, nil)
 
 		db := edb.NewStrictMockEnterpriseDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		result, err := (&Resolver{db: db}).ScheduleUserPermissionsSync(ctx, &graphqlbackend.UserPermissionsSyncArgs{})
-		if want := auth.ErrMustBeSiteAdmin; err != want {
+		result, err := (&Resolver{db: db}).ScheduleUserPermissionsSync(ctx, &graphqlbackend.UserPermissionsSyncArgs{User: graphqlbackend.MarshalUserID(1)})
+		if want := auth.ErrMustBeSiteAdminOrSameUser; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
 		if result != nil {
@@ -383,8 +383,8 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 		called := false
 		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
 			called = true
-			if len(req.UserIDs) != 1 && req.UserIDs[0] == userID {
-				t.Errorf("unexpected UserIDs argument. want=%d have=%d", userID, req.UserIDs[0])
+			if len(req.UserIDs) != 1 || req.UserIDs[0] != userID {
+				t.Errorf("unexpected UserIDs argument. want=%d have=%v", userID, req.UserIDs)
 			}
 			if req.TriggeredByUserID != 123 {
 				t.Errorf("unexpected TriggeredByUserID argument. want=%d have=%d", 1, req.TriggeredByUserID)
@@ -394,6 +394,38 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 
 		_, err := r.ScheduleUserPermissionsSync(actor.WithActor(context.Background(), &actor.Actor{UID: 123}),
 			&graphqlbackend.UserPermissionsSyncArgs{User: graphqlbackend.MarshalUserID(userID)})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !called {
+			t.Fatal("expected SchedulePermsSync to be called but wasn't")
+		}
+	})
+
+	t.Run("queue the same user, not a site-admin", func(t *testing.T) {
+		userID := int32(123)
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: userID}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		r := &Resolver{db: db}
+
+		called := false
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
+			called = true
+			if len(req.UserIDs) != 1 || req.UserIDs[0] != userID {
+				t.Errorf("unexpected UserIDs argument. want=%d have=%v", userID, req.UserIDs)
+			}
+			if req.TriggeredByUserID != userID {
+				t.Errorf("unexpected TriggeredByUserID argument. want=%d have=%d", 1, req.TriggeredByUserID)
+			}
+		}
+		t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
+
+		_, err := r.ScheduleUserPermissionsSync(actor.WithActor(context.Background(), &actor.Actor{UID: 123}),
+			&graphqlbackend.UserPermissionsSyncArgs{User: graphqlbackend.MarshalUserID(123)})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1264,20 +1296,47 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 }
 
 func TestResolver_UserPermissionsInfo(t *testing.T) {
-	t.Run("authenticated as non-admin", func(t *testing.T) {
+	t.Run("authenticated as non-admin, asking not for self", func(t *testing.T) {
+		user := &types.User{ID: 42}
+
 		users := database.NewStrictMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(user, nil)
+		users.GetByIDFunc.SetDefaultReturn(user, nil)
 
 		db := edb.NewStrictMockEnterpriseDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&Resolver{db: db}).UserPermissionsInfo(ctx, graphqlbackend.MarshalRepositoryID(1))
-		if want := auth.ErrMustBeSiteAdmin; err != want {
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: user.ID})
+		result, err := (&Resolver{db: db}).UserPermissionsInfo(ctx, graphqlbackend.MarshalUserID(1))
+		if want := auth.ErrMustBeSiteAdminOrSameUser; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
 		if result != nil {
 			t.Errorf("result: want nil but got %v", result)
+		}
+	})
+
+	t.Run("authenticated as non-admin, asking for self succeeds", func(t *testing.T) {
+		user := &types.User{ID: 42}
+
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(user, nil)
+		users.GetByIDFunc.SetDefaultReturn(user, nil)
+
+		perms := edb.NewStrictMockPermsStore()
+		perms.LoadUserPermissionsFunc.SetDefaultReturn(nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.PermsFunc.SetDefaultReturn(perms)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: user.ID})
+		result, err := (&Resolver{db: db}).UserPermissionsInfo(ctx, graphqlbackend.MarshalUserID(user.ID))
+		if err != nil {
+			t.Errorf("err: want nil but got %v", err)
+		}
+		if result == nil {
+			t.Errorf("result: want non-nil but got nil")
 		}
 	})
 
