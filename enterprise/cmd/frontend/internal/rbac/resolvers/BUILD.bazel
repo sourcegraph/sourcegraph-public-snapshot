@@ -43,6 +43,7 @@ go_test(
         "//cmd/frontend/graphqlbackend",
         "//enterprise/cmd/frontend/internal/rbac/resolvers/apitest",
         "//internal/actor",
+        "//internal/auth",
         "//internal/database",
         "//internal/database/dbtest",
         "//internal/gqlutil",

@@ -131,7 +131,7 @@ loop:
 		for _, job := range jobs {
 			// We don't check job with ID=4 because it is a user sync job which is not
 			// processed by current worker.
-			if job.ID != 4 && (job.State == "queued" || job.State == "processing") {
+			if job.ID != 4 && (job.State == database.PermissionSyncJobStateQueued || job.State == database.PermissionSyncJobStateProcessing) {
 				// wait and retry
 				time.Sleep(500 * time.Millisecond)
 				continue loop
@@ -172,7 +172,7 @@ loop:
 
 		// Check that repo sync job was completed and results were saved.
 		if jobID == 2 {
-			require.Equal(t, "completed", job.State)
+			require.Equal(t, database.PermissionSyncJobStateCompleted, job.State)
 			require.Nil(t, job.FailureMessage)
 			require.Equal(t, 1, job.PermissionsAdded)
 			require.Equal(t, 2, job.PermissionsRemoved)
@@ -191,7 +191,7 @@ loop:
 
 		// Check that user sync job wasn't picked up by repo sync worker.
 		if jobID == 4 {
-			require.Equal(t, "queued", job.State)
+			require.Equal(t, database.PermissionSyncJobStateQueued, job.State)
 			require.Nil(t, job.FailureMessage)
 			require.Equal(t, 0, job.PermissionsAdded)
 			require.Equal(t, 0, job.PermissionsRemoved)
@@ -262,7 +262,7 @@ loop:
 		for _, job := range jobs {
 			// We don't check job with ID=3 because it is a repo sync job which is not
 			// processed by current worker.
-			if job.ID != 4 && (job.State == "queued" || job.State == "processing") {
+			if job.ID != 4 && (job.State == database.PermissionSyncJobStateQueued || job.State == database.PermissionSyncJobStateProcessing) {
 				// wait and retry
 				time.Sleep(500 * time.Millisecond)
 				continue loop
@@ -302,7 +302,7 @@ loop:
 		}
 
 		if jobID == 2 {
-			require.Equal(t, "completed", job.State)
+			require.Equal(t, database.PermissionSyncJobStateCompleted, job.State)
 			require.Nil(t, job.FailureMessage)
 			require.Equal(t, 1, job.PermissionsAdded)
 			require.Equal(t, 2, job.PermissionsRemoved)
@@ -322,7 +322,7 @@ loop:
 
 		// Check that repo sync job wasn't picked up by user sync worker.
 		if jobID == 4 {
-			require.Equal(t, "queued", job.State)
+			require.Equal(t, database.PermissionSyncJobStateQueued, job.State)
 			require.Nil(t, job.FailureMessage)
 			require.Equal(t, 0, job.PermissionsAdded)
 			require.Equal(t, 0, job.PermissionsRemoved)
