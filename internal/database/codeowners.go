@@ -25,7 +25,7 @@ type CodeownersStore interface {
 	UpdateCodeownersFile(ctx context.Context, codeowners *types.CodeownersFile) error
 	GetCodeownersForRepo(ctx context.Context, id api.RepoID) (*types.CodeownersFile, error)
 	DeleteCodeownersForRepo(ctx context.Context, id api.RepoID) error
-	ListCodeowners(ctx context.Context) ([]*types.CodeownersFile, error)
+	ListCodeowners(ctx context.Context, opts ListCodeownersOpts) ([]*types.CodeownersFile, int32, error)
 }
 
 type codeownersStore struct {
@@ -187,10 +187,49 @@ DELETE FROM codeowners
 WHERE %s
 `
 
-func (s *codeownersStore) ListCodeowners(ctx context.Context) ([]*types.CodeownersFile, error) {
-	//TODO implement me
-	panic("implement me")
+type ListCodeownersOpts struct {
+	*LimitOffset
+
+	// Only return codeowners past this cursor (repoID).
+	Cursor int32
 }
+
+func (s *codeownersStore) ListCodeowners(ctx context.Context, opts ListCodeownersOpts) (_ []*types.CodeownersFile, next int32, err error) {
+	if opts.LimitOffset != nil && opts.Limit > 0 {
+		opts.Limit++
+	}
+	where := []*sqlf.Query{
+		sqlf.Sprintf("repo_id >= %s", opts.Cursor),
+	}
+
+	q := sqlf.Sprintf(
+		listCodeownersFilesQueryFmtStr,
+		sqlf.Join(codeownersColumns, ","),
+		sqlf.Join(where, "AND"),
+		opts.LimitOffset.SQL(),
+	)
+
+	codeownersFiles, err := scanCodeowners(s.Query(ctx, q))
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if opts.LimitOffset != nil && opts.Limit > 0 && len(codeownersFiles) == opts.Limit {
+		next = int32(codeownersFiles[len(codeownersFiles)-1].RepoID)
+		codeownersFiles = codeownersFiles[:len(codeownersFiles)-1]
+	}
+
+	return codeownersFiles, next, nil
+}
+
+const listCodeownersFilesQueryFmtStr = `
+SELECT %s
+FROM codeowners 
+WHERE %s
+ORDER BY 
+    repo_id ASC 
+%s
+`
 
 func CodeownersWith(other basestore.ShareableStore) CodeownersStore {
 	return &codeownersStore{

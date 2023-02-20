@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -82,7 +83,7 @@ func TestCodeowners_CreateUpdateDelete(t *testing.T) {
 	})
 }
 
-func TestCodeowners_Get(t *testing.T) {
+func TestCodeowners_GetList(t *testing.T) {
 	ctx := context.Background()
 
 	logger := logtest.NoOp(t)
@@ -90,45 +91,76 @@ func TestCodeowners_Get(t *testing.T) {
 
 	store := db.Codeowners()
 
-	t.Run("not found", func(t *testing.T) {
-		_, err := store.GetCodeownersForRepo(ctx, api.RepoID(100))
-		if err == nil {
-			t.Fatal("expected an error")
+	createFile := func(file *types.CodeownersFile) *types.CodeownersFile {
+		if err := store.CreateCodeownersFile(ctx, file); err != nil {
+			t.Fatal(err)
 		}
-		require.ErrorAs(t, CodeownersFileNotFoundError{}, &err)
+		return file
+	}
+
+	repo11Codeowners := createFile(newCodeownersFile("*", "person", api.RepoID(11)))
+	repo102Codeowners := createFile(newCodeownersFile("*", "everyone", api.RepoID(102)))
+
+	t.Run("get", func(t *testing.T) {
+		t.Run("not found", func(t *testing.T) {
+			_, err := store.GetCodeownersForRepo(ctx, api.RepoID(100))
+			if err == nil {
+				t.Fatal("expected an error")
+			}
+			require.ErrorAs(t, CodeownersFileNotFoundError{}, &err)
+		})
+		t.Run("get by repo ID", func(t *testing.T) {
+			got, err := store.GetCodeownersForRepo(ctx, api.RepoID(11))
+			if err != nil {
+				t.Fatal(err)
+			}
+			require.Equal(t, repo11Codeowners, got)
+		})
+		t.Run("get by repo ID after update", func(t *testing.T) {
+			got, err := store.GetCodeownersForRepo(ctx, api.RepoID(102))
+			if err != nil {
+				t.Fatal(err)
+			}
+			require.Equal(t, repo102Codeowners, got)
+			repo102Codeowners.UpdatedAt = time.Now().UTC()
+			if err := store.UpdateCodeownersFile(ctx, repo102Codeowners); err != nil {
+				t.Fatal(err)
+			}
+			got, err = store.GetCodeownersForRepo(ctx, api.RepoID(102))
+			if err != nil {
+				t.Fatal(err)
+			}
+			require.Equal(t, repo102Codeowners, got)
+		})
 	})
 
-	t.Run("get by repo ID", func(t *testing.T) {
-		codeownersFile := newCodeownersFile("*", "person", api.RepoID(11))
-		if err := store.CreateCodeownersFile(ctx, codeownersFile); err != nil {
-			t.Fatal("creating codeowners failed", err)
-		}
-		got, err := store.GetCodeownersForRepo(ctx, api.RepoID(11))
-		if err != nil {
-			t.Fatal(err)
-		}
-		require.Equal(t, codeownersFile, got)
-	})
+	t.Run("list", func(t *testing.T) {
+		all := []*types.CodeownersFile{repo11Codeowners, repo102Codeowners}
 
-	t.Run("get by repo ID after update", func(t *testing.T) {
-		codeownersFile := newCodeownersFile("*", "everyone", api.RepoID(102))
-		if err := store.CreateCodeownersFile(ctx, codeownersFile); err != nil {
-			t.Fatal(err)
-		}
-		got, err := store.GetCodeownersForRepo(ctx, api.RepoID(102))
+		// List all
+		have, cursor, err := store.ListCodeowners(ctx, ListCodeownersOpts{})
 		if err != nil {
 			t.Fatal(err)
 		}
-		require.Equal(t, codeownersFile, got)
-		codeownersFile.UpdatedAt = time.Now().UTC()
-		if err := store.UpdateCodeownersFile(ctx, codeownersFile); err != nil {
-			t.Fatal(err)
+		require.Equal(t, all, have)
+		if cursor != 0 {
+			t.Fatal("incorrect cursor returned")
 		}
-		got, err = store.GetCodeownersForRepo(ctx, api.RepoID(102))
-		if err != nil {
-			t.Fatal(err)
+
+		// List with cursor pagination
+		var lastCursor int32
+		for i := 0; i < len(all); i++ {
+			t.Run(fmt.Sprintf("list codeowners n#%d", i), func(t *testing.T) {
+				opts := ListCodeownersOpts{LimitOffset: &LimitOffset{Limit: 1}, Cursor: lastCursor}
+				cf, c, err := store.ListCodeowners(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+				lastCursor = c
+				fmt.Println(cf[0])
+				assert.Equal(t, all[i], cf[0])
+			})
 		}
-		require.Equal(t, codeownersFile, got)
 	})
 }
 
