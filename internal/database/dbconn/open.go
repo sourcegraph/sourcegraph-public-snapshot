@@ -138,6 +138,30 @@ func (d *extendedDriver) Open(str string) (driver.Conn, error) {
 	if _, ok := d.Driver.(*sqlhooks.Driver); !ok {
 		return nil, errors.New("sql driver is not a sqlhooks.Driver")
 	}
+
+	// Driver.Open() is called during after we first attempt to connect to the database
+	// during startup time in `dbconn.open()`, where the manager will persist the config internally,
+	// and also call the underlying pgx RegisterConnConfig() to register the config to pgx driver.
+	// Therefore, this should never be nil.
+	cfg := manager.getConfig(str)
+	if cfg == nil {
+		return nil, errors.Newf("no config found %q", str)
+	}
+
+	if pgConnectionUpdater != "" {
+		u, ok := connectionUpdaters[pgConnectionUpdater]
+		if !ok {
+			return nil, errors.Errorf("unknown connection updater %q", pgConnectionUpdater)
+		}
+		if u.ShouldUpdate(cfg) {
+			config, err := u.Update(cfg.Copy())
+			if err != nil {
+				return nil, errors.Wrapf(err, "update connection %q", str)
+			}
+			str = manager.registerConfig(config)
+		}
+	}
+
 	c, err := d.Driver.Open(str)
 	if err != nil {
 		return nil, err
@@ -218,10 +242,14 @@ var registerOnce sync.Once
 
 func open(cfg *pgx.ConnConfig) (*sql.DB, error) {
 	registerOnce.Do(registerPostgresProxy)
+	// this function is called once during startup time, and we register the db config
+	// to our own manager, and manager will also register the config to pgx driver by
+	// calling the underlying stdlib.RegisterConnConfig().
+	name := manager.registerConfig(cfg)
 
 	db, err := otelsql.Open(
 		"postgres-proxy",
-		stdlib.RegisterConnConfig(cfg),
+		name,
 		otelsql.WithTracerProvider(otel.GetTracerProvider()),
 		otelsql.WithSQLCommenter(true),
 		otelsql.WithSpanOptions(otelsql.SpanOptions{

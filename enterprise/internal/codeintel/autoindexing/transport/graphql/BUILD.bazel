@@ -32,7 +32,6 @@ go_library(
         "//internal/database",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
-        "//internal/gqlutil",
         "//internal/metrics",
         "//internal/observation",
         "//internal/types",

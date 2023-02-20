@@ -287,6 +287,21 @@ Referenced by:
 
 ```
 
+# Table "public.cached_available_indexers"
+```
+       Column       |  Type   | Collation | Nullable |                        Default                        
+--------------------+---------+-----------+----------+-------------------------------------------------------
+ id                 | integer |           | not null | nextval('cached_available_indexers_id_seq'::regclass)
+ repository_id      | integer |           | not null | 
+ num_events         | integer |           | not null | 
+ available_indexers | jsonb   |           | not null | 
+Indexes:
+    "cached_available_indexers_pkey" PRIMARY KEY, btree (id)
+    "cached_available_indexers_repository_id" UNIQUE, btree (repository_id)
+    "cached_available_indexers_num_events" btree (num_events DESC) WHERE available_indexers::text <> '{}'::text
+
+```
+
 # Table "public.changeset_events"
 ```
     Column    |           Type           | Collation | Nullable |                   Default                    
@@ -2275,14 +2290,12 @@ Foreign-key constraints:
  id          | integer                  |           | not null | nextval('namespace_permissions_id_seq'::regclass)
  namespace   | text                     |           | not null | 
  resource_id | integer                  |           | not null | 
- action      | text                     |           | not null | 
  user_id     | integer                  |           | not null | 
  created_at  | timestamp with time zone |           | not null | now()
 Indexes:
     "namespace_permissions_pkey" PRIMARY KEY, btree (id)
-    "unique_resource_permission" UNIQUE CONSTRAINT, btree (namespace, resource_id, action, user_id)
+    "unique_resource_permission" UNIQUE, btree (namespace, resource_id, user_id)
 Check constraints:
-    "action_not_blank" CHECK (action <> ''::text)
     "namespace_not_blank" CHECK (namespace <> ''::text)
 Foreign-key constraints:
     "namespace_permissions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE

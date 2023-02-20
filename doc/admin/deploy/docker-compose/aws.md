@@ -1,6 +1,6 @@
 # Install Sourcegraph on Amazon Web Services (AWS)
 
-> ⚠️ We recommend new users use our [AWS AMI](../machine-images/aws-oneclick) or [script-install](../single-node/script.md) instructions, which are easier and offer more flexibility when configuring Sourcegraph. Existing customers can reach out to our Customer Engineering team support@sourcegraph.com if they wish to migrate to these deployment models.
+> ⚠️ We recommend new users use our [AWS AMI](../machine-images/aws-oneclick.md) or [script-install](../single-node/script.md) instructions, which are easier and offer more flexibility when configuring Sourcegraph. Existing customers can reach out to our Customer Engineering team support@sourcegraph.com if they wish to migrate to these deployment models.
 
 ---
 
