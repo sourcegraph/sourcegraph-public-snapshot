@@ -1,11 +1,11 @@
 extend type Query {
     embeddingsSearch(
-        repoName: String!
+        repo: ID!
         query: String!
         codeResultsCount: Int!
         textResultsCount: Int!
     ): EmbeddingsSearchResults!
-    isContextRequiredForQuery(repoName: String!, query: String!): Boolean!
+    isContextRequiredForQuery(query: String!): Boolean!
 }
 
 extend type Mutation {

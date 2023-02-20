@@ -53,8 +53,7 @@ type EmbeddingsSearchParameters struct {
 }
 
 type IsContextRequiredForQueryParameters struct {
-	RepoName api.RepoName `json:"repoName"`
-	Query    string       `json:"query"`
+	Query string `json:"query"`
 }
 
 type IsContextRequiredForQueryResult struct {
@@ -87,7 +86,7 @@ func (c *Client) Search(ctx context.Context, args EmbeddingsSearchParameters) (*
 }
 
 func (c *Client) IsContextRequiredForQuery(ctx context.Context, args IsContextRequiredForQueryParameters) (bool, error) {
-	resp, err := c.httpPost(ctx, "isContextRequiredForQuery", args.RepoName, args)
+	resp, err := c.httpPost(ctx, "isContextRequiredForQuery", "", args)
 	if err != nil {
 		return false, err
 	}

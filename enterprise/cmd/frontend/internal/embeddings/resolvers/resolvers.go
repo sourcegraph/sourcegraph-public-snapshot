@@ -25,7 +25,12 @@ type Resolver struct {
 }
 
 func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.EmbeddingsSearchInputArgs) (graphqlbackend.EmbeddingsSearchResultsResolver, error) {
-	repo, err := r.db.Repos().GetByName(ctx, api.RepoName(args.RepoName))
+	repoID, err := graphqlbackend.UnmarshalRepositoryID(args.Repo)
+	if err != nil {
+		return nil, err
+	}
+
+	repo, err := r.db.Repos().Get(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
@@ -44,11 +49,7 @@ func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.Emb
 }
 
 func (r *Resolver) IsContextRequiredForQuery(ctx context.Context, args graphqlbackend.IsContextRequiredForQueryInputArgs) (bool, error) {
-	repo, err := r.db.Repos().GetByName(ctx, api.RepoName(args.RepoName))
-	if err != nil {
-		return false, err
-	}
-	return embeddings.NewClient().IsContextRequiredForQuery(ctx, embeddings.IsContextRequiredForQueryParameters{RepoName: repo.Name, Query: args.Query})
+	return embeddings.NewClient().IsContextRequiredForQuery(ctx, embeddings.IsContextRequiredForQueryParameters{Query: args.Query})
 }
 
 func (r *Resolver) ScheduleRepositoriesForEmbedding(ctx context.Context, args graphqlbackend.ScheduleRepositoriesForEmbeddingArgs) (*graphqlbackend.EmptyResponse, error) {
