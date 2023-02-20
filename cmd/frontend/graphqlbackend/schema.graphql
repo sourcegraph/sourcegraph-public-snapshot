@@ -1371,9 +1371,8 @@ type Query {
     packageRepoReferences(
         """
         The exact scheme value to filter by.
-        TODO: should this be an enum?
         """
-        scheme: String
+        scheme: PackageRepoReferenceKind
         """
         If supplied, only package repo references that match the given
         terms by their name will be returned.
@@ -3463,6 +3462,19 @@ type PackageRepoReferenceConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
+}
+
+"""
+A kind of package repo reference.
+ExternalServiceKind, with a more specific set of values.
+"""
+enum PackageRepoReferenceKind {
+    GOMODULES
+    JVMPACKAGES
+    NPMPACKAGES
+    PYTHONPACKAGES
+    RUSTPACKAGES
+    RUBYPACKAGES
 }
 
 """
