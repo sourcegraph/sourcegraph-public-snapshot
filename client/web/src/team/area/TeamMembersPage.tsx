@@ -10,14 +10,10 @@ export interface TeamMembersPageProps {
 }
 
 export const TeamMembersPage: React.FunctionComponent<TeamMembersPageProps> = ({ team }) => (
-        <Page>
-            <TeamHeader team={team} className="mb-3" />
-            <div className="container">
-                <TeamMemberListPage
-                    teamID={team.id}
-                    teamName={team.name}
-                    viewerCanAdminister={team.viewerCanAdminister}
-                />
-            </div>
-        </Page>
-    )
+    <Page>
+        <TeamHeader team={team} className="mb-3" />
+        <div className="container">
+            <TeamMemberListPage teamID={team.id} teamName={team.name} viewerCanAdminister={team.viewerCanAdminister} />
+        </div>
+    </Page>
+)

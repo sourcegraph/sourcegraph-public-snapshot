@@ -10,10 +10,10 @@ export interface TeamChildTeamsPageProps {
 }
 
 export const TeamChildTeamsPage: React.FunctionComponent<TeamChildTeamsPageProps> = ({ team }) => (
-        <Page>
-            <TeamHeader team={team} className="mb-3" />
-            <div className="container">
-                <ChildTeamListPage parentTeam={team.name} />
-            </div>
-        </Page>
-    )
+    <Page>
+        <TeamHeader team={team} className="mb-3" />
+        <div className="container">
+            <ChildTeamListPage parentTeam={team.name} />
+        </div>
+    </Page>
+)
