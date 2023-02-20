@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
@@ -62,7 +63,11 @@ func TestCodeowners_Get(t *testing.T) {
 	store := db.Codeowners()
 
 	t.Run("not found", func(t *testing.T) {
-
+		_, err := store.GetCodeownersForRepo(ctx, api.RepoID(100))
+		if err == nil {
+			t.Fatal("expected an error")
+		}
+		require.ErrorAs(t, CodeownersFileNotFoundError{}, &err)
 	})
 
 	t.Run("get by repo ID", func(t *testing.T) {
@@ -78,7 +83,24 @@ func TestCodeowners_Get(t *testing.T) {
 	})
 
 	t.Run("get by repo ID after update", func(t *testing.T) {
-
+		codeownersFile := newCodeownersFile("*", "everyone", api.RepoID(102))
+		if err := store.CreateCodeownersFile(ctx, codeownersFile); err != nil {
+			t.Fatal(err)
+		}
+		got, err := store.GetCodeownersForRepo(ctx, api.RepoID(102))
+		if err != nil {
+			t.Fatal(err)
+		}
+		require.Equal(t, codeownersFile, got)
+		codeownersFile.UpdatedAt = time.Now().UTC()
+		if err := store.UpdateCodeownersFile(ctx, codeownersFile); err != nil {
+			t.Fatal(err)
+		}
+		got, err = store.GetCodeownersForRepo(ctx, api.RepoID(102))
+		if err != nil {
+			t.Fatal(err)
+		}
+		require.Equal(t, codeownersFile, got)
 	})
 }
 
