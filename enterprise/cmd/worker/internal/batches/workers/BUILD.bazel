@@ -46,7 +46,6 @@ go_test(
     ],
     embed = [":workers"],
     deps = [
-        "//cmd/frontend/graphqlbackend",
         "//enterprise/internal/batches/service",
         "//enterprise/internal/batches/store",
         "//enterprise/internal/batches/testing",
@@ -64,6 +63,7 @@ go_test(
         "//lib/batches/template",
         "@com_github_google_go_cmp//cmp",
         "@com_github_google_go_cmp//cmp/cmpopts",
+        "@com_github_graph_gophers_graphql_go//relay",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_sourcegraph_log//logtest",
     ],

@@ -1,13 +1,17 @@
 package apitest
 
-import "github.com/sourcegraph/sourcegraph/internal/gqlutil"
+import (
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
+)
 
 type Permission struct {
-	Typename  string `json:"__typename"`
-	ID        string
-	Namespace string
-	Action    string
-	CreatedAt gqlutil.DateTime
+	Typename    string `json:"__typename"`
+	ID          string
+	Namespace   types.PermissionNamespace
+	DisplayName string
+	Action      string
+	CreatedAt   gqlutil.DateTime
 }
 
 type PageInfo struct {
@@ -49,4 +53,8 @@ type User struct {
 	Permissions PermissionConnection
 	// All roles assigned to this user.
 	Roles RoleConnection
+}
+
+type EmptyResponse struct {
+	AlwaysNil string
 }

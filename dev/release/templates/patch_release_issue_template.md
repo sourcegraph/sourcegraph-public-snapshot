@@ -27,7 +27,12 @@ This release is scheduled for **$RELEASE_DATE**.
 
 <!-- Keep in sync with release_issue_template's "Setup" section -->
 
-- [ ] Ensure release configuration in [`dev/release/release-config.jsonc`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/release/release-config.jsonc) on `main` is up-to-date with the parameters for the current release.
+- [ ] Ensure release configuration in [`dev/release/release-config.jsonc`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/release/release-config.jsonc) on `main` has version $MAJOR.$MINOR.$PATCH selected by using the command:
+
+```shell
+pnpm run release release:activate-release
+```
+
 - [ ] Ensure you have the latest version of the release tooling and configuration by checking out and updating `sourcegraph@main`.
 - [ ] Create a `Security release approval issue` and post a message in the [#security](https://sourcegraph.slack.com/archives/C1JH2BEHZ) channel tagging @security-support.
 
@@ -53,7 +58,7 @@ git push origin $MAJOR.$MINOR
 
 Create and test the first release candidate:
 
-- [ ] Push a release candidate tag:
+- [ ] Push a new release candidate tag. This command will automatically detect the appropriate release candidate number. This command can be executed as many times as required, and will increment the release candidate number for each subsequent build: :
   ```sh
   pnpm run release release:create-candidate
   ```
@@ -61,9 +66,7 @@ Create and test the first release candidate:
 **Note**: Ensure that you've pulled both main and release branches before running this command.
 
 - [ ] Ensure that the following Buildkite pipelines all pass for the `v$MAJOR.$MINOR.$PATCH-rc.1` tag:
-
-  - [ ] [Sourcegraph pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH-rc.1)
-
+- [ ] [Sourcegraph pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH-rc.1)
 - [ ] File any failures and regressions in the pipelines as `release-blocker` issues and assign the appropriate teams.
 
 **Note**: You will need to re-check the above pipelines for any subsequent release candidates. You can see the Buildkite logs by tweaking the "branch" query parameter in the URLs to point to the desired release candidate. In general, the URL scheme looks like the following (replacing `N` in the URL):
@@ -77,14 +80,16 @@ Create and test the first release candidate:
 <!-- Keep in sync with release_issue_template's "Stage release" section -->
 
 - [ ] Verify the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md) on `main` and `$MAJOR.$MINOR` are accurate.
-- [ ] Tag the final release:
+- [ ] Promote a release candidate to the final release build. You will need to provide the tag of the release candidate which you would like to promote as an argument. To get a list of available release candidates, you can use:
+  ```shell
+  pnpm run release release:check-candidate
+  ```
+  To promote the candidate, use the command:
   ```sh
-  pnpm run release release:create-candidate final
+  pnpm run release release:promote-candidate tag
   ```
 - [ ] Ensure that the following pipelines all pass for the `v$MAJOR.$MINOR.$PATCH` tag:
-
-  - [ ] [Sourcegraph pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH)
-
+- [ ] [Sourcegraph pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH)
 - [ ] Wait for the `v$MAJOR.$MINOR.$PATCH` release Docker images to be available in [Docker Hub](https://hub.docker.com/r/sourcegraph/server/tags)
 - [ ] Open PRs that publish the new release and address any action items required to finalize draft PRs (track PR status via the [generated release batch change](https://k8s.sgdev.org/organizations/sourcegraph/batch-changes)):
   ```sh
@@ -109,14 +114,16 @@ Create and test the first release candidate:
 - [ ] Finalize and announce that the release is live:
   ```sh
   pnpm run release release:announce
-  pnpm run release release:close
   ```
 
 ## Post-release
 
-- [ ] Open a PR to update [`dev/release/release-config.jsonc`](https://github.com/sourcegraph/sourcegraph/edit/main/dev/release/release-config.jsonc) with the parameters for the current release.
-- [ ] Ensure you have the latest version of the release tooling and configuration by checking out and updating `sourcegraph@main`.
-- [ ] Let the #cloud team know about the managed instances upgrade issue.
-- [ ] Close this issue.
+- [ ] Close the release:
+
+```shell
+  pnpm run release release:close
+```
+
+- [ ] Open a PR to update [`dev/release/release-config.jsonc`](https://github.com/sourcegraph/sourcegraph/edit/main/dev/release/release-config.jsonc) after the auto-generated changes above.
 
 **Note:** If another patch release is requested after the release, ask that a [patch request issue](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=team%2Fdistribution&template=request_patch_release.md) be filled out and approved first.

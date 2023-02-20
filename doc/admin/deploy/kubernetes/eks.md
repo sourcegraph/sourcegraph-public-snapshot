@@ -19,7 +19,7 @@ Before moving forward, you will need:
 - `awscli`: The command line tool provided by Amazon to work with AWS resources. [Installation guide](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html) and [Configuration guide](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html#cli-configure-quickstart-config).
 - `kubectl`: The command line tool used for working with Kuberentes clusters and resources. [Installation guide](https://kubernetes.io/docs/tasks/tools/).
 - `eksctl`: A tool provided by Waveworks for configuring and creating EKS clusters in Amazon. [Installation guide](https://eksctl.io/introduction/#installation).
-- **IAM permissions**: The user that will be performing the installtion must have permissions to work with Amazon EKS IAM roles and service linked roles, AWS CloudFormation, and a VPC and related resources.
+- **IAM permissions**: The user that will be performing the installation must have permissions to work with Amazon EKS IAM roles and service linked roles, AWS CloudFormation, and a VPC and related resources.
 
 Through this guide, we will be using a number of parameters starting with `$` that you will need to replace with your desired values:
 

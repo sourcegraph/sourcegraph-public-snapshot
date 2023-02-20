@@ -1,21 +1,26 @@
-import React, { useContext, useMemo, useEffect } from 'react'
+import { FC, useContext, useMemo, useEffect } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 import { noop } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, Link, useObservable, useDebounce, Icon, Input, Text } from '@sourcegraph/wildcard'
-
 import {
-    getDefaultInputProps,
-    useField,
+    Button,
+    Card,
+    Link,
+    Icon,
+    Input,
+    Text,
+    Label,
     useForm,
-    InsightQueryInput,
-    RepositoriesField,
-    insightRepositoriesValidator,
-    insightRepositoriesAsyncValidator,
-} from '../../../../../components'
+    useField,
+    useObservable,
+    useDebounce,
+    getDefaultInputProps,
+} from '@sourcegraph/wildcard'
+
+import { InsightQueryInput, RepositoriesField, insightRepositoriesValidator } from '../../../../../components'
 import { CodeInsightsBackendContext } from '../../../../../core'
 import { getQueryPatternTypeFilter } from '../../../../insights/creation/search-insight'
 import { CodeInsightsDescription } from '../code-insights-description/CodeInsightsDescription'
@@ -25,20 +30,18 @@ import { DynamicInsightPreview } from './DynamicInsightPreview'
 import styles from './DynamicCodeInsightExample.module.scss'
 
 interface CodeInsightExampleFormValues {
-    repositories: string
+    repositories: string[]
     query: string
 }
 
 const INITIAL_INSIGHT_VALUES: CodeInsightExampleFormValues = {
-    repositories: 'github.com/sourcegraph/sourcegraph',
+    repositories: ['github.com/sourcegraph/sourcegraph'],
     query: 'TODO',
 }
 
 interface DynamicCodeInsightExampleProps extends TelemetryProps, React.HTMLAttributes<HTMLDivElement> {}
 
-export const DynamicCodeInsightExample: React.FunctionComponent<
-    React.PropsWithChildren<DynamicCodeInsightExampleProps>
-> = props => {
+export const DynamicCodeInsightExample: FC<DynamicCodeInsightExampleProps> = props => {
     const { telemetryService, ...otherProps } = props
 
     const { getFirstExampleRepository } = useContext(CodeInsightsBackendContext)
@@ -54,7 +57,6 @@ export const DynamicCodeInsightExample: React.FunctionComponent<
         formApi: form.formAPI,
         validators: {
             sync: insightRepositoriesValidator,
-            async: insightRepositoriesAsyncValidator,
         },
     })
 
@@ -73,7 +75,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<
     useEffect(() => {
         // This is to prevent resetting the name in an endless loop
         if (derivedRepositoryURL) {
-            setRepositoryValue(derivedRepositoryURL)
+            setRepositoryValue([derivedRepositoryURL])
         }
     }, [setRepositoryValue, derivedRepositoryURL])
 
@@ -111,6 +113,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<
                     label="Data series search query"
                     required={true}
                     as={InsightQueryInput}
+                    repoQuery={null}
                     repositories={repositories.input.value}
                     patternType={getQueryPatternTypeFilter(query.input.value)}
                     placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
@@ -118,13 +121,14 @@ export const DynamicCodeInsightExample: React.FunctionComponent<
                     className="mt-3 mb-0"
                 />
 
-                <Input
-                    as={RepositoriesField}
-                    required={true}
-                    label="Repositories"
-                    placeholder="Example: github.com/sourcegraph/sourcegraph"
+                <Label htmlFor="repositories-id" className="mt-3">
+                    Repositories
+                </Label>
+                <RepositoriesField
+                    id="repositories-id"
+                    description="Find and choose up to 1 repository to run insight"
+                    placeholder="Search repositories..."
                     {...getDefaultInputProps(repositories)}
-                    className="mt-3 mb-0"
                 />
             </form>
 
@@ -143,7 +147,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<
     )
 }
 
-const CalloutArrow: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = props => (
+const CalloutArrow: FC<{ className?: string }> = props => (
     <Text className={classNames(styles.calloutBlock, props.className)}>
         <svg
             width="59"

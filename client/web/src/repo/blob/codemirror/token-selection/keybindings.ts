@@ -1,10 +1,15 @@
 import {
+    selectAll,
     selectCharLeft,
     selectCharRight,
+    selectDocEnd,
+    selectDocStart,
     selectGroupLeft,
     selectGroupRight,
     selectLineDown,
     selectLineUp,
+    selectPageDown,
+    selectPageUp,
 } from '@codemirror/commands'
 import { Extension, Prec } from '@codemirror/state'
 import { EditorView, KeyBinding, keymap, layer, RectangleMarker } from '@codemirror/view'
@@ -100,8 +105,11 @@ const keybindings: KeyBinding[] = [
                     () => {}
                 )
                 .finally(() => {
-                    // hide loading tooltip
-                    view.dispatch({ effects: setFocusedOccurrenceTooltip.of(null) })
+                    // close loading tooltip if any
+                    const current = getCodeIntelTooltipState(view, 'focus')
+                    if (current?.tooltip instanceof LoadingTooltip && current?.occurrence === selected.occurrence) {
+                        view.dispatch({ effects: setFocusedOccurrenceTooltip.of(null) })
+                    }
                 })
 
             return true
@@ -111,14 +119,14 @@ const keybindings: KeyBinding[] = [
     {
         key: 'Mod-ArrowRight',
         run(view) {
-            view.state.facet(blobPropsFacet).history.goForward()
+            view.state.facet(blobPropsFacet).navigate(1)
             return true
         },
     },
     {
         key: 'Mod-ArrowLeft',
         run(view) {
-            view.state.facet(blobPropsFacet).history.goBack()
+            view.state.facet(blobPropsFacet).navigate(-1)
             return true
         },
     },
@@ -159,6 +167,35 @@ const textSelectionKeybindings: KeyBinding[] = [
     {
         key: 'ArrowDown',
         shift: selectLineDown,
+    },
+
+    {
+        key: 'Mod-Home',
+        mac: 'Cmd-ArrowUp',
+        shift: selectDocStart,
+    },
+
+    {
+        key: 'Mod-End',
+        mac: 'Cmd-ArrowDown',
+        shift: selectDocEnd,
+    },
+
+    {
+        key: 'PageUp',
+        mac: 'Ctrl-ArrowUp',
+        shift: selectPageUp,
+    },
+
+    {
+        key: 'PageDown',
+        mac: 'Ctrl-ArrowDown',
+        shift: selectPageDown,
+    },
+
+    {
+        key: 'Mod-a',
+        run: selectAll,
     },
 ]
 
@@ -277,13 +314,6 @@ function textSelectionExtension(): Extension {
             },
             '.cm-selectionLayer .cm-selectionBackground': {
                 background: 'var(--code-selection-bg-2)',
-
-                /**
-                 * [RectangleMarker.forRange](https://sourcegraph.com/github.com/codemirror/view@a0a0b9ef5a4deaf58842422ac080030042d83065/-/blob/src/layer.ts?L60-75)
-                 * returns absolutely positioned markers. Markers top position has extra 1px more in its `top` value breaking alignment wih the line.
-                 * We compensate this spacing by setting negative margin-top.
-                 */
-                marginTop: '-1px',
             },
         }),
     ]

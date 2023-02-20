@@ -16,6 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -23,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -136,7 +137,7 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger 
 		}
 	}()
 
-	repoToPackages := make(map[api.RepoName][]precise.Package)
+	repoToPackages := make(map[api.RepoName][]dependencies.MinimialVersionedPackageRepo)
 	var repoNames []api.RepoName
 	for {
 		packageReference, exists, err := scanner.Next()
@@ -147,11 +148,10 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger 
 			break
 		}
 
-		pkg := precise.Package{
-			Scheme:  packageReference.Package.Scheme,
-			Manager: packageReference.Package.Manager,
-			Name:    packageReference.Package.Name,
-			Version: packageReference.Package.Version,
+		pkg := dependencies.MinimialVersionedPackageRepo{
+			Scheme:  packageReference.Scheme,
+			Name:    reposource.PackageName(packageReference.Name),
+			Version: packageReference.Version,
 		}
 
 		repoName, _, ok := inference.InferRepositoryAndRevision(pkg)
@@ -217,7 +217,7 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger 
 
 	for _, pkgs := range repoToPackages {
 		for _, pkg := range pkgs {
-			if err := h.indexEnqueuer.QueueIndexesForPackage(ctx, pkg); err != nil {
+			if err := h.indexEnqueuer.QueueIndexesForPackage(ctx, pkg, true); err != nil {
 				errs = append(errs, errors.Wrap(err, "enqueuer.QueueIndexesForPackage"))
 			}
 		}

@@ -7,7 +7,6 @@ load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 #
 # gazelle:prefix github.com/sourcegraph/sourcegraph
 # gazelle:build_file_name BUILD.bazel
-
 # Disable some by default, only include configured BUILDs
 #
 # gazelle:aspect_js disabled
@@ -30,7 +29,7 @@ ts_config(
     visibility = ["//visibility:public"],
     deps = [
         "//:node_modules/@sourcegraph/tsconfig",
-        "//:tsconfig.json",
+        "//:tsconfig.base.json",
     ],
 )
 
@@ -110,3 +109,4 @@ js_library(
     ],
 )
 
+exports_files(["go.mod"])

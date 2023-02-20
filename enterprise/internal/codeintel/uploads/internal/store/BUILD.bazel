@@ -11,7 +11,8 @@ go_library(
         "store_dependency_index.go",
         "store_dumps.go",
         "store_export.go",
-        "store_index.go",
+        # TODO JH: I don't know what this isn't getting picked up by Gazelle
+        "store_index.go",  # keep
         "store_packages.go",
         "store_reconcile.go",
         "store_references.go",
@@ -56,7 +57,8 @@ go_test(
         "store_dependency_index_test.go",
         "store_dumps_test.go",
         "store_export_test.go",
-        "store_index_test.go",
+        # TODO JH: I don't know what this isn't getting picked up by Gazelle
+        "store_index_test.go",  # keep
         "store_packages_test.go",
         "store_reconcile_test.go",
         "store_references_test.go",

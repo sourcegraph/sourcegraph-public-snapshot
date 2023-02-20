@@ -21,8 +21,11 @@ import {
     ViewPlugin,
     ViewUpdate,
 } from '@codemirror/view'
+import classNames from 'classnames'
 
 import { isValidLineRange, MOUSE_MAIN_BUTTON, preciseOffsetAtCoords } from './utils'
+
+import { blobPropsFacet } from './index'
 
 /**
  * Represents the currently selected line range. null means no lines are
@@ -32,6 +35,7 @@ import { isValidLineRange, MOUSE_MAIN_BUTTON, preciseOffsetAtCoords } from './ut
 export type SelectedLineRange = { line: number; character?: number; endLine?: number } | null
 
 const selectedLineDecoration = Decoration.line({
+    class: 'selected-line',
     attributes: {
         tabIndex: '-1',
         'data-line-focusable': '',
@@ -115,7 +119,7 @@ export const selectedLines = StateField.define<SelectedLineRange>({
 
                 return RectangleMarker.forRange(
                     view,
-                    'selected-line',
+                    classNames('selected-line', { ['blame-visible']: view.state.facet(blobPropsFacet).isBlameVisible }),
                     EditorSelection.range(startLine.from, Math.min(endLine.to + 1, view.state.doc.length))
                 )
             },
@@ -132,13 +136,28 @@ export const selectedLines = StateField.define<SelectedLineRange>({
             class: 'selected-lines-layer',
         }),
         EditorView.theme({
+            /**
+             * [RectangleMarker.forRange](https://sourcegraph.com/github.com/codemirror/view@a0a0b9ef5a4deaf58842422ac080030042d83065/-/blob/src/layer.ts?L60-75)
+             * returns absolutely positioned markers. Markers top position has extra 1px (6px in case blame decorations
+             * are visible) more in its `top` value breaking alignment wih the line.
+             * We compensate this spacing by setting negative margin-top.
+             */
             '.selected-lines-layer .selected-line': {
-                /**
-                 * [RectangleMarker.forRange](https://sourcegraph.com/github.com/codemirror/view@a0a0b9ef5a4deaf58842422ac080030042d83065/-/blob/src/layer.ts?L60-75)
-                 * returns absolutely positioned markers. Markers top position has extra 1px more in its `top` value breaking alignment wih the line.
-                 * We compensate this spacing by setting negative margin-top.
-                 */
                 marginTop: '-1px',
+
+                // Ensure selection marker height matches line height.
+                minHeight: '1rem',
+            },
+            '.selected-lines-layer .selected-line.blame-visible': {
+                marginTop: '-6px',
+
+                // Ensure selection marker height matches the increased line height.
+                minHeight: 'calc(1.5rem + 1px)',
+            },
+
+            // Selected line background is set by adding 'selected-line' class to the layer markers.
+            '.cm-line.selected-line': {
+                background: 'transparent',
             },
 
             /**
@@ -148,9 +167,6 @@ export const selectedLines = StateField.define<SelectedLineRange>({
              * highlight (background color) between the selected line gutters (decorated with {@link selectedLineGutterMarker}) and layer.
              * To remove this gap we move padding from `.cm-line` to the last gutter.
              */
-            '.cm-line': {
-                paddingLeft: '0 !important',
-            },
             '.cm-gutter:last-child .cm-gutterElement': {
                 paddingRight: '1rem',
             },

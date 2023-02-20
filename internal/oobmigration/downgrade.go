@@ -23,8 +23,8 @@ func scheduleDowngrade(from, to Version, migrations []yamlMigration) ([]Migratio
 
 		interval := migrationInterval{
 			id:         m.ID,
-			introduced: Version{m.IntroducedVersionMajor, m.IntroducedVersionMinor},
-			deprecated: Version{*m.DeprecatedVersionMajor, *m.DeprecatedVersionMinor},
+			introduced: Version{Major: m.IntroducedVersionMajor, Minor: m.IntroducedVersionMinor},
+			deprecated: Version{Major: *m.DeprecatedVersionMajor, Minor: *m.DeprecatedVersionMinor},
 		}
 
 		// Only add intervals that are introduced within the migration range: `to <= introduced < from`

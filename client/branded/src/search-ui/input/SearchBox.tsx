@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef } from 'react'
+import { FC, useCallback, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 
@@ -68,7 +68,7 @@ export interface SearchBoxProps
     recentSearches?: RecentSearch[]
 }
 
-export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBoxProps>> = props => {
+export const SearchBox: FC<SearchBoxProps> = props => {
     const {
         queryState,
         onEditorCreated: onEditorCreatedCallback,

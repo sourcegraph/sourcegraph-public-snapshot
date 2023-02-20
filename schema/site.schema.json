@@ -368,6 +368,12 @@
           "default": false,
           "!go": { "pointer": false }
         },
+        "enableStorm": {
+          "description": "Enables the Storm frontend architecture changes.",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": false }
+        },
         "ranking": {
           "description": "Experimental search result ranking options.",
           "type": "object",
@@ -414,6 +420,12 @@
               "default": 4500,
               "group": "Search",
               "!go": { "pointer": true }
+            },
+            "flushWallTimeMS": {
+              "description": "Controls the amount of time that Zoekt shards collect and rank results when the 'search-ranking' feature is enabled. Larger values give a more stable ranking, but searches can take longer to return an initial result.",
+              "type": "integer",
+              "default": 500,
+              "group": "Search"
             }
           }
         },
@@ -472,7 +484,7 @@
         "insightsDataRetention": {
           "description": "Code insights data points beyond the sample size defined in the site configuration will be periodically archived",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "!go": {
             "pointer": true
           }
@@ -1401,6 +1413,20 @@
       "group": "CodeInsights",
       "default": 60
     },
+    "insights.backfill.repositoryGroupSize": {
+      "description": "Set the number of repositories to batch in a group during backfilling.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 10
+    },
+    "insights.backfill.repositoryConcurrency": {
+      "description": "Number of repositories within the batch to backfill concurrently.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 3,
+      "maximum": 10,
+      "minimum": 1
+    },
     "insights.query.worker.concurrency": {
       "description": "Number of concurrent executions of a code insight query on a worker node",
       "type": "integer",
@@ -1601,18 +1627,29 @@
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["builtin", "saml", "openidconnect", "http-header", "github", "gitlab", "bitbucketcloud", "gerrit"]
+            "enum": [
+              "azureDevOps",
+              "bitbucketcloud",
+              "builtin",
+              "gerrit",
+              "github",
+              "gitlab",
+              "http-header",
+              "openidconnect",
+              "saml"
+            ]
           }
         },
         "oneOf": [
+          { "$ref": "#/definitions/AzureDevOpsAuthProvider" },
+          { "$ref": "#/definitions/BitbucketCloudAuthProvider" },
           { "$ref": "#/definitions/BuiltinAuthProvider" },
-          { "$ref": "#/definitions/SAMLAuthProvider" },
-          { "$ref": "#/definitions/OpenIDConnectAuthProvider" },
-          { "$ref": "#/definitions/HTTPHeaderAuthProvider" },
+          { "$ref": "#/definitions/GerritAuthProvider" },
           { "$ref": "#/definitions/GitHubAuthProvider" },
           { "$ref": "#/definitions/GitLabAuthProvider" },
-          { "$ref": "#/definitions/BitbucketCloudAuthProvider" },
-          { "$ref": "#/definitions/GerritAuthProvider" }
+          { "$ref": "#/definitions/HTTPHeaderAuthProvider" },
+          { "$ref": "#/definitions/OpenIDConnectAuthProvider" },
+          { "$ref": "#/definitions/SAMLAuthProvider" }
         ],
         "!go": {
           "taggedUnionType": true
@@ -2201,6 +2238,38 @@
           "type": "string",
           "description": "URL of the Gerrit instance, such as https://gerrit-review.googlesource.com or https://gerrit.example.com.",
           "default": "https://gerrit-review.googlesource.com/"
+        }
+      }
+    },
+    "AzureDevOpsAuthProvider": {
+      "description": "Azure auth provider for dev.azure.com",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "clientID", "clientSecret"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "azureDevOps"
+        },
+        "clientID": {
+          "type": "string",
+          "description": "The app ID of the Azure OAuth app."
+        },
+        "clientSecret": {
+          "type": "string",
+          "description": "The client Secret of the Azure OAuth app."
+        },
+        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" },
+        "apiScope": {
+          "type": "string",
+          "description": "The OAuth API scope that should be used",
+          "default": "vso.code,vso.identity"
+        },
+        "allowSignup": {
+          "description": "Allows new visitors to sign up for accounts Azure DevOps authentication. If false, users signing in via Azure DevOps must have an existing Sourcegraph account, which will be linked to their Azure DevOps identity after sign-in.",
+          "default": true,
+          "type": "boolean",
+          "!go": { "pointer": true }
         }
       }
     },

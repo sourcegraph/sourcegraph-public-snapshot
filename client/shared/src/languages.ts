@@ -471,6 +471,10 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'vim':
             return 'vim'
 
+        // XLSG
+        case 'xlsg':
+            return 'xlsg'
+
         // XML
         case 'xml':
         case 'adml':

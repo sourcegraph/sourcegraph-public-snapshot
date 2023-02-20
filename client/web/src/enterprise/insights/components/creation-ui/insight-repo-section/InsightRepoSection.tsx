@@ -10,7 +10,6 @@ import { EditorHint, QueryChangeSource, QueryState } from '@sourcegraph/shared/s
 import {
     Button,
     Code,
-    Input,
     Label,
     InputElement,
     InputErrorMessage,
@@ -18,20 +17,17 @@ import {
     InputStatus,
     useDebounce,
     Link,
+    FormGroup,
+    useFieldAPI,
+    getDefaultInputProps,
+    getDefaultInputStatus,
+    getDefaultInputError,
 } from '@sourcegraph/wildcard'
 
 import { InsightRepositoriesCountResult, InsightRepositoriesCountVariables } from '../../../../../graphql-operations'
 import { useExperimentalFeatures } from '../../../../../stores'
 import { CreateInsightFormFields } from '../../../pages/insights/creation/search-insight'
-import {
-    FormGroup,
-    getDefaultInputProps,
-    getDefaultInputStatus,
-    getDefaultInputError,
-    RepositoriesField,
-    useFieldAPI,
-    MonacoField,
-} from '../../form'
+import { getRepoQueryPreview, RepositoriesField, MonacoField } from '../../form'
 import { MonacoPreviewLink } from '../../form/monaco-field'
 
 import styles from './InsightRepoSection.module.scss'
@@ -128,16 +124,16 @@ function RepositoriesURLsPicker(props: RepositoriesURLsPickerProps): ReactElemen
     const { repositories, 'aria-labelledby': ariaLabelledby } = props
 
     const { value, disabled, ...attributes } = getDefaultInputProps(repositories)
-    const fieldValue = disabled ? '' : value
+    const fieldValue = disabled ? [] : value
 
     return (
-        <Input
-            as={RepositoriesField}
-            message="Use a list of repository names separated with commas"
-            placeholder="Example: github.com/sourcegraph/sourcegraph"
+        <RepositoriesField
+            id="repositories-id"
+            description="Find and choose up to 1 repository to run insight"
+            placeholder="Search repositories..."
             aria-labelledby={ariaLabelledby}
+            aria-invalid={!!repositories.meta.error}
             value={fieldValue}
-            disabled={disabled}
             {...attributes}
         />
     )
@@ -229,7 +225,7 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
     }
 
     const queryState = disabled ? EMPTY_QUERY_STATA : value
-    const previewQuery = value.query ? `(${value.query}) archived:yes fork:yes count:all` : value.query
+    const previewQuery = value.query ? getRepoQueryPreview(value.query) : value.query
     const fieldStatus = getDefaultInputStatus(repoQuery, value => value.query)
     const LabelComponent = label ? Label : 'div'
 
@@ -253,6 +249,7 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
                     onChange={handleOnChange}
                     disabled={disabled}
                     aria-busy={fieldStatus === InputStatus.loading}
+                    aria-invalid={!!repoQuery.meta.error}
                     {...attributes}
                 />
 

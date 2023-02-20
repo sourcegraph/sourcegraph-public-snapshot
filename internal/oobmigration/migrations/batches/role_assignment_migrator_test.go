@@ -16,13 +16,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestRoleAssignmentMigrator(t *testing.T) {
+func TestUserRoleAssignmentMigrator(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := basestore.NewWithHandle(db.Handle())
 
-	migrator := NewRoleAssignmentMigrator(store, 5)
+	migrator := NewUserRoleAssignmentMigrator(store, 5)
 	progress, err := migrator.Progress(ctx, false)
 	assert.NoError(t, err)
 
