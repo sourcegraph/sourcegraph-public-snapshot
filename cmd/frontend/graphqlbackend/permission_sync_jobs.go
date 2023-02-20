@@ -21,7 +21,7 @@ type PermissionSyncJobResolver interface {
 	State() string
 	FailureMessage() *string
 	Reason() database.PermissionSyncJobReason
-	CancellationReason() string
+	CancellationReason() *string
 	TriggeredByUserID() int32
 	QueuedAt() time.Time
 	StartedAt() time.Time

@@ -14,12 +14,6 @@ type operations struct {
 	getUploadDocumentsForPath   *observation.Operation
 	scanDocuments               *observation.Operation
 	insertMetadata              *observation.Operation
-	writeMeta                   *observation.Operation
-	writeDocuments              *observation.Operation
-	writeResultChunks           *observation.Operation
-	writeDefinitions            *observation.Operation
-	writeReferences             *observation.Operation
-	writeImplementations        *observation.Operation
 	deleteUnreferencedDocuments *observation.Operation
 }
 
@@ -50,12 +44,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getUploadDocumentsForPath:   op("GetUploadDocumentsForPath"),
 		scanDocuments:               op("ScanDocuments"),
 		insertMetadata:              op("InsertMetadata"),
-		writeMeta:                   op("WriteMeta"),
-		writeDocuments:              op("WriteDocuments"),
-		writeResultChunks:           op("WriteResultChunks"),
-		writeDefinitions:            op("WriteDefinitions"),
-		writeReferences:             op("WriteReferences"),
-		writeImplementations:        op("WriteImplementations"),
 		deleteUnreferencedDocuments: op("DeleteUnreferencedDocuments"),
 	}
 }

@@ -33,7 +33,7 @@ jobs:
         run: pnpm install --frozen-lockfile
       - run: pnpm generate
       - run: pnpm --filter ./client/web-sveltekit run sync
-      - run: pnpm dlx @sourcegraph/scip-typescript index --pnpm-workspaces
+      - run: pnpm dlx @sourcegraph/scip-typescript index --pnpm-workspaces --no-global-caches
       - run: cp index.scip dump.lsif-typed
       - name: Install src-cli
         run: |
