@@ -103,9 +103,7 @@ func (i *insightViewSeriesDisplayOptionsResolver) SortOptions(ctx context.Contex
 }
 
 func (i *insightViewSeriesDisplayOptionsResolver) NumSamples() *int32 {
-	v := int32(i.seriesDisplayOptions.NumSamples)
-	return &v
-
+	return i.seriesDisplayOptions.NumSamples
 }
 
 type insightViewSeriesSortOptionsResolver struct {
@@ -589,6 +587,7 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 		SeriesSortMode:      seriesSortMode,
 		SeriesSortDirection: seriesSortDirection,
 		SeriesLimit:         args.Input.ViewControls.SeriesDisplayOptions.Limit,
+		SeriesNumSamples:    args.Input.ViewControls.SeriesDisplayOptions.NumSamples,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "UpdateView")
@@ -1094,12 +1093,10 @@ func (d *InsightViewQueryConnectionResolver) Nodes(ctx context.Context) ([]graph
 					Direction: types.SeriesSortDirection(d.args.SeriesDisplayOptions.SortOptions.Direction),
 				}
 			}
-			numSamples := 90
-			if d.args.SeriesDisplayOptions.NumSamples != nil {
-				numSamples = int(*d.args.SeriesDisplayOptions.NumSamples)
-				if numSamples > 90 {
-					numSamples = 90
-				}
+			numSamples := d.args.SeriesDisplayOptions.NumSamples
+			if numSamples != nil && *numSamples > 90 {
+				var maxNumSamples int32 = 90
+				numSamples = &maxNumSamples
 			}
 			resolver.overrideSeriesOptions = &types.SeriesDisplayOptions{
 				SortOptions: sortOptions,
@@ -1303,8 +1300,8 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, startSer
 	}
 
 	// Don't try to match on non-global series, since they are always replaced
-	// Also don't try to match on series that use repo critieria
-	// TODO: Reconsider matching on on criteria based series. If so the edit case would need work to ensure other insights remain the same.
+	// Also don't try to match on series that use repo criteria
+	// TODO: Reconsider matching on criteria based series. If so the edit case would need work to ensure other insights remain the same.
 	if len(series.RepositoryScope.Repositories) == 0 && series.RepositoryScope.RepositoryCriteria == nil {
 		matchingSeries, foundSeries, err = tx.FindMatchingSeries(ctx, store.MatchSeriesArgs{
 			Query:                     series.Query,

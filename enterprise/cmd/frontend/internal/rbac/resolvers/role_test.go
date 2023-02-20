@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestRoleResolver(t *testing.T) {
@@ -33,7 +34,7 @@ func TestRoleResolver(t *testing.T) {
 	adminCtx := actor.WithActor(ctx, actor.FromUser(adminUserID))
 
 	perm, err := db.Permissions().Create(ctx, database.CreatePermissionOpts{
-		Namespace: "BATCHCHANGES",
+		Namespace: types.BatchChangesNamespace,
 		Action:    "READ",
 	})
 	if err != nil {
@@ -45,7 +46,7 @@ func TestRoleResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = db.RolePermissions().Create(ctx, database.CreateRolePermissionOpts{
+	err = db.RolePermissions().Assign(ctx, database.AssignRolePermissionOpts{
 		RoleID:       role.ID,
 		PermissionID: perm.ID,
 	})
@@ -80,10 +81,11 @@ func TestRoleResolver(t *testing.T) {
 				},
 				Nodes: []apitest.Permission{
 					{
-						ID:        mpid,
-						Namespace: perm.Namespace,
-						Action:    perm.Action,
-						CreatedAt: gqlutil.DateTime{Time: perm.CreatedAt.Truncate(time.Second)},
+						ID:          mpid,
+						Namespace:   perm.Namespace,
+						DisplayName: perm.DisplayName(),
+						Action:      perm.Action,
+						CreatedAt:   gqlutil.DateTime{Time: perm.CreatedAt.Truncate(time.Second)},
 					},
 				},
 			},
@@ -105,7 +107,6 @@ func TestRoleResolver(t *testing.T) {
 		assert.Len(t, errs, 1)
 		assert.Equal(t, errs[0].Message, "must be site admin")
 	})
-
 }
 
 const queryRoleNode = `
@@ -122,6 +123,7 @@ query ($role: ID!) {
 				nodes {
 					id
 					namespace
+					displayName
 					action
 					createdAt
 				}

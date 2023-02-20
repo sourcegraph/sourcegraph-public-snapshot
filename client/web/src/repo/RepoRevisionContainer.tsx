@@ -204,7 +204,7 @@ export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
     const { filePath } = parseBrowserRepoURL(location.pathname)
 
     return (
-        <RepoRevisionWrapper className="pl-3">
+        <RepoRevisionWrapper className="px-3">
             <Routes>
                 {routes.map(
                     ({ path, render, condition = () => true }) =>

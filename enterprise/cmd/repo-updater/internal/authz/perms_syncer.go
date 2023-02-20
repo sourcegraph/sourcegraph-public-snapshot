@@ -275,8 +275,8 @@ type fetchUserPermsViaExternalAccountsResults struct {
 	repoPerms map[int32][]int32
 	// A map from external repository spec to sub-repository permissions. This stores the permissions for sub-repositories of private repositories.
 	subRepoPerms map[api.ExternalRepoSpec]*authz.SubRepoPermissions
-	// A set of provider states. This stores the result of calling auth provider for each account.
-	providerStates providerStatesSet
+
+	providerStates database.CodeHostStatusesSet
 }
 
 // fetchUserPermsViaExternalAccounts uses external accounts (aka. login
@@ -352,7 +352,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 		}
 
 		acct, err := provider.FetchAccount(ctx, user, accts, emails)
-		results.providerStates = append(results.providerStates, newProviderState(provider, err, "FetchAccount"))
+		results.providerStates = append(results.providerStates, database.NewProviderStatus(provider, err, "FetchAccount"))
 		if err != nil {
 			providerLogger.Error("could not fetch account from authz provider", log.Error(err))
 			continue
@@ -398,7 +398,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 		// the token, or if the token is revoked, the "401 Unauthorized" error will be
 		// handled here.
 		extPerms, err := provider.FetchUserPerms(ctx, acct, fetchOpts)
-		results.providerStates = append(results.providerStates, newProviderState(provider, err, "FetchUserPerms"))
+		results.providerStates = append(results.providerStates, database.NewProviderStatus(provider, err, "FetchUserPerms"))
 		if err != nil {
 			acctLogger.Debug("error fetching user permissions", log.Error(err))
 
@@ -598,7 +598,7 @@ func (s *PermsSyncer) saveUserPermsForAccount(ctx context.Context, userID int32,
 
 // syncUserPerms processes permissions syncing request in user-centric way. When `noPerms` is true,
 // the method will use partial results to update permissions tables even when error occurs.
-func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms bool, fetchOpts authz.FetchPermsOptions) (result *database.SetPermissionsResult, providerStates []syncjobs.ProviderStatus, err error) {
+func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms bool, fetchOpts authz.FetchPermsOptions) (result *database.SetPermissionsResult, providerStates database.CodeHostStatusesSet, err error) {
 	ctx, save := s.observe(ctx, "PermsSyncer.syncUserPerms", "")
 	defer save(requestTypeUser, userID, &err)
 
@@ -714,7 +714,7 @@ func UnifiedUserRepoPermsEnabled(ctx context.Context, db database.DB) bool {
 // syncRepoPerms processes permissions syncing request in repository-centric way.
 // When `noPerms` is true, the method will use partial results to update permissions
 // tables even when error occurs.
-func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPerms bool, fetchOpts authz.FetchPermsOptions) (result *database.SetPermissionsResult, providerStates []syncjobs.ProviderStatus, err error) {
+func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPerms bool, fetchOpts authz.FetchPermsOptions) (result *database.SetPermissionsResult, providerStates database.CodeHostStatusesSet, err error) {
 	ctx, save := s.observe(ctx, "PermsSyncer.syncRepoPerms", "")
 	defer save(requestTypeRepo, int32(repoID), &err)
 
@@ -766,7 +766,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		URI:              repo.URI,
 		ExternalRepoSpec: repo.ExternalRepo,
 	}, fetchOpts)
-	providerStates = append(providerStates, newProviderState(provider, err, "FetchRepoPerms"))
+	providerStates = append(providerStates, database.NewProviderStatus(provider, err, "FetchRepoPerms"))
 
 	// Detect 404 error (i.e. not authorized to call given APIs) that often happens with GitHub.com
 	// when the owner of the token only has READ access. However, we don't want to fail
@@ -922,16 +922,16 @@ func (s *PermsSyncer) syncPerms(ctx context.Context, syncGroups map[requestType]
 
 	defer s.queue.remove(request.Type, request.ID, true)
 
-	var runSync func() (*database.SetPermissionsResult, providerStatesSet, error)
+	var runSync func() (*database.SetPermissionsResult, database.CodeHostStatusesSet, error)
 	switch request.Type {
 	case requestTypeUser:
-		runSync = func() (*database.SetPermissionsResult, providerStatesSet, error) {
+		runSync = func() (*database.SetPermissionsResult, database.CodeHostStatusesSet, error) {
 			// Ensure the job field is recorded when monitoring external API calls
 			ctx = metrics.ContextWithTask(ctx, "SyncUserPerms")
 			return s.syncUserPerms(ctx, request.ID, request.NoPerms, request.Options)
 		}
 	case requestTypeRepo:
-		runSync = func() (*database.SetPermissionsResult, providerStatesSet, error) {
+		runSync = func() (*database.SetPermissionsResult, database.CodeHostStatusesSet, error) {
 			// Ensure the job field is recorded when monitoring external API calls
 			ctx = metrics.ContextWithTask(ctx, "SyncRepoPerms")
 			return s.syncRepoPerms(ctx, api.RepoID(request.ID), request.NoPerms, request.Options)
@@ -980,7 +980,6 @@ func (s *PermsSyncer) syncPerms(ctx context.Context, syncGroups map[requestType]
 
 func (s *PermsSyncer) runSync(ctx context.Context) {
 	logger := s.logger.Scoped("runSync", "routine to start processing the sync request queue")
-	defer logger.Info("stopped")
 
 	userMaxConcurrency := syncUsersMaxConcurrency()
 	logger.Debug("started", log.Int("syncUsersMaxConcurrency", userMaxConcurrency))
@@ -1200,9 +1199,6 @@ func (s *PermsSyncer) isDisabled() bool { return PermissionSyncingDisabled() }
 func (s *PermsSyncer) runSchedule(ctx context.Context) {
 	logger := s.logger.Scoped("runSchedule", "periodically queue old records for sync")
 
-	logger.Info("started")
-	defer logger.Info("stopped")
-
 	ticker := time.NewTicker(s.scheduleInterval)
 	defer ticker.Stop()
 
@@ -1214,7 +1210,7 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 		}
 
 		if s.isDisabled() || permssync.PermissionSyncWorkerEnabled(ctx, s.db, logger) {
-			logger.Info("disabled")
+			logger.Debug("old scheduler disabled due to either permission syncing disabled or new scheduler enabled")
 			continue
 		}
 
@@ -1224,7 +1220,7 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 			continue
 		}
 
-		logger.Info("scheduling permission syncs", log.Int("users", len(schedule.Users)), log.Int("repos", len(schedule.Repos)))
+		logger.Debug("scheduling permission syncs", log.Int("users", len(schedule.Users)), log.Int("repos", len(schedule.Repos)))
 
 		s.scheduleUsers(ctx, schedule.Users...)
 		s.scheduleRepos(ctx, schedule.Repos...)

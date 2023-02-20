@@ -53,6 +53,73 @@ func (f BasicFeature) Check(info *Info) error {
 	return nil
 }
 
+// FeatureBatchChanges is whether Batch Changes on this Sourcegraph instance has been purchased.
+type FeatureBatchChanges struct {
+	// If true, there is no limit to the number of changesets that can be created.
+	Unrestricted bool
+	// Maximum number of changesets that can be created per batch change. If Unrestricted is true, this is ignored.
+	MaxNumChangesets int
+}
+
+func (*FeatureBatchChanges) FeatureName() string {
+	return "batch-changes"
+}
+
+func (f *FeatureBatchChanges) Check(info *Info) error {
+	if info == nil {
+		return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", f.FeatureName()))
+	}
+
+	// If the deprecated campaigns are enabled, use unrestricted batch changes
+	if FeatureCampaigns.Check(info) == nil {
+		f.Unrestricted = true
+		return nil
+	}
+
+	// If the batch changes tag exists on the license, use unrestricted batch changes
+	if info.HasTag(f.FeatureName()) {
+		f.Unrestricted = true
+		return nil
+	}
+
+	// Otherwise, check the default batch changes feature
+	if info.Plan().HasFeature(f, info.IsExpired()) {
+		return nil
+	}
+
+	return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", f.FeatureName()))
+}
+
+type FeaturePrivateRepositories struct {
+	// If true, there is no limit to the number of private repositories that can be added.
+	Unrestricted bool
+	// Maximum number of private repositories that can be added. If Unrestricted is true, this is ignored.
+	MaxNumPrivateRepos int
+}
+
+func (*FeaturePrivateRepositories) FeatureName() string {
+	return "private-repositories"
+}
+
+func (f *FeaturePrivateRepositories) Check(info *Info) error {
+	if info == nil {
+		return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", f.FeatureName()))
+	}
+
+	// If the private repositories tag exists on the license, use unrestricted private repositories
+	if info.HasTag(f.FeatureName()) {
+		f.Unrestricted = true
+		return nil
+	}
+
+	// Otherwise, check the defaultprivate repositories feature
+	if info.Plan().HasFeature(f, info.IsExpired()) {
+		return nil
+	}
+
+	return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", f.FeatureName()))
+}
+
 // Check checks whether the feature is activated based on the current license. If it is
 // disabled, it returns a non-nil error.
 //

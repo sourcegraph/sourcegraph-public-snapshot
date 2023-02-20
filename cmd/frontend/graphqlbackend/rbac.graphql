@@ -78,6 +78,17 @@ type PermissionConnection {
 }
 
 """
+A namespace represents a distinct context within which permission policies
+are defined and enforced.
+"""
+enum PermissionNamespace {
+    """
+    This represents the Batch Changes namespace.
+    """
+    BATCH_CHANGES
+}
+
+"""
 A permission
 """
 type Permission implements Node {
@@ -88,11 +99,15 @@ type Permission implements Node {
     """
     The namespace in which this permission belongs to.
     """
-    namespace: String!
+    namespace: PermissionNamespace!
     """
     The unique action which is granted to a bearer of this permission.
     """
     action: String!
+    """
+    A unique, human-readable string used to represent a permission, taking the form: <namespace>:<object_id>#<relation>@<user_id | user_group>
+    """
+    displayName: String!
     """
     The date and time when the permission was created.
     """
@@ -143,6 +158,19 @@ extend type Query {
         """
         before: String
     ): PermissionConnection!
+}
+
+extend type Mutation {
+    """
+    Deletes a role. This mutation targets only non-system roles.
+    Any users who were assigned to the role will be unassigned and lose any permissions associated with it.
+    """
+    deleteRole(role: ID!): EmptyResponse!
+
+    """
+    Creates a role.
+    """
+    createRole(name: String!): Role!
 }
 
 extend type User {

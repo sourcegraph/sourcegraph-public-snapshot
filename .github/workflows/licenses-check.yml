@@ -30,10 +30,11 @@ jobs:
       with: { go-version: '1.19' }
 
     # set up correct version of node
-    - id: nvmrc
-      run: echo ::set-output name=NODE_VERSION::$(cat .nvmrc)
+    - name: Setup Node
+      id: node-setup
+      run: echo "NODE_VERSION=16.18.1" >> ${GITHUB_OUTPUT}
     - uses: actions/setup-node@v2
-      with: { node-version: '${{ steps.nvmrc.outputs.NODE_VERSION }}' }
+      with: { node-version: '${{ steps.node-setup.outputs.NODE_VERSION }}' }
 
     - name: Install license_finder
       run: gem install license_finder:7.1.0 # sync with licenses-update.yml

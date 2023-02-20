@@ -59,7 +59,7 @@ export const navigateToLineOnAnyClickExtension: Extension = [
                 if (props.nav) {
                     props.nav(href)
                 } else {
-                    props.history.push(href)
+                    props.navigate(href)
                 }
             }
         },

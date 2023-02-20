@@ -1,11 +1,8 @@
 import { useMemo, FC } from 'react'
 
-import {
-    CodeInsightCreationMode,
-    CodeInsightsCreationActions,
-    FORM_ERROR,
-    SubmissionErrors,
-} from '../../../../components'
+import { FORM_ERROR, SubmissionErrors } from '@sourcegraph/wildcard'
+
+import { CodeInsightCreationMode, CodeInsightsCreationActions } from '../../../../components'
 import { MinimalCaptureGroupInsightData, CaptureGroupInsight } from '../../../../core'
 import { CaptureGroupFormFields } from '../../creation/capture-group'
 import { CaptureGroupCreationContent } from '../../creation/capture-group/components/CaptureGroupCreationContent'
@@ -31,7 +28,7 @@ export const EditCaptureGroupInsight: FC<EditCaptureGroupInsightProps> = props =
             title: insight.title,
             repoMode: repoQuery ? 'search-query' : 'urls-list',
             repoQuery: { query: repoQuery },
-            repositories: insight.repositories.join(', '),
+            repositories: insight.repositories,
             groupSearchQuery: insight.query,
             stepValue: Object.values(insight.step)[0]?.toString() ?? '3',
             step: Object.keys(insight.step)[0] as InsightStep,

@@ -108,6 +108,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
                 showEmailForm={query.has(ShowEmailFormQueryParameter)}
                 context={context}
                 telemetryService={telemetryService}
+                isSourcegraphDotCom={context.sourcegraphDotComMode}
             />
         )
     }

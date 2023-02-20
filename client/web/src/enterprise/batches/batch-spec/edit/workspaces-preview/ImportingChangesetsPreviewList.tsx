@@ -13,13 +13,17 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../../../../../components/FilteredConnection/ui'
+import { BatchSpecImportingChangesetsResult } from '../../../../../graphql-operations'
 
 import { ImportingChangesetFields } from './useImportingChangesets'
 
 import styles from './ImportingChangesetsPreviewList.module.scss'
 
 interface ImportingChangesetsPreviewListProps {
-    importingChangesetsConnection: UseShowMorePaginationResult<ImportingChangesetFields>
+    importingChangesetsConnection: UseShowMorePaginationResult<
+        BatchSpecImportingChangesetsResult,
+        ImportingChangesetFields
+    >
     /**
      * Whether or not the changesets in this list are up-to-date with the current batch
      * spec input YAML in the editor.
