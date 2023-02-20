@@ -239,8 +239,9 @@ func configureRemoteGitCommand(cmd *exec.Cmd, tlsConf *tlsConfig) {
 		"-c", "credential.helper=",
 	}
 
-	if len(cmd.Args) > 1 {
-		// Use Git protocol version 2 for all commands
+	if len(cmd.Args) > 1 && cmd.Args[1] != "ls-remote" {
+		// Use Git protocol version 2 for all commands except for ls-remote because it actually decreases the performance of ls-remote.
+		// https://opensource.googleblog.com/2018/05/introducing-git-protocol-version-2.html
 		extraArgs = append(extraArgs, "-c", "protocol.version=2")
 	}
 
