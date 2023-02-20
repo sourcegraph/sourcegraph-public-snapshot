@@ -1,13 +1,12 @@
-package background
+package contextdetection
 
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 )
 
-type RepoEmbeddingJob struct {
+type ContextDetectionEmbeddingJob struct {
 	ID              int
 	State           string
 	FailureMessage  *string
@@ -21,11 +20,8 @@ type RepoEmbeddingJob struct {
 	ExecutionLogs   []executor.ExecutionLogEntry
 	WorkerHostname  string
 	Cancel          bool
-
-	RepoID   api.RepoID
-	Revision api.CommitID
 }
 
-func (j *RepoEmbeddingJob) RecordID() int {
+func (j *ContextDetectionEmbeddingJob) RecordID() int {
 	return j.ID
 }

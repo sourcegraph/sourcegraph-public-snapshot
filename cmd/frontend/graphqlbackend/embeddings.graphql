@@ -1,15 +1,16 @@
 extend type Query {
     embeddingsSearch(
-        repository: ID!
+        repoName: String!
         query: String!
         codeResultsCount: Int!
         textResultsCount: Int!
     ): EmbeddingsSearchResults!
-    # isContextRequiredForQuery(query: String!): Boolean!
+    isContextRequiredForQuery(repoName: String!, query: String!): Boolean!
 }
 
 extend type Mutation {
     scheduleRepositoriesForEmbedding(repoNames: [String!]!): EmptyResponse!
+    scheduleContextDetectionForEmbedding: EmptyResponse!
 }
 
 type EmbeddingsSearchResult {

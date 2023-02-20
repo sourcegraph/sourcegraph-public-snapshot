@@ -2,22 +2,27 @@ package graphqlbackend
 
 import (
 	"context"
-
-	"github.com/graph-gophers/graphql-go"
 )
 
 type EmbeddingsResolver interface {
 	EmbeddingsSearch(ctx context.Context, args EmbeddingsSearchInputArgs) (EmbeddingsSearchResultsResolver, error)
+	IsContextRequiredForQuery(ctx context.Context, args IsContextRequiredForQueryInputArgs) (bool, error)
 
 	ScheduleRepositoriesForEmbedding(ctx context.Context, args ScheduleRepositoriesForEmbeddingArgs) (*EmptyResponse, error)
+	ScheduleContextDetectionForEmbedding(ctx context.Context) (*EmptyResponse, error)
 }
 
 type ScheduleRepositoriesForEmbeddingArgs struct {
 	RepoNames []string
 }
 
+type IsContextRequiredForQueryInputArgs struct {
+	RepoName string
+	Query    string
+}
+
 type EmbeddingsSearchInputArgs struct {
-	Repository       graphql.ID
+	RepoName         string
 	Query            string
 	CodeResultsCount int32
 	TextResultsCount int32

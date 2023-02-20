@@ -46,10 +46,19 @@ type Client struct {
 }
 
 type EmbeddingsSearchParameters struct {
-	RepoName         api.RepoName
-	Query            string
-	CodeResultsCount int
-	TextResultsCount int
+	RepoName         api.RepoName `json:"repoName"`
+	Query            string       `json:"query"`
+	CodeResultsCount int          `json:"codeResultsCount"`
+	TextResultsCount int          `json:"textResultsCount"`
+}
+
+type IsContextRequiredForQueryParameters struct {
+	RepoName api.RepoName `json:"repoName"`
+	Query    string       `json:"query"`
+}
+
+type IsContextRequiredForQueryResult struct {
+	IsRequired bool `json:"isRequired"`
 }
 
 func (c *Client) Search(ctx context.Context, args EmbeddingsSearchParameters) (*EmbeddingSearchResults, error) {
@@ -75,6 +84,31 @@ func (c *Client) Search(ctx context.Context, args EmbeddingsSearchParameters) (*
 		return nil, err
 	}
 	return &response, nil
+}
+
+func (c *Client) IsContextRequiredForQuery(ctx context.Context, args IsContextRequiredForQueryParameters) (bool, error) {
+	resp, err := c.httpPost(ctx, "isContextRequiredForQuery", args.RepoName, args)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		// best-effort inclusion of body in error message
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
+		return false, errors.Errorf(
+			"Embeddings.IsContextRequiredForQuery http status %d: %s",
+			resp.StatusCode,
+			string(body),
+		)
+	}
+
+	var response IsContextRequiredForQueryResult
+	err = json.NewDecoder(resp.Body).Decode(&response)
+	if err != nil {
+		return false, err
+	}
+	return response.IsRequired, nil
 }
 
 func (c *Client) url(repo api.RepoName) (string, error) {

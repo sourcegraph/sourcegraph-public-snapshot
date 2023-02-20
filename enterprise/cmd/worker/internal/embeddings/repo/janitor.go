@@ -1,4 +1,4 @@
-package embeddings
+package repo
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	embeddingsbg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background"
+	repoembeddingsbg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -34,14 +34,14 @@ func (j *repoEmbeddingJanitorJob) Routines(_ context.Context, observationCtx *ob
 	if err != nil {
 		return nil, err
 	}
-	store := embeddingsbg.NewRepoEmbeddingJobWorkerStore(observationCtx, db.Handle())
+	store := repoembeddingsbg.NewRepoEmbeddingJobWorkerStore(observationCtx, db.Handle())
 	return []goroutine.BackgroundRoutine{newRepoEmbeddingJobResetter(observationCtx, store)}, nil
 }
 
-func newRepoEmbeddingJobResetter(observationCtx *observation.Context, workerStore dbworkerstore.Store[*embeddingsbg.RepoEmbeddingJob]) *dbworker.Resetter[*embeddingsbg.RepoEmbeddingJob] {
+func newRepoEmbeddingJobResetter(observationCtx *observation.Context, workerStore dbworkerstore.Store[*repoembeddingsbg.RepoEmbeddingJob]) *dbworker.Resetter[*repoembeddingsbg.RepoEmbeddingJob] {
 	return dbworker.NewResetter(observationCtx.Logger, workerStore, dbworker.ResetterOptions{
-		Name:     "embedding_job_worker_resetter",
+		Name:     "repo_embedding_job_worker_resetter",
 		Interval: time.Minute * 60, // Check for orphaned jobs every 60 minutes
-		Metrics:  dbworker.NewResetterMetrics(observationCtx, "embedding_job_worker"),
+		Metrics:  dbworker.NewResetterMetrics(observationCtx, "repo_embedding_job_worker"),
 	})
 }

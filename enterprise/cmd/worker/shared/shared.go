@@ -13,7 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codemonitors"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/embeddings"
+	contextdetectionembeddings "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/embeddings/contextdetection"
+	repoembeddings "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/embeddings/repo"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executors"
 	workerinsights "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/insights"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/permissions"
@@ -61,8 +62,10 @@ var additionalJobs = map[string]job.Job{
 	"auth-permission-sync-job-cleaner":   auth.NewPermissionSyncJobCleaner(),
 	"auth-permission-sync-job-scheduler": auth.NewPermissionSyncJobScheduler(),
 
-	"repo-embedding-janitor": embeddings.NewRepoEmbeddingJanitorJob(),
-	"repo-embedding-job":     embeddings.NewRepoEmbeddingJob(),
+	"repo-embedding-janitor":              repoembeddings.NewRepoEmbeddingJanitorJob(),
+	"repo-embedding-job":                  repoembeddings.NewRepoEmbeddingJob(),
+	"context-detection-embedding-janitor": contextdetectionembeddings.NewContextDetectionEmbeddingJanitorJob(),
+	"context-detection-embedding-job":     contextdetectionembeddings.NewContextDetectionEmbeddingJob(),
 
 	// Note: experimental (not documented)
 	"codeintel-ranking-sourcer": codeintel.NewRankingSourcerJob(),

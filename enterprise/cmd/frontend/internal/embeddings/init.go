@@ -6,7 +6,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/embeddings/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
-	embeddingsbg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/contextdetection"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -22,8 +23,9 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	store := embeddingsbg.RepoEmbeddingJobsStore{Store: basestore.NewWithHandle(db.Handle())}
+	repoEmbeddingsStore := repo.RepoEmbeddingJobsStore{Store: basestore.NewWithHandle(db.Handle())}
+	contextDetectionEmbeddingsStore := contextdetection.ContextDetectionEmbeddingJobsStore{Store: basestore.NewWithHandle(db.Handle())}
 	gitserverClient := gitserver.NewClient()
-	enterpriseServices.EmbeddingsResolver = resolvers.NewResolver(db, store, gitserverClient)
+	enterpriseServices.EmbeddingsResolver = resolvers.NewResolver(db, gitserverClient, repoEmbeddingsStore, contextDetectionEmbeddingsStore)
 	return nil
 }

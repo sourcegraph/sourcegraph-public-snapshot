@@ -11,6 +11,8 @@ import (
 
 var nonAlphanumericCharsRegexp = lazyregexp.New(`[^0-9a-zA-Z]`)
 
+var CONTEXT_DETECTION_INDEX_NAME = "context_detection.embeddingindex"
+
 type RepoEmbeddingIndexName string
 
 func GetRepoEmbeddingIndexName(repoName api.RepoName) RepoEmbeddingIndexName {

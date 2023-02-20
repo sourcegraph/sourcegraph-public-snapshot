@@ -1,4 +1,4 @@
-package embeddings
+package repo
 
 import (
 	"bytes"
@@ -11,7 +11,7 @@ import (
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
-	embeddingsbg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background"
+	repoembeddingsbg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -25,13 +25,13 @@ type handler struct {
 	gitserverClient gitserver.Client
 }
 
-var _ workerutil.Handler[*embeddingsbg.RepoEmbeddingJob] = &handler{}
+var _ workerutil.Handler[*repoembeddingsbg.RepoEmbeddingJob] = &handler{}
 
 var matchEverythingRegexp = regexp.MustCompile(``)
 
 const MAX_FILE_SIZE = 1000000 // 1MB
 
-func (h *handler) Handle(ctx context.Context, logger log.Logger, record *embeddingsbg.RepoEmbeddingJob) error {
+func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoembeddingsbg.RepoEmbeddingJob) error {
 	repo, err := h.db.Repos().Get(ctx, record.RepoID)
 	if err != nil {
 		return err

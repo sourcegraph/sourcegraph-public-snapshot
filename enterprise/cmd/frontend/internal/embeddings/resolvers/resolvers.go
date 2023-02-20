@@ -5,29 +5,27 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
-	embeddingsbg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background"
+	contextdetectionbg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/contextdetection"
+	repobg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
-func NewResolver(db database.DB, store embeddingsbg.RepoEmbeddingJobsStore, gitserverClient gitserver.Client) graphqlbackend.EmbeddingsResolver {
-	return &Resolver{db: db, gitserverClient: gitserverClient, store: store}
+func NewResolver(db database.DB, gitserverClient gitserver.Client, repoStore repobg.RepoEmbeddingJobsStore, contextDetectionStore contextdetectionbg.ContextDetectionEmbeddingJobsStore) graphqlbackend.EmbeddingsResolver {
+	return &Resolver{db: db, gitserverClient: gitserverClient, repoStore: repoStore, contextDetectionStore: contextDetectionStore}
 }
 
 type Resolver struct {
-	db              database.DB
-	gitserverClient gitserver.Client
-	store           embeddingsbg.RepoEmbeddingJobsStore
+	db                    database.DB
+	gitserverClient       gitserver.Client
+	repoStore             repobg.RepoEmbeddingJobsStore
+	contextDetectionStore contextdetectionbg.ContextDetectionEmbeddingJobsStore
 }
 
 func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.EmbeddingsSearchInputArgs) (graphqlbackend.EmbeddingsSearchResultsResolver, error) {
-	repoID, err := graphqlbackend.UnmarshalRepositoryID(args.Repository)
-	if err != nil {
-		return nil, err
-	}
-
-	repo, err := r.db.Repos().Get(ctx, repoID)
+	repo, err := r.db.Repos().GetByName(ctx, api.RepoName(args.RepoName))
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +43,20 @@ func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.Emb
 	return &embeddingsSearchResultsResolver{results}, nil
 }
 
+func (r *Resolver) IsContextRequiredForQuery(ctx context.Context, args graphqlbackend.IsContextRequiredForQueryInputArgs) (bool, error) {
+	repo, err := r.db.Repos().GetByName(ctx, api.RepoName(args.RepoName))
+	if err != nil {
+		return false, err
+	}
+	return embeddings.NewClient().IsContextRequiredForQuery(ctx, embeddings.IsContextRequiredForQueryParameters{RepoName: repo.Name, Query: args.Query})
+}
+
 func (r *Resolver) ScheduleRepositoriesForEmbedding(ctx context.Context, args graphqlbackend.ScheduleRepositoriesForEmbeddingArgs) (*graphqlbackend.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins may schedule embedding jobs.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
 	// TODO: Check if repos exists, and check if repo + revision embedding job already exists and is not completed
 	repoStore := r.db.Repos()
 	for _, repoName := range args.RepoNames {
@@ -57,10 +68,23 @@ func (r *Resolver) ScheduleRepositoriesForEmbedding(ctx context.Context, args gr
 		if err != nil {
 			return nil, err
 		}
-		_, err = r.store.CreateRepoEmbeddingJob(ctx, repo.ID, latestRevision)
+		_, err = r.repoStore.CreateRepoEmbeddingJob(ctx, repo.ID, latestRevision)
 		if err != nil {
 			return nil, err
 		}
+	}
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) ScheduleContextDetectionForEmbedding(ctx context.Context) (*graphqlbackend.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins may schedule embedding jobs.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	_, err := r.contextDetectionStore.CreateContextDetectionEmbeddingJob(ctx)
+	if err != nil {
+		return nil, err
 	}
 	return &graphqlbackend.EmptyResponse{}, nil
 }

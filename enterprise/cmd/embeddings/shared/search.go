@@ -5,9 +5,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 const QUERY_EMBEDDING_RETRIES = 3
@@ -16,11 +14,14 @@ type readFileFn func(ctx context.Context, repoName api.RepoName, revision api.Co
 
 type getRepoEmbeddingIndexFn func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error)
 
-func SearchRepoEmbeddingIndex(
+type getQueryEmbeddingFn func(query string) ([]float32, error)
+
+func searchRepoEmbeddingIndex(
 	ctx context.Context,
 	params embeddings.EmbeddingsSearchParameters,
 	readFile readFileFn,
 	getRepoEmbeddingIndex getRepoEmbeddingIndexFn,
+	getQueryEmbedding getQueryEmbeddingFn,
 ) (*embeddings.EmbeddingSearchResults, error) {
 	repoEmbeddingIndexName := embeddings.GetRepoEmbeddingIndexName(params.RepoName)
 	embeddingIndex, err := getRepoEmbeddingIndex(ctx, repoEmbeddingIndexName)
@@ -28,8 +29,7 @@ func SearchRepoEmbeddingIndex(
 		return nil, err
 	}
 
-	config := conf.Get().Embeddings
-	embeddedQuery, err := embed.GetEmbeddingsWithRetries([]string{params.Query}, config, QUERY_EMBEDDING_RETRIES)
+	embeddedQuery, err := getQueryEmbedding(params.Query)
 	if err != nil {
 		return nil, err
 	}

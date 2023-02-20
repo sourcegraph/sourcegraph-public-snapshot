@@ -1,4 +1,4 @@
-package embeddings
+package repo
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
-	embeddingsbg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background"
+	repoembeddingsbg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -51,7 +51,7 @@ func (s *repoEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 		newRepoEmbeddingJobWorker(
 			workCtx,
 			observationCtx,
-			embeddingsbg.NewRepoEmbeddingJobWorkerStore(observationCtx, db.Handle()),
+			repoembeddingsbg.NewRepoEmbeddingJobWorkerStore(observationCtx, db.Handle()),
 			edb.NewEnterpriseDB(db),
 			uploadStore,
 			gitserver.NewClient(),
@@ -62,13 +62,13 @@ func (s *repoEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 func newRepoEmbeddingJobWorker(
 	ctx context.Context,
 	observationCtx *observation.Context,
-	workerStore dbworkerstore.Store[*embeddingsbg.RepoEmbeddingJob],
+	workerStore dbworkerstore.Store[*repoembeddingsbg.RepoEmbeddingJob],
 	db edb.EnterpriseDB,
 	uploadStore uploadstore.Store,
 	gitserverClient gitserver.Client,
-) *workerutil.Worker[*embeddingsbg.RepoEmbeddingJob] {
+) *workerutil.Worker[*repoembeddingsbg.RepoEmbeddingJob] {
 	handler := &handler{db, uploadStore, gitserverClient}
-	return dbworker.NewWorker[*embeddingsbg.RepoEmbeddingJob](ctx, workerStore, handler, workerutil.WorkerOptions{
+	return dbworker.NewWorker[*repoembeddingsbg.RepoEmbeddingJob](ctx, workerStore, handler, workerutil.WorkerOptions{
 		Name:              "repo_embedding_job_worker",
 		Interval:          time.Second, // Poll for a job once per second
 		NumHandlers:       1,           // Process only one job at a time (per instance)

@@ -36,6 +36,7 @@ const addr = ":9991"
 
 const REPO_EMBEDDING_INDEX_CACHE_MAX_ENTRIES = 5
 const FILE_CACHE_MAX_ENTRIES = 128
+const QUERY_EMBEDDINGS_CACHE_MAX_ENTRIES = 128
 
 func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config *Config) error {
 	logger := observationCtx.Logger
@@ -67,6 +68,13 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return errors.Wrap(err, "creating file cache")
 	}
 
+	queryEmbeddingsCache, err := lru.New(QUERY_EMBEDDINGS_CACHE_MAX_ENTRIES)
+	if err != nil {
+		return errors.Wrap(err, "creating query embeddings cache")
+	}
+
+	var contextDetectionEmbeddingIndex *embeddings.ContextDetectionEmbeddingIndex = nil
+
 	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(edb.NewEnterpriseDB(db).SubRepoPerms())
 	if err != nil {
 		return errors.Wrap(err, "creating sub-repo client")
@@ -80,8 +88,24 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return getCachedRepoEmbeddingIndex(ctx, repoEmbeddingIndexCache, repoEmbeddingIndexName, uploadStore)
 	}
 
+	getQueryEmbedding := func(query string) ([]float32, error) {
+		config := conf.Get().Embeddings
+		return getCachedQueryEmbedding(queryEmbeddingsCache, config, query)
+	}
+
+	getContextDetectionEmbeddingIndex := func(ctx context.Context) (*embeddings.ContextDetectionEmbeddingIndex, error) {
+		if contextDetectionEmbeddingIndex != nil {
+			return contextDetectionEmbeddingIndex, nil
+		}
+		contextDetectionEmbeddingIndex, err = downloadContextDetectionEmbeddingIndex(ctx, uploadStore)
+		if err != nil {
+			return nil, err
+		}
+		return contextDetectionEmbeddingIndex, nil
+	}
+
 	// Create HTTP server
-	handler := NewHandler(ctx, readFile, getRepoEmbeddingIndex)
+	handler := NewHandler(ctx, readFile, getRepoEmbeddingIndex, getQueryEmbedding, getContextDetectionEmbeddingIndex)
 	handler = handlePanic(logger, handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
@@ -104,6 +128,8 @@ func NewHandler(
 	ctx context.Context,
 	readFile readFileFn,
 	getRepoEmbeddingIndex getRepoEmbeddingIndexFn,
+	getQueryEmbedding getQueryEmbeddingFn,
+	getContextDetectionEmbeddingIndex getContextDetectionEmbeddingIndexFn,
 ) http.Handler {
 	// Initialize the legacy JSON API server
 	mux := http.NewServeMux()
@@ -120,7 +146,7 @@ func NewHandler(
 			return
 		}
 
-		res, err := SearchRepoEmbeddingIndex(ctx, args, readFile, getRepoEmbeddingIndex)
+		res, err := searchRepoEmbeddingIndex(ctx, args, readFile, getRepoEmbeddingIndex, getQueryEmbedding)
 		if err != nil {
 			http.Error(w, "error searching embedding index", http.StatusInternalServerError)
 			return
@@ -128,6 +154,29 @@ func NewHandler(
 
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(res)
+	})
+
+	mux.HandleFunc("/isContextRequiredForQuery", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
+			return
+		}
+
+		var args embeddings.IsContextRequiredForQueryParameters
+		err := json.NewDecoder(r.Body).Decode(&args)
+		if err != nil {
+			http.Error(w, "could not parse request body", http.StatusBadRequest)
+			return
+		}
+
+		isRequired, err := isContextRequiredForQuery(ctx, getQueryEmbedding, getContextDetectionEmbeddingIndex, args.Query)
+		if err != nil {
+			http.Error(w, "error detecting if context is required for query", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(embeddings.IsContextRequiredForQueryResult{IsRequired: isRequired})
 	})
 
 	return mux
