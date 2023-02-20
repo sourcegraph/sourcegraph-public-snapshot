@@ -4794,6 +4794,10 @@ type GitCommit implements Node {
     """
     abbreviatedOID: String!
     """
+    The changelist number in the Perforce depot submitted with this commit.
+    """
+    changelist: Int
+    """
     This commit's author.
     """
     author: Signature!
@@ -5567,6 +5571,10 @@ type GitBlob implements TreeEntry & File2 {
     The Git commit containing this blob.
     """
     commit: GitCommit!
+    """
+    The file revision at this commit on Perforce.
+    """
+    revision: Int
     """
     The repository containing this Git blob.
     """
