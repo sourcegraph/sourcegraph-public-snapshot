@@ -1,9 +1,11 @@
 package auth
 
 import (
+	"math/rand"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNormalizeUsername(t *testing.T) {
@@ -64,9 +66,42 @@ func TestNormalizeUsername(t *testing.T) {
 	}
 }
 
+// Equivalent to `^\w(?:\w|[-.](?=\w))*-?$` which we have in the DB constraint, but without a lookahead
+var validUsername = lazyregexp.New(`^\w(?:(?:[\w.-]\w|\w)*-?|)$`)
+
 func isValidUsername(name string) bool {
 	return validUsername.MatchString(name) && len(name) <= 255 // (255 is the max length of a username in the database
 }
 
-// Equivalent to `^\w(?:\w|[-.](?=\w))*-?$` which we have in the DB constraint, but without a lookahead
-var validUsername = lazyregexp.New(`^\w(?:(?:[\w.-]\w|\w)*-?|)$`)
+func Test_AddRandomSuffixToMakeUnique(t *testing.T) {
+	const suffixLength = 5
+
+	testCases := []struct {
+		username   string
+		wantLength int
+	}{
+		{
+			username:   "bob",
+			wantLength: 3 + 1 + suffixLength,
+		},
+		{
+			username:   "bob-",
+			wantLength: 4 + suffixLength,
+		},
+		{
+			username:   "",
+			wantLength: suffixLength,
+		},
+	}
+
+	rand.Seed(0)
+	for _, tc := range testCases {
+		// Run a bunch of times to see we're getting consistent results
+		for i := 0; i < 100; i++ {
+			out, err := AddRandomSuffix(tc.username)
+			assert.NoError(t, err, tc.username)
+			assert.Len(t, out, tc.wantLength)
+			assert.True(t, isValidUsername(out))
+		}
+	}
+}
