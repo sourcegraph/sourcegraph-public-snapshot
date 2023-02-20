@@ -3,13 +3,16 @@ package database
 import (
 	"context"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type CodeownersStore interface {
@@ -37,7 +40,7 @@ func (s *codeownersStore) CreateCodeownersFile(ctx context.Context, file *types.
 
 		q := sqlf.Sprintf(
 			createCodeownersQueryFmtStr,
-			sqlf.Join(codeownersInsertColumns, ","),
+			sqlf.Join(codeownersColumns, ","),
 			file.Contents,
 			file.Proto,
 			file.RepoID,
@@ -53,7 +56,7 @@ func (s *codeownersStore) CreateCodeownersFile(ctx context.Context, file *types.
 	})
 }
 
-var codeownersInsertColumns = []*sqlf.Query{
+var codeownersColumns = []*sqlf.Query{
 	sqlf.Sprintf("contents"),
 	sqlf.Sprintf("contents_proto"),
 	sqlf.Sprintf("repo_id"),
@@ -70,9 +73,27 @@ DO UPDATE SET contents = EXCLUDED.contents, contents_proto = EXCLUDED.contents_p
 `
 
 func (s *codeownersStore) GetCodeownersForRepo(ctx context.Context, id api.RepoID) (*types.CodeownersFile, error) {
-	//TODO implement me
-	panic("implement me")
+	q := sqlf.Sprintf(
+		getCodeownersFileQueryFmtStr,
+		sqlf.Join(codeownersColumns, ", "),
+		sqlf.Sprintf("repo_id = %s", id),
+	)
+	codeownersFiles, err := scanCodeowners(s.Query(ctx, q))
+	if err != nil {
+		return nil, err
+	}
+	if len(codeownersFiles) != 1 {
+		return nil, errors.New("add a not found error")
+	}
+	return codeownersFiles[0], nil
 }
+
+const getCodeownersFileQueryFmtStr = `
+SELECT %s
+FROM codeowners 
+WHERE %s
+LIMIT 1
+`
 
 func (s *codeownersStore) DeleteCodeownersForRepo(ctx context.Context, id api.RepoID) error {
 	//TODO implement me
@@ -106,14 +127,21 @@ func (s *codeownersStore) WithTransact(ctx context.Context, f func(store Codeown
 
 var scanCodeowners = basestore.NewSliceScanner(func(s dbutil.Scanner) (*types.CodeownersFile, error) {
 	var c types.CodeownersFile
+	c.Proto = new(codeownerspb.File)
 	err := scanCodeownersRow(s, &c)
 	return &c, err
 })
 
 func scanCodeownersRow(sc dbutil.Scanner, c *types.CodeownersFile) error {
-	return sc.Scan(
+	var protoString string
+	if err := sc.Scan(
 		&c.Contents,
-		&c.Proto,
+		&protoString,
 		&c.RepoID,
-	)
+		&c.CreatedAt,
+		&c.UpdatedAt,
+	); err != nil {
+		return err
+	}
+	return jsonpb.UnmarshalString(protoString, c.Proto)
 }
