@@ -37,9 +37,9 @@ type LsifStore interface {
 
 	// Ranking
 	ScanDocuments(ctx context.Context, id int, f func(path string, document *scip.Document) error) (err error)
-	InsertDefinitionsAndReferencesForDocument(ctx context.Context, upload db.ExportedUpload, rankingGraphKey string, f func(ctx context.Context, upload db.ExportedUpload, rankingGraphKey, path string, document *scip.Document) error) (err error)
-	InsertDefintionsForRanking(ctx context.Context, rankingGraphKey string, defintions []shared.RankingDefintions) (err error)
-	InsertReferencesForRanking(ctx context.Context, rankingGraphKey string, references shared.RankingReferences) (err error)
+	InsertDefinitionsAndReferencesForDocument(ctx context.Context, upload db.ExportedUpload, rankingGraphKey string, rankingBatchSize int, f func(ctx context.Context, upload db.ExportedUpload, rankingBatchSize int, rankingGraphKey, path string, document *scip.Document) error) (err error)
+	InsertDefintionsForRanking(ctx context.Context, rankingGraphKey string, rankingBatchSize int, defintions []shared.RankingDefintions) (err error)
+	InsertReferencesForRanking(ctx context.Context, rankingGraphKey string, rankingBatchSize int, references shared.RankingReferences) (err error)
 	InsertPathCountInputs(ctx context.Context, rankingGraphKey string, batchSize int) (err error)
 	InsertPathRanks(ctx context.Context, graphKey string, batchSize int) (numPathRanksInserted float64, numInputsProcessed float64, err error)
 }

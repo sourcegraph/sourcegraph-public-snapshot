@@ -25,18 +25,25 @@ func (s *Service) MapRankingGraph(ctx context.Context, numRankingRoutines int) (
 	ctx, _, endObservation := s.operations.mapRankingGraph.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	if err := s.lsifstore.InsertPathCountInputs(ctx, rankingGraphKey, rankingBatchSize); err != nil {
+	if err := s.lsifstore.InsertPathCountInputs(ctx, rankingGraphKey, rankingMapReduceBatchSize); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *Service) ReduceRankingGraph(ctx context.Context, numRankingRoutines int) (numPathRanksInserted float64, numPathCountInputsProcessed float64, err error) {
+func (s *Service) ReduceRankingGraph(
+	ctx context.Context,
+	numRankingRoutines int,
+) (numPathRanksInserted float64, numPathCountInputsProcessed float64, err error) {
 	ctx, _, endObservation := s.operations.reduceRankingGraph.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	numPathRanksInserted, numPathCountInputsProcessed, err = s.lsifstore.InsertPathRanks(ctx, rankingGraphKey, rankingBatchSize)
+	numPathRanksInserted, numPathCountInputsProcessed, err = s.lsifstore.InsertPathRanks(
+		ctx,
+		rankingGraphKey,
+		rankingMapReduceBatchSize,
+	)
 	if err != nil {
 		return numPathCountInputsProcessed, numPathCountInputsProcessed, err
 	}
@@ -44,11 +51,20 @@ func (s *Service) ReduceRankingGraph(ctx context.Context, numRankingRoutines int
 	return numPathRanksInserted, numPathCountInputsProcessed, nil
 }
 
-func (s *Service) ExportRankingGraph(ctx context.Context, numRankingRoutines int) (err error) {
+func (s *Service) ExportRankingGraph(
+	ctx context.Context,
+	numRankingRoutines int,
+	numBatchSize int,
+) (err error) {
 	ctx, _, endObservation := s.operations.exportRankingGraph.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	uploads, err := s.store.GetUploadsForRanking(ctx, rankingGraphKey, "ranking", rankingGraphBatchSize)
+	uploads, err := s.store.GetUploadsForRanking(
+		ctx,
+		rankingGraphKey,
+		"ranking",
+		rankingGraphBatchSize,
+	)
 	if err != nil {
 		return err
 	}
@@ -64,7 +80,7 @@ func (s *Service) ExportRankingGraph(ctx context.Context, numRankingRoutines int
 	for i := 0; i < numRankingRoutines; i++ {
 		g.Go(func(ctx context.Context) error {
 			for upload := range sharedUploads {
-				if err := s.lsifstore.InsertDefinitionsAndReferencesForDocument(ctx, upload, rankingGraphKey, s.setDefinitionsAndReferencesForUpload); err != nil {
+				if err := s.lsifstore.InsertDefinitionsAndReferencesForDocument(ctx, upload, rankingGraphKey, numBatchSize, s.setDefinitionsAndReferencesForUpload); err != nil {
 					s.logger.Error(
 						"Failed to process upload for ranking graph",
 						log.Int("id", upload.ID),
@@ -94,7 +110,13 @@ func (s *Service) ExportRankingGraph(ctx context.Context, numRankingRoutines int
 	return nil
 }
 
-func (s *Service) setDefinitionsAndReferencesForUpload(ctx context.Context, upload store.ExportedUpload, rankingGraphKey, path string, document *scip.Document) error {
+func (s *Service) setDefinitionsAndReferencesForUpload(
+	ctx context.Context,
+	upload store.ExportedUpload,
+	rankingBatchNumber int,
+	rankingGraphKey, path string,
+	document *scip.Document,
+) error {
 	seenDefinitions := map[string]struct{}{}
 	definitions := []shared.RankingDefintions{}
 	for _, occ := range document.Occurrences {
@@ -128,15 +150,15 @@ func (s *Service) setDefinitionsAndReferencesForUpload(ctx context.Context, uplo
 	}
 
 	if len(definitions) > 0 {
-		if err := s.lsifstore.InsertDefintionsForRanking(ctx, rankingGraphKey, definitions); err != nil {
+		if err := s.lsifstore.InsertDefintionsForRanking(ctx, rankingGraphKey, rankingBatchNumber, definitions); err != nil {
 			return err
 		}
 	}
 
 	if len(references) > 0 {
-		if err := s.lsifstore.InsertReferencesForRanking(ctx, rankingGraphKey, shared.RankingReferences{
-			UploadID:   upload.ID,
-			SymbolName: references,
+		if err := s.lsifstore.InsertReferencesForRanking(ctx, rankingGraphKey, rankingBatchNumber, shared.RankingReferences{
+			UploadID:    upload.ID,
+			SymbolNames: references,
 		}); err != nil {
 			return err
 		}
@@ -150,34 +172,39 @@ func (s *Service) VacuumRankingGraph(ctx context.Context) error {
 		return nil
 	}
 
-	numDeleted, err := s.store.ProcessStaleExportedUploads(ctx, rankingGraphKey, rankingGraphDeleteBatchSize, func(ctx context.Context, objectPrefix string) error {
-		if objectPrefix == "" {
-			// Special case: we haven't backfilled some data on dotcom yet
-			return nil
-		}
+	numDeleted, err := s.store.ProcessStaleExportedUploads(
+		ctx,
+		rankingGraphKey,
+		rankingGraphDeleteBatchSize,
+		func(ctx context.Context, objectPrefix string) error {
+			if objectPrefix == "" {
+				// Special case: we haven't backfilled some data on dotcom yet
+				return nil
+			}
 
-		objects := s.rankingBucket.Objects(ctx, &storage.Query{
-			Prefix: objectPrefix,
-		})
-		for {
-			attrs, err := objects.Next()
-			if err != nil {
-				if err == iterator.Done {
-					break
+			objects := s.rankingBucket.Objects(ctx, &storage.Query{
+				Prefix: objectPrefix,
+			})
+			for {
+				attrs, err := objects.Next()
+				if err != nil {
+					if err == iterator.Done {
+						break
+					}
+
+					return err
 				}
 
-				return err
+				if err := s.rankingBucket.Object(attrs.Name).Delete(ctx); err != nil {
+					return err
+				}
+
+				s.operations.numBytesDeleted.Add(float64(attrs.Size))
 			}
 
-			if err := s.rankingBucket.Object(attrs.Name).Delete(ctx); err != nil {
-				return err
-			}
-
-			s.operations.numBytesDeleted.Add(float64(attrs.Size))
-		}
-
-		return nil
-	})
+			return nil
+		},
+	)
 	if err != nil {
 		return err
 	}
@@ -204,38 +231,44 @@ func (s *Service) serializeAndPersistRankingGraphForUpload(
 		}
 	}()
 
-	return s.serializeRankingGraphForUpload(ctx, id, repo, root, func(filename string, format string, args ...any) error {
-		path := fmt.Sprintf("%s/%s", objectPrefix, filename)
+	return s.serializeRankingGraphForUpload(
+		ctx,
+		id,
+		repo,
+		root,
+		func(filename string, format string, args ...any) error {
+			path := fmt.Sprintf("%s/%s", objectPrefix, filename)
 
-		ow, ok := writers[path]
-		if !ok {
-			handle := s.rankingBucket.Object(path)
-			if err := handle.Delete(ctx); err != nil && err != storage.ErrObjectNotExist {
+			ow, ok := writers[path]
+			if !ok {
+				handle := s.rankingBucket.Object(path)
+				if err := handle.Delete(ctx); err != nil && err != storage.ErrObjectNotExist {
+					return err
+				}
+
+				wc := handle.NewWriter(ctx)
+				ow = &gcsObjectWriter{
+					Writer:  bufio.NewWriter(wc),
+					c:       wc,
+					written: 0,
+				}
+				writers[path] = ow
+			}
+
+			if n, err := io.Copy(ow, strings.NewReader(fmt.Sprintf(format, args...))); err != nil {
 				return err
+			} else {
+				ow.written += n
+				s.operations.numBytesUploaded.Add(float64(n))
+
+				if ow.written > maxBytesPerObject {
+					return errors.Newf("CSV output exceeds max bytes (%d)", maxBytesPerObject)
+				}
 			}
 
-			wc := handle.NewWriter(ctx)
-			ow = &gcsObjectWriter{
-				Writer:  bufio.NewWriter(wc),
-				c:       wc,
-				written: 0,
-			}
-			writers[path] = ow
-		}
-
-		if n, err := io.Copy(ow, strings.NewReader(fmt.Sprintf(format, args...))); err != nil {
-			return err
-		} else {
-			ow.written += n
-			s.operations.numBytesUploaded.Add(float64(n))
-
-			if ow.written > maxBytesPerObject {
-				return errors.Newf("CSV output exceeds max bytes (%d)", maxBytesPerObject)
-			}
-		}
-
-		return nil
-	})
+			return nil
+		},
+	)
 }
 
 type gcsObjectWriter struct {

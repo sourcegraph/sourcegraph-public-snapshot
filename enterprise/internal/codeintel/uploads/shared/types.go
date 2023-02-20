@@ -208,6 +208,6 @@ type RankingDefintions struct {
 }
 
 type RankingReferences struct {
-	UploadID   int
-	SymbolName []string
+	UploadID    int
+	SymbolNames []string
 }

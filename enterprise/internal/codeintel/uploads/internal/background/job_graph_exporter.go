@@ -13,13 +13,14 @@ func NewRankingGraphExporter(
 	uploadsService UploadService,
 	numRankingRoutines int,
 	interval time.Duration,
+  batchSize int,
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		context.Background(),
 		"rank.graph-exporter", "exports new and purges old code-intel data as CSV",
 		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			if err := uploadsService.ExportRankingGraph(ctx, numRankingRoutines); err != nil {
+			if err := uploadsService.ExportRankingGraph(ctx, numRankingRoutines, batchSize); err != nil {
 				return err
 			}
 

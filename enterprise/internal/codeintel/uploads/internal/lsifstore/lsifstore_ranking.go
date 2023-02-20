@@ -3,7 +3,6 @@ package lsifstore
 import (
 	"bytes"
 	"context"
-	"fmt"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -23,7 +22,8 @@ func (s *store) InsertDefinitionsAndReferencesForDocument(
 	ctx context.Context,
 	upload db.ExportedUpload,
 	rankingGraphKey string,
-	setDefsAndRefs func(ctx context.Context, upload db.ExportedUpload, rankingGraphKey, path string, document *scip.Document) error,
+	rankingBatchNumber int,
+	setDefsAndRefs func(ctx context.Context, upload db.ExportedUpload, rankingBatchNumber int, rankingGraphKey, path string, document *scip.Document) error,
 ) (err error) {
 	ctx, _, endObservation := s.operations.createDefinitionsAndReferencesForRanking.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.Int("id", upload.ID),
@@ -52,7 +52,7 @@ func (s *store) InsertDefinitionsAndReferencesForDocument(
 		if err := proto.Unmarshal(scipPayload, &document); err != nil {
 			return err
 		}
-		err = setDefsAndRefs(ctx, upload, rankingGraphKey, path, &document)
+		err = setDefsAndRefs(ctx, upload, rankingBatchNumber, rankingGraphKey, path, &document)
 		if err != nil {
 			return err
 		}
@@ -70,10 +70,18 @@ JOIN codeintel_scip_documents sd ON sd.id = sid.document_id
 WHERE sid.upload_id = %s
 ORDER BY sid.document_path
 `
-const batchNumber = 10000
 
-func (s *store) InsertDefintionsForRanking(ctx context.Context, rankingGraphKey string, defintions []shared.RankingDefintions) (err error) {
-	ctx, _, endObservation := s.operations.setDefinitionsForRanking.With(ctx, &err, observation.Args{})
+func (s *store) InsertDefintionsForRanking(
+	ctx context.Context,
+	rankingGraphKey string,
+	rankingBatchNumber int,
+	defintions []shared.RankingDefintions,
+) (err error) {
+	ctx, _, endObservation := s.operations.setDefinitionsForRanking.With(
+		ctx,
+		&err,
+		observation.Args{},
+	)
 	defer endObservation(1, observation.Args{})
 
 	tx, err := s.db.Transact(ctx)
@@ -83,22 +91,19 @@ func (s *store) InsertDefintionsForRanking(ctx context.Context, rankingGraphKey 
 	defer func() { err = tx.Done(err) }()
 
 	inserter := func(inserter *batch.Inserter) error {
-		batchDefinitions := make([]shared.RankingDefintions, 0, batchNumber)
+		batchDefinitions := make([]shared.RankingDefintions, 0, rankingBatchNumber)
 		for _, def := range defintions {
 			batchDefinitions = append(batchDefinitions, def)
 
-			if len(batchDefinitions) == batchNumber {
-				fmt.Println("inserting def batch")
+			if len(batchDefinitions) == rankingBatchNumber {
 				if err := insertDefinitions(ctx, inserter, rankingGraphKey, batchDefinitions); err != nil {
 					return err
 				}
-				batchDefinitions = make([]shared.RankingDefintions, 0, batchNumber)
-				fmt.Println("finish inserting def batch")
+				batchDefinitions = make([]shared.RankingDefintions, 0, rankingBatchNumber)
 			}
 		}
 
 		if len(batchDefinitions) > 0 {
-			fmt.Println("last one inserting def batch")
 			if err := insertDefinitions(ctx, inserter, rankingGraphKey, batchDefinitions); err != nil {
 				return err
 			}
@@ -124,8 +129,6 @@ func (s *store) InsertDefintionsForRanking(ctx context.Context, rankingGraphKey 
 		return err
 	}
 
-	fmt.Println("finish inserting all def batch")
-
 	return nil
 }
 
@@ -150,7 +153,11 @@ func insertDefinitions(
 	return nil
 }
 
-func (s *store) InsertPathCountInputs(ctx context.Context, rankingGraphKey string, batchSize int) (err error) {
+func (s *store) InsertPathCountInputs(
+	ctx context.Context,
+	rankingGraphKey string,
+	batchSize int,
+) (err error) {
 	ctx, _, endObservation := s.operations.insertPathCountInputs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -162,13 +169,15 @@ func (s *store) InsertPathCountInputs(ctx context.Context, rankingGraphKey strin
 }
 
 const insertPathCountInputsQuery = `
-WITH refs AS (
+WITH
+ refs AS (
 	SELECT
 		id,
-		unnest(symbol_names) AS symbol_names
+		symbol_names
 	FROM codeintel_ranking_references rr
 	WHERE rr.graph_key = %s AND NOT rr.processed
 	ORDER BY rr.symbol_names, rr.id
+	FOR UPDATE
 	LIMIT %s
 ),
 definitions AS (
@@ -177,7 +186,7 @@ definitions AS (
 		document_path,
 		graph_key
 	FROM codeintel_ranking_definitions
-	WHERE symbol_name IN (SELECT symbol_names FROM refs)
+	WHERE symbol_name IN (SELECT unnest(symbol_names) FROM refs)
 ),
 processed AS (
     UPDATE codeintel_ranking_references
@@ -194,10 +203,18 @@ FROM definitions
 GROUP BY repository, document_path, graph_key
 `
 
-func (s *store) InsertPathRanks(ctx context.Context, graphKey string, batchSize int) (numPathRanksInserted float64, numInputsProcessed float64, err error) {
-	ctx, _, endObservation := s.operations.insertPathRanks.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("graphKey", graphKey),
-	}})
+func (s *store) InsertPathRanks(
+	ctx context.Context,
+	graphKey string,
+	batchSize int,
+) (numPathRanksInserted float64, numInputsProcessed float64, err error) {
+	ctx, _, endObservation := s.operations.insertPathRanks.With(
+		ctx,
+		&err,
+		observation.Args{LogFields: []otlog.Field{
+			otlog.String("graphKey", graphKey),
+		}},
+	)
 	defer endObservation(1, observation.Args{})
 
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(insertPathRanksQuery, graphKey, batchSize))
@@ -234,7 +251,7 @@ processed AS (
     UPDATE codeintel_ranking_path_counts_inputs
     SET processed = true
     WHERE id IN (SELECT ir.id FROM input_ranks ir)
-	RETURNING 1
+    RETURNING 1
 ),
 inserted AS (
 	INSERT INTO codeintel_path_ranks AS pr (repository_id, precision, payload)
@@ -276,8 +293,17 @@ SELECT
 	(SELECT COUNT(*) FROM inserted) AS num_inserted
 `
 
-func (s *store) InsertReferencesForRanking(ctx context.Context, rankingGraphKey string, references shared.RankingReferences) (err error) {
-	ctx, _, endObservation := s.operations.setReferencesForRanking.With(ctx, &err, observation.Args{})
+func (s *store) InsertReferencesForRanking(
+	ctx context.Context,
+	rankingGraphKey string,
+	rankingBatchNumber int,
+	references shared.RankingReferences,
+) (err error) {
+	ctx, _, endObservation := s.operations.setReferencesForRanking.With(
+		ctx,
+		&err,
+		observation.Args{},
+	)
 	defer endObservation(1, observation.Args{})
 
 	tx, err := s.db.Transact(ctx)
@@ -287,24 +313,19 @@ func (s *store) InsertReferencesForRanking(ctx context.Context, rankingGraphKey 
 	defer func() { err = tx.Done(err) }()
 
 	inserter := func(inserter *batch.Inserter) error {
-		batchSymbolNames := make([]string, 0, batchNumber)
-		for _, ref := range references.SymbolName {
+		batchSymbolNames := make([]string, 0, rankingBatchNumber)
+		for _, ref := range references.SymbolNames {
 			batchSymbolNames = append(batchSymbolNames, ref)
 
-			if len(batchSymbolNames) == batchNumber {
-				fmt.Println("inserting ref batch")
-
+			if len(batchSymbolNames) == rankingBatchNumber {
 				if err := inserter.Insert(ctx, references.UploadID, pq.Array(batchSymbolNames), rankingGraphKey); err != nil {
 					return err
 				}
-				batchSymbolNames = make([]string, 0, batchNumber)
-
-				fmt.Println("finish inserting ref batch")
+				batchSymbolNames = make([]string, 0, rankingBatchNumber)
 			}
 		}
 
 		if len(batchSymbolNames) > 0 {
-			fmt.Println("last one inserting ref batch")
 			if err := inserter.Insert(ctx, references.UploadID, pq.Array(batchSymbolNames), rankingGraphKey); err != nil {
 				return err
 			}
@@ -323,8 +344,6 @@ func (s *store) InsertReferencesForRanking(ctx context.Context, rankingGraphKey 
 	); err != nil {
 		return err
 	}
-
-	fmt.Println("finish inserting all ref batch")
 
 	return nil
 }
