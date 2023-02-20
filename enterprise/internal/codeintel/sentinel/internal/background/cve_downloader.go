@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/internal/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -38,45 +39,6 @@ type CveDownloader struct {
 }
 
 const advisoryDatabaseURL = "https://github.com/github/advisory-database/archive/refs/heads/main.zip"
-
-type Vulnerability struct {
-	// Data that's consistent across all instances of a vulnerability
-	SGVulnID         int
-	ID               string
-	Summary          string
-	Details          string
-	CPEs             []string
-	CWEs             []string
-	Aliases          []string
-	Related          []string
-	DataSource       string
-	URLs             []string
-	Severity         string
-	CVSSVector       string
-	CVSSScore        string
-	Published        time.Time
-	Modified         time.Time
-	Withdrawn        time.Time
-	AffectedPackages []AffectedPackage
-}
-
-// Data that varies across instances of a vulnerability
-// Need to decide if this will be flat inside Vulnerability (and have multiple duplicate vulns)
-// or a separate struct/table
-type AffectedPackage struct {
-	PackageName       string
-	Language          string
-	Namespace         string
-	VersionConstraint []string
-	Fixed             bool
-	FixedIn           string
-	AffectedSymbols   []AffectedSymbol
-}
-
-type AffectedSymbol struct {
-	Path    string
-	Symbols []string
-}
 
 type GHSAVulnerability struct {
 	SchemaVersion string    `json:"schema_version"`
@@ -172,11 +134,11 @@ type GoVulnDBAffectedEcosystemSpecific struct {
 	} `json:"imports"`
 }
 
-func (matcher *CveDownloader) handle(ctx context.Context, metrics *Metrics, useLocalCache bool) (vulns []Vulnerability, err error) {
+func (matcher *CveDownloader) handle(ctx context.Context, metrics *Metrics, useLocalCache bool) (vulns []shared.Vulnerability, err error) {
 	return HandleGithub(ctx, metrics, useLocalCache)
 }
 
-func HandleGithub(ctx context.Context, metrics *Metrics, useLocalCache bool) (vulns []Vulnerability, err error) {
+func HandleGithub(ctx context.Context, metrics *Metrics, useLocalCache bool) (vulns []shared.Vulnerability, err error) {
 	var ghsaReader io.ReadCloser
 
 	if useLocalCache {
@@ -254,15 +216,15 @@ func (e GHSAUnreviewedError) Error() string {
 
 // Convert a GHSAVulnerability to one or more Vulnerabilities
 // A GHSA vuln may result in multiple vulns as we flatten its structure
-func ghsaToVuln(g GHSAVulnerability) (vuln Vulnerability, err error) {
+func ghsaToVuln(g GHSAVulnerability) (vuln shared.Vulnerability, err error) {
 
 	// Only process vulns that GitHub has reviewed
 	if !g.DatabaseSpecific.GitHubReviewed {
-		return Vulnerability{}, GHSAUnreviewedError{"Vulnerability not reviewed"}
+		return shared.Vulnerability{}, GHSAUnreviewedError{"Vulnerability not reviewed"}
 	}
 
 	// Set up base vulnerability with common properties
-	v := Vulnerability{
+	v := shared.Vulnerability{
 		ID:         g.ID,
 		Summary:    g.Summary,
 		Details:    g.Details,
@@ -288,10 +250,10 @@ func ghsaToVuln(g GHSAVulnerability) (vuln Vulnerability, err error) {
 	// g.Affected contains an array of packages that are affected by this vulnerability
 	// Each package may also contain an array of version ranges that indicate when the vulnerability was
 	//	introduced or resolved
-	var pas []AffectedPackage
+	var pas []shared.AffectedPackage
 	for _, affected := range g.Affected {
 		// Information that will be the same for all instances
-		var affectedBase AffectedPackage
+		var affectedBase shared.AffectedPackage
 		affectedBase.PackageName = affected.Package.Name
 		affectedBase.Namespace = "github:" + affected.Package.Ecosystem
 		affectedBase.Language = githubEcosystemToLanguage(affected.Package.Ecosystem)
@@ -368,7 +330,7 @@ func githubEcosystemToLanguage(ecosystem string) (language string) {
 	return language
 }
 
-func HandleGoVulnDb(ctx context.Context, metrics *Metrics, useLocalCache bool) (vulns []Vulnerability, err error) {
+func HandleGoVulnDb(ctx context.Context, metrics *Metrics, useLocalCache bool) (vulns []shared.Vulnerability, err error) {
 	// TODO: Fetch database
 
 	// Open test directory of json files
@@ -414,8 +376,8 @@ func HandleGoVulnDb(ctx context.Context, metrics *Metrics, useLocalCache bool) (
 	return
 }
 
-func osvToVuln(o OSV) (vuln Vulnerability, err error) {
-	v := Vulnerability{
+func osvToVuln(o OSV) (vuln shared.Vulnerability, err error) {
+	v := shared.Vulnerability{
 		ID:        o.ID,
 		Summary:   o.Summary,
 		Details:   o.Details,
@@ -431,9 +393,9 @@ func osvToVuln(o OSV) (vuln Vulnerability, err error) {
 		v.URLs = append(v.URLs, reference.URL)
 	}
 
-	var pas []AffectedPackage
+	var pas []shared.AffectedPackage
 	for _, affected := range o.Affected {
-		var pa AffectedPackage
+		var pa shared.AffectedPackage
 
 		pa.PackageName = affected.Package.Name
 		pa.Language = affected.Package.Ecosystem
@@ -446,7 +408,7 @@ func osvToVuln(o OSV) (vuln Vulnerability, err error) {
 		}
 
 		for _, i := range affected.EcosystemSpecific.Imports {
-			pa.AffectedSymbols = append(pa.AffectedSymbols, AffectedSymbol{
+			pa.AffectedSymbols = append(pa.AffectedSymbols, shared.AffectedSymbol{
 				Path:    i.Path,
 				Symbols: i.Symbols,
 			})
