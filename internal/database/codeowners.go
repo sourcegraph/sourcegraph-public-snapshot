@@ -16,7 +16,7 @@ type CodeownersStore interface {
 	basestore.ShareableStore
 	Done(error) error
 
-	CreateCodeownersForRepo(ctx context.Context, codeowners *types.CodeownersFile, id api.RepoID) error
+	CreateCodeownersFile(ctx context.Context, codeowners *types.CodeownersFile) error
 	GetCodeownersForRepo(ctx context.Context, id api.RepoID) (*types.CodeownersFile, error)
 	DeleteCodeownersForRepo(ctx context.Context, id api.RepoID) error
 	ListCodeowners(ctx context.Context) ([]*types.CodeownersFile, error)
@@ -26,7 +26,7 @@ type codeownersStore struct {
 	*basestore.Store
 }
 
-func (s *codeownersStore) CreateCodeownersForRepo(ctx context.Context, file *types.CodeownersFile, id api.RepoID) error {
+func (s *codeownersStore) CreateCodeownersFile(ctx context.Context, file *types.CodeownersFile) error {
 	return s.WithTransact(ctx, func(tx CodeownersStore) error {
 		if file.CreatedAt.IsZero() {
 			file.CreatedAt = timeutil.Now()
@@ -64,8 +64,9 @@ var codeownersInsertColumns = []*sqlf.Query{
 const createCodeownersQueryFmtStr = `
 INSERT INTO codeowners 
 (%s)
-VALUES (%s, %s, %s, %s, %s, %s)
-ON CONFLICT DO UPDATE 
+VALUES (%s, %s, %s, %s, %s)
+ON CONFLICT (repo_id) 
+DO UPDATE SET contents = EXCLUDED.contents, contents_proto = EXCLUDED.contents_proto, updated_at = EXCLUDED.updated_at
 `
 
 func (s *codeownersStore) GetCodeownersForRepo(ctx context.Context, id api.RepoID) (*types.CodeownersFile, error) {

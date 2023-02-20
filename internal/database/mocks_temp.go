@@ -3756,6 +3756,9 @@ type MockDB struct {
 	// object controlling the behavior of the method
 	// BitbucketProjectPermissions.
 	BitbucketProjectPermissionsFunc *DBBitbucketProjectPermissionsFunc
+	// CodeownersFunc is an instance of a mock function object controlling
+	// the behavior of the method Codeowners.
+	CodeownersFunc *DBCodeownersFunc
 	// ConfFunc is an instance of a mock function object controlling the
 	// behavior of the method Conf.
 	ConfFunc *DBConfFunc
@@ -3912,6 +3915,11 @@ func NewMockDB() *MockDB {
 		},
 		BitbucketProjectPermissionsFunc: &DBBitbucketProjectPermissionsFunc{
 			defaultHook: func() (r0 BitbucketProjectPermissionsStore) {
+				return
+			},
+		},
+		CodeownersFunc: &DBCodeownersFunc{
+			defaultHook: func() (r0 CodeownersStore) {
 				return
 			},
 		},
@@ -4167,6 +4175,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.BitbucketProjectPermissions")
 			},
 		},
+		CodeownersFunc: &DBCodeownersFunc{
+			defaultHook: func() CodeownersStore {
+				panic("unexpected invocation of MockDB.Codeowners")
+			},
+		},
 		ConfFunc: &DBConfFunc{
 			defaultHook: func() ConfStore {
 				panic("unexpected invocation of MockDB.Conf")
@@ -4412,6 +4425,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		BitbucketProjectPermissionsFunc: &DBBitbucketProjectPermissionsFunc{
 			defaultHook: i.BitbucketProjectPermissions,
+		},
+		CodeownersFunc: &DBCodeownersFunc{
+			defaultHook: i.Codeowners,
 		},
 		ConfFunc: &DBConfFunc{
 			defaultHook: i.Conf,
@@ -4848,6 +4864,104 @@ func (c DBBitbucketProjectPermissionsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBBitbucketProjectPermissionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBCodeownersFunc describes the behavior when the Codeowners method of the
+// parent MockDB instance is invoked.
+type DBCodeownersFunc struct {
+	defaultHook func() CodeownersStore
+	hooks       []func() CodeownersStore
+	history     []DBCodeownersFuncCall
+	mutex       sync.Mutex
+}
+
+// Codeowners delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDB) Codeowners() CodeownersStore {
+	r0 := m.CodeownersFunc.nextHook()()
+	m.CodeownersFunc.appendCall(DBCodeownersFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Codeowners method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBCodeownersFunc) SetDefaultHook(hook func() CodeownersStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Codeowners method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBCodeownersFunc) PushHook(hook func() CodeownersStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBCodeownersFunc) SetDefaultReturn(r0 CodeownersStore) {
+	f.SetDefaultHook(func() CodeownersStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBCodeownersFunc) PushReturn(r0 CodeownersStore) {
+	f.PushHook(func() CodeownersStore {
+		return r0
+	})
+}
+
+func (f *DBCodeownersFunc) nextHook() func() CodeownersStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBCodeownersFunc) appendCall(r0 DBCodeownersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBCodeownersFuncCall objects describing the
+// invocations of this function.
+func (f *DBCodeownersFunc) History() []DBCodeownersFuncCall {
+	f.mutex.Lock()
+	history := make([]DBCodeownersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBCodeownersFuncCall is an object that describes an invocation of method
+// Codeowners on an instance of MockDB.
+type DBCodeownersFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 CodeownersStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBCodeownersFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBCodeownersFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
