@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 )
 
 // BatchChangeSource represents how a batch change can be created
@@ -1858,4 +1859,9 @@ type TeamMember struct {
 	TeamID    int32
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+type CodeownersFile struct {
+	Contents string
+	Proto    *codeownerspb.File
 }
