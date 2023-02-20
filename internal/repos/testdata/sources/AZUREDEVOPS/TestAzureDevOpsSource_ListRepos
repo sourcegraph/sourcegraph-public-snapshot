@@ -29,12 +29,14 @@
     "sshUrl": "git@ssh.dev.azure.com:v3/sgtestazure/sgtestazure/sgtestazure2",
     "webUrl": "https://dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure2",
     "isDisabled": false,
+    "isFork": false,
     "project": {
      "id": "dc493f7d-0b57-4de2-a59b-3f74ff3ea334",
      "name": "sgtestazure",
      "state": "wellFormed",
      "revision": 11,
-     "visibility": "private"
+     "visibility": "private",
+     "url": "https://dev.azure.com/sgtestazure/_apis/projects/dc493f7d-0b57-4de2-a59b-3f74ff3ea334"
     }
    }
   },
@@ -68,12 +70,14 @@
     "sshUrl": "git@ssh.dev.azure.com:v3/sgtestazure/sgtestazure/sgtestazure",
     "webUrl": "https://dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure",
     "isDisabled": false,
+    "isFork": false,
     "project": {
      "id": "dc493f7d-0b57-4de2-a59b-3f74ff3ea334",
      "name": "sgtestazure",
      "state": "wellFormed",
      "revision": 11,
-     "visibility": "private"
+     "visibility": "private",
+     "url": "https://dev.azure.com/sgtestazure/_apis/projects/dc493f7d-0b57-4de2-a59b-3f74ff3ea334"
     }
    }
   },
@@ -107,12 +111,14 @@
     "sshUrl": "git@ssh.dev.azure.com:v3/sgtestazure/sg%20test%20with%20spaces/sg%20test%20with%20spaces%202",
     "webUrl": "https://dev.azure.com/sgtestazure/sg%20test%20with%20spaces/_git/sg%20test%20with%20spaces%202",
     "isDisabled": false,
+    "isFork": false,
     "project": {
      "id": "8c1230da-3631-41e8-8df3-c94a705227d8",
      "name": "sg test with spaces",
      "state": "wellFormed",
      "revision": 19,
-     "visibility": "private"
+     "visibility": "private",
+     "url": "https://dev.azure.com/sgtestazure/_apis/projects/8c1230da-3631-41e8-8df3-c94a705227d8"
     }
    }
   }
