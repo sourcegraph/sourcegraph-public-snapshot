@@ -100,9 +100,12 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                             >
                                 {provider.serviceType === 'github' && <Icon aria-hidden={true} svgPath={mdiGithub} />}
                                 {provider.serviceType === 'gitlab' && <Icon aria-hidden={true} svgPath={mdiGitlab} />}
-                                {provider.serviceType === 'bitbucketCloud' && <Icon aria-hidden={true} svgPath={mdiBitbucket} />}
-                                {provider.serviceType === 'azuredevops' && <Icon aria-hidden={true} svgPath={mdiMicrosoftAzureDevops} />}
-                                {' '}
+                                {provider.serviceType === 'bitbucketCloud' && (
+                                    <Icon aria-hidden={true} svgPath={mdiBitbucket} />
+                                )}
+                                {provider.serviceType === 'azuredevops' && (
+                                    <Icon aria-hidden={true} svgPath={mdiMicrosoftAzureDevops} />
+                                )}{' '}
                                 Continue with {provider.displayName}
                             </Button>
                         </div>
