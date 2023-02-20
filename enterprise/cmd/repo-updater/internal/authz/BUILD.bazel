@@ -7,7 +7,6 @@ go_library(
         "metrics.go",
         "perms_syncer.go",
         "perms_syncer_worker.go",
-        "provider_state.go",
         "request_queue.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater/internal/authz",
@@ -59,7 +58,6 @@ go_test(
     embed = [":authz"],
     deps = [
         "//enterprise/internal/authz/github",
-        "//enterprise/internal/authz/syncjobs",
         "//enterprise/internal/database",
         "//enterprise/internal/licensing",
         "//internal/actor",

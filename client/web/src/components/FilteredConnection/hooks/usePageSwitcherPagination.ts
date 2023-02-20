@@ -96,12 +96,20 @@ export const usePageSwitcherPagination = <TResult, TVariables extends PaginatedC
         ...initialPaginationArgs,
     } as any
 
-    const { data, error, loading, refetch } = useQuery<TResult, TVariables>(query, {
+    const {
+        data: currentData,
+        previousData,
+        error,
+        loading,
+        refetch,
+    } = useQuery<TResult, TVariables>(query, {
         variables: queryVariables,
         fetchPolicy: options?.fetchPolicy,
         onCompleted: options?.onCompleted,
         pollInterval: options?.pollInterval,
     })
+
+    const data = currentData ?? previousData
 
     const connection = useMemo(() => {
         if (!data) {

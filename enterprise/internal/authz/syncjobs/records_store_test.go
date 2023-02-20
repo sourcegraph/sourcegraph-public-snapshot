@@ -6,6 +6,7 @@ import (
 
 	"github.com/hexops/autogold"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -22,7 +23,7 @@ func TestSyncJobRecordsRecord(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		c := &memCache{}
 		s.cache = c
-		s.Record("repo", 12, []ProviderStatus{}, nil)
+		s.Record("repo", 12, database.CodeHostStatusesSet{}, nil)
 		autogold.Want("record_success", &memCache{values: []string{
 			`{"job_type":"repo","job_id":12,"completed":"2006-01-02T15:04:05Z","status":"SUCCESS","message":"","providers":[]}`,
 		}}).
@@ -31,7 +32,7 @@ func TestSyncJobRecordsRecord(t *testing.T) {
 	t.Run("error", func(t *testing.T) {
 		c := &memCache{}
 		s.cache = c
-		s.Record("repo", 12, []ProviderStatus{}, errors.New("oh no"))
+		s.Record("repo", 12, database.CodeHostStatusesSet{}, errors.New("oh no"))
 		autogold.Want("record_error", &memCache{values: []string{
 			`{"job_type":"repo","job_id":12,"completed":"2006-01-02T15:04:05Z","status":"ERROR","message":"oh no","providers":[]}`,
 		}}).

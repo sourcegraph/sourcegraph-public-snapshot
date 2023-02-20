@@ -57,6 +57,8 @@ func (p *Provider) Config() schema.AuthProviders {
 func (p *Provider) CachedInfo() *providers.Info {
 	displayName := p.ServiceID
 	switch {
+	case p.SourceConfig.AzureDevOps != nil && p.SourceConfig.AzureDevOps.DisplayName != "":
+		displayName = p.SourceConfig.AzureDevOps.DisplayName
 	case p.SourceConfig.Github != nil && p.SourceConfig.Github.DisplayName != "":
 		displayName = p.SourceConfig.Github.DisplayName
 	case p.SourceConfig.Gitlab != nil && p.SourceConfig.Gitlab.DisplayName != "":
