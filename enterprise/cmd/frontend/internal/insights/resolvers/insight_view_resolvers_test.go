@@ -3,11 +3,12 @@ package resolvers
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -441,13 +442,13 @@ func TestInsightRepoScopeResolver(t *testing.T) {
 		series types.InsightViewSeries
 		want   autogold.Value
 	}{
-		{series: makeSeries(nil, "repo:a"), want: autogold.Want("search based", `{"SearchScoped":true,"RepoList":null,"Search":"repo:a","AllRepos":false}`)},
-		{series: makeSeries([]string{"repoA", "repoB"}, ""), want: autogold.Want("named list", `{"SearchScoped":false,"RepoList":["repoA","repoB"],"Search":"","AllRepos":false}`)},
-		{series: makeSeries(nil, ""), want: autogold.Want("all repos", `{"SearchScoped":true,"RepoList":null,"Search":"","AllRepos":true}`)},
+		{series: makeSeries(nil, "repo:a"), want: autogold.Expect(`{"SearchScoped":true,"RepoList":null,"Search":"repo:a","AllRepos":false}`)},
+		{series: makeSeries([]string{"repoA", "repoB"}, ""), want: autogold.Expect(`{"SearchScoped":false,"RepoList":["repoA","repoB"],"Search":"","AllRepos":false}`)},
+		{series: makeSeries(nil, ""), want: autogold.Expect(`{"SearchScoped":true,"RepoList":null,"Search":"","AllRepos":true}`)},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.want.Name(), func(t *testing.T) {
+	for i, tc := range testCases {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			unionResolver := insightRepositoryDefinitionResolver{series: tc.series}
 			repoScopedResolver, ok := unionResolver.ToInsightRepositoryScope()
 			var result tcResult

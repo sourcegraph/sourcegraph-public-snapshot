@@ -3,12 +3,13 @@ package store
 import (
 	"context"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 
@@ -40,7 +41,7 @@ func TestSeriesPoints(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("SeriesPoints", []SeriesPoint{}).Equal(t, points)
+	autogold.Expect([]SeriesPoint{}).Equal(t, points)
 
 	// Insert some fake data.
 	_, err = insightsDB.ExecContext(context.Background(), `
@@ -81,7 +82,7 @@ SELECT time,
 			t.Fatal(err)
 		}
 		t.Log(points)
-		autogold.Want("SeriesPoints(2).len", 16).Equal(t, len(points))
+		autogold.Expect(16).Equal(t, len(points))
 	})
 
 	t.Run("subset of data", func(t *testing.T) {
@@ -93,7 +94,7 @@ SELECT time,
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("SeriesPoints(3).len", 0).Equal(t, len(points))
+		autogold.Expect(0).Equal(t, len(points))
 	})
 
 	t.Run("latest 3 points", func(t *testing.T) {
@@ -104,7 +105,7 @@ SELECT time,
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("SeriesPoints(4).len", 3).Equal(t, len(points))
+		autogold.Expect(3).Equal(t, len(points))
 	})
 
 	t.Run("include list", func(t *testing.T) {
@@ -196,7 +197,7 @@ func TestCountData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("first", 0).Equal(t, numDataPoints)
+	autogold.Expect(0).Equal(t, numDataPoints)
 
 	// How many data points on 03-01?
 	numDataPoints, err = store.CountData(ctx, CountDataOpts{
@@ -206,7 +207,7 @@ func TestCountData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("second", 1).Equal(t, numDataPoints)
+	autogold.Expect(1).Equal(t, numDataPoints)
 
 	// How many data points from 03-01 to 03-04?
 	numDataPoints, err = store.CountData(ctx, CountDataOpts{
@@ -216,7 +217,7 @@ func TestCountData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("third", 5).Equal(t, numDataPoints)
+	autogold.Expect(5).Equal(t, numDataPoints)
 }
 
 func TestRecordSeriesPoints(t *testing.T) {
@@ -311,7 +312,7 @@ func TestRecordSeriesPoints(t *testing.T) {
 		}
 		return s
 	}
-	autogold.Want("wanted points = gotten points", stringify(want)).Equal(t, stringify(points))
+	autogold.Expect(stringify(want)).Equal(t, stringify(points))
 }
 
 func TestRecordSeriesPointsSnapshotOnly(t *testing.T) {
@@ -527,14 +528,14 @@ func TestDeleteSnapshots(t *testing.T) {
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("unexpected count of series points after deleting snapshots (want/got): %v", diff)
 	}
-	autogold.Equal(t, points, autogold.ExportedOnly())
+	autogold.ExpectFile(t, points, autogold.ExportedOnly())
 
 	gotRecordingTimes, err := store.GetInsightSeriesRecordingTimes(ctx, 1, SeriesPointsOpts{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	wantRecordingTimes := types.InsightSeriesRecordingTimes{InsightSeriesID: 1, RecordingTimes: []types.RecordingTime{{Timestamp: current.Add(time.Hour)}}}
-	autogold.Want("snapshot recording time should have been deleted", gotRecordingTimes).Equal(t, wantRecordingTimes)
+	autogold.Expect(gotRecordingTimes).Equal(t, wantRecordingTimes)
 }
 
 func TestValues(t *testing.T) {
@@ -753,42 +754,42 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 	}{
 		{
 			getFor: 1,
-			want:   autogold.Want("get all recording times for series1", stringifyTimes(series1Times)),
+			want:   autogold.Expect(stringifyTimes(series1Times)),
 		},
 		{
 			insert: &types.InsightSeriesRecordingTimes{InsightSeriesID: 1, RecordingTimes: makeRecordings([]time.Time{now}, true)},
 			getFor: 1,
-			want:   autogold.Want("duplicates are not inserted", stringifyTimes(series1Times)),
+			want:   autogold.Expect(stringifyTimes(series1Times)),
 		},
 		{
 			insert: &types.InsightSeriesRecordingTimes{InsightSeriesID: 2, RecordingTimes: makeRecordings([]time.Time{now.Local()}, true)},
 			getFor: 2,
-			want:   autogold.Want("UTC is always used", stringifyTimes(series2Times)),
+			want:   autogold.Expect(stringifyTimes(series2Times)),
 		},
 		{
 			getFor:  2,
 			getFrom: &now,
-			want:    autogold.Want("gets subset of series 2 recording times", stringifyTimes(series2Times[:2])),
+			want:    autogold.Expect(stringifyTimes(series2Times[:2])),
 		},
 		{
 			getFor: 1,
 			getTo:  &now,
-			want:   autogold.Want("gets subset of series 1 recording times", stringifyTimes(series1Times[:1])),
+			want:   autogold.Expect(stringifyTimes(series1Times[:1])),
 		},
 		{
 			getFor:  2,
 			getFrom: &oldTime,
 			getTo:   &afterNow,
-			want:    autogold.Want("gets subset from and to", stringifyTimes(append(series2Times[:1], series2Times[2]))),
+			want:    autogold.Expect(stringifyTimes(append(series2Times[:1], series2Times[2]))),
 		},
 		{
 			getFor:   1,
 			getAfter: &now,
-			want:     autogold.Want("gets all times after", stringifyTimes(series1Times[1:])),
+			want:     autogold.Expect(stringifyTimes(series1Times[1:])),
 		},
 	}
-	for _, tc := range testCases {
-		t.Run(tc.want.Name(), func(t *testing.T) {
+	for i, tc := range testCases {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			if tc.insert != nil {
 				if err := timeseriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{*tc.insert}); err != nil {
 					t.Fatal(err)
@@ -847,7 +848,7 @@ func Test_coalesceZeroValues(t *testing.T) {
 			nil,
 			nil,
 			nil,
-			autogold.Want("empty returns empty", []string{}),
+			autogold.Expect([]string{}),
 		},
 		{
 			map[string]*SeriesPoint{
@@ -855,7 +856,7 @@ func Test_coalesceZeroValues(t *testing.T) {
 			},
 			[]time.Time{},
 			map[string]struct{}{"": {}},
-			autogold.Want("empty recording times returns empty", []string{}),
+			autogold.Expect([]string{}),
 		},
 		{
 			map[string]*SeriesPoint{
@@ -863,7 +864,7 @@ func Test_coalesceZeroValues(t *testing.T) {
 			},
 			generateTimes(2),
 			map[string]struct{}{"": {}},
-			autogold.Want("augment one data point", []string{
+			autogold.Expect([]string{
 				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Value: 1}`,
 				`SeriesPoint{Time: "2020-01-02 00:00:00 +0000 UTC", Value: 0}`,
 			}),
@@ -877,7 +878,7 @@ func Test_coalesceZeroValues(t *testing.T) {
 			},
 			generateTimes(2),
 			map[string]struct{}{"one": {}, "two": {}, "three": {}},
-			autogold.Want("augment capture data points", []string{
+			autogold.Expect([]string{
 				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Capture: "one", Value: 1}`,
 				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Capture: "three", Value: 3}`,
 				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Capture: "two", Value: 2}`,
@@ -893,15 +894,15 @@ func Test_coalesceZeroValues(t *testing.T) {
 			},
 			append([]time.Time{testTime.AddDate(0, 0, -1)}, generateTimes(2)...),
 			map[string]struct{}{"": {}},
-			autogold.Want("augment data point in the past", []string{
+			autogold.Expect([]string{
 				`SeriesPoint{Time: "2019-12-31 00:00:00 +0000 UTC", Value: 0}`,
 				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Value: 11}`,
 				`SeriesPoint{Time: "2020-01-02 00:00:00 +0000 UTC", Value: 22}`,
 			}),
 		},
 	}
-	for _, tc := range testCases {
-		t.Run(tc.want.Name(), func(t *testing.T) {
+	for i, tc := range testCases {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			got := coalesceZeroValues("1", tc.points, tc.captureValues, makeRecordingTimes(tc.recordingTimes))
 			tc.want.Equal(t, stringify(got))
 		})
@@ -1025,12 +1026,12 @@ func TestGetAllDataForInsightViewId(t *testing.T) {
 			t.Fatalf("expected %d got %d series points for export", len(recordingTimes.RecordingTimes), len(got))
 		}
 		for i, rt := range recordingTimes.RecordingTimes {
-			autogold.Want("insight view title is correct", view.Title).Equal(t, got[i].InsightViewTitle)
-			autogold.Want("series query is correct", series.Query).Equal(t, got[i].SeriesQuery)
-			autogold.Want("series label is correct", "label").Equal(t, got[i].SeriesLabel)
-			autogold.Want("series value is correct", 0).Equal(t, got[i].Value)
-			autogold.Want("recording time is correct", rt.Timestamp).Equal(t, got[i].RecordingTime.UTC())
-			autogold.Want("repo and capture are nil", true).Equal(t, got[i].RepoName == nil && got[i].Capture == nil)
+			autogold.Expect(view.Title).Equal(t, got[i].InsightViewTitle)
+			autogold.Expect(series.Query).Equal(t, got[i].SeriesQuery)
+			autogold.Expect("label").Equal(t, got[i].SeriesLabel)
+			autogold.Expect(0).Equal(t, got[i].Value)
+			autogold.Expect(rt.Timestamp).Equal(t, got[i].RecordingTime.UTC())
+			autogold.Expect(true).Equal(t, got[i].RepoName == nil && got[i].Capture == nil)
 		}
 	})
 
@@ -1069,12 +1070,12 @@ SELECT recording_time,
 		for _, sp := range got {
 			repo := "github.com/gorilla/mux-original"
 			var capture *string
-			autogold.Want("insight view title is correct", view.Title).Equal(t, sp.InsightViewTitle)
-			autogold.Want("series query is correct", series.Query).Equal(t, sp.SeriesQuery)
-			autogold.Want("series label is correct", "label").Equal(t, sp.SeriesLabel)
-			autogold.Want("series value is correct", 11).Equal(t, sp.Value)
-			autogold.Want("series repo ID is correct", &repo).Equal(t, sp.RepoName)
-			autogold.Want("nil capture", capture).Equal(t, sp.Capture)
+			autogold.Expect(view.Title).Equal(t, sp.InsightViewTitle)
+			autogold.Expect(series.Query).Equal(t, sp.SeriesQuery)
+			autogold.Expect("label").Equal(t, sp.SeriesLabel)
+			autogold.Expect(11).Equal(t, sp.Value)
+			autogold.Expect(&repo).Equal(t, sp.RepoName)
+			autogold.Expect(capture).Equal(t, sp.Capture)
 		}
 	})
 	t.Run("respects repo permissions", func(t *testing.T) {
@@ -1128,12 +1129,12 @@ SELECT recording_time,
 		for _, sp := range got {
 			repo := "github.com/sourcegraph/sourcegraph"
 			var capture *string
-			autogold.Want("insight view title is correct", view.Title).Equal(t, sp.InsightViewTitle)
-			autogold.Want("series query is correct", series.Query).Equal(t, sp.SeriesQuery)
-			autogold.Want("series label is correct", "label").Equal(t, sp.SeriesLabel)
-			autogold.Want("series value is correct", 22).Equal(t, sp.Value)
-			autogold.Want("series repo ID is correct", &repo).Equal(t, sp.RepoName)
-			autogold.Want("nil capture", capture).Equal(t, sp.Capture)
+			autogold.Expect(view.Title).Equal(t, sp.InsightViewTitle)
+			autogold.Expect(series.Query).Equal(t, sp.SeriesQuery)
+			autogold.Expect("label").Equal(t, sp.SeriesLabel)
+			autogold.Expect(22).Equal(t, sp.Value)
+			autogold.Expect(&repo).Equal(t, sp.RepoName)
+			autogold.Expect(capture).Equal(t, sp.Capture)
 		}
 	})
 	t.Run("respects exclude repo filter", func(t *testing.T) {
