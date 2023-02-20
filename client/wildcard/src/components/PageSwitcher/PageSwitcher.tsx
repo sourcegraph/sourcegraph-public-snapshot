@@ -22,6 +22,7 @@ export interface PageSwitcherProps {
     goToPreviousPage: () => Promise<void>
     goToFirstPage: () => Promise<void>
     goToLastPage: () => Promise<void>
+    onClick?: () => void
     className?: string
 }
 
@@ -43,12 +44,14 @@ export const PageSwitcher: React.FunctionComponent<React.PropsWithChildren<PageS
         goToLastPage,
         hasPreviousPage,
         hasNextPage,
+        onClick,
     } = props
 
     const [isLoadingPage, setIsLoadingPage] = React.useState(false)
     function withLoadingPage<T>(func: () => Promise<T>): () => Promise<void> {
         return async () => {
             try {
+                onClick?.()
                 setIsLoadingPage(true)
                 await func()
             } finally {

@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/client"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func TestRegistryExtensionConnectionResolver(t *testing.T) {
@@ -25,13 +24,6 @@ func TestRegistryExtensionConnectionResolver(t *testing.T) {
 		}
 		return ids
 	}
-
-	ListLocalRegistryExtensions = func(context.Context, database.DB, graphqlbackend.RegistryExtensionConnectionArgs) ([]graphqlbackend.RegistryExtension, error) {
-		return nil, nil
-	}
-	defer func() {
-		ListLocalRegistryExtensions = nil
-	}()
 
 	ctx := context.Background()
 

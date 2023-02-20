@@ -63,6 +63,7 @@ const (
 )
 
 // gitGCMode describes which mode we should be running git gc.
+// See for a detailed description of the modes: https://docs.sourcegraph.com/dev/background-information/git_gc
 var gitGCMode = func() int {
 	// EnableGCAuto is a temporary flag that allows us to control whether or not
 	// `git gc --auto` is invoked during janitorial activities. This flag will
@@ -400,7 +401,7 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitS
 			multi = errors.Append(multi, err)
 		}
 		// we use the same conservative age for locks inside of refs
-		if err := bestEffortWalk(gitDir.Path("refs"), func(path string, fi fs.FileInfo) error {
+		if err := bestEffortWalk(gitDir.Path("refs"), func(path string, fi fs.DirEntry) error {
 			if fi.IsDir() {
 				return nil
 			}
@@ -505,7 +506,7 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitS
 		})
 	}
 
-	err := bestEffortWalk(s.ReposDir, func(dir string, fi fs.FileInfo) error {
+	err := bestEffortWalk(s.ReposDir, func(dir string, fi fs.DirEntry) error {
 		if s.ignorePath(dir) {
 			if fi.IsDir() {
 				return filepath.SkipDir
@@ -789,7 +790,7 @@ func gitDirModTime(d GitDir) (time.Time, error) {
 
 func (s *Server) findGitDirs() ([]GitDir, error) {
 	var dirs []GitDir
-	err := bestEffortWalk(s.ReposDir, func(path string, fi fs.FileInfo) error {
+	err := bestEffortWalk(s.ReposDir, func(path string, fi fs.DirEntry) error {
 		if s.ignorePath(path) {
 			if fi.IsDir() {
 				return filepath.SkipDir
@@ -813,8 +814,13 @@ func dirSize(d string) int64 {
 	var size int64
 	// We don't return an error, so we know that err is always nil and can be
 	// ignored.
-	_ = bestEffortWalk(d, func(path string, fi fs.FileInfo) error {
-		if fi.IsDir() {
+	_ = bestEffortWalk(d, func(path string, d fs.DirEntry) error {
+		if d.IsDir() {
+			return nil
+		}
+		fi, err := d.Info()
+		if err != nil {
+			// We ignore errors for individual files.
 			return nil
 		}
 		size += fi.Size()
@@ -913,12 +919,16 @@ func (s *Server) removeRepoDirectory(gitDir GitDir, updateCloneStatus bool) erro
 func (s *Server) cleanTmpFiles(dir GitDir) {
 	now := time.Now()
 	packdir := dir.Path("objects", "pack")
-	err := bestEffortWalk(packdir, func(path string, info fs.FileInfo) error {
-		if path != packdir && info.IsDir() {
+	err := bestEffortWalk(packdir, func(path string, d fs.DirEntry) error {
+		if path != packdir && d.IsDir() {
 			return filepath.SkipDir
 		}
 		file := filepath.Base(path)
 		if strings.HasPrefix(file, "tmp_pack_") {
+			info, err := d.Info()
+			if err != nil {
+				return err
+			}
 			if now.Sub(info.ModTime()) > conf.GitLongCommandTimeout() {
 				err := os.Remove(path)
 				if err != nil {

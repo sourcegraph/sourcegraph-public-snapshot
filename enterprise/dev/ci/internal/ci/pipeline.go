@@ -236,10 +236,20 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			publishFinalDockerImage(c, patchImage))
 
 	case runtype.CandidatesNoTest:
+		imageBuildOps := operations.NewNamedSet("Image builds")
 		for _, dockerImage := range images.SourcegraphDockerImages {
-			ops.Append(
+			imageBuildOps.Append(
 				buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), false))
 		}
+		ops.Merge(imageBuildOps)
+
+		ops.Append(wait)
+
+		publishOps := operations.NewNamedSet("Publish images")
+		for _, dockerImage := range images.SourcegraphDockerImages {
+			publishOps.Append(publishFinalDockerImage(c, dockerImage))
+		}
+		ops.Merge(publishOps)
 
 	case runtype.ExecutorPatchNoTest:
 		executorVMImage := "executor-vm"

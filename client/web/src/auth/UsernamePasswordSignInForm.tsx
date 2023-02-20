@@ -13,11 +13,11 @@ import { getReturnTo, PasswordInput } from './SignInSignUpCommon'
 
 interface Props {
     onAuthError: (error: Error | null) => void
-    noThirdPartyProviders?: boolean
     context: Pick<
         SourcegraphContext,
         'allowSignup' | 'authProviders' | 'sourcegraphDotComMode' | 'xhrHeaders' | 'resetPasswordEnabled'
     >
+    className?: string
 }
 
 /**
@@ -25,7 +25,7 @@ interface Props {
  */
 export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     onAuthError,
-    noThirdPartyProviders,
+    className,
     context,
 }) => {
     const location = useLocation()
@@ -90,7 +90,7 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWith
 
     return (
         <>
-            <Form onSubmit={handleSubmit}>
+            <Form onSubmit={handleSubmit} className={className}>
                 <Input
                     id="username-or-email"
                     label={<Text alignment="left">Username or email</Text>}
@@ -126,11 +126,7 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWith
                     )}
                 </div>
 
-                <div
-                    className={classNames('form-group', {
-                        'mb-0': noThirdPartyProviders,
-                    })}
-                >
+                <div className={classNames('form-group', 'mb-0')}>
                     <Button display="block" type="submit" disabled={loading} variant="primary">
                         {loading ? <LoadingSpinner /> : 'Sign in'}
                     </Button>

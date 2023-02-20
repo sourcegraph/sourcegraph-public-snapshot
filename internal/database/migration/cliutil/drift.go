@@ -60,7 +60,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 		// the user to skip erroring here if they are explicitly skipping this
 		// version check.
 		inferredVersion, ok, err := func() (string, bool, error) {
-			v, patch, ok, err := getServiceVersion(ctx, r)
+			v, patch, ok, err := GetServiceVersion(ctx, r)
 			if err != nil || !ok {
 				return "", false, err
 			}
@@ -215,7 +215,7 @@ func fetchExpectedSchema(
 		))
 	}
 
-	return descriptions.SchemaDescription{}, errors.Newf("failed to locate target schema description")
+	return descriptions.SchemaDescription{}, errors.New("failed to locate target schema description")
 }
 
 func canonicalize(schemaDescription descriptions.SchemaDescription) descriptions.SchemaDescription {

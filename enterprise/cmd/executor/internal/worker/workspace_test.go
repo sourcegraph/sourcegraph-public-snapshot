@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -22,6 +23,12 @@ var ignorePort = cmpopts.IgnoreSliceElements(func(v string) bool {
 })
 
 func TestPrepareWorkspace_Clone(t *testing.T) {
+	testDir := t.TempDir()
+	workspace.MakeTempDirectory = func(string) (string, error) { return testDir, nil }
+	t.Cleanup(func() {
+		workspace.MakeTempDirectory = workspace.MakeTemporaryDirectory
+	})
+
 	options := Options{
 		QueueOptions: queue.Options{
 			BaseClientOptions: apiclient.BaseClientOptions{
@@ -72,6 +79,12 @@ func TestPrepareWorkspace_Clone(t *testing.T) {
 }
 
 func TestPrepareWorkspace_Clone_Subdirectory(t *testing.T) {
+	testDir := t.TempDir()
+	workspace.MakeTempDirectory = func(string) (string, error) { return testDir, nil }
+	t.Cleanup(func() {
+		workspace.MakeTempDirectory = workspace.MakeTemporaryDirectory
+	})
+
 	options := Options{
 		QueueOptions: queue.Options{
 			BaseClientOptions: apiclient.BaseClientOptions{
@@ -124,6 +137,12 @@ func TestPrepareWorkspace_Clone_Subdirectory(t *testing.T) {
 }
 
 func TestPrepareWorkspace_ShallowClone(t *testing.T) {
+	testDir := t.TempDir()
+	workspace.MakeTempDirectory = func(string) (string, error) { return testDir, nil }
+	t.Cleanup(func() {
+		workspace.MakeTempDirectory = workspace.MakeTemporaryDirectory
+	})
+
 	options := Options{
 		QueueOptions: queue.Options{
 			BaseClientOptions: apiclient.BaseClientOptions{
@@ -174,6 +193,12 @@ func TestPrepareWorkspace_ShallowClone(t *testing.T) {
 }
 
 func TestPrepareWorkspace_SparseCheckout(t *testing.T) {
+	testDir := t.TempDir()
+	workspace.MakeTempDirectory = func(string) (string, error) { return testDir, nil }
+	t.Cleanup(func() {
+		workspace.MakeTempDirectory = workspace.MakeTemporaryDirectory
+	})
+
 	options := Options{
 		QueueOptions: queue.Options{
 			BaseClientOptions: apiclient.BaseClientOptions{
@@ -227,6 +252,12 @@ func TestPrepareWorkspace_SparseCheckout(t *testing.T) {
 }
 
 func TestPrepareWorkspace_NoRepository(t *testing.T) {
+	testDir := t.TempDir()
+	workspace.MakeTempDirectory = func(string) (string, error) { return testDir, nil }
+	t.Cleanup(func() {
+		workspace.MakeTempDirectory = workspace.MakeTemporaryDirectory
+	})
+
 	options := Options{}
 	runner := NewMockRunner()
 	handler := &handler{

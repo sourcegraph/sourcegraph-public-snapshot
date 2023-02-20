@@ -12,7 +12,12 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../../../components/FilteredConnection/ui'
-import { BatchChangesCodeHostFields, Scalars } from '../../../graphql-operations'
+import {
+    BatchChangesCodeHostFields,
+    GlobalBatchChangesCodeHostsResult,
+    Scalars,
+    UserBatchChangesCodeHostsResult,
+} from '../../../graphql-operations'
 
 import { useGlobalBatchChangesCodeHostConnection, useUserBatchChangesCodeHostConnection } from './backend'
 import { CodeHostConnectionNode } from './CodeHostConnectionNode'
@@ -37,7 +42,10 @@ export const UserCodeHostConnections: React.FunctionComponent<
 
 interface CodeHostConnectionsProps extends GlobalCodeHostConnectionsProps {
     userID: Scalars['ID'] | null
-    connectionResult: UseShowMorePaginationResult<BatchChangesCodeHostFields>
+    connectionResult: UseShowMorePaginationResult<
+        GlobalBatchChangesCodeHostsResult | UserBatchChangesCodeHostsResult,
+        BatchChangesCodeHostFields
+    >
 }
 
 const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeHostConnectionsProps>> = ({

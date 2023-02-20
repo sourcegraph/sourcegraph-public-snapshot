@@ -204,7 +204,6 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                 {/* Breadcrumb for the nav elements */}
                 <Breadcrumbs
                     breadcrumbs={props.breadcrumbs}
-                    location={location}
                     className={classNames('justify-content-start', !props.forceWrap ? styles.breadcrumbWrap : '')}
                 />
             </div>

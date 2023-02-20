@@ -1,4 +1,4 @@
-import { matchPath, useLocation } from 'react-router'
+import { matchPath, useLocation } from 'react-router-dom-v5-compat'
 
 import { LayoutRouteProps } from '../routes'
 
@@ -15,7 +15,6 @@ export const useRoutesMatch = (routes: readonly LayoutRouteProps[]): string | un
     // TODO: Replace with useMatches once top-level <Router/> is V6
     return routes.find(
         route =>
-            matchPath(location.pathname, { path: route.path, exact: true }) ||
-            matchPath(location.pathname, { path: route.path.replace(/\/\*$/, ''), exact: true })
+            matchPath(route.path, location.pathname) || matchPath(route.path.replace(/\/\*$/, ''), location.pathname)
     )?.path
 }

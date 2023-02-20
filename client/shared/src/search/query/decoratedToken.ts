@@ -1201,7 +1201,7 @@ export const toCSSClassName = (token: DecoratedToken): string => {
     }
 }
 
-interface Decoration {
+export interface Decoration {
     value: string
     key: number
     className: string
