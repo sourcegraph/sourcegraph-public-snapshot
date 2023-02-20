@@ -614,7 +614,6 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                     >
                         <TabbedPanelContent
                             {...props}
-                            // {...props.themeProps}
                             repoName={`git://${parseBrowserRepoURL(location.pathname).repoName}`}
                             fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
                         />
