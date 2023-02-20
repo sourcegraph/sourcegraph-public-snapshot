@@ -62,7 +62,6 @@ const LIST_TEAMS_OF_PARENT = gql`
         team(name: $teamName) {
             childTeams(first: $first, after: $after, search: $search) {
                 totalCount
-                totalCountWithChildTeams: totalCount(countDeeplyNestedTeams: true)
                 pageInfo {
                     endCursor
                     hasNextPage
