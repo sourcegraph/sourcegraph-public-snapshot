@@ -13,5 +13,19 @@ def tools_dependencies():
       sha256 = "be9dc0782a7b257d9cfd66b76f91081e80f57742f61e12cd29068b213ee48abc",
       executable = True,
     )
+    # TODO linux
 
+
+    http_file(
+      name = "shfmt_darwin_amd64",
+      urls = ["https://github.com/mvdan/sh/releases/download/v3.6.0/shfmt_v3.6.0_darwin_amd64"],
+      sha256 = "633f242246ee0a866c5f5df25cbf61b6af0d5e143555aca32950059cf13d91e0",
+      executable = True,
+    )
+    http_file(
+      name = "shfmt_darwin_arm64",
+      urls = ["https://github.com/mvdan/sh/releases/download/v3.6.0/shfmt_v3.6.0_darwin_arm64"],
+      sha256 = "633f242246ee0a866c5f5df25cbf61b6af0d5e143555aca32950059cf13d91e0",
+      executable = True,
+    )
 

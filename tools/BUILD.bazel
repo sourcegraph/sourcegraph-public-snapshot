@@ -5,3 +5,11 @@ sh_binary(
         "@bazel_tools//src/conditions:darwin_arm64": ["@kubectl_darwin_arm64//file:downloaded"],
     }),
 )
+
+sh_binary(
+   name = "shfmt",
+    srcs = select({
+        "@bazel_tools//src/conditions:darwin_x86_64": ["@shfmt_darwin_amd64//file:downloaded"],
+        "@bazel_tools//src/conditions:darwin_arm64": ["@shfmt_darwin_arm64//file:downloaded"],
+    }),
+)

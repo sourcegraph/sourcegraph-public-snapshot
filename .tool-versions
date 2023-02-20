@@ -1,9 +1,9 @@
 golang 1.19.3
 nodejs 16.18.1
-fd 8.6.0
-shfmt 3.5.0
-shellcheck 0.7.1
-kubectl 1.21.7
+fd 8.6.0 # no need
+shfmt 3.5.0 # done
+shellcheck 0.7.1 # https://github.com/aignas/rules_shellcheck
+kubectl 1.21.7 # done
 github-cli 2.0.0
 packer 1.8.3
 trivy 0.30.3
