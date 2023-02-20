@@ -28,8 +28,16 @@ func NewCVEDownloader(store store.Store, metrics *Metrics, interval time.Duratio
 		"codeintel.sentinel-cve-downloader", "TODO",
 		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			_, err := cveDownloader.handle(ctx, metrics, false)
-			return err
+			vulnerabilities, err := cveDownloader.handle(ctx, metrics)
+			if err != nil {
+				return err
+			}
+
+			if err := store.InsertVulnerabilities(ctx, vulnerabilities); err != nil {
+				return err
+			}
+
+			return nil
 		}),
 	)
 }
@@ -134,8 +142,8 @@ type GoVulnDBAffectedEcosystemSpecific struct {
 	} `json:"imports"`
 }
 
-func (matcher *CveDownloader) handle(ctx context.Context, metrics *Metrics, useLocalCache bool) (vulns []shared.Vulnerability, err error) {
-	return HandleGithub(ctx, metrics, useLocalCache)
+func (matcher *CveDownloader) handle(ctx context.Context, metrics *Metrics) (vulns []shared.Vulnerability, err error) {
+	return HandleGithub(ctx, metrics, false)
 }
 
 func HandleGithub(ctx context.Context, metrics *Metrics, useLocalCache bool) (vulns []shared.Vulnerability, err error) {
@@ -202,7 +210,6 @@ func HandleGithub(ctx context.Context, metrics *Metrics, useLocalCache bool) (vu
 		vulns = append(vulns, convertedVuln)
 	}
 
-	// TODO - insert into DB
 	return vulns, nil
 }
 
@@ -225,7 +232,7 @@ func ghsaToVuln(g GHSAVulnerability) (vuln shared.Vulnerability, err error) {
 
 	// Set up base vulnerability with common properties
 	v := shared.Vulnerability{
-		ID:         g.ID,
+		SourceID:   g.ID,
 		Summary:    g.Summary,
 		Details:    g.Details,
 		Published:  g.DatabaseSpecific.NVDPublishedAt,
@@ -378,7 +385,7 @@ func HandleGoVulnDb(ctx context.Context, metrics *Metrics, useLocalCache bool) (
 
 func osvToVuln(o OSV) (vuln shared.Vulnerability, err error) {
 	v := shared.Vulnerability{
-		ID:        o.ID,
+		SourceID:  o.ID,
 		Summary:   o.Summary,
 		Details:   o.Details,
 		Published: o.Published,

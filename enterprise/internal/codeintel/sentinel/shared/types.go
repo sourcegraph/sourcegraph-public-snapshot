@@ -3,9 +3,8 @@ package shared
 import "time"
 
 type Vulnerability struct {
-	// Data that's consistent across all instances of a vulnerability
-	SGVulnID         int
-	ID               string
+	ID               int    // internal ID
+	SourceID         string // external ID
 	Summary          string
 	Details          string
 	CPEs             []string
