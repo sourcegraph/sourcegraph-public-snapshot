@@ -520,13 +520,6 @@ function initCodeIntelligence({
                     )
                     .subscribe()
             )
-            // if (codeHost.isLightTheme) {
-            //     this.subscription.add(
-            //         codeHost.isLightTheme.subscribe(isLightTheme => {
-            //             this.setState({ isLightTheme })
-            //         })
-            //     )
-            // }
             containerComponentUpdates.next()
         }
         public componentWillUnmount(): void {
