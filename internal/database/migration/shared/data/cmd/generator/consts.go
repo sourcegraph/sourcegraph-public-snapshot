@@ -7,8 +7,8 @@ import (
 )
 
 // NOTE: This should be kept up-to-date with cmd/migrator/build.sh so that we "bake in"
-// fallback schemas everything we support migrating to.
-const maxVersionString = "4.4.0"
+// fallback schemas everything we support migrating to. The release tool automates this upgrade, so don't touch this :)
+const maxVersionString = "4.5.0"
 
 // MaxVersion is the highest known released version at the time the migrator was built.
 var MaxVersion = func() oobmigration.Version {

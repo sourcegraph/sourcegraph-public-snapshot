@@ -67,3 +67,10 @@ func ProductNameWithBrand(hasLicense bool, licenseTags []string) string {
 
 	return baseName + name
 }
+
+var MiscTags = []string{
+	"trial",
+	"dev",
+	TrueUpUserCountTag,
+	"starter",
+}

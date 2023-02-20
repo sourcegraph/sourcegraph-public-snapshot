@@ -88,8 +88,10 @@ type AutoindexingServiceResolver interface {
 	LSIFIndexByID(ctx context.Context, id graphql.ID) (_ LSIFIndexResolver, err error)
 	LSIFIndexes(ctx context.Context, args *LSIFIndexesQueryArgs) (LSIFIndexConnectionResolver, error)
 	LSIFIndexesByRepo(ctx context.Context, args *LSIFRepositoryIndexesQueryArgs) (LSIFIndexConnectionResolver, error)
+	InferAutoIndexJobsForRepo(ctx context.Context, args *InferAutoIndexJobsForRepoArgs) ([]AutoIndexJobDescriptionResolver, error)
 	QueueAutoIndexJobsForRepo(ctx context.Context, args *QueueAutoIndexJobsForRepoArgs) ([]LSIFIndexResolver, error)
 	UpdateRepositoryIndexConfiguration(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*EmptyResponse, error)
+	CodeIntelSummary(ctx context.Context) (CodeIntelSummaryResolver, error)
 	RepositorySummary(ctx context.Context, id graphql.ID) (CodeIntelRepositorySummaryResolver, error)
 	CodeIntelligenceInferenceScript(ctx context.Context) (string, error)
 	UpdateCodeIntelligenceInferenceScript(ctx context.Context, args *UpdateCodeIntelligenceInferenceScriptArgs) (*EmptyResponse, error)
@@ -121,12 +123,57 @@ type PoliciesServiceResolver interface {
 	UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *UpdateCodeIntelligenceConfigurationPolicyArgs) (*EmptyResponse, error)
 }
 
+type CodeIntelSummaryResolver interface {
+	NumRepositoriesWithCodeIntelligence(ctx context.Context) (int32, error)
+	RepositoriesWithErrors(ctx context.Context, args *RepositoriesWithErrorsArgs) (CodeIntelRepositoryWithErrorConnectionResolver, error)
+	RepositoriesWithConfiguration(ctx context.Context, args *RepositoriesWithConfigurationArgs) (CodeIntelRepositoryWithConfigurationConnectionResolver, error)
+}
+
+type RepositoriesWithErrorsArgs struct {
+	First *int32
+	After *string
+}
+
+type RepositoriesWithConfigurationArgs struct {
+	First *int32
+	After *string
+}
+
+type CodeIntelRepositoryWithErrorConnectionResolver interface {
+	Nodes() []CodeIntelRepositoryWithErrorResolver
+	TotalCount() *int32
+	PageInfo() PageInfo
+}
+
+type CodeIntelRepositoryWithConfigurationConnectionResolver interface {
+	Nodes() []CodeIntelRepositoryWithConfigurationResolver
+	TotalCount() *int32
+	PageInfo() PageInfo
+}
+
+type CodeIntelRepositoryWithErrorResolver interface {
+	Repository() RepositoryResolver
+	Count() int32
+}
+
+type CodeIntelRepositoryWithConfigurationResolver interface {
+	Repository() RepositoryResolver
+	Indexers() []IndexerWithCountResolver
+}
+
+type IndexerWithCountResolver interface {
+	Indexer() CodeIntelIndexerResolver
+	Count() int32
+}
+
 type CodeIntelRepositorySummaryResolver interface {
 	RecentUploads() []LSIFUploadsWithRepositoryNamespaceResolver
 	RecentIndexes() []LSIFIndexesWithRepositoryNamespaceResolver
+	RecentActivity(ctx context.Context) ([]PreciseIndexResolver, error)
 	LastUploadRetentionScan() *gqlutil.DateTime
 	LastIndexScan() *gqlutil.DateTime
 	AvailableIndexers() []InferredAvailableIndexersResolver
+	LimitError() *string
 }
 
 type PreciseIndexesQueryArgs struct {
@@ -179,6 +226,12 @@ type PreciseIndexResolver interface {
 	IsLatestForRepo() bool
 	RetentionPolicyOverview(ctx context.Context, args *LSIFUploadRetentionPolicyMatchesArgs) (CodeIntelligenceRetentionPolicyMatchesConnectionResolver, error)
 	AuditLogs(ctx context.Context) (*[]LSIFUploadsAuditLogsResolver, error)
+}
+
+type AutoIndexJobDescriptionResolver interface {
+	Root() string
+	Indexer() CodeIntelIndexerResolver
+	Steps() IndexStepsResolver
 }
 
 type PageInfo interface {
@@ -251,6 +304,7 @@ type RepositoryFilterPreviewResolver interface {
 	TotalCount() int32
 	Limit() *int32
 	TotalMatches() int32
+	MatchesAllRepos() bool
 }
 
 type CodeIntelligenceCommitGraphResolver interface {
@@ -286,18 +340,29 @@ type PreciseSupportResolver interface {
 }
 
 type CodeIntelIndexerResolver interface {
+	Key() string
 	Name() string
 	URL() string
 }
 
 type IndexConfigurationResolver interface {
 	Configuration(ctx context.Context) (*string, error)
-	InferredConfiguration(ctx context.Context) (*string, error)
+	InferredConfiguration(ctx context.Context) (InferredConfigurationResolver, error)
+}
+
+type InferredConfigurationResolver interface {
+	Configuration() string
+	LimitError() *string
 }
 
 type GitTreeCodeIntelSupportResolver interface {
 	SearchBasedSupport(context.Context) (*[]GitTreeSearchBasedCoverage, error)
-	PreciseSupport(context.Context) (*[]GitTreePreciseCoverage, error)
+	PreciseSupport(context.Context) (GitTreePreciseCoverageErrorResolver, error)
+}
+
+type GitTreePreciseCoverageErrorResolver interface {
+	Coverage() []GitTreePreciseCoverage
+	LimitError() *string
 }
 
 type GitTreeSearchBasedCoverage interface {
@@ -692,6 +757,12 @@ type LSIFIndexesWithRepositoryNamespaceResolver interface {
 	Indexes() []LSIFIndexResolver
 }
 
+type InferAutoIndexJobsForRepoArgs struct {
+	Repository graphql.ID
+	Rev        *string
+	Script     *string
+}
+
 type QueueAutoIndexJobsForRepoArgs struct {
 	Repository    graphql.ID
 	Rev           *string
@@ -719,6 +790,7 @@ type CodeIntelligenceConfigurationPoliciesArgs struct {
 	Query            *string
 	ForDataRetention *bool
 	ForIndexing      *bool
+	Protected        *bool
 	After            *string
 }
 
@@ -764,33 +836,26 @@ type PreviewRepositoryFilterArgs struct {
 }
 
 type InferredAvailableIndexersResolver interface {
+	Indexer() CodeIntelIndexerResolver
 	Roots() []string
-	Index() string
-	URL() string
 }
 
 type inferredAvailableIndexersResolver struct {
-	roots []string
-	index string
-	url   string
+	indexer CodeIntelIndexerResolver
+	roots   []string
 }
 
-func NewInferredAvailableIndexersResolver(index string, roots []string, url string) InferredAvailableIndexersResolver {
+func NewInferredAvailableIndexersResolver(indexer CodeIntelIndexerResolver, roots []string) InferredAvailableIndexersResolver {
 	return &inferredAvailableIndexersResolver{
-		index: index,
-		roots: roots,
-		url:   url,
+		indexer: indexer,
+		roots:   roots,
 	}
+}
+
+func (r *inferredAvailableIndexersResolver) Indexer() CodeIntelIndexerResolver {
+	return r.indexer
 }
 
 func (r *inferredAvailableIndexersResolver) Roots() []string {
 	return r.roots
-}
-
-func (r *inferredAvailableIndexersResolver) Index() string {
-	return r.index
-}
-
-func (r *inferredAvailableIndexersResolver) URL() string {
-	return r.url
 }

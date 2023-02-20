@@ -25,6 +25,7 @@ type TestChangesetOpts struct {
 	ExternalID            string
 	ExternalBranch        string
 	ExternalForkNamespace string
+	ExternalForkName      string
 	ExternalState         btypes.ChangesetExternalState
 	ExternalReviewState   btypes.ChangesetReviewState
 	ExternalCheckState    btypes.ChangesetCheckState
@@ -113,6 +114,10 @@ func BuildChangeset(opts TestChangesetOpts) *btypes.Changeset {
 
 	if opts.ExternalForkNamespace != "" {
 		changeset.ExternalForkNamespace = opts.ExternalForkNamespace
+	}
+
+	if opts.ExternalForkName != "" {
+		changeset.ExternalForkName = opts.ExternalForkName
 	}
 
 	if opts.FailureMessage != "" {

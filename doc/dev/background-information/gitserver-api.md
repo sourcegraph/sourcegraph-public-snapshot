@@ -6,7 +6,7 @@
 It clones repositories and exposes an API for interacting with that clone.
 
 `gitserver` used to expose a simple "run any Git command" interface, 
-but [that was removed](../../dev/adr/1658418787-deprecate-raw-git-commands)
+but [that was removed](../../dev/adr/1658418787-deprecate-raw-git-commands.md)
 and in its place the `gitserver client` exposes an API supporting specific Git operations.
 
 | Method                | Description                                                                                                                                                                                             | Notes                                                                                                                                                                                                                                                                                                                                                              | Git Command or GitServer Endpoint                                                                                                                                                                                                                                                      |

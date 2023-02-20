@@ -315,12 +315,56 @@ type RepoHasKVPPredicate struct {
 }
 
 func (p *RepoHasKVPPredicate) Unmarshal(params string, negated bool) (err error) {
-	split := strings.Split(params, ":")
-	if len(split) != 2 || len(split[0]) == 0 {
-		return errors.New("expected params in the form of key:value")
+	scanLiteral := func(data string) (string, int, error) {
+		if strings.HasPrefix(data, `"`) {
+			return ScanDelimited([]byte(data), true, '"')
+		}
+		if strings.HasPrefix(data, `'`) {
+			return ScanDelimited([]byte(data), true, '\'')
+		}
+		loc := strings.Index(data, ":")
+		if loc >= 0 {
+			return data[:loc], loc, nil
+		}
+		return data, len(data), nil
 	}
-	p.Key = split[0]
-	p.Value = split[1]
+
+	// Trim leading and trailing spaces in params
+	params = strings.Trim(params, " \t")
+
+	// Scan the possibly-quoted key
+	key, advance, err := scanLiteral(params)
+	if err != nil {
+		return err
+	}
+	params = params[advance:]
+
+	// Chomp the leading ":"
+	if !strings.HasPrefix(params, ":") {
+		return errors.New("expected params of the form key:value")
+	}
+	params = params[len(":"):]
+
+	// Scan the possibly-quoted value
+	value, advance, err := scanLiteral(params)
+	if err != nil {
+		return err
+	}
+	params = params[advance:]
+
+	// If we have more text after scanning both the key and the value,
+	// that means someone tried to use a quoted string with data outside
+	// the quotes.
+	if len(params) != 0 {
+		return errors.New("unexpected extra content")
+	}
+
+	if len(key) == 0 {
+		return errors.New("key cannot be empty")
+	}
+
+	p.Key = key
+	p.Value = value
 	p.Negated = negated
 	return nil
 }

@@ -1,9 +1,0 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
-
-go_library(
-    name = "project1",
-    srcs = ["test.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/precise/diff/testdata/project1",
-    visibility = ["//visibility:public"],
-    deps = ["@com_github_google_go_cmp//cmp"],
-)

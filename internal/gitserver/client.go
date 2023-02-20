@@ -28,20 +28,20 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	sglog "github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/go-diff/diff"
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/proto"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -219,7 +219,8 @@ type RawBatchLogResult struct {
 type BatchLogCallback func(repoCommit api.RepoCommit, gitLogResult RawBatchLogResult) error
 
 type HunkReader interface {
-	Read() (hunks []*Hunk, done bool, err error)
+	Read() (*Hunk, error)
+	Close() error
 }
 
 type Client interface {
@@ -584,7 +585,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 		return nil, err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("grpc", false) {
+	if internalgrpc.IsGRPCEnabled(ctx) {
 		req := &proto.ExecRequest{
 			Repo:           string(repoName),
 			EnsureRevision: c.EnsureRevision(),
@@ -605,12 +606,12 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 		client := proto.NewGitserverServiceClient(conn)
 		stream, err := client.Exec(ctx, req)
 		if err != nil {
+			conn.Close()
 			return nil, err
 		}
 		r := streamio.NewReader(func() ([]byte, error) {
 			msg, err := stream.Recv()
 			if err != nil {
-
 				return nil, err
 			}
 			return msg.GetData(), nil
@@ -724,15 +725,46 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 
 	repoName := protocol.NormalizeRepo(args.Repo)
 
+	addrForRepo, err := c.AddrForRepo(ctx, repoName)
+	if err != nil {
+		return false, err
+	}
+
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		conn, err := grpc.DialContext(ctx, addrForRepo, defaults.DialOptions()...)
+		if err != nil {
+			return false, err
+		}
+		defer conn.Close()
+
+		client := proto.NewGitserverServiceClient(conn)
+		cs, err := client.Search(ctx, args.ToProto())
+		if err != nil {
+			return false, err
+		}
+
+		limitHit := false
+		for {
+			msg, err := cs.Recv()
+			if err != nil {
+				return limitHit, convertGitserverError(err)
+			}
+
+			switch m := msg.Message.(type) {
+			case *proto.SearchResponse_LimitHit:
+				limitHit = limitHit || m.LimitHit
+			case *proto.SearchResponse_Match:
+				onMatches([]protocol.CommitMatch{protocol.CommitMatchFromProto(m.Match)})
+			default:
+				return false, errors.Newf("unknown message type %T", m)
+			}
+		}
+	}
+
 	protocol.RegisterGob()
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	if err := enc.Encode(args); err != nil {
-		return false, err
-	}
-
-	addrForRepo, err := c.AddrForRepo(ctx, repoName)
-	if err != nil {
 		return false, err
 	}
 
@@ -768,6 +800,37 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 	}
 
 	return eventDone.LimitHit, eventDone.Err()
+}
+
+func convertGitserverError(err error) error {
+	if errors.Is(err, io.EOF) {
+		return nil
+	}
+
+	st, ok := status.FromError(err)
+	if !ok {
+		return err
+	}
+
+	if st.Code() == codes.Canceled {
+		return context.Canceled
+	}
+
+	if st.Code() == codes.DeadlineExceeded {
+		return context.DeadlineExceeded
+	}
+
+	for _, detail := range st.Details() {
+		if notFound, ok := detail.(*proto.NotFoundPayload); ok {
+			return &gitdomain.RepoNotExistError{
+				Repo:            api.RepoName(notFound.GetRepo()),
+				CloneProgress:   notFound.GetCloneProgress(),
+				CloneInProgress: notFound.GetCloneInProgress(),
+			}
+		}
+	}
+
+	return err
 }
 
 func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password string, args ...string) (_ io.ReadCloser, _ http.Header, errRes error) {

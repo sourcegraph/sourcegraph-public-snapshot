@@ -21,6 +21,7 @@ go_library(
         "index_steps_resolver.go",
         "indexes_repository_namespace_resolver.go",
         "indexes_resolver.go",
+        "precise_indexes.go",
         "prefetcher.go",
         "repository_resolver.go",
         "retention_policy_matcher_connection.go",

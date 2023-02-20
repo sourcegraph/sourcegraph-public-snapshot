@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
@@ -574,4 +575,89 @@ func TestDeleteOrganization_OnCloud(t *testing.T) {
 				`,
 		})
 	})
+}
+
+func TestSetIsSiteAdmin(t *testing.T) {
+	testCases := map[string]struct {
+		isSiteAdmin           bool
+		argsUserID            int32
+		argsSiteAdmin         bool
+		result                *EmptyResponse
+		wantErr               error
+		securityLogEventCalls int
+		setIsSiteAdminCalls   int
+	}{
+		"authenticated as non-admin": {
+			isSiteAdmin:           false,
+			argsUserID:            1,
+			argsSiteAdmin:         true,
+			result:                nil,
+			wantErr:               auth.ErrMustBeSiteAdmin,
+			securityLogEventCalls: 1,
+			setIsSiteAdminCalls:   0,
+		},
+		"set current user as site-admin": {
+			isSiteAdmin:           true,
+			argsUserID:            1,
+			argsSiteAdmin:         true,
+			result:                nil,
+			wantErr:               errRefuseToSetCurrentUserSiteAdmin,
+			securityLogEventCalls: 1,
+			setIsSiteAdminCalls:   0,
+		},
+		"authenticated as site-admin: promoting to site-admin": {
+			isSiteAdmin:           true,
+			argsUserID:            2,
+			argsSiteAdmin:         true,
+			result:                &EmptyResponse{},
+			wantErr:               nil,
+			securityLogEventCalls: 1,
+			setIsSiteAdminCalls:   1,
+		},
+		"authenticated as site-admin: demoting to site-admin": {
+			isSiteAdmin:           true,
+			argsUserID:            2,
+			argsSiteAdmin:         false,
+			result:                &EmptyResponse{},
+			wantErr:               nil,
+			securityLogEventCalls: 1,
+			setIsSiteAdminCalls:   1,
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			users := database.NewMockUserStore()
+			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: tc.isSiteAdmin}, nil)
+			users.SetIsSiteAdminFunc.SetDefaultReturn(nil)
+
+			securityLogEvents := database.NewMockSecurityEventLogsStore()
+			securityLogEvents.LogEventFunc.SetDefaultReturn()
+
+			db := database.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
+			db.SecurityEventLogsFunc.SetDefaultReturn(securityLogEvents)
+
+			s := newSchemaResolver(db, gitserver.NewClient())
+
+			actorCtx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			result, err := s.SetUserIsSiteAdmin(actorCtx, &struct {
+				UserID    graphql.ID
+				SiteAdmin bool
+			}{
+				UserID:    MarshalUserID(tc.argsUserID),
+				SiteAdmin: tc.argsSiteAdmin,
+			})
+
+			if want := tc.wantErr; err != want {
+				t.Errorf("err: want %q but got %v", want, err)
+			}
+			if result != tc.result {
+				t.Errorf("result: want %v but got %v", tc.result, result)
+			}
+
+			mockrequire.CalledN(t, securityLogEvents.LogEventFunc, tc.securityLogEventCalls)
+			mockrequire.CalledN(t, users.SetIsSiteAdminFunc, tc.setIsSiteAdminCalls)
+		})
+	}
 }

@@ -190,7 +190,6 @@ describe('updateQueryStateFromURL', () => {
     }
 
     const isSearchContextAvailable = () => Promise.resolve(true)
-    const showSearchContext = false
 
     describe('search context', () => {
         it('should extract the search context from the query', () => {
@@ -199,63 +198,12 @@ describe('updateQueryStateFromURL', () => {
             return getQueryStateFromLocation({
                 location: location.pipe(first()),
                 isSearchContextAvailable,
-                showSearchContext,
             })
                 .pipe(
                     last(),
-                    tap(({ searchContextSpec }) => {
-                        expect(searchContextSpec).toEqual('me')
-                    })
-                )
-                .toPromise()
-        })
-
-        it('remove the context filter from the URL if search contexts are enabled and available', () => {
-            const [location] = createHistoryObservable('q=context:me+test')
-
-            return getQueryStateFromLocation({
-                location: location.pipe(first()),
-                isSearchContextAvailable: () => Promise.resolve(true),
-                showSearchContext: true,
-            })
-                .pipe(
-                    last(),
-                    tap(({ processedQuery }) => {
-                        expect(processedQuery).toBe('test')
-                    })
-                )
-                .toPromise()
-        })
-
-        it('should not remove the context filter from the URL if search context is not available', () => {
-            const [location] = createHistoryObservable('q=context:me+test')
-
-            return getQueryStateFromLocation({
-                location: location.pipe(first()),
-                showSearchContext: true,
-                isSearchContextAvailable: () => Promise.resolve(false),
-            })
-                .pipe(
-                    last(),
-                    tap(({ processedQuery }) => {
-                        expect(processedQuery).toBe('context:me test')
-                    })
-                )
-                .toPromise()
-        })
-
-        it('should not remove the context filter from the URL if search contexts are disabled', () => {
-            const [location] = createHistoryObservable('q=context:me+test')
-
-            return getQueryStateFromLocation({
-                location: location.pipe(first()),
-                showSearchContext: false,
-                isSearchContextAvailable: () => Promise.resolve(true),
-            })
-                .pipe(
-                    last(),
-                    tap(({ processedQuery }) => {
-                        expect(processedQuery).toBe('context:me test')
+                    tap(({ searchContextSpec, query }) => {
+                        expect(searchContextSpec?.spec).toEqual('me')
+                        expect(query).toEqual('context:me test')
                     })
                 )
                 .toPromise()

@@ -23,6 +23,7 @@ type GitService interface {
 
 type gitService struct {
 	checker authz.SubRepoPermissionChecker
+	client  gitserver.Client
 }
 
 func NewDefaultGitService(checker authz.SubRepoPermissionChecker) GitService {
@@ -32,14 +33,15 @@ func NewDefaultGitService(checker authz.SubRepoPermissionChecker) GitService {
 
 	return &gitService{
 		checker: checker,
+		client:  gitserver.NewClient(),
 	}
 }
 
 func (s *gitService) ListFiles(ctx context.Context, repo api.RepoName, commit string, pattern *regexp.Regexp) ([]string, error) {
-	return gitserver.NewClient().ListFiles(ctx, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit), pattern)
+	return s.client.ListFiles(ctx, s.checker, repo, api.CommitID(commit), pattern)
 }
 
 func (s *gitService) Archive(ctx context.Context, repo api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
 	// Note: the sub-repo perms checker is nil here because all paths were already checked via a previous call to s.ListFiles
-	return gitserver.NewClient().ArchiveReader(ctx, nil, repo, opts)
+	return s.client.ArchiveReader(ctx, nil, repo, opts)
 }
