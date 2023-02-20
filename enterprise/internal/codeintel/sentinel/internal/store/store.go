@@ -3,20 +3,24 @@ package store
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type Store interface {
 	Foo(ctx context.Context) error
-	InsertVulnerabilities(ctx context.Context, vulnerabilities []shared.Vulnerability) (err error)
+	InsertVulnerabilities(ctx context.Context, vulnerabilities []shared.Vulnerability) error
+	ScanMatches(ctx context.Context) error
 }
 
 type store struct {
@@ -309,3 +313,53 @@ SELECT c.id, c.path, c.symbols FROM candidates c
 -- TODO - update instead
 ON CONFLICT DO NOTHING
 `
+
+func (s *store) ScanMatches(ctx context.Context) (err error) {
+	ctx, _, endObservation := s.operations.scanMatches.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	// TODO - insert instead of returning
+	matches, err := scanFilteredVulnerabilityMatches(s.db.Query(ctx, sqlf.Sprintf(scanMatchesQuery)))
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("> %v\n", matches)
+	return nil
+}
+
+const scanMatchesQuery = `
+SELECT
+	r.dump_id,
+	r.version,
+	vap.vulnerability_id,
+	vap.version_constraint
+FROM vulnerability_affected_packages vap
+JOIN lsif_references r ON r.name LIKE vap.package_name
+WHERE
+	-- TODO - java mapping
+	-- r.scheme = 'gomod' AND vap.language = 'go'
+	r.scheme = 'npm' AND vap.language = 'Javascript'
+`
+
+type VulnerabilityMatch struct {
+	UploadID        int
+	VulnerabilityID int
+}
+
+var scanFilteredVulnerabilityMatches = basestore.NewFilteredSliceScanner(func(s dbutil.Scanner) (m VulnerabilityMatch, _ bool, _ error) {
+	var version string
+	var versionConstraints []string
+
+	if err := s.Scan(&m.UploadID, &version, &m.VulnerabilityID, pq.Array(&versionConstraints)); err != nil {
+		return VulnerabilityMatch{}, false, err
+	}
+
+	return m, versionMatchesConstraints(version, versionConstraints), nil
+})
+
+func versionMatchesConstraints(version string, constraints []string) bool {
+	// TODO - actually compare constraints
+	fmt.Printf("> %v %v\n", version, constraints)
+	return true
+}

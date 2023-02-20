@@ -2,7 +2,6 @@ package background
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/internal/store"
@@ -29,7 +28,9 @@ type cveMatcher struct {
 }
 
 func (matcher *cveMatcher) handle(ctx context.Context, metrics *Metrics) error {
-	// TODO
-	fmt.Printf("MATCHER HIT\n")
+	if err := matcher.store.ScanMatches(ctx); err != nil {
+		return err
+	}
+
 	return nil
 }
