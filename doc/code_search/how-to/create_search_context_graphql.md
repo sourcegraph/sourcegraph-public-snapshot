@@ -4,14 +4,14 @@ This document will take you through how to create a search context for your user
 
 ## Prerequisites
 
-* This document assumes that you have a private Sourcegraph instance
-* Assumes you are creating a Private search context with a user namespace which is only available to the user
-* For more information on available permissions and ways to alter the following examples, please see [Managing search contexts with api - permissions and visibility overview](https://docs.sourcegraph.com/api/graphql/managing-search-contexts-with-api#permissions-and-visibility-overview)
+* This document assumes that you have a private Sourcegraph instance.
+* Assumes you are creating a private search context with a user namespace that is only available to the user.
+* For more information on available permissions and ways to alter the following examples, please see [Managing search contexts with the API - Permissions and visibility overview](https://docs.sourcegraph.com/api/graphql/managing-search-contexts-with-api#permissions-and-visibility-overview).
 
-## Steps to create
+## Steps to create a search context
 
 
-Step 1: Add to global configuration (must be site-admin):
+Step 1: Add to global configuration (must be a site admin):
 
 
 ```json
@@ -22,23 +22,24 @@ Step 1: Add to global configuration (must be site-admin):
 }
 ```
 
-Step 2: Make sure you have added code hosts: [Add repositories (from code hosts) to Sourcegraph](https://docs.sourcegraph.com/admin/repo/add)
+Step 2: Make sure you have added code hosts: [Add repositories (from code hosts) to Sourcegraph](https://docs.sourcegraph.com/admin/repo/add).
 
 
 
-Step 3: Follow the steps to [Generate an access token for GraphQL](https://docs.sourcegraph.com/api/graphql#quickstart) if you already haven't
+Step 3: Follow the steps to [Generate an access token for GraphQL](https://docs.sourcegraph.com/api/graphql#quickstart) if you haven't already.
 
 
 
-Step 4: Navigate to the API console on your instance, replacing sourcegraph.example with the correct string for your instance URL.
+Step 4: Navigate to the API console on your instance and replace `sourcegraph.example` with the correct string for your instance URL.
 
 * Example: `https://sourcegraph.example.com/api/console`
 
 
 
-Step 5: Query your user namespace id and save the value
+Step 5: Query your user namespace id and save the value.
 
-* The name: will be your Sourcegraph instance login name
+* The name will be your Sourcegraph instance login name.
+
 Example:
 
 ```json
@@ -51,7 +52,8 @@ query {
 
 Step 6: Query your desired repo id and save the value.
 
-* It should be whatever the URL is for that repo. 
+* This should be whatever the URL is for that repo. 
+
 Example: 
 
 ```json
@@ -81,7 +83,7 @@ mutation CreateSearchContext(
 }
 ```
 
-Then in the Query Variables section on the bottom of the GraphQL API page, use this variables example, changing at least the name and description:
+Then, in the Query Variables section on the bottom of the GraphQL API page, use this variables example, changing at least the name and description:
 
 ```json
 {
@@ -101,7 +103,7 @@ Then in the Query Variables section on the bottom of the GraphQL API page, use t
 ```
 
 
-Step 8: Run the query, that should create a search context and the output will look something like:
+Step 8: Run the query. This should create a search context and the output will look something like this:
 
 
 ```json
@@ -117,7 +119,7 @@ Step 8: Run the query, that should create a search context and the output will l
 
 
 
-Step 9: Go to the main search page and you should see the new Search context as part of the search bar!
+Step 9: Go to the main search page and you should see the new search context as part of the search bar.
 
 ## Further resources
 
