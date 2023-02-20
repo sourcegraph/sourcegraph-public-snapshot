@@ -9,9 +9,9 @@ type CodeIntelIndexer struct {
 	DockerImages []string
 }
 
-// AllIndexers is a list of all detectable/suggested indexers known to Sourcegraph.
+// allIndexers is a list of all detectable/suggested indexers known to Sourcegraph.
 // Two indexers with the same language key will be preferred according to the given order.
-var AllIndexers = []CodeIntelIndexer{
+var allIndexers = []CodeIntelIndexer{
 	// C++
 	makeInternalIndexer("C++", "lsif-clang"),
 	makeInternalIndexer("C++", "lsif-cpp"),
@@ -62,6 +62,17 @@ var AllIndexers = []CodeIntelIndexer{
 	makeInternalIndexer("TypeScript", "lsif-node"),
 }
 
+func NamesForKey(key string) []string {
+	var names []string
+	for _, indexer := range allIndexers {
+		if indexer.LanguageKey == key {
+			names = append(names, indexer.Name)
+		}
+	}
+
+	return names
+}
+
 var extensions = map[string][]string{
 	"C++":        {".c", ".cp", ".cpp", ".cxx", ".h", ".hpp"},
 	"Dart":       {".dart"},
@@ -79,9 +90,9 @@ var extensions = map[string][]string{
 	"TypeScript": {".js", ".jsx", ".ts", ".tsx"},
 }
 
-var ImageToIndexer = func() map[string]CodeIntelIndexer {
+var imageToIndexer = func() map[string]CodeIntelIndexer {
 	m := map[string]CodeIntelIndexer{}
-	for _, indexer := range AllIndexers {
+	for _, indexer := range allIndexers {
 		for _, dockerImage := range indexer.DockerImages {
 			m[dockerImage] = indexer
 		}
@@ -94,7 +105,7 @@ var PreferredIndexers = func() map[string]CodeIntelIndexer {
 	preferred := map[string]CodeIntelIndexer{}
 
 	m := map[string]CodeIntelIndexer{}
-	for _, indexer := range AllIndexers {
+	for _, indexer := range allIndexers {
 		if p, ok := preferred[indexer.LanguageKey]; ok {
 			m[indexer.Name] = p
 		} else {
@@ -109,7 +120,7 @@ var PreferredIndexers = func() map[string]CodeIntelIndexer {
 // A map of file extension to a list of indexers in order of recommendation from most to least.
 var LanguageToIndexer = func() map[string][]CodeIntelIndexer {
 	m := map[string][]CodeIntelIndexer{}
-	for _, indexer := range AllIndexers {
+	for _, indexer := range allIndexers {
 		for _, extension := range extensions[indexer.LanguageKey] {
 			m[extension] = append(m[extension], indexer)
 		}

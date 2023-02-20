@@ -47,6 +47,7 @@ type AutoindexingServiceResolver interface {
 	UpdateCodeIntelligenceInferenceScript(ctx context.Context, args *UpdateCodeIntelligenceInferenceScriptArgs) (*EmptyResponse, error)
 
 	PreciseIndexByID(ctx context.Context, id graphql.ID) (PreciseIndexResolver, error)
+	IndexerKeys(ctx context.Context, args *IndexerKeyQueryArgs) ([]string, error)
 	PreciseIndexes(ctx context.Context, args *PreciseIndexesQueryArgs) (PreciseIndexConnectionResolver, error)
 	DeletePreciseIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error)
 	DeletePreciseIndexes(ctx context.Context, args *DeletePreciseIndexesArgs) (*EmptyResponse, error)
@@ -126,12 +127,17 @@ type CodeIntelRepositorySummaryResolver interface {
 	LimitError() *string
 }
 
+type IndexerKeyQueryArgs struct {
+	Repo *graphql.ID
+}
+
 type PreciseIndexesQueryArgs struct {
 	graphqlutil.ConnectionArgs
 	After        *string
 	Repo         *graphql.ID
 	Query        *string
 	States       *[]string
+	IndexerKey   *string
 	DependencyOf *string
 	DependentOf  *string
 }
