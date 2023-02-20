@@ -195,17 +195,14 @@ func dbAddUserAction(cmd *cli.Context) error {
 
 		// Report back the new user information.
 		std.Out.WriteSuccessf(
-			// the space after the last %s is so the user can select the password easily in the shell to copy it.
-			"User '%s%s%s' (%s%s%s) has been created and its password is '%s%s%s'.",
-			output.StyleOrange,
-			username,
-			output.StyleReset,
-			output.StyleOrange,
-			email,
-			output.StyleReset,
-			output.StyleOrange,
-			password,
-			output.StyleReset,
+			fmt.Sprintf("User '%[1]s%[3]s%[2]s' (%[1]s%[4]s%[2]s) has been created and its password is '%[1]s%[5]s%[6]s'.",
+				output.StyleOrange,
+				output.StyleSuccess,
+				username,
+				email,
+				password,
+				output.StyleReset,
+			),
 		)
 
 		return nil
