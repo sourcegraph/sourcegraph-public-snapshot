@@ -22,10 +22,15 @@ type CodeownersStore interface {
 	basestore.ShareableStore
 	Done(error) error
 
+	// CreateCodeownersFile creates a given Codeowners file in the database.
 	CreateCodeownersFile(ctx context.Context, codeowners *types.CodeownersFile) error
+	// UpdateCodeownersFile updates a manually ingested Codeowners file in the database, matched by repo.
 	UpdateCodeownersFile(ctx context.Context, codeowners *types.CodeownersFile) error
+	// GetCodeownersForRepo gets a manually ingested Codeowners file for the given repo if it exists.
 	GetCodeownersForRepo(ctx context.Context, id api.RepoID) (*types.CodeownersFile, error)
+	// DeleteCodeownersForRepo deletes a manually ingested Codeowners file for a given repo if it exists.
 	DeleteCodeownersForRepo(ctx context.Context, id api.RepoID) error
+	// ListCodeowners lists manually ingested Codeowners files given the options.
 	ListCodeowners(ctx context.Context, opts ListCodeownersOpts) ([]*types.CodeownersFile, int32, error)
 }
 
