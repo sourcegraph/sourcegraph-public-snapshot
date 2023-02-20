@@ -1535,7 +1535,7 @@ export const defaultExternalServices: Record<ExternalServiceKind, AddExternalSer
 }
 
 export const externalRepoIcon = (
-    externalRepo: ExternalRepositoryFields
+    externalRepo: Pick<ExternalRepositoryFields, 'serviceType'>
 ): React.ComponentType<{ className?: string }> | undefined => {
     const externalServiceKind = externalRepo.serviceType.toUpperCase() as ExternalServiceKind
     return defaultExternalServices[externalServiceKind]?.icon ?? undefined

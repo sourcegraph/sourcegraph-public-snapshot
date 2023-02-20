@@ -18,8 +18,10 @@ import {
     Alert,
     Text,
     Code,
+    Icon,
 } from '@sourcegraph/wildcard'
 
+import { externalRepoIcon } from '../components/externalServices/externalServices'
 import {
     buildFilterArgs,
     FilterControl,
@@ -37,50 +39,47 @@ import {
     ExternalServiceKindsVariables,
     ExternalServiceKindsResult,
     ExternalServiceKind,
+    PackageRepoReferenceKind,
 } from '../graphql-operations'
 
 import { EXTERNAL_SERVICE_KINDS, PACKAGES_QUERY } from './backend'
-import { ExternalRepositoryIcon } from './components/ExternalRepositoryIcon'
 import { RepoMirrorInfo } from './components/RepoMirrorInfo'
 
 import { searchQuery } from '../components/fuzzyFinder/FuzzyModal.module.scss'
 import styles from './SiteAdminPackagesPage.module.scss'
-
-// TODO: Share this with backend (Make `scheme` a GQL enum)
-type PackageScheme = 'npm' | 'go' | 'semanticdb' | 'scip-ruby' | 'python' | 'rust-analyzer'
 
 const ExternalServicePackageMap: Partial<
     Record<
         ExternalServiceKind,
         {
             label: string
-            value: PackageScheme
+            value: PackageRepoReferenceKind
         }
     >
 > = {
     [ExternalServiceKind.NPMPACKAGES]: {
         label: 'NPM',
-        value: 'npm',
+        value: PackageRepoReferenceKind.NPMPACKAGES,
     },
     [ExternalServiceKind.GOMODULES]: {
         label: 'Go',
-        value: 'go',
+        value: PackageRepoReferenceKind.GOMODULES,
     },
     [ExternalServiceKind.JVMPACKAGES]: {
         label: 'JVM',
-        value: 'semanticdb',
+        value: PackageRepoReferenceKind.JVMPACKAGES,
     },
     [ExternalServiceKind.RUBYPACKAGES]: {
         label: 'Ruby',
-        value: 'scip-ruby',
+        value: PackageRepoReferenceKind.RUBYPACKAGES,
     },
     [ExternalServiceKind.PYTHONPACKAGES]: {
         label: 'Python',
-        value: 'python',
+        value: PackageRepoReferenceKind.PYTHONPACKAGES,
     },
     [ExternalServiceKind.RUSTPACKAGES]: {
         label: 'Rust',
-        value: 'rust-analyzer',
+        value: PackageRepoReferenceKind.RUSTPACKAGES,
     },
 }
 
@@ -89,15 +88,17 @@ interface PackageNodeProps {
 }
 
 const PackageNode: React.FunctionComponent<React.PropsWithChildren<PackageNodeProps>> = ({ node }) => {
+    const PackageIconComponent = externalRepoIcon({ serviceType: node.scheme })
+
     const packageRepository = node.repository
 
     return (
         <li className="list-group-item px-0 py-2">
-            <div className="d-flex align-items-center justify-content-between">
+            <div className={styles.node}>
                 <div>
+                    <Icon as={PackageIconComponent} aria-label="Package host logo" className="mr-2" />
                     {packageRepository ? (
                         <>
-                            <ExternalRepositoryIcon externalRepo={packageRepository.externalRepository} />
                             <RepoLink repoName={node.name} to={packageRepository.url} />
                             <RepoMirrorInfo mirrorInfo={packageRepository.mirrorInfo} />
                         </>
@@ -318,7 +319,7 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
                         ))}
                     </ul>
                 )}
-                {hasNextPage && (
+                {connection?.nodes && connection.totalCount !== connection.nodes.length && hasNextPage && (
                     <div>
                         <Button variant="link" size="sm" onClick={fetchMore}>
                             Show more
