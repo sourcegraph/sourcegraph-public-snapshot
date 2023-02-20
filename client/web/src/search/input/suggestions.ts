@@ -1,5 +1,5 @@
 import { EditorState } from '@codemirror/state'
-import { mdiFilterOutline, mdiTextSearchVariant, mdiSourceRepository, mdiStar, mdiFileOutline } from '@mdi/js'
+import { mdiFilterOutline, mdiSourceRepository, mdiStar, mdiFileOutline } from '@mdi/js'
 import { byLengthAsc, extendedMatch, Fzf, FzfOptions, FzfResultItem } from 'fzf'
 
 import { tokenAt, tokens as queryTokens } from '@sourcegraph/branded'
@@ -9,14 +9,12 @@ import {
     Group,
     Option,
     Source,
-    getEditorConfig,
     SuggestionResult,
-    submitQueryInfo,
-    queryRenderer,
     filterRenderer,
     filterValueRenderer,
     shortenPath,
     combineResults,
+    defaultLanguages,
 } from '@sourcegraph/branded/src/search-ui/experimental'
 import { getParsedQuery } from '@sourcegraph/branded/src/search-ui/input/codemirror/parsedQuery'
 import { isDefined } from '@sourcegraph/common'
@@ -24,11 +22,12 @@ import { gql } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { regexInsertText } from '@sourcegraph/shared/src/search/query/completion-utils'
-import { FILTERS, FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
+import { FILTERS, FilterType, ResolvedFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { Node, OperatorKind } from '@sourcegraph/shared/src/search/query/parser'
-import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
-import { CharacterRange, Filter, PatternKind, Token } from '@sourcegraph/shared/src/search/query/token'
-import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { predicateCompletion } from '@sourcegraph/shared/src/search/query/predicates'
+import { selectorHasFields } from '@sourcegraph/shared/src/search/query/selectFilter'
+import { CharacterRange, Filter, Literal, PatternKind, Token } from '@sourcegraph/shared/src/search/query/token'
+import { isFilterOfType, resolveFilterMemoized } from '@sourcegraph/shared/src/search/query/utils'
 import { getSymbolIconSVGPath } from '@sourcegraph/shared/src/symbols/symbolIcons'
 
 import { AuthenticatedUser } from '../../auth'
@@ -41,6 +40,17 @@ import {
     SuggestionsSymbolVariables,
     SymbolKind,
 } from '../../graphql-operations'
+
+// The number of entries we want to show in various situations
+//
+// The number of filter values to show when there are multiple sections (e.g. values and predicates)
+const MULTIPLE_FILTER_VALUE_LIST_SIZE = 7
+// The number of filter values to show when there is only one section
+const ALL_FILTER_VALUE_LIST_SIZE = 12
+// The number of default suggestions
+const DEFAULT_SUGGESTIONS_LIST_SIZE = 3
+// The number of default suggestions for important types
+const DEFAULT_SUGGESTIONS_HIGH_PRI_LIST_SIZE = 5
 
 /**
  * Used to organize the various sources that contribute to the final list of
@@ -295,55 +305,6 @@ function toSymbolSuggestion({ item, positions }: FzfResultItem<CodeSymbol>, from
     }
 }
 
-/**
- * If the query is not empty, this source will return a single command
- * suggestion which submits the query when selected.
- */
-const currentQuery: InternalSource = ({ token, input }) => {
-    if (token?.type === 'filter') {
-        return null
-    }
-
-    let label = input
-    let actionName = 'Search everywhere'
-
-    const contextFilter = findFilter(input, FilterType.context, FilterKind.Global)
-
-    if (contextFilter) {
-        label = omitFilter(input, contextFilter)
-        if (contextFilter.value?.value !== 'global') {
-            actionName = `Search '${contextFilter.value?.value ?? ''}'`
-        }
-    }
-
-    if (label.trim() === '') {
-        return null
-    }
-
-    return {
-        result: [
-            {
-                title: '',
-                options: [
-                    {
-                        icon: mdiTextSearchVariant,
-                        label,
-                        action: {
-                            type: 'command',
-                            name: actionName,
-                            apply: (_option, view) => {
-                                getEditorConfig(view.state).onSubmit()
-                            },
-                        },
-                        render: queryRenderer,
-                        info: submitQueryInfo,
-                    },
-                ],
-            },
-        ],
-    }
-}
-
 const FILTER_SUGGESTIONS = new Fzf(Object.keys(FILTERS) as FilterType[], { match: extendedMatch })
 // These are the filters shown when the query input is empty or the cursor is at
 // at whitespace token.
@@ -371,14 +332,18 @@ const filterSuggestions: InternalSource = ({ tokens, token, position }) => {
 
     if (!token || token.type === 'whitespace') {
         const filters = DEFAULT_FILTERS
-            // Add related filters
+            // Show related filters
             .concat(
-                tokens.flatMap(token =>
-                    token.type === 'filter' ? RELATED_FILTERS[token.field.value as FilterType]?.(token) ?? none : none
-                )
+                tokens.flatMap(token => {
+                    if (token.type !== 'filter') {
+                        return none
+                    }
+                    const resolvedFilter = resolveFilterMemoized(token.field.value)
+                    return resolvedFilter ? RELATED_FILTERS[resolvedFilter.type]?.(token) ?? none : none
+                })
             )
             // Remove existing filters
-            .filter(filter => !tokens.some(token => token.type === 'filter' && token.field.value === filter))
+            .filter(filterType => !tokens.some(token => token.type === 'filter' && isFilterOfType(token, filterType)))
 
         options = filters.map(filter => toFilterCompletion(filter, position))
     } else if (token?.type === 'pattern') {
@@ -416,49 +381,92 @@ function filterValueSuggestions(caches: Caches): InternalSource {
         if (token?.type !== 'filter') {
             return null
         }
-        const resolvedFilter = resolveFilter(token.field.value)
+        const resolvedFilter = resolveFilterMemoized(token.field.value)
+
+        if (!resolvedFilter) {
+            return null
+        }
+
         const value = token.value?.value ?? ''
         const from = token.value?.range.start ?? token.range.end
         const to = token.value?.range.end
 
-        switch (resolvedFilter?.definition.suggestions) {
+        switch (resolvedFilter.definition.suggestions) {
             case 'repo': {
+                const predicates = staticFilterPredicateOptions('repo', token.value, position)
                 return caches.repo.query(
                     value,
-                    entries => [
-                        {
-                            title: 'Repositories',
-                            options: entries.slice(0, 25).map(item => toRepoCompletion(item, from, to)),
-                        },
-                    ],
+                    entries => {
+                        const groups = [
+                            {
+                                title: 'Repositories',
+                                options: entries
+                                    .slice(
+                                        0,
+                                        predicates.length === 0
+                                            ? ALL_FILTER_VALUE_LIST_SIZE
+                                            : MULTIPLE_FILTER_VALUE_LIST_SIZE
+                                    )
+                                    .map(item => toRepoCompletion(item, from, to)),
+                            },
+                        ]
+
+                        if (predicates.length > 0) {
+                            groups.push({
+                                title: 'Predicates',
+                                options: predicates,
+                            })
+                        }
+
+                        return groups
+                    },
                     parsedQuery,
                     position
                 )
             }
 
             case 'path': {
+                const predicates = staticFilterPredicateOptions('file', token.value, position)
                 return caches.file.query(
                     value,
-                    entries => [
-                        {
-                            title: 'Files',
-                            options: entries.map(item => toFileCompletion(item, from, to)).slice(0, 25),
-                        },
-                    ],
+                    entries => {
+                        const groups = [
+                            {
+                                title: 'Files',
+                                options: entries
+                                    .map(item => toFileCompletion(item, from, to))
+                                    .slice(
+                                        0,
+                                        predicates.length === 0
+                                            ? ALL_FILTER_VALUE_LIST_SIZE
+                                            : MULTIPLE_FILTER_VALUE_LIST_SIZE
+                                    ),
+                            },
+                        ]
+
+                        if (predicates.length > 0) {
+                            groups.push({
+                                title: 'Predicates',
+                                options: predicates,
+                            })
+                        }
+
+                        return groups
+                    },
                     parsedQuery,
                     position
                 )
             }
 
             default: {
-                switch (resolvedFilter?.type) {
+                switch (resolvedFilter.type) {
                     // Some filters are not defined to have dynamic suggestions,
                     // we need to handle these here explicitly. We can't change
                     // the filter definition without breaking the current
                     // search input.
                     case FilterType.context:
                         return caches.context.query(value, entries => {
-                            entries = value.trim() === '' ? entries.slice(0, 10) : entries
+                            entries = value.trim() === '' ? entries.slice(0, ALL_FILTER_VALUE_LIST_SIZE) : entries
                             return [
                                 {
                                     title: 'Search contexts',
@@ -468,8 +476,8 @@ function filterValueSuggestions(caches: Caches): InternalSource {
                             ]
                         })
                     default: {
-                        const suggestions = staticFilterValueSuggestions(token)
-                        return suggestions ? { result: [suggestions] } : null
+                        const options = staticFilterValueOptions(token, resolvedFilter)
+                        return options.length > 0 ? { result: [{ title: '', options }] } : null
                     }
                 }
             }
@@ -477,34 +485,116 @@ function filterValueSuggestions(caches: Caches): InternalSource {
     }
 }
 
-function staticFilterValueSuggestions(token?: Token): Group | null {
-    if (token?.type !== 'filter') {
-        return null
+const filterValueFzfOptions: Partial<Record<FilterType, Partial<FzfOptions<Option>>>> = {
+    [FilterType.lang]: {
+        fuzzy: 'v2',
+    },
+}
+
+function staticFilterValueOptions(
+    token: Extract<Token, { type: 'filter' }>,
+    resolvedFilter: NonNullable<ResolvedFilter>
+): Option[] {
+    if (!resolvedFilter.definition.discreteValues) {
+        return []
     }
 
-    const resolvedFilter = resolveFilter(token.field.value)
-    if (!resolvedFilter?.definition.discreteValues) {
-        return null
+    const value = token.value?.value ?? ''
+    const from = token.value?.range.start ?? token.range.end
+    const to = token.value?.range.end
+
+    let options: Option[]
+    if (resolvedFilter.type === FilterType.select) {
+        // The some select filter values have multiple subfields, e.g.
+        // "symbol.class". To provide a balanced list of suggestions and
+        // ergonomics we show subfields only if the value already contains a
+        // "top-level" value (e.g. "symbol" or "commit"). To make this work
+        // selecting a top-level value with subfields should _not_ append a space
+        // for starting a new token. This is what `selectorHasFields` determines
+        // below.
+        // At the same time, if we already show all subfields (including the
+        // top-level value), then selecting any of the values should also append
+        // a space. This is handled by the `includesSubFieldValues` check.
+        //
+        // Examples:
+        // - Selecting "repo" will append "repo " (repo has no subfields)
+        // - Selecting "symbol" will append "symbol", which in turn will list
+        //   all "symbol" related values (including "symbol" itself)
+        // - Selecting any of the "symbol..." values inserts that value
+        //   including a trailing space because all of them are "terminal"
+        //   values at this point.
+        const values = resolvedFilter.definition.discreteValues(token.value, false)
+        const includesSubFieldValues = values.some(value => value.label.includes('.'))
+
+        options = values.map(({ label }) => ({
+            label,
+            action: {
+                type: 'completion',
+                from,
+                to,
+                insertValue: selectorHasFields(label) && !includesSubFieldValues ? label : label + ' ',
+            },
+        }))
+    } else if (resolvedFilter.type === FilterType.lang && !value) {
+        // We show a shorter default languages list than the current query
+        // input.
+        options = defaultLanguages.map(label => ({
+            label,
+            action: {
+                type: 'completion',
+                from,
+                to,
+            },
+        }))
+    } else {
+        options = resolvedFilter.definition.discreteValues(token.value, false).map(value => ({
+            label: value.label,
+            action: {
+                type: 'completion',
+                from,
+                to,
+                insertValue: (value.insertText ?? value.label) + ' ',
+            },
+        }))
     }
 
-    const value = token.value
-    let options: Option[] = resolvedFilter.definition.discreteValues(token.value, false).map(value => ({
-        label: value.label,
+    if (value) {
+        const fzf = new Fzf(options, {
+            selector: option => option.label,
+            fuzzy: false,
+            ...filterValueFzfOptions[resolvedFilter.type],
+        })
+        options = fzf.find(value).map(match => ({ ...match.item, matches: match.positions }))
+    }
+
+    return options
+}
+
+type PredicateFzfOptions = FzfOptions<{ label: string; asSnippet?: boolean; insertText?: string }>
+const predicateFzfOption: PredicateFzfOptions = {
+    selector: completion => completion.label,
+    fuzzy: false,
+    forward: false,
+    tiebreakers: [byStartDesc, byLengthAsc],
+}
+
+/**
+ * Returns predicate options for the provided filter type.
+ */
+function staticFilterPredicateOptions(type: 'repo' | 'file', value: Literal | undefined, position: number): Option[] {
+    const fzf = new Fzf(predicateCompletion(type), predicateFzfOption)
+    return fzf.find(value?.value || '').map(({ item, positions }) => ({
+        label: item.label,
+        matches: positions,
         action: {
             type: 'completion',
-            from: token.value?.range.start ?? token.range.end,
-            to: token.value?.range.end,
-            insertValue: (value.insertText ?? value.label) + ' ',
+            from: value?.range.start ?? position,
+            to: value?.range.end,
+            // insertText is always set for prediction completions
+            insertValue: item.insertText! + ' ${}',
+            asSnippet: item.asSnippet,
         },
     }))
-
-    if (value && value.value !== '') {
-        const fzf = new Fzf(options, { selector: option => option.label })
-        options = fzf.find(value.value).map(match => ({ ...match.item, matches: match.positions }))
-    }
-
-    // TODO: Determine appropriate title
-    return options.length > 0 ? { title: '', options } : null
 }
 
 /**
@@ -514,7 +604,8 @@ function staticFilterValueSuggestions(token?: Token): Group | null {
 function repoSuggestions(cache: Caches['repo']): InternalSource {
     return ({ token, tokens, parsedQuery, position }) => {
         const showRepoSuggestions =
-            token?.type === 'pattern' && !tokens.some(token => token.type === 'filter' && token.field.value === 'repo')
+            token?.type === 'pattern' &&
+            !tokens.some(token => token.type === 'filter' && isFilterOfType(token, FilterType.repo))
         if (!showRepoSuggestions) {
             return null
         }
@@ -524,7 +615,9 @@ function repoSuggestions(cache: Caches['repo']): InternalSource {
             results => [
                 {
                     title: 'Repositories',
-                    options: results.slice(0, 3).map(result => toRepoSuggestion(result, token.range.start)),
+                    options: results
+                        .slice(0, DEFAULT_SUGGESTIONS_LIST_SIZE)
+                        .map(result => toRepoSuggestion(result, token.range.start)),
                 },
             ],
             parsedQuery,
@@ -545,12 +638,15 @@ function fileSuggestions(cache: Caches['file'], isSourcegraphDotCom?: boolean): 
         const showFileSuggestions =
             token?.type === 'pattern' &&
             (!isSourcegraphDotCom ||
-                tokens.some(
-                    token =>
-                        token.type === 'filter' &&
-                        ((token.field.value === 'context' && token.value?.value !== 'global') ||
-                            token.field.value === 'repo')
-                ))
+                tokens.some(token => {
+                    if (token.type !== 'filter') {
+                        return false
+                    }
+                    return (
+                        (isFilterOfType(token, FilterType.context) && token.value?.value !== 'global') ||
+                        isFilterOfType(token, FilterType.repo)
+                    )
+                }))
 
         if (!showFileSuggestions) {
             return null
@@ -561,7 +657,9 @@ function fileSuggestions(cache: Caches['file'], isSourcegraphDotCom?: boolean): 
             results => [
                 {
                     title: 'Files',
-                    options: results.slice(0, 5).map(result => toFileSuggestion(result, token.range.start)),
+                    options: results
+                        .slice(0, DEFAULT_SUGGESTIONS_HIGH_PRI_LIST_SIZE)
+                        .map(result => toFileSuggestion(result, token.range.start)),
                 },
             ],
             parsedQuery,
@@ -586,13 +684,17 @@ function symbolSuggestions(cache: Caches['symbol'], isSourcegraphDotCom?: boolea
         // "global".
 
         if (
-            !tokens.some(
-                token =>
-                    token.type === 'filter' &&
-                    ((token.field.value === 'context' && (!isSourcegraphDotCom || token.value?.value !== 'global')) ||
-                        token.field.value === 'repo' ||
-                        token.field.value === 'file')
-            )
+            !tokens.some(token => {
+                if (token.type !== 'filter') {
+                    return false
+                }
+                return (
+                    (isFilterOfType(token, FilterType.context) &&
+                        (!isSourcegraphDotCom || token.value?.value !== 'global')) ||
+                    isFilterOfType(token, FilterType.repo) ||
+                    isFilterOfType(token, FilterType.file)
+                )
+            })
         ) {
             return null
         }
@@ -602,7 +704,9 @@ function symbolSuggestions(cache: Caches['symbol'], isSourcegraphDotCom?: boolea
             results => [
                 {
                     title: 'Symbols',
-                    options: results.slice(0, 5).map(result => toSymbolSuggestion(result, token.range.start)),
+                    options: results
+                        .slice(0, DEFAULT_SUGGESTIONS_HIGH_PRI_LIST_SIZE)
+                        .map(result => toSymbolSuggestion(result, token.range.start)),
                 },
             ],
             parsedQuery,
@@ -624,24 +728,28 @@ interface Caches {
     symbol: ContextualCache<CodeSymbol, FzfResultItem<CodeSymbol>>
 }
 
-interface SuggestionsSourceConfig
+export interface SuggestionsSourceConfig
     extends Pick<SearchContextProps, 'fetchSearchContexts' | 'getUserSearchContextNamespaces'> {
     platformContext: Pick<PlatformContext, 'requestGraphQL'>
     authenticatedUser?: AuthenticatedUser | null
     isSourcegraphDotCom?: boolean
 }
 
+let sharedCaches: Caches | null = null
+
 /**
- * Main function of this module. It creates a suggestion source which internally
- * delegates to other sources.
+ * Initializes and persists suggestion caches.
  */
-export const createSuggestionsSource = ({
+function createCaches({
     platformContext,
     authenticatedUser,
     fetchSearchContexts,
     getUserSearchContextNamespaces,
-    isSourcegraphDotCom,
-}: SuggestionsSourceConfig): Source => {
+}: SuggestionsSourceConfig): Caches {
+    if (sharedCaches) {
+        return sharedCaches
+    }
+
     const cleanRegex = (value: string): string => value.replace(/^\^|\\\.|\$$/g, '')
 
     const repoFzfOptions: FzfOptions<Repo> = {
@@ -671,7 +779,7 @@ export const createSuggestionsSource = ({
     const symbolFilters: Set<FilterType> = new Set([...fileFilters, FilterType.file])
 
     // TODO: Initialize outside to persist cache across page navigation
-    const caches: Caches = {
+    return (sharedCaches = {
         repo: new Cache({
             // Repo queries are scoped to context: filters
             dataCacheKey: (parsedQuery, position) =>
@@ -679,7 +787,10 @@ export const createSuggestionsSource = ({
                     ? buildSuggestionQuery(
                           parsedQuery,
                           { start: position, end: position },
-                          token => token.type === 'parameter' && !!token.value && token.field === 'context'
+                          token =>
+                              token.type === 'parameter' &&
+                              !!token.value &&
+                              resolveFilterMemoized(token.field)?.type === FilterType.context
                       )
                     : '',
             queryKey: (value, dataCacheKey = '') => `${dataCacheKey} type:repo count:50 repo:${value}`,
@@ -709,7 +820,7 @@ export const createSuggestionsSource = ({
                 }
 
                 const response = await fetchSearchContexts({
-                    first: 50,
+                    first: 20,
                     query: value,
                     platformContext,
                     namespaces: getUserSearchContextNamespaces(authenticatedUser),
@@ -745,7 +856,9 @@ export const createSuggestionsSource = ({
                           parsedQuery,
                           { start: position, end: position },
                           token =>
-                              token.type === 'parameter' && !!token.value && fileFilters.has(token.field as FilterType)
+                              token.type === 'parameter' &&
+                              !!token.value &&
+                              containsFilterType(fileFilters, token.field)
                       )
                     : '',
             queryKey: (value, dataCacheKey = '') => `${dataCacheKey} type:file count:50 file:${value}`,
@@ -788,7 +901,7 @@ export const createSuggestionsSource = ({
                           token =>
                               token.type === 'parameter' &&
                               !!token.value &&
-                              symbolFilters.has(token.field as FilterType)
+                              containsFilterType(symbolFilters, token.field)
                       )
                     : '',
             queryKey: (value, dataCacheKey = '') => `${dataCacheKey} type:symbol count:50 ${value}`,
@@ -824,10 +937,18 @@ export const createSuggestionsSource = ({
                 return fzf.find(query)
             },
         }),
-    }
+    })
+}
+
+/**
+ * Main function of this module. It creates a suggestion source which internally
+ * delegates to other sources.
+ */
+export const createSuggestionsSource = (config: SuggestionsSourceConfig): Source => {
+    const { isSourcegraphDotCom } = config
+    const caches = createCaches(config)
 
     const sources: InternalSource[] = [
-        currentQuery,
         filterValueSuggestions(caches),
         filterSuggestions,
         repoSuggestions(caches.repo),
@@ -1031,9 +1152,6 @@ function printParsedQuery(node: Node, buffer: string[] = []): string[] {
                     return buffer
             }
         case 'parameter': {
-            if (node.negated) {
-                buffer.push('-')
-            }
             buffer.push(node.field, ':', node.value)
             return buffer
         }
@@ -1126,4 +1244,16 @@ function collapseOpenFilterValues(tokens: Token[], input: string): Token[] {
     }
 
     return result
+}
+
+function containsFilterType(filterTypes: Set<FilterType>, filterType: string): boolean {
+    const resolvedFilter = resolveFilterMemoized(filterType)
+    if (!resolvedFilter) {
+        return false
+    }
+    return filterTypes.has(resolvedFilter.type)
+}
+
+function byStartDesc(itemA: FzfResultItem<unknown>, itemB: FzfResultItem<unknown>): number {
+    return itemB.start - itemA.start
 }

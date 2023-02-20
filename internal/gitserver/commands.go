@@ -492,7 +492,7 @@ func (c *clientImplementor) lStat(ctx context.Context, checker authz.SubRepoPerm
 		return fis[0], nil
 	} else {
 		if filteringErr != nil {
-			err = errors.Wrap(err, "filtering paths")
+			err = errors.Wrap(filteringErr, "filtering paths")
 		} else {
 			err = &os.PathError{Op: "ls-tree", Path: path, Err: os.ErrNotExist}
 		}
@@ -737,7 +737,7 @@ func streamBlameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChec
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed", args))
 	}
 
-	return newBlameHunkReader(ctx, rc), nil
+	return newBlameHunkReader(rc), nil
 }
 
 // BlameFile returns Git blame information about a file.

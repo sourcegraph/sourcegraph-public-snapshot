@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
@@ -43,6 +44,7 @@ var additionalJobs = map[string]job.Job{
 	"export-usage-telemetry":        telemetry.NewTelemetryJob(),
 
 	"codeintel-policies-repository-matcher":       codeintel.NewPoliciesRepositoryMatcherJob(),
+	"codeintel-autoindexing-summary-builder":      codeintel.NewAutoindexingSummaryBuilder(),
 	"codeintel-autoindexing-dependency-scheduler": codeintel.NewAutoindexingDependencySchedulerJob(),
 	"codeintel-autoindexing-janitor":              codeintel.NewAutoindexingJanitorJob(),
 	"codeintel-autoindexing-scheduler":            codeintel.NewAutoindexingSchedulerJob(),
@@ -53,6 +55,7 @@ var additionalJobs = map[string]job.Job{
 	"codeintel-upload-janitor":                    codeintel.NewUploadJanitorJob(),
 	"codeintel-upload-graph-exporter":             codeintel.NewGraphExporterJob(),
 	"codeintel-uploadstore-expirer":               codeintel.NewPreciseCodeIntelUploadExpirer(),
+	"codeintel-crates-syncer":                     codeintel.NewCratesSyncerJob(),
 
 	"auth-sourcegraph-operator-cleaner":  auth.NewSourcegraphOperatorCleaner(),
 	"auth-permission-sync-job-cleaner":   auth.NewPermissionSyncJobCleaner(),
@@ -93,5 +96,4 @@ func getEnterpriseInit(logger log.Logger) func(database.DB) {
 			logger.Fatal("Failed to create sub-repo client", log.Error(err))
 		}
 	}
-
 }

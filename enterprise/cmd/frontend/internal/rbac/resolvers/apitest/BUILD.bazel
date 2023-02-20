@@ -11,6 +11,7 @@ go_library(
     deps = [
         "//internal/gqlutil",
         "//internal/jsonc",
+        "//internal/types",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_graph_gophers_graphql_go//errors",
     ],

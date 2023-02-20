@@ -109,7 +109,7 @@ export const USER_CODE_HOSTS = gql`
 
 export const useUserBatchChangesCodeHostConnection = (
     user: Scalars['ID']
-): UseShowMorePaginationResult<BatchChangesCodeHostFields> =>
+): UseShowMorePaginationResult<UserBatchChangesCodeHostsResult, BatchChangesCodeHostFields> =>
     useShowMorePagination<
         UserBatchChangesCodeHostsResult,
         UserBatchChangesCodeHostsVariables,
@@ -148,7 +148,10 @@ export const GLOBAL_CODE_HOSTS = gql`
     ${CODE_HOST_FIELDS_FRAGMENT}
 `
 
-export const useGlobalBatchChangesCodeHostConnection = (): UseShowMorePaginationResult<BatchChangesCodeHostFields> =>
+export const useGlobalBatchChangesCodeHostConnection = (): UseShowMorePaginationResult<
+    GlobalBatchChangesCodeHostsResult,
+    BatchChangesCodeHostFields
+> =>
     useShowMorePagination<
         GlobalBatchChangesCodeHostsResult,
         GlobalBatchChangesCodeHostsVariables,

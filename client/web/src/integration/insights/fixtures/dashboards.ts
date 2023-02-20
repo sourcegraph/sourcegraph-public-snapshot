@@ -39,7 +39,7 @@ export const GET_DASHBOARD_INSIGHTS_EMPTY: GetDashboardInsightsResult = {
 export const CAPTURE_GROUP_INSIGHT: InsightViewNode = {
     id: 'aW5zaWdodF92aWV3OiIyQnF6ZnBQQzFYUVJTeFpkUnhOWk5jYW1jQ1ki',
     defaultSeriesDisplayOptions: {
-        limit: 20,
+        limit: null,
         numSamples: null,
         sortOptions: {
             mode: SeriesSortMode.RESULT_COUNT,

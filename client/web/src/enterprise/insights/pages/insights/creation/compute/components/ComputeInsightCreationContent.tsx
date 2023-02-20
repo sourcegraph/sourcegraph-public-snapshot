@@ -1,24 +1,28 @@
 import { FC, HTMLAttributes, ReactNode } from 'react'
 
 import { GroupByField } from '@sourcegraph/shared/src/graphql-operations'
-import { Code, Input, Label } from '@sourcegraph/wildcard'
+import {
+    Code,
+    Input,
+    Label,
+    useForm,
+    useField,
+    FormGroup,
+    FormChangeEvent,
+    getDefaultInputProps,
+    SubmissionErrors,
+} from '@sourcegraph/wildcard'
 
 import {
     createDefaultEditSeries,
     CreationUIForm,
     CreationUiLayout,
     CreationUIPreview,
-    FormChangeEvent,
-    FormGroup,
     FormSeries,
-    getDefaultInputProps,
     insightRepositoriesValidator,
     insightSeriesValidator,
     insightTitleValidator,
     RepositoriesField,
-    SubmissionErrors,
-    useField,
-    useForm,
 } from '../../../../../components'
 import { useUiFeatures } from '../../../../../hooks'
 import { CreateComputeInsightFormFields } from '../types'
@@ -123,8 +127,6 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                     <Label htmlFor="repositories-id">Repositories</Label>
                     <RepositoriesField
                         id="repositories-id"
-                        autoFocus={true}
-                        required={true}
                         description="Find and choose up to 1 repository to run insight"
                         placeholder="Search repositories..."
                         {...getDefaultInputProps(repositories)}
@@ -146,6 +148,8 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                 >
                     <FormSeries
                         seriesField={series}
+                        // Compute doesn't support repo query selection
+                        repoQuery={null}
                         repositories={repositories.input.value}
                         showValidationErrorsOnMount={formAPI.submitted}
                         hasAddNewSeriesButton={false}
@@ -169,7 +173,11 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                 <hr aria-hidden={true} className="my-4 w-100" />
 
                 <FormGroup name="map result" title="Map result">
-                    <ComputeInsightMapPicker series={validSeries} {...groupBy.input} />
+                    <ComputeInsightMapPicker
+                        series={validSeries}
+                        value={groupBy.input.value}
+                        onChange={groupBy.input.onChange}
+                    />
                 </FormGroup>
 
                 <hr aria-hidden={true} className="my-4 w-100" />

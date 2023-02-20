@@ -1087,3 +1087,120 @@ func TestMembersPaginated(t *testing.T) {
 		t.Errorf("unexpected member usernames (-want,+got):\n%s", diff)
 	}
 }
+
+func TestMembersSearch(t *testing.T) {
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+		t.Fatalf("failed to create parent team: %s", err)
+	}
+	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
+	if err != nil {
+		t.Fatalf("failed to fetch fake team by ID: %s", err)
+	}
+	for _, u := range []types.User{
+		{
+			Username: "username-hit",
+		},
+		{
+			Username: "username-miss",
+		},
+		{
+			Username:    "look-at-displayname",
+			DisplayName: "Display Name Hit",
+		},
+	} {
+		userID := fs.AddUser(u)
+		fs.AddTeamMember(&types.TeamMember{
+			TeamID: team.ID,
+			UserID: userID,
+		})
+	}
+	idOfMissingUser := -7
+	fs.AddTeamMember(&types.TeamMember{
+		TeamID: team.ID,
+		UserID: int32(idOfMissingUser),
+	})
+	fs.AddUser(types.User{Username: "search-hit-but-not-team-member"})
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `{
+			team(name: "team") {
+				members(search: "hit") {
+					nodes {
+						... on User {
+							username
+						}
+					}
+				}
+			}
+		}`,
+		ExpectedResult: `{
+			"team": {
+				"members": {
+					"nodes": [
+						{"username": "username-hit"},
+						{"username": "look-at-displayname"}
+					]
+				}
+			}
+		}`,
+	})
+}
+
+func TestMembersAdd(t *testing.T) {
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+		t.Fatalf("failed to create parent team: %s", err)
+	}
+	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
+	if err != nil {
+		t.Fatalf("cannot fetch parent team: %s", err)
+	}
+	userExistingID := fs.AddUser(types.User{Username: "existing"})
+	userExistingAndAddedID := fs.AddUser(types.User{Username: "existingAndAdded"})
+	userAddedID := fs.AddUser(types.User{Username: "added"})
+	fs.AddTeamMember(
+		&types.TeamMember{TeamID: team.ID, UserID: userExistingID},
+		&types.TeamMember{TeamID: team.ID, UserID: userExistingAndAddedID},
+	)
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `mutation AddTeamMembers($existingAndAddedId: ID!, $addedId: ID!) {
+			addTeamMembers(teamName: "team", members: [
+				$existingAndAddedId,
+				$addedId
+			]) {
+				members {
+					nodes {
+						... on User {
+							username
+						}
+					}
+				}
+			}
+		}`,
+		ExpectedResult: `{
+			"addTeamMembers": {
+				"members": {
+					"nodes": [
+						{"username": "existing"},
+						{"username": "existingAndAdded"},
+						{"username": "added"}
+					]
+				}
+			}
+		}`,
+		Variables: map[string]any{
+			"existingAndAddedId": string(relay.MarshalID("TeamMember", userExistingAndAddedID)),
+			"addedId":            string(relay.MarshalID("TeamMember", userAddedID)),
+		},
+	})
+}
