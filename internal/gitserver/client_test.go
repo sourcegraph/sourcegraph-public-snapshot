@@ -282,9 +282,11 @@ func createSimpleGitRepo(t *testing.T, root string) string {
 }
 
 func TestAddrForRepo(t *testing.T) {
-	addrs := []string{"gitserver-1", "gitserver-2", "gitserver-3"}
-	pinned := map[string]string{
-		"repo2": "gitserver-1",
+	ga := gitserver.GitServerAddresses{
+		Addresses: []string{"gitserver-1", "gitserver-2", "gitserver-3"},
+		PinnedServers: map[string]string{
+			"repo2": "gitserver-1",
+		},
 	}
 
 	testCases := []struct {
@@ -316,10 +318,7 @@ func TestAddrForRepo(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := gitserver.AddrForRepo("gitserver", tc.repo, gitserver.GitServerAddresses{
-				Addresses:     addrs,
-				PinnedServers: pinned,
-			})
+			got := ga.AddrForRepo("gitserver", tc.repo)
 			if got != tc.want {
 				t.Fatalf("Want %q, got %q", tc.want, got)
 			}

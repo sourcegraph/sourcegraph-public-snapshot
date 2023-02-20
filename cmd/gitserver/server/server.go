@@ -669,7 +669,7 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 }
 
 func (s *Server) addrForRepo(repoName api.RepoName, gitServerAddrs gitserver.GitServerAddresses) string {
-	return gitserver.AddrForRepo(filepath.Base(os.Args[0]), repoName, gitServerAddrs)
+	return gitServerAddrs.AddrForRepo(filepath.Base(os.Args[0]), repoName)
 }
 
 func currentGitserverAddresses() gitserver.GitServerAddresses {

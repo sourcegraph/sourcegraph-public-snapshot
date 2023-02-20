@@ -3,8 +3,6 @@ package gitserver
 import (
 	"bytes"
 	"context"
-	"crypto/md5"
-	"encoding/binary"
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
@@ -77,11 +75,8 @@ var _ Client = &clientImplementor{}
 // NewClient returns a new gitserver.Client.
 func NewClient() Client {
 	return &clientImplementor{
-		logger: sglog.Scoped("NewClient", "returns a new gitserver.Client"),
-		addrs: func() []string {
-			return conf.Get().ServiceConnections().GitServers
-		},
-		pinned:      pinnedReposFromConfig,
+		logger:      sglog.Scoped("NewClient", "returns a new gitserver.Client"),
+		picker:      newConfPicker(),
 		httpClient:  defaultDoer,
 		HTTPLimiter: defaultLimiter,
 		// Use the binary name for userAgent. This should effectively identify
@@ -97,11 +92,8 @@ func NewClient() Client {
 func NewTestClient(cli httpcli.Doer, addrs []string) Client {
 	logger := sglog.Scoped("NewTestClient", "Test New client")
 	return &clientImplementor{
-		logger: logger,
-		addrs: func() []string {
-			return addrs
-		},
-		pinned:      pinnedReposFromConfig,
+		logger:      logger,
+		picker:      newTestPicker(addrs),
 		httpClient:  cli,
 		HTTPLimiter: parallel.NewRun(500),
 		// Use the binary name for userAgent. This should effectively identify
@@ -198,15 +190,7 @@ type clientImplementor struct {
 	// logger is used for all logging and logger creation
 	logger sglog.Logger
 
-	// addrs is a function which should return the addresses for gitservers. It
-	// is called each time a request is made. The function must be safe for
-	// concurrent use. It may return different results at different times.
-	addrs func() []string
-
-	// pinned holds a map of repositories(key) pinned to a particular gitserver instance(value). This function
-	// should query the conf to fetch a fresh map of pinned repos, so that we don't have to proactively watch for conf changes
-	// and sync the pinned map.
-	pinned func() map[string]string
+	picker addrPicker
 
 	// operations are used for internal observability
 	operations *operations
@@ -448,18 +432,11 @@ type Client interface {
 }
 
 func (c *clientImplementor) Addrs() []string {
-	return c.addrs()
+	return c.picker.addrs()
 }
 
 func (c *clientImplementor) AddrForRepo(repo api.RepoName) string {
-	addrs := c.Addrs()
-	if len(addrs) == 0 {
-		panic("unexpected state: no gitserver addresses")
-	}
-	return AddrForRepo(c.userAgent, repo, GitServerAddresses{
-		Addresses:     addrs,
-		PinnedServers: c.pinned(),
-	})
+	return c.picker.addrForRepo(c.userAgent, repo)
 }
 
 var addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
@@ -479,19 +456,6 @@ func AddrForRepo(userAgent string, repo api.RepoName, addresses GitServerAddress
 	}
 
 	return addrForKey(rs, addresses.Addresses)
-}
-
-type GitServerAddresses struct {
-	Addresses     []string
-	PinnedServers map[string]string
-}
-
-// addrForKey returns the gitserver address to use for the given string key,
-// which is hashed for sharding purposes.
-func addrForKey(key string, addrs []string) string {
-	sum := md5.Sum([]byte(key))
-	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(addrs))
-	return addrs[serverIndex]
 }
 
 // ArchiveOptions contains options for the Archive func.
