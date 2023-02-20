@@ -210,7 +210,7 @@ func TestChangesetResolver(t *testing.T) {
 		ExternalServiceType:   "github",
 		ExternalID:            "98765",
 		ExternalForkNamespace: "user",
-		ExternalForkName:      "user",
+		ExternalForkName:      "my-fork",
 		PublicationState:      btypes.ChangesetPublicationStateUnpublished,
 		ReconcilerState:       btypes.ReconcilerStateQueued,
 	})
