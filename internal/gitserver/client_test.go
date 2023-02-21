@@ -462,6 +462,7 @@ func setAddrs(addrs []string, pinned map[string]string) {
 			},
 		},
 	})
+	gitserver.ForceUpdateConns()
 }
 
 func TestClient_BatchLog(t *testing.T) {

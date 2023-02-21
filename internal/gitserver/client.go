@@ -35,6 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -67,6 +68,13 @@ var ClientMocks, emptyClientMocks struct {
 // tests don't inadvertently use them).
 func ResetClientMocks() {
 	ClientMocks = emptyClientMocks
+}
+
+// ForceUpdateConns synchronously updates `conns` with the latest config.
+// Usually this happens automatically in the background, but for tests,
+// we sometimes want to make this deterministic.
+func ForceUpdateConns() {
+	conns.update(conf.Get())
 }
 
 var _ Client = &clientImplementor{}
