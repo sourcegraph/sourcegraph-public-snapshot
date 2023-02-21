@@ -1,37 +1,23 @@
 package tracer
 
 import (
-	"sync/atomic"
-
 	"github.com/sourcegraph/log"
-	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
 
-// newConfWatcher creates a callback that can be used on subscription to changes in site
-// configuration via conf.Watch(). The callback is stateful, compares the new state of
-// configuration with previous known state on each call, and propagates any changes to the
-// provider and debugMode references.
+// newConfWatcher subscribes to changes in site configuration and propagates them to the
+// provided switchable tracers.
 func newConfWatcher(
 	logger log.Logger,
 	c conftypes.SiteConfigQuerier,
-	// provider will be updated with the appropriate span processors.
-	provider *oteltracesdk.TracerProvider,
-	// spanProcessorBuilder is used to create span processors to configure on the provider
-	// based on the given options.
-	spanProcessorBuilder func(logger log.Logger, opts options, debug bool) (oteltracesdk.SpanProcessor, error),
-	// debugMode is a shared reference that can be updated with the latest debug state.
-	debugMode *atomic.Bool,
+	otelProvider *switchableOtelTracerProvider,
+	otTracer *switchableOTTracer,
+	initialOpts options,
 ) func() {
 	// always keep a reference to our existing options to determine if an update is needed
-	oldOpts := options{
-		// Default options
-		TracerType:  None,
-		externalURL: "",
-	}
-	var oldProcessor oteltracesdk.SpanProcessor
+	oldOpts := initialOpts
 
 	// return function to be called on every conf update
 	return func() {
@@ -40,7 +26,7 @@ func newConfWatcher(
 			tracingConfig  = siteConfig.ObservabilityTracing
 			previousPolicy = policy.GetTracePolicy()
 			setTracerType  = None
-			debugChanged   bool
+			debug          = false
 		)
 
 		// If 'observability.tracing: {}', try to enable tracing by default
@@ -73,19 +59,18 @@ func newConfWatcher(
 			}
 
 			// Configure debug mode
-			debugChanged = debugMode.CompareAndSwap(debugMode.Load(), tracingConfig.Debug)
-		} else {
-			debugChanged = debugMode.CompareAndSwap(debugMode.Load(), false)
+			debug = tracingConfig.Debug
 		}
 
 		// collect options
 		opts := options{
 			TracerType:  setTracerType,
 			externalURL: siteConfig.ExternalURL,
+			debug:       debug,
 			// Stays the same
 			resource: oldOpts.resource,
 		}
-		if opts == oldOpts && !debugChanged {
+		if opts == oldOpts {
 			// Nothing changed
 			return
 		}
@@ -93,31 +78,18 @@ func newConfWatcher(
 		// update old opts for comparison
 		oldOpts = opts
 
-		// create new span processor
-		debug := debugMode.Load()
+		// create new tracer providers
 		tracerLogger := logger.With(
 			log.String("tracerType", string(opts.TracerType)),
-			log.Bool("debug", debug))
-		processor, err := spanProcessorBuilder(logger, opts, debug)
+			log.Bool("debug", opts.debug))
+		otImpl, otelImpl, closer, err := newTracer(tracerLogger, &opts)
 		if err != nil {
-			tracerLogger.Warn("failed to build updated processors", log.Error(err))
-			// continue with handling, do not fail fast
+			tracerLogger.Warn("failed to initialize tracer", log.Error(err))
+			// do not return - we still want to update tracers
 		}
 
-		// add the new processor. we do this before adding the new processor to
-		// ensure we don't have any gaps where spans are being dropped.
-		if processor != nil {
-			provider.RegisterSpanProcessor(processor)
-		}
-
-		// remove the pre-existing processor - this shuts it down and prevents
-		// newer traces from going to it. we do this regardless of processor
-		// creation error
-		if oldProcessor != nil {
-			provider.UnregisterSpanProcessor(oldProcessor)
-		}
-
-		// update reference
-		oldProcessor = processor
+		// update global tracers
+		otelProvider.set(otelImpl, closer, opts.debug)
+		otTracer.set(tracerLogger, otImpl, opts.debug)
 	}
 }
