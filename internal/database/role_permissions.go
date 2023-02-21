@@ -49,11 +49,11 @@ type RolePermissionStore interface {
 	basestore.ShareableStore
 
 	// Assign is used to assign a permission to a role.
-	Assign(ctx context.Context, opts AssignRolePermissionOpts) (*types.RolePermission, error)
+	Assign(ctx context.Context, opts AssignRolePermissionOpts) error
 	// AssignToSystemRole is used to assign a permission to a system role.
-	AssignToSystemRole(ctx context.Context, opts AssignToSystemRoleOpts) (*types.RolePermission, error)
+	AssignToSystemRole(ctx context.Context, opts AssignToSystemRoleOpts) error
 	// BulkAssignToSystemRole is used to assign a permission to multiple system roles.
-	BulkAssignPermissionsToSystemRoles(ctx context.Context, opts BulkAssignPermissionsToSystemRolesOpts) ([]*types.RolePermission, error)
+	BulkAssignPermissionsToSystemRoles(ctx context.Context, opts BulkAssignPermissionsToSystemRolesOpts) error
 	// GetByRoleIDAndPermissionID returns one RolePermission associated with the provided role and permission.
 	GetByRoleIDAndPermissionID(ctx context.Context, opts GetRolePermissionOpts) (*types.RolePermission, error)
 	// GetByRoleID returns all RolePermission associated with the provided role ID
@@ -205,13 +205,13 @@ ON CONFLICT DO NOTHING
 RETURNING %s
 `
 
-func (rp *rolePermissionStore) Assign(ctx context.Context, opts AssignRolePermissionOpts) (*types.RolePermission, error) {
+func (rp *rolePermissionStore) Assign(ctx context.Context, opts AssignRolePermissionOpts) error {
 	if opts.PermissionID == 0 {
-		return nil, errors.New("missing permission id")
+		return errors.New("missing permission id")
 	}
 
 	if opts.RoleID == 0 {
-		return nil, errors.New("missing role id")
+		return errors.New("missing role id")
 	}
 
 	q := sqlf.Sprintf(
@@ -221,20 +221,25 @@ func (rp *rolePermissionStore) Assign(ctx context.Context, opts AssignRolePermis
 		sqlf.Join(rolePermissionColumns, ", "),
 	)
 
-	rolePermission, err := scanRolePermission(rp.QueryRow(ctx, q))
+	_, err := scanRolePermission(rp.QueryRow(ctx, q))
 	if err != nil {
-		return nil, errors.Wrap(err, "scanning role permission")
+		// If there are no rows returned, it means that the role has already being assigned this permission.
+		// In that case, we don't need to return an error.
+		if err == sql.ErrNoRows {
+			return nil
+		}
+		return errors.Wrap(err, "scanning role permission")
 	}
-	return rolePermission, nil
+	return nil
 }
 
-func (rp *rolePermissionStore) AssignToSystemRole(ctx context.Context, opts AssignToSystemRoleOpts) (*types.RolePermission, error) {
+func (rp *rolePermissionStore) AssignToSystemRole(ctx context.Context, opts AssignToSystemRoleOpts) error {
 	if opts.PermissionID == 0 {
-		return nil, errors.New("permission id is required")
+		return errors.New("permission id is required")
 	}
 
 	if opts.Role == "" {
-		return nil, errors.New("role is required")
+		return errors.New("role is required")
 	}
 
 	roleQuery := sqlf.Sprintf("SELECT id FROM roles WHERE name = %s", opts.Role)
@@ -246,20 +251,25 @@ func (rp *rolePermissionStore) AssignToSystemRole(ctx context.Context, opts Assi
 		sqlf.Join(rolePermissionColumns, ", "),
 	)
 
-	rolePermission, err := scanRolePermission(rp.QueryRow(ctx, q))
+	_, err := scanRolePermission(rp.QueryRow(ctx, q))
 	if err != nil {
-		return nil, errors.Wrap(err, "scanning role permission")
+		// If there are no rows returned, it means that the role has already being assigned this permission.
+		// In that case, we don't need to return an error.
+		if err == sql.ErrNoRows {
+			return nil
+		}
+		return errors.Wrap(err, "scanning role permission")
 	}
-	return rolePermission, nil
+	return nil
 }
 
-func (rp *rolePermissionStore) BulkAssignPermissionsToSystemRoles(ctx context.Context, opts BulkAssignPermissionsToSystemRolesOpts) ([]*types.RolePermission, error) {
+func (rp *rolePermissionStore) BulkAssignPermissionsToSystemRoles(ctx context.Context, opts BulkAssignPermissionsToSystemRolesOpts) error {
 	if opts.PermissionID == 0 {
-		return nil, errors.New("permission id is required")
+		return errors.New("permission id is required")
 	}
 
 	if len(opts.Roles) == 0 {
-		return nil, errors.New("roles are required")
+		return errors.New("roles are required")
 	}
 
 	var rps []*sqlf.Query
@@ -276,7 +286,16 @@ func (rp *rolePermissionStore) BulkAssignPermissionsToSystemRoles(ctx context.Co
 	)
 
 	var scanRolePermissions = basestore.NewSliceScanner(scanRolePermission)
-	return scanRolePermissions(rp.Query(ctx, q))
+	_, err := scanRolePermissions(rp.Query(ctx, q))
+	if err != nil {
+		// If there are no rows returned, it means that the role has already being assigned this permission.
+		// In that case, we don't need to return an error.
+		if err == sql.ErrNoRows {
+			return nil
+		}
+		return err
+	}
+	return nil
 }
 
 type RolePermissionNotFoundErr struct {

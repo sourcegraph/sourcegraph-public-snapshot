@@ -1,14 +1,16 @@
 import { FC, useEffect, useState } from 'react'
 
 import { Location, useLocation } from 'react-router-dom'
-import { BehaviorSubject } from 'rxjs'
-import { first } from 'rxjs/operators'
+import { BehaviorSubject, combineLatest } from 'rxjs'
+import { distinctUntilChanged, first, map, startWith } from 'rxjs/operators'
 
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { isSearchContextSpecAvailable } from '@sourcegraph/shared/src/search'
 
 import { getQueryStateFromLocation } from './search'
 import { setQueryStateFromURL } from './stores/navbarSearchQueryState'
+import { observeStore, useExperimentalFeatures } from './stores'
+import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 
 export const GLOBAL_SEARCH_CONTEXT_SPEC = 'global'
 
@@ -34,30 +36,50 @@ export const SearchQueryStateObserver: FC<SearchQueryStateObserverProps> = props
     }, [location, locationSubject])
 
     useEffect(() => {
-        const subscription = getQueryStateFromLocation({
-            location: locationSubject,
-            showSearchContext: searchContextsEnabled,
-            isSearchContextAvailable: (searchContext: string) =>
-                searchContextsEnabled
-                    ? isSearchContextSpecAvailable({ spec: searchContext, platformContext }).pipe(first()).toPromise()
-                    : Promise.resolve(false),
-        }).subscribe(parsedSearchURLAndContext => {
+        const subscription = combineLatest([
+            observeStore(useExperimentalFeatures).pipe(
+                map(([features]) => features.searchQueryInput === 'experimental'),
+                // This ensures that the query stays unmodified until we know
+                // whether the feature flag is set or not.
+                startWith(true),
+                distinctUntilChanged()
+            ),
+            getQueryStateFromLocation({
+                location: locationSubject,
+                isSearchContextAvailable: (searchContext: string) =>
+                    searchContextsEnabled
+                        ? isSearchContextSpecAvailable({
+                              spec: searchContext,
+                              platformContext: platformContext,
+                          })
+                              .pipe(first())
+                              .toPromise()
+                        : Promise.resolve(false),
+            }),
+        ]).subscribe(([enableExperimentalSearchInput, parsedSearchURLAndContext]) => {
             if (parsedSearchURLAndContext.query) {
                 // Only override filters and update query from URL if there
                 // is a search query.
-                if (
-                    parsedSearchURLAndContext.searchContextSpec &&
-                    parsedSearchURLAndContext.searchContextSpec !== selectedSearchContextSpec
-                ) {
-                    setSelectedSearchContextSpec(parsedSearchURLAndContext.searchContextSpec)
-                } else if (!parsedSearchURLAndContext.searchContextSpec) {
+                if (!parsedSearchURLAndContext.searchContextSpec) {
                     // If no search context is present we have to fall back
                     // to the global search context to match the server
                     // behavior.
                     setSelectedSearchContextSpec(GLOBAL_SEARCH_CONTEXT_SPEC)
+                } else if (parsedSearchURLAndContext.searchContextSpec.spec !== selectedSearchContextSpec) {
+                    setSelectedSearchContextSpec(parsedSearchURLAndContext.searchContextSpec.spec)
                 }
 
-                setQueryStateFromURL(parsedSearchURLAndContext, parsedSearchURLAndContext.processedQuery)
+                const processedQuery =
+                    !enableExperimentalSearchInput &&
+                    parsedSearchURLAndContext.searchContextSpec &&
+                    searchContextsEnabled
+                        ? omitFilter(
+                              parsedSearchURLAndContext.query,
+                              parsedSearchURLAndContext.searchContextSpec.filter
+                          )
+                        : parsedSearchURLAndContext.query
+
+                setQueryStateFromURL(parsedSearchURLAndContext, processedQuery)
             }
         })
 

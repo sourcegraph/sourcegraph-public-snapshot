@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -46,7 +47,7 @@ func syncJobsRecordsLimit(c conftypes.SiteConfigQuerier) int {
 }
 
 // Record inserts a record for this job's outcome into the records store.
-func (r *RecordsStore) Record(jobType string, jobID int32, providerStates []ProviderStatus, err error) {
+func (r *RecordsStore) Record(jobType string, jobID int32, providerStates database.CodeHostStatusesSet, err error) {
 	completed := r.now()
 
 	record := Status{
@@ -70,5 +71,5 @@ func (r *RecordsStore) Record(jobType string, jobID int32, providerStates []Prov
 	}
 
 	// Key by timestamp for sorting
-	r.cache.Insert(val)
+	_ = r.cache.Insert(val)
 }

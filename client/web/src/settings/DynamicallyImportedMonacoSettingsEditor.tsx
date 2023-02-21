@@ -80,7 +80,7 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
     }
 
     private get effectiveValue(): string {
-        return this.state.value === undefined ? this.props.value : this.state.value
+        return this.props.value
     }
 
     private get isDirty(): boolean {
@@ -110,15 +110,17 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
             )
         }
 
+        const { className, ...otherProps } = this.props
+
         return (
-            <div className={this.props.className || ''}>
+            <div className={className || ''}>
                 <BeforeUnloadPrompt when={this.props.loading || this.isDirty} message="Discard changes?" />
                 {this.props.actions && (
                     <EditorActionsGroup actions={this.props.actions} onClick={this.runAction.bind(this)} />
                 )}
                 <React.Suspense fallback={<LoadingSpinner className="mt-2" />}>
                     <MonacoSettingsEditor
-                        {...this.props}
+                        {...otherProps}
                         onDidSave={this.onSave}
                         onChange={this.onChange}
                         value={effectiveValue}

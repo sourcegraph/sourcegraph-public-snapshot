@@ -37,6 +37,7 @@ go_test(
         "//enterprise/internal/codemonitors/background",
         "//enterprise/internal/database",
         "//internal/actor",
+        "//internal/auth",
         "//internal/database",
         "//internal/database/dbtest",
         "//internal/gqlutil",

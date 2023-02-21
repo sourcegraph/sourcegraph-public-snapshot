@@ -143,13 +143,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		logger.Error("Performing initial rate limit sync", log.Error(err))
 	}
 
-	// All dependencies ready
-	debugDumpers := make(map[string]debugserver.Dumper)
-	var enqueueRepoPerms func(context.Context, api.RepoID, database.PermissionSyncJobReason) error
-	if enterpriseInit != nil {
-		debugDumpers, enqueueRepoPerms = enterpriseInit(observationCtx, db, store, keyring.Default(), cf, server)
-	}
-
 	syncer := &repos.Syncer{
 		Sourcer: src,
 		Store:   store,
@@ -158,6 +151,15 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		Synced:  make(chan repos.Diff),
 		Now:     clock,
 		ObsvCtx: observation.ContextWithLogger(logger.Scoped("syncer", "repo syncer"), observationCtx),
+	}
+
+	server.Syncer = syncer
+
+	// All dependencies ready
+	debugDumpers := make(map[string]debugserver.Dumper)
+	var enqueueRepoPerms func(context.Context, api.RepoID, database.PermissionSyncJobReason) error
+	if enterpriseInit != nil {
+		debugDumpers, enqueueRepoPerms = enterpriseInit(observationCtx, db, store, keyring.Default(), cf, server)
 	}
 
 	go watchSyncer(ctx, logger, syncer, updateScheduler, enqueueRepoPerms, server.ChangesetSyncRegistry)
@@ -171,7 +173,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			logger.Fatal("syncer.Run failure", log.Error(err))
 		}
 	}()
-	server.Syncer = syncer
 
 	go syncScheduler(ctx, logger, updateScheduler, store)
 

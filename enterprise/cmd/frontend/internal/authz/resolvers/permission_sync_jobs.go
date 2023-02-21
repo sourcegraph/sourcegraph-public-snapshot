@@ -85,7 +85,7 @@ func (p *permissionSyncJobResolver) ID() graphql.ID {
 }
 
 func (p *permissionSyncJobResolver) State() string {
-	return p.job.State
+	return p.job.State.ToGraphQL()
 }
 
 func (p *permissionSyncJobResolver) FailureMessage() *string {
@@ -96,7 +96,7 @@ func (p *permissionSyncJobResolver) Reason() database.PermissionSyncJobReason {
 	return p.job.Reason
 }
 
-func (p *permissionSyncJobResolver) CancellationReason() string {
+func (p *permissionSyncJobResolver) CancellationReason() *string {
 	return p.job.CancellationReason
 }
 

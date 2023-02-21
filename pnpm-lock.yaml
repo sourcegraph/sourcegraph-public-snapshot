@@ -1172,7 +1172,12 @@ importers:
       '@sourcegraph/testing': link:../testing
 
   dev/release:
-    specifiers: {}
+    specifiers:
+      '@types/luxon': ^3.2.0
+      luxon: ^3.2.1
+    dependencies:
+      '@types/luxon': 3.2.0
+      luxon: 3.2.1
 
   schema:
     specifiers: {}
