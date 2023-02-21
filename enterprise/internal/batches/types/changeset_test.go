@@ -360,45 +360,71 @@ func TestChangeset_Body(t *testing.T) {
 
 func TestChangeset_URL(t *testing.T) {
 	want := "foo"
-	for name, meta := range map[string]any{
-		"azuredevops": &azuredevops2.AnnotatedPullRequest{
-			PullRequest: &azuredevops.PullRequest{
-				URL: want,
-			},
-		},
-		"bitbucketcloud": &bbcs.AnnotatedPullRequest{
-			PullRequest: &bitbucketcloud.PullRequest{
-				Links: bitbucketcloud.Links{
-					"html": bitbucketcloud.Link{Href: want},
+	for name, meta := range map[string]struct {
+		pr   any
+		want string
+	}{
+		"azuredevops": {
+			pr: &azuredevops2.AnnotatedPullRequest{
+				PullRequest: &azuredevops.PullRequest{
+					ID: 12,
+					Repository: azuredevops.Repository{
+						Name: "repoName",
+						Project: azuredevops.Project{
+							Name: "projectName",
+						},
+						APIURL: "https://dev.azure.com/sgtestazure/projectName/_git/repositories/repoName",
+					},
+					URL: "https://dev.azure.com/sgtestazure/projectID/_apis/git/repositories/repoID/pullRequests/12",
 				},
 			},
+			want: "https://dev.azure.com/sgtestazure/projectName/_git/repoName/pullrequest/12",
 		},
-		"bitbucketserver": &bitbucketserver.PullRequest{
-			Links: struct {
-				Self []struct {
-					Href string `json:"href"`
-				} `json:"self"`
-			}{
-				Self: []struct {
-					Href string `json:"href"`
-				}{{Href: want}},
+		"bitbucketcloud": {
+			pr: &bbcs.AnnotatedPullRequest{
+				PullRequest: &bitbucketcloud.PullRequest{
+					Links: bitbucketcloud.Links{
+						"html": bitbucketcloud.Link{Href: want},
+					},
+				},
 			},
+			want: want,
 		},
-		"GitHub": &github.PullRequest{
-			URL: want,
+		"bitbucketserver": {
+			pr: &bitbucketserver.PullRequest{
+				Links: struct {
+					Self []struct {
+						Href string `json:"href"`
+					} `json:"self"`
+				}{
+					Self: []struct {
+						Href string `json:"href"`
+					}{{Href: want}},
+				},
+			},
+			want: want,
 		},
-		"GitLab": &gitlab.MergeRequest{
-			WebURL: want,
+		"GitHub": {
+			pr: &github.PullRequest{
+				URL: want,
+			},
+			want: want,
+		},
+		"GitLab": {
+			pr: &gitlab.MergeRequest{
+				WebURL: want,
+			},
+			want: want,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			c := &Changeset{Metadata: meta}
+			c := &Changeset{Metadata: meta.pr}
 			have, err := c.URL()
 			if err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
-			if have != want {
-				t.Errorf("unexpected URL: have %s; want %s", have, want)
+			if have != meta.want {
+				t.Errorf("unexpected URL: have %s; want %s", have, meta.want)
 			}
 		})
 	}
