@@ -1693,6 +1693,14 @@ CREATE TABLE codeintel_path_ranks (
     graph_key text
 );
 
+CREATE TABLE codeintel_ranking_definitions (
+    upload_id integer NOT NULL,
+    symbol_name text NOT NULL,
+    repository text NOT NULL,
+    document_path text NOT NULL,
+    graph_key text NOT NULL
+);
+
 CREATE TABLE codeintel_ranking_exports (
     upload_id integer,
     graph_key text NOT NULL,
@@ -1710,6 +1718,25 @@ CREATE SEQUENCE codeintel_ranking_exports_id_seq
     CACHE 1;
 
 ALTER SEQUENCE codeintel_ranking_exports_id_seq OWNED BY codeintel_ranking_exports.id;
+
+CREATE TABLE codeintel_ranking_references (
+    id bigint NOT NULL,
+    upload_id integer NOT NULL,
+    symbol_names text[] NOT NULL,
+    graph_key text NOT NULL,
+    processed boolean DEFAULT false NOT NULL
+);
+
+COMMENT ON TABLE codeintel_ranking_references IS 'References for a given upload proceduced by background job consuming SCIP indexes.';
+
+CREATE SEQUENCE codeintel_ranking_references_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE codeintel_ranking_references_id_seq OWNED BY codeintel_ranking_references.id;
 
 CREATE TABLE configuration_policies_audit_logs (
     log_timestamp timestamp with time zone DEFAULT clock_timestamp(),
@@ -4148,6 +4175,8 @@ ALTER TABLE ONLY codeintel_path_rank_inputs ALTER COLUMN id SET DEFAULT nextval(
 
 ALTER TABLE ONLY codeintel_ranking_exports ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_exports_id_seq'::regclass);
 
+ALTER TABLE ONLY codeintel_ranking_references ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_references_id_seq'::regclass);
+
 ALTER TABLE ONLY configuration_policies_audit_logs ALTER COLUMN sequence SET DEFAULT nextval('configuration_policies_audit_logs_seq'::regclass);
 
 ALTER TABLE ONLY critical_and_site_config ALTER COLUMN id SET DEFAULT nextval('critical_and_site_config_id_seq'::regclass);
@@ -4380,6 +4409,9 @@ ALTER TABLE ONLY codeintel_path_rank_inputs
 
 ALTER TABLE ONLY codeintel_ranking_exports
     ADD CONSTRAINT codeintel_ranking_exports_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY codeintel_ranking_references
+    ADD CONSTRAINT codeintel_ranking_references_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY critical_and_site_config
     ADD CONSTRAINT critical_and_site_config_pkey PRIMARY KEY (id);
@@ -4804,7 +4836,13 @@ CREATE UNIQUE INDEX codeintel_path_ranks_repository_id_precision ON codeintel_pa
 
 CREATE INDEX codeintel_path_ranks_updated_at ON codeintel_path_ranks USING btree (updated_at) INCLUDE (repository_id);
 
+CREATE INDEX codeintel_ranking_definitions_symbol_name ON codeintel_ranking_definitions USING btree (symbol_name);
+
+CREATE INDEX codeintel_ranking_definitions_upload_id ON codeintel_ranking_definitions USING btree (upload_id);
+
 CREATE UNIQUE INDEX codeintel_ranking_exports_graph_key_upload_id ON codeintel_ranking_exports USING btree (graph_key, upload_id);
+
+CREATE INDEX codeintel_ranking_references_upload_id ON codeintel_ranking_references USING btree (upload_id);
 
 CREATE INDEX configuration_policies_audit_logs_policy_id ON configuration_policies_audit_logs USING btree (policy_id);
 
