@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func userCtx(userID int32) context.Context {
@@ -1153,67 +1152,24 @@ func TestMembersSearch(t *testing.T) {
 }
 
 func TestMembersAdd(t *testing.T) {
+	fs := fakedb.New()
 	db := database.NewMockDB()
-	userStore := database.NewMockUserStore()
-	db.UsersFunc.SetDefaultReturn(userStore)
-	externalAccsStore := database.NewMockUserExternalAccountsStore()
-	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccsStore)
-	userExistingID := int32(1)
-	userExistingAndAddedID := int32(2)
-	userAddedID := int32(3)
-	userStore.GetByIDFunc.SetDefaultHook(func(ctx context.Context, i int32) (*types.User, error) {
-		if i == userExistingID {
-			return &types.User{ID: userExistingID, Username: "existing", SiteAdmin: true}, nil
-		}
-		if i == userExistingAndAddedID {
-			return &types.User{ID: userExistingAndAddedID, Username: "existingAndAdded"}, nil
-		}
-		if i == userAddedID {
-			return &types.User{ID: userAddedID, Username: "added"}, nil
-		}
-		return nil, errors.New("not found")
-	})
-	userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
-	teamsStore := database.NewMockTeamStore()
-	team := &types.Team{Name: "team"}
-	db.TeamsFunc.SetDefaultReturn(teamsStore)
-	teamsStore.GetTeamByNameFunc.SetDefaultReturn(team, nil)
-
-	ctx := actor.WithActor(context.Background(), actor.FromUser(userExistingID))
-
-	userStore.GetByUsernameFunc.SetDefaultHook(func(ctx context.Context, s string) (*types.User, error) {
-		if s == "existing" {
-			return &types.User{ID: userExistingID, Username: "existing", SiteAdmin: true}, nil
-		}
-		if s == "existingAndAdded" {
-			return &types.User{ID: userExistingAndAddedID, Username: "existingAndAdded"}, nil
-		}
-		if s == "added" {
-			return &types.User{ID: userAddedID, Username: "added"}, nil
-		}
-		return nil, errors.New("not found")
-	})
-	userStore.ListFunc.SetDefaultHook(func(ctx context.Context, ulo *database.UsersListOptions) ([]*types.User, error) {
-		ret := []*types.User{}
-		for _, id := range ulo.UserIDs {
-			if id == userExistingID {
-				ret = append(ret, &types.User{ID: userExistingID, Username: "existing", SiteAdmin: true})
-			}
-			if id == userExistingAndAddedID {
-				ret = append(ret, &types.User{ID: userExistingAndAddedID, Username: "existingAndAdded"})
-			}
-			if id == userAddedID {
-				ret = append(ret, &types.User{ID: userAddedID, Username: "added"})
-			}
-		}
-		return ret, nil
-	})
-
-	teamsStore.ListTeamMembersFunc.SetDefaultReturn([]*types.TeamMember{
-		{TeamID: team.ID, UserID: userExistingID},
-		{TeamID: team.ID, UserID: userExistingAndAddedID},
-	}, nil, nil)
-
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+		t.Fatalf("failed to create team: %s", err)
+	}
+	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
+	if err != nil {
+		t.Fatalf("cannot fetch team: %s", err)
+	}
+	userExistingID := fs.AddUser(types.User{Username: "existing"})
+	userExistingAndAddedID := fs.AddUser(types.User{Username: "existingAndAdded"})
+	userAddedID := fs.AddUser(types.User{Username: "added"})
+	fs.AddTeamMember(
+		&types.TeamMember{TeamID: team.ID, UserID: userExistingID},
+		&types.TeamMember{TeamID: team.ID, UserID: userExistingAndAddedID},
+	)
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
 		Context: ctx,
@@ -1278,7 +1234,7 @@ func TestMembersRemove(t *testing.T) {
 		Schema:  mustParseGraphQLSchema(t, db),
 		Context: ctx,
 		Query: `mutation RemoveTeamMembers($r1: ID!, $r2: ID!, $r3: ID!) {
-			removeTeamMembers(teamName: "team", members: [$r1, $r2, $r3]) {
+			removeTeamMembers(teamName: "team", members: [{ id: $r1 }, { id: $r2 }, { id: $r3 }]) {
 				members {
 					nodes {
 						... on User {
@@ -1300,9 +1256,9 @@ func TestMembersRemove(t *testing.T) {
 			}
 		}`,
 		Variables: map[string]any{
-			"r1": string(relay.MarshalID("TeamMember", removedIDs[0])),
-			"r2": string(relay.MarshalID("TeamMember", removedIDs[1])),
-			"r3": string(relay.MarshalID("TeamMember", removedIDs[2])),
+			"r1": string(relay.MarshalID("User", removedIDs[0])),
+			"r2": string(relay.MarshalID("User", removedIDs[1])),
+			"r3": string(relay.MarshalID("User", removedIDs[2])),
 		},
 	})
 }
@@ -1337,7 +1293,7 @@ func TestMembersSet(t *testing.T) {
 		Schema:  mustParseGraphQLSchema(t, db),
 		Context: ctx,
 		Query: `mutation SetTeamMembers($r1: ID!, $r2: ID!, $r3: ID!, $r4: ID!) {
-			setTeamMembers(teamName: "team", members: [$r1, $r2, $r3, $r4]) {
+			setTeamMembers(teamName: "team", members: [{ id: $r1 }, { id: $r2 }, { id: $r3 }, { id: $r4 }]) {
 				members {
 					nodes {
 						... on User {
@@ -1360,10 +1316,10 @@ func TestMembersSet(t *testing.T) {
 			}
 		}`,
 		Variables: map[string]any{
-			"r1": string(relay.MarshalID("TeamMember", setIDs[0])),
-			"r2": string(relay.MarshalID("TeamMember", setIDs[1])),
-			"r3": string(relay.MarshalID("TeamMember", setIDs[2])),
-			"r4": string(relay.MarshalID("TeamMember", setIDs[3])),
+			"r1": string(relay.MarshalID("User", setIDs[0])),
+			"r2": string(relay.MarshalID("User", setIDs[1])),
+			"r3": string(relay.MarshalID("User", setIDs[2])),
+			"r4": string(relay.MarshalID("User", setIDs[3])),
 		},
 	})
 }

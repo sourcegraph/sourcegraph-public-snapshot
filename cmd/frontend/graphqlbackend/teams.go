@@ -586,10 +586,23 @@ func (r *schemaResolver) SetTeamMembers(ctx context.Context, args *TeamMembersAr
 	if args.Team != nil && args.TeamName != nil {
 		return nil, errors.New("team must be identified by either id (team parameter) or name (teamName parameter), both specified")
 	}
-	userIDsToAdd, err := args.membersIDs()
+
+	users, notFound, err := usersForTeamMembers(ctx, r.db, args.Members)
 	if err != nil {
 		return nil, err
 	}
+	if len(notFound) > 0 && !args.Lenient {
+		var err error
+		for _, member := range notFound {
+			err = errors.Append(err, errors.Newf("member not found: %s", member.String()))
+		}
+		return nil, err
+	}
+	usersMap := make(map[int32]*types.User, len(users))
+	for _, user := range users {
+		usersMap[user.ID] = user
+	}
+
 	team, err := findTeam(ctx, r.db.Teams(), args.Team, args.TeamName)
 	if err != nil {
 		return nil, err
@@ -605,8 +618,8 @@ func (r *schemaResolver) SetTeamMembers(ctx context.Context, args *TeamMembersAr
 				return err
 			}
 			for _, m := range existingMembers {
-				if userIDsToAdd[m.UserID] {
-					delete(userIDsToAdd, m.UserID)
+				if _, ok := usersMap[m.UserID]; ok {
+					delete(usersMap, m.UserID)
 				} else {
 					membersToRemove = append(membersToRemove, &types.TeamMember{
 						UserID: m.UserID,
@@ -620,9 +633,9 @@ func (r *schemaResolver) SetTeamMembers(ctx context.Context, args *TeamMembersAr
 			listOpts.Cursor = *cursor
 		}
 		var membersToAdd []*types.TeamMember
-		for userID := range userIDsToAdd {
+		for _, user := range users {
 			membersToAdd = append(membersToAdd, &types.TeamMember{
-				UserID: userID,
+				UserID: user.ID,
 				TeamID: team.ID,
 			})
 		}
@@ -657,18 +670,27 @@ func (r *schemaResolver) RemoveTeamMembers(ctx context.Context, args *TeamMember
 	if args.Team != nil && args.TeamName != nil {
 		return nil, errors.New("team must be identified by either id (team parameter) or name (teamName parameter), both specified")
 	}
-	memberIDs, err := args.membersIDs()
+
+	users, notFound, err := usersForTeamMembers(ctx, r.db, args.Members)
 	if err != nil {
 		return nil, err
 	}
+	if len(notFound) > 0 && !args.Lenient {
+		var err error
+		for _, member := range notFound {
+			err = errors.Append(err, errors.Newf("member not found: %s", member.String()))
+		}
+		return nil, err
+	}
+
 	team, err := findTeam(ctx, r.db.Teams(), args.Team, args.TeamName)
 	if err != nil {
 		return nil, err
 	}
 	var membersToRemove []*types.TeamMember
-	for userID := range memberIDs {
+	for _, user := range users {
 		membersToRemove = append(membersToRemove, &types.TeamMember{
-			UserID: userID,
+			UserID: user.ID,
 			TeamID: team.ID,
 		})
 	}
