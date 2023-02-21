@@ -41,14 +41,15 @@ var _ workerutil.Store[types.Job] = &Client{}
 var _ command.ExecutionLogEntryStore = &Client{}
 
 func New(observationCtx *observation.Context, options Options, metricsGatherer prometheus.Gatherer) (*Client, error) {
-	client, err := apiclient.NewBaseClient(options.BaseClientOptions)
+	logger := log.Scoped("executor-api-queue-client", "The API client adapter for executors to use dbworkers over HTTP")
+	client, err := apiclient.NewBaseClient(logger, options.BaseClientOptions)
 	if err != nil {
 		return nil, err
 	}
 	return &Client{
 		options:         options,
 		client:          client,
-		logger:          log.Scoped("executor-api-queue-client", "The API client adapter for executors to use dbworkers over HTTP"),
+		logger:          logger,
 		metricsGatherer: metricsGatherer,
 		operations:      newOperations(observationCtx),
 	}, nil
