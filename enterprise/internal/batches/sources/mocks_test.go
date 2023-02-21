@@ -5691,9 +5691,6 @@ type MockAzureDevOpsClient struct {
 	// AuthenticatorFunc is an instance of a mock function object
 	// controlling the behavior of the method Authenticator.
 	AuthenticatorFunc *AzureDevOpsClientAuthenticatorFunc
-	// AzureServicesProfileFunc is an instance of a mock function object
-	// controlling the behavior of the method AzureServicesProfile.
-	AzureServicesProfileFunc *AzureDevOpsClientAzureServicesProfileFunc
 	// CompletePullRequestFunc is an instance of a mock function object
 	// controlling the behavior of the method CompletePullRequest.
 	CompletePullRequestFunc *AzureDevOpsClientCompletePullRequestFunc
@@ -5707,6 +5704,9 @@ type MockAzureDevOpsClient struct {
 	// ForkRepositoryFunc is an instance of a mock function object
 	// controlling the behavior of the method ForkRepository.
 	ForkRepositoryFunc *AzureDevOpsClientForkRepositoryFunc
+	// GetAuthorizedProfileFunc is an instance of a mock function object
+	// controlling the behavior of the method GetAuthorizedProfile.
+	GetAuthorizedProfileFunc *AzureDevOpsClientGetAuthorizedProfileFunc
 	// GetProjectFunc is an instance of a mock function object controlling
 	// the behavior of the method GetProject.
 	GetProjectFunc *AzureDevOpsClientGetProjectFunc
@@ -5754,11 +5754,6 @@ func NewMockAzureDevOpsClient() *MockAzureDevOpsClient {
 				return
 			},
 		},
-		AzureServicesProfileFunc: &AzureDevOpsClientAzureServicesProfileFunc{
-			defaultHook: func(context.Context) (r0 azuredevops.Profile, r1 error) {
-				return
-			},
-		},
 		CompletePullRequestFunc: &AzureDevOpsClientCompletePullRequestFunc{
 			defaultHook: func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestCompleteInput) (r0 azuredevops.PullRequest, r1 error) {
 				return
@@ -5776,6 +5771,11 @@ func NewMockAzureDevOpsClient() *MockAzureDevOpsClient {
 		},
 		ForkRepositoryFunc: &AzureDevOpsClientForkRepositoryFunc{
 			defaultHook: func(context.Context, string, azuredevops.ForkRepositoryInput) (r0 azuredevops.Repository, r1 error) {
+				return
+			},
+		},
+		GetAuthorizedProfileFunc: &AzureDevOpsClientGetAuthorizedProfileFunc{
+			defaultHook: func(context.Context) (r0 azuredevops.Profile, r1 error) {
 				return
 			},
 		},
@@ -5846,11 +5846,6 @@ func NewStrictMockAzureDevOpsClient() *MockAzureDevOpsClient {
 				panic("unexpected invocation of MockAzureDevOpsClient.Authenticator")
 			},
 		},
-		AzureServicesProfileFunc: &AzureDevOpsClientAzureServicesProfileFunc{
-			defaultHook: func(context.Context) (azuredevops.Profile, error) {
-				panic("unexpected invocation of MockAzureDevOpsClient.AzureServicesProfile")
-			},
-		},
 		CompletePullRequestFunc: &AzureDevOpsClientCompletePullRequestFunc{
 			defaultHook: func(context.Context, azuredevops.PullRequestCommonArgs, azuredevops.PullRequestCompleteInput) (azuredevops.PullRequest, error) {
 				panic("unexpected invocation of MockAzureDevOpsClient.CompletePullRequest")
@@ -5869,6 +5864,11 @@ func NewStrictMockAzureDevOpsClient() *MockAzureDevOpsClient {
 		ForkRepositoryFunc: &AzureDevOpsClientForkRepositoryFunc{
 			defaultHook: func(context.Context, string, azuredevops.ForkRepositoryInput) (azuredevops.Repository, error) {
 				panic("unexpected invocation of MockAzureDevOpsClient.ForkRepository")
+			},
+		},
+		GetAuthorizedProfileFunc: &AzureDevOpsClientGetAuthorizedProfileFunc{
+			defaultHook: func(context.Context) (azuredevops.Profile, error) {
+				panic("unexpected invocation of MockAzureDevOpsClient.GetAuthorizedProfile")
 			},
 		},
 		GetProjectFunc: &AzureDevOpsClientGetProjectFunc{
@@ -5935,9 +5935,6 @@ func NewMockAzureDevOpsClientFrom(i azuredevops.Client) *MockAzureDevOpsClient {
 		AuthenticatorFunc: &AzureDevOpsClientAuthenticatorFunc{
 			defaultHook: i.Authenticator,
 		},
-		AzureServicesProfileFunc: &AzureDevOpsClientAzureServicesProfileFunc{
-			defaultHook: i.AzureServicesProfile,
-		},
 		CompletePullRequestFunc: &AzureDevOpsClientCompletePullRequestFunc{
 			defaultHook: i.CompletePullRequest,
 		},
@@ -5949,6 +5946,9 @@ func NewMockAzureDevOpsClientFrom(i azuredevops.Client) *MockAzureDevOpsClient {
 		},
 		ForkRepositoryFunc: &AzureDevOpsClientForkRepositoryFunc{
 			defaultHook: i.ForkRepository,
+		},
+		GetAuthorizedProfileFunc: &AzureDevOpsClientGetAuthorizedProfileFunc{
+			defaultHook: i.GetAuthorizedProfile,
 		},
 		GetProjectFunc: &AzureDevOpsClientGetProjectFunc{
 			defaultHook: i.GetProject,
@@ -6193,115 +6193,6 @@ func (c AzureDevOpsClientAuthenticatorFuncCall) Args() []interface{} {
 // invocation.
 func (c AzureDevOpsClientAuthenticatorFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// AzureDevOpsClientAzureServicesProfileFunc describes the behavior when the
-// AzureServicesProfile method of the parent MockAzureDevOpsClient instance
-// is invoked.
-type AzureDevOpsClientAzureServicesProfileFunc struct {
-	defaultHook func(context.Context) (azuredevops.Profile, error)
-	hooks       []func(context.Context) (azuredevops.Profile, error)
-	history     []AzureDevOpsClientAzureServicesProfileFuncCall
-	mutex       sync.Mutex
-}
-
-// AzureServicesProfile delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockAzureDevOpsClient) AzureServicesProfile(v0 context.Context) (azuredevops.Profile, error) {
-	r0, r1 := m.AzureServicesProfileFunc.nextHook()(v0)
-	m.AzureServicesProfileFunc.appendCall(AzureDevOpsClientAzureServicesProfileFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the AzureServicesProfile
-// method of the parent MockAzureDevOpsClient instance is invoked and the
-// hook queue is empty.
-func (f *AzureDevOpsClientAzureServicesProfileFunc) SetDefaultHook(hook func(context.Context) (azuredevops.Profile, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// AzureServicesProfile method of the parent MockAzureDevOpsClient instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *AzureDevOpsClientAzureServicesProfileFunc) PushHook(hook func(context.Context) (azuredevops.Profile, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *AzureDevOpsClientAzureServicesProfileFunc) SetDefaultReturn(r0 azuredevops.Profile, r1 error) {
-	f.SetDefaultHook(func(context.Context) (azuredevops.Profile, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *AzureDevOpsClientAzureServicesProfileFunc) PushReturn(r0 azuredevops.Profile, r1 error) {
-	f.PushHook(func(context.Context) (azuredevops.Profile, error) {
-		return r0, r1
-	})
-}
-
-func (f *AzureDevOpsClientAzureServicesProfileFunc) nextHook() func(context.Context) (azuredevops.Profile, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *AzureDevOpsClientAzureServicesProfileFunc) appendCall(r0 AzureDevOpsClientAzureServicesProfileFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// AzureDevOpsClientAzureServicesProfileFuncCall objects describing the
-// invocations of this function.
-func (f *AzureDevOpsClientAzureServicesProfileFunc) History() []AzureDevOpsClientAzureServicesProfileFuncCall {
-	f.mutex.Lock()
-	history := make([]AzureDevOpsClientAzureServicesProfileFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// AzureDevOpsClientAzureServicesProfileFuncCall is an object that describes
-// an invocation of method AzureServicesProfile on an instance of
-// MockAzureDevOpsClient.
-type AzureDevOpsClientAzureServicesProfileFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 azuredevops.Profile
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c AzureDevOpsClientAzureServicesProfileFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c AzureDevOpsClientAzureServicesProfileFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // AzureDevOpsClientCompletePullRequestFunc describes the behavior when the
@@ -6759,6 +6650,115 @@ func (c AzureDevOpsClientForkRepositoryFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c AzureDevOpsClientForkRepositoryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// AzureDevOpsClientGetAuthorizedProfileFunc describes the behavior when the
+// GetAuthorizedProfile method of the parent MockAzureDevOpsClient instance
+// is invoked.
+type AzureDevOpsClientGetAuthorizedProfileFunc struct {
+	defaultHook func(context.Context) (azuredevops.Profile, error)
+	hooks       []func(context.Context) (azuredevops.Profile, error)
+	history     []AzureDevOpsClientGetAuthorizedProfileFuncCall
+	mutex       sync.Mutex
+}
+
+// GetAuthorizedProfile delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockAzureDevOpsClient) GetAuthorizedProfile(v0 context.Context) (azuredevops.Profile, error) {
+	r0, r1 := m.GetAuthorizedProfileFunc.nextHook()(v0)
+	m.GetAuthorizedProfileFunc.appendCall(AzureDevOpsClientGetAuthorizedProfileFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetAuthorizedProfile
+// method of the parent MockAzureDevOpsClient instance is invoked and the
+// hook queue is empty.
+func (f *AzureDevOpsClientGetAuthorizedProfileFunc) SetDefaultHook(hook func(context.Context) (azuredevops.Profile, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetAuthorizedProfile method of the parent MockAzureDevOpsClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *AzureDevOpsClientGetAuthorizedProfileFunc) PushHook(hook func(context.Context) (azuredevops.Profile, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AzureDevOpsClientGetAuthorizedProfileFunc) SetDefaultReturn(r0 azuredevops.Profile, r1 error) {
+	f.SetDefaultHook(func(context.Context) (azuredevops.Profile, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AzureDevOpsClientGetAuthorizedProfileFunc) PushReturn(r0 azuredevops.Profile, r1 error) {
+	f.PushHook(func(context.Context) (azuredevops.Profile, error) {
+		return r0, r1
+	})
+}
+
+func (f *AzureDevOpsClientGetAuthorizedProfileFunc) nextHook() func(context.Context) (azuredevops.Profile, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AzureDevOpsClientGetAuthorizedProfileFunc) appendCall(r0 AzureDevOpsClientGetAuthorizedProfileFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// AzureDevOpsClientGetAuthorizedProfileFuncCall objects describing the
+// invocations of this function.
+func (f *AzureDevOpsClientGetAuthorizedProfileFunc) History() []AzureDevOpsClientGetAuthorizedProfileFuncCall {
+	f.mutex.Lock()
+	history := make([]AzureDevOpsClientGetAuthorizedProfileFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AzureDevOpsClientGetAuthorizedProfileFuncCall is an object that describes
+// an invocation of method GetAuthorizedProfile on an instance of
+// MockAzureDevOpsClient.
+type AzureDevOpsClientGetAuthorizedProfileFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 azuredevops.Profile
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AzureDevOpsClientGetAuthorizedProfileFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AzureDevOpsClientGetAuthorizedProfileFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

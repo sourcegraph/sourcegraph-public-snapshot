@@ -99,7 +99,7 @@ func TestAzureDevOpsSource_ValidateAuthenticator(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			s, client := mockAzureDevOpsSource()
-			client.AzureServicesProfileFunc.SetDefaultReturn(azuredevops.Profile{}, want)
+			client.GetAuthorizedProfileFunc.SetDefaultReturn(azuredevops.Profile{}, want)
 
 			assert.Equal(t, want, s.ValidateAuthenticator(ctx))
 		})
