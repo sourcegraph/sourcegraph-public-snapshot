@@ -61,7 +61,6 @@ interface Props
     filePath: string
     commitID: string
     revision: string
-    globbing: boolean
     useActionItemsBar: ActionItemsBarProps['useActionItemsBar']
     isSourcegraphDotCom: boolean
     className?: string

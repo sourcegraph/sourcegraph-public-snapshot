@@ -39,7 +39,6 @@ import {
 } from '@sourcegraph/shared/src/settings/settings'
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
-import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { FeedbackText, setLinkComponent, RouterLink, WildcardThemeContext, WildcardTheme } from '@sourcegraph/wildcard'
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
@@ -129,7 +128,6 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
     const [resolvedAuthenticatedUser, setResolvedAuthenticatedUser] = useState<AuthenticatedUser | null>(null)
     const [settingsCascade, setSettingsCascade] = useState<SettingsCascadeOrError<Settings>>(EMPTY_SETTINGS_CASCADE)
     const [viewerSubject, setViewerSubject] = useState<SettingsSubjectCommonFields>(() => siteSubjectNoAdmin())
-    const [globbing, setGlobbing] = useState(false)
 
     const [graphqlClient, setGraphqlClient] = useState<GraphQLClient | null>(null)
     const [temporarySettingsStorage, setTemporarySettingsStorage] = useState<TemporarySettingsStorage | null>(null)
@@ -249,7 +247,6 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
                     setQueryStateFromSettings(settingsCascade)
                     setSettingsCascade(settingsCascade)
                     setResolvedAuthenticatedUser(authenticatedUser ?? null)
-                    setGlobbing(globbingEnabledFromSettings(settingsCascade))
                     setViewerSubject(viewerSubjectFromSettings(settingsCascade, authenticatedUser))
                 },
                 () => setResolvedAuthenticatedUser(null)
@@ -319,7 +316,6 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
         updateSearchContext,
         deleteSearchContext,
         isSearchContextSpecAvailable,
-        globbing,
         streamSearch: aggregateStreamingSearch,
         codeIntelligenceEnabled: !!props.codeInsightsEnabled,
         notebooksEnabled: props.notebooksEnabled,
@@ -392,7 +388,6 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
                     updateSearchContext={updateSearchContext}
                     deleteSearchContext={deleteSearchContext}
                     isSearchContextSpecAvailable={isSearchContextSpecAvailable}
-                    globbing={globbing}
                     streamSearch={aggregateStreamingSearch}
                     codeIntelligenceEnabled={!!props.codeInsightsEnabled}
                     notebooksEnabled={props.notebooksEnabled}

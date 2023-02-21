@@ -12,6 +12,7 @@ import { asError, isErrorLike } from '@sourcegraph/common'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { Button, useEventObservable, Icon } from '@sourcegraph/wildcard'
 
 import { Block, BlockDirection, BlockInit, BlockInput, BlockType } from '..'
@@ -37,7 +38,6 @@ export interface NotebookComponentProps
         ThemeProps,
         TelemetryProps,
         Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded' | 'executedQuery'> {
-    globbing: boolean
     isReadOnly?: boolean
     blocks: BlockInit[]
     authenticatedUser: AuthenticatedUser | null
@@ -90,7 +90,6 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         platformContext,
         blocks: initialBlocks,
         fetchHighlightedFileLineRanges,
-        globbing,
         searchContextsEnabled,
         settingsCascade,
         outlineContainerElement,
@@ -394,7 +393,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 {...blockProps}
                                 telemetryService={telemetryService}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
-                                globbing={globbing}
+                                globbing={globbingEnabledFromSettings(settingsCascade)}
                             />
                         )
                     case 'query':
@@ -403,7 +402,6 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 {...block}
                                 {...blockProps}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
-                                globbing={globbing}
                                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 searchContextsEnabled={searchContextsEnabled}
                                 settingsCascade={settingsCascade}
@@ -418,7 +416,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 {...block}
                                 {...blockProps}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
-                                globbing={globbing}
+                                globbing={globbingEnabledFromSettings(settingsCascade)}
                                 telemetryService={telemetryService}
                                 platformContext={platformContext}
                             />
@@ -439,7 +437,6 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 selectedBlockId,
                 telemetryService,
                 isSourcegraphDotCom,
-                globbing,
                 fetchHighlightedFileLineRanges,
                 searchContextsEnabled,
                 settingsCascade,

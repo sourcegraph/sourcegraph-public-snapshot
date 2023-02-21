@@ -59,7 +59,6 @@ interface NotebookPageProps
         Omit<StreamingSearchResultsListProps, 'allExpanded' | 'platformContext' | 'executedQuery'>,
         PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'> {
     authenticatedUser: AuthenticatedUser | null
-    globbing: boolean
     fetchNotebook?: typeof _fetchNotebook
     updateNotebook?: typeof _updateNotebook
     deleteNotebook?: typeof _deleteNotebook
@@ -81,7 +80,6 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
     createNotebookStar = _createNotebookStar,
     deleteNotebookStar = _deleteNotebookStar,
     copyNotebook = _copyNotebook,
-    globbing,
     streamSearch,
     isLightTheme,
     telemetryService,
@@ -309,7 +307,6 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                 onUpdateBlocks={onUpdateBlocks}
                                 onCopyNotebook={onCopyNotebook}
                                 exportedFileName={exportedFileName}
-                                globbing={globbing}
                                 streamSearch={streamSearch}
                                 isLightTheme={isLightTheme}
                                 telemetryService={telemetryService}

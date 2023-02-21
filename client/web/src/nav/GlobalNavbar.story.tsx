@@ -26,7 +26,6 @@ const getDefaultProps = (props: ThemeProps): GlobalNavbarProps => ({
     telemetryService: NOOP_TELEMETRY_SERVICE,
     themePreference: ThemePreference.Light,
     onThemePreferenceChange: () => undefined,
-    globbing: false,
     platformContext: {} as any,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,

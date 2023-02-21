@@ -15,7 +15,6 @@ import {
     updateFilters,
 } from '@sourcegraph/shared/src/search/query/transformer'
 import { LATEST_VERSION, RepositoryMatch, SearchMatch } from '@sourcegraph/shared/src/search/stream'
-import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { SearchPatternType } from '../../graphql-operations'
@@ -256,8 +255,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
         [extensionCoreAPI, instanceURL]
     )
 
-    const globbing = useMemo(() => globbingEnabledFromSettings(settingsCascade), [settingsCascade])
-
     const setSelectedSearchContextSpec = useCallback(
         (spec: string) => {
             extensionCoreAPI
@@ -347,7 +344,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     getUserSearchContextNamespaces={getUserSearchContextNamespaces}
                     fetchStreamSuggestions={fetchStreamSuggestions}
                     settingsCascade={settingsCascade}
-                    globbing={globbing}
                     isLightTheme={theme === 'theme-light'}
                     telemetryService={platformContext.telemetryService}
                     platformContext={platformContext}

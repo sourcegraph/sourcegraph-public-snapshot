@@ -24,6 +24,7 @@ import { escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 import { Button, Icon, Link, useObservable } from '@sourcegraph/wildcard'
@@ -91,8 +92,6 @@ export interface RepoContainerContext
 
     onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 
-    globbing: boolean
-
     isMacPlatform: boolean
 
     isSourcegraphDotCom: boolean
@@ -127,7 +126,6 @@ interface RepoContainerProps
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     authenticatedUser: AuthenticatedUser | null
-    globbing: boolean
     isMacPlatform: boolean
     isSourcegraphDotCom: boolean
 }
@@ -143,7 +141,7 @@ export interface HoverThresholdProps {
  * Renders a horizontal bar and content for a repository page.
  */
 export const RepoContainer: FC<RepoContainerProps> = props => {
-    const { extensionsController, globbing, repoContainerRoutes, authenticatedUser } = props
+    const { extensionsController, repoContainerRoutes, authenticatedUser } = props
 
     const location = useLocation()
 
@@ -265,6 +263,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
     }, [extensionsController, repoName, resolvedRevisionOrError, revision])
 
     // Update the navbar query to reflect the current repo / revision
+    const globbing = globbingEnabledFromSettings(props.settingsCascade)
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
     useEffect(() => {
         let query = searchQueryForRepoRevision(repoName, globbing, revision)

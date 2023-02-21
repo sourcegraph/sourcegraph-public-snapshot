@@ -98,7 +98,6 @@ interface BlobPageProps
         Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled' | 'useCodeIntel'>,
         NotebookProps {
     authenticatedUser: AuthenticatedUser | null
-    globbing: boolean
     isMacPlatform: boolean
     isSourcegraphDotCom: boolean
     repoID?: Scalars['ID']

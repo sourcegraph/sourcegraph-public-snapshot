@@ -29,7 +29,6 @@ const defaultProps: SearchBoxProps = {
         subjects: null,
     },
     isLightTheme: false,
-    globbing: false,
     queryState: { query: 'hello repo:test' },
     isSourcegraphDotCom: false,
     patternType: SearchPatternType.standard,

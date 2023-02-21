@@ -43,9 +43,6 @@ export interface CommunitySearchContextPageProps
 
     // CommunitySearchContext page metadata
     communitySearchContextMetadata: CommunitySearchContextMetadata
-
-    /** Whether globbing is enabled for filters. */
-    globbing: boolean
 }
 
 export const CommunitySearchContextPage: React.FunctionComponent<

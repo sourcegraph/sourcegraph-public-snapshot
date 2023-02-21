@@ -73,7 +73,6 @@ export interface LegacyLayoutProps
     // Search
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 
-    globbing: boolean
     isSourcegraphDotCom: boolean
 
     themeProps: ThemeProps & ThemePreferenceProps

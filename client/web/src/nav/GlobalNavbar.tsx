@@ -65,9 +65,6 @@ export interface GlobalNavbarProps
     isSourcegraphDotCom: boolean
     showSearchBox: boolean
     routes: readonly LayoutRouteProps[]
-
-    // Whether globbing is enabled for filters.
-    globbing: boolean
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
     enableLegacyExtensions?: boolean

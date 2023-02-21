@@ -12,6 +12,7 @@ import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentS
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 
 import { IEditor, LazyQueryInput, LazyQueryInputProps } from './LazyQueryInput'
 import { SearchButton } from './SearchButton'
@@ -33,7 +34,6 @@ export interface SearchBoxProps
             | 'autoFocus'
             | 'onFocus'
             | 'onSubmit'
-            | 'globbing'
             | 'interpretComments'
             | 'onChange'
             | 'onCompletionItemSelected'
@@ -183,7 +183,7 @@ export const SearchBox: FC<SearchBoxProps> = props => {
                         autoFocus={props.autoFocus}
                         caseSensitive={props.caseSensitive}
                         fetchStreamSuggestions={props.fetchStreamSuggestions}
-                        globbing={props.globbing}
+                        globbing={globbingEnabledFromSettings(props.settingsCascade)}
                         interpretComments={props.interpretComments}
                         isLightTheme={props.isLightTheme}
                         isSourcegraphDotCom={props.isSourcegraphDotCom}

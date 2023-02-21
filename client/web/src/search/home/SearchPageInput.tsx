@@ -53,8 +53,6 @@ interface Props
         Pick<SearchContextProps, 'searchContextsEnabled'> {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
-    /** Whether globbing is enabled for filters. */
-    globbing: boolean
     autoFocus?: boolean
     queryState: QueryState
     setQueryState: (newState: QueryState) => void

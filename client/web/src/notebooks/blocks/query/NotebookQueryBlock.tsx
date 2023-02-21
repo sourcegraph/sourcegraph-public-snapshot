@@ -19,6 +19,7 @@ import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestio
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
 
@@ -41,7 +42,6 @@ interface NotebookQueryBlockProps
         SettingsCascadeProps,
         TelemetryProps,
         PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings'> {
-    globbing: boolean
     isSourcegraphDotCom: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     authenticatedUser: AuthenticatedUser | null
@@ -70,7 +70,6 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
         onBlockInputChange,
         fetchHighlightedFileLineRanges,
         onRunBlock,
-        globbing,
         isSourcegraphDotCom,
         searchContextsEnabled,
         ...props
@@ -128,6 +127,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
             }
         }, [editor])
 
+        const globbing = globbingEnabledFromSettings(settingsCascade)
         const queryCompletion = useMemo(
             () =>
                 createDefaultSuggestions({
