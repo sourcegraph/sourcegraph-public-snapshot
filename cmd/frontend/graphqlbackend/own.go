@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
@@ -54,4 +55,40 @@ type CodeownersFileEntryResolver interface {
 	Description(context.Context) (string, error)
 	CodeownersFile(context.Context) (FileResolver, error)
 	RuleLineMatch(context.Context) (int32, error)
+}
+
+type IngestedCodeownersResolver interface {
+	AddCodeownersFile(context.Context, *CodeownersFileArgs) (CodeownersIngestedFileResolver, error)
+	UpdateCodeownersFile(context.Context, *CodeownersFileArgs) (CodeownersIngestedFileResolver, error)
+	DeleteCodeownersFile(context.Context, *DeleteCodeownersFileArgs) error
+
+	CodeownersIngestedFiles(context.Context, *CodeownersIngestedFilesArgs) ([]CodeownersIngestedFileConnectionResolver, error)
+}
+
+type CodeownersFileArgs struct {
+	FileContents string
+	RepoID       int32
+}
+
+type DeleteCodeownersFileArgs struct {
+	RepoID int32
+}
+
+type CodeownersIngestedFilesArgs struct {
+	First  *int32
+	After  *string
+	RepoID *int32
+}
+
+type CodeownersIngestedFileResolver interface {
+	Contents() string
+	RepoID() int32
+	CreatedAt() time.Time
+	UpdatedAt() time.Time
+}
+
+type CodeownersIngestedFileConnectionResolver interface {
+	Nodes(ctx context.Context) ([]CodeownersIngestedFileResolver, error)
+	TotalCount(ctx context.Context) (*int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }

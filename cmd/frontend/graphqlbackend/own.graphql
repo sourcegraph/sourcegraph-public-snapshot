@@ -128,7 +128,7 @@ extend type Mutation {
 }
 
 extend type Query {
-    ingestedCodeownersFiles(first: Int, after: Int, repoID: Int): [CodeownersIngestedFileConnection!]
+    codeownersIngestedFiles(first: Int, after: Int, repoID: Int): [CodeownersIngestedFileConnection!]
 }
 type CodeownersIngestedFileConnection {
     """
