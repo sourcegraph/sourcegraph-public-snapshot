@@ -42,7 +42,7 @@ func NewRankingGraphMapper(
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		context.Background(),
-		"rank.graph-mapper", "maps definitions and references data to path_counts_inputs table in lsifstore",
+		"rank.graph-mapper", "maps definitions and references data to path_counts_inputs table in store",
 		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			if err := uploadsService.MapRankingGraph(ctx, numRankingRoutines, rankingJobEnabled); err != nil {
