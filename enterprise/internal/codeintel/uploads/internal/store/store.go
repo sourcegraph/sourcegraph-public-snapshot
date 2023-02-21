@@ -5,6 +5,7 @@ import (
 	"time"
 
 	logger "github.com/sourcegraph/log"
+	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -43,6 +44,7 @@ type Store interface {
 	HasRepository(ctx context.Context, repositoryID int) (_ bool, err error)
 
 	// Uploads
+	GetIndexers(ctx context.Context, opts shared.GetIndexersOptions) ([]string, error)
 	GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (_ []types.Upload, _ int, err error)
 	GetUploadByID(ctx context.Context, id int) (_ types.Upload, _ bool, err error)
 	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error)
@@ -106,6 +108,11 @@ type Store interface {
 
 	ReindexUploads(ctx context.Context, opts shared.ReindexUploadsOptions) error
 	ReindexUploadByID(ctx context.Context, id int) error
+
+	// Ranking
+	InsertDefinitionsAndReferencesForDocument(ctx context.Context, upload ExportedUpload, rankingGraphKey string, rankingBatchSize int, f func(ctx context.Context, upload ExportedUpload, rankingBatchSize int, rankingGraphKey, path string, document *scip.Document) error) (err error)
+	InsertDefintionsForRanking(ctx context.Context, rankingGraphKey string, rankingBatchSize int, defintions []shared.RankingDefintions) (err error)
+	InsertReferencesForRanking(ctx context.Context, rankingGraphKey string, rankingBatchSize int, references shared.RankingReferences) (err error)
 }
 
 // store manages the database operations for uploads.

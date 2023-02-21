@@ -1,6 +1,7 @@
 package result
 
 import (
+	"sort"
 	"sync"
 
 	"github.com/bits-and-blooms/bitset"
@@ -34,6 +35,12 @@ type mergeVal struct {
 	seen  *bitset.BitSet
 	sent  bool
 }
+
+type byPopCount []mergeVal
+
+func (s byPopCount) Len() int           { return len(s) }
+func (s byPopCount) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s byPopCount) Less(i, j int) bool { return s[i].seen.Count() < s[j].seen.Count() }
 
 // AddMatches adds a set of Matches from the given source to the merger.
 // For each of these matches, if that match has been seen by every source, we
@@ -108,11 +115,21 @@ func (lm *merger) addMatch(m Match, source int) Match {
 // Stated differently, when added to the matches that were already returned
 // by AddMatches, you get the union of sources.
 func (lm *merger) UnsentTracked() Matches {
-	var res Matches
+	// We possibly allocate more than is needed. However, assuming that most matches
+	// will not been seen by all sources, the limit should be fine.
+	matches := make([]mergeVal, 0, len(lm.matches))
 	for _, val := range lm.matches {
 		if !val.sent {
-			res = append(res, val.match)
+			matches = append(matches, val)
 		}
+	}
+
+	// Prioritize matches that were found by multiple sources.
+	sort.Sort(sort.Reverse(byPopCount(matches)))
+
+	res := make(Matches, 0, len(matches))
+	for _, val := range matches {
+		res = append(res, val.match)
 	}
 	return res
 }

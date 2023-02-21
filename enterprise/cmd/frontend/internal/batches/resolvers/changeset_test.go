@@ -210,6 +210,7 @@ func TestChangesetResolver(t *testing.T) {
 		ExternalServiceType:   "github",
 		ExternalID:            "98765",
 		ExternalForkNamespace: "user",
+		ExternalForkName:      "my-fork",
 		PublicationState:      btypes.ChangesetPublicationStateUnpublished,
 		ReconcilerState:       btypes.ReconcilerStateQueued,
 	})
@@ -372,6 +373,7 @@ func TestChangesetResolver(t *testing.T) {
 				Typename:      "ExternalChangeset",
 				ExternalID:    "98765",
 				ForkNamespace: "user",
+				ForkName:      "my-fork",
 				Repository:    apitest.Repository{Name: string(repo.Name)},
 				Labels:        []apitest.Label{},
 				State:         string(btypes.ChangesetStateProcessing),
@@ -432,6 +434,7 @@ query($changeset: ID!) {
 
       externalID
       forkNamespace
+	  forkName
       state
       reviewState
       checkState

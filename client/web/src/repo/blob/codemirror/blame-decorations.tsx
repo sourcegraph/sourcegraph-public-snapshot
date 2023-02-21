@@ -18,7 +18,7 @@ import {
 } from '@codemirror/view'
 import { isEqual } from 'lodash'
 import { createRoot, Root } from 'react-dom/client'
-import { NavigateFunction } from 'react-router-dom-v5-compat'
+import { NavigateFunction } from 'react-router-dom'
 
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 

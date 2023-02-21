@@ -1,4 +1,4 @@
-import { matchPath, useLocation } from 'react-router-dom-v5-compat'
+import { matchPath, useLocation } from 'react-router-dom'
 
 import { LayoutRouteProps } from '../routes'
 

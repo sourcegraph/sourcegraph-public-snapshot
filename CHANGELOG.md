@@ -21,15 +21,18 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- Experimental GraphQL query, `permissionsSyncJobs` is removed and substituted with new non-experimental `permissionSyncJobs` query (mind the singular form of permission) which provides full information about permission sync jobs stored in the database. `authz.syncJobsRecordsTTL`. [#47933](https://github.com/sourcegraph/sourcegraph/pull/47933)
 
 ### Fixed
 
--
+- Fixed issues with propagating tracing configuration throughout the application. [#47428](https://github.com/sourcegraph/sourcegraph/pull/47428)
+- Enable `auto gc` on fetch when `SRC_ENABLE_GC_AUTO` is set to `true`. [#47852](https://github.com/sourcegraph/sourcegraph/pull/47852)
 
 ### Removed
 
 - The LSIF upload endpoint is no longer supported and has been replaced by a diagnostic error page. src-cli v4.5+ will translate all local LSIF files to SCIP prior to upload. [#47547](https://github.com/sourcegraph/sourcegraph/pull/47547)
+- The experimental setting `authz.syncJobsRecordsLimit` has been removed. [#47933](https://github.com/sourcegraph/sourcegraph/pull/47933)
+- Storing permission sync jobs statuses in Redis has been removed as now all permission sync related data is stored in a database. [#47933](https://github.com/sourcegraph/sourcegraph/pull/47933)
 
 ## 4.5.0
 

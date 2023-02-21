@@ -7,10 +7,8 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/syncjobs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -29,16 +27,14 @@ const (
 
 func MakePermsSyncerWorker(observationCtx *observation.Context, syncer permsSyncer, syncType syncType, jobsStore database.PermissionSyncJobStore) *permsSyncerWorker {
 	logger := observationCtx.Logger.Scoped("RepoPermsSyncerWorkerRepo", "Repository permission sync worker")
-	recordsStore := syncjobs.NewRecordsStore(logger.Scoped("records", "Records provider states in redis"), conf.DefaultClient())
 	if syncType == SyncTypeUser {
 		logger = observationCtx.Logger.Scoped("UserPermsSyncerWorker", "User permission sync worker")
 	}
 	return &permsSyncerWorker{
-		logger:       logger,
-		syncer:       syncer,
-		syncType:     syncType,
-		recordsStore: recordsStore,
-		jobsStore:    jobsStore,
+		logger:    logger,
+		syncer:    syncer,
+		syncType:  syncType,
+		jobsStore: jobsStore,
 	}
 }
 
@@ -48,11 +44,10 @@ type permsSyncer interface {
 }
 
 type permsSyncerWorker struct {
-	logger       log.Logger
-	syncer       permsSyncer
-	syncType     syncType
-	recordsStore *syncjobs.RecordsStore
-	jobsStore    database.PermissionSyncJobStore
+	logger    log.Logger
+	syncer    permsSyncer
+	syncType  syncType
+	jobsStore database.PermissionSyncJobStore
 }
 
 // PreDequeue in our case does a nice trick of adding a predicate (WHERE clause)
@@ -117,7 +112,6 @@ func (h *permsSyncerWorker) handlePermsSync(ctx context.Context, reqType request
 		}
 	}
 
-	h.recordsStore.Record(reqType.String(), reqID, providerStates, err)
 	return err
 }
 

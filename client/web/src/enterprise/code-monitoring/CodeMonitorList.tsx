@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 
-import { useLocation } from 'react-router-dom-v5-compat'
+import { useLocation } from 'react-router-dom'
 import { of } from 'rxjs'
 
 import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
