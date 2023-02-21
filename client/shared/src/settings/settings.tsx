@@ -4,6 +4,7 @@ import { createAggregateError, ErrorLike, isErrorLike, parseJSONCOrError } from 
 
 import { DefaultSettingFields, OrgSettingFields, SiteSettingFields, UserSettingFields } from '../graphql-operations'
 import { Settings as GeneratedSettingsType } from '../schema/settings.schema'
+import { createContext, useContext, useMemo } from 'react'
 
 /**
  * A dummy type to represent the "subject" for client settings (i.e., settings stored in the client application,
@@ -220,6 +221,7 @@ export function merge(base: any, add: any, custom?: CustomMergeFunctions): void 
  * @todo Display the errors to the user in another component.
  *
  * @template S the settings type
+ * @deprecated Use useSettings() instead.
  */
 export function isSettingsValid<S extends Settings>(
     settingsCascade: SettingsCascadeOrError<S>
@@ -234,7 +236,45 @@ export function isSettingsValid<S extends Settings>(
 
 /**
  * React partial props for components needing the settings cascade.
+ * @deprecated Use useSettings() or useSettingsCascade() instead.
  */
 export interface SettingsCascadeProps<S extends Settings = Settings> {
     settingsCascade: SettingsCascadeOrError<S>
+}
+
+interface SettingsContextData<S extends Settings = Settings> {
+    settingsCascade: SettingsCascadeOrError<S> | null
+}
+const SettingsContext = createContext<SettingsContextData>({
+    settingsCascade: null,
+})
+
+interface SettingsProviderProps {
+    settingsCascade: SettingsCascadeOrError
+}
+
+export const SettingsProvider: React.FC<React.PropsWithChildren<SettingsProviderProps>> = props => {
+    const { children, settingsCascade } = props
+    const context = useMemo(() => ({ settingsCascade }), [settingsCascade])
+    return <SettingsContext.Provider value={context}>{children}</SettingsContext.Provider>
+}
+
+/**
+ * Access the underlying settings cascade directly.
+ * @deprecated Use useSettings() instead.
+ */
+export const useSettingsCascade = (): SettingsCascadeOrError => {
+    const { settingsCascade } = useContext(SettingsContext)
+    if (!settingsCascade) {
+        throw new Error('useSettingsCascade must be used within a SettingsProvider')
+    }
+    return settingsCascade
+}
+
+/**
+ * A React hooks that returns the resolved settings cascade.
+ */
+export const useSettings = (): Settings | null => {
+    const settingsCascade = useSettingsCascade()
+    return isSettingsValid(settingsCascade) ? settingsCascade.final : null
 }
