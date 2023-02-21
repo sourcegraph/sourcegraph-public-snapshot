@@ -26,6 +26,7 @@ export const SearchQueryStateObserver: FC<SearchQueryStateObserverProps> = props
     const { searchContextsEnabled, platformContext, setSelectedSearchContextSpec, selectedSearchContextSpec } = props
 
     const location = useLocation()
+
     const selectedSearchContextSpecRef = useRef(selectedSearchContextSpec)
     selectedSearchContextSpecRef.current = selectedSearchContextSpec
 
@@ -43,9 +44,7 @@ export const SearchQueryStateObserver: FC<SearchQueryStateObserverProps> = props
 
     useEffect(() => {
         locationSubject.next(location)
-        // Trigger observable update on context spec change too.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [location, locationSubject, selectedSearchContextSpec])
+    }, [location, locationSubject])
 
     useEffect(() => {
         const subscription = getQueryStateFromLocation({
