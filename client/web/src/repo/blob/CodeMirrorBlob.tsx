@@ -15,7 +15,6 @@ import {
     formatSearchParameters,
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
-import { findLanguageMatchingDocument } from '@sourcegraph/shared/src/codeintel/api'
 import { editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -23,7 +22,7 @@ import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash, toURIWithPath } from '@sourcegraph/shared/src/util/url'
+import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { BlobStencilFields, ExternalLinkFields, Scalars } from '../../graphql-operations'
@@ -44,6 +43,7 @@ import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
 import { selectOccurrence } from './codemirror/token-selection/code-intel-tooltips'
 import { tokenSelectionExtension } from './codemirror/token-selection/extension'
+import { languageSupport } from './codemirror/token-selection/languageSupport'
 import { selectionFromLocation } from './codemirror/token-selection/selections'
 import { tokensAsLinks } from './codemirror/tokens-as-links'
 import { isValidLineRange } from './codemirror/utils'
@@ -277,10 +277,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         },
         [customHistoryAction]
     )
-    const isLanguageSupported = useMemo(
-        () => !!findLanguageMatchingDocument({ uri: toURIWithPath(props.blobInfo) }),
-        [props.blobInfo]
-    )
     const extensions = useMemo(
         () => [
             // Log uncaught errors that happen in callbacks that we pass to
@@ -297,11 +293,12 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 enableSelectionDrivenCodeNavigation,
             }),
             codeFoldingExtension(),
-            enableSelectionDrivenCodeNavigation && isLanguageSupported ? tokenSelectionExtension() : [],
+            enableSelectionDrivenCodeNavigation ? tokenSelectionExtension() : [],
             enableLinkDrivenCodeNavigation
                 ? tokensAsLinks({ navigate: navigateRef.current, blobInfo, preloadGoToDefinition })
                 : [],
             syntaxHighlight.of(blobInfo),
+            languageSupport.of(blobInfo),
             pin.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick
                 ? sourcegraphExtensions({
