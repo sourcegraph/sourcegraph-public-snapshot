@@ -1,6 +1,8 @@
 @import '@reach/tabs/styles';
 
-.wildcard-tabs {
+// Use :where() to avoid specificity issues with routes that want to customize
+// the tabs styling which CSS might be loaded in an unspecified order.
+:where(.wildcard-tabs) {
     --opacity-transition: 0.3s;
     --scroll-gradient-color: var(--body-bg);
     --small-size-font: 0.75rem;

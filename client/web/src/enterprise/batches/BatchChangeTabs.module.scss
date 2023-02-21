@@ -2,10 +2,8 @@
     [data-reach-tab],
     [data-reach-tab]:hover,
     [data-reach-tab][data-selected] {
-        // Use !important here because this is competing with the default Tab styles based on CSS
-        // insertion order, but we always want to overwrite these defaults.
-        padding: 0.5rem 1rem !important;
-        font-size: 0.875rem !important;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
 
         :global(.text-content) {
             display: inline-flex;
