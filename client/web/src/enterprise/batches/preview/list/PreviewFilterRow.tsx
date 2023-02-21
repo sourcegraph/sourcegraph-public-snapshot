@@ -1,6 +1,6 @@
 import React, { FC, useCallback, useContext, useEffect, useRef } from 'react'
 
-import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { Input, Form } from '@sourcegraph/wildcard'
 

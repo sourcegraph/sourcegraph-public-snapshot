@@ -668,8 +668,8 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 	}
 }
 
-func (s *Server) addrForRepo(ctx context.Context, repoName api.RepoName, gitServerAddrs gitserver.GitServerAddresses) (string, error) {
-	return gitserver.AddrForRepo(ctx, filepath.Base(os.Args[0]), repoName, gitServerAddrs)
+func (s *Server) addrForRepo(repoName api.RepoName, gitServerAddrs gitserver.GitServerAddresses) string {
+	return gitserver.AddrForRepo(filepath.Base(os.Args[0]), repoName, gitServerAddrs)
 }
 
 func currentGitserverAddresses() gitserver.GitServerAddresses {
@@ -888,10 +888,7 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 			repo.Name = api.UndeletedRepoName(repo.Name)
 
 			// Ensure we're only dealing with repos we are responsible for.
-			addr, err := s.addrForRepo(ctx, repo.Name, gitServerAddrs)
-			if err != nil {
-				return err
-			}
+			addr := s.addrForRepo(repo.Name, gitServerAddrs)
 			if !s.hostnameMatch(addr) {
 				repoSyncStateCounter.WithLabelValues("other_shard").Inc()
 				continue

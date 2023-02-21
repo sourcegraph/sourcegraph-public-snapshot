@@ -3,7 +3,7 @@ import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 're
 import { useApolloClient } from '@apollo/client'
 import { mdiChevronRight, mdiDelete, mdiMapSearch, mdiRedo } from '@mdi/js'
 import classNames from 'classnames'
-import { useLocation } from 'react-router-dom-v5-compat'
+import { useLocation } from 'react-router-dom'
 import { of, Subject } from 'rxjs'
 import { tap } from 'rxjs/operators'
 

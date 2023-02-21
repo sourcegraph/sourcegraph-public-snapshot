@@ -58,6 +58,10 @@ func (r *Resolver) VulnerabilityMatches(ctx context.Context, args resolverstubs.
 	return r.SentinelRootResolver.VulnerabilityMatches(ctx, args)
 }
 
+func (r *Resolver) IndexerKeys(ctx context.Context, opts *resolverstubs.IndexerKeyQueryArgs) (_ []string, err error) {
+	return r.autoIndexingRootResolver.IndexerKeys(ctx, opts)
+}
+
 func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ resolverstubs.LSIFUploadResolver, err error) {
 	return r.uploadsRootResolver.LSIFUploadByID(ctx, id)
 }

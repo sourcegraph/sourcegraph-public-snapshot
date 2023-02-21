@@ -34,8 +34,8 @@ describe('TabbedPanel', () => {
         const panelButton = await renderResult.findByRole('tab', { name: panelToSelect.title })
         fireEvent.click(panelButton)
 
-        expect(renderResult.history.location.pathname).toEqual(location.pathname)
-        expect(renderResult.history.location.search).toEqual(location.search)
-        expect(renderResult.history.location.hash).toEqual(`#tab=${panelToSelect.id}`)
+        expect(renderResult.locationRef.current?.pathname).toEqual(location.pathname)
+        expect(renderResult.locationRef.current?.search).toEqual(location.search)
+        expect(renderResult.locationRef.current?.hash).toEqual(`#tab=${panelToSelect.id}`)
     })
 })

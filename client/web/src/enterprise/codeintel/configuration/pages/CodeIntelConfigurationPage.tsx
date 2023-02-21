@@ -13,7 +13,7 @@ import {
     mdiSourceRepository,
 } from '@mdi/js'
 import classNames from 'classnames'
-import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Subject } from 'rxjs'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'

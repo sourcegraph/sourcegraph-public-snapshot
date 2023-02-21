@@ -1,7 +1,7 @@
 import React, { useLayoutEffect } from 'react'
 
 import ReactDOM from 'react-dom'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 import { ReplaySubject } from 'rxjs'
 
 import { BlameHunk } from '../blame/useBlameHunks'

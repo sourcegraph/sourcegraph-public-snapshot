@@ -1,0 +1,15 @@
+"Aspect bazelrc presets; see https://docs.aspect.build/guides/bazelrc"
+
+load("@aspect_bazel_lib//lib:bazelrc_presets.bzl", "write_aspect_bazelrc_presets")
+
+write_aspect_bazelrc_presets(
+    name = "update_aspect_bazelrc_presets",
+    presets = [
+        "bazel6",
+        "convenience",
+        "correctness",
+        "debug",
+        "javascript",
+        "performance",
+    ],
+)

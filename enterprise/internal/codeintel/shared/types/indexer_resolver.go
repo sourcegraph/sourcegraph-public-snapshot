@@ -1,5 +1,7 @@
 package types
 
+import "strings"
+
 type CodeIntelIndexerResolver interface {
 	Key() string
 	Name() string
@@ -10,24 +12,26 @@ type codeIntelIndexerResolver struct {
 	indexer CodeIntelIndexer
 }
 
-func NewIndexerResolver(indexerName string) CodeIntelIndexerResolver {
-	for _, indexer := range AllIndexers {
-		if indexer.Name == indexerName {
-			return NewCodeIntelIndexerResolverFrom(indexer)
-		}
-	}
-
-	return NewCodeIntelIndexerResolver(indexerName)
+func NewCodeIntelIndexerResolver(name string) CodeIntelIndexerResolver {
+	return NewCodeIntelIndexerResolverFrom(indexerFromName(name))
 }
 
-func NewCodeIntelIndexerResolver(name string) CodeIntelIndexerResolver {
-	for _, indexer := range AllIndexers {
+func indexerFromName(name string) CodeIntelIndexer {
+	// drop the Docker image tag if one exists
+	name = strings.Split(name, "@sha256:")[0]
+	name = strings.Split(name, ":")[0]
+
+	if indexer, ok := imageToIndexer[name]; ok {
+		return indexer
+	}
+
+	for _, indexer := range allIndexers {
 		if indexer.Name == name {
-			return NewCodeIntelIndexerResolverFrom(indexer)
+			return indexer
 		}
 	}
 
-	return NewCodeIntelIndexerResolverFrom(CodeIntelIndexer{Name: name})
+	return CodeIntelIndexer{Name: name}
 }
 
 func NewCodeIntelIndexerResolverFrom(indexer CodeIntelIndexer) CodeIntelIndexerResolver {
