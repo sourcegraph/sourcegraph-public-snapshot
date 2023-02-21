@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { isEqual } from 'lodash'
-import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
 
 import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
@@ -45,8 +44,8 @@ import {
 import { EXTERNAL_SERVICE_KINDS, PACKAGES_QUERY } from './backend'
 import { RepoMirrorInfo } from './components/RepoMirrorInfo'
 
-import { searchQuery } from '../components/fuzzyFinder/FuzzyModal.module.scss'
 import styles from './SiteAdminPackagesPage.module.scss'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 const ExternalServicePackageMap: Partial<
     Record<
@@ -302,7 +301,7 @@ export const SiteAdminPackagesPage: React.FunctionComponent<React.PropsWithChild
                     {connection && (
                         <ConnectionSummary
                             connection={connection}
-                            connectionQuery={searchQuery}
+                            connectionQuery={query}
                             hasNextPage={hasNextPage}
                             first={DEFAULT_FIRST}
                             noun="package"
