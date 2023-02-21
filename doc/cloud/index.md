@@ -73,7 +73,7 @@ Sourcegraph Cloud instances are deployed in one of Google Cloud Platform data ce
 - Asia (Japan)
 - Australia
 
-More details about the locations and storing data can be found in [our handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/multi-region/)
+More details about the locations and storing data can be found in [our handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/multi-region/).
 
 ### Health monitoring, support, and SLAs
 
