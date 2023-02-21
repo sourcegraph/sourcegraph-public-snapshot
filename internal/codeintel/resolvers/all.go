@@ -28,13 +28,13 @@ type SentinelServiceResolver interface {
 }
 
 type GetVulnerabilitiesArgs struct {
-	First *int
-	// TODO
+	First *int32
+	After *string
 }
 
 type GetVulnerabilityMatchesArgs struct {
-	First *int
-	// TODO
+	First *int32
+	After *string
 }
 
 type VulnerabilityConnectionResolver interface {

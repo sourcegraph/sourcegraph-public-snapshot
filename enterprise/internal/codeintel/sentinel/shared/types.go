@@ -3,11 +3,13 @@ package shared
 import "time"
 
 type GetVulnerabilitiesArgs struct {
-	// TODO
+	Limit  int
+	Offset int
 }
 
 type GetVulnerabilityMatchesArgs struct {
-	// TODO
+	Limit  int
+	Offset int
 }
 
 type Vulnerability struct {
@@ -25,8 +27,8 @@ type Vulnerability struct {
 	CVSSVector       string
 	CVSSScore        string
 	Published        time.Time
-	Modified         time.Time
-	Withdrawn        time.Time
+	Modified         *time.Time
+	Withdrawn        *time.Time
 	AffectedPackages []AffectedPackage
 }
 
@@ -49,5 +51,5 @@ type AffectedSymbol struct {
 }
 
 type VulnerabilityMatch struct {
-	// TODO
+	SourceID string
 }

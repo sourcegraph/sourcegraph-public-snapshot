@@ -450,6 +450,11 @@ extend type Query {
         TODO
         """
         first: Int
+
+        """
+        TODO
+        """
+        after: String
     ): VulnerabilityConnection!
 
     """
@@ -460,6 +465,11 @@ extend type Query {
         TODO
         """
         first: Int
+
+        """
+        TODO
+        """
+        after: String
     ): VulnerabilityMatchConnection!
 }
 

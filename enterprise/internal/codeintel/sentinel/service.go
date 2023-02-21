@@ -23,10 +23,10 @@ func newService(
 	}
 }
 
-func (s *Service) GetVulnerabilities(ctx context.Context, args shared.GetVulnerabilitiesArgs) ([]shared.Vulnerability, error) {
+func (s *Service) GetVulnerabilities(ctx context.Context, args shared.GetVulnerabilitiesArgs) ([]shared.Vulnerability, int, error) {
 	return s.store.GetVulnerabilities(ctx, args)
 }
 
-func (s *Service) GetVulnerabilityMatches(ctx context.Context, args shared.GetVulnerabilityMatchesArgs) ([]shared.VulnerabilityMatch, error) {
+func (s *Service) GetVulnerabilityMatches(ctx context.Context, args shared.GetVulnerabilityMatchesArgs) ([]shared.VulnerabilityMatch, int, error) {
 	return s.store.GetVulnerabilityMatches(ctx, args)
 }

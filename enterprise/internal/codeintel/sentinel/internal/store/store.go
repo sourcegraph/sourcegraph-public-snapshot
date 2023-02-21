@@ -7,11 +7,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/go-version"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	logger "github.com/sourcegraph/log"
-
-	gv "github.com/hashicorp/go-version"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -22,9 +21,9 @@ import (
 )
 
 type Store interface {
-	GetVulnerabilities(ctx context.Context, args shared.GetVulnerabilitiesArgs) ([]shared.Vulnerability, error)
+	GetVulnerabilities(ctx context.Context, args shared.GetVulnerabilitiesArgs) ([]shared.Vulnerability, int, error)
 	InsertVulnerabilities(ctx context.Context, vulnerabilities []shared.Vulnerability) error
-	GetVulnerabilityMatches(ctx context.Context, args shared.GetVulnerabilityMatchesArgs) ([]shared.VulnerabilityMatch, error)
+	GetVulnerabilityMatches(ctx context.Context, args shared.GetVulnerabilityMatchesArgs) ([]shared.VulnerabilityMatch, int, error)
 	ScanMatches(ctx context.Context) error
 }
 
@@ -43,15 +42,8 @@ func New(observationCtx *observation.Context, db database.DB) Store {
 	}
 }
 
-func (s *store) GetVulnerabilities(ctx context.Context, args shared.GetVulnerabilitiesArgs) (_ []shared.Vulnerability, err error) {
-	vulnerabilities, err := scanVulnerabilities(s.db.Query(ctx, sqlf.Sprintf(getVulnerabilitiesQuery)))
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO
-	fmt.Printf("> %v\n", vulnerabilities)
-	return nil, nil
+func (s *store) GetVulnerabilities(ctx context.Context, args shared.GetVulnerabilitiesArgs) (_ []shared.Vulnerability, _ int, err error) {
+	return scanVulnerabilities(s.db.Query(ctx, sqlf.Sprintf(getVulnerabilitiesQuery, args.Limit, args.Offset)))
 }
 
 const getVulnerabilitiesQuery = `
@@ -71,33 +63,38 @@ SELECT
 	cvss_score,
 	published,
 	modified,
-	withdrawn
+	withdrawn,
+	COUNT(*) OVER() AS count
 FROM vulnerabilities
+ORDER BY source_id
+LIMIT %s
+OFFSET %s
 `
 
-var scanVulnerabilities = basestore.NewSliceScanner(func(s dbutil.Scanner) (v shared.Vulnerability, _ error) {
+var scanVulnerabilities = basestore.NewSliceWithCountScanner(func(s dbutil.Scanner) (v shared.Vulnerability, count int, _ error) {
 	if err := s.Scan(
 		&v.ID,
 		&v.SourceID,
 		&v.Summary,
 		&v.Details,
-		&v.CPEs,
-		&v.CWEs,
-		&v.Aliases,
-		&v.Related,
+		pq.Array(&v.CPEs),
+		pq.Array(&v.CWEs),
+		pq.Array(&v.Aliases),
+		pq.Array(&v.Related),
 		&v.DataSource,
-		&v.URLs,
+		pq.Array(&v.URLs),
 		&v.Severity,
 		&v.CVSSVector,
 		&v.CVSSScore,
 		&v.Published,
 		&v.Modified,
 		&v.Withdrawn,
+		&count,
 	); err != nil {
-		return shared.Vulnerability{}, err
+		return shared.Vulnerability{}, 0, err
 	}
 
-	return v, nil
+	return v, count, nil
 })
 
 // CREATE TABLE IF NOT EXISTS vulnerability_affected_packages (
@@ -190,8 +187,8 @@ func (s *store) InsertVulnerabilities(ctx context.Context, vulnerabilities []sha
 					v.CVSSVector,
 					v.CVSSScore,
 					v.Published,
-					v.Modified,
-					v.Withdrawn,
+					dbutil.NullTime{Time: v.Modified},
+					dbutil.NullTime{Time: v.Withdrawn},
 				); err != nil {
 					return err
 				}
@@ -389,9 +386,9 @@ SELECT c.id, c.path, c.symbols FROM candidates c
 ON CONFLICT DO NOTHING
 `
 
-func (s *store) GetVulnerabilityMatches(ctx context.Context, args shared.GetVulnerabilityMatchesArgs) ([]shared.VulnerabilityMatch, error) {
+func (s *store) GetVulnerabilityMatches(ctx context.Context, args shared.GetVulnerabilityMatchesArgs) ([]shared.VulnerabilityMatch, int, error) {
 	// TODO
-	return nil, errors.New("unimplemented")
+	return nil, 0, errors.New("unimplemented")
 }
 
 func (s *store) ScanMatches(ctx context.Context) (err error) {
@@ -492,18 +489,18 @@ var scanFilteredVulnerabilityMatches = basestore.NewFilteredSliceScanner(func(s 
 	return m, versionMatchesConstraints(version, versionConstraints), nil
 })
 
-func versionMatchesConstraints(version string, constraints []string) bool {
-	v, err := gv.NewVersion(version)
+func versionMatchesConstraints(versionString string, constraints []string) bool {
+	v, err := version.NewVersion(versionString)
 	if err != nil {
 		// TODO - log like an adult, you idiot.
-		fmt.Printf("CANNOT PARSE VERSION: %q\n", version)
+		fmt.Printf("CANNOT PARSE VERSION: %q\n", versionString)
 		return false
 	}
 
-	constraint, err := gv.NewConstraint(strings.Join(constraints, ","))
+	constraint, err := version.NewConstraint(strings.Join(constraints, ","))
 	if err != nil {
 		// TODO - log like an adult, you idiot.
-		fmt.Printf("CANNOT PARSE CONSTRAINT: %q\n", version)
+		fmt.Printf("CANNOT PARSE CONSTRAINT: %q\n", versionString)
 		return false
 	}
 
