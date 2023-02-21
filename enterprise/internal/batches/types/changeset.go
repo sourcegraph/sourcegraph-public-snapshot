@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"github.com/goware/urlx"
 	azuredevops2 "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
 	"strconv"
 	"strings"
@@ -613,7 +614,13 @@ func (c *Changeset) URL() (s string, err error) {
 		if err != nil {
 			return "", err
 		}
-		return fmt.Sprintf("https://dev.azure.com/%s/%s/_git/%s/pullrequest/%s", org, m.Repository.Project.Name, m.Repository.Name, strconv.Itoa(m.ID)), nil
+		u, err := urlx.Parse(m.URL)
+		if err != nil {
+			return "", err
+		}
+
+		// The URL returned by the API is for the PR API endpoint, so we need to reconstruct it.
+		return fmt.Sprintf("https://%s/%s/%s/_git/%s/pullrequest/%s", u.Host, org, m.Repository.Project.Name, m.Repository.Name, strconv.Itoa(m.ID)), nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
