@@ -447,8 +447,20 @@ func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
 	// simulate config change - site admin manually changes the pinned repo config
 	setAddrs([]string{"gitserver1", "gitserver2"}, map[string]string{"repo1": "gitserver1"})
 
-	addr = client.AddrForRepo("repo1")
-	require.Equal(t, "gitserver1", addr)
+	// config changes do not propagate immediately.
+	// Ensure that it shows up in a reasonable amount of time
+	timeout := time.After(time.Second)
+	for {
+		select {
+		case <-timeout:
+			t.Fatalf("expected addr to eventually change to %s, but got %s", "gitserver1", client.AddrForRepo("repo1"))
+		case <-time.After(time.Millisecond):
+			if client.AddrForRepo("repo1") == "gitserver1" {
+				// Success!
+				return
+			}
+		}
+	}
 }
 
 func setAddrs(addrs []string, pinned map[string]string) {
@@ -462,7 +474,6 @@ func setAddrs(addrs []string, pinned map[string]string) {
 			},
 		},
 	})
-	gitserver.ForceUpdateConns()
 }
 
 func TestClient_BatchLog(t *testing.T) {
