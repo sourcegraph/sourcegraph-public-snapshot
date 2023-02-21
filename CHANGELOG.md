@@ -21,7 +21,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
-- Experimental GraphQL query, `permissionsSyncJobs` is removed and substituted with new non-experimental `permissionSyncJobs` query (mind the singular form of permission) which provides full information about permission sync jobs stored in the database. `authz.syncJobsRecordsTTL`. [#47933](https://github.com/sourcegraph/sourcegraph/pull/47933)
+- Experimental GraphQL query, `permissionsSyncJobs` is removed and substituted with new non-experimental `permissionSyncJobs` query (mind the singular form of permission) which provides full information about permission sync jobs stored in the database. [#47933](https://github.com/sourcegraph/sourcegraph/pull/47933)
 
 ### Fixed
 
