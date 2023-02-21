@@ -115,7 +115,8 @@ func computeCheckState(c *btypes.Changeset, events ChangesetEvents) btypes.Chang
 	case *bbcs.AnnotatedPullRequest:
 		return computeBitbucketCloudBuildState(c.UpdatedAt, m, events)
 	case *azuredevops.AnnotatedPullRequest:
-		return computeAzureDevOpsBuildState(c.UpdatedAt, m, events)
+		// TODO: @varsanojidan Not implemmented yet : return computeAzureDevOpsBuildState(c.UpdatedAt, m, events)
+		return computeAzureDevOpsBuildState(m)
 	}
 
 	return btypes.ChangesetCheckStateUnknown
@@ -255,7 +256,7 @@ func parseBitbucketCloudBuildState(s bitbucketcloud.PullRequestStatusState) btyp
 	}
 }
 
-func computeAzureDevOpsBuildState(lastSynced time.Time, apr *azuredevops.AnnotatedPullRequest, events []*btypes.ChangesetEvent) btypes.ChangesetCheckState {
+func computeAzureDevOpsBuildState(apr *azuredevops.AnnotatedPullRequest) btypes.ChangesetCheckState {
 	stateMap := make(map[int]btypes.ChangesetCheckState)
 
 	// States from last sync.

@@ -303,21 +303,17 @@ func (s AzureDevOpsSource) GetFork(ctx context.Context, targetRepo *types.Repo, 
 }
 
 func (s AzureDevOpsSource) checkAndCopy(targetRepo *types.Repo, fork *azuredevops.Repository) (*types.Repo, error) {
-	tr := targetRepo.Metadata.(*azuredevops.Repository)
-
 	if !fork.IsFork {
 		return nil, errors.New("repo is not a fork")
 	}
 
 	// Now we make a copy of targetRepo, but with its sources and metadata updated to
 	// point to the fork
-	originalNamespace := tr.Namespace()
-
 	forkNamespace := fork.Namespace()
 
 	// Now we make a copy of the target repo, but with its sources and metadata updated to
 	// point to the fork
-	forkRepo, err := copyAzureDevOpsRepoAsFork(targetRepo, fork, originalNamespace, forkNamespace, fork.Name)
+	forkRepo, err := copyAzureDevOpsRepoAsFork(targetRepo, fork, forkNamespace, fork.Name)
 	if err != nil {
 		return nil, errors.Wrap(err, "updating target repo sources")
 	}
@@ -342,7 +338,8 @@ func (s AzureDevOpsSource) annotatePullRequest(ctx context.Context, repo *azured
 
 	var statuses []*azuredevops.PullRequestBuildStatus
 	for _, status := range srs {
-		statuses = append(statuses, &status)
+		localStatus := status
+		statuses = append(statuses, &localStatus)
 	}
 
 	return &azuredevops2.AnnotatedPullRequest{
@@ -414,7 +411,7 @@ func (s AzureDevOpsSource) createCommonPullRequestArgs(repo azuredevops.Reposito
 	}, nil
 }
 
-func copyAzureDevOpsRepoAsFork(repo *types.Repo, fork *azuredevops.Repository, originalNamespace, forkNamespace, forkName string) (*types.Repo, error) {
+func copyAzureDevOpsRepoAsFork(repo *types.Repo, fork *azuredevops.Repository, forkNamespace, forkName string) (*types.Repo, error) {
 	forkRepo := *repo
 
 	if repo.Sources == nil || len(repo.Sources) == 0 {

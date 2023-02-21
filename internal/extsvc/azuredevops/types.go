@@ -1,10 +1,11 @@
 package azuredevops
 
 import (
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
@@ -197,8 +198,8 @@ type PullRequestBuildStatus struct {
 	ID           int                    `json:"id"`
 	State        PullRequestStatusState `json:"state"`
 	Description  string                 `json:"description"`
-	CreationDate string                 `json:"creationDate"`
-	UpdateDate   string                 `json:"updateDate"`
+	CreationDate time.Time              `json:"creationDate"`
+	UpdateDate   time.Time              `json:"updateDate"`
 	CreatedBy    CreatorInfo            `json:"createdBy"`
 }
 
