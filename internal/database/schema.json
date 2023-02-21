@@ -450,6 +450,15 @@
       "CycleOption": "NO"
     },
     {
+      "Name": "codeintel_ranking_definitions_id_seq",
+      "TypeName": "bigint",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
       "Name": "codeintel_ranking_exports_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
@@ -7361,19 +7370,6 @@
       "Columns": [
         {
           "Name": "document_path",
-          "Index": 4,
-          "TypeName": "text",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "graph_key",
           "Index": 5,
           "TypeName": "text",
           "IsNullable": false,
@@ -7386,8 +7382,34 @@
           "Comment": ""
         },
         {
+          "Name": "graph_key",
+          "Index": 6,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "nextval('codeintel_ranking_definitions_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "repository",
-          "Index": 3,
+          "Index": 4,
           "TypeName": "text",
           "IsNullable": false,
           "Default": "",
@@ -7400,7 +7422,7 @@
         },
         {
           "Name": "symbol_name",
-          "Index": 2,
+          "Index": 3,
           "TypeName": "text",
           "IsNullable": false,
           "Default": "",
@@ -7413,7 +7435,7 @@
         },
         {
           "Name": "upload_id",
-          "Index": 1,
+          "Index": 2,
           "TypeName": "integer",
           "IsNullable": false,
           "Default": "",
@@ -7426,6 +7448,16 @@
         }
       ],
       "Indexes": [
+        {
+          "Name": "codeintel_ranking_definitions_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_ranking_definitions_pkey ON codeintel_ranking_definitions USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
         {
           "Name": "codeintel_ranking_definitions_symbol_name",
           "IsPrimaryKey": false,

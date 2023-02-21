@@ -27,9 +27,10 @@ Our Helm chart has a lot of sensible defaults baked into the values.yaml. Not on
 
 1. Prepare any required customizations
    - Most environments are likely to need changes from the defaults—use the guidance in [Configuration](#configuration).
-1. Review the changes
+   - These changes are inclusive of updates to resourcing for each service. See our [resource estimator](../resource_estimator.md) for more information.
+2. Review the changes
    - There are [three mechanisms](#reviewing-changes) that can be used to review any customizations made, this is an optional step, but may be useful the first time you deploy Sourcegraph, for peace of mind.
-1. Select your deployment method and follow the guidance:
+3. Select your deployment method and follow the guidance:
    - [Google GKE](#configure-sourcegraph-on-google-kubernetes-engine-gke)
    - [AWS EKS](#configure-sourcegraph-on-elastic-kubernetes-service-eks)
    - [Azure AKS](#configure-sourcegraph-on-azure-managed-kubernetes-service-aks)
@@ -610,6 +611,9 @@ frontend:
   ingress:
     enabled: true
     annotations:
+      alb.ingress.kubernetes.io/target-type: ip # specifies targeting services with type ClusterIP
+      # By default the AWS ALB will be internal to your VPC.
+    #  alb.ingress.kubernetes.io/scheme: internet-facing  # use this annotation if you plan to provision a public Sourcegraph URL.
       kubernetes.io/ingress.class: alb # aws load balancer controller ingressClass name
       # additional aws alb ingress controller supported annotations
       # ...

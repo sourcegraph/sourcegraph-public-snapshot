@@ -1694,12 +1694,22 @@ CREATE TABLE codeintel_path_ranks (
 );
 
 CREATE TABLE codeintel_ranking_definitions (
+    id bigint NOT NULL,
     upload_id integer NOT NULL,
     symbol_name text NOT NULL,
     repository text NOT NULL,
     document_path text NOT NULL,
     graph_key text NOT NULL
 );
+
+CREATE SEQUENCE codeintel_ranking_definitions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE codeintel_ranking_definitions_id_seq OWNED BY codeintel_ranking_definitions.id;
 
 CREATE TABLE codeintel_ranking_exports (
     upload_id integer,
@@ -4191,6 +4201,8 @@ ALTER TABLE ONLY codeintel_lockfiles ALTER COLUMN id SET DEFAULT nextval('codein
 
 ALTER TABLE ONLY codeintel_path_rank_inputs ALTER COLUMN id SET DEFAULT nextval('codeintel_path_rank_inputs_id_seq'::regclass);
 
+ALTER TABLE ONLY codeintel_ranking_definitions ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_definitions_id_seq'::regclass);
+
 ALTER TABLE ONLY codeintel_ranking_exports ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_exports_id_seq'::regclass);
 
 ALTER TABLE ONLY codeintel_ranking_path_counts_inputs ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_path_counts_inputs_id_seq'::regclass);
@@ -4426,6 +4438,9 @@ ALTER TABLE ONLY codeintel_path_rank_inputs
 
 ALTER TABLE ONLY codeintel_path_rank_inputs
     ADD CONSTRAINT codeintel_path_rank_inputs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY codeintel_ranking_definitions
+    ADD CONSTRAINT codeintel_ranking_definitions_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY codeintel_ranking_exports
     ADD CONSTRAINT codeintel_ranking_exports_pkey PRIMARY KEY (id);
