@@ -186,13 +186,13 @@ func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphq
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only site admins can trigger user permissions syncs.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	userID, err := graphqlbackend.UnmarshalUserID(args.User)
+	if err != nil {
 		return nil, err
 	}
 
-	userID, err := graphqlbackend.UnmarshalUserID(args.User)
-	if err != nil {
+	// 🚨 SECURITY: User can trigger permission sync for themselves, site admins for any user.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
 		return nil, err
 	}
 
@@ -581,15 +581,16 @@ func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID)
 }
 
 func (r *Resolver) UserPermissionsInfo(ctx context.Context, id graphql.ID) (graphqlbackend.PermissionsInfoResolver, error) {
-	// 🚨 SECURITY: Only site admins can query user permissions.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
-	}
-
 	userID, err := graphqlbackend.UnmarshalUserID(id)
 	if err != nil {
 		return nil, err
 	}
+
+	// 🚨 SECURITY: User can query own permissions, site admins all user permissions.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+		return nil, err
+	}
+
 	// Make sure the user ID is valid and not soft-deleted.
 	if _, err = r.db.Users().GetByID(ctx, userID); err != nil {
 		return nil, err
@@ -620,10 +621,6 @@ func (r *Resolver) PermissionSyncJobs(ctx context.Context, args graphqlbackend.L
 	// 🚨 SECURITY: Only site admins can query sync jobs records.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
-	}
-
-	if args.First == nil || *args.First == 0 {
-		return nil, errors.New("expected non-zero 'first'")
 	}
 
 	return NewPermissionSyncJobsResolver(r.db, args)
