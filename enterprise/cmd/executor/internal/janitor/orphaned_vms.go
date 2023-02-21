@@ -6,7 +6,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/ignite"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -14,6 +14,7 @@ import (
 )
 
 type orphanedVMJanitor struct {
+	logger  log.Logger
 	prefix  string
 	names   *NameSet
 	metrics *metrics
@@ -27,6 +28,7 @@ var (
 // NewOrphanedVMJanitor returns a background routine that periodically removes all VMs
 // on the host that are not known by the worker running within this executor instance.
 func NewOrphanedVMJanitor(
+	logger log.Logger,
 	prefix string,
 	names *NameSet,
 	interval time.Duration,
@@ -34,6 +36,7 @@ func NewOrphanedVMJanitor(
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), "executors.orphaned-vm-janitor", "deletes VMs from a previous executor instance",
 		interval, newOrphanedVMJanitor(
+			logger,
 			prefix,
 			names,
 			metrics,
@@ -42,11 +45,13 @@ func NewOrphanedVMJanitor(
 }
 
 func newOrphanedVMJanitor(
+	logger log.Logger,
 	prefix string,
 	names *NameSet,
 	metrics *metrics,
 ) *orphanedVMJanitor {
 	return &orphanedVMJanitor{
+		logger:  logger,
 		prefix:  prefix,
 		names:   names,
 		metrics: metrics,
@@ -60,7 +65,7 @@ func (j *orphanedVMJanitor) Handle(ctx context.Context) (err error) {
 	}
 
 	for _, id := range findOrphanedVMs(vmsByName, j.names.Slice()) {
-		log15.Info("Removing orphaned VM", "id", id)
+		j.logger.Info("Removing orphaned VM", log.String("id", id))
 
 		if removeErr := exec.CommandContext(ctx, "ignite", "rm", "-f", id).Run(); removeErr != nil {
 			err = errors.Append(err, removeErr)
@@ -74,7 +79,7 @@ func (j *orphanedVMJanitor) Handle(ctx context.Context) (err error) {
 
 func (j *orphanedVMJanitor) HandleError(err error) {
 	j.metrics.numErrors.Inc()
-	log15.Error("Failed to remove up orphaned vms", "error", err)
+	j.logger.Error("Failed to remove up orphaned vms", log.Error(err))
 }
 
 // findOrphanedVMs returns the set of VM identifiers present in running VMs but
