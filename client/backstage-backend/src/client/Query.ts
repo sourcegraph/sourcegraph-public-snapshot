@@ -1,52 +1,23 @@
 import { gql } from '@apollo/client'
 import type { DocumentNode } from '@apollo/client'
-import type { AuthenticatedUser } from '../../../shared/src/auth'
-import { currentAuthStateQuery } from '../../../shared/src/auth'
 
 export interface Query<T> {
-    gql(): DocumentNode
-    vars(): string
-    marshal(data: any): T
+  gql(): DocumentNode
+  vars(): string
+  marshal(data: any): T
 }
 
+export type SearchResults = Array<SearchResult>
 export interface SearchResult {
-    readonly repository: string
-    readonly filename: string
-    readonly fileContent: string
+  readonly __typename?: string
+  readonly repository: string
+  readonly filename?: string
+  readonly fileContent?: string
 }
 
-export class SearchQuery implements Query<SearchResult[]> {
-    private readonly query: string
-
-    constructor(query: string) {
-        this.query = query
-    }
-
-    marshal(data: any): SearchResult[] {
-        const results = new Array<SearchResult>()
-        if (!data.search) {
-            // TODO(@burmudar): remove - only temporary
-            console.log('undefined data.search')
-            return results
-        }
-
-        // TODO(@burmudar): remove - only temporary
-        console.log('raw', data)
-
-        for (const v of data.search.results.results) {
-            const { repository, file } = v
-            results.push({ repository: repository.name, filename: file.name, fileContent: file.content })
-        }
-
-        return results
-    }
-
-    vars(): any {
-        return { search: this.query }
-    }
-
-    gql(): DocumentNode {
-        return gql(`
+export class SearchQuery implements Query<SearchResults> {
+  private readonly query: string
+  static gql: DocumentNode = gql(`
             query ($search: String!) {
                 search(query: $search) {
                     results {
@@ -66,47 +37,91 @@ export class SearchQuery implements Query<SearchResult[]> {
                 }
             }
         `)
+
+
+  constructor(query: string) {
+    this.query = query
+  }
+
+  marshal(data: any): SearchResults {
+    const results = new Array<SearchResult>()
+    if (!data.search) {
+      return results
     }
+
+    for (const value of data.search.results.results) {
+      let filename = ""
+      let fileContent = ""
+      if ('file' in value) {
+        filename = value.file.name
+        fileContent = value.file.content
+      }
+
+      results.push({ repository: value.repository.name, filename: filename, fileContent: fileContent })
+    }
+
+    return results
+  }
+
+  vars(): any {
+    return { search: this.query }
+  }
+
+  gql(): DocumentNode {
+    return SearchQuery.gql
+  }
 }
 
-// UserQuery is purely used as a sanity check and will be removed in the future
-// TODO(@burmudar): remove
-export class UserQuery implements Query<string> {
-    vars(): any {
-        return {}
-    }
+export class SearchRepoQuery extends SearchQuery {
+  static gql: DocumentNode = gql(`
+            query ($search: String!) {
+                search(query: $search) {
+                    results {
+                        results {
+                            __typename
+                            ... on FileMatch {
+                                repository {
+                                    name
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        `)
 
-    gql(): DocumentNode {
-        return gql(`
+
+  constructor(query: string) {
+    super(query)
+  }
+
+  gql(): DocumentNode {
+    return SearchRepoQuery.gql
+  }
+}
+
+export class UserQuery implements Query<string> {
+  static gql: DocumentNode = gql(`
             query {
                 currentUser {
                     username
                 }
             }
         `)
-    }
 
-    marshal(data: any): string {
-        if ('currentUser' in data) {
-            const { currentUser } = data
-            console.log(currentUser.username)
-            return currentUser.username
-        }
-        throw new Error('username not found')
-    }
-}
+  vars(): any {
+    return {}
+  }
 
-export type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-export class AuthenticatedUserQuery implements Query<AuthenticatedUser> {
-    gql(): DocumentNode {
-        return gql(currentAuthStateQuery)
-    }
+  gql(): DocumentNode {
+    return UserQuery.gql
+  }
 
-    vars(): string {
-        return ''
+  marshal(data: any): string {
+    if ('currentUser' in data) {
+      const { currentUser } = data
+      return currentUser.username
     }
-
-    marshal(data: any): AuthenticatedUser {
-        return data.currentUser
-    }
+    throw new Error('currentUser field missing')
+  }
 }
