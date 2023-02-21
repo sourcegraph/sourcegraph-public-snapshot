@@ -122,8 +122,11 @@ func (a *atomicGitServerConns) update(cfg *conf.Unified) {
 	}
 
 	before := a.conns.Load()
+	if before == nil {
+		before = &GitServerConns{}
+	}
 
-	if before != nil && slices.Equal(before.Addresses, after.Addresses) {
+	if slices.Equal(before.Addresses, after.Addresses) {
 		// No change in addresses. Reuse the old connections.
 		// We still update newAddrs in case the pinned repos have changed.
 		after.grpcConns = before.grpcConns
