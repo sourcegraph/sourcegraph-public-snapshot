@@ -43,7 +43,7 @@ func TestMerger(t *testing.T) {
 		{mkFileMatch(repo, "all_sources", 1), 2},
 		// 2 sources
 		{mkFileMatch(repo, "2_of_3", 1), 0},
-		{mkFileMatch(repo, "2_of_3", 1), 1}, // should be depuped by merger
+		{mkFileMatch(repo, "2_of_3", 1), 1}, // should be deduped by merger
 		// 1 source
 		{mkFileMatch(repo, "1_of_3", 1), 0},
 		{mkFileMatch(repo, "1_of_3_other", 1), 1},
