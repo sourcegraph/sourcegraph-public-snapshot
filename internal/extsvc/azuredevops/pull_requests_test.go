@@ -38,7 +38,7 @@ func TestClient_AbandonPullRequest(t *testing.T) {
 
 	// When updating this test make sure you point these args to an active PR.
 	args := PullRequestCommonArgs{
-		PullRequestID: "11",
+		PullRequestID: "12",
 		Org:           "sgtestazure",
 		Project:       "sgtestazure",
 		RepoNameOrID:  "sgtestazure",

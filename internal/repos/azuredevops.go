@@ -153,6 +153,7 @@ func (s *AzureDevOpsSource) makeRepo(p azuredevops.Repository) (*types.Repo, err
 	return &types.Repo{
 		Name: api.RepoName(name),
 		URI:  name,
+		Fork: p.IsFork,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          p.ID,
 			ServiceType: extsvc.TypeAzureDevOps,
@@ -161,7 +162,7 @@ func (s *AzureDevOpsSource) makeRepo(p azuredevops.Repository) (*types.Repo, err
 		Sources: map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
-				CloneURL: fullURL.String(),
+				CloneURL: p.CloneURL,
 			},
 		},
 		Metadata: p,

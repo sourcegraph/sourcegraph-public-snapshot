@@ -2,7 +2,6 @@ package sources
 
 import (
 	"context"
-	"fmt"
 	azuredevops2 "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -114,6 +113,7 @@ func (s AzureDevOpsSource) CreateChangeset(ctx context.Context, cs *Changeset) (
 		Project:      repo.Project.Name,
 		RepoNameOrID: repo.Name,
 	}
+
 	pr, err := s.client.CreatePullRequest(ctx, args, input)
 	if err != nil {
 		return false, errors.Wrap(err, "creating pull request")
@@ -220,7 +220,7 @@ func (s AzureDevOpsSource) MergeChangeset(ctx context.Context, cs *Changeset, sq
 	}
 
 	updated, err := s.client.CompletePullRequest(ctx, args, azuredevops.PullRequestCompleteInput{
-		CommitID:      cs.HeadRef,
+		CommitID:      cs.SyncState.HeadRefOid,
 		MergeStrategy: mergeStrategy,
 	})
 	if err != nil {
@@ -365,12 +365,11 @@ func (s AzureDevOpsSource) setChangesetMetadata(ctx context.Context, repo *azure
 }
 
 func (s AzureDevOpsSource) changesetToPullRequestInput(cs *Changeset) azuredevops.CreatePullRequestInput {
-	destBranch := gitdomain.AbbreviateRef(cs.BaseRef)
 	input := azuredevops.CreatePullRequestInput{
 		Title:         cs.Title,
 		Description:   cs.Body,
-		SourceRefName: gitdomain.AbbreviateRef(cs.HeadRef),
-		TargetRefName: destBranch,
+		SourceRefName: cs.HeadRef,
+		TargetRefName: cs.BaseRef,
 	}
 
 	// If we're forking, then we need to set the source repository as well.
@@ -388,14 +387,12 @@ func (s AzureDevOpsSource) changesetToUpdatePullRequestInput(cs *Changeset) azur
 	input := azuredevops.PullRequestUpdateInput{
 		Title:       &cs.Title,
 		Description: &cs.Body,
-		// TODO: does this matter?
+		// TODO: @varsanojidan does this matter?
 		// SourceRefName: gitdomain.AbbreviateRef(cs.HeadRef),
 		TargetRefName: &destBranch,
 	}
-	fmt.Printf("CHANGESET: %+v\n", cs)
-	fmt.Printf("INPUT: %+v\n", input)
 
-	// TODO: does this matter?
+	// TODO: @varsanojidan does this matter?
 	// If we're forking, then we need to set the source repository as well.
 	//if cs.RemoteRepo != cs.TargetRepo {
 	//	input.ForkSource.Repository = *cs.RemoteRepo.Metadata.(*azuredevops.Repository)
@@ -409,7 +406,6 @@ func (s AzureDevOpsSource) createCommonPullRequestArgs(repo azuredevops.Reposito
 	if err != nil {
 		return azuredevops.PullRequestCommonArgs{}, errors.Wrap(err, "getting Azure DevOps organization from project")
 	}
-	fmt.Printf("repo: %+v\n", repo)
 	return azuredevops.PullRequestCommonArgs{
 		PullRequestID: cs.ExternalID,
 		Org:           org,

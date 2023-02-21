@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	azuredevops2 "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
 	"strconv"
 	"strings"
@@ -608,7 +609,11 @@ func (c *Changeset) URL() (s string, err error) {
 		// instead.
 		return "", errors.New("Bitbucket Cloud pull request does not have a html link")
 	case *azuredevops2.AnnotatedPullRequest:
-		return m.URL, nil
+		org, err := m.Repository.GetOrganization()
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("https://dev.azure.com/%s/%s/_git/%s/pullrequest/%s", org, m.Repository.Project.Name, m.Repository.Name, strconv.Itoa(m.ID)), nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}

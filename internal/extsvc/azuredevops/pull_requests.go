@@ -141,7 +141,7 @@ func (c *client) CreatePullRequestCommentThread(ctx context.Context, args PullRe
 func (c *client) CompletePullRequest(ctx context.Context, args PullRequestCommonArgs, input PullRequestCompleteInput) (PullRequest, error) {
 	reqURL := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/pullrequests/%s", args.Org, args.Project, args.RepoNameOrID, args.PullRequestID)}
 	completed := PullRequestStatusCompleted
-	pri := PullRequestUpdateInput{Status: &completed, LastMergeSourceCommit: &input}
+	pri := PullRequestUpdateInput{Status: &completed, LastMergeSourceCommit: &PullRequestCommit{CommitID: input.CommitID}}
 	if input.MergeStrategy != nil {
 		pri.CompletionOptions = PullRequestCompletionOptions{
 			MergeStrategy: *input.MergeStrategy,
