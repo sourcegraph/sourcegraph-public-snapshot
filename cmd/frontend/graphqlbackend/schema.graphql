@@ -9353,8 +9353,10 @@ extend type Mutation {
 
     For now, members can only be the IDs of User entities in Sourcegraph.
     Later, we will expand this to allow Persons as well.
+
+    If lenient is true, members that are not matched to a user are skipped.
     """
-    addTeamMembers(team: ID, teamName: String, members: [TeamMemberInput!]!): Team!
+    addTeamMembers(team: ID, teamName: String, members: [TeamMemberInput!]!, lenient: Boolean = false): Team!
 
     """
     This is a convenience method to forcefully overwrite the full set of members
@@ -9366,8 +9368,10 @@ extend type Mutation {
 
     For now, members can only be the IDs of User entities in Sourcegraph.
     Later, we will expand this to allow Persons as well.
+
+    If lenient is true, members that are not matched to a user are skipped.
     """
-    setTeamMembers(team: ID, teamName: String, members: [TeamMemberInput!]!): Team!
+    setTeamMembers(team: ID, teamName: String, members: [TeamMemberInput!]!, lenient: Boolean = false): Team!
 
     """
     This mutation removes team membership for the given team and set of members.
@@ -9378,8 +9382,10 @@ extend type Mutation {
 
     For now, members can only be the IDs of User entities in Sourcegraph.
     Later, we will expand this to allow Persons as well.
+
+    If lenient is true, members that are not matched to a user are skipped.
     """
-    removeTeamMembers(team: ID, teamName: String, members: [TeamMemberInput!]!): Team!
+    removeTeamMembers(team: ID, teamName: String, members: [TeamMemberInput!]!, lenient: Boolean = false): Team!
 }
 
 """
@@ -9408,8 +9414,32 @@ input TeamMemberInput {
     """
     email: String
 
+    """
+    If the user has an associated external account, use this.
+    externalAccountServiceID and externalAccountServiceType must be set and
+    either of externalAccountAccountID externalAccountLogin are required as well.
+    Service ID for the GitHub OAuth provider, for example, is https://github.com/.
+    """
     externalAccountServiceID: String
+    """
+    If the user has an associated external account, use this.
+    externalAccountServiceID and externalAccountServiceType must be set and
+    either of externalAccountAccountID externalAccountLogin are required as well.
+    Service Type for the GitHub OAuth provider, for example, is github.
+    """
     externalAccountServiceType: String
+    """
+    If the user has an associated external account, use this.
+    externalAccountServiceID and externalAccountServiceType must be set and
+    either of externalAccountAccountID externalAccountLogin are required as well.
+    Account ID is the unique identifier on the external account platform.
+    """
     externalAccountAccountID: String
+    """
+    If the user has an associated external account, use this.
+    externalAccountServiceID and externalAccountServiceType must be set and
+    either of externalAccountAccountID externalAccountLogin are required as well.
+    Account Login is usually the username on the external account platform.
+    """
     externalAccountLogin: String
 }

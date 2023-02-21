@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func userCtx(userID int32) context.Context {
@@ -1152,31 +1153,74 @@ func TestMembersSearch(t *testing.T) {
 }
 
 func TestMembersAdd(t *testing.T) {
-	fs := fakedb.New()
 	db := database.NewMockDB()
-	fs.Wire(db)
-	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
-		t.Fatalf("failed to create parent team: %s", err)
-	}
-	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
-	if err != nil {
-		t.Fatalf("cannot fetch parent team: %s", err)
-	}
-	userExistingID := fs.AddUser(types.User{Username: "existing"})
-	userExistingAndAddedID := fs.AddUser(types.User{Username: "existingAndAdded"})
-	userAddedID := fs.AddUser(types.User{Username: "added"})
-	fs.AddTeamMember(
-		&types.TeamMember{TeamID: team.ID, UserID: userExistingID},
-		&types.TeamMember{TeamID: team.ID, UserID: userExistingAndAddedID},
-	)
+	userStore := database.NewMockUserStore()
+	db.UsersFunc.SetDefaultReturn(userStore)
+	externalAccsStore := database.NewMockUserExternalAccountsStore()
+	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccsStore)
+	userExistingID := int32(1)
+	userExistingAndAddedID := int32(2)
+	userAddedID := int32(3)
+	userStore.GetByIDFunc.SetDefaultHook(func(ctx context.Context, i int32) (*types.User, error) {
+		if i == userExistingID {
+			return &types.User{ID: userExistingID, Username: "existing", SiteAdmin: true}, nil
+		}
+		if i == userExistingAndAddedID {
+			return &types.User{ID: userExistingAndAddedID, Username: "existingAndAdded"}, nil
+		}
+		if i == userAddedID {
+			return &types.User{ID: userAddedID, Username: "added"}, nil
+		}
+		return nil, errors.New("not found")
+	})
+	userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+	teamsStore := database.NewMockTeamStore()
+	team := &types.Team{Name: "team"}
+	db.TeamsFunc.SetDefaultReturn(teamsStore)
+	teamsStore.GetTeamByNameFunc.SetDefaultReturn(team, nil)
+
+	ctx := actor.WithActor(context.Background(), actor.FromUser(userExistingID))
+
+	userStore.GetByUsernameFunc.SetDefaultHook(func(ctx context.Context, s string) (*types.User, error) {
+		if s == "existing" {
+			return &types.User{ID: userExistingID, Username: "existing", SiteAdmin: true}, nil
+		}
+		if s == "existingAndAdded" {
+			return &types.User{ID: userExistingAndAddedID, Username: "existingAndAdded"}, nil
+		}
+		if s == "added" {
+			return &types.User{ID: userAddedID, Username: "added"}, nil
+		}
+		return nil, errors.New("not found")
+	})
+	userStore.ListFunc.SetDefaultHook(func(ctx context.Context, ulo *database.UsersListOptions) ([]*types.User, error) {
+		ret := []*types.User{}
+		for _, id := range ulo.UserIDs {
+			if id == userExistingID {
+				ret = append(ret, &types.User{ID: userExistingID, Username: "existing", SiteAdmin: true})
+			}
+			if id == userExistingAndAddedID {
+				ret = append(ret, &types.User{ID: userExistingAndAddedID, Username: "existingAndAdded"})
+			}
+			if id == userAddedID {
+				ret = append(ret, &types.User{ID: userAddedID, Username: "added"})
+			}
+		}
+		return ret, nil
+	})
+
+	teamsStore.ListTeamMembersFunc.SetDefaultReturn([]*types.TeamMember{
+		{TeamID: team.ID, UserID: userExistingID},
+		{TeamID: team.ID, UserID: userExistingAndAddedID},
+	}, nil, nil)
+
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
 		Context: ctx,
 		Query: `mutation AddTeamMembers($existingAndAddedId: ID!, $addedId: ID!) {
 			addTeamMembers(teamName: "team", members: [
-				$existingAndAddedId,
-				$addedId
+				{ id: $existingAndAddedId },
+				{ id: $addedId }
 			]) {
 				members {
 					nodes {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strings"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -474,6 +475,7 @@ type TeamMembersArgs struct {
 	Team     *graphql.ID
 	TeamName *string
 	Members  []TeamMemberInput
+	Lenient  bool
 }
 
 type TeamMemberInput struct {
@@ -484,6 +486,37 @@ type TeamMemberInput struct {
 	ExternalAccountServiceType *string
 	ExternalAccountAccountID   *string
 	ExternalAccountLogin       *string
+}
+
+func (t TeamMemberInput) String() string {
+	conds := []string{}
+
+	if t.ID != nil {
+		conds = append(conds, fmt.Sprintf("ID=%s", string(*t.ID)))
+	}
+	if t.Username != nil {
+		conds = append(conds, fmt.Sprintf("Username=%s", *t.Username))
+	}
+	if t.Email != nil {
+		conds = append(conds, fmt.Sprintf("Email=%s", *t.Email))
+	}
+	if t.ExternalAccountServiceID != nil {
+		maybeString := func(s *string) string {
+			if s == nil {
+				return ""
+			}
+			return *s
+		}
+		conds = append(conds, fmt.Sprintf(
+			"ExternalAccount(ServiceID=%s, ServiceType=%s, AccountID=%s, Login=%s)",
+			maybeString(t.ExternalAccountServiceID),
+			maybeString(t.ExternalAccountServiceType),
+			maybeString(t.ExternalAccountAccountID),
+			maybeString(t.ExternalAccountLogin),
+		))
+	}
+
+	return fmt.Sprintf("team member (%s)", strings.Join(conds, ","))
 }
 
 func (r *schemaResolver) AddTeamMembers(ctx context.Context, args *TeamMembersArgs) (*TeamResolver, error) {
@@ -519,10 +552,18 @@ func (r *schemaResolver) AddTeamMembers(ctx context.Context, args *TeamMembersAr
 		return nil, errors.New("must specify team name or team id")
 	}
 
-	users, _, err := usersForTeamMembers(ctx, r.db, args.Members)
+	users, notFound, err := usersForTeamMembers(ctx, r.db, args.Members)
 	if err != nil {
 		return nil, err
 	}
+	if len(notFound) > 0 && !args.Lenient {
+		var err error
+		for _, member := range notFound {
+			err = errors.Append(err, errors.Newf("member not found: %s", member.String()))
+		}
+		return nil, err
+	}
+
 	ms := make([]*types.TeamMember, 0, len(users))
 	for _, u := range users {
 		ms = append(ms, &types.TeamMember{
@@ -590,19 +631,21 @@ func (r *schemaResolver) Team(ctx context.Context, args *TeamArgs) (*TeamResolve
 func usersForTeamMembers(ctx context.Context, db database.DB, members []TeamMemberInput) (users []*types.User, noMatch []TeamMemberInput, err error) {
 	// First, look at IDs.
 	ids := []int32{}
-	members = filterMembers(members, func(m TeamMemberInput) (drop bool) {
+	members, err = filterMembers(members, func(m TeamMemberInput) (drop bool, err error) {
 		// If ID is specified for the member, we try to find the user by ID.
 		if m.ID == nil {
-			return false
+			return false, nil
 		}
 		id, err := UnmarshalUserID(*m.ID)
 		if err != nil {
-			// Invalid ID, continue with next best option.
-			return false
+			return false, err
 		}
 		ids = append(ids, id)
-		return true
+		return true, nil
 	})
+	if err != nil {
+		return nil, nil, err
+	}
 	if len(ids) > 0 {
 		users, err = db.Users().List(ctx, &database.UsersListOptions{UserIDs: ids})
 		if err != nil {
@@ -612,13 +655,16 @@ func usersForTeamMembers(ctx context.Context, db database.DB, members []TeamMemb
 
 	// Now, look at all that have username set.
 	usernames := []string{}
-	members = filterMembers(members, func(m TeamMemberInput) (drop bool) {
+	members, err = filterMembers(members, func(m TeamMemberInput) (drop bool, err error) {
 		if m.Username == nil {
-			return false
+			return false, nil
 		}
 		usernames = append(usernames, *m.Username)
-		return true
+		return true, nil
 	})
+	if err != nil {
+		return nil, nil, err
+	}
 	if len(usernames) > 0 {
 		us, err := db.Users().List(ctx, &database.UsersListOptions{Usernames: usernames})
 		if err != nil {
@@ -628,22 +674,25 @@ func usersForTeamMembers(ctx context.Context, db database.DB, members []TeamMemb
 	}
 
 	// Next up: Email.
-	members = filterMembers(members, func(m TeamMemberInput) (drop bool) {
+	members, err = filterMembers(members, func(m TeamMemberInput) (drop bool, err error) {
 		if m.Email == nil {
-			return false
+			return false, nil
 		}
 		user, err := db.Users().GetByVerifiedEmail(ctx, *m.Email)
 		if err != nil {
-			return false
+			return false, err
 		}
 		users = append(users, user)
-		return true
+		return true, nil
 	})
+	if err != nil {
+		return nil, nil, err
+	}
 
 	// Next up: ExternalAccount.
-	members = filterMembers(members, func(m TeamMemberInput) (drop bool) {
+	members, err = filterMembers(members, func(m TeamMemberInput) (drop bool, err error) {
 		if m.ExternalAccountServiceID == nil || m.ExternalAccountServiceType == nil {
-			return false
+			return false, nil
 		}
 
 		eas, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
@@ -651,17 +700,17 @@ func usersForTeamMembers(ctx context.Context, db database.DB, members []TeamMemb
 			ServiceID:   *m.ExternalAccountServiceID,
 		})
 		if err != nil {
-			return false
+			return false, err
 		}
 		for _, ea := range eas {
 			if m.ExternalAccountAccountID != nil {
 				if ea.AccountID == *m.ExternalAccountAccountID {
 					u, err := db.Users().GetByID(ctx, ea.UserID)
 					if err != nil {
-						return false
+						return false, err
 					}
 					users = append(users, u)
-					return true
+					return true, nil
 				}
 				continue
 			}
@@ -672,26 +721,32 @@ func usersForTeamMembers(ctx context.Context, db database.DB, members []TeamMemb
 				if *ea.PublicAccountData.Login == *m.ExternalAccountAccountID {
 					u, err := db.Users().GetByID(ctx, ea.UserID)
 					if err != nil {
-						return false
+						return false, err
 					}
 					users = append(users, u)
-					return true
+					return true, nil
 				}
 				continue
 			}
 		}
-		return false
+		return false, nil
 	})
 
-	return users, members, nil
+	return users, members, err
 }
 
-func filterMembers(members []TeamMemberInput, pred func(member TeamMemberInput) (drop bool)) []TeamMemberInput {
+// filterMembers calls pred on each member, and returns a new slice of members
+// for which the predicate was falsey.
+func filterMembers(members []TeamMemberInput, pred func(member TeamMemberInput) (drop bool, err error)) ([]TeamMemberInput, error) {
 	remaining := []TeamMemberInput{}
 	for _, member := range members {
-		if !pred(member) {
+		ok, err := pred(member)
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
 			remaining = append(remaining, member)
 		}
 	}
-	return remaining
+	return remaining, nil
 }
