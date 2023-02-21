@@ -2,45 +2,58 @@ package graphqlbackend
 
 import (
 	"context"
-	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
-// PermissionSyncJobsResolver is a main interface for all GraphQL operations with
-// permission sync jobs.
-type PermissionSyncJobsResolver interface {
-	PermissionSyncJobs(ctx context.Context, args ListPermissionSyncJobsArgs) (*graphqlutil.ConnectionResolver[PermissionSyncJobResolver], error)
-}
-
+// PermissionSyncJobResolver is used to resolve permission sync jobs.
+//
+// TODO(sashaostrikov) add PermissionSyncJobProvider when it is persisted in the
+// db.
 type PermissionSyncJobResolver interface {
 	ID() graphql.ID
 	State() string
 	FailureMessage() *string
-	Reason() database.PermissionSyncJobReason
+	Reason() PermissionSyncJobReasonResolver
 	CancellationReason() *string
-	TriggeredByUserID() int32
-	QueuedAt() time.Time
-	StartedAt() time.Time
-	FinishedAt() time.Time
-	ProcessAfter() time.Time
-	NumResets() int
-	NumFailures() int
-	LastHeartbeatAt() time.Time
-	ExecutionLogs() []executor.ExecutionLogEntry
+	TriggeredByUser(ctx context.Context) (*UserResolver, error)
+	QueuedAt() gqlutil.DateTime
+	StartedAt() *gqlutil.DateTime
+	FinishedAt() *gqlutil.DateTime
+	ProcessAfter() *gqlutil.DateTime
+	RanForMs() *int32
+	NumResets() *int32
+	NumFailures() *int32
+	LastHeartbeatAt() *gqlutil.DateTime
 	WorkerHostname() string
 	Cancel() bool
-	RepositoryID() graphql.ID
-	UserID() graphql.ID
-	Priority() database.PermissionSyncJobPriority
+	Subject() PermissionSyncJobSubject
+	Priority() string
 	NoPerms() bool
 	InvalidateCaches() bool
-	PermissionsAdded() int
-	PermissionsRemoved() int
-	PermissionsFound() int
+	PermissionsAdded() int32
+	PermissionsRemoved() int32
+	PermissionsFound() int32
+	CodeHostStates() []CodeHostStateResolver
+}
+
+type PermissionSyncJobReasonResolver interface {
+	Group() string
+	Message() string
+}
+
+type CodeHostStateResolver interface {
+	ProviderID() string
+	ProviderType() string
+	Status() string
+	Message() string
+}
+
+type PermissionSyncJobSubject interface {
+	ToRepository() (*RepositoryResolver, bool)
+	ToUser() (*UserResolver, bool)
 }
 
 type ListPermissionSyncJobsArgs struct {

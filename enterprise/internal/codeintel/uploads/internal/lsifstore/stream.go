@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -27,7 +28,7 @@ func (s *store) ScanDocuments(ctx context.Context, id int, f func(path string, d
 			return err
 		}
 
-		scipPayload, err := decompressor.decompress(bytes.NewReader(compressedSCIPPayload))
+		scipPayload, err := shared.Decompressor.Decompress(bytes.NewReader(compressedSCIPPayload))
 		if err != nil {
 			return err
 		}

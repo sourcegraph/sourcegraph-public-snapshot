@@ -12,11 +12,20 @@ type DateTime struct{ time.Time }
 
 // DateTimeOrNil is a helper function that returns nil for time == nil and otherwise wraps time in
 // DateTime.
-func DateTimeOrNil(time *time.Time) *DateTime {
-	if time == nil {
+func DateTimeOrNil(timePtr *time.Time) *DateTime {
+	if timePtr == nil {
 		return nil
 	}
-	return &DateTime{Time: *time}
+	return &DateTime{Time: *timePtr}
+}
+
+// FromTime is a helper function that returns nil for a zero-valued time and
+// otherwise wraps time in DateTime.
+func FromTime(inputTime time.Time) *DateTime {
+	if inputTime.IsZero() {
+		return nil
+	}
+	return &DateTime{Time: inputTime}
 }
 
 func (DateTime) ImplementsGraphQLType(name string) bool {

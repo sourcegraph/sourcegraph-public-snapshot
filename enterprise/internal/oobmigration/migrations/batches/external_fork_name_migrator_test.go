@@ -2,7 +2,6 @@ package batches
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/keegancsmith/sqlf"
@@ -217,8 +216,6 @@ func TestExternalForkNameMigrator(t *testing.T) {
 	for _, tc := range testData {
 		// Check that we can find the empty spec with its new ID.
 		cs, err := s.GetChangeset(ctx, bstore.GetChangesetOpts{ExternalID: tc.extID, ExternalServiceType: tc.extSvcType})
-
-		fmt.Printf("changeset: %+v\n\n", cs)
 
 		if err != nil {
 			t.Fatalf("could not find changeset with external ID %s after migration", tc.extID)

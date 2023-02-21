@@ -138,20 +138,30 @@ extend type Query {
     authzProviderTypes: [String!]!
 
     """
-    EXPERIMENTAL: Returns a list of recent permissions sync jobs for a given set of parameters.
-
-    This endpoint currently only reports recently completed sync jobs, with an expiry configurable by 'authz.syncJobsRecordsTTL'.
+    Returns a list of recent permissions sync jobs for a given set of parameters.
     """
-    permissionsSyncJobs(
-        """
-        Only returns jobs with this status.
-        """
-        status: PermissionsSyncJobStatus
+    permissionSyncJobs(
         """
         Number of jobs returned. Maximum number of returned jobs is 500. Up to 100 jobs are returned by default.
         """
-        first: Int = 100
-    ): PermissionsSyncJobsConnection!
+        first: Int
+        """
+        The number of nodes to return starting from the end (latest).
+        Note: Use either last or first (see above) in the query. Setting both will
+        return an error.
+        """
+        last: Int
+        """
+        Opaque pagination cursor to be used when paginating forwards that may be also used
+        in conjunction with "first" to return the first N nodes.
+        """
+        after: String
+        """
+        Opaque pagination cursor to be used when paginating backwards that may be
+        also used in conjunction with "last" to return the last N nodes.
+        """
+        before: String
+    ): PermissionSyncJobsConnection!
 
     """
     Returns a list of Bitbucket Project permissions sync jobs for a given set of parameters.
@@ -315,11 +325,11 @@ input FetchPermissionsOptions {
 """
 Permission sync jobs.
 """
-type PermissionsSyncJobsConnection {
+type PermissionSyncJobsConnection implements Connection {
     """
     Permission sync jobs.
     """
-    nodes: [PermissionsSyncJob!]!
+    nodes: [PermissionSyncJob!]!
     """
     The total number of jobs in the connection.
     """
@@ -327,50 +337,182 @@ type PermissionsSyncJobsConnection {
     """
     Pagination information.
     """
-    pageInfo: PageInfo!
+    pageInfo: ConnectionPageInfo!
 }
 
 """
-Status types of permissions sync jobs.
+State types of permission sync jobs.
 """
-enum PermissionsSyncJobStatus {
-    ERROR
-    SUCCESS
+enum PermissionSyncJobState {
+    QUEUED
+    PROCESSING
+    FAILED
+    ERRORED
+    COMPLETED
+}
+
+"""
+Compound type for a permission sync job trigger reason.
+Consists of a reason group (PermissionSyncJobReasonGroup) and a message, providing details
+about why/how the sync was triggered.
+"""
+type PermissionSyncJobReason {
+    """
+    PermissionSyncJobReasonGroup combines multiple permission sync job trigger reasons into groups with similar grounds.
+    """
+    group: PermissionSyncJobReasonGroup!
+    """
+    Message with details about why/how the sync was triggered.
+    """
+    message: String!
+}
+
+"""
+State types of permission sync jobs.
+"""
+enum PermissionSyncJobReasonGroup {
+    MANUAL
+    WEBHOOK
+    SCHEDULE
+    SOURCEGRAPH
+}
+
+"""
+Union type for a subject of a permission sync job (repository or user).
+"""
+union PermissionSyncJobSubject = User | Repository
+
+"""
+Permission sync job priority.
+"""
+enum PermissionSyncJobPriority {
+    LOW
+    MEDIUM
+    HIGH
+}
+
+"""
+Describes the state of a provider (code host) during a permission sync job.
+"""
+type CodeHostState {
+    """
+    ID of a permissions provider (code host).
+    """
+    providerID: String!
+    """
+    Permissions provider (code host) type.
+    """
+    providerType: String!
+    """
+    Status of permission sync of a given provider.
+    """
+    status: String!
+    """
+    Status message.
+    """
+    message: String!
 }
 
 """
 State of a permission sync job.
 """
-type PermissionsSyncJob implements Node {
+type PermissionSyncJob implements Node {
     """
     Unique node ID.
     """
     id: ID!
     """
-    Type of the sync job.
+    State of a permission sync job.
     """
-    type: String!
+    state: PermissionSyncJobState!
     """
-    ID of the entity worked on in this sync job.
+    Failure message for failed sync job.
     """
-    jobID: Int!
+    failureMessage: String
     """
-    Completion time of the sync job.
+    Reason for triggering a permission sync job.
     """
-    completedAt: DateTime
+    reason: PermissionSyncJobReason!
     """
-    Status of the sync job.
+    Reason for cancellation of a given permission sync job.
     """
-    status: PermissionsSyncJobStatus!
+    cancellationReason: String
     """
-    Message describing the status of the sync job - for example, the contents of any
-    errors.
+    User who triggered this permission sync job.
     """
-    message: String!
+    triggeredByUser: User
     """
-    Per-provider states.
+    Time when permission sync job was queued.
     """
-    providers: [PermissionsProviderState!]!
+    queuedAt: DateTime!
+    """
+    Time when permission sync job processing was started.
+    """
+    startedAt: DateTime
+    """
+    Time when permission sync job processing finished.
+    """
+    finishedAt: DateTime
+    """
+    Time after which permission sync job processing should be started.
+    """
+    processAfter: DateTime
+    """
+    How long did it take for permission sync job to complete.
+    """
+    ranForMs: Int
+    """
+    Number of permission sync job processing resets.
+    """
+    numResets: Int
+    """
+    Number of permission sync job processing failures.
+    """
+    numFailures: Int
+    """
+    Time of last heartbeat of a permission sync job processing.
+    """
+    lastHeartbeatAt: DateTime
+    """
+    Hostname of a worker on which permission sync job is processing.
+    """
+    workerHostname: String!
+    """
+    Flag showing that given permission sync job should be canceled instead of being processed.
+    """
+    cancel: Boolean!
+    """
+    Subject of a permission sync job (repository or user).
+    """
+    subject: PermissionSyncJobSubject!
+    """
+    Priority of a permission sync job.
+    """
+    priority: PermissionSyncJobPriority!
+    """
+    Flag showing that there are no permissions for a given repository/user.
+    """
+    noPerms: Boolean!
+    """
+    Flag showing that caches should be invalidated during permission sync job processing.
+    """
+    invalidateCaches: Boolean!
+    """
+    Number of added permissions during permission sync job processing.
+    """
+    permissionsAdded: Int!
+    """
+    Number of removed permissions during permission sync job processing.
+    """
+    permissionsRemoved: Int!
+    """
+    Number of found permissions during permission sync job processing.
+    """
+    permissionsFound: Int!
+    """
+    State of providers (code hosts) during permission sync job.
+    """
+    codeHostStates: [CodeHostState!]!
 }
 
 """
