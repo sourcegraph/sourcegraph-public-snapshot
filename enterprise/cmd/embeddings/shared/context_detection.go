@@ -2,13 +2,10 @@ package shared
 
 import (
 	"context"
-	"encoding/json"
-	"io"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 )
 
 type getContextDetectionEmbeddingIndexFn func(ctx context.Context) (*embeddings.ContextDetectionEmbeddingIndex, error)
@@ -76,23 +73,4 @@ func isQuerySimilarToNoContextMessages(
 	// We have to be really sure that the query is similar to no context messages, so we include the `MIN_NO_CONTEXT_SIMILARITY_DIFF` threshold.
 	isSimilarToNoContextMessages := (messagesWithoutContextSimilarity - messagesWithContextSimilarity) >= MIN_NO_CONTEXT_SIMILARITY_DIFF
 	return isSimilarToNoContextMessages, nil
-}
-
-func downloadContextDetectionEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store) (*embeddings.ContextDetectionEmbeddingIndex, error) {
-	indexFile, err := uploadStore.Get(ctx, embeddings.CONTEXT_DETECTION_INDEX_NAME)
-	if err != nil {
-		return nil, err
-	}
-
-	indexFileBytes, err := io.ReadAll(indexFile)
-	if err != nil {
-		return nil, err
-	}
-
-	var embeddingIndex embeddings.ContextDetectionEmbeddingIndex
-	err = json.Unmarshal(indexFileBytes, &embeddingIndex)
-	if err != nil {
-		return nil, err
-	}
-	return &embeddingIndex, nil
 }

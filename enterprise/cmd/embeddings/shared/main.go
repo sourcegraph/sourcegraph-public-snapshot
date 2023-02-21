@@ -8,15 +8,18 @@ import (
 	"net/http"
 	"time"
 
-	lru "github.com/hashicorp/golang-lru"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	srp "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -34,12 +37,10 @@ import (
 
 const addr = ":9991"
 
-const REPO_EMBEDDING_INDEX_CACHE_MAX_ENTRIES = 5
-const FILE_CACHE_MAX_ENTRIES = 128
-const QUERY_EMBEDDINGS_CACHE_MAX_ENTRIES = 128
-
 func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config *Config) error {
 	logger := observationCtx.Logger
+
+	// TODO: Check if embeddings are enabled.
 
 	// Initialize tracing/metrics
 	observationCtx = observation.NewContext(logger, observation.Honeycomb(&honey.Dataset{
@@ -51,6 +52,11 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	sqlDB := mustInitializeFrontendDB(observationCtx)
 	db := database.NewDB(logger, sqlDB)
 
+	go setAuthzProviders(ctx, db)
+
+	repoStore := db.Repos()
+	repoEmbeddingJobsStore := repo.NewRepoEmbeddingJobsStore(db)
+
 	// Run setup
 	gitserverClient := gitserver.NewClient()
 	uploadStore, err := embeddings.NewEmbeddingsUploadStore(ctx, observationCtx, config.EmbeddingsUploadStoreConfig)
@@ -58,51 +64,30 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return err
 	}
 
-	repoEmbeddingIndexCache, err := lru.New(REPO_EMBEDDING_INDEX_CACHE_MAX_ENTRIES)
-	if err != nil {
-		return errors.Wrap(err, "creating repo embedding index cache")
-	}
-
-	fileCache, err := lru.New(FILE_CACHE_MAX_ENTRIES)
-	if err != nil {
-		return errors.Wrap(err, "creating file cache")
-	}
-
-	queryEmbeddingsCache, err := lru.New(QUERY_EMBEDDINGS_CACHE_MAX_ENTRIES)
-	if err != nil {
-		return errors.Wrap(err, "creating query embeddings cache")
-	}
-
-	var contextDetectionEmbeddingIndex *embeddings.ContextDetectionEmbeddingIndex = nil
-
 	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(edb.NewEnterpriseDB(db).SubRepoPerms())
 	if err != nil {
 		return errors.Wrap(err, "creating sub-repo client")
 	}
 
-	readFile := func(ctx context.Context, repoName api.RepoName, revision api.CommitID, fileName string) ([]byte, error) {
-		return readCachedFile(ctx, fileCache, gitserverClient, repoName, revision, fileName)
+	readFile, err := readCachedFileFn(gitserverClient)
+	if err != nil {
+		return err
 	}
 
-	getRepoEmbeddingIndex := func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
-		return getCachedRepoEmbeddingIndex(ctx, repoEmbeddingIndexCache, repoEmbeddingIndexName, uploadStore)
+	getRepoEmbeddingIndex, err := getCachedRepoEmbeddingIndexFn(repoStore, repoEmbeddingJobsStore, func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
+		return downloadRepoEmbeddingIndex(ctx, repoEmbeddingIndexName, uploadStore)
+	})
+	if err != nil {
+		return err
 	}
 
-	getQueryEmbedding := func(query string) ([]float32, error) {
-		config := conf.Get().Embeddings
-		return getCachedQueryEmbedding(queryEmbeddingsCache, config, query)
+	client := embed.NewEmbeddingsClient(conf.Get().Embeddings)
+	getQueryEmbedding, err := getCachedQueryEmbeddingFn(client)
+	if err != nil {
+		return err
 	}
 
-	getContextDetectionEmbeddingIndex := func(ctx context.Context) (*embeddings.ContextDetectionEmbeddingIndex, error) {
-		if contextDetectionEmbeddingIndex != nil {
-			return contextDetectionEmbeddingIndex, nil
-		}
-		contextDetectionEmbeddingIndex, err = downloadContextDetectionEmbeddingIndex(ctx, uploadStore)
-		if err != nil {
-			return nil, err
-		}
-		return contextDetectionEmbeddingIndex, nil
-	}
+	getContextDetectionEmbeddingIndex := getCachedContextDetectionEmbeddingIndexFn(uploadStore)
 
 	// Create HTTP server
 	handler := NewHandler(ctx, readFile, getRepoEmbeddingIndex, getQueryEmbedding, getContextDetectionEmbeddingIndex)
@@ -193,6 +178,20 @@ func mustInitializeFrontendDB(observationCtx *observation.Context) *sql.DB {
 	}
 
 	return db
+}
+
+// SetAuthzProviders periodically refreshes the global authz providers. This changes the repositories that are visible for reads based on the
+// current actor stored in an operation's context, which is likely an internal actor for many of
+// the jobs configured in this service. This also enables repository update operations to fetch
+// permissions from code hosts.
+func setAuthzProviders(ctx context.Context, db database.DB) {
+	// authz also relies on UserMappings being setup.
+	globals.WatchPermissionsUserMapping()
+
+	for range time.NewTicker(eiauthz.RefreshInterval()).C {
+		allowAccessByDefault, authzProviders, _, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)
+		authz.SetProviders(allowAccessByDefault, authzProviders)
+	}
 }
 
 func handlePanic(logger log.Logger, next http.Handler) http.Handler {

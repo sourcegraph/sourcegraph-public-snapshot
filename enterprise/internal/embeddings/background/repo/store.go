@@ -72,16 +72,40 @@ func NewRepoEmbeddingJobWorkerStore(observationCtx *observation.Context, dbHandl
 	})
 }
 
-var _ basestore.ShareableStore = &RepoEmbeddingJobsStore{}
+type RepoEmbeddingJobsStore interface {
+	basestore.ShareableStore
 
-type RepoEmbeddingJobsStore struct {
+	CreateRepoEmbeddingJob(ctx context.Context, repoID api.RepoID, revision api.CommitID) (int, error)
+	GetLastCompletedRepoEmbeddingJob(ctx context.Context, repoID api.RepoID) (*RepoEmbeddingJob, error)
+}
+
+var _ basestore.ShareableStore = &repoEmbeddingJobsStore{}
+
+type repoEmbeddingJobsStore struct {
 	*basestore.Store
 }
 
-var createRepoEmbeddingJobFmtStr = `INSERT INTO repo_embedding_jobs (repo_id, revision) VALUES (%s, %s) RETURNING id`
+func NewRepoEmbeddingJobsStore(other basestore.ShareableStore) RepoEmbeddingJobsStore {
+	return &repoEmbeddingJobsStore{Store: basestore.NewWithHandle(other.Handle())}
+}
 
-func (s *RepoEmbeddingJobsStore) CreateRepoEmbeddingJob(ctx context.Context, repoID api.RepoID, revision api.CommitID) (int, error) {
+const createRepoEmbeddingJobFmtStr = `INSERT INTO repo_embedding_jobs (repo_id, revision) VALUES (%s, %s) RETURNING id`
+
+func (s *repoEmbeddingJobsStore) CreateRepoEmbeddingJob(ctx context.Context, repoID api.RepoID, revision api.CommitID) (int, error) {
 	q := sqlf.Sprintf(createRepoEmbeddingJobFmtStr, repoID, revision)
 	id, _, err := basestore.ScanFirstInt(s.Query(ctx, q))
 	return id, err
+}
+
+const getLastFinishedRepoEmbeddingJob = `
+SELECT %s
+FROM repo_embedding_jobs
+WHERE state = 'completed' AND repo_id = %d
+ORDER BY finished_at DESC
+LIMIT 1
+`
+
+func (s *repoEmbeddingJobsStore) GetLastCompletedRepoEmbeddingJob(ctx context.Context, repoID api.RepoID) (*RepoEmbeddingJob, error) {
+	q := sqlf.Sprintf(getLastFinishedRepoEmbeddingJob, sqlf.Join(repoEmbeddingJobsColumns, ", "), repoID)
+	return scanRepoEmbeddingJob(s.QueryRow(ctx, q))
 }

@@ -4,21 +4,31 @@ import (
 	lru "github.com/hashicorp/golang-lru"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func getCachedQueryEmbedding(cache *lru.Cache, config *schema.Embeddings, query string) ([]float32, error) {
-	var err error
-	var queryEmbedding []float32
+const QUERY_EMBEDDING_RETRIES = 3
+const QUERY_EMBEDDINGS_CACHE_MAX_ENTRIES = 128
 
-	if cachedQueryEmbedding, ok := cache.Get(query); ok {
-		queryEmbedding = cachedQueryEmbedding.([]float32)
-	} else {
-		queryEmbedding, err = embed.GetEmbeddingsWithRetries([]string{query}, config, QUERY_EMBEDDING_RETRIES)
-		if err != nil {
-			return nil, err
-		}
-		cache.Add(query, queryEmbedding)
+func getCachedQueryEmbeddingFn(client embed.EmbeddingsClient) (getQueryEmbeddingFn, error) {
+	cache, err := lru.New(QUERY_EMBEDDINGS_CACHE_MAX_ENTRIES)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating query embeddings cache")
 	}
-	return queryEmbedding, err
+
+	return func(query string) ([]float32, error) {
+		var err error
+		var queryEmbedding []float32
+
+		if cachedQueryEmbedding, ok := cache.Get(query); ok {
+			queryEmbedding = cachedQueryEmbedding.([]float32)
+		} else {
+			queryEmbedding, err = client.GetEmbeddingsWithRetries([]string{query}, QUERY_EMBEDDING_RETRIES)
+			if err != nil {
+				return nil, err
+			}
+			cache.Add(query, queryEmbedding)
+		}
+		return queryEmbedding, err
+	}, nil
 }

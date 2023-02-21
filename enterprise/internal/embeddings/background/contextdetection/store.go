@@ -69,15 +69,25 @@ func NewContextDetectionEmbeddingJobWorkerStore(observationCtx *observation.Cont
 	})
 }
 
-var _ basestore.ShareableStore = &ContextDetectionEmbeddingJobsStore{}
+type ContextDetectionEmbeddingJobsStore interface {
+	basestore.ShareableStore
 
-type ContextDetectionEmbeddingJobsStore struct {
+	CreateContextDetectionEmbeddingJob(ctx context.Context) (int, error)
+}
+
+type contextDetectionEmbeddingJobsStore struct {
 	*basestore.Store
 }
 
+func NewContextDetectionEmbeddingJobsStore(other basestore.ShareableStore) ContextDetectionEmbeddingJobsStore {
+	return &contextDetectionEmbeddingJobsStore{Store: basestore.NewWithHandle(other.Handle())}
+}
+
+var _ basestore.ShareableStore = &contextDetectionEmbeddingJobsStore{}
+
 var createContextDetectionEmbeddingJobFmtStr = `INSERT INTO context_detection_embedding_jobs DEFAULT VALUES RETURNING id`
 
-func (s *ContextDetectionEmbeddingJobsStore) CreateContextDetectionEmbeddingJob(ctx context.Context) (int, error) {
+func (s *contextDetectionEmbeddingJobsStore) CreateContextDetectionEmbeddingJob(ctx context.Context) (int, error) {
 	q := sqlf.Sprintf(createContextDetectionEmbeddingJobFmtStr)
 	id, _, err := basestore.ScanFirstInt(s.Query(ctx, q))
 	return id, err

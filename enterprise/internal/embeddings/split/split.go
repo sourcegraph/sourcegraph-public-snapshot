@@ -44,6 +44,11 @@ type EmbeddableChunk struct {
 	Content   string
 }
 
+// SplitIntoEmbeddableChunks splits the given text into embeddable chunks.
+//
+// The text is split on newline characters into lines. The lines are then grouped into chunks based on the split options.
+// When the token sum of lines in a chunk exceeds the chunk token threshold or an early split token threshold is met
+// and the current line is splittable (empty line, or starts with a comment or declaration), a chunk is ended and added to the results.
 func SplitIntoEmbeddableChunks(text string, fileName string, splitOptions SplitOptions) []EmbeddableChunk {
 	chunks := []EmbeddableChunk{}
 	startLine, tokensSum := 0, 0
@@ -61,7 +66,7 @@ func SplitIntoEmbeddableChunks(text string, fileName string, splitOptions SplitO
 		if tokensSum > splitOptions.ChunkTokensThreshold || (tokensSum > splitOptions.ChunkEarlySplitTokensThreshold && isSplittableLine(lines[i])) {
 			addChunk(i)
 		}
-		tokensSum += embeddings.CountTokens(lines[i])
+		tokensSum += embeddings.EstimateTokens(lines[i])
 	}
 
 	if tokensSum > 0 {

@@ -27,14 +27,34 @@ type EmbeddingAPIResponse struct {
 	} `json:"data"`
 }
 
-func GetEmbeddingsWithRetries(texts []string, config *schema.Embeddings, maxRetries int) ([]float32, error) {
-	embeddings, err := getEmbeddings(texts, config)
+type EmbeddingsClient interface {
+	GetEmbeddingsWithRetries(texts []string, maxRetries int) ([]float32, error)
+	GetDimensions() int
+}
+
+func NewEmbeddingsClient(config *schema.Embeddings) EmbeddingsClient {
+	return &embeddingsClient{config: config}
+}
+
+type embeddingsClient struct {
+	config *schema.Embeddings
+}
+
+func (c *embeddingsClient) GetDimensions() int {
+	return c.config.Dimensions
+}
+
+// GetEmbeddingsWithRetries tries to embed the given texts using the external service specified in the config.
+// In case of failure, it retries the embedding procedure up to maxRetries. This due to the OpenAI API which
+// often hangs up when downloading large embedding responses.
+func (c *embeddingsClient) GetEmbeddingsWithRetries(texts []string, maxRetries int) ([]float32, error) {
+	embeddings, err := getEmbeddings(texts, c.config)
 	if err == nil {
 		return embeddings, nil
 	}
 
 	for i := 0; i < maxRetries; i++ {
-		embeddings, err = getEmbeddings(texts, config)
+		embeddings, err = getEmbeddings(texts, c.config)
 		if err == nil {
 			return embeddings, nil
 		} else {

@@ -8,12 +8,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
-const QUERY_EMBEDDING_RETRIES = 3
-
 type readFileFn func(ctx context.Context, repoName api.RepoName, revision api.CommitID, fileName string) ([]byte, error)
-
-type getRepoEmbeddingIndexFn func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error)
-
+type getRepoEmbeddingIndexFn func(ctx context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error)
 type getQueryEmbeddingFn func(query string) ([]float32, error)
 
 func searchRepoEmbeddingIndex(
@@ -23,8 +19,7 @@ func searchRepoEmbeddingIndex(
 	getRepoEmbeddingIndex getRepoEmbeddingIndexFn,
 	getQueryEmbedding getQueryEmbeddingFn,
 ) (*embeddings.EmbeddingSearchResults, error) {
-	repoEmbeddingIndexName := embeddings.GetRepoEmbeddingIndexName(params.RepoName)
-	embeddingIndex, err := getRepoEmbeddingIndex(ctx, repoEmbeddingIndexName)
+	embeddingIndex, err := getRepoEmbeddingIndex(ctx, params.RepoName)
 	if err != nil {
 		return nil, err
 	}
@@ -64,14 +59,31 @@ func searchEmbeddingIndex(
 		}
 		lines := strings.Split(string(fileContent), "\n")
 
+		// Sanity check: check that startLine and endLine are within 0 and len(lines).
+		startLine := max(0, min(len(lines), row.StartLine))
+		endLine := max(0, min(len(lines), row.EndLine))
+
 		results[idx] = embeddings.EmbeddingSearchResult{
 			FileName:  row.FileName,
 			StartLine: row.StartLine,
 			EndLine:   row.EndLine,
-			// TODO: Sanity check: check that startline and endline are within 0 and len(lines)
-			Content: strings.Join(lines[row.StartLine:row.EndLine], "\n"),
+			Content:   strings.Join(lines[startLine:endLine], "\n"),
 		}
 	}
 
 	return results
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -23,8 +22,8 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	repoEmbeddingsStore := repo.RepoEmbeddingJobsStore{Store: basestore.NewWithHandle(db.Handle())}
-	contextDetectionEmbeddingsStore := contextdetection.ContextDetectionEmbeddingJobsStore{Store: basestore.NewWithHandle(db.Handle())}
+	repoEmbeddingsStore := repo.NewRepoEmbeddingJobsStore(db)
+	contextDetectionEmbeddingsStore := contextdetection.NewContextDetectionEmbeddingJobsStore(db)
 	gitserverClient := gitserver.NewClient()
 	enterpriseServices.EmbeddingsResolver = resolvers.NewResolver(db, gitserverClient, repoEmbeddingsStore, contextDetectionEmbeddingsStore)
 	return nil

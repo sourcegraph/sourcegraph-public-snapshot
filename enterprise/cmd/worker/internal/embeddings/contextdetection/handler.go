@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type handler struct {
@@ -30,13 +29,14 @@ const MAX_EMBEDDINGS_RETRIES = 3
 
 func (h *handler) Handle(ctx context.Context, logger log.Logger, _ *contextdetectionbg.ContextDetectionEmbeddingJob) error {
 	embeddingsConfig := conf.Get().Embeddings
+	embeddingsClient := embed.NewEmbeddingsClient(embeddingsConfig)
 
-	messagesWithAdditionalContextIndex, err := getContextDetectionMessagesEmbeddingIndex(MESSAGES_WITH_ADDITIONAL_CONTEXT, embeddingsConfig)
+	messagesWithAdditionalContextIndex, err := getContextDetectionMessagesEmbeddingIndex(MESSAGES_WITH_ADDITIONAL_CONTEXT, embeddingsClient)
 	if err != nil {
 		return err
 	}
 
-	messagesWithoutAdditionalContextIndex, err := getContextDetectionMessagesEmbeddingIndex(MESSAGES_WITHOUT_ADDITIONAL_CONTEXT, embeddingsConfig)
+	messagesWithoutAdditionalContextIndex, err := getContextDetectionMessagesEmbeddingIndex(MESSAGES_WITHOUT_ADDITIONAL_CONTEXT, embeddingsClient)
 	if err != nil {
 		return err
 	}
@@ -56,13 +56,13 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, _ *contextdetec
 	return err
 }
 
-func getContextDetectionMessagesEmbeddingIndex(messages []string, config *schema.Embeddings) (embeddings.EmbeddingIndex[embeddings.ContextDetectionEmbeddingRowMetadata], error) {
+func getContextDetectionMessagesEmbeddingIndex(messages []string, client embed.EmbeddingsClient) (embeddings.EmbeddingIndex[embeddings.ContextDetectionEmbeddingRowMetadata], error) {
 	metadata := make([]embeddings.ContextDetectionEmbeddingRowMetadata, len(messages))
 	for idx, message := range messages {
 		metadata[idx] = embeddings.ContextDetectionEmbeddingRowMetadata{Message: message}
 	}
 
-	messagesEmbeddings, err := embed.GetEmbeddingsWithRetries(messages, config, MAX_EMBEDDINGS_RETRIES)
+	messagesEmbeddings, err := client.GetEmbeddingsWithRetries(messages, MAX_EMBEDDINGS_RETRIES)
 	if err != nil {
 		return embeddings.EmbeddingIndex[embeddings.ContextDetectionEmbeddingRowMetadata]{}, err
 	}
@@ -70,6 +70,6 @@ func getContextDetectionMessagesEmbeddingIndex(messages []string, config *schema
 	return embeddings.EmbeddingIndex[embeddings.ContextDetectionEmbeddingRowMetadata]{
 		Embeddings:      messagesEmbeddings,
 		RowMetadata:     metadata,
-		ColumnDimension: config.Dimensions,
+		ColumnDimension: client.GetDimensions(),
 	}, nil
 }

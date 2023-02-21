@@ -55,8 +55,9 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 	}
 
 	config := conf.Get()
+	embeddingsClient := embed.NewEmbeddingsClient(config.Embeddings)
 
-	repoEmbeddingIndex, err := embed.EmbedRepo(ctx, repo.Name, record.Revision, validFiles, config.Embeddings, func(fileName string) ([]byte, error) {
+	repoEmbeddingIndex, err := embed.EmbedRepo(ctx, repo.Name, record.Revision, validFiles, embeddingsClient, func(fileName string) ([]byte, error) {
 		return h.gitserverClient.ReadFile(ctx, nil, repo.Name, record.Revision, fileName)
 	})
 	if err != nil {
