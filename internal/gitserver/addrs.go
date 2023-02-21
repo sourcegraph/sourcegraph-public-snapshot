@@ -47,6 +47,8 @@ type GitServerAddresses struct {
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
 func (g GitServerAddresses) AddrForRepo(userAgent string, repo api.RepoName) string {
+	addrForRepoInvoked.WithLabelValues(userAgent).Inc()
+
 	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
 	rs := string(repo)
 
