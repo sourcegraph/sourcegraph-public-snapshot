@@ -881,15 +881,14 @@ type NamespacePermission struct {
 	ID         int64
 	Namespace  PermissionNamespace
 	ResourceID int64
-	Action     string
 	UserID     int32
 	CreatedAt  time.Time
 }
 
 func (n *NamespacePermission) DisplayName() string {
 	// Based on the zanzibar representation for data relations:
-	// <namespace>:<object_id>#<relation>@<user_id | user_group>
-	return fmt.Sprintf("%s:%d#%s@%d", n.Namespace, n.ResourceID, n.Action, n.UserID)
+	// <namespace>:<object_id>#@<user_id | user_group>
+	return fmt.Sprintf("%s:%d@%d", n.Namespace, n.ResourceID, n.UserID)
 }
 
 type OrgMemberAutocompleteSearchItem struct {

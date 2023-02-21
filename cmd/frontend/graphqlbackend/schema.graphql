@@ -1371,9 +1371,8 @@ type Query {
     packageRepoReferences(
         """
         The exact scheme value to filter by.
-        TODO: should this be an enum?
         """
-        scheme: String
+        scheme: PackageRepoReferenceKind
         """
         If supplied, only package repo references that match the given
         terms by their name will be returned.
@@ -3466,6 +3465,19 @@ type PackageRepoReferenceConnection {
 }
 
 """
+A kind of package repo reference.
+ExternalServiceKind, with a more specific set of values.
+"""
+enum PackageRepoReferenceKind {
+    GOMODULES
+    JVMPACKAGES
+    NPMPACKAGES
+    PYTHONPACKAGES
+    RUSTPACKAGES
+    RUBYPACKAGES
+}
+
+"""
 A reference to a package repo, such as a maven artifact, rust crate etc.
 """
 type PackageRepoReference {
@@ -3478,7 +3490,7 @@ type PackageRepoReference {
     The ecosystem/package-manager/indexer scheme under which this package repo
     reference is uniquely identified e.g. npm/python/rust-analyzer
     """
-    scheme: String!
+    scheme: PackageRepoReferenceKind!
 
     """
     The name of the package, in a format relevant to the specific ecosystem e.g.
@@ -6848,6 +6860,25 @@ type Site implements SettingsSubject {
     Reflects the site configuration `enableLegacyExtensions` experimental feature value.
     """
     enableLegacyExtensions: Boolean!
+
+    """
+    FOR INTERNAL USE ONLY: Returns information about instance upgrade readiness.
+    """
+    upgradeReadiness: UpgradeReadiness!
+}
+
+"""
+Instance upgrade readiness information includes schema drifts and deprecated-but-unfinished out-of-band migrations.
+"""
+type UpgradeReadiness {
+    """
+    The schema drift details.
+    """
+    schemaDrift: String!
+    """
+    The list of deprecated-but-unfinished out-of-band migrations.
+    """
+    requiredOutOfBandMigrations: [OutOfBandMigration!]!
 }
 
 """

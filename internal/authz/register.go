@@ -71,7 +71,8 @@ func GetProviders() (authzAllowByDefault bool, providers []Provider) {
 
 var isTest = (func() bool {
 	path, _ := os.Executable()
-	return filepath.Ext(path) == ".test" ||
+	return strings.HasSuffix(filepath.Base(path), "_test") || // Test binary build by Bazel
+		filepath.Ext(path) == ".test" ||
 		strings.Contains(path, "/T/___") || // Test path used by GoLand
 		filepath.Base(path) == "__debug_bin" // Debug binary used by VSCode
 })()

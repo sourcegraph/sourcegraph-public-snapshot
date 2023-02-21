@@ -2,7 +2,7 @@ import React, { useMemo, useEffect, useState } from 'react'
 
 import { mdiBrain, mdiCog, mdiFolder, mdiHistory, mdiSourceBranch, mdiSourceRepository, mdiTag } from '@mdi/js'
 import classNames from 'classnames'
-import { Navigate, useLocation } from 'react-router-dom-v5-compat'
+import { Navigate } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
 
 import { asError, encodeURIPathComponent, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
@@ -92,8 +92,6 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     className,
     ...props
 }) => {
-    const location = useLocation()
-
     useEffect(() => {
         if (filePath === '') {
             props.telemetryService.logViewEvent('Repository')
@@ -324,7 +322,6 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                             repo={repo}
                             revision={revision}
                             commitID={commitID}
-                            location={location}
                             {...props}
                         />
                     </div>

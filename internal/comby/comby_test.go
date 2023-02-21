@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -143,7 +143,7 @@ func Test_stdin(t *testing.T) {
 		return b.String()
 	}
 
-	autogold.Want("stdin", `{"uri":null,"diff":"--- /dev/null\n+++ /dev/null\n@@ -1,1 +1,1 @@\n-yes\n+no"}
+	autogold.Expect(`{"uri":null,"diff":"--- /dev/null\n+++ /dev/null\n@@ -1,1 +1,1 @@\n-yes\n+no"}
 `).
 		Equal(t, test(Args{
 			Input:           FileContent("yes\n"),

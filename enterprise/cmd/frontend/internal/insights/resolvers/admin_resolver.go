@@ -121,13 +121,13 @@ func (r *Resolver) RetryInsightSeriesBackfill(ctx context.Context, args *graphql
 	if err := auth.CheckUserIsSiteAdmin(ctx, r.postgresDB, actr.UID); err != nil {
 		return nil, err
 	}
-	var backfillID int
-	err := relay.UnmarshalSpec(args.Id, &backfillID)
+	var backfillQueueID graphqlbackend.BackfillQueueID
+	err := relay.UnmarshalSpec(args.Id, &backfillQueueID)
 	if err != nil {
 		return nil, errors.Wrap(err, "error unmarshalling the backfill id")
 	}
 	backfillStore := scheduler.NewBackfillStore(r.insightsDB)
-	backfill, err := backfillStore.LoadBackfill(ctx, backfillID)
+	backfill, err := backfillStore.LoadBackfill(ctx, backfillQueueID.BackfillID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to load backfill")
 	}
@@ -148,10 +148,11 @@ func (r *Resolver) RetryInsightSeriesBackfill(ctx context.Context, args *graphql
 	}
 	updatedItem := backfillItems[0]
 	return &graphqlbackend.BackfillQueueItemResolver{
-		BackfillID:   updatedItem.ID,
-		InsightTitle: updatedItem.InsightTitle,
-		Label:        updatedItem.SeriesLabel,
-		Query:        updatedItem.SeriesSearchQuery,
+		BackfillID:      updatedItem.ID,
+		InsightTitle:    updatedItem.InsightTitle,
+		Label:           updatedItem.SeriesLabel,
+		Query:           updatedItem.SeriesSearchQuery,
+		InsightUniqueID: updatedItem.InsightUniqueID,
 		BackfillStatus: &backfillStatusResolver{
 			queueItem: updatedItem,
 		},
@@ -163,13 +164,13 @@ func (r *Resolver) MoveInsightSeriesBackfillToFrontOfQueue(ctx context.Context, 
 	if err := auth.CheckUserIsSiteAdmin(ctx, r.postgresDB, actr.UID); err != nil {
 		return nil, err
 	}
-	var backfillID int
-	err := relay.UnmarshalSpec(args.Id, &backfillID)
+	var backfillQueueID graphqlbackend.BackfillQueueID
+	err := relay.UnmarshalSpec(args.Id, &backfillQueueID)
 	if err != nil {
 		return nil, errors.Wrap(err, "error unmarshalling the backfill id")
 	}
 	backfillStore := scheduler.NewBackfillStore(r.insightsDB)
-	backfill, err := backfillStore.LoadBackfill(ctx, backfillID)
+	backfill, err := backfillStore.LoadBackfill(ctx, backfillQueueID.BackfillID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to load backfill")
 	}
@@ -189,10 +190,11 @@ func (r *Resolver) MoveInsightSeriesBackfillToFrontOfQueue(ctx context.Context, 
 	}
 	updatedItem := backfillItems[0]
 	return &graphqlbackend.BackfillQueueItemResolver{
-		BackfillID:   updatedItem.ID,
-		InsightTitle: updatedItem.InsightTitle,
-		Label:        updatedItem.SeriesLabel,
-		Query:        updatedItem.SeriesSearchQuery,
+		BackfillID:      updatedItem.ID,
+		InsightTitle:    updatedItem.InsightTitle,
+		Label:           updatedItem.SeriesLabel,
+		Query:           updatedItem.SeriesSearchQuery,
+		InsightUniqueID: updatedItem.InsightUniqueID,
 		BackfillStatus: &backfillStatusResolver{
 			queueItem: updatedItem,
 		},
@@ -204,13 +206,13 @@ func (r *Resolver) MoveInsightSeriesBackfillToBackOfQueue(ctx context.Context, a
 	if err := auth.CheckUserIsSiteAdmin(ctx, r.postgresDB, actr.UID); err != nil {
 		return nil, err
 	}
-	var backfillID int
-	err := relay.UnmarshalSpec(args.Id, &backfillID)
+	var backfillQueueID graphqlbackend.BackfillQueueID
+	err := relay.UnmarshalSpec(args.Id, &backfillQueueID)
 	if err != nil {
 		return nil, errors.Wrap(err, "error unmarshalling the backfill id")
 	}
 	backfillStore := scheduler.NewBackfillStore(r.insightsDB)
-	backfill, err := backfillStore.LoadBackfill(ctx, backfillID)
+	backfill, err := backfillStore.LoadBackfill(ctx, backfillQueueID.BackfillID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to load backfill")
 	}
@@ -230,10 +232,11 @@ func (r *Resolver) MoveInsightSeriesBackfillToBackOfQueue(ctx context.Context, a
 	}
 	updatedItem := backfillItems[0]
 	return &graphqlbackend.BackfillQueueItemResolver{
-		BackfillID:   updatedItem.ID,
-		InsightTitle: updatedItem.InsightTitle,
-		Label:        updatedItem.SeriesLabel,
-		Query:        updatedItem.SeriesSearchQuery,
+		BackfillID:      updatedItem.ID,
+		InsightTitle:    updatedItem.InsightTitle,
+		Label:           updatedItem.SeriesLabel,
+		Query:           updatedItem.SeriesSearchQuery,
+		InsightUniqueID: updatedItem.InsightUniqueID,
 		BackfillStatus: &backfillStatusResolver{
 			queueItem: updatedItem,
 		},
@@ -406,8 +409,8 @@ func (r *Resolver) InsightAdminBackfillQueue(ctx context.Context, args *graphqlb
 		&args.ConnectionResolverArgs,
 		&graphqlutil.ConnectionResolverOptions{
 			OrderBy: database.OrderBy{
-				{Field: string(orderByToDBBackfillColumn(orderBy))},
-				{Field: string(scheduler.BackfillID)},
+				{Field: string(orderByToDBBackfillColumn(orderBy))}, // user selected or default
+				{Field: string(scheduler.BackfillID)},               // key field to support paging
 			},
 			Ascending: !args.Descending})
 	if err != nil {
@@ -463,11 +466,12 @@ func (a *adminBackfillQueueConnectionStore) ComputeNodes(ctx context.Context, ar
 	resolvers := make([]*graphqlbackend.BackfillQueueItemResolver, 0, len(backfillItems))
 	for _, item := range backfillItems {
 		resolvers = append(resolvers, &graphqlbackend.BackfillQueueItemResolver{
-			BackfillID:   item.ID,
-			InsightTitle: item.InsightTitle,
-			CreatorID:    item.CreatorID,
-			Label:        item.SeriesLabel,
-			Query:        item.SeriesSearchQuery,
+			BackfillID:      item.ID,
+			InsightTitle:    item.InsightTitle,
+			CreatorID:       item.CreatorID,
+			Label:           item.SeriesLabel,
+			Query:           item.SeriesSearchQuery,
+			InsightUniqueID: item.InsightUniqueID,
 			BackfillStatus: &backfillStatusResolver{
 				queueItem: item,
 			},
@@ -482,27 +486,18 @@ func (a *adminBackfillQueueConnectionStore) ComputeNodes(ctx context.Context, ar
 func (a *adminBackfillQueueConnectionStore) MarshalCursor(node *graphqlbackend.BackfillQueueItemResolver, orderBy database.OrderBy) (*string, error) {
 	// This is the enum the client requested ordering by
 	column := orderBy[0].Field
-	var value string
 
 	switch scheduler.BackfillQueueColumn(column) {
-	case scheduler.State:
-		value = strings.ToLower(node.BackfillStatus.State())
-	case scheduler.QueuePosition:
-		pos := node.BackfillStatus.QueuePosition()
-		if pos != nil {
-			value = fmt.Sprintf("%d", pos)
-		} else {
-			value = "NULL"
-		}
+	case scheduler.State, scheduler.QueuePosition:
 	default:
 		return nil, errors.New(fmt.Sprintf("invalid OrderBy.Field. Expected: one of (STATE, QUEUE_POSITION). Actual: %s", column))
 	}
 
-	// format of the "Value" is the value for the sorted by column ie `QUEUED` followed by the ID of the current node
+	// In cursor Column is the what to sort by and the Value is the backfillID
 	cursor := marshalBackfillItemCursor(
 		&itypes.Cursor{
 			Column: string(dbToOrderBy(scheduler.BackfillQueueColumn(column))),
-			Value:  fmt.Sprintf("%s@%d", value, node.IDInt32()),
+			Value:  fmt.Sprintf("%d", node.IDInt32()),
 		},
 	)
 
@@ -523,21 +518,7 @@ func (a *adminBackfillQueueConnectionStore) UnmarshalCursor(cursor string, order
 		return nil, errors.New("Invalid cursor. Expected one of (STATE, QUEUE_POSITION)")
 	}
 
-	csv := ""
-	values := strings.Split(backfillCursor.Value, "@")
-	if len(values) != 2 {
-		return nil, errors.New("Invalid cursor. Expected Value: <orderbyvalue>@<id>")
-	}
-	switch orderByColumn {
-	case scheduler.State:
-		csv = fmt.Sprintf("'%v', %v", values[0], values[1])
-	case scheduler.BackfillID, scheduler.QueuePosition:
-		csv = fmt.Sprintf("%v, %v", values[0], values[1])
-	default:
-		return nil, errors.New("Invalid OrderBy Field.")
-	}
-
-	return &csv, err
+	return &backfillCursor.Value, err
 }
 
 const backfillCursorKind = "InsightsAdminBackfillItem"

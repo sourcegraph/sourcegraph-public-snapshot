@@ -18,7 +18,7 @@ Search over commit diffs using `type:diff` to see how your codebase has changed 
 
 You can also search within commit diffs on multiple branches by specifying the branches in a `repo:` field after the `@` sign. After the `@`, separate Git refs with `:`, specify Git ref globs by prefixing them with `*`, and exclude a commit reachable from a ref by prefixing it with `^`. Diff searches can be further narrowed down with parameters that filter by author and time.
 
-See the [query syntax](../reference/queries.md#diff-and-commit-searches-only) documentation for a comprehensive list of supported parameters.
+See the [query syntax](../reference/queries.md#keywords-diff-and-commit-searches-only) documentation for a comprehensive list of supported parameters.
 
 ## Commit message search
 
@@ -38,10 +38,7 @@ Smart Search helps find search results that are likely to be more useful than sh
 
 Take a query like `go buf byte parser`, for example. Normally, Sourcegraph will search for the string "go buf byte parser" with those tokens in that order. If there are **_no_** results, Smart Search attempts variations of the query. One rule applies a `lang:` filter to known languages. For example, `go` may refer to the `Go` language, so we convert this token to a `lang:Go` filter. Another rule relaxes the ordering on remaining tokens so that we search for `buf AND byte AND parser` anywhere in the file. Here's an example of what Smart Search looks like in action:
 
-<img
-  src="https://storage.googleapis.com/sourcegraph-assets/about.sourcegraph.com/blog/2022/smart-search-example.png"
-  alt="Smart Search example"
-/>
+<img src="https://storage.googleapis.com/sourcegraph-assets/about.sourcegraph.com/blog/2022/smart-search-example.png" alt="Smart Search example"/>
 <br />
 
 Note that if the original query finds results (which depends on the code it runs on), Smart Search has no effect. Smart Search does not otherwise intervene or interfere with search queries if those queries return results, and Sourcegraph behaves as usual.
@@ -75,8 +72,9 @@ Search contexts help you search the code you care about on Sourcegraph. A search
 
 Every search on Sourcegraph uses a search context. Search contexts can be defined with the contexts selector shown in the search input, or entered directly in a search query.
 
-See the [search contexts](../how-to/search_contexts.md) documentation for instructions for using and creating search contexts.
+If you currently use version contexts, you can automatically [convert your existing version contexts to search contexts](../../admin/how-to/converting-version-contexts-to-search-contexts.md). We recommend migrating to search contexts for a more intuitive, powerful search experience and the latest improvements and updates.
 
+See the [search contexts](../how-to/search_contexts.md) documentation to learn how to use and create search contexts.
 
 ## Fuzzy search <span class="badge badge-primary">experimental</span>
 
@@ -118,11 +116,3 @@ Indexing multiple branches will add additional resource requirements to Sourcegr
 > NOTE: The default branch (`HEAD`) is always indexed.
 
 > NOTE: All revisions specified in version contexts are also indexed.
-
-**Note**: While version contexts are located in the site configuration, search contexts are located in the global settings.
-
-Reload the page after saving changes to see search contexts enabled.
-
-If you currently use [version contexts](#version-contexts), you can automatically [convert your existing version contexts to search contexts](../../admin/how-to/converting-version-contexts-to-search-contexts.md). We recommend migrating to search contexts for a more intuitive, powerful search experience and the latest improvements and updates.
-
-See the [search contexts](../how-to/search_contexts.md) documentation to learn how to use and create search contexts.

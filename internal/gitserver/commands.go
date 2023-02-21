@@ -737,7 +737,7 @@ func streamBlameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChec
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed", args))
 	}
 
-	return newBlameHunkReader(ctx, rc), nil
+	return newBlameHunkReader(rc), nil
 }
 
 // BlameFile returns Git blame information about a file.
@@ -2444,10 +2444,7 @@ func (c *clientImplementor) ArchiveReader(
 		return nil, err
 	}
 
-	u, err := c.archiveURL(ctx, repo, options)
-	if err != nil {
-		return nil, err
-	}
+	u := c.archiveURL(repo, options)
 
 	resp, err := c.do(ctx, repo, "POST", u.String(), nil)
 	if err != nil {

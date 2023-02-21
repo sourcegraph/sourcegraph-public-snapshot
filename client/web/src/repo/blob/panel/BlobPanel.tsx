@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react'
 
-import { useLocation } from 'react-router-dom-v5-compat'
+import { useLocation } from 'react-router-dom'
 import { Observable, Subscription } from 'rxjs'
 
 import { Panel, useBuiltinTabbedPanelViews } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
@@ -17,7 +17,9 @@ import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shar
 
 import { CodeIntelligenceProps } from '../../../codeintel'
 import { ReferencesPanel } from '../../../codeintel/ReferencesPanel'
+import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
+import { FileOwnershipPanel } from '../own/FileOwnershipPanel'
 
 interface Props
     extends AbsoluteRepoFile,
@@ -35,7 +37,7 @@ interface Props
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
-export type BlobPanelTabID = 'info' | 'def' | 'references' | 'impl' | 'typedef' | 'history'
+export type BlobPanelTabID = 'info' | 'def' | 'references' | 'impl' | 'typedef' | 'history' | 'ownership'
 
 /**
  * A React hook that registers panel views for the blob.
@@ -65,6 +67,8 @@ function useBlobPanelViews({
             ? { line: parsedHash.line, character: parsedHash.character || 0 }
             : undefined
     }, [location.hash, location.search])
+
+    const [enableOwnershipPanel] = useFeatureFlag('search-ownership')
 
     useBuiltinTabbedPanelViews(
         useMemo(() => {
@@ -107,6 +111,20 @@ function useBlobPanelViews({
                         </PanelContent>
                     ),
                 },
+                enableOwnershipPanel
+                    ? {
+                          id: 'ownership',
+                          title: 'Ownership',
+                          element: (
+                              <FileOwnershipPanel
+                                  key="ownership"
+                                  repoID={repoID}
+                                  revision={revision}
+                                  filePath={filePath}
+                              />
+                          ),
+                      }
+                    : null,
             ].filter(isDefined)
 
             return panelDefinitions
@@ -124,6 +142,7 @@ function useBlobPanelViews({
             filePath,
             preferAbsoluteTimestamps,
             defaultPageSize,
+            enableOwnershipPanel,
         ])
     )
 

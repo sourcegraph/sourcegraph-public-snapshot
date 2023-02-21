@@ -63,7 +63,7 @@ A [multi-version upgrade](../../updates/index.md#multi-version-upgrades) is a do
 To perform a multi-version upgrade on a Sourcegraph instance running on Kubernetes:
 
 1. Spin down any pods that access the database. This must be done for the following deployments and stateful sets listed below. This can be performed directly via a series of `kubectl` commands (given below), or by setting `replicas: 0` in each deployment/stateful set's definitions and re-applying the configuration.
-  - Deployments (e.g., `kubectl scale deployment <name> --replicas=0`)
+   - Deployments (e.g., `kubectl scale deployment <name> --replicas=0`)
       - precise-code-intel-worker
       - repo-updater
       - searcher
@@ -71,12 +71,12 @@ To perform a multi-version upgrade on a Sourcegraph instance running on Kubernet
       - sourcegraph-frontend-internal
       - symbols
       - worker
-  - Stateful sets (e.g., `kubectl scale sts <name> --replicas=0`):
+   - Stateful sets (e.g., `kubectl scale sts <name> --replicas=0`):
       - gitserver
       - indexed-search
 1. **If upgrading from 3.26 or before to 3.27 or later**, the `pgsql` and `codeintel-db` databases must be upgraded from Postgres 11 to Postgres 12. If this step is not performed, then the following upgrade procedure will fail fast (and leave all existing data untouched).
-  - If using an external database, follow the [upgrading external PostgreSQL instances](../../postgres.md#upgrading-external-postgresql-instances) guide.
-  - Otherwise, perform the following steps from the [upgrading internal Postgres instances](../../postgres.md#upgrading-internal-postgresql-instances) guide:
+   - If using an external database, follow the [upgrading external PostgreSQL instances](../../postgres.md#upgrading-external-postgresql-instances) guide.
+   - Otherwise, perform the following steps from the [upgrading internal Postgres instances](../../postgres.md#upgrading-internal-postgresql-instances) guide:
       1. It's assumed that your fork of `deploy-sourcegraph` is up to date with your instance's current version. Pull the upstream changes for `v3.27.0` and resolve any git merge conflicts. We need to temporarily boot the containers defined at this specific version to rewrite existing data to the new Postgres 12 format.
       1. Run `kubectl apply -l deploy=sourcegraph -f base/pgsql` to launch a new Postgres 12 container and rewrite the old Postgres 11 data. This may take a while, but streaming container logs should show progress. **NOTE**: The Postgres migration requires enough capacity in its attached volume to accommodate an additional copy of the data currently on disk. Resize the volume now if necessary—the container will fail to start if there is not enough free disk space.
       1. Wait until the database container is accepting connections. Once ready, run the command `kubectl exec pgsql -- psql -U sg -c 'REINDEX database sg;'` issue a reindex command to Postgres to repair indexes that were silently invalidated by the previous data rewrite step. **If you skip this step**, then some data may become inaccessible under normal operation, the following steps are not guaranteed to work, and **data loss will occur**.
@@ -91,9 +91,9 @@ To perform a multi-version upgrade on a Sourcegraph instance running on Kubernet
   1. Start the migrator job via `kubectl apply -f configure/migrator/migrator.Job.yaml`.
   1. Run `kubectl wait -f configure/migrator/migrator.Job.yaml --for=condition=complete --timeout=-1s` to wait for the job to complete. Run `kubectl logs job.batch/migrator -f` stream the migrator's stdout logs for progress.
 1. The remaining infrastructure can now be updated. The [standard upgrade procedure](#standard-upgrades) describes this step in more detail.
-  - Ensure that the replica counts adjusted in the previous steps are turned back up.
-  - Run `./kubectl-apply-all.sh` to deploy the new pods to the Kubernetes cluster.
-  - Monitor the status of the deployment via `kubectl get pods -o wide --watch`.
+   - Ensure that the replica counts adjusted in the previous steps are turned back up.
+   - Run `./kubectl-apply-all.sh` to deploy the new pods to the Kubernetes cluster.
+   - Monitor the status of the deployment via `kubectl get pods -o wide --watch`.
 
 ## Rollback
 

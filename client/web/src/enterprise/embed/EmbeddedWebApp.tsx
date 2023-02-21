@@ -1,7 +1,6 @@
 import { FC, Suspense, useEffect, useMemo } from 'react'
 
-import { Router } from 'react-router'
-import { CompatRouter, Routes, Route } from 'react-router-dom-v5-compat'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
 import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/createSyncLoadedController'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
@@ -12,7 +11,6 @@ import '../../SourcegraphWebApp.scss'
 import { GlobalContributions } from '../../contributions'
 import { createPlatformContext } from '../../platform/context'
 import { useTheme, ThemePreference } from '../../theme'
-import { globalHistory } from '../../util/globalHistory'
 
 import { OpenNewTabAnchorLink } from './OpenNewTabAnchorLink'
 
@@ -61,48 +59,46 @@ export const EmbeddedWebApp: FC = () => {
     //
     // IMPORTANT: Please consult with the security team if you are unsure whether your changes could introduce security exploits.
     return (
-        <Router history={globalHistory}>
-            <CompatRouter>
-                <WildcardThemeContext.Provider value={WILDCARD_THEME}>
-                    <div className={styles.body}>
-                        <Suspense
-                            fallback={
-                                <div className="d-flex justify-content-center p-3">
-                                    <LoadingSpinner />
-                                </div>
-                            }
-                        >
-                            <Routes>
-                                <Route
-                                    path="/embed/notebooks/:notebookId"
-                                    element={
-                                        <EmbeddedNotebookPage
-                                            searchContextsEnabled={true}
-                                            isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                            authenticatedUser={null}
-                                            isLightTheme={isLightTheme}
-                                            settingsCascade={EMPTY_SETTINGS_CASCADE}
-                                            platformContext={platformContext}
-                                        />
-                                    }
-                                />
-                                <Route
-                                    path="*"
-                                    element={
-                                        <Alert variant="danger">
-                                            Invalid embedding route, please check the embedding URL.
-                                        </Alert>
-                                    }
-                                />
-                            </Routes>
-                        </Suspense>
-                        <GlobalContributions
-                            extensionsController={extensionsController}
-                            platformContext={platformContext}
-                        />
-                    </div>
-                </WildcardThemeContext.Provider>
-            </CompatRouter>
-        </Router>
+        <BrowserRouter>
+            <WildcardThemeContext.Provider value={WILDCARD_THEME}>
+                <div className={styles.body}>
+                    <Suspense
+                        fallback={
+                            <div className="d-flex justify-content-center p-3">
+                                <LoadingSpinner />
+                            </div>
+                        }
+                    >
+                        <Routes>
+                            <Route
+                                path="/embed/notebooks/:notebookId"
+                                element={
+                                    <EmbeddedNotebookPage
+                                        searchContextsEnabled={true}
+                                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                        authenticatedUser={null}
+                                        isLightTheme={isLightTheme}
+                                        settingsCascade={EMPTY_SETTINGS_CASCADE}
+                                        platformContext={platformContext}
+                                    />
+                                }
+                            />
+                            <Route
+                                path="*"
+                                element={
+                                    <Alert variant="danger">
+                                        Invalid embedding route, please check the embedding URL.
+                                    </Alert>
+                                }
+                            />
+                        </Routes>
+                    </Suspense>
+                    <GlobalContributions
+                        extensionsController={extensionsController}
+                        platformContext={platformContext}
+                    />
+                </div>
+            </WildcardThemeContext.Provider>
+        </BrowserRouter>
     )
 }

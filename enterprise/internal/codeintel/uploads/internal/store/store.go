@@ -43,6 +43,7 @@ type Store interface {
 	HasRepository(ctx context.Context, repositoryID int) (_ bool, err error)
 
 	// Uploads
+	GetIndexers(ctx context.Context, opts shared.GetIndexersOptions) ([]string, error)
 	GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (_ []types.Upload, _ int, err error)
 	GetUploadByID(ctx context.Context, id int) (_ types.Upload, _ bool, err error)
 	GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error)

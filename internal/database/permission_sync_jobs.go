@@ -2,9 +2,8 @@ package database
 
 import (
 	"context"
-	"database/sql/driver"
-	"encoding/json"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -24,6 +23,20 @@ import (
 
 const CancellationReasonHigherPriority = "A job with higher priority was added."
 
+type PermissionSyncJobState string
+
+// PermissionSyncJobState constants.
+const (
+	PermissionSyncJobStateQueued     PermissionSyncJobState = "queued"
+	PermissionSyncJobStateProcessing PermissionSyncJobState = "processing"
+	PermissionSyncJobStateErrored    PermissionSyncJobState = "errored"
+	PermissionSyncJobStateFailed     PermissionSyncJobState = "failed"
+	PermissionSyncJobStateCompleted  PermissionSyncJobState = "completed"
+)
+
+// ToGraphQL returns the GraphQL representation of the worker state.
+func (s PermissionSyncJobState) ToGraphQL() string { return strings.ToUpper(string(s)) }
+
 type PermissionSyncJobPriority int
 
 const (
@@ -31,6 +44,19 @@ const (
 	MediumPriorityPermissionSync PermissionSyncJobPriority = 5
 	HighPriorityPermissionSync   PermissionSyncJobPriority = 10
 )
+
+func (p PermissionSyncJobPriority) ToString() string {
+	switch p {
+	case HighPriorityPermissionSync:
+		return "HIGH"
+	case MediumPriorityPermissionSync:
+		return "MEDIUM"
+	case LowPriorityPermissionSync:
+		fallthrough
+	default:
+		return "LOW"
+	}
+}
 
 type PermissionSyncJobReason string
 
@@ -90,7 +116,7 @@ type PermissionSyncJobStore interface {
 	List(ctx context.Context, opts ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error)
 	Count(ctx context.Context) (int, error)
 	CancelQueuedJob(ctx context.Context, reason string, id int) error
-	SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult, codeHostStates []PermissionSyncCodeHostState) error
+	SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult, codeHostStatuses CodeHostStatusesSet) error
 }
 
 type permissionSyncJobStore struct {
@@ -223,7 +249,7 @@ func (s *permissionSyncJobStore) checkDuplicateAndCreateSyncJob(ctx context.Cont
 	defer func() {
 		err = tx.Done(err)
 	}()
-	opts := ListPermissionSyncJobOpts{UserID: job.UserID, RepoID: job.RepositoryID, State: "queued", NotCanceled: true, NullProcessAfter: true}
+	opts := ListPermissionSyncJobOpts{UserID: job.UserID, RepoID: job.RepositoryID, State: PermissionSyncJobStateQueued, NotCanceled: true, NullProcessAfter: true}
 	syncJobs, err := tx.List(ctx, opts)
 	if err != nil {
 		return err
@@ -291,7 +317,7 @@ type SetPermissionsResult struct {
 	Found   int
 }
 
-func (s *permissionSyncJobStore) SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult, states []PermissionSyncCodeHostState) error {
+func (s *permissionSyncJobStore) SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult, statuses CodeHostStatusesSet) error {
 	q := sqlf.Sprintf(`
 		UPDATE permission_sync_jobs
 		SET
@@ -300,7 +326,7 @@ func (s *permissionSyncJobStore) SaveSyncResult(ctx context.Context, id int, res
 			permissions_found = %d,
 			code_host_states = %s
 		WHERE id = %d
-		`, result.Added, result.Removed, result.Found, pq.Array(states), id)
+		`, result.Added, result.Removed, result.Found, pq.Array(statuses), id)
 
 	_, err := s.ExecResult(ctx, q)
 	return err
@@ -311,7 +337,7 @@ type ListPermissionSyncJobOpts struct {
 	UserID              int
 	RepoID              int
 	Reason              PermissionSyncJobReason
-	State               string
+	State               PermissionSyncJobState
 	NullProcessAfter    bool
 	NotNullProcessAfter bool
 	NotCanceled         bool
@@ -418,10 +444,10 @@ func (s *permissionSyncJobStore) Count(ctx context.Context) (int, error) {
 
 type PermissionSyncJob struct {
 	ID                 int
-	State              string
+	State              PermissionSyncJobState
 	FailureMessage     *string
 	Reason             PermissionSyncJobReason
-	CancellationReason string
+	CancellationReason *string
 	TriggeredByUserID  int32
 	QueuedAt           time.Time
 	StartedAt          time.Time
@@ -445,29 +471,6 @@ type PermissionSyncJob struct {
 	PermissionsRemoved int
 	PermissionsFound   int
 	CodeHostStates     []PermissionSyncCodeHostState
-}
-
-// PermissionSyncCodeHostState describes the state of a provider during an authz sync job.
-type PermissionSyncCodeHostState struct {
-	ProviderID   string `json:"provider_id"`
-	ProviderType string `json:"provider_type"`
-
-	// Status is one of "ERROR" or "SUCCESS"
-	Status  string `json:"status"`
-	Message string `json:"message"`
-}
-
-func (e *PermissionSyncCodeHostState) Scan(value any) error {
-	b, ok := value.([]byte)
-	if !ok {
-		return errors.Errorf("value is not []byte: %T", value)
-	}
-
-	return json.Unmarshal(b, &e)
-}
-
-func (e PermissionSyncCodeHostState) Value() (driver.Value, error) {
-	return json.Marshal(e)
 }
 
 func (j *PermissionSyncJob) RecordID() int { return j.ID }
@@ -519,7 +522,7 @@ func scanPermissionSyncJob(job *PermissionSyncJob, s dbutil.Scanner) error {
 		&job.ID,
 		&job.State,
 		&job.Reason,
-		&dbutil.NullString{S: &job.CancellationReason},
+		&job.CancellationReason,
 		&dbutil.NullInt32{N: &job.TriggeredByUserID},
 		&job.FailureMessage,
 		&job.QueuedAt,

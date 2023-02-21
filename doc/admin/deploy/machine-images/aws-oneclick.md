@@ -112,10 +112,6 @@ By default Sourcegraph will be available over HTTP on the public internet. To se
 2. [Configure user authentication](../../../admin/auth/index.md) (SSO, SAML, OpenID Connect, etc.)
 3. [Review the new Network Security Group](https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html) to prevent access from the public internet and follow the principle of least privilege.
 
-### Share with your team
-
-[See here](/adopt/trial#3-share-with-the-trial-team) for some tips on how to share Sourcegraph with your team!
-
 ## Managing Sourcegraph
 
 ### Backup and restore

@@ -1,31 +1,27 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import { formatISO, subYears } from 'date-fns'
-import * as H from 'history'
 import { escapeRegExp } from 'lodash'
 import { Observable } from 'rxjs'
-import { map, switchMap, tap } from 'rxjs/operators'
+import { map, switchMap } from 'rxjs/operators'
 
-import { memoizeObservable, numberWithCommas, pluralize } from '@sourcegraph/common'
-import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { numberWithCommas, pluralize } from '@sourcegraph/common'
+import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType, TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Button, Card, CardHeader, Link, Tooltip, Text } from '@sourcegraph/wildcard'
+import { Card, CardHeader, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
-import { FilteredConnection } from '../../components/FilteredConnection'
-import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionList,
     ConnectionLoading,
     ConnectionSummary,
-    ShowMoreButton,
     SummaryContainer,
     ConnectionError,
 } from '../../components/FilteredConnection/ui'
@@ -46,9 +42,8 @@ import {
 import { PersonLink } from '../../person/PersonLink'
 import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
 import { UserAvatar } from '../../user/UserAvatar'
-import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
+import { GitCommitNodeTableRow } from '../commits/GitCommitNodeTableRow'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
-import { BATCH_COUNT } from '../RepositoriesPopover'
 
 import { DiffStat, FilesCard, ReadmePreviewCard } from './TreePagePanels'
 
@@ -56,67 +51,12 @@ import styles from './TreePageContent.module.scss'
 import contributorsStyles from './TreePageContentContributors.module.scss'
 import panelStyles from './TreePagePanels.module.scss'
 
+const COUNT = 20
+
 export interface TreeCommitsResponse {
     ancestors: NonNullable<Extract<TreeCommitsResult['node'], { __typename: 'Repository' }>['commit']>['ancestors']
     externalURLs: Extract<TreeCommitsResult['node'], { __typename: 'Repository' }>['externalURLs']
 }
-
-export const fetchTreeCommits = memoizeObservable(
-    (args: {
-        repo: Scalars['ID']
-        revspec: string
-        first?: number
-        filePath?: string
-        after?: string
-    }): Observable<TreeCommitsResponse> =>
-        requestGraphQL<TreeCommitsResult, TreeCommitsVariables>(
-            gql`
-                query TreeCommits($repo: ID!, $revspec: String!, $first: Int, $filePath: String, $after: String) {
-                    node(id: $repo) {
-                        __typename
-                        ... on Repository {
-                            externalURLs {
-                                url
-                                serviceKind
-                            }
-                            commit(rev: $revspec) {
-                                ancestors(first: $first, path: $filePath, after: $after) {
-                                    nodes {
-                                        ...GitCommitFields
-                                    }
-                                    pageInfo {
-                                        hasNextPage
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                ${gitCommitFragment}
-            `,
-            {
-                ...args,
-                first: args.first || null,
-                filePath: args.filePath || null,
-                after: args.after || null,
-            }
-        ).pipe(
-            map(dataOrThrowErrors),
-            map(data => {
-                if (!data.node) {
-                    throw new Error('Repository not found')
-                }
-                if (data.node.__typename !== 'Repository') {
-                    throw new Error('Node is not a Repository')
-                }
-                if (!data.node.commit) {
-                    throw new Error('Commit not found')
-                }
-                return { ancestors: data.node.commit.ancestors, externalURLs: data.node.externalURLs }
-            })
-        ),
-    args => `${args.repo}:${args.revspec}:${String(args.first)}:${String(args.filePath)}:${String(args.after)}`
-)
 
 export const fetchCommit = (args: {
     repo: Scalars['String']
@@ -234,23 +174,18 @@ interface TreePageContentProps extends ExtensionsControllerProps, ThemeProps, Te
     tree: TreeFields
     repo: TreePageRepositoryFields
     commitID: string
-    location: H.Location
     revision: string
 }
 
-export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<TreePageContentProps>> = ({
-    filePath,
-    tree,
-    repo,
-    commitID,
-    revision,
-    ...props
-}) => {
-    const [showOlderCommits, setShowOlderCommits] = useState(false)
+export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<TreePageContentProps>> = props => {
+    const { filePath, tree, repo, revision } = props
 
     const readmeEntry = useMemo(() => {
         for (const entry of tree.entries) {
-            if (!entry.isDirectory && (entry.name === 'README.md' || entry.name === 'README')) {
+            if (
+                !entry.isDirectory &&
+                (entry.name.toLocaleLowerCase() === 'readme.md' || entry.name.toLocaleLowerCase() === 'readme')
+            ) {
                 return entry
             }
         }
@@ -270,136 +205,20 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
         return () => subscription.unsubscribe()
     }, [repo.name, revision, filePath])
 
-    const queryTreeCommits = useCallback(
-        (args: { first?: number }): Observable<TreeCommitsResponse> => {
-            const after: string | undefined = showOlderCommits ? undefined : formatISO(subYears(Date.now(), 1))
-            return fetchTreeCommits({
-                ...args,
-                repo: repo.id,
-                revspec: revision || '',
-                filePath,
-                after,
-            })
-        },
-        [filePath, repo.id, revision, showOlderCommits]
-    )
-    const [externalURLs, setExternalURLs] = useState<undefined | TreeCommitsResponse['externalURLs']>(undefined)
-    const queryCommits = useCallback(
-        (args: { first?: number }): Observable<TreeCommitsResponse['ancestors']> => {
-            const treeCommits = queryTreeCommits(args)
-            return treeCommits.pipe(
-                tap(data => {
-                    if (data.externalURLs) {
-                        setExternalURLs(data.externalURLs)
-                    }
-                }),
-                map(data => data.ancestors)
-            )
-        },
-        [queryTreeCommits]
-    )
-
-    const onShowOlderCommitsClicked = useCallback((event: React.MouseEvent): void => {
-        event.preventDefault()
-        setShowOlderCommits(true)
-    }, [])
-
-    const emptyElement = showOlderCommits ? (
-        <>No commits in this tree.</>
-    ) : (
-        <div className="test-tree-page-no-recent-commits">
-            <Text className="mb-2">No commits in this tree in the past year.</Text>
-            <Button
-                className="test-tree-page-show-all-commits"
-                onClick={onShowOlderCommitsClicked}
-                variant="secondary"
-                size="sm"
-            >
-                Show all commits
-            </Button>
-        </div>
-    )
-
-    const TotalCountSummary: React.FunctionComponent<React.PropsWithChildren<{ totalCount: number }>> = ({
-        totalCount,
-    }) => (
-        <div className="p-2">
-            {showOlderCommits ? (
-                <>
-                    {totalCount} total {pluralize('commit', totalCount)} in this tree.
-                </>
-            ) : (
-                <>
-                    <Text className="mb-2">
-                        {totalCount} {pluralize('commit', totalCount)} in this tree in the past year.
-                    </Text>
-                    <Button onClick={onShowOlderCommitsClicked} variant="secondary" size="sm">
-                        Show all commits
-                    </Button>
-                </>
-            )}
-        </div>
-    )
-
     return (
         <>
             {readmeEntry && <ReadmePreviewCard entry={readmeEntry} repoName={repo.name} revision={revision} />}
-
             <section className={classNames('test-tree-entries container mb-3 px-0', styles.section)}>
                 <FilesCard diffStats={diffStats} entries={tree.entries} className={styles.files} filePath={filePath} />
 
                 <Card className={styles.commits}>
-                    <CardHeader className={panelStyles.cardColHeaderWrapper}>
-                        {tree.isRoot ? <Link to={`${tree.url}/-/commits`}>Commits</Link> : 'Commits'}
-                    </CardHeader>
-
-                    <FilteredConnection<
-                        GitCommitFields,
-                        Pick<
-                            GitCommitNodeProps,
-                            'className' | 'compact' | 'messageSubjectClassName' | 'wrapperElement' | 'externalURLs'
-                        >
-                    >
-                        listClassName="list-group list-group-flush"
-                        noun="commit in this tree"
-                        pluralNoun="commits in this tree"
-                        queryConnection={queryCommits}
-                        nodeComponent={GitCommitNode}
-                        nodeComponentProps={{
-                            className: classNames('list-group-item px-2 py-1', styles.gitCommitNode),
-                            messageSubjectClassName: styles.gitCommitNodeMessageSubject,
-                            compact: true,
-                            wrapperElement: 'li',
-                            externalURLs,
-                        }}
-                        updateOnChange={`${repo.name}:${revision}:${filePath}:${String(showOlderCommits)}`}
-                        defaultFirst={20}
-                        useURLQuery={false}
-                        hideSearch={true}
-                        emptyElement={emptyElement}
-                        totalCountSummaryComponent={TotalCountSummary}
-                        loaderClassName={contributorsStyles.filteredConnectionLoading}
-                        showMoreClassName="mb-0"
-                        summaryClassName={contributorsStyles.filteredConnectionSummary}
-                    />
+                    <CardHeader className={panelStyles.cardColHeaderWrapper}>Commits</CardHeader>
+                    <Commits {...props} />
                 </Card>
 
                 <Card className={styles.contributors}>
-                    <CardHeader className={panelStyles.cardColHeaderWrapper}>
-                        {tree.isRoot ? (
-                            <Link to={`${tree.url}/-/stats/contributors`}>Contributors</Link>
-                        ) : (
-                            'Contributors'
-                        )}
-                    </CardHeader>
-                    <Contributors
-                        filePath={filePath}
-                        tree={tree}
-                        repo={repo}
-                        commitID={commitID}
-                        revision={revision}
-                        {...props}
-                    />
+                    <CardHeader className={panelStyles.cardColHeaderWrapper}>Contributors</CardHeader>
+                    <Contributors {...props} />
                 </Card>
             </section>
         </>
@@ -462,57 +281,47 @@ const CONTRIBUTORS_QUERY = gql`
 `
 
 interface ContributorsProps extends TreePageContentProps {}
-
-const Contributors: React.FunctionComponent<ContributorsProps> = ({ repo, filePath }) => {
+const Contributors: React.FC<ContributorsProps> = ({ repo, filePath }) => {
     const spec: QuerySpec = {
         revisionRange: '',
         after: '',
         path: filePath,
     }
 
-    const { connection, error, loading, hasNextPage, fetchMore } = useShowMorePagination<
+    const { data, error, loading } = useQuery<
         TreePageRepositoryContributorsResult,
-        TreePageRepositoryContributorsVariables,
-        RepositoryContributorNodeFields
-    >({
-        query: CONTRIBUTORS_QUERY,
+        TreePageRepositoryContributorsVariables
+    >(CONTRIBUTORS_QUERY, {
         variables: {
-            first: BATCH_COUNT,
+            first: COUNT,
             repo: repo.id,
             revisionRange: spec.revisionRange,
             afterDate: spec.after,
             path: filePath,
         },
-        getConnection: result => {
-            const { node } = dataOrThrowErrors(result)
-            if (!node) {
-                throw new Error(`Node ${repo.id} not found`)
-            }
-            if (!('contributors' in node)) {
-                throw new Error('Failed to fetch contributors for this repo')
-            }
-            return node.contributors
-        },
-        options: {
-            fetchPolicy: 'cache-first',
-        },
     })
+
+    const node = data?.node && data?.node.__typename === 'Repository' ? data.node : null
+    const connection = node?.contributors
 
     return (
         <ConnectionContainer>
             {error && <ConnectionError errors={[error.message]} />}
             {connection && connection.nodes.length > 0 && (
-                <ConnectionList className="list-group list-group-flush test-filtered-contributors-connection">
-                    {connection.nodes.map(node => (
-                        <RepositoryContributorNode
-                            key={`${node.person.displayName}:${node.count}`}
-                            node={node}
-                            repoName={repo.name}
-                            // TODO: what does `globbing` do?
-                            globbing={true}
-                            {...spec}
-                        />
-                    ))}
+                <ConnectionList
+                    className={classNames('test-filtered-contributors-connection', styles.table)}
+                    as="table"
+                >
+                    <tbody>
+                        {connection.nodes.map(node => (
+                            <RepositoryContributorNode
+                                key={node.person.email}
+                                node={node}
+                                repoName={repo.name}
+                                {...spec}
+                            />
+                        ))}
+                    </tbody>
                 </ConnectionList>
             )}
             {loading && (
@@ -520,18 +329,30 @@ const Contributors: React.FunctionComponent<ContributorsProps> = ({ repo, filePa
                     <ConnectionLoading />
                 </div>
             )}
-            <SummaryContainer className={styles.contributorsSummary}>
+            <SummaryContainer className={styles.tableSummary}>
                 {connection && (
-                    <ConnectionSummary
-                        compact={true}
-                        connection={connection}
-                        first={BATCH_COUNT}
-                        noun="contributor"
-                        pluralNoun="contributors"
-                        hasNextPage={hasNextPage}
-                    />
+                    <>
+                        <ConnectionSummary
+                            compact={true}
+                            connection={connection}
+                            first={COUNT}
+                            noun="contributor"
+                            pluralNoun="contributors"
+                            hasNextPage={connection.pageInfo.hasNextPage}
+                        />
+                        {connection.pageInfo.hasNextPage && (
+                            <small>
+                                <Link
+                                    to={`${repo.url}/-/stats/contributors?${
+                                        filePath ? 'path=' + encodeURIComponent(filePath) : ''
+                                    }`}
+                                >
+                                    Show more
+                                </Link>
+                            </small>
+                        )}
+                    </>
                 )}
-                {hasNextPage && <ShowMoreButton className="m-0 p-1 border-0" onClick={fetchMore} />}
             </SummaryContainer>
         </ConnectionContainer>
     )
@@ -546,19 +367,16 @@ interface QuerySpec {
 interface RepositoryContributorNodeProps extends QuerySpec {
     node: RepositoryContributorNodeFields
     repoName: string
-    globbing: boolean
 }
-
-const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren<RepositoryContributorNodeProps>> = ({
+const RepositoryContributorNode: React.FC<RepositoryContributorNodeProps> = ({
     node,
     repoName,
     revisionRange,
     after,
     path,
-    globbing,
 }) => {
     const query: string = [
-        searchQueryForRepoRevision(repoName, globbing),
+        searchQueryForRepoRevision(repoName, false),
         'type:diff',
         `author:${quoteIfNeeded(node.person.email)}`,
         after ? `after:${quoteIfNeeded(after)}` : '',
@@ -568,12 +386,12 @@ const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren
         .replace(/\s+/, ' ')
 
     return (
-        <li className={classNames('list-group-item py-2', contributorsStyles.repositoryContributorNode)}>
-            <div className={contributorsStyles.person}>
+        <tr className={classNames('list-group-item', contributorsStyles.repositoryContributorNode)}>
+            <td className={contributorsStyles.person}>
                 <UserAvatar inline={true} className="mr-2" user={node.person.user ? node.person.user : node.person} />
-                <PersonLink userClassName="font-weight-bold" person={node.person} />
-            </div>
-            <div className={contributorsStyles.commits}>
+                <PersonLink person={node.person} />
+            </td>
+            <td className={contributorsStyles.commits}>
                 <Tooltip
                     content={
                         revisionRange?.includes('..')
@@ -582,14 +400,108 @@ const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren
                     }
                     placement="left"
                 >
-                    <Link
-                        to={`/search?${buildSearchURLQuery(query, SearchPatternType.standard, false)}`}
-                        className="font-weight-bold"
-                    >
+                    <Link to={`/search?${buildSearchURLQuery(query, SearchPatternType.standard, false)}`}>
                         {numberWithCommas(node.count)} {pluralize('commit', node.count)}
                     </Link>
                 </Tooltip>
-            </div>
-        </li>
+            </td>
+        </tr>
+    )
+}
+
+const COMMITS_QUERY = gql`
+    query TreeCommits($repo: ID!, $revspec: String!, $first: Int, $filePath: String, $after: String) {
+        node(id: $repo) {
+            __typename
+            ... on Repository {
+                externalURLs {
+                    url
+                    serviceKind
+                }
+                commit(rev: $revspec) {
+                    ancestors(first: $first, path: $filePath, after: $after) {
+                        nodes {
+                            ...GitCommitFields
+                        }
+                        pageInfo {
+                            hasNextPage
+                        }
+                    }
+                }
+            }
+        }
+    }
+    ${gitCommitFragment}
+`
+
+interface CommitsProps extends TreePageContentProps {}
+const Commits: React.FC<CommitsProps> = ({ repo, revision, filePath, tree }) => {
+    const after: string = useMemo(() => formatISO(subYears(Date.now(), 1)), [])
+    const { data, error, loading } = useQuery<TreeCommitsResult, TreeCommitsVariables>(COMMITS_QUERY, {
+        variables: {
+            first: COUNT,
+            repo: repo.id,
+            revspec: revision || '',
+            after,
+            filePath,
+        },
+    })
+
+    const node = data?.node && data?.node.__typename === 'Repository' ? data.node : null
+    const externalURLs = node?.externalURLs
+    const connection = node?.commit?.ancestors
+
+    return (
+        <ConnectionContainer>
+            {error && <ConnectionError errors={[error.message]} />}
+            {connection && connection.nodes.length > 0 && (
+                <ConnectionList className={classNames('test-commits-connection', styles.table)} as="table">
+                    <tbody>
+                        {connection.nodes.map(node => (
+                            <GitCommitNodeTableRow
+                                key={node.id}
+                                node={node}
+                                className={styles.gitCommitNode}
+                                messageSubjectClassName={styles.gitCommitNodeMessageSubject}
+                                compact={true}
+                                externalURLs={externalURLs}
+                            />
+                        ))}
+                    </tbody>
+                </ConnectionList>
+            )}
+            {loading && (
+                <div className={contributorsStyles.filteredConnectionLoading}>
+                    <ConnectionLoading />
+                </div>
+            )}
+            <SummaryContainer className={styles.tableSummary}>
+                {connection && (
+                    <>
+                        <small className="text-muted">
+                            <span>
+                                {connection.nodes.length > 0 ? (
+                                    <>
+                                        Showing last {connection.nodes.length}{' '}
+                                        {pluralize(
+                                            'commit of the past year',
+                                            connection.nodes.length,
+                                            'commits of the past year'
+                                        )}
+                                    </>
+                                ) : (
+                                    <>No commits in the past year</>
+                                )}
+                            </span>
+                        </small>
+                        <small>
+                            <Link to={`${tree.url}/-/commits`}>
+                                Show {connection.pageInfo.hasNextPage ? 'more' : 'all'}
+                            </Link>
+                        </small>
+                    </>
+                )}
+            </SummaryContainer>
+        </ConnectionContainer>
     )
 }
