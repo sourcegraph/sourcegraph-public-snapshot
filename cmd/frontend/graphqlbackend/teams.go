@@ -88,10 +88,7 @@ func (r *teamConnectionResolver) compute(ctx context.Context) {
 	})
 }
 
-func (r *teamConnectionResolver) TotalCount(ctx context.Context, args *struct{ CountDeeplyNestedTeams bool }) (int32, error) {
-	if args != nil && args.CountDeeplyNestedTeams {
-		return 0, errors.New("Not supported: counting deeply nested teams.")
-	}
+func (r *teamConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	// Not taking into account limit or cursor for count.
 	opts := database.ListTeamsOpts{
 		WithParentID: r.parentID,
@@ -278,10 +275,7 @@ func (r *teamMemberConnection) compute(ctx context.Context) {
 	})
 }
 
-func (r *teamMemberConnection) TotalCount(ctx context.Context, args *struct{ CountDeeplyNestedTeamMembers bool }) (int32, error) {
-	if args != nil && args.CountDeeplyNestedTeamMembers {
-		return 0, errors.New("Not supported: counting deeply nested team members.")
-	}
+func (r *teamMemberConnection) TotalCount(ctx context.Context) (int32, error) {
 	// Not taking into account limit or cursor for count.
 	opts := database.ListTeamMembersOpts{
 		TeamID: r.teamID,
