@@ -66,7 +66,7 @@ site_admin_system_role AS MATERIALIZED (
     SELECT id FROM roles WHERE name = %s
 ),
 -- this query selects all users without the USER role
-users_without_user_roles AS MATERIALIZED (
+users_without_user_role AS MATERIALIZED (
 	SELECT
 		u.id as user_id, role.id AS role_id
 	FROM users u,
@@ -76,7 +76,7 @@ users_without_user_roles AS MATERIALIZED (
 	FOR UPDATE SKIP LOCKED
 ),
 -- this query selects all site administrators without the SITE_ADMINISTRATOR role
-admins_without_admin_roles AS MATERIALIZED (
+admins_without_admin_role AS MATERIALIZED (
 	SELECT
 		u.id as user_id, role.id AS role_id
 	FROM users u,
@@ -86,8 +86,8 @@ admins_without_admin_roles AS MATERIALIZED (
 	FOR UPDATE SKIP LOCKED
 )
 INSERT INTO user_roles (user_id, role_id)
-	SELECT user_id, role_id FROM users_without_user_roles
+	SELECT user_id, role_id FROM users_without_user_role
 		UNION ALL
-	SELECT user_id, role_id FROM admins_without_admin_roles
+	SELECT user_id, role_id FROM admins_without_admin_role
 ON CONFLICT DO NOTHING
 `
