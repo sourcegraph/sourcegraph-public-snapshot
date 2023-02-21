@@ -20,7 +20,7 @@
       "examples": ["https://dev.azure.com"]
     },
     "username": {
-      "description": "A username for authentication withe the Gerrit code host.",
+      "description": "A username for authentication with the Azure DevOps code host.",
       "type": "string",
       "minLength": 1
     },
