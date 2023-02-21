@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { Routes, Route, useParams, useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { Routes, Route, useParams, useLocation, useNavigate } from 'react-router-dom'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'

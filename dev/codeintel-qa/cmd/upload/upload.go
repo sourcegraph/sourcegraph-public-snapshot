@@ -102,7 +102,6 @@ func upload(ctx context.Context, repoName, commit, file string) (string, error) 
 	for k, v := range argMap {
 		args = append(args, fmt.Sprintf("-%s=%s", k, v))
 	}
-	args = append(args, "--skip-scip")
 
 	tempDir, err := os.MkdirTemp("", "codeintel-qa")
 	if err != nil {

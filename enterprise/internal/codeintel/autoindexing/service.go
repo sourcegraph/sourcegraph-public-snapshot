@@ -152,7 +152,7 @@ func (s *Service) GetIndexConfigurationByRepositoryID(ctx context.Context, repos
 
 // InferIndexConfiguration looks at the repository contents at the latest commit on the default branch of the given
 // repository and determines an index configuration that is likely to succeed.
-func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int, commit string, bypassLimit bool) (_ *config.IndexConfiguration, hints []config.IndexJobHint, err error) {
+func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) (_ *config.IndexConfiguration, hints []config.IndexJobHint, err error) {
 	ctx, trace, endObservation := s.operations.inferIndexConfiguration.With(ctx, &err, observation.Args{
 		LogFields: []otlog.Field{
 			otlog.Int("repositoryID", repositoryID),
@@ -178,7 +178,7 @@ func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int,
 	}
 	trace.AddEvent("found", attribute.String("commit", commit))
 
-	indexJobs, err := s.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, bypassLimit)
+	indexJobs, err := s.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, localOverrideScript, bypassLimit)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -290,8 +290,8 @@ func (s *Service) QueueIndexesForPackage(ctx context.Context, pkg dependencies.M
 	return s.indexEnqueuer.QueueIndexesForPackage(ctx, pkg, assumeSynced)
 }
 
-func (s *Service) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]config.IndexJob, error) {
-	return s.jobSelector.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, bypassLimit)
+func (s *Service) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) ([]config.IndexJob, error) {
+	return s.jobSelector.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, localOverrideScript, bypassLimit)
 }
 
 func (s *Service) InferIndexJobHintsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error) {

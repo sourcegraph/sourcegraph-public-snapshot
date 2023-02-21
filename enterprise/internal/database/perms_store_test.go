@@ -16,13 +16,17 @@ import (
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/maps"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -34,7 +38,7 @@ func cleanupPermsTables(t *testing.T, s *permsStore) {
 		return
 	}
 
-	q := `TRUNCATE TABLE user_permissions, repo_permissions, user_pending_permissions, repo_pending_permissions;`
+	q := `TRUNCATE TABLE user_permissions, repo_permissions, user_pending_permissions, repo_pending_permissions, user_repo_permissions;`
 	if err := s.execute(context.Background(), sqlf.Sprintf(q)); err != nil {
 		t.Fatal(err)
 	}
@@ -313,7 +317,7 @@ func testPermsStore_FetchReposByUserAndExternalService(db database.DB) func(*tes
 			if err != nil {
 				t.Fatal(err)
 			}
-			equal(t, "repos", []api.RepoID{}, repos)
+			equal(t, "repos", 0, len(repos))
 		})
 	}
 }
@@ -663,6 +667,246 @@ func testPermsStore_SetUserPermissions(db database.DB) func(*testing.T) {
 				if err != nil {
 					t.Fatal("repo_permissions:", err)
 				}
+			})
+		}
+	}
+}
+
+var scanPermissions = basestore.NewSliceScanner(func(s dbutil.Scanner) (p authz.Permission, _ error) {
+	err := s.Scan(&p.UserID, &p.ExternalAccountID, &p.RepoID, &p.CreatedAt, &p.UpdatedAt)
+	return p, err
+})
+
+func checkUserRepoPermissions(t *testing.T, s *permsStore, where *sqlf.Query, expectedPermissions []authz.Permission) {
+	t.Helper()
+	format := "SELECT user_id, user_external_account_id, repo_id, created_at, updated_at FROM user_repo_permissions WHERE %s;"
+	permissions, err := scanPermissions(s.Query(context.Background(), sqlf.Sprintf(format, where)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// scanPermissions returns nil if there are no results, but for the purpose of test readability,
+	// we defined expectedPermissions to be an empty slice, which matches the empty permissions input to write to the db.
+	// hence if permissions is nil, we set it to an empty slice.
+	if permissions == nil {
+		permissions = []authz.Permission{}
+	}
+
+	if diff := cmp.Diff(expectedPermissions, permissions, cmpopts.IgnoreFields(authz.Permission{}, "CreatedAt", "UpdatedAt")); diff != "" {
+		t.Fatalf("Expected permissions: %v do not match actual permissions: %v; diff %v", expectedPermissions, permissions, diff)
+	}
+}
+
+func setupPermsRelatedEntities(t *testing.T, s *permsStore, permissions []authz.Permission) {
+	t.Helper()
+	if permissions == nil || len(permissions) == 0 {
+		t.Fatal("no permissions to setup related entities for")
+	}
+
+	users := make(map[int32]*sqlf.Query, len(permissions))
+	externalAccounts := make(map[int32]*sqlf.Query, len(permissions))
+	repos := make(map[int32]*sqlf.Query, len(permissions))
+	for _, p := range permissions {
+		users[p.UserID] = sqlf.Sprintf("(%s::integer, %s::text)", p.UserID, fmt.Sprintf("user-%d", p.UserID))
+		externalAccounts[p.ExternalAccountID] = sqlf.Sprintf("(%s::integer, %s::integer, %s::text, %s::text, %s::text, %s::text)", p.ExternalAccountID, p.UserID, "service_type", "service_id", fmt.Sprintf("account_id_%d", p.ExternalAccountID), "client_id")
+		repos[p.RepoID] = sqlf.Sprintf("(%s::integer, %s::text)", p.RepoID, fmt.Sprintf("repo-%d", p.RepoID))
+	}
+
+	defaultErrMessage := "setup test related entities before actual test"
+	usersQuery := sqlf.Sprintf(`INSERT INTO users(id, username) VALUES %s ON CONFLICT (id) DO NOTHING`, sqlf.Join(maps.Values(users), ","))
+	if err := s.execute(context.Background(), usersQuery); err != nil {
+		t.Fatal(defaultErrMessage, err)
+	}
+	externalAccountsQuery := sqlf.Sprintf(`INSERT INTO user_external_accounts(id, user_id, service_type, service_id, account_id, client_id) VALUES %s ON CONFLICT(id) DO NOTHING`, sqlf.Join(maps.Values(externalAccounts), ","))
+	if err := s.execute(context.Background(), externalAccountsQuery); err != nil {
+		t.Fatal(defaultErrMessage, err)
+	}
+	reposQuery := sqlf.Sprintf(`INSERT INTO repo(id, name) VALUES %s ON CONFLICT(id) DO NOTHING`, sqlf.Join(maps.Values(repos), ","))
+	if err := s.execute(context.Background(), reposQuery); err != nil {
+		t.Fatal(defaultErrMessage, err)
+	}
+}
+
+func testPermsStore_SetUserRepoPermissions(db database.DB) func(*testing.T) {
+	source := "test"
+
+	tests := []struct {
+		name                string
+		origPermissions     []authz.Permission
+		permissions         []authz.Permission
+		expectedPermissions []authz.Permission
+		entity              authz.PermissionEntity
+	}{
+		{
+			name:                "empty",
+			permissions:         []authz.Permission{},
+			expectedPermissions: []authz.Permission{},
+			entity:              authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
+		},
+		{
+			name: "add",
+			permissions: []authz.Permission{
+				{UserID: 1, ExternalAccountID: 1, RepoID: 1},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 2},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 3},
+			},
+			expectedPermissions: []authz.Permission{
+				{UserID: 1, ExternalAccountID: 1, RepoID: 1},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 2},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 3},
+			},
+			entity: authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
+		},
+		{
+			name: "add, update and remove",
+			origPermissions: []authz.Permission{
+				{UserID: 1, ExternalAccountID: 1, RepoID: 1},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 2},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 3},
+			},
+			permissions: []authz.Permission{
+				{UserID: 1, ExternalAccountID: 1, RepoID: 1},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 4},
+			},
+			expectedPermissions: []authz.Permission{
+				{UserID: 1, ExternalAccountID: 1, RepoID: 1},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 4},
+			},
+			entity: authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
+		},
+		{
+			name: "remove only",
+			origPermissions: []authz.Permission{
+				{UserID: 1, ExternalAccountID: 1, RepoID: 1},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 2},
+				{UserID: 1, ExternalAccountID: 1, RepoID: 3},
+			},
+			permissions:         []authz.Permission{},
+			expectedPermissions: []authz.Permission{},
+			entity:              authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
+		},
+	}
+
+	return func(t *testing.T) {
+		ctx := actor.WithInternalActor(context.Background())
+		logger := logtest.Scoped(t)
+
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				s := perms(logger, db, clock)
+				t.Cleanup(func() {
+					cleanupPermsTables(t, s)
+					cleanupUsersTable(t, s)
+					cleanupReposTable(t, s)
+				})
+
+				if len(test.origPermissions) > 0 {
+					setupPermsRelatedEntities(t, s, test.origPermissions)
+					err := s.setUserRepoPermissions(ctx, test.origPermissions, test.entity, source)
+					if err != nil {
+						t.Fatal("setup test permissions before actual test", err)
+					}
+				}
+
+				if len(test.permissions) > 0 {
+					setupPermsRelatedEntities(t, s, test.permissions)
+				}
+				if err := s.setUserRepoPermissions(ctx, test.permissions, test.entity, source); err != nil {
+					t.Fatal("testing user repo permissions", err)
+				}
+
+				if test.entity.UserID > 0 {
+					checkUserRepoPermissions(t, s, sqlf.Sprintf("user_id = %d", test.entity.UserID), test.expectedPermissions)
+				} else if test.entity.RepoID > 0 {
+					checkUserRepoPermissions(t, s, sqlf.Sprintf("repo_id = %d", test.entity.RepoID), test.expectedPermissions)
+				}
+			})
+		}
+	}
+}
+
+func testPermsStore_FetchReposByExternalAccount(db database.DB) func(*testing.T) {
+	source := "test"
+
+	tests := []struct {
+		name              string
+		origPermissions   []authz.Permission
+		expected          []api.RepoID
+		externalAccountID int32
+	}{
+		{
+			name:              "empty",
+			externalAccountID: 1,
+			expected:          nil,
+		},
+		{
+			name:              "one match",
+			externalAccountID: 1,
+			expected:          []api.RepoID{1},
+			origPermissions: []authz.Permission{
+				{
+					UserID:            1,
+					ExternalAccountID: 1,
+					RepoID:            1,
+				},
+				{
+					UserID:            1,
+					ExternalAccountID: 2,
+					RepoID:            2,
+				},
+				{
+					UserID: 1,
+					RepoID: 3,
+				},
+			},
+		},
+		{
+			name:              "multiple matches",
+			externalAccountID: 1,
+			expected:          []api.RepoID{1, 2},
+			origPermissions: []authz.Permission{
+				{
+					UserID:            1,
+					ExternalAccountID: 1,
+					RepoID:            1,
+				},
+				{
+					UserID:            1,
+					ExternalAccountID: 1,
+					RepoID:            2,
+				},
+				{
+					UserID: 1,
+					RepoID: 3,
+				},
+			},
+		},
+	}
+
+	return func(t *testing.T) {
+		ctx := actor.WithInternalActor(context.Background())
+		logger := logtest.Scoped(t)
+
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				s := perms(logger, db, clock)
+				t.Cleanup(func() {
+					cleanupPermsTables(t, s)
+				})
+
+				if test.origPermissions != nil && len(test.origPermissions) > 0 {
+					setupPermsRelatedEntities(t, s, test.origPermissions)
+					err := s.setUserRepoPermissions(ctx, test.origPermissions, authz.PermissionEntity{UserID: 42}, source)
+					if err != nil {
+						t.Fatal("setup test permissions before actual test", err)
+					}
+				}
+
+				ids, err := s.FetchReposByExternalAccount(ctx, test.externalAccountID)
+				if err != nil {
+					t.Fatal("testing fetch repos by user and external account", err)
+				}
+
+				assert.Equal(t, test.expected, ids, "no match found for repo IDs")
 			})
 		}
 	}
@@ -2632,11 +2876,10 @@ INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id
 			t.Fatalf("len(userIDs): want 2 but got %v", userIDs)
 		}
 
-		if userIDs["alice_gitlab"] != 1 {
-			t.Fatalf(`userIDs["alice_gitlab"]: want 1 but got %d`, userIDs["alice_gitlab"])
-		} else if userIDs["bob_gitlab"] != 2 {
-			t.Fatalf(`userIDs["bob_gitlab"]: want 2 but got %d`, userIDs["bob_gitlab"])
-		}
+		assert.Equal(t, int32(1), userIDs["alice_gitlab"].UserID)
+		assert.Equal(t, int32(1), userIDs["alice_gitlab"].ExternalAccountID)
+		assert.Equal(t, int32(2), userIDs["bob_gitlab"].UserID)
+		assert.Equal(t, int32(3), userIDs["bob_gitlab"].ExternalAccountID)
 
 		accounts = &extsvc.Accounts{
 			ServiceType: "github",

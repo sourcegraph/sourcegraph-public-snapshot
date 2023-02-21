@@ -1,6 +1,6 @@
 import { FC } from 'react'
 
-import { Routes, Route, Navigate } from 'react-router-dom-v5-compat'
+import { Routes, Route, Navigate } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -137,13 +137,13 @@ const BREADCRUMB = { key: 'code-intelligence', element: 'Code graph data' }
  * Renders pages related to repository code graph.
  */
 export const RepositoryCodeIntelArea: FC<RepositoryCodeIntelAreaPageProps> = props => {
-    const { useBreadcrumb } = props
+    const { useBreadcrumb, repo } = props
 
     useBreadcrumb(BREADCRUMB)
 
     return (
         <div className="container d-flex mt-3">
-            <CodeIntelSidebar className="flex-0 mr-3" codeIntelSidebarGroups={sidebarRoutes} {...props} />
+            <CodeIntelSidebar className="flex-0 mr-3" codeIntelSidebarGroups={sidebarRoutes} repo={repo} />
 
             <div className="flex-bounded">
                 <Routes>

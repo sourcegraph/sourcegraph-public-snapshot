@@ -2,7 +2,6 @@ package graphql
 
 import (
 	"context"
-	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -67,7 +66,7 @@ func (r *codeIntelTreeInfoResolver) SearchBasedSupport(ctx context.Context) (*[]
 
 func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) (resolverstubs.GitTreePreciseCoverageErrorResolver, error) {
 	var limitErr error
-	configurations, hints, err := r.autoindexSvc.InferIndexConfiguration(ctx, int(r.repo.ID), r.commit, true)
+	configurations, hints, err := r.autoindexSvc.InferIndexConfiguration(ctx, int(r.repo.ID), r.commit, "", true)
 	if err != nil {
 		if errors.As(err, &inference.LimitError{}) {
 			limitErr = err
@@ -84,7 +83,7 @@ func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) (resolve
 				resolvers = append(resolvers, &codeIntelTreePreciseCoverageResolver{
 					confidence: indexJobInfered,
 					// drop the tag if it exists
-					indexer: codeinteltypes.NewCodeIntelIndexerResolverFrom(codeinteltypes.ImageToIndexer[strings.Split(job.Indexer, ":")[0]]),
+					indexer: codeinteltypes.NewCodeIntelIndexerResolver(job.Indexer),
 				})
 			}
 		}
@@ -104,7 +103,7 @@ func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) (resolve
 			resolvers = append(resolvers, &codeIntelTreePreciseCoverageResolver{
 				confidence: confidence,
 				// expected that job hints don't include a tag in the indexer name
-				indexer: codeinteltypes.NewCodeIntelIndexerResolverFrom(codeinteltypes.ImageToIndexer[hint.Indexer]),
+				indexer: codeinteltypes.NewCodeIntelIndexerResolver(hint.Indexer),
 			})
 		}
 	}

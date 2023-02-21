@@ -17,7 +17,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
-
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -32,6 +31,51 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func TestGetIndexers(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+	ctx := context.Background()
+
+	insertUploads(t, db,
+		types.Upload{ID: 1, Indexer: "scip-typescript"},
+		types.Upload{ID: 2, Indexer: "scip-typescript"},
+		types.Upload{ID: 3, Indexer: "scip-typescript"},
+		types.Upload{ID: 4, Indexer: "scip-typescript"},
+		types.Upload{ID: 5, Indexer: "scip-typescript"},
+		types.Upload{ID: 6, Indexer: "lsif-ocaml", RepositoryID: 51},
+		types.Upload{ID: 7, Indexer: "lsif-ocaml", RepositoryID: 51},
+		types.Upload{ID: 8, Indexer: "third-party/scip-python@sha256:deadbeefdeadbeefdeadbeef", RepositoryID: 51},
+	)
+
+	// Global
+	indexers, err := store.GetIndexers(ctx, shared.GetIndexersOptions{})
+	if err != nil {
+		t.Fatalf("unexpected error getting indexers: %s", err)
+	}
+	expectedIndexers := []string{
+		"lsif-ocaml",
+		"scip-typescript",
+		"third-party/scip-python@sha256:deadbeefdeadbeefdeadbeef",
+	}
+	if diff := cmp.Diff(expectedIndexers, indexers); diff != "" {
+		t.Errorf("unexpected indexers (-want +got):\n%s", diff)
+	}
+
+	// Repo-specific
+	indexers, err = store.GetIndexers(ctx, shared.GetIndexersOptions{RepositoryID: 51})
+	if err != nil {
+		t.Fatalf("unexpected error getting indexers: %s", err)
+	}
+	expectedIndexers = []string{
+		"lsif-ocaml",
+		"third-party/scip-python@sha256:deadbeefdeadbeefdeadbeef",
+	}
+	if diff := cmp.Diff(expectedIndexers, indexers); diff != "" {
+		t.Errorf("unexpected indexers (-want +got):\n%s", diff)
+	}
+}
 
 func TestGetUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
@@ -60,9 +104,9 @@ func TestGetUploads(t *testing.T) {
 		types.Upload{ID: 5, Commit: makeCommit(3333), UploadedAt: t5, Root: "sub1/", State: "processing", Indexer: "scip-typescript"},
 		types.Upload{ID: 6, UploadedAt: t6, Root: "sub2/", State: "processing", RepositoryID: 52, RepositoryName: "foo bar y"},
 		types.Upload{ID: 7, UploadedAt: t7, FinishedAt: &t4, Root: "sub1/", Indexer: "scip-typescript"},
-		types.Upload{ID: 8, UploadedAt: t8, FinishedAt: &t4, Indexer: "scip-typescript"},
+		types.Upload{ID: 8, UploadedAt: t8, FinishedAt: &t4, Indexer: "lsif-typescript"},
 		types.Upload{ID: 9, UploadedAt: t9, State: "queued"},
-		types.Upload{ID: 10, UploadedAt: t10, FinishedAt: &t6, Root: "sub1/", Indexer: "scip-typescript"},
+		types.Upload{ID: 10, UploadedAt: t10, FinishedAt: &t6, Root: "sub1/", Indexer: "lsif-ocaml"},
 		types.Upload{ID: 11, UploadedAt: t11, FinishedAt: &t6, Root: "sub1/", Indexer: "scip-typescript"},
 
 		// Deleted duplicates
@@ -116,6 +160,7 @@ func TestGetUploads(t *testing.T) {
 		visibleAtTip        bool
 		dependencyOf        int
 		dependentOf         int
+		indexerNames        []string
 		uploadedBefore      *time.Time
 		uploadedAfter       *time.Time
 		inCommitGraph       bool
@@ -129,13 +174,13 @@ func TestGetUploads(t *testing.T) {
 		{oldestFirst: true, expectedIDs: []int{11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1}},
 		{repositoryID: 50, expectedIDs: []int{1, 2, 3, 5, 7, 8, 9, 10, 11}},
 		{state: "completed", expectedIDs: []int{7, 8, 10, 11}},
-		{term: "sub", expectedIDs: []int{1, 3, 5, 6, 7, 10, 11}},     // searches root
-		{term: "003", expectedIDs: []int{1, 3, 5}},                   // searches commits
-		{term: "333", expectedIDs: []int{1, 2, 3, 5}},                // searches commits and failure message
-		{term: "typescript", expectedIDs: []int{2, 5, 7, 8, 10, 11}}, // searches indexer
-		{term: "QuEuEd", expectedIDs: []int{1, 3, 4, 9}},             // searches text status
-		{term: "bAr", expectedIDs: []int{4, 6}},                      // search repo names
-		{state: "failed", expectedIDs: []int{2}},                     // treats errored/failed states equivalently
+		{term: "sub", expectedIDs: []int{1, 3, 5, 6, 7, 10, 11}}, // searches root
+		{term: "003", expectedIDs: []int{1, 3, 5}},               // searches commits
+		{term: "333", expectedIDs: []int{1, 2, 3, 5}},            // searches commits and failure message
+		{term: "typescript", expectedIDs: []int{2, 5, 7, 8, 11}}, // searches indexer
+		{term: "QuEuEd", expectedIDs: []int{1, 3, 4, 9}},         // searches text status
+		{term: "bAr", expectedIDs: []int{4, 6}},                  // search repo names
+		{state: "failed", expectedIDs: []int{2}},                 // treats errored/failed states equivalently
 		{visibleAtTip: true, expectedIDs: []int{2, 5, 7, 8}},
 		{uploadedBefore: &t5, expectedIDs: []int{6, 7, 8, 9, 10, 11}},
 		{uploadedAfter: &t4, expectedIDs: []int{1, 2, 3}},
@@ -148,6 +193,7 @@ func TestGetUploads(t *testing.T) {
 		{dependentOf: 10, expectedIDs: []int{}},
 		{dependencyOf: 11, expectedIDs: []int{8}},
 		{dependentOf: 11, expectedIDs: []int{}},
+		{indexerNames: []string{"typescript", "ocaml"}, expectedIDs: []int{2, 5, 7, 8, 10, 11}}, // search indexer names (only)
 		{allowDeletedRepo: true, state: "deleted", expectedIDs: []int{12, 13, 14, 15}},
 		{allowDeletedRepo: true, state: "deleted", alllowDeletedUpload: true, expectedIDs: []int{12, 13, 14, 15, 16, 17}},
 		{states: []string{"completed", "failed"}, expectedIDs: []int{2, 7, 8, 10, 11}},
@@ -155,7 +201,7 @@ func TestGetUploads(t *testing.T) {
 
 	runTest := func(testCase testCase, lo, hi int) (errors int) {
 		name := fmt.Sprintf(
-			"repositoryID=%d|state='%s'|states='%s',term='%s'|visibleAtTip=%v|dependencyOf=%d|dependentOf=%d|offset=%d",
+			"repositoryID=%d|state='%s'|states='%s',term='%s'|visibleAtTip=%v|dependencyOf=%d|dependentOf=%d|indexersNames=%v|offset=%d",
 			testCase.repositoryID,
 			testCase.state,
 			strings.Join(testCase.states, ","),
@@ -163,6 +209,7 @@ func TestGetUploads(t *testing.T) {
 			testCase.visibleAtTip,
 			testCase.dependencyOf,
 			testCase.dependentOf,
+			testCase.indexerNames,
 			lo,
 		)
 
@@ -175,6 +222,7 @@ func TestGetUploads(t *testing.T) {
 				VisibleAtTip:       testCase.visibleAtTip,
 				DependencyOf:       testCase.dependencyOf,
 				DependentOf:        testCase.dependentOf,
+				IndexerNames:       testCase.indexerNames,
 				UploadedBefore:     testCase.uploadedBefore,
 				UploadedAfter:      testCase.uploadedAfter,
 				InCommitGraph:      testCase.inCommitGraph,

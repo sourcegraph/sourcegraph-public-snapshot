@@ -1,6 +1,6 @@
 import { FC } from 'react'
 
-import { Routes, Route, Navigate } from 'react-router-dom-v5-compat'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { SiteExternalServiceConfigResult, SiteExternalServiceConfigVariables } from 'src/graphql-operations'
 
 import { useQuery } from '@sourcegraph/http-client'

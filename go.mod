@@ -13,6 +13,7 @@ require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PuerkitoBio/rehttp v1.1.0
 	github.com/RoaringBitmap/roaring v1.2.3
+	github.com/XSAM/otelsql v0.18.0
 	github.com/agext/levenshtein v1.2.3
 	github.com/amit7itz/goset v1.0.1
 	github.com/aws/aws-sdk-go-v2 v1.17.4
@@ -78,7 +79,6 @@ require (
 	github.com/graphql-go/graphql v0.8.0
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/hashicorp/golang-lru v0.5.4
-	github.com/hexops/autogold v1.3.1
 	github.com/hexops/valast v1.4.3
 	github.com/honeycombio/libhoney-go v1.15.8
 	github.com/inconshreveable/log15 v0.0.0-20201112154412-8562bdadbbac
@@ -187,8 +187,6 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
-require github.com/XSAM/otelsql v0.15.0
-
 require (
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.14.1 // indirect
@@ -224,7 +222,7 @@ require (
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	github.com/zenazn/goji v1.0.1 // indirect
-	go.opentelemetry.io/otel/metric v0.34.0 // indirect
+	go.opentelemetry.io/otel/metric v0.35.0 // indirect
 	go.uber.org/goleak v1.2.0 // indirect
 )
 
@@ -245,7 +243,7 @@ require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/go-github/v47 v47.1.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2 v2.0.0-rc.3
-	github.com/hexops/autogold/v2 v2.0.3
+	github.com/hexops/autogold/v2 v2.1.0
 	github.com/k3a/html2text v1.1.0
 	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.13
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
@@ -326,7 +324,7 @@ require (
 	github.com/dave/jennifer v1.5.0 // indirect
 	github.com/djherbis/buffer v1.2.0 // indirect
 	github.com/djherbis/nio/v3 v3.0.1 // indirect
-	github.com/dlclark/regexp2 v1.7.0 // indirect
+	github.com/dlclark/regexp2 v1.8.0 // indirect
 	github.com/docker/docker v20.10.21+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
@@ -456,8 +454,8 @@ require (
 	go.mongodb.org/mongo-driver v1.10.2 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/collector/pdata v0.56.0 // indirect
-	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.37.0
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.36.4
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.38.0
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.38.0
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.13.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.13.0
 	go.opentelemetry.io/proto/otlp v0.19.0
@@ -503,8 +501,6 @@ replace (
 // These entries indicate temporary replace directives due to a pending pull request upstream
 // or issues with specific versions.
 replace (
-	// Forked until PR is merged upstream TODO @jhchabran
-	github.com/XSAM/otelsql => github.com/sourcegraph/otelsql v0.0.0-20220905085252-74375c884fff
 	// Pending: https://github.com/crewjam/saml/pull/450
 	github.com/crewjam/saml => github.com/sourcegraph/saml v0.0.0-20220728002234-ab6b53f6f94d
 	// Pending: https://github.com/ghodss/yaml/pull/65

@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react'
 
 import { mdiMagnify } from '@mdi/js'
-import { Navigate, useLocation } from 'react-router-dom-v5-compat'
+import { Navigate, useLocation } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
 import {

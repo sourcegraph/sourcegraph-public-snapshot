@@ -44,7 +44,7 @@ func (m *externalForkNameMigrator) Progress(ctx context.Context, _ bool) (float6
 // or Cloud.
 const externalForkNameMigratorProgressQuery = `
 SELECT
-	CASE migrated.count WHEN 0 THEN 0 ELSE
+	CASE total.count WHEN 0 THEN 1 ELSE
 		CAST(migrated.count AS float) / CAST(total.count AS float)
 	END
 FROM

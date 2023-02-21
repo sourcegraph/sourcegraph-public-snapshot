@@ -2488,7 +2488,7 @@ ALTER SEQUENCE lsif_dependency_indexing_jobs_id_seq1 OWNED BY lsif_dependency_in
 CREATE TABLE lsif_dependency_repos (
     id bigint NOT NULL,
     name text NOT NULL,
-    version text NOT NULL,
+    version text DEFAULT '👁️temporary_sentinel_value👁️'::text NOT NULL,
     scheme text NOT NULL
 );
 

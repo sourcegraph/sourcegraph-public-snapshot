@@ -21,15 +21,17 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- Experimental GraphQL query, `permissionsSyncJobs` is removed and substituted with new non-experimental `permissionSyncJobs` query (mind the singular form of permission) which provides full information about permission sync jobs stored in the database. `authz.syncJobsRecordsTTL`. [#47933](https://github.com/sourcegraph/sourcegraph/pull/47933)
 
 ### Fixed
 
--
+- Fixed issues with propagating tracing configuration throughout the application. [#47428](https://github.com/sourcegraph/sourcegraph/pull/47428)
 
 ### Removed
 
--
+- The LSIF upload endpoint is no longer supported and has been replaced by a diagnostic error page. src-cli v4.5+ will translate all local LSIF files to SCIP prior to upload. [#47547](https://github.com/sourcegraph/sourcegraph/pull/47547)
+- The experimental setting `authz.syncJobsRecordsLimit` has been removed. [#47933](https://github.com/sourcegraph/sourcegraph/pull/47933)
+- Storing permission sync jobs statuses in Redis has been removed as now all permission sync related data is stored in a database. [#47933](https://github.com/sourcegraph/sourcegraph/pull/47933)
 
 ## 4.5.0
 
@@ -78,6 +80,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed a bug where removing an auth provider would render a user's Account Security page inaccessible if they still had an external account associated with the removed auth provider. [#47092](https://github.com/sourcegraph/sourcegraph/pull/47092)
 - Fixed a bug where the `repo:has.description()` parameter now correctly shows description of a repository synced from a Bitbucket server code host connection, while previously it used to show the repository name instead [#46752](https://github.com/sourcegraph/sourcegraph/pull/46752)
 - Fixed a bug where permissions syncs consumed more rate limit tokens than required. This should lead to speed-ups in permission syncs, as well as other possible cases where a process runs in repo-updater. [#47374](https://github.com/sourcegraph/sourcegraph/pull/47374)
+- Fixes UI bug where folders with single child were appearing as child folders themselves. [#46628](https://github.com/sourcegraph/sourcegraph/pull/46628)
 
 ### Removed
 

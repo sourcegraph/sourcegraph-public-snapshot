@@ -8,6 +8,7 @@ proto_library(
     name = "proto_proto",
     srcs = ["gitserver.proto"],
     visibility = ["//:__subpackages__"],
+    deps = ["@com_google_protobuf//:timestamp_proto"],
 )
 
 go_proto_library(

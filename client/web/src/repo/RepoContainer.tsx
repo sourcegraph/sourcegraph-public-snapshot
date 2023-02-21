@@ -3,7 +3,7 @@ import React, { FC, Suspense, useEffect, useMemo, useState } from 'react'
 import { mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
-import { matchPath, Location, useLocation, Route, Routes } from 'react-router-dom-v5-compat'
+import { matchPath, Location, useLocation, Route, Routes } from 'react-router-dom'
 import { NEVER, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 

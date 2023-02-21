@@ -1,7 +1,6 @@
 import { FC } from 'react'
 
-import { MemoryRouter, MemoryRouterProps } from 'react-router'
-import { Routes, Route, CompatRouter } from 'react-router-dom-v5-compat'
+import { RouterProvider, createMemoryRouter, MemoryRouterProps } from 'react-router-dom'
 
 import { MockedStoryProvider, MockedStoryProviderProps } from '@sourcegraph/shared/src/stories'
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -40,7 +39,8 @@ export const WebStory: FC<WebStoryProps> = ({
     mocks,
     path = '*',
     useStrictMocking,
-    ...memoryRouterProps
+    initialEntries = ['/'],
+    initialIndex = 1,
 }) => {
     const isLightTheme = useTheme()
     const breadcrumbSetters = useBreadcrumbs()
@@ -48,25 +48,28 @@ export const WebStory: FC<WebStoryProps> = ({
     usePrependStyles('web-styles', webStyles)
     setExperimentalFeaturesForTesting()
 
+    const routes = [
+        {
+            path,
+            element: (
+                <Children
+                    {...breadcrumbSetters}
+                    isLightTheme={isLightTheme}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                />
+            ),
+        },
+    ]
+
+    const router = createMemoryRouter(routes, {
+        initialEntries,
+        initialIndex,
+    })
+
     return (
         <MockedStoryProvider mocks={mocks} useStrictMocking={useStrictMocking}>
             <WildcardThemeContext.Provider value={{ isBranded: true }}>
-                <MemoryRouter {...memoryRouterProps}>
-                    <CompatRouter>
-                        <Routes>
-                            <Route
-                                path={path}
-                                element={
-                                    <Children
-                                        {...breadcrumbSetters}
-                                        isLightTheme={isLightTheme}
-                                        telemetryService={NOOP_TELEMETRY_SERVICE}
-                                    />
-                                }
-                            />
-                        </Routes>
-                    </CompatRouter>
-                </MemoryRouter>
+                <RouterProvider router={router} />
             </WildcardThemeContext.Provider>
         </MockedStoryProvider>
     )

@@ -14,6 +14,10 @@ type SourcedCommits struct {
 	Commits        []string
 }
 
+type GetIndexersOptions struct {
+	RepositoryID int
+}
+
 type GetUploadsOptions struct {
 	RepositoryID            int
 	State                   string
@@ -22,6 +26,7 @@ type GetUploadsOptions struct {
 	VisibleAtTip            bool
 	DependencyOf            int
 	DependentOf             int
+	IndexerNames            []string
 	UploadedBefore          *time.Time
 	UploadedAfter           *time.Time
 	LastRetentionScanBefore *time.Time
