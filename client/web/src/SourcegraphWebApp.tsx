@@ -353,39 +353,39 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
     const router = createBrowserRouter([
         {
             element: (
-                                <Layout
-                                    authenticatedUser={resolvedAuthenticatedUser}
-                                    viewerSubject={viewerSubject}
-                                    settingsCascade={settingsCascade}
-                                    batchChangesEnabled={props.batchChangesEnabled}
-                                    batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(settingsCascade)}
-                                    batchChangesWebhookLogsEnabled={window.context.batchChangesWebhookLogsEnabled}
-                                    // Search query
-                                    fetchHighlightedFileLineRanges={_fetchHighlightedFileLineRanges}
-                                    // Extensions
-                                    platformContext={platformContext}
-                                    extensionsController={null}
-                                    telemetryService={eventLogger}
-                                    isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                    searchContextsEnabled={props.searchContextsEnabled}
-                                    selectedSearchContextSpec={selectedSearchContextSpec}
-                                    setSelectedSearchContextSpec={setSelectedSearchContextSpec}
-                                    getUserSearchContextNamespaces={getUserSearchContextNamespaces}
-                                    fetchSearchContexts={fetchSearchContexts}
-                                    fetchSearchContextBySpec={fetchSearchContextBySpec}
-                                    fetchSearchContext={fetchSearchContext}
-                                    createSearchContext={createSearchContext}
-                                    updateSearchContext={updateSearchContext}
-                                    deleteSearchContext={deleteSearchContext}
-                                    isSearchContextSpecAvailable={isSearchContextSpecAvailable}
-                                    globbing={globbing}
-                                    streamSearch={aggregateStreamingSearch}
-                                    codeIntelligenceEnabled={!!props.codeInsightsEnabled}
-                                    notebooksEnabled={props.notebooksEnabled}
-                                    codeMonitoringEnabled={props.codeMonitoringEnabled}
-                                    searchAggregationEnabled={props.searchAggregationEnabled}
-                                />
-                            ),
+                <Layout
+                    authenticatedUser={resolvedAuthenticatedUser}
+                    viewerSubject={viewerSubject}
+                    settingsCascade={settingsCascade}
+                    batchChangesEnabled={props.batchChangesEnabled}
+                    batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(settingsCascade)}
+                    batchChangesWebhookLogsEnabled={window.context.batchChangesWebhookLogsEnabled}
+                    // Search query
+                    fetchHighlightedFileLineRanges={_fetchHighlightedFileLineRanges}
+                    // Extensions
+                    platformContext={platformContext}
+                    extensionsController={null}
+                    telemetryService={eventLogger}
+                    isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                    searchContextsEnabled={props.searchContextsEnabled}
+                    selectedSearchContextSpec={selectedSearchContextSpec}
+                    setSelectedSearchContextSpec={setSelectedSearchContextSpec}
+                    getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+                    fetchSearchContexts={fetchSearchContexts}
+                    fetchSearchContextBySpec={fetchSearchContextBySpec}
+                    fetchSearchContext={fetchSearchContext}
+                    createSearchContext={createSearchContext}
+                    updateSearchContext={updateSearchContext}
+                    deleteSearchContext={deleteSearchContext}
+                    isSearchContextSpecAvailable={isSearchContextSpecAvailable}
+                    globbing={globbing}
+                    streamSearch={aggregateStreamingSearch}
+                    codeIntelligenceEnabled={!!props.codeInsightsEnabled}
+                    notebooksEnabled={props.notebooksEnabled}
+                    codeMonitoringEnabled={props.codeMonitoringEnabled}
+                    searchAggregationEnabled={props.searchAggregationEnabled}
+                />
+            ),
             children: props.routes
                 .map(
                     ({ condition = () => true, render, path, handle }) =>

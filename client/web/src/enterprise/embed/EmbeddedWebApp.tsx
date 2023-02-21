@@ -62,44 +62,45 @@ export const EmbeddedWebApp: FC = () => {
     // IMPORTANT: Please consult with the security team if you are unsure whether your changes could introduce security exploits.
     return (
         <BrowserRouter>
-                <WildcardThemeContext.Provider value={WILDCARD_THEME}>
-                    <div className={styles.body}>
-                        <Suspense
-                            fallback={
-                                <div className="d-flex justify-content-center p-3">
-                                    <LoadingSpinner />
-                                </div>
-                            }
-                        >
-                            <Routes>
-                                <Route
-                                    path="/embed/notebooks/:notebookId"
-                                    element={
-                                        <EmbeddedNotebookPage
-                                            searchContextsEnabled={true}
-                                            isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                            authenticatedUser={null}
-                                            settingsCascade={EMPTY_SETTINGS_CASCADE}
-                                            platformContext={platformContext}
-                                        />
-                                    }
-                                />Ï
-                                <Route
-                                    path="*"
-                                    element={
-                                        <Alert variant="danger">
-                                            Invalid embedding route, please check the embedding URL.
-                                        </Alert>
-                                    }
-                                />
-                            </Routes>
-                        </Suspense>
-                        <GlobalContributions
-                            extensionsController={extensionsController}
-                            platformContext={platformContext}
-                        />
-                    </div>
-                </WildcardThemeContext.Provider>
-            </BrowserRouter>
+            <WildcardThemeContext.Provider value={WILDCARD_THEME}>
+                <div className={styles.body}>
+                    <Suspense
+                        fallback={
+                            <div className="d-flex justify-content-center p-3">
+                                <LoadingSpinner />
+                            </div>
+                        }
+                    >
+                        <Routes>
+                            <Route
+                                path="/embed/notebooks/:notebookId"
+                                element={
+                                    <EmbeddedNotebookPage
+                                        searchContextsEnabled={true}
+                                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                        authenticatedUser={null}
+                                        settingsCascade={EMPTY_SETTINGS_CASCADE}
+                                        platformContext={platformContext}
+                                    />
+                                }
+                            />
+                            Ï
+                            <Route
+                                path="*"
+                                element={
+                                    <Alert variant="danger">
+                                        Invalid embedding route, please check the embedding URL.
+                                    </Alert>
+                                }
+                            />
+                        </Routes>
+                    </Suspense>
+                    <GlobalContributions
+                        extensionsController={extensionsController}
+                        platformContext={platformContext}
+                    />
+                </div>
+            </WildcardThemeContext.Provider>
+        </BrowserRouter>
     )
 }

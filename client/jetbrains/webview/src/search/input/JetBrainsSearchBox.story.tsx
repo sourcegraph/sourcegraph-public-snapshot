@@ -47,42 +47,41 @@ export const JetBrainsSearchBoxStory: Story = () => {
             <ThemeContext.Provider value={{ themeSetting: !isDarkTheme ? ThemeSetting.Light : ThemeSetting.Dark }}>
                 <BrowserRouter>
                     <div ref={rootElementRef}>
-                            <div className="d-flex justify-content-center">
-                                <div className="mx-6">
-                                    <JetBrainsSearchBox
-                                        caseSensitive={true}
-                                        setCaseSensitivity={() => {}}
-                                        patternType={SearchPatternType.regexp}
-                                        setPatternType={() => {}}
-                                        isSourcegraphDotCom={false}
-                                        structuralSearchDisabled={false}
-                                        queryState={{ query: 'type:file test AND test repo:contains.file(CHANGELOG)' }}
-                                        onChange={() => {}}
-                                        onSubmit={() => {}}
-                                        authenticatedUser={null}
-                                        searchContextsEnabled={true}
-                                        showSearchContext={true}
-                                        showSearchContextManagement={false}
-                                        setSelectedSearchContextSpec={() => {}}
-                                        selectedSearchContextSpec={undefined}
-                                        fetchSearchContexts={() => {
-                                            throw new Error('fetchSearchContexts')
-                                        }}
-                                        getUserSearchContextNamespaces={() => []}
-                                        fetchStreamSuggestions={() => NEVER}
-                                        settingsCascade={EMPTY_SETTINGS_CASCADE}
-                                        globbing={false}
-                                        telemetryService={NOOP_TELEMETRY_SERVICE}
-                                        platformContext={{ requestGraphQL: () => EMPTY }}
-                                        className=""
-                                        containerClassName=""
-                                        autoFocus={true}
-                                        hideHelpButton={true}
-                                    />
-                                </div>
+                        <div className="d-flex justify-content-center">
+                            <div className="mx-6">
+                                <JetBrainsSearchBox
+                                    caseSensitive={true}
+                                    setCaseSensitivity={() => {}}
+                                    patternType={SearchPatternType.regexp}
+                                    setPatternType={() => {}}
+                                    isSourcegraphDotCom={false}
+                                    structuralSearchDisabled={false}
+                                    queryState={{ query: 'type:file test AND test repo:contains.file(CHANGELOG)' }}
+                                    onChange={() => {}}
+                                    onSubmit={() => {}}
+                                    authenticatedUser={null}
+                                    searchContextsEnabled={true}
+                                    showSearchContext={true}
+                                    showSearchContextManagement={false}
+                                    setSelectedSearchContextSpec={() => {}}
+                                    selectedSearchContextSpec={undefined}
+                                    fetchSearchContexts={() => {
+                                        throw new Error('fetchSearchContexts')
+                                    }}
+                                    getUserSearchContextNamespaces={() => []}
+                                    fetchStreamSuggestions={() => NEVER}
+                                    settingsCascade={EMPTY_SETTINGS_CASCADE}
+                                    globbing={false}
+                                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                                    platformContext={{ requestGraphQL: () => EMPTY }}
+                                    className=""
+                                    containerClassName=""
+                                    autoFocus={true}
+                                    hideHelpButton={true}
+                                />
                             </div>
                         </div>
-
+                    </div>
                 </BrowserRouter>
             </ThemeContext.Provider>
         </WildcardThemeContext.Provider>
