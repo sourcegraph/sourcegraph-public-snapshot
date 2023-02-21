@@ -23,7 +23,8 @@ describe('SurveyPage', () => {
 
     afterEach(cleanup)
 
-    const renderSurveyPage = ({ mocks, routerProps }: RenderSurveyPageParameters) => renderWithBrandedContext(
+    const renderSurveyPage = ({ mocks, routerProps }: RenderSurveyPageParameters) =>
+        renderWithBrandedContext(
             <MockedTestProvider mocks={mocks}>
                 <SurveyPage authenticatedUser={null} />
             </MockedTestProvider>,
