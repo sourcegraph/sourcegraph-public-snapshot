@@ -2,16 +2,16 @@ name: scip-typescript
 on:
   push:
     paths:
-      - '**.ts'
-      - '**.tsx'
-      - '**.js'
+      - "**.ts"
+      - "**.tsx"
+      - "**.js"
 
 jobs:
   scip-typescript:
     if: github.repository == 'sourcegraph/sourcegraph'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: pnpm/action-setup@v2
         id: pnpm-install
         with:

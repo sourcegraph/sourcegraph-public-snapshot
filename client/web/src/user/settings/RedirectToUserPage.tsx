@@ -1,4 +1,4 @@
-import { Navigate, useLocation } from 'react-router-dom-v5-compat'
+import { Navigate, useLocation } from 'react-router-dom'
 
 import { userURL } from '..'
 import { AuthenticatedUser } from '../../auth'

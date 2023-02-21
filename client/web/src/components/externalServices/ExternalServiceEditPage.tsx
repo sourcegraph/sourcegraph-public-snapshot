@@ -1,7 +1,7 @@
 import React, { FC, useEffect, useState, useCallback } from 'react'
 
 import { mdiCog } from '@mdi/js'
-import { Navigate, useParams } from 'react-router-dom-v5-compat'
+import { Navigate, useParams } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'

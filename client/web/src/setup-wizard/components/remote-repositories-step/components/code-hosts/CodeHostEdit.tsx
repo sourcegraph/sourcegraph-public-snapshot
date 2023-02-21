@@ -1,7 +1,7 @@
 import { FC, ReactNode } from 'react'
 
 import { gql, useQuery } from '@apollo/client'
-import { useParams } from 'react-router-dom-v5-compat'
+import { useParams } from 'react-router-dom'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { Alert, Button, ErrorAlert, H4, Link, LoadingSpinner } from '@sourcegraph/wildcard'

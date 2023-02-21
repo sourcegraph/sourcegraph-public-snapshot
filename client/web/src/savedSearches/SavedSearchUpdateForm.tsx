@@ -1,6 +1,6 @@
 import React, { FC } from 'react'
 
-import { useParams } from 'react-router-dom-v5-compat'
+import { useParams } from 'react-router-dom'
 import { concat, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,

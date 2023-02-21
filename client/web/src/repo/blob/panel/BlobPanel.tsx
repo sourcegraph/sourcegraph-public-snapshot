@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react'
 
-import { useLocation } from 'react-router-dom-v5-compat'
+import { useLocation } from 'react-router-dom'
 import { Observable, Subscription } from 'rxjs'
 
 import { Panel, useBuiltinTabbedPanelViews } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'

@@ -17,6 +17,7 @@ export interface AuthProvider {
         | 'saml'
         | 'builtin'
         | 'gerrit'
+        | 'azuredevops'
     displayName: string
     isBuiltin: boolean
     authenticationURL: string

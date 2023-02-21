@@ -1,7 +1,7 @@
 import React, { useMemo, useCallback, useEffect } from 'react'
 
 import classNames from 'classnames'
-import { useParams } from 'react-router-dom-v5-compat'
+import { useParams } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
 import { gql, useQuery } from '@sourcegraph/http-client'

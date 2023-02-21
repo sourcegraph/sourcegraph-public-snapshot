@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 
 import { mdiCloudDownload, mdiCog, mdiBrain } from '@mdi/js'
 import { isEqual } from 'lodash'
-import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'

@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 import { getUrlQuery, GetUrlQueryParameters } from '../utils'
 

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from 'react'
 
 import { subDays, startOfDay } from 'date-fns'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import { useParams } from 'react-router-dom-v5-compat'
+import { useParams } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'

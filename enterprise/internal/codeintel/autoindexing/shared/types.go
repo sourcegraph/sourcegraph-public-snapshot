@@ -9,6 +9,7 @@ type GetIndexesOptions struct {
 	State         string
 	States        []string
 	Term          string
+	IndexerNames  []string
 	WithoutUpload bool
 	Limit         int
 	Offset        int

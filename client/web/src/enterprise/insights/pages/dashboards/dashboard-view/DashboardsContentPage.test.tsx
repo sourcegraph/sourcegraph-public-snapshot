@@ -217,7 +217,7 @@ describe('DashboardsContent', () => {
 
     it('redirect to new dashboard page on selection', async () => {
         const screen = renderDashboardsContent()
-        const { history, user } = screen
+        const { locationRef, user } = screen
 
         const chooseDashboard = await waitFor(() => screen.getByRole('button', { name: /Choose a dashboard/ }))
         user.click(chooseDashboard)
@@ -229,17 +229,15 @@ describe('DashboardsContent', () => {
             user.click(dashboard2)
         }
 
-        expect(history.location.pathname).toEqual('/insights/dashboards/bar')
+        expect(locationRef.current?.pathname).toEqual('/insights/dashboards/bar')
     })
 
     it('redirects to dashboard edit page', async () => {
         const screen = renderDashboardsContent()
 
-        const { history } = screen
-
         await triggerDashboardMenuItem(screen, 'Configure dashboard')
 
-        expect(history.location.pathname).toEqual('/insights/dashboards/foo/edit')
+        expect(screen.locationRef.current?.pathname).toEqual('/insights/dashboards/foo/edit')
     })
 
     it('opens add insight modal', async () => {

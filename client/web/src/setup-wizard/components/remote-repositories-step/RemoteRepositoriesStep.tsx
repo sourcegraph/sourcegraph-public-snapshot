@@ -1,7 +1,7 @@
 import { FC, HTMLAttributes } from 'react'
 
 import classNames from 'classnames'
-import { Routes, Route, matchPath, useLocation } from 'react-router-dom-v5-compat'
+import { Routes, Route, matchPath, useLocation } from 'react-router-dom'
 
 import { Container, Text } from '@sourcegraph/wildcard'
 

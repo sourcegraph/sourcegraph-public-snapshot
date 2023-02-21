@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/hexops/valast"
 
 	"github.com/sourcegraph/log/logtest"
@@ -80,7 +80,7 @@ func TestGetDashboard(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		autogold.Equal(t, got, autogold.ExportedOnly())
+		autogold.ExpectFile(t, got, autogold.ExportedOnly())
 	})
 
 	t.Run("test user 3 can see global and user private dashboards", func(t *testing.T) {
@@ -89,7 +89,7 @@ func TestGetDashboard(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		autogold.Equal(t, got, autogold.ExportedOnly())
+		autogold.ExpectFile(t, got, autogold.ExportedOnly())
 	})
 	t.Run("test user 3 can see both dashboards limit 1", func(t *testing.T) {
 		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{3}, Limit: 1})
@@ -97,7 +97,7 @@ func TestGetDashboard(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		autogold.Equal(t, got, autogold.ExportedOnly())
+		autogold.ExpectFile(t, got, autogold.ExportedOnly())
 	})
 	t.Run("test user 3 can see both dashboards after 1", func(t *testing.T) {
 		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{3}, After: 1})
@@ -105,7 +105,7 @@ func TestGetDashboard(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		autogold.Equal(t, got, autogold.ExportedOnly())
+		autogold.ExpectFile(t, got, autogold.ExportedOnly())
 	})
 	t.Run("test user 4 in org 1 can see both global and org private dashboard", func(t *testing.T) {
 		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{4}, OrgID: []int{1}})
@@ -113,7 +113,7 @@ func TestGetDashboard(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		autogold.Equal(t, got, autogold.ExportedOnly())
+		autogold.ExpectFile(t, got, autogold.ExportedOnly())
 	})
 	t.Run("test user 3 can see both dashboards with view", func(t *testing.T) {
 		viewId := "shared1234"
@@ -122,7 +122,7 @@ func TestGetDashboard(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		autogold.Equal(t, got, autogold.ExportedOnly())
+		autogold.ExpectFile(t, got, autogold.ExportedOnly())
 	})
 	t.Run("test user 4 in org 1 can see both dashboards with view", func(t *testing.T) {
 		viewId := "shared1234"
@@ -131,7 +131,7 @@ func TestGetDashboard(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		autogold.Equal(t, got, autogold.ExportedOnly())
+		autogold.ExpectFile(t, got, autogold.ExportedOnly())
 	})
 	t.Run("test user 4 can not see dashboards with private view", func(t *testing.T) {
 		viewId := "private1234"
@@ -140,7 +140,7 @@ func TestGetDashboard(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		autogold.Equal(t, got, autogold.ExportedOnly())
+		autogold.ExpectFile(t, got, autogold.ExportedOnly())
 	})
 	t.Run("test user 3 can see both dashboards with view limit 1", func(t *testing.T) {
 		viewId := "shared1234"
@@ -149,7 +149,7 @@ func TestGetDashboard(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		autogold.Equal(t, got, autogold.ExportedOnly())
+		autogold.ExpectFile(t, got, autogold.ExportedOnly())
 	})
 	t.Run("test user 3 can see both dashboards with view after 1", func(t *testing.T) {
 		viewId := "shared1234"
@@ -158,7 +158,7 @@ func TestGetDashboard(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		autogold.Equal(t, got, autogold.ExportedOnly())
+		autogold.ExpectFile(t, got, autogold.ExportedOnly())
 	})
 }
 
@@ -177,7 +177,7 @@ func TestCreateDashboard(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("BeforeCreate", []*types.Dashboard{}).Equal(t, got)
+		autogold.Expect([]*types.Dashboard{}).Equal(t, got)
 
 		global := true
 		orgId := 1
@@ -190,7 +190,7 @@ func TestCreateDashboard(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("AfterCreateDashboard", []*types.Dashboard{{
+		autogold.Expect([]*types.Dashboard{{
 			ID:           1,
 			Title:        "test dashboard 1",
 			UserIdGrants: []int64{},
@@ -202,7 +202,7 @@ func TestCreateDashboard(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("AfterCreateGrant", []*DashboardGrant{
+		autogold.Expect([]*DashboardGrant{
 			{
 				Global: valast.Addr(true).(*bool),
 			},
@@ -235,7 +235,7 @@ func TestUpdateDashboard(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("BeforeUpdate", []*types.Dashboard{
+		autogold.Expect([]*types.Dashboard{
 			{
 				ID:           1,
 				Title:        "test dashboard 1",
@@ -264,7 +264,7 @@ func TestUpdateDashboard(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("AfterUpdate", []*types.Dashboard{
+		autogold.Expect([]*types.Dashboard{
 			{
 				ID:           1,
 				Title:        "new title!",
@@ -308,7 +308,7 @@ func TestDeleteDashboard(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("BeforeDelete", []*types.Dashboard{
+		autogold.Expect([]*types.Dashboard{
 			{
 				ID:           1,
 				Title:        "test dashboard 1",
@@ -333,7 +333,7 @@ func TestDeleteDashboard(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("AfterDelete", []*types.Dashboard{{
+		autogold.Expect([]*types.Dashboard{{
 			ID:           2,
 			Title:        "test dashboard 2",
 			UserIdGrants: []int64{},
@@ -368,7 +368,7 @@ func TestRestoreDashboard(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("BeforeRestore", []*types.Dashboard{
+		autogold.Expect([]*types.Dashboard{
 			{
 				ID:           1,
 				Title:        "test dashboard 1",
@@ -386,7 +386,7 @@ func TestRestoreDashboard(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("AfterRestore", []*types.Dashboard{
+		autogold.Expect([]*types.Dashboard{
 			{
 				ID:           1,
 				Title:        "test dashboard 1",
@@ -469,7 +469,7 @@ func TestAddViewsToDashboard(t *testing.T) {
 			return unsorted[i] < unsorted[j]
 		})
 		got.InsightIDs = unsorted
-		autogold.Equal(t, got, autogold.ExportedOnly())
+		autogold.ExpectFile(t, got, autogold.ExportedOnly())
 	})
 }
 
@@ -520,7 +520,7 @@ func TestRemoveViewsFromDashboard(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("dashboards before removing a view", []*types.Dashboard{
+		autogold.Expect([]*types.Dashboard{
 			{
 				ID:           1,
 				Title:        "first",
@@ -547,7 +547,7 @@ func TestRemoveViewsFromDashboard(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("dashboards after removing a view", []*types.Dashboard{
+		autogold.Expect([]*types.Dashboard{
 			{
 				ID:           1,
 				Title:        "first",
