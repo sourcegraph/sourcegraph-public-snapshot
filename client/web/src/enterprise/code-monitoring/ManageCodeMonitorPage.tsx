@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 
 import { VisuallyHidden } from '@reach/visually-hidden'
-import { useParams } from 'react-router-dom-v5-compat'
+import { useParams } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { startWith, catchError, tap } from 'rxjs/operators'
 

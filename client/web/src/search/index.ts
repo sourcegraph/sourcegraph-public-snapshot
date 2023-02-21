@@ -1,6 +1,6 @@
-import { Location } from 'history'
 import { escapeRegExp, memoize } from 'lodash'
-import { from, Observable, of } from 'rxjs'
+import { Location } from 'react-router-dom'
+import { from, Observable, of, Subject } from 'rxjs'
 import { startWith, switchMap, map, distinctUntilChanged } from 'rxjs/operators'
 
 import { memoizeObservable } from '@sourcegraph/common'
@@ -231,7 +231,7 @@ export function getQueryStateFromLocation({
     location,
     isSearchContextAvailable,
 }: {
-    location: Observable<Location>
+    location: Subject<Location>
     /**
      * Resolves to true if the provided search context exists for the user.
      */

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiBookOutline } from '@mdi/js'
 import classNames from 'classnames'
-import { Location, Navigate, useNavigate, useLocation, NavigateFunction } from 'react-router-dom-v5-compat'
+import { Location, Navigate, useNavigate, useLocation, NavigateFunction } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
 

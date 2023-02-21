@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/stretchr/testify/require"
+	"k8s.io/utils/pointer"
 )
 
 func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
@@ -65,7 +66,7 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 	_, err = db.ExecContext(ctx, "UPDATE permission_sync_jobs SET code_host_states=array["+
 		"'{\"provider_id\":\"ID\",\"provider_type\":\"Type\",\"status\":\"SUCCESS\",\"message\":\"successful success\"}',"+
 		"'{\"provider_id\":\"ID\",\"provider_type\":\"Type\",\"status\":\"ERROR\",\"message\":\"unsuccessful unsuccess :(\"}'"+
-		"]::json[] WHERE id=3")
+		"]::json[], cancellation_reason='i tried to cancel but it already failed', failure_message='imma failure' WHERE id=3")
 	require.NoError(t, err)
 
 	jobs, err = store.List(ctx, ListPermissionSyncJobOpts{})
@@ -76,7 +77,7 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 	wantJobs := []*PermissionSyncJob{
 		{
 			ID:                jobs[0].ID,
-			State:             "queued",
+			State:             PermissionSyncJobStateQueued,
 			RepositoryID:      int(repo1.ID),
 			Priority:          HighPriorityPermissionSync,
 			InvalidateCaches:  true,
@@ -86,7 +87,7 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 		},
 		{
 			ID:               jobs[1].ID,
-			State:            "queued",
+			State:            PermissionSyncJobStateQueued,
 			UserID:           int(user1.ID),
 			Priority:         MediumPriorityPermissionSync,
 			InvalidateCaches: true,
@@ -94,14 +95,16 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 			Reason:           ReasonManualUserSync,
 		},
 		{
-			ID:               jobs[2].ID,
-			State:            "queued",
-			UserID:           int(user2.ID),
-			Priority:         LowPriorityPermissionSync,
-			InvalidateCaches: true,
-			ProcessAfter:     processAfter,
-			Reason:           ReasonManualUserSync,
-			CodeHostStates:   codeHostStates,
+			ID:                 jobs[2].ID,
+			State:              PermissionSyncJobStateQueued,
+			UserID:             int(user2.ID),
+			Priority:           LowPriorityPermissionSync,
+			InvalidateCaches:   true,
+			ProcessAfter:       processAfter,
+			Reason:             ReasonManualUserSync,
+			CodeHostStates:     codeHostStates,
+			FailureMessage:     pointer.String("imma failure"),
+			CancellationReason: pointer.String("i tried to cancel but it already failed"),
 		},
 	}
 	if diff := cmp.Diff(jobs, wantJobs, cmpopts.IgnoreFields(PermissionSyncJob{}, "QueuedAt")); diff != "" {
@@ -343,7 +346,7 @@ func TestPermissionSyncJobs_CancelQueuedJob(t *testing.T) {
 	cancelledJob, err := store.List(ctx, ListPermissionSyncJobOpts{RepoID: int(repo1.ID)})
 	require.NoError(t, err)
 	require.Len(t, cancelledJob, 1)
-	require.Equal(t, CancellationReasonHigherPriority, cancelledJob[0].CancellationReason)
+	require.Equal(t, CancellationReasonHigherPriority, *cancelledJob[0].CancellationReason)
 
 	// Cancelling already cancelled job doesn't make sense and errors out as well.
 	err = store.CancelQueuedJob(ctx, CancellationReasonHigherPriority, 1)

@@ -25,6 +25,7 @@ type TestChangesetOpts struct {
 	ExternalID            string
 	ExternalBranch        string
 	ExternalForkNamespace string
+	ExternalForkName      string
 	ExternalState         btypes.ChangesetExternalState
 	ExternalReviewState   btypes.ChangesetReviewState
 	ExternalCheckState    btypes.ChangesetCheckState
@@ -113,6 +114,10 @@ func BuildChangeset(opts TestChangesetOpts) *btypes.Changeset {
 
 	if opts.ExternalForkNamespace != "" {
 		changeset.ExternalForkNamespace = opts.ExternalForkNamespace
+	}
+
+	if opts.ExternalForkName != "" {
+		changeset.ExternalForkName = opts.ExternalForkName
 	}
 
 	if opts.FailureMessage != "" {
@@ -419,5 +424,15 @@ func SetChangesetClosed(t *testing.T, ctx context.Context, s UpdateChangeseter, 
 
 	if err := s.UpdateChangeset(ctx, c); err != nil {
 		t.Fatalf("failed to update changeset: %s", err)
+	}
+}
+
+func DeleteChangeset(t *testing.T, ctx context.Context, s UpdateChangeseter, c *btypes.Changeset) {
+	t.Helper()
+
+	c.SetDeleted()
+
+	if err := s.UpdateChangeset(ctx, c); err != nil {
+		t.Fatalf("failed to delete changeset: %s", err)
 	}
 }
