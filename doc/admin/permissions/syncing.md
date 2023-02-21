@@ -137,28 +137,37 @@ However given the way the system works, we need to be aware of the worst case:
 
 For initial setup of instance, when the initial sync for all repositories and users is running, users will gradually see more and more search results from repositories they have access to.
 
+### Request count
+
 To calculate how long a full sync takes, it is important to take into consideration many factors - how quickly we fill the sync job queue, how is internal rate limiter and external rate limiter configured, etc. But in general, we need to make the following amount of requests to fully sync all the user-centric permissions (and we double poll, so double the number for repo-centric sync jobs):
 
-$$request_count = (users * repositories) \over per_page_items$$
+$$request_count = (users * avg_repository_access) \over per_page_items + (repositories * avg_users_access) \over \per_page_items $$
 
 **Example:**
 
-There are `10 000` users, `40 000` repositories and the github.com API is paginated on `100` items per page.
-We need to make `4M` requests. To cover both user-centric and repo-centric case, it means `8M` requests.
-Github.com has an API rate limit of `5000` requests per hour. In that case, complete permission sync of all users takes $4M requests / 5000  = 800 hours$. 
+There are `10 000` users, `40 000` repositories and the github.com API is paginated on `100` items per page. 
+On average, every user has read access to `300` repositories and on average a repository is accessible by `75` users.
 
-33 days on a complete cycle of permission sync is not great, it can potentially mean 33 days of lag time mentioned above. Even if we let permission sync consume all the rate limit and we stagger our requests perfectly, which is rarely the case. Depending on the code host, the rate limit might be much higher. 
+We need to make `3M` requests. To cover both user-centric and repo-centric case, it means `6M` requests.
+Github.com has an API rate limit of `5000` requests per hour. In that case, complete permission sync of all users takes $3M requests / 5000  = 600 hours$. 
 
-> IMPORTANT: For permission syncing to be quicker, the code host needs to be able to handle a lot more requests per hour.
+`25` days to complete a full cycle of permission sync is not great, it can potentially mean `25` days of lag time mentioned above. 
+Even if we let permission sync consume all the rate limit and we stagger our requests perfectly, which is rarely the case. 
+Depending on the code host, the rate limit might be much higher, but then we might be firing huge amounts of requests to the code host.
+
+> IMPORTANT: For permission syncing to be quicker, the code host needs to be able to handle big amounts of requests per hour.
+
+> IMPORTANT: Depending on the customer scale, the amount of users, repositories and the distribution of permissions accross them, the time it takes to fully sync will vary.
 
 > IMPORTANT: Hence why we recommend configuring webhooks for permission syncing on GitHub which makes lag time much smaller.
 
 ## Configuration
-There are variety of options in the site configuration to tune how the permissions sync requests are scheduled and processed:
+There are variety of options in the site configuration to tune how the permissions sync requests are scheduled. 
+Default values are shown below:
 
 ```json
 {
-  // Time interval (in seconds) of how often each component picks up authorization changes in external services.
+  // Time interval between each iteration of the scheduler
   "permissions.syncScheduleInterval": 15,
   // Number of user permissions to schedule for syncing in single scheduler iteration.
   "permissions.syncOldestUsers": 10,
@@ -174,9 +183,46 @@ There are variety of options in the site configuration to tune how the permissio
 }
 ```
 
+If the purpose is to fire more requests to the code host, the internal rate limit or the code host rate limit must be also changed accordingly. 
+
+Internal rate limiter settings are described on each code host configuration page, but in general, the `requestsPerHour` field needs to be set to the desired number.
+
+### Recommendations
+
+#### Count users << Count repositories
+If there are much less users, than repositories, it is better to rely on user-centric perms sync instead of repo-centric sync. In that case, we recommend:
+```json
+  "permissions.syncOldestUsers": 20,
+  "permissions.syncOldestRepos": 1,
+```
+
+This configuration change will schedule `20` users on each scheduler iteration and just `1` repository. That way, we use the API requests better and user sync will be prefered.
+This is just an example, please change the `syncOldestUsers` value to what is desired in your organization. 
+
+**Example**:
+There are `10 000` users, `40 000` repositories and the desired time to do a full cycle of permission sync is `2 hours`.
+That means we need to sync 5000 users an hour. If we keep the `syncScheduleInterval` to `15s` (the default), we schedule 4-times a minute. `5000/(4 * 60) = 20.8`, so the scheduler needs to schedule 21 users on each iteration to get under the 2 hour mark.
+
+The rate limit for the code host would need to be changed to support the load. In that case the recommendation is to set it to 2x of the amount of [requests expected from permission syncing](#request-count).
+#### Count repositories << Count users
+
+If the situation is reversed, it is recommended to the opposite than the above. 
+Prefer repo-centric permission sync in these situations.
+
+```json
+  "permissions.syncOldestUsers": 1,
+  "permissions.syncOldestRepos": 20,
+```
+
+**Example**
+There are `10 000` users, `5000` repositories and the desired time for a full permission sync cycle is `2 hours`.
+That means we need to sync 2500 repositories an hour. If we keep the `syncScheduleInterval` to `15s`(the default), we schedule 4-times a minute. `2500/(4 * 60) = 10.4`, so the scheduler needs to schedule 11 repositories on each iteration to get under the 2 hour mark.
+
+The rate limit for the code host would need to be changed to support the load. In that case the recommendation is to set it to 2x of the amount of [requests expected from permission syncing](#request-count).
+
 > WARNING: ======= OLD PART FROM HERE ON ========
 
-# OLD FART
+# OLD PART
 
 If the Sourcegraph instance is configured to sync repositories from multiple code hosts, setting up permissions for each code host will make repository permissions apply holistically on Sourcegraph, so long as users log in from each code host - [learn more](#permissions-for-multiple-code-hosts).
 

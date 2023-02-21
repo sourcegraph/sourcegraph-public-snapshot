@@ -41,21 +41,16 @@ To know more about each method that we support, please follow the link above.
 Support for repository permissions accross different code hosts is different. The following table captures current state of support (ordered alphabetically):
 | Code host | Permission Syncing | Webhooks for Permissions | Explicit API |
 | -------- | -------- | -------- | -------- | 
-| AWS CodeCommit | Yes | No | Yes |
-| Bitbucket Cloud <span class="badge badge-beta">Beta</span> | Yes | No | Yes |
-| Bitbucket Server <span class="badge badge-beta">Beta</span> | Yes | No | Yes |
-| Gerrit <span class="badge badge-beta">Beta</span> | Yes | No | Yes |
-| GitHub   | Yes | Yes | Yes |
-| GitHub Enterprise | Yes | Yes | Yes |
-| GitLab | Yes | No | Yes |
-| GitLab Self-Managed | Yes | No | Yes |
-| Gitolite | Yes | No | Yes |
-| Perforce <span class="badge badge-experimental">Experimental</span> | Yes <span class="badge">(with file-level permissions)</span> | Yes | Yes |
+| Bitbucket Cloud <span class="badge badge-beta">Beta</span> | ✓ | ✗ | ✓ |
+| Bitbucket Server | ✓ | ✗ | ✓ |
+| Gerrit <span class="badge badge-beta">Beta</span> | ✓ | ✗ | ✓ |
+| GitHub   | ✓ | ✓ | ✓ |
+| GitHub Enterprise | ✓ | ✓ | ✓ |
+| GitLab | ✓ | ✗ | ✓ |
+| GitLab Self-Managed | ✓ | ✗ | ✓ |
+| Perforce <span class="badge badge-experimental">Experimental</span> | Yes <span class="badge">(with file-level permissions)</span> | ✓ | ✓ |
 
-Tier 2 code host support:
-| Code host | Permission Syncing | Webhooks for Permissions | Explicit API |
-| Generic Git host | No | No | Yes |
-| Sourcegraph CLI Serve-Git | No | No | Yes |
+All the other code hosts only support [Explicit permissions API](./api.md).
 
 // TODO: @milan make sure the table is representing real state
 ## Licensing
