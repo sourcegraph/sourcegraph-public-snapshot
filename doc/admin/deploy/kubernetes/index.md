@@ -85,22 +85,38 @@ See our [configurations guide](configure.md) for a list of available storage cla
 
 If you cannot create a storage class or want to use an existing one with SSDs:
 
-1. Include the `storage-class/update-class-name` component under the components list
-2. Input the storage class name by setting the value for `STORAGECLASS_NAME` under the configMapGenerator section
+1. Include the `storage-class/name-update` component under the components list
+2. Input the storage class name by setting the value of `STORAGECLASS_NAME` in `buildConfig.yaml`
    
 For example, set `STORAGECLASS_NAME=sourcegraph` if `sourcegraph` is the name of an existing storage class:
 
-  ```yaml
-  # instances/my-sourcegraph/kustomization.yaml
+Include the `storage-class/name-update` component under the components list.
+
+```yaml
+# instances/my-sourcegraph/kustomization.yaml
   components:
     # Update storageClassName to the STORAGECLASS_NAME value set below
-    - ../../components/storage-class/update-class-name
-  # ...
-  configMapGenerator:
-  - name: sourcegraph-kustomize-env
-    behavior: merge
-    literals:
-      - STORAGECLASS_NAME=sourcegraph # Set STORAGECLASS_NAME value to 'sourcegraph'
+    - ../../components/storage-class/name-update
+```
+
+Copy [instances/template/buildConfig.template.yaml](kustomize/index.md#template) to the `instances/my-sourcegraph` subdirectory as `buildConfig.yaml`.
+
+```bash
+$ cp instances/template/buildConfig.template.yaml instances/my-sourcegraph/buildConfig.yaml
+```
+
+ Input the storage class name by setting the value of `STORAGECLASS_NAME` to `sourcegraph` in `buildConfig.yaml`
+
+  ```yaml
+  # instances/my-sourcegraph/buildConfig.yaml
+  apiVersion: v1
+  kind: SourcegraphBuildConfig
+  metadata:
+    labels:
+      deploy: sourcegraph-kustomize
+    name: sourcegraph-kustomize-config
+  data:
+    STORAGECLASS_NAME: sourcegraph # -- [ACTION] Set storage class name here
   ```
 
 #### Option 3: Use default storage class

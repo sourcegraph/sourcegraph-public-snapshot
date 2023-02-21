@@ -462,12 +462,12 @@ components:
 
 To use an **existing** storage class provided by other cloud providers:
 
-**Step 1**: Include the `storage-class/update-class-name` component to your overlay:
+**Step 1**: Include the `storage-class/name-update` component to your overlay:
 
   ```yaml
   # instances/$INSTANCE_NAME/kustomization.yaml
   components:
-    - ../../components/storage-class/update-class-name
+    - ../../components/storage-class/name-update
   ```
 
 **Step 2**: Enter the value of your existing storage class name in your [buildConfig.yaml file](kustomize/index.md#buildconfig-yaml) using the `STORAGECLASS_NAME` config key
@@ -478,7 +478,7 @@ Example, add `STORAGECLASS_NAME=sourcegraph` if `sourcegraph` is the name for th
   # instances/$INSTANCE_NAME/kustomization.yaml
   components:
     # Update storageClassName to the STORAGECLASS_NAME value set below
-    - ../../components/storage-class/update-class-name
+    - ../../components/storage-class/name-update
   ...
   configMapGenerator:
   - name: sourcegraph-kustomize-env
@@ -487,18 +487,18 @@ Example, add `STORAGECLASS_NAME=sourcegraph` if `sourcegraph` is the name for th
       - STORAGECLASS_NAME=sourcegraph # -- [ACTION] Set storage class name here
   ```
 
-  The `storage-class/update-class-name` component updates the `storageClassName` field for all associated resources to the `STORAGECLASS_NAME` value set in step 2.
+  The `storage-class/name-update` component updates the `storageClassName` field for all associated resources to the `STORAGECLASS_NAME` value set in step 2.
 
 ### Update storageClassName
 
 To updates the `storageClassName` field for all associated resources:
 
-**Step 1**: Include the `storage-class/update-class-name` component to your overlay:
+**Step 1**: Include the `storage-class/name-update` component to your overlay:
 
   ```yaml
   # instances/$INSTANCE_NAME/kustomization.yaml
   components:
-    - ../../components/storage-class/update-class-name
+    - ../../components/storage-class/name-update
   ```
 
 **Step 2**: Enter the value of your existing storage class name in your [buildConfig.yaml](kustomize/index.md#buildconfig-yaml) file using the `STORAGECLASS_NAME` config key
@@ -517,7 +517,7 @@ Example, add `STORAGECLASS_NAME=sourcegraph` if `sourcegraph` is the name for th
     STORAGECLASS_NAME: sourcegraph # -- [ACTION] Set storage class name here
   ```
 
-  The `storage-class/update-class-name` component updates the `storageClassName` field for all associated resources to the `STORAGECLASS_NAME` value set in step 2.
+  The `storage-class/name-update` component updates the `storageClassName` field for all associated resources to the `STORAGECLASS_NAME` value set in step 2.
 
 ### Create a custom storage class
 
