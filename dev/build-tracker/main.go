@@ -210,8 +210,9 @@ func (s *Server) handleHealthz(w http.ResponseWriter, req *http.Request) {
 
 // notifyIfFailed sends a notification over slack if the provided build has failed. If the build is successful no notifcation is sent
 func (s *Server) notifyIfFailed(build *Build) error {
-	if build.hasFailed() {
-		s.logger.Info("detected failed build - sending notification", log.Int("buildNumber", intp(build.Number)))
+	finalizedBuild := FinaliseBuild(build)
+	if finalizedBuild.isFailed() || finalizedBuild.isFixed() {
+		s.logger.Info("sending notification for build", log.Int("buildNumber", intp(build.Number)), log.String("state", string(finalizedBuild.State)))
 		// We lock the build while we send a notificationn so that we can ensure any late jobs do not interfere with what
 		// we're about to send.
 		build.Lock()

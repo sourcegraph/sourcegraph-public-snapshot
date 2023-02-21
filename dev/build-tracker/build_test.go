@@ -132,7 +132,7 @@ func TestBuildFailedJobs(t *testing.T) {
 		build := store.GetByBuildNumber(1)
 
 		unique := make(map[string]int)
-		for _, s := range build.findFailedSteps() {
+		for _, s := range FindFailedSteps(build.Steps) {
 			unique[s.Name] += 1
 		}
 

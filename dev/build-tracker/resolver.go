@@ -1,14 +1,26 @@
 package main
 
-type BuildResolution struct {
+type FinalizedBuild struct {
 	Passed []*Step
 	Failed []*Step
 	Fixed  []*Step
-	State  string
+	State  StepState
 }
 
-func FinaliseBuild(build *Build) *BuildResolution {
-	r := BuildResolution{}
+func (f *FinalizedBuild) isFailed() bool {
+	return f.State == Failed
+}
+
+func (f *FinalizedBuild) isFixed() bool {
+	return f.State == Fixed
+}
+
+func (f *FinalizedBuild) isPassed() bool {
+	return f.State == Passed
+}
+
+func FinaliseBuild(build *Build) *FinalizedBuild {
+	r := FinalizedBuild{}
 	for _, step := range build.Steps {
 		state := step.FinalState()
 		switch state {
@@ -21,12 +33,12 @@ func FinaliseBuild(build *Build) *BuildResolution {
 		}
 	}
 
-	r.State = string(Passed)
+	r.State = Passed
 	if len(r.Failed) > 0 {
-		r.State = string(Failed)
+		r.State = Failed
 	}
 	if len(r.Fixed) > 0 && len(r.Failed) == 0 {
-		r.State = string(Fixed)
+		r.State = Fixed
 	}
 
 	return &r

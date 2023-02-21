@@ -221,7 +221,7 @@ func (c *NotificationClient) createMessageBlocks(logger log.Logger, build *Build
 
 	// create a bulleted list of all the failed jobs
 	//
-	stepGroups := build.GroupIntoStepStates()
+	stepGroups := GroupIntoStepStates(build.Steps)
 	stepSection := createStepsSection(Fixed, stepGroups[Fixed], StepShowLimit)
 	stepSection += createStepsSection(Failed, stepGroups[Failed], StepShowLimit)
 
@@ -307,9 +307,6 @@ func (n *NotificationClient) cacheCleanup(hours int) {
 }
 
 func generateSlackHeader(build *Build) string {
-	if build.isFinalized() {
-		return fmt.Sprintf(":green_circle: Build %d fixed", build.number())
-	}
 	header := fmt.Sprintf(":red_circle: Build %d failed", build.number())
 	switch build.ConsecutiveFailure {
 	case 0, 1: // no suffix

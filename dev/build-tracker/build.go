@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sync"
 
-	"cuelang.org/go/pkg/strings"
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/sourcegraph/log"
 )
@@ -41,64 +40,11 @@ type Step struct {
 type StepState string
 
 const (
-	Passed StepState = "Passed"
-	Failed StepState = "Failed"
-	Fixed  StepState = "Fixed"
+	Unknown StepState = ""
+	Passed  StepState = "Passed"
+	Failed  StepState = "Failed"
+	Fixed   StepState = "Fixed"
 )
-
-// GroupJobFilter has a filter with an associated group. Jobs matching the Filter can be considered as part of the group
-type GroupJobFilter struct {
-	Filter func(j *Job) bool
-	Group  string
-}
-
-func NewStep(name string) *Step {
-	return &Step{
-		Name: name,
-		Jobs: make([]*Job, 0),
-	}
-}
-
-func NewStepFromJob(j *Job) *Step {
-	s := NewStep(j.name())
-	s.Add(j)
-	return s
-}
-
-func (s *Step) Add(j *Job) {
-	s.Jobs = append(s.Jobs, j)
-}
-func (s *Step) FinalState() StepState {
-	// If we have no jobs for some reason, then we regard it as the StepState as Passed ... cannot have a Failed StepState
-	// if we have no jobs!
-	if len(s.Jobs) == 0 {
-		return Passed
-	}
-	if len(s.Jobs) == 1 {
-		return StepState(*s.Jobs[0].State)
-	}
-	// we only care about the last two states of because that determines the final state
-	// n - 1  |   n    | Final
-	// Passed | Passed | Passed
-	// Passed | Failed | Failed
-	// Failed | Failed | Failed
-	// Failed | Passed | Fixed
-	beforeLastState := StepState(*s.Jobs[len(s.Jobs)-2].State)
-	lastState := StepState(*s.Jobs[len(s.Jobs)-1].State)
-
-	// Note that for all cases except the last case, the final state is whatever the last job state is.
-	// The final state only differs when the before state is Failed and the last State is Passed, so
-	finalState := lastState
-	if beforeLastState == Failed && lastState == Fixed {
-		finalState = Fixed
-	}
-
-	return finalState
-}
-
-func (s *Step) LastJob() *Job {
-	return s.Jobs[len(s.Jobs)-1]
-}
 
 // updateFromEvent updates the current build with the build and pipeline from the event.
 func (b *Build) updateFromEvent(e *Event) {
@@ -108,15 +54,6 @@ func (b *Build) updateFromEvent(e *Event) {
 
 func (b *Build) hasFailed() bool {
 	return b.state() == "failed"
-}
-
-// isFinalized determines whether the job is considered fixed. A job is fixed when:
-// * It has previously failed which means we have sent a notification for it
-// * It is not failed anymore
-func (b *Build) isFinalized() bool {
-	// if we have sent a notification previously for this build ie. the build failed previously
-	// and the build is not failed currently = the build must be fixed
-	return !b.hasFailed() && b.hasNotification()
 }
 
 func (b *Build) isFinished() bool {
@@ -164,63 +101,8 @@ func (b *Build) message() string {
 	return strp(b.Message)
 }
 
-func (b *Build) findFailedSteps() []*Step {
-	results := []*Step{}
-
-	for _, step := range b.Steps {
-		if state := step.FinalState(); state == Failed {
-			results = append(results, step)
-		}
-	}
-	return []*Step{}
-}
-
-func (b *Build) GroupIntoStepStates() map[StepState][]*Step {
-	groups := make(map[StepState][]*Step)
-
-	for _, step := range b.Steps {
-		state := step.FinalState()
-
-		items, ok := groups[state]
-		if !ok {
-			items = make([]*Step, 0)
-		}
-		groups[state] = append(items, step)
-	}
-
-	return groups
-}
-
 func (b *Build) hasNotification() bool {
 	return b.Notification != nil
-}
-
-type Job struct {
-	buildkite.Job
-}
-
-func (j *Job) id() string {
-	return strp(j.ID)
-}
-
-func (j *Job) name() string {
-	return strp(j.Name)
-}
-
-func (j *Job) exitStatus() int {
-	return intp(j.ExitStatus)
-}
-
-func (j *Job) failed() bool {
-	return !j.SoftFailed && j.exitStatus() > 0
-}
-
-func (j *Job) state() string {
-	return strings.ToTitle(strp(j.State))
-}
-
-func (j *Job) hasTimedOut() bool {
-	return j.state() == "timed_out"
 }
 
 // Pipeline wraps a buildkite.Pipeline and provides convenience functions to access values of the wrapped pipeline is a safe maner
