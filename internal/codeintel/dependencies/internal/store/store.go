@@ -42,12 +42,11 @@ func New(op *observation.Context, db database.DB) *store {
 
 // ListDependencyReposOpts are options for listing dependency repositories.
 type ListDependencyReposOpts struct {
-	Scheme              string
-	Name                reposource.PackageName
-	ExactNameOnly       bool
-	After               int
-	Limit               int
-	MostRecentlyUpdated bool
+	Scheme        string
+	Name          reposource.PackageName
+	ExactNameOnly bool
+	After         int
+	Limit         int
 }
 
 // ListDependencyRepos returns dependency repositories to be synced by gitserver.
@@ -62,9 +61,6 @@ func (s *store) ListPackageRepoRefs(ctx context.Context, opts ListDependencyRepo
 	}()
 
 	sortExpr := "ORDER BY lr.id ASC"
-	if opts.MostRecentlyUpdated {
-		sortExpr = "ORDER BY prv.id DESC"
-	}
 
 	depReposMap := basestore.NewOrderedMap[int, shared.PackageRepoReference]()
 	scanner := basestore.NewKeyedCollectionScanner[int, shared.PackageRepoReference, shared.PackageRepoReference](depReposMap, func(s dbutil.Scanner) (int, shared.PackageRepoReference, error) {
@@ -117,20 +113,13 @@ const listDependencyReposQuery = `
 SELECT %s
 FROM (
 	SELECT id, scheme, name
-	FROM (
-		SELECT id, scheme, name, ROW_NUMBER() OVER(
-			PARTITION BY scheme, name
-			ORDER BY id ASC
-		) AS row_num
-		FROM lsif_dependency_repos
-		%s
-		ORDER BY id ASC
-	) AS single_entry
-	WHERE row_num = 1
+	FROM lsif_dependency_repos
+	%s
 	-- ID based offset
 	%s
 	-- limit results
 	%s
+	ORDER BY id ASC
 ) lr
 -- optional join
 %s
@@ -167,14 +156,10 @@ func makeLimit(limit int) *sqlf.Query {
 }
 
 func makeOffset(opts ListDependencyReposOpts) *sqlf.Query {
-	switch {
-	case opts.MostRecentlyUpdated && opts.After > 0:
+	if opts.After > 0 {
 		return sqlf.Sprintf("AND id < %s", opts.After)
-	case !opts.MostRecentlyUpdated && opts.After > 0:
-		return sqlf.Sprintf("AND id > %s", opts.After)
-	default:
-		return sqlf.Sprintf("")
 	}
+	return sqlf.Sprintf("")
 }
 
 // InsertDependencyRepos creates the given dependency repos if they don't yet exist. The values that did not exist previously are returned.
@@ -369,9 +354,25 @@ FROM (
 	)
 	-- we order by ID in list as we use ID-based pagination,
 	-- but unit tests rely on name ordering when paginating
-	ORDER BY name
 ) diff
+ORDER BY name
 RETURNING id, scheme, name
+`
+
+// USE THIS INSTEAD!!!!!
+const x = `
+SELECT scheme, name
+FROM (
+	SELECT scheme, name
+	FROM t_package_repo_refs t
+	WHERE NOT EXISTS (
+		SELECT scheme, name
+		FROM lsif_dependency_repos
+		WHERE scheme = t.scheme AND
+		name = t.name
+	)
+) diff
+ORDER BY name
 `
 
 const transferPackageRepoRefVersionsQuery = `
