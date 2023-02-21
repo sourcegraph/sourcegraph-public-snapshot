@@ -405,29 +405,18 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
                     themeProps={themeProps}
                 />
             ),
-            children: [
-                ...props.routes
-                    // Remove routes that are already migrated
-                    .filter(route => route.path !== PageRoutes.RepoContainer)
-                    .map(
-                        ({ condition = () => true, render, path }) =>
-                            condition(context) && {
-                                path: path.slice(1), // remove leading slash
-                                element: render(context),
-                            }
-                    )
-                    .filter(isTruthy),
-
-                {
-                    path: '*',
-                    element: <RepoContainer {...context} />,
-                    // In RR6, the useMatches hook will only give you the location that is matched
-                    // by the path rule and not the path rule instead. Since we need to be able to
-                    // detect if we're inside the repo container reliably inside the Layout, we
-                    // expose this information in the handle object instead.
-                    handle: { isRepoContainer: true },
-                },
-            ],
+            children: props.routes
+                // Remove routes that are already migrated
+                .filter(route => route.path !== PageRoutes.RepoContainer)
+                .map(
+                    ({ condition = () => true, render, path, handle }) =>
+                        condition(context) && {
+                            path: path.slice(1), // remove leading slash
+                            element: render(context),
+                            handle,
+                        }
+                )
+                .filter(isTruthy),
         },
     ])
 
