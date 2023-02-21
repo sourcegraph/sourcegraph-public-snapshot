@@ -15,12 +15,22 @@ import (
 	"google.golang.org/api/iterator"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
-func (s *Service) SerializeRankingGraph(ctx context.Context, numRankingRoutines int) error {
-	if s.rankingBucket == nil {
+func (s *Service) ExportRankingGraph(
+	ctx context.Context,
+	numRankingRoutines int,
+	numBatchSize int,
+	rankingJobEnabled bool,
+) (err error) {
+	ctx, _, endObservation := s.operations.exportRankingGraph.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	if !rankingJobEnabled {
 		return nil
 	}
 
@@ -40,7 +50,7 @@ func (s *Service) SerializeRankingGraph(ctx context.Context, numRankingRoutines 
 	for i := 0; i < numRankingRoutines; i++ {
 		g.Go(func(ctx context.Context) error {
 			for upload := range sharedUploads {
-				if err := s.serializeAndPersistRankingGraphForUpload(ctx, upload.ID, upload.Repo, upload.Root, upload.ObjectPrefix); err != nil {
+				if err := s.store.InsertDefinitionsAndReferencesForDocument(ctx, upload, rankingGraphKey, numBatchSize, s.setDefinitionsAndReferencesForUpload); err != nil {
 					s.logger.Error(
 						"Failed to process upload for ranking graph",
 						log.Int("id", upload.ID),
@@ -67,6 +77,63 @@ func (s *Service) SerializeRankingGraph(ctx context.Context, numRankingRoutines 
 
 	if err := g.Wait(); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (s *Service) setDefinitionsAndReferencesForUpload(
+	ctx context.Context,
+	upload store.ExportedUpload,
+	rankingBatchNumber int,
+	rankingGraphKey, path string,
+	document *scip.Document,
+) error {
+	seenDefinitions := map[string]struct{}{}
+	definitions := []shared.RankingDefintions{}
+	for _, occ := range document.Occurrences {
+		if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) {
+			continue
+		}
+
+		if scip.SymbolRole_Definition.Matches(occ) {
+			definitions = append(definitions, shared.RankingDefintions{
+				UploadID:     upload.ID,
+				SymbolName:   occ.Symbol,
+				Repository:   upload.Repo,
+				DocumentPath: filepath.Join(upload.Root, path),
+			})
+			seenDefinitions[occ.Symbol] = struct{}{}
+		}
+	}
+
+	references := []string{}
+	for _, occ := range document.Occurrences {
+		if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) {
+			continue
+		}
+
+		if _, ok := seenDefinitions[occ.Symbol]; ok {
+			continue
+		}
+		if !scip.SymbolRole_Definition.Matches(occ) {
+			references = append(references, occ.Symbol)
+		}
+	}
+
+	if len(definitions) > 0 {
+		if err := s.store.InsertDefintionsForRanking(ctx, rankingGraphKey, rankingBatchNumber, definitions); err != nil {
+			return err
+		}
+	}
+
+	if len(references) > 0 {
+		if err := s.store.InsertReferencesForRanking(ctx, rankingGraphKey, rankingBatchNumber, shared.RankingReferences{
+			UploadID:    upload.ID,
+			SymbolNames: references,
+		}); err != nil {
+			return err
+		}
 	}
 
 	return nil
