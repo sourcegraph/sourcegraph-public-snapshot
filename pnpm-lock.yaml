@@ -11,7 +11,7 @@ importers:
 
   .:
     specifiers:
-      '@apollo/client': ^3.5.0
+      '@apollo/client': ^3.8.0-alpha.7
       '@atlassian/aui': ^7.10.3
       '@axe-core/puppeteer': ^4.4.2
       '@babel/core': ^7.20.5
@@ -400,7 +400,7 @@ importers:
       yauzl: ^2.10.0
       zustand: ^3.6.9
     dependencies:
-      '@apollo/client': 3.5.10_jztdkcoyb6t7sgjrqwrwvm7qta
+      '@apollo/client': 3.8.0-alpha.7_wgohupceissbkfn62czjahgqgi
       '@codemirror/autocomplete': 6.1.0_42luzusa22g3gmuqmbrrjz6ypm
       '@codemirror/commands': 6.0.1
       '@codemirror/lang-json': 6.0.0
@@ -452,7 +452,7 @@ importers:
       agent-base: 6.0.2
       ajv: 8.11.2
       ajv-formats: 2.1.1_ajv@8.11.2
-      apollo3-cache-persist: 0.12.1_@apollo+client@3.5.10
+      apollo3-cache-persist: 0.12.1_644btsh2xtpu4bkvh35a7fqf6e
       bloomfilter: 0.0.18
       case-sensitive-paths-webpack-plugin: 2.4.0
       classnames: 2.3.1
@@ -785,7 +785,7 @@ importers:
       webpack-dev-server: 4.11.1_rjsyjcrmk25kqsjzwkvj3a2evq
       webpack-manifest-plugin: 5.0.0_webpack@5.75.0
       webpack-stats-plugin: 1.1.1
-      wildcard-mock-link: 2.0.1_537blwf6n3jkmoyzwoadzzdkge
+      wildcard-mock-link: 2.0.1_o5lzffothtsynmyk2hdsl4g6qu
       worker-loader: 3.0.8_webpack@5.75.0
       yaml: 2.2.1
       yauzl: 2.10.0
@@ -1198,36 +1198,41 @@ packages:
       js-yaml: 3.14.1
     dev: true
 
-  /@apollo/client/3.5.10_jztdkcoyb6t7sgjrqwrwvm7qta:
-    resolution: {integrity: sha512-tL3iSpFe9Oldq7gYikZK1dcYxp1c01nlSwtsMz75382HcI6fvQXyFXUCJTTK3wgO2/ckaBvRGw7VqjFREdVoRw==}
+  /@apollo/client/3.8.0-alpha.7_wgohupceissbkfn62czjahgqgi:
+    resolution: {integrity: sha512-pwyACANhC4R0VnEXn4Uv7DEIOr3V6kmKC+Eh3wlspuhP7RLHsU31oFYXmNs2THHAMDdXAK96axutd6qP86eZ+Q==}
     peerDependencies:
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
       graphql-ws: ^5.5.5
-      react: ^16.8.0 || ^17.0.0
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
       subscriptions-transport-ws: ^0.9.0 || ^0.11.0
     peerDependenciesMeta:
       graphql-ws:
         optional: true
       react:
         optional: true
+      react-dom:
+        optional: true
       subscriptions-transport-ws:
         optional: true
     dependencies:
       '@graphql-typed-document-node/core': 3.1.1_graphql@15.4.0
-      '@wry/context': 0.6.0
+      '@wry/context': 0.7.0
       '@wry/equality': 0.5.1
       '@wry/trie': 0.3.0
       graphql: 15.4.0
-      graphql-tag: 2.12.5_graphql@15.4.0
+      graphql-tag: 2.12.6_graphql@15.4.0
       graphql-ws: 5.11.2_graphql@15.4.0
       hoist-non-react-statics: 3.3.2
       optimism: 0.16.1
       prop-types: 15.8.1
       react: 18.1.0
+      react-dom: 18.1.0_react@18.1.0
+      response-iterator: 0.2.6
       symbol-observable: 4.0.0
-      ts-invariant: 0.9.4
+      ts-invariant: 0.10.3
       tslib: 2.1.0
-      zen-observable-ts: 1.2.3
+      zen-observable-ts: 1.2.5
 
   /@ardatan/relay-compiler/12.0.0_graphql@15.4.0:
     resolution: {integrity: sha512-9anThAaj1dQr6IGmzBMcfzOQKTa5artjuPmw8NYK/fiGEMjADbSguBY2FMDykt+QhilR3wc9VA/3yVju7JHg7Q==}
@@ -4631,7 +4636,7 @@ packages:
       change-case-all: 1.0.14
       dependency-graph: 0.11.0
       graphql: 15.4.0
-      graphql-tag: 2.12.5_graphql@15.4.0
+      graphql-tag: 2.12.6_graphql@15.4.0
       parse-filepath: 1.0.2
       tslib: 2.1.0
     transitivePeerDependencies:
@@ -4652,7 +4657,7 @@ packages:
       change-case-all: 1.0.15
       dependency-graph: 0.11.0
       graphql: 15.4.0
-      graphql-tag: 2.12.5_graphql@15.4.0
+      graphql-tag: 2.12.6_graphql@15.4.0
       parse-filepath: 1.0.2
       tslib: 2.1.0
     transitivePeerDependencies:
@@ -12032,6 +12037,12 @@ packages:
     dependencies:
       tslib: 2.1.0
 
+  /@wry/context/0.7.0:
+    resolution: {integrity: sha512-LcDAiYWRtwAoSOArfk7cuYvFXytxfVrdX7yxoUmK7pPITLk5jYh2F8knCwS7LjgYL8u1eidPlKKV6Ikqq0ODqQ==}
+    engines: {node: '>=8'}
+    dependencies:
+      tslib: 2.1.0
+
   /@wry/equality/0.5.1:
     resolution: {integrity: sha512-FZKbdpbcVcbDxQrKcaBClNsQaMg9nof1RKM7mReJe5DKUzM5u8S7T+PqwNqvib5O2j2xxF1R4p5O3+b6baTrbw==}
     engines: {node: '>=8'}
@@ -12406,12 +12417,12 @@ packages:
       normalize-path: 3.0.0
       picomatch: 2.3.1
 
-  /apollo3-cache-persist/0.12.1_@apollo+client@3.5.10:
+  /apollo3-cache-persist/0.12.1_644btsh2xtpu4bkvh35a7fqf6e:
     resolution: {integrity: sha512-bYh/OzhzR70URRRf0OkzkpTLB7+fwx1Ftiw8/MWW8NhEgF+K9u3FO786DSUcE6X2NqSObYKF0+CpM9K8vrJNxw==}
     peerDependencies:
       '@apollo/client': ^3.2.5
     dependencies:
-      '@apollo/client': 3.5.10_jztdkcoyb6t7sgjrqwrwvm7qta
+      '@apollo/client': 3.8.0-alpha.7_wgohupceissbkfn62czjahgqgi
     dev: false
 
   /app-root-dir/1.0.2:
@@ -19433,11 +19444,11 @@ packages:
       graphql: 15.4.0
     dev: true
 
-  /graphql-tag/2.12.5_graphql@15.4.0:
-    resolution: {integrity: sha512-5xNhP4063d16Pz3HBtKprutsPrmHZi5IdUGOWRxA2B6VF7BIRGOHZ5WQvDmJXZuPcBg7rYwaFxvQYjqkSdR3TQ==}
+  /graphql-tag/2.12.6_graphql@15.4.0:
+    resolution: {integrity: sha512-FdSNcu2QQcWnM2VNvSCCDCVS5PpPqpzgFT8+GXzqJuoDd0CBncxCY278u4mhRO7tMgo2JjgJA5aZ+nWSQ/Z+xg==}
     engines: {node: '>=10'}
     peerDependencies:
-      graphql: ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0
+      graphql: ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
     dependencies:
       graphql: 15.4.0
       tslib: 2.1.0
@@ -29181,6 +29192,10 @@ packages:
       path-parse: 1.0.7
       supports-preserve-symlinks-flag: 1.0.0
 
+  /response-iterator/0.2.6:
+    resolution: {integrity: sha512-pVzEEzrsg23Sh053rmDUvLSkGXluZio0qu8VT6ukrYuvtjVfCbDZH9d6PGXb8HZfzdNZt8feXv/jvUzlhRgLnw==}
+    engines: {node: '>=0.8'}
+
   /responselike/1.0.2:
     resolution: {integrity: sha512-/Fpe5guzJk1gPqdJLJR5u7eG/gNY4nImjbRDaVWVMRhne55TCmj2i9Q+54PBRfatRC8v/rIiv9BN0pMd9OV5EQ==}
     dependencies:
@@ -31869,8 +31884,8 @@ packages:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
     dev: true
 
-  /ts-invariant/0.9.4:
-    resolution: {integrity: sha512-63jtX/ZSwnUNi/WhXjnK8kz4cHHpYS60AnmA6ixz17l7E12a5puCWFlNpkne5Rl0J8TBPVHpGjsj4fxs8ObVLQ==}
+  /ts-invariant/0.10.3:
+    resolution: {integrity: sha512-uivwYcQaxAucv1CzRp2n/QdYPo4ILf9VXgH19zEIjFx2EJufV16P0JtJVpYHy89DItG6Kwj2oIUjrcK5au+4tQ==}
     engines: {node: '>=8'}
     dependencies:
       tslib: 2.1.0
@@ -33782,13 +33797,13 @@ packages:
       string-width: 4.2.3
     dev: true
 
-  /wildcard-mock-link/2.0.1_537blwf6n3jkmoyzwoadzzdkge:
+  /wildcard-mock-link/2.0.1_o5lzffothtsynmyk2hdsl4g6qu:
     resolution: {integrity: sha512-pEYG7q9cHLc6lQVvYtj6CeoI9nIjZN59jiJ+jbwT+Oki8RyV+2BCNoRNRIamkh6r43ByseKIKcNJMbudt0e4aQ==}
     peerDependencies:
       '@apollo/client': ^3.3.15
       graphql: ^14.5.8 || ^15.0.0
     dependencies:
-      '@apollo/client': 3.5.10_jztdkcoyb6t7sgjrqwrwvm7qta
+      '@apollo/client': 3.8.0-alpha.7_wgohupceissbkfn62czjahgqgi
       delay: 5.0.0
       fast-json-stable-stringify: 2.1.0
       graphql: 15.4.0
@@ -34336,8 +34351,8 @@ packages:
     resolution: {integrity: sha512-raRj6r0gPzopFm5XWBJZr/NuV4EEnT4iE+U3dp5FV5pCb588Gmm3zLIp/j9yqqcMiHH8VNQlerLTgOqL7krh6w==}
     dev: false
 
-  /zen-observable-ts/1.2.3:
-    resolution: {integrity: sha512-hc/TGiPkAWpByykMwDcem3SdUgA4We+0Qb36bItSuJC9xD0XVBZoFHYoadAomDSNf64CG8Ydj0Qb8Od8BUWz5g==}
+  /zen-observable-ts/1.2.5:
+    resolution: {integrity: sha512-QZWQekv6iB72Naeake9hS1KxHlotfRpe+WGNbNx5/ta+R3DNjVO2bswf63gXlWDcs+EMd7XY8HfVQyP1X6T4Zg==}
     dependencies:
       zen-observable: 0.8.15
 
