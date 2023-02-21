@@ -371,7 +371,7 @@ CREATE TEMPORARY TABLE t_vulnerability_affected_packages (
 	namespace           TEXT NOT NULL,
 	version_constraint  TEXT[] NOT NULL,
 	fixed               boolean NOT NULL,
-	fixed_in            TEXT NOT NULL,
+	fixed_in            TEXT,
 	affected_symbols    JSON NOT NULL
 ) ON COMMIT DROP
 `
