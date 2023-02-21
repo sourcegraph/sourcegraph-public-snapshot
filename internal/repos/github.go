@@ -299,6 +299,27 @@ func (s *GitHubSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
 
+// ListNamespaces returns all Github organizations accessible to the given source defined
+// via the external service configuration.
+func (s *GitHubSource) ListNamespaces(ctx context.Context, results chan SourceNamespaceResult) {
+	var err error
+	orgs := make([]*github.Org, 0)
+	hasNextPage := true
+	for page := 1; hasNextPage; page++ {
+		var pageOrgs []*github.Org
+		pageOrgs, hasNextPage, _, err = s.v3Client.GetAuthenticatedUserOrgsForPage(ctx, page)
+		if err != nil {
+			results <- SourceNamespaceResult{Source: s, Err: err}
+			continue
+		}
+		orgs = append(orgs, pageOrgs...)
+	}
+	for _, org := range orgs {
+		s.logger.Debug("github org sent to namespaces result", log.String("org login", org.Login), log.Int("org id", org.ID))
+		results <- SourceNamespaceResult{Source: s, Namespace: &types.ExternalServiceNamespace{ID: org.ID, Name: org.Login, ExternalID: org.NodeID}}
+	}
+}
+
 // GetRepo returns the GitHub repository with the given name and owner
 // ("org/repo-name")
 func (s *GitHubSource) GetRepo(ctx context.Context, nameWithOwner string) (*types.Repo, error) {

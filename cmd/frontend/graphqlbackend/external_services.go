@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	jsoniter "github.com/json-iterator/go"
 	"strconv"
 	"strings"
 	"sync"
@@ -21,9 +22,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var extsvcConfigAllowEdits, _ = strconv.ParseBool(env.Get("EXTSVC_CONFIG_ALLOW_EDITS", "false", "When EXTSVC_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
@@ -443,4 +446,52 @@ func (r *schemaResolver) CancelExternalServiceSync(ctx context.Context, args *ca
 	}
 
 	return &EmptyResponse{}, nil
+}
+
+type externalServiceNamespacesArgs struct {
+	Kind  string
+	Token string
+	Url   string
+}
+
+func (r *schemaResolver) QueryExternalServiceNamespaces(ctx context.Context, args *externalServiceNamespacesArgs) (*queryExternalServiceNamespaceConnectionResolver, error) {
+	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		return nil, auth.ErrMustBeSiteAdmin
+	}
+
+	res := queryExternalServiceNamespaceConnectionResolver{
+		args:              args,
+		repoupdaterClient: r.repoupdaterClient,
+	}
+	return &res, nil
+}
+
+type queryExternalServiceNamespaceConnectionResolver struct {
+	args              *externalServiceNamespacesArgs
+	repoupdaterClient *repoupdater.Client
+
+	once       sync.Once
+	nodes      []*types.ExternalServiceNamespace
+	totalCount int32
+	err        error
+}
+
+func NewSourceConnection(kind, url, token string) (string, error) {
+	var (
+		err        error
+		marshalled []byte
+	)
+	switch kind {
+	case extsvc.KindGitHub:
+		cnxn := schema.GitHubConnection{
+			Url:   url,
+			Token: token,
+		}
+
+		marshalled, err = jsoniter.Marshal(cnxn)
+	default:
+		return "", errors.New(repos.UnimplementedDiscoverySource)
+	}
+
+	return string(marshalled), err
 }
