@@ -11,13 +11,16 @@ go_library(
     deps = [
         "//cmd/frontend/enterprise",
         "//enterprise/internal/codeintel",
+        "//enterprise/internal/scim/filter",
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/database",
+        "//internal/extsvc",
         "//internal/observation",
         "//internal/types",
         "//lib/errors",
         "@com_github_elimity_com_scim//:scim",
+        "@com_github_elimity_com_scim//errors",
         "@com_github_elimity_com_scim//optional",
         "@com_github_elimity_com_scim//schema",
         "@com_github_sourcegraph_log//:log",
@@ -34,5 +37,6 @@ go_test(
         "//internal/types",
         "@com_github_elimity_com_scim//:scim",
         "@com_github_scim2_filter_parser_v2//:filter-parser",
+        "@com_github_stretchr_testify//assert",
     ],
 )

@@ -3,12 +3,10 @@ package auth
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
-	"github.com/sergi/go-diff/diffmatchpatch"
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -19,12 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-func init() {
-	spew.Config.DisablePointerAddresses = true
-	spew.Config.SortKeys = true
-	spew.Config.SpewKeys = true
-}
 
 // TestGetAndSaveUser ensures the correctness of the GetAndSaveUser function.
 //
@@ -300,7 +292,7 @@ func TestGetAndSaveUser(t *testing.T) {
 			innerCases: []innerCase{{
 				op:         getNonExistentUserCreateIfNotExistOp,
 				expSafeErr: "Unable to create a new user account due to a unexpected error. Ask a site admin for help.",
-				expErr:     unexpectedErr,
+				expErr:     errors.Wrapf(unexpectedErr, `username: "nonexistent", email: "nonexistent@example.com"`),
 			}},
 		},
 		{
@@ -395,23 +387,29 @@ func TestGetAndSaveUser(t *testing.T) {
 						op := c.op
 						op.CreateIfNotExist = createIfNotExist
 						userID, safeErr, err := GetAndSaveUser(ctx, m.DB(), op)
-						for _, v := range []struct {
-							label string
-							got   any
-							want  any
-						}{
-							{"userID", userID, c.expUserID},
-							{"safeErr", safeErr, c.expSafeErr},
-							{"err", err, c.expErr},
-							{"savedExtAccts (side-effect)", m.savedExtAccts, c.expSavedExtAccts},
-							{"updatedUsers (side-effect)", m.updatedUsers, c.expUpdatedUsers},
-							{"createdUsers (side-effect)", m.createdUsers, c.expCreatedUsers},
-						} {
-							if label, got, want := v.label, v.got, v.want; !reflect.DeepEqual(got, want) {
-								dmp := diffmatchpatch.New()
-								t.Errorf("%s: got != want\n%#v != %#v\ndiff(got, want):\n%s",
-									label, got, want, dmp.DiffPrettyText(dmp.DiffMain(spew.Sdump(want), spew.Sdump(got), false)))
-							}
+
+						if userID != c.expUserID {
+							t.Errorf("mismatched userID, want: %v, but got %v", c.expUserID, userID)
+						}
+
+						if diff := cmp.Diff(safeErr, c.expSafeErr); diff != "" {
+							t.Errorf("mismatched safeErr, got != want, diff(-got, +want):\n%s", diff)
+						}
+
+						if !errors.Is(err, c.expErr) {
+							t.Errorf("mismatched errors, want %#v, but got %#v", c.expErr, err)
+						}
+
+						if diff := cmp.Diff(m.savedExtAccts, c.expSavedExtAccts); diff != "" {
+							t.Errorf("mismatched side-effect savedExtAccts, got != want, diff(-got, +want):\n%s", diff)
+						}
+
+						if diff := cmp.Diff(m.updatedUsers, c.expUpdatedUsers); diff != "" {
+							t.Errorf("mismatched side-effect updatedUsers, got != want, diff(-got, +want):\n%s", diff)
+						}
+
+						if diff := cmp.Diff(m.createdUsers, c.expCreatedUsers); diff != "" {
+							t.Errorf("mismatched side-effect createdUsers, got != want, diff(-got, +want):\n%s", diff)
 						}
 
 						if c.expCalledGrantPendingPermissions != m.calledGrantPendingPermissions {
@@ -433,9 +431,9 @@ func TestGetAndSaveUser(t *testing.T) {
 		usersStore.GetByVerifiedEmailFunc.SetDefaultReturn(nil, errNotFound)
 		externalAccountsStore := database.NewMockUserExternalAccountsStore()
 		externalAccountsStore.LookupUserAndSaveFunc.SetDefaultReturn(0, errNotFound)
-		externalAccountsStore.CreateUserAndSaveFunc.SetDefaultHook(func(ctx context.Context, _ database.NewUser, _ extsvc.AccountSpec, _ extsvc.AccountData) (int32, error) {
+		externalAccountsStore.CreateUserAndSaveFunc.SetDefaultHook(func(ctx context.Context, _ database.NewUser, _ extsvc.AccountSpec, _ extsvc.AccountData) (*types.User, error) {
 			require.True(t, actor.FromContext(ctx).SourcegraphOperator, "the actor should be a Sourcegraph operator")
-			return 1, nil
+			return &types.User{ID: 1}, nil
 		})
 		eventLogsStore := database.NewMockEventLogStore()
 		eventLogsStore.BulkInsertFunc.SetDefaultHook(func(ctx context.Context, _ []*database.Event) error {
@@ -655,22 +653,22 @@ func (m *mocks) LookupUserAndSave(_ context.Context, spec extsvc.AccountSpec, da
 }
 
 // CreateUserAndSave mocks database.ExternalAccounts.CreateUserAndSave
-func (m *mocks) CreateUserAndSave(_ context.Context, newUser database.NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUserID int32, err error) {
+func (m *mocks) CreateUserAndSave(_ context.Context, newUser database.NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUser *types.User, err error) {
 	if m.createUserAndSaveErr != nil {
-		return 0, m.createUserAndSaveErr
+		return &types.User{}, m.createUserAndSaveErr
 	}
 
 	// Check if username already exists
 	for _, u := range m.userInfos {
 		if u.user.Username == newUser.Username {
-			return 0, database.MockCannotCreateUserUsernameExistsErr
+			return &types.User{}, database.MockCannotCreateUserUsernameExistsErr
 		}
 	}
 	// Check if email already exists
 	for _, u := range m.userInfos {
 		for _, email := range u.emails {
 			if email == newUser.Email {
-				return 0, database.MockCannotCreateUserEmailExistsErr
+				return &types.User{}, database.MockCannotCreateUserEmailExistsErr
 			}
 		}
 	}
@@ -686,7 +684,7 @@ func (m *mocks) CreateUserAndSave(_ context.Context, newUser database.NewUser, s
 	// Save ext acct
 	m.savedExtAccts[userID] = append(m.savedExtAccts[userID], spec)
 
-	return userID, nil
+	return &types.User{ID: userID}, nil
 }
 
 // AssociateUserAndSave mocks database.ExternalAccounts.AssociateUserAndSave

@@ -1,7 +1,6 @@
 import React from 'react'
 
-import { MemoryRouter, MemoryRouterProps } from 'react-router'
-import { CompatRouter } from 'react-router-dom-v5-compat'
+import { MemoryRouter, MemoryRouterProps } from 'react-router-dom'
 
 import { WildcardThemeContext } from '../hooks/useWildcardTheme'
 
@@ -33,9 +32,7 @@ export const BrandedStory: React.FunctionComponent<BrandedProps> = ({
     return (
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
             <MemoryRouter {...memoryRouterProps}>
-                <CompatRouter>
-                    <Children isLightTheme={isLightTheme} />
-                </CompatRouter>
+                <Children isLightTheme={isLightTheme} />
             </MemoryRouter>
         </WildcardThemeContext.Provider>
     )

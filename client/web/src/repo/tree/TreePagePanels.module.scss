@@ -2,7 +2,7 @@
     max-height: 30rem;
     overflow: hidden;
     margin-top: 1rem;
-    padding: 0 0.25rem 0 0;
+    padding: 0 0.2rem 0 0.2rem;
 
     &-fader {
         width: 100%;
@@ -16,6 +16,15 @@
         display: block;
         margin-top: 0.25rem;
     }
+}
+
+.readme-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    // 30rem for the readme height + 1.5rem for the link that will be rendered
+    // below it and additional margin.
+    height: 31.5rem;
 }
 
 .card-col-header-wrapper {

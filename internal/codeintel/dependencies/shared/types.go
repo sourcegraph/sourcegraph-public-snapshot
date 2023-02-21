@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 )
 
@@ -24,10 +23,8 @@ type MinimalPackageRepoRef struct {
 	Versions []string
 }
 
-type PackageDependencyLiteral struct {
-	RepoNameValue          api.RepoName
-	GitTagFromVersionValue string
-	SchemeValue            string
-	PackageSyntaxValue     reposource.PackageName
-	PackageVersionValue    string
+type MinimialVersionedPackageRepo struct {
+	Scheme  string
+	Name    reposource.PackageName
+	Version string
 }

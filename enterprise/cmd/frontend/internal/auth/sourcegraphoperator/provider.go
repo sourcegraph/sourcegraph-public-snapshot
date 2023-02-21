@@ -13,7 +13,13 @@ import (
 )
 
 // provider is an implementation of providers.Provider for the Sourcegraph
-// Operator authentication.
+// Operator authentication, also referred to as "SOAP". There can only ever be
+// one provider of this type, and it can only be provisioned through Cloud site
+// configuration (see github.com/sourcegraph/sourcegraph/enterprise/internal/cloud)
+//
+// SOAP is used to provision accounts for Sourcegraph teammates in Sourcegraph
+// Cloud - for more details, refer to
+// https://handbook.sourcegraph.com/departments/cloud/technical-docs/oidc_site_admin/#faq
 type provider struct {
 	config cloud.SchemaAuthProviderSourcegraphOperator
 	*openidconnect.Provider

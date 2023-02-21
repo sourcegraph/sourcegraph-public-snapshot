@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect } from 'react'
 
 import classNames from 'classnames'
-import { useNavigate, useParams } from 'react-router-dom-v5-compat'
+import { useNavigate, useParams } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
 import { gql, useMutation, useQuery } from '@sourcegraph/http-client'

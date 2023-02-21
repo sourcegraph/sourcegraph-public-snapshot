@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var MockGetAndSaveUser func(ctx context.Context, op GetAndSaveUserOp) (userID int32, safeErrMsg string, err error)
@@ -117,25 +118,25 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (u
 		// information of the actor, especially whether the actor is a Sourcegraph
 		// operator or not.
 		ctx = sgactor.WithActor(ctx, act)
-		userID, err := externalAccountsStore.CreateUserAndSave(ctx, op.UserProps, op.ExternalAccount, op.ExternalAccountData)
+		user, err := externalAccountsStore.CreateUserAndSave(ctx, op.UserProps, op.ExternalAccount, op.ExternalAccountData)
 		switch {
 		case database.IsUsernameExists(err):
 			return 0, false, false, fmt.Sprintf("Username %q already exists, but no verified email matched %q", op.UserProps.Username, op.UserProps.Email), err
 		case errcode.PresentationMessage(err) != "":
 			return 0, false, false, errcode.PresentationMessage(err), err
 		case err != nil:
-			return 0, false, false, "Unable to create a new user account due to a unexpected error. Ask a site admin for help.", err
+			return 0, false, false, "Unable to create a new user account due to a unexpected error. Ask a site admin for help.", errors.Wrapf(err, "username: %q, email: %q", op.UserProps.Username, op.UserProps.Email)
 		}
-		act.UID = userID
+		act.UID = user.ID
 
 		if err = db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
-			UserID: userID,
+			UserID: user.ID,
 			Perm:   authz.Read,
 			Type:   authz.PermRepos,
 		}); err != nil {
 			logger.Error(
 				"failed to grant user pending permissions",
-				sglog.Int32("userID", userID),
+				sglog.Int32("userID", user.ID),
 				sglog.Error(err),
 			)
 			// OK to continue, since this is a best-effort to improve the UX with some initial permissions available.
@@ -177,7 +178,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (u
 			)
 		}
 
-		return userID, true, true, "", nil
+		return user.ID, true, true, "", nil
 	}()
 	if err != nil {
 		const eventName = "ExternalAuthSignupFailed"

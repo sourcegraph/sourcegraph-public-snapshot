@@ -38,7 +38,7 @@ interface CodeIntelAPI {
         context: sourcegraph.ReferenceContext
     ): Observable<clientType.Location[]>
     getImplementations(parameters: TextDocumentPositionParameters): Observable<clientType.Location[]>
-    getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged | null>
+    getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged | null | undefined>
     getDocumentHighlights(textParameters: TextDocumentPositionParameters): Observable<DocumentHighlight[]>
 }
 
@@ -110,7 +110,7 @@ class DefaultCodeIntelAPI implements CodeIntelAPI {
             request.providers.implementations.provideLocations(request.document, request.position)
         )
     }
-    public getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged | null> {
+    public getHover(textParameters: TextDocumentPositionParameters): Observable<HoverMerged | null | undefined> {
         const request = requestFor(textParameters)
         return (
             request.providers.hover
@@ -152,7 +152,7 @@ function toTextDocument(textDocument: TextDocumentIdentifier): sourcegraph.TextD
     }
 }
 
-function findLanguageMatchingDocument(textDocument: TextDocumentIdentifier): Language | undefined {
+export function findLanguageMatchingDocument(textDocument: TextDocumentIdentifier): Language | undefined {
     const document: Pick<TextDocument, 'uri' | 'languageId'> = toTextDocument(textDocument)
     for (const language of languages) {
         if (match(language.selector, document)) {

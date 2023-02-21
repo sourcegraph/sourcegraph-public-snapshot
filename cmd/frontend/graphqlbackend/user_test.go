@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -309,7 +310,7 @@ func TestUpdateUser(t *testing.T) {
 			},
 		)
 		got := fmt.Sprintf("%v", err)
-		want := "must be authenticated as the authorized user or site admin"
+		want := auth.ErrMustBeSiteAdminOrSameUser.Error()
 		assert.Equal(t, want, got)
 		assert.Nil(t, result)
 	})
@@ -625,7 +626,7 @@ func TestUser_Organizations(t *testing.T) {
 
 	expectOrgFailure := func(t *testing.T, actorUID int32) {
 		t.Helper()
-		wantErr := "must be authenticated as the authorized user or site admin"
+		wantErr := auth.ErrMustBeSiteAdminOrSameUser.Error()
 		RunTests(t, []*Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: actorUID}),

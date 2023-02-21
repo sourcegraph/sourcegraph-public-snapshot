@@ -35,6 +35,10 @@ func (i *invitableCollaboratorResolver) AvatarURL() *string {
 }
 func (i *invitableCollaboratorResolver) User() *UserResolver { return nil }
 
+func (r *invitableCollaboratorResolver) OwnerField() string {
+	return ""
+}
+
 type RecentCommittersFunc func(context.Context, *github.RecentCommittersParams) (*github.RecentCommittersResults, error)
 
 func pickReposToScanForCollaborators(possibleRepos []string, maxReposToScan int) []string {

@@ -234,7 +234,7 @@ func checkGitVersion(versionConstraint string) func(context.Context) error {
 		}
 
 		elems := strings.Split(out, " ")
-		if len(elems) != 3 {
+		if len(elems) != 3 && len(elems) != 5 {
 			return errors.Newf("unexpected output from git: %s", out)
 		}
 

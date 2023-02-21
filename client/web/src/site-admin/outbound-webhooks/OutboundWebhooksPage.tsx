@@ -1,7 +1,6 @@
 import { FC, useEffect } from 'react'
 
 import { mdiAlertCircle, mdiCog, mdiMapSearch, mdiPencil, mdiPlus } from '@mdi/js'
-import { RouteComponentProps } from 'react-router'
 
 import { pluralize } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -24,7 +23,7 @@ import { DeleteButton } from './delete/DeleteButton'
 
 import styles from './OutboundWebhooksPage.module.scss'
 
-export interface OutboundWebhooksPageProps extends TelemetryProps, RouteComponentProps<{}> {}
+export interface OutboundWebhooksPageProps extends TelemetryProps {}
 
 export const OutboundWebhooksPage: FC<OutboundWebhooksPageProps> = ({ telemetryService }) => {
     useEffect(() => {

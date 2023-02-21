@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
 
 import { VisuallyHidden } from '@reach/visually-hidden'
-import { useLocation } from 'react-router-dom-v5-compat'
+import { useLocation } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'

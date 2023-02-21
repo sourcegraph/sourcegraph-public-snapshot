@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import { useLocation } from 'react-router-dom-v5-compat'
+import { useLocation } from 'react-router-dom'
 
 import { ContributableMenu } from '@sourcegraph/client-api'
 import { isErrorLike, isMacPlatform } from '@sourcegraph/common'
@@ -24,9 +24,11 @@ import { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { CodeMonitoringProps } from '../codeMonitoring'
+import { CodyIcon } from '../cody/CodyIcon'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { getFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
 import { WebCommandListPopoverButton } from '../components/shared'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useHandleSubmitFeedback, useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
@@ -182,6 +184,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
 
     const { fuzzyFinderNavbar } = getFuzzyFinderFeatureFlags(props.settingsCascade.final) ?? false
 
+    const [codyEnabled] = useFeatureFlag('cody')
+
     return (
         <>
             <NavBar
@@ -243,6 +247,13 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             </NavLink>
                         </NavItem>
                     )}
+                    {codyEnabled && (
+                        <NavItem icon={CodyIcon}>
+                            <NavLink variant={navLinkVariant} to="/cody">
+                                Cody
+                            </NavLink>
+                        </NavItem>
+                    )}
                 </NavGroup>
                 <NavActions>
                     {!props.authenticatedUser && (
@@ -287,7 +298,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                     {props.authenticatedUser && isSourcegraphDotCom && (
                         <ButtonLink
-                            className={styles.signUp}
+                            variant="secondary"
+                            outline={true}
                             to={buildCloudTrialURL(props.authenticatedUser)}
                             size="sm"
                             onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NavBarLoggedIn' })}
@@ -329,8 +341,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                         Sign in
                                     </Button>
                                     <ButtonLink
-                                        className={styles.signUp}
                                         to={buildGetStartedURL(isSourcegraphDotCom, props.authenticatedUser)}
+                                        variant="primary"
                                         size="sm"
                                         onClick={() => eventLogger.log('ClickedOnTopNavTrialButton')}
                                     >

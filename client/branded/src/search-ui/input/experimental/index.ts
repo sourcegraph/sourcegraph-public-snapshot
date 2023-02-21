@@ -8,6 +8,8 @@ export type {
     Source,
     SuggestionResult,
 } from './suggestionsExtension'
-export { getEditorConfig } from './suggestionsExtension'
+export { getEditorConfig, combineResults } from './suggestionsExtension'
 export * from './optionRenderer'
 export * from './utils'
+export * from './codemirror/history'
+export * from './filters'

@@ -3,7 +3,7 @@
 set -eu
 
 ROOTDIR="$(realpath "$(dirname "${BASH_SOURCE[0]}")"/../../..)"
-GORELEASER_CROSS_VERSION=v1.19.5
+GORELEASER_CROSS_VERSION=v1.20.0
 GCLOUD_APP_CREDENTIALS_FILE=${GCLOUD_APP_CREDENTIALS_FILE-$HOME/.config/gcloud/application_default_credentials.json}
 
 if [ -z "${SKIP_BUILD_WEB-}" ]; then
@@ -14,6 +14,7 @@ fi
 
 if [ -z "${GITHUB_TOKEN-}" ]; then
   echo "Warning: GITHUB_TOKEN must be set for releases. Disregard this message for local snapshot builds."
+  GITHUB_TOKEN=
 fi
 
 if [ ! -f "$GCLOUD_APP_CREDENTIALS_FILE" ]; then
@@ -24,6 +25,7 @@ if [ ! -f "$GCLOUD_APP_CREDENTIALS_FILE" ]; then
   echo "Or set GCLOUD_APP_CREDENTIALS_FILE to a file containing the credentials."
   echo
   echo "Disregard this message for local snapshot builds."
+  GCLOUD_APP_CREDENTIALS_FILE=''
 fi
 
 if [ -z "${VERSION-}" ]; then
@@ -84,5 +86,5 @@ exec docker run --rm \
        -v "$GCLOUD_APP_CREDENTIALS_FILE":/root/.config/gcloud/application_default_credentials.json \
        -e "GITHUB_TOKEN=$GITHUB_TOKEN" \
        -e "GORELEASER_CURRENT_TAG=$GORELEASER_CURRENT_TAG" \
-       goreleaser/goreleaser-cross:$GORELEASER_CROSS_VERSION \
+       ghcr.io/goreleaser/goreleaser-cross:$GORELEASER_CROSS_VERSION \
        --config enterprise/dev/app/goreleaser.yaml --parallelism 1 --debug --rm-dist ${GORELEASER_ARGS[*]} "$@"

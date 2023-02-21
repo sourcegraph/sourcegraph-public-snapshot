@@ -1,7 +1,5 @@
 import React, { useEffect, useMemo } from 'react'
 
-import * as H from 'history'
-
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { Container, PageHeader, LoadingSpinner, useObservable, Alert, Link } from '@sourcegraph/wildcard'
 
@@ -20,9 +18,8 @@ import styles from './UserSettingsPermissionsPage.module.scss'
 export const UserSettingsPermissionsPage: React.FunctionComponent<
     React.PropsWithChildren<{
         user: UserSettingsAreaUserFields
-        history: H.History
     }>
-> = ({ user, history }) => {
+> = ({ user }) => {
     useEffect(() => eventLogger.logViewEvent('UserSettingsPermissions'))
     const permissionsInfo = useObservable(useMemo(() => userPermissionsInfo(user.id), [user.id]))
 
@@ -81,7 +78,7 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<
                                 </tr>
                             </tbody>
                         </table>
-                        <ScheduleUserPermissionsSyncActionContainer user={user} history={history} />
+                        <ScheduleUserPermissionsSyncActionContainer user={user} />
                     </>
                 )}
             </Container>
@@ -91,7 +88,6 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<
 
 interface ScheduleUserPermissionsSyncActionContainerProps {
     user: UserSettingsAreaUserFields
-    history: H.History
 }
 
 class ScheduleUserPermissionsSyncActionContainer extends React.PureComponent<ScheduleUserPermissionsSyncActionContainerProps> {
@@ -99,11 +95,10 @@ class ScheduleUserPermissionsSyncActionContainer extends React.PureComponent<Sch
         return (
             <ActionContainer
                 title="Manually schedule a permissions sync"
-                description={<div>Site admins are able to manually schedule a permissions sync for this user.</div>}
+                description={<div>Schedule a permissions sync for user: {this.props.user.username}.</div>}
                 buttonLabel="Schedule now"
                 flashText="Added to queue"
                 run={this.scheduleUserPermissions}
-                history={this.props.history}
                 className={styles.userSettingsPermissionsPageSyncContainer}
             />
         )

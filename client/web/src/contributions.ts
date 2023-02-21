@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
-import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -44,12 +44,12 @@ export function GlobalContributions(props: Props): null {
                     historyOrNavigate: navigate,
                     getLocation: () => locationRef.current,
                     extensionsController,
-                    locationAssign: globalThis.location.assign.bind(location),
+                    locationAssign: globalThis.location.assign.bind(globalThis.location),
                 })
             )
         }
         return () => subscriptions.unsubscribe()
-    })
+    }, [extensionsController, navigate, platformContext])
 
     // Throw error to the <ErrorBoundary />
     if (error) {

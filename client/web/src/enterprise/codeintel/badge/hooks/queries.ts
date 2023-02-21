@@ -1,5 +1,13 @@
 import { gql } from '@sourcegraph/http-client'
 
+import {
+    gitTreeCodeIntelInfoFragment,
+    preciseSupportFragment,
+    searchBasedCodeIntelSupportFragment,
+    inferredAvailableIndexersFieldsFragment,
+} from '../../dashboard/hooks/queries'
+import { codeIntelIndexerFieldsFragment } from '../../indexes/hooks/types'
+
 export const lsifIndexFieldsFragment = gql`
     fragment LsifIndexFields on LSIFIndex {
         __typename
@@ -210,37 +218,6 @@ export const codeIntelStatusQuery = gql`
         }
     }
 
-    fragment GitTreeCodeIntelInfoFields on GitTreeCodeIntelInfo {
-        preciseSupport {
-            support {
-                ...PreciseSupportFields
-            }
-            confidence
-        }
-        searchBasedSupport {
-            support {
-                ...SearchBasedCodeIntelSupportFields
-            }
-        }
-    }
-
-    fragment PreciseSupportFields on PreciseCodeIntelSupport {
-        supportLevel
-        indexers {
-            ...CodeIntelIndexerFields
-        }
-    }
-
-    fragment SearchBasedCodeIntelSupportFields on SearchBasedCodeIntelSupport {
-        language
-        supportLevel
-    }
-
-    fragment CodeIntelIndexerFields on CodeIntelIndexer {
-        name
-        url
-    }
-
     fragment LSIFUploadsWithRepositoryNamespaceFields on LSIFUploadsWithRepositoryNamespace {
         root
         indexer {
@@ -261,14 +238,13 @@ export const codeIntelStatusQuery = gql`
         }
     }
 
-    fragment InferredAvailableIndexersFields on InferredAvailableIndexers {
-        roots
-        index
-        url
-    }
-
     ${lsifUploadFieldsFragment}
     ${lsifIndexFieldsFragment}
+    ${codeIntelIndexerFieldsFragment}
+    ${inferredAvailableIndexersFieldsFragment}
+    ${gitTreeCodeIntelInfoFragment}
+    ${preciseSupportFragment}
+    ${searchBasedCodeIntelSupportFragment}
 `
 
 export const requestedLanguageSupportQuery = gql`

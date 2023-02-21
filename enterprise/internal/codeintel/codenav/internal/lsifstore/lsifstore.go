@@ -46,14 +46,12 @@ type LsifStore interface {
 
 type store struct {
 	db         *basestore.Store
-	serializer *Serializer
 	operations *operations
 }
 
 func New(observationCtx *observation.Context, db codeintelshared.CodeIntelDB) LsifStore {
 	return &store{
 		db:         basestore.NewWithHandle(db.Handle()),
-		serializer: NewSerializer(),
 		operations: newOperations(observationCtx),
 	}
 }

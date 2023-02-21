@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
 
 import { mdiPlus } from '@mdi/js'
-import { RouteComponentProps } from 'react-router'
 import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -22,10 +21,7 @@ import {
 import { accessTokenFragment, AccessTokenNode, AccessTokenNodeProps } from '../../../settings/tokens/AccessTokenNode'
 import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
-interface Props
-    extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'user'>,
-        Pick<RouteComponentProps<{}>, 'match'>,
-        TelemetryProps {
+interface Props extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'user'>, TelemetryProps {
     /**
      * The newly created token, if any. This component must call onDidPresentNewToken
      * when it is finished presenting the token secret to the user.
@@ -44,7 +40,6 @@ interface Props
  */
 export const UserSettingsTokensPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
-    match,
     authenticatedUser,
     user,
     newToken,
@@ -84,7 +79,7 @@ export const UserSettingsTokensPage: React.FunctionComponent<React.PropsWithChil
                 description="Access tokens may be used to access the Sourcegraph API."
                 actions={
                     !siteAdminViewingOtherUser && (
-                        <Button to={`${match.url}/new`} variant="primary" as={Link}>
+                        <Button to="new" variant="primary" as={Link}>
                             <Icon role="img" aria-hidden={true} svgPath={mdiPlus} /> Generate new token
                         </Button>
                     )

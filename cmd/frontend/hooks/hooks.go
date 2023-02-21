@@ -14,9 +14,10 @@ var PostAuthMiddleware func(http.Handler) http.Handler
 type LicenseInfo struct {
 	CurrentPlan string `json:"currentPlan"`
 
-	CodeScaleLimit         string `json:"codeScaleLimit"`
-	CodeScaleCloseToLimit  bool   `json:"codeScaleCloseToLimit"`
-	CodeScaleExceededLimit bool   `json:"codeScaleExceededLimit"`
+	CodeScaleLimit         string   `json:"codeScaleLimit"`
+	CodeScaleCloseToLimit  bool     `json:"codeScaleCloseToLimit"`
+	CodeScaleExceededLimit bool     `json:"codeScaleExceededLimit"`
+	KnownLicenseTags       []string `json:"knownLicenseTags"`
 }
 
 var GetLicenseInfo = func(isSiteAdmin bool) *LicenseInfo { return nil }

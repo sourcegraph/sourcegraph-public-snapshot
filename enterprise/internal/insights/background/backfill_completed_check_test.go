@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/log/logtest"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -87,7 +87,7 @@ func TestCheckBackfillCompleted(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("SeriesBackfillCompleted", series).Equal(t, []SeriesBackfillStatus{})
+		autogold.Expect(series).Equal(t, []SeriesBackfillStatus{})
 	})
 	t.Run("Stamps backfill_completed_at for a series with only completed jobs", func(t *testing.T) {
 		resetDatabase()
@@ -115,7 +115,7 @@ func TestCheckBackfillCompleted(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("SeriesBackfillCompleted", series).Equal(t, []SeriesBackfillStatus{{SeriesId: "1", BackfillCompletedAt: now.UTC()}})
+		autogold.Expect(series).Equal(t, []SeriesBackfillStatus{{SeriesId: "1", BackfillCompletedAt: now.UTC()}})
 	})
 	t.Run("Stamps backfill_completed_at for multiple series", func(t *testing.T) {
 		resetDatabase()
@@ -154,7 +154,7 @@ func TestCheckBackfillCompleted(t *testing.T) {
 		sort.SliceStable(series, func(i, j int) bool {
 			return strings.Compare(series[i].SeriesId, series[j].SeriesId) < 0
 		})
-		autogold.Want("SeriesBackfillCompleted", series).Equal(t, []SeriesBackfillStatus{
+		autogold.Expect(series).Equal(t, []SeriesBackfillStatus{
 			{SeriesId: "1", BackfillCompletedAt: now.UTC()},
 			{SeriesId: "2", BackfillCompletedAt: now.Add(time.Minute * 10).UTC()},
 		})
@@ -181,7 +181,7 @@ func TestCheckBackfillCompleted(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("SeriesBackfillCompleted", series).Equal(t, []SeriesBackfillStatus{})
+		autogold.Expect(series).Equal(t, []SeriesBackfillStatus{})
 	})
 }
 

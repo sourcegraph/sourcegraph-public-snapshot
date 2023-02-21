@@ -3,8 +3,6 @@ package scim
 import (
 	"context"
 	"net/http"
-	"strconv"
-	"strings"
 
 	"github.com/elimity-com/scim"
 	"github.com/elimity-com/scim/optional"
@@ -12,146 +10,25 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // UserResourceHandler implements the scim.ResourceHandler interface for users.
 type UserResourceHandler struct {
-	ctx            context.Context
-	observationCtx *observation.Context
-	db             database.DB
+	ctx              context.Context
+	observationCtx   *observation.Context
+	db               database.DB
+	coreSchema       schema.Schema
+	schemaExtensions []scim.SchemaExtension
 }
 
 // NewUserResourceHandler returns a new UserResourceHandler.
 func NewUserResourceHandler(ctx context.Context, observationCtx *observation.Context, db database.DB) *UserResourceHandler {
 	return &UserResourceHandler{
-		ctx:            ctx,
-		observationCtx: observationCtx,
-		db:             db,
-	}
-}
-
-// Create stores given attributes. Returns a resource with the attributes that are stored and a (new) unique identifier.
-func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAttributes) (scim.Resource, error) {
-	// TODO: For testing only, real logic should come here
-	attributesString := resourceAttributesToLoggableString(attributes)
-	h.observationCtx.Logger.Error("XXXXX Create", log.String("method", r.Method), log.String("attributes", attributesString))
-
-	return scim.Resource{
-		ID: "123",
-	}, nil
-}
-
-// Get returns the resource corresponding with the given identifier.
-func (h *UserResourceHandler) Get(r *http.Request, idStr string) (scim.Resource, error) {
-	id, err := strconv.ParseInt(idStr, 10, 32)
-	if err != nil {
-		return scim.Resource{}, errors.New("invalid id")
-	}
-
-	// Get users
-	users, err := h.db.Users().ListForSCIM(r.Context(), &database.UsersListOptions{
-		UserIDs: []int32{int32(id)},
-	})
-	if err != nil {
-		return scim.Resource{}, errors.Wrap(err, "Error loading user")
-	}
-	if len(users) == 0 {
-		return scim.Resource{}, errors.New("User not found")
-	}
-
-	resource := h.convertUserToSCIMResource(users[0])
-
-	return resource, nil
-}
-
-// GetAll returns a paginated list of resources.
-// An empty list of resources will be represented as `null` in the JSON response if `nil` is assigned to the
-// Page.Resources. Otherwise, is an empty slice is assigned, an empty list will be represented as `[]`.
-func (h *UserResourceHandler) GetAll(r *http.Request, params scim.ListRequestParams) (scim.Page, error) {
-	// Get total count
-	totalCount, err := h.db.Users().Count(r.Context(), &database.UsersListOptions{})
-	if err != nil {
-		return scim.Page{}, err
-	}
-
-	// Calculate offset
-	var offset int
-	if params.StartIndex > 0 {
-		offset = params.StartIndex - 1
-	}
-
-	// Get users
-	users, err := h.db.Users().ListForSCIM(r.Context(), &database.UsersListOptions{
-		LimitOffset: &database.LimitOffset{
-			Limit:  params.Count,
-			Offset: offset,
-		},
-	})
-	if err != nil {
-		return scim.Page{}, err
-	}
-
-	resources := make([]scim.Resource, 0, len(users))
-	for _, user := range users {
-		resources = append(resources, h.convertUserToSCIMResource(user))
-	}
-
-	return scim.Page{
-		TotalResults: totalCount,
-		Resources:    resources,
-	}, nil
-}
-
-// convertUserToSCIMResource converts a Sourcegraph user to a SCIM resource.
-func (h *UserResourceHandler) convertUserToSCIMResource(user *types.UserForSCIM) scim.Resource {
-	// Convert names
-	firstName, middleName, lastName := displayNameToPieces(user.DisplayName)
-
-	// Convert external ID
-	externalIDOptional := optional.String{}
-	if user.SCIMExternalID != "" {
-		externalIDOptional = optional.NewString(user.SCIMExternalID)
-	}
-
-	// Convert emails
-	emailMap := make([]interface{}, 0, len(user.Emails))
-	for _, email := range user.Emails {
-		emailMap = append(emailMap, map[string]interface{}{"value": email})
-	}
-
-	return scim.Resource{
-		ID:         strconv.FormatInt(int64(user.ID), 10),
-		ExternalID: externalIDOptional,
-		Attributes: scim.ResourceAttributes{
-			"userName":   user.Username,
-			"externalId": user.SCIMExternalID,
-			"name": map[string]interface{}{
-				"givenName":  firstName,
-				"middleName": middleName,
-				"familyName": lastName,
-				"formatted":  user.DisplayName,
-			},
-			"displayName": user.DisplayName,
-			"emails":      emailMap,
-			"active":      true,
-		},
-	}
-}
-
-// displayNameToPieces splits a display name into first, middle, and last name.
-func displayNameToPieces(displayName string) (first, middle, last string) {
-	pieces := strings.Fields(displayName)
-	switch len(pieces) {
-	case 0:
-		return "", "", ""
-	case 1:
-		return pieces[0], "", ""
-	case 2:
-		return pieces[0], "", pieces[1]
-	default:
-		return pieces[0], strings.Join(pieces[1:len(pieces)-1], " "), pieces[len(pieces)-1]
+		ctx:              ctx,
+		observationCtx:   observationCtx,
+		db:               db,
+		coreSchema:       createCoreSchema(),
+		schemaExtensions: createSchemaExtensions(),
 	}
 }
 
@@ -165,14 +42,6 @@ func (h *UserResourceHandler) Replace(r *http.Request, id string, attributes sci
 	return scim.Resource{
 		ID: "123",
 	}, nil
-}
-
-// Delete removes the resource with corresponding ID.
-func (h *UserResourceHandler) Delete(r *http.Request, id string) error {
-	// TODO: Add real logic
-	h.observationCtx.Logger.Error("XXXXX Delete", log.String("method", r.Method), log.String("id", id))
-
-	return nil
 }
 
 // Patch update one or more attributes of a SCIM resource using a sequence of
@@ -197,7 +66,20 @@ func (h *UserResourceHandler) Patch(r *http.Request, id string, operations []sci
 
 // createUserResourceType creates a SCIM resource type for users.
 func createUserResourceType(userResourceHandler *UserResourceHandler) scim.ResourceType {
-	coreUserSchema := schema.Schema{
+	return scim.ResourceType{
+		ID:               optional.NewString("User"),
+		Name:             "User",
+		Endpoint:         "/Users",
+		Description:      optional.NewString("User Account"),
+		Schema:           userResourceHandler.coreSchema,
+		SchemaExtensions: userResourceHandler.schemaExtensions,
+		Handler:          userResourceHandler,
+	}
+}
+
+// createCoreSchema creates a SCIM core schema for users.
+func createCoreSchema() schema.Schema {
+	return schema.Schema{
 		ID:          "urn:ietf:params:scim:schemas:core:2.0:User",
 		Name:        optional.NewString("User"),
 		Description: optional.NewString("User Account"),
@@ -207,9 +89,59 @@ func createUserResourceType(userResourceHandler *UserResourceHandler) scim.Resou
 				Required:   true,
 				Uniqueness: schema.AttributeUniquenessServer(),
 			})),
+			schema.SimpleCoreAttribute(schema.SimpleStringParams(schema.StringParams{
+				Name:       "externalId",
+				Uniqueness: schema.AttributeUniquenessNone(),
+			})),
+			schema.SimpleCoreAttribute(schema.SimpleBooleanParams(schema.BooleanParams{
+				Name:     "active",
+				Required: false,
+			})),
+			schema.ComplexCoreAttribute(schema.ComplexParams{
+				Name:     "name",
+				Required: false,
+				SubAttributes: []schema.SimpleParams{
+					schema.SimpleStringParams(schema.StringParams{
+						Name: "givenName",
+					}),
+					schema.SimpleStringParams(schema.StringParams{
+						Name: "middleName",
+					}),
+					schema.SimpleStringParams(schema.StringParams{
+						Name: "familyName",
+					}),
+				},
+			}),
+			schema.SimpleCoreAttribute(schema.SimpleStringParams(schema.StringParams{
+				Name: "displayName",
+			})),
+			schema.ComplexCoreAttribute(schema.ComplexParams{
+				Name:        "emails",
+				MultiValued: true,
+				SubAttributes: []schema.SimpleParams{
+					schema.SimpleStringParams(schema.StringParams{
+						Name: "value",
+					}),
+					schema.SimpleStringParams(schema.StringParams{
+						Name: "display",
+					}),
+					schema.SimpleStringParams(schema.StringParams{
+						Name: "type",
+						CanonicalValues: []string{
+							"work", "home", "other",
+						},
+					}),
+					schema.SimpleBooleanParams(schema.BooleanParams{
+						Name: "primary",
+					}),
+				},
+			}),
 		},
 	}
+}
 
+// createSchemaExtensions creates a SCIM schema extension for users.
+func createSchemaExtensions() []scim.SchemaExtension {
 	extensionUserSchema := schema.Schema{
 		ID:          "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
 		Name:        optional.NewString("EnterpriseUser"),
@@ -224,17 +156,10 @@ func createUserResourceType(userResourceHandler *UserResourceHandler) scim.Resou
 		},
 	}
 
-	return scim.ResourceType{
-		ID:          optional.NewString("User"),
-		Name:        "User",
-		Endpoint:    "/Users",
-		Description: optional.NewString("User Account"),
-		Schema:      coreUserSchema,
-		SchemaExtensions: []scim.SchemaExtension{
-			{Schema: extensionUserSchema},
-		},
-		Handler: userResourceHandler,
+	schemaExtensions := []scim.SchemaExtension{
+		{Schema: extensionUserSchema},
 	}
+	return schemaExtensions
 }
 
 // TODO: Temporary function to log attributes

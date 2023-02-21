@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react'
 
 import { ApolloError, WatchQueryFetchPolicy } from '@apollo/client'
-import { useHistory, useLocation } from 'react-router'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 import { GraphQLResult, useQuery } from '@sourcegraph/http-client'
 
@@ -96,12 +96,20 @@ export const usePageSwitcherPagination = <TResult, TVariables extends PaginatedC
         ...initialPaginationArgs,
     } as any
 
-    const { data, error, loading, refetch } = useQuery<TResult, TVariables>(query, {
+    const {
+        data: currentData,
+        previousData,
+        error,
+        loading,
+        refetch,
+    } = useQuery<TResult, TVariables>(query, {
         variables: queryVariables,
         fetchPolicy: options?.fetchPolicy,
         onCompleted: options?.onCompleted,
         pollInterval: options?.pollInterval,
     })
+
+    const data = currentData ?? previousData
 
     const connection = useMemo(() => {
         if (!data) {
@@ -205,7 +213,7 @@ const useSyncPaginationArgsWithUrl = (
     setPaginationArgs: (args: PaginatedConnectionQueryArguments) => void
 ] => {
     const location = useLocation()
-    const history = useHistory()
+    const navigate = useNavigate()
 
     const initialPaginationArgs = useMemo(() => {
         if (enabled) {
@@ -221,10 +229,10 @@ const useSyncPaginationArgsWithUrl = (
         (paginationArgs: PaginatedConnectionQueryArguments): void => {
             if (enabled) {
                 const search = getSearchFromPaginationArgs(paginationArgs)
-                history.replace({ search })
+                navigate({ search }, { replace: true })
             }
         },
-        [enabled, history]
+        [enabled, navigate]
     )
     return [initialPaginationArgs, setPaginationArgs]
 }

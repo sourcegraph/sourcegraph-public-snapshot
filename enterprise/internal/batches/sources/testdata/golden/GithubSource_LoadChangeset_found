@@ -16,12 +16,14 @@
   },
   "BaseRepository": {
    "ID": "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
+   "Name": "sourcegraph",
    "Owner": {
     "Login": "sourcegraph"
    }
   },
   "HeadRepository": {
    "ID": "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
+   "Name": "sourcegraph",
    "Owner": {
     "Login": "sourcegraph"
    }
@@ -252,52 +254,11 @@
      "Commit": {
       "OID": "30cc0384757b7d2fe9d42cf09ab7744731c8a9ea",
       "CheckSuites": {
-       "Nodes": [
-        {
-         "ID": "MDEwOkNoZWNrU3VpdGUyMjMwNzk1ODA=",
-         "Status": "COMPLETED",
-         "Conclusion": "STALE",
-         "ReceivedAt": "0001-01-01T00:00:00Z",
-         "CheckRuns": {
-          "Nodes": []
-         }
-        },
-        {
-         "ID": "MDEwOkNoZWNrU3VpdGUyMjMwNzk1ODE=",
-         "Status": "COMPLETED",
-         "Conclusion": "STALE",
-         "ReceivedAt": "0001-01-01T00:00:00Z",
-         "CheckRuns": {
-          "Nodes": []
-         }
-        },
-        {
-         "ID": "MDEwOkNoZWNrU3VpdGUyMjMwNzk1ODI=",
-         "Status": "COMPLETED",
-         "Conclusion": "STALE",
-         "ReceivedAt": "0001-01-01T00:00:00Z",
-         "CheckRuns": {
-          "Nodes": []
-         }
-        }
-       ]
+       "Nodes": []
       },
       "Status": {
-       "State": "SUCCESS",
-       "Contexts": [
-        {
-         "ID": "MDEzOlN0YXR1c0NvbnRleHQ3NjQ0MDU0MzIx",
-         "Context": "buildkite/sourcegraph",
-         "Description": "Build #42783 passed (15 minutes, 53 seconds)",
-         "State": "SUCCESS"
-        },
-        {
-         "ID": "MDEzOlN0YXR1c0NvbnRleHQ3NjQ0MDUzMTQ0",
-         "Context": "percy/Sourcegraph",
-         "Description": "Visual review automatically approved, no visual changes found.",
-         "State": "SUCCESS"
-        }
-       ]
+       "State": "",
+       "Contexts": null
       },
       "CommittedDate": "2019-09-13T09:13:12Z"
      }

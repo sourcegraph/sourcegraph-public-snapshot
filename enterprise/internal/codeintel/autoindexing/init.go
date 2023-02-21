@@ -24,7 +24,6 @@ var (
 func NewService(
 	observationCtx *observation.Context,
 	db database.DB,
-	uploadSvc UploadService,
 	depsSvc DependenciesService,
 	policiesSvc PoliciesService,
 	gitserver GitserverClient,
@@ -34,7 +33,7 @@ func NewService(
 	repoUpdater := repoupdater.DefaultClient
 	inferenceSvc := inference.NewService()
 
-	svc := newService(scopedContext("service", observationCtx), store, uploadSvc, inferenceSvc, repoUpdater, gitserver, symbolsClient)
+	svc := newService(scopedContext("service", observationCtx), store, inferenceSvc, repoUpdater, gitserver, symbolsClient)
 
 	return svc
 }
@@ -127,6 +126,23 @@ func NewDependencyIndexSchedulers(
 			workerutil.NewMetrics(observationCtx, "codeintel_dependency_index_queueing"),
 			ConfigDependencyIndexInst.DependencyIndexerSchedulerPollInterval,
 			ConfigDependencyIndexInst.DependencyIndexerSchedulerConcurrency,
+		),
+	}
+}
+
+func NewSummaryBuilder(
+	observationCtx *observation.Context,
+	autoindexingSvc *Service,
+	uploadSvc UploadService,
+) []goroutine.BackgroundRoutine {
+	return []goroutine.BackgroundRoutine{
+		background.NewSummaryBuilder(
+			observationCtx,
+			autoindexingSvc.store,
+			autoindexingSvc.jobSelector,
+			uploadSvc,
+			SummaryBuilderConfigInst.Interval,
+			SummaryBuilderConfigInst.NumRepositoriesToConfigure,
 		),
 	}
 }

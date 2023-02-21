@@ -2,7 +2,7 @@ import { FunctionComponent, useRef, useState } from 'react'
 
 import { mdiLinkVariant } from '@mdi/js'
 import { escapeRegExp } from 'lodash'
-import { useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
@@ -21,7 +21,7 @@ interface Props extends TelemetryProps {
 export const CodeInsightIndependentPageActions: FunctionComponent<Props> = props => {
     const { insight, telemetryService } = props
 
-    const history = useHistory()
+    const navigate = useNavigate()
 
     const copyLinkButtonReference = useRef<HTMLButtonElement | null>(null)
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -80,7 +80,7 @@ export const CodeInsightIndependentPageActions: FunctionComponent<Props> = props
             <ConfirmDeleteModal
                 insight={insight}
                 showModal={showDeleteConfirm}
-                onConfirm={() => history.push('/insights/all')}
+                onConfirm={() => navigate('/insights/all')}
                 onCancel={() => setShowDeleteConfirm(false)}
             />
         </div>

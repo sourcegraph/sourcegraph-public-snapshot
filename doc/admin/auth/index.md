@@ -7,7 +7,7 @@ Sourcegraph supports the following ways for users to sign in:
 - [GitHub](#github)
 - [GitLab](#gitlab)
 - [Bitbucket Cloud](#bitbucket-cloud)
-- [Gerrit](#gerrit)
+- [Gerrit](#gerrit) <span class="badge badge-beta">Beta</span>
 - [SAML](saml/index.md)
 - [OpenID Connect](#openid-connect)
   - [Google Workspace (Google accounts)](#google-workspace-google-accounts)
@@ -352,6 +352,7 @@ Then add the following lines to your [site configuration](config/site_config.md)
 Replace the `clientKey` and `clientSecret` values with the values from your Bitbucket Cloud OAuth consumer.
 
 ## Gerrit
+<span class="badge badge-beta">Beta</span>
 
 To enable users to add Gerrit credentials and verify their access to repositories on Sourcegraph,
 add the following lines to your [site configuration](config/site_config.md):
@@ -523,12 +524,12 @@ At the time of signing in with the new account, any of the email addresses confi
 
 Usernames on Sourcegraph are normalized according to the following rules.
 
-- Any characters not in `[a-zA-Z0-9-.]` are replaced with `-`
+- Any characters not in `[a-zA-Z0-9-._]` are replaced with `-`
 - Usernames with exactly one `@` character are interpreted as an email address, so the username will be extracted by truncating at the `@` character.
 - Usernames with two or more `@` characters are not considered an email address, so the `@` will be treated as a non-standard character and be replaced with `-`
-- Usernames with consecutive `-` or `.` characters are not allowed
-- Usernames that start or end with `.` are not allowed
-- Usernames that start with `-` are not allowed
+- Usernames with consecutive `-` or `.` characters are not allowed, so they are replaced with a single `-` or `.`
+- Usernames that start with `.` or `-` are not allowed, starting periods and dashes are removed
+- Usernames that end with `.` are not allowed, ending periods are removed
 
 Usernames from authentication providers are normalized before being used in Sourcegraph. Usernames chosen by users are rejected if they do not meet these criteria.
 

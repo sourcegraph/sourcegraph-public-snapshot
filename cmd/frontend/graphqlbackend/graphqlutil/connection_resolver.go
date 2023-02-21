@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const DEFAULT_MAX_PAGE_SIZE = 100
+const DefaultMaxPageSize = 100
 
 type ConnectionResolver[N any] struct {
 	store   ConnectionResolverStore[N]
@@ -36,7 +36,7 @@ type ConnectionResolverArgs struct {
 	Before *string
 }
 
-// Limit returns max nodes limit based on resolver arguments
+// Limit returns max nodes limit based on resolver arguments.
 func (a *ConnectionResolverArgs) Limit(options *ConnectionResolverOptions) int {
 	var limit *int32
 
@@ -60,22 +60,22 @@ type ConnectionResolverOptions struct {
 	//
 	// Defaults to `true` when not set.
 	Reverse *bool
-	// Columns to order by
+	// Columns to order by.
 	OrderBy database.OrderBy
-	// Order direction
+	// Order direction.
 	Ascending bool
 }
 
-// MaxPageSize returns the configured max page limit for the connection
+// MaxPageSizeOrDefault returns the configured max page limit for the connection.
 func (o *ConnectionResolverOptions) MaxPageSizeOrDefault() int {
 	if o.MaxPageSize != nil {
 		return *o.MaxPageSize
 	}
 
-	return DEFAULT_MAX_PAGE_SIZE
+	return DefaultMaxPageSize
 }
 
-// ApplyMaxPageSize return max page size by applying the configured max limit to the first, last arguments
+// ApplyMaxPageSize return max page size by applying the configured max limit to the first, last arguments.
 func (o *ConnectionResolverOptions) ApplyMaxPageSize(limit *int32) int {
 	maxPageSize := o.MaxPageSizeOrDefault()
 

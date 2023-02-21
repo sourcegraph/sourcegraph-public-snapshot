@@ -1,13 +1,12 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, BeforeUnloadPrompt } from '@sourcegraph/wildcard'
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { SaveToolbar } from '../components/SaveToolbar'
@@ -17,8 +16,6 @@ import { eventLogger } from '../tracking/eventLogger'
 import styles from './SettingsFile.module.scss'
 
 interface Props extends ThemeProps, TelemetryProps {
-    history: H.History
-
     settings: SiteAdminSettingsCascadeFields['subjects'][number]['latestSettings'] | null
 
     /**
@@ -123,21 +120,6 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         )
     }
 
-    public componentDidMount(): void {
-        // Prevent navigation when dirty.
-        this.subscriptions.add(
-            this.props.history.block((location: H.Location, action: H.Action) => {
-                if (action === 'REPLACE') {
-                    return undefined
-                }
-                if (this.state.saving || this.dirty) {
-                    return 'Discard settings changes?'
-                }
-                return undefined // allow navigation
-            })
-        )
-    }
-
     public componentDidUpdate(): void {
         this.componentUpdates.next(this.props)
     }
@@ -157,6 +139,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
 
         return (
             <div className={classNames('test-settings-file d-flex flex-grow-1 flex-column', styles.settingsFile)}>
+                <BeforeUnloadPrompt when={this.state.saving || this.dirty} message="Discard settings changes?" />
                 <React.Suspense fallback={<LoadingSpinner className="mt-2" />}>
                     <MonacoSettingsEditor
                         value={contents}

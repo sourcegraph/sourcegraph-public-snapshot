@@ -25,9 +25,10 @@ func newService(observationCtx *observation.Context, store store.Store) *Service
 }
 
 type (
-	PackageRepoReference  = shared.PackageRepoReference
-	PackageRepoRefVersion = shared.PackageRepoRefVersion
-	MinimalPackageRepoRef = shared.MinimalPackageRepoRef
+	PackageRepoReference         = shared.PackageRepoReference
+	PackageRepoRefVersion        = shared.PackageRepoRefVersion
+	MinimalPackageRepoRef        = shared.MinimalPackageRepoRef
+	MinimialVersionedPackageRepo = shared.MinimialVersionedPackageRepo
 )
 
 type ListDependencyReposOpts struct {

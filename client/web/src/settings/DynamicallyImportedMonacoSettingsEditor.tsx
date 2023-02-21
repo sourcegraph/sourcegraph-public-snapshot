@@ -1,13 +1,12 @@
 import * as React from 'react'
 
-import * as H from 'history'
 import * as _monaco from 'monaco-editor' // type only
 import { Subscription } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, BeforeUnloadPrompt } from '@sourcegraph/wildcard'
 
 import { SaveToolbarProps, SaveToolbar, SaveToolbarPropsGenerator } from '../components/SaveToolbar'
 
@@ -53,8 +52,6 @@ interface Props<T extends object>
     }
 
     explanation?: JSX.Element
-
-    history: H.History
 }
 
 interface State {
@@ -78,29 +75,12 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
     private monaco: typeof _monaco | null = null
     private configEditor?: _monaco.editor.ICodeEditor
 
-    public componentDidMount(): void {
-        if (this.props.blockNavigationIfDirty !== false) {
-            // Prevent navigation when dirty.
-            this.subscriptions.add(
-                this.props.history.block((location: H.Location, action: H.Action) => {
-                    if (action === 'REPLACE') {
-                        return undefined
-                    }
-                    if (this.props.loading || this.isDirty) {
-                        return 'Discard changes?'
-                    }
-                    return undefined // allow navigation
-                })
-            )
-        }
-    }
-
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
     }
 
     private get effectiveValue(): string {
-        return this.state.value === undefined ? this.props.value : this.state.value
+        return this.props.value
     }
 
     private get isDirty(): boolean {
@@ -130,14 +110,17 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
             )
         }
 
+        const { className, ...otherProps } = this.props
+
         return (
-            <div className={this.props.className || ''}>
+            <div className={className || ''}>
+                <BeforeUnloadPrompt when={this.props.loading || this.isDirty} message="Discard changes?" />
                 {this.props.actions && (
                     <EditorActionsGroup actions={this.props.actions} onClick={this.runAction.bind(this)} />
                 )}
                 <React.Suspense fallback={<LoadingSpinner className="mt-2" />}>
                     <MonacoSettingsEditor
-                        {...this.props}
+                        {...otherProps}
                         onDidSave={this.onSave}
                         onChange={this.onChange}
                         value={effectiveValue}
