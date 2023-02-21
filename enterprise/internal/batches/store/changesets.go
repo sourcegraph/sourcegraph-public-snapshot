@@ -964,7 +964,6 @@ func (s *Store) UpdateChangesetsForApply(ctx context.Context, cs []*btypes.Chang
 				c.NumFailures,
 				c.Closing,
 				c.SyncErrorMessage,
-				c.PreviousFailureMessage,
 			); err != nil {
 				return err
 			}
@@ -1001,6 +1000,7 @@ CREATE TEMPORARY TABLE temp_changesets (
     ui_publication_state batch_changes_changeset_ui_publication_state,
     reconciler_state text DEFAULT 'queued'::text,
     failure_message text,
+	previous_failure_message text,
     num_resets integer DEFAULT 0 NOT NULL,
     num_failures integer DEFAULT 0 NOT NULL,
     closing boolean DEFAULT false NOT NULL,
