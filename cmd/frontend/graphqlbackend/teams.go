@@ -544,8 +544,75 @@ func (r *schemaResolver) AddTeamMembers(ctx context.Context, args *TeamMembersAr
 	}, nil
 }
 
-func (r *schemaResolver) SetTeamMembers(args *TeamMembersArgs) *TeamResolver {
-	return &TeamResolver{}
+func (r *schemaResolver) SetTeamMembers(ctx context.Context, args *TeamMembersArgs) (*TeamResolver, error) {
+	// 🚨 SECURITY: For now we only allow site admins to use teams.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, errors.New("only site admins can modify team members")
+	}
+	if args.Team == nil && args.TeamName == nil {
+		return nil, errors.New("team must be identified by either id (team parameter) or name (teamName parameter), none specified")
+	}
+	if args.Team != nil && args.TeamName != nil {
+		return nil, errors.New("team must be identified by either id (team parameter) or name (teamName parameter), both specified")
+	}
+	userIDsToAdd, err := args.membersIDs()
+	if err != nil {
+		return nil, err
+	}
+	team, err := findTeam(ctx, r.db.Teams(), args.Team, args.TeamName)
+	if err != nil {
+		return nil, err
+	}
+	if err := r.db.WithTransact(ctx, func(tx database.DB) error {
+		var membersToRemove []*types.TeamMember
+		listOpts := database.ListTeamMembersOpts{
+			TeamID: team.ID,
+		}
+		for {
+			existingMembers, cursor, err := tx.Teams().ListTeamMembers(ctx, listOpts)
+			if err != nil {
+				return err
+			}
+			for _, m := range existingMembers {
+				if userIDsToAdd[m.UserID] {
+					delete(userIDsToAdd, m.UserID)
+				} else {
+					membersToRemove = append(membersToRemove, &types.TeamMember{
+						UserID: m.UserID,
+						TeamID: team.ID,
+					})
+				}
+			}
+			if cursor == nil {
+				break
+			}
+			listOpts.Cursor = *cursor
+		}
+		var membersToAdd []*types.TeamMember
+		for userID := range userIDsToAdd {
+			membersToAdd = append(membersToAdd, &types.TeamMember{
+				UserID: userID,
+				TeamID: team.ID,
+			})
+		}
+		if len(membersToRemove) > 0 {
+			if err := tx.Teams().DeleteTeamMember(ctx, membersToRemove...); err != nil {
+				return err
+			}
+		}
+		if len(membersToAdd) > 0 {
+			if err := tx.Teams().CreateTeamMember(ctx, membersToAdd...); err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	return &TeamResolver{
+		db:   r.db,
+		team: team,
+	}, nil
 }
 
 func (r *schemaResolver) RemoveTeamMembers(ctx context.Context, args *TeamMembersArgs) (*TeamResolver, error) {
