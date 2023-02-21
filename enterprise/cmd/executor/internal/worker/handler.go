@@ -81,7 +81,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 	// interpolate into the command. No command that we run on the host leaks environment
 	// variables, and the user-specified commands (which could leak their environment) are
 	// run in a clean VM.
-	commandLogger := command.NewLogger(h.logStore, job, job.RecordID(), union(h.options.RedactedValues, job.RedactedValues))
+	commandLogger := command.NewLogger(logger, h.logStore, job, union(h.options.RedactedValues, job.RedactedValues))
 	defer func() {
 		if flushErr := commandLogger.Flush(); flushErr != nil {
 			err = errors.Append(err, flushErr)
