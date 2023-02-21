@@ -131,6 +131,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     isLightTheme,
     branding,
     isSourcegraphDotCom,
+    isSourcegraphApp,
     isRepositoryRelatedPage,
     codeInsightsEnabled,
     searchContextsEnabled,

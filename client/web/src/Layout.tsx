@@ -75,6 +75,7 @@ export interface LegacyLayoutProps
 
     globbing: boolean
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 
     themeProps: ThemeProps & ThemePreferenceProps
 }

@@ -381,6 +381,7 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
                     extensionsController={null}
                     telemetryService={eventLogger}
                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                    isSourcegraphApp={window.context.sourcegraphAppMode}
                     searchContextsEnabled={props.searchContextsEnabled}
                     selectedSearchContextSpec={getSelectedSearchContextSpec()}
                     setSelectedSearchContextSpec={setSelectedSearchContextSpec}
