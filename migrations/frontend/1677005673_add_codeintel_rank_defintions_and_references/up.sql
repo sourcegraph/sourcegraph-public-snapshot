@@ -1,4 +1,5 @@
 CREATE TABLE IF NOT EXISTS codeintel_ranking_definitions (
+    id bigserial PRIMARY KEY NOT NULL,
     upload_id int NOT NULL,
     symbol_name text NOT NULL,
     repository text NOT NULL,

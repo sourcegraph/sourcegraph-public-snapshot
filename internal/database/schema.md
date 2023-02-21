@@ -940,14 +940,16 @@ Triggers:
 
 # Table "public.codeintel_ranking_definitions"
 ```
-    Column     |  Type   | Collation | Nullable | Default 
----------------+---------+-----------+----------+---------
+    Column     |  Type   | Collation | Nullable |                          Default                          
+---------------+---------+-----------+----------+-----------------------------------------------------------
+ id            | bigint  |           | not null | nextval('codeintel_ranking_definitions_id_seq'::regclass)
  upload_id     | integer |           | not null | 
  symbol_name   | text    |           | not null | 
  repository    | text    |           | not null | 
  document_path | text    |           | not null | 
  graph_key     | text    |           | not null | 
 Indexes:
+    "codeintel_ranking_definitions_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_definitions_symbol_name" btree (symbol_name)
     "codeintel_ranking_definitions_upload_id" btree (upload_id)
 
