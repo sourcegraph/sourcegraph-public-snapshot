@@ -7,9 +7,8 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"strings"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -26,7 +25,7 @@ type command struct {
 
 // runCommand invokes the given command on the host machine. The standard output and
 // standard error streams of the invoked command are written to the given logger.
-func runCommand(ctx context.Context, command command, logger Logger) (err error) {
+func runCommand(ctx context.Context, internLogger log.Logger, command command, logger Logger) (err error) {
 	// The context here is used below as a guard against the command finishing before we close
 	// the stdout and stderr pipes. This context may not cancel until after logs for the job
 	// have been flushed, or after the 30m job deadline, so we enforce a cancellation of a
@@ -37,7 +36,10 @@ func runCommand(ctx context.Context, command command, logger Logger) (err error)
 	ctx, _, endObservation := command.Operation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	log15.Info(fmt.Sprintf("Running command: %s", strings.Join(command.Command, " ")))
+	internLogger.Info(
+		"Running command",
+		log.Strings("command", command.Command),
+	)
 
 	if err := validateCommand(command.Command); err != nil {
 		return err
@@ -77,7 +79,7 @@ func runCommand(ctx context.Context, command command, logger Logger) (err error)
 	defer handle.Close()
 
 	pipeReaderWaitGroup := readProcessPipes(handle, stdout, stderr)
-	exitCode, err := monitorCommand(ctx, cmd, pipeReaderWaitGroup)
+	exitCode, err := monitorCommand(ctx, internLogger, cmd, pipeReaderWaitGroup)
 	handle.Finalize(exitCode)
 	if err != nil {
 		return err
@@ -177,7 +179,7 @@ func readProcessPipes(logWriter io.WriteCloser, stdout, stderr io.Reader) *errgr
 // monitorCommand starts the given command and waits for the given errgroup to complete.
 // This function returns a non-nil error only if there was a system issue - commands that
 // run but fail due to a non-zero exit code will return a nil error and the exit code.
-func monitorCommand(ctx context.Context, cmd *exec.Cmd, pipeReaderWaitGroup *errgroup.Group) (int, error) {
+func monitorCommand(ctx context.Context, internalLogger log.Logger, cmd *exec.Cmd, pipeReaderWaitGroup *errgroup.Group) (int, error) {
 	if err := cmd.Start(); err != nil {
 		return 0, errors.Wrap(err, "starting command")
 	}
@@ -196,7 +198,7 @@ func monitorCommand(ctx context.Context, cmd *exec.Cmd, pipeReaderWaitGroup *err
 			return e.ExitCode(), nil
 		}
 
-		log15.Error("Non exit-error returned from command", "err", err)
+		internalLogger.Error("Non exit-error returned from command", log.Error(err))
 		return 0, errors.Wrap(err, "waiting for command")
 	}
 
