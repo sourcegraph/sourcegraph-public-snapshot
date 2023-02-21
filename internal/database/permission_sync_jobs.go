@@ -58,21 +58,74 @@ func (p PermissionSyncJobPriority) ToString() string {
 	}
 }
 
+// PermissionSyncJobReasonGroup combines multiple permission sync job trigger
+// reasons into groups with similar grounds.
+type PermissionSyncJobReasonGroup string
+
+// PermissionSyncJobReasonGroup constants.
+const (
+	PermissionSyncJobReasonGroupManual      PermissionSyncJobReasonGroup = "MANUAL"
+	PermissionSyncJobReasonGroupWebhook     PermissionSyncJobReasonGroup = "WEBHOOK"
+	PermissionSyncJobReasonGroupSchedule    PermissionSyncJobReasonGroup = "SCHEDULE"
+	PermissionSyncJobReasonGroupSourcegraph PermissionSyncJobReasonGroup = "SOURCEGRAPH"
+	PermissionSyncJobReasonGroupUnknown     PermissionSyncJobReasonGroup = "UNKNOWN"
+)
+
 type PermissionSyncJobReason string
+
+// ResolveGroup returns a PermissionSyncJobReasonGroup for a given
+// PermissionSyncJobReason or PermissionSyncJobReasonGroupUnknown if the reason
+// doesn't belong to any of groups.
+func (r PermissionSyncJobReason) ResolveGroup() PermissionSyncJobReasonGroup {
+	switch r {
+	case ReasonManualRepoSync,
+		ReasonManualUserSync:
+		return PermissionSyncJobReasonGroupManual
+	case ReasonGitHubUserEvent,
+		ReasonGitHubUserAddedEvent,
+		ReasonGitHubUserRemovedEvent,
+		ReasonGitHubUserMembershipAddedEvent,
+		ReasonGitHubUserMembershipRemovedEvent,
+		ReasonGitHubTeamAddedToRepoEvent,
+		ReasonGitHubTeamRemovedFromRepoEvent,
+		ReasonGitHubOrgMemberAddedEvent,
+		ReasonGitHubOrgMemberRemovedEvent,
+		ReasonGitHubRepoEvent,
+		ReasonGitHubRepoMadePrivateEvent:
+		return PermissionSyncJobReasonGroupWebhook
+	case ReasonUserOutdatedPermissions,
+		ReasonUserNoPermissions,
+		ReasonRepoOutdatedPermissions,
+		ReasonRepoNoPermissions,
+		ReasonRepoUpdatedFromCodeHost:
+		return PermissionSyncJobReasonGroupSchedule
+	case ReasonUserEmailRemoved,
+		ReasonUserEmailVerified,
+		ReasonUserAddedToOrg,
+		ReasonUserRemovedFromOrg,
+		ReasonUserAcceptedOrgInvite:
+		return PermissionSyncJobReasonGroupSourcegraph
+	default:
+		return PermissionSyncJobReasonGroupUnknown
+	}
+}
 
 const (
 	// ReasonUserOutdatedPermissions and below are reasons of scheduled permission
 	// syncs.
 	ReasonUserOutdatedPermissions PermissionSyncJobReason = "REASON_USER_OUTDATED_PERMS"
 	ReasonUserNoPermissions       PermissionSyncJobReason = "REASON_USER_NO_PERMS"
-	ReasonUserEmailRemoved        PermissionSyncJobReason = "REASON_USER_EMAIL_REMOVED"
-	ReasonUserEmailVerified       PermissionSyncJobReason = "REASON_USER_EMAIL_VERIFIED"
-	ReasonUserAddedToOrg          PermissionSyncJobReason = "REASON_USER_ADDED_TO_ORG"
-	ReasonUserRemovedFromOrg      PermissionSyncJobReason = "REASON_USER_REMOVED_FROM_ORG"
-	ReasonUserAcceptedOrgInvite   PermissionSyncJobReason = "REASON_USER_ACCEPTED_ORG_INVITE"
 	ReasonRepoOutdatedPermissions PermissionSyncJobReason = "REASON_REPO_OUTDATED_PERMS"
 	ReasonRepoNoPermissions       PermissionSyncJobReason = "REASON_REPO_NO_PERMS"
 	ReasonRepoUpdatedFromCodeHost PermissionSyncJobReason = "REASON_REPO_UPDATED_FROM_CODE_HOST"
+
+	// ReasonUserEmailRemoved and below are reasons of permission syncs scheduled due
+	// to Sourcegraph internal events.
+	ReasonUserEmailRemoved      PermissionSyncJobReason = "REASON_USER_EMAIL_REMOVED"
+	ReasonUserEmailVerified     PermissionSyncJobReason = "REASON_USER_EMAIL_VERIFIED"
+	ReasonUserAddedToOrg        PermissionSyncJobReason = "REASON_USER_ADDED_TO_ORG"
+	ReasonUserRemovedFromOrg    PermissionSyncJobReason = "REASON_USER_REMOVED_FROM_ORG"
+	ReasonUserAcceptedOrgInvite PermissionSyncJobReason = "REASON_USER_ACCEPTED_ORG_INVITE"
 
 	// ReasonGitHubUserEvent and below are reasons of permission syncs triggered by
 	// webhook events.
