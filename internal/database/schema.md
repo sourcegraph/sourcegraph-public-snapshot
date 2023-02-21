@@ -1770,7 +1770,7 @@ Foreign-key constraints:
 ---------+--------+-----------+----------+---------------------------------------------------
  id      | bigint |           | not null | nextval('lsif_dependency_repos_id_seq'::regclass)
  name    | text   |           | not null | 
- version | text   |           | not null | 
+ version | text   |           | not null | '👁️temporary_sentinel_value👁️'::text
  scheme  | text   |           | not null | 
 Indexes:
     "lsif_dependency_repos_pkey" PRIMARY KEY, btree (id)
