@@ -11,6 +11,7 @@ import { BrandLogo } from '../components/branding/BrandLogo'
 import { PageTitle } from '../components/PageTitle'
 import { refreshSiteFlags } from '../site/backend'
 
+import { LocalRepositoriesStep } from './components/local-repositories-step'
 import { RemoteRepositoriesStep } from './components/remote-repositories-step'
 import { SetupStepsRoot, SetupStepsContent, SetupStepsFooter, StepConfiguration } from './components/setup-steps'
 import { SyncRepositoriesStep } from './components/SyncRepositoriesStep'
@@ -117,6 +118,13 @@ export const SetupWizard: FC<SetupWizardProps> = props => {
     )
 }
 
-function LocalRepositoriesStep(props: any): ReactElement {
-    return <H2 {...props}>Hello local repositories step</H2>
+function SyncRepositoriesStep(props: any): ReactElement {
+    return (
+        <section {...props}>
+            <Text>
+                It may take a few moments to clone and index each repository. Repository statuses are displayed below.
+            </Text>
+            <SiteAdminRepositoriesContainer />
+        </section>
+    )
 }
