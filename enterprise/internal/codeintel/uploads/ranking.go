@@ -180,6 +180,21 @@ func (s *Service) VacuumRankingGraph(ctx context.Context) error {
 	return nil
 }
 
+func (s *Service) MapRankingGraph(ctx context.Context, numRankingRoutines int, rankingJobEnabled bool) (err error) {
+	ctx, _, endObservation := s.operations.mapRankingGraph.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	if !rankingJobEnabled {
+		return nil
+	}
+
+	if err := s.store.InsertPathCountInputs(ctx, rankingGraphKey, rankingMapReduceBatchSize); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 const maxBytesPerObject = 1024 * 1024 * 1024 // 1GB
 
 func (s *Service) serializeAndPersistRankingGraphForUpload(
