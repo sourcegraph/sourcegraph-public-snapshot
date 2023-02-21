@@ -1,21 +1,57 @@
+import { useEffect, useMemo } from 'react'
+
 import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Badge, Container, ErrorAlert, H3, Icon, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { GlobalCodeIntelStatusResult } from '../../../../graphql-operations'
 import { ExternalRepositoryIcon } from '../../../../site-admin/components/ExternalRepositoryIcon'
 import { globalCodeIntelStatusQuery } from '../backend'
 
+import { DataSummary, DataSummaryItem } from '../components/DataSummary'
+
 import styles from './GlobalDashboardPage.module.scss'
 
-export const GlobalDashboardPage: React.FunctionComponent = () => {
+interface GlobalDashboardPageProps extends TelemetryProps {}
+
+export const GlobalDashboardPage: React.FunctionComponent<GlobalDashboardPageProps> = ({ telemetryService }) => {
+    useEffect(() => {
+        telemetryService.logPageView('CodeIntelGlobalDashboard')
+    }, [telemetryService])
+
     const { data, error, loading } = useQuery<GlobalCodeIntelStatusResult>(globalCodeIntelStatusQuery, {
         notifyOnNetworkStatusChange: false,
         fetchPolicy: 'no-cache',
     })
+
+    const summaryItems = useMemo((): DataSummaryItem[] => {
+        if (!data) {
+            return []
+        }
+
+        return [
+            {
+                label: 'Repositories with precise code intelligence',
+                value: data.codeIntelSummary.numRepositoriesWithCodeIntelligence,
+                className: styles.summaryItemExtended,
+                valueClassName: 'text-success',
+            },
+            {
+                label: 'Repositories with errors',
+                value: data.codeIntelSummary.repositoriesWithErrors?.nodes.length || 0,
+                valueClassName: 'text-danger',
+            },
+            {
+                label: 'Configurable repositories',
+                value: data.codeIntelSummary.repositoriesWithConfiguration?.nodes.length || 0,
+                valueClassName: 'text-merged',
+            },
+        ]
+    }, [data])
 
     if (loading || !data) {
         return <LoadingSpinner />
@@ -37,26 +73,7 @@ export const GlobalDashboardPage: React.FunctionComponent = () => {
                 className="mb-3"
             />
             <Container>
-                <div className={styles.summary}>
-                    <div className={styles.summaryItemExtended}>
-                        <div className={classNames(styles.summaryNumber, 'text-success')}>
-                            {data.codeIntelSummary.numRepositoriesWithCodeIntelligence}
-                        </div>
-                        <div className="text-muted">Repositories with precise code intelligence</div>
-                    </div>
-                    <div className={styles.summaryItem}>
-                        <div className={classNames(styles.summaryNumber, 'text-danger')}>
-                            {data.codeIntelSummary.repositoriesWithErrors?.nodes.length || 0}
-                        </div>
-                        <div className="text-muted">Repositories with errors</div>
-                    </div>
-                    <div className={styles.summaryItem}>
-                        <div className={classNames(styles.summaryNumber, 'text-merged')}>
-                            {data.codeIntelSummary.repositoriesWithConfiguration?.nodes.length || 0}
-                        </div>
-                        <div className="text-muted">Configurable repositories</div>
-                    </div>
-                </div>
+                <DataSummary items={summaryItems} className="pb-3" />
 
                 {data.codeIntelSummary.repositoriesWithErrors &&
                     data.codeIntelSummary.repositoriesWithErrors.nodes.length > 0 && (
@@ -84,7 +101,7 @@ export const GlobalDashboardPage: React.FunctionComponent = () => {
                                             to={`${repository.url}/-/code-graph/dashboard`} // TODO: Link to list of errors for repo specific
                                             className={styles.detailsLink}
                                         >
-                                            <Badge variant="danger" className="mr-1" pill={true}>
+                                            <Badge variant="danger" className={styles.badge} pill={true}>
                                                 {count} {count > 1 ? 'errors' : 'error'}
                                             </Badge>
                                             <Icon svgPath={mdiChevronRight} size="md" aria-label="Fix" />
@@ -122,8 +139,8 @@ export const GlobalDashboardPage: React.FunctionComponent = () => {
                                                 to={`${repository.url}/-/code-graph/dashboard`} // TODO: Link to list of actions for repo specific
                                                 className={styles.detailsLink}
                                             >
-                                                <Badge variant="info" className="mr-1" pill={true}>
-                                                    {indexers.length} actions
+                                                <Badge variant="info" className={styles.badge} pill={true}>
+                                                    {indexers.length} {indexers.length > 1 ? 'actions' : 'action'}
                                                 </Badge>
                                                 <Icon svgPath={mdiChevronRight} size="md" aria-label="Configure" />
                                             </Link>

@@ -1,0 +1,16 @@
+.summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    padding-bottom: 1rem;
+
+    &-item {
+        margin: 0 auto;
+        display: block;
+        text-align: center;
+        max-width: 8rem;
+    }
+
+    &-number {
+        font-size: 3rem;
+    }
+}

@@ -1,24 +1,6 @@
-.summary {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    padding-bottom: 1rem;
-
-    &-item,
-    &-item-extended {
-        margin: 0 auto;
-        display: block;
-        text-align: center;
-        max-width: 8rem;
-    }
-
-    &-item-extended {
-        // Maintain similar spacing with additional copy
-        max-width: 12rem;
-    }
-
-    &-number {
-        font-size: 3rem;
-    }
+.summary-item-extended {
+    // Maintain similar spacing with additional copy
+    max-width: 12rem;
 }
 
 .details {
@@ -55,4 +37,9 @@
             text-decoration: none;
         }
     }
+}
+
+.badge {
+    // Avoid inconsistencies in label width
+    min-width: 5rem;
 }
