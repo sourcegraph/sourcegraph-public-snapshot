@@ -35,21 +35,24 @@ const RepositoryStatusBadge: React.FunctionComponent<{ status: string }> = ({ st
     </Badge>
 )
 
+const parseRepositoryStatus = (repository: SiteAdminRepositoryFields): string => {
+    let status = 'queued'
+    if (repository.mirrorInfo.cloned && !repository.mirrorInfo.lastError) {
+        status = 'cloned'
+    } else if (repository.mirrorInfo.cloneInProgress) {
+        status = 'cloning'
+    } else if (repository.mirrorInfo.lastError) {
+        status = 'failed'
+    }
+    return status
+}
+
 interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
 }
 
 export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({ node }) => {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false)
-
-    let status = 'queued'
-    if (node.mirrorInfo.cloned && !node.mirrorInfo.lastError) {
-        status = 'cloned'
-    } else if (node.mirrorInfo.cloneInProgress) {
-        status = 'cloning'
-    } else if (node.mirrorInfo.lastError) {
-        status = 'failed'
-    }
 
     return (
         <li
@@ -60,7 +63,7 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
             <div className="d-flex align-items-center justify-content-between">
                 <div className="d-flex col-7 pl-0">
                     <div className={classNames('d-flex col-2 px-0 justify-content-between h-100', styles.badgeWrapper)}>
-                        <RepositoryStatusBadge status={status} />
+                        <RepositoryStatusBadge status={parseRepositoryStatus(node)} />
                         {node.mirrorInfo.cloneInProgress && <LoadingSpinner />}
                     </div>
 
@@ -93,10 +96,10 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                 <Icon aria-hidden={true} svgPath={mdiFileDocumentOutline} /> See errors
                             </PopoverTrigger>
 
-                            <PopoverContent position={Position.bottom} className={styles.errorContent}>
+                            <PopoverContent position={Position.left} className={styles.errorContent}>
                                 <div className="d-flex">
                                     <H4 className="m-2">
-                                        <RepositoryStatusBadge status={status} />
+                                        <RepositoryStatusBadge status={parseRepositoryStatus(node)} />
                                         <ExternalRepositoryIcon
                                             externalRepo={node.externalRepository}
                                             className="mx-2"

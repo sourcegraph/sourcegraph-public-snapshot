@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 
 import { isEqual } from 'lodash'
-import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Container, Input, LoadingSpinner, ErrorAlert, PageSwitcher } from '@sourcegraph/wildcard'
