@@ -19,26 +19,30 @@ func TestAccessRequests_Create(t *testing.T) {
 	store := db.AccessRequests()
 
 	t.Run("valid input", func(t *testing.T) {
-		_, err := store.Create(ctx, &types.AccessRequest{
+		accessRequest, err := store.Create(ctx, &types.AccessRequest{
 			Email:          "a1@example.com",
 			Name:           "a1",
-			AdditionalInfo: "af1",
+			AdditionalInfo: "info1",
 		})
 		assert.NoError(t, err)
+		assert.Equal(t, "a1", accessRequest.Name)
+		assert.Equal(t, "info1", accessRequest.AdditionalInfo)
+		assert.Equal(t, "a1@example.com", accessRequest.Email)
+		assert.Equal(t, types.AccessRequestStatusPending, accessRequest.Status)
 	})
 
 	t.Run("existing access request email", func(t *testing.T) {
 		_, err := store.Create(ctx, &types.AccessRequest{
 			Email:          "a2@example.com",
 			Name:           "a1",
-			AdditionalInfo: "af1",
+			AdditionalInfo: "info1",
 		})
 		assert.NoError(t, err)
 
 		_, err = store.Create(ctx, &types.AccessRequest{
 			Email:          "a2@example.com",
 			Name:           "a2",
-			AdditionalInfo: "af2",
+			AdditionalInfo: "info2",
 		})
 		assert.Error(t, err)
 		assert.Equal(t, err.Error(), "cannot create user: err_access_request_with_such_email_exists")
@@ -58,7 +62,7 @@ func TestAccessRequests_Create(t *testing.T) {
 		_, err = store.Create(ctx, &types.AccessRequest{
 			Email:          "u@example.com",
 			Name:           "a3",
-			AdditionalInfo: "af3",
+			AdditionalInfo: "info3",
 		})
 		assert.Error(t, err)
 		assert.Equal(t, err.Error(), "cannot create user: err_user_with_such_email_exists")
@@ -85,7 +89,7 @@ func TestAccessRequests_Update(t *testing.T) {
 		accessRequest, err := store.Create(ctx, &types.AccessRequest{
 			Email:          "a1@example.com",
 			Name:           "a1",
-			AdditionalInfo: "af1",
+			AdditionalInfo: "info1",
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, accessRequest.Status, types.AccessRequestStatusPending)
@@ -110,7 +114,7 @@ func TestAccessRequests_GetByID(t *testing.T) {
 		assert.Equal(t, err, &ErrAccessRequestNotFound{ID: nonExistentAccessRequestID})
 	})
 	t.Run("existing access request", func(t *testing.T) {
-		createdAccessRequest, err := store.Create(ctx, &types.AccessRequest{Email: "a1@example.com", Name: "a1", AdditionalInfo: "af1"})
+		createdAccessRequest, err := store.Create(ctx, &types.AccessRequest{Email: "a1@example.com", Name: "a1", AdditionalInfo: "info1"})
 		assert.NoError(t, err)
 		accessRequest, err := store.GetByID(ctx, createdAccessRequest.ID)
 		assert.NoError(t, err)
@@ -132,7 +136,7 @@ func TestAccessRequests_GetByEmail(t *testing.T) {
 		assert.Equal(t, err, &ErrAccessRequestNotFound{Email: nonExistingAccessRequestEmail})
 	})
 	t.Run("existing access request", func(t *testing.T) {
-		createdAccessRequest, err := store.Create(ctx, &types.AccessRequest{Email: "a1@example.com", Name: "a1", AdditionalInfo: "af1"})
+		createdAccessRequest, err := store.Create(ctx, &types.AccessRequest{Email: "a1@example.com", Name: "a1", AdditionalInfo: "info1"})
 		assert.NoError(t, err)
 		accessRequest, err := store.GetByEmail(ctx, createdAccessRequest.Email)
 		assert.NoError(t, err)
@@ -146,11 +150,11 @@ func TestAccessRequests_Count(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.AccessRequests()
 
-	ar1, err := store.Create(ctx, &types.AccessRequest{Email: "a1@example.com", Name: "a1", AdditionalInfo: "af1"})
+	ar1, err := store.Create(ctx, &types.AccessRequest{Email: "a1@example.com", Name: "a1", AdditionalInfo: "info1"})
 	assert.NoError(t, err)
-	ar2, err := store.Create(ctx, &types.AccessRequest{Email: "a2@example.com", Name: "a2", AdditionalInfo: "af2"})
+	ar2, err := store.Create(ctx, &types.AccessRequest{Email: "a2@example.com", Name: "a2", AdditionalInfo: "info2"})
 	assert.NoError(t, err)
-	_, err = store.Create(ctx, &types.AccessRequest{Email: "a3@example.com", Name: "a3", AdditionalInfo: "af3"})
+	_, err = store.Create(ctx, &types.AccessRequest{Email: "a3@example.com", Name: "a3", AdditionalInfo: "info3"})
 	assert.NoError(t, err)
 
 	t.Run("all", func(t *testing.T) {
@@ -186,11 +190,11 @@ func TestAccessRequests_List(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.AccessRequests()
 
-	ar1, err := store.Create(ctx, &types.AccessRequest{Email: "a1@example.com", Name: "a1", AdditionalInfo: "af1"})
+	ar1, err := store.Create(ctx, &types.AccessRequest{Email: "a1@example.com", Name: "a1", AdditionalInfo: "info1"})
 	assert.NoError(t, err)
-	ar2, err := store.Create(ctx, &types.AccessRequest{Email: "a2@example.com", Name: "a2", AdditionalInfo: "af2"})
+	ar2, err := store.Create(ctx, &types.AccessRequest{Email: "a2@example.com", Name: "a2", AdditionalInfo: "info2"})
 	assert.NoError(t, err)
-	_, err = store.Create(ctx, &types.AccessRequest{Email: "a3@example.com", Name: "a3", AdditionalInfo: "af3"})
+	_, err = store.Create(ctx, &types.AccessRequest{Email: "a3@example.com", Name: "a3", AdditionalInfo: "info3"})
 	assert.NoError(t, err)
 
 	t.Run("all", func(t *testing.T) {

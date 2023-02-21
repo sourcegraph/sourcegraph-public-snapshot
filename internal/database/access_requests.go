@@ -154,7 +154,7 @@ func AccessRequestsWith(other basestore.ShareableStore, logger log.Logger) Acces
 const (
 	accessRequestInsertQuery = `
 		INSERT INTO access_requests (%s)
-		VALUES ( %s, %s, %s )
+		VALUES ( %s, %s, %s, %s )
 		RETURNING %s`
 	accessRequestListQuery = `
 		SELECT %s
@@ -183,6 +183,7 @@ var (
 		sqlf.Sprintf("name"),
 		sqlf.Sprintf("email"),
 		sqlf.Sprintf("additional_info"),
+		sqlf.Sprintf("status"),
 	}
 )
 
@@ -221,6 +222,7 @@ func (s *accessRequestStore) Create(ctx context.Context, accessRequest *types.Ac
 		accessRequest.Name,
 		accessRequest.Email,
 		accessRequest.AdditionalInfo,
+		types.AccessRequestStatusPending,
 		sqlf.Join(accessRequestColumns, ","),
 	)
 	data, err := scanAccessRequest(tx.QueryRow(ctx, createQuery))
