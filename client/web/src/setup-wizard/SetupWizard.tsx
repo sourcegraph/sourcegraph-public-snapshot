@@ -7,6 +7,7 @@ import { BrandLogo } from '../components/branding/BrandLogo'
 import { PageTitle } from '../components/PageTitle'
 import { SiteAdminRepositoriesContainer } from '../site-admin/SiteAdminRepositoriesContainer'
 
+import { LocalRepositoriesStep } from './components/local-repositories-step'
 import { RemoteRepositoriesStep } from './components/remote-repositories-step'
 import { SetupStepsRoot, StepConfiguration } from './components/setup-steps'
 
@@ -61,10 +62,6 @@ export const SetupWizard: FC = () => {
             <SetupStepsRoot initialStepId={activeStepId} steps={SETUP_STEPS} onStepChange={handleStepChange} />
         </div>
     )
-}
-
-function LocalRepositoriesStep(props: any): ReactElement {
-    return <H2 {...props}>Hello local repositories step</H2>
 }
 
 function SyncRepositoriesStep(props: any): ReactElement {
