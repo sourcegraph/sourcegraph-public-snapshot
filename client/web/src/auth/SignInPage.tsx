@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 
-import { mdiBitbucket, mdiGithub, mdiGitlab, mdiEmail } from '@mdi/js'
+import { mdiBitbucket, mdiGithub, mdiGitlab, mdiEmail, mdiMicrosoftAzureDevops } from '@mdi/js'
 import classNames from 'classnames'
 import { partition } from 'lodash'
 import { Navigate, useLocation, useSearchParams } from 'react-router-dom'
@@ -102,6 +102,9 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                                 {provider.serviceType === 'gitlab' && <Icon aria-hidden={true} svgPath={mdiGitlab} />}
                                 {provider.serviceType === 'bitbucketCloud' && (
                                     <Icon aria-hidden={true} svgPath={mdiBitbucket} />
+                                )}
+                                {provider.serviceType === 'azuredevops' && (
+                                    <Icon aria-hidden={true} svgPath={mdiMicrosoftAzureDevops} />
                                 )}{' '}
                                 Continue with {provider.displayName}
                             </Button>

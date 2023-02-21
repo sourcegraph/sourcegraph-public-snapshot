@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"golang.org/x/oauth2"
 )
@@ -46,4 +48,38 @@ func SetExternalAccountData(data *extsvc.AccountData, user *Profile, token *oaut
 	data.Data = extsvc.NewUnencryptedData(serializedUser)
 	data.AuthData = extsvc.NewUnencryptedData(serializedToken)
 	return nil
+}
+
+// GetExternalAccountData returns the deserialized user and token from the external account data
+// JSON blob in a typesafe way.
+func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (usr *Profile, tok *oauth2.Token, err error) {
+	if data.Data != nil {
+		usr, err = encryption.DecryptJSON[Profile](ctx, data.Data)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	if data.AuthData != nil {
+		tok, err = encryption.DecryptJSON[oauth2.Token](ctx, data.AuthData)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	return usr, tok, nil
+}
+
+func GetPublicExternalAccountData(ctx context.Context, accountData *extsvc.AccountData) (*extsvc.PublicAccountData, error) {
+	data, _, err := GetExternalAccountData(ctx, accountData)
+	if err != nil {
+		return nil, err
+	}
+
+	email := strings.ToLower(data.EmailAddress)
+
+	return &extsvc.PublicAccountData{
+		DisplayName: &data.DisplayName,
+		Login:       &email,
+	}, nil
 }
