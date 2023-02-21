@@ -25,9 +25,10 @@ func NewRankingGraphExporter(
 				return err
 			}
 
-			if err := uploadsService.VacuumRankingGraph(ctx); err != nil {
-				return err
-			}
+			// Need to replace this pre-deployment
+			// if err := uploadsService.VacuumRankingGraph(ctx); err != nil {
+			// 	return err
+			// }
 
 			return nil
 		}))
