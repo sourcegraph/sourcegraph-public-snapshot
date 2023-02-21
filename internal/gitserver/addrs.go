@@ -18,9 +18,9 @@ var addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
 
 // NewGitserverAddressesFromConf fetches the current set of gitserver addresses
 // and pinned repos for gitserver.
-func NewGitserverAddressesFromConf() GitServerAddresses {
+func NewGitserverAddressesFromConf() GitserverAddresses {
 	cfg := conf.Get()
-	addrs := GitServerAddresses{
+	addrs := GitserverAddresses{
 		Addresses: cfg.ServiceConnectionConfig.GitServers,
 	}
 	if cfg.ExperimentalFeatures != nil {
@@ -29,13 +29,13 @@ func NewGitserverAddressesFromConf() GitServerAddresses {
 	return addrs
 }
 
-func newTestGitserverAddresses(addrs []string) GitServerAddresses {
-	return GitServerAddresses{
+func newTestGitserverAddresses(addrs []string) GitserverAddresses {
+	return GitserverAddresses{
 		Addresses: addrs,
 	}
 }
 
-type GitServerAddresses struct {
+type GitserverAddresses struct {
 	// The current list of gitserver addresses
 	Addresses []string
 
@@ -46,7 +46,7 @@ type GitServerAddresses struct {
 }
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
-func (g GitServerAddresses) AddrForRepo(userAgent string, repo api.RepoName) string {
+func (g GitserverAddresses) AddrForRepo(userAgent string, repo api.RepoName) string {
 	addrForRepoInvoked.WithLabelValues(userAgent).Inc()
 
 	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it

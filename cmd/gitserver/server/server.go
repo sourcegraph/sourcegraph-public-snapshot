@@ -668,7 +668,7 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 	}
 }
 
-func (s *Server) addrForRepo(repoName api.RepoName, gitServerAddrs gitserver.GitServerAddresses) string {
+func (s *Server) addrForRepo(repoName api.RepoName, gitServerAddrs gitserver.GitserverAddresses) string {
 	return gitServerAddrs.AddrForRepo(filepath.Base(os.Args[0]), repoName)
 }
 
@@ -783,7 +783,7 @@ var (
 	})
 )
 
-func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batchSize, perSecond int, fullSync bool) error {
+func (s *Server) syncRepoState(gitServerAddrs gitserver.GitserverAddresses, batchSize, perSecond int, fullSync bool) error {
 	s.Logger.Debug("starting syncRepoState", log.Bool("fullSync", fullSync))
 	addrs := gitServerAddrs.Addresses
 

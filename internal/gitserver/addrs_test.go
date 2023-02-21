@@ -7,7 +7,7 @@ import (
 )
 
 func TestAddrForRepo(t *testing.T) {
-	ga := GitServerAddresses{
+	ga := GitserverAddresses{
 		Addresses: []string{"gitserver-1", "gitserver-2", "gitserver-3"},
 		PinnedServers: map[string]string{
 			"repo2": "gitserver-1",

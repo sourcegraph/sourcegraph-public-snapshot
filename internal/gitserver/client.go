@@ -92,7 +92,7 @@ func NewTestClient(cli httpcli.Doer, addrs []string) Client {
 	logger := sglog.Scoped("NewTestClient", "Test New client")
 	return &clientImplementor{
 		logger:      logger,
-		addrs:       func() GitServerAddresses { return newTestGitserverAddresses(addrs) },
+		addrs:       func() GitserverAddresses { return newTestGitserverAddresses(addrs) },
 		httpClient:  cli,
 		HTTPLimiter: parallel.NewRun(500),
 		// Use the binary name for userAgent. This should effectively identify
@@ -191,7 +191,7 @@ type clientImplementor struct {
 
 	// addrs is a function that returns the current set of gitserver addresses.
 	// It is called each time a request is made. It must be safe for concurrent use.
-	addrs func() GitServerAddresses
+	addrs func() GitserverAddresses
 
 	// operations are used for internal observability
 	operations *operations
