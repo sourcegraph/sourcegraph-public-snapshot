@@ -55,6 +55,7 @@ func (s *Service) ExportRankingGraph(
 	ctx context.Context,
 	numRankingRoutines int,
 	numBatchSize int,
+	rankingJobEnabled bool,
 ) (err error) {
 	ctx, _, endObservation := s.operations.exportRankingGraph.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
