@@ -298,18 +298,19 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             </NavAction>
                         </>
                     )}
-                    {JSON.stringify(isSourcegraphApp)}
-                    {
+                    {isSourcegraphApp && (
                         <ButtonLink
                             variant="secondary"
                             outline={true}
                             to={buildCloudTrialURL(props.authenticatedUser)}
                             size="sm"
-                            onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NavBarApp' })}
+                            onClick={() =>
+                                eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NavBarSourcegraphApp' })
+                            }
                         >
                             Try Sourcegraph Cloud
                         </ButtonLink>
-                    }
+                    )}
                     {props.authenticatedUser && isSourcegraphDotCom && (
                         <ButtonLink
                             variant="secondary"
