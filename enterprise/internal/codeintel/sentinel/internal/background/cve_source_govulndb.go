@@ -4,9 +4,12 @@ package background
 // Govulndb uses the Open Source Vulnerability (OSV) format, with some custom extensions.
 
 import (
+	"archive/zip"
+	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 
@@ -16,24 +19,52 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// ReadGoVulnDb fetches a copy of the Go Vulnerability Database and converts it to the internal Vulnerability format
-func ReadGoVulnDb(ctx context.Context) (vulns []shared.Vulnerability, err error) {
-	// TODO: Fetch database
+const govulndbAdvisoryDatabaseURL = "https://github.com/golang/vuln/archive/refs/heads/master.zip"
 
-	// Open test directory of json files
-	path := "./go-vulndb/"
-	fileList, err := os.ReadDir(path)
+// ReadGoVulnDb fetches a copy of the Go Vulnerability Database and converts it to the internal Vulnerability format
+func ReadGoVulnDb(ctx context.Context, useLocalCache bool) (vulns []shared.Vulnerability, err error) {
+	if useLocalCache {
+		zipReader, err := os.Open("vulndb-govulndb.zip")
+		if err != nil {
+			return nil, errors.New("unable to open zip file")
+		}
+
+		return ParseGovulndbAdvisoryDB(zipReader)
+	}
+
+	resp, err := http.Get(govulndbAdvisoryDatabaseURL)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return nil, errors.Newf("unexpected status code %d", resp.StatusCode)
+	}
+
+	return ParseGitHubAdvisoryDB(resp.Body)
+}
+
+func ParseGovulndbAdvisoryDB(govulndbReader io.Reader) (vulns []shared.Vulnerability, err error) {
+	content, err := io.ReadAll(govulndbReader)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, file := range fileList {
-		if filepath.Ext(file.Name()) != ".json" {
+	zr, err := zip.NewReader(bytes.NewReader(content), int64(len(content)))
+	if err != nil {
+		return nil, err
+	}
+
+	for _, f := range zr.File {
+		if filepath.Dir(f.Name) != "vulndb-master/data/osv" {
+			continue
+		}
+		if filepath.Ext(f.Name) != ".json" {
 			continue
 		}
 
-		fullPath := filepath.Join(path, file.Name())
-		r, err := os.Open(fullPath)
+		r, err := f.Open()
 		if err != nil {
 			return nil, err
 		}
@@ -50,12 +81,6 @@ func ReadGoVulnDb(ctx context.Context) (vulns []shared.Vulnerability, err error)
 		if err != nil {
 			return nil, err
 		}
-
-		out, err := json.MarshalIndent(convertedVuln, "", "  ")
-		if err != nil {
-			return nil, err
-		}
-		fmt.Printf("%s\n\n", string(out))
 
 		vulns = append(vulns, convertedVuln)
 	}
