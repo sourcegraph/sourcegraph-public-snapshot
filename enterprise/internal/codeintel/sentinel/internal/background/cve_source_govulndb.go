@@ -16,7 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func ReadGoVulnDb(ctx context.Context) ([]shared.Vulnerability, error) {
+// ReadGoVulnDb fetches a copy of the Go Vulnerability Database and converts it to the internal Vulnerability format
+func ReadGoVulnDb(ctx context.Context) (vulns []shared.Vulnerability, err error) {
 	// TODO: Fetch database
 
 	// Open test directory of json files
@@ -26,16 +27,12 @@ func ReadGoVulnDb(ctx context.Context) ([]shared.Vulnerability, error) {
 		return nil, err
 	}
 
-	var vulns []shared.Vulnerability
 	for _, file := range fileList {
 		if filepath.Ext(file.Name()) != ".json" {
 			continue
 		}
 
 		fullPath := filepath.Join(path, file.Name())
-
-		fmt.Printf("Walking %s\n", file.Name())
-
 		r, err := os.Open(fullPath)
 		if err != nil {
 			return nil, err
@@ -43,30 +40,34 @@ func ReadGoVulnDb(ctx context.Context) ([]shared.Vulnerability, error) {
 		defer r.Close()
 
 		var osvVuln OSV
-
 		if err := json.NewDecoder(r).Decode(&osvVuln); err != nil {
 			return nil, err
 		}
 
+		// Convert OSV to Vulnerability using Govulndb handler
 		var g Govulndb
-		v, err := osvToVuln(osvVuln, g)
+		convertedVuln, err := osvToVuln(osvVuln, g)
 		if err != nil {
 			return nil, err
 		}
 
-		out, err := json.MarshalIndent(v, "", "  ")
+		out, err := json.MarshalIndent(convertedVuln, "", "  ")
 		if err != nil {
 			return nil, err
 		}
 		fmt.Printf("%s\n\n", string(out))
+
+		vulns = append(vulns, convertedVuln)
 	}
 
 	return vulns, nil
 }
 
+//
 // Govulndb-specific structs and handlers
+//
 
-// TODO: Remove caps from DB
+// GovulndbAffectedEcosystemSpecific represents the custom data format used by Govulndb for OSV.Affected.EcosystemSpecific
 type GovulndbAffectedEcosystemSpecific struct {
 	Imports []struct {
 		Path    string   `mapstructure:"path" json:"path"`
@@ -75,6 +76,7 @@ type GovulndbAffectedEcosystemSpecific struct {
 	} `mapstructure:"imports" json:"imports"`
 }
 
+// GovulndbAffectedDatabaseSpecific represents the custom data format used by Govulndb for OSV.Affected.DatabaseSpecific
 type GovulndbAffectedDatabaseSpecific struct {
 	URL string `json:"url"`
 }

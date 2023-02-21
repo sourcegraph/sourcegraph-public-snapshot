@@ -7,8 +7,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
 )
 
-// Open Source Vulnerability format
-// https://ossf.github.io/osv-schema/
+// OSV represents the Open Source Vulnerability format.
+// See https://ossf.github.io/osv-schema/
 type OSV struct {
 	SchemaVersion string    `json:"schema_version"`
 	ID            string    `json:"id"`
@@ -32,9 +32,10 @@ type OSV struct {
 		Name    string   `json:"name"`
 		Contact []string `json:"contact"`
 	} `json:"credits"`
-	DatabaseSpecific interface{} `json:"database_specific"`
+	DatabaseSpecific interface{} `json:"database_specific"` // Provider-specific data, parsed by topLevelHandler
 }
 
+// OSVAffected describes packages which are affected by an OSV vulnerability
 type OSVAffected struct {
 	Package struct {
 		Ecosystem string `json:"ecosystem"`
@@ -55,24 +56,23 @@ type OSVAffected struct {
 	} `json:"ranges"`
 
 	Versions          []string    `json:"versions"`
-	EcosystemSpecific interface{} `json:"ecosystem_specific"`
-	// EcosystemSpecific GoVulnDBAffectedEcosystemSpecific `json:"ecosystem_specific"`
-	DatabaseSpecific interface{} `json:"database_specific"`
-	// DatabaseSpecific map[string]string `json:"database_specific"` // TODO: Currently hardcoding GoVulndb format
+	EcosystemSpecific interface{} `json:"ecosystem_specific"` // Provider-specific data, parsed by affectedHandler
+	DatabaseSpecific  interface{} `json:"database_specific"`  // Provider-specific data, parsed by affectedHandler
 }
 
+// DataSourceHandler allows vulnerability database to provide handlers for parsing database-specific data structures.
+// Custom data structures can be provided at various locations in OSV, and are named DatabaseSpecific or EcosystemSpecific.
 type DataSourceHandler interface {
-	topLevelHandler(OSV, *shared.Vulnerability) error
-	affectedHandler(OSVAffected, *shared.AffectedPackage) error
+	topLevelHandler(OSV, *shared.Vulnerability) error           // Handle provider-specific data at the top level of the OSV struct
+	affectedHandler(OSVAffected, *shared.AffectedPackage) error // Handle provider-specific data at the OSV.Affected level
 }
 
-// The Open Source Vulnerability (OSV) format is a common interchange format for exchanging
-// vulnerability data. Some fields are common, and some fields are database-specific.
+// osvToVuln converts an OSV-formatted vulnerability to Sourcegraph's internal Vulnerability format
 func osvToVuln(o OSV, dataSourceHandler DataSourceHandler) (vuln shared.Vulnerability, err error) {
 	// Core sections:
 	//	- /General details
 	//  - Severity - TODO, need to loop over
-	//	- /Affected - TODO add custom handlers
+	//	- /Affected
 	//  - /References
 	//  - Credits
 	//  - /Database_specific
@@ -92,7 +92,8 @@ func osvToVuln(o OSV, dataSourceHandler DataSourceHandler) (vuln shared.Vulnerab
 		v.URLs = append(v.URLs, reference.URL)
 	}
 
-	// Process top-level data with a database-specific handler
+	// Parse custom data with a provider-specific handler
+	// TODO: Handle skip-level issues, rather than returning
 	if err := dataSourceHandler.topLevelHandler(o, &v); err != nil {
 		return v, err
 	}
@@ -104,6 +105,7 @@ func osvToVuln(o OSV, dataSourceHandler DataSourceHandler) (vuln shared.Vulnerab
 		ap.PackageName = affected.Package.Name
 		ap.Language = affected.Package.Ecosystem
 
+		// Parse custom data with a provider-specific handler
 		if err := dataSourceHandler.affectedHandler(affected, &ap); err != nil {
 			return v, err
 		}

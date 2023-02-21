@@ -1,6 +1,6 @@
 package background
 
-// Parse vulnerabilities from the GitHub Security Advisories (GHSA) database.
+// Fetch and parse vulnerabilities from the GitHub Security Advisories (GHSA) database.
 // GHSA uses the Open Source Vulnerability (OSV) format, with some custom extensions.
 
 import (
@@ -23,6 +23,7 @@ import (
 
 const advisoryDatabaseURL = "https://github.com/github/advisory-database/archive/refs/heads/main.zip"
 
+// ReadGitHubAdvisoryDB fetches a copy of the GHSA database and converts it to the internal Vulnerability format
 func ReadGitHubAdvisoryDB(ctx context.Context, useLocalCache bool) (vulns []shared.Vulnerability, err error) {
 	if useLocalCache {
 		zipReader, err := os.Open("main.zip")
@@ -46,13 +47,12 @@ func ReadGitHubAdvisoryDB(ctx context.Context, useLocalCache bool) (vulns []shar
 	return ParseGitHubAdvisoryDB(resp.Body)
 }
 
-func ParseGitHubAdvisoryDB(ghsaReader io.Reader) ([]shared.Vulnerability, error) {
+func ParseGitHubAdvisoryDB(ghsaReader io.Reader) (vulns []shared.Vulnerability, err error) {
 	content, err := io.ReadAll(ghsaReader)
 	if err != nil {
 		return nil, err
 	}
 
-	var vulns []shared.Vulnerability
 	zr, err := zip.NewReader(bytes.NewReader(content), int64(len(content)))
 	if err != nil {
 		return nil, err
@@ -74,6 +74,7 @@ func ParseGitHubAdvisoryDB(ghsaReader io.Reader) ([]shared.Vulnerability, error)
 			return nil, err
 		}
 
+		// Convert OSV to Vulnerability using GHSA handler
 		var g GHSA
 		convertedVuln, err := osvToVuln(osvVuln, g)
 		if err != nil {
@@ -90,7 +91,9 @@ func ParseGitHubAdvisoryDB(ghsaReader io.Reader) ([]shared.Vulnerability, error)
 	return vulns, nil
 }
 
+//
 // GHSA-specific structs and handlers
+//
 
 type GHSADatabaseSpecific struct {
 	Severity               string    `mapstructure:"severity" json:"severity"`
