@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"golang.org/x/exp/slices"
 	"google.golang.org/grpc"
 )
 
@@ -115,66 +116,34 @@ func (a *atomicGitServerConns) initOnce() {
 }
 
 func (a *atomicGitServerConns) update(cfg *conf.Unified) {
-	newAddrs := GitServerConns{
+	after := GitServerConns{
 		GitserverAddresses: NewGitserverAddressesFromConf(cfg),
-		grpcConns:          make(map[string]connAndErr),
+		grpcConns:          nil, // to be filled in
 	}
 
-	// Diff the old addresses with the new addresses
-	old := a.conns.Load()
-	if old == nil {
-		// If update is being called for the first time,
-		// default to the zero value.
-		old = &GitServerConns{}
-	}
-	added, removed, unchanged := diffStrings(old.Addresses, newAddrs.Addresses)
+	before := a.conns.Load()
 
-	// For each address we already had a connection for, reuse that connection
-	for _, addr := range unchanged {
-		newAddrs.grpcConns[addr] = old.grpcConns[addr]
+	if before != nil && slices.Equal(before.Addresses, after.Addresses) {
+		// No change in addresses. Reuse the old connections.
+		// We still update newAddrs in case the pinned repos have changed.
+		after.grpcConns = before.grpcConns
+		a.conns.Store(&after)
+		return
 	}
 
-	// For each new address, open a new connection
-	for _, addr := range added {
+	// Open connections for each address
+	after.grpcConns = make(map[string]connAndErr, len(after.Addresses))
+	for _, addr := range after.Addresses {
 		conn, err := grpc.Dial(addr, defaults.DialOptions()...)
-		newAddrs.grpcConns[addr] = connAndErr{conn, err}
+		after.grpcConns[addr] = connAndErr{conn: conn, err: err}
 	}
 
-	if len(newAddrs.grpcConns) != len(newAddrs.Addresses) {
-		panic("invariant violated: there must be the same number of addresses and conns")
-	}
+	a.conns.Store(&after)
 
-	a.conns.Store(&newAddrs)
-
-	// After we've published the new version, close the old connections
-	for _, addr := range removed {
-		ce := old.grpcConns[addr]
-		if ce.err != nil {
-			continue
-		}
-		ce.conn.Close()
-	}
-}
-
-func diffStrings(before, after []string) (added, removed, unchanged []string) {
-	beforeSet := make(map[string]struct{}, len(before))
-	for _, addr := range before {
-		beforeSet[addr] = struct{}{}
-	}
-
-	for _, addr := range after {
-		_, ok := beforeSet[addr]
-		if ok {
-			unchanged = append(unchanged, addr)
-			delete(beforeSet, addr)
-		} else {
-			added = append(added, addr)
+	// After making the new conns visible, close the old conns
+	for _, ce := range before.grpcConns {
+		if ce.err == nil {
+			ce.conn.Close()
 		}
 	}
-
-	for addr := range beforeSet {
-		removed = append(removed, addr)
-	}
-
-	return added, removed, unchanged
 }
