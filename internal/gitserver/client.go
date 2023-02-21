@@ -550,6 +550,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 
 		stream, err := client.Exec(ctx, req)
 		if err != nil {
+			cancel()
 			return nil, err
 		}
 		r := streamio.NewReader(func() ([]byte, error) {
