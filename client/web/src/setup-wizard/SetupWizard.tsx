@@ -6,6 +6,7 @@ import { H1, H2, Text } from '@sourcegraph/wildcard'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { PageTitle } from '../components/PageTitle'
 import { SiteAdminRepositoriesContainer } from '../site-admin/SiteAdminRepositoriesContainer'
+
 import { RemoteRepositoriesStep } from './components/remote-repositories-step'
 import { SetupStepsRoot, StepConfiguration } from './components/setup-steps'
 
