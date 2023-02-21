@@ -48,8 +48,8 @@ func Register(ctx context.Context, logger log.Logger, protocol otlpenv.Protocol,
 
 		TracerProvider: otel.GetTracerProvider(),
 
-		MeterProvider: mustMetricsProvider(logger),
-		MetricsLevel:  configtelemetry.LevelNone,
+		MeterProvider: mustPrometheusMetricsProvider(logger),
+		MetricsLevel:  configtelemetry.LevelBasic,
 	}
 	componentName := "otlpadapter"
 
@@ -127,7 +127,10 @@ func Register(ctx context.Context, logger log.Logger, protocol otlpenv.Protocol,
 	}
 }
 
-func mustMetricsProvider(l log.Logger) metric.MeterProvider {
+// mustPrometheusMetricsProvider creates a metric provider that uses the default
+// Prometheus metrics registerer to report metrics. If it fails to create one,
+// an error is logged and a no-op metrics provider is used.
+func mustPrometheusMetricsProvider(l log.Logger) metric.MeterProvider {
 	prom, err := otelprometheus.New(otelprometheus.WithRegisterer(prometheus.DefaultRegisterer))
 	if err != nil {
 		l.Error("failed to register prometheus metrics for otlpadapter", log.Error(err))
