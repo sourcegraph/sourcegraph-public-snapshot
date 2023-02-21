@@ -341,7 +341,7 @@ type PermissionSyncJobsConnection implements Connection {
 }
 
 """
-State types of permissions sync jobs.
+State types of permission sync jobs.
 """
 enum PermissionSyncJobState {
     QUEUED
@@ -352,17 +352,23 @@ enum PermissionSyncJobState {
 }
 
 """
-Compound type for a permissions sync job trigger reason.
+Compound type for a permission sync job trigger reason.
 Consists of a reason group (PermissionSyncJobReasonGroup) and a message, providing details
 about why/how the sync was triggered.
 """
 type PermissionSyncJobReason {
+    """
+    PermissionSyncJobReasonGroup combines multiple permission sync job trigger reasons into groups with similar grounds.
+    """
     group: PermissionSyncJobReasonGroup!
+    """
+    Message with details about why/how the sync was triggered.
+    """
     message: String!
 }
 
 """
-State types of permissions sync jobs.
+State types of permission sync jobs.
 """
 enum PermissionSyncJobReasonGroup {
     MANUAL
@@ -371,8 +377,14 @@ enum PermissionSyncJobReasonGroup {
     SOURCEGRAPH
 }
 
+"""
+Union type for a subject of a permission sync job (repository or user).
+"""
 union PermissionSyncJobSubject = User | Repository
 
+"""
+Permission sync job priority.
+"""
 enum PermissionSyncJobPriority {
     LOW
     MEDIUM
