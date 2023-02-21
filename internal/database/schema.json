@@ -12474,7 +12474,7 @@
           "Index": 3,
           "TypeName": "text",
           "IsNullable": false,
-          "Default": "",
+          "Default": "'👁️temporary_sentinel_value👁️'::text",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
