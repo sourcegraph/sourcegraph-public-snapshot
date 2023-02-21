@@ -28,10 +28,16 @@ EMBEDDABLE_EXTENSIONS = set(
         "rb",
         "php",
         "scala",
+        "sh",
+        "txt",
+        "c",
+        "cpp",
+        "h",
+        "cc",
     ]
 )
-EMBEDDABLE_EXTENSIONLESS_FILES = set(["dockerfile", "license"])
-EXCLUDED_PATHS = ["/__fixtures__/", "/__tests__/", "/testdata/", "/mocks"]
+EMBEDDABLE_EXTENSIONLESS_FILES = set(["dockerfile", "license", "cmakelists"])
+EXCLUDED_PATHS = ["/__fixtures__/", "/__tests__/", "/testdata/", "/mocks", "/vendor"]
 MAX_FILE_SIZE_BYTES = 1000000  # 1MB
 FILESYSTEM_SAFE_NAME_REGEXP = re.compile(r"[^0-9a-zA-Z]")
 
