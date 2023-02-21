@@ -5,6 +5,9 @@ go_library(
     srcs = [
         "init.go",
         "user.go",
+        "user_create.go",
+        "user_delete.go",
+        "user_get.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/scim",
     visibility = ["//enterprise:__subpackages__"],
@@ -12,6 +15,7 @@ go_library(
         "//cmd/frontend/enterprise",
         "//enterprise/internal/codeintel",
         "//enterprise/internal/scim/filter",
+        "//internal/authz",
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/database",
@@ -29,7 +33,11 @@ go_library(
 
 go_test(
     name = "scim_test",
-    srcs = ["user_test.go"],
+    srcs = [
+        "user_create_test.go",
+        "user_get_test.go",
+        "user_test.go",
+    ],
     embed = [":scim"],
     deps = [
         "//internal/database",

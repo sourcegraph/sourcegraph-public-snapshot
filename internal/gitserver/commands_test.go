@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -448,7 +449,7 @@ func TestRepository_BlameFile(t *testing.T) {
 			repo: MakeGitRepository(t, gitCommands...),
 			path: "f2",
 			opt: &BlameOptions{
-				NewestCommit: "master",
+				NewestCommit: "main",
 			},
 			wantHunks: gitWantHunks,
 		},
@@ -535,7 +536,7 @@ func TestRepository_ResolveBranch(t *testing.T) {
 	}{
 		"git cmd": {
 			repo:         MakeGitRepository(t, gitCommands...),
-			branch:       "master",
+			branch:       "main",
 			wantCommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8",
 		},
 	}
@@ -957,7 +958,7 @@ func TestMerger_MergeBase(t *testing.T) {
 		"echo line2 >> f",
 		"git add f",
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-		"git checkout master",
+		"git checkout main",
 		"echo line3 > h",
 		"git add h",
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m qux --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
@@ -970,7 +971,7 @@ func TestMerger_MergeBase(t *testing.T) {
 	}{
 		"git cmd": {
 			repo: MakeGitRepository(t, cmds...),
-			a:    "master", b: "b2",
+			a:    "main", b: "b2",
 			wantMergeBase: "testbase",
 		},
 	}
@@ -1129,6 +1130,7 @@ func TestStat(t *testing.T) {
 	})
 
 	fileInfo, err := client.Stat(ctx, checker, repo, commitID, "dir1/file1")
+	log.Print(fileInfo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1311,7 +1313,7 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 				"2008-01-02T15:04:05Z",
 			},
 			after:           "2006-01-02T15:04:05Z",
-			revspec:         "master",
+			revspec:         "main",
 			want:            true,
 			wantSubRepoTest: true,
 		},
@@ -1323,7 +1325,7 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 				"2017-01-02T15:04:06Z",
 			},
 			after:           "1 year ago",
-			revspec:         "master",
+			revspec:         "main",
 			want:            false,
 			wantSubRepoTest: false,
 		},
@@ -1931,14 +1933,14 @@ func TestRepository_Commits_options_path(t *testing.T) {
 	}{
 		"git cmd Path 0": {
 			opt: CommitsOptions{
-				Range: "master",
+				Range: "main",
 				Path:  "doesnt-exist",
 			},
 			wantCommits: nil,
 		},
 		"git cmd Path 1": {
 			opt: CommitsOptions{
-				Range: "master",
+				Range: "main",
 				Path:  "file1",
 			},
 			wantCommits: wantGitCommits,
@@ -2212,7 +2214,7 @@ func TestRefDescriptions(t *testing.T) { // KEEP
 			t.Errorf("err calling RefDescriptions: %s", err)
 		}
 		expectedRefDescriptions := map[string][]gitdomain.RefDescription{
-			"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": {makeBranch("master", "2006-01-02T15:04:05Z", false)},
+			"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": {makeBranch("main", "2006-01-02T15:04:05Z", false)},
 			"9d7a382983098eed6cf911bd933dfacb13116e42": {makeBranch("my-other-branch", "2006-01-02T15:04:05Z", false)},
 			"7cf006d0599531db799c08d3b00d7fd06da33015": {makeBranch("my-branch-no-access", "2006-01-02T15:04:05Z", true)},
 		}
@@ -2228,7 +2230,7 @@ func TestRefDescriptions(t *testing.T) { // KEEP
 			t.Errorf("err calling RefDescriptions: %s", err)
 		}
 		expectedRefDescriptions := map[string][]gitdomain.RefDescription{
-			"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": {makeBranch("master", "2006-01-02T15:04:05Z", false)},
+			"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": {makeBranch("main", "2006-01-02T15:04:05Z", false)},
 			"9d7a382983098eed6cf911bd933dfacb13116e42": {makeBranch("my-other-branch", "2006-01-02T15:04:05Z", false)},
 		}
 		if diff := cmp.Diff(expectedRefDescriptions, refDescriptions); diff != "" {
@@ -2647,7 +2649,7 @@ func TestRepository_ListBranches(t *testing.T) {
 		"git checkout -b b1",
 	}
 
-	wantBranches := []*gitdomain.Branch{{Name: "b0", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}, {Name: "b1", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}, {Name: "master", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}}
+	wantBranches := []*gitdomain.Branch{{Name: "b0", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}, {Name: "b1", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}, {Name: "main", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}}
 
 	testBranches(t, gitCommands, wantBranches, BranchesOptions{})
 }
@@ -2711,8 +2713,8 @@ func TestRepository_Branches_ContainsCommit(t *testing.T) {
 	// Pre-sorted branches
 	gitWantBranches := map[string][]*gitdomain.Branch{
 		"920c0e9d7b287b030ac9770fd7ba3ee9dc1760d9": {{Name: "branch2", Head: "920c0e9d7b287b030ac9770fd7ba3ee9dc1760d9"}},
-		"1224d334dfe08f4693968ea618ad63ae86ec16ca": {{Name: "master", Head: "1224d334dfe08f4693968ea618ad63ae86ec16ca"}},
-		"2816a72df28f699722156e545d038a5203b959de": {{Name: "branch2", Head: "920c0e9d7b287b030ac9770fd7ba3ee9dc1760d9"}, {Name: "master", Head: "1224d334dfe08f4693968ea618ad63ae86ec16ca"}},
+		"1224d334dfe08f4693968ea618ad63ae86ec16ca": {{Name: "main", Head: "1224d334dfe08f4693968ea618ad63ae86ec16ca"}},
+		"2816a72df28f699722156e545d038a5203b959de": {{Name: "branch2", Head: "920c0e9d7b287b030ac9770fd7ba3ee9dc1760d9"}, {Name: "main", Head: "1224d334dfe08f4693968ea618ad63ae86ec16ca"}},
 	}
 
 	repo := MakeGitRepository(t, gitCommands...)
@@ -2753,10 +2755,10 @@ func TestRepository_Branches_BehindAheadCounts(t *testing.T) {
 	wantBranches := []*gitdomain.Branch{
 		{Counts: &gitdomain.BehindAhead{Behind: 5, Ahead: 1}, Name: "old_work", Head: "26692c614c59ddaef4b57926810aac7d5f0e94f0"},
 		{Counts: &gitdomain.BehindAhead{Behind: 0, Ahead: 3}, Name: "dev", Head: "6724953367f0cd9a7755bac46ee57f4ab0c1aad8"},
-		{Counts: &gitdomain.BehindAhead{Behind: 0, Ahead: 0}, Name: "master", Head: "8ea26e077a8fb9aa502c3fe2cfa3ce4e052d1a76"},
+		{Counts: &gitdomain.BehindAhead{Behind: 0, Ahead: 0}, Name: "main", Head: "8ea26e077a8fb9aa502c3fe2cfa3ce4e052d1a76"},
 	}
 
-	testBranches(t, gitCommands, wantBranches, BranchesOptions{BehindAheadBranch: "master"})
+	testBranches(t, gitCommands, wantBranches, BranchesOptions{BehindAheadBranch: "main"})
 }
 
 func TestRepository_Branches_IncludeCommit(t *testing.T) {
@@ -2782,7 +2784,7 @@ func TestRepository_Branches_IncludeCommit(t *testing.T) {
 			},
 		},
 		{
-			Name: "master", Head: "a3c1537db9797215208eec56f8e7c9c37f8358ca",
+			Name: "main", Head: "a3c1537db9797215208eec56f8e7c9c37f8358ca",
 			Commit: &gitdomain.Commit{
 				ID:        "a3c1537db9797215208eec56f8e7c9c37f8358ca",
 				Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},

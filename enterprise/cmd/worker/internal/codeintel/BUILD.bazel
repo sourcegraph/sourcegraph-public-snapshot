@@ -6,6 +6,7 @@ go_library(
         "autoindexing_dependency_scheduler_job.go",
         "autoindexing_janitor.go",
         "autoindexing_scheduler_job.go",
+        "autoindexing_summary_builder.go",
         "commitgraph_updater_job.go",
         "crates_syncer.go",
         "lsifuploadstore_expirer.go",

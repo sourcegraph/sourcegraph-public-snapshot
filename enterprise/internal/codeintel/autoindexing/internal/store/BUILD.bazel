@@ -45,6 +45,7 @@ go_test(
         "store_expiration_test.go",
         "store_indexes_test.go",
         "store_language_support_test.go",
+        "store_repositories_test.go",
         "store_sourced_commits_test.go",
     ],
     embed = [":store"],

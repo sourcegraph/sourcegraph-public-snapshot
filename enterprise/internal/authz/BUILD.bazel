@@ -30,6 +30,7 @@ go_test(
         "authz_test.go",
         "main_test.go",
     ],
+    data = glob(["testdata/**"]),
     embed = [":authz"],
     deps = [
         "//cmd/frontend/auth/providers",
