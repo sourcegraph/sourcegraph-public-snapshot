@@ -225,7 +225,7 @@ type HunkReader interface {
 
 type Client interface {
 	// AddrForRepo returns the gitserver address to use for the given repo name.
-	AddrForRepo(context.Context, api.RepoName) (string, error)
+	AddrForRepo(api.RepoName) string
 
 	// ArchiveReader streams back the file contents of an archived git repo.
 	ArchiveReader(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, options ArchiveOptions) (io.ReadCloser, error)
@@ -451,12 +451,12 @@ func (c *clientImplementor) Addrs() []string {
 	return c.addrs()
 }
 
-func (c *clientImplementor) AddrForRepo(ctx context.Context, repo api.RepoName) (string, error) {
+func (c *clientImplementor) AddrForRepo(repo api.RepoName) string {
 	addrs := c.Addrs()
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
-	return AddrForRepo(ctx, c.userAgent, repo, GitServerAddresses{
+	return AddrForRepo(c.userAgent, repo, GitServerAddresses{
 		Addresses:     addrs,
 		PinnedServers: c.pinned(),
 	})
@@ -469,16 +469,16 @@ var addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
 // It should never be called with a nil addresses pointer.
-func AddrForRepo(ctx context.Context, userAgent string, repo api.RepoName, addresses GitServerAddresses) (string, error) {
+func AddrForRepo(userAgent string, repo api.RepoName, addresses GitServerAddresses) string {
 	addrForRepoInvoked.WithLabelValues(userAgent).Inc()
 
 	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
 	rs := string(repo)
 	if repoPinned, addr := getPinnedRepoAddr(rs, addresses.PinnedServers); repoPinned {
-		return addr, nil
+		return addr
 	}
 
-	return addrForKey(rs, addresses.Addresses), nil
+	return addrForKey(rs, addresses.Addresses)
 }
 
 type GitServerAddresses struct {
@@ -537,7 +537,7 @@ func (a *archiveReader) Close() error {
 
 // archiveURL returns a URL from which an archive of the given Git repository can
 // be downloaded from.
-func (c *clientImplementor) archiveURL(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (*url.URL, error) {
+func (c *clientImplementor) archiveURL(repo api.RepoName, opt ArchiveOptions) *url.URL {
 	q := url.Values{
 		"repo":    {string(repo)},
 		"treeish": {opt.Treeish},
@@ -548,16 +548,13 @@ func (c *clientImplementor) archiveURL(ctx context.Context, repo api.RepoName, o
 		q.Add("path", string(pathspec))
 	}
 
-	addrForRepo, err := c.AddrForRepo(ctx, repo)
-	if err != nil {
-		return nil, err
-	}
+	addrForRepo := c.AddrForRepo(repo)
 	return &url.URL{
 		Scheme:   "http",
 		Host:     addrForRepo,
 		Path:     "/archive",
 		RawQuery: q.Encode(),
-	}, nil
+	}
 }
 
 type badRequestError struct{ error }
@@ -593,10 +590,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 			Stdin:          c.stdin,
 			NoTimeout:      c.noTimeout,
 		}
-		addr, err := c.execer.AddrForRepo(ctx, repoName)
-		if err != nil {
-			return nil, err
-		}
+		addr := c.execer.AddrForRepo(repoName)
 
 		conn, err := grpc.DialContext(ctx, addr, defaults.DialOptions()...)
 		if err != nil {
@@ -725,10 +719,7 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 
 	repoName := protocol.NormalizeRepo(args.Repo)
 
-	addrForRepo, err := c.AddrForRepo(ctx, repoName)
-	if err != nil {
-		return false, err
-	}
+	addrForRepo := c.AddrForRepo(repoName)
 
 	if internalgrpc.IsGRPCEnabled(ctx) {
 		conn, err := grpc.DialContext(ctx, addrForRepo, defaults.DialOptions()...)
@@ -965,11 +956,7 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 	for _, repoCommit := range opts.RepoCommits {
 		addr, ok := addrsByName[repoCommit.Repo]
 		if !ok {
-			addr, err = c.AddrForRepo(ctx, repoCommit.Repo)
-			if err != nil {
-				return err
-			}
-
+			addr = c.AddrForRepo(repoCommit.Repo)
 			addrsByName[repoCommit.Repo] = addr
 		}
 
@@ -1160,10 +1147,7 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 	shards := make(map[string]*protocol.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
 
 	for _, r := range repos {
-		addr, err := c.AddrForRepo(ctx, r)
-		if err != nil {
-			return nil, err
-		}
+		addr := c.AddrForRepo(r)
 		shard := shards[addr]
 
 		if shard == nil {
@@ -1261,10 +1245,7 @@ func (c *clientImplementor) doReposStats(ctx context.Context, addr string) (*pro
 func (c *clientImplementor) Remove(ctx context.Context, repo api.RepoName) error {
 	// In case the repo has already been deleted from the database we need to pass
 	// the old name in order to land on the correct gitserver instance.
-	addr, err := c.AddrForRepo(ctx, api.UndeletedRepoName(repo))
-	if err != nil {
-		return err
-	}
+	addr := c.AddrForRepo(api.UndeletedRepoName(repo))
 	return c.RemoveFrom(ctx, repo, addr)
 }
 
@@ -1301,10 +1282,7 @@ func (c *clientImplementor) httpPost(ctx context.Context, repo api.RepoName, op 
 		return nil, err
 	}
 
-	addrForRepo, err := c.AddrForRepo(ctx, repo)
-	if err != nil {
-		return nil, err
-	}
+	addrForRepo := c.AddrForRepo(repo)
 	uri := "http://" + addrForRepo + "/" + op
 	return c.do(ctx, repo, "POST", uri, b)
 }
