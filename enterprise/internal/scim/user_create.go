@@ -80,6 +80,7 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 	if err != nil {
 		return scim.Resource{}, err
 	}
+	attributes["userName"] = user.Username
 
 	var now = time.Now()
 
