@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -98,6 +100,8 @@ func SearchGRPC(
 			msg, err := resp.Recv()
 			if errors.Is(err, io.EOF) {
 				return false, nil
+			} else if status.Code(err) == codes.Canceled {
+				return false, context.Canceled
 			} else if err != nil {
 				return false, err
 			}
