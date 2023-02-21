@@ -2,13 +2,13 @@ import { Location, createPath } from 'react-router-dom'
 import { Subscription, Subject } from 'rxjs'
 import { tap, last } from 'rxjs/operators'
 
-import { resetAllMemoizationCaches } from '@sourcegraph/common'
+import { logger, resetAllMemoizationCaches } from '@sourcegraph/common'
 import { SearchMode } from '@sourcegraph/shared/src/search'
+import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SearchPatternType } from '../graphql-operations'
 
 import { parseSearchURL, repoFilterForRepoRevision, getQueryStateFromLocation } from '.'
-import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 expect.addSnapshotSerializer({
     serialize: value => JSON.stringify(value),
@@ -192,7 +192,7 @@ describe('updateQueryStateFromURL', () => {
     const isSearchContextAvailable = () => Promise.resolve(true)
 
     describe('search context', () => {
-        it.only('should extract the search context from the query', done => {
+        it('should extract the search context from the query', done => {
             const [locationSubject, location] = createHistoryObservable('q=context:me+test')
 
             getQueryStateFromLocation({
@@ -208,6 +208,7 @@ describe('updateQueryStateFromURL', () => {
                     })
                 )
                 .toPromise()
+                .catch(logger.error)
 
             locationSubject.next(location)
             locationSubject.complete()

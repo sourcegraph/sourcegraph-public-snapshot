@@ -6,11 +6,11 @@ import { distinctUntilChanged, first, map, startWith } from 'rxjs/operators'
 
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { isSearchContextSpecAvailable } from '@sourcegraph/shared/src/search'
+import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 
 import { getQueryStateFromLocation } from './search'
-import { setQueryStateFromURL } from './stores/navbarSearchQueryState'
 import { observeStore, useExperimentalFeatures } from './stores'
-import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { setQueryStateFromURL } from './stores/navbarSearchQueryState'
 
 export const GLOBAL_SEARCH_CONTEXT_SPEC = 'global'
 
@@ -50,7 +50,7 @@ export const SearchQueryStateObserver: FC<SearchQueryStateObserverProps> = props
                     searchContextsEnabled
                         ? isSearchContextSpecAvailable({
                               spec: searchContext,
-                              platformContext: platformContext,
+                              platformContext,
                           })
                               .pipe(first())
                               .toPromise()
