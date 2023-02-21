@@ -548,8 +548,41 @@ func (r *schemaResolver) SetTeamMembers(args *TeamMembersArgs) *TeamResolver {
 	return &TeamResolver{}
 }
 
-func (r *schemaResolver) RemoveTeamMembers(args *TeamMembersArgs) *TeamResolver {
-	return &TeamResolver{}
+func (r *schemaResolver) RemoveTeamMembers(ctx context.Context, args *TeamMembersArgs) (*TeamResolver, error) {
+	// 🚨 SECURITY: For now we only allow site admins to use teams.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, errors.New("only site admins can view teams")
+	}
+	if args.Team == nil && args.TeamName == nil {
+		return nil, errors.New("team must be identified by either id (team parameter) or name (teamName parameter), none specified")
+	}
+	if args.Team != nil && args.TeamName != nil {
+		return nil, errors.New("team must be identified by either id (team parameter) or name (teamName parameter), both specified")
+	}
+	memberIDs, err := args.membersIDs()
+	if err != nil {
+		return nil, err
+	}
+	team, err := findTeam(ctx, r.db.Teams(), args.Team, args.TeamName)
+	if err != nil {
+		return nil, err
+	}
+	var membersToRemove []*types.TeamMember
+	for userID := range memberIDs {
+		membersToRemove = append(membersToRemove, &types.TeamMember{
+			UserID: userID,
+			TeamID: team.ID,
+		})
+	}
+	if len(membersToRemove) > 0 {
+		if err := r.db.Teams().DeleteTeamMember(ctx, membersToRemove...); err != nil {
+			return nil, err
+		}
+	}
+	return &TeamResolver{
+		db:   r.db,
+		team: team,
+	}, nil
 }
 
 func (r *schemaResolver) Teams(ctx context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {
