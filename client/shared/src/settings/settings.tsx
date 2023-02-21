@@ -1,10 +1,11 @@
+import { createContext, useContext, useMemo } from 'react'
+
 import { cloneDeep, isFunction } from 'lodash'
 
 import { createAggregateError, ErrorLike, isErrorLike, parseJSONCOrError } from '@sourcegraph/common'
 
 import { DefaultSettingFields, OrgSettingFields, SiteSettingFields, UserSettingFields } from '../graphql-operations'
 import { Settings as GeneratedSettingsType } from '../schema/settings.schema'
-import { createContext, useContext, useMemo } from 'react'
 
 /**
  * A dummy type to represent the "subject" for client settings (i.e., settings stored in the client application,
@@ -236,6 +237,7 @@ export function isSettingsValid<S extends Settings>(
 
 /**
  * React partial props for components needing the settings cascade.
+ *
  * @deprecated Use useSettings() or useSettingsCascade() instead.
  */
 export interface SettingsCascadeProps<S extends Settings = Settings> {
@@ -261,6 +263,7 @@ export const SettingsProvider: React.FC<React.PropsWithChildren<SettingsProvider
 
 /**
  * Access the underlying settings cascade directly.
+ *
  * @deprecated Use useSettings() instead.
  */
 export const useSettingsCascade = (): SettingsCascadeOrError => {
