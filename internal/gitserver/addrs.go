@@ -34,7 +34,12 @@ func newTestGitserverAddresses(addrs []string) GitServerAddresses {
 }
 
 type GitServerAddresses struct {
-	Addresses     []string
+	// The current list of gitserver addresses
+	Addresses []string
+
+	// A list of overrides to pin a repo to a specific gitserver instance. This
+	// ensures that, even if the number of gitservers changes, these repos will
+	// not be moved.
 	PinnedServers map[string]string
 }
 
