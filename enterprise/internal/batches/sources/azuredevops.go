@@ -127,6 +127,51 @@ func (s AzureDevOpsSource) CreateChangeset(ctx context.Context, cs *Changeset) (
 	return true, nil
 }
 
+// CreateDraftChangeset creates the given changeset on the code host in draft mode.
+func (s AzureDevOpsSource) CreateDraftChangeset(ctx context.Context, cs *Changeset) (bool, error) {
+	input := s.changesetToPullRequestInput(cs)
+	input.IsDraft = true
+	repo := cs.TargetRepo.Metadata.(*azuredevops.Repository)
+	org, err := repo.GetOrganization()
+	if err != nil {
+		return false, errors.Wrap(err, "getting Azure DevOps organization from project")
+	}
+	args := azuredevops.OrgProjectRepoArgs{
+		Org:          org,
+		Project:      repo.Project.Name,
+		RepoNameOrID: repo.Name,
+	}
+
+	pr, err := s.client.CreatePullRequest(ctx, args, input)
+	if err != nil {
+		return false, errors.Wrap(err, "creating pull request")
+	}
+
+	if err := s.setChangesetMetadata(ctx, repo, &pr, cs); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+// UndraftChangeset will update the Changeset on the source to be not in draft mode anymore.
+func (s AzureDevOpsSource) UndraftChangeset(ctx context.Context, cs *Changeset) error {
+	input := s.changesetToUpdatePullRequestInput(cs)
+	input.IsDraft = false
+	repo := cs.TargetRepo.Metadata.(*azuredevops.Repository)
+	args, err := s.createCommonPullRequestArgs(*repo, *cs)
+	if err != nil {
+		return err
+	}
+
+	updated, err := s.client.UpdatePullRequest(ctx, args, input)
+	if err != nil {
+		return errors.Wrap(err, "updating pull request")
+	}
+
+	return s.setChangesetMetadata(ctx, repo, &updated, cs)
+}
+
 // CloseChangeset will close the Changeset on the source, where "close"
 // means the appropriate final state on the codehost (e.g. "abandoned" on
 // AzureDevOps).
@@ -383,18 +428,10 @@ func (s AzureDevOpsSource) changesetToPullRequestInput(cs *Changeset) azuredevop
 func (s AzureDevOpsSource) changesetToUpdatePullRequestInput(cs *Changeset) azuredevops.PullRequestUpdateInput {
 	destBranch := gitdomain.AbbreviateRef(cs.BaseRef)
 	input := azuredevops.PullRequestUpdateInput{
-		Title:       &cs.Title,
-		Description: &cs.Body,
-		// TODO: @varsanojidan does this matter?
-		// SourceRefName: gitdomain.AbbreviateRef(cs.HeadRef),
+		Title:         &cs.Title,
+		Description:   &cs.Body,
 		TargetRefName: &destBranch,
 	}
-
-	// TODO: @varsanojidan does this matter?
-	// If we're forking, then we need to set the source repository as well.
-	//if cs.RemoteRepo != cs.TargetRepo {
-	//	input.ForkSource.Repository = *cs.RemoteRepo.Metadata.(*azuredevops.Repository)
-	//}
 
 	return input
 }

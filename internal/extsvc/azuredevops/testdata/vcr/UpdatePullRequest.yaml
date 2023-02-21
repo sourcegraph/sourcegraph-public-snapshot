@@ -2,7 +2,7 @@
 version: 1
 interactions:
 - request:
-    body: '{"status":null,"title":"new title","description":"new description","mergeOptions":null,"lastMergeSourceCommit":null,"targetRefName":null,"completionOptions":{"mergeStrategy":"","deleteSourceBranch":false,"mergeCommitMessage":""}}'
+    body: '{"status":null,"title":"new title","description":"new description","mergeOptions":null,"lastMergeSourceCommit":null,"targetRefName":null,"isDraft":false,"completionOptions":{"mergeStrategy":"","deleteSourceBranch":false,"mergeCommitMessage":""}}'
     form: {}
     headers:
       Content-Type:
@@ -16,13 +16,13 @@ interactions:
       Access-Control-Expose-Headers:
       - Request-Context
       Activityid:
-      - c2e3d11e-c064-4f02-8c74-6d3e6e79dad8
+      - 2cd6509f-9b31-4d57-92c9-0bd48ed3a1db
       Cache-Control:
       - no-cache, no-store, must-revalidate
       Content-Type:
       - application/json; charset=utf-8; api-version=7.0
       Date:
-      - Tue, 21 Feb 2023 17:20:10 GMT
+      - Tue, 21 Feb 2023 21:05:10 GMT
       Expires:
       - "-1"
       P3p:
@@ -43,13 +43,13 @@ interactions:
       X-Frame-Options:
       - SAMEORIGIN
       X-Msedge-Ref:
-      - 'Ref A: AA02D9B1E63D479E8C0A5027E77ADE2D Ref B: YTO01EDGE0706 Ref C: 2023-02-21T17:20:10Z'
+      - 'Ref A: 01AC3DCE25B54DEB9CE5D2A1C5A89B15 Ref B: YTO01EDGE0715 Ref C: 2023-02-21T21:05:11Z'
       X-Tfs-Processid:
-      - a204d2fa-1717-4df8-b6dc-56e56fd64710
+      - 7b0d29f1-704c-4127-9aa1-a96b64423669
       X-Tfs-Session:
-      - c2e3d11e-c064-4f02-8c74-6d3e6e79dad8
+      - 2cd6509f-9b31-4d57-92c9-0bd48ed3a1db
       X-Vss-E2eid:
-      - c2e3d11e-c064-4f02-8c74-6d3e6e79dad8
+      - 2cd6509f-9b31-4d57-92c9-0bd48ed3a1db
       X-Vss-Senderdeploymentid:
       - 4ff21e82-8865-0b2e-ffe8-9598818f8190
       X-Vss-Userdata:

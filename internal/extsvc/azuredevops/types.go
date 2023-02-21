@@ -77,6 +77,7 @@ type CreatePullRequestInput struct {
 	Description   string     `json:"description"`
 	Reviewers     []Reviewer `json:"reviewers"`
 	ForkSource    *ForkRef   `json:"forkSource"`
+	IsDraft       bool       `json:"isDraft"`
 }
 
 type ForkRef struct {
@@ -140,6 +141,7 @@ type PullRequestUpdateInput struct {
 	MergeOptions          *PullRequestMergeOptions     `json:"mergeOptions"`
 	LastMergeSourceCommit *PullRequestCommit           `json:"lastMergeSourceCommit"`
 	TargetRefName         *string                      `json:"targetRefName"`
+	IsDraft               bool                         `json:"isDraft"`
 	CompletionOptions     PullRequestCompletionOptions `json:"completionOptions"`
 	// ADO does not seem to support updating Source ref name, only TargetRefName which needs to be explicitly enabled.
 }
