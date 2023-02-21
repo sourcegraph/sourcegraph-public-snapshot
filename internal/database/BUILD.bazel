@@ -244,6 +244,7 @@ go_test(
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
         "@com_github_tidwall_gjson//:gjson",
+        "@io_k8s_utils//pointer",
         "@org_golang_x_sync//errgroup",
     ],
 )
