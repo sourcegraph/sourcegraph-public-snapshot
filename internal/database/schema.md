@@ -972,6 +972,22 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.codeintel_ranking_path_counts_inputs"
+```
+    Column     |  Type   | Collation | Nullable |                             Default                              
+---------------+---------+-----------+----------+------------------------------------------------------------------
+ id            | bigint  |           | not null | nextval('codeintel_ranking_path_counts_inputs_id_seq'::regclass)
+ repository    | text    |           | not null | 
+ document_path | text    |           | not null | 
+ count         | integer |           | not null | 
+ graph_key     | text    |           | not null | 
+ processed     | boolean |           | not null | false
+Indexes:
+    "codeintel_ranking_path_counts_inputs_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_path_counts_inputs_graph_key_and_repository" btree (graph_key, repository)
+
+```
+
 # Table "public.codeintel_ranking_references"
 ```
     Column    |  Type   | Collation | Nullable |                         Default                          
