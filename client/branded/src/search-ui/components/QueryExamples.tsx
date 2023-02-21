@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { EditorHint, QueryState } from '@sourcegraph/shared/src/search'

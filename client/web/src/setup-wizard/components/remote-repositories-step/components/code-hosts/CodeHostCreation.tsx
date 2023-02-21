@@ -1,6 +1,6 @@
 import { FC, ReactNode } from 'react'
 
-import { useParams } from 'react-router-dom-v5-compat'
+import { useParams } from 'react-router-dom'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { Alert, H4, Link, Button } from '@sourcegraph/wildcard'

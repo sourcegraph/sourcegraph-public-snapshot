@@ -17,6 +17,7 @@ export interface AuthProvider {
         | 'saml'
         | 'builtin'
         | 'gerrit'
+        | 'azuredevops'
     displayName: string
     isBuiltin: boolean
     authenticationURL: string
@@ -52,6 +53,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     debug: boolean
 
     sourcegraphDotComMode: boolean
+    sourcegraphAppMode: boolean
 
     /**
      * siteID is the identifier of the Sourcegraph site.
