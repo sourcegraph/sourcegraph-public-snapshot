@@ -1,6 +1,6 @@
 import { gql } from '@sourcegraph/http-client'
 
-import { codeIntelIndexerFieldsFragment, preciseIndexFieldsFragment } from '../../indexes/hooks/types'
+import { codeIntelIndexerFieldsFragment, preciseIndexFieldsFragment } from '../indexes/hooks/types'
 
 export const globalCodeIntelStatusQuery = gql`
     query GlobalCodeIntelStatus {
