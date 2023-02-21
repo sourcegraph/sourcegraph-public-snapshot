@@ -290,7 +290,7 @@ func TestGitGCAuto(t *testing.T) {
 	}
 
 	// Bring everything back together in one branch.
-	runCmd(t, repo, "git", "checkout", "master")
+	runCmd(t, repo, "git", "checkout", "main")
 	runCmd(t, repo, "git", "merge", "secondary")
 
 	// Now create a bare repo like gitserver expects
