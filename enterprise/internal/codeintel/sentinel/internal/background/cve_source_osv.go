@@ -124,7 +124,7 @@ func osvToVuln(o OSV, dataSourceHandler DataSourceHandler) (vuln shared.Vulnerab
 				if event.Fixed != "" {
 					ap.VersionConstraint = append(ap.VersionConstraint, "<"+event.Fixed)
 					ap.Fixed = true
-					ap.FixedIn = event.Fixed
+					ap.FixedIn = &event.Fixed
 				}
 				if event.LastAffected != "" {
 					ap.VersionConstraint = append(ap.VersionConstraint, "<="+event.LastAffected)

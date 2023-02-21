@@ -41,7 +41,7 @@ type AffectedPackage struct {
 	Namespace         string
 	VersionConstraint []string
 	Fixed             bool
-	FixedIn           string
+	FixedIn           *string
 	AffectedSymbols   []AffectedSymbol
 }
 

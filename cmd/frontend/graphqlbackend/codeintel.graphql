@@ -610,8 +610,65 @@ type Vulnerability {
     """
     withdrawn: DateTime
 
-    # TODO
-    # AffectedPackages : []AffectedPackage
+    """
+    TODO
+    """
+    affectedPackages: [VulnerabilityAffectedPackage!]!
+}
+
+"""
+TODO
+"""
+type VulnerabilityAffectedPackage {
+    """
+    TODO
+    """
+    packageName: String!
+
+    """
+    TODO
+    """
+    language: String!
+
+    """
+    TODO
+    """
+    namespace: String!
+
+    """
+    TODO
+    """
+    versionConstraint: [String!]!
+
+    """
+    TODO
+    """
+    fixed: Boolean!
+
+    """
+    TODO
+    """
+    fixedIn: String
+
+    """
+    TODO
+    """
+    affectedSymbols: [VulnerabilityAffectedSymbol!]!
+}
+
+"""
+TODO
+"""
+type VulnerabilityAffectedSymbol {
+    """
+    TODO
+    """
+    path: String!
+
+    """
+    TODO
+    """
+    symbols: [String!]!
 }
 
 """

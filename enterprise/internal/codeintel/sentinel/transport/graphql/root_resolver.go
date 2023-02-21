@@ -126,6 +126,48 @@ func (r *vulnerabilityResolver) Withdrawn() *gqlutil.DateTime {
 	return gqlutil.DateTimeOrNil(r.v.Withdrawn)
 }
 
+func (r *vulnerabilityResolver) AffectedPackages() []resolverstubs.VulnerabilityAffectedPackageResolver {
+	var resolvers []resolverstubs.VulnerabilityAffectedPackageResolver
+	for _, p := range r.v.AffectedPackages {
+		resolvers = append(resolvers, &vulnerabilityAffectedPackageResolver{
+			p: p,
+		})
+	}
+
+	return resolvers
+}
+
+type vulnerabilityAffectedPackageResolver struct {
+	p shared.AffectedPackage
+}
+
+func (r *vulnerabilityAffectedPackageResolver) PackageName() string { return r.p.PackageName }
+func (r *vulnerabilityAffectedPackageResolver) Language() string    { return r.p.Language }
+func (r *vulnerabilityAffectedPackageResolver) Namespace() string   { return r.p.Namespace }
+func (r *vulnerabilityAffectedPackageResolver) VersionConstraint() []string {
+	return r.p.VersionConstraint
+}
+func (r *vulnerabilityAffectedPackageResolver) Fixed() bool      { return r.p.Fixed }
+func (r *vulnerabilityAffectedPackageResolver) FixedIn() *string { return r.p.FixedIn }
+
+func (r *vulnerabilityAffectedPackageResolver) AffectedSymbols() []resolverstubs.VulnerabilityAffectedSymbolResolver {
+	var resolvers []resolverstubs.VulnerabilityAffectedSymbolResolver
+	for _, s := range r.p.AffectedSymbols {
+		resolvers = append(resolvers, &vulnerabilityAffectedSymbolResolver{
+			s: s,
+		})
+	}
+
+	return resolvers
+}
+
+type vulnerabilityAffectedSymbolResolver struct {
+	s shared.AffectedSymbol
+}
+
+func (r *vulnerabilityAffectedSymbolResolver) Path() string      { return r.s.Path }
+func (r *vulnerabilityAffectedSymbolResolver) Symbols() []string { return r.s.Symbols }
+
 //
 //
 

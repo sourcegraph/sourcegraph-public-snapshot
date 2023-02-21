@@ -59,6 +59,22 @@ type VulnerabilityResolver interface {
 	Published() gqlutil.DateTime
 	Modified() *gqlutil.DateTime
 	Withdrawn() *gqlutil.DateTime
+	AffectedPackages() []VulnerabilityAffectedPackageResolver
+}
+
+type VulnerabilityAffectedPackageResolver interface {
+	PackageName() string
+	Language() string
+	Namespace() string
+	VersionConstraint() []string
+	Fixed() bool
+	FixedIn() *string
+	AffectedSymbols() []VulnerabilityAffectedSymbolResolver
+}
+
+type VulnerabilityAffectedSymbolResolver interface {
+	Path() string
+	Symbols() []string
 }
 
 type VulnerabilityMatchConnectionResolver interface {
