@@ -197,6 +197,7 @@ go_library(
         "//cmd/frontend/internal/search/logs",
         "//cmd/frontend/internal/siteid",
         "//cmd/frontend/internal/suspiciousnames",
+        "//cmd/migrator/shared",
         "//internal/actor",
         "//internal/adminanalytics",
         "//internal/api",
@@ -212,6 +213,8 @@ go_library(
         "//internal/conf/deploy",
         "//internal/conf/reposource",
         "//internal/database",
+        "//internal/database/migration/cliutil",
+        "//internal/database/migration/schemas",
         "//internal/encryption",
         "//internal/encryption/keyring",
         "//internal/env",
@@ -270,6 +273,7 @@ go_library(
         "//lib/batches",
         "//lib/errors",
         "//lib/group",
+        "//lib/output",
         "//schema",
         "@com_github_gogo_protobuf//jsonpb",
         "@com_github_golang_jwt_jwt_v4//:jwt",
@@ -309,6 +313,8 @@ go_library(
 
 go_test(
     name = "graphqlbackend_test",
+    # graphqlbackend_test.go opens itself during its test, so we need to make it available.
+    data = ["graphqlbackend_test.go"], # keep
     srcs = [
         "access_tokens_test.go",
         "client_configuration_test.go",
@@ -391,6 +397,7 @@ go_test(
         "//internal/conf/conftypes",
         "//internal/database",
         "//internal/database/dbtest",
+        "//internal/database/fakedb",
         "//internal/encryption",
         "//internal/extsvc",
         "//internal/extsvc/gerrit",
@@ -401,6 +408,7 @@ go_test(
         "//internal/gitserver/gitdomain",
         "//internal/gitserver/protocol",
         "//internal/inventory",
+        "//internal/oobmigration",
         "//internal/rcache",
         "//internal/repos",
         "//internal/repoupdater",
@@ -432,7 +440,7 @@ go_test(
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_graph_gophers_graphql_go//errors",
         "@com_github_graph_gophers_graphql_go//relay",
-        "@com_github_hexops_autogold//:autogold",
+        "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_inconshreveable_log15//:log15",
         "@com_github_sourcegraph_go_diff//diff",
         "@com_github_sourcegraph_log//:log",
