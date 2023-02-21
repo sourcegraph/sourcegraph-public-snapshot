@@ -63,7 +63,7 @@ export interface GlobalNavbarProps
         CodeMonitoringProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
-    isSourcegraphApp?: boolean
+    isSourcegraphApp: boolean
     showSearchBox: boolean
     routes: readonly LayoutRouteProps[]
 
@@ -298,7 +298,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             </NavAction>
                         </>
                     )}
-                    {isSourcegraphApp && (
+                    {JSON.stringify(isSourcegraphApp)}
+                    {
                         <ButtonLink
                             variant="secondary"
                             outline={true}
@@ -308,7 +309,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         >
                             Try Sourcegraph Cloud
                         </ButtonLink>
-                    )}
+                    }
                     {props.authenticatedUser && isSourcegraphDotCom && (
                         <ButtonLink
                             variant="secondary"
