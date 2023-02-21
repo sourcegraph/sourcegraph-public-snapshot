@@ -1,83 +1,87 @@
 import { Config } from '@backstage/config'
-import { SearchService, createService, createDummySearch } from '../client'
+import { SearchService, createService } from '../client'
 import { parserForType, ParserFunction } from './parsers'
 import { EntityProvider, EntityProviderConnection } from '@backstage/plugin-catalog-backend'
 
 export type EntityType = 'file' | 'grpc' | 'graphql'
 
 abstract class BaseEntityProvider implements EntityProvider {
-  private connection?: EntityProviderConnection
-  private sourcegraph?: SearchService
-  private query: string
-  private endpoint: string
-  private disabled: boolean = false
-  private readonly entityType: EntityType
-  private entityParseFn: ParserFunction
+    private connection?: EntityProviderConnection
+    private sourcegraph?: SearchService
+    private query: string
+    private endpoint: string
+    private disabled: boolean = false
+    private readonly entityType: EntityType
+    private entityParseFn: ParserFunction
 
-  protected constructor(config: Config, entityType: EntityType) {
-    const token = config.getString('sourcegraph.token')
-    const sudoUsername = config.getOptionalString('sourcegraph.sudoUsername')
-    const queryConfig = config.getConfig(`sourcegraph.${entityType}`)
+    protected constructor(config: Config, entityType: EntityType) {
+        const token = config.getString('sourcegraph.token')
+        const sudoUsername = config.getOptionalString('sourcegraph.sudoUsername')
+        const queryConfig = config.getConfig(`sourcegraph.${entityType}`)
 
-    this.endpoint = config.getString('sourcegraph.endpoint')
-    this.entityType = entityType
-    this.entityParseFn = parserForType(entityType)
-    this.query = queryConfig.getOptionalString('query') ?? ''
+        this.endpoint = config.getString('sourcegraph.endpoint')
+        this.entityType = entityType
+        this.entityParseFn = parserForType(entityType)
+        this.query = queryConfig.getOptionalString('query') ?? ''
 
-    this.disabled = this.query == ''
-    if (this.disabled) {
-      this.sourcegraph = createDummySearch()
-    } else {
-      createService({ endpoint: this.endpoint, token, sudoUsername }).then((service) => this.sourcegraph = service.Search)
-    }
-  }
-
-  getProviderName(): string {
-    return `url: ${this.endpoint}/sourcegraph-${this.entityType}-entity-provider`
-  }
-
-  async connect(connection: EntityProviderConnection): Promise<void> {
-    this.connection = connection
-  }
-
-  async run(): Promise<void> {
-    if (!this.connection) {
-      throw new Error('connection not initialized')
+        this.disabled = this.query == ''
+        if (!this.disabled) {
+            createService({ endpoint: this.endpoint, token, sudoUsername }).then(
+                service => (this.sourcegraph = service.Search)
+            )
+        } else {
+            console.error("query '' is invalid - provider will be in disabled state")
+        }
     }
 
-    await this.fullMutation()
-  }
+    getProviderName(): string {
+        return `url: ${this.endpoint}/sourcegraph-${this.entityType}-entity-provider`
+    }
 
-  async fullMutation() {
-    // TODO(@burmudar): remove - only temporary
-    console.log(`STARTING ${this.entityType} SEARCH ⌛`)
-    const results = await this.sourcegraph?.searchQuery(this.query)
-    console.log(`${results?.length} items matched query ${this.query}`)
-    console.log(`END ${this.entityType} SEARCH ⌛`)
+    async connect(connection: EntityProviderConnection): Promise<void> {
+        this.connection = connection
+    }
 
-    const entities = this.entityParseFn(results ?? [], this.getProviderName())
+    async run(): Promise<void> {
+        if (!this.connection) {
+            throw new Error('connection not initialized')
+        }
 
-    await this.connection?.applyMutation({
-      type: 'full',
-      entities: entities,
-    })
-  }
+        await this.fullMutation()
+    }
+
+    async fullMutation() {
+        // TODO(@burmudar): remove - only temporary
+        if (this.disabled) {
+            console.log(`${this.getProviderName} is disabled`)
+            return
+        }
+        const results = await this.sourcegraph?.searchQuery(this.query)
+        console.log(`${results?.length} items matched query ${this.query}`)
+
+        const entities = this.entityParseFn(results ?? [], this.getProviderName())
+
+        await this.connection?.applyMutation({
+            type: 'full',
+            entities: entities,
+        })
+    }
 }
 
 export class GrpcEntityProvider extends BaseEntityProvider {
-  constructor(config: Config) {
-    super(config, 'grpc')
-  }
+    constructor(config: Config) {
+        super(config, 'grpc')
+    }
 }
 
 export class GraphQLEntityProvider extends BaseEntityProvider {
-  constructor(config: Config) {
-    super(config, 'graphql')
-  }
+    constructor(config: Config) {
+        super(config, 'graphql')
+    }
 }
 
 export class YamlFileEntityProvider extends BaseEntityProvider {
-  constructor(config: Config) {
-    super(config, 'file')
-  }
+    constructor(config: Config) {
+        super(config, 'file')
+    }
 }
