@@ -7,9 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/output"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 // run with -v for output
@@ -23,7 +24,7 @@ func TestCheckPermissionsSyncing(t *testing.T) {
 	}{{
 		name: "no jobs",
 		instanceHealth: Indicators{
-			PermissionsSyncJobs: struct{ Nodes []permissionsSyncJob }{
+			PermissionSyncJobs: struct{ Nodes []permissionSyncJob }{
 				Nodes: nil,
 			},
 		},
@@ -32,14 +33,14 @@ func TestCheckPermissionsSyncing(t *testing.T) {
 	}, {
 		name: "healthy",
 		instanceHealth: Indicators{
-			PermissionsSyncJobs: struct{ Nodes []permissionsSyncJob }{
-				Nodes: []permissionsSyncJob{{
-					CompletedAt: time.Now(),
-					Status:      "SUCCESS",
-					Providers: []permissionsProviderStatus{{
-						Type:   "github",
-						ID:     "https://github.com/",
-						Status: "SUCCESS",
+			PermissionSyncJobs: struct{ Nodes []permissionSyncJob }{
+				Nodes: []permissionSyncJob{{
+					FinishedAt: time.Now(),
+					State:      "SUCCESS",
+					CodeHostStates: []permissionsProviderStatus{{
+						ProviderType: "github",
+						ProviderID:   "https://github.com/",
+						Status:       "SUCCESS",
 					}},
 				}},
 			},
@@ -49,15 +50,15 @@ func TestCheckPermissionsSyncing(t *testing.T) {
 	}, {
 		name: "unhealthy",
 		instanceHealth: Indicators{
-			PermissionsSyncJobs: struct{ Nodes []permissionsSyncJob }{
-				Nodes: []permissionsSyncJob{{
-					CompletedAt: time.Now(),
-					Status:      "ERROR",
-					Message:     "oh no!",
-					Providers: []permissionsProviderStatus{{
-						Type:   "github",
-						ID:     "https://github.com/",
-						Status: "ERROR",
+			PermissionSyncJobs: struct{ Nodes []permissionSyncJob }{
+				Nodes: []permissionSyncJob{{
+					FinishedAt:     time.Now(),
+					State:          "ERROR",
+					FailureMessage: "oh no!",
+					CodeHostStates: []permissionsProviderStatus{{
+						ProviderType: "github",
+						ProviderID:   "https://github.com/",
+						Status:       "ERROR",
 					}},
 				}},
 			},

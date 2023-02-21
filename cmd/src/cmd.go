@@ -23,8 +23,8 @@ type command struct {
 	// handler is the function that is invoked to handle this command.
 	handler func(args []string) error
 
-	// flagSet.Usage function to invoke on e.g. -h flag. If nil, a default one
-	// one is used.
+	// flagSet.Usage function to invoke on e.g. -h flag. If nil, a default one is
+	// used.
 	usageFunc func()
 }
 
@@ -48,7 +48,7 @@ type commander []*command
 func (c commander) run(flagSet *flag.FlagSet, cmdName, usageText string, args []string) {
 	// Parse flags.
 	flagSet.Usage = func() {
-		fmt.Fprint(flag.CommandLine.Output(), usageText)
+		_, _ = fmt.Fprint(flag.CommandLine.Output(), usageText)
 	}
 	if !flagSet.Parsed() {
 		_ = flagSet.Parse(args)
@@ -68,7 +68,7 @@ func (c commander) run(flagSet *flag.FlagSet, cmdName, usageText string, args []
 			continue
 		}
 		cmd.flagSet.Usage = func() {
-			fmt.Fprintf(flag.CommandLine.Output(), "Usage of '%s %s':\n", cmdName, cmd.flagSet.Name())
+			_, _ = fmt.Fprintf(flag.CommandLine.Output(), "Usage of '%s %s':\n", cmdName, cmd.flagSet.Name())
 			cmd.flagSet.PrintDefaults()
 		}
 	}

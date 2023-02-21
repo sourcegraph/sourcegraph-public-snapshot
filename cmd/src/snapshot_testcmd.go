@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 
@@ -93,7 +94,7 @@ TEST DATA
 				"No critical issues found!"))
 			return nil
 		},
-		usageFunc: func() { fmt.Fprint(flag.CommandLine.Output(), usage) },
+		usageFunc: func() { _, _ = fmt.Fprint(flag.CommandLine.Output(), usage) },
 	})
 }
 
@@ -105,7 +106,7 @@ func compareSnapshotSummaries(out *output.Output, recordedSummary, newSummary sn
 	diff := cmp.Diff(recordedSummary, newSummary)
 	if diff != "" {
 		b.WriteLine(output.Line(output.EmojiFailure, output.StyleFailure, "Snapshot diff detected:"))
-		b.WriteCode("diff", diff)
+		_ = b.WriteCode("diff", diff)
 		return errors.New("snapshot mismatch")
 	}
 	b.WriteLine(output.Emoji(output.EmojiSuccess, "Snapshots match!"))

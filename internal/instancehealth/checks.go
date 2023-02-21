@@ -134,16 +134,16 @@ func checkPermissionsSyncing(
 	var syncCount int
 	var syncErrors []string
 	var seenProviders = make(map[string]map[string]string) // provider : state : message
-	for _, sync := range instanceHealth.PermissionsSyncJobs.Nodes {
-		if sync.CompletedAt.Before(time.Now().Add(-since)) {
+	for _, sync := range instanceHealth.PermissionSyncJobs.Nodes {
+		if sync.FinishedAt.Before(time.Now().Add(-since)) {
 			continue
 		}
 		syncCount += 1
-		if sync.Status == "ERROR" {
-			syncErrors = append(syncErrors, sync.Message)
+		if sync.State == "ERROR" || sync.State == "FAILED" {
+			syncErrors = append(syncErrors, sync.FailureMessage)
 		}
-		for _, p := range sync.Providers {
-			key := fmt.Sprintf("%s - %s", p.Type, p.ID)
+		for _, p := range sync.CodeHostStates {
+			key := fmt.Sprintf("%s - %s", p.ProviderType, p.ProviderID)
 			if _, ok := seenProviders[key]; !ok {
 				seenProviders[key] = make(map[string]string)
 			}
