@@ -17,26 +17,44 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func makeUsersCreateTestDB() (*database.MockDB, *database.MockAuthzStore) {
+type mockFuncs struct {
+	dB             *database.MockDB
+	authzStore     *database.MockAuthzStore
+	usersStore     *database.MockUserStore
+	userEmailStore *database.MockUserEmailsStore
+}
+
+func makeUsersCreateTestDB(t *testing.T) mockFuncs {
 	users := database.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	// This is the created user that is returned via the GraphQL API.
 	users.CreateFunc.SetDefaultReturn(&types.User{ID: 1, Username: "alice"}, nil)
+	// This refers to the user executing this API request.
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, SiteAdmin: true}, nil)
 
 	authz := database.NewMockAuthzStore()
 	authz.GrantPendingPermissionsFunc.SetDefaultReturn(nil)
 
+	userEmails := database.NewMockUserEmailsStore()
+
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.AuthzFunc.SetDefaultReturn(authz)
-	return db, authz
+	db.UserEmailsFunc.SetDefaultReturn(userEmails)
+
+	return mockFuncs{
+		dB:             db,
+		usersStore:     users,
+		authzStore:     authz,
+		userEmailStore: userEmails,
+	}
 }
 
 func TestCreateUser(t *testing.T) {
-	db, authz := makeUsersCreateTestDB()
+	mocks := makeUsersCreateTestDB(t)
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schema: mustParseGraphQLSchema(t, mocks.dB),
 			Query: `
 				mutation {
 					createUser(username: "alice") {
@@ -58,7 +76,8 @@ func TestCreateUser(t *testing.T) {
 		},
 	})
 
-	mockrequire.Called(t, authz.GrantPendingPermissionsFunc)
+	mockrequire.CalledOnce(t, mocks.authzStore.GrantPendingPermissionsFunc)
+	mockrequire.CalledOnce(t, mocks.usersStore.CreateFunc)
 }
 
 func TestCreateUserResetPasswordURL(t *testing.T) {
@@ -72,7 +91,7 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 	})
 
 	t.Run("with SMTP disabled", func(t *testing.T) {
-		db, authz := makeUsersCreateTestDB()
+		mocks := makeUsersCreateTestDB(t)
 
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
@@ -83,7 +102,7 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schema: mustParseGraphQLSchema(t, mocks.dB),
 				Query: `
 					mutation {
 						createUser(username: "alice",email:"alice@sourcegraph.com",verifiedEmail:false) {
@@ -107,7 +126,7 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 			},
 		})
 
-		mockrequire.Called(t, authz.GrantPendingPermissionsFunc)
+		mockrequire.Called(t, mocks.authzStore.GrantPendingPermissionsFunc)
 	})
 
 	t.Run("with SMTP enabled", func(t *testing.T) {
@@ -127,13 +146,11 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 			txemail.MockSend = nil
 		})
 
-		db, authz := makeUsersCreateTestDB()
-		userEmails := database.NewMockUserEmailsStore()
-		db.UserEmailsFunc.SetDefaultReturn(userEmails)
+		mocks := makeUsersCreateTestDB(t)
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schema: mustParseGraphQLSchema(t, mocks.dB),
 				Query: `
 					mutation {
 						createUser(username: "alice",email:"alice@sourcegraph.com",verifiedEmail:false) {
@@ -162,8 +179,8 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 		assert.Contains(t, data.URL, "&emailVerifyCode=")
 		assert.Contains(t, data.URL, "&email=")
 
-		mockrequire.Called(t, authz.GrantPendingPermissionsFunc)
-		mockrequire.Called(t, userEmails.SetLastVerificationFunc)
+		mockrequire.Called(t, mocks.authzStore.GrantPendingPermissionsFunc)
+		mockrequire.Called(t, mocks.userEmailStore.SetLastVerificationFunc)
 	})
 
 	t.Run("with SMTP enabled, without verifiedEmail", func(t *testing.T) {
@@ -183,13 +200,11 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 			txemail.MockSend = nil
 		})
 
-		db, authz := makeUsersCreateTestDB()
-		userEmails := database.NewMockUserEmailsStore()
-		db.UserEmailsFunc.SetDefaultReturn(userEmails)
+		mocks := makeUsersCreateTestDB(t)
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schema: mustParseGraphQLSchema(t, mocks.dB),
 				Query: `
 					mutation {
 						createUser(username: "alice",email:"alice@sourcegraph.com") {
@@ -219,7 +234,7 @@ func TestCreateUserResetPasswordURL(t *testing.T) {
 		assert.NotContains(t, data.URL, "&emailVerifyCode=")
 		assert.NotContains(t, data.URL, "&email=")
 
-		mockrequire.Called(t, authz.GrantPendingPermissionsFunc)
-		mockrequire.NotCalled(t, userEmails.SetLastVerificationFunc)
+		mockrequire.Called(t, mocks.authzStore.GrantPendingPermissionsFunc)
+		mockrequire.NotCalled(t, mocks.userEmailStore.SetLastVerificationFunc)
 	})
 }

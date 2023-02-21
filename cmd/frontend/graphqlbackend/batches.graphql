@@ -418,6 +418,10 @@ type ExternalChangeset implements Node & Changeset {
     host).
     """
     forkNamespace: String
+    """
+    If the changeset was opened from a fork, this is the name of the fork repository.
+    """
+    forkName: String
 
     """
     The review state of this changeset. This is only set once the changeset is published on the code host.

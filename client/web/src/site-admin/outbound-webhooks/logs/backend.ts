@@ -56,7 +56,7 @@ export const OUTBOUND_WEBHOOK_LOGS = gql`
 export const useOutboundWebhookLogsConnection = (
     id: string,
     onlyErrors: boolean
-): UseShowMorePaginationResult<OutboundWebhookLogFields> =>
+): UseShowMorePaginationResult<OutboundWebhookLogsResult, OutboundWebhookLogFields> =>
     useShowMorePagination<OutboundWebhookLogsResult, OutboundWebhookLogsVariables, OutboundWebhookLogFields>({
         query: OUTBOUND_WEBHOOK_LOGS,
         variables: {

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/grafana/regexp"
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 )
@@ -20,9 +20,7 @@ func Test_replace(t *testing.T) {
 		return result.Value
 	}
 
-	autogold.Want(
-		"regexp search replace",
-		"needs a bit more queryrunner").
+	autogold.Expect("needs a bit more queryrunner").
 		Equal(t, test("needs more queryrunner", &Replace{
 			SearchPattern:  &Regexp{Value: regexp.MustCompile(`more (\w+)`)},
 			ReplacePattern: "a bit more $1",
@@ -33,9 +31,7 @@ func Test_replace(t *testing.T) {
 		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
 	}
 
-	autogold.Want(
-		"structural search replace",
-		"foo(baz, bar)").
+	autogold.Expect("foo(baz, bar)").
 		Equal(t, test("foo(bar, baz)", &Replace{
 			SearchPattern:  &Comby{Value: `foo(:[x], :[y])`},
 			ReplacePattern: "foo(:[y], :[x])",

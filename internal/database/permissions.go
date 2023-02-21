@@ -50,7 +50,7 @@ type PermissionStore interface {
 }
 
 type CreatePermissionOpts struct {
-	Namespace string
+	Namespace types.PermissionNamespace
 	Action    string
 }
 
@@ -106,6 +106,10 @@ func (p *permissionStore) WithTransact(ctx context.Context, f func(PermissionSto
 }
 
 func (p *permissionStore) Create(ctx context.Context, opts CreatePermissionOpts) (*types.Permission, error) {
+	if opts.Action == "" || !opts.Namespace.Valid() {
+		return nil, errors.New("valid action and namespace is required")
+	}
+
 	q := sqlf.Sprintf(
 		permissionCreateQueryFmtStr,
 		sqlf.Join(permissionInsertColumns, ", "),
@@ -138,6 +142,9 @@ func scanPermission(sc dbutil.Scanner) (*types.Permission, error) {
 func (p *permissionStore) BulkCreate(ctx context.Context, opts []CreatePermissionOpts) ([]*types.Permission, error) {
 	var values []*sqlf.Query
 	for _, opt := range opts {
+		if !opt.Namespace.Valid() {
+			return nil, errors.New("valid namespace is required")
+		}
 		values = append(values, sqlf.Sprintf("(%s, %s)", opt.Namespace, opt.Action))
 	}
 

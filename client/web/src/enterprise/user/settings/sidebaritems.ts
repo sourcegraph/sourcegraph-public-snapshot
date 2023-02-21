@@ -25,7 +25,6 @@ export const enterpriseUserSettingsSideBarItems: UserSettingsSidebarItems = [
         label: 'Permissions',
         to: '/permissions',
         exact: true,
-        condition: ({ authenticatedUser }) => !!authenticatedUser.siteAdmin,
     },
     {
         to: '/event-log',

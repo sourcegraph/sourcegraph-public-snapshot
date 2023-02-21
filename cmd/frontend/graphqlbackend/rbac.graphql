@@ -78,6 +78,17 @@ type PermissionConnection {
 }
 
 """
+A namespace represents a distinct context within which permission policies
+are defined and enforced.
+"""
+enum PermissionNamespace {
+    """
+    This represents the Batch Changes namespace.
+    """
+    BATCH_CHANGES
+}
+
+"""
 A permission
 """
 type Permission implements Node {
@@ -88,7 +99,7 @@ type Permission implements Node {
     """
     The namespace in which this permission belongs to.
     """
-    namespace: String!
+    namespace: PermissionNamespace!
     """
     The unique action which is granted to a bearer of this permission.
     """

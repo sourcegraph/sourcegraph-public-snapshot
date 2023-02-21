@@ -4,7 +4,7 @@ import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronUp, mdiFilterOutline, 
 import classNames from 'classnames'
 import * as H from 'history'
 import { capitalize, uniqBy } from 'lodash'
-import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -235,22 +235,24 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
 > = props => {
     const languageId = getModeFromPath(props.token.filePath)
     const spec = findLanguageSpec(languageId)
-    const tokenResult = findSearchToken({
-        text: props.fileContent,
-        position: {
-            line: props.token.line - 1,
-            character: props.token.character - 1,
-        },
-        lineRegexes: spec.commentStyles.map(style => style.lineRegex).filter(isDefined),
-        blockCommentStyles: spec.commentStyles.map(style => style.block).filter(isDefined),
-        identCharPattern: spec.identCharPattern,
-    })
+    const tokenResult =
+        spec &&
+        findSearchToken({
+            text: props.fileContent,
+            position: {
+                line: props.token.line - 1,
+                character: props.token.character - 1,
+            },
+            lineRegexes: spec.commentStyles.map(style => style.lineRegex).filter(isDefined),
+            blockCommentStyles: spec.commentStyles.map(style => style.block).filter(isDefined),
+            identCharPattern: spec.identCharPattern,
+        })
     const shouldMixPreciseAndSearchBasedReferences: boolean = newSettingsGetter(props.settingsCascade)<boolean>(
         'codeIntel.mixPreciseAndSearchBasedReferences',
         false
     )
 
-    if (!tokenResult?.searchToken) {
+    if (!spec || !tokenResult?.searchToken) {
         return (
             <div>
                 <Text className="text-danger">Could not find token.</Text>

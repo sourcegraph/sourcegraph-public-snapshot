@@ -1,6 +1,6 @@
 import { FC, useMemo, Suspense } from 'react'
 
-import { useParams, useLocation, Routes, Route } from 'react-router-dom-v5-compat'
+import { useParams, useLocation, Routes, Route } from 'react-router-dom'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -44,11 +44,15 @@ export const UserAreaGQLFragment = gql`
         viewerCanAdminister
         builtinAuth
         createdAt
+        emails @skip(if: $isSourcegraphDotCom) {
+            email
+            isPrimary
+        }
     }
 `
 
 export const USER_AREA_USER_PROFILE = gql`
-    query UserAreaUserProfile($username: String!) {
+    query UserAreaUserProfile($username: String!, $isSourcegraphDotCom: Boolean!) {
         user(username: $username) {
             ...UserAreaUserFields
         }
@@ -119,7 +123,7 @@ export interface UserAreaRouteContext
 /**
  * A user's public profile area.
  */
-export const UserArea: FC<UserAreaProps> = ({ useBreadcrumb, userAreaRoutes, ...props }) => {
+export const UserArea: FC<UserAreaProps> = ({ useBreadcrumb, userAreaRoutes, isSourcegraphDotCom, ...props }) => {
     const location = useLocation()
     const { username } = useParams()
     const userAreaMainUrl = `/users/${username}`
@@ -127,7 +131,7 @@ export const UserArea: FC<UserAreaProps> = ({ useBreadcrumb, userAreaRoutes, ...
     const { data, error, loading, previousData } = useQuery<UserAreaUserProfileResult, UserAreaUserProfileVariables>(
         USER_AREA_USER_PROFILE,
         {
-            variables: { username: username! },
+            variables: { username: username!, isSourcegraphDotCom },
         }
     )
 
@@ -169,6 +173,7 @@ export const UserArea: FC<UserAreaProps> = ({ useBreadcrumb, userAreaRoutes, ...
         user,
         namespace: user,
         ...childBreadcrumbSetters,
+        isSourcegraphDotCom,
     }
 
     return (

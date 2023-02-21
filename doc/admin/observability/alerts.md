@@ -5374,6 +5374,36 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*repo-updater"
 
 <br />
 
+## searcher: replica_traffic
+
+<p class="subtitle">requests per second per replica over 10m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> searcher: 5+ requests per second per replica over 10m
+
+**Next steps**
+
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#searcher-replica-traffic).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_searcher_replica_traffic"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((sum by (instance) (rate(searcher_service_request_total[10m]))) >= 5)`
+
+</details>
+
+<br />
+
 ## searcher: unindexed_search_request_errors
 
 <p class="subtitle">unindexed search request errors every 5m by code</p>
@@ -5399,36 +5429,6 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*repo-updater"
 <summary>Technical details</summary>
 
 Generated query for warning alert: `max((sum by (code) (increase(searcher_service_request_total{code!="200",code!="canceled"}[5m])) / ignoring (code) group_left () sum(increase(searcher_service_request_total[5m])) * 100) >= 5)`
-
-</details>
-
-<br />
-
-## searcher: replica_traffic
-
-<p class="subtitle">requests per second over 10m</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> searcher: 5+ requests per second over 10m
-
-**Next steps**
-
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#searcher-replica-traffic).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_searcher_replica_traffic"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((sum by (instance) (rate(searcher_service_request_total[10m]))) >= 5)`
 
 </details>
 

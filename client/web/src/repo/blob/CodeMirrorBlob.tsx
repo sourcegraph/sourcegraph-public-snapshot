@@ -8,7 +8,7 @@ import { openSearchPanel } from '@codemirror/search'
 import { Compartment, EditorState, Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { isEqual } from 'lodash'
-import { createPath, NavigateFunction, useLocation, useNavigate, Location } from 'react-router-dom-v5-compat'
+import { createPath, NavigateFunction, useLocation, useNavigate, Location } from 'react-router-dom'
 
 import {
     addLineRangeQueryParameter,
@@ -43,6 +43,7 @@ import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
 import { selectOccurrence } from './codemirror/token-selection/code-intel-tooltips'
 import { tokenSelectionExtension } from './codemirror/token-selection/extension'
+import { languageSupport } from './codemirror/token-selection/languageSupport'
 import { selectionFromLocation } from './codemirror/token-selection/selections'
 import { tokensAsLinks } from './codemirror/tokens-as-links'
 import { isValidLineRange } from './codemirror/utils'
@@ -87,6 +88,8 @@ export interface BlobProps
 
     isBlameVisible?: boolean
     blameHunks?: BlameHunkData
+
+    activeURL?: string
 }
 
 export interface BlobPropsFacet extends BlobProps {
@@ -200,7 +203,17 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     // This is used to avoid reinitializing the editor when new locations in the
     // same file are opened inside the reference panel.
     const blobInfo = useDistinctBlob(props.blobInfo)
-    const position = useMemo(() => parseQueryAndHash(location.search, location.hash), [location.search, location.hash])
+    const position = useMemo(() => {
+        // When an activeURL is passed, it takes presedence over the react
+        // router location API.
+        //
+        // This is needed to support the reference panel
+        if (props.activeURL) {
+            const url = new URL(props.activeURL, window.location.href)
+            return parseQueryAndHash(url.search, url.hash)
+        }
+        return parseQueryAndHash(location.search, location.hash)
+    }, [props.activeURL, location.search, location.hash])
     const hasPin = useMemo(() => urlIsPinned(location.search), [location.search])
 
     const blobProps = useMemo(
@@ -285,6 +298,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 ? tokensAsLinks({ navigate: navigateRef.current, blobInfo, preloadGoToDefinition })
                 : [],
             syntaxHighlight.of(blobInfo),
+            languageSupport.of(blobInfo),
             pin.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick
                 ? sourcegraphExtensions({

@@ -47,8 +47,6 @@ export interface SearchPageProps
  * The search page
  */
 export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchPageProps>> = props => {
-    const homepageUserInvitation = useExperimentalFeatures(features => features.homepageUserInvitation) ?? false
-    const showCollaborators = window.context.allowSignup && homepageUserInvitation && props.isSourcegraphDotCom
     const { width } = useWindowSize()
     const shouldShowAddCodeHostWidget = useShouldShowAddCodeHostWidget(props.authenticatedUser)
     const experimentalQueryInput = useExperimentalFeatures(features => features.searchQueryInput === 'experimental')
@@ -109,11 +107,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                     <SearchPageInput {...props} queryState={queryState} setQueryState={setQueryState} source="home" />
                 )}
             </div>
-            <div
-                className={classNames(styles.panelsContainer, {
-                    [styles.panelsContainerWithCollaborators]: showCollaborators,
-                })}
-            >
+            <div className={classNames(styles.panelsContainer)}>
                 {(!!props.authenticatedUser || props.isSourcegraphDotCom) && (
                     <QueryExamples
                         selectedSearchContextSpec={props.selectedSearchContextSpec}

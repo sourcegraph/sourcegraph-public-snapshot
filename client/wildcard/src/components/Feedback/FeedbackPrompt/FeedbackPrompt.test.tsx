@@ -64,7 +64,7 @@ describe('FeedbackPrompt', () => {
 
         submitFeedback()
 
-        expect(await screen.findByText(/thank you for your help/i)).toBeInTheDocument()
+        expect(await screen.findByText(/thank you/i)).toBeInTheDocument()
         sinon.assert.calledWith(onSubmit, sampleFeedback.feedback)
 
         expect(document.body).toMatchSnapshot()

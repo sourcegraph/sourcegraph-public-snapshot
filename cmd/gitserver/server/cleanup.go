@@ -63,6 +63,7 @@ const (
 )
 
 // gitGCMode describes which mode we should be running git gc.
+// See for a detailed description of the modes: https://docs.sourcegraph.com/dev/background-information/git_gc
 var gitGCMode = func() int {
 	// EnableGCAuto is a temporary flag that allows us to control whether or not
 	// `git gc --auto` is invoked during janitorial activities. This flag will
@@ -172,7 +173,7 @@ const reposStatsName = "repos-stats.json"
 // 10. Perform sg-maintenance
 // 11. Git prune
 // 12. Only during first run: Set sizes of repos which don't have it in a database.
-func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitServerAddresses) {
+func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitserverAddresses) {
 	janitorRunning.Set(1)
 	janitorStart := time.Now()
 	defer func() {
@@ -225,13 +226,7 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitS
 
 		// Record the number and disk usage used of repos that should
 		// not belong on this instance and remove up to SRC_WRONG_SHARD_DELETE_LIMIT in a single Janitor run.
-		addr, err := s.addrForRepo(bCtx, name, gitServerAddrs)
-		if err != nil {
-			s.Logger.Error("failed to get server address for repo", log.String("repoName", string(name)))
-			// We bail out here because it would mean that the hostname doesn't match below and
-			// it would remove repos if the DB is down for example
-			return
-		}
+		addr := s.addrForRepo(name, gitServerAddrs)
 
 		if !s.hostnameMatch(addr) {
 			wrongShardRepoCount++

@@ -42,7 +42,8 @@ export const BrandLogo: React.FunctionComponent<React.PropsWithChildren<Props>> 
 
     const sourcegraphLogoUrl =
         variant === 'symbol'
-            ? `${assetsRoot}/img/sourcegraph-mark.svg?v2` // Add query parameter for cache busting.
+            ? // When changed, update cmd/frontend/internal/app/ui/handlers.go for proper preloading
+              `${assetsRoot}/img/sourcegraph-mark.svg?v2` // Add query parameter for cache busting.
             : `${assetsRoot}/img/sourcegraph-logo-${themeProperty}.svg`
 
     const customBrandingLogoUrl = branding?.[themeProperty]?.[variant]
