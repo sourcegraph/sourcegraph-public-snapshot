@@ -450,11 +450,29 @@
       "CycleOption": "NO"
     },
     {
+      "Name": "codeintel_ranking_definitions_id_seq",
+      "TypeName": "bigint",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
       "Name": "codeintel_ranking_exports_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
       "MinimumValue": 1,
       "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "codeintel_ranking_references_id_seq",
+      "TypeName": "bigint",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 9223372036854775807,
       "Increment": 1,
       "CycleOption": "NO"
     },
@@ -7338,6 +7356,124 @@
       ]
     },
     {
+      "Name": "codeintel_ranking_definitions",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "document_path",
+          "Index": 5,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "graph_key",
+          "Index": 6,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "nextval('codeintel_ranking_definitions_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "repository",
+          "Index": 4,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "symbol_name",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "upload_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "codeintel_ranking_definitions_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_ranking_definitions_pkey ON codeintel_ranking_definitions USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "codeintel_ranking_definitions_symbol_name",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_ranking_definitions_symbol_name ON codeintel_ranking_definitions USING btree (symbol_name)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "codeintel_ranking_definitions_upload_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_ranking_definitions_upload_id ON codeintel_ranking_definitions USING btree (upload_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
       "Name": "codeintel_ranking_exports",
       "Comment": "",
       "Columns": [
@@ -7438,6 +7574,101 @@
           "ConstraintDefinition": "FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL"
         }
       ],
+      "Triggers": []
+    },
+    {
+      "Name": "codeintel_ranking_references",
+      "Comment": "References for a given upload proceduced by background job consuming SCIP indexes.",
+      "Columns": [
+        {
+          "Name": "graph_key",
+          "Index": 4,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "nextval('codeintel_ranking_references_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "processed",
+          "Index": 5,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "symbol_names",
+          "Index": 3,
+          "TypeName": "text[]",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "upload_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "codeintel_ranking_references_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_ranking_references_pkey ON codeintel_ranking_references USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "codeintel_ranking_references_upload_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_ranking_references_upload_id ON codeintel_ranking_references USING btree (upload_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
