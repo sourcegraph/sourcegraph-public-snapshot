@@ -9,6 +9,7 @@ option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
 service GitserverService {
   rpc Exec(ExecRequest) returns (stream ExecResponse) {}
   rpc Search(SearchRequest) returns (stream SearchResponse) {}
+  rpc RepoCloneProgress(RepoCloneProgressRequest) returns (RepoCloneProgressResponse) {}
 }
 
 message ExecRequest {
@@ -191,4 +192,14 @@ message CommitMatch {
   // to its first parent. May be unset if `include_modified_files` is not
   // specified in the request.
   repeated string modified_files = 9;
+}
+
+message RepoCloneProgressRequest {
+  string repo_name = 1;
+}
+
+message RepoCloneProgressResponse {
+  bool clone_in_progress = 1;
+  string clone_progress = 2;
+  bool cloned = 3;
 }

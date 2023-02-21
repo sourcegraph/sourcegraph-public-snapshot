@@ -1,27 +1,18 @@
 package server
 
 import (
-<<<<<<< HEAD
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/log"
+
+	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
-=======
-	"context"
 
-	"github.com/sourcegraph/log"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/proto"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
->>>>>>> 0bff7cf256 (WIP on repoCloneProgress)
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -85,7 +76,6 @@ func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 	return nil
 }
 
-<<<<<<< HEAD
 func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService_SearchServer) error {
 	args, err := protocol.SearchRequestFromProto(req)
 	if err != nil {
@@ -115,7 +105,8 @@ func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 			LimitHit: limitHit,
 		},
 	})
-=======
+}
+
 func (gs *GRPCServer) RepoCloneProgress(ctx context.Context, req *proto.RepoCloneProgressRequest) (*proto.RepoCloneProgressResponse, error) {
 	repo := api.RepoName(req.GetRepoName())
 	dir := gs.Server.dir(repo)
@@ -128,5 +119,4 @@ func (gs *GRPCServer) RepoCloneProgress(ctx context.Context, req *proto.RepoClon
 		resp.CloneProgress = "This will never finish cloning"
 	}
 	return &resp, nil
->>>>>>> 0bff7cf256 (WIP on repoCloneProgress)
 }
