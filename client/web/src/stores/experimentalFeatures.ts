@@ -10,6 +10,7 @@ const defaultSettings: SettingsExperimentalFeatures = {
      * Whether we show the multiline editor at /search/console
      */
     showMultilineSearchConsole: false,
+    showSearchContext: true,
     codeMonitoringWebHooks: true,
     showCodeMonitoringLogs: true,
     codeInsightsCompute: false,
