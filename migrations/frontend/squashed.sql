@@ -4408,6 +4408,12 @@ ALTER TABLE ONLY codeintel_path_rank_inputs
 ALTER TABLE ONLY codeintel_ranking_exports
     ADD CONSTRAINT codeintel_ranking_exports_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY codeintel_ranking_path_counts_inputs
+    ADD CONSTRAINT codeintel_ranking_path_counts_inputs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY codeintel_ranking_references
+    ADD CONSTRAINT codeintel_ranking_references_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY critical_and_site_config
     ADD CONSTRAINT critical_and_site_config_pkey PRIMARY KEY (id);
 

@@ -1,4 +1,4 @@
-package lsifstore
+package store
 
 import (
 	"bytes"
@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"google.golang.org/protobuf/proto"
 
-	db "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
@@ -20,10 +19,10 @@ import (
 
 func (s *store) InsertDefinitionsAndReferencesForDocument(
 	ctx context.Context,
-	upload db.ExportedUpload,
+	upload ExportedUpload,
 	rankingGraphKey string,
 	rankingBatchNumber int,
-	setDefsAndRefs func(ctx context.Context, upload db.ExportedUpload, rankingBatchNumber int, rankingGraphKey, path string, document *scip.Document) error,
+	setDefsAndRefs func(ctx context.Context, upload ExportedUpload, rankingBatchNumber int, rankingGraphKey, path string, document *scip.Document) error,
 ) (err error) {
 	ctx, _, endObservation := s.operations.createDefinitionsAndReferencesForRanking.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.Int("id", upload.ID),
@@ -43,7 +42,7 @@ func (s *store) InsertDefinitionsAndReferencesForDocument(
 			return err
 		}
 
-		scipPayload, err := decompressor.decompress(bytes.NewReader(compressedSCIPPayload))
+		scipPayload, err := shared.Decompressor.Decompress(bytes.NewReader(compressedSCIPPayload))
 		if err != nil {
 			return err
 		}

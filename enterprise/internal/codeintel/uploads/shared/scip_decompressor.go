@@ -1,4 +1,4 @@
-package lsifstore
+package shared
 
 import (
 	"bytes"
@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-var decompressor = &gzipDecompressor{
+var Decompressor = &gzipDecompressor{
 	readers: sync.Pool{
 		New: func() any { return new(gzip.Reader) },
 	},
@@ -17,7 +17,7 @@ type gzipDecompressor struct {
 	readers sync.Pool
 }
 
-func (c *gzipDecompressor) decompress(r io.Reader) ([]byte, error) {
+func (c *gzipDecompressor) Decompress(r io.Reader) ([]byte, error) {
 	buf := bytes.NewBuffer(nil)
 	err := c.decompressInto(r, buf)
 	return buf.Bytes(), err

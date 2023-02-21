@@ -7524,6 +7524,16 @@
       ],
       "Indexes": [
         {
+          "Name": "codeintel_ranking_path_counts_inputs_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_ranking_path_counts_inputs_pkey ON codeintel_ranking_path_counts_inputs USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
           "Name": "codeintel_ranking_path_counts_inputs_graph_key_and_repository",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -7608,6 +7618,16 @@
         }
       ],
       "Indexes": [
+        {
+          "Name": "codeintel_ranking_references_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_ranking_references_pkey ON codeintel_ranking_references USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
         {
           "Name": "codeintel_ranking_references_upload_id",
           "IsPrimaryKey": false,

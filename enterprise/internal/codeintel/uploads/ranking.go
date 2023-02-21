@@ -25,7 +25,7 @@ func (s *Service) MapRankingGraph(ctx context.Context, numRankingRoutines int) (
 	ctx, _, endObservation := s.operations.mapRankingGraph.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	if err := s.lsifstore.InsertPathCountInputs(ctx, rankingGraphKey, rankingMapReduceBatchSize); err != nil {
+	if err := s.store.InsertPathCountInputs(ctx, rankingGraphKey, rankingMapReduceBatchSize); err != nil {
 		return err
 	}
 
@@ -39,7 +39,7 @@ func (s *Service) ReduceRankingGraph(
 	ctx, _, endObservation := s.operations.reduceRankingGraph.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	numPathRanksInserted, numPathCountInputsProcessed, err = s.lsifstore.InsertPathRanks(
+	numPathRanksInserted, numPathCountInputsProcessed, err = s.store.InsertPathRanks(
 		ctx,
 		rankingGraphKey,
 		rankingMapReduceBatchSize,
@@ -80,7 +80,7 @@ func (s *Service) ExportRankingGraph(
 	for i := 0; i < numRankingRoutines; i++ {
 		g.Go(func(ctx context.Context) error {
 			for upload := range sharedUploads {
-				if err := s.lsifstore.InsertDefinitionsAndReferencesForDocument(ctx, upload, rankingGraphKey, numBatchSize, s.setDefinitionsAndReferencesForUpload); err != nil {
+				if err := s.store.InsertDefinitionsAndReferencesForDocument(ctx, upload, rankingGraphKey, numBatchSize, s.setDefinitionsAndReferencesForUpload); err != nil {
 					s.logger.Error(
 						"Failed to process upload for ranking graph",
 						log.Int("id", upload.ID),
@@ -150,13 +150,13 @@ func (s *Service) setDefinitionsAndReferencesForUpload(
 	}
 
 	if len(definitions) > 0 {
-		if err := s.lsifstore.InsertDefintionsForRanking(ctx, rankingGraphKey, rankingBatchNumber, definitions); err != nil {
+		if err := s.store.InsertDefintionsForRanking(ctx, rankingGraphKey, rankingBatchNumber, definitions); err != nil {
 			return err
 		}
 	}
 
 	if len(references) > 0 {
-		if err := s.lsifstore.InsertReferencesForRanking(ctx, rankingGraphKey, rankingBatchNumber, shared.RankingReferences{
+		if err := s.store.InsertReferencesForRanking(ctx, rankingGraphKey, rankingBatchNumber, shared.RankingReferences{
 			UploadID:    upload.ID,
 			SymbolNames: references,
 		}); err != nil {

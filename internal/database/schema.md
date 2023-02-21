@@ -965,6 +965,7 @@ Foreign-key constraints:
  graph_key     | text    |           | not null | 
  processed     | boolean |           | not null | false
 Indexes:
+    "codeintel_ranking_path_counts_inputs_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_path_counts_inputs_graph_key_and_repository" btree (graph_key, repository)
 
 ```
@@ -979,6 +980,7 @@ Indexes:
  graph_key    | text    |           | not null | 
  processed    | boolean |           | not null | false
 Indexes:
+    "codeintel_ranking_references_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_references_upload_id" btree (upload_id)
 
 ```
