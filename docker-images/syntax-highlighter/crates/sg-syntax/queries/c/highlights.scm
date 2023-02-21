@@ -14,6 +14,7 @@
 "==" @identifier.operator
 ">" @identifier.operator
 "||" @identifier.operator
+"!" @identifier.operator
 
 ; "." @delimiter
 ; ";" @delimiter

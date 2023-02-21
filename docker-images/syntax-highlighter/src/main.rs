@@ -32,8 +32,6 @@ fn lsif(q: Json<SourcegraphQuery>) -> JsonValue {
 
 #[post("/scip", format = "application/json", data = "<q>")]
 fn scip(q: Json<ScipHighlightQuery>) -> JsonValue {
-    println!("engine: {:?}", q.engine);
-    println!("filetype: {:?}", q.filetype);
     match sg_syntax::scip_highlight(q.into_inner()) {
         Ok(v) => v,
         Err(err) => err,

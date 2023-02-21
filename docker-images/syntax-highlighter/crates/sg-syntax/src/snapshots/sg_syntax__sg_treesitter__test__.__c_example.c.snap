@@ -159,6 +159,7 @@ expression: "dump_document(&document, &contents)"
 //                                                           ^^^^^^^ Identifier 
       if (!pop.slices.size)
 //    ^^ IdentifierKeyword 
+//        ^ IdentifierOperator 
 //         ^^^ Identifier 
 //             ^^^^^^ Identifier 
 //                    ^^^^ Identifier 
@@ -260,6 +261,7 @@ expression: "dump_document(&document, &contents)"
           } else if (!child->extra) {
 //          ^^^^ IdentifierKeyword 
 //               ^^ IdentifierKeyword 
+//                   ^ IdentifierOperator 
 //                    ^^^^^ Identifier 
 //                         ^^ IdentifierOperator 
 //                           ^^^^^ Identifier 
@@ -543,6 +545,7 @@ expression: "dump_document(&document, &contents)"
 //           ^^^^^ BooleanLiteral 
     if (!table_entry->is_reusable)
 //  ^^ IdentifierKeyword 
+//      ^ IdentifierOperator 
 //       ^^^^^^^^^^^ Identifier 
 //                  ^^ IdentifierOperator 
 //                    ^^^^^^^^^^^ Identifier 
@@ -551,6 +554,7 @@ expression: "dump_document(&document, &contents)"
 //           ^^^^^ BooleanLiteral 
     if (!table_entry->depends_on_lookahead)
 //  ^^ IdentifierKeyword 
+//      ^ IdentifierOperator 
 //       ^^^^^^^^^^^ Identifier 
 //                  ^^ IdentifierOperator 
 //                    ^^^^^^^^^^^^^^^^^^^^ Identifier 
@@ -745,6 +749,7 @@ expression: "dump_document(&document, &contents)"
   
     if (!has_version_without_errors && ts_stack_version_count(self->stack) > 0) {
 //  ^^ IdentifierKeyword 
+//      ^ IdentifierOperator 
 //       ^^^^^^^^^^^^^^^^^^^^^^^^^^ Identifier 
 //                                  ^^ IdentifierOperator 
 //                                     ^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction 
