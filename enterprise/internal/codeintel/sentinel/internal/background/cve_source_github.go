@@ -152,6 +152,7 @@ func (g GHSA) affectedHandler(a OSVAffected, affectedPackage *shared.AffectedPac
 	return nil
 }
 
+// GHSAUnreviewedError is used to indicate when a vulnerability has not been reviewed, and should be skipped
 type GHSAUnreviewedError struct {
 	msg string
 }

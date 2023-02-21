@@ -93,7 +93,6 @@ func osvToVuln(o OSV, dataSourceHandler DataSourceHandler) (vuln shared.Vulnerab
 	}
 
 	// Parse custom data with a provider-specific handler
-	// TODO: Handle skip-level issues, rather than returning
 	if err := dataSourceHandler.topLevelHandler(o, &v); err != nil {
 		return v, err
 	}
