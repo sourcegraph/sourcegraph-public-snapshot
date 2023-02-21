@@ -175,7 +175,7 @@ type EventPersonMatch struct {
 	Email  string `json:"email"`
 
 	// User will not be set if no user was matched.
-	User UserMetadata `json:"user,omitempty"`
+	User *UserMetadata `json:"user,omitempty"`
 }
 
 type UserMetadata struct {
