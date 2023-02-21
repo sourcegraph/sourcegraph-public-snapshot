@@ -1401,10 +1401,10 @@ func tooManyPackfiles(dir GitDir, limit int) (bool, error) {
 // git-gc operations are running at the same time.
 func gitSetAutoGC(dir GitDir) error {
 	switch gitGCMode {
-	case gitGCModeGitAutoGC:
+	case gitGCModeGitAutoGC, gitGCModeJanitorAutoGC:
 		return gitConfigUnset(dir, "gc.auto")
 
-	case gitGCModeJanitorAutoGC, gitGCModeMaintenance:
+	case gitGCModeMaintenance:
 		return gitConfigSet(dir, "gc.auto", "0")
 
 	default:

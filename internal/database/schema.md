@@ -938,6 +938,23 @@ Triggers:
 
 ```
 
+# Table "public.codeintel_ranking_definitions"
+```
+    Column     |  Type   | Collation | Nullable |                          Default                          
+---------------+---------+-----------+----------+-----------------------------------------------------------
+ id            | bigint  |           | not null | nextval('codeintel_ranking_definitions_id_seq'::regclass)
+ upload_id     | integer |           | not null | 
+ symbol_name   | text    |           | not null | 
+ repository    | text    |           | not null | 
+ document_path | text    |           | not null | 
+ graph_key     | text    |           | not null | 
+Indexes:
+    "codeintel_ranking_definitions_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_definitions_symbol_name" btree (symbol_name)
+    "codeintel_ranking_definitions_upload_id" btree (upload_id)
+
+```
+
 # Table "public.codeintel_ranking_exports"
 ```
     Column     |           Type           | Collation | Nullable |                        Default                        
@@ -954,6 +971,23 @@ Foreign-key constraints:
     "codeintel_ranking_exports_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL
 
 ```
+
+# Table "public.codeintel_ranking_references"
+```
+    Column    |  Type   | Collation | Nullable |                         Default                          
+--------------+---------+-----------+----------+----------------------------------------------------------
+ id           | bigint  |           | not null | nextval('codeintel_ranking_references_id_seq'::regclass)
+ upload_id    | integer |           | not null | 
+ symbol_names | text[]  |           | not null | 
+ graph_key    | text    |           | not null | 
+ processed    | boolean |           | not null | false
+Indexes:
+    "codeintel_ranking_references_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_references_upload_id" btree (upload_id)
+
+```
+
+References for a given upload proceduced by background job consuming SCIP indexes.
 
 # Table "public.configuration_policies_audit_logs"
 ```
