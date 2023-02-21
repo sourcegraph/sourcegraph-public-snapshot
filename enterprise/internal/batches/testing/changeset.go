@@ -426,3 +426,13 @@ func SetChangesetClosed(t *testing.T, ctx context.Context, s UpdateChangeseter, 
 		t.Fatalf("failed to update changeset: %s", err)
 	}
 }
+
+func DeleteChangeset(t *testing.T, ctx context.Context, s UpdateChangeseter, c *btypes.Changeset) {
+	t.Helper()
+
+	c.SetDeleted()
+
+	if err := s.UpdateChangeset(ctx, c); err != nil {
+		t.Fatalf("failed to delete changeset: %s", err)
+	}
+}
