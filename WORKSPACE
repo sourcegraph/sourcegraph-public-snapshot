@@ -150,8 +150,15 @@ rules_proto_dependencies()
 rules_proto_toolchains()
 
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
-load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
+load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies", "go_repository")
 load("//:deps.bzl", "go_dependencies")
+
+go_repository(
+    name = "com_github_aws_aws_sdk_go_v2_service_ssooidc",
+    importpath = "github.com/aws/aws-sdk-go-v2/service/ssooidc",
+    sum = "h1:0bLhH6DRAqox+g0LatcjGKjjhU6Eudyys6HB6DJVPj8=",
+    version = "v1.14.1",
+)
 
 # gazelle:repository_macro deps.bzl%go_dependencies
 go_dependencies()

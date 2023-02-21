@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/derision-test/glock"
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
@@ -41,14 +41,14 @@ func Test_NewBackfill(t *testing.T) {
 	backfill, err := store.NewBackfill(ctx, series)
 	require.NoError(t, err)
 
-	autogold.Want("backfill loaded successfully", SeriesBackfill{Id: 1, SeriesId: 1, State: "new"}).Equal(t, *backfill)
+	autogold.Expect(SeriesBackfill{Id: 1, SeriesId: 1, State: "new"}).Equal(t, *backfill)
 
 	var updated *SeriesBackfill
 	t.Run("set scope on newly created backfill", func(t *testing.T) {
 		updated, err = backfill.SetScope(ctx, store, []int32{1, 3, 6, 8}, 100)
 		require.NoError(t, err)
 
-		autogold.Want("set scope on newly created backfill", &SeriesBackfill{
+		autogold.Expect(&SeriesBackfill{
 			Id: 1, SeriesId: 1, repoIteratorId: 1,
 			EstimatedCost: 100,
 			State:         "processing",
@@ -59,14 +59,14 @@ func Test_NewBackfill(t *testing.T) {
 		err := backfill.SetFailed(ctx, store)
 		require.NoError(t, err)
 
-		autogold.Want("set state to failed", &SeriesBackfill{Id: 1, SeriesId: 1, State: "failed"}).Equal(t, backfill)
+		autogold.Expect(&SeriesBackfill{Id: 1, SeriesId: 1, State: "failed"}).Equal(t, backfill)
 	})
 
 	t.Run("set state to completed", func(t *testing.T) {
 		err := backfill.SetCompleted(ctx, store)
 		require.NoError(t, err)
 
-		autogold.Want("set state to completed", &SeriesBackfill{Id: 1, SeriesId: 1, State: "completed"}).Equal(t, backfill)
+		autogold.Expect(&SeriesBackfill{Id: 1, SeriesId: 1, State: "completed"}).Equal(t, backfill)
 	})
 
 	t.Run("load repo iterator", func(t *testing.T) {
@@ -75,7 +75,7 @@ func Test_NewBackfill(t *testing.T) {
 		jsonified, err := json.Marshal(iterator)
 		require.NoError(t, err)
 
-		autogold.Want("load repo iterator", `{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"0001-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":0,"TotalCount":4,"SuccessCount":0,"Cursor":0}`).Equal(t, string(jsonified))
+		autogold.Expect(`{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"0001-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":0,"TotalCount":4,"SuccessCount":0,"Cursor":0}`).Equal(t, string(jsonified))
 	})
 }
 
@@ -107,7 +107,7 @@ func Test_ResetBackfill(t *testing.T) {
 	require.NoError(t, err)
 	err = backfill.SetFailed(ctx, store)
 	require.NoError(t, err)
-	autogold.Want("backfill after failure successfully", SeriesBackfill{
+	autogold.Expect(SeriesBackfill{
 		Id: 1, SeriesId: 1, repoIteratorId: 1,
 		EstimatedCost: 100,
 		State:         BackfillState("failed"),
@@ -115,11 +115,11 @@ func Test_ResetBackfill(t *testing.T) {
 
 	jsonified, err := json.Marshal(iterator)
 	require.NoError(t, err)
-	autogold.Want("initial repo iterator", `{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"0001-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":0,"TotalCount":4,"SuccessCount":0,"Cursor":0}`).Equal(t, string(jsonified))
+	autogold.Expect(`{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"0001-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":0,"TotalCount":4,"SuccessCount":0,"Cursor":0}`).Equal(t, string(jsonified))
 
 	err = backfill.RetryBackfillAttempt(ctx, store)
 	require.NoError(t, err)
-	autogold.Want("backfill after reset", SeriesBackfill{
+	autogold.Expect(SeriesBackfill{
 		Id: 1, SeriesId: 1, repoIteratorId: 1,
 		EstimatedCost: 100,
 		State:         BackfillState("processing"),
@@ -128,7 +128,7 @@ func Test_ResetBackfill(t *testing.T) {
 	require.NoError(t, err)
 	jsonifiedAfterReset, err := json.Marshal(iteratorAfterReset)
 	require.NoError(t, err)
-	autogold.Want("iterator after reset", `{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"0001-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":0,"TotalCount":4,"SuccessCount":0,"Cursor":0}`).Equal(t, string(jsonifiedAfterReset))
+	autogold.Expect(`{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"0001-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":0,"TotalCount":4,"SuccessCount":0,"Cursor":0}`).Equal(t, string(jsonifiedAfterReset))
 
 }
 

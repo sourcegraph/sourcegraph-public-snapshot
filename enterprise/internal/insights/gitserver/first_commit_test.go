@@ -3,7 +3,7 @@ package gitserver
 import (
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -17,27 +17,27 @@ func Test_IsEmptyRepoError(t *testing.T) {
 	}{
 		{
 			err:  errors.New(emptyRepoErrMessage),
-			want: autogold.Want("EmptyRepo", true),
+			want: autogold.Expect(true),
 		},
 		{
 			err:  errors.Newf("Another message: %w", errors.New(emptyRepoErrMessage)),
-			want: autogold.Want("NestedEmptyRepoError", true),
+			want: autogold.Expect(true),
 		},
 		{
 			err:  errors.Newf("Another message: %w", errors.Newf("Deep nested: %w", errors.New(emptyRepoErrMessage))),
-			want: autogold.Want("DeepNestedError", true),
+			want: autogold.Expect(true),
 		},
 		{
 			err:  errors.Newf("Another message: %w", errors.New("Not an empty repo")),
-			want: autogold.Want("NestedNotEmptyRepoError", false),
+			want: autogold.Expect(false),
 		},
 		{
 			err:  errors.New("A different error"),
-			want: autogold.Want("NotEmptyRepo", false),
+			want: autogold.Expect(false),
 		},
 	}
 	for _, tc := range testCases {
-		t.Run(tc.want.Name(), func(t *testing.T) {
+		t.Run(tc.err.Error(), func(t *testing.T) {
 			got := isFirstCommitEmptyRepoError(tc.err)
 			tc.want.Equal(t, got)
 		})
