@@ -160,10 +160,8 @@ type bufferedDocument struct {
 	payloadHash  []byte
 }
 
-const (
-	DocumentsBatchSize = 256
-	MaxBatchPayloadSum = 1024 * 1024 * 32
-)
+const DocumentsBatchSize = 256
+const MaxBatchPayloadSum = 1024 * 1024 * 32
 
 func (s *scipWriter) InsertDocument(ctx context.Context, path string, scipDocument *scip.Document) error {
 	if s.batchPayloadSum >= MaxBatchPayloadSum {

@@ -18,7 +18,7 @@ var ConfigCommittedAtBackfillInst = &backfillConfig{}
 func (c *backfillConfig) Load() {
 	c.Interval = c.GetInterval("CODEINTEL_UPLOAD_BACKFILLER_INTERVAL", "10s", "The frequency with which to run periodic codeintel backfiller tasks.")
 	c.BatchSize = c.GetInt("CODEINTEL_UPLOAD_BACKFILLER_BATCH_SIZE", "100", "The number of upload to populate an unset `commited_at` field per batch.")
-  }
+}
 
 type janitorConfig struct {
 	env.BaseConfig
@@ -112,7 +112,7 @@ type exportConfig struct {
 
 	RankingInterval    time.Duration
 	NumRankingRoutines int
-  RankingBatchSize   int
+	RankingBatchSize   int
 }
 
 var ConfigExportInst = &exportConfig{}
@@ -120,5 +120,5 @@ var ConfigExportInst = &exportConfig{}
 func (c *exportConfig) Load() {
 	c.RankingInterval = c.GetInterval("CODEINTEL_UPLOADS_RANKING_INTERVAL", "1s", "How frequently to serialize a batch of the code intel graph for ranking.")
 	c.NumRankingRoutines = c.GetInt("CODEINTEL_UPLOADS_RANKING_NUM_ROUTINES", "4", "The number of concurrent ranking graph serializer routines to run per worker instance.")
-  c.RankingBatchSize = c.GetInt("CODEINTEL_UPLOADS_RANKING_BATCH_SIZE", "10000", "The number of definitions and references to populate the ranking graph per batch.")
+	c.RankingBatchSize = c.GetInt("CODEINTEL_UPLOADS_RANKING_BATCH_SIZE", "10000", "The number of definitions and references to populate the ranking graph per batch.")
 }

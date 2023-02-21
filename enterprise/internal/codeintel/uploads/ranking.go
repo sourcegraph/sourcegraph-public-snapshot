@@ -172,39 +172,34 @@ func (s *Service) VacuumRankingGraph(ctx context.Context) error {
 		return nil
 	}
 
-	numDeleted, err := s.store.ProcessStaleExportedUploads(
-		ctx,
-		rankingGraphKey,
-		rankingGraphDeleteBatchSize,
-		func(ctx context.Context, objectPrefix string) error {
-			if objectPrefix == "" {
-				// Special case: we haven't backfilled some data on dotcom yet
-				return nil
-			}
-
-			objects := s.rankingBucket.Objects(ctx, &storage.Query{
-				Prefix: objectPrefix,
-			})
-			for {
-				attrs, err := objects.Next()
-				if err != nil {
-					if err == iterator.Done {
-						break
-					}
-
-					return err
-				}
-
-				if err := s.rankingBucket.Object(attrs.Name).Delete(ctx); err != nil {
-					return err
-				}
-
-				s.operations.numBytesDeleted.Add(float64(attrs.Size))
-			}
-
+	numDeleted, err := s.store.ProcessStaleExportedUploads(ctx, rankingGraphKey, rankingGraphDeleteBatchSize, func(ctx context.Context, objectPrefix string) error {
+		if objectPrefix == "" {
+			// Special case: we haven't backfilled some data on dotcom yet
 			return nil
-		},
-	)
+		}
+
+		objects := s.rankingBucket.Objects(ctx, &storage.Query{
+			Prefix: objectPrefix,
+		})
+		for {
+			attrs, err := objects.Next()
+			if err != nil {
+				if err == iterator.Done {
+					break
+				}
+
+				return err
+			}
+
+			if err := s.rankingBucket.Object(attrs.Name).Delete(ctx); err != nil {
+				return err
+			}
+
+			s.operations.numBytesDeleted.Add(float64(attrs.Size))
+		}
+
+		return nil
+	})
 	if err != nil {
 		return err
 	}
@@ -231,44 +226,38 @@ func (s *Service) serializeAndPersistRankingGraphForUpload(
 		}
 	}()
 
-	return s.serializeRankingGraphForUpload(
-		ctx,
-		id,
-		repo,
-		root,
-		func(filename string, format string, args ...any) error {
-			path := fmt.Sprintf("%s/%s", objectPrefix, filename)
+	return s.serializeRankingGraphForUpload(ctx, id, repo, root, func(filename string, format string, args ...any) error {
+		path := fmt.Sprintf("%s/%s", objectPrefix, filename)
 
-			ow, ok := writers[path]
-			if !ok {
-				handle := s.rankingBucket.Object(path)
-				if err := handle.Delete(ctx); err != nil && err != storage.ErrObjectNotExist {
-					return err
-				}
-
-				wc := handle.NewWriter(ctx)
-				ow = &gcsObjectWriter{
-					Writer:  bufio.NewWriter(wc),
-					c:       wc,
-					written: 0,
-				}
-				writers[path] = ow
-			}
-
-			if n, err := io.Copy(ow, strings.NewReader(fmt.Sprintf(format, args...))); err != nil {
+		ow, ok := writers[path]
+		if !ok {
+			handle := s.rankingBucket.Object(path)
+			if err := handle.Delete(ctx); err != nil && err != storage.ErrObjectNotExist {
 				return err
-			} else {
-				ow.written += n
-				s.operations.numBytesUploaded.Add(float64(n))
-
-				if ow.written > maxBytesPerObject {
-					return errors.Newf("CSV output exceeds max bytes (%d)", maxBytesPerObject)
-				}
 			}
 
-			return nil
-		},
-	)
+			wc := handle.NewWriter(ctx)
+			ow = &gcsObjectWriter{
+				Writer:  bufio.NewWriter(wc),
+				c:       wc,
+				written: 0,
+			}
+			writers[path] = ow
+		}
+
+		if n, err := io.Copy(ow, strings.NewReader(fmt.Sprintf(format, args...))); err != nil {
+			return err
+		} else {
+			ow.written += n
+			s.operations.numBytesUploaded.Add(float64(n))
+
+			if ow.written > maxBytesPerObject {
+				return errors.Newf("CSV output exceeds max bytes (%d)", maxBytesPerObject)
+			}
+		}
+
+		return nil
+	})
 }
 
 type gcsObjectWriter struct {
