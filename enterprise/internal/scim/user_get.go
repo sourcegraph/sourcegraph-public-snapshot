@@ -16,7 +16,7 @@ import (
 
 // Get returns the resource corresponding with the given identifier.
 func (h *UserResourceHandler) Get(r *http.Request, idStr string) (scim.Resource, error) {
-	user, err := getUserFromDB(r.Context(), h.db, idStr)
+	user, err := getUserFromDB(r.Context(), h.db.Users(), idStr)
 	if err != nil {
 		return scim.Resource{}, err
 	}

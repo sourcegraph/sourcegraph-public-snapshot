@@ -9,9 +9,11 @@ import (
 	scimerrors "github.com/elimity-com/scim/errors"
 	"github.com/elimity-com/scim/optional"
 	"github.com/elimity-com/scim/schema"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // UserResourceHandler implements the scim.ResourceHandler interface for users.
@@ -36,13 +38,13 @@ func NewUserResourceHandler(ctx context.Context, observationCtx *observation.Con
 
 // getUserFromDB returns the user with the given ID.
 // When it fails, it returns an error that's safe to return to the client as a SCIM error.
-func getUserFromDB(ctx context.Context, db database.DB, idStr string) (*types.UserForSCIM, error) {
+func getUserFromDB(ctx context.Context, store database.UserStore, idStr string) (*types.UserForSCIM, error) {
 	id, err := strconv.ParseInt(idStr, 10, 32)
 	if err != nil {
 		return nil, scimerrors.ScimError{Status: http.StatusBadRequest, Detail: "invalid id"}
 	}
 
-	users, err := db.Users().ListForSCIM(ctx, &database.UsersListOptions{
+	users, err := store.ListForSCIM(ctx, &database.UsersListOptions{
 		UserIDs: []int32{int32(id)},
 	})
 	if err != nil {
@@ -198,4 +200,37 @@ func getOptionalExternalID(attributes scim.ResourceAttributes) optional.String {
 		}
 	}
 	return optional.String{}
+}
+
+// extractUsername extracts the username from the given attributes.
+func extractUsername(attributes scim.ResourceAttributes) (username string) {
+	if attributes["userName"] != nil {
+		username = attributes["userName"].(string)
+	}
+	return
+}
+
+// getUniqueUsername returns a unique username based on the given requested username plus normalization,
+// and adding a random suffix to make it unique in case there one without a suffix already exists in the DB.
+// This is meant to be done inside a transaction so that the user creation/update is guaranteed to be
+// coherent with the evaluation of this function.
+func getUniqueUsername(ctx context.Context, tx database.UserStore, requestedUsername string) (string, error) {
+	// Process requested username
+	normalizedUsername, err := auth.NormalizeUsername(requestedUsername)
+	if err != nil {
+		normalizedUsername, err = auth.AddRandomSuffix("")
+		if err != nil {
+			return "", scimerrors.ScimErrorBadParams([]string{"invalid username"})
+		}
+	}
+	_, err = tx.GetByUsername(ctx, normalizedUsername)
+	if err == nil { // Username exists, try to add random suffix
+		normalizedUsername, err = auth.AddRandomSuffix(normalizedUsername)
+		if err != nil {
+			return "", scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not normalize username").Error()}
+		}
+	} else if !database.IsUserNotFoundErr(err) {
+		return "", scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not check if username exists").Error()}
+	}
+	return normalizedUsername, nil
 }
