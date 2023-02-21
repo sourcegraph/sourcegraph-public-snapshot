@@ -2,6 +2,7 @@ package backend
 
 import (
 	"sync"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -92,15 +93,19 @@ func (c *collectSender) Done() (_ *zoekt.SearchResult, _ []*zoekt.SearchResult, 
 
 type FlushCollectSender struct {
 	mu                 sync.Mutex
-	remainingEndpoints map[string]bool
-	maxSizeBytes       int
 	collectSender      *collectSender
 	sender             zoekt.Sender
+	remainingEndpoints map[string]bool
+	maxSizeBytes       int
+	timerCancel        chan struct{}
 }
 
 // newFlushCollectSender creates a sender which will collect and rank results
-// until it has received one result from every endpoint. After that it will stream
-// each result as it is sent.
+// until it has received one result from every endpoint. After it flushes that
+// ranked result, it will stream out each result as it is received.
+//
+// If it has not heard back from every endpoint by a certain timeout, then it will
+// flush as a 'fallback plan' to avoid delaying the search too much.
 func newFlushCollectSender(opts *zoekt.SearchOptions, endpoints []string, maxSizeBytes int, sender zoekt.Sender) *FlushCollectSender {
 	remainingEndpoints := map[string]bool{}
 	for _, endpoint := range endpoints {
@@ -108,7 +113,25 @@ func newFlushCollectSender(opts *zoekt.SearchOptions, endpoints []string, maxSiz
 	}
 
 	collectSender := newCollectSender(opts)
-	return &FlushCollectSender{remainingEndpoints: remainingEndpoints, maxSizeBytes: maxSizeBytes, collectSender: collectSender, sender: sender}
+	timerCancel := make(chan struct{})
+
+	flushSender := &FlushCollectSender{collectSender: collectSender, sender: sender,
+		remainingEndpoints: remainingEndpoints, maxSizeBytes: maxSizeBytes, timerCancel: timerCancel}
+
+	// As an escape hatch, stop collecting after twice the FlushWallTime. This protects against
+	// cases where an endpoint stops being responsive so we never receive its results.
+	go func() {
+		timer := time.NewTimer(2 * opts.FlushWallTime)
+		select {
+		case <-timerCancel:
+			timer.Stop()
+		case <-timer.C:
+			flushSender.mu.Lock()
+			flushSender.stopCollectingAndFlush(zoekt.FlushReasonTimerExpired)
+			flushSender.mu.Unlock()
+		}
+	}()
+	return flushSender
 }
 
 // Send consumes a search event. We transition through 3 states
@@ -173,6 +196,9 @@ func (f *FlushCollectSender) stopCollectingAndFlush(reason zoekt.FlushReason) {
 
 	// From now on use sender directly
 	f.collectSender = nil
+
+	// Stop timer goroutine if it is still running.
+	close(f.timerCancel)
 }
 
 func (f *FlushCollectSender) Flush() {
