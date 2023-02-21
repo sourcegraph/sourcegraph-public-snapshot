@@ -1,7 +1,7 @@
 import { FC } from 'react'
 
 import classNames from 'classnames'
-import { useLocation, useNavigate, useParams } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Alert, LoadingSpinner } from '@sourcegraph/wildcard'

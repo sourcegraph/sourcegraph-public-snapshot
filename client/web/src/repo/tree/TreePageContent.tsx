@@ -182,7 +182,10 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
 
     const readmeEntry = useMemo(() => {
         for (const entry of tree.entries) {
-            if (!entry.isDirectory && (entry.name === 'README.md' || entry.name === 'README')) {
+            if (
+                !entry.isDirectory &&
+                (entry.name.toLocaleLowerCase() === 'readme.md' || entry.name.toLocaleLowerCase() === 'readme')
+            ) {
                 return entry
             }
         }

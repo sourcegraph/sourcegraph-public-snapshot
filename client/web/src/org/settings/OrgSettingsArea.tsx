@@ -1,7 +1,7 @@
 import React, { FC } from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Routes, Route, useLocation } from 'react-router-dom-v5-compat'
+import { Routes, Route, useLocation } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'

@@ -625,7 +625,7 @@ export class HovercardView implements TooltipView {
         }
 
         root.render(
-            <CodeMirrorContainer onRender={() => repositionTooltips(this.view)}>
+            <CodeMirrorContainer navigate={props.navigate} onRender={() => repositionTooltips(this.view)}>
                 <div
                     className={classNames({
                         'cm-code-intel-hovercard': true,

@@ -3,7 +3,7 @@ import { FC, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 're
 import classNames from 'classnames'
 import { Remote } from 'comlink'
 import { isEqual } from 'lodash'
-import { useLocation, useNavigate, createPath } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate, createPath } from 'react-router-dom'
 import {
     BehaviorSubject,
     combineLatest,
