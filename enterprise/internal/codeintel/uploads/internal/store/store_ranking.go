@@ -23,7 +23,7 @@ func (s *store) InsertDefinitionsAndReferencesForDocument(
 	rankingBatchNumber int,
 	setDefsAndRefs func(ctx context.Context, upload ExportedUpload, rankingBatchNumber int, rankingGraphKey, path string, document *scip.Document) error,
 ) (err error) {
-	ctx, _, endObservation := s.operations.createDefinitionsAndReferencesForRanking.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+	ctx, _, endObservation := s.operations.insertDefinitionsAndReferencesForDocument.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.Int("id", upload.ID),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -75,7 +75,7 @@ func (s *store) InsertDefintionsForRanking(
 	rankingBatchNumber int,
 	defintions []shared.RankingDefintions,
 ) (err error) {
-	ctx, _, endObservation := s.operations.setDefinitionsForRanking.With(
+	ctx, _, endObservation := s.operations.insertDefintionsForRanking.With(
 		ctx,
 		&err,
 		observation.Args{},
@@ -157,7 +157,7 @@ func (s *store) InsertReferencesForRanking(
 	rankingBatchNumber int,
 	references shared.RankingReferences,
 ) (err error) {
-	ctx, _, endObservation := s.operations.setReferencesForRanking.With(
+	ctx, _, endObservation := s.operations.insertReferencesForRanking.With(
 		ctx,
 		&err,
 		observation.Args{},
