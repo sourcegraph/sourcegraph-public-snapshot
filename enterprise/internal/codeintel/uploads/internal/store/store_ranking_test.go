@@ -28,13 +28,15 @@ func TestInsertReferences(t *testing.T) {
 	store := New(&observation.TestContext, db)
 
 	// Insert references
-	mockReferences := shared.RankingReferences{
-		UploadID: 1, SymbolNames: []string{"foo", "bar", "baz"},
+	mockReferences := []shared.RankingReferences{
+		{UploadID: 1, SymbolNames: []string{"foo", "bar", "baz"}},
 	}
 
-	// Test InsertReferencesForRanking
-	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockReferences); err != nil {
-		t.Fatalf("unexpected error inserting references: %s", err)
+	for _, reference := range mockReferences {
+		// Test InsertReferencesForRanking
+		if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, reference); err != nil {
+			t.Fatalf("unexpected error inserting references: %s", err)
+		}
 	}
 
 	// Test references where inserted
