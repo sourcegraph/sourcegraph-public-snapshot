@@ -1439,6 +1439,9 @@ func ScanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 	if failureMessage != "" {
 		t.FailureMessage = &failureMessage
 	}
+	if previousFailureMessage != "" {
+		t.PreviousFailureMessage = &previousFailureMessage
+	}
 	if syncErrorMessage != "" {
 		t.SyncErrorMessage = &syncErrorMessage
 	}
