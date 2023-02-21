@@ -30,7 +30,7 @@ func Validate(runner util.CmdRunner, cliCtx *cli.Context, logger log.Logger, con
 
 	telemetryOptions := newQueueTelemetryOptions(runner, cliCtx.Context, config.UseFirecracker, logger)
 	copts := queueOptions(config, telemetryOptions)
-	client, err := apiclient.NewBaseClient(copts.BaseClientOptions)
+	client, err := apiclient.NewBaseClient(logger, copts.BaseClientOptions)
 	if err != nil {
 		return err
 	}
