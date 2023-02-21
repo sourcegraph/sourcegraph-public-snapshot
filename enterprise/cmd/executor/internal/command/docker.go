@@ -1,14 +1,70 @@
 package command
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
+
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // ScriptsPath is the location relative to the executor workspace where the executor
 // will write scripts required for the execution of the job.
 const ScriptsPath = ".sourcegraph-executor"
+
+type dockerRunner struct {
+	dir       string
+	logger    log.Logger
+	cmdLogger Logger
+	options   Options
+	// tmpDir is used to store temporary files used for docker execution.
+	tmpDir           string
+	dockerConfigPath string
+}
+
+var _ Runner = &dockerRunner{}
+
+func (r *dockerRunner) Setup(ctx context.Context) error {
+	dir, err := os.MkdirTemp("", "executor-docker-runner")
+	if err != nil {
+		return errors.Wrap(err, "failed to create tmp dir for docker runner")
+	}
+	r.tmpDir = dir
+
+	// If docker auth config is present, write it.
+	if len(r.options.DockerOptions.DockerAuthConfig.Auths) > 0 {
+		d, err := json.Marshal(r.options.DockerOptions.DockerAuthConfig)
+		if err != nil {
+			return err
+		}
+		r.dockerConfigPath, err = os.MkdirTemp(r.tmpDir, "docker_auth")
+		if err != nil {
+			return err
+		}
+		if err = os.WriteFile(filepath.Join(r.dockerConfigPath, "config.json"), d, os.ModePerm); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (r *dockerRunner) Teardown(ctx context.Context) error {
+	if err := os.RemoveAll(r.tmpDir); err != nil {
+		r.logger.Error("Failed to remove docker state tmp dir", log.String("tmpDir", r.tmpDir), log.Error(err))
+	}
+
+	return nil
+}
+
+func (r *dockerRunner) Run(ctx context.Context, command Spec) error {
+	return runCommand(ctx, r.logger, formatRawOrDockerCommand(command, r.dir, r.options, r.dockerConfigPath), r.cmdLogger)
+}
 
 // formatRawOrDockerCommand constructs the command to run on the host in order to
 // invoke the given spec. If the spec does not specify an image, then the command
@@ -41,13 +97,14 @@ func formatRawOrDockerCommand(spec Spec, dir string, options Options, dockerConf
 		Command: flatten(
 			"docker",
 			dockerConfigFlag(dockerConfigPath),
-			"run", "--rm",
+			"run",
+			"--rm",
 			dockerHostGatewayFlag(options.DockerOptions.AddHostGateway),
 			dockerResourceFlags(options.ResourceOptions),
 			dockerVolumeFlags(hostDir),
-			dockerWorkingdirectoryFlags(spec.Dir),
+			dockerWorkingDirectoryFlags(spec.Dir),
 			dockerEnvFlags(spec.Env),
-			dockerEntrypointFlags(),
+			dockerEntrypointFlags,
 			spec.Image,
 			filepath.Join("/data", ScriptsPath, spec.ScriptPath),
 		),
@@ -62,13 +119,15 @@ func formatRawOrDockerCommand(spec Spec, dir string, options Options, dockerConf
 // unexpected compatibility or security issues with using --add-host=...  when it is not needed.
 func dockerHostGatewayFlag(shouldAdd bool) []string {
 	if shouldAdd {
-		return []string{"--add-host=host.docker.internal:host-gateway"}
+		return dockerGatewayHost
 	}
 	return nil
 }
 
+var dockerGatewayHost = []string{"--add-host=host.docker.internal:host-gateway"}
+
 func dockerResourceFlags(options ResourceOptions) []string {
-	flags := make([]string, 0, 2)
+	flags := make([]string, 0, 4)
 	if options.NumCPUs != 0 {
 		flags = append(flags, "--cpus", strconv.Itoa(options.NumCPUs))
 	}
@@ -90,7 +149,7 @@ func dockerConfigFlag(dockerConfigPath string) []string {
 	return []string{"--config", dockerConfigPath}
 }
 
-func dockerWorkingdirectoryFlags(dir string) []string {
+func dockerWorkingDirectoryFlags(dir string) []string {
 	return []string{"-w", filepath.Join("/data", dir)}
 }
 
@@ -98,6 +157,4 @@ func dockerEnvFlags(env []string) []string {
 	return intersperse("-e", env)
 }
 
-func dockerEntrypointFlags() []string {
-	return []string{"--entrypoint", "/bin/sh"}
-}
+var dockerEntrypointFlags = []string{"--entrypoint", "/bin/sh"}
