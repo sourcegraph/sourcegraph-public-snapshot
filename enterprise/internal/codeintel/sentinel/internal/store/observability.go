@@ -8,9 +8,10 @@ import (
 )
 
 type operations struct {
-	foo                   *observation.Operation
-	insertVulnerabilities *observation.Operation
-	scanMatches           *observation.Operation
+	getVulnerabilities      *observation.Operation
+	insertVulnerabilities   *observation.Operation
+	getVulnerabilityMatches *observation.Operation
+	scanMatches             *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -34,8 +35,9 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		foo:                   op("Foo"),
-		insertVulnerabilities: op("InsertVulnerabilities"),
-		scanMatches:           op("ScanMatches"),
+		getVulnerabilities:      op("GetVulnerabilities"),
+		insertVulnerabilities:   op("InsertVulnerabilities"),
+		getVulnerabilityMatches: op("GetVulnerabilityMatches"),
+		scanMatches:             op("ScanMatches"),
 	}
 }

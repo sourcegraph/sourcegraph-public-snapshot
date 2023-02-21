@@ -51,5 +51,6 @@ type AffectedSymbol struct {
 }
 
 type VulnerabilityMatch struct {
-	SourceID string
+	UploadID                     int
+	VulnerabilityAffectedPackage int
 }

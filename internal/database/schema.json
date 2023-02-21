@@ -1035,7 +1035,7 @@
       "CycleOption": "NO"
     },
     {
-      "Name": "vulnerability_match_id_seq",
+      "Name": "vulnerability_matches_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
       "MinimumValue": 1,
@@ -22878,7 +22878,7 @@
           "Name": "modified",
           "Index": 15,
           "TypeName": "timestamp with time zone",
-          "IsNullable": false,
+          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -22891,7 +22891,7 @@
           "Name": "published",
           "Index": 14,
           "TypeName": "timestamp with time zone",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -22969,7 +22969,7 @@
           "Name": "withdrawn",
           "Index": 16,
           "TypeName": "timestamp with time zone",
-          "IsNullable": false,
+          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -23237,7 +23237,7 @@
       "Triggers": []
     },
     {
-      "Name": "vulnerability_match",
+      "Name": "vulnerability_matches",
       "Comment": "",
       "Columns": [
         {
@@ -23245,7 +23245,7 @@
           "Index": 1,
           "TypeName": "integer",
           "IsNullable": false,
-          "Default": "nextval('vulnerability_match_id_seq'::regclass)",
+          "Default": "nextval('vulnerability_matches_id_seq'::regclass)",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -23282,32 +23282,32 @@
       ],
       "Indexes": [
         {
-          "Name": "vulnerability_match_pkey",
+          "Name": "vulnerability_matches_pkey",
           "IsPrimaryKey": true,
           "IsUnique": true,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX vulnerability_match_pkey ON vulnerability_match USING btree (id)",
+          "IndexDefinition": "CREATE UNIQUE INDEX vulnerability_matches_pkey ON vulnerability_matches USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
-          "Name": "vulnerability_match_upload_id_vulnerability_affected_package_id",
+          "Name": "vulnerability_matches_upload_id_vulnerability_affected_package_",
           "IsPrimaryKey": false,
           "IsUnique": true,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX vulnerability_match_upload_id_vulnerability_affected_package_id ON vulnerability_match USING btree (upload_id, vulnerability_affected_package_id)",
+          "IndexDefinition": "CREATE UNIQUE INDEX vulnerability_matches_upload_id_vulnerability_affected_package_ ON vulnerability_matches USING btree (upload_id, vulnerability_affected_package_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
         {
-          "Name": "vulnerability_match_vulnerability_affected_package_id",
+          "Name": "vulnerability_matches_vulnerability_affected_package_id",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX vulnerability_match_vulnerability_affected_package_id ON vulnerability_match USING btree (vulnerability_affected_package_id)",
+          "IndexDefinition": "CREATE INDEX vulnerability_matches_vulnerability_affected_package_id ON vulnerability_matches USING btree (vulnerability_affected_package_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }

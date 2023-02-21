@@ -2126,7 +2126,7 @@ Check constraints:
     "lsif_uploads_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
 Referenced by:
     TABLE "codeintel_ranking_exports" CONSTRAINT "codeintel_ranking_exports_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL
-    TABLE "vulnerability_match" CONSTRAINT "fk_upload" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+    TABLE "vulnerability_matches" CONSTRAINT "fk_upload" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_dependency_syncing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_dependency_indexing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey1" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_packages" CONSTRAINT "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
@@ -3637,9 +3637,9 @@ Triggers:
  severity    | text                     |           | not null | 
  cvss_vector | text                     |           | not null | 
  cvss_score  | text                     |           | not null | 
- published   | timestamp with time zone |           |          | 
- modified    | timestamp with time zone |           | not null | 
- withdrawn   | timestamp with time zone |           | not null | 
+ published   | timestamp with time zone |           | not null | 
+ modified    | timestamp with time zone |           |          | 
+ withdrawn   | timestamp with time zone |           |          | 
 Indexes:
     "vulnerabilities_pkey" PRIMARY KEY, btree (id)
     "vulnerabilities_source_id" UNIQUE, btree (source_id)
@@ -3667,7 +3667,7 @@ Foreign-key constraints:
     "fk_vulnerabilities" FOREIGN KEY (vulnerability_id) REFERENCES vulnerabilities(id) ON DELETE CASCADE
 Referenced by:
     TABLE "vulnerability_affected_symbols" CONSTRAINT "fk_vulnerability_affected_packages" FOREIGN KEY (vulnerability_affected_package_id) REFERENCES vulnerability_affected_packages(id) ON DELETE CASCADE
-    TABLE "vulnerability_match" CONSTRAINT "fk_vulnerability_affected_packages" FOREIGN KEY (vulnerability_affected_package_id) REFERENCES vulnerability_affected_packages(id) ON DELETE CASCADE
+    TABLE "vulnerability_matches" CONSTRAINT "fk_vulnerability_affected_packages" FOREIGN KEY (vulnerability_affected_package_id) REFERENCES vulnerability_affected_packages(id) ON DELETE CASCADE
 
 ```
 
@@ -3687,17 +3687,17 @@ Foreign-key constraints:
 
 ```
 
-# Table "public.vulnerability_match"
+# Table "public.vulnerability_matches"
 ```
-              Column               |  Type   | Collation | Nullable |                     Default                     
------------------------------------+---------+-----------+----------+-------------------------------------------------
- id                                | integer |           | not null | nextval('vulnerability_match_id_seq'::regclass)
+              Column               |  Type   | Collation | Nullable |                      Default                      
+-----------------------------------+---------+-----------+----------+---------------------------------------------------
+ id                                | integer |           | not null | nextval('vulnerability_matches_id_seq'::regclass)
  upload_id                         | integer |           | not null | 
  vulnerability_affected_package_id | integer |           | not null | 
 Indexes:
-    "vulnerability_match_pkey" PRIMARY KEY, btree (id)
-    "vulnerability_match_upload_id_vulnerability_affected_package_id" UNIQUE, btree (upload_id, vulnerability_affected_package_id)
-    "vulnerability_match_vulnerability_affected_package_id" btree (vulnerability_affected_package_id)
+    "vulnerability_matches_pkey" PRIMARY KEY, btree (id)
+    "vulnerability_matches_upload_id_vulnerability_affected_package_" UNIQUE, btree (upload_id, vulnerability_affected_package_id)
+    "vulnerability_matches_vulnerability_affected_package_id" btree (vulnerability_affected_package_id)
 Foreign-key constraints:
     "fk_upload" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     "fk_vulnerability_affected_packages" FOREIGN KEY (vulnerability_affected_package_id) REFERENCES vulnerability_affected_packages(id) ON DELETE CASCADE

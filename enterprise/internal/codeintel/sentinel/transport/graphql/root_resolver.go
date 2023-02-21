@@ -83,6 +83,9 @@ func (r *rootResolver) VulnerabilityMatches(ctx context.Context, args resolverst
 		Limit:  limit,
 		Offset: offset,
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	return &vulnerabilityMatchConnectionResolver{
 		matches:    matches,
@@ -161,8 +164,12 @@ type vulnerabilityMatchResolver struct {
 	m shared.VulnerabilityMatch
 }
 
-func (r *vulnerabilityMatchResolver) SourceID() string {
-	return r.m.SourceID
+func (r *vulnerabilityMatchResolver) UploadID() int32 {
+	return int32(r.m.UploadID)
+}
+
+func (r *vulnerabilityMatchResolver) VulnerabilityAffectedPackageID() int32 {
+	return int32(r.m.VulnerabilityAffectedPackage)
 }
 
 //

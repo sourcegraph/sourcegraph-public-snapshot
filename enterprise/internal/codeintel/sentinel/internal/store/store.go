@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -43,6 +42,9 @@ func New(observationCtx *observation.Context, db database.DB) Store {
 }
 
 func (s *store) GetVulnerabilities(ctx context.Context, args shared.GetVulnerabilitiesArgs) (_ []shared.Vulnerability, _ int, err error) {
+	ctx, _, endObservation := s.operations.getVulnerabilities.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	return scanVulnerabilities(s.db.Query(ctx, sqlf.Sprintf(getVulnerabilitiesQuery, args.Limit, args.Offset)))
 }
 
@@ -277,9 +279,9 @@ CREATE TEMPORARY TABLE t_vulnerabilities (
 	severity     TEXT NOT NULL,
 	cvss_vector  TEXT NOT NULL,
 	cvss_score   TEXT NOT NULL,
-	published    TIMESTAMP WITH TIME ZONE,
-	modified     TIMESTAMP WITH TIME ZONE NOT NULL,
-	withdrawn    TIMESTAMP WITH TIME ZONE NOT NULL
+	published    TIMESTAMP WITH TIME ZONE NOT NULL,
+	modified     TIMESTAMP WITH TIME ZONE,
+	withdrawn    TIMESTAMP WITH TIME ZONE
 ) ON COMMIT DROP
 `
 
@@ -386,10 +388,34 @@ SELECT c.id, c.path, c.symbols FROM candidates c
 ON CONFLICT DO NOTHING
 `
 
-func (s *store) GetVulnerabilityMatches(ctx context.Context, args shared.GetVulnerabilityMatchesArgs) ([]shared.VulnerabilityMatch, int, error) {
-	// TODO
-	return nil, 0, errors.New("unimplemented")
+func (s *store) GetVulnerabilityMatches(ctx context.Context, args shared.GetVulnerabilityMatchesArgs) (_ []shared.VulnerabilityMatch, _ int, err error) {
+	ctx, _, endObservation := s.operations.getVulnerabilityMatches.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return scanVulnerabilityMatch(s.db.Query(ctx, sqlf.Sprintf(getVulnerabilityMatchesQuery, args.Limit, args.Offset)))
 }
+
+const getVulnerabilityMatchesQuery = `
+SELECT
+	m.id,
+	m.upload_id,
+	m.vulnerability_affected_package_id
+FROM vulnerability_matches m
+ORDER BY id
+LIMIT %s
+OFFSET %s
+`
+
+var scanVulnerabilityMatch = basestore.NewSliceWithCountScanner(func(s dbutil.Scanner) (match shared.VulnerabilityMatch, count int, _ error) {
+	if err := s.Scan(
+		&match.UploadID,
+		&match.VulnerabilityAffectedPackage,
+		&count,
+	); err != nil {
+		return shared.VulnerabilityMatch{}, 0, err
+	}
+	return match, count, nil
+})
 
 func (s *store) ScanMatches(ctx context.Context) (err error) {
 	ctx, _, endObservation := s.operations.scanMatches.With(ctx, &err, observation.Args{})
@@ -450,7 +476,8 @@ SELECT
 	r.version,
 	vap.version_constraint
 FROM vulnerability_affected_packages vap
-JOIN lsif_references r ON r.name LIKE vap.package_name
+-- TODO - do we need to do the inverse as well?
+JOIN lsif_references r ON r.name LIKE '%%' || vap.package_name || '%%'
 -- TODO - refine this match
 WHERE
 	(r.scheme = 'gomod' AND vap.language = 'go') OR
@@ -466,7 +493,7 @@ CREATE TEMPORARY TABLE t_vulnerability_affected_packages (
 `
 
 const scanMatchesUpdateQuery = `
-INSERT INTO vulnerability_match (upload_id, vulnerability_affected_package_id)
+INSERT INTO vulnerability_matches (upload_id, vulnerability_affected_package_id)
 SELECT upload_id, vulnerability_affected_package_id FROM t_vulnerability_affected_packages
 ON CONFLICT DO NOTHING
 `

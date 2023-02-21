@@ -4040,9 +4040,9 @@ CREATE TABLE vulnerabilities (
     severity text NOT NULL,
     cvss_vector text NOT NULL,
     cvss_score text NOT NULL,
-    published timestamp with time zone,
-    modified timestamp with time zone NOT NULL,
-    withdrawn timestamp with time zone NOT NULL
+    published timestamp with time zone NOT NULL,
+    modified timestamp with time zone,
+    withdrawn timestamp with time zone
 );
 
 CREATE SEQUENCE vulnerabilities_id_seq
@@ -4093,13 +4093,13 @@ CREATE SEQUENCE vulnerability_affected_symbols_id_seq
 
 ALTER SEQUENCE vulnerability_affected_symbols_id_seq OWNED BY vulnerability_affected_symbols.id;
 
-CREATE TABLE vulnerability_match (
+CREATE TABLE vulnerability_matches (
     id integer NOT NULL,
     upload_id integer NOT NULL,
     vulnerability_affected_package_id integer NOT NULL
 );
 
-CREATE SEQUENCE vulnerability_match_id_seq
+CREATE SEQUENCE vulnerability_matches_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -4107,7 +4107,7 @@ CREATE SEQUENCE vulnerability_match_id_seq
     NO MAXVALUE
     CACHE 1;
 
-ALTER SEQUENCE vulnerability_match_id_seq OWNED BY vulnerability_match.id;
+ALTER SEQUENCE vulnerability_matches_id_seq OWNED BY vulnerability_matches.id;
 
 CREATE TABLE webhook_logs (
     id bigint NOT NULL,
@@ -4355,7 +4355,7 @@ ALTER TABLE ONLY vulnerability_affected_packages ALTER COLUMN id SET DEFAULT nex
 
 ALTER TABLE ONLY vulnerability_affected_symbols ALTER COLUMN id SET DEFAULT nextval('vulnerability_affected_symbols_id_seq'::regclass);
 
-ALTER TABLE ONLY vulnerability_match ALTER COLUMN id SET DEFAULT nextval('vulnerability_match_id_seq'::regclass);
+ALTER TABLE ONLY vulnerability_matches ALTER COLUMN id SET DEFAULT nextval('vulnerability_matches_id_seq'::regclass);
 
 ALTER TABLE ONLY webhook_logs ALTER COLUMN id SET DEFAULT nextval('webhook_logs_id_seq'::regclass);
 
@@ -4784,8 +4784,8 @@ ALTER TABLE ONLY vulnerability_affected_packages
 ALTER TABLE ONLY vulnerability_affected_symbols
     ADD CONSTRAINT vulnerability_affected_symbols_pkey PRIMARY KEY (id);
 
-ALTER TABLE ONLY vulnerability_match
-    ADD CONSTRAINT vulnerability_match_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY vulnerability_matches
+    ADD CONSTRAINT vulnerability_matches_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY webhook_logs
     ADD CONSTRAINT webhook_logs_pkey PRIMARY KEY (id);
@@ -5221,9 +5221,9 @@ CREATE UNIQUE INDEX vulnerability_affected_packages_vulnerability_id_package_nam
 
 CREATE UNIQUE INDEX vulnerability_affected_symbols_vulnerability_affected_package_i ON vulnerability_affected_symbols USING btree (vulnerability_affected_package_id, path);
 
-CREATE UNIQUE INDEX vulnerability_match_upload_id_vulnerability_affected_package_id ON vulnerability_match USING btree (upload_id, vulnerability_affected_package_id);
+CREATE UNIQUE INDEX vulnerability_matches_upload_id_vulnerability_affected_package_ ON vulnerability_matches USING btree (upload_id, vulnerability_affected_package_id);
 
-CREATE INDEX vulnerability_match_vulnerability_affected_package_id ON vulnerability_match USING btree (vulnerability_affected_package_id);
+CREATE INDEX vulnerability_matches_vulnerability_affected_package_id ON vulnerability_matches USING btree (vulnerability_affected_package_id);
 
 CREATE INDEX webhook_logs_external_service_id_idx ON webhook_logs USING btree (external_service_id);
 
@@ -5518,7 +5518,7 @@ ALTER TABLE ONLY feature_flag_overrides
 ALTER TABLE ONLY feature_flag_overrides
     ADD CONSTRAINT feature_flag_overrides_namespace_user_id_fkey FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY vulnerability_match
+ALTER TABLE ONLY vulnerability_matches
     ADD CONSTRAINT fk_upload FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY vulnerability_affected_packages
@@ -5527,7 +5527,7 @@ ALTER TABLE ONLY vulnerability_affected_packages
 ALTER TABLE ONLY vulnerability_affected_symbols
     ADD CONSTRAINT fk_vulnerability_affected_packages FOREIGN KEY (vulnerability_affected_package_id) REFERENCES vulnerability_affected_packages(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY vulnerability_match
+ALTER TABLE ONLY vulnerability_matches
     ADD CONSTRAINT fk_vulnerability_affected_packages FOREIGN KEY (vulnerability_affected_package_id) REFERENCES vulnerability_affected_packages(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY gitserver_repos

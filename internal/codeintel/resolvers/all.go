@@ -68,7 +68,8 @@ type VulnerabilityMatchConnectionResolver interface {
 }
 
 type VulnerabilityMatchResolver interface {
-	SourceID() string
+	UploadID() int32
+	VulnerabilityAffectedPackageID() int32
 }
 
 type CodeNavServiceResolver interface {

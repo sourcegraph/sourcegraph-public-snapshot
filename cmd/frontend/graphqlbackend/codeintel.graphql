@@ -603,12 +603,15 @@ type Vulnerability {
 TODO
 """
 type VulnerabilityMatch {
-    # TODO - more
+    """
+    TODO
+    """
+    uploadID: Int!
 
     """
     TODO
     """
-    sourceID: String!
+    vulnerabilityAffectedPackageID: Int!
 }
 
 """
