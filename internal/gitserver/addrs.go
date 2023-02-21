@@ -3,6 +3,7 @@ package gitserver
 import (
 	"crypto/md5"
 	"encoding/binary"
+	"sync"
 	"sync/atomic"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -94,18 +95,33 @@ type connAndErr struct {
 	err  error
 }
 
-type atomicGRPCAddresses struct {
-	atomic.Pointer[GitServerConns]
+type atomicGitServerConns struct {
+	conns     atomic.Pointer[GitServerConns]
+	watchOnce sync.Once
 }
 
-func (a *atomicGRPCAddresses) update(cfg *conf.Unified) {
+func (a *atomicGitServerConns) get() *GitServerConns {
+	a.initOnce()
+	return a.conns.Load()
+}
+
+func (a *atomicGitServerConns) initOnce() {
+	// Initialize lazily because conf.Watch cannot be used during init time.
+	a.watchOnce.Do(func() {
+		conf.Watch(func() {
+			a.update(conf.Get())
+		})
+	})
+}
+
+func (a *atomicGitServerConns) update(cfg *conf.Unified) {
 	newAddrs := GitServerConns{
 		GitserverAddresses: NewGitserverAddressesFromConf(cfg),
 		grpcConns:          make(map[string]connAndErr),
 	}
 
 	// Diff the old addresses with the new addresses
-	old := a.Load()
+	old := a.conns.Load()
 	if old == nil {
 		// If update is being called for the first time,
 		// default to the zero value.
@@ -128,7 +144,7 @@ func (a *atomicGRPCAddresses) update(cfg *conf.Unified) {
 		panic("invariant violated: there must be the same number of addresses and conns")
 	}
 
-	a.Store(&newAddrs)
+	a.conns.Store(&newAddrs)
 
 	// After we've published the new version, close the old connections
 	for _, addr := range removed {

@@ -35,7 +35,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -44,7 +43,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -55,15 +53,7 @@ var (
 	clientFactory  = httpcli.NewInternalClientFactory("gitserver")
 	defaultDoer, _ = clientFactory.Doer()
 	defaultLimiter = parallel.NewRun(500)
-
-	// create addrs lazily because conf.Watch cannot be called during init
-	addrs = syncx.OnceValue(func() *atomicGRPCAddresses {
-		a := &atomicGRPCAddresses{}
-		conf.Watch(func() {
-			a.update(conf.Get())
-		})
-		return a
-	})
+	conns          = &atomicGitServerConns{}
 )
 
 var ClientMocks, emptyClientMocks struct {
@@ -85,7 +75,7 @@ var _ Client = &clientImplementor{}
 func NewClient() Client {
 	return &clientImplementor{
 		logger:      sglog.Scoped("NewClient", "returns a new gitserver.Client"),
-		gitservers:  func() *GitServerConns { return addrs().Load() },
+		conns:       conns.get,
 		httpClient:  defaultDoer,
 		HTTPLimiter: defaultLimiter,
 		// Use the binary name for userAgent. This should effectively identify
@@ -102,7 +92,7 @@ func NewTestClient(cli httpcli.Doer, addrs []string) Client {
 	logger := sglog.Scoped("NewTestClient", "Test New client")
 	return &clientImplementor{
 		logger:      logger,
-		gitservers:  func() *GitServerConns { return newTestGitserverConns(addrs) },
+		conns:       func() *GitServerConns { return newTestGitserverConns(addrs) },
 		httpClient:  cli,
 		HTTPLimiter: parallel.NewRun(500),
 		// Use the binary name for userAgent. This should effectively identify
@@ -199,8 +189,8 @@ type clientImplementor struct {
 	// logger is used for all logging and logger creation
 	logger sglog.Logger
 
-	// gitservers is a function that returns the current set of gitserver addresses and connections
-	gitservers func() *GitServerConns
+	// conns is a function that returns the current set of gitserver addresses and connections
+	conns func() *GitServerConns
 
 	// operations are used for internal observability
 	operations *operations
@@ -442,15 +432,15 @@ type Client interface {
 }
 
 func (c *clientImplementor) Addrs() []string {
-	return c.gitservers().Addresses
+	return c.conns().Addresses
 }
 
 func (c *clientImplementor) AddrForRepo(repo api.RepoName) string {
-	return c.gitservers().AddrForRepo(c.userAgent, repo)
+	return c.conns().AddrForRepo(c.userAgent, repo)
 }
 
 func (c *clientImplementor) ConnForRepo(repo api.RepoName) (*grpc.ClientConn, error) {
-	return c.gitservers().ConnForRepo(c.userAgent, repo)
+	return c.conns().ConnForRepo(c.userAgent, repo)
 }
 
 // ArchiveOptions contains options for the Archive func.
