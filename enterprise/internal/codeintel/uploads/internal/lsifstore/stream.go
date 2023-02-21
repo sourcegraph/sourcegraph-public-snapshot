@@ -27,7 +27,7 @@ func (s *store) ScanDocuments(ctx context.Context, id int, f func(path string, d
 			return err
 		}
 
-		scipPayload, err := decompressor.decompress(bytes.NewReader(compressedSCIPPayload))
+		scipPayload, err := Decompressor.Decompress(bytes.NewReader(compressedSCIPPayload))
 		if err != nil {
 			return err
 		}

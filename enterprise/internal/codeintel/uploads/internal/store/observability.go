@@ -80,6 +80,11 @@ type operations struct {
 
 	reindexUploads    *observation.Operation
 	reindexUploadByID *observation.Operation
+
+	// Ranking
+	createDefinitionsAndReferencesForRanking *observation.Operation
+	setDefinitionsForRanking                 *observation.Operation
+	setReferencesForRanking                  *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -176,5 +181,10 @@ func newOperations(observationCtx *observation.Context) *operations {
 
 		reindexUploads:    op("ReindexUploads"),
 		reindexUploadByID: op("ReindexUploadByID"),
+
+		// Ranking
+		createDefinitionsAndReferencesForRanking: op("CreateDefinitionsAndReferencesForRanking"),
+		setDefinitionsForRanking:                 op("SetDefinitionsForRanking"),
+		setReferencesForRanking:                  op("SetReferencesForRanking"),
 	}
 }
