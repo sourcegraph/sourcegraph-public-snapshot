@@ -293,17 +293,6 @@ BEGIN
 END;
 $$;
 
-CREATE FUNCTION func_lsif_dependency_repos_backfill() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-    BEGIN
-        INSERT INTO package_repo_versions (package_id, version)
-        VALUES (NEW.id, NEW.version);
-
-        RETURN NULL;
-    END;
-$$;
-
 CREATE FUNCTION func_lsif_uploads_delete() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -2562,7 +2551,6 @@ ALTER SEQUENCE lsif_dependency_indexing_jobs_id_seq1 OWNED BY lsif_dependency_in
 CREATE TABLE lsif_dependency_repos (
     id bigint NOT NULL,
     name text NOT NULL,
-    version text DEFAULT '👁️temporary_sentinel_value👁️'::text NOT NULL,
     scheme text NOT NULL
 );
 
@@ -4568,9 +4556,6 @@ ALTER TABLE ONLY lsif_dependency_indexing_jobs
 ALTER TABLE ONLY lsif_dependency_repos
     ADD CONSTRAINT lsif_dependency_repos_pkey PRIMARY KEY (id);
 
-ALTER TABLE ONLY lsif_dependency_repos
-    ADD CONSTRAINT lsif_dependency_repos_unique_triplet UNIQUE (scheme, name, version);
-
 ALTER TABLE ONLY lsif_dirty_repositories
     ADD CONSTRAINT lsif_dirty_repositories_pkey PRIMARY KEY (repository_id);
 
@@ -5230,8 +5215,6 @@ CREATE TRIGGER batch_spec_workspace_execution_last_dequeues_insert AFTER INSERT 
 CREATE TRIGGER batch_spec_workspace_execution_last_dequeues_update AFTER UPDATE ON batch_spec_workspace_execution_jobs REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert();
 
 CREATE TRIGGER changesets_update_computed_state BEFORE INSERT OR UPDATE ON changesets FOR EACH ROW EXECUTE FUNCTION changesets_computed_state_ensure();
-
-CREATE TRIGGER lsif_dependency_repos_backfill AFTER INSERT ON lsif_dependency_repos FOR EACH ROW WHEN ((new.version <> '👁️temporary_sentinel_value👁️'::text)) EXECUTE FUNCTION func_lsif_dependency_repos_backfill();
 
 CREATE TRIGGER trig_create_zoekt_repo_on_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_zoekt_repo();
 
