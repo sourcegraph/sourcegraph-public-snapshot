@@ -1,15 +1,21 @@
 package background
 
+// Parse vulnerabilities from the GitHub Security Advisories (GHSA) database.
+// GHSA uses the Open Source Vulnerability (OSV) format, with some custom extensions.
+
 import (
 	"archive/zip"
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/mitchellh/mapstructure"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -40,49 +46,6 @@ func ReadGitHubAdvisoryDB(ctx context.Context, useLocalCache bool) (vulns []shar
 	return ParseGitHubAdvisoryDB(resp.Body)
 }
 
-type GHSAVulnerability struct {
-	SchemaVersion string    `json:"schema_version"`
-	ID            string    `json:"id"`
-	Modified      time.Time `json:"modified"`
-	Published     time.Time `json:"published"`
-	Aliases       []string  `json:"aliases"`
-	Summary       string    `json:"summary"`
-	Details       string    `json:"details"`
-	Severity      []struct {
-		Type  string `json:"type"`
-		Score string `json:"score"`
-	} `json:"severity"`
-	Affected []struct {
-		Package struct {
-			Ecosystem string `json:"ecosystem"`
-			Name      string `json:"name"`
-		} `json:"package"`
-		Ranges []struct {
-			Type   string              `json:"type"`
-			Events []map[string]string `json:"events"`
-		} `json:"ranges"`
-	} `json:"affected"`
-	References []struct {
-		Type string `json:"type"`
-		URL  string `json:"url"`
-	} `json:"references"`
-	DatabaseSpecific struct {
-		CWEIDs           []string  `json:"cwe_ids"`
-		Severity         string    `json:"severity"`
-		GitHubReviewed   bool      `json:"github_reviewed"`
-		GitHubReviewedAt time.Time `json:"github_reviewed_at"`
-		NVDPublishedAt   time.Time `json:"nvd_published_at"`
-	} `json:"database_specific"`
-}
-
-type GHSAUnreviewedError struct {
-	msg string
-}
-
-func (e GHSAUnreviewedError) Error() string {
-	return e.msg
-}
-
 func ParseGitHubAdvisoryDB(ghsaReader io.Reader) ([]shared.Vulnerability, error) {
 	content, err := io.ReadAll(ghsaReader)
 	if err != nil {
@@ -106,12 +69,13 @@ func ParseGitHubAdvisoryDB(ghsaReader io.Reader) ([]shared.Vulnerability, error)
 		}
 		defer r.Close()
 
-		var ghsaVuln GHSAVulnerability
-		if err := json.NewDecoder(r).Decode(&ghsaVuln); err != nil {
+		var osvVuln OSV
+		if err := json.NewDecoder(r).Decode(&osvVuln); err != nil {
 			return nil, err
 		}
 
-		convertedVuln, err := ghsaToVuln(ghsaVuln)
+		var g GHSA
+		convertedVuln, err := osvToVuln(osvVuln, g)
 		if err != nil {
 			if _, ok := err.(GHSAUnreviewedError); ok {
 				continue
@@ -126,88 +90,71 @@ func ParseGitHubAdvisoryDB(ghsaReader io.Reader) ([]shared.Vulnerability, error)
 	return vulns, nil
 }
 
-// Convert a GHSAVulnerability to one or more Vulnerabilities
-// A GHSA vuln may result in multiple vulns as we flatten its structure
-func ghsaToVuln(g GHSAVulnerability) (shared.Vulnerability, error) {
-	// Only process vulns that GitHub has reviewed
-	if !g.DatabaseSpecific.GitHubReviewed {
-		return shared.Vulnerability{}, GHSAUnreviewedError{"Vulnerability not reviewed"}
+// GHSA-specific structs and handlers
+
+type GHSADatabaseSpecific struct {
+	Severity               string    `mapstructure:"severity" json:"severity"`
+	GithubReviewed         bool      `mapstructure:"github_reviewed" json:"github_reviewed"`
+	GithubReviewedAt       time.Time `json:"github_reviewed_at"`
+	GithubReviewedAtString string    `mapstructure:"github_reviewed_at"`
+	NvdPublishedAt         time.Time `json:"nvd_published_at"`
+	NvdPublishedAtString   string    `mapstructure:"nvd_published_at"`
+	CweIDs                 []string  `mapstructure:"cwe_ids" json:"cwe_ids"`
+}
+
+type GHSA int64
+
+func (g GHSA) topLevelHandler(o OSV, v *shared.Vulnerability) (err error) {
+	var databaseSpecific GHSADatabaseSpecific
+	if err := mapstructure.Decode(o.DatabaseSpecific, &databaseSpecific); err != nil {
+		return errors.Wrap(err, "cannot map DatabaseSpecific to GHSADatabaseSpecific")
 	}
 
-	// Set up base vulnerability with common properties
-	v := shared.Vulnerability{
-		SourceID:   g.ID,
-		Summary:    g.Summary,
-		Details:    g.Details,
-		Published:  g.DatabaseSpecific.NVDPublishedAt,
-		CWEs:       g.DatabaseSpecific.CWEIDs,
-		Aliases:    g.Aliases,
-		DataSource: "https://github.com/advisories/" + g.ID,
-		Severity:   g.DatabaseSpecific.Severity,
+	// Only process reviewed GitHub vulnerabilities
+	if !databaseSpecific.GithubReviewed {
+		return GHSAUnreviewedError{"Vulnerability not reviewed"}
 	}
 
-	if len(g.Severity) > 0 && g.Severity[0].Score != "" {
-		v.CVSSVector = g.Severity[0].Score
-	} else {
-		// fmt.Printf("No CVSS vector for %s - %v\n", v.ID, v.RelatedVulnerabilities)
-	}
-
-	var urls []string
-	for _, ref := range g.References {
-		urls = append(urls, ref.URL)
-	}
-	v.URLs = urls
-
-	// g.Affected contains an array of packages that are affected by this vulnerability
-	// Each package may also contain an array of version ranges that indicate when the vulnerability was
-	//	introduced or resolved
-	var pas []shared.AffectedPackage
-	for _, affected := range g.Affected {
-		// Information that will be the same for all instances
-		var affectedBase shared.AffectedPackage
-		affectedBase.PackageName = affected.Package.Name
-		affectedBase.Namespace = "github:" + affected.Package.Ecosystem
-		affectedBase.Language = githubEcosystemToLanguage(affected.Package.Ecosystem)
-
-		if len(affected.Ranges) == 0 {
-			pas = append(pas, affectedBase)
-			continue
+	// mapstructure won't parse times, so do it manually
+	if databaseSpecific.NvdPublishedAtString != "" {
+		databaseSpecific.NvdPublishedAt, err = time.Parse(time.RFC3339, databaseSpecific.NvdPublishedAtString)
+		if err != nil {
+			fmt.Printf("Failed to parse NvdPublishedAtString: %s\n", err)
 		}
-
-		// Process version ranges affecting this pacakge
-		for _, affectedRange := range affected.Ranges {
-			a := affectedBase
-
-			if len(affectedRange.Events) == 0 {
-				continue
-			}
-
-			// Events can be: introduced, fixed, last_affected
-			for _, event := range affectedRange.Events {
-				for eventKey, eventValue := range event {
-					switch eventKey {
-					case "introduced":
-						a.VersionConstraint = append(a.VersionConstraint, ">="+eventValue)
-					case "fixed":
-						a.VersionConstraint = append(a.VersionConstraint, "<"+eventValue)
-						a.Fixed = true
-						a.FixedIn = eventValue // In existing data, there is never >1 fixed entry per affected package
-					case "last_affected":
-						a.VersionConstraint = append(a.VersionConstraint, "<="+eventValue)
-						// TODO: Does this actually mean it's fixed? Can we tell which version it's fixed in?
-						// a.Fixed = true
-					}
-				}
-
-			}
-
-			pas = append(pas, a)
+	}
+	if databaseSpecific.GithubReviewedAtString != "" {
+		databaseSpecific.GithubReviewedAt, err = time.Parse(time.RFC3339, databaseSpecific.GithubReviewedAtString)
+		if err != nil {
+			fmt.Printf("Failed to parse GithubReviewedAtString: %s\n", err)
 		}
-
-		v.AffectedPackages = pas
 	}
 
-	return v, nil
+	v.DataSource = "https://github.com/advisories/" + o.ID
+	v.Severity = databaseSpecific.Severity // Low, Medium, High, Critical // TODO: Override this with CVSS score if it exists
+	v.CWEs = databaseSpecific.CweIDs
+
+	// Ideally use NVD publish date; fall back on GitHub review date
+	v.Published = databaseSpecific.NvdPublishedAt
+	if v.Published.IsZero() {
+		v.Published = databaseSpecific.GithubReviewedAt
+	}
+
+	return nil
+}
+
+func (g GHSA) affectedHandler(a OSVAffected, affectedPackage *shared.AffectedPackage) error {
+	affectedPackage.Language = githubEcosystemToLanguage(a.Package.Ecosystem)
+	affectedPackage.Namespace = "github:" + a.Package.Ecosystem
+
+	return nil
+}
+
+type GHSAUnreviewedError struct {
+	msg string
+}
+
+func (e GHSAUnreviewedError) Error() string {
+	return e.msg
 }
 
 func githubEcosystemToLanguage(ecosystem string) (language string) {
