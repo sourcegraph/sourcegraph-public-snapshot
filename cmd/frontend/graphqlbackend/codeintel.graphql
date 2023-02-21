@@ -517,6 +517,7 @@ type VulnerabilityMatchConnection {
 TODO
 """
 type Vulnerability {
+    # TODO
     # id: ID!
 
     """
@@ -594,6 +595,7 @@ type Vulnerability {
     """
     withdrawn: DateTime
 
+    # TODO
     # AffectedPackages : []AffectedPackage
 }
 
