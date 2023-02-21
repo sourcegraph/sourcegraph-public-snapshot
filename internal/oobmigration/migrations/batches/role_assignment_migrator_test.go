@@ -84,9 +84,12 @@ func TestUserRoleAssignmentMigrator(t *testing.T) {
 	userRole, err := db.Roles().Get(ctx, database.GetRoleOpts{
 		Name: string(types.UserSystemRole),
 	})
+	require.NoError(t, err)
+
 	siteAdminRole, err := db.Roles().Get(ctx, database.GetRoleOpts{
 		Name: string(types.SiteAdministratorSystemRole),
 	})
+	require.NoError(t, err)
 
 	for _, user := range users {
 		assertRolesForUser(ctx, t, db, user, userRole, siteAdminRole)
