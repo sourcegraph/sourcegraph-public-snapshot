@@ -2,15 +2,11 @@ package command
 
 import (
 	"context"
-	"encoding/json"
-	"os"
-	"path/filepath"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Runner is the interface between an executor and the host on which commands
@@ -39,6 +35,28 @@ type Spec struct {
 	Dir        string
 	Env        []string
 	Operation  *observation.Operation
+}
+
+// NewRunner creates a new runner with the given options.
+func NewRunner(dir string, logger Logger, options Options, operations *Operations) Runner {
+	if !options.FirecrackerOptions.Enabled {
+		return &dockerRunner{
+			dir:       dir,
+			logger:    log.Scoped("docker-runner", ""),
+			cmdLogger: logger,
+			options:   options,
+		}
+	}
+
+	firecrackerInternalLogger := log.Scoped("firecracker-runner", "")
+	return &firecrackerRunner{
+		name:            options.ExecutorName,
+		workspaceDevice: dir,
+		internalLogger:  firecrackerInternalLogger,
+		commandLogger:   logger,
+		options:         options,
+		operations:      operations,
+	}
 }
 
 type Options struct {
@@ -115,114 +133,4 @@ type ResourceOptions struct {
 	// executors in k8s or docker-compose without requiring the host and node paths to
 	// be identical.
 	DockerHostMountPath string
-}
-
-// NewRunner creates a new runner with the given options.
-func NewRunner(dir string, logger Logger, options Options, operations *Operations) Runner {
-	if !options.FirecrackerOptions.Enabled {
-		return &dockerRunner{
-			dir:       dir,
-			logger:    log.Scoped("docker-runner", ""),
-			cmdLogger: logger,
-			options:   options,
-		}
-	}
-
-	return &firecrackerRunner{
-		name:            options.ExecutorName,
-		workspaceDevice: dir,
-		logger:          logger,
-		options:         options,
-		operations:      operations,
-	}
-}
-
-type dockerRunner struct {
-	dir       string
-	logger    log.Logger
-	cmdLogger Logger
-	options   Options
-	// tmpDir is used to store temporary files used for docker execution.
-	tmpDir           string
-	dockerConfigPath string
-}
-
-var _ Runner = &dockerRunner{}
-
-func (r *dockerRunner) Setup(ctx context.Context) error {
-	dir, err := os.MkdirTemp("", "executor-docker-runner")
-	if err != nil {
-		return errors.Wrap(err, "failed to create tmp dir for docker runner")
-	}
-	r.tmpDir = dir
-
-	// If docker auth config is present, write it.
-	if len(r.options.DockerOptions.DockerAuthConfig.Auths) > 0 {
-		d, err := json.Marshal(r.options.DockerOptions.DockerAuthConfig)
-		if err != nil {
-			return err
-		}
-		r.dockerConfigPath, err = os.MkdirTemp(r.tmpDir, "docker_auth")
-		if err != nil {
-			return err
-		}
-		if err := os.WriteFile(filepath.Join(r.dockerConfigPath, "config.json"), d, os.ModePerm); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (r *dockerRunner) Teardown(ctx context.Context) error {
-	if err := os.RemoveAll(r.tmpDir); err != nil {
-		r.logger.Error("Failed to remove docker state tmp dir", log.String("tmpDir", r.tmpDir), log.Error(err))
-	}
-
-	return nil
-}
-
-func (r *dockerRunner) Run(ctx context.Context, command Spec) error {
-	return runCommand(ctx, formatRawOrDockerCommand(command, r.dir, r.options, r.dockerConfigPath), r.cmdLogger)
-}
-
-type firecrackerRunner struct {
-	name            string
-	workspaceDevice string
-	logger          Logger
-	options         Options
-	// tmpDir is used to store temporary files used for firecracker execution.
-	tmpDir           string
-	operations       *Operations
-	dockerConfigPath string
-}
-
-var _ Runner = &firecrackerRunner{}
-
-func (r *firecrackerRunner) Setup(ctx context.Context) error {
-	dir, err := os.MkdirTemp("", "executor-firecracker-runner")
-	if err != nil {
-		return errors.Wrap(err, "failed to create tmp dir for firecracker runner")
-	}
-	r.tmpDir = dir
-
-	dockerConfigPath, err := setupFirecracker(ctx, defaultRunner, r.logger, r.name, r.workspaceDevice, r.tmpDir, r.options, r.operations)
-	r.dockerConfigPath = dockerConfigPath
-	return err
-}
-
-func (r *firecrackerRunner) Teardown(ctx context.Context) error {
-	return teardownFirecracker(ctx, defaultRunner, r.logger, r.name, r.tmpDir, r.operations)
-}
-
-func (r *firecrackerRunner) Run(ctx context.Context, command Spec) error {
-	return runCommand(ctx, formatFirecrackerCommand(command, r.name, r.options, r.dockerConfigPath), r.logger)
-}
-
-type runnerWrapper struct{}
-
-var defaultRunner = &runnerWrapper{}
-
-func (runnerWrapper) RunCommand(ctx context.Context, command command, logger Logger) error {
-	return runCommand(ctx, command, logger)
 }
