@@ -92,7 +92,7 @@ func NewTestClient(cli httpcli.Doer, addrs []string) Client {
 	logger := sglog.Scoped("NewTestClient", "Test New client")
 	return &clientImplementor{
 		logger:      logger,
-		conns:       func() *GitServerConns { return newTestGitserverConns(addrs) },
+		conns:       func() *GitserverConns { return newTestGitserverConns(addrs) },
 		httpClient:  cli,
 		HTTPLimiter: parallel.NewRun(500),
 		// Use the binary name for userAgent. This should effectively identify
@@ -190,7 +190,7 @@ type clientImplementor struct {
 	logger sglog.Logger
 
 	// conns is a function that returns the current set of gitserver addresses and connections
-	conns func() *GitServerConns
+	conns func() *GitserverConns
 
 	// operations are used for internal observability
 	operations *operations

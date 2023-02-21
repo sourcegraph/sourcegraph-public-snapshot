@@ -34,12 +34,12 @@ func NewGitserverAddressesFromConf(cfg *conf.Unified) GitserverAddresses {
 	return addrs
 }
 
-func newTestGitserverConns(addrs []string) *GitServerConns {
+func newTestGitserverConns(addrs []string) *GitserverConns {
 	conns := make(map[string]connAndErr)
 	for _, addr := range addrs {
 		conns[addr] = connAndErr{err: errors.New("conns not available in tests")}
 	}
-	return &GitServerConns{
+	return &GitserverConns{
 		GitserverAddresses: GitserverAddresses{
 			Addresses: addrs,
 		},
@@ -79,13 +79,13 @@ func addrForKey(key string, addrs []string) string {
 	return addrs[serverIndex]
 }
 
-type GitServerConns struct {
+type GitserverConns struct {
 	GitserverAddresses
 	// invariant: there is one conn for every
 	grpcConns map[string]connAndErr
 }
 
-func (g *GitServerConns) ConnForRepo(userAgent string, repo api.RepoName) (*grpc.ClientConn, error) {
+func (g *GitserverConns) ConnForRepo(userAgent string, repo api.RepoName) (*grpc.ClientConn, error) {
 	addr := g.AddrForRepo(userAgent, repo)
 	ce := g.grpcConns[addr]
 	return ce.conn, ce.err
@@ -97,11 +97,11 @@ type connAndErr struct {
 }
 
 type atomicGitServerConns struct {
-	conns     atomic.Pointer[GitServerConns]
+	conns     atomic.Pointer[GitserverConns]
 	watchOnce sync.Once
 }
 
-func (a *atomicGitServerConns) get() *GitServerConns {
+func (a *atomicGitServerConns) get() *GitserverConns {
 	a.initOnce()
 	return a.conns.Load()
 }
@@ -116,14 +116,14 @@ func (a *atomicGitServerConns) initOnce() {
 }
 
 func (a *atomicGitServerConns) update(cfg *conf.Unified) {
-	after := GitServerConns{
+	after := GitserverConns{
 		GitserverAddresses: NewGitserverAddressesFromConf(cfg),
 		grpcConns:          nil, // to be filled in
 	}
 
 	before := a.conns.Load()
 	if before == nil {
-		before = &GitServerConns{}
+		before = &GitserverConns{}
 	}
 
 	if slices.Equal(before.Addresses, after.Addresses) {
