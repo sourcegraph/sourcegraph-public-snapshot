@@ -12,8 +12,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 	"github.com/graph-gophers/graphql-go"
-
 	sglog "github.com/sourcegraph/log"
+	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -36,6 +36,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	proto "github.com/sourcegraph/sourcegraph/internal/frontend/indexedsearch/v1"
 )
 
 type Handlers struct {
@@ -174,25 +176,24 @@ func NewHandler(
 	return m
 }
 
-// NewInternalHandler returns a new API handler for internal endpoints that uses
-// the provided API router, which must have been created by httpapi/router.NewInternal.
+// RegisterInternalServices registers REST and gRPC handlers for Sourcegraph's internal API on the
+// provided mux.Router and gRPC server.
 //
 // 🚨 SECURITY: This handler should not be served on a publicly exposed port. 🚨
 // This handler is not guaranteed to provide the same authorization checks as
 // public API handlers.
-func NewInternalHandler(
+func RegisterInternalServices(
 	m *mux.Router,
+	s *grpc.Server,
+
 	db database.DB,
 	schema *graphql.Schema,
 	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
 	rankingService enterprise.RankingService,
 	newComputeStreamHandler enterprise.NewComputeStreamHandler,
 	rateLimitWatcher graphqlbackend.LimitWatcher,
-) http.Handler {
+) {
 	logger := sglog.Scoped("InternalHandler", "frontend internal HTTP API handler")
-	if m == nil {
-		m = apirouter.New(nil)
-	}
 	m.StrictSlash(true)
 
 	handler := jsonMiddleware(&errorHandler{
@@ -224,6 +225,8 @@ func NewInternalHandler(
 	m.Get(apirouter.DocumentRanks).Handler(trace.Route(handler(indexer.serveDocumentRanks)))
 	m.Get(apirouter.UpdateIndexStatus).Handler(trace.Route(handler(indexer.handleIndexStatusUpdate)))
 
+	s.RegisterService(&proto.IndexedSearchConfigurationService_ServiceDesc, &searchIndexerGRPCServer{server: indexer})
+
 	m.Get(apirouter.ExternalURL).Handler(trace.Route(handler(serveExternalURL)))
 	m.Get(apirouter.SendEmail).Handler(trace.Route(handler(serveSendEmail)))
 	gitService := &gitServiceHandler{
@@ -246,8 +249,6 @@ func NewInternalHandler(
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
 		http.Error(w, "no route", http.StatusNotFound)
 	})
-
-	return m
 }
 
 var schemaDecoder = schema.NewDecoder()

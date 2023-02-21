@@ -1,12 +1,12 @@
 syntax = "proto3";
 
-package frontend.v1;
+package frontend.indexedsearch.v1;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/sourcegraph/sourcegraph/internal/frontend/indexed-search/v1";
+option go_package = "github.com/sourcegraph/sourcegraph/internal/frontend/indexedsearch/v1";
 
-service FrontendService {
+service IndexedSearchConfigurationService {
   // SearchConfiguration returns the current indexing configuration for the specified repositories.
   rpc SearchConfiguration(SearchConfigurationRequest) returns (SearchConfigurationResponse) {}
 

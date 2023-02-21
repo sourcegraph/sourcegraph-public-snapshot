@@ -8,7 +8,6 @@ package v1
 
 import (
 	context "context"
-
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -19,10 +18,10 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// FrontendServiceClient is the client API for FrontendService service.
+// IndexedSearchConfigurationServiceClient is the client API for IndexedSearchConfigurationService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type FrontendServiceClient interface {
+type IndexedSearchConfigurationServiceClient interface {
 	// SearchConfiguration returns the current indexing configuration for the specified repositories.
 	SearchConfiguration(ctx context.Context, in *SearchConfigurationRequest, opts ...grpc.CallOption) (*SearchConfigurationResponse, error)
 	// List returns the list of repositories that the client should index.
@@ -36,63 +35,63 @@ type FrontendServiceClient interface {
 	UpdateIndexStatus(ctx context.Context, in *UpdateIndexStatusRequest, opts ...grpc.CallOption) (*UpdateIndexStatusResponse, error)
 }
 
-type frontendServiceClient struct {
+type indexedSearchConfigurationServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewFrontendServiceClient(cc grpc.ClientConnInterface) FrontendServiceClient {
-	return &frontendServiceClient{cc}
+func NewIndexedSearchConfigurationServiceClient(cc grpc.ClientConnInterface) IndexedSearchConfigurationServiceClient {
+	return &indexedSearchConfigurationServiceClient{cc}
 }
 
-func (c *frontendServiceClient) SearchConfiguration(ctx context.Context, in *SearchConfigurationRequest, opts ...grpc.CallOption) (*SearchConfigurationResponse, error) {
+func (c *indexedSearchConfigurationServiceClient) SearchConfiguration(ctx context.Context, in *SearchConfigurationRequest, opts ...grpc.CallOption) (*SearchConfigurationResponse, error) {
 	out := new(SearchConfigurationResponse)
-	err := c.cc.Invoke(ctx, "/frontend.v1.FrontendService/SearchConfiguration", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/frontend.indexedsearch.v1.IndexedSearchConfigurationService/SearchConfiguration", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *frontendServiceClient) List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListResponse, error) {
+func (c *indexedSearchConfigurationServiceClient) List(ctx context.Context, in *ListRequest, opts ...grpc.CallOption) (*ListResponse, error) {
 	out := new(ListResponse)
-	err := c.cc.Invoke(ctx, "/frontend.v1.FrontendService/List", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/frontend.indexedsearch.v1.IndexedSearchConfigurationService/List", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *frontendServiceClient) RepositoryRank(ctx context.Context, in *RepositoryRankRequest, opts ...grpc.CallOption) (*RepositoryRankResponse, error) {
+func (c *indexedSearchConfigurationServiceClient) RepositoryRank(ctx context.Context, in *RepositoryRankRequest, opts ...grpc.CallOption) (*RepositoryRankResponse, error) {
 	out := new(RepositoryRankResponse)
-	err := c.cc.Invoke(ctx, "/frontend.v1.FrontendService/RepositoryRank", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/frontend.indexedsearch.v1.IndexedSearchConfigurationService/RepositoryRank", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *frontendServiceClient) DocumentRanks(ctx context.Context, in *DocumentRanksRequest, opts ...grpc.CallOption) (*DocumentRanksResponse, error) {
+func (c *indexedSearchConfigurationServiceClient) DocumentRanks(ctx context.Context, in *DocumentRanksRequest, opts ...grpc.CallOption) (*DocumentRanksResponse, error) {
 	out := new(DocumentRanksResponse)
-	err := c.cc.Invoke(ctx, "/frontend.v1.FrontendService/DocumentRanks", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/frontend.indexedsearch.v1.IndexedSearchConfigurationService/DocumentRanks", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *frontendServiceClient) UpdateIndexStatus(ctx context.Context, in *UpdateIndexStatusRequest, opts ...grpc.CallOption) (*UpdateIndexStatusResponse, error) {
+func (c *indexedSearchConfigurationServiceClient) UpdateIndexStatus(ctx context.Context, in *UpdateIndexStatusRequest, opts ...grpc.CallOption) (*UpdateIndexStatusResponse, error) {
 	out := new(UpdateIndexStatusResponse)
-	err := c.cc.Invoke(ctx, "/frontend.v1.FrontendService/UpdateIndexStatus", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/frontend.indexedsearch.v1.IndexedSearchConfigurationService/UpdateIndexStatus", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// FrontendServiceServer is the server API for FrontendService service.
-// All implementations must embed UnimplementedFrontendServiceServer
+// IndexedSearchConfigurationServiceServer is the server API for IndexedSearchConfigurationService service.
+// All implementations must embed UnimplementedIndexedSearchConfigurationServiceServer
 // for forward compatibility
-type FrontendServiceServer interface {
+type IndexedSearchConfigurationServiceServer interface {
 	// SearchConfiguration returns the current indexing configuration for the specified repositories.
 	SearchConfiguration(context.Context, *SearchConfigurationRequest) (*SearchConfigurationResponse, error)
 	// List returns the list of repositories that the client should index.
@@ -104,157 +103,158 @@ type FrontendServiceServer interface {
 	// UpdateIndexStatus informs the server that the caller has indexed the specified repositories
 	// at the specified commits.
 	UpdateIndexStatus(context.Context, *UpdateIndexStatusRequest) (*UpdateIndexStatusResponse, error)
-	mustEmbedUnimplementedFrontendServiceServer()
+	mustEmbedUnimplementedIndexedSearchConfigurationServiceServer()
 }
 
-// UnimplementedFrontendServiceServer must be embedded to have forward compatible implementations.
-type UnimplementedFrontendServiceServer struct {
+// UnimplementedIndexedSearchConfigurationServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedIndexedSearchConfigurationServiceServer struct {
 }
 
-func (UnimplementedFrontendServiceServer) SearchConfiguration(context.Context, *SearchConfigurationRequest) (*SearchConfigurationResponse, error) {
+func (UnimplementedIndexedSearchConfigurationServiceServer) SearchConfiguration(context.Context, *SearchConfigurationRequest) (*SearchConfigurationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SearchConfiguration not implemented")
 }
-func (UnimplementedFrontendServiceServer) List(context.Context, *ListRequest) (*ListResponse, error) {
+func (UnimplementedIndexedSearchConfigurationServiceServer) List(context.Context, *ListRequest) (*ListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
 }
-func (UnimplementedFrontendServiceServer) RepositoryRank(context.Context, *RepositoryRankRequest) (*RepositoryRankResponse, error) {
+func (UnimplementedIndexedSearchConfigurationServiceServer) RepositoryRank(context.Context, *RepositoryRankRequest) (*RepositoryRankResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RepositoryRank not implemented")
 }
-func (UnimplementedFrontendServiceServer) DocumentRanks(context.Context, *DocumentRanksRequest) (*DocumentRanksResponse, error) {
+func (UnimplementedIndexedSearchConfigurationServiceServer) DocumentRanks(context.Context, *DocumentRanksRequest) (*DocumentRanksResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DocumentRanks not implemented")
 }
-func (UnimplementedFrontendServiceServer) UpdateIndexStatus(context.Context, *UpdateIndexStatusRequest) (*UpdateIndexStatusResponse, error) {
+func (UnimplementedIndexedSearchConfigurationServiceServer) UpdateIndexStatus(context.Context, *UpdateIndexStatusRequest) (*UpdateIndexStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateIndexStatus not implemented")
 }
-func (UnimplementedFrontendServiceServer) mustEmbedUnimplementedFrontendServiceServer() {}
+func (UnimplementedIndexedSearchConfigurationServiceServer) mustEmbedUnimplementedIndexedSearchConfigurationServiceServer() {
+}
 
-// UnsafeFrontendServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to FrontendServiceServer will
+// UnsafeIndexedSearchConfigurationServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to IndexedSearchConfigurationServiceServer will
 // result in compilation errors.
-type UnsafeFrontendServiceServer interface {
-	mustEmbedUnimplementedFrontendServiceServer()
+type UnsafeIndexedSearchConfigurationServiceServer interface {
+	mustEmbedUnimplementedIndexedSearchConfigurationServiceServer()
 }
 
-func RegisterFrontendServiceServer(s grpc.ServiceRegistrar, srv FrontendServiceServer) {
-	s.RegisterService(&FrontendService_ServiceDesc, srv)
+func RegisterIndexedSearchConfigurationServiceServer(s grpc.ServiceRegistrar, srv IndexedSearchConfigurationServiceServer) {
+	s.RegisterService(&IndexedSearchConfigurationService_ServiceDesc, srv)
 }
 
-func _FrontendService_SearchConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _IndexedSearchConfigurationService_SearchConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SearchConfigurationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FrontendServiceServer).SearchConfiguration(ctx, in)
+		return srv.(IndexedSearchConfigurationServiceServer).SearchConfiguration(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/frontend.v1.FrontendService/SearchConfiguration",
+		FullMethod: "/frontend.indexedsearch.v1.IndexedSearchConfigurationService/SearchConfiguration",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FrontendServiceServer).SearchConfiguration(ctx, req.(*SearchConfigurationRequest))
+		return srv.(IndexedSearchConfigurationServiceServer).SearchConfiguration(ctx, req.(*SearchConfigurationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FrontendService_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _IndexedSearchConfigurationService_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FrontendServiceServer).List(ctx, in)
+		return srv.(IndexedSearchConfigurationServiceServer).List(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/frontend.v1.FrontendService/List",
+		FullMethod: "/frontend.indexedsearch.v1.IndexedSearchConfigurationService/List",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FrontendServiceServer).List(ctx, req.(*ListRequest))
+		return srv.(IndexedSearchConfigurationServiceServer).List(ctx, req.(*ListRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FrontendService_RepositoryRank_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _IndexedSearchConfigurationService_RepositoryRank_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RepositoryRankRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FrontendServiceServer).RepositoryRank(ctx, in)
+		return srv.(IndexedSearchConfigurationServiceServer).RepositoryRank(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/frontend.v1.FrontendService/RepositoryRank",
+		FullMethod: "/frontend.indexedsearch.v1.IndexedSearchConfigurationService/RepositoryRank",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FrontendServiceServer).RepositoryRank(ctx, req.(*RepositoryRankRequest))
+		return srv.(IndexedSearchConfigurationServiceServer).RepositoryRank(ctx, req.(*RepositoryRankRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FrontendService_DocumentRanks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _IndexedSearchConfigurationService_DocumentRanks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DocumentRanksRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FrontendServiceServer).DocumentRanks(ctx, in)
+		return srv.(IndexedSearchConfigurationServiceServer).DocumentRanks(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/frontend.v1.FrontendService/DocumentRanks",
+		FullMethod: "/frontend.indexedsearch.v1.IndexedSearchConfigurationService/DocumentRanks",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FrontendServiceServer).DocumentRanks(ctx, req.(*DocumentRanksRequest))
+		return srv.(IndexedSearchConfigurationServiceServer).DocumentRanks(ctx, req.(*DocumentRanksRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FrontendService_UpdateIndexStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _IndexedSearchConfigurationService_UpdateIndexStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateIndexStatusRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FrontendServiceServer).UpdateIndexStatus(ctx, in)
+		return srv.(IndexedSearchConfigurationServiceServer).UpdateIndexStatus(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/frontend.v1.FrontendService/UpdateIndexStatus",
+		FullMethod: "/frontend.indexedsearch.v1.IndexedSearchConfigurationService/UpdateIndexStatus",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FrontendServiceServer).UpdateIndexStatus(ctx, req.(*UpdateIndexStatusRequest))
+		return srv.(IndexedSearchConfigurationServiceServer).UpdateIndexStatus(ctx, req.(*UpdateIndexStatusRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// FrontendService_ServiceDesc is the grpc.ServiceDesc for FrontendService service.
+// IndexedSearchConfigurationService_ServiceDesc is the grpc.ServiceDesc for IndexedSearchConfigurationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var FrontendService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "frontend.v1.FrontendService",
-	HandlerType: (*FrontendServiceServer)(nil),
+var IndexedSearchConfigurationService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "frontend.indexedsearch.v1.IndexedSearchConfigurationService",
+	HandlerType: (*IndexedSearchConfigurationServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "SearchConfiguration",
-			Handler:    _FrontendService_SearchConfiguration_Handler,
+			Handler:    _IndexedSearchConfigurationService_SearchConfiguration_Handler,
 		},
 		{
 			MethodName: "List",
-			Handler:    _FrontendService_List_Handler,
+			Handler:    _IndexedSearchConfigurationService_List_Handler,
 		},
 		{
 			MethodName: "RepositoryRank",
-			Handler:    _FrontendService_RepositoryRank_Handler,
+			Handler:    _IndexedSearchConfigurationService_RepositoryRank_Handler,
 		},
 		{
 			MethodName: "DocumentRanks",
-			Handler:    _FrontendService_DocumentRanks_Handler,
+			Handler:    _IndexedSearchConfigurationService_DocumentRanks_Handler,
 		},
 		{
 			MethodName: "UpdateIndexStatus",
-			Handler:    _FrontendService_UpdateIndexStatus_Handler,
+			Handler:    _IndexedSearchConfigurationService_UpdateIndexStatus_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

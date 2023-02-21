@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	proto "github.com/sourcegraph/sourcegraph/internal/frontend/indexedsearch/v1"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -45,6 +46,23 @@ func repoRankFromConfig(siteConfig schema.SiteConfiguration, repoName string) fl
 	}
 	val += scores[repoName]
 	return val
+}
+
+type searchIndexerGRPCServer struct {
+	server *searchIndexerServer
+	proto.UnimplementedIndexedSearchConfigurationServiceServer
+}
+
+func (s *searchIndexerGRPCServer) UpdateIndexStatus(ctx context.Context, req *proto.UpdateIndexStatusRequest) (*proto.UpdateIndexStatusResponse, error) {
+	var request indexStatusUpdateArgs
+	request.FromProto(req)
+
+	err := s.server.doIndexStatusUpdate(ctx, &request)
+	if err != nil {
+		return nil, err
+	}
+
+	return &proto.UpdateIndexStatusResponse{}, nil
 }
 
 // searchIndexerServer has handlers that zoekt-sourcegraph-indexserver
@@ -328,29 +346,81 @@ func serveRank[T []float64 | map[string][]float64](
 	return nil
 }
 
-func (h *searchIndexerServer) handleIndexStatusUpdate(w http.ResponseWriter, r *http.Request) error {
-	var body struct {
-		Repositories []struct {
-			RepoID   uint32
-			Branches []zoekt.RepositoryBranch
-		}
+func (h *searchIndexerServer) handleIndexStatusUpdate(_ http.ResponseWriter, r *http.Request) error {
+	var args indexStatusUpdateArgs
+
+	if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
+		return errors.Wrap(err, "failed to decode request args")
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		return errors.Wrap(err, "failed to decode request body")
-	}
+	return h.doIndexStatusUpdate(r.Context(), &args)
+}
 
+func (h *searchIndexerServer) doIndexStatusUpdate(ctx context.Context, args *indexStatusUpdateArgs) error {
 	var (
-		ids     = make([]int32, len(body.Repositories))
-		minimal = make(map[uint32]*zoekt.MinimalRepoListEntry, len(body.Repositories))
+		ids     = make([]int32, len(args.Repositories))
+		minimal = make(map[uint32]*zoekt.MinimalRepoListEntry, len(args.Repositories))
 	)
 
-	for i, repo := range body.Repositories {
+	for i, repo := range args.Repositories {
 		ids[i] = int32(repo.RepoID)
 		minimal[repo.RepoID] = &zoekt.MinimalRepoListEntry{Branches: repo.Branches}
 	}
 
 	h.logger.Info("updating index status", log.Int32s("repositories", ids))
+	return h.db.ZoektRepos().UpdateIndexStatuses(ctx, minimal)
+}
 
-	return h.db.ZoektRepos().UpdateIndexStatuses(r.Context(), minimal)
+type indexStatusUpdateArgs struct {
+	Repositories []indexStatusUpdateRepository
+}
+
+type indexStatusUpdateRepository struct {
+	RepoID   uint32
+	Branches []zoekt.RepositoryBranch
+}
+
+func (a *indexStatusUpdateArgs) FromProto(req *proto.UpdateIndexStatusRequest) {
+	a.Repositories = make([]indexStatusUpdateRepository, 0, len(req.Repositories))
+
+	for _, repo := range req.Repositories {
+		branches := make([]zoekt.RepositoryBranch, 0, len(repo.Branches))
+		for _, b := range repo.Branches {
+			branches = append(branches, zoekt.RepositoryBranch{
+				Name:    b.Name,
+				Version: b.Version,
+			})
+		}
+
+		a.Repositories = append(a.Repositories, struct {
+			RepoID   uint32
+			Branches []zoekt.RepositoryBranch
+		}{
+			RepoID:   repo.RepoId,
+			Branches: branches,
+		})
+	}
+}
+
+func (a *indexStatusUpdateArgs) ToProto() *proto.UpdateIndexStatusRequest {
+	repos := make([]*proto.UpdateIndexStatusRequest_Repository, 0, len(a.Repositories))
+
+	for _, repo := range a.Repositories {
+		branches := make([]*proto.ZoektRepositoryBranch, 0, len(repo.Branches))
+		for _, b := range repo.Branches {
+			branches = append(branches, &proto.ZoektRepositoryBranch{
+				Name:    b.Name,
+				Version: b.Version,
+			})
+		}
+
+		repos = append(repos, &proto.UpdateIndexStatusRequest_Repository{
+			RepoId:   repo.RepoID,
+			Branches: branches,
+		})
+	}
+
+	return &proto.UpdateIndexStatusRequest{
+		Repositories: repos,
+	}
 }
