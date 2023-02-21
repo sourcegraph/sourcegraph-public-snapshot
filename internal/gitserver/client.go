@@ -551,7 +551,9 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 		}
 		r := streamio.NewReader(func() ([]byte, error) {
 			msg, err := stream.Recv()
-			if err != nil {
+			if status.Code(err) == codes.Canceled {
+				return nil, context.Canceled
+			} else if err != nil {
 				return nil, err
 			}
 			return msg.GetData(), nil

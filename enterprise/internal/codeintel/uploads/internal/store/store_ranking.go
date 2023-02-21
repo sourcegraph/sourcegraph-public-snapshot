@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
@@ -42,7 +41,7 @@ func (s *store) InsertDefinitionsAndReferencesForDocument(
 			return err
 		}
 
-		scipPayload, err := lsifstore.Decompressor.Decompress(bytes.NewReader(compressedSCIPPayload))
+		scipPayload, err := shared.Decompressor.Decompress(bytes.NewReader(compressedSCIPPayload))
 		if err != nil {
 			return err
 		}

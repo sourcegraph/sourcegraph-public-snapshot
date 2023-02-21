@@ -1,4 +1,4 @@
-package lsifstore
+package shared
 
 import (
 	"bytes"
