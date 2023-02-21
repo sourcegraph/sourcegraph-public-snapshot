@@ -41,8 +41,8 @@ export function GlobalContributions(props: Props): null {
     useEffect(() => {
         const subscriptions = new Subscription()
         if (extensionsController !== null) {
-            const historyOrNavigate: NavigateFunction = (to: any, options: any): void =>
-                navigateRef.current?.(to, options) as any
+            const historyOrNavigate: NavigateFunction = ((to: any, options: any): void =>
+                navigateRef.current?.(to, options)) as any
             subscriptions.add(
                 registerHoverContributions({
                     platformContext,
