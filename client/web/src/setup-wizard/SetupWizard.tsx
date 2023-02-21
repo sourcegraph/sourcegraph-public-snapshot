@@ -1,9 +1,11 @@
 import { FC, ReactElement, useCallback } from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { H1, H2 } from '@sourcegraph/wildcard'
+import { H1, H2, Text } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
+import { PageTitle } from '../components/PageTitle'
+import { SiteAdminRepositoriesContainer } from '../site-admin/SiteAdminRepositoriesContainer'
 
 import { RemoteRepositoriesStep } from './components/remote-repositories-step'
 import { SetupStepsRoot, StepConfiguration } from './components/setup-steps'
@@ -27,7 +29,7 @@ const SETUP_STEPS: StepConfiguration[] = [
         id: '003',
         name: 'Sync repositories',
         path: '/setup/sync-repositories',
-        component: () => <H2>Hello sync repositories step</H2>,
+        component: SyncRepositoriesStep,
     },
 ]
 
@@ -47,6 +49,7 @@ export const SetupWizard: FC = () => {
 
     return (
         <div className={styles.root}>
+            <PageTitle title="Setup" />
             <header className={styles.header}>
                 <BrandLogo variant="logo" isLightTheme={false} className={styles.logo} />
 
@@ -62,4 +65,15 @@ export const SetupWizard: FC = () => {
 
 function LocalRepositoriesStep(props: any): ReactElement {
     return <H2 {...props}>Hello local repositories step</H2>
+}
+
+function SyncRepositoriesStep(props: any): ReactElement {
+    return (
+        <section {...props}>
+            <Text>
+                It may take a few moments to clone and index each repository. Repository statuses are displayed below.
+            </Text>
+            <SiteAdminRepositoriesContainer />
+        </section>
+    )
 }
