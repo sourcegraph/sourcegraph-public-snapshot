@@ -5,12 +5,13 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
-	azuredevops2 "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	azuredevops2 "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"

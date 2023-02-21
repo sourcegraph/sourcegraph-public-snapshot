@@ -2,6 +2,10 @@ package sources
 
 import (
 	"context"
+	"net/url"
+	"strconv"
+	"strings"
+
 	azuredevops2 "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -13,9 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"net/url"
-	"strconv"
-	"strings"
 )
 
 type AzureDevOpsSource struct {

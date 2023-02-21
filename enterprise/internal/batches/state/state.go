@@ -2,12 +2,13 @@ package state
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
-	azuredevops2 "github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"io"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
+	azuredevops2 "github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 
 	"github.com/sourcegraph/go-diff/diff"
 
