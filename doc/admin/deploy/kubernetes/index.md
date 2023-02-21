@@ -28,28 +28,41 @@ Below is an overview of installing Sourcegraph on Kubernetes using Kustomize.
 Create a release branch from the default branch in your local fork of the [deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s) repository. Refer to the [reference repository's docs](../repositories.md) for instructions on creating a local fork.
 
 ```bash
-$ git clone https://github.com/sourcegraph/deploy-sourcegraph-k8s.git
-$ cd deploy-sourcegraph-k8s
-$ git checkout -b release
+  $ git clone https://github.com/sourcegraph/deploy-sourcegraph-k8s.git
+  $ cd deploy-sourcegraph-k8s
+  $ git checkout -b release
 ```
 
 ### **Step 2**: Set up a directory for your instance
 
-Create a new directory `instances/my-sourcegraph` for your Sourcegraph instance.
+Create an instance directory called `instances/my-sourcegraph` from the [instances/template](kustomize/index.md#template) directory:
 
 ```bash
-$ mkdir instances/my-sourcegraph
+  $ cp -R instances/template instances/my-sourcegraph
 ```
 
-### **Step 3**: Set up the kustomization file
+### **Step 3**: Set up the configuration files
 
-Copy [instances/template/kustomization.template.yaml](kustomize/index.md#template) to the `instances/my-sourcegraph` subdirectory as `kustomization.yaml`.
+#### kustomization.yaml
+
+The `kustomization.yaml` file is used to configure your Sourcegraph instance. 
+
+1\. Rename the [kustomization.template.yaml](kustomize/index.md#kustomization-yaml) file in `instances/my-sourcegraph` to `kustomization.yaml`:
 
 ```bash
-$ cp instances/template/kustomization.template.yaml instances/my-sourcegraph/kustomization.yaml
+  $ mv instances/template/kustomization.template.yaml instances/my-sourcegraph/kustomization.yaml
 ```
 
-The new `kustomization.yaml` file will be used to configure your deployment.
+#### buildConfig.yaml
+
+The `buildConfig.yaml` file is used to configure components included in your `kustomization` file that require extra configuration.
+
+2\. Rename the [buildConfig.template.yaml](kustomize/index.md#buildconfig-yaml) file in `instances/my-sourcegraph` to `buildConfig.yaml`:
+
+```bash
+  $ mv instances/template/buildConfig.template.yaml instances/my-sourcegraph/buildConfig.yaml
+```
+
 
 ### **Step 4**: Set namespace
 
@@ -74,7 +87,8 @@ We recommend using a preconfigured storage class component for your cloud provid
   # instances/my-sourcegraph/kustomization.yaml
   # Select a component that corresponds to your cluster provider.
   components:
-    - ../../components/storage-class/aws
+    - ../../components/storage-class/aws/aws-ebs
+    - ../../components/storage-class/aws/ebs-csi
     - ../../components/storage-class/azure
     - ../../components/storage-class/gke
   ```
@@ -85,38 +99,27 @@ See our [configurations guide](configure.md) for a list of available storage cla
 
 If you cannot create a storage class or want to use an existing one with SSDs:
 
-1. Include the `storage-class/name-update` component under the components list
-2. Input the storage class name by setting the value of `STORAGECLASS_NAME` in `buildConfig.yaml`
-   
+1\. Include the `storage-class/name-update` component under the components list
+
+  ```yaml
+  # instances/my-sourcegraph/kustomization.yaml
+    components:
+      # This updates storageClassName to the STORAGECLASS_NAME value set in buildConfig.yaml
+      - ../../components/storage-class/name-update
+  ```
+
+2\. Input the storage class name by setting the value of `STORAGECLASS_NAME` in `buildConfig.yaml`. 
+
 For example, set `STORAGECLASS_NAME=sourcegraph` if `sourcegraph` is the name of an existing storage class:
-
-Include the `storage-class/name-update` component under the components list.
-
-```yaml
-# instances/my-sourcegraph/kustomization.yaml
-  components:
-    # Update storageClassName to the STORAGECLASS_NAME value set below
-    - ../../components/storage-class/name-update
-```
-
-Copy [instances/template/buildConfig.template.yaml](kustomize/index.md#template) to the `instances/my-sourcegraph` subdirectory as `buildConfig.yaml`.
-
-```bash
-$ cp instances/template/buildConfig.template.yaml instances/my-sourcegraph/buildConfig.yaml
-```
-
- Input the storage class name by setting the value of `STORAGECLASS_NAME` to `sourcegraph` in `buildConfig.yaml`
 
   ```yaml
   # instances/my-sourcegraph/buildConfig.yaml
-  apiVersion: v1
-  kind: SourcegraphBuildConfig
-  metadata:
-    labels:
-      deploy: sourcegraph-kustomize
-    name: sourcegraph-kustomize-config
-  data:
-    STORAGECLASS_NAME: sourcegraph # -- [ACTION] Set storage class name here
+    # ...
+    kind: SourcegraphBuildConfig
+    metadata:
+      name: sourcegraph-kustomize-config
+    data:
+      STORAGECLASS_NAME: sourcegraph # -- [ACTION] Update storage class name here
   ```
 
 #### Option 3: Use default storage class

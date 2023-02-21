@@ -83,10 +83,10 @@ We highly recommend deploying Sourcegraph on Kubernetes with Kustomize due to th
 
 **For setting up non-production environments on local machines.**
 
+  - [Sourcegraph App](../../app/index.md) - A standalone application on local machine
   - [Docker Compose](docker-compose/index.md) - A deployment option using Docker Compose
   - [Docker Single Container](docker-single-container/index.md) - A deployment option using a single Docker container
   - [Minikube](single-node/minikube.md) - A deployment option using Minikube with Docker container
-  - [Sourcegraph App (Experimental)](../../app/index.md) - A standalone application for experimentation
 
 ### ARM / ARM64 support
 

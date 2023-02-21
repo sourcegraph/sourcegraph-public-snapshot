@@ -81,11 +81,11 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: default
 resources:
-# Sourcegraph Main Stack
+# Deploy Sourcegraph main stack
 - ../../base/sourcegraph
+# Deploy Sourcegraph monitoring stack
+- ../../base/monitoring
 components:
-# Sourcegraph Monitoring Stack
-- ../../components/monitoring
 # Use resources for a size-XS instance
 - ../../components/sizes/xs
 # Apply configurations for AWS EKS storage class and ALB
@@ -111,11 +111,12 @@ Step 1: Add the `aws/mange-cert` component to your overlay:
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: default
-# Sourcegraph Main Stack
+resources:
+# Deploy Sourcegraph main stack
 - ../../base/sourcegraph
+# Deploy Sourcegraph monitoring stack
+- ../../base/monitoring
 components:
-# Sourcegraph Monitoring Stack
-- ../../components/monitoring
 - ../../components/sizes/xs
 - ../../components/clusters/aws/eks-ebs
 - ../../components/clusters/aws/mange-cert

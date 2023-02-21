@@ -104,25 +104,23 @@ File structure:
       └── kustomization.template.yaml
 ```
 
-All custom overlays built for a specific instance should be stored in the [instances directory](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tree/master/instances), where you can find the [instances/template folder](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tree/master/instances/template). This folder contains a `kustomization.template.yaml file` that is preconfigured to construct an overlay for deploying Sourcegraph.
+All custom overlays built for a specific instance should be stored in the [instances directory](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tree/master/instances), where you can find the [instances/template folder](https://github.com/sourcegraph/deploy-sourcegraph-k8s/tree/master/instances/template). This folder contains a [kustomization.template.yaml file](#kustomization-yaml) that is preconfigured to construct an overlay for deploying Sourcegraph, and a [buildConfig.template.yaml](#buildconfig-yaml).
 
 ### kustomization.yaml
 
 The [kustomization.yaml file](#kustomization-yaml) is a fundamental element of a Kustomize overlay. It is situated in the root directory of the overlay and serves as a means of customizing and configuring the resources defined in the base manifests, as outlined in our [configuration documentation](../configure.md).
 
-To correctly configure your Sourcegraph deployment, it is crucial to create an overlay using the `kustomization.template.yaml` file provided. This [kustomization.yaml file](#kustomization-yaml) is specifically designed for Sourcegraph deployments, making the configuration process more manageable. The file includes various options and sections, allowing for the creation of a Sourcegraph instance that is tailored to the specific environment. These sections include:
+To correctly configure your Sourcegraph deployment, it is crucial to create an overlay using the `kustomization.template.yaml` file provided. This [kustomization.yaml file](#kustomization-yaml) is specifically designed for Sourcegraph deployments, making the configuration process more manageable. The file includes various options and sections, allowing for the creation of a Sourcegraph instance that is tailored to the specific environment.
+
+#### components-list
+
+The order of components in the [kustomization.template.yaml file](kustomize/index.md#kustomization-yaml) is important and should be maintained. The components are listed in a specific order to ensure proper dependency management and compatibility between components. Reordering components can introduce conflicts or prevent components from interacting as expected. Only modify the component order if explicitly instructed to do so by the documentation. Otherwise, leave the component order as-is to avoid issues.
 
 ### buildConfig.yaml
 
 Some Kustomize components may require additional configuration. These inputs typically specify environment/use-case-specific settings. For example, the name of your private registry to update images.
-Only copy the `buildConfig.yaml` file into your overlay instance directory if a component's documentation explicitly instructs you to do so. Not all components need extra configuration, and some have suitable defaults.
+Only update the values inside the `buildConfig.yaml` file if a component's documentation explicitly instructs you to do so. Not all components need extra configuration, and some have suitable defaults.
 Modifying `buildConfig.yaml` unnecessarily can cause errors or unintended behavior. Always check the [configuration docs](../configure.md) or comments in [kustomization.yaml](#kustomization-yaml) before changing this file.
-
-When needed, copy the `buildConfig.template.yaml` file from the `instances/template` directory to the new directory created in step 1, and rename it to `buildConfig.yaml`.
-
-```bash
-$ cp instances/template/buildConfig.template.yaml instances/$INSTANCE_NAME/buildConfig.yaml
-```
 
 ### patches directory
 
@@ -139,10 +137,10 @@ This will ensure the files are in the correct location for the configuration pro
 
 ### Create a Sourcegraph overlay
 
-The [kustomization.template.yaml](#template) file found in the `instances/template` directory serves as a starting point for creating a custom overlay for your deployment. This template file includes a list of components that are commonly used in Sourcegraph deployments. To create a new overlay, you can copy this template file to the desired overlay directory (e.g. instances/production) and name it kustomization.yaml. Then, you can enable or disable specific components by commenting or uncommenting them in the overlay file. This allows you to customize your deployment to suit your specific needs.
+The [instances/template](#template) directory serves as a starting point for creating a custom overlay for your deployment. This template file includes a list of components that are commonly used in Sourcegraph deployments. To create a new overlay, you can copy this template file to the desired overlay directory (e.g. instances/production) and name it kustomization.yaml. Then, you can enable or disable specific components by commenting or uncommenting them in the overlay file. This allows you to customize your deployment to suit your specific needs.
 
 
-**Step 1**: Create a new directory within the `overlays` subdirectory. 
+**Step 1**: Create a new directory within the `instances` subdirectory. 
 
 The name of this directory, $INSTANCE_NAME, serves as the name of your overlay for a specific instance, for example, dev, prod, staging, etc.
 
