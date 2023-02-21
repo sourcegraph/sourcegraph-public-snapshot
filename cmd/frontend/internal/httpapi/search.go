@@ -19,11 +19,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	proto "github.com/sourcegraph/sourcegraph/internal/frontend/indexedsearch/v1"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/protos/frontend/indexedsearch/v1"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -50,10 +50,10 @@ func repoRankFromConfig(siteConfig schema.SiteConfiguration, repoName string) fl
 
 type searchIndexerGRPCServer struct {
 	server *searchIndexerServer
-	proto.UnimplementedIndexedSearchConfigurationServiceServer
+	v1.UnimplementedIndexedSearchConfigurationServiceServer
 }
 
-func (s *searchIndexerGRPCServer) UpdateIndexStatus(ctx context.Context, req *proto.UpdateIndexStatusRequest) (*proto.UpdateIndexStatusResponse, error) {
+func (s *searchIndexerGRPCServer) UpdateIndexStatus(ctx context.Context, req *v1.UpdateIndexStatusRequest) (*v1.UpdateIndexStatusResponse, error) {
 	var request indexStatusUpdateArgs
 	request.FromProto(req)
 
@@ -62,7 +62,7 @@ func (s *searchIndexerGRPCServer) UpdateIndexStatus(ctx context.Context, req *pr
 		return nil, err
 	}
 
-	return &proto.UpdateIndexStatusResponse{}, nil
+	return &v1.UpdateIndexStatusResponse{}, nil
 }
 
 // searchIndexerServer has handlers that zoekt-sourcegraph-indexserver
@@ -380,7 +380,7 @@ type indexStatusUpdateRepository struct {
 	Branches []zoekt.RepositoryBranch
 }
 
-func (a *indexStatusUpdateArgs) FromProto(req *proto.UpdateIndexStatusRequest) {
+func (a *indexStatusUpdateArgs) FromProto(req *v1.UpdateIndexStatusRequest) {
 	a.Repositories = make([]indexStatusUpdateRepository, 0, len(req.Repositories))
 
 	for _, repo := range req.Repositories {
@@ -402,25 +402,25 @@ func (a *indexStatusUpdateArgs) FromProto(req *proto.UpdateIndexStatusRequest) {
 	}
 }
 
-func (a *indexStatusUpdateArgs) ToProto() *proto.UpdateIndexStatusRequest {
-	repos := make([]*proto.UpdateIndexStatusRequest_Repository, 0, len(a.Repositories))
+func (a *indexStatusUpdateArgs) ToProto() *v1.UpdateIndexStatusRequest {
+	repos := make([]*v1.UpdateIndexStatusRequest_Repository, 0, len(a.Repositories))
 
 	for _, repo := range a.Repositories {
-		branches := make([]*proto.ZoektRepositoryBranch, 0, len(repo.Branches))
+		branches := make([]*v1.ZoektRepositoryBranch, 0, len(repo.Branches))
 		for _, b := range repo.Branches {
-			branches = append(branches, &proto.ZoektRepositoryBranch{
+			branches = append(branches, &v1.ZoektRepositoryBranch{
 				Name:    b.Name,
 				Version: b.Version,
 			})
 		}
 
-		repos = append(repos, &proto.UpdateIndexStatusRequest_Repository{
+		repos = append(repos, &v1.UpdateIndexStatusRequest_Repository{
 			RepoId:   repo.RepoID,
 			Branches: branches,
 		})
 	}
 
-	return &proto.UpdateIndexStatusRequest{
+	return &v1.UpdateIndexStatusRequest{
 		Repositories: repos,
 	}
 }

@@ -36,8 +36,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	proto "github.com/sourcegraph/sourcegraph/internal/frontend/indexedsearch/v1"
+	proto "github.com/sourcegraph/sourcegraph/protos/frontend/indexedsearch/v1"
 )
 
 type Handlers struct {
