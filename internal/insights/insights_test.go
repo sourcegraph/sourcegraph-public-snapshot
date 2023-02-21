@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/hexops/valast"
 	"github.com/inconshreveable/log15"
 
@@ -103,7 +103,7 @@ func TestGetSearchInsightsMulti(t *testing.T) {
 		return got[i].ID < got[j].ID
 	})
 
-	autogold.Want("testGetSearchInsightsMulti", []SearchInsight{
+	autogold.Expect([]SearchInsight{
 		{
 			ID:           "searchInsights.insight.global.simple",
 			Title:        "my insight",

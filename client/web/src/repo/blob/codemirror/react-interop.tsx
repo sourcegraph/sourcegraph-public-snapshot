@@ -1,11 +1,8 @@
 import React, { useEffect } from 'react'
 
-import { Router } from 'react-router'
-import { CompatRouter } from 'react-router-dom-v5-compat'
+import { BrowserRouter } from 'react-router-dom'
 
 import { WildcardThemeContext } from '@sourcegraph/wildcard'
-
-import { globalHistory } from '../../../util/globalHistory'
 
 interface CodeMirrorContainerProps {
     onMount?: () => void
@@ -28,9 +25,7 @@ export const CodeMirrorContainer: React.FunctionComponent<React.PropsWithChildre
 
     return (
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
-            <Router history={globalHistory}>
-                <CompatRouter>{children}</CompatRouter>
-            </Router>
+            <BrowserRouter>{children}</BrowserRouter>
         </WildcardThemeContext.Provider>
     )
 }

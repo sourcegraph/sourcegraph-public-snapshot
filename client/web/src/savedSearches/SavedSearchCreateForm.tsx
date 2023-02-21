@@ -1,6 +1,6 @@
 import React, { FC } from 'react'
 
-import { useLocation, useNavigate, NavigateFunction, Location } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate, NavigateFunction, Location } from 'react-router-dom'
 import { concat, Subject, Subscription } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { Omit } from 'utility-types'

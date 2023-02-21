@@ -5,12 +5,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { ApolloProvider } from '@apollo/client'
 import ServerIcon from 'mdi-react/ServerIcon'
-import { Router } from 'react-router'
-import { CompatRouter, Routes, Route } from 'react-router-dom-v5-compat'
+import { RouterProvider, createBrowserRouter } from 'react-router-dom'
 import { combineLatest, from, Subscription, fromEvent, of, Subject, Observable } from 'rxjs'
-import { first, startWith, switchMap } from 'rxjs/operators'
+import { startWith, switchMap } from 'rxjs/operators'
 
-import { isMacPlatform, logger } from '@sourcegraph/common'
+import { isTruthy, isMacPlatform, logger } from '@sourcegraph/common'
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
 import { SharedSpanName, TraceSpanProvider } from '@sourcegraph/observability-client'
 import { FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
@@ -67,8 +66,9 @@ import type { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import type { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import type { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import type { LayoutRouteProps, LegacyLayoutRouteComponentProps } from './routes'
-import { parseSearchURL, getQueryStateFromLocation, SearchAggregationProps } from './search'
+import { parseSearchURL, SearchAggregationProps } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
+import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import {
@@ -77,7 +77,6 @@ import {
     getExperimentalFeatures,
     useNavbarQueryState,
 } from './stores'
-import { setQueryStateFromURL } from './stores/navbarSearchQueryState'
 import { useThemeProps } from './theme'
 import { eventLogger } from './tracking/eventLogger'
 import type { UserAreaRoute } from './user/area/UserArea'
@@ -85,8 +84,6 @@ import type { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import type { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import type { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { UserSessionStores } from './UserSessionStores'
-import { globalHistory } from './util/globalHistory'
-import { observeLocation } from './util/location'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
 
 import styles from './LegacySourcegraphWebApp.module.scss'
@@ -121,8 +118,6 @@ interface SourcegraphWebAppProps
 const WILDCARD_THEME: WildcardTheme = {
     isBranded: true,
 }
-
-const GLOBAL_SEARCH_CONTEXT_SPEC = 'global'
 
 setLinkComponent(RouterLink)
 
@@ -295,38 +290,6 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
 
         setWorkspaceSearchContext(selectedSearchContextSpec)
 
-        // Update search query state whenever the URL changes
-        subscriptions.add(
-            getQueryStateFromLocation({
-                location: observeLocation(globalHistory).pipe(startWith(globalHistory.location)),
-                showSearchContext: props.searchContextsEnabled,
-                isSearchContextAvailable: (searchContext: string) =>
-                    props.searchContextsEnabled
-                        ? isSearchContextSpecAvailable({ spec: searchContext, platformContext })
-                              .pipe(first())
-                              .toPromise()
-                        : Promise.resolve(false),
-            }).subscribe(parsedSearchURLAndContext => {
-                if (parsedSearchURLAndContext.query) {
-                    // Only override filters and update query from URL if there
-                    // is a search query.
-                    if (
-                        parsedSearchURLAndContext.searchContextSpec &&
-                        parsedSearchURLAndContext.searchContextSpec !== selectedSearchContextSpec
-                    ) {
-                        setSelectedSearchContextSpec(parsedSearchURLAndContext.searchContextSpec)
-                    } else if (!parsedSearchURLAndContext.searchContextSpec) {
-                        // If no search context is present we have to fall back
-                        // to the global search context to match the server
-                        // behavior.
-                        setSelectedSearchContextSpec(GLOBAL_SEARCH_CONTEXT_SPEC)
-                    }
-
-                    setQueryStateFromURL(parsedSearchURLAndContext, parsedSearchURLAndContext.processedQuery)
-                }
-            })
-        )
-
         userRepositoriesUpdates.next()
 
         return () => subscriptions.unsubscribe()
@@ -401,6 +364,55 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
         return null
     }
 
+    const router = createBrowserRouter([
+        {
+            element: (
+                <Layout
+                    authenticatedUser={resolvedAuthenticatedUser}
+                    viewerSubject={viewerSubject}
+                    settingsCascade={settingsCascade}
+                    batchChangesEnabled={props.batchChangesEnabled}
+                    batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(settingsCascade)}
+                    batchChangesWebhookLogsEnabled={window.context.batchChangesWebhookLogsEnabled}
+                    // Search query
+                    fetchHighlightedFileLineRanges={_fetchHighlightedFileLineRanges}
+                    // Extensions
+                    platformContext={platformContext}
+                    extensionsController={null}
+                    telemetryService={eventLogger}
+                    isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                    searchContextsEnabled={props.searchContextsEnabled}
+                    selectedSearchContextSpec={getSelectedSearchContextSpec()}
+                    setSelectedSearchContextSpec={setSelectedSearchContextSpec}
+                    getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+                    fetchSearchContexts={fetchSearchContexts}
+                    fetchSearchContextBySpec={fetchSearchContextBySpec}
+                    fetchSearchContext={fetchSearchContext}
+                    createSearchContext={createSearchContext}
+                    updateSearchContext={updateSearchContext}
+                    deleteSearchContext={deleteSearchContext}
+                    isSearchContextSpecAvailable={isSearchContextSpecAvailable}
+                    globbing={globbing}
+                    streamSearch={aggregateStreamingSearch}
+                    codeIntelligenceEnabled={!!props.codeInsightsEnabled}
+                    notebooksEnabled={props.notebooksEnabled}
+                    codeMonitoringEnabled={props.codeMonitoringEnabled}
+                    searchAggregationEnabled={props.searchAggregationEnabled}
+                    themeProps={themeProps}
+                />
+            ),
+            children: props.routes
+                .map(
+                    ({ condition = () => true, render, path }) =>
+                        condition(context) && {
+                            path: path.slice(1), // remove leading slash
+                            element: render(context),
+                        }
+                )
+                .filter(isTruthy),
+        },
+    ])
+
     return (
         <ComponentsComposer
             components={[
@@ -418,61 +430,7 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
                 /* eslint-enable react/no-children-prop, react/jsx-key */
             ]}
         >
-            <Router history={globalHistory}>
-                <CompatRouter>
-                    <Routes>
-                        <Route
-                            path="*"
-                            element={
-                                <Layout
-                                    authenticatedUser={resolvedAuthenticatedUser}
-                                    viewerSubject={viewerSubject}
-                                    settingsCascade={settingsCascade}
-                                    batchChangesEnabled={props.batchChangesEnabled}
-                                    batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(settingsCascade)}
-                                    batchChangesWebhookLogsEnabled={window.context.batchChangesWebhookLogsEnabled}
-                                    // Search query
-                                    fetchHighlightedFileLineRanges={_fetchHighlightedFileLineRanges}
-                                    // Extensions
-                                    platformContext={platformContext}
-                                    extensionsController={null}
-                                    telemetryService={eventLogger}
-                                    isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                    searchContextsEnabled={props.searchContextsEnabled}
-                                    selectedSearchContextSpec={getSelectedSearchContextSpec()}
-                                    setSelectedSearchContextSpec={setSelectedSearchContextSpec}
-                                    getUserSearchContextNamespaces={getUserSearchContextNamespaces}
-                                    fetchSearchContexts={fetchSearchContexts}
-                                    fetchSearchContextBySpec={fetchSearchContextBySpec}
-                                    fetchSearchContext={fetchSearchContext}
-                                    createSearchContext={createSearchContext}
-                                    updateSearchContext={updateSearchContext}
-                                    deleteSearchContext={deleteSearchContext}
-                                    isSearchContextSpecAvailable={isSearchContextSpecAvailable}
-                                    globbing={globbing}
-                                    streamSearch={aggregateStreamingSearch}
-                                    codeIntelligenceEnabled={!!props.codeInsightsEnabled}
-                                    notebooksEnabled={props.notebooksEnabled}
-                                    codeMonitoringEnabled={props.codeMonitoringEnabled}
-                                    searchAggregationEnabled={props.searchAggregationEnabled}
-                                    themeProps={themeProps}
-                                />
-                            }
-                        >
-                            {props.routes.map(
-                                ({ condition = () => true, ...route }) =>
-                                    condition(context) && (
-                                        <Route
-                                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                            path={route.path.slice(1)} // remove leading slash
-                                            element={route.render(context)}
-                                        />
-                                    )
-                            )}
-                        </Route>
-                    </Routes>
-                </CompatRouter>
-            </Router>
+            <RouterProvider router={router} />
             <UserSessionStores />
         </ComponentsComposer>
     )

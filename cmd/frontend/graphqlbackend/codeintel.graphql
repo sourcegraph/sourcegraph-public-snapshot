@@ -275,6 +275,16 @@ extend type Query {
     ): CodeIntelligenceConfigurationPolicyConnection!
 
     """
+    A list of unique indexer keys queryable via the `preciseIndexes.indexerKey` filter.
+    """
+    indexerKeys(
+        """
+        If supplied, only indexers associated with the given repository will be returned.
+        """
+        repo: ID
+    ): [String!]!
+
+    """
     Query precise code intelligence indexes.
     """
     preciseIndexes(
@@ -293,6 +303,11 @@ extend type Query {
         If supplied, only precise indexes in one of the provided states are returned.
         """
         states: [PreciseIndexState!]
+
+        """
+        If supplied, only precise indexes created by an indexer with the given key are returned.
+        """
+        indexerKey: String
 
         """
         If supplied, only precise indexes that are a dependency of the specified index are returned.

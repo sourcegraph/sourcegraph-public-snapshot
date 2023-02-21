@@ -4,7 +4,7 @@ import { defaultKeymap, historyKeymap, history as codemirrorHistory } from '@cod
 import { Compartment, EditorState, Extension, Prec } from '@codemirror/state'
 import { EditorView, keymap, drawSelection } from '@codemirror/view'
 import inRange from 'lodash/inRange'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 import useResizeObserver from 'use-resize-observer'
 import * as uuid from 'uuid'
 

@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from 'react'
 
 import { mdiMagnify } from '@mdi/js'
-import { useParams } from 'react-router-dom-v5-compat'
+import { useParams } from 'react-router-dom'
 import { Observable, of, throwError } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
 

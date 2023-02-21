@@ -316,13 +316,10 @@ func TestAddrForRepo(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := gitserver.AddrForRepo(context.Background(), "gitserver", tc.repo, gitserver.GitServerAddresses{
+			got := gitserver.AddrForRepo("gitserver", tc.repo, gitserver.GitServerAddresses{
 				Addresses:     addrs,
 				PinnedServers: pinned,
 			})
-			if err != nil {
-				t.Fatal("Error during getting gitserver address")
-			}
 			if got != tc.want {
 				t.Fatalf("Want %q, got %q", tc.want, got)
 			}
@@ -486,16 +483,12 @@ func TestClient_ResolveRevisions(t *testing.T) {
 }
 
 func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
-	ctx := context.Background()
 	client := gitserver.NewTestClient(&http.Client{}, []string{"gitserver1", "gitserver2"})
 	setPinnedRepos(map[string]string{
 		"repo1": "gitserver2",
 	})
 
-	addr, err := client.AddrForRepo(ctx, "repo1")
-	if err != nil {
-		t.Fatal("Error during getting gitserver address")
-	}
+	addr := client.AddrForRepo("repo1")
 	require.Equal(t, "gitserver2", addr)
 
 	// simulate config change - site admin manually changes the pinned repo config
@@ -503,10 +496,7 @@ func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
 		"repo1": "gitserver1",
 	})
 
-	addr, err = client.AddrForRepo(ctx, "repo1")
-	if err != nil {
-		t.Fatal("Error during getting gitserver address")
-	}
+	addr = client.AddrForRepo("repo1")
 	require.Equal(t, "gitserver1", addr)
 }
 

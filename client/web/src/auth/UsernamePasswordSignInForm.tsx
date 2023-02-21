@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
-import { useLocation } from 'react-router-dom-v5-compat'
+import { useLocation } from 'react-router-dom'
 
 import { asError, logger } from '@sourcegraph/common'
 import { Label, Button, LoadingSpinner, Link, Text, Input, Form } from '@sourcegraph/wildcard'

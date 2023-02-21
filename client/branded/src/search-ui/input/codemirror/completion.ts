@@ -46,7 +46,7 @@ import {
     mdiWrench,
 } from '@mdi/js'
 import { isEqual, startCase } from 'lodash'
-import { NavigateFunction } from 'react-router-dom-v5-compat'
+import { NavigateFunction } from 'react-router-dom'
 
 import { isDefined } from '@sourcegraph/common'
 import { SymbolKind } from '@sourcegraph/shared/src/graphql-operations'

@@ -26,7 +26,7 @@ import {
     WidgetType,
 } from '@codemirror/view'
 import classNames from 'classnames'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
