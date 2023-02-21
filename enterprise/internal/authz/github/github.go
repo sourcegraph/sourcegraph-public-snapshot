@@ -162,13 +162,16 @@ func (p *Provider) requiredAuthScopes() (requiredAuthScope, bool) {
 // fetchUserPermsByToken fetches all the private repo ids that the token can access.
 //
 // This may return a partial result if an error is encountered, e.g. via rate limits.
-func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.AccountID, token *auth.OAuthBearerToken, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+func (p *Provider) fetchUserPermsByToken(ctx context.Context, account *extsvc.Account, token *auth.OAuthBearerToken, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
 	client, err := p.client()
 	if err != nil {
 		return nil, errors.Wrap(err, "get client")
 	}
 	client = client.WithAuthenticator(token)
+	client.WithRateLimiter(fmt.Sprintf("url:%s,clientID:%s,accountID:%s", account.ServiceID, account.ClientID, account.AccountID))
+
+	accountID := extsvc.AccountID(account.AccountID)
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
@@ -351,7 +354,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		oauthToken.NeedsRefreshBuffer = 5
 	}
 
-	return p.fetchUserPermsByToken(ctx, extsvc.AccountID(account.AccountID), oauthToken, opts)
+	return p.fetchUserPermsByToken(ctx, account, oauthToken, opts)
 }
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to

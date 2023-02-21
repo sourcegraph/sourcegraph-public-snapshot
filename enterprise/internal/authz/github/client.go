@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 )
 
 // 🚨 SECURITY: Call sites should take care to provide this valid values and use the return
@@ -42,6 +43,7 @@ type client interface {
 
 	GetAuthenticatedOAuthScopes(ctx context.Context) ([]string, error)
 	WithAuthenticator(auther auth.Authenticator) client
+	WithRateLimiter(urn string)
 }
 
 var _ client = (*ClientAdapter)(nil)
@@ -55,4 +57,10 @@ func (c *ClientAdapter) WithAuthenticator(auther auth.Authenticator) client {
 	return &ClientAdapter{
 		V3Client: c.V3Client.WithAuthenticator(auther),
 	}
+}
+
+func (c *ClientAdapter) WithRateLimiter(urn string) {
+	rl := ratelimit.DefaultRegistry.Get(urn)
+	rl.SetLimit(5000.0 / 3600.0)
+	c.V3Client.WithRateLimiter(rl)
 }

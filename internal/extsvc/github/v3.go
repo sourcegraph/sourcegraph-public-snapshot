@@ -138,6 +138,10 @@ func (c *V3Client) RateLimitMonitor() *ratelimit.Monitor {
 	return c.rateLimitMonitor
 }
 
+func (c *V3Client) WithRateLimiter(rl *ratelimit.InstrumentedLimiter) {
+	c.rateLimit = rl
+}
+
 func (c *V3Client) get(ctx context.Context, requestURI string, result any) (*httpResponseState, error) {
 	req, err := http.NewRequest("GET", requestURI, nil)
 	if err != nil {
