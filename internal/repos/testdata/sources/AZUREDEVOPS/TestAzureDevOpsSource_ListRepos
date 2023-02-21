@@ -18,7 +18,7 @@
    "Sources": {
     "extsvc:azuredevops:0": {
      "ID": "extsvc:azuredevops:0",
-     "CloneURL": "https://dev.azure.com/sgtestazure2"
+     "CloneURL": "https://sgtestazure@dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure2"
     }
    },
    "Metadata": {
@@ -59,7 +59,7 @@
    "Sources": {
     "extsvc:azuredevops:0": {
      "ID": "extsvc:azuredevops:0",
-     "CloneURL": "https://dev.azure.com/sgtestazure"
+     "CloneURL": "https://sgtestazure@dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure"
     }
    },
    "Metadata": {
@@ -100,7 +100,7 @@
    "Sources": {
     "extsvc:azuredevops:0": {
      "ID": "extsvc:azuredevops:0",
-     "CloneURL": "https://dev.azure.com/sg%20test%20with%20spaces%202"
+     "CloneURL": "https://sgtestazure@dev.azure.com/sgtestazure/sg%20test%20with%20spaces/_git/sg%20test%20with%20spaces%202"
     }
    },
    "Metadata": {
