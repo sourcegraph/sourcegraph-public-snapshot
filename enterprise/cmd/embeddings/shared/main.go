@@ -40,8 +40,6 @@ const addr = ":9991"
 func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config *Config) error {
 	logger := observationCtx.Logger
 
-	// TODO: Check if embeddings are enabled.
-
 	// Initialize tracing/metrics
 	observationCtx = observation.NewContext(logger, observation.Honeycomb(&honey.Dataset{
 		Name:       "embeddings",
@@ -81,7 +79,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return err
 	}
 
-	client := embed.NewEmbeddingsClient(conf.Get().Embeddings)
+	client := embed.NewEmbeddingsClient()
 	getQueryEmbedding, err := getCachedQueryEmbeddingFn(client)
 	if err != nil {
 		return err

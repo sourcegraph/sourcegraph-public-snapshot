@@ -8,8 +8,10 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -29,25 +31,49 @@ type EmbeddingAPIResponse struct {
 
 type EmbeddingsClient interface {
 	GetEmbeddingsWithRetries(texts []string, maxRetries int) ([]float32, error)
-	GetDimensions() int
+	GetDimensions() (int, error)
 }
 
-func NewEmbeddingsClient(config *schema.Embeddings) EmbeddingsClient {
-	return &embeddingsClient{config: config}
+func NewEmbeddingsClient() EmbeddingsClient {
+	client := &embeddingsClient{config: conf.Get().Embeddings}
+
+	mu := sync.Mutex{}
+	conf.Watch(func() {
+		mu.Lock()
+		defer mu.Unlock()
+		client.setConfig(conf.Get().Embeddings)
+	})
+
+	return client
 }
 
 type embeddingsClient struct {
 	config *schema.Embeddings
 }
 
-func (c *embeddingsClient) GetDimensions() int {
-	return c.config.Dimensions
+func (c *embeddingsClient) isDisabled() bool {
+	return c.config == nil || !c.config.Enabled
+}
+
+func (c *embeddingsClient) setConfig(config *schema.Embeddings) {
+	c.config = config
+}
+
+func (c *embeddingsClient) GetDimensions() (int, error) {
+	if c.isDisabled() {
+		return -1, errors.New("embeddings are not configured or disabled")
+	}
+	return c.config.Dimensions, nil
 }
 
 // GetEmbeddingsWithRetries tries to embed the given texts using the external service specified in the config.
 // In case of failure, it retries the embedding procedure up to maxRetries. This due to the OpenAI API which
 // often hangs up when downloading large embedding responses.
 func (c *embeddingsClient) GetEmbeddingsWithRetries(texts []string, maxRetries int) ([]float32, error) {
+	if c.isDisabled() {
+		return nil, errors.New("embeddings are not configured or disabled")
+	}
+
 	embeddings, err := getEmbeddings(texts, c.config)
 	if err == nil {
 		return embeddings, nil

@@ -35,7 +35,6 @@ func (s *contextDetectionEmbeddingJob) Config() []env.Config {
 }
 
 func (s *contextDetectionEmbeddingJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	// TODO: Check if embeddings are enabled
 	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
@@ -70,7 +69,7 @@ func newContextDetectionEmbeddingJobWorker(
 	handler := &handler{db, uploadStore, gitserverClient}
 	return dbworker.NewWorker[*contextdetectionbg.ContextDetectionEmbeddingJob](ctx, workerStore, handler, workerutil.WorkerOptions{
 		Name:              "context_detection_embedding_job_worker",
-		Interval:          time.Second, // Poll for a job once per second
+		Interval:          time.Minute, // Poll for a job once per minute
 		NumHandlers:       1,           // Process only one job at a time (per instance)
 		HeartbeatInterval: 10 * time.Second,
 		Metrics:           workerutil.NewMetrics(observationCtx, "context_detection_embedding_job_worker"),

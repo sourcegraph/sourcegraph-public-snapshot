@@ -7,6 +7,8 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+
 	"github.com/grafana/regexp"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -32,6 +34,11 @@ var matchEverythingRegexp = regexp.MustCompile(``)
 const MAX_FILE_SIZE = 1000000 // 1MB
 
 func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoembeddingsbg.RepoEmbeddingJob) error {
+	config := conf.Get().Embeddings
+	if config == nil || !config.Enabled {
+		return errors.New("embeddings are not configured or disabled")
+	}
+
 	repo, err := h.db.Repos().Get(ctx, record.RepoID)
 	if err != nil {
 		return err
@@ -54,8 +61,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		}
 	}
 
-	config := conf.Get()
-	embeddingsClient := embed.NewEmbeddingsClient(config.Embeddings)
+	embeddingsClient := embed.NewEmbeddingsClient()
 
 	repoEmbeddingIndex, err := embed.EmbedRepo(ctx, repo.Name, record.Revision, validFiles, embeddingsClient, func(fileName string) ([]byte, error) {
 		return h.gitserverClient.ReadFile(ctx, nil, repo.Name, record.Revision, fileName)

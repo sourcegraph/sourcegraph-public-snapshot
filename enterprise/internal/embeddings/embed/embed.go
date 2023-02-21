@@ -78,7 +78,10 @@ func embedFiles(
 		return nil, nil
 	}
 
-	dimensions := client.GetDimensions()
+	dimensions, err := client.GetDimensions()
+	if err != nil {
+		return nil, err
+	}
 	index := &embeddings.EmbeddingIndex[embeddings.RepoEmbeddingRowMetadata]{
 		Embeddings:      make([]float32, 0, len(fileNames)*dimensions),
 		RowMetadata:     make([]embeddings.RepoEmbeddingRowMetadata, 0, len(fileNames)),

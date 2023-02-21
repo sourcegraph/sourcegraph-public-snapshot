@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+
 	"github.com/sourcegraph/log"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -28,8 +30,12 @@ var _ workerutil.Handler[*contextdetectionbg.ContextDetectionEmbeddingJob] = &ha
 const MAX_EMBEDDINGS_RETRIES = 3
 
 func (h *handler) Handle(ctx context.Context, logger log.Logger, _ *contextdetectionbg.ContextDetectionEmbeddingJob) error {
-	embeddingsConfig := conf.Get().Embeddings
-	embeddingsClient := embed.NewEmbeddingsClient(embeddingsConfig)
+	config := conf.Get().Embeddings
+	if config == nil || !config.Enabled {
+		return errors.New("embeddings are not configured or disabled")
+	}
+
+	embeddingsClient := embed.NewEmbeddingsClient()
 
 	messagesWithAdditionalContextIndex, err := getContextDetectionMessagesEmbeddingIndex(MESSAGES_WITH_ADDITIONAL_CONTEXT, embeddingsClient)
 	if err != nil {
@@ -67,9 +73,13 @@ func getContextDetectionMessagesEmbeddingIndex(messages []string, client embed.E
 		return embeddings.EmbeddingIndex[embeddings.ContextDetectionEmbeddingRowMetadata]{}, err
 	}
 
+	dimensions, err := client.GetDimensions()
+	if err != nil {
+		return embeddings.EmbeddingIndex[embeddings.ContextDetectionEmbeddingRowMetadata]{}, err
+	}
 	return embeddings.EmbeddingIndex[embeddings.ContextDetectionEmbeddingRowMetadata]{
 		Embeddings:      messagesEmbeddings,
 		RowMetadata:     metadata,
-		ColumnDimension: client.GetDimensions(),
+		ColumnDimension: dimensions,
 	}, nil
 }

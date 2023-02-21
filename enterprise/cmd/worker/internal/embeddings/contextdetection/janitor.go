@@ -29,7 +29,6 @@ func (j *contextDetectionEmbeddingJanitorJob) Config() []env.Config {
 }
 
 func (j *contextDetectionEmbeddingJanitorJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	// TODO: Check if embeddings are enabled
 	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
@@ -41,7 +40,7 @@ func (j *contextDetectionEmbeddingJanitorJob) Routines(_ context.Context, observ
 func newContextDetectionEmbeddingJobResetter(observationCtx *observation.Context, workerStore dbworkerstore.Store[*contextdetectionbg.ContextDetectionEmbeddingJob]) *dbworker.Resetter[*contextdetectionbg.ContextDetectionEmbeddingJob] {
 	return dbworker.NewResetter(observationCtx.Logger, workerStore, dbworker.ResetterOptions{
 		Name:     "context_detection_embedding_job_worker_resetter",
-		Interval: time.Minute * 60, // Check for orphaned jobs every 60 minutes
+		Interval: time.Hour * 2, // Check for orphaned jobs every 2 hours (embedding jobs can take a while)
 		Metrics:  dbworker.NewResetterMetrics(observationCtx, "context_detection_embedding_job_worker"),
 	})
 }
