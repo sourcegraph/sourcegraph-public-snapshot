@@ -55,7 +55,7 @@ The `kustomization.yaml` file is used to configure your Sourcegraph instance.
 
 #### buildConfig.yaml
 
-The `buildConfig.yaml` file is used to configure components included in your `kustomization` file that require extra configuration.
+The `buildConfig.yaml` file is used to configure components included in your `kustomization` file when required.
 
 2\. Rename the [buildConfig.template.yaml](kustomize/index.md#buildconfig-yaml) file in `instances/my-sourcegraph` to `buildConfig.yaml`:
 

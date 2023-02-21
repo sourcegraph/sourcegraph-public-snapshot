@@ -54,7 +54,7 @@ However, deploying with these default settings may not be suitable for all envir
 
 ## Overlays
 
-The **instances directory** is used to store customizations specific to your deployment environment. It allows you to create different overlays for different purposes, such as one for production and another for staging. It is best practice to avoid making changes to files outside of the **instances directory** in order to prevent merge conflicts during future updates.
+The **instances directory** is used to store customizations specific to your deployment environment. It allows you to create different overlays for different instances for different purposes, such as an instance for production and another for staging. It is best practice to avoid making changes to files outside of the **instances directory** in order to prevent merge conflicts during future updates.
 
 An [overlay](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/#bases-and-overlays) acts as a **customization layer** that contains a [kustomization file](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/), where components are defined as the **configuration layer** to include a set of instructions for Kustomize to generate and apply configurations to the **base layer**.
 
@@ -66,15 +66,13 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: sourcegraph-example
 resources:
-# Add resources for Sourcegraph main stack
-- ../../base/sourcegraph
+  - ../../base/sourcegraph # Deploy Sourcegraph main stack
+  - ../../base/monitoring # Deploy Sourcegraph monitoring stack
 components:
-# Add resources for Sourcegraph monitoring stack
-- ../../components/monitoring
-# Configurs the deployment for k3s cluster
-- ../../components/clusters/k3s
-# Configurs the resources we added above for a size XS instance
-- ../../components/sizes/xs
+  # Configurs the deployment for k3s cluster
+  - ../../components/clusters/k3s
+  # Configurs the resources we added above for a size XS instance
+  - ../../components/sizes/xs
 ```
 
 ### Examples overlays
@@ -137,24 +135,45 @@ This will ensure the files are in the correct location for the configuration pro
 
 ### Create a Sourcegraph overlay
 
-The [instances/template](#template) directory serves as a starting point for creating a custom overlay for your deployment. This template file includes a list of components that are commonly used in Sourcegraph deployments. To create a new overlay, you can copy this template file to the desired overlay directory (e.g. instances/production) and name it kustomization.yaml. Then, you can enable or disable specific components by commenting or uncommenting them in the overlay file. This allows you to customize your deployment to suit your specific needs.
+The [instances/template](#template) directory serves as a starting point for creating a custom overlay for your deployment. It includes the template files that includes a list of components that are commonly used in Sourcegraph deployments. To create a new overlay, you can copy this directory to a new directory. Then, you can enable or disable specific components by commenting or uncommenting them in the overlay file `kustomization.yaml` inside the new directory. This allows you to customize your deployment to suit your specific needs.
 
 
-**Step 1**: Create a new directory within the `instances` subdirectory. 
+**Step 1**: Set up a directory for your instance
 
-The name of this directory, $INSTANCE_NAME, serves as the name of your overlay for a specific instance, for example, dev, prod, staging, etc.
+Create a copy of the [instances/template](#template) directory within the `instances` subdirectory.
 
-```bash
-# from the root of the repository
-$ mkdir instances/$INSTANCE_NAME
-```
-
-**Step 2**: Copy the `kustomization.template.yaml` file from the `instances/template` directory to the new directory created in step 1, and rename it to `kustomization.yaml`.
+The name of this directory, `$INSTANCE_NAME`, serves as the name of your overlay for the specific instance, for example, `dev`, `prod`, `staging`, etc.
 
 ```bash
-$ cp instances/template/kustomization.template.yaml instances/$INSTANCE_NAME/kustomization.yaml
+# from the root of the deploy-sourcegraph-k8s repository
+$ export INSTANCE_NAME=staging # Update 'staging' to your instance name
+$ cp -R instances/template instances/$INSTANCE_NAME
 ```
 
+**Step 2**: Set up the configuration files
+
+As described above, you can find two configuration files within the `$INSTANCE_NAME` directory:
+
+1. The `kustomization.yaml` file is used to configure your Sourcegraph instance. 
+2. The `buildConfig.yaml` file is used to configure components included in your `kustomization` file when required.
+
+Follow the steps listed below to set up the configuration files for your instance overlay: `$INSTANCE_NAME`. 
+
+#### kustomization.yaml
+
+Rename the [kustomization.template.yaml](kustomize/index.md#kustomization-yaml) file in `instances/$INSTANCE_NAME` to `kustomization.yaml`:
+
+```bash
+  $ mv instances/template/kustomization.template.yaml instances/$INSTANCE_NAME/kustomization.yaml
+```
+
+#### buildConfig.yaml
+
+Rename the [buildConfig.template.yaml](kustomize/index.md#buildconfig-yaml) file in `instances/$INSTANCE_NAME` to `buildConfig.yaml`:
+
+```bash
+  $ mv instances/template/buildConfig.template.yaml instances/$INSTANCE_NAME/buildConfig.yaml
+```
 **Step 3**: You can begin customizing your Sourcegraph deployment by updating the [kustomization.yaml file](#kustomization-yaml) inside your overlay, following our [configuration guides](../configure.md) for guidance.
 
 ## Components
