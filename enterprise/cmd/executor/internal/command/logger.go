@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
@@ -34,8 +34,196 @@ type Logger interface {
 // output to flush the entry to the database.
 type LogEntry interface {
 	io.WriteCloser
+	// Finalize completes the log entry with the given exit code.
 	Finalize(exitCode int)
+	// CurrentLogEntry returns the execution log entry.
 	CurrentLogEntry() internalexecutor.ExecutionLogEntry
+}
+
+// NewLogger creates a new logger instance with the given store, job, record,
+// and replacement map.
+// When the log messages are serialized, any occurrence of sensitive values are
+// replace with a non-sensitive value.
+// Each log message is written to the store in a goroutine. The Flush method
+// must be called to ensure all entries are written.
+func NewLogger(internalLogger log.Logger, store ExecutionLogEntryStore, job types.Job, replacements map[string]string) Logger {
+	oldnew := make([]string, 0, len(replacements)*2)
+	for k, v := range replacements {
+		oldnew = append(oldnew, k, v)
+	}
+
+	l := &logger{
+		internalLogger: internalLogger,
+		store:          store,
+		job:            job,
+		done:           make(chan struct{}),
+		handles:        make(chan *entryHandle, logEntryBufsize),
+		replacer:       strings.NewReplacer(oldnew...),
+		errs:           nil,
+	}
+
+	go l.writeEntries()
+
+	return l
+}
+
+// ExecutionLogEntryStore handle interactions with executor.Job logs.
+type ExecutionLogEntryStore interface {
+	// AddExecutionLogEntry adds a new log entry to the store.
+	AddExecutionLogEntry(ctx context.Context, job types.Job, entry internalexecutor.ExecutionLogEntry) (int, error)
+	// UpdateExecutionLogEntry updates the log entry with the given ID.
+	UpdateExecutionLogEntry(ctx context.Context, job types.Job, entryID int, entry internalexecutor.ExecutionLogEntry) error
+}
+
+// logEntryBufSize is the maximum number of log entries that are logged by the
+// task execution but not yet written to the database.
+const logEntryBufsize = 50
+
+type logger struct {
+	internalLogger log.Logger
+	store          ExecutionLogEntryStore
+	done           chan struct{}
+	handles        chan *entryHandle
+
+	job types.Job
+
+	replacer *strings.Replacer
+
+	errs   error
+	errsMu sync.Mutex
+}
+
+func (l *logger) Flush() error {
+	close(l.handles)
+	<-l.done
+
+	l.errsMu.Lock()
+	defer l.errsMu.Unlock()
+
+	return l.errs
+}
+
+func (l *logger) Log(key string, command []string) LogEntry {
+	handle := &entryHandle{
+		logEntry: internalexecutor.ExecutionLogEntry{
+			Key:       key,
+			Command:   command,
+			StartTime: time.Now(),
+		},
+		replacer: l.replacer,
+		buf:      &bytes.Buffer{},
+		done:     make(chan struct{}),
+	}
+
+	l.handles <- handle
+	return handle
+}
+
+func (l *logger) writeEntries() {
+	defer close(l.done)
+
+	var wg sync.WaitGroup
+	for handle := range l.handles {
+		initialLogEntry := handle.CurrentLogEntry()
+		entryID, err := l.store.AddExecutionLogEntry(context.Background(), l.job, initialLogEntry)
+		if err != nil {
+			// If there is a timeout or cancellation error we don't want to skip
+			// writing these logs as users will often want to see how far something
+			// progressed prior to a timeout.
+			l.internalLogger.Warn(
+				"Failed to upload executor log entry for job",
+				log.Int("jobID", l.job.ID),
+				log.String("repositoryName", l.job.RepositoryName),
+				log.String("commit", l.job.Commit),
+				log.Error(err),
+			)
+
+			l.appendError(err)
+
+			continue
+		}
+		l.internalLogger.Debug(
+			"Writing log entry",
+			log.Int("jobID", l.job.ID),
+			log.Int("entryID", entryID),
+			log.String("repositoryName", l.job.RepositoryName),
+			log.String("commit", l.job.Commit),
+		)
+
+		wg.Add(1)
+		go func(handle *entryHandle, entryID int, initialLogEntry internalexecutor.ExecutionLogEntry) {
+			defer wg.Done()
+
+			l.syncLogEntry(handle, entryID, initialLogEntry)
+		}(handle, entryID, initialLogEntry)
+	}
+
+	wg.Wait()
+}
+
+func (l *logger) appendError(err error) {
+	l.errsMu.Lock()
+	l.errs = errors.Append(l.errs, err)
+	l.errsMu.Unlock()
+}
+
+func (l *logger) syncLogEntry(handle *entryHandle, entryID int, old internalexecutor.ExecutionLogEntry) {
+	lastWrite := false
+
+	for !lastWrite {
+		select {
+		case <-handle.done:
+			lastWrite = true
+		case <-time.After(syncLogEntryInterval):
+		}
+
+		current := handle.CurrentLogEntry()
+		if !entryWasUpdated(old, current) {
+			continue
+		}
+
+		l.internalLogger.Debug(
+			"Updating executor log entry",
+			log.Int("jobID", l.job.ID),
+			log.Int("entryID", entryID),
+			log.String("repositoryName", l.job.RepositoryName),
+			log.String("commit", l.job.Commit),
+			log.String("key", current.Key),
+			log.Int("outLen", len(current.Out)),
+			log.Intp("exitCode", current.ExitCode),
+			log.Intp("durationMs", current.DurationMs),
+		)
+
+		if err := l.store.UpdateExecutionLogEntry(context.Background(), l.job, entryID, current); err != nil {
+			logMethod := l.internalLogger.Warn
+			if lastWrite {
+				logMethod = l.internalLogger.Error
+				// If lastWrite, this MUST complete for the job to be considered successful,
+				// so we want to hard-fail otherwise. We store away the error.
+				l.appendError(err)
+			}
+
+			logMethod(
+				"Failed to update executor log entry for job",
+				log.Int("jobID", l.job.ID),
+				log.Int("entryID", entryID),
+				log.String("repositoryName", l.job.RepositoryName),
+				log.String("commit", l.job.Commit),
+				log.Bool("lastWrite", lastWrite),
+				log.Error(err),
+			)
+		} else {
+			old = current
+		}
+	}
+}
+
+const syncLogEntryInterval = 1 * time.Second
+
+// If old didn't have exit code or duration and current does, update; we're finished.
+// Otherwise, update if the log text has changed since the last write to the API.
+func entryWasUpdated(old, current internalexecutor.ExecutionLogEntry) bool {
+	return (current.ExitCode != nil && old.ExitCode == nil) || (current.DurationMs != nil && old.DurationMs == nil) || current.Out != old.Out
 }
 
 type entryHandle struct {
@@ -76,6 +264,13 @@ func (h *entryHandle) CurrentLogEntry() internalexecutor.ExecutionLogEntry {
 	return logEntry
 }
 
+func redact(entry *internalexecutor.ExecutionLogEntry, replacer *strings.Replacer) {
+	for i, arg := range entry.Command {
+		entry.Command[i] = replacer.Replace(arg)
+	}
+	entry.Out = replacer.Replace(entry.Out)
+}
+
 func (h *entryHandle) currentLogEntry() internalexecutor.ExecutionLogEntry {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -87,190 +282,7 @@ func (h *entryHandle) currentLogEntry() internalexecutor.ExecutionLogEntry {
 	return logEntry
 }
 
-type logger struct {
-	store   ExecutionLogEntryStore
-	done    chan struct{}
-	handles chan *entryHandle
-
-	job types.Job
-
-	replacer *strings.Replacer
-
-	errs   error
-	errsMu sync.Mutex
-}
-
-// ExecutionLogEntryStore handle interactions with executor.Job logs.
-type ExecutionLogEntryStore interface {
-	AddExecutionLogEntry(ctx context.Context, job types.Job, entry internalexecutor.ExecutionLogEntry) (int, error)
-	UpdateExecutionLogEntry(ctx context.Context, job types.Job, entryID int, entry internalexecutor.ExecutionLogEntry) error
-}
-
-// logEntryBufSize is the maximum number of log entries that are logged by the
-// task execution but not yet written to the database.
-const logEntryBufsize = 50
-
-// NewLogger creates a new logger instance with the given store, job, record,
-// and replacement map.
-// When the log messages are serialized, any occurrence of sensitive values are
-// replace with a non-sensitive value.
-// Each log message is written to the store in a goroutine. The Flush method
-// must be called to ensure all entries are written.
-func NewLogger(store ExecutionLogEntryStore, job types.Job, recordID int, replacements map[string]string) Logger {
-	oldnew := make([]string, 0, len(replacements)*2)
-	for k, v := range replacements {
-		oldnew = append(oldnew, k, v)
-	}
-
-	l := &logger{
-		store:    store,
-		job:      job,
-		done:     make(chan struct{}),
-		handles:  make(chan *entryHandle, logEntryBufsize),
-		replacer: strings.NewReplacer(oldnew...),
-		errs:     nil,
-	}
-
-	go l.writeEntries()
-
-	return l
-}
-
-func (l *logger) Flush() error {
-	close(l.handles)
-	<-l.done
-
-	l.errsMu.Lock()
-	defer l.errsMu.Unlock()
-
-	return l.errs
-}
-
-func (l *logger) Log(key string, command []string) LogEntry {
-	handle := &entryHandle{
-		logEntry: internalexecutor.ExecutionLogEntry{
-			Key:       key,
-			Command:   command,
-			StartTime: time.Now(),
-		},
-		replacer: l.replacer,
-		buf:      &bytes.Buffer{},
-		done:     make(chan struct{}),
-	}
-
-	l.handles <- handle
-	return handle
-}
-
-func (l *logger) writeEntries() {
-	defer close(l.done)
-
-	var wg sync.WaitGroup
-	for handle := range l.handles {
-		initialLogEntry := handle.CurrentLogEntry()
-		entryID, err := l.store.AddExecutionLogEntry(context.Background(), l.job, initialLogEntry)
-		if err != nil {
-			// If there is a timeout or cancellation error we don't want to skip
-			// writing these logs as users will often want to see how far something
-			// progressed prior to a timeout.
-			log15.Warn("Failed to upload executor log entry for job", "id", l.job.ID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit, "error", err)
-
-			l.appendError(err)
-
-			continue
-		}
-		log15.Debug("Writing log entry", "jobID", l.job.ID, "entryID", entryID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit)
-
-		wg.Add(1)
-		go func(handle *entryHandle, entryID int, initialLogEntry internalexecutor.ExecutionLogEntry) {
-			defer wg.Done()
-
-			l.syncLogEntry(handle, entryID, initialLogEntry)
-		}(handle, entryID, initialLogEntry)
-	}
-
-	wg.Wait()
-}
-
-const syncLogEntryInterval = 1 * time.Second
-
-func (l *logger) syncLogEntry(handle *entryHandle, entryID int, old internalexecutor.ExecutionLogEntry) {
-	lastWrite := false
-
-	for !lastWrite {
-		select {
-		case <-handle.done:
-			lastWrite = true
-		case <-time.After(syncLogEntryInterval):
-		}
-
-		current := handle.CurrentLogEntry()
-		if !entryWasUpdated(old, current) {
-			continue
-		}
-
-		logArgs := make([]any, 0, 16)
-		logArgs = append(
-			logArgs,
-			"jobID", l.job.ID,
-			"repositoryName", l.job.RepositoryName,
-			"commit", l.job.Commit,
-			"entryID", entryID,
-			"key", current.Key,
-			"outLen", len(current.Out),
-		)
-		if current.ExitCode != nil {
-			logArgs = append(logArgs, "exitCode", *current.ExitCode)
-		}
-		if current.DurationMs != nil {
-			logArgs = append(logArgs, "durationMs", *current.DurationMs)
-		}
-
-		log15.Debug("Updating executor log entry", logArgs...)
-
-		if err := l.store.UpdateExecutionLogEntry(context.Background(), l.job, entryID, current); err != nil {
-			logMethod := log15.Warn
-			if lastWrite {
-				logMethod = log15.Error
-				// If lastWrite, this MUST complete for the job to be considered successful,
-				// so we want to hard-fail otherwise. We store away the error.
-				l.appendError(err)
-			}
-
-			logMethod(
-				"Failed to update executor log entry for job",
-				"jobID", l.job.ID,
-				"repositoryName", l.job.RepositoryName,
-				"commit", l.job.Commit,
-				"entryID", entryID,
-				"lastWrite", lastWrite,
-				"error", err,
-			)
-		} else {
-			old = current
-		}
-	}
-}
-
-func (l *logger) appendError(err error) {
-	l.errsMu.Lock()
-	l.errs = errors.Append(l.errs, err)
-	l.errsMu.Unlock()
-}
-
-// If old didn't have exit code or duration and current does, update; we're finished.
-// Otherwise, update if the log text has changed since the last write to the API.
-func entryWasUpdated(old, current internalexecutor.ExecutionLogEntry) bool {
-	return (current.ExitCode != nil && old.ExitCode == nil) || (current.DurationMs != nil && old.DurationMs == nil) || current.Out != old.Out
-}
-
-func redact(entry *internalexecutor.ExecutionLogEntry, replacer *strings.Replacer) {
-	for i, arg := range entry.Command {
-		entry.Command[i] = replacer.Replace(arg)
-	}
-	entry.Out = replacer.Replace(entry.Out)
-}
-
+// NewWriterLogger returns a logger that writes to the given writer.
 func NewWriterLogger(w io.Writer) Logger {
 	return &writerLogger{w}
 }
@@ -280,6 +292,7 @@ type writerLogger struct {
 }
 
 func (*writerLogger) Flush() error { return nil }
+
 func (l *writerLogger) Log(key string, command []string) LogEntry {
 	fmt.Fprintf(l.w, "%s: %s", key, strings.Join(command, " "))
 	return &writerLogEntry{w: l.w}
@@ -292,8 +305,11 @@ type writerLogEntry struct {
 func (l *writerLogEntry) Write(p []byte) (n int, err error) {
 	return fmt.Fprint(l.w, string(p))
 }
-func (*writerLogEntry) Close() error          { return nil }
+
+func (*writerLogEntry) Close() error { return nil }
+
 func (*writerLogEntry) Finalize(exitCode int) {}
+
 func (*writerLogEntry) CurrentLogEntry() internalexecutor.ExecutionLogEntry {
 	return internalexecutor.ExecutionLogEntry{}
 }

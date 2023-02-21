@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -19,7 +21,7 @@ func TestLogger(t *testing.T) {
 	})
 
 	job := types.Job{}
-	l := NewLogger(s, job, 1, map[string]string{})
+	l := NewLogger(logtest.Scoped(t), s, job, map[string]string{})
 
 	e := l.Log("the_key", []string{"cmd", "arg1"})
 
@@ -64,7 +66,7 @@ func TestLogger_Failure(t *testing.T) {
 	s.UpdateExecutionLogEntryFunc.SetDefaultReturn(errors.New("failure!!"))
 
 	job := types.Job{}
-	l := NewLogger(s, job, 1, map[string]string{})
+	l := NewLogger(logtest.Scoped(t), s, job, map[string]string{})
 
 	e := l.Log("the_key", []string{"cmd", "arg1"})
 
