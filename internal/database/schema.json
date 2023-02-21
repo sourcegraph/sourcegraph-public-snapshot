@@ -7554,7 +7554,15 @@
           "ConstraintDefinition": "UNIQUE (repo_id)"
         }
       ],
-      "Constraints": null,
+      "Constraints": [
+        {
+          "Name": "codeowners_repo_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "repo",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE"
+        }
+      ],
       "Triggers": []
     },
     {

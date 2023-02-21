@@ -4,5 +4,8 @@ CREATE TABLE IF NOT EXISTS codeowners (
     contents_proto json not null,
     repo_id int unique not null,
     created_at timestamp with time zone NOT NULL DEFAULT now(),
-    updated_at timestamp with time zone NOT NULL DEFAULT now()
+    updated_at timestamp with time zone NOT NULL DEFAULT now(),
+
+    CONSTRAINT codeowners_repo_id_fkey
+        FOREIGN KEY (repo_id) REFERENCES repo (id) ON DELETE CASCADE
 );

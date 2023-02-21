@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
@@ -14,8 +13,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
+
+// createRepos is a helper to set up repos we use in this test to satisfy foreign key constraints.
+// repo IDs are generated automatically, so we just specify the number we want.
+func createRepos(t *testing.T, ctx context.Context, store database.RepoStore, numOfRepos int) {
+	for i := 0; i < numOfRepos; i++ {
+		if err := store.Create(ctx, &types.Repo{
+			Name: api.RepoName(fmt.Sprintf("%d", i)),
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
 
 func TestCodeowners_CreateUpdateDelete(t *testing.T) {
 	ctx := context.Background()
@@ -23,17 +35,18 @@ func TestCodeowners_CreateUpdateDelete(t *testing.T) {
 	logger := logtest.NoOp(t)
 	db := NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 
+	createRepos(t, ctx, db.Repos(), 6)
 	store := db.Codeowners()
 
 	t.Run("create new codeowners file", func(t *testing.T) {
-		codeowners := newCodeownersFile("*", "everyone", api.RepoID(100))
+		codeowners := newCodeownersFile("*", "everyone", api.RepoID(1))
 		if err := store.CreateCodeownersFile(ctx, codeowners); err != nil {
 			t.Fatal(err)
 		}
 	})
 
 	t.Run("create codeowners duplicate error", func(t *testing.T) {
-		codeowners := newCodeownersFile("*", "everyone", api.RepoID(200))
+		codeowners := newCodeownersFile("*", "everyone", api.RepoID(2))
 		if err := store.CreateCodeownersFile(ctx, codeowners); err != nil {
 			t.Fatal(err)
 		}
@@ -45,18 +58,18 @@ func TestCodeowners_CreateUpdateDelete(t *testing.T) {
 	})
 
 	t.Run("update codeowners file", func(t *testing.T) {
-		codeowners := newCodeownersFile("*", "everyone", api.RepoID(102))
+		codeowners := newCodeownersFile("*", "everyone", api.RepoID(3))
 		if err := store.CreateCodeownersFile(ctx, codeowners); err != nil {
 			t.Fatal(err)
 		}
-		codeowners = newCodeownersFile("*", "notEveryone", api.RepoID(102))
+		codeowners = newCodeownersFile("*", "notEveryone", api.RepoID(3))
 		if err := store.UpdateCodeownersFile(ctx, codeowners); err != nil {
 			t.Fatal(err)
 		}
 	})
 
 	t.Run("update non existent codeowners file", func(t *testing.T) {
-		codeowners := newCodeownersFile("*", "notEveryone", api.RepoID(33))
+		codeowners := newCodeownersFile("*", "notEveryone", api.RepoID(4))
 		err := store.UpdateCodeownersFile(ctx, codeowners)
 		if err == nil {
 			t.Fatal("expected not found error")
@@ -65,7 +78,7 @@ func TestCodeowners_CreateUpdateDelete(t *testing.T) {
 	})
 
 	t.Run("delete", func(t *testing.T) {
-		repoID := api.RepoID(10)
+		repoID := api.RepoID(5)
 		codeowners := newCodeownersFile("*", "everyone", repoID)
 		if err := store.CreateCodeownersFile(ctx, codeowners); err != nil {
 			t.Fatal(err)
@@ -76,7 +89,7 @@ func TestCodeowners_CreateUpdateDelete(t *testing.T) {
 	})
 
 	t.Run("delete non existent codeowners file", func(t *testing.T) {
-		err := store.DeleteCodeownersForRepo(ctx, api.RepoID(9000))
+		err := store.DeleteCodeownersForRepo(ctx, api.RepoID(6))
 		if err == nil {
 			t.Fatal("did not return useful not found information")
 		}
@@ -90,6 +103,8 @@ func TestCodeowners_GetList(t *testing.T) {
 	logger := logtest.NoOp(t)
 	db := NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 
+	createRepos(t, ctx, db.Repos(), 2)
+
 	store := db.Codeowners()
 
 	createFile := func(file *types.CodeownersFile) *types.CodeownersFile {
@@ -98,9 +113,8 @@ func TestCodeowners_GetList(t *testing.T) {
 		}
 		return file
 	}
-
-	repo11Codeowners := createFile(newCodeownersFile("*", "person", api.RepoID(11)))
-	repo102Codeowners := createFile(newCodeownersFile("*", "everyone", api.RepoID(102)))
+	repo1Codeowners := createFile(newCodeownersFile("*", "person", api.RepoID(1)))
+	repo2Codeowners := createFile(newCodeownersFile("*", "everyone", api.RepoID(2)))
 
 	t.Run("get", func(t *testing.T) {
 		t.Run("not found", func(t *testing.T) {
@@ -111,32 +125,32 @@ func TestCodeowners_GetList(t *testing.T) {
 			require.ErrorAs(t, CodeownersFileNotFoundError{}, &err)
 		})
 		t.Run("get by repo ID", func(t *testing.T) {
-			got, err := store.GetCodeownersForRepo(ctx, api.RepoID(11))
+			got, err := store.GetCodeownersForRepo(ctx, api.RepoID(1))
 			if err != nil {
 				t.Fatal(err)
 			}
-			require.Equal(t, repo11Codeowners, got)
+			require.Equal(t, repo1Codeowners, got)
 		})
 		t.Run("get by repo ID after update", func(t *testing.T) {
-			got, err := store.GetCodeownersForRepo(ctx, api.RepoID(102))
+			got, err := store.GetCodeownersForRepo(ctx, api.RepoID(2))
 			if err != nil {
 				t.Fatal(err)
 			}
-			require.Equal(t, repo102Codeowners, got)
-			repo102Codeowners.UpdatedAt = time.Now().UTC()
-			if err := store.UpdateCodeownersFile(ctx, repo102Codeowners); err != nil {
+			require.Equal(t, repo2Codeowners, got)
+			repo2Codeowners.UpdatedAt = timeutil.Now()
+			if err := store.UpdateCodeownersFile(ctx, repo2Codeowners); err != nil {
 				t.Fatal(err)
 			}
-			got, err = store.GetCodeownersForRepo(ctx, api.RepoID(102))
+			got, err = store.GetCodeownersForRepo(ctx, api.RepoID(2))
 			if err != nil {
 				t.Fatal(err)
 			}
-			require.Equal(t, repo102Codeowners, got)
+			require.Equal(t, repo2Codeowners, got)
 		})
 	})
 
 	t.Run("list", func(t *testing.T) {
-		all := []*types.CodeownersFile{repo11Codeowners, repo102Codeowners}
+		all := []*types.CodeownersFile{repo1Codeowners, repo2Codeowners}
 
 		// List all
 		have, cursor, err := store.ListCodeowners(ctx, ListCodeownersOpts{})
