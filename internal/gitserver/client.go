@@ -189,7 +189,8 @@ type clientImplementor struct {
 	// logger is used for all logging and logger creation
 	logger sglog.Logger
 
-	// addrs is a function that returns the current set of gitserver addresses
+	// addrs is a function that returns the current set of gitserver addresses.
+	// It is called each time a request is made. It must be safe for concurrent use.
 	addrs func() GitServerAddresses
 
 	// operations are used for internal observability
