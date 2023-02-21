@@ -552,6 +552,21 @@ func computeSingleChangesetExternalState(c *btypes.Changeset) (s btypes.Changese
 		default:
 			return "", errors.Errorf("unknown Bitbucket Cloud pull request state: %s", m.State)
 		}
+	case *azuredevops.AnnotatedPullRequest:
+		switch m.Status {
+		case azuredevops2.PullRequestStatusAbandoned:
+			s = btypes.ChangesetExternalStateClosed
+		case azuredevops2.PullRequestStatusCompleted:
+			s = btypes.ChangesetExternalStateMerged
+		case azuredevops2.PullRequestStatusActive:
+			if m.IsDraft {
+				s = btypes.ChangesetExternalStateDraft
+			} else {
+				s = btypes.ChangesetExternalStateOpen
+			}
+		default:
+			return "", errors.Errorf("unknown Bitbucket Cloud pull request state: %s", m.Status)
+		}
 	default:
 		return "", errors.New("unknown changeset type")
 	}

@@ -17,12 +17,12 @@
     "url": "https://dev.azure.com/sgtestazure/_apis/projects/dc493f7d-0b57-4de2-a59b-3f74ff3ea334"
    }
   },
-  "pullRequestId": 12,
-  "codeReviewId": 12,
+  "pullRequestId": 40,
+  "codeReviewId": 40,
   "status": "abandoned",
-  "creationDate": "2023-02-17T02:21:23.2995071Z",
-  "title": "Make it clearer that \"command\" steps are executed on local machine",
-  "description": "Make it clearer that \"command\" steps are executed on local machine",
+  "creationDate": "2023-02-21T21:58:41.3091777Z",
+  "title": "Updated .gitignore",
+  "description": "Updated .gitignore",
   "createdBy": {
    "id": "473dec3e-03d7-6147-b106-0b0a7f766a92",
    "displayName": "idan.varsano@sourcegraph.com",
@@ -30,21 +30,22 @@
    "url": "https://spsprodcca1.vssps.visualstudio.com/Ab768986f-7304-43dd-be74-f37e30f66c38/_apis/Identities/473dec3e-03d7-6147-b106-0b0a7f766a92",
    "imageUrl": "https://dev.azure.com/sgtestazure/_api/_common/identityImage?id=473dec3e-03d7-6147-b106-0b0a7f766a92"
   },
-  "sourceRefName": "refs/heads/action-docs",
-  "targetRefName": "refs/heads/master",
+  "sourceRefName": "refs/heads/ignore",
+  "targetRefName": "refs/heads/hello-world",
   "mergeStatus": "",
-  "mergeId": "168fc5d7-c830-45a0-b8c4-f69e16faa67a",
+  "mergeId": "a18938ff-9e4b-4511-8557-e97be025e642",
   "lastMergeSourceCommit": {
-   "commitId": "43f23696277d8c412aa5da481009a5ec8302ded4",
-   "url": "https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/c4d186ef-18a6-4de4-a610-aa9ebd4e1faa/commits/43f23696277d8c412aa5da481009a5ec8302ded4"
+   "commitId": "0c8e8dfe907c724f785cdc818e0400ec0d68cb0b",
+   "url": "https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/c4d186ef-18a6-4de4-a610-aa9ebd4e1faa/commits/0c8e8dfe907c724f785cdc818e0400ec0d68cb0b"
   },
   "lastMergeTargetCommit": {
-   "commitId": "12fba599d6b6ba7de2d4c5194cea58090201e4e1",
-   "url": "https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/c4d186ef-18a6-4de4-a610-aa9ebd4e1faa/commits/12fba599d6b6ba7de2d4c5194cea58090201e4e1"
+   "commitId": "fd7fd88d7ab29404ba5a1b606f5be0479acc5c49",
+   "url": "https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/c4d186ef-18a6-4de4-a610-aa9ebd4e1faa/commits/fd7fd88d7ab29404ba5a1b606f5be0479acc5c49"
   },
   "supportsIterations": true,
-  "artifactId": "vstfs:///Git/PullRequestId/dc493f7d-0b57-4de2-a59b-3f74ff3ea334%2fc4d186ef-18a6-4de4-a610-aa9ebd4e1faa%2f12",
+  "artifactId": "vstfs:///Git/PullRequestId/dc493f7d-0b57-4de2-a59b-3f74ff3ea334%2fc4d186ef-18a6-4de4-a610-aa9ebd4e1faa%2f40",
   "reviewers": [],
   "forkSource": null,
-  "url": "https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/c4d186ef-18a6-4de4-a610-aa9ebd4e1faa/pullRequests/12"
+  "url": "https://dev.azure.com/sgtestazure/dc493f7d-0b57-4de2-a59b-3f74ff3ea334/_apis/git/repositories/c4d186ef-18a6-4de4-a610-aa9ebd4e1faa/pullRequests/40",
+  "isDraft": false
  }

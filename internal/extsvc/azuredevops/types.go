@@ -101,7 +101,7 @@ type PullRequest struct {
 	Repository            Repository        `json:"repository"`
 	ID                    int               `json:"pullRequestId"`
 	CodeReviewID          int               `json:"codeReviewId"`
-	Status                string            `json:"status"`
+	Status                PullRequestStatus `json:"status"`
 	CreationDate          time.Time         `json:"creationDate"`
 	Title                 string            `json:"title"`
 	Description           string            `json:"description"`
@@ -117,6 +117,7 @@ type PullRequest struct {
 	Reviewers             []Reviewer        `json:"reviewers"`
 	ForkSource            *ForkRef          `json:"forkSource"`
 	URL                   string            `json:"url"`
+	IsDraft               bool              `json:"isDraft"`
 }
 
 type PullRequestCommit struct {
