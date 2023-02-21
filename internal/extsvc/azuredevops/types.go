@@ -199,7 +199,7 @@ type PullRequestBuildStatus struct {
 	State        PullRequestStatusState `json:"state"`
 	Description  string                 `json:"description"`
 	CreationDate time.Time              `json:"creationDate"`
-	UpdateDate   time.Time              `json:"updateDate"`
+	UpdateDate   time.Time              `json:"updatedDate"`
 	CreatedBy    CreatorInfo            `json:"createdBy"`
 }
 

@@ -4,7 +4,7 @@
    "state": "succeeded",
    "description": "Sample status succeeded",
    "creationDate": "2023-02-01T23:17:18.3963036Z",
-   "updateDate": "",
+   "updatedDate": "2023-02-01T23:17:18.3963036Z",
    "createdBy": {
     "id": "473dec3e-03d7-6147-b106-0b0a7f766a92",
     "displayName": "idan.varsano@sourcegraph.com",
