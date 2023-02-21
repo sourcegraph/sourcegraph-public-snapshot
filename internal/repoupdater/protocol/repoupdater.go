@@ -273,12 +273,12 @@ type ExternalServiceSyncResult struct {
 	Error string
 }
 
-type QueryExternalServiceNamespacesArgs struct {
+type ExternalServiceNamespacesArgs struct {
 	Kind   string
 	Config string
 }
 
-type QueryExternalServiceNamespacesResult struct {
+type ExternalServiceNamespacesResult struct {
 	Namespaces []*types.ExternalServiceNamespace
 	Error      string
 }

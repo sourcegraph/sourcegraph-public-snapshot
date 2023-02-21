@@ -428,16 +428,28 @@ func (r *externalServiceSyncJobResolver) FinishedAt() *gqlutil.DateTime {
 	return &gqlutil.DateTime{Time: r.job.FinishedAt}
 }
 
-func (r *queryExternalServiceNamespaceConnectionResolver) compute(ctx context.Context) ([]*types.ExternalServiceNamespace, int32, error) {
+func (r *externalServiceSyncJobResolver) ReposSynced() int32 { return r.job.ReposSynced }
+
+func (r *externalServiceSyncJobResolver) RepoSyncErrors() int32 { return r.job.RepoSyncErrors }
+
+func (r *externalServiceSyncJobResolver) ReposAdded() int32 { return r.job.ReposAdded }
+
+func (r *externalServiceSyncJobResolver) ReposDeleted() int32 { return r.job.ReposDeleted }
+
+func (r *externalServiceSyncJobResolver) ReposModified() int32 { return r.job.ReposModified }
+
+func (r *externalServiceSyncJobResolver) ReposUnmodified() int32 { return r.job.ReposUnmodified }
+
+func (r *externalServiceNamespaceConnectionResolver) compute(ctx context.Context) ([]*types.ExternalServiceNamespace, int32, error) {
 	r.once.Do(func() {
-		connection, err := NewSourceConnection(r.args.Kind, r.args.Url, r.args.Token)
+		config, err := NewSourceConfiguration(r.args.Kind, r.args.Url, r.args.Token)
 		if err != nil {
 			r.err = err
 			return
 		}
 
-		args := protocol.QueryExternalServiceNamespacesArgs{Kind: r.args.Kind, Config: connection}
-		res, err := r.repoupdaterClient.QueryExternalServiceNamespaces(ctx, args)
+		args := protocol.ExternalServiceNamespacesArgs{Kind: r.args.Kind, Config: config}
+		res, err := r.repoupdaterClient.ExternalServiceNamespaces(ctx, args)
 		if err != nil {
 			r.err = err
 			return
@@ -452,19 +464,7 @@ func (r *queryExternalServiceNamespaceConnectionResolver) compute(ctx context.Co
 	return r.nodes, r.totalCount, r.err
 }
 
-func (r *externalServiceSyncJobResolver) ReposSynced() int32 { return r.job.ReposSynced }
-
-func (r *externalServiceSyncJobResolver) RepoSyncErrors() int32 { return r.job.RepoSyncErrors }
-
-func (r *externalServiceSyncJobResolver) ReposAdded() int32 { return r.job.ReposAdded }
-
-func (r *externalServiceSyncJobResolver) ReposDeleted() int32 { return r.job.ReposDeleted }
-
-func (r *externalServiceSyncJobResolver) ReposModified() int32 { return r.job.ReposModified }
-
-func (r *externalServiceSyncJobResolver) ReposUnmodified() int32 { return r.job.ReposUnmodified }
-
-func (r *queryExternalServiceNamespaceConnectionResolver) Nodes(ctx context.Context) ([]*externalServiceNamespaceResolver, error) {
+func (r *externalServiceNamespaceConnectionResolver) Nodes(ctx context.Context) ([]*externalServiceNamespaceResolver, error) {
 	namespaces, totalCount, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
@@ -480,17 +480,9 @@ func (r *queryExternalServiceNamespaceConnectionResolver) Nodes(ctx context.Cont
 	return nodes, nil
 }
 
-func (r *queryExternalServiceNamespaceConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+func (r *externalServiceNamespaceConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	_, totalCount, err := r.compute(ctx)
 	return totalCount, err
-}
-
-func (r *queryExternalServiceNamespaceConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	jobs, totalCount, err := r.compute(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return graphqlutil.HasNextPage(len(jobs) != int(totalCount)), nil
 }
 
 type externalServiceNamespaceResolver struct {

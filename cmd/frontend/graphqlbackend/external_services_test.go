@@ -1074,7 +1074,7 @@ func TestCancelExternalServiceSync(t *testing.T) {
 	})
 }
 
-func TestQueryExternalServiceNamespaces(t *testing.T) {
+func TestExternalServiceNamespaces(t *testing.T) {
 	t.Run("as an admin with access to the external service", func(t *testing.T) {
 		users := database.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
@@ -1093,26 +1093,26 @@ func TestQueryExternalServiceNamespaces(t *testing.T) {
 
 		id := relay.MarshalID("ExternalServiceNamespace", namespace)
 
-		repoupdater.MockQueryExternalServiceNamespaces = func(_ context.Context, args protocol.QueryExternalServiceNamespacesArgs) (*protocol.QueryExternalServiceNamespacesResult, error) {
-			res := protocol.QueryExternalServiceNamespacesResult{
+		repoupdater.MockExternalServiceNamespaces = func(_ context.Context, args protocol.ExternalServiceNamespacesArgs) (*protocol.ExternalServiceNamespacesResult, error) {
+			res := protocol.ExternalServiceNamespacesResult{
 				Namespaces: []*types.ExternalServiceNamespace{&namespace},
 				Error:      "",
 			}
 			return &res, nil
 		}
-		t.Cleanup(func() { repoupdater.MockQueryExternalServiceNamespaces = nil })
+		t.Cleanup(func() { repoupdater.MockExternalServiceNamespaces = nil })
 
 		RunTest(t, &Test{
 			Schema: mustParseGraphQLSchema(t, db),
 			Query: fmt.Sprintf(
-				`query { queryExternalServiceNamespaces(kind: %s, url: "%s", token: "%s") {
+				`query { externalServiceNamespaces(kind: %s, url: "%s", token: "%s") {
 							nodes{
 								id
 								name
 								externalID
 							} } } `,
 				extsvc.KindGitHub, "https://github.com", "abc"),
-			ExpectedResult: fmt.Sprintf(`{ "queryExternalServiceNamespaces": {
+			ExpectedResult: fmt.Sprintf(`{ "externalServiceNamespaces": {
 				"nodes": [
 					{
 						"id": "%s",
@@ -1138,19 +1138,19 @@ func TestQueryExternalServiceNamespaces(t *testing.T) {
 		namespace := types.ExternalServiceNamespace{
 			ID: 1, Name: organizationName, ExternalID: externalID,
 		}
-		repoupdater.MockQueryExternalServiceNamespaces = func(_ context.Context, args protocol.QueryExternalServiceNamespacesArgs) (*protocol.QueryExternalServiceNamespacesResult, error) {
-			res := protocol.QueryExternalServiceNamespacesResult{
+		repoupdater.MockExternalServiceNamespaces = func(_ context.Context, args protocol.ExternalServiceNamespacesArgs) (*protocol.ExternalServiceNamespacesResult, error) {
+			res := protocol.ExternalServiceNamespacesResult{
 				Namespaces: []*types.ExternalServiceNamespace{&namespace},
 				Error:      "",
 			}
 			return &res, nil
 		}
-		t.Cleanup(func() { repoupdater.MockQueryExternalServiceNamespaces = nil })
+		t.Cleanup(func() { repoupdater.MockExternalServiceNamespaces = nil })
 
 		RunTest(t, &Test{
 			Schema: mustParseGraphQLSchema(t, db),
 			Query: fmt.Sprintf(
-				`query { queryExternalServiceNamespaces(kind: %s, url: "%s", token: "%s") {
+				`query { externalServiceNamespaces(kind: %s, url: "%s", token: "%s") {
 							nodes{
 								id
 								name
@@ -1160,7 +1160,7 @@ func TestQueryExternalServiceNamespaces(t *testing.T) {
 			ExpectedResult: `null`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:          []any{"queryExternalServiceNamespaces"},
+					Path:          []any{"externalServiceNamespaces"},
 					Message:       auth.ErrMustBeSiteAdmin.Error(),
 					ResolverError: auth.ErrMustBeSiteAdmin,
 				},
@@ -1184,19 +1184,19 @@ func TestQueryExternalServiceNamespaces(t *testing.T) {
 			ID: 1, Name: organizationName, ExternalID: externalID,
 		}
 
-		repoupdater.MockQueryExternalServiceNamespaces = func(_ context.Context, args protocol.QueryExternalServiceNamespacesArgs) (*protocol.QueryExternalServiceNamespacesResult, error) {
-			res := protocol.QueryExternalServiceNamespacesResult{
+		repoupdater.MockExternalServiceNamespaces = func(_ context.Context, args protocol.ExternalServiceNamespacesArgs) (*protocol.ExternalServiceNamespacesResult, error) {
+			res := protocol.ExternalServiceNamespacesResult{
 				Namespaces: []*types.ExternalServiceNamespace{&namespace},
 				Error:      "",
 			}
 			return &res, errors.New("connection check failed. could not fetch authenticated user: request to https://repoupdater/user returned status 401: Bad credentials")
 		}
-		t.Cleanup(func() { repoupdater.MockQueryExternalServiceNamespaces = nil })
+		t.Cleanup(func() { repoupdater.MockExternalServiceNamespaces = nil })
 
 		RunTest(t, &Test{
 			Schema: mustParseGraphQLSchema(t, db),
 			Query: fmt.Sprintf(
-				`query { queryExternalServiceNamespaces(kind: %s, url: "%s", token: "%s") {
+				`query { externalServiceNamespaces(kind: %s, url: "%s", token: "%s") {
 							nodes{
 								id
 								name
@@ -1206,7 +1206,7 @@ func TestQueryExternalServiceNamespaces(t *testing.T) {
 			ExpectedResult: `null`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:    []any{"queryExternalServiceNamespaces", "nodes"},
+					Path:    []any{"externalServiceNamespaces", "nodes"},
 					Message: "connection check failed. could not fetch authenticated user: request to https://repoupdater/user returned status 401: Bad credentials",
 				},
 			},
@@ -1229,19 +1229,19 @@ func TestQueryExternalServiceNamespaces(t *testing.T) {
 			ID: 1, Name: organizationName, ExternalID: externalID,
 		}
 
-		repoupdater.MockQueryExternalServiceNamespaces = func(_ context.Context, args protocol.QueryExternalServiceNamespacesArgs) (*protocol.QueryExternalServiceNamespacesResult, error) {
-			res := protocol.QueryExternalServiceNamespacesResult{
+		repoupdater.MockExternalServiceNamespaces = func(_ context.Context, args protocol.ExternalServiceNamespacesArgs) (*protocol.ExternalServiceNamespacesResult, error) {
+			res := protocol.ExternalServiceNamespacesResult{
 				Namespaces: []*types.ExternalServiceNamespace{&namespace},
 				Error:      "",
 			}
 			return &res, nil
 		}
-		t.Cleanup(func() { repoupdater.MockQueryExternalServiceNamespaces = nil })
+		t.Cleanup(func() { repoupdater.MockExternalServiceNamespaces = nil })
 
 		RunTest(t, &Test{
 			Schema: mustParseGraphQLSchema(t, db),
 			Query: fmt.Sprintf(
-				`query { queryExternalServiceNamespaces(kind: %s, url: "%s", token: "%s") {
+				`query { externalServiceNamespaces(kind: %s, url: "%s", token: "%s") {
 							nodes{
 								id
 								name
@@ -1251,7 +1251,7 @@ func TestQueryExternalServiceNamespaces(t *testing.T) {
 			ExpectedResult: `null`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:    []any{"queryExternalServiceNamespaces", "nodes"},
+					Path:    []any{"externalServiceNamespaces", "nodes"},
 					Message: "External Service type does not support discovery of repositories and namespaces.",
 				},
 			},

@@ -66,7 +66,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/sync-external-service", trace.WithRouteName("sync-external-service", s.handleExternalServiceSync))
 	mux.HandleFunc("/enqueue-changeset-sync", trace.WithRouteName("enqueue-changeset-sync", s.handleEnqueueChangesetSync))
 	mux.HandleFunc("/schedule-perms-sync", trace.WithRouteName("schedule-perms-sync", s.handleSchedulePermsSync))
-	mux.HandleFunc("/ext-svc-namespaces", trace.WithRouteName("ext-svc-namespaces", s.handleQueryExternalServiceNamespaces))
+	mux.HandleFunc("/external-service-namespaces", trace.WithRouteName("/external-service-namespaces", s.handleExternalServiceNamespaces))
 	return mux
 }
 
@@ -401,17 +401,17 @@ func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request)
 	s.respond(w, http.StatusOK, nil)
 }
 
-func (s *Server) handleQueryExternalServiceNamespaces(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleExternalServiceNamespaces(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 
-	var req protocol.QueryExternalServiceNamespacesArgs
+	var req protocol.ExternalServiceNamespacesArgs
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	extsvc := &types.ExternalService{
+	externalSvc := &types.ExternalService{
 		Kind:   req.Kind,
 		Config: extsvc.NewUnencryptedConfig(req.Config),
 	}
@@ -419,26 +419,23 @@ func (s *Server) handleQueryExternalServiceNamespaces(w http.ResponseWriter, r *
 	logger := s.Logger.With(log.String("ExternalServiceKind", req.Kind))
 
 	genericSourcer := s.NewGenericSourcer(logger)
-	genericSrc, err := genericSourcer(ctx, extsvc)
+	genericSrc, err := genericSourcer(ctx, externalSvc)
 	if err != nil {
 		logger.Error("server.query-external-service-namespaces", log.Error(err))
 		return
 	}
 
-	var result *protocol.QueryExternalServiceNamespacesResult
+	var result *protocol.ExternalServiceNamespacesResult
 	if err = genericSrc.CheckConnection(ctx); err != nil {
-		result = &protocol.QueryExternalServiceNamespacesResult{Error: err.Error()}
+		result = &protocol.ExternalServiceNamespacesResult{Error: err.Error()}
 		s.respond(w, http.StatusUnauthorized, result)
 		return
 	}
 
-	var (
-		discoverableSrc repos.DiscoverableSource
-		discoverable    bool
-	)
+	discoverableSrc, ok := genericSrc.(repos.DiscoverableSource)
 
-	if discoverableSrc, discoverable = genericSrc.(repos.DiscoverableSource); !discoverable {
-		result = &protocol.QueryExternalServiceNamespacesResult{Error: repos.UnimplementedDiscoverySource}
+	if !ok {
+		result = &protocol.ExternalServiceNamespacesResult{Error: repos.UnimplementedDiscoverySource}
 		s.respond(w, http.StatusNotImplemented, result)
 		return
 	}
@@ -455,16 +452,16 @@ func (s *Server) handleQueryExternalServiceNamespaces(w http.ResponseWriter, r *
 
 	for res := range results {
 		if res.Err != nil {
-			sourceErrs = errors.Append(sourceErrs, &repos.SourceError{Err: res.Err, ExtSvc: extsvc})
+			sourceErrs = errors.Append(sourceErrs, &repos.SourceError{Err: res.Err, ExtSvc: externalSvc})
 			continue
 		}
 		namespaces = append(namespaces, res.Namespace)
 	}
 
 	if sourceErrs != nil {
-		result = &protocol.QueryExternalServiceNamespacesResult{Namespaces: namespaces, Error: sourceErrs.Error()}
+		result = &protocol.ExternalServiceNamespacesResult{Namespaces: namespaces, Error: sourceErrs.Error()}
 	} else {
-		result = &protocol.QueryExternalServiceNamespacesResult{Namespaces: namespaces}
+		result = &protocol.ExternalServiceNamespacesResult{Namespaces: namespaces}
 	}
 	s.respond(w, http.StatusOK, result)
 }

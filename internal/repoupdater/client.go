@@ -276,16 +276,16 @@ func (c *Client) SyncExternalService(ctx context.Context, externalServiceID int6
 	return &result, nil
 }
 
-// MockQueryExternalServiceNamespaces mocks (*Client).QueryExternalServiceNamespaces for tests.
-var MockQueryExternalServiceNamespaces func(ctx context.Context, args protocol.QueryExternalServiceNamespacesArgs) (*protocol.QueryExternalServiceNamespacesResult, error)
+// MockExternalServiceNamespaces mocks (*Client).QueryExternalServiceNamespaces for tests.
+var MockExternalServiceNamespaces func(ctx context.Context, args protocol.ExternalServiceNamespacesArgs) (*protocol.ExternalServiceNamespacesResult, error)
 
-// QueryExternalServiceNamespaces retrieves a list of namespaces available to the given external service configuration
-func (c *Client) QueryExternalServiceNamespaces(ctx context.Context, args protocol.QueryExternalServiceNamespacesArgs) (result *protocol.QueryExternalServiceNamespacesResult, err error) {
-	if MockQueryExternalServiceNamespaces != nil {
-		return MockQueryExternalServiceNamespaces(ctx, args)
+// ExternalServiceNamespaces retrieves a list of namespaces available to the given external service configuration
+func (c *Client) ExternalServiceNamespaces(ctx context.Context, args protocol.ExternalServiceNamespacesArgs) (result *protocol.ExternalServiceNamespacesResult, err error) {
+	if MockExternalServiceNamespaces != nil {
+		return MockExternalServiceNamespaces(ctx, args)
 	}
 
-	resp, err := c.httpPost(ctx, "ext-svc-namespaces", args)
+	resp, err := c.httpPost(ctx, "external-service-namespaces", args)
 	if err != nil {
 		return nil, err
 	}

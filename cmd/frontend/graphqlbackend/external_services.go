@@ -2,8 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	jsoniter "github.com/json-iterator/go"
 	"strconv"
 	"strings"
 	"sync"
@@ -454,19 +454,18 @@ type externalServiceNamespacesArgs struct {
 	Url   string
 }
 
-func (r *schemaResolver) QueryExternalServiceNamespaces(ctx context.Context, args *externalServiceNamespacesArgs) (*queryExternalServiceNamespaceConnectionResolver, error) {
+func (r *schemaResolver) ExternalServiceNamespaces(ctx context.Context, args *externalServiceNamespacesArgs) (*externalServiceNamespaceConnectionResolver, error) {
 	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
 		return nil, auth.ErrMustBeSiteAdmin
 	}
 
-	res := queryExternalServiceNamespaceConnectionResolver{
+	return &externalServiceNamespaceConnectionResolver{
 		args:              args,
 		repoupdaterClient: r.repoupdaterClient,
-	}
-	return &res, nil
+	}, nil
 }
 
-type queryExternalServiceNamespaceConnectionResolver struct {
+type externalServiceNamespaceConnectionResolver struct {
 	args              *externalServiceNamespacesArgs
 	repoupdaterClient *repoupdater.Client
 
@@ -476,11 +475,9 @@ type queryExternalServiceNamespaceConnectionResolver struct {
 	err        error
 }
 
-func NewSourceConnection(kind, url, token string) (string, error) {
-	var (
-		err        error
-		marshalled []byte
-	)
+// NewSourceConfiguration returns a configuration string for defining a Source for discovery.
+// Only external service kinds that implement source discovery functions are returned.
+func NewSourceConfiguration(kind, url, token string) (string, error) {
 	switch kind {
 	case extsvc.KindGitHub:
 		cnxn := schema.GitHubConnection{
@@ -488,10 +485,9 @@ func NewSourceConnection(kind, url, token string) (string, error) {
 			Token: token,
 		}
 
-		marshalled, err = jsoniter.Marshal(cnxn)
+		marshalled, err := json.Marshal(cnxn)
+		return string(marshalled), err
 	default:
 		return "", errors.New(repos.UnimplementedDiscoverySource)
 	}
-
-	return string(marshalled), err
 }

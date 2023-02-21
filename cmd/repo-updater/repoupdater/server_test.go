@@ -849,7 +849,7 @@ func TestExternalServiceValidate_ValidatesToken(t *testing.T) {
 	}
 }
 
-func TestServer_QueryExternalServiceNamespaces(t *testing.T) {
+func TestServer_ExternalServiceNamespaces(t *testing.T) {
 	githubConnection := `
 {
 	"url": "https://github.com",
@@ -882,48 +882,48 @@ func TestServer_QueryExternalServiceNamespaces(t *testing.T) {
 
 	testCases := []struct {
 		name   string
-		args   protocol.QueryExternalServiceNamespacesArgs
-		result *protocol.QueryExternalServiceNamespacesResult
+		args   protocol.ExternalServiceNamespacesArgs
+		result *protocol.ExternalServiceNamespacesResult
 		src    repos.Source
 		assert typestest.ReposAssertion
 		err    string
 	}{
 		{
 			name: "discoverable source - github",
-			args: protocol.QueryExternalServiceNamespacesArgs{
+			args: protocol.ExternalServiceNamespacesArgs{
 				Kind:   extsvc.KindGitHub,
 				Config: githubConnection,
 			},
 			src:    repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, &types.Repo{}), false, githubOrg),
-			result: &protocol.QueryExternalServiceNamespacesResult{Namespaces: []*types.ExternalServiceNamespace{githubOrg}, Error: ""},
+			result: &protocol.ExternalServiceNamespacesResult{Namespaces: []*types.ExternalServiceNamespace{githubOrg}, Error: ""},
 		},
 		{
 			name: "unavailable - github.com",
-			args: protocol.QueryExternalServiceNamespacesArgs{
+			args: protocol.ExternalServiceNamespacesArgs{
 				Kind:   extsvc.KindGitHub,
 				Config: githubConnection,
 			},
 			src:    repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, &types.Repo{}), true, githubOrg),
-			result: &protocol.QueryExternalServiceNamespacesResult{Error: "fake source unavailable"},
+			result: &protocol.ExternalServiceNamespacesResult{Error: "fake source unavailable"},
 			err:    "fake source unavailable",
 		},
 		{
 			name: "discoverable source - github - empty namespaces result",
-			args: protocol.QueryExternalServiceNamespacesArgs{
+			args: protocol.ExternalServiceNamespacesArgs{
 				Kind:   extsvc.KindGitHub,
 				Config: githubConnection,
 			},
 			src:    repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, &types.Repo{}), false),
-			result: &protocol.QueryExternalServiceNamespacesResult{Namespaces: []*types.ExternalServiceNamespace{}, Error: ""},
+			result: &protocol.ExternalServiceNamespacesResult{Namespaces: []*types.ExternalServiceNamespace{}, Error: ""},
 		},
 		{
 			name: "source does not implement discoverable source",
-			args: protocol.QueryExternalServiceNamespacesArgs{
+			args: protocol.ExternalServiceNamespacesArgs{
 				Kind:   extsvc.KindGitHub,
 				Config: gitlabConnection,
 			},
 			src:    repos.NewFakeSource(&gitlabSource, nil, &types.Repo{}),
-			result: &protocol.QueryExternalServiceNamespacesResult{Error: repos.UnimplementedDiscoverySource},
+			result: &protocol.ExternalServiceNamespacesResult{Error: repos.UnimplementedDiscoverySource},
 			err:    repos.UnimplementedDiscoverySource,
 		},
 	}
@@ -950,7 +950,11 @@ func TestServer_QueryExternalServiceNamespaces(t *testing.T) {
 
 			cli := repoupdater.NewClient(srv.URL)
 
-			res, err := cli.QueryExternalServiceNamespaces(ctx, tc.args)
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			res, err := cli.ExternalServiceNamespaces(ctx, tc.args)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Fatalf("have err: %q, want: %q", have, want)
 			}

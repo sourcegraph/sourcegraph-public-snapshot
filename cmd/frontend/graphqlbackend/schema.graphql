@@ -1299,7 +1299,7 @@ type Query {
     Lists all namespaces for a given external service connection.
     A namespace is an entity on the code host that repositories are assignable to.
     """
-    queryExternalServiceNamespaces(
+    externalServiceNamespaces(
         """
         The kind of the external service.
         """
@@ -1312,7 +1312,7 @@ type Query {
         The url of the external service.
         """
         url: String!
-    ): QueryExternalServiceNamespaceConnection!
+    ): ExternalServiceNamespaceConnection!
     """
     List all repositories.
     """
@@ -3150,7 +3150,7 @@ type ExternalServiceSyncJob implements Node {
 """
 A list of namespaces available to an external service configuration.
 """
-type QueryExternalServiceNamespaceConnection {
+type ExternalServiceNamespaceConnection {
     """
     A list of namespaces available on the source.
     Namespaces are used to organize which members and users can access repositories
@@ -3162,18 +3162,13 @@ type QueryExternalServiceNamespaceConnection {
     The total number of source repos in the connection.
     """
     totalCount: Int!
-
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
 }
 
 """
 A namespace sourced from a defined external service (such as GitHub, GitLab, Phabricator, etc.) that can be discovered
 before any sync or mirror operations.
 """
-type ExternalServiceNamespace implements Node {
+type ExternalServiceNamespace {
     """
     The unique identifier of the external service namespace.
     """
