@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { isEqual } from 'lodash'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
@@ -45,7 +46,6 @@ import { EXTERNAL_SERVICE_KINDS, PACKAGES_QUERY } from './backend'
 import { RepoMirrorInfo } from './components/RepoMirrorInfo'
 
 import styles from './SiteAdminPackagesPage.module.scss'
-import { useLocation, useNavigate } from 'react-router-dom'
 
 const ExternalServicePackageMap: Partial<
     Record<
