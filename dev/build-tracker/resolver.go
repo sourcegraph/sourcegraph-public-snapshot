@@ -10,17 +10,14 @@ type BuildResolution struct {
 func FinaliseBuild(build *Build) *BuildResolution {
 	r := BuildResolution{}
 	for _, step := range build.Steps {
-		state := step.ResolveState()
+		state := step.FinalState()
 		switch state {
 		case Failed:
 			r.Failed = append(r.Failed, step)
-			break
 		case Fixed:
 			r.Fixed = append(r.Fixed, step)
-			break
 		case Passed:
 			r.Passed = append(r.Passed, step)
-			break
 		}
 	}
 

@@ -23,7 +23,6 @@ func newJob(name string, exit int) *Job {
 			Name:       &name,
 			ExitStatus: &exit,
 		},
-		fixed: true,
 	}
 
 }
@@ -56,11 +55,12 @@ func TestLargeAmountOfFailures(t *testing.T) {
 		Pipeline: &Pipeline{buildkite.Pipeline{
 			Name: &pipelineID,
 		}},
-		Jobs: map[string]Job{},
+		Steps: map[string]*Step{},
 	}
 	for i := 1; i <= 30; i++ {
-		job := *newJob(fmt.Sprintf("%d fake step", i), i)
-		build.Jobs[job.name()] = job
+		job := newJob(fmt.Sprintf("%d fake step", i), i)
+		step := NewStepFromJob(job)
+		build.Steps[step.Name] = step
 	}
 
 	flag.Parse()
@@ -134,7 +134,7 @@ func TestGetTeammateFromBuild(t *testing.T) {
 			Pipeline: &Pipeline{buildkite.Pipeline{
 				Name: &pipelineID,
 			}},
-			Jobs: map[string]Job{},
+			Steps: map[string]*Step{},
 		}
 
 		teammate, err := client.getTeammateForBuild(build)
@@ -164,7 +164,7 @@ func TestGetTeammateFromBuild(t *testing.T) {
 			Pipeline: &Pipeline{buildkite.Pipeline{
 				Name: &pipelineID,
 			}},
-			Jobs: map[string]Job{},
+			Steps: map[string]*Step{},
 		}
 
 		teammate, err := client.getTeammateForBuild(build)
@@ -193,7 +193,7 @@ func TestGetTeammateFromBuild(t *testing.T) {
 			Pipeline: &Pipeline{buildkite.Pipeline{
 				Name: &pipelineID,
 			}},
-			Jobs: map[string]Job{},
+			Steps: map[string]*Step{},
 		}
 
 		teammate, err := client.getTeammateForBuild(build)
@@ -273,11 +273,11 @@ func TestSlackNotification(t *testing.T) {
 			Pipeline: &Pipeline{buildkite.Pipeline{
 				Name: &pipelineID,
 			}},
-			Jobs: map[string]Job{
-				":one: fake step":   *newJob(":one: fake step", exit),
-				":two: fake step":   *newJob(":two: fake step", exit),
-				":three: fake step": *newJob(":three: fake step", exit),
-				":four: fake step":  *newJob(":four: fake step", exit),
+			Steps: map[string]*Step{
+				":one: fake step":   NewStepFromJob(newJob(":one: fake step", exit)),
+				":two: fake step":   NewStepFromJob(newJob(":two: fake step", exit)),
+				":three: fake step": NewStepFromJob(newJob(":three: fake step", exit)),
+				":four: fake step":  NewStepFromJob(newJob(":four: fake step", exit)),
 			},
 		}
 
@@ -319,8 +319,8 @@ func TestSlackNotification(t *testing.T) {
 			Pipeline: &Pipeline{buildkite.Pipeline{
 				Name: &pipelineID,
 			}},
-			Jobs: map[string]Job{
-				":one: fake step": *newJob(":one: fake step", exit),
+			Steps: map[string]*Step{
+				":one: fake step": NewStepFromJob(newJob(":one: fake step", exit)),
 			},
 		}
 
@@ -333,7 +333,7 @@ func TestSlackNotification(t *testing.T) {
 			t.Errorf("expected not nil notification after new message")
 		}
 		// now update the notification with additional jobs that failed
-		build.Jobs[":alarm_clock: delayed job"] = *newJob(":clock: delayed job", exit)
+		build.Steps[":alarm_clock: delayed job"] = NewStepFromJob(newJob(":clock: delayed job", exit))
 		updatedNotification, err := client.sendUpdatedMessage(build, newNotification)
 		if err != nil {
 			t.Fatalf("failed to send slack notification: %v", err)
@@ -388,8 +388,8 @@ func TestServerNotify(t *testing.T) {
 		Pipeline: &Pipeline{buildkite.Pipeline{
 			Name: &pipelineID,
 		}},
-		Jobs: map[string]Job{
-			":one: fake step": *newJob(":one: fake step", exit),
+		Steps: map[string]*Step{
+			":one: fake step": NewStepFromJob(newJob(":one: fake step", exit)),
 		},
 	}
 
@@ -402,7 +402,7 @@ func TestServerNotify(t *testing.T) {
 		t.Fatalf("expected build to have a notification after failure notification")
 	}
 	// now update the notification with additional jobs that failed
-	build.Jobs[":alarm_clock: delayed job"] = *newJob(":alarm_clock: delayed job", exit)
+	build.Steps[":alarm_clock: delayed job"] = NewStepFromJob(newJob(":alarm_clock: delayed job", exit))
 	// even though we call the same method, it has a different flow because the build has a previous notification present
 	oldNotification := build.Notification
 	err = server.notifyIfFailed(build)

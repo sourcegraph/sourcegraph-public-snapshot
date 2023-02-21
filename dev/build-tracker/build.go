@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 
+	"cuelang.org/go/pkg/strings"
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/sourcegraph/log"
 )
@@ -51,12 +52,6 @@ type GroupJobFilter struct {
 	Group  string
 }
 
-// FailedJobFilter filters jobs that have failed and the group is "failed"
-var FailedJobFilter = GroupJobFilter{Group: "failed", Filter: func(j *Job) bool { return j.failed() }}
-
-// FixedJobFilter filters jobs that are considered fixed and the group is "fixed"
-var FixedJobFilter = GroupJobFilter{Group: "fixed", Filter: func(j *Job) bool { return j.fixed }}
-
 func NewStep(name string) *Step {
 	return &Step{
 		Name: name,
@@ -64,27 +59,41 @@ func NewStep(name string) *Step {
 	}
 }
 
-func (s *Step) ResolveState() StepState {
+func NewStepFromJob(j *Job) *Step {
+	s := NewStep(j.name())
+	s.Add(j)
+	return s
+}
+
+func (s *Step) Add(j *Job) {
+	s.Jobs = append(s.Jobs, j)
+}
+func (s *Step) FinalState() StepState {
 	// If we have no jobs for some reason, then we regard it as the StepState as Passed ... cannot have a Failed StepState
 	// if we have no jobs!
 	if len(s.Jobs) == 0 {
 		return Passed
 	}
-	// we assume the first job is in a failed state
-	startState := StepState(s.Jobs[0].state())
-	if startState != Failed {
-		// warn
+	if len(s.Jobs) == 1 {
+		return StepState(*s.Jobs[0].State)
 	}
-	// lastState is the final State
-	lastState := startState
-	if len(s.Jobs) > 1 {
-		lastState = StepState(s.Jobs[len(s.Jobs)-1].state())
-	}
-	if startState == Failed && lastState == Passed {
-		return Fixed
+	// we only care about the last two states of because that determines the final state
+	// n - 1  |   n    | Final
+	// Passed | Passed | Passed
+	// Passed | Failed | Failed
+	// Failed | Failed | Failed
+	// Failed | Passed | Fixed
+	beforeLastState := StepState(*s.Jobs[len(s.Jobs)-2].State)
+	lastState := StepState(*s.Jobs[len(s.Jobs)-1].State)
+
+	// Note that for all cases except the last case, the final state is whatever the last job state is.
+	// The final state only differs when the before state is Failed and the last State is Passed, so
+	finalState := lastState
+	if beforeLastState == Failed && lastState == Fixed {
+		finalState = Fixed
 	}
 
-	return lastState
+	return finalState
 }
 
 func (s *Step) LastJob() *Job {
@@ -159,7 +168,7 @@ func (b *Build) findFailedSteps() []*Step {
 	results := []*Step{}
 
 	for _, step := range b.Steps {
-		if state := step.ResolveState(); state == Failed {
+		if state := step.FinalState(); state == Failed {
 			results = append(results, step)
 		}
 	}
@@ -170,7 +179,7 @@ func (b *Build) GroupIntoStepStates() map[StepState][]*Step {
 	groups := make(map[StepState][]*Step)
 
 	for _, step := range b.Steps {
-		state := step.ResolveState()
+		state := step.FinalState()
 
 		items, ok := groups[state]
 		if !ok {
@@ -188,7 +197,6 @@ func (b *Build) hasNotification() bool {
 
 type Job struct {
 	buildkite.Job
-	fixed bool
 }
 
 func (j *Job) id() string {
@@ -208,7 +216,7 @@ func (j *Job) failed() bool {
 }
 
 func (j *Job) state() string {
-	return strp(j.State)
+	return strings.ToTitle(strp(j.State))
 }
 
 func (j *Job) hasTimedOut() bool {
