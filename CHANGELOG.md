@@ -21,7 +21,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- Renders `readme.txt` files in the repository page. []()
 
 ### Fixed
 
