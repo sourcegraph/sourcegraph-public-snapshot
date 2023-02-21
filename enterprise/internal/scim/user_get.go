@@ -12,30 +12,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/scim/filter"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Get returns the resource corresponding with the given identifier.
 func (h *UserResourceHandler) Get(r *http.Request, idStr string) (scim.Resource, error) {
-	id, err := strconv.ParseInt(idStr, 10, 32)
+	user, err := getUserFromDB(r.Context(), h.db, idStr)
 	if err != nil {
-		return scim.Resource{}, errors.New("invalid id")
+		return scim.Resource{}, err
 	}
-
-	// Get users
-	users, err := h.db.Users().ListForSCIM(r.Context(), &database.UsersListOptions{
-		UserIDs: []int32{int32(id)},
-	})
-	if err != nil {
-		return scim.Resource{}, scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
-	}
-	if len(users) == 0 {
-		return scim.Resource{}, scimerrors.ScimErrorResourceNotFound(idStr)
-	}
-
-	resource := h.convertUserToSCIMResource(users[0])
-
-	return resource, nil
+	return h.convertUserToSCIMResource(user), nil
 }
 
 // GetAll returns a paginated list of resources.

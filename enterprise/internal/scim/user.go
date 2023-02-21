@@ -2,12 +2,16 @@ package scim
 
 import (
 	"context"
+	"net/http"
+	"strconv"
 
 	"github.com/elimity-com/scim"
+	scimerrors "github.com/elimity-com/scim/errors"
 	"github.com/elimity-com/scim/optional"
 	"github.com/elimity-com/scim/schema"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // UserResourceHandler implements the scim.ResourceHandler interface for users.
@@ -30,6 +34,26 @@ func NewUserResourceHandler(ctx context.Context, observationCtx *observation.Con
 	}
 }
 
+// getUserFromDB returns the user with the given ID.
+// When it fails, it returns an error that's safe to return to the client as a SCIM error.
+func getUserFromDB(ctx context.Context, db database.DB, idStr string) (*types.UserForSCIM, error) {
+	id, err := strconv.ParseInt(idStr, 10, 32)
+	if err != nil {
+		return nil, scimerrors.ScimError{Status: http.StatusBadRequest, Detail: "invalid id"}
+	}
+
+	users, err := db.Users().ListForSCIM(ctx, &database.UsersListOptions{
+		UserIDs: []int32{int32(id)},
+	})
+	if err != nil {
+		return nil, scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
+	}
+	if len(users) == 0 {
+		return nil, scimerrors.ScimErrorResourceNotFound(idStr)
+	}
+
+	return users[0], nil
+}
 
 // createUserResourceType creates a SCIM resource type for users.
 func createUserResourceType(userResourceHandler *UserResourceHandler) scim.ResourceType {
@@ -164,4 +188,14 @@ func resourceAttributesToLoggableString(attributes scim.ResourceAttributes) stri
 		}
 	}
 	return attributesString
+}
+
+// getOptionalExternalID extracts the external identifier of the given attributes.
+func getOptionalExternalID(attributes scim.ResourceAttributes) optional.String {
+	if eID, ok := attributes["externalId"]; ok {
+		if externalID, ok := eID.(string); ok {
+			return optional.NewString(externalID)
+		}
+	}
+	return optional.String{}
 }

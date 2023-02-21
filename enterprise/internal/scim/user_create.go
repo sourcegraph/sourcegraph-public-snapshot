@@ -161,13 +161,3 @@ func containsErrCannotCreateUserError(err error) (database.ErrCannotCreateUser, 
 
 	return database.ErrCannotCreateUser{}, false
 }
-
-// getOptionalExternalID extracts the external identifier of the given attributes.
-func getOptionalExternalID(attributes scim.ResourceAttributes) optional.String {
-	if eID, ok := attributes["externalId"]; ok {
-		if externalID, ok := eID.(string); ok {
-			return optional.NewString(externalID)
-		}
-	}
-	return optional.String{}
-}
