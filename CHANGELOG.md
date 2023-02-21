@@ -25,7 +25,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- Fixed issues with propagating tracing configuration throughout the application. [#47428](https://github.com/sourcegraph/sourcegraph/pull/47428)
 
 ### Removed
 
