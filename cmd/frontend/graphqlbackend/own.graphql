@@ -113,3 +113,36 @@ type CodeownersFileEntry {
     """
     ruleLineMatch: Int!
 }
+
+type CodeownersIngestedFile {
+    contents: String!
+    repoID: Int!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+}
+
+extend type Mutation {
+    addCodeownersFile(file: String!, repoID: Int!): CodeownersIngestedFile!
+    updateCodeownersFile(file: String!, repoID: Int!): CodeownersIngestedFile!
+    deleteCodeownersFile(repoID: Int!): EmptyResponse!
+}
+
+extend type Query {
+    ingestedCodeownersFiles(first: Int, after: Int, repoID: Int): [CodeownersIngestedFileConnection!]
+}
+type CodeownersIngestedFileConnection {
+    """
+    The total count of items in the connection.
+    """
+    totalCount: Int!
+
+    """
+    The pagination info for the connection.
+    """
+    pageInfo: PageInfo!
+
+    """
+    The current page of teams in this connection.
+    """
+    nodes: [CodeownersIngestedFile!]!
+}
