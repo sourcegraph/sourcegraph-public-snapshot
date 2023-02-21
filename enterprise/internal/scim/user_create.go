@@ -7,7 +7,7 @@ import (
 
 	"github.com/elimity-com/scim"
 	scimerrors "github.com/elimity-com/scim/errors"
-	"github.com/elimity-com/scim/optional"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -22,37 +22,63 @@ func (h *UserResourceHandler) Create(r *http.Request, attributes scim.ResourceAt
 	if primaryEmail == "" {
 		return scim.Resource{}, scimerrors.ScimErrorBadParams([]string{"emails missing"})
 	}
-	username := extractUsername(attributes)
 	displayName := extractDisplayName(attributes)
 
-	// Create user (with or without external ID)
-	// TODO: Use NewSCIMUser instead of NewUser?
-	newUser := database.NewUser{
-		Email:           primaryEmail,
-		Username:        username,
-		DisplayName:     displayName,
-		EmailIsVerified: true,
-	}
-	var user *types.User
-	var err error
-	if optionalExternalID.Present() {
-		accountSpec := extsvc.AccountSpec{
-			ServiceType: "scim",
-			// TODO: provide proper service ID
-			ServiceID: "TODO",
-			AccountID: optionalExternalID.Value(),
-		}
-		user, err = h.db.UserExternalAccounts().CreateUserAndSave(r.Context(), newUser, accountSpec, extsvc.AccountData{})
-	} else {
-		user, err = h.db.Users().Create(r.Context(), newUser)
-	}
+	// Process requested username
+	requestedUsername := extractUsername(attributes)
+	normalizedUsername, err := auth.NormalizeUsername(requestedUsername)
 	if err != nil {
-		if dbErr, ok := containsDBError(err); ok {
-			if code := dbErr.Code(); code == database.ErrorCodeUsernameExists || code == database.ErrorCodeEmailExists {
-				return scim.Resource{}, scimerrors.ScimError{Status: http.StatusConflict, Detail: err.Error()}
-			}
+		normalizedUsername, err = auth.AddRandomSuffix("")
+		if err != nil {
+			return scim.Resource{}, scimerrors.ScimErrorBadParams([]string{"invalid username"})
 		}
-		return scim.Resource{}, scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
+	}
+
+	// Make sure the username is unique, then create user with/without an external account ID
+	var user *types.User
+	err = h.db.WithTransact(r.Context(), func(tx database.DB) error {
+		_, err := tx.Users().GetByUsername(r.Context(), normalizedUsername)
+		if err == nil { // Username exists, try to add random suffix
+			normalizedUsername, err = auth.AddRandomSuffix(normalizedUsername)
+			if err != nil {
+				return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not normalize username").Error()}
+			}
+		} else if !database.IsUserNotFoundErr(err) {
+			return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not check if username exists").Error()}
+		}
+
+		// Create user (with or without external ID)
+		// TODO: Use NewSCIMUser instead of NewUser?
+		newUser := database.NewUser{
+			Email:           primaryEmail,
+			Username:        normalizedUsername,
+			DisplayName:     displayName,
+			EmailIsVerified: true,
+		}
+		if optionalExternalID.Present() {
+			accountSpec := extsvc.AccountSpec{
+				ServiceType: "scim",
+				// TODO: provide proper service ID
+				ServiceID: "TODO",
+				AccountID: optionalExternalID.Value(),
+			}
+			user, err = h.db.UserExternalAccounts().CreateUserAndSave(r.Context(), newUser, accountSpec, extsvc.AccountData{})
+		} else {
+			user, err = h.db.Users().Create(r.Context(), newUser)
+		}
+		if err != nil {
+			if dbErr, ok := containsErrCannotCreateUserError(err); ok {
+				code := dbErr.Code()
+				if code == database.ErrorCodeUsernameExists || code == database.ErrorCodeEmailExists {
+					return scimerrors.ScimError{Status: http.StatusConflict, Detail: err.Error()}
+				}
+			}
+			return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
+		}
+		return nil
+	})
+	if err != nil {
+		return scim.Resource{}, err
 	}
 
 	var now = time.Now()
@@ -90,6 +116,7 @@ func extractPrimaryEmail(attributes scim.ResourceAttributes) (primaryEmail strin
 
 // extractUsername extracts the username from the given attributes.
 func extractUsername(attributes scim.ResourceAttributes) (username string) {
+	// TODO: Validate here?
 	if attributes["userName"] != nil {
 		username = attributes["userName"].(string)
 	}
@@ -113,9 +140,9 @@ func extractDisplayName(attributes scim.ResourceAttributes) (displayName string)
 	return
 }
 
-// containsDBError returns true if the given error contains at least one database.ErrCannotCreateUser.
+// containsErrCannotCreateUserError returns true if the given error contains at least one database.ErrCannotCreateUser.
 // It also returns the first such error.
-func containsDBError(err error) (database.ErrCannotCreateUser, bool) {
+func containsErrCannotCreateUserError(err error) (database.ErrCannotCreateUser, bool) {
 	if err == nil {
 		return database.ErrCannotCreateUser{}, false
 	}

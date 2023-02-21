@@ -134,6 +134,15 @@ type userNotFoundErr struct {
 	args []any
 }
 
+func IsUserNotFoundErr(err error) bool {
+	_, ok := err.(userNotFoundErr)
+	return ok
+}
+
+func NewUserNotFoundErr(args ...any) userNotFoundErr {
+	return userNotFoundErr{args: args}
+}
+
 func (err userNotFoundErr) Error() string {
 	return fmt.Sprintf("user not found: %v", err.args)
 }

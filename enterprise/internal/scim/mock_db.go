@@ -37,9 +37,20 @@ func getMockDB() *database.MockDB {
 	userStore.CreateFunc.SetDefaultHook(func(ctx context.Context, user database.NewUser) (*types.User, error) {
 		return &types.User{ID: 5, Username: user.Username, DisplayName: user.DisplayName}, nil
 	})
+	userStore.GetByUsernameFunc.SetDefaultHook(func(ctx context.Context, username string) (*types.User, error) {
+		for _, user := range users {
+			if user.Username == username {
+				return &user.User, nil
+			}
+		}
+		return nil, database.NewUserNotFoundErr()
+	})
 
 	// Create DB
 	db := database.NewMockDB()
+	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, tx func(database.DB) error) error {
+		return tx(db)
+	})
 	db.UsersFunc.SetDefaultReturn(userStore)
 	return db
 }

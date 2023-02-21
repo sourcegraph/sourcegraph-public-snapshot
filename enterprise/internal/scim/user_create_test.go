@@ -14,7 +14,7 @@ func TestUserResourceHandler_Create(t *testing.T) {
 	db := getMockDB()
 	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
 	user, err := userResourceHandler.Create(&http.Request{}, scim.ResourceAttributes{
-		"userName": "user1",
+		"userName": "user5",
 		"name": map[string]interface{}{
 			"givenName":  "First",
 			"middleName": "Middle",
