@@ -40,7 +40,7 @@ type byPopCount []mergeVal
 
 func (s byPopCount) Len() int           { return len(s) }
 func (s byPopCount) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
-func (s byPopCount) Less(i, j int) bool { return s[i].seen.Count() > s[j].seen.Count() }
+func (s byPopCount) Less(i, j int) bool { return s[i].seen.Count() < s[j].seen.Count() }
 
 // AddMatches adds a set of Matches from the given source to the merger.
 // For each of these matches, if that match has been seen by every source, we
@@ -125,7 +125,7 @@ func (lm *merger) UnsentTracked() Matches {
 	}
 
 	// Prioritize matches that were found by multiple sources.
-	sort.Sort(byPopCount(matches))
+	sort.Sort(sort.Reverse(byPopCount(matches)))
 
 	res := make(Matches, 0, len(matches))
 	for _, val := range matches {
