@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, Routes, useLocation } from 'react-router-dom-v5-compat'
+import { Route, Routes, useLocation } from 'react-router-dom'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'

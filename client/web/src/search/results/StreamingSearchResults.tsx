@@ -1,7 +1,7 @@
 import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
-import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
 import { limitHit, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/branded'

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
-import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { NEVER } from 'rxjs'
 import { catchError, startWith, tap } from 'rxjs/operators'
 

@@ -1,6 +1,6 @@
 import { FC, useCallback, useMemo, useState } from 'react'
 
-import { Route, Routes, useLocation } from 'react-router-dom-v5-compat'
+import { Route, Routes, useLocation } from 'react-router-dom'
 
 import { StreamingSearchResultsListProps, CopyPathAction } from '@sourcegraph/branded'
 import { isErrorLike } from '@sourcegraph/common'

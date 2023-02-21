@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { mdiBitbucket, mdiGithub, mdiGitlab, mdiEmail } from '@mdi/js'
 import classNames from 'classnames'
 import { partition } from 'lodash'
-import { Navigate, useLocation, useSearchParams } from 'react-router-dom-v5-compat'
+import { Navigate, useLocation, useSearchParams } from 'react-router-dom'
 
 import { Alert, Icon, Text, Link, Button, ErrorAlert, AnchorLink } from '@sourcegraph/wildcard'
 

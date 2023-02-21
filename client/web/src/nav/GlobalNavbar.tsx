@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import { useLocation } from 'react-router-dom-v5-compat'
+import { useLocation } from 'react-router-dom'
 
 import { ContributableMenu } from '@sourcegraph/client-api'
 import { isErrorLike, isMacPlatform } from '@sourcegraph/common'

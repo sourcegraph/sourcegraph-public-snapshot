@@ -3,7 +3,7 @@ import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 're
 import { useApolloClient } from '@apollo/client'
 import { mdiDelete, mdiGraph, mdiHistory, mdiRecycle, mdiRedo, mdiTimerSand } from '@mdi/js'
 import classNames from 'classnames'
-import { Navigate, useLocation, useParams, useNavigate } from 'react-router-dom-v5-compat'
+import { Navigate, useLocation, useParams, useNavigate } from 'react-router-dom'
 import { takeWhile } from 'rxjs/operators'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'

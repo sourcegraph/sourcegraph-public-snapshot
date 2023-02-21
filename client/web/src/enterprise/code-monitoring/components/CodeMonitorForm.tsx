@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import { isEqual } from 'lodash'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { mergeMap, startWith, catchError, tap, filter } from 'rxjs/operators'
 
