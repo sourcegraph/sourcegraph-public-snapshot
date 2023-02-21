@@ -92,13 +92,20 @@ func (r *schemaResolver) SetAccessRequestStatus(ctx context.Context, args *struc
 	if err != nil {
 		return nil, err
 	}
-	accessRequest, err := r.db.AccessRequests().GetByID(ctx, id)
+
+	store, err := r.db.AccessRequests().Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = store.Done(err) }()
+
+	accessRequest, err := store.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
 	accessRequest.Status = args.Status
-	if _, err := r.db.AccessRequests().Update(ctx, &types.AccessRequest{ID: accessRequest.ID, Status: accessRequest.Status}); err != nil {
+	if _, err := store.Update(ctx, &types.AccessRequest{ID: accessRequest.ID, Status: accessRequest.Status}); err != nil {
 		return nil, err
 	}
 	return nil, nil

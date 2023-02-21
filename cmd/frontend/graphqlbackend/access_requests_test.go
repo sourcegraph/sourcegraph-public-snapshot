@@ -94,6 +94,7 @@ func TestAccessRequestsQuery_All(t *testing.T) {
 func TestAccessRequestsMutation_SetAccessRequestStatus(t *testing.T) {
 	newMockAccessRequestStore := func(t *testing.T, existing *types.AccessRequest, want *types.AccessRequest) database.AccessRequestStore {
 		mockStore := database.NewMockAccessRequestStore()
+		mockStore.TransactFunc.SetDefaultReturn(mockStore, nil)
 		mockStore.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.AccessRequest, error) {
 			if id == existing.ID {
 				return existing, nil

@@ -137,6 +137,8 @@ type AccessRequestStore interface {
 	GetByEmail(context.Context, string) (*types.AccessRequest, error)
 	Count(context.Context, *AccessRequestsFilterOptions) (int, error)
 	List(context.Context, *AccessRequestsFilterAndListOptions) (_ []*types.AccessRequest, err error)
+	Transact(ctx context.Context) (AccessRequestStore, error)
+	Done(error) error
 }
 
 type accessRequestStore struct {
@@ -185,9 +187,16 @@ var (
 )
 
 func (s *accessRequestStore) Create(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
 	// We don't allow adding a new request_access with an email address that has already been
 	// verified by another user.
-	exists, _, err := basestore.ScanFirstBool(s.Query(ctx, sqlf.Sprintf("SELECT TRUE FROM user_emails WHERE email = %s AND verified_at IS NOT NULL", accessRequest.Email)))
+	userExistsQuery := sqlf.Sprintf("SELECT TRUE FROM user_emails WHERE email = %s AND verified_at IS NOT NULL", accessRequest.Email)
+	exists, _, err := basestore.ScanFirstBool(tx.Query(ctx, userExistsQuery))
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +205,8 @@ func (s *accessRequestStore) Create(ctx context.Context, accessRequest *types.Ac
 	}
 
 	// We don't allow adding a new request_access with an email address that has already been used
-	exists, _, err = basestore.ScanFirstBool(s.Query(ctx, sqlf.Sprintf("SELECT TRUE FROM access_requests WHERE email = %s", accessRequest.Email)))
+	accessRequestsExistsQuery := sqlf.Sprintf("SELECT TRUE FROM access_requests WHERE email = %s", accessRequest.Email)
+	exists, _, err = basestore.ScanFirstBool(tx.Query(ctx, accessRequestsExistsQuery))
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +215,7 @@ func (s *accessRequestStore) Create(ctx context.Context, accessRequest *types.Ac
 	}
 
 	// Continue with creating the new access request.
-	q := sqlf.Sprintf(
+	createQuery := sqlf.Sprintf(
 		accessRequestInsertQuery,
 		sqlf.Join(accessRequestInsertColumns, ","),
 		accessRequest.Name,
@@ -213,8 +223,7 @@ func (s *accessRequestStore) Create(ctx context.Context, accessRequest *types.Ac
 		accessRequest.AdditionalInfo,
 		sqlf.Join(accessRequestColumns, ","),
 	)
-
-	data, err := scanAccessRequest(s.QueryRow(ctx, q))
+	data, err := scanAccessRequest(tx.QueryRow(ctx, createQuery))
 	if err != nil {
 		return nil, errors.Wrap(err, "scanning access_request")
 	}
@@ -285,6 +294,21 @@ func (s *accessRequestStore) List(ctx context.Context, opt *AccessRequestsFilter
 	}
 
 	return nodes, nil
+}
+
+func (s *accessRequestStore) Transact(ctx context.Context) (AccessRequestStore, error) {
+	return s.transact(ctx)
+}
+
+func (s *accessRequestStore) transact(ctx context.Context) (*accessRequestStore, error) {
+	txBase, err := s.Store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &accessRequestStore{
+		Store:  txBase,
+		logger: s.logger,
+	}, nil
 }
 
 func scanAccessRequest(sc dbutil.Scanner) (*types.AccessRequest, error) {

@@ -38,6 +38,9 @@ type MockAccessRequestStore struct {
 	// CreateFunc is an instance of a mock function object controlling the
 	// behavior of the method Create.
 	CreateFunc *AccessRequestStoreCreateFunc
+	// DoneFunc is an instance of a mock function object controlling the
+	// behavior of the method Done.
+	DoneFunc *AccessRequestStoreDoneFunc
 	// GetByEmailFunc is an instance of a mock function object controlling
 	// the behavior of the method GetByEmail.
 	GetByEmailFunc *AccessRequestStoreGetByEmailFunc
@@ -50,6 +53,9 @@ type MockAccessRequestStore struct {
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
 	ListFunc *AccessRequestStoreListFunc
+	// TransactFunc is an instance of a mock function object controlling the
+	// behavior of the method Transact.
+	TransactFunc *AccessRequestStoreTransactFunc
 	// UpdateFunc is an instance of a mock function object controlling the
 	// behavior of the method Update.
 	UpdateFunc *AccessRequestStoreUpdateFunc
@@ -70,6 +76,11 @@ func NewMockAccessRequestStore() *MockAccessRequestStore {
 				return
 			},
 		},
+		DoneFunc: &AccessRequestStoreDoneFunc{
+			defaultHook: func(error) (r0 error) {
+				return
+			},
+		},
 		GetByEmailFunc: &AccessRequestStoreGetByEmailFunc{
 			defaultHook: func(context.Context, string) (r0 *types.AccessRequest, r1 error) {
 				return
@@ -87,6 +98,11 @@ func NewMockAccessRequestStore() *MockAccessRequestStore {
 		},
 		ListFunc: &AccessRequestStoreListFunc{
 			defaultHook: func(context.Context, *AccessRequestsFilterAndListOptions) (r0 []*types.AccessRequest, r1 error) {
+				return
+			},
+		},
+		TransactFunc: &AccessRequestStoreTransactFunc{
+			defaultHook: func(context.Context) (r0 AccessRequestStore, r1 error) {
 				return
 			},
 		},
@@ -113,6 +129,11 @@ func NewStrictMockAccessRequestStore() *MockAccessRequestStore {
 				panic("unexpected invocation of MockAccessRequestStore.Create")
 			},
 		},
+		DoneFunc: &AccessRequestStoreDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockAccessRequestStore.Done")
+			},
+		},
 		GetByEmailFunc: &AccessRequestStoreGetByEmailFunc{
 			defaultHook: func(context.Context, string) (*types.AccessRequest, error) {
 				panic("unexpected invocation of MockAccessRequestStore.GetByEmail")
@@ -131,6 +152,11 @@ func NewStrictMockAccessRequestStore() *MockAccessRequestStore {
 		ListFunc: &AccessRequestStoreListFunc{
 			defaultHook: func(context.Context, *AccessRequestsFilterAndListOptions) ([]*types.AccessRequest, error) {
 				panic("unexpected invocation of MockAccessRequestStore.List")
+			},
+		},
+		TransactFunc: &AccessRequestStoreTransactFunc{
+			defaultHook: func(context.Context) (AccessRequestStore, error) {
+				panic("unexpected invocation of MockAccessRequestStore.Transact")
 			},
 		},
 		UpdateFunc: &AccessRequestStoreUpdateFunc{
@@ -152,6 +178,9 @@ func NewMockAccessRequestStoreFrom(i AccessRequestStore) *MockAccessRequestStore
 		CreateFunc: &AccessRequestStoreCreateFunc{
 			defaultHook: i.Create,
 		},
+		DoneFunc: &AccessRequestStoreDoneFunc{
+			defaultHook: i.Done,
+		},
 		GetByEmailFunc: &AccessRequestStoreGetByEmailFunc{
 			defaultHook: i.GetByEmail,
 		},
@@ -163,6 +192,9 @@ func NewMockAccessRequestStoreFrom(i AccessRequestStore) *MockAccessRequestStore
 		},
 		ListFunc: &AccessRequestStoreListFunc{
 			defaultHook: i.List,
+		},
+		TransactFunc: &AccessRequestStoreTransactFunc{
+			defaultHook: i.Transact,
 		},
 		UpdateFunc: &AccessRequestStoreUpdateFunc{
 			defaultHook: i.Update,
@@ -384,6 +416,108 @@ func (c AccessRequestStoreCreateFuncCall) Args() []interface{} {
 // invocation.
 func (c AccessRequestStoreCreateFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// AccessRequestStoreDoneFunc describes the behavior when the Done method of
+// the parent MockAccessRequestStore instance is invoked.
+type AccessRequestStoreDoneFunc struct {
+	defaultHook func(error) error
+	hooks       []func(error) error
+	history     []AccessRequestStoreDoneFuncCall
+	mutex       sync.Mutex
+}
+
+// Done delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockAccessRequestStore) Done(v0 error) error {
+	r0 := m.DoneFunc.nextHook()(v0)
+	m.DoneFunc.appendCall(AccessRequestStoreDoneFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Done method of the
+// parent MockAccessRequestStore instance is invoked and the hook queue is
+// empty.
+func (f *AccessRequestStoreDoneFunc) SetDefaultHook(hook func(error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Done method of the parent MockAccessRequestStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *AccessRequestStoreDoneFunc) PushHook(hook func(error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AccessRequestStoreDoneFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AccessRequestStoreDoneFunc) PushReturn(r0 error) {
+	f.PushHook(func(error) error {
+		return r0
+	})
+}
+
+func (f *AccessRequestStoreDoneFunc) nextHook() func(error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AccessRequestStoreDoneFunc) appendCall(r0 AccessRequestStoreDoneFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of AccessRequestStoreDoneFuncCall objects
+// describing the invocations of this function.
+func (f *AccessRequestStoreDoneFunc) History() []AccessRequestStoreDoneFuncCall {
+	f.mutex.Lock()
+	history := make([]AccessRequestStoreDoneFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AccessRequestStoreDoneFuncCall is an object that describes an invocation
+// of method Done on an instance of MockAccessRequestStore.
+type AccessRequestStoreDoneFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AccessRequestStoreDoneFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AccessRequestStoreDoneFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // AccessRequestStoreGetByEmailFunc describes the behavior when the
@@ -807,6 +941,111 @@ func (c AccessRequestStoreListFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c AccessRequestStoreListFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// AccessRequestStoreTransactFunc describes the behavior when the Transact
+// method of the parent MockAccessRequestStore instance is invoked.
+type AccessRequestStoreTransactFunc struct {
+	defaultHook func(context.Context) (AccessRequestStore, error)
+	hooks       []func(context.Context) (AccessRequestStore, error)
+	history     []AccessRequestStoreTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// Transact delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockAccessRequestStore) Transact(v0 context.Context) (AccessRequestStore, error) {
+	r0, r1 := m.TransactFunc.nextHook()(v0)
+	m.TransactFunc.appendCall(AccessRequestStoreTransactFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Transact method of
+// the parent MockAccessRequestStore instance is invoked and the hook queue
+// is empty.
+func (f *AccessRequestStoreTransactFunc) SetDefaultHook(hook func(context.Context) (AccessRequestStore, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Transact method of the parent MockAccessRequestStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *AccessRequestStoreTransactFunc) PushHook(hook func(context.Context) (AccessRequestStore, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AccessRequestStoreTransactFunc) SetDefaultReturn(r0 AccessRequestStore, r1 error) {
+	f.SetDefaultHook(func(context.Context) (AccessRequestStore, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AccessRequestStoreTransactFunc) PushReturn(r0 AccessRequestStore, r1 error) {
+	f.PushHook(func(context.Context) (AccessRequestStore, error) {
+		return r0, r1
+	})
+}
+
+func (f *AccessRequestStoreTransactFunc) nextHook() func(context.Context) (AccessRequestStore, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AccessRequestStoreTransactFunc) appendCall(r0 AccessRequestStoreTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of AccessRequestStoreTransactFuncCall objects
+// describing the invocations of this function.
+func (f *AccessRequestStoreTransactFunc) History() []AccessRequestStoreTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]AccessRequestStoreTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AccessRequestStoreTransactFuncCall is an object that describes an
+// invocation of method Transact on an instance of MockAccessRequestStore.
+type AccessRequestStoreTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 AccessRequestStore
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AccessRequestStoreTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AccessRequestStoreTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
