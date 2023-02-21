@@ -40,7 +40,6 @@ import {
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
-import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { FeedbackText, setLinkComponent, RouterLink, WildcardThemeContext, WildcardTheme } from '@sourcegraph/wildcard'
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
@@ -89,8 +88,6 @@ import { UserSessionStores } from './UserSessionStores'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
 
 import styles from './LegacySourcegraphWebApp.module.scss'
-
-const RepoContainer = lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer')
 
 interface SourcegraphWebAppProps
     extends CodeIntelligenceProps,
