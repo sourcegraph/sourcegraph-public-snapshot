@@ -73,7 +73,6 @@ import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { setQueryStateFromSettings, setExperimentalFeaturesFromSettings, useNavbarQueryState } from './stores'
-import { useThemeProps } from './theme'
 import { eventLogger } from './tracking/eventLogger'
 import type { UserAreaRoute } from './user/area/UserArea'
 import type { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
@@ -216,8 +215,6 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
         const parsedSearchURL = parseSearchURL(window.location.search)
         const parsedSearchQuery = parsedSearchURL.query || ''
 
-        document.documentElement.classList.add('theme')
-
         getWebGraphQLClient()
             .then(graphqlClient => {
                 setGraphqlClient(graphqlClient)
@@ -291,11 +288,9 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
     }, [])
 
     const breadcrumbProps = useBreadcrumbs()
-    const themeProps = useThemeProps()
 
     const context = {
         ...props,
-        ...themeProps,
         ...breadcrumbProps,
         isMacPlatform: isMacPlatform(),
         telemetryService: eventLogger,
@@ -389,7 +384,6 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
                     notebooksEnabled={props.notebooksEnabled}
                     codeMonitoringEnabled={props.codeMonitoringEnabled}
                     searchAggregationEnabled={props.searchAggregationEnabled}
-                    themeProps={themeProps}
                 />
             ),
             children: props.routes

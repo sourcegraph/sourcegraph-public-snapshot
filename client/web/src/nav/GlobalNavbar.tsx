@@ -15,7 +15,7 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SearchContextInputProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, Link, ButtonLink, useWindowSize } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -36,7 +36,6 @@ import { LayoutRouteProps } from '../routes'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { useNavbarQueryState } from '../stores'
-import { ThemePreferenceProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { NavDropdown, NavDropdownItem } from './NavBar/NavDropdown'
@@ -52,8 +51,6 @@ export interface GlobalNavbarProps
         PlatformContextProps,
         ExtensionsControllerProps,
         TelemetryProps,
-        ThemeProps,
-        ThemePreferenceProps,
         SearchContextInputProps,
         CodeInsightsProps,
         BatchChangesProps,
@@ -125,7 +122,6 @@ function FuzzyFinderNavItem(setFuzzyFinderVisible: React.Dispatch<SetStateAction
 
 export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<GlobalNavbarProps>> = ({
     showSearchBox,
-    isLightTheme,
     branding,
     isSourcegraphDotCom,
     isRepositoryRelatedPage,
@@ -180,6 +176,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const { fuzzyFinderNavbar } = getFuzzyFinderFeatureFlags(props.settingsCascade.final) ?? false
 
     const [codyEnabled] = useFeatureFlag('cody')
+    const isLightTheme = useIsLightTheme()
 
     return (
         <>
@@ -324,7 +321,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         <NavAction>
                             <UserNavItem
                                 {...props}
-                                isLightTheme={isLightTheme}
                                 authenticatedUser={props.authenticatedUser}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                                 codeHostIntegrationMessaging={

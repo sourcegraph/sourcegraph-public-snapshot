@@ -11,7 +11,6 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextInputProps, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Form } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -23,7 +22,6 @@ import { useRecentSearches } from './useRecentSearches'
 
 interface Props
     extends SettingsCascadeProps,
-        ThemeProps,
         SearchContextInputProps,
         TelemetryProps,
         PlatformContextProps<'requestGraphQL'> {
@@ -32,6 +30,7 @@ interface Props
     globbing: boolean
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
+    isLightTheme: boolean
 }
 
 const selectQueryState = ({

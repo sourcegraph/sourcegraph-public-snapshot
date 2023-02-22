@@ -330,7 +330,6 @@ export const defaultProps: ReferencesPanelProps = {
         },
     },
     platformContext: NOOP_PLATFORM_CONTEXT as any,
-    isLightTheme: false,
     fetchHighlightedFileLineRanges: args => {
         if (args.filePath === 'cmd/go-diff/go-diff.go') {
             return of(highlightedLinesGoDiffGo)

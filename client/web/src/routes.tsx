@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 
 import { Navigate } from 'react-router-dom'
 
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { BatchChangesProps } from './batches'
@@ -13,7 +12,6 @@ import type { LegacyLayoutProps } from './LegacyLayout'
 import { PageRoutes } from './routes.constants'
 import { SearchPageWrapper } from './search/SearchPageWrapper'
 import { getExperimentalFeatures } from './stores'
-import { ThemePreferenceProps } from './theme'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
@@ -39,8 +37,6 @@ const RepoContainer = lazyComponent(() => import('./repo/RepoContainer'), 'RepoC
 
 export interface LegacyLayoutRouteComponentProps
     extends Omit<LegacyLayoutProps, 'match'>,
-        ThemeProps,
-        ThemePreferenceProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
         CodeIntelligenceProps,
