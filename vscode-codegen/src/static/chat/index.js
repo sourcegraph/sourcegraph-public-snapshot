@@ -162,18 +162,23 @@ const messageBubbleTemplate = `
 </div>
 `
 
+function getContextFilesString(contextFiles) {
+	if (!contextFiles || contextFiles.length === 0) {
+		return ''
+	}
+	if (contextFiles.length === 1) {
+		return `<span style="font-style: italic;">Cody read ${contextFiles[0]}</span>`
+	}
+	return `<span style="font-style: italic;" title="${contextFiles.join("\n")}">Cody read ${contextFiles[0]} and ${contextFiles.length - 1} other files</span>`
+}
+
 function getMessageBubble(author, text, timestamp, contextFiles) {
 	const bubbleType = author === 'bot' ? 'bot' : 'human'
 	const authorName = author === 'bot' ? 'Cody' : 'Me'
 	return messageBubbleTemplate
 		.replace(/{type}/g, bubbleType)
 		.replace('{text}', text)
-		.replace(
-			'{contextFiles}',
-			contextFiles && contextFiles.length > 0
-				? `<span style="font-style: italic;">Cody read ${contextFiles.join(', ')}</span>`
-				: ''
-		)
+		.replace('{contextFiles}', getContextFilesString(contextFiles))
 		.replace('{footer}', timestamp ? `${authorName} &middot; ${timestamp}` : `<i>${authorName} is writing...</i>`)
 }
 

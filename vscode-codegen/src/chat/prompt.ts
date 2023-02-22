@@ -129,7 +129,10 @@ export class Transcript {
 	// We split the context into multiple messages instead of joining them into a single giant message.
 	// We can gradually eliminate them from the prompt, instead of losing them all at once with a single large messeage
 	// when we run out of tokens.
-	private async getEmbeddingsContextMessages(query: string, options: ContextSearchOptions): Promise<Message[]> {
+	private async getEmbeddingsContextMessages(
+		query: string,
+		options: ContextSearchOptions
+	): Promise<ContextMessage[]> {
 		if (!this.embeddingsClient) {
 			return []
 		}
@@ -152,9 +155,12 @@ export class Transcript {
 					? populateMarkdownContextTemplate
 					: populateCodeContextTemplate
 
-				return groupedResults.results.flatMap<Message>(text =>
-					getContextMessageWithResponse(contextTemplateFn(text, groupedResults.filePath))
-				)
+				return groupedResults.results.flatMap<Message>(text => {
+					return getContextMessageWithResponse(
+						contextTemplateFn(text, groupedResults.filePath),
+						groupedResults.filePath
+					)
+				})
 			})
 	}
 
@@ -371,9 +377,9 @@ export function populateMarkdownContextTemplate(md: string, filePath: string): s
 	return MARKDOWN_CONTEXT_TEMPLATE.replace('{filePath}', filePath).replace('{text}', md)
 }
 
-export function getContextMessageWithResponse(text: string): Message[] {
+export function getContextMessageWithResponse(text: string, filename?: string): ContextMessage[] {
 	return [
-		{ speaker: 'you', text: text },
+		{ speaker: 'you', text: text, filename },
 		{ speaker: 'bot', text: 'Ok.' },
 	]
 }
