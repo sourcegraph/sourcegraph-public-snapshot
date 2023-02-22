@@ -135,6 +135,14 @@ func osvToVuln(o OSV, dataSourceHandler DataSourceHandler) (vuln shared.Vulnerab
 			}
 		}
 
+		if len(affected.Ranges) == 0 && len(affected.Versions) > 0 {
+			// A version indicates a precise affected version, so it doesn't make sense to have >1
+			if len(affected.Versions) > 1 {
+				fmt.Printf("Data warning: %s has multiple single affected versions\n", v.SourceID)
+			}
+			ap.VersionConstraint = append(ap.VersionConstraint, "="+affected.Versions[0])
+		}
+
 		pas = append(pas, ap)
 	}
 
