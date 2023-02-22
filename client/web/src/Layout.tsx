@@ -1,7 +1,7 @@
 import React, { Suspense, useCallback, useRef, useState } from 'react'
 
 import classNames from 'classnames'
-import { Outlet, useLocation, Navigate } from 'react-router-dom'
+import { Outlet, useLocation, Navigate, useMatches } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
@@ -30,7 +30,6 @@ import { LazyFuzzyFinder } from './components/fuzzyFinder/LazyFuzzyFinder'
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
 import { useUserHistory } from './components/useUserHistory'
-import { GlobalContributions } from './contributions'
 import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { useHandleSubmitFeedback } from './hooks'
@@ -87,18 +86,25 @@ const CONTRAST_COMPLIANT_CLASSNAME = 'theme-contrast-compliant-syntax-highlighti
 export const Layout: React.FC<LegacyLayoutProps> = props => {
     const location = useLocation()
 
-    // TODO: Replace with useMatches once top-level <Router/> is V6
-    const routeMatch: any = '' /* props.routes.find(
-        route =>
-            matchPath(route.path, location.pathname) || matchPath(route.path.replace(/\/\*$/, ''), location.pathname)
-    )?.path*/
+    const routeMatches = useMatches()
 
-    const isSearchRelatedPage = (routeMatch === PageRoutes.RepoContainer || routeMatch?.startsWith('/search')) ?? false
+    const isRepositoryRelatedPage =
+        routeMatches.some(
+            routeMatch =>
+                routeMatch.handle &&
+                typeof routeMatch.handle === 'object' &&
+                Object.hasOwn(routeMatch.handle, 'isRepoContainer')
+        ) ?? false
+    // TODO: Move the search box into a shared layout component that is only used for repo routes
+    //       and search routes once we have flattened the router hierarchy.
+    const isSearchRelatedPage =
+        (isRepositoryRelatedPage || routeMatches.some(routeMatch => routeMatch.pathname.startsWith('/search'))) ?? false
     const isSearchHomepage = location.pathname === '/search' && !parseSearchURLQuery(location.search)
-    const isSearchConsolePage = routeMatch?.startsWith('/search/console')
-    const isSearchNotebooksPage = routeMatch?.startsWith(EnterprisePageRoutes.Notebooks)
+    const isSearchConsolePage = routeMatches.some(routeMatch => routeMatch.pathname.startsWith('/search/console'))
+    const isSearchNotebooksPage = routeMatches.some(routeMatch =>
+        routeMatch.pathname.startsWith(EnterprisePageRoutes.Notebooks)
+    )
     const isSearchNotebookListPage = location.pathname === EnterprisePageRoutes.Notebooks
-    const isRepositoryRelatedPage = routeMatch === PageRoutes.RepoContainer ?? false
 
     const { setupWizard } = useExperimentalFeatures()
     const isSetupWizardPage = setupWizard && location.pathname.startsWith(PageRoutes.SetupWizard)
@@ -137,7 +143,8 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     const showFeedbackModal = useCallback(() => setFeedbackModalOpen(true), [])
 
     const { handleSubmitFeedback } = useHandleSubmitFeedback({
-        routeMatch,
+        routeMatch:
+            routeMatches && routeMatches.length > 0 ? routeMatches[routeMatches.length - 1].pathname : undefined,
     })
 
     // Note: this was a poor UX and is disabled for now, see https://github.com/sourcegraph/sourcegraph/issues/30192
@@ -255,11 +262,6 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     />
                 </Panel>
             )}
-            <GlobalContributions
-                key={3}
-                extensionsController={props.extensionsController}
-                platformContext={props.platformContext}
-            />
             {(isSearchNotebookListPage || (isSearchRelatedPage && !isSearchHomepage)) && (
                 <NotepadContainer userId={props.authenticatedUser?.id} />
             )}
