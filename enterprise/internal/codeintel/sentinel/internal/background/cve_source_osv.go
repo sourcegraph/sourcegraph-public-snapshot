@@ -2,7 +2,10 @@ package background
 
 import (
 	"fmt"
+	"strings"
 	"time"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
 )
@@ -68,7 +71,7 @@ type DataSourceHandler interface {
 }
 
 // osvToVuln converts an OSV-formatted vulnerability to Sourcegraph's internal Vulnerability format
-func osvToVuln(o OSV, dataSourceHandler DataSourceHandler) (vuln shared.Vulnerability, err error) {
+func (parser *CveParser) osvToVuln(o OSV, dataSourceHandler DataSourceHandler) (vuln shared.Vulnerability, err error) {
 	// Core sections:
 	//	- /General details
 	//  - Severity - TODO, need to loop over
@@ -98,14 +101,25 @@ func osvToVuln(o OSV, dataSourceHandler DataSourceHandler) (vuln shared.Vulnerab
 	}
 
 	if len(o.Severity) > 1 {
-		fmt.Printf("Data warning: %s has >1 severity (actual: %d)\n", v.SourceID, len(o.Severity))
+		parser.logger.Warn(
+			"unexpected number of severity values (>1)",
+			log.String("type", "dataWarning"),
+			log.String("sourceID", v.SourceID),
+			log.String("actualCount", fmt.Sprint(len(o.Severity))),
+		)
 	}
 	for _, severity := range o.Severity {
 		v.CVSSVector = severity.Score
 
 		v.CVSSScore, v.Severity, err = parseCVSS(v.CVSSVector)
 		if err != nil {
-			fmt.Printf("Data warning: %s could not parse CVSS vector '%s': %s\n", v.SourceID, v.CVSSVector, err)
+			parser.logger.Warn(
+				"could not parse CVSS vector",
+				log.String("type", "dataWarning"),
+				log.String("sourceID", v.SourceID),
+				log.String("cvssVector", v.CVSSVector),
+				log.String("err", err.Error()),
+			)
 		}
 	}
 
@@ -122,7 +136,12 @@ func osvToVuln(o OSV, dataSourceHandler DataSourceHandler) (vuln shared.Vulnerab
 		}
 
 		if len(affected.Ranges) > 1 {
-			fmt.Printf("More than one affected range in %s\n", v.SourceID)
+			parser.logger.Warn(
+				"unexpected number of affected.Ranges (>1)",
+				log.String("type", "dataWarning"),
+				log.String("sourceID", v.SourceID),
+				log.String("actualNumRanges", fmt.Sprint(len(affected.Ranges))),
+			)
 		}
 
 		// In all observed cases a single range is used, so keep it simple
@@ -150,7 +169,13 @@ func osvToVuln(o OSV, dataSourceHandler DataSourceHandler) (vuln shared.Vulnerab
 		if len(affected.Ranges) == 0 && len(affected.Versions) > 0 {
 			// A version indicates a precise affected version, so it doesn't make sense to have >1
 			if len(affected.Versions) > 1 {
-				fmt.Printf("Data warning: %s has multiple single affected versions\n", v.SourceID)
+				parser.logger.Warn(
+					"unexpected number of affected versions (>1)",
+					log.String("type", "dataWarning"),
+					log.String("sourceID", v.SourceID),
+					log.String("actual", v.CVSSVector),
+					log.String("err", err.Error()),
+				)
 			}
 			ap.VersionConstraint = append(ap.VersionConstraint, "="+affected.Versions[0])
 		}

@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -24,14 +23,14 @@ import (
 const advisoryDatabaseURL = "https://github.com/github/advisory-database/archive/refs/heads/main.zip"
 
 // ReadGitHubAdvisoryDB fetches a copy of the GHSA database and converts it to the internal Vulnerability format
-func ReadGitHubAdvisoryDB(ctx context.Context, useLocalCache bool) (vulns []shared.Vulnerability, err error) {
+func (parser *CveParser) ReadGitHubAdvisoryDB(ctx context.Context, useLocalCache bool) (vulns []shared.Vulnerability, err error) {
 	if useLocalCache {
 		zipReader, err := os.Open("main.zip")
 		if err != nil {
 			return nil, errors.New("unable to open zip file")
 		}
 
-		return ParseGitHubAdvisoryDB(zipReader)
+		return parser.ParseGitHubAdvisoryDB(zipReader)
 	}
 
 	resp, err := http.Get(advisoryDatabaseURL)
@@ -44,10 +43,10 @@ func ReadGitHubAdvisoryDB(ctx context.Context, useLocalCache bool) (vulns []shar
 		return nil, errors.Newf("unexpected status code %d", resp.StatusCode)
 	}
 
-	return ParseGitHubAdvisoryDB(resp.Body)
+	return parser.ParseGitHubAdvisoryDB(resp.Body)
 }
 
-func ParseGitHubAdvisoryDB(ghsaReader io.Reader) (vulns []shared.Vulnerability, err error) {
+func (parser *CveParser) ParseGitHubAdvisoryDB(ghsaReader io.Reader) (vulns []shared.Vulnerability, err error) {
 	content, err := io.ReadAll(ghsaReader)
 	if err != nil {
 		return nil, err
@@ -76,7 +75,7 @@ func ParseGitHubAdvisoryDB(ghsaReader io.Reader) (vulns []shared.Vulnerability, 
 
 		// Convert OSV to Vulnerability using GHSA handler
 		var g GHSA
-		convertedVuln, err := osvToVuln(osvVuln, g)
+		convertedVuln, err := parser.osvToVuln(osvVuln, g)
 		if err != nil {
 			if _, ok := err.(GHSAUnreviewedError); ok {
 				continue
@@ -122,13 +121,13 @@ func (g GHSA) topLevelHandler(o OSV, v *shared.Vulnerability) (err error) {
 	if databaseSpecific.NvdPublishedAtString != "" {
 		databaseSpecific.NvdPublishedAt, err = time.Parse(time.RFC3339, databaseSpecific.NvdPublishedAtString)
 		if err != nil {
-			fmt.Printf("Failed to parse NvdPublishedAtString: %s\n", err)
+			return errors.Wrap(err, "failed to parse NvdPublishedAtString")
 		}
 	}
 	if databaseSpecific.GithubReviewedAtString != "" {
 		databaseSpecific.GithubReviewedAt, err = time.Parse(time.RFC3339, databaseSpecific.GithubReviewedAtString)
 		if err != nil {
-			fmt.Printf("Failed to parse GithubReviewedAtString: %s\n", err)
+			return errors.Wrap(err, "failed to parse GithubReviewedAtString")
 		}
 	}
 

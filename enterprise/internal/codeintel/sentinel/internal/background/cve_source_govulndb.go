@@ -22,14 +22,14 @@ import (
 const govulndbAdvisoryDatabaseURL = "https://github.com/golang/vuln/archive/refs/heads/master.zip"
 
 // ReadGoVulnDb fetches a copy of the Go Vulnerability Database and converts it to the internal Vulnerability format
-func ReadGoVulnDb(ctx context.Context, useLocalCache bool) (vulns []shared.Vulnerability, err error) {
+func (parser *CveParser) ReadGoVulnDb(ctx context.Context, useLocalCache bool) (vulns []shared.Vulnerability, err error) {
 	if useLocalCache {
 		zipReader, err := os.Open("vulndb-govulndb.zip")
 		if err != nil {
 			return nil, errors.New("unable to open zip file")
 		}
 
-		return ParseGovulndbAdvisoryDB(zipReader)
+		return parser.ParseGovulndbAdvisoryDB(zipReader)
 	}
 
 	resp, err := http.Get(govulndbAdvisoryDatabaseURL)
@@ -42,10 +42,10 @@ func ReadGoVulnDb(ctx context.Context, useLocalCache bool) (vulns []shared.Vulne
 		return nil, errors.Newf("unexpected status code %d", resp.StatusCode)
 	}
 
-	return ParseGitHubAdvisoryDB(resp.Body)
+	return parser.ParseGitHubAdvisoryDB(resp.Body)
 }
 
-func ParseGovulndbAdvisoryDB(govulndbReader io.Reader) (vulns []shared.Vulnerability, err error) {
+func (parser *CveParser) ParseGovulndbAdvisoryDB(govulndbReader io.Reader) (vulns []shared.Vulnerability, err error) {
 	content, err := io.ReadAll(govulndbReader)
 	if err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func ParseGovulndbAdvisoryDB(govulndbReader io.Reader) (vulns []shared.Vulnerabi
 
 		// Convert OSV to Vulnerability using Govulndb handler
 		var g Govulndb
-		convertedVuln, err := osvToVuln(osvVuln, g)
+		convertedVuln, err := parser.osvToVuln(osvVuln, g)
 		if err != nil {
 			return nil, err
 		}
