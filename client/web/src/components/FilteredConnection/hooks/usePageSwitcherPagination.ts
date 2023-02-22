@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react'
 
 import { ApolloError, WatchQueryFetchPolicy } from '@apollo/client'
-import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 import { GraphQLResult, useQuery } from '@sourcegraph/http-client'
 

@@ -1157,11 +1157,11 @@ func TestMembersAdd(t *testing.T) {
 	fs.Wire(db)
 	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
 	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
-		t.Fatalf("failed to create parent team: %s", err)
+		t.Fatalf("failed to create team: %s", err)
 	}
 	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
 	if err != nil {
-		t.Fatalf("cannot fetch parent team: %s", err)
+		t.Fatalf("cannot fetch team: %s", err)
 	}
 	userExistingID := fs.AddUser(types.User{Username: "existing"})
 	userExistingAndAddedID := fs.AddUser(types.User{Username: "existingAndAdded"})
@@ -1201,6 +1201,125 @@ func TestMembersAdd(t *testing.T) {
 		Variables: map[string]any{
 			"existingAndAddedId": string(relay.MarshalID("TeamMember", userExistingAndAddedID)),
 			"addedId":            string(relay.MarshalID("TeamMember", userAddedID)),
+		},
+	})
+}
+
+func TestMembersRemove(t *testing.T) {
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+		t.Fatalf("failed to create team: %s", err)
+	}
+	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
+	if err != nil {
+		t.Fatalf("cannot fetch team: %s", err)
+	}
+	var removedIDs []int32
+	for i := 1; i <= 3; i++ {
+		fs.AddTeamMember(&types.TeamMember{
+			TeamID: team.ID,
+			UserID: fs.AddUser(types.User{Username: fmt.Sprintf("retained-%d", i)}),
+		})
+		id := fs.AddUser(types.User{Username: fmt.Sprintf("removed-%d", i)})
+		fs.AddTeamMember(&types.TeamMember{
+			TeamID: team.ID,
+			UserID: id,
+		})
+		removedIDs = append(removedIDs, id)
+	}
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `mutation RemoveTeamMembers($r1: ID!, $r2: ID!, $r3: ID!) {
+			removeTeamMembers(teamName: "team", members: [$r1, $r2, $r3]) {
+				members {
+					nodes {
+						... on User {
+							username
+						}
+					}
+				}
+			}
+		}`,
+		ExpectedResult: `{
+			"removeTeamMembers": {
+				"members": {
+					"nodes": [
+						{"username": "retained-1"},
+						{"username": "retained-2"},
+						{"username": "retained-3"}
+					]
+				}
+			}
+		}`,
+		Variables: map[string]any{
+			"r1": string(relay.MarshalID("TeamMember", removedIDs[0])),
+			"r2": string(relay.MarshalID("TeamMember", removedIDs[1])),
+			"r3": string(relay.MarshalID("TeamMember", removedIDs[2])),
+		},
+	})
+}
+
+func TestMembersSet(t *testing.T) {
+	fs := fakedb.New()
+	db := database.NewMockDB()
+	fs.Wire(db)
+	ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
+	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+		t.Fatalf("failed to create team: %s", err)
+	}
+	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
+	if err != nil {
+		t.Fatalf("cannot fetch team: %s", err)
+	}
+	var setIDs []int32
+	for i := 1; i <= 2; i++ {
+		fs.AddTeamMember(&types.TeamMember{
+			TeamID: team.ID,
+			UserID: fs.AddUser(types.User{Username: fmt.Sprintf("before-%d", i)}),
+		})
+		id := fs.AddUser(types.User{Username: fmt.Sprintf("before-and-after-%d", i)})
+		fs.AddTeamMember(&types.TeamMember{
+			TeamID: team.ID,
+			UserID: id,
+		})
+		setIDs = append(setIDs, id)
+		setIDs = append(setIDs, fs.AddUser(types.User{Username: fmt.Sprintf("after-%d", i)}))
+	}
+	RunTest(t, &Test{
+		Schema:  mustParseGraphQLSchema(t, db),
+		Context: ctx,
+		Query: `mutation SetTeamMembers($r1: ID!, $r2: ID!, $r3: ID!, $r4: ID!) {
+			setTeamMembers(teamName: "team", members: [$r1, $r2, $r3, $r4]) {
+				members {
+					nodes {
+						... on User {
+							username
+						}
+					}
+				}
+			}
+		}`,
+		ExpectedResult: `{
+			"setTeamMembers": {
+				"members": {
+					"nodes": [
+						{"username": "before-and-after-1"},
+						{"username": "after-1"},
+						{"username": "before-and-after-2"},
+						{"username": "after-2"}
+					]
+				}
+			}
+		}`,
+		Variables: map[string]any{
+			"r1": string(relay.MarshalID("TeamMember", setIDs[0])),
+			"r2": string(relay.MarshalID("TeamMember", setIDs[1])),
+			"r3": string(relay.MarshalID("TeamMember", setIDs[2])),
+			"r4": string(relay.MarshalID("TeamMember", setIDs[3])),
 		},
 	})
 }

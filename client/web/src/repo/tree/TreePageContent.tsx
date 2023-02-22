@@ -12,7 +12,6 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { SearchPatternType, TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Card, CardHeader, Link, Tooltip } from '@sourcegraph/wildcard'
 
@@ -169,7 +168,7 @@ export const fetchDiffStats = (args: {
         })
     )
 
-interface TreePageContentProps extends ExtensionsControllerProps, ThemeProps, TelemetryProps, PlatformContextProps {
+interface TreePageContentProps extends ExtensionsControllerProps, TelemetryProps, PlatformContextProps {
     filePath: string
     tree: TreeFields
     repo: TreePageRepositoryFields
@@ -182,7 +181,8 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
 
     const readmeEntry = useMemo(() => {
         for (const entry of tree.entries) {
-            if (!entry.isDirectory && (entry.name === 'README.md' || entry.name === 'README')) {
+            const name = entry.name.toLocaleLowerCase()
+            if (!entry.isDirectory && (name === 'readme.md' || name === 'readme' || name === 'readme.txt')) {
                 return entry
             }
         }

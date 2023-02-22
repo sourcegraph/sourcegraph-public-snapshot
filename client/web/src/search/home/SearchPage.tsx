@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 
+import { mdiArrowRight } from '@mdi/js'
 import classNames from 'classnames'
 
 import { QueryExamples } from '@sourcegraph/branded/src/search-ui/components/QueryExamples'
@@ -9,16 +10,14 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { QueryState, SearchContextInputProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
-import { Link, Tooltip, useWindowSize, VIEWPORT_SM } from '@sourcegraph/wildcard'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
+import { Icon, Link, Tooltip, useWindowSize, VIEWPORT_SM } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { CodeInsightsProps } from '../../insights/types'
 import { AddCodeHostWidget, useShouldShowAddCodeHostWidget } from '../../onboarding/AddCodeHostWidget'
 import { useExperimentalFeatures } from '../../stores'
-import { ThemePreferenceProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { SearchPageFooter } from './SearchPageFooter'
@@ -28,8 +27,6 @@ import styles from './SearchPage.module.scss'
 
 export interface SearchPageProps
     extends SettingsCascadeProps<Settings>,
-        ThemeProps,
-        ThemePreferenceProps,
         TelemetryProps,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
         PlatformContextProps<'settings' | 'sourcegraphURL' | 'updateSettings' | 'requestGraphQL'>,
@@ -48,6 +45,7 @@ export interface SearchPageProps
  */
 export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchPageProps>> = props => {
     const { width } = useWindowSize()
+    const isLightTheme = useIsLightTheme()
     const shouldShowAddCodeHostWidget = useShouldShowAddCodeHostWidget(props.authenticatedUser)
     const experimentalQueryInput = useExperimentalFeatures(features => features.searchQueryInput === 'experimental')
 
@@ -68,18 +66,18 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
 
     return (
         <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
-            <BrandLogo className={styles.logo} isLightTheme={props.isLightTheme} variant="logo" />
+            <BrandLogo className={styles.logo} isLightTheme={isLightTheme} variant="logo" />
             {props.isSourcegraphDotCom && (
                 <div className="d-sm-flex flex-row text-center">
                     <div className={classNames(width >= VIEWPORT_SM && 'border-right', 'text-muted mt-3 mr-sm-2 pr-2')}>
-                        Search millions of public repositories
+                        Searching millions of public repositories
                     </div>
                     <div className="mt-3">
                         <Link
-                            to={buildCloudTrialURL(props.authenticatedUser)}
-                            onClick={() => eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'HomeAboveSearch' })}
+                            to="https://about.sourcegraph.com"
+                            onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'HomeAboveSearch' })}
                         >
-                            Search private code
+                            Get Sourcegraph Enterprise <Icon svgPath={mdiArrowRight} aria-hidden={true} />
                         </Link>
                     </div>
                 </div>
@@ -119,7 +117,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                 )}
             </div>
 
-            <SearchPageFooter {...props} />
+            <SearchPageFooter {...props} isLightTheme={isLightTheme} />
         </div>
     )
 }

@@ -1389,9 +1389,8 @@ type Query {
     packageRepoReferences(
         """
         The exact scheme value to filter by.
-        TODO: should this be an enum?
         """
-        scheme: String
+        scheme: PackageRepoReferenceKind
         """
         If supplied, only package repo references that match the given
         terms by their name will be returned.
@@ -3521,6 +3520,19 @@ type PackageRepoReferenceConnection {
 }
 
 """
+A kind of package repo reference.
+ExternalServiceKind, with a more specific set of values.
+"""
+enum PackageRepoReferenceKind {
+    GOMODULES
+    JVMPACKAGES
+    NPMPACKAGES
+    PYTHONPACKAGES
+    RUSTPACKAGES
+    RUBYPACKAGES
+}
+
+"""
 A reference to a package repo, such as a maven artifact, rust crate etc.
 """
 type PackageRepoReference {
@@ -3533,7 +3545,7 @@ type PackageRepoReference {
     The ecosystem/package-manager/indexer scheme under which this package repo
     reference is uniquely identified e.g. npm/python/rust-analyzer
     """
-    scheme: String!
+    scheme: PackageRepoReferenceKind!
 
     """
     The name of the package, in a format relevant to the specific ecosystem e.g.
@@ -9238,13 +9250,7 @@ type TeamConnection {
     """
     The total count of items in the connection.
     """
-    totalCount(
-        """
-        If true, the total count of teams, including deeply nested child teams will
-        be returned. Note that those teams will NOT be part of the nodes.
-        """
-        countDeeplyNestedTeams: Boolean = false
-    ): Int!
+    totalCount: Int!
 
     """
     The pagination info for the connection.
@@ -9264,14 +9270,7 @@ type TeamMemberConnection {
     """
     The total count of items in the connection.
     """
-    totalCount(
-        """
-        If true, the total count of members of this team, including deeply nested
-        child teams members will be returned. Note that child team members will NOT
-        be part of the nodes.
-        """
-        countDeeplyNestedTeamMembers: Boolean = false
-    ): Int!
+    totalCount: Int!
 
     """
     The pagination info for the connection.

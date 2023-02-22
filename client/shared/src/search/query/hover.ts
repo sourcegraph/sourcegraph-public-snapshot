@@ -146,6 +146,8 @@ const toSelectorHover = (token: MetaSelector): string => {
             return 'Select and display distinct repository paths from search results.'
         case MetaSelectorKind.File:
             return 'Select and display distinct file paths from search results.'
+        case MetaSelectorKind.FileOwners:
+            return 'Select and display distinct code owners from search results.'
         case MetaSelectorKind.Content:
             return 'Select and display only results matching content inside files.'
         case MetaSelectorKind.Commit:

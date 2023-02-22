@@ -3,7 +3,7 @@ import React, { useCallback, useEffect } from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual } from 'lodash'
-import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { Tree, Link, flattenTree, TreeNode } from '@sourcegraph/wildcard'

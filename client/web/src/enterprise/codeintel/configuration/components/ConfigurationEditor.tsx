@@ -3,7 +3,7 @@ import { FunctionComponent, useCallback, useMemo, useState } from 'react'
 import { editor } from 'monaco-editor'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, screenReaderAnnounce, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
@@ -16,7 +16,7 @@ import allConfigSchema from '../schema.json'
 
 import { IndexConfigurationSaveToolbar, IndexConfigurationSaveToolbarProps } from './IndexConfigurationSaveToolbar'
 
-export interface ConfigurationEditorProps extends ThemeProps, TelemetryProps {
+export interface ConfigurationEditorProps extends TelemetryProps {
     repoId: string
     authenticatedUser: AuthenticatedUser | null
 }
@@ -24,9 +24,9 @@ export interface ConfigurationEditorProps extends ThemeProps, TelemetryProps {
 export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = ({
     repoId,
     authenticatedUser,
-    isLightTheme,
     telemetryService,
 }) => {
+    const isLightTheme = useIsLightTheme()
     const { inferredConfiguration, loadingInferred, inferredError } = useInferredConfig(repoId)
     const { configuration, loadingRepository, repositoryError } = useRepositoryConfig(repoId)
     const { updateConfigForRepository, isUpdating, updatingError } = useUpdateConfigurationForRepository()

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 
-import { Navigate } from 'react-router-dom-v5-compat'
+import { Navigate } from 'react-router-dom'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'

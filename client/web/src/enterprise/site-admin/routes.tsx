@@ -1,4 +1,4 @@
-import { Navigate, useLocation, useParams } from 'react-router-dom-v5-compat'
+import { Navigate, useLocation, useParams } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
@@ -123,7 +123,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
         },
         {
             path: '/batch-changes/specs',
-            render: props => <BatchSpecsPage {...props} />,
+            render: () => <BatchSpecsPage />,
             condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
                 batchChangesEnabled && batchChangesExecutionEnabled,
         },

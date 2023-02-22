@@ -1,7 +1,7 @@
 import { FC, useEffect } from 'react'
 
 import { mdiPlus } from '@mdi/js'
-import { Navigate } from 'react-router-dom-v5-compat'
+import { Navigate } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, ButtonLink, Icon, PageHeader, Container } from '@sourcegraph/wildcard'

@@ -13,13 +13,12 @@ import {
     mdiSourceRepository,
 } from '@mdi/js'
 import classNames from 'classnames'
-import { useNavigate, useLocation } from 'react-router-dom-v5-compat'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Subject } from 'rxjs'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Badge, Button, Container, ErrorAlert, H3, Icon, Link, PageHeader, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
@@ -65,12 +64,11 @@ const filters: FilteredConnectionFilter[] = [
     },
 ]
 
-export interface CodeIntelConfigurationPageProps extends ThemeProps, TelemetryProps {
+export interface CodeIntelConfigurationPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     queryPolicies?: typeof defaultQueryPolicies
     repo?: { id: string; name: string }
     indexingEnabled?: boolean
-    isLightTheme: boolean
     telemetryService: TelemetryService
 }
 

@@ -25,7 +25,6 @@ export const panels: Panel[] = [
 export const panelProps: React.ComponentPropsWithoutRef<typeof TabbedPanelContent> = {
     repoName: 'git://github.com/foo/bar',
     fetchHighlightedFileLineRanges: () => of([]),
-    isLightTheme: true,
     platformContext: {} as any,
     settingsCascade: { subjects: null, final: null },
     telemetryService: NOOP_TELEMETRY_SERVICE,
