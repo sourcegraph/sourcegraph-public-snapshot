@@ -88,6 +88,7 @@ func (s *ownService) OwnersFile(ctx context.Context, repoName api.RepoName, comm
 
 func (s *ownService) ResolveOwnersWithType(ctx context.Context, protoOwners []*codeownerspb.Owner) ([]codeowners.ResolvedOwner, error) {
 	resolved := make([]codeowners.ResolvedOwner, 0, len(protoOwners))
+
 	// We have to look up owner by owner because of the branching conditions:
 	// We first try to find a user given the owner information. If we cannot find a user, we try to match a team.
 	// If all fails, we return an unknown owner type with the information we have from the proto.
@@ -100,19 +101,14 @@ func (s *ownService) ResolveOwnersWithType(ctx context.Context, protoOwners []*c
 			resolved = append(resolved, cached)
 			continue
 		}
-		if po.Handle == "" && po.Email == "" {
-			// This is a safeguard in case somehow neither email nor handle are set.
-			continue
-		}
+
 		resolvedOwner, err := s.resolveOwner(ctx, po.Handle, po.Email)
 		if err != nil {
 			return nil, err
 		}
 		if resolvedOwner == nil {
-			resolvedOwner = &codeowners.UnknownOwner{
-				Handle: po.Handle,
-				Email:  po.Email,
-			}
+			// This is a safeguard in case somehow neither email nor handle are set.
+			continue
 		}
 		resolved = append(resolved, resolvedOwner)
 		s.mu.Lock()

@@ -41,10 +41,13 @@ func (s fakeOwnService) OwnersFile(context.Context, api.RepoName, api.CommitID) 
 	return s.File, nil
 }
 
+// ResolverOwnersWithType here behaves in line with production
+// OwnService implementation in case handle/email cannot be associated
+// with anything - defaults to a Person with a nil person entity.
 func (s fakeOwnService) ResolveOwnersWithType(_ context.Context, owners []*codeownerspb.Owner) ([]codeowners.ResolvedOwner, error) {
 	var resolved []codeowners.ResolvedOwner
 	for _, o := range owners {
-		resolved = append(resolved, &codeowners.UnknownOwner{
+		resolved = append(resolved, &codeowners.Person{
 			Handle: o.Handle,
 			Email:  o.Email,
 		})
@@ -80,11 +83,7 @@ func (f fileInfo) Mode() os.FileMode {
 func (f fileInfo) ModTime() time.Time { return time.Now() }
 func (f fileInfo) Sys() any           { return any(nil) }
 
-// TestOwnershipAlmostPanelQuery verifies working of the ownership resolver
-// on a query like the one issued by the blob ownership bottom panel, except
-// matching on owner is for newly added unresolved owner rather than person.
-// This makes for a smaller pull request and less faking.
-func TestOwnershipAlmostPanelQuery(t *testing.T) {
+func TestBlobOwnershipPanelQuery(t *testing.T) {
 	fs := fakedb.New()
 	db := database.NewMockDB()
 	fs.Wire(db)
@@ -116,6 +115,17 @@ func TestOwnershipAlmostPanelQuery(t *testing.T) {
 		Schema:  schema,
 		Context: ctx,
 		Query: `
+			fragment OwnerFields on Person {
+				email
+				avatarURL
+				displayName
+				user {
+					username
+					displayName
+					url
+				}
+			}
+
 			fragment CodeownersFileEntryFields on CodeownersFileEntry {
 				title
 				description
@@ -129,10 +139,7 @@ func TestOwnershipAlmostPanelQuery(t *testing.T) {
 								ownership {
 									nodes {
 										owner {
-											... on UnknownOwner {
-												handle
-												email
-											}
+											...OwnerFields
 										}
 										reasons {
 											...CodeownersFileEntryFields
@@ -152,8 +159,10 @@ func TestOwnershipAlmostPanelQuery(t *testing.T) {
 							"nodes": [
 								{
 									"owner": {
-										"handle": "js-owner",
-										"email": null
+										"email": "",
+										"avatarURL": null,
+										"displayName": "js-owner",
+										"user": null
 									},
 									"reasons": [
 										{

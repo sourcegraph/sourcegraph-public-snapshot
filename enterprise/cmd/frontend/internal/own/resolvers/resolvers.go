@@ -131,34 +131,6 @@ func (r *ownerResolver) ToTeam() (*graphqlbackend.TeamResolver, bool) {
 	return nil, false
 }
 
-func (r *ownerResolver) ToUnknownOwner() (graphqlbackend.UnknownOwnerResolver, bool) {
-	owner, ok := r.resolvedOwner.(*codeowners.UnknownOwner)
-	if !ok || r.resolvedOwner.Type() != codeowners.OwnerTypeUnknown {
-		return nil, false
-	}
-	return &unknownOwnerResolver{owner: owner}, true
-}
-
-type unknownOwnerResolver struct {
-	owner *codeowners.UnknownOwner
-}
-
-func (r *unknownOwnerResolver) Handle() *string {
-	h := r.owner.Handle
-	if h == "" {
-		return nil
-	}
-	return &h
-}
-
-func (r *unknownOwnerResolver) Email() *string {
-	e := r.owner.Email
-	if e == "" {
-		return nil
-	}
-	return &e
-}
-
 type codeownersFileEntryResolver struct{}
 
 func (r *codeownersFileEntryResolver) ToCodeownersFileEntry() (graphqlbackend.CodeownersFileEntryResolver, bool) {
