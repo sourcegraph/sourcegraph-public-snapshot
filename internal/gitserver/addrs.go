@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"golang.org/x/exp/slices"
 	"google.golang.org/grpc"
 )
@@ -87,7 +88,10 @@ type GitserverConns struct {
 
 func (g *GitserverConns) ConnForRepo(userAgent string, repo api.RepoName) (*grpc.ClientConn, error) {
 	addr := g.AddrForRepo(userAgent, repo)
-	ce := g.grpcConns[addr]
+	ce, ok := g.grpcConns[addr]
+	if !ok {
+		return nil, errors.Newf("no gRPC connection found for address %q", addr)
+	}
 	return ce.conn, ce.err
 }
 
