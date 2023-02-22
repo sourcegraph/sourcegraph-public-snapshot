@@ -968,7 +968,7 @@ A [multi-version upgrade](../../updates/index.md#multi-version-upgrades) is a do
     ```
     > NOTE: The command above is general and you'll need to substitute in your own namespace, target sourcegraph version, and desired migrator image version. In general run the most recent version of migrator.
 
-    You can learn more about running migrator operations in helm in the [migrator operations doc](../../how-to/manual_database_migrations.md#kubernetes).
+    You can learn more about running migrator operations in helm in the [migrator operations doc](../../how-to/manual_database_migrations.md#helm-kubernetes).
 3. **Upgrade your instance via `helm upgrade`**
   - Now that the databases have been migrated to the latest versions, services can be scaled up and upgrade via the [standard procedure](#standard-upgrades). For example:
     ```
