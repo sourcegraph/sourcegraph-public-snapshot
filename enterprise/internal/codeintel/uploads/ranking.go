@@ -60,12 +60,11 @@ func (s *Service) ExportRankingGraph(
 	ctx, _, endObservation := s.operations.exportRankingGraph.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	uploads, err := s.store.GetUploadsForRanking(
-		ctx,
-		rankingGraphKey,
-		"ranking",
-		rankingGraphBatchSize,
-	)
+	if !rankingJobEnabled {
+		return nil
+	}
+
+	uploads, err := s.store.GetUploadsForRanking(ctx, rankingGraphKey, "ranking", rankingGraphBatchSize)
 	if err != nil {
 		return err
 	}
