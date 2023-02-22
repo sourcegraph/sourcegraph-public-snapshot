@@ -4,7 +4,7 @@ RUN mkdir -p /redis-data && chown -R redis:redis /redis-data
 
 # @FIXME: Update redis image
 # Pin busybox=1.33.1-r6 https://github.com/sourcegraph/sourcegraph/issues/27965
-
+# hadolint ignore=SC2261
 RUN apk --upgrade --no-cache add tini 'apk-tools>=2.12.7-r0' 'libssl1.1>=1.1.1t-r0' 'libcrypto1.1>=1.1.1t-r0' 'busybox>=1.33.1-r6'
 
 
