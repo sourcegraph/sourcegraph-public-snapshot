@@ -117,7 +117,6 @@ interface BlameDecorationProps {
     navigate: NavigateFunction
     onSelect?: (line: number) => void
     onDeselect?: (line: number) => void
-    isLightTheme: boolean
     hideRecency: boolean
 }
 
@@ -128,7 +127,6 @@ export const BlameDecoration: React.FunctionComponent<BlameDecorationProps> = ({
     onDeselect,
     firstCommitDate,
     externalURLs,
-    isLightTheme,
     hideRecency,
     navigate,
 }) => {
@@ -154,7 +152,7 @@ export const BlameDecoration: React.FunctionComponent<BlameDecorationProps> = ({
     // Prevent hitting the backend (full page reloads) for links that stay inside the app.
     const handleParentCommitLinkClick = useMemo(() => createLinkClickHandler(navigate), [navigate])
 
-    const recencyColor = useBlameRecencyColor(blameHunk?.displayInfo.commitDate, firstCommitDate, isLightTheme)
+    const recencyColor = useBlameRecencyColor(blameHunk?.displayInfo.commitDate, firstCommitDate)
 
     if (!blameHunk) {
         return null

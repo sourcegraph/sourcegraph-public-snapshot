@@ -1,4 +1,4 @@
-import React, { Suspense, useCallback, useRef, useState } from 'react'
+import React, { Suspense, useCallback, useLayoutEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import { Outlet, useLocation, Navigate, useMatches } from 'react-router-dom'
@@ -14,7 +14,7 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps, SettingsSubjectCommonFields } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { FeedbackPrompt, LoadingSpinner, Panel } from '@sourcegraph/wildcard'
@@ -41,7 +41,6 @@ import { parseSearchURLQuery, SearchAggregationProps, SearchStreamingProps } fro
 import { NotepadContainer } from './search/Notepad'
 import { SearchQueryStateObserver } from './SearchQueryStateObserver'
 import { useExperimentalFeatures } from './stores'
-import { ThemePreferenceProps, useTheme } from './theme'
 import { getExperimentalFeatures } from './util/get-experimental-features'
 import { parseBrowserRepoURL } from './util/url'
 
@@ -74,8 +73,6 @@ export interface LegacyLayoutProps
 
     globbing: boolean
     isSourcegraphDotCom: boolean
-
-    themeProps: ThemeProps & ThemePreferenceProps
 }
 /**
  * Syntax highlighting changes for WCAG 2.1 contrast compliance (currently behind feature flag)
@@ -128,16 +125,13 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
         location.pathname === PageRoutes.PasswordReset ||
         location.pathname === PageRoutes.Welcome
 
-    const themeState = useTheme()
-    const themeStateRef = useRef(themeState)
-    themeStateRef.current = themeState
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
 
-    useScrollToLocationHash(location)
-
-    const showHelpShortcut = useKeyboardShortcut('keyboardShortcutsHelp')
+    const { theme } = useTheme()
     const [keyboardShortcutsHelpOpen, setKeyboardShortcutsHelpOpen] = useState(false)
     const [feedbackModalOpen, setFeedbackModalOpen] = useState(false)
+    const showHelpShortcut = useKeyboardShortcut('keyboardShortcutsHelp')
+
     const showKeyboardShortcutsHelp = useCallback(() => setKeyboardShortcutsHelpOpen(true), [])
     const hideKeyboardShortcutsHelp = useCallback(() => setKeyboardShortcutsHelpOpen(false), [])
     const showFeedbackModal = useCallback(() => setFeedbackModalOpen(true), [])
@@ -146,6 +140,16 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
         routeMatch:
             routeMatches && routeMatches.length > 0 ? routeMatches[routeMatches.length - 1].pathname : undefined,
     })
+
+    useLayoutEffect(() => {
+        const isLightTheme = theme === Theme.Light
+
+        document.documentElement.classList.add('theme')
+        document.documentElement.classList.toggle('theme-light', isLightTheme)
+        document.documentElement.classList.toggle('theme-dark', !isLightTheme)
+    }, [theme])
+
+    useScrollToLocationHash(location)
 
     // Note: this was a poor UX and is disabled for now, see https://github.com/sourcegraph/sourcegraph/issues/30192
     // const [tosAccepted, setTosAccepted] = useState(true) // Assume TOS has been accepted so that we don't show the TOS modal on initial load
@@ -214,9 +218,8 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
             )}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
-                    routes={[]}
                     {...props}
-                    {...props.themeProps}
+                    routes={[]}
                     showSearchBox={
                         isSearchRelatedPage &&
                         !isSearchHomepage &&
@@ -256,7 +259,6 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                 >
                     <TabbedPanelContent
                         {...props}
-                        {...props.themeProps}
                         repoName={`git://${parseBrowserRepoURL(location.pathname).repoName}`}
                         fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
                     />
@@ -269,7 +271,6 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                 <LazyFuzzyFinder
                     isVisible={isFuzzyFinderVisible}
                     setIsVisible={setFuzzyFinderVisible}
-                    themeState={themeStateRef}
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                     settingsCascade={props.settingsCascade}
                     telemetryService={props.telemetryService}

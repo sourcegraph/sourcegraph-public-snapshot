@@ -31,7 +31,6 @@ import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     RepoSpec,
     RevisionSpec,
@@ -91,7 +90,6 @@ export interface ReferencesPanelProps
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
-        ThemeProps,
         HighlightedFileLineRangesProps {
     /** Whether to show the first loaded reference in mini code view */
     jumpToFirst?: boolean

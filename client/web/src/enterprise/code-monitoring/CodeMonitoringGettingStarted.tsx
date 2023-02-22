@@ -4,7 +4,7 @@ import { mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Link, Button, CardBody, Card, Icon, H2, H3, H4, Text } from '@sourcegraph/wildcard'
 
 import { CallToActionBanner } from '../../components/CallToActionBanner'
@@ -12,7 +12,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 
 import styles from './CodeMonitoringGettingStarted.module.scss'
 
-interface CodeMonitoringGettingStartedProps extends ThemeProps {
+interface CodeMonitoringGettingStartedProps {
     authenticatedUser: AuthenticatedUser | null
 }
 
@@ -65,7 +65,8 @@ const createCodeMonitorUrl = (example: ExampleCodeMonitor): string => {
 
 export const CodeMonitoringGettingStarted: React.FunctionComponent<
     React.PropsWithChildren<CodeMonitoringGettingStartedProps>
-> = ({ isLightTheme, authenticatedUser }) => {
+> = ({ authenticatedUser }) => {
+    const isLightTheme = useIsLightTheme()
     const isSourcegraphDotCom: boolean = window.context?.sourcegraphDotComMode || false
     const assetsRoot = window.context?.assetsRoot || ''
 

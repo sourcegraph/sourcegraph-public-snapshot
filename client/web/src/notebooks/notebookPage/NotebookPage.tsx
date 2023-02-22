@@ -13,7 +13,7 @@ import { asError, isErrorLike } from '@sourcegraph/common'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     LoadingSpinner,
     PageHeader,
@@ -34,7 +34,6 @@ import { PageTitle } from '../../components/PageTitle'
 import { NotebookFields, NotebookInput } from '../../graphql-operations'
 import { SearchStreamingProps } from '../../search'
 import { NotepadIcon } from '../../search/Notepad'
-import { useTheme, ThemePreference } from '../../theme'
 import {
     fetchNotebook as _fetchNotebook,
     updateNotebook as _updateNotebook,
@@ -51,10 +50,8 @@ import { NotebookPageHeaderActions } from './NotebookPageHeaderActions'
 import { NotebookTitle } from './NotebookTitle'
 
 import styles from './NotebookPage.module.scss'
-
 interface NotebookPageProps
     extends SearchStreamingProps,
-        ThemeProps,
         TelemetryProps,
         Omit<StreamingSearchResultsListProps, 'allExpanded' | 'platformContext' | 'executedQuery'>,
         PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'> {
@@ -83,7 +80,6 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
     copyNotebook = _copyNotebook,
     globbing,
     streamSearch,
-    isLightTheme,
     telemetryService,
     searchContextsEnabled,
     isSourcegraphDotCom,
@@ -311,7 +307,6 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                 exportedFileName={exportedFileName}
                                 globbing={globbing}
                                 streamSearch={streamSearch}
-                                isLightTheme={isLightTheme}
                                 telemetryService={telemetryService}
                                 searchContextsEnabled={searchContextsEnabled}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
@@ -348,7 +343,7 @@ interface NotepadCTAProps {
 
 const NotepadCTA: React.FunctionComponent<React.PropsWithChildren<NotepadCTAProps>> = ({ onEnable, onClose }) => {
     const assetsRoot = window.context?.assetsRoot || ''
-    const isLightTheme = useTheme().enhancedThemePreference === ThemePreference.Light
+    const isLightTheme = useIsLightTheme()
 
     return (
         <MarketingBlock wrapperClassName={classNames(styles.notepadCta, 'd-none d-md-block')}>
