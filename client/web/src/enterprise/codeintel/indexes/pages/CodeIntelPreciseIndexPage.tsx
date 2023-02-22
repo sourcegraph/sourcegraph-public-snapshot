@@ -3,7 +3,7 @@ import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 're
 import { useApolloClient } from '@apollo/client'
 import { mdiDelete, mdiGraph, mdiHistory, mdiRecycle, mdiRedo, mdiTimerSand } from '@mdi/js'
 import classNames from 'classnames'
-import { Navigate, useLocation, useParams, useNavigate } from 'react-router-dom-v5-compat'
+import { Navigate, useLocation, useParams, useNavigate } from 'react-router-dom'
 import { takeWhile } from 'rxjs/operators'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
@@ -420,9 +420,11 @@ interface CodeIntelReindexUploadProps {
 }
 
 const CodeIntelReindexUpload: FunctionComponent<CodeIntelReindexUploadProps> = ({ reindexUpload, reindexOrError }) => (
-    <Button type="button" variant="secondary" onClick={reindexUpload} disabled={reindexOrError === 'loading'}>
-        <Icon aria-hidden={true} svgPath={mdiRedo} /> Mark index as replaceable by autoindexing
-    </Button>
+    <Tooltip content="Allow Sourcegraph to re-index this commit in the future and replace this data.">
+        <Button type="button" variant="secondary" onClick={reindexUpload} disabled={reindexOrError === 'loading'}>
+            <Icon aria-hidden={true} svgPath={mdiRedo} /> Mark index as replaceable by autoindexing
+        </Button>
+    </Tooltip>
 )
 
 interface CodeIntelDeleteUploadProps {

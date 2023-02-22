@@ -22,6 +22,7 @@ type Store interface {
 	DeleteConfigurationPolicyByID(ctx context.Context, id int) (err error)
 
 	// Repositories
+	RepoCount(ctx context.Context) (int, error)
 	GetRepoIDsByGlobPatterns(ctx context.Context, patterns []string, limit, offset int) (_ []int, _ int, err error)
 	UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) (err error)
 

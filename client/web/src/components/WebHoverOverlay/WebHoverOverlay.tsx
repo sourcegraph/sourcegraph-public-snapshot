@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect } from 'react'
 
 import classNames from 'classnames'
-import { Location, useLocation } from 'react-router-dom-v5-compat'
+import { Location, useLocation } from 'react-router-dom'
 import { fromEvent, Observable } from 'rxjs'
 import { finalize, tap } from 'rxjs/operators'
 

@@ -1,0 +1,21 @@
+.dropdown-list {
+    width: 22rem;
+}
+
+.dropdown-button {
+    border-left: 1px solid var(--border-primary-color);
+    padding: 0 0.25rem;
+}
+
+.dropdown-item {
+    padding: 1rem;
+    white-space: normal;
+
+    &:not(:last-child) {
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    &[data-reach-menu-item]:active {
+        --text-muted: var(--white);
+    }
+}

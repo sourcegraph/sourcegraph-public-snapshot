@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { mdiEye } from '@mdi/js'
-import { useLocation } from 'react-router'
+import { useLocation } from 'react-router-dom'
 
 import { RenderMode } from '@sourcegraph/shared/src/util/url'
 import { createLinkUrl, Icon, Link, Tooltip } from '@sourcegraph/wildcard'

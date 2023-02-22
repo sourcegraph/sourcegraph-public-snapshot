@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"testing"
 	"time"
 
@@ -15,7 +16,8 @@ import (
 )
 
 func TestLatestDockerVersionPushed(t *testing.T) {
-	if testing.Short() {
+	// We cannot perform external network requests in Bazel tests, it breaks the sandbox.
+	if testing.Short() || os.Getenv("BAZEL_TEST") == "1" {
 		t.Skip("Skipping due to network request against dockerhub")
 	}
 
@@ -33,7 +35,8 @@ func TestLatestDockerVersionPushed(t *testing.T) {
 }
 
 func TestLatestKubernetesVersionPushed(t *testing.T) {
-	if testing.Short() {
+	// We cannot perform external network requests in Bazel tests, it breaks the sandbox.
+	if testing.Short() || os.Getenv("BAZEL_TEST") == "1" {
 		t.Skip("Skipping due to network request")
 	}
 
@@ -49,7 +52,8 @@ func TestLatestKubernetesVersionPushed(t *testing.T) {
 }
 
 func TestLatestDockerComposeOrPureDockerVersionPushed(t *testing.T) {
-	if testing.Short() {
+	// We cannot perform external network requests in Bazel tests, it breaks the sandbox.
+	if testing.Short() || os.Getenv("BAZEL_TEST") == "1" {
 		t.Skip("Skipping due to network request")
 	}
 

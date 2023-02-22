@@ -95,7 +95,7 @@ func NewSliceWithCountScanner[T any](f func(dbutil.Scanner) (T, int, error)) fun
 // query result organized as a map. The given function is invoked multiple times with a SQL rows
 // object to scan a single map value. The given reducer provides a way to customize how multiple
 // values are reduced into a collection.
-func NewKeyedCollectionScanner[Map keyedMap[K, Vs], K comparable, V, Vs any](
+func NewKeyedCollectionScanner[K comparable, V, Vs any, Map keyedMap[K, Vs]](
 	values Map,
 	scanPair func(dbutil.Scanner) (K, V, error),
 	reducer CollectionReducer[V, Vs],
@@ -127,7 +127,7 @@ func NewKeyedCollectionScanner[Map keyedMap[K, Vs], K comparable, V, Vs any](
 func NewMapScanner[K comparable, V any](f func(dbutil.Scanner) (K, V, error)) func(rows Rows, queryErr error) (map[K]V, error) {
 	return func(rows Rows, queryErr error) (map[K]V, error) {
 		m := NewUnorderedmap[K, V]()
-		err := NewKeyedCollectionScanner[*UnorderedMap[K, V], K, V, V](m, f, SingleValueReducer[V]{})(rows, queryErr)
+		err := NewKeyedCollectionScanner[K, V, V](m, f, SingleValueReducer[V]{})(rows, queryErr)
 		return m.ToMap(), err
 	}
 }
@@ -138,7 +138,7 @@ func NewMapScanner[K comparable, V any](f func(dbutil.Scanner) (K, V, error)) fu
 func NewMapSliceScanner[K comparable, V any](f func(dbutil.Scanner) (K, V, error)) func(rows Rows, queryErr error) (map[K][]V, error) {
 	return func(rows Rows, queryErr error) (map[K][]V, error) {
 		m := NewUnorderedmap[K, []V]()
-		err := NewKeyedCollectionScanner[*UnorderedMap[K, []V], K, V, []V](m, f, SliceReducer[V]{})(rows, queryErr)
+		err := NewKeyedCollectionScanner[K, V, []V](m, f, SliceReducer[V]{})(rows, queryErr)
 		return m.ToMap(), err
 	}
 }

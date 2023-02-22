@@ -1,7 +1,7 @@
 import React, { useCallback, KeyboardEvent, MouseEvent } from 'react'
 
 import classNames from 'classnames'
-import { useHistory } from 'react-router'
+import { useNavigate } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -73,11 +73,11 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
         </span>
     )
 
-    const history = useHistory()
+    const navigate = useNavigate()
     const navigateToFile = useCallback(
         (event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>): void =>
-            navigateToCodeExcerpt(event, openInNewTab ?? false, history),
-        [openInNewTab, history]
+            navigateToCodeExcerpt(event, openInNewTab ?? false, navigate),
+        [openInNewTab, navigate]
     )
 
     const logEventOnCopy = useCallback(() => {

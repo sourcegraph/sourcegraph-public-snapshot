@@ -7,9 +7,8 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { openSearchPanel } from '@codemirror/search'
 import { Compartment, EditorState, Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import * as H from 'history'
 import { isEqual } from 'lodash'
-import { createPath, NavigateFunction, type Location } from 'react-router-dom-v5-compat'
+import { createPath, NavigateFunction, useLocation, useNavigate, Location } from 'react-router-dom'
 
 import {
     addLineRangeQueryParameter,
@@ -44,6 +43,7 @@ import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
 import { selectOccurrence } from './codemirror/token-selection/code-intel-tooltips'
 import { tokenSelectionExtension } from './codemirror/token-selection/extension'
+import { languageSupport } from './codemirror/token-selection/languageSupport'
 import { selectionFromLocation } from './codemirror/token-selection/selections'
 import { tokensAsLinks } from './codemirror/tokens-as-links'
 import { isValidLineRange } from './codemirror/utils'
@@ -89,19 +89,11 @@ export interface BlobProps
     isBlameVisible?: boolean
     blameHunks?: BlameHunkData
 
-    navigate: NavigateFunction
+    activeURL?: string
+}
 
-    /**
-     * TODO(valery): RR6
-     *
-     * @deprecated prefer using useNavigate()
-     */
-    history: H.History
-    /**
-     * TODO(valery): RR6
-     *
-     * @deprecated prefer using useLocation()
-     */
+export interface BlobPropsFacet extends BlobProps {
+    navigate: NavigateFunction
     location: Location
 }
 
@@ -151,8 +143,12 @@ const staticExtensions: Extension = [
             backgroundColor: 'var(--code-bg)',
             borderRight: 'initial',
         },
+        '.cm-content:focus-visible': {
+            outline: 'none',
+            boxShadow: 'none',
+        },
         '.cm-line': {
-            paddingLeft: '1rem',
+            paddingLeft: '0',
         },
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',
@@ -178,7 +174,7 @@ const blobPropsCompartment = new Compartment()
 // Compartment for line wrapping.
 const wrapCodeCompartment = new Compartment()
 
-export const Blob: React.FunctionComponent<BlobProps> = props => {
+export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     const {
         className,
         wrapCode,
@@ -196,10 +192,10 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
         overrideBrowserSearchKeybinding,
         'data-testid': dataTestId,
-
-        location,
-        navigate,
     } = props
+
+    const navigate = useNavigate()
+    const location = useLocation()
 
     const [useFileSearch, setUseFileSearch] = useLocalStorage('blob.overrideBrowserFindOnPage', true)
 
@@ -207,10 +203,28 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     // This is used to avoid reinitializing the editor when new locations in the
     // same file are opened inside the reference panel.
     const blobInfo = useDistinctBlob(props.blobInfo)
-    const position = useMemo(() => parseQueryAndHash(location.search, location.hash), [location.search, location.hash])
+    const position = useMemo(() => {
+        // When an activeURL is passed, it takes presedence over the react
+        // router location API.
+        //
+        // This is needed to support the reference panel
+        if (props.activeURL) {
+            const url = new URL(props.activeURL, window.location.href)
+            return parseQueryAndHash(url.search, url.hash)
+        }
+        return parseQueryAndHash(location.search, location.hash)
+    }, [props.activeURL, location.search, location.hash])
     const hasPin = useMemo(() => urlIsPinned(location.search), [location.search])
 
-    const blobProps = useMemo(() => blobPropsFacet.of(props), [props])
+    const blobProps = useMemo(
+        () =>
+            blobPropsFacet.of({
+                ...props,
+                navigate,
+                location,
+            }),
+        [props, navigate, location]
+    )
 
     const themeSettings = useMemo(() => EditorView.darkTheme.of(isLightTheme === false), [isLightTheme])
     const wrapCodeSettings = useMemo<Extension>(() => (wrapCode ? EditorView.lineWrapping : []), [wrapCode])
@@ -278,11 +292,13 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
                 enableSelectionDrivenCodeNavigation,
             }),
+            codeFoldingExtension(),
             enableSelectionDrivenCodeNavigation ? tokenSelectionExtension() : [],
             enableLinkDrivenCodeNavigation
                 ? tokensAsLinks({ navigate: navigateRef.current, blobInfo, preloadGoToDefinition })
                 : [],
             syntaxHighlight.of(blobInfo),
+            languageSupport.of(blobInfo),
             pin.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick
                 ? sourcegraphExtensions({
@@ -304,7 +320,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 overrideBrowserFindInPageShortcut: useFileSearch,
                 onOverrideBrowserFindInPageToggle: setUseFileSearch,
             }),
-            codeFoldingExtension(),
         ],
         // A couple of values are not dependencies (blameDecorations, blobProps,
         // hasPin, position and settings) because those are updated in effects
@@ -475,7 +490,7 @@ function useDistinctBlob(blobInfo: BlobInfo): BlobInfo {
  */
 export function updateBrowserHistoryIfChanged(
     navigate: NavigateFunction,
-    location: H.Location,
+    location: Location,
     newSearchParameters: URLSearchParams,
     /** If set to true replace the current history entry instead of adding a new one. */
     replace: boolean = false

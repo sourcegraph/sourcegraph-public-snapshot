@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import { mdiChevronDown, mdiAlertCircle, mdiPencil, mdiClose, mdiSync, mdiCloseCircleOutline } from '@mdi/js'
 import { noop } from 'lodash'
-import { useHistory, useLocation } from 'react-router'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
 import {
@@ -64,7 +64,7 @@ const MemoizedActionsMenu: React.FunctionComponent<
         Pick<BatchSpecContextState, 'batchChange' | 'batchSpec' | 'setActionsError'> & ActionsMenuProps
     >
 > = React.memo(function MemoizedActionsMenu({ batchChange, batchSpec, setActionsError, defaultMode }) {
-    const history = useHistory()
+    const navigate = useNavigate()
     const location = useLocation()
 
     const { url } = batchChange
@@ -83,9 +83,9 @@ const MemoizedActionsMenu: React.FunctionComponent<
 
     const cancelAndEdit = useCallback(() => {
         cancelBatchSpecExecution()
-            .then(() => history.push(`${url}/edit`))
+            .then(() => navigate(`${url}/edit`))
             .catch(noop)
-    }, [cancelBatchSpecExecution, history, url])
+    }, [cancelBatchSpecExecution, navigate, url])
 
     const [retryBatchSpecExecution, { loading: isRetryLoading }] = useMutation<
         RetryBatchSpecExecutionResult,
@@ -97,9 +97,9 @@ const MemoizedActionsMenu: React.FunctionComponent<
             setCancelModalType('edit')
             setShowCancelModal(true)
         } else {
-            history.push(`${url}/edit`)
+            navigate(`${url}/edit`)
         }
-    }, [isExecuting, url, history])
+    }, [isExecuting, url, navigate])
 
     const onSelectCancel = useCallback(() => {
         setCancelModalType('cancel')
@@ -188,7 +188,7 @@ const MemoizedActionsMenu: React.FunctionComponent<
                     {mode !== ActionsMenuMode.ActionsOnlyClose && (
                         <>
                             {mode === ActionsMenuMode.ActionsWithPreview && (
-                                <MenuItem onSelect={() => history.push(`${batchSpec.executionURL}/preview`)}>
+                                <MenuItem onSelect={() => navigate(`${batchSpec.executionURL}/preview`)}>
                                     <Icon aria-hidden={true} svgPath={mdiAlertCircle} /> Preview with errors
                                 </MenuItem>
                             )}

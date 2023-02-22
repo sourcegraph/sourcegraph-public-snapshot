@@ -324,8 +324,8 @@ func (r *NodeResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, b
 	return n, ok
 }
 
-func (r *NodeResolver) ToPermissionsSyncJob() (PermissionsSyncJobResolver, bool) {
-	n, ok := r.Node.(PermissionsSyncJobResolver)
+func (r *NodeResolver) ToPermissionSyncJob() (PermissionSyncJobResolver, bool) {
+	n, ok := r.Node.(PermissionSyncJobResolver)
 	return n, ok
 }
 
@@ -334,8 +334,8 @@ func (r *NodeResolver) ToOutboundWebhook() (OutboundWebhookResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToTeam() (*teamResolver, bool) {
-	n, ok := r.Node.(*teamResolver)
+func (r *NodeResolver) ToTeam() (*TeamResolver, bool) {
+	n, ok := r.Node.(*TeamResolver)
 	return n, ok
 }
 

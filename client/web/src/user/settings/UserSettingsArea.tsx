@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { Route, Routes, useLocation } from 'react-router-dom'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -20,7 +20,7 @@ import {
     UserSettingsAreaUserProfileVariables,
 } from '../../graphql-operations'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
-import { RouteDescriptor } from '../../util/contributions'
+import { RouteV6Descriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
 
 import { EditUserProfilePageGQLFragment } from './profile/UserSettingsProfilePage'
@@ -28,17 +28,14 @@ import { UserSettingsSidebar, UserSettingsSidebarItems } from './UserSettingsSid
 
 import styles from './UserSettingsArea.module.scss'
 
-export interface UserSettingsAreaRoute extends RouteDescriptor<UserSettingsAreaRouteContext> {}
+export interface UserSettingsAreaRoute extends RouteV6Descriptor<UserSettingsAreaRouteContext> {}
 
-export interface UserSettingsAreaProps
-    extends UserAreaRouteContext,
-        RouteComponentProps<{}>,
-        ThemeProps,
-        TelemetryProps {
+export interface UserSettingsAreaProps extends UserAreaRouteContext, ThemeProps, TelemetryProps {
     authenticatedUser: AuthenticatedUser
     sideBarItems: UserSettingsSidebarItems
     routes: readonly UserSettingsAreaRoute[]
     user: UserAreaUserFields
+    isSourcegraphDotCom: boolean
 }
 
 export interface UserSettingsAreaRouteContext extends UserSettingsAreaProps {
@@ -58,9 +55,10 @@ const UserSettingsAreaGQLFragment = gql`
         siteAdmin @include(if: $siteAdmin)
         builtinAuth
         createdAt
-        emails @include(if: $siteAdmin) {
+        emails @skip(if: $isSourcegraphDotCom) {
             email
             verified
+            isPrimary
         }
         organizations {
             nodes {
@@ -76,7 +74,7 @@ const UserSettingsAreaGQLFragment = gql`
 `
 
 const USER_SETTINGS_AREA_USER_PROFILE = gql`
-    query UserSettingsAreaUserProfile($userID: ID!, $siteAdmin: Boolean!) {
+    query UserSettingsAreaUserProfile($userID: ID!, $siteAdmin: Boolean!, $isSourcegraphDotCom: Boolean!) {
         node(id: $userID) {
             __typename
             ...UserSettingsAreaUserFields
@@ -92,6 +90,7 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<
     React.PropsWithChildren<UserSettingsAreaProps>
 > = props => {
     const { authenticatedUser, sideBarItems } = props
+    const location = useLocation()
 
     const { data, error, loading, previousData } = useQuery<
         UserSettingsAreaUserProfileResult,
@@ -100,6 +99,7 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<
         variables: {
             userID: props.user.id,
             siteAdmin: authenticatedUser.siteAdmin,
+            isSourcegraphDotCom: props.isSourcegraphDotCom,
         },
     })
 
@@ -152,24 +152,21 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<
                     className={classNames('flex-0 mr-3 mb-4', styles.userSettingsSidebar)}
                 />
                 <div className="flex-1">
-                    <ErrorBoundary location={props.location}>
+                    <ErrorBoundary location={location}>
                         <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
-                            <Switch>
+                            <Routes>
                                 {props.routes.map(
-                                    ({ path, exact, render, condition = () => true }) =>
+                                    ({ path, render, condition = () => true }) =>
                                         condition(context) && (
                                             <Route
-                                                render={routeComponentProps =>
-                                                    render({ ...context, ...routeComponentProps })
-                                                }
-                                                path={props.match.url + path}
+                                                element={render(context)}
+                                                path={path}
                                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                                exact={exact}
                                             />
                                         )
                                 )}
-                                <Route render={() => <NotFoundPage pageType="settings" />} key="hardcoded-key" />
-                            </Switch>
+                                <Route element={<NotFoundPage pageType="settings" />} />
+                            </Routes>
                         </React.Suspense>
                     </ErrorBoundary>
                 </div>

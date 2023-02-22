@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react'
 
 import { mdiChevronDoubleUp, mdiChevronDoubleDown } from '@mdi/js'
 import classNames from 'classnames'
-import { useLocation } from 'react-router-dom-v5-compat'
+import { useLocation } from 'react-router-dom'
 
 import { ContributableMenu } from '@sourcegraph/client-api'
 import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'

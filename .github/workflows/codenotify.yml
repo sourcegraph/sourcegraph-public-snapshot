@@ -9,7 +9,7 @@ jobs:
     name: codenotify
     if: ${{ !startsWith(github.head_ref, 'contractors/' )}}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
       - uses: sourcegraph/codenotify@v0.6.2

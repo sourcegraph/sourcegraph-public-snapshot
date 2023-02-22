@@ -3,7 +3,7 @@ package graphqlbackend
 import (
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
@@ -23,22 +23,22 @@ func TestOffsetBasedCursorSlice(t *testing.T) {
 		{
 			"first page",
 			&database.PaginationArgs{First: &int2},
-			autogold.Want("first two items", []int{1, 2}),
+			autogold.Expect([]int{1, 2}),
 		},
 		{
 			"next page",
 			&database.PaginationArgs{First: &int2, After: &string1},
-			autogold.Want("first two items", []int{3, 4}),
+			autogold.Expect([]int{3, 4}),
 		},
 		{
 			"last page",
 			&database.PaginationArgs{Last: &int2},
-			autogold.Want("first two items", []int{9, 10}),
+			autogold.Expect([]int{9, 10}),
 		},
 		{
 			"previous page",
 			&database.PaginationArgs{Last: &int2, Before: &string8},
-			autogold.Want("first two items", []int{7, 8}),
+			autogold.Expect([]int{7, 8}),
 		},
 	}
 

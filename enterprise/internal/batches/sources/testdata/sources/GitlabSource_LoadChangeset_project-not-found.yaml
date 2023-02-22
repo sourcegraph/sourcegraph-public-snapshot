@@ -5,6 +5,8 @@ interactions:
     body: ""
     form: {}
     headers:
+      Cache-Control:
+      - max-age=0
       Content-Type:
       - application/json; charset=utf-8
     url: https://gitlab.com/api/v4/projects/999999999999/merge_requests/100000
@@ -17,35 +19,39 @@ interactions:
       Cf-Cache-Status:
       - DYNAMIC
       Cf-Ray:
-      - 620a4c6b2c41acbe-OTP
-      Cf-Request-Id:
-      - 083a4e16fc0000acbe2b0c6000000001
+      - 793fcc11ca02ec7c-SEA
       Content-Length:
       - "35"
+      Content-Security-Policy:
+      - default-src 'none'
       Content-Type:
       - application/json
       Date:
-      - Sat, 13 Feb 2021 00:05:34 GMT
-      Expect-Ct:
-      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      - Sat, 04 Feb 2023 01:57:43 GMT
       Gitlab-Lb:
-      - fe-10-lb-gprd
+      - fe-08-lb-gprd
       Gitlab-Sv:
-      - api-07-sv-gprd
+      - localhost
+      Nel:
+      - '{"success_fraction":0.01,"report_to":"cf-nel","max_age":604800}'
+      Referrer-Policy:
+      - strict-origin-when-cross-origin
+      Report-To:
+      - '{"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=oMQrSrJNhwHxdC5c6%2F%2B%2FlkQSOvlmiH%2FcqG45kN8ChNKXMC4woYkGa1%2Fnx4cxk2ehmS5nxS%2BWcXB%2BZ%2FwYQljxKwuy2I6nHAM46xjgfafVnDgvH9cUB4jPY2Vq%2B1E%3D"}],"group":"cf-nel","max_age":604800}'
       Server:
       - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000
       Vary:
       - Origin
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - SAMEORIGIN
-      X-Gitlab-Feature-Category:
-      - code_review
       X-Request-Id:
-      - 01EYCB9ZV25SYMGN24FFV0ES6P
+      - aa218451adb6f3994b7c6d23e2f1aad4
       X-Runtime:
-      - "0.027809"
+      - "0.044335"
     status: 404 Not Found
     code: 404
     duration: ""

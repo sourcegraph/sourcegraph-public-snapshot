@@ -1,6 +1,6 @@
 import { FC, useCallback, useMemo, useState } from 'react'
 
-import { Route, Routes, useLocation } from 'react-router-dom-v5-compat'
+import { Route, Routes, useLocation } from 'react-router-dom'
 
 import { StreamingSearchResultsListProps, CopyPathAction } from '@sourcegraph/branded'
 import { isErrorLike } from '@sourcegraph/common'
@@ -204,7 +204,7 @@ export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
     const { filePath } = parseBrowserRepoURL(location.pathname)
 
     return (
-        <RepoRevisionWrapper className="pl-3">
+        <RepoRevisionWrapper className="px-3">
             <Routes>
                 {routes.map(
                     ({ path, render, condition = () => true }) =>

@@ -3,7 +3,6 @@ import React from 'react'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
-import { CompatRouter } from 'react-router-dom-v5-compat'
 import { EMPTY, NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
@@ -60,13 +59,11 @@ describe('StreamingSearchResults', () => {
     function renderWrapper(component: React.ReactElement<StreamingSearchResultsProps>) {
         return render(
             <BrowserRouter>
-                <CompatRouter>
-                    <MockedTestProvider mocks={revisionsMockResponses}>
-                        <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
-                            {component}
-                        </SearchQueryStateStoreProvider>
-                    </MockedTestProvider>
-                </CompatRouter>
+                <MockedTestProvider mocks={revisionsMockResponses}>
+                    <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
+                        {component}
+                    </SearchQueryStateStoreProvider>
+                </MockedTestProvider>
             </BrowserRouter>
         )
     }

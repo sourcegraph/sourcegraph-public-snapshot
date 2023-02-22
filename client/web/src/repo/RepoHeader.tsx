@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react'
 
 import { mdiDotsVertical } from '@mdi/js'
 import classNames from 'classnames'
-import { useLocation } from 'react-router-dom-v5-compat'
+import { useLocation } from 'react-router-dom'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
@@ -204,7 +204,6 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                 {/* Breadcrumb for the nav elements */}
                 <Breadcrumbs
                     breadcrumbs={props.breadcrumbs}
-                    location={location}
                     className={classNames('justify-content-start', !props.forceWrap ? styles.breadcrumbWrap : '')}
                 />
             </div>

@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { mdiInformationOutline, mdiLock } from '@mdi/js'
 import classNames from 'classnames'
 import { noop } from 'lodash'
-import { useHistory, useLocation } from 'react-router'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
 import { UserSettingFields, OrgSettingFields } from '@sourcegraph/shared/src/graphql-operations'
@@ -110,9 +110,9 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
 
     const { isUnlicensed, maxUnlicensedChangesets } = useBatchChangesLicense()
 
-    const history = useHistory()
+    const navigate = useNavigate()
     const location = useLocation()
-    const handleCancel = (): void => history.goBack()
+    const handleCancel = (): void => navigate(-1)
     const handleCreate: React.FormEventHandler = (event): void => {
         event.preventDefault()
         const redirectSearchParameters = new URLSearchParams(location.search)
@@ -145,9 +145,7 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                     : Promise.resolve(args)
             })
             .then(({ data }) =>
-                data
-                    ? history.push(`${data.createEmptyBatchChange.url}/edit${serializedRedirectSearchParameters}`)
-                    : noop()
+                data ? navigate(`${data.createEmptyBatchChange.url}/edit${serializedRedirectSearchParameters}`) : noop()
             )
             // We destructure and surface the error from `useMutation` instead.
             .catch(noop)

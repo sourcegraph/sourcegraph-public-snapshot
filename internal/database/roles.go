@@ -35,7 +35,6 @@ var roleColumns = []*sqlf.Query{
 	sqlf.Sprintf("roles.name"),
 	sqlf.Sprintf("roles.system"),
 	sqlf.Sprintf("roles.created_at"),
-	sqlf.Sprintf("roles.deleted_at"),
 }
 
 var roleInsertColumns = []*sqlf.Query{
@@ -120,7 +119,9 @@ func (r *roleStore) Get(ctx context.Context, opts GetRoleOpts) (*types.Role, err
 		conds = append(conds, sqlf.Sprintf("name = %s", opts.Name))
 	}
 
-	conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
+	if len(conds) == 0 {
+		conds = append(conds, sqlf.Sprintf("TRUE"))
+	}
 
 	q := sqlf.Sprintf(
 		getRoleFmtStr,
@@ -146,7 +147,6 @@ func scanRole(sc dbutil.Scanner) (*types.Role, error) {
 		&role.Name,
 		&role.System,
 		&role.CreatedAt,
-		&dbutil.NullTime{Time: &role.DeletedAt},
 	); err != nil {
 		return nil, err
 	}
@@ -209,7 +209,7 @@ func (r *roleStore) list(ctx context.Context, opts RolesListOptions, selects *sq
 }
 
 func (r *roleStore) computeConditionsAndJoins(opts RolesListOptions) ([]*sqlf.Query, *sqlf.Query) {
-	var conds = []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
+	var conds []*sqlf.Query
 	var joins = sqlf.Sprintf("")
 
 	if opts.System {
@@ -219,6 +219,10 @@ func (r *roleStore) computeConditionsAndJoins(opts RolesListOptions) ([]*sqlf.Qu
 	if opts.UserID != 0 {
 		conds = append(conds, sqlf.Sprintf("user_roles.user_id = %s", opts.UserID))
 		joins = sqlf.Sprintf("INNER JOIN user_roles ON user_roles.role_id = roles.id")
+	}
+
+	if len(conds) == 0 {
+		conds = append(conds, sqlf.Sprintf("TRUE"))
 	}
 
 	return conds, joins
@@ -280,7 +284,7 @@ UPDATE roles
 SET
     name = %s
 WHERE
-	id = %s
+	id = %s AND NOT system
 RETURNING
 	%s
 `
@@ -299,10 +303,8 @@ func (r *roleStore) Update(ctx context.Context, role *types.Role) (*types.Role, 
 }
 
 const roleDeleteQueryFmtStr = `
-UPDATE roles
-SET
-	deleted_at = NOW()
-WHERE id = %s AND NOT system AND deleted_at IS NULL
+DELETE FROM roles
+WHERE id = %s AND NOT system
 `
 
 func (r *roleStore) Delete(ctx context.Context, opts DeleteRoleOpts) error {

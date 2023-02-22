@@ -4,7 +4,7 @@ import { ApolloError } from '@apollo/client'
 import { mdiDelete, mdiGraveStone } from '@mdi/js'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
-import { useNavigate, useParams, useLocation } from 'react-router-dom-v5-compat'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { useLazyQuery } from '@sourcegraph/http-client'
@@ -159,9 +159,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                 ? { type: GitObjectType.GIT_TAG, pattern: '*' }
                 : { type: GitObjectType.GIT_COMMIT }
 
-        const repoDefaults = repo
-            ? { repository: repo, name: `Custom policy for ${displayRepoName(repo.name)}` }
-            : { name: 'Custom global policy' }
+        const repoDefaults = repo ? { repository: repo } : {}
         const typeDefaults = policyConfig?.type === GitObjectType.GIT_UNKNOWN ? defaultTypes : {}
         const configWithDefaults = policyConfig && { ...policyConfig, ...repoDefaults, ...typeDefaults }
 
