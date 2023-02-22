@@ -47,7 +47,7 @@ func isContextRequiredForQuery(
 	if err != nil {
 		return false, err
 	}
-	// If query is more similar to messages that require context, then we can assume context is required for the query.
+	// If the query is similar to messages that require context, then we can assume context is required for the query.
 	return !isSimilarToNoContextMessages, nil
 }
 

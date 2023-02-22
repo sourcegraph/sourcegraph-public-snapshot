@@ -33,6 +33,7 @@ func isSplittableLine(line string) bool {
 }
 
 type SplitOptions struct {
+	NoSplitTokensThreshold         int
 	ChunkTokensThreshold           int
 	ChunkEarlySplitTokensThreshold int
 }
@@ -50,6 +51,11 @@ type EmbeddableChunk struct {
 // When the token sum of lines in a chunk exceeds the chunk token threshold or an early split token threshold is met
 // and the current line is splittable (empty line, or starts with a comment or declaration), a chunk is ended and added to the results.
 func SplitIntoEmbeddableChunks(text string, fileName string, splitOptions SplitOptions) []EmbeddableChunk {
+	// If the text is short enough, embed the entire file rather than splitting it into chunks.
+	if embeddings.EstimateTokens(text) < splitOptions.NoSplitTokensThreshold {
+		return []EmbeddableChunk{{FileName: fileName, StartLine: 0, EndLine: strings.Count(text, "\n") + 1, Content: text}}
+	}
+
 	chunks := []EmbeddableChunk{}
 	startLine, tokensSum := 0, 0
 	lines := strings.Split(text, "\n")

@@ -20,10 +20,8 @@ func readCachedFileFn(gitserverClient gitserver.Client) (readFileFn, error) {
 		return nil, errors.Wrap(err, "creating file cache")
 	}
 
-	return func(ctx context.Context, repoName api.RepoName, revision api.CommitID, fileName string) ([]byte, error) {
+	return func(ctx context.Context, repoName api.RepoName, revision api.CommitID, fileName string) (content []byte, err error) {
 		cacheKey := fmt.Sprintf("%s:%s:%s", repoName, revision, fileName)
-		var content []byte
-		var err error
 		if cachedContent, ok := cache.Get(cacheKey); ok {
 			content = cachedContent.([]byte)
 		} else {

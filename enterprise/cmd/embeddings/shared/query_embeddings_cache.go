@@ -16,10 +16,7 @@ func getCachedQueryEmbeddingFn(client embed.EmbeddingsClient) (getQueryEmbedding
 		return nil, errors.Wrap(err, "creating query embeddings cache")
 	}
 
-	return func(query string) ([]float32, error) {
-		var err error
-		var queryEmbedding []float32
-
+	return func(query string) (queryEmbedding []float32, err error) {
 		if cachedQueryEmbedding, ok := cache.Get(query); ok {
 			queryEmbedding = cachedQueryEmbedding.([]float32)
 		} else {

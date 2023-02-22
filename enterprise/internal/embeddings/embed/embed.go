@@ -2,7 +2,6 @@ package embed
 
 import (
 	"context"
-	"strings"
 	"unicode/utf8"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -19,17 +18,6 @@ const MAX_TEXT_EMBEDDING_VECTORS = 128_000
 const EMBEDDING_BATCHES = 5
 const EMBEDDING_BATCH_SIZE = 512
 
-// The threshold to embed the entire file is slightly larger than the chunk threshold to
-// avoid splitting small files unnecessarily.
-const EMBED_ENTIRE_FILE_TOKENS_THRESHOLD = 384
-const EMBEDDING_CHUNK_TOKENS_THRESHOLD = 256
-const EMBEDDING_CHUNK_EARLY_SPLIT_TOKENS_THRESHOLD = EMBEDDING_CHUNK_TOKENS_THRESHOLD - 32
-
-var SPLIT_OPTIONS = split.SplitOptions{
-	ChunkTokensThreshold:           EMBEDDING_CHUNK_TOKENS_THRESHOLD,
-	ChunkEarlySplitTokensThreshold: EMBEDDING_CHUNK_EARLY_SPLIT_TOKENS_THRESHOLD,
-}
-
 type readFile func(fileName string) ([]byte, error)
 
 // EmbedRepo embeds file contents from the given file names for a repository.
@@ -41,6 +29,7 @@ func EmbedRepo(
 	revision api.CommitID,
 	fileNames []string,
 	client EmbeddingsClient,
+	splitOptions split.SplitOptions,
 	readFile readFile,
 ) (*embeddings.RepoEmbeddingIndex, error) {
 	codeFileNames, textFileNames := []string{}, []string{}
@@ -52,12 +41,12 @@ func EmbedRepo(
 		}
 	}
 
-	codeIndex, err := embedFiles(codeFileNames, client, readFile, MAX_CODE_EMBEDDING_VECTORS)
+	codeIndex, err := embedFiles(codeFileNames, client, splitOptions, readFile, MAX_CODE_EMBEDDING_VECTORS)
 	if err != nil {
 		return nil, err
 	}
 
-	textIndex, err := embedFiles(textFileNames, client, readFile, MAX_TEXT_EMBEDDING_VECTORS)
+	textIndex, err := embedFiles(textFileNames, client, splitOptions, readFile, MAX_TEXT_EMBEDDING_VECTORS)
 	if err != nil {
 		return nil, err
 	}
@@ -71,6 +60,7 @@ func EmbedRepo(
 func embedFiles(
 	fileNames []string,
 	client EmbeddingsClient,
+	splitOptions split.SplitOptions,
 	readFile readFile,
 	maxEmbeddingVectors int,
 ) (*embeddings.EmbeddingIndex[embeddings.RepoEmbeddingRowMetadata], error) {
@@ -129,12 +119,7 @@ func embedFiles(
 			continue
 		}
 
-		// If the file is small enough, embed the entire file rather than splitting it into chunks.
-		if embeddings.EstimateTokens(content) < EMBED_ENTIRE_FILE_TOKENS_THRESHOLD {
-			embeddableChunks = append(embeddableChunks, split.EmbeddableChunk{FileName: fileName, StartLine: 0, EndLine: strings.Count(content, "\n") + 1, Content: content})
-		} else {
-			embeddableChunks = append(embeddableChunks, split.SplitIntoEmbeddableChunks(content, fileName, SPLIT_OPTIONS)...)
-		}
+		embeddableChunks = append(embeddableChunks, split.SplitIntoEmbeddableChunks(content, fileName, splitOptions)...)
 
 		if len(embeddableChunks) > EMBEDDING_BATCHES*EMBEDDING_BATCH_SIZE {
 			err := addEmbeddableChunks(embeddableChunks, EMBEDDING_BATCH_SIZE)

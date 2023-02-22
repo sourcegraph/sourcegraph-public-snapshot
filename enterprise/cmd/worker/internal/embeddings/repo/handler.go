@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	repoembeddingsbg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/split"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
@@ -32,6 +33,18 @@ var _ workerutil.Handler[*repoembeddingsbg.RepoEmbeddingJob] = &handler{}
 var matchEverythingRegexp = regexp.MustCompile(``)
 
 const MAX_FILE_SIZE = 1000000 // 1MB
+
+// The threshold to embed the entire file is slightly larger than the chunk threshold to
+// avoid splitting small files unnecessarily.
+const EMBED_ENTIRE_FILE_TOKENS_THRESHOLD = 384
+const EMBEDDING_CHUNK_TOKENS_THRESHOLD = 256
+const EMBEDDING_CHUNK_EARLY_SPLIT_TOKENS_THRESHOLD = EMBEDDING_CHUNK_TOKENS_THRESHOLD - 32
+
+var splitOptions = split.SplitOptions{
+	NoSplitTokensThreshold:         EMBED_ENTIRE_FILE_TOKENS_THRESHOLD,
+	ChunkTokensThreshold:           EMBEDDING_CHUNK_TOKENS_THRESHOLD,
+	ChunkEarlySplitTokensThreshold: EMBEDDING_CHUNK_EARLY_SPLIT_TOKENS_THRESHOLD,
+}
 
 func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoembeddingsbg.RepoEmbeddingJob) error {
 	config := conf.Get().Embeddings
@@ -63,7 +76,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 
 	embeddingsClient := embed.NewEmbeddingsClient()
 
-	repoEmbeddingIndex, err := embed.EmbedRepo(ctx, repo.Name, record.Revision, validFiles, embeddingsClient, func(fileName string) ([]byte, error) {
+	repoEmbeddingIndex, err := embed.EmbedRepo(ctx, repo.Name, record.Revision, validFiles, embeddingsClient, splitOptions, func(fileName string) ([]byte, error) {
 		return h.gitserverClient.ReadFile(ctx, nil, repo.Name, record.Revision, fileName)
 	})
 	if err != nil {

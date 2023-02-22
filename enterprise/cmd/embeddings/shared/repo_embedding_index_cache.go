@@ -2,8 +2,6 @@ package shared
 
 import (
 	"context"
-	"encoding/json"
-	"io"
 	"time"
 
 	lru "github.com/hashicorp/golang-lru"
@@ -14,31 +12,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 )
 
 const REPO_EMBEDDING_INDEX_CACHE_MAX_ENTRIES = 5
 
 type downloadRepoEmbeddingIndexFn func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error)
-
-func downloadRepoEmbeddingIndex(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName, uploadStore uploadstore.Store) (*embeddings.RepoEmbeddingIndex, error) {
-	repoEmbeddingIndexFile, err := uploadStore.Get(ctx, string(repoEmbeddingIndexName))
-	if err != nil {
-		return nil, err
-	}
-
-	repoEmbeddingIndexFileBytes, err := io.ReadAll(repoEmbeddingIndexFile)
-	if err != nil {
-		return nil, err
-	}
-
-	var embeddingIndex embeddings.RepoEmbeddingIndex
-	err = json.Unmarshal(repoEmbeddingIndexFileBytes, &embeddingIndex)
-	if err != nil {
-		return nil, err
-	}
-	return &embeddingIndex, nil
-}
 
 type repoEmbeddingIndexCacheEntry struct {
 	index      *embeddings.RepoEmbeddingIndex
@@ -80,7 +58,7 @@ func getCachedRepoEmbeddingIndexFn(
 		cacheEntry, ok := cache.Get(repoEmbeddingIndexName)
 		// Check if the index is in the cache.
 		if ok {
-			// Check if we have a newer finished embedding job. If so, download the new index, and cache it instead.
+			// Check if we have a newer finished embedding job. If so, download the new index, cache it, and return it instead.
 			repoEmbeddingIndexCacheEntry := cacheEntry.(repoEmbeddingIndexCacheEntry)
 			if lastFinishedRepoEmbeddingJob.FinishedAt.After(repoEmbeddingIndexCacheEntry.finishedAt) {
 				return getAndCacheIndex(ctx, repoEmbeddingIndexName, lastFinishedRepoEmbeddingJob.FinishedAt)
