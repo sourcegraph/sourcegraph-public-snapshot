@@ -16,7 +16,7 @@
         overflow-y: scroll;
 
         &-item {
-            padding: 0.5rem 1rem;
+            padding: 0 1rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -32,6 +32,7 @@
     }
 
     &-link {
+        padding: 0.5rem 0;
         display: flex;
         &:hover {
             text-decoration: none;
@@ -41,5 +42,5 @@
 
 .badge {
     // Avoid inconsistencies in label width
-    min-width: 5rem;
+    min-width: 6rem;
 }

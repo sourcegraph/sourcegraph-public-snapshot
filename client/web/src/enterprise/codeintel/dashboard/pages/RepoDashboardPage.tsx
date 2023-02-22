@@ -56,10 +56,10 @@ const failureStates = new Set<PreciseIndexState>([
 ])
 
 type ShowFilter = 'all' | 'errors' | 'suggestions'
-type LanguageFilter = 'all' | string
+type IndexerFilter = 'all' | string
 interface FilterState {
     show: ShowFilter
-    language: LanguageFilter
+    indexer: IndexerFilter
 }
 
 export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> = ({ telemetryService, repo }) => {
@@ -70,13 +70,12 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
     const location = useLocation()
     const navigate = useNavigate()
 
-    const activeTab = 'tree'
-
     const { data, loading, error } = useRepoCodeIntelStatus({ variables: { repository: repo.name } })
 
+    // TODO: Smart filters that adapt to the data
     const [filterState, setFilterState] = useState<FilterState>({
         show: 'all',
-        language: 'all',
+        indexer: 'all',
     })
 
     useEffect(() => {
@@ -86,7 +85,7 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
         setFilterState(previous => ({
             ...previous,
             ...(queryParameters.has('show') ? { show: queryParameters.get('show') as ShowFilter } : {}),
-            ...(queryParameters.has('language') ? { language: queryParameters.get('language') as LanguageFilter } : {}),
+            ...(queryParameters.has('indexer') ? { indexer: queryParameters.get('indexer') as IndexerFilter } : {}),
         }))
     }, [location.search])
 
@@ -101,19 +100,17 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
 
     const shouldDisplayIndex = useCallback(
         (index: PreciseIndexFields): boolean =>
-            // Valid language filter
-            (filterState.language === 'all' || filterState.language === getIndexerKey(index)) &&
+            // Valid indexer filter
+            (filterState.indexer === 'all' || filterState.indexer === getIndexerKey(index)) &&
             // Valid show filter
-            (filterState.show === 'all' || filterState.show === 'errors') &&
-            // Valid failure
-            failureStates.has(index.state),
+            (filterState.show === 'all' || (filterState.show === 'errors' && failureStates.has(index.state))),
         [filterState]
     )
 
     const shouldDisplayIndexerSuggestion = useCallback(
         (indexer: CodeIntelIndexerFields): boolean =>
-            // Valid language filter
-            (filterState.language === 'all' || filterState.language === indexer.key) &&
+            // Valid indexer filter
+            (filterState.indexer === 'all' || filterState.indexer === indexer.key) &&
             // Valid show filter
             (filterState.show === 'all' || filterState.show === 'suggestions'),
         [filterState]
@@ -155,7 +152,7 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
                 valueClassName: 'text-success',
             },
             {
-                label: 'Failing projects',
+                label: 'Projects with errors',
                 value: numFailedIndexes,
                 className: styles.summaryItemThin,
                 valueClassName: 'text-danger',
@@ -200,101 +197,84 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
             <Container>
                 <DataSummary items={summaryItems} className="pb-3" />
             </Container>
+            <Container className="mt-3">
+                <div className="d-flex justify-content-end">
+                    <Select
+                        id="show-filter"
+                        label="Show:"
+                        value={filterState.show}
+                        onChange={event => handleFilterChange(event, 'show')}
+                        className="d-flex align-items-center mr-3"
+                        selectClassName={styles.select}
+                        labelClassName="mb-0 mr-2"
+                        isCustomStyle={true}
+                    >
+                        <option value="all">All</option>
+                        <option value="errors">Errors</option>
+                        <option value="suggestions">Suggestions</option>
+                    </Select>
 
-            <ul className="nav nav-tabs mt-2 w-100">
-                {/* TODO Add tab roles etc */}
-                <li className="nav-item w-50">
-                    <Link to="?view=tree" className={classNames('nav-link w-100', activeTab === 'tree' && 'active')}>
-                        Explore
-                    </Link>
-                </li>
-            </ul>
+                    <Select
+                        id="indexer-filter"
+                        label="Indexer:"
+                        value={filterState.indexer}
+                        onChange={event => handleFilterChange(event, 'indexer')}
+                        className="d-flex align-items-center"
+                        selectClassName={styles.select}
+                        labelClassName="mb-0 mr-2"
+                        isCustomStyle={true}
+                    >
+                        <option value="all">All</option>
+                        {[...languageKeys].sort().map(key => (
+                            <option key={key} value={key}>
+                                {key}
+                            </option>
+                        ))}
+                    </Select>
+                </div>
 
-            <Container>
-                {activeTab === 'tree' && (
-                    <>
-                        <H3>Explore</H3>
-                        <div className="d-flex justify-content-end">
-                            <Select
-                                id="show-filter"
-                                label="Show:"
-                                value={filterState.show}
-                                onChange={event => handleFilterChange(event, 'show')}
-                                className="d-flex align-items-center mr-3"
-                                selectClassName={styles.select}
-                                labelClassName="mb-0 mr-2"
-                                isCustomStyle={true}
-                            >
-                                <option value="all">All</option>
-                                <option value="errors">Errors</option>
-                                <option value="suggestions">Suggestions</option>
-                            </Select>
+                {filteredTreeData.length > 1 ? (
+                    <Tree
+                        data={filteredTreeData}
+                        defaultExpandedIds={filteredTreeData.map(element => element.id)}
+                        propagateCollapse={true}
+                        renderNode={({ element: { id, name: treeRoot, displayName }, handleExpand, ...props }) => {
+                            const descendentRoots = new Set(descendentNames(filteredTreeData, id).map(sanitizePath))
+                            const filteredIndexesForRoot = filteredIndexes.filter(
+                                index => getIndexRoot(index) === treeRoot
+                            )
+                            const filteredIndexesForDescendents = filteredIndexes.filter(index =>
+                                descendentRoots.has(getIndexRoot(index))
+                            )
+                            const filteredSuggestedIndexersForRoot = filteredSuggestedIndexers.filter(
+                                ({ root }) => sanitizePath(root) === treeRoot
+                            )
+                            const filteredSuggestedIndexersForDescendents = filteredSuggestedIndexers.filter(
+                                ({ root }) => descendentRoots.has(sanitizePath(root))
+                            )
 
-                            <Select
-                                id="language-filter"
-                                label="Language:"
-                                value={filterState.language}
-                                onChange={event => handleFilterChange(event, 'language')}
-                                className="d-flex align-items-center"
-                                selectClassName={styles.select}
-                                labelClassName="mb-0 mr-2"
-                                isCustomStyle={true}
-                            >
-                                <option value="all">All</option>
-                                {[...languageKeys].sort().map(key => (
-                                    <option key={key} value={key}>
-                                        {key}
-                                    </option>
-                                ))}
-                            </Select>
-                        </div>
-
-                        {filteredTreeData.length > 0 ? (
-                            <Tree
-                                data={filteredTreeData}
-                                defaultExpandedIds={filteredTreeData.map(element => element.id)}
-                                propagateCollapse={true}
-                                renderNode={({ element: { id, name: treeRoot, displayName }, ...props }) => {
-                                    const descendentRoots = new Set(
-                                        descendentNames(filteredTreeData, id).map(sanitizePath)
-                                    )
-                                    const filteredIndexesForRoot = filteredIndexes.filter(
-                                        index => getIndexRoot(index) === treeRoot
-                                    )
-                                    const filteredIndexesForDescendents = filteredIndexes.filter(index =>
-                                        descendentRoots.has(getIndexRoot(index))
-                                    )
-                                    const filteredSuggestedIndexersForRoot = filteredSuggestedIndexers.filter(
-                                        ({ root }) => sanitizePath(root) === treeRoot
-                                    )
-                                    const filteredSuggestedIndexersForDescendents = filteredSuggestedIndexers.filter(
-                                        ({ root }) => descendentRoots.has(sanitizePath(root))
-                                    )
-
-                                    return (
-                                        <TreeNode
-                                            displayName={displayName}
-                                            indexesByIndexerNameForRoot={groupBy(filteredIndexesForRoot, getIndexerKey)}
-                                            availableIndexersForRoot={filteredSuggestedIndexersForRoot}
-                                            numDescendentErrors={
-                                                filteredIndexesForDescendents.filter(index =>
-                                                    failureStates.has(index.state)
-                                                ).length
-                                            }
-                                            numDescendentConfigurable={
-                                                filterState.show === 'all' || filterState.show === 'suggestions'
-                                                    ? filteredSuggestedIndexersForDescendents.length
-                                                    : 0
-                                            }
-                                            {...props}
-                                        />
-                                    )
-                                }}
-                            />
-                        ) : (
-                            <>No code intel to display.</>
-                        )}
-                    </>
+                            return (
+                                <TreeNode
+                                    onClick={handleExpand}
+                                    displayName={displayName}
+                                    indexesByIndexerNameForRoot={groupBy(filteredIndexesForRoot, getIndexerKey)}
+                                    availableIndexersForRoot={filteredSuggestedIndexersForRoot}
+                                    numDescendentErrors={
+                                        filteredIndexesForDescendents.filter(index => failureStates.has(index.state))
+                                            .length
+                                    }
+                                    numDescendentConfigurable={
+                                        filterState.show === 'all' || filterState.show === 'suggestions'
+                                            ? filteredSuggestedIndexersForDescendents.length
+                                            : 0
+                                    }
+                                    {...props}
+                                />
+                            )
+                        }}
+                    />
+                ) : (
+                    <>No code intel to display.</>
                 )}
             </Container>
         </>
@@ -309,6 +289,7 @@ interface TreeNodeProps {
     availableIndexersForRoot: IndexerDescription[]
     numDescendentErrors: number
     numDescendentConfigurable: number
+    onClick: (event: React.MouseEvent) => {}
 }
 
 const TreeNode: React.FunctionComponent<TreeNodeProps> = ({
@@ -319,8 +300,11 @@ const TreeNode: React.FunctionComponent<TreeNodeProps> = ({
     availableIndexersForRoot,
     numDescendentErrors,
     numDescendentConfigurable,
+    onClick,
 }) => (
-    <div className="w-100">
+    // We already handle accessibility events for expansion in the <TreeView />
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+    <div className={classNames(styles.treeNode, !isBranch && styles.treeNodeBland)} onClick={onClick}>
         <div className={classNames('d-inline', !isBranch ? styles.spacer : '')}>
             <Icon
                 svgPath={isBranch && isExpanded ? mdiFolderOpenOutline : mdiFolderOutline}
@@ -328,29 +312,37 @@ const TreeNode: React.FunctionComponent<TreeNodeProps> = ({
                 aria-hidden={true}
             />
             {displayName}
+            {isBranch && !isExpanded && (numDescendentConfigurable > 0 || numDescendentErrors > 0) && (
+                <>
+                    {numDescendentConfigurable > 0 && (
+                        <Badge variant="merged" className="ml-2" pill={true} small={true}>
+                            {numDescendentConfigurable}
+                        </Badge>
+                    )}
+                    {numDescendentErrors > 0 && (
+                        <Badge variant="danger" className="ml-2" pill={true} small={true}>
+                            {numDescendentErrors}
+                        </Badge>
+                    )}
+                </>
+            )}
         </div>
 
-        {[...indexesByIndexerNameForRoot?.entries()].sort(byKey).map(([indexerName, indexes]) => (
-            <IndexStateBadge key={indexerName} indexes={indexes} />
-        ))}
+        <div className="d-flex align-items-center">
+            {[...indexesByIndexerNameForRoot?.entries()].sort(byKey).map(([indexerName, indexes]) => (
+                <IndexStateBadge key={indexerName} indexes={indexes} />
+            ))}
 
-        {availableIndexersForRoot.map(indexer => (
-            <ConfigurationStateBadge indexer={indexer} className="float-right ml-2" key={indexer.key} />
-        ))}
-
-        {isBranch && !isExpanded && (numDescendentConfigurable > 0 || numDescendentErrors > 0) && (
-            <>
-                {numDescendentConfigurable > 0 && (
-                    <Badge variant="primary" className="ml-2" pill={true} small={true}>
-                        {numDescendentConfigurable}
-                    </Badge>
-                )}
-                {numDescendentErrors > 0 && (
-                    <Badge variant="danger" className="ml-2" pill={true} small={true}>
-                        {numDescendentErrors}
-                    </Badge>
-                )}
-            </>
-        )}
+            {availableIndexersForRoot.map(indexer => (
+                <Badge
+                    variant="outlineSecondary"
+                    href="../configuration" // TODO: Fix
+                    key={indexer.key}
+                    className={classNames('p-1 text-muted', styles.badge)}
+                >
+                    Configure {indexer.key}
+                </Badge>
+            ))}
+        </div>
     </div>
 )

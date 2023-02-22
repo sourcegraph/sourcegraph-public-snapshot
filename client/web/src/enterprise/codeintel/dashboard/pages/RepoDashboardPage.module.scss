@@ -21,6 +21,24 @@
     width: 10rem;
 }
 
+.tree-node {
+    width: 100%;
+    min-height: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    &-bland {
+        &:hover {
+            background-color: var(--color-bg-1);
+        }
+    }
+}
+
+.badge {
+    border-radius: 0.5rem;
+}
+
 /*************** Inherited styles ***********/
 .icon {
     flex-shrink: 0;

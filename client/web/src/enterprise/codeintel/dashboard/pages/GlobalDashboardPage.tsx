@@ -33,21 +33,27 @@ export const GlobalDashboardPage: React.FunctionComponent<GlobalDashboardPagePro
             return []
         }
 
+        const countWithPreciseCodeIntel = data.codeIntelSummary.numRepositoriesWithCodeIntelligence
+        const countWithErrors = data.codeIntelSummary.repositoriesWithErrors?.nodes.length || 0
+        const countConfigurable = data.codeIntelSummary.repositoriesWithConfiguration?.nodes.length || 0
+
         return [
             {
-                label: 'Repositories with precise code intelligence',
-                value: data.codeIntelSummary.numRepositoriesWithCodeIntelligence,
+                label: `${
+                    countWithPreciseCodeIntel === 1 ? 'Repository' : 'Repositories'
+                } with precise code intelligence`,
+                value: countWithPreciseCodeIntel,
                 className: styles.summaryItemExtended,
                 valueClassName: 'text-success',
             },
             {
-                label: 'Repositories with errors',
-                value: data.codeIntelSummary.repositoriesWithErrors?.nodes.length || 0,
+                label: `${countWithErrors === 1 ? 'Repository' : 'Repositories'} with errors`,
+                value: countWithErrors,
                 valueClassName: 'text-danger',
             },
             {
-                label: 'Configurable repositories',
-                value: data.codeIntelSummary.repositoriesWithConfiguration?.nodes.length || 0,
+                label: `Configurable ${countConfigurable === 1 ? 'repository' : 'repositories'}`,
+                value: countConfigurable,
                 valueClassName: 'text-merged',
             },
         ]
@@ -73,8 +79,11 @@ export const GlobalDashboardPage: React.FunctionComponent<GlobalDashboardPagePro
                 className="mb-3"
             />
             <Container>
+                {/* TODO: Make data summary links to configure? */}
                 <DataSummary items={summaryItems} className="pb-3" />
+            </Container>
 
+            <Container className="mt-3">
                 {data.codeIntelSummary.repositoriesWithErrors &&
                     data.codeIntelSummary.repositoriesWithErrors.nodes.length > 0 && (
                         <div className={styles.details}>
@@ -94,11 +103,11 @@ export const GlobalDashboardPage: React.FunctionComponent<GlobalDashboardPagePro
                                             )}
                                             <RepoLink
                                                 repoName={repository.name}
-                                                to={`${repository.url}/-/code-graph/dashboard`}
+                                                to={`${repository.url}/-/code-graph/dashboard?show=errors`}
                                             />
                                         </div>
                                         <Link
-                                            to={`${repository.url}/-/code-graph/dashboard`} // TODO: Link to list of errors for repo specific
+                                            to={`${repository.url}/-/code-graph/dashboard?show=errors`}
                                             className={styles.detailsLink}
                                         >
                                             <Badge variant="danger" className={styles.badge} pill={true}>
@@ -132,15 +141,16 @@ export const GlobalDashboardPage: React.FunctionComponent<GlobalDashboardPagePro
                                                 )}
                                                 <RepoLink
                                                     repoName={repository.name}
-                                                    to={`${repository.url}/-/code-graph/dashboard`}
+                                                    to={`${repository.url}/-/code-graph/dashboard?show=suggestions`}
                                                 />
                                             </div>
                                             <Link
-                                                to={`${repository.url}/-/code-graph/dashboard`} // TODO: Link to list of actions for repo specific
+                                                to={`${repository.url}/-/code-graph/dashboard?show=suggestions`}
                                                 className={styles.detailsLink}
                                             >
                                                 <Badge variant="info" className={styles.badge} pill={true}>
-                                                    {indexers.length} {indexers.length > 1 ? 'actions' : 'action'}
+                                                    {indexers.length}{' '}
+                                                    {indexers.length > 1 ? 'suggestions' : 'suggestion'}
                                                 </Badge>
                                                 <Icon svgPath={mdiChevronRight} size="md" aria-label="Configure" />
                                             </Link>
