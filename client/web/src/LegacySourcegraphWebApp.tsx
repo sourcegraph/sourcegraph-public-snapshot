@@ -37,7 +37,11 @@ import {
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
-import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import {
+    EMPTY_SETTINGS_CASCADE,
+    SettingsCascadeProps,
+    SettingsProvider,
+} from '@sourcegraph/shared/src/settings/settings'
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
@@ -71,12 +75,7 @@ import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheP
 import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import {
-    setQueryStateFromSettings,
-    setExperimentalFeaturesFromSettings,
-    getExperimentalFeatures,
-    useNavbarQueryState,
-} from './stores'
+import { setQueryStateFromSettings, setExperimentalFeaturesFromSettings, useNavbarQueryState } from './stores'
 import { eventLogger } from './tracking/eventLogger'
 import type { UserAreaRoute } from './user/area/UserArea'
 import type { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
@@ -321,7 +320,7 @@ export class LegacySourcegraphWebApp extends React.Component<
                             isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                             isSourcegraphApp={window.context.sourcegraphAppMode}
                             searchContextsEnabled={this.props.searchContextsEnabled}
-                            selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
+                            selectedSearchContextSpec={this.state.selectedSearchContextSpec}
                             setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
                             getUserSearchContextNamespaces={getUserSearchContextNamespaces}
                             fetchSearchContexts={fetchSearchContexts}
@@ -346,6 +345,7 @@ export class LegacySourcegraphWebApp extends React.Component<
                     /* eslint-disable react/no-children-prop, react/jsx-key */
                     <ApolloProvider client={graphqlClient} children={undefined} />,
                     <WildcardThemeContext.Provider value={WILDCARD_THEME} />,
+                    <SettingsProvider settingsCascade={this.state.settingsCascade} />,
                     <ErrorBoundary location={null} />,
                     <TraceSpanProvider name={SharedSpanName.AppMount} />,
                     <FeatureFlagsProvider />,
@@ -368,9 +368,6 @@ export class LegacySourcegraphWebApp extends React.Component<
             </ComponentsComposer>
         )
     }
-
-    private getSelectedSearchContextSpec = (): string | undefined =>
-        getExperimentalFeatures().showSearchContext ? this.state.selectedSearchContextSpec : undefined
 
     private setSelectedSearchContextSpecWithNoChecks = (spec: string): void => {
         this.setState({ selectedSearchContextSpec: spec })

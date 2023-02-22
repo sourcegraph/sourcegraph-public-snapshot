@@ -8486,6 +8486,19 @@
 				"IndexMetadata": null
 			},
 			{
+				"ID": 1676996650,
+				"Name": "package_repos_separate_versions_table_patch1",
+				"UpQuery": "ALTER TABLE lsif_dependency_repos\nALTER COLUMN version SET DEFAULT '👁️temporary_sentinel_value👁️';",
+				"DownQuery": "ALTER TABLE lsif_dependency_repos\nALTER COLUMN version DROP DEFAULT;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1675962678
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
 				"ID": 1675864432,
 				"Name": "add code_host_states to permission_sync_jobs table",
 				"UpQuery": "ALTER TABLE permission_sync_jobs ADD COLUMN IF NOT EXISTS code_host_states JSON[];",
@@ -8721,7 +8734,7 @@
 				"RootID": 1648051770,
 				"LeafIDs": [
 					1675296942,
-					1675962678,
+					1676996650,
 					1675864432
 				],
 				"PreCreation": false
