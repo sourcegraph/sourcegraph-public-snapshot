@@ -11,6 +11,8 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/dev/build-tracker/config"
+	"github.com/sourcegraph/sourcegraph/dev/build-tracker/notify"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -27,71 +29,24 @@ var CleanUpInterval = 5 * time.Minute
 // will be eligible for clean up.
 var BuildExpiryWindow = 4 * time.Hour
 
-const DefaultChannel = "#william-buildchecker-webhook-test"
-
 // Server is the http server that listens for events from Buildkite. The server tracks builds and their associated jobs
 // with the use of a BuildStore. Once a build is finished and has failed, the server sends a notification.
 type Server struct {
 	logger       log.Logger
 	store        *BuildStore
-	config       *config
-	notifyClient *NotificationClient
+	config       *config.Config
+	notifyClient *notify.Client
 	http         *http.Server
 }
 
-type config struct {
-	BuildkiteToken string
-	SlackToken     string
-	GithubToken    string
-	SlackChannel   string
-	Production     bool
-	DebugPassword  string
-}
-
-func configFromEnv() (*config, error) {
-	var c config
-
-	err := envVar("BUILDKITE_WEBHOOK_TOKEN", &c.BuildkiteToken)
-	if err != nil {
-		return nil, err
-	}
-	err = envVar("SLACK_TOKEN", &c.SlackToken)
-	if err != nil {
-		return nil, err
-	}
-	err = envVar("GITHUB_TOKEN", &c.GithubToken)
-	if err != nil {
-		return nil, err
-	}
-
-	err = envVar("SLACK_CHANNEL", &c.SlackChannel)
-	if err != nil {
-		c.SlackChannel = DefaultChannel
-	}
-
-	err = envVar("BUILDTRACKER_PRODUCTION", &c.Production)
-	if err != nil {
-		c.Production = false
-	}
-
-	if c.Production {
-		_ = envVar("BUILDTRACKER_DEBUG_PASSWORD", &c.DebugPassword)
-		if c.DebugPassword == "" {
-			return nil, errors.New("BUILDTRACKER_DEBUG_PASSWORD is required when BUILDTRACKER_PRODUCTION is true")
-		}
-	}
-
-	return &c, nil
-}
-
 // NewServer creatse a new server to listen for Buildkite webhook events.
-func NewServer(logger log.Logger, c config) *Server {
+func NewServer(logger log.Logger, c config.Config) *Server {
 	logger = logger.Scoped("server", "Server which tracks events received from Buildkite and sends notifications on failures")
 	server := &Server{
 		logger:       logger,
 		store:        NewBuildStore(logger),
 		config:       &c,
-		notifyClient: NewNotificationClient(logger, c.SlackToken, c.GithubToken, c.SlackChannel),
+		notifyClient: notify.NewClient(logger, c.SlackToken, c.GithubToken, c.SlackChannel),
 	}
 
 	// Register routes the the server will be responding too
@@ -210,19 +165,14 @@ func (s *Server) handleHealthz(w http.ResponseWriter, req *http.Request) {
 
 // notifyIfFailed sends a notification over slack if the provided build has failed. If the build is successful no notifcation is sent
 func (s *Server) notifyIfFailed(build *Build) error {
-	finalizedBuild := FinaliseBuild(build)
-	if finalizedBuild.isFailed() || finalizedBuild.isFixed() {
-		s.logger.Info("sending notification for build", log.Int("buildNumber", intp(build.Number)), log.String("state", string(finalizedBuild.State)))
+	info := ToBuildNotification(build)
+	if info.BuildStatus == string(BuildFailed) || info.BuildStatus == string(BuildFixed) {
+		s.logger.Info("sending notification for build", log.Int("buildNumber", intp(build.Number)), log.String("status", string(info.BuildStatus)))
 		// We lock the build while we send a notificationn so that we can ensure any late jobs do not interfere with what
 		// we're about to send.
 		build.Lock()
 		defer build.Unlock()
-		var err error
-		if build.hasNotification() {
-			build.Notification, err = s.notifyClient.sendUpdatedMessage(build, build.Notification)
-		} else {
-			build.Notification, err = s.notifyClient.sendNewMessage(build)
-		}
+		err := s.notifyClient.Send(info)
 		return err
 	}
 
@@ -254,7 +204,6 @@ func (s *Server) startCleaner(every, window time.Duration) func() {
 			select {
 			case <-ticker.C:
 				s.deleteOldBuilds(window)
-				s.notifyClient.cacheCleanup(int(BuildExpiryWindow.Hours()))
 			case <-done:
 				ticker.Stop()
 				return
@@ -299,7 +248,7 @@ func main() {
 
 	logger := log.Scoped("BuildTracker", "main entrypoint for Build Tracking Server")
 
-	serverConf, err := configFromEnv()
+	serverConf, err := config.NewFromEnv()
 	if err != nil {
 		logger.Fatal("failed to get config from env", log.Error(err))
 	}
