@@ -2,14 +2,22 @@ import { Message } from '@sourcegraph/cody-common'
 
 import { AnthropicAPIClient, AnthropicCompletionCallbacks, AnthropicCompletionParams } from './anthropic-api'
 
+const logRequests = ['true', '1'].indexOf(process.env.LOG_CLAUDE?.toLocaleLowerCase() || '') >= 0
+
 export class ClaudeBackend {
 	private client: AnthropicAPIClient
 
-	constructor(apiKey: string, private modelParams: Omit<AnthropicCompletionParams, 'prompt'>) {
+	constructor(
+		apiKey: string,
+		private modelParams: Omit<AnthropicCompletionParams, 'prompt'>,
+		private preambleMessages: Message[]
+	) {
 		this.client = new AnthropicAPIClient(apiKey)
 	}
 
-	chat(messages: Message[], callbacks: AnthropicCompletionCallbacks): void {
+	chat(origMessages: Message[], callbacks: AnthropicCompletionCallbacks): void {
+		const messages = [...this.preambleMessages, ...origMessages]
+
 		let lastSpeaker: 'bot' | 'you' | undefined
 		for (const msg of messages) {
 			if (msg.speaker === lastSpeaker) {
@@ -24,11 +32,17 @@ export class ClaudeBackend {
 		}
 
 		if (lastSpeaker === 'you') {
-			promptComponents.push('\n\nAssistant: ')
+			promptComponents.push('\n\nAssistant:') // Important: no trailing space (affects output quality)
 		}
 
 		const prompt = promptComponents.join('')
 
-		this.client.completion({ ...this.modelParams, prompt }, callbacks)
+		if (logRequests) {
+			console.log(`REQUEST:\n${prompt}`)
+		}
+
+		const anthropicReq = { ...this.modelParams, prompt }
+		console.log(`REQ: ${JSON.stringify(anthropicReq, null, '  ')}`)
+		this.client.completion(anthropicReq, callbacks)
 	}
 }

@@ -106,3 +106,8 @@ export interface WSChatResponseError extends WSChatMessage {
 	kind: 'response:error'
 	error: string
 }
+
+export interface QueryInfo {
+	needsCodebaseContext: boolean
+	needsCurrentFileContext: boolean
+}

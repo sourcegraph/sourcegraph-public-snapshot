@@ -1,28 +1,135 @@
 import path from 'path'
+import * as vscode from 'vscode'
 
-import { Message } from '@sourcegraph/cody-common'
+import { Message, QueryInfo } from '@sourcegraph/cody-common'
 
 import { EmbeddingsClient, EmbeddingSearchResult } from '../embeddings-client'
 import { ContextSearchOptions } from './context-search-options'
 import { getRecipe } from './recipes/index'
+import { getKeywordContextMessages } from './context'
+import fetch from 'node-fetch'
 
-const MAX_PROMPT_TOKEN_LENGTH = 7000
+const PROMPT_PREAMBLE_LENGTH = 230
+const MAX_PROMPT_TOKEN_LENGTH = 7000 - PROMPT_PREAMBLE_LENGTH
 const SOLUTION_TOKEN_LENGTH = 1000
 const MAX_HUMAN_INPUT_TOKENS = 1000
 const MAX_RECIPE_INPUT_TOKENS = 2000
 const MAX_RECIPE_SURROUNDING_TOKENS = 500
 const MAX_AVAILABLE_PROMPT_LENGTH = MAX_PROMPT_TOKEN_LENGTH - SOLUTION_TOKEN_LENGTH
+export const MAX_CURRENT_FILE_TOKENS = 4000
 const CHARS_PER_TOKEN = 4
 
-export class Prompt {
-	private messages: Message[] = []
+interface ContextMessage extends Message {
+	filename?: string
+}
 
-	constructor(private embeddingsClient: EmbeddingsClient | null) {}
+// Each TranscriptChunk corresponds to a sequence of messages that should be considered as a unit during prompt construction.
+// - Typically, `actual` has length 1 and represents the actual message incorporated into the prompt.
+// - `context` is messages that include code snippets fetched as contextual knowledge.
+//    These should not be displayed in the chat GUI.
+// - `display` are messages that should replace `actual` in the chat GUI.
+interface TranscriptChunk {
+	actual: Message[]
+	context: ContextMessage[]
+	display?: Message[]
+}
+
+export class Transcript {
+	private transcript: TranscriptChunk[] = []
+
+	constructor(
+		private embeddingsClient: EmbeddingsClient | null,
+		private contextType: 'embeddings' | 'keyword' | 'none',
+		private serverUrl: string
+	) {}
+
+	getDisplayMessages(): Message[] {
+		return this.transcript.flatMap(({ display, actual }) => display || actual)
+	}
+
+	private getUnderlyingMessages(): Message[] {
+		return this.transcript.flatMap(({ actual }) => actual)
+	}
+
+	getLastContextFiles(): string[] {
+		for (const chunk of [...this.transcript].reverse()) {
+			if (chunk.actual.length === 0) {
+				continue
+			}
+			if (chunk.actual[chunk.actual.length - 1].speaker === 'bot') {
+				continue
+			}
+			return chunk.context.flatMap(msg => msg.filename || [])
+		}
+		return []
+	}
+
+	private async detectIntent(text: string): Promise<QueryInfo> {
+		const resp = await fetch(`${this.serverUrl}/info?q=${encodeURIComponent(text)}`)
+		const respText = await resp.text()
+		return JSON.parse(respText) as QueryInfo
+	}
+
+	private async getCodebaseContextMessages(query: string): Promise<ContextMessage[]> {
+		const { needsCurrentFileContext } = await this.detectIntent(query)
+		if (needsCurrentFileContext) {
+			const activeEditor = vscode.window.activeTextEditor
+			const documentText = activeEditor?.document.getText()
+			const documentUri = activeEditor?.document.uri
+			vscode.window.activeTextEditor
+			if (!documentText || !documentUri) {
+				return []
+			}
+			const truncatedDocumentText = truncateText(documentText, MAX_CURRENT_FILE_TOKENS)
+			return [
+				{
+					filename: path.basename(documentUri.path),
+					speaker: 'you',
+					text: `Here is the current open file to add to your knowledge base:\n\`\`\`\n${truncatedDocumentText}\n\`\`\``,
+				},
+				{
+					speaker: 'bot',
+					text: 'Ok, added this current open file to my knowledge base.',
+				},
+			]
+		}
+
+		// Only load context messages for the first question in the transcript
+		if (this.transcript.length > 0) {
+			return []
+		}
+
+		const inputNeedsAdditionalContext = this.embeddingsClient
+			? await this.embeddingsClient.queryNeedsAdditionalContext(query)
+			: false
+
+		let contextMessages: Message[] | undefined
+		switch (this.contextType) {
+			case 'embeddings':
+				console.log('fetching embeddings')
+				contextMessages = inputNeedsAdditionalContext
+					? await this.getEmbeddingsContextMessages(query, {
+							numCodeResults: 8,
+							numMarkdownResults: 2,
+					  })
+					: []
+				break
+			case 'keyword':
+				console.log('fetching keyword matches')
+				contextMessages = await getKeywordContextMessages(query)
+				break
+			case 'none':
+			default:
+				contextMessages = []
+		}
+
+		return contextMessages
+	}
 
 	// We split the context into multiple messages instead of joining them into a single giant message.
 	// We can gradually eliminate them from the prompt, instead of losing them all at once with a single large messeage
 	// when we run out of tokens.
-	private async getContextMessages(query: string, options: ContextSearchOptions): Promise<Message[]> {
+	private async getEmbeddingsContextMessages(query: string, options: ContextSearchOptions): Promise<Message[]> {
 		if (!this.embeddingsClient) {
 			return []
 		}
@@ -51,91 +158,105 @@ export class Prompt {
 			})
 	}
 
-	private addInstructionsToHumanInput(humanInput: string): string {
-		const instructions = [
-			`Answer the following question or statement only if you know the answer or can make a well-informed guess; otherwise tell me you don't know it.`,
-			`Do not reference any file names or URLs, unless you are sure they exist.`,
-			`Format code snippets using Markdown-style backticks.`,
-		].join(' ')
-		return `${instructions}\n\n${humanInput}`
+	private addMessage(chunk: TranscriptChunk): void {
+		this.transcript.push(chunk)
 	}
 
-	async getPromptForMessage(
-		message: Message,
-		contextMessages: Message[],
-		botResponsePrefix: string = ''
-	): Promise<Message[]> {
-		const messageTokensUsage = estimateTokensUsage(message)
-		// Since we are limited by the amount of tokens we can send to the backend, we have to truncate the prompt.
-		// In order of priority, we have to fit in:
-		//   1. The latest message.
-		//   2. The context messages related to the message.
-		//   3. Older chat messages.
-		const newPromptMessages = []
-		// We always want to include the human message in the prompt, so we decrease the available tokens budget
-		// by the amount of tokens in the human message.
-		let availablePromptTokensBudget = MAX_AVAILABLE_PROMPT_LENGTH - messageTokensUsage
+	// addHumanMessage adds a human message to the transcript, along the way computing any context
+	// messages that should be incorporated into the prompt.
+	// This should only be invoked with the last message was from 'bot'.
+	// Returns the prompt that should be sent to fetch the bot response (same as calling `getPrompt`)
+	async addHumanMessage(humanInput: string): Promise<Message[]> {
+		const actualMessages = this.getUnderlyingMessages()
+		if (actualMessages.length > 0 && actualMessages[actualMessages.length - 1].speaker === 'you') {
+			throw new Error('attempt to add human message when last message was human')
+		}
 
-		// The available messages for the next prompt consist of the older messages and the new context messages.
-		// Since we traverse the available messages in reverse order (newer -> older) the context messages take a
-		// precedence over the older messages.
-		const availableMessages = this.messages.concat(contextMessages)
-		for (let i = availableMessages.length - 1; i >= 1; i -= 2) {
-			const humanMessage = availableMessages[i - 1]
-			const botMessage = availableMessages[i]
-			const combinedTokensUsage = estimateTokensUsage(humanMessage) + estimateTokensUsage(botMessage)
+		const truncatedHumanInput = truncateText(humanInput, MAX_HUMAN_INPUT_TOKENS)
+		const contextMessages = await this.getCodebaseContextMessages(humanInput)
+		const humanMessage: Message = {
+			speaker: 'you',
+			text: contextMessages.length > 0 ? humanInput : truncatedHumanInput,
+		}
 
-			// We stop adding pairs of messages once we exceed the available tokens budget.
-			if (combinedTokensUsage <= availablePromptTokensBudget) {
-				newPromptMessages.push(botMessage, humanMessage)
-				availablePromptTokensBudget -= combinedTokensUsage
-			} else {
-				break
+		this.addMessage({
+			actual: [humanMessage],
+			context: contextMessages,
+		})
+
+		return this.getPrompt()
+	}
+
+	async addBotMessage(text: string) {
+		this.addMessage({
+			actual: [{ speaker: 'bot', text }],
+			context: [],
+		})
+	}
+
+	// getPrompt takes the current transcript (both hidden and displayed) and generates a prompt
+	// to send to the server to generate the next bot message. This should only be invoked
+	// when the last message in the transcript was from 'you'.
+	//
+	// The prompt construction algorithm is as follows:
+	// - Iterate through chunks with most recent first
+	// - Add the `actual` messages of the chunk to the prompt
+	// - If the chunk has context messages, incorporate them if you haven't yet incorporated context messages from any other chunk.
+	//   - Note: this means we only include context messages of the most recent chunk that has them
+	// - Visit the next chunk. Repeat until you run out of token budget.
+	// - At the end, incorporate the botResponsePrefix (which controls the first part of the bot response if you wish to constrain that).
+	getPrompt(botResponsePrefix: string = ''): Message[] {
+		const reversePrompt: Message[] = []
+		const reverseTranscript = [...this.transcript].reverse()
+		let tokenBudget = MAX_AVAILABLE_PROMPT_LENGTH
+		let incorporatedContext = false
+		for (let i = 0; i < reverseTranscript.length; i++) {
+			const chunk = reverseTranscript[i]
+			for (const msg of [...chunk.actual].reverse()) {
+				const tokenUsage = estimateTokensUsage(msg)
+				if (tokenUsage <= tokenBudget) {
+					reversePrompt.push(msg)
+					tokenBudget -= tokenUsage
+				} else {
+					break
+				}
+			}
+			if (i === 0) {
+				if (reversePrompt.length === 0) {
+					throw new Error('last message size exceeded token window')
+				} else if (reversePrompt[0].speaker !== 'you') {
+					throw new Error('last message was not human')
+				}
+			}
+
+			if (!incorporatedContext && chunk.context.length >= 2) {
+				for (let j = chunk.context.length - 1; j >= 1; j -= 2) {
+					const humanMsg = chunk.context[j - 1]
+					const botMsg = chunk.context[j]
+					const combinedTokensUsage = estimateTokensUsage(humanMsg) + estimateTokensUsage(botMsg)
+
+					if (combinedTokensUsage <= tokenBudget) {
+						reversePrompt.push(botMsg, humanMsg)
+						tokenBudget -= combinedTokensUsage
+					} else {
+						break
+					}
+				}
+				incorporatedContext = true
 			}
 		}
 
-		// TODO: At this point, we could check if the context messages include any duplicates, and remove them.
-		// TODO: If we manage to remove some of the duplicates, we could probably squeeze in a couple of older messages.
-		// TODO: Although, that risks introducing more duplicates. So, the algorithm would very likely have to do multiple passes.
-		// TODO: For now, we are happy with a single pass and keeping the duplicates.
-
-		// Reverse the prompt messages, so they appear in chat order (older -> newer).
-		this.messages = newPromptMessages.reverse()
-		// Finally, add the human message at the end.
-		this.messages.push(message)
-
+		const prompt = [...reversePrompt].reverse()
 		if (botResponsePrefix) {
-			this.messages.push({ speaker: 'bot', text: botResponsePrefix })
+			prompt.push({ speaker: 'bot', text: botResponsePrefix })
 		}
-
-		return this.messages
+		return prompt
 	}
 
-	async getPromptForHumanInput(humanInput: string): Promise<Message[]> {
-		const truncatedHumanInput = truncateText(humanInput, MAX_HUMAN_INPUT_TOKENS)
-
-		// TODO: Add context from currently active text editor if embeddingsClient is not available
-		const inputNeedsAdditionalContext = this.embeddingsClient
-			? await this.embeddingsClient.queryNeedsAdditionalContext(truncatedHumanInput)
-			: false
-
-		const contextMessages = inputNeedsAdditionalContext
-			? await this.getContextMessages(truncatedHumanInput, {
-					numCodeResults: 8,
-					numMarkdownResults: 2,
-			  })
-			: []
-		const humanMessage: Message = {
-			speaker: 'you',
-			text: contextMessages.length > 0 ? this.addInstructionsToHumanInput(humanInput) : truncatedHumanInput,
-		}
-		return this.getPromptForMessage(humanMessage, contextMessages)
-	}
-
-	async getPromptForRecipe(recipeID: string): Promise<{
-		messages: Message[]
-		displayText: string
-		recipePrefix: string
+	async resetToRecipe(recipeID: string): Promise<{
+		prompt: Message[]
+		display: Message[]
+		botResponsePrefix: string
 	} | null> {
 		const recipe = getRecipe(recipeID)
 		if (!recipe) {
@@ -144,32 +265,30 @@ export class Prompt {
 		const prompt = await recipe.getPrompt(
 			MAX_RECIPE_INPUT_TOKENS + MAX_RECIPE_SURROUNDING_TOKENS,
 			(query: string, options: ContextSearchOptions): Promise<Message[]> =>
-				this.getContextMessages(query, options)
+				this.getEmbeddingsContextMessages(query, options)
 		)
 		if (!prompt) {
 			return null
 		}
+
+		this.reset()
 		const { displayText, contextMessages, promptMessage, botResponsePrefix } = prompt
 
-		const promptMessages = await this.getPromptForMessage(promptMessage, contextMessages, botResponsePrefix)
-		return {
-			messages: promptMessages,
-			recipePrefix: botResponsePrefix,
-			displayText,
-		}
-	}
+		this.addMessage({
+			display: [{ speaker: 'you', text: displayText }],
+			actual: [promptMessage],
+			context: contextMessages,
+		})
 
-	addBotResponse(text: string): void {
-		const lastMessage = this.messages[this.messages.length - 1]
-		if (lastMessage?.speaker === 'bot') {
-			// Remove the last bot message that only contains the prefix, and append the full message below.
-			this.messages = this.messages.slice(0, this.messages.length - 1)
+		return {
+			display: this.getDisplayMessages(),
+			prompt: this.getPrompt(botResponsePrefix),
+			botResponsePrefix,
 		}
-		this.messages.push({ speaker: 'bot', text })
 	}
 
 	reset(): void {
-		this.messages = []
+		this.transcript = []
 	}
 }
 

@@ -123,6 +123,15 @@
         },
         "cody.debug": {
           "type": "boolean"
+        },
+        "cody.useContext": {
+          "type": "string",
+          "enum": [
+            "embeddings",
+            "keyword",
+            "none"
+          ],
+          "default": "embeddings"
         }
       }
     }
@@ -145,6 +154,8 @@
     "@types/glob": "^8.0.0",
     "@types/mocha": "^10.0.0",
     "@types/node": "16.x",
+    "@types/stopword": "^2.0.0",
+    "@types/stream-json": "^1.7.3",
     "@types/vscode": "^1.74.0",
     "@types/ws": "^8.5.4",
     "@typescript-eslint/eslint-plugin": "^5.42.0",
@@ -170,9 +181,12 @@
     "highlight.js": "^11.7.0",
     "isomorphic-ws": "^5.0.0",
     "marked": "^4.2.5",
+    "natural": "github:NaturalNode/natural#master",
     "node-fetch": "^2.6.7",
     "openai": "^3.1.0",
     "sanitize-html": "^2.8.1",
+    "stopword": "^2.0.7",
+    "stream-json": "^1.7.5",
     "vscode-uri": "^3.0.7",
     "ws": "^8.11.0"
   },

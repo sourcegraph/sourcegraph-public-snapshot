@@ -5,6 +5,7 @@ import express from 'express'
 
 import * as bodyParser from 'body-parser'
 import {
+	Message,
 	WSChatRequest,
 	WSChatResponseChange,
 	WSChatResponseComplete,
@@ -13,6 +14,7 @@ import {
 import { ClaudeBackend } from './prompts/claude'
 import { wsHandleGetCompletions } from './completions'
 import { authenticate, getUsers } from './auth'
+import { getInfo } from './info'
 
 const anthropicApiKey = process.env.ANTHROPIC_API_KEY
 if (!anthropicApiKey) {
@@ -26,14 +28,54 @@ if (!usersPath) {
 
 const port = process.env.CODY_PORT || '8080'
 
-const claudeBackend = new ClaudeBackend(anthropicApiKey, {
-	model: 'claude-v1',
-	temperature: 0.2,
-	stop_sequences: ['\n\nHuman:'],
-	max_tokens_to_sample: 1000,
-	top_p: 1.0,
-	top_k: -1,
-})
+// Character length of this preamble is 806 chars or ~230 tokens (at a conservative rate of 3.5 chars per token).
+// If this is modified, then `PROMPT_PREAMBLE_LENGTH` in prompt.ts should be updated.
+const codyPreambleMessages: Message[] = [
+	{
+		speaker: 'you',
+		text: `You are Cody, an AI-powered coding assistant created by Sourcegraph that performs the following actions:
+- Answer general programming questions
+- Answer questions about code that I have provided to you
+- Generate code that matches a written description
+- Explain what a section of code does
+
+In your responses, you should obey the following rules:
+- Be as brief and concise as possible without losing clarity
+- Any code snippets should be markdown-formatted (placed in-between triple backticks like this "\`\`\`").
+- Answer questions only if you know the answer or can make a well-informed guess. Otherwise, tell me you don't know, and tell me what context I need to provide to you in order for you to answer the question.
+- Do not reference any file names or URLs, unless you are sure they exist.`,
+	},
+	{
+		speaker: 'bot',
+		text: 'Understood. I am Cody, an AI-powered coding assistant created by Sourcegraph and will follow the rules above',
+	},
+]
+
+const claudeBackend = new ClaudeBackend(
+	anthropicApiKey,
+	{
+		model: 'claude-v1',
+		temperature: 0.2,
+		stop_sequences: ['\n\nHuman:'],
+		max_tokens_to_sample: 1000,
+		top_p: -1,
+		top_k: -1,
+	},
+	codyPreambleMessages
+)
+
+const shortAnswerBackend = new ClaudeBackend(
+	anthropicApiKey,
+	{
+		model: 'claude-v1',
+		temperature: 0.0,
+		stop_sequences: ['\n\nHuman:'],
+		max_tokens_to_sample: 1,
+		top_p: -1,
+		top_k: -1,
+	},
+	[]
+)
 
 const app = express()
 app.use(bodyParser.json())
@@ -64,6 +106,17 @@ wssCompletions.on('connection', ws => {
 		}
 	})
 	// TODO(beyang): handle shutdown
+})
+
+app.get('/info', (req, res) => {
+	const { q } = req.query
+	getInfo(shortAnswerBackend, q as string)
+		.then(info => {
+			res.send(JSON.stringify(info))
+		})
+		.catch(error => {
+			res.status(500).send(`error: ${error}`)
+		})
 })
 
 const wssChat = new WebSocketServer({ noServer: true })

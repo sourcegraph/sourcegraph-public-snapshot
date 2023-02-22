@@ -5,6 +5,7 @@ import { ChatViewProvider } from './chat/view'
 import { WSChatClient } from './chat/ws'
 import { WSCompletionsClient, fetchAndShowCompletions } from './completions'
 import { EmbeddingsClient } from './embeddings-client'
+import fetch from 'node-fetch'
 
 const CODY_ENDPOINT = 'cody.sgdev.org'
 const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'
@@ -19,7 +20,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	history.register(context)
 
 	const serverAddr = settings.get('cody.serverEndpoint') || CODY_ENDPOINT
-	const serverUrl = `${isDevelopment ? 'ws' : 'wss'}://${serverAddr}`
+	const wsUrl = `${isDevelopment ? 'ws' : 'wss'}://${serverAddr}`
+	const httpUrl = `${isDevelopment ? 'http' : 'https'}://${serverAddr}`
 
 	const embeddingsAddr = settings.get('cody.embeddingsEndpoint') || CODY_ENDPOINT
 	const embeddingsUrl = `${isDevelopment ? 'http' : 'https'}://${embeddingsAddr}`
@@ -33,14 +35,16 @@ export async function activate(context: vscode.ExtensionContext) {
 		)
 	}
 
-	const wsCompletionsClient = WSCompletionsClient.new(`${serverUrl}/completions`, accessToken)
-	const wsChatClient = WSChatClient.new(`${serverUrl}/chat`, accessToken)
+	const wsCompletionsClient = WSCompletionsClient.new(`${wsUrl}/completions`, accessToken)
+	const wsChatClient = WSChatClient.new(`${wsUrl}/chat`, accessToken)
 	const embeddingsClient = codebaseId ? new EmbeddingsClient(embeddingsUrl, accessToken, codebaseId) : null
 
 	const chatProvider = new ChatViewProvider(
 		context.extensionPath,
+		httpUrl,
 		wsChatClient,
 		embeddingsClient,
+		settings.get('cody.useContext') || 'none',
 		settings.get('cody.debug') || false
 	)
 

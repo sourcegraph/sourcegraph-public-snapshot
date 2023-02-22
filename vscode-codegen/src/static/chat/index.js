@@ -1,64 +1,117 @@
 const MAX_HEIGHT = 192
 
 let tabsController = null
+let askController = null
 let debugLog = []
 
-// TODO: We need a design for the chat empty state.
-function onInitialize() {
-	const vscode = acquireVsCodeApi()
-	const inputElement = document.getElementById('input')
-	const submitElement = document.querySelector('.submit-container')
-	const resetElement = document.querySelector('.reset-conversation')
+class ChatController {
+	constructor(containerId, recipeContainerId, vscode, gettingStartedHTML) {
+		this.containerId = containerId
+		this.recipeContainerId = recipeContainerId
+		this.vscode = vscode
+		this.gettingStartedHTML = gettingStartedHTML
 
-	const resizeInput = () => {
-		inputElement.style.height = 0
-		const height = Math.min(MAX_HEIGHT, inputElement.scrollHeight)
-		inputElement.style.height = `${height}px`
-		inputElement.style.overflowY = height >= MAX_HEIGHT ? 'auto' : 'hidden'
+		this.containerElement = document.getElementById(containerId)
+		this.inputElement = this.containerElement.querySelector('.chat-input')
+		this.submitElement = this.containerElement.querySelector('.submit-container')
+		this.resetElement = this.containerElement.querySelector('.reset-conversation')
+		this.transcriptContainerElement = this.containerElement.querySelector('.transcript-container')
+
+		this.initListeners()
 	}
 
-	tabsController = new TabsController({ selectedTab: 'chat' })
+	initListeners() {
+		// TODO(beyang): handle destruction
+		this.inputElement.addEventListener('keydown', e => {
+			if (e.key === 'Enter' && !e.shiftKey) {
+				if (e.target.value.trim().length === 0) {
+					return
+				}
+				this.vscode.postMessage({ command: 'submit', text: e.target.value })
+				e.target.value = ''
+				e.preventDefault()
 
-	inputElement.addEventListener('keydown', e => {
-		if (e.key === 'Enter' && !e.shiftKey) {
-			if (e.target.value.trim().length === 0) {
+				setTimeout(() => this.resizeInput(), 0)
+			}
+		})
+		this.inputElement.addEventListener('input', () => this.resizeInput())
+
+		this.submitElement.addEventListener('click', () => {
+			if (this.inputElement.value.trim().length === 0) {
 				return
 			}
-			vscode.postMessage({ command: 'submit', text: e.target.value })
-			e.target.value = ''
-			e.preventDefault()
+			this.vscode.postMessage({ command: 'submit', text: inputElement.value })
+			this.inputElement.value = ''
+		})
 
-			setTimeout(resizeInput, 0)
+		this.resetElement.addEventListener('click', () => {
+			this.vscode.postMessage({ command: 'reset' })
+		})
+
+		if (this.recipeContainerId) {
+			const recipeContainer = document.getElementById(this.recipeContainerId)
+			const onRecipeButtonClick = e => {
+				this.vscode.postMessage({
+					command: 'executeRecipe',
+					recipe: e.target.dataset.recipe,
+				})
+			}
+			const recipeButtons = recipeContainer.querySelectorAll('.btn-recipe')
+			recipeButtons.forEach(button => button.addEventListener('click', onRecipeButtonClick))
 		}
-	})
-
-	inputElement.addEventListener('input', resizeInput)
-
-	submitElement.addEventListener('click', () => {
-		if (inputElement.value.trim().length === 0) {
-			return
-		}
-		vscode.postMessage({ command: 'submit', text: inputElement.value })
-		inputElement.value = ''
-	})
-
-	const onRecipeButtonClick = e => {
-		vscode.postMessage({ command: 'executeRecipe', recipe: e.target.dataset.recipe })
 	}
-	const recipeButtons = document.querySelectorAll('.btn-recipe')
-	recipeButtons.forEach(button => button.addEventListener('click', onRecipeButtonClick))
 
-	resetElement.addEventListener('click', () => {
-		vscode.postMessage({ command: 'reset' })
-	})
+	resizeInput() {
+		this.inputElement.style.height = 0
+		const height = Math.min(MAX_HEIGHT, this.inputElement.scrollHeight)
+		this.inputElement.style.height = `${height}px`
+		this.inputElement.style.overflowY = height >= MAX_HEIGHT ? 'auto' : 'hidden'
+	}
 
-	vscode.postMessage({ command: 'initialized' })
+	renderMessages(messages, messageInProgress) {
+		const messageElements = messages
+			.filter(message => !message.hidden)
+			.map(message => getMessageBubble(message.speaker, message.displayText, message.timestamp, message.contextFiles))
+
+		const messageInProgressElement = messageInProgress
+			? getMessageInProgressBubble(messageInProgress.speaker, messageInProgress.displayText, messageInProgress.contextFiles)
+			: ''
+
+		if (messageInProgress) {
+			this.inputElement.setAttribute('disabled', '')
+			this.submitElement.style.cursor = 'default'
+		} else {
+			this.inputElement.removeAttribute('disabled')
+			this.submitElement.style.cursor = 'pointer'
+		}
+
+		if ((!messages || messages.length === 0) && !messageInProgress && this.gettingStartedHTML) {
+			this.transcriptContainerElement.innerHTML = this.gettingStartedHTML
+		} else {
+			this.transcriptContainerElement.innerHTML = messageElements.join('') + messageInProgressElement
+		}
+
+		setTimeout(() => {
+			if (messageInProgress && messageInProgress.displayText.length === 0) {
+				this.containerElement.querySelector('.bubble-loader')?.scrollIntoView()
+			} else if (!messageInProgress && messages.length > 0) {
+				this.containerElement.querySelector('.bubble-row:last-child')?.scrollIntoView()
+			}
+		}, 0)
+	}
+}
+
+function onInitialize() {
+	const vscode = acquireVsCodeApi()
+	tabsController = new TabsController({ selectedTab: 'ask' })
+	askController = new ChatController('container-ask', 'container-recipes', vscode, gettingStartedHTML)
+	vscode.postMessage({ command: 'initialized', containerId: 'container-ask' })
 }
 
 function onMessage(event) {
 	switch (event.data.type) {
 		case 'transcript':
-			renderMessages(event.data.messages, event.data.messageInProgress)
+			askController.renderMessages(event.data.messages, event.data.messageInProgress)
 			break
 		case 'showTab':
 			if (tabsController) {
@@ -72,10 +125,32 @@ function onMessage(event) {
 	}
 }
 
+const gettingStartedHTML = `
+<div class="container-getting-started">
+	<h1>Tips and tricks</h1>
+	<p>Here are some examples of what you can ask Cody:</p>
+	<ul>
+		<li>What are the most popular Go CLI libraries?</li>
+		<li>Write a function that parses JSON in Python</li>
+		<li>What changed in my codebase in the last day?</li>
+		<li>Summarize the code in this file.</li>
+		<li>What's wrong with this code?</li>
+	</ul>
+
+	<p>Recommendations:</p>
+	<ul>
+		<li>Make your questions detailed and specific. The more context Cody has, the better Cody's responses will be.</li>
+	</ul>
+</div>
+`
+
 const messageBubbleTemplate = `
 <div class="bubble-row {type}-bubble-row">
 	<div class="bubble {type}-bubble">
-		<div class="bubble-content {type}-bubble-content">{text}</div>
+		<div class="bubble-content {type}-bubble-content">
+			{contextFiles}
+			{text}
+		</div>
 		<div class="bubble-footer {type}-bubble-footer">
 			{footer}
 		</div>
@@ -83,16 +158,17 @@ const messageBubbleTemplate = `
 </div>
 `
 
-function getMessageBubble(author, text, timestamp) {
+function getMessageBubble(author, text, timestamp, contextFiles) {
 	const bubbleType = author === 'bot' ? 'bot' : 'human'
 	const authorName = author === 'bot' ? 'Cody' : 'Me'
 	return messageBubbleTemplate
 		.replace(/{type}/g, bubbleType)
 		.replace('{text}', text)
+		.replace('{contextFiles}', contextFiles && contextFiles.length > 0 ? `<span style="font-style: italic;">Cody read ${contextFiles.join(', ')}</span>` : '')
 		.replace('{footer}', timestamp ? `${authorName} &middot; ${timestamp}` : `<i>${authorName} is writing...</i>`)
 }
 
-function getMessageInProgressBubble(author, text) {
+function getMessageInProgressBubble(author, text, contextFiles) {
 	if (text.length === 0) {
 		const loader = `
 		<div class="bubble-loader">
@@ -102,39 +178,7 @@ function getMessageInProgressBubble(author, text) {
 		</div>`
 		return getMessageBubble(author, loader, null)
 	}
-	return getMessageBubble(author, text, null)
-}
-
-function renderMessages(messages, messageInProgress) {
-	const inputElement = document.getElementById('input')
-	const submitElement = document.querySelector('.submit-container')
-	const transcriptContainerElement = document.querySelector('.transcript-container')
-
-	const messageElements = messages
-		.filter(message => !message.hidden)
-		.map(message => getMessageBubble(message.speaker, message.displayText, message.timestamp))
-
-	const messageInProgressElement = messageInProgress
-		? getMessageInProgressBubble(messageInProgress.speaker, messageInProgress.displayText)
-		: ''
-
-	if (messageInProgress) {
-		inputElement.setAttribute('disabled', '')
-		submitElement.style.cursor = 'default'
-	} else {
-		inputElement.removeAttribute('disabled')
-		submitElement.style.cursor = 'pointer'
-	}
-
-	transcriptContainerElement.innerHTML = messageElements.join('') + messageInProgressElement
-
-	setTimeout(() => {
-		if (messageInProgress && messageInProgress.displayText.length === 0) {
-			document.querySelector('.bubble-loader')?.scrollIntoView()
-		} else if (!messageInProgress && messages.length > 0) {
-			document.querySelector('.bubble-row:last-child')?.scrollIntoView()
-		}
-	}, 0)
+	return getMessageBubble(author, text, null, contextFiles)
 }
 
 const debugMessageTemplate = `

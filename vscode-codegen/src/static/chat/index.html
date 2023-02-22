@@ -13,11 +13,11 @@
 <body>
 	<div class="outer-container">
 		<ul class="tab-menu-container">
-			<li id="tab-menu-item-chat" class="tab-menu-item" data-tab="chat">Chat</li>
+			<li id="tab-menu-item-ask" class="tab-menu-item" data-tab="ask">Ask</li>
 			<li id="tab-menu-item-recipes" class="tab-menu-item" data-tab="recipes">Recipes</li>
 			<li id="tab-menu-item-recipes" class="tab-menu-item {debug-tab-class-hidden}" data-tab="debug">Debug</li>
 		</ul>
-		<div class="inner-container" data-tab-target="recipes">
+		<div id="container-recipes" class="inner-container" data-tab-target="recipes">
 			<button class="btn-recipe" data-recipe="explainCode">Explain selected code (detailed)</button>
 			<button class="btn-recipe" data-recipe="explainCodeHighLevel">Explain selected code (high level)</button>
 			<button class="btn-recipe" data-recipe="generateUnitTest">Generate a unit test</button>
@@ -25,7 +25,7 @@
 			<button class="btn-recipe" data-recipe="translateToLanguage">Translate to different language</button>
 			<button class="btn-recipe" data-recipe="gitHistory">Recent history</button>
 		</div>
-		<div class="inner-container" data-tab-target="chat">
+		<div id="container-ask" class="inner-container" data-tab-target="ask">
 			<div class="header-container">
 				<div class="header-container-left">
 					<div class="header-logo">
@@ -53,7 +53,7 @@
 			<div class="transcript-container"></div>
 			<div class="input-row">
 				<div class="input-container">
-					<textarea id="input"></textarea>
+					<textarea class="chat-input"></textarea>
 				</div>
 				<div class="submit-container">
 					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewbox="0 0 24 24"
@@ -64,7 +64,7 @@
 				</div>
 			</div>
 		</div>
-		<div class="inner-container" data-tab-target="debug">
+		<div id="container-debug" class="inner-container" data-tab-target="debug">
 			<div class="debug-container">
 				<div class="debug-container-placeholder">
 					(No data yet)

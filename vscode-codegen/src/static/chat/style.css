@@ -236,17 +236,20 @@ body {
 	background-color: var(--bot-bubble-color);
 }
 
-#input {
+.chat-input {
 	font-family: var(--vscode-font-family), 'Nunito', sans-serif;
 	width: 100%;
 	height: 100%;
 	resize: none;
 	border: none;
-	outline: none;
 	color: white;
 	background-color: var(--bot-bubble-color);
 	font-size: 16px;
 	height: 24px;
+}
+
+textarea.chat-input {
+	outline: none;
 }
 
 .btn-recipe {
@@ -284,4 +287,12 @@ body {
 
 .debug-tab-hidden {
 	display: none;
+}
+
+.container-getting-started {
+	padding: 1.5rem;
+}
+
+.container-getting-started li {
+	line-height: 1.5rem;
 }
