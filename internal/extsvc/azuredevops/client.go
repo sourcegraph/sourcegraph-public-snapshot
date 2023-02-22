@@ -162,3 +162,11 @@ func (c *client) IsAzureDevOpsServices() bool {
 func (e *httpError) Error() string {
 	return fmt.Sprintf("Azure DevOps API HTTP error: code=%d url=%q body=%q", e.StatusCode, e.URL, e.Body)
 }
+
+func (e *httpError) Unauthorized() bool {
+	return e.StatusCode == http.StatusUnauthorized
+}
+
+func (e *httpError) NotFound() bool {
+	return e.StatusCode == http.StatusNotFound
+}
