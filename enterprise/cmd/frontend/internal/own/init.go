@@ -3,11 +3,13 @@ package own
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/own/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -17,11 +19,12 @@ func Init(
 	ctx context.Context,
 	observationCtx *observation.Context,
 	db database.DB,
-	_ codeintel.Services,
+	s codeintel.Services,
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	enterpriseServices.OwnResolver = resolvers.New()
-
+	g := gitserver.NewClient()
+	o := backend.NewOwnService(g, db)
+	enterpriseServices.OwnResolver = resolvers.New(db, o)
 	return nil
 }
