@@ -66,7 +66,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/sync-external-service", trace.WithRouteName("sync-external-service", s.handleExternalServiceSync))
 	mux.HandleFunc("/enqueue-changeset-sync", trace.WithRouteName("enqueue-changeset-sync", s.handleEnqueueChangesetSync))
 	mux.HandleFunc("/schedule-perms-sync", trace.WithRouteName("schedule-perms-sync", s.handleSchedulePermsSync))
-	mux.HandleFunc("/external-service-namespaces", trace.WithRouteName("/external-service-namespaces", s.handleExternalServiceNamespaces))
+	mux.HandleFunc("/external-service-namespaces", trace.WithRouteName("external-service-namespaces", s.handleExternalServiceNamespaces))
 	return mux
 }
 
