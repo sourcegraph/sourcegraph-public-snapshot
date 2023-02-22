@@ -6,6 +6,8 @@ import (
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/dev/build-tracker/notify"
 )
 
 // Build keeps track of a buildkite.Build and it's associated jobs and pipeline.
@@ -25,9 +27,6 @@ type Build struct {
 	// ConsecutiveFailure indicates whether this build is the nth consecutive failure.
 	ConsecutiveFailure int `json:"consecutiveFailures"`
 
-	// Notification is the details about the notification that was sent for this build.
-	Notification *SlackNotification
-
 	// Mutex is used to to control and stop other changes being made to the build.
 	sync.Mutex
 }
@@ -37,13 +36,24 @@ type Step struct {
 	Jobs []*Job
 }
 
-type StepState string
+// Implement the notify.JobLine interface
+
+func (s *Step) Title() string {
+	return s.Name
+}
+
+func (s *Step) LogURL() string {
+	return s.LastJob().WebURL
+}
+
+// BuildStatus is the status of the build. The status is determined by the final status of contained Jobs of the build
+type BuildStatus string
 
 const (
-	Unknown StepState = ""
-	Passed  StepState = "Passed"
-	Failed  StepState = "Failed"
-	Fixed   StepState = "Fixed"
+	BuildStatusUnknown BuildStatus = ""
+	BuildPassed        BuildStatus = "Passed"
+	BuildFailed        BuildStatus = "Failed"
+	BuildFixed         BuildStatus = "Fixed"
 )
 
 // updateFromEvent updates the current build with the build and pipeline from the event.
@@ -101,10 +111,6 @@ func (b *Build) message() string {
 	return strp(b.Message)
 }
 
-func (b *Build) hasNotification() bool {
-	return b.Notification != nil
-}
-
 // Pipeline wraps a buildkite.Pipeline and provides convenience functions to access values of the wrapped pipeline is a safe maner
 type Pipeline struct {
 	buildkite.Pipeline `json:"pipeline"`
@@ -160,6 +166,39 @@ func (b *Event) jobName() string {
 
 func (b *Event) buildNumber() int {
 	return intp(b.Build.Number)
+}
+
+func ToBuildNotification(build *Build) *notify.BuildNotification {
+	info := notify.BuildNotification{
+		BuildNumber:        build.number(),
+		ConsecutiveFailure: build.ConsecutiveFailure,
+		PipelineName:       build.Pipeline.name(),
+		AuthorEmail:        build.authorEmail(),
+		Message:            build.message(),
+		Commit:             build.commit(),
+		BuildStatus:        "",
+		BuildURL:           *build.URL,
+		Fixed:              []notify.JobLine{},
+		Failed:             []notify.JobLine{},
+	}
+
+	groups := GroupByStatus(build.Steps)
+	for _, j := range groups[JobFixed] {
+		info.Fixed = append(info.Fixed, j)
+	}
+	for _, j := range groups[JobFailed] {
+		info.Failed = append(info.Fixed, j)
+	}
+
+	if len(groups[JobFailed]) > 0 {
+		info.BuildStatus = string(BuildFailed)
+	} else if len(groups[JobFixed]) > 0 {
+		info.BuildStatus = string(BuildFixed)
+	} else {
+		info.BuildStatus = string(BuildPassed)
+	}
+
+	return &info
 }
 
 // BuildStore is a thread safe store which keeps track of Builds described by buildkite build events.
