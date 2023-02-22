@@ -38,7 +38,8 @@
     "@backstage/config": "^1.0.6",
     "@backstage/plugin-catalog-backend": "^1.7.1",
     "@sourcegraph/http-client": "workspace:^0.0.1",
-    "@sourcegraph/shared": "workspace:^1.0.0"
+    "@sourcegraph/shared": "workspace:^1.0.0",
+    "rxjs": "^6.6.3"
   },
   "files": [
     "dist"
