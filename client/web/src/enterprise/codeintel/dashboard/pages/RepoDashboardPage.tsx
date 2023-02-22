@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -55,12 +55,10 @@ const failureStates = new Set<PreciseIndexState>([
     PreciseIndexState.PROCESSING_ERRORED,
 ])
 
-type ActiveTab = 'list' | 'tree'
-
-type InfoFilter = 'all' | 'errors' | 'suggestions'
+type ShowFilter = 'all' | 'errors' | 'suggestions'
 type LanguageFilter = 'all' | string
 interface FilterState {
-    information: InfoFilter
+    show: ShowFilter
     language: LanguageFilter
 }
 
@@ -70,24 +68,43 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
     }, [telemetryService])
 
     const location = useLocation()
-    const queryParameters = new URLSearchParams(location.search)
-    const activeTab: ActiveTab = queryParameters.get('view') === 'list' ? 'list' : 'tree'
+    const navigate = useNavigate()
+
+    const activeTab = 'tree'
 
     const { data, loading, error } = useRepoCodeIntelStatus({ variables: { repository: repo.name } })
 
-    // TODO: Understand more
     const [filterState, setFilterState] = useState<FilterState>({
-        information: 'all',
+        show: 'all',
         language: 'all',
     })
-    const applyFilter = (patch: Partial<FilterState>): void => setFilterState({ ...filterState, ...patch })
+
+    useEffect(() => {
+        const queryParameters = new URLSearchParams(location.search)
+
+        // TODO: Better type safety
+        setFilterState(previous => ({
+            ...previous,
+            ...(queryParameters.has('show') ? { show: queryParameters.get('show') as ShowFilter } : {}),
+            ...(queryParameters.has('language') ? { language: queryParameters.get('language') as LanguageFilter } : {}),
+        }))
+    }, [location.search])
+
+    const handleFilterChange = useCallback(
+        (event: React.ChangeEvent<HTMLSelectElement>, paramKey: keyof FilterState) => {
+            const queryParameters = new URLSearchParams(location.search)
+            queryParameters.set(paramKey, event.target.value)
+            navigate({ search: queryParameters.toString() }, { replace: true })
+        },
+        [location.search, navigate]
+    )
 
     const shouldDisplayIndex = useCallback(
         (index: PreciseIndexFields): boolean =>
             // Valid language filter
             (filterState.language === 'all' || filterState.language === getIndexerKey(index)) &&
-            // Valid information filter
-            (filterState.information === 'all' || filterState.information === 'errors') &&
+            // Valid show filter
+            (filterState.show === 'all' || filterState.show === 'errors') &&
             // Valid failure
             failureStates.has(index.state),
         [filterState]
@@ -97,8 +114,8 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
         (indexer: CodeIntelIndexerFields): boolean =>
             // Valid language filter
             (filterState.language === 'all' || filterState.language === indexer.key) &&
-            // Valid information filter
-            (filterState.information === 'all' || filterState.information === 'suggestions'),
+            // Valid show filter
+            (filterState.show === 'all' || filterState.show === 'suggestions'),
         [filterState]
     )
 
@@ -191,11 +208,6 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
                         Explore
                     </Link>
                 </li>
-                <li className="nav-item w-50">
-                    <Link to="?view=list" className={classNames('nav-link w-100', activeTab === 'list' && 'active')}>
-                        Suggestions
-                    </Link>
-                </li>
             </ul>
 
             <Container>
@@ -204,10 +216,10 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
                         <H3>Explore</H3>
                         <div className="d-flex justify-content-end">
                             <Select
-                                id="info-filter"
+                                id="show-filter"
                                 label="Show:"
-                                value={filterState.information}
-                                onChange={event => applyFilter({ information: event.target.value as InfoFilter })}
+                                value={filterState.show}
+                                onChange={event => handleFilterChange(event, 'show')}
                                 className="d-flex align-items-center mr-3"
                                 selectClassName={styles.select}
                                 labelClassName="mb-0 mr-2"
@@ -221,8 +233,8 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
                             <Select
                                 id="language-filter"
                                 label="Language:"
-                                value={filterState.information}
-                                onChange={event => applyFilter({ language: event.target.value })}
+                                value={filterState.language}
+                                onChange={event => handleFilterChange(event, 'language')}
                                 className="d-flex align-items-center"
                                 selectClassName={styles.select}
                                 labelClassName="mb-0 mr-2"
@@ -270,8 +282,7 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
                                                 ).length
                                             }
                                             numDescendentConfigurable={
-                                                filterState.information === 'all' ||
-                                                filterState.information === 'suggestions'
+                                                filterState.show === 'all' || filterState.show === 'suggestions'
                                                     ? filteredSuggestedIndexersForDescendents.length
                                                     : 0
                                             }
@@ -283,12 +294,6 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
                         ) : (
                             <>No code intel to display.</>
                         )}
-                    </>
-                )}
-                {activeTab === 'list' && (
-                    <>
-                        <H3>Suggestions</H3>
-                        <pre>{JSON.stringify(data.availableIndexers, null, 2)}</pre>
                     </>
                 )}
             </Container>
