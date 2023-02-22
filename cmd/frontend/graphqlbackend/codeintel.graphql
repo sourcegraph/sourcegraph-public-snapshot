@@ -531,9 +531,11 @@ type VulnerabilityMatchConnection {
 """
 TODO
 """
-type Vulnerability {
-    # TODO
-    # id: ID!
+type Vulnerability implements Node {
+    """
+    TODO
+    """
+    id: ID!
 
     """
     TODO
@@ -674,16 +676,26 @@ type VulnerabilityAffectedSymbol {
 """
 TODO
 """
-type VulnerabilityMatch {
+type VulnerabilityMatch implements Node {
     """
     TODO
     """
-    uploadID: Int!
+    id: ID!
 
     """
     TODO
     """
-    vulnerabilityAffectedPackageID: Int!
+    vulnerability: Vulnerability!
+
+    """
+    TODO
+    """
+    affectedPackage: VulnerabilityAffectedPackage!
+
+    """
+    TODO
+    """
+    preciseIndex: PreciseIndex!
 }
 
 """

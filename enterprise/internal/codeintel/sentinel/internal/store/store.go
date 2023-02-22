@@ -20,6 +20,9 @@ import (
 )
 
 type Store interface {
+	VulnerabilityByID(ctx context.Context, id int) (shared.Vulnerability, bool, error)
+	VulnerabilityMatchByID(ctx context.Context, id int) (shared.VulnerabilityMatch, bool, error)
+	GetVulnerabilitiesByIDs(ctx context.Context, ids ...int) ([]shared.Vulnerability, error)
 	GetVulnerabilities(ctx context.Context, args shared.GetVulnerabilitiesArgs) ([]shared.Vulnerability, int, error)
 	InsertVulnerabilities(ctx context.Context, vulnerabilities []shared.Vulnerability) error
 	GetVulnerabilityMatches(ctx context.Context, args shared.GetVulnerabilityMatchesArgs) ([]shared.VulnerabilityMatch, int, error)
@@ -41,38 +44,32 @@ func New(observationCtx *observation.Context, db database.DB) Store {
 	}
 }
 
-func (s *store) GetVulnerabilities(ctx context.Context, args shared.GetVulnerabilitiesArgs) (_ []shared.Vulnerability, _ int, err error) {
-	ctx, _, endObservation := s.operations.getVulnerabilities.With(ctx, &err, observation.Args{})
+func (s *store) VulnerabilityByID(ctx context.Context, id int) (_ shared.Vulnerability, _ bool, err error) {
+	ctx, _, endObservation := s.operations.vulnerabilityByID.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return scanVulnerabilities(s.db.Query(ctx, sqlf.Sprintf(getVulnerabilitiesQuery, args.Limit, args.Offset)))
+	vulnerabilities, _, err := scanVulnerabilitiesAndCount(s.db.Query(ctx, sqlf.Sprintf(getVulnerabilityByIDQuery, id)))
+	if err != nil || len(vulnerabilities) == 0 {
+		return shared.Vulnerability{}, false, err
+	}
+
+	return vulnerabilities[0], true, nil
 }
 
-const getVulnerabilitiesQuery = `
-WITH limited_vulnerabilities AS (
-	SELECT
-		v.id,
-		v.source_id,
-		v.summary,
-		v.details,
-		v.cpes,
-		v.cwes,
-		v.aliases,
-		v.related,
-		v.data_source,
-		v.urls,
-		v.severity,
-		v.cvss_vector,
-		v.cvss_score,
-		v.published,
-		v.modified,
-		v.withdrawn,
-		COUNT(*) OVER() AS count
-	FROM vulnerabilities v
-	LIMIT %s
-	OFFSET %s
-)
+const getVulnerabilityByIDQuery = `
 SELECT
+	` + vulnerabilityFields + `,
+	` + vulnerabilityAffectedPackageFields + `,
+	` + vulnerabilityAffectedSymbolFields + `,
+	0 AS count
+FROM vulnerabilities v
+LEFT JOIN vulnerability_affected_packages vap ON vap.vulnerability_id = v.id
+LEFT JOIN vulnerability_affected_symbols vas ON vas.vulnerability_affected_package_id = vap.id
+WHERE v.id = %s
+ORDER BY vap.id, vas.id
+`
+
+const vulnerabilityFields = `
 	v.id,
 	v.source_id,
 	v.summary,
@@ -88,23 +85,104 @@ SELECT
 	v.cvss_score,
 	v.published,
 	v.modified,
-	v.withdrawn,
+	v.withdrawn
+`
+
+const vulnerabilityAffectedPackageFields = `
 	vap.package_name,
 	vap.language,
 	vap.namespace,
 	vap.version_constraint,
 	vap.fixed,
-	vap.fixed_in,
+	vap.fixed_in
+`
+
+const vulnerabilityAffectedSymbolFields = `
 	vas.path,
-	vas.symbols,
+	vas.symbols
+`
+
+func (s *store) VulnerabilityMatchByID(ctx context.Context, id int) (_ shared.VulnerabilityMatch, _ bool, err error) {
+	ctx, _, endObservation := s.operations.vulnerabilityMatchByID.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	matches, _, err := scanVulnerabilityMatchesAndCount(s.db.Query(ctx, sqlf.Sprintf(vulnerabilityMatchByIDQuery, id)))
+	if err != nil || len(matches) == 0 {
+		return shared.VulnerabilityMatch{}, false, err
+	}
+
+	return matches[0], true, nil
+}
+
+const vulnerabilityMatchByIDQuery = `
+SELECT
+	m.id,
+	m.upload_id,
+	vap.vulnerability_id,
+	` + vulnerabilityAffectedPackageFields + `,
+	` + vulnerabilityAffectedSymbolFields + `,
+	0 AS count
+FROM vulnerability_matches m
+LEFT JOIN vulnerability_affected_packages vap ON vap.id = m.vulnerability_affected_package_id
+LEFT JOIN vulnerability_affected_symbols vas ON vas.vulnerability_affected_package_id = vap.id
+WHERE id = %s
+`
+
+func (s *store) GetVulnerabilitiesByIDs(ctx context.Context, ids ...int) (_ []shared.Vulnerability, err error) {
+	ctx, _, endObservation := s.operations.getVulnerabilitiesByIDs.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	vulnerabilities, _, err := scanVulnerabilitiesAndCount(s.db.Query(ctx, sqlf.Sprintf(getVulnerabilitiesByIDsQuery, pq.Array(ids))))
+	return vulnerabilities, err
+}
+
+const getVulnerabilitiesByIDsQuery = `
+SELECT
+	` + vulnerabilityFields + `,
+	` + vulnerabilityAffectedPackageFields + `,
+	` + vulnerabilityAffectedSymbolFields + `,
+	0 AS count
+FROM vulnerabilities v
+LEFT JOIN vulnerability_affected_packages vap ON vap.vulnerability_id = v.id
+LEFT JOIN vulnerability_affected_symbols vas ON vas.vulnerability_affected_package_id = vap.id
+WHERE v.id = ANY(%s)
+ORDER BY v.id, vap.id, vas.id
+`
+
+func (s *store) GetVulnerabilities(ctx context.Context, args shared.GetVulnerabilitiesArgs) (_ []shared.Vulnerability, _ int, err error) {
+	ctx, _, endObservation := s.operations.getVulnerabilities.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return scanVulnerabilitiesAndCount(s.db.Query(ctx, sqlf.Sprintf(getVulnerabilitiesQuery, args.Limit, args.Offset)))
+}
+
+const getVulnerabilitiesQuery = `
+WITH limited_vulnerabilities AS (
+	SELECT
+		` + vulnerabilityFields + `,
+		COUNT(*) OVER() AS count
+	FROM vulnerabilities v
+	ORDER BY id
+	LIMIT %s
+	OFFSET %s
+)
+SELECT
+	` + vulnerabilityFields + `,
+	` + vulnerabilityAffectedPackageFields + `,
+	` + vulnerabilityAffectedSymbolFields + `,
 	v.count
 FROM limited_vulnerabilities v
 LEFT JOIN vulnerability_affected_packages vap ON vap.vulnerability_id = v.id
 LEFT JOIN vulnerability_affected_symbols vas ON vas.vulnerability_affected_package_id = vap.id
+ORDER BY v.id, vap.id, vas.id
 `
 
-var scanVulnerabilityTriple = func(s dbutil.Scanner) (v shared.Vulnerability, vap shared.AffectedPackage, vas shared.AffectedSymbol, count int, _ error) {
-	var fixedIn string
+var scanSingleVulnerabilityAndCount = func(s dbutil.Scanner) (v shared.Vulnerability, count int, _ error) {
+	var (
+		vap     shared.AffectedPackage
+		vas     shared.AffectedSymbol
+		fixedIn string
+	)
 
 	if err := s.Scan(
 		&v.ID,
@@ -134,65 +212,59 @@ var scanVulnerabilityTriple = func(s dbutil.Scanner) (v shared.Vulnerability, va
 		pq.Array(vas.Symbols),
 		&count,
 	); err != nil {
-		return shared.Vulnerability{}, shared.AffectedPackage{}, shared.AffectedSymbol{}, 0, err
+		return shared.Vulnerability{}, 0, err
 	}
 
 	if fixedIn != "" {
 		vap.FixedIn = &fixedIn
 	}
-
-	return v, vap, vas, count, nil
-}
-
-var scanVulnerabilities = func(rows basestore.Rows, queryErr error) (values []shared.Vulnerability, totalCount int, _ error) {
-	scanner := func(s dbutil.Scanner) (bool, error) {
-		value, affectedPackage, affectedSymbol, count, err := scanVulnerabilityTriple(s)
-		if err != nil {
-			return false, err
-		}
-
-		lastValuesIndex := len(values) - 1
-		if len(values) == 0 || values[lastValuesIndex].ID != value.ID {
-			// New data from LHS of join
-			values = append(values, value)
-			lastValuesIndex++
-		}
-
-		// RHS of join is non-NULL
-		if affectedPackage.PackageName != "" {
-			value := values[lastValuesIndex]
-			{
-				if len(value.AffectedPackages) == 0 {
-					// New data for affected packages (case 1)
-					value.AffectedPackages = append(value.AffectedPackages, affectedPackage)
-				} else {
-					lastPackageIndex := len(value.AffectedPackages) - 1
-					lastPackage := value.AffectedPackages[lastPackageIndex]
-
-					// New data for affected packages (case 2)
-					if lastPackage.Namespace != affectedPackage.Namespace || lastPackage.Language != affectedPackage.Language || lastPackage.PackageName != affectedPackage.PackageName {
-						value.AffectedPackages = append(value.AffectedPackages, affectedPackage)
-					}
-				}
-
-				if affectedSymbol.Path != "" {
-					lastPackageIndex := len(value.AffectedPackages) - 1
-					lastPackage := value.AffectedPackages[lastPackageIndex]
-					{
-						lastPackage.AffectedSymbols = append(lastPackage.AffectedSymbols, affectedSymbol)
-					}
-					value.AffectedPackages[lastPackageIndex] = lastPackage
-				}
-			}
-			values[lastValuesIndex] = value
-		}
-
-		totalCount = count
-		return true, nil
+	if vas.Path != "" {
+		vap.AffectedSymbols = append(vap.AffectedSymbols, vas)
+	}
+	if vap.PackageName != "" {
+		v.AffectedPackages = append(v.AffectedPackages, vap)
 	}
 
-	err := basestore.NewCallbackScanner(scanner)(rows, queryErr)
-	return values, totalCount, err
+	return v, count, nil
+}
+
+var flattenPackages = func(packages []shared.AffectedPackage) []shared.AffectedPackage {
+	flattened := []shared.AffectedPackage{}
+	for _, pkg := range packages {
+		i := len(flattened) - 1
+		if len(flattened) == 0 || flattened[i].Namespace != pkg.Namespace || flattened[i].Language != pkg.Language || flattened[i].PackageName != flattened[i].PackageName {
+			flattened = append(flattened, pkg)
+		} else {
+			flattened[i].AffectedSymbols = append(flattened[i].AffectedSymbols, pkg.AffectedSymbols...)
+		}
+	}
+
+	return flattened
+}
+
+var flattenVulnerabilities = func(vs []shared.Vulnerability) []shared.Vulnerability {
+	flattened := []shared.Vulnerability{}
+	for _, v := range vs {
+		i := len(flattened) - 1
+		if len(flattened) == 0 || flattened[i].ID != v.ID {
+			flattened = append(flattened, v)
+		} else {
+			flattened[i].AffectedPackages = flattenPackages(append(flattened[i].AffectedPackages, v.AffectedPackages...))
+		}
+	}
+
+	return flattened
+}
+
+var scanVulnerabilitiesAndCount = func(rows basestore.Rows, queryErr error) ([]shared.Vulnerability, int, error) {
+	values, totalCount, err := basestore.NewSliceWithCountScanner(func(s dbutil.Scanner) (shared.Vulnerability, int, error) {
+		return scanSingleVulnerabilityAndCount(s)
+	})(rows, queryErr)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return flattenVulnerabilities(values), totalCount, nil
 }
 
 func (s *store) InsertVulnerabilities(ctx context.Context, vulnerabilities []shared.Vulnerability) (err error) {
@@ -470,30 +542,98 @@ func (s *store) GetVulnerabilityMatches(ctx context.Context, args shared.GetVuln
 	ctx, _, endObservation := s.operations.getVulnerabilityMatches.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return scanVulnerabilityMatch(s.db.Query(ctx, sqlf.Sprintf(getVulnerabilityMatchesQuery, args.Limit, args.Offset)))
+	return scanVulnerabilityMatchesAndCount(s.db.Query(ctx, sqlf.Sprintf(getVulnerabilityMatchesQuery, args.Limit, args.Offset)))
 }
 
 const getVulnerabilityMatchesQuery = `
+WITH limited_matches AS (
+	SELECT
+		m.id,
+		m.upload_id,
+		m.vulnerability_affected_package_id,
+		COUNT(*) OVER() AS count
+	FROM vulnerability_matches m
+	ORDER BY id
+	LIMIT %s
+	OFFSET %s
+)
 SELECT
 	m.id,
 	m.upload_id,
-	m.vulnerability_affected_package_id
-FROM vulnerability_matches m
-ORDER BY id
-LIMIT %s
-OFFSET %s
+	vap.vulnerability_id,
+	` + vulnerabilityAffectedPackageFields + `,
+	` + vulnerabilityAffectedSymbolFields + `,
+	COUNT(*) OVER() AS count
+FROM limited_matches m
+LEFT JOIN vulnerability_affected_packages vap ON vap.id = m.vulnerability_affected_package_id
+LEFT JOIN vulnerability_affected_symbols vas ON vas.vulnerability_affected_package_id = vap.id
+ORDER BY m.id, vap.id, vas.id
 `
 
-var scanVulnerabilityMatch = basestore.NewSliceWithCountScanner(func(s dbutil.Scanner) (match shared.VulnerabilityMatch, count int, _ error) {
-	if err := s.Scan(
-		&match.UploadID,
-		&match.VulnerabilityAffectedPackage,
-		&count,
-	); err != nil {
-		return shared.VulnerabilityMatch{}, 0, err
+var flattenMatches = func(ms []shared.VulnerabilityMatch) []shared.VulnerabilityMatch {
+	flattened := []shared.VulnerabilityMatch{}
+	for _, m := range ms {
+		i := len(flattened) - 1
+		if len(flattened) == 0 || flattened[i].ID != m.ID {
+			flattened = append(flattened, m)
+		} else {
+			if flattened[i].AffectedPackage.PackageName == "" {
+				flattened[i].AffectedPackage = m.AffectedPackage
+			} else {
+				symbols := flattened[i].AffectedPackage.AffectedSymbols
+				symbols = append(symbols, m.AffectedPackage.AffectedSymbols...)
+				flattened[i].AffectedPackage.AffectedSymbols = symbols
+			}
+		}
 	}
-	return match, count, nil
-})
+
+	return flattened
+}
+
+var scanVulnerabilityMatchesAndCount = func(rows basestore.Rows, queryErr error) ([]shared.VulnerabilityMatch, int, error) {
+	matches, totalCount, err := basestore.NewSliceWithCountScanner(func(s dbutil.Scanner) (match shared.VulnerabilityMatch, count int, _ error) {
+		var (
+			vap     shared.AffectedPackage
+			vas     shared.AffectedSymbol
+			fixedIn string
+		)
+
+		if err := s.Scan(
+			&match.ID,
+			&match.UploadID,
+			&match.VulnerabilityID,
+			// RHS(s) of left join (may be null)
+			&dbutil.NullString{S: &vap.PackageName},
+			&dbutil.NullString{S: &vap.Language},
+			&dbutil.NullString{S: &vap.Namespace},
+			pq.Array(&vap.VersionConstraint),
+			&dbutil.NullBool{B: &vap.Fixed},
+			&dbutil.NullString{S: &fixedIn},
+			&dbutil.NullString{S: &vas.Path},
+			pq.Array(vas.Symbols),
+			&count,
+		); err != nil {
+			return shared.VulnerabilityMatch{}, 0, err
+		}
+
+		if fixedIn != "" {
+			vap.FixedIn = &fixedIn
+		}
+		if vas.Path != "" {
+			vap.AffectedSymbols = append(vap.AffectedSymbols, vas)
+		}
+		if vap.PackageName != "" {
+			match.AffectedPackage = vap
+		}
+
+		return match, count, nil
+	})(rows, queryErr)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return flattenMatches(matches), totalCount, nil
+}
 
 func (s *store) ScanMatches(ctx context.Context) (err error) {
 	ctx, _, endObservation := s.operations.scanMatches.With(ctx, &err, observation.Args{})

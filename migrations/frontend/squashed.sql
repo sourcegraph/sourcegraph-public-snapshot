@@ -4063,7 +4063,7 @@ CREATE TABLE vulnerability_affected_packages (
     namespace text NOT NULL,
     version_constraint text[] NOT NULL,
     fixed boolean NOT NULL,
-    fixed_in text NOT NULL
+    fixed_in text
 );
 
 CREATE SEQUENCE vulnerability_affected_packages_id_seq

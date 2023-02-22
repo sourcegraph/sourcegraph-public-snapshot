@@ -23025,7 +23025,7 @@
           "Name": "fixed_in",
           "Index": 8,
           "TypeName": "text",
-          "IsNullable": false,
+          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,

@@ -83,6 +83,9 @@ func Init(
 	sentinelRootResolver := sentinelgraphql.NewRootResolver(
 		scopedContext("sentinel"),
 		codeIntelServices.SentinelService,
+		codeIntelServices.AutoIndexingService,
+		codeIntelServices.UploadsService,
+		codeIntelServices.PoliciesService,
 	)
 
 	enterpriseServices.CodeIntelResolver = newResolver(

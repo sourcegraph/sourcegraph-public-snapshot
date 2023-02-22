@@ -25,6 +25,8 @@ type RootResolver interface {
 type SentinelServiceResolver interface {
 	Vulnerabilities(ctx context.Context, args GetVulnerabilitiesArgs) (VulnerabilityConnectionResolver, error)
 	VulnerabilityMatches(ctx context.Context, args GetVulnerabilityMatchesArgs) (VulnerabilityMatchConnectionResolver, error)
+	VulnerabilityByID(ctx context.Context, id graphql.ID) (_ VulnerabilityResolver, err error)
+	VulnerabilityMatchByID(ctx context.Context, id graphql.ID) (_ VulnerabilityMatchResolver, err error)
 }
 
 type GetVulnerabilitiesArgs struct {
@@ -44,6 +46,7 @@ type VulnerabilityConnectionResolver interface {
 }
 
 type VulnerabilityResolver interface {
+	ID() graphql.ID
 	SourceID() string
 	Summary() string
 	Details() string
@@ -84,8 +87,10 @@ type VulnerabilityMatchConnectionResolver interface {
 }
 
 type VulnerabilityMatchResolver interface {
-	UploadID() int32
-	VulnerabilityAffectedPackageID() int32
+	ID() graphql.ID
+	Vulnerability(ctx context.Context) (VulnerabilityResolver, error)
+	AffectedPackage(ctx context.Context) (VulnerabilityAffectedPackageResolver, error)
+	PreciseIndex(ctx context.Context) (PreciseIndexResolver, error)
 }
 
 type CodeNavServiceResolver interface {

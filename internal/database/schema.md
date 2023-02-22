@@ -3659,7 +3659,7 @@ Referenced by:
  namespace          | text    |           | not null | 
  version_constraint | text[]  |           | not null | 
  fixed              | boolean |           | not null | 
- fixed_in           | text    |           | not null | 
+ fixed_in           | text    |           |          | 
 Indexes:
     "vulnerability_affected_packages_pkey" PRIMARY KEY, btree (id)
     "vulnerability_affected_packages_vulnerability_id_package_name" UNIQUE, btree (vulnerability_id, package_name)
