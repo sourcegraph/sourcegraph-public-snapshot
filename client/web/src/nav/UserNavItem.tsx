@@ -49,7 +49,7 @@ export interface UserNavItemProps {
 export const UserNavItem: FC<UserNavItemProps> = props => {
     const {
         authenticatedUser,
-        showDotComMarketing,
+        isSourcegraphDotCom,
         codeHostIntegrationMessaging,
         menuButtonRef,
         showFeedbackModal,
@@ -183,7 +183,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                 </MenuLink>
                             )}
                             <MenuDivider className={styles.dropdownDivider} />
-                            {showDotComMarketing && (
+                            {isSourcegraphDotCom && (
                                 <MenuLink
                                     as={AnchorLink}
                                     to="https://about.sourcegraph.com"

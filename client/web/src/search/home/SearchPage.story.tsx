@@ -9,7 +9,6 @@ import { extensionsController } from '@sourcegraph/shared/src/testing/searchTest
 
 import { WebStory } from '../../components/WebStory'
 import { MockedFeatureFlagsProvider } from '../../featureFlags/MockedFeatureFlagsProvider'
-import { useExperimentalFeatures } from '../../stores'
 
 import { SearchPage, SearchPageProps } from './SearchPage'
 
