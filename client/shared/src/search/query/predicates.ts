@@ -178,31 +178,37 @@ export const predicateCompletion = (field: string): Completion[] => {
                 label: 'has.path(...)',
                 insertText: 'has.path(${1:CHANGELOG})',
                 asSnippet: true,
+                description: 'Limit results to repositories containing a path',
             },
             {
                 label: 'has.content(...)',
                 insertText: 'has.content(${1:TODO})',
                 asSnippet: true,
+                description: 'Limit results to repositories containing a file whose content matches a pattern',
             },
             {
                 label: 'has.file(...)',
                 insertText: 'has.file(path:${1:CHANGELOG} content:${2:fix})',
                 asSnippet: true,
+                description: 'Limit results to  repositories containing a file matching a path and content',
             },
             {
                 label: 'has.commit.after(...)',
                 insertText: 'has.commit.after(${1:1 month ago})',
                 asSnippet: true,
+                description: 'Limit results to repositories having commits after a certain date',
             },
             {
                 label: 'has.description(...)',
                 insertText: 'has.description(${1})',
                 asSnippet: true,
+                description: 'Limit results to repositories matching a specific description',
             },
             {
                 label: 'has.tag(...)',
                 insertText: 'has.tag(${1})',
                 asSnippet: true,
+                description: 'Limit results to repositories having a specific tag',
             },
             {
                 label: 'has(...)',
@@ -219,19 +225,16 @@ export const predicateCompletion = (field: string): Completion[] => {
     if (field === 'file') {
         return [
             {
-                label: 'contains.content(...)',
-                insertText: 'contains.content(${1:TODO})',
-                asSnippet: true,
-            },
-            {
                 label: 'has.content(...)',
                 insertText: 'has.content(${1:TODO})',
                 asSnippet: true,
+                description: 'Limit results to files whose contents matches a pattern',
             },
             {
                 label: 'has.owner(...)',
                 insertText: 'has.owner(${1})',
                 asSnippet: true,
+                description: 'Limit results to files having a specific owner',
             },
         ]
     }
