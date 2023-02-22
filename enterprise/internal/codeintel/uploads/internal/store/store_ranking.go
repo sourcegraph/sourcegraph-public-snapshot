@@ -17,6 +17,67 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// TODO - test
+func (s *store) VacuumStaleDefinitionsAndReferences(ctx context.Context, graphKey string) (
+	numStaleDefinitionRecordsDeleted int,
+	numStaleReferenceRecordsDeleted int,
+	err error,
+) {
+	// TODO - observability
+
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(vacuumStaleDefinitionsAndReferencesQuery, graphKey, graphKey))
+	if err != nil {
+		return 0, 0, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		if err := rows.Scan(
+			&numStaleDefinitionRecordsDeleted,
+			&numStaleReferenceRecordsDeleted,
+		); err != nil {
+			return 0, 0, err
+		}
+	}
+
+	return numStaleDefinitionRecordsDeleted, numStaleReferenceRecordsDeleted, nil
+}
+
+const vacuumStaleDefinitionsAndReferencesQuery = `
+WITH
+locked_definitions AS (
+	SELECT id
+	FROM codeintel_ranking_definitions
+	WHERE
+		upload_id NOT IN (SELECT uvt.upload_id FROM lsif_uploads_visible_at_tip uvt WHERE uvt.is_default_branch) AND
+		graph_key = %s
+	ORDER BY id
+	FOR UPDATE
+),
+locked_references AS (
+	SELECT id
+	FROM codeintel_ranking_references
+	WHERE
+		upload_id NOT IN (SELECT uvt.upload_id FROM lsif_uploads_visible_at_tip uvt WHERE uvt.is_default_branch) AND
+		graph_key = %s
+	ORDER BY id
+	FOR UPDATE
+),
+deleted_definitions AS (
+	DELETE FROM codeintel_ranking_definitions
+	WHERE id IN (SELECT id FROM locked_definitions)
+	RETURNING 1
+),
+deleted_references AS (
+	DELETE FROM codeintel_ranking_references
+	WHERE id IN (SELECT id FROM locked_references)
+	RETURNING 1
+)
+SELECT
+	(SELECT COUNT(*) FROM locked_definitions),
+	(SELECT COUNT(*) FROM deleted_references)
+`
+
 func (s *store) InsertDefinitionsAndReferencesForDocument(
 	ctx context.Context,
 	upload ExportedUpload,

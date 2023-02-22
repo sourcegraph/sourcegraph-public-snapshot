@@ -2,7 +2,6 @@ package uploads
 
 import (
 	"context"
-	"fmt"
 	"path/filepath"
 
 	"cloud.google.com/go/storage"
@@ -139,11 +138,10 @@ func (s *Service) setDefinitionsAndReferencesForUpload(
 // TODO - vacuum needs to cleanup map/reduce junk
 
 func (s *Service) VacuumRankingGraph(ctx context.Context) error {
-	// TODO - actually hit store
-
-	numStaleDefinitionRecordsDeleted := 0 // TODO
-	numStaleReferenceRecordsDeleted := 0  // TODO
-	fmt.Printf("NEED TO VACUUM RANKING GRAPH HERE\n")
+	numStaleDefinitionRecordsDeleted, numStaleReferenceRecordsDeleted, err := s.store.VacuumStaleDefinitionsAndReferences(ctx, rankingGraphKey)
+	if err != nil {
+		return err
+	}
 
 	s.operations.numStaleDefinitionRecordsDeleted.Add(float64(numStaleDefinitionRecordsDeleted))
 	s.operations.numStaleReferenceRecordsDeleted.Add(float64(numStaleReferenceRecordsDeleted))
