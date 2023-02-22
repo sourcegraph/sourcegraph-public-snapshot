@@ -22,7 +22,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     }
 
     const jsContext: SourcegraphContext = {
-        currentUser: undefined,
+        currentUser: null,
         externalURL: sourcegraphBaseUrl,
         accessTokensAllow: 'all-users-create',
         allowSignup: true,
