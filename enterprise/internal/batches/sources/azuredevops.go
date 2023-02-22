@@ -2,7 +2,7 @@ package sources
 
 import (
 	"context"
-	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"net/url"
 	"strconv"
 	"strings"
@@ -209,7 +209,6 @@ func (s AzureDevOpsSource) UpdateChangeset(ctx context.Context, cs *Changeset) e
 	}
 	if pr.TargetRefName != cs.BaseRef {
 		input := s.changesetToUpdatePullRequestInput(cs, true)
-		fmt.Printf("%+v\n", *input.TargetRefName)
 		_, err := s.client.UpdatePullRequest(ctx, args, input)
 		if err != nil {
 			return errors.Wrap(err, "updating pull request")
@@ -444,9 +443,10 @@ func (s AzureDevOpsSource) changesetToPullRequestInput(cs *Changeset) azuredevop
 }
 
 func (s AzureDevOpsSource) changesetToUpdatePullRequestInput(cs *Changeset, targetRefChanged bool) azuredevops.PullRequestUpdateInput {
+	targetRed := gitdomain.EnsureRefPrefix(cs.BaseRef)
 	if targetRefChanged {
 		return azuredevops.PullRequestUpdateInput{
-			TargetRefName: &cs.BaseRef,
+			TargetRefName: &targetRed,
 		}
 	}
 
