@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { Icon, Text } from '@sourcegraph/wildcard'
 
-import styles from './CloudCtaBanner.module.scss'
+import styles from './CallToActionBanner.module.scss'
 
 export interface CloudCtaBanner {
     variant?: 'filled' | 'outlined' | 'underlined' | string | undefined
@@ -14,7 +14,7 @@ export interface CloudCtaBanner {
     children: ReactNode
 }
 
-export const CloudCtaBanner: FunctionComponent<CloudCtaBanner> = ({ variant, small, className, children }) => (
+export const CallToActionBanner: FunctionComponent<CloudCtaBanner> = ({ variant, small, className, children }) => (
     <section
         className={classNames(className, 'd-flex justify-content-center', {
             [styles.filled]: variant === 'filled',
