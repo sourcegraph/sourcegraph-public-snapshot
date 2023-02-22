@@ -216,5 +216,12 @@ func NewGraphExporters(observationCtx *observation.Context, uploadSvc *Service) 
 			ConfigExportInst.RankingInterval,
 			ConfigExportInst.RankingJobsEnabled,
 		),
+		background.NewRankingGraphReducer(
+			observationCtx,
+			uploadSvc,
+			ConfigExportInst.NumRankingRoutines,
+			ConfigExportInst.RankingInterval,
+			ConfigExportInst.RankingJobsEnabled,
+		),
 	}
 }

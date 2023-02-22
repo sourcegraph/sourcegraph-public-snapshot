@@ -65,6 +65,7 @@ type operations struct {
 	// Ranking
 	exportRankingGraph *observation.Operation
 	mapRankingGraph    *observation.Operation
+	reduceRankingGraph *observation.Operation
 
 	numUploadsRead         prometheus.Counter
 	numBytesUploaded       prometheus.Counter
@@ -183,6 +184,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		// Ranking
 		exportRankingGraph: op("ExportRankingGraph"),
 		mapRankingGraph:    op("MapRankingGraph"),
+		reduceRankingGraph: op("ReduceRankingGraph"),
 
 		numUploadsRead:         numUploadsRead,
 		numBytesUploaded:       numBytesUploaded,

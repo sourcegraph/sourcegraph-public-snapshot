@@ -31,7 +31,8 @@ func NewRankingGraphExporter(
 			// }
 
 			return nil
-		}))
+		}),
+	)
 }
 
 func NewRankingGraphMapper(
@@ -50,5 +51,32 @@ func NewRankingGraphMapper(
 				return err
 			}
 			return nil
-		}))
+		}),
+	)
+}
+
+func NewRankingGraphReducer(
+	observationCtx *observation.Context,
+	uploadsService UploadService,
+	numRankingRoutines int,
+	interval time.Duration,
+	rankingJobEnabled bool,
+) goroutine.BackgroundRoutine {
+	operations := newRankingOperations(observationCtx)
+	return goroutine.NewPeriodicGoroutine(
+		context.Background(),
+		"rank.graph-reducer", "reduces path_counts_inputs into a count of paths per repository and stores it in path_ranks table in store.",
+		interval,
+		goroutine.HandlerFunc(func(ctx context.Context) error {
+			numPathRanksInserted, numPathCountsInputsProcessed, err := uploadsService.ReduceRankingGraph(ctx, numRankingRoutines, rankingJobEnabled)
+			if err != nil {
+				return err
+			}
+
+			operations.numPathCountsInputsRowsProcessed.Add(numPathCountsInputsProcessed)
+			operations.numPathRanksInserted.Add(numPathRanksInserted)
+
+			return nil
+		}),
+	)
 }
