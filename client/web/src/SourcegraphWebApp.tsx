@@ -403,8 +403,6 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
                 />
             ),
             children: props.routes
-                // Remove routes that are already migrated
-                .filter(route => route.path !== PageRoutes.RepoContainer)
                 .map(
                     ({ condition = () => true, render, path, handle }) =>
                         condition(context) && {
