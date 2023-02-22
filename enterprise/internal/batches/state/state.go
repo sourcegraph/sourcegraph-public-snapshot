@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -258,11 +259,11 @@ func parseBitbucketCloudBuildState(s bitbucketcloud.PullRequestStatusState) btyp
 }
 
 func computeAzureDevOpsBuildState(apr *azuredevops.AnnotatedPullRequest) btypes.ChangesetCheckState {
-	stateMap := make(map[int]btypes.ChangesetCheckState)
+	stateMap := make(map[string]btypes.ChangesetCheckState)
 
 	// States from last sync.
 	for _, status := range apr.Statuses {
-		stateMap[status.ID] = parseAzureDevOpsdBuildState(status.State)
+		stateMap[strconv.Itoa(status.ID)] = parseAzureDevOpsdBuildState(status.State)
 	}
 
 	// TODO: @varsanojidan handle events.
@@ -271,13 +272,12 @@ func computeAzureDevOpsBuildState(apr *azuredevops.AnnotatedPullRequest) btypes.
 	for _, v := range stateMap {
 		states = append(states, v)
 	}
-
 	return combineCheckStates(states)
 }
 
 func parseAzureDevOpsdBuildState(s azuredevops2.PullRequestStatusState) btypes.ChangesetCheckState {
 	switch s {
-	case azuredevops2.PullRequestBuildStatusStateError, azuredevops2.PullRequestBuildStatusStateNotApplicable, azuredevops2.PullRequestBuildStatusStateNotSet:
+	case azuredevops2.PullRequestBuildStatusStateError, azuredevops2.PullRequestBuildStatusStateFailed:
 		return btypes.ChangesetCheckStateFailed
 	case azuredevops2.PullRequestBuildStatusStatePending:
 		return btypes.ChangesetCheckStatePending
