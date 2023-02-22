@@ -111,7 +111,6 @@ matchesLoop:
 				InputRev:      mm.InputRev,
 				Repo:          mm.Repo,
 				CommitID:      mm.CommitID,
-				Path:          mm.Path,
 			}
 			ownerMatches = append(ownerMatches, ownerMatch)
 		}
