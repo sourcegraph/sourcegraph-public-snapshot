@@ -1,4 +1,4 @@
-package main
+package notify
 
 import (
 	"context"
@@ -29,27 +29,30 @@ func newCacheItem[T any](value T) *cacheItem[T] {
 	}
 }
 
-type NotificationClient struct {
-	slack               slack.Client
-	team                team.TeammateResolver
-	commitTeammateCache map[string]*cacheItem[*team.Teammate]
-	logger              log.Logger
-	channel             string
+type Client struct {
+	slack   slack.Client
+	team    team.TeammateResolver
+	history map[int]*SlackNotification
+	logger  log.Logger
+	channel string
 }
 
-type Notification struct {
+type BuildNotification struct {
 	BuildNumber        int
-	ConsequtiveFailure int
+	ConsecutiveFailure int
+	PipelineName       string
+	AuthorEmail        string
 	Message            string
 	Commit             string
-	Teammate           *team.Teammate
-	Fixed              []JobItem
-	Failed             []JobItem
+	BuildURL           string
+	BuildStatus        string
+	Fixed              []JobLine
+	Failed             []JobLine
 }
 
-type JobItem struct {
-	Name   string
-	LogURL string
+type JobLine interface {
+	Title() string
+	LogURL() string
 }
 
 type SlackNotification struct {
@@ -62,6 +65,9 @@ type SlackNotification struct {
 	// the traditional channel you're use to that starts with a '#'. Instead it's the global ID for that channel used by
 	// Slack.
 	ChannelID string
+
+	// BuildNotification is the BuildNotification that was used to send this SlackNotification
+	BuildNotification *BuildNotification
 }
 
 func (n *SlackNotification) Equals(o *SlackNotification) bool {
@@ -72,15 +78,16 @@ func (n *SlackNotification) Equals(o *SlackNotification) bool {
 	return n.ID == o.ID && n.ChannelID == o.ChannelID && n.SentAt.Equal(o.SentAt)
 }
 
-func NewSlackNotification(id, channel string) *SlackNotification {
+func NewSlackNotification(id, channel string, info *BuildNotification) *SlackNotification {
 	return &SlackNotification{
-		SentAt:    time.Now(),
-		ID:        id,
-		ChannelID: channel,
+		SentAt:            time.Now(),
+		ID:                id,
+		ChannelID:         channel,
+		BuildNotification: info,
 	}
 }
 
-func NewNotificationClient(logger log.Logger, slackToken, githubToken, channel string) *NotificationClient {
+func NewClient(logger log.Logger, slackToken, githubToken, channel string) *Client {
 	debug := os.Getenv("BUILD_TRACKER_SLACK_DEBUG") == "1"
 	slackClient := slack.New(slackToken, slack.OptionDebug(debug))
 
@@ -90,49 +97,42 @@ func NewNotificationClient(logger log.Logger, slackToken, githubToken, channel s
 	githubClient := github.NewClient(&httpClient)
 	teamResolver := team.NewTeammateResolver(githubClient, slackClient)
 
-	return &NotificationClient{
-		logger:              logger.Scoped("notificationClient", "client which interacts with Slack and Github to send notifications"),
-		slack:               *slackClient,
-		team:                teamResolver,
-		commitTeammateCache: map[string]*cacheItem[*team.Teammate]{},
-		channel:             channel,
-	}
+	history := make(map[int]*SlackNotification)
 
+	return &Client{
+		logger:  logger.Scoped("notificationClient", "client which interacts with Slack and Github to send notifications"),
+		slack:   *slackClient,
+		team:    teamResolver,
+		channel: channel,
+		history: history,
+	}
 }
 
-func (c *NotificationClient) getTeammateForBuild(build *Build) (*team.Teammate, error) {
-	// first check if we already have the details for this teammate
-	c.logger.Debug("determining teammate", log.String("author", build.authorName()), log.String("email", build.authorEmail()), log.String("commit", build.commit()))
-	cached, ok := c.commitTeammateCache[build.authorEmail()]
-
-	// we have the details for this member already!
+func (c *Client) Send(info *BuildNotification) error {
+	previous, ok := c.history[info.BuildNumber]
 	if ok {
-		return cached.Value, nil
+		if sent, err := c.sendUpdatedMessage(info, previous); err == nil {
+			c.history[info.BuildNumber] = sent
+		} else {
+			return err
+		}
+	} else if sent, err := c.sendNewMessage(info); err != nil {
+		return err
+	} else {
+		c.history[info.BuildNumber] = sent
 	}
 
-	result, err := c.team.ResolveByCommitAuthor(context.Background(), "sourcegraph", "sourcegraph", build.commit())
-	if err != nil {
-		return nil, err
-	}
-	// remember this teammate!
-	c.logger.Debug("caching teammate", log.String("teammateEmail", result.Email), log.String("buildEmail", build.authorEmail()))
-	if build.authorEmail() != result.Email {
-		c.logger.Warn("build mail and teammate mail do not match", log.String("teammateEmail", result.Email), log.String("buildEmail", build.authorEmail()))
-	}
-	// we're assuming the build author email and resolved teammate email match
-	c.commitTeammateCache[result.Email] = newCacheItem(result)
-	return result, nil
-
+	return nil
 }
 
-func (c *NotificationClient) sendUpdatedMessage(build *Build, previous *SlackNotification) (*SlackNotification, error) {
+func (c *Client) sendUpdatedMessage(info *BuildNotification, previous *SlackNotification) (*SlackNotification, error) {
 	if previous == nil {
 		return nil, fmt.Errorf("cannot update message with nil notification")
 	}
-	logger := c.logger.With(log.Int("buildNumber", build.number()), log.String("channel", c.channel))
+	logger := c.logger.With(log.Int("buildNumber", info.BuildNumber), log.String("channel", c.channel))
 	logger.Debug("creating slack json")
 
-	blocks, err := c.createMessageBlocks(logger, build)
+	blocks, err := c.createMessageBlocks(logger, info)
 	if err != nil {
 		return previous, err
 	}
@@ -148,16 +148,16 @@ func (c *NotificationClient) sendUpdatedMessage(build *Build, previous *SlackNot
 		return previous, err
 	}
 
-	return NewSlackNotification(id, channel), nil
+	return NewSlackNotification(id, channel, info), nil
 }
 
-func (c *NotificationClient) sendNewMessage(build *Build) (*SlackNotification, error) {
-	logger := c.logger.With(log.Int("buildNumber", build.number()), log.String("channel", c.channel))
+func (c *Client) sendNewMessage(info *BuildNotification) (*SlackNotification, error) {
+	logger := c.logger.With(log.Int("buildNumber", info.BuildNumber), log.String("channel", c.channel))
 	logger.Debug("creating slack json")
 
-	blocks, err := c.createMessageBlocks(logger, build)
+	blocks, err := c.createMessageBlocks(logger, info)
 	if err != nil {
-		return build.Notification, err
+		return nil, err
 	}
 	// Slack responds with the message timestamp and a channel, which you have to use when you want to update the message.
 	var id, channel string
@@ -171,7 +171,7 @@ func (c *NotificationClient) sendNewMessage(build *Build) (*SlackNotification, e
 	}
 
 	logger.Info("notification posted")
-	return NewSlackNotification(id, channel), nil
+	return NewSlackNotification(id, channel, info), nil
 }
 
 func commitLink(msg, commit string) string {
@@ -187,49 +187,52 @@ func slackMention(teammate *team.Teammate) string {
 	return fmt.Sprintf("<@%s>", teammate.SlackID)
 }
 
-func createStepsSection(state StepState, steps []*Step, stepShowLimit int) string {
-	if len(steps) == 0 {
+func createStepsSection(status string, items []JobLine, showLimit int) string {
+	if len(items) == 0 {
 		return ""
 	}
-	section := fmt.Sprintf("*%s jobs:*\n\n", state)
+	section := fmt.Sprintf("*%s jobs:*\n\n", status)
 	// if there are more than JobShowLimit of failed jobs, we cannot print all of it
 	// since the message will to big and slack will reject the message with "invalid_blocks"
-	if len(steps) > StepShowLimit {
-		section = fmt.Sprintf("* %d %s jobs (showing %d):*\n\n", len(steps), state, StepShowLimit)
+	if len(items) > StepShowLimit {
+		section = fmt.Sprintf("* %d %s jobs (showing %d):*\n\n", len(items), status, showLimit)
 	}
-	for i := 0; i < StepShowLimit && i < len(steps); i++ {
-		s := steps[i]
-		section += fmt.Sprintf("• %s", s.Name)
-		j := s.LastJob()
-		if j.hasTimedOut() {
-			section += " (Timed out)"
+	for i := 0; i < showLimit && i < len(items); i++ {
+		item := items[i]
+
+		line := fmt.Sprintf("● %s", item.Title())
+		if item.LogURL() != "" {
+			line += fmt.Sprintf("- <%s|logs>", item.LogURL())
 		}
-		if j.WebURL != "" {
-			section += fmt.Sprintf(" - <%s|logs>", j.WebURL)
-		}
-		section += "\n"
+		section += line
 	}
 
 	return section
 }
 
-func (c *NotificationClient) createMessageBlocks(logger log.Logger, build *Build) ([]slack.Block, error) {
-	msg, _, _ := strings.Cut(build.message(), "\n")
-	msg += fmt.Sprintf(" (%s)", build.commit()[:7])
+func (c *Client) getTeammateForBuild(commit string) (*team.Teammate, error) {
+	result, err := c.team.ResolveByCommitAuthor(context.Background(), "sourcegraph", "sourcegraph", commit)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 
-	section := fmt.Sprintf("> %s\n\n", commitLink(msg, build.commit()))
+}
+
+func (c *Client) createMessageBlocks(logger log.Logger, info *BuildNotification) ([]slack.Block, error) {
+	msg, _, _ := strings.Cut(info.Message, "\n")
+	msg += fmt.Sprintf(" (%s)", info.Commit[:7])
+
+	section := fmt.Sprintf("> %s\n\n", commitLink(msg, info.Commit))
 
 	// create a bulleted list of all the failed jobs
-	//
-	stepGroups := GroupIntoStepStates(build.Steps)
-	stepSection := createStepsSection(Fixed, stepGroups[Fixed], StepShowLimit)
-	stepSection += createStepsSection(Failed, stepGroups[Failed], StepShowLimit)
+	jobSection := createStepsSection("Fixed", info.Fixed, StepShowLimit)
+	jobSection += createStepsSection("Failed", info.Failed, StepShowLimit)
 
-	section += stepSection
+	section += jobSection
 
-	logger.Debug("getting teammate information using commit", log.String("commit", build.commit()))
-	teammate, err := c.getTeammateForBuild(build)
-	var author string
+	teammate, err := c.getTeammateForBuild(info.Commit)
+	author := ""
 	if err != nil {
 		c.logger.Error("failed to find teammate", log.Error(err))
 		// the error has some guidance on how to fix it so that teammate resolver can figure out who you are from the commit!
@@ -249,14 +252,14 @@ func (c *NotificationClient) createMessageBlocks(logger log.Logger, build *Build
 
 	blocks := []slack.Block{
 		slack.NewHeaderBlock(
-			slack.NewTextBlockObject(slack.PlainTextType, generateSlackHeader(build), true, false),
+			slack.NewTextBlockObject(slack.PlainTextType, generateSlackHeader(info), true, false),
 		),
 		slack.NewSectionBlock(&slack.TextBlockObject{Type: slack.MarkdownType, Text: section}, nil, nil),
 		slack.NewSectionBlock(
 			nil,
 			[]*slack.TextBlockObject{
 				{Type: slack.MarkdownType, Text: fmt.Sprintf("*Author:* %s", author)},
-				{Type: slack.MarkdownType, Text: fmt.Sprintf("*Pipeline:* %s", build.Pipeline.name())},
+				{Type: slack.MarkdownType, Text: fmt.Sprintf("*Pipeline:* %s", info.PipelineName)},
 			},
 			nil,
 		),
@@ -266,7 +269,7 @@ func (c *NotificationClient) createMessageBlocks(logger log.Logger, build *Build
 				&slack.ButtonBlockElement{
 					Type:  slack.METButton,
 					Style: slack.StylePrimary,
-					URL:   *build.WebURL,
+					URL:   info.BuildURL,
 					Text:  &slack.TextBlockObject{Type: slack.PlainTextType, Text: "Go to build"},
 				},
 				&slack.ButtonBlockElement{
@@ -297,25 +300,19 @@ _Disable flakes on sight and save your fellow teammate some time!_`,
 	return blocks, nil
 }
 
-func (n *NotificationClient) cacheCleanup(hours int) {
-	for k, v := range n.commitTeammateCache {
-		duration := time.Since(v.Timestamp)
-		if duration.Hours() >= float64(hours) {
-			delete(n.commitTeammateCache, k)
-		}
+func generateSlackHeader(info *BuildNotification) string {
+	if len(info.Failed) == 0 && len(info.Fixed) > 0 {
+		return fmt.Sprintf(":green_circle: Build %d Fixed", info.BuildNumber)
 	}
-}
-
-func generateSlackHeader(build *Build) string {
-	header := fmt.Sprintf(":red_circle: Build %d failed", build.number())
-	switch build.ConsecutiveFailure {
+	header := fmt.Sprintf(":red_circle: Build %d failed", info.BuildNumber)
+	switch info.ConsecutiveFailure {
 	case 0, 1: // no suffix
 	case 2:
 		header += " (2nd failure)"
 	case 3:
 		header += " (:exclamation: 3rd failure)"
 	default:
-		header += fmt.Sprintf(" (:bangbang: %dth failure)", build.ConsecutiveFailure)
+		header += fmt.Sprintf(" (:bangbang: %dth failure)", info.ConsecutiveFailure)
 	}
 	return header
 }

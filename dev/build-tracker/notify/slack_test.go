@@ -1,30 +1,33 @@
-package main
+package notify
 
 import (
 	"flag"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/hexops/autogold"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/dev/build-tracker/config"
 	"github.com/sourcegraph/sourcegraph/dev/team"
 )
 
 var RunSlackIntegrationTest = flag.Bool("RunSlackIntegrationTest", false, "Run Slack integration tests")
 var RunGitHubIntegrationTest = flag.Bool("RunGitHubIntegrationTest", false, "Run Github integration tests")
 
-func newJob(name string, exit int) *Job {
-	return &Job{
-		Job: buildkite.Job{
-			Name:       &name,
-			ExitStatus: &exit,
-		},
-	}
+type TestJobLine struct {
+	title string
+	url   string
+}
 
+func (l *TestJobLine) Title() string {
+	return l.title
+}
+
+func (l *TestJobLine) LogURL() string {
+	return l.url
 }
 
 func TestLargeAmountOfFailures(t *testing.T) {
@@ -33,34 +36,23 @@ func TestLargeAmountOfFailures(t *testing.T) {
 	url := "http://www.google.com"
 	pipelineID := "sourcegraph"
 	msg := "Large amount of failures test"
-	build := Build{
-		Build: buildkite.Build{
-			Message: &msg,
-			WebURL:  &url,
-			Creator: &buildkite.Creator{
-				AvatarURL: "https://www.gravatar.com/avatar/7d4f6781b10e48a94d1052c443d13149",
-			},
-			Pipeline: &buildkite.Pipeline{
-				ID:   &pipelineID,
-				Name: &pipelineID,
-			},
-			Author: &buildkite.Author{
-				Name:  "William Bezuidenhout",
-				Email: "william.bezuidenhout@sourcegraph.com",
-			},
-			Number: &num,
-			URL:    &url,
-			Commit: &commit,
-		},
-		Pipeline: &Pipeline{buildkite.Pipeline{
-			Name: &pipelineID,
-		}},
-		Steps: map[string]*Step{},
+	info := &BuildNotification{
+		BuildNumber:        num,
+		ConsecutiveFailure: 0,
+		PipelineName:       pipelineID,
+		AuthorEmail:        "william.bezuidenhout@sourcegraph.com",
+		Message:            msg,
+		Commit:             commit,
+		BuildURL:           url,
+		BuildStatus:        "Failed",
+		Fixed:              []JobLine{},
+		Failed:             []JobLine{},
 	}
 	for i := 1; i <= 30; i++ {
-		job := newJob(fmt.Sprintf("%d fake step", i), i)
-		step := NewStepFromJob(job)
-		build.Steps[step.Name] = step
+		info.Failed = append(info.Failed, &TestJobLine{
+			title: fmt.Sprintf("Job %d", i),
+			url:   "http://example.com",
+		})
 	}
 
 	flag.Parse()
@@ -69,14 +61,14 @@ func TestLargeAmountOfFailures(t *testing.T) {
 	}
 	logger := logtest.NoOp(t)
 
-	conf, err := configFromEnv()
+	conf, err := config.NewFromEnv()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	client := NewNotificationClient(logger, conf.SlackToken, conf.GithubToken, DefaultChannel)
+	client := NewClient(logger, conf.SlackToken, conf.GithubToken, config.DefaultChannel)
 
-	_, err = client.sendNewMessage(&build)
+	err = client.Send(info)
 	if err != nil {
 		t.Fatalf("failed to send build: %s", err)
 	}
@@ -111,13 +103,14 @@ func TestGetTeammateFromBuild(t *testing.T) {
 	}
 
 	logger := logtest.NoOp(t)
-	config, err := configFromEnv()
+	conf, err := config.NewFromEnv()
 	if err != nil {
 		t.Fatal(err)
 	}
+	conf.SlackChannel = config.DefaultChannel
 
 	t.Run("with nil author, commit author is still retrieved", func(t *testing.T) {
-		client := NewNotificationClient(logger, config.SlackToken, config.GithubToken, DefaultChannel)
+		client := NewClient(logger, conf.SlackToken, conf.GithubToken, conf.SlackChannel)
 
 		num := 160000
 		commit := "ca7c44f79984ff8d645b580bfaaf08ce9a37a05d"
@@ -143,7 +136,7 @@ func TestGetTeammateFromBuild(t *testing.T) {
 		require.Equal(t, teammate.Name, "Leo Papaloizos")
 	})
 	t.Run("commit author preferred over build author", func(t *testing.T) {
-		client := NewNotificationClient(logger, config.SlackToken, config.GithubToken, DefaultChannel)
+		client := NewClient(logger, conf.SlackToken, conf.GithubToken, conf.SlackChannel)
 
 		num := 160000
 		commit := "78926a5b3b836a8a104a5d5adf891e5626b1e405"
@@ -172,7 +165,7 @@ func TestGetTeammateFromBuild(t *testing.T) {
 		require.Equal(t, teammate.Name, "Ryan Slade")
 	})
 	t.Run("retrieving teammate for build populates cache", func(t *testing.T) {
-		client := NewNotificationClient(logger, config.SlackToken, config.GithubToken, DefaultChannel)
+		client := NewClient(logger, conf.SlackToken, conf.GithubToken, conf.SlackChannel)
 
 		num := 160000
 		commit := "78926a5b3b836a8a104a5d5adf891e5626b1e405"
@@ -206,30 +199,6 @@ func TestGetTeammateFromBuild(t *testing.T) {
 	})
 }
 
-func TestCacheClean(t *testing.T) {
-	// Populate the cache with items
-	logger := logtest.NoOp(t)
-	client := NewNotificationClient(logger, "testing", "testing", DefaultChannel)
-
-	// Add some old items
-	for i := 0; i < 3; i++ {
-		item := newCacheItem(&team.Teammate{})
-		// subtract 1 year
-		item.Timestamp = time.Now().AddDate(-1, 0, 0)
-		client.commitTeammateCache[fmt.Sprintf("%d", i)] = item
-	}
-	// Add some recent builds
-	client.commitTeammateCache["4"] = newCacheItem(&team.Teammate{})
-	client.commitTeammateCache["5"] = newCacheItem(&team.Teammate{})
-	client.commitTeammateCache["6"] = newCacheItem(&team.Teammate{})
-
-	// Clean up! 3 items should be left
-	// we can put any hours, since our 3 builds are years old
-	client.cacheCleanup(5)
-
-	require.Equal(t, 3, len(client.commitTeammateCache))
-}
-
 func TestSlackNotification(t *testing.T) {
 	flag.Parse()
 	if !*RunSlackIntegrationTest {
@@ -237,12 +206,12 @@ func TestSlackNotification(t *testing.T) {
 	}
 	logger := logtest.NoOp(t)
 
-	config, err := configFromEnv()
+	conf, err := config.NewFromEnv()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	client := NewNotificationClient(logger, config.SlackToken, config.GithubToken, DefaultChannel)
+	client := NewClient(logger, conf.SlackToken, conf.GithubToken, config.DefaultChannel)
 
 	num := 160000
 	url := "http://www.google.com"
@@ -353,12 +322,12 @@ func TestServerNotify(t *testing.T) {
 	}
 	logger := logtest.NoOp(t)
 
-	config, err := configFromEnv()
+	conf, err := config.NewFromEnv()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	server := NewServer(logger, *config)
+	server := NewServer(logger, *conf)
 
 	num := 160000
 	url := "http://www.google.com"
