@@ -22,7 +22,7 @@ export async function getKeywordContextMessages(query: string): Promise<Message[
 			const uri = vscode.Uri.file(path.join(rootPath, filename))
 			const text = (await vscode.workspace.openTextDocument(uri)).getText()
 			const messageText = populateCodeContextTemplate(text, filename)
-			return getContextMessageWithResponse(messageText)
+			return getContextMessageWithResponse(messageText, filename)
 		})
 	)
 	return messagePairs.reverse().flatMap(p => p)

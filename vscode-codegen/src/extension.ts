@@ -39,12 +39,20 @@ export async function activate(context: vscode.ExtensionContext) {
 	const wsChatClient = WSChatClient.new(`${wsUrl}/chat`, accessToken)
 	const embeddingsClient = codebaseId ? new EmbeddingsClient(embeddingsUrl, accessToken, codebaseId) : null
 
+	let contextType: 'embeddings' | 'keyword' | 'none' = settings.get('cody.useContext') || 'embeddings'
+	if (!embeddingsClient && contextType === 'embeddings') {
+		vscode.window.showInformationMessage(
+			'Embeddings were not available (is `cody.codebase` set?), falling back to keyword context'
+		)
+		contextType = 'keyword'
+	}
+
 	const chatProvider = new ChatViewProvider(
 		context.extensionPath,
 		httpUrl,
 		wsChatClient,
 		embeddingsClient,
-		settings.get('cody.useContext') || 'none',
+		contextType,
 		settings.get('cody.debug') || false
 	)
 
