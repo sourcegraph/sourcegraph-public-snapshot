@@ -33,3 +33,22 @@ func NewRankingGraphExporter(
 			return nil
 		}))
 }
+
+func NewRankingGraphMapper(
+	observationCtx *observation.Context,
+	uploadsService UploadService,
+	numRankingRoutines int,
+	interval time.Duration,
+	rankingJobEnabled bool,
+) goroutine.BackgroundRoutine {
+	return goroutine.NewPeriodicGoroutine(
+		context.Background(),
+		"rank.graph-mapper", "maps definitions and references data to path_counts_inputs table in store",
+		interval,
+		goroutine.HandlerFunc(func(ctx context.Context) error {
+			if err := uploadsService.MapRankingGraph(ctx, numRankingRoutines, rankingJobEnabled); err != nil {
+				return err
+			}
+			return nil
+		}))
+}
