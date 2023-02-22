@@ -7,13 +7,11 @@ overrides:
   webpack: '5'
   tslib: 2.1.0
 
-packageExtensionsChecksum: 4b1de42ef6cd5dc58798836c97782882
-
 importers:
 
   .:
     specifiers:
-      '@apollo/client': ^3.5.0
+      '@apollo/client': ^3.8.0-alpha.7
       '@atlassian/aui': ^7.10.3
       '@axe-core/puppeteer': ^4.4.2
       '@babel/core': ^7.20.5
@@ -160,8 +158,6 @@ importers:
       '@types/react-dom': 18.0.2
       '@types/react-grid-layout': 1.3.2
       '@types/react-resizable': ^3.0.2
-      '@types/react-router': ^5.1.18
-      '@types/react-router-dom': ^5.3.3
       '@types/recharts': 1.8.23
       '@types/resize-observer-browser': 0.1.4
       '@types/rimraf': ^3.0.2
@@ -337,9 +333,7 @@ importers:
       react-grid-layout: 1.3.4
       react-refresh: ^0.10.0
       react-resizable: ^3.0.4
-      react-router: ^5.2.0
-      react-router-dom: ^5.2.0
-      react-router-dom-v5-compat: ^6.7.0
+      react-router-dom: ^6.8.1
       react-spring: ^9.4.2
       react-sticky-box: 1.0.2
       react-use-websocket: ^4.3.1
@@ -406,7 +400,7 @@ importers:
       yauzl: ^2.10.0
       zustand: ^3.6.9
     dependencies:
-      '@apollo/client': 3.5.10_jztdkcoyb6t7sgjrqwrwvm7qta
+      '@apollo/client': 3.8.0-alpha.7_wgohupceissbkfn62czjahgqgi
       '@codemirror/autocomplete': 6.1.0_42luzusa22g3gmuqmbrrjz6ypm
       '@codemirror/commands': 6.0.1
       '@codemirror/lang-json': 6.0.0
@@ -458,7 +452,7 @@ importers:
       agent-base: 6.0.2
       ajv: 8.11.2
       ajv-formats: 2.1.1_ajv@8.11.2
-      apollo3-cache-persist: 0.12.1_@apollo+client@3.5.10
+      apollo3-cache-persist: 0.12.1_644btsh2xtpu4bkvh35a7fqf6e
       bloomfilter: 0.0.18
       case-sensitive-paths-webpack-plugin: 2.4.0
       classnames: 2.3.1
@@ -516,9 +510,7 @@ importers:
       react-focus-lock: 2.7.1_ci6b7qrbzfuzg4ahcdqxg6om2y
       react-grid-layout: 1.3.4_ef5jwxihqo6n7gxfmzogljlgcm
       react-resizable: 3.0.4_ef5jwxihqo6n7gxfmzogljlgcm
-      react-router: 5.2.0_react@18.1.0
-      react-router-dom: 5.2.0_react@18.1.0
-      react-router-dom-v5-compat: 6.7.0_xjeikfjhclro5pp2abrahotxli
+      react-router-dom: 6.8.1_ef5jwxihqo6n7gxfmzogljlgcm
       react-spring: 9.4.2_uhqtmaalq6dzvuj2e7ivp7mfdy
       react-sticky-box: 1.0.2_react@18.1.0
       react-use-websocket: 4.3.1_ef5jwxihqo6n7gxfmzogljlgcm
@@ -659,8 +651,6 @@ importers:
       '@types/react-dom': 18.0.2
       '@types/react-grid-layout': 1.3.2
       '@types/react-resizable': 3.0.2
-      '@types/react-router': 5.1.18
-      '@types/react-router-dom': 5.3.3
       '@types/recharts': 1.8.23
       '@types/resize-observer-browser': 0.1.4
       '@types/rimraf': 3.0.2
@@ -795,7 +785,7 @@ importers:
       webpack-dev-server: 4.11.1_rjsyjcrmk25kqsjzwkvj3a2evq
       webpack-manifest-plugin: 5.0.0_webpack@5.75.0
       webpack-stats-plugin: 1.1.1
-      wildcard-mock-link: 2.0.1_537blwf6n3jkmoyzwoadzzdkge
+      wildcard-mock-link: 2.0.1_o5lzffothtsynmyk2hdsl4g6qu
       worker-loader: 3.0.8_webpack@5.75.0
       yaml: 2.2.1
       yauzl: 2.10.0
@@ -1182,7 +1172,12 @@ importers:
       '@sourcegraph/testing': link:../testing
 
   dev/release:
-    specifiers: {}
+    specifiers:
+      '@types/luxon': ^3.2.0
+      luxon: ^3.2.1
+    dependencies:
+      '@types/luxon': 3.2.0
+      luxon: 3.2.1
 
   schema:
     specifiers: {}
@@ -1203,36 +1198,41 @@ packages:
       js-yaml: 3.14.1
     dev: true
 
-  /@apollo/client/3.5.10_jztdkcoyb6t7sgjrqwrwvm7qta:
-    resolution: {integrity: sha512-tL3iSpFe9Oldq7gYikZK1dcYxp1c01nlSwtsMz75382HcI6fvQXyFXUCJTTK3wgO2/ckaBvRGw7VqjFREdVoRw==}
+  /@apollo/client/3.8.0-alpha.7_wgohupceissbkfn62czjahgqgi:
+    resolution: {integrity: sha512-pwyACANhC4R0VnEXn4Uv7DEIOr3V6kmKC+Eh3wlspuhP7RLHsU31oFYXmNs2THHAMDdXAK96axutd6qP86eZ+Q==}
     peerDependencies:
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
       graphql-ws: ^5.5.5
-      react: ^16.8.0 || ^17.0.0
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
       subscriptions-transport-ws: ^0.9.0 || ^0.11.0
     peerDependenciesMeta:
       graphql-ws:
         optional: true
       react:
         optional: true
+      react-dom:
+        optional: true
       subscriptions-transport-ws:
         optional: true
     dependencies:
       '@graphql-typed-document-node/core': 3.1.1_graphql@15.4.0
-      '@wry/context': 0.6.0
+      '@wry/context': 0.7.0
       '@wry/equality': 0.5.1
       '@wry/trie': 0.3.0
       graphql: 15.4.0
-      graphql-tag: 2.12.5_graphql@15.4.0
+      graphql-tag: 2.12.6_graphql@15.4.0
       graphql-ws: 5.11.2_graphql@15.4.0
       hoist-non-react-statics: 3.3.2
       optimism: 0.16.1
       prop-types: 15.8.1
       react: 18.1.0
+      react-dom: 18.1.0_react@18.1.0
+      response-iterator: 0.2.6
       symbol-observable: 4.0.0
-      ts-invariant: 0.9.4
+      ts-invariant: 0.10.3
       tslib: 2.1.0
-      zen-observable-ts: 1.2.3
+      zen-observable-ts: 1.2.5
 
   /@ardatan/relay-compiler/12.0.0_graphql@15.4.0:
     resolution: {integrity: sha512-9anThAaj1dQr6IGmzBMcfzOQKTa5artjuPmw8NYK/fiGEMjADbSguBY2FMDykt+QhilR3wc9VA/3yVju7JHg7Q==}
@@ -4636,7 +4636,7 @@ packages:
       change-case-all: 1.0.14
       dependency-graph: 0.11.0
       graphql: 15.4.0
-      graphql-tag: 2.12.5_graphql@15.4.0
+      graphql-tag: 2.12.6_graphql@15.4.0
       parse-filepath: 1.0.2
       tslib: 2.1.0
     transitivePeerDependencies:
@@ -4657,7 +4657,7 @@ packages:
       change-case-all: 1.0.15
       dependency-graph: 0.11.0
       graphql: 15.4.0
-      graphql-tag: 2.12.5_graphql@15.4.0
+      graphql-tag: 2.12.6_graphql@15.4.0
       parse-filepath: 1.0.2
       tslib: 2.1.0
     transitivePeerDependencies:
@@ -7904,11 +7904,6 @@ packages:
       zustand: 3.7.2_react@18.1.0
     dev: false
 
-  /@remix-run/router/1.3.0:
-    resolution: {integrity: sha512-nwQoYb3m4DDpHTeOwpJEuDt8lWVcujhYYSFGLluC+9es2PyLjm+jjq3IeRBQbwBtPLJE/lkuHuGHr8uQLgmJRA==}
-    engines: {node: '>=14'}
-    dev: false
-
   /@remix-run/router/1.3.2:
     resolution: {integrity: sha512-t54ONhl/h75X94SWsHGQ4G/ZrCEguKSRQr7DrjTciJXW0YU1QhlwYeycvK5JgkzlxmvrK7wq1NB/PLtHxoiDcA==}
     engines: {node: '>=14'}
@@ -11099,21 +11094,6 @@ packages:
       '@types/react': 18.0.8
     dev: true
 
-  /@types/react-router-dom/5.3.3:
-    resolution: {integrity: sha512-kpqnYK4wcdm5UaWI3fLcELopqLrHgLqNsdpHauzlQktfkHL3npOSwtj1Uz9oKBAzs7lFtVkV8j83voAz2D8fhw==}
-    dependencies:
-      '@types/history': 4.7.11
-      '@types/react': 18.0.8
-      '@types/react-router': 5.1.18
-    dev: true
-
-  /@types/react-router/5.1.18:
-    resolution: {integrity: sha512-YYknwy0D0iOwKQgz9v8nOzt2J6l4gouBmDnWqUUznltOTaon+r8US8ky8HvN0tXvc38U9m6z/t2RsVsnd1zM0g==}
-    dependencies:
-      '@types/history': 4.7.11
-      '@types/react': 18.0.8
-    dev: true
-
   /@types/react-sparklines/1.7.2:
     resolution: {integrity: sha512-N1GwO7Ri5C5fE8+CxhiDntuSw1qYdGytBuedKrCxWpaojXm4WnfygbdBdc5sXGX7feMxDXBy9MNhxoUTwrMl4A==}
     dependencies:
@@ -12057,6 +12037,12 @@ packages:
     dependencies:
       tslib: 2.1.0
 
+  /@wry/context/0.7.0:
+    resolution: {integrity: sha512-LcDAiYWRtwAoSOArfk7cuYvFXytxfVrdX7yxoUmK7pPITLk5jYh2F8knCwS7LjgYL8u1eidPlKKV6Ikqq0ODqQ==}
+    engines: {node: '>=8'}
+    dependencies:
+      tslib: 2.1.0
+
   /@wry/equality/0.5.1:
     resolution: {integrity: sha512-FZKbdpbcVcbDxQrKcaBClNsQaMg9nof1RKM7mReJe5DKUzM5u8S7T+PqwNqvib5O2j2xxF1R4p5O3+b6baTrbw==}
     engines: {node: '>=8'}
@@ -12431,12 +12417,12 @@ packages:
       normalize-path: 3.0.0
       picomatch: 2.3.1
 
-  /apollo3-cache-persist/0.12.1_@apollo+client@3.5.10:
+  /apollo3-cache-persist/0.12.1_644btsh2xtpu4bkvh35a7fqf6e:
     resolution: {integrity: sha512-bYh/OzhzR70URRRf0OkzkpTLB7+fwx1Ftiw8/MWW8NhEgF+K9u3FO786DSUcE6X2NqSObYKF0+CpM9K8vrJNxw==}
     peerDependencies:
       '@apollo/client': ^3.2.5
     dependencies:
-      '@apollo/client': 3.5.10_jztdkcoyb6t7sgjrqwrwvm7qta
+      '@apollo/client': 3.8.0-alpha.7_wgohupceissbkfn62czjahgqgi
     dev: false
 
   /app-root-dir/1.0.2:
@@ -17368,7 +17354,7 @@ packages:
       '@typescript-eslint/eslint-plugin': 5.24.0_z4swst3wuuqk4hlme4ajzslgh4
       '@typescript-eslint/utils': 5.51.0_7kw3g6rralp5ps6mg3uyzz6azm
       eslint: 8.34.0
-      jest: 29.4.0_@types+node@16.18.11
+      jest: 29.4.0_@types+node@18.11.18
     transitivePeerDependencies:
       - supports-color
       - typescript
@@ -19458,11 +19444,11 @@ packages:
       graphql: 15.4.0
     dev: true
 
-  /graphql-tag/2.12.5_graphql@15.4.0:
-    resolution: {integrity: sha512-5xNhP4063d16Pz3HBtKprutsPrmHZi5IdUGOWRxA2B6VF7BIRGOHZ5WQvDmJXZuPcBg7rYwaFxvQYjqkSdR3TQ==}
+  /graphql-tag/2.12.6_graphql@15.4.0:
+    resolution: {integrity: sha512-FdSNcu2QQcWnM2VNvSCCDCVS5PpPqpzgFT8+GXzqJuoDd0CBncxCY278u4mhRO7tMgo2JjgJA5aZ+nWSQ/Z+xg==}
     engines: {node: '>=10'}
     peerDependencies:
-      graphql: ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0
+      graphql: ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
     dependencies:
       graphql: 15.4.0
       tslib: 2.1.0
@@ -21057,6 +21043,7 @@ packages:
 
   /isarray/0.0.1:
     resolution: {integrity: sha512-D2S+3GLxWH+uhrNEcoh/fnmYeP8E8/zHl644d/jdA0g2uyXvy3sb0qxotE+ne0LtccHknQzWwZEzhak7oJ0COQ==}
+    dev: true
 
   /isarray/1.0.0:
     resolution: {integrity: sha512-VLghIWNM6ELQzo7zwmcg0NmTVyWKYjvIeM83yjp0wRDTmUnrM678fQbcKBo6n2CJEF0szoG//ytg+TKla89ALQ==}
@@ -24841,19 +24828,6 @@ packages:
     engines: {node: '>=4'}
     dev: true
 
-  /mini-create-react-context/0.4.0_m2ik3obrudsrebznnhij42e2gq:
-    resolution: {integrity: sha512-b0TytUgFSbgFJGzJqXPKCFCBWigAjpjo+Fl7Vf7ZbKRDptszpppKxXH6DRXEABZ/gcEQczeb0iZ7JvL8e8jjCA==}
-    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
-    peerDependencies:
-      prop-types: ^15.0.0
-      react: ^0.14.0 || ^15.0.0 || ^16.0.0
-    dependencies:
-      '@babel/runtime': 7.20.6
-      prop-types: 15.8.1
-      react: 18.1.0
-      tiny-warning: 1.0.3
-    dev: false
-
   /mini-css-extract-plugin/2.7.2_webpack@5.75.0:
     resolution: {integrity: sha512-EdlUizq13o0Pd+uCp+WO/JpkLvHRVGt97RqfeGhXqAcorYo1ypJSpkV+WDT0vY/kmh/p7wRdJNJtuyK540PXDw==}
     engines: {node: '>= 12.13.0'}
@@ -26342,6 +26316,7 @@ packages:
     resolution: {integrity: sha512-nifX1uj4S9IrK/w3Xe7kKvNEepXivANs9ng60Iq7PU/BlouV3yL/VUhFqTuTq33ykwUqoNcTeGo5vdOBP4jS/Q==}
     dependencies:
       isarray: 0.0.1
+    dev: true
 
   /path-to-regexp/6.2.0:
     resolution: {integrity: sha512-f66KywYG6+43afgE/8j/GoiNyygk/bnoCbps++3ErRKsIYkGGupyv07R2Ok5m9i67Iqc+T2g1eAUGUPzWhYTyg==}
@@ -28186,35 +28161,17 @@ packages:
       resize-observer-polyfill: 1.5.1
     dev: false
 
-  /react-router-dom-v5-compat/6.7.0_xjeikfjhclro5pp2abrahotxli:
-    resolution: {integrity: sha512-pwK0hdpgbBnTxCv0/Yi1yCaVX0iglPxxDvuy6VK7MF/0q2MYEkqS186diGdktgXikKXmFMhhXR2h3IanBv0tAA==}
+  /react-router-dom/6.8.1_ef5jwxihqo6n7gxfmzogljlgcm:
+    resolution: {integrity: sha512-67EXNfkQgf34P7+PSb6VlBuaacGhkKn3kpE51+P6zYSG2kiRoumXEL6e27zTa9+PGF2MNXbgIUHTVlleLbIcHQ==}
     engines: {node: '>=14'}
     peerDependencies:
       react: '>=16.8'
       react-dom: '>=16.8'
-      react-router-dom: 4 || 5
     dependencies:
-      '@remix-run/router': 1.3.0
-      history: 4.5.1
+      '@remix-run/router': 1.3.2
       react: 18.1.0
       react-dom: 18.1.0_react@18.1.0
-      react-router: 6.7.0_react@18.1.0
-      react-router-dom: 5.2.0_react@18.1.0
-    dev: false
-
-  /react-router-dom/5.2.0_react@18.1.0:
-    resolution: {integrity: sha512-gxAmfylo2QUjcwxI63RhQ5G85Qqt4voZpUXSEqCwykV0baaOTQDR1f0PmY8AELqIyVc0NEZUj0Gov5lNGcXgsA==}
-    peerDependencies:
-      react: '>=15'
-    dependencies:
-      '@babel/runtime': 7.20.6
-      history: 4.5.1
-      loose-envify: 1.4.0
-      prop-types: 15.8.1
-      react: 18.1.0
-      react-router: 5.2.0_react@18.1.0
-      tiny-invariant: 1.3.1
-      tiny-warning: 1.0.3
+      react-router: 6.8.1_react@18.1.0
     dev: false
 
   /react-router-dom/6.8.1_sfoxds7t5ydpegc3knd667wn6m:
@@ -28229,34 +28186,6 @@ packages:
       react-dom: 17.0.2_react@17.0.2
       react-router: 6.8.1_react@17.0.2
 
-  /react-router/5.2.0_react@18.1.0:
-    resolution: {integrity: sha512-smz1DUuFHRKdcJC0jobGo8cVbhO3x50tCL4icacOlcwDOEQPq4TMqwx3sY1TP+DvtTgz4nm3thuo7A+BK2U0Dw==}
-    peerDependencies:
-      react: '>=15'
-    dependencies:
-      '@babel/runtime': 7.20.6
-      history: 4.5.1
-      hoist-non-react-statics: 3.3.2
-      loose-envify: 1.4.0
-      mini-create-react-context: 0.4.0_m2ik3obrudsrebznnhij42e2gq
-      path-to-regexp: 1.7.0
-      prop-types: 15.8.1
-      react: 18.1.0
-      react-is: 16.13.1
-      tiny-invariant: 1.3.1
-      tiny-warning: 1.0.3
-    dev: false
-
-  /react-router/6.7.0_react@18.1.0:
-    resolution: {integrity: sha512-KNWlG622ddq29MAM159uUsNMdbX8USruoKnwMMQcs/QWZgFUayICSn2oB7reHce1zPj6CG18kfkZIunSSRyGHg==}
-    engines: {node: '>=14'}
-    peerDependencies:
-      react: '>=16.8'
-    dependencies:
-      '@remix-run/router': 1.3.0
-      react: 18.1.0
-    dev: false
-
   /react-router/6.8.1_react@17.0.2:
     resolution: {integrity: sha512-Jgi8BzAJQ8MkPt8ipXnR73rnD7EmZ0HFFb7jdQU24TynGW1Ooqin2KVDN9voSC+7xhqbbCd2cjGUepb6RObnyg==}
     engines: {node: '>=14'}
@@ -28265,6 +28194,16 @@ packages:
     dependencies:
       '@remix-run/router': 1.3.2
       react: 17.0.2
+
+  /react-router/6.8.1_react@18.1.0:
+    resolution: {integrity: sha512-Jgi8BzAJQ8MkPt8ipXnR73rnD7EmZ0HFFb7jdQU24TynGW1Ooqin2KVDN9voSC+7xhqbbCd2cjGUepb6RObnyg==}
+    engines: {node: '>=14'}
+    peerDependencies:
+      react: '>=16.8'
+    dependencies:
+      '@remix-run/router': 1.3.2
+      react: 18.1.0
+    dev: false
 
   /react-shallow-renderer/16.15.0_react@18.1.0:
     resolution: {integrity: sha512-oScf2FqQ9LFVQgA73vr86xl2NaOIX73rh+YFqcOp68CWj56tSfgtGKrEbyhCj0rSijyG9M1CYprTh39fBi5hzA==}
@@ -29252,6 +29191,10 @@ packages:
       is-core-module: 2.11.0
       path-parse: 1.0.7
       supports-preserve-symlinks-flag: 1.0.0
+
+  /response-iterator/0.2.6:
+    resolution: {integrity: sha512-pVzEEzrsg23Sh053rmDUvLSkGXluZio0qu8VT6ukrYuvtjVfCbDZH9d6PGXb8HZfzdNZt8feXv/jvUzlhRgLnw==}
+    engines: {node: '>=0.8'}
 
   /responselike/1.0.2:
     resolution: {integrity: sha512-/Fpe5guzJk1gPqdJLJR5u7eG/gNY4nImjbRDaVWVMRhne55TCmj2i9Q+54PBRfatRC8v/rIiv9BN0pMd9OV5EQ==}
@@ -31941,8 +31884,8 @@ packages:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
     dev: true
 
-  /ts-invariant/0.9.4:
-    resolution: {integrity: sha512-63jtX/ZSwnUNi/WhXjnK8kz4cHHpYS60AnmA6ixz17l7E12a5puCWFlNpkne5Rl0J8TBPVHpGjsj4fxs8ObVLQ==}
+  /ts-invariant/0.10.3:
+    resolution: {integrity: sha512-uivwYcQaxAucv1CzRp2n/QdYPo4ILf9VXgH19zEIjFx2EJufV16P0JtJVpYHy89DItG6Kwj2oIUjrcK5au+4tQ==}
     engines: {node: '>=8'}
     dependencies:
       tslib: 2.1.0
@@ -33854,13 +33797,13 @@ packages:
       string-width: 4.2.3
     dev: true
 
-  /wildcard-mock-link/2.0.1_537blwf6n3jkmoyzwoadzzdkge:
+  /wildcard-mock-link/2.0.1_o5lzffothtsynmyk2hdsl4g6qu:
     resolution: {integrity: sha512-pEYG7q9cHLc6lQVvYtj6CeoI9nIjZN59jiJ+jbwT+Oki8RyV+2BCNoRNRIamkh6r43ByseKIKcNJMbudt0e4aQ==}
     peerDependencies:
       '@apollo/client': ^3.3.15
       graphql: ^14.5.8 || ^15.0.0
     dependencies:
-      '@apollo/client': 3.5.10_jztdkcoyb6t7sgjrqwrwvm7qta
+      '@apollo/client': 3.8.0-alpha.7_wgohupceissbkfn62czjahgqgi
       delay: 5.0.0
       fast-json-stable-stringify: 2.1.0
       graphql: 15.4.0
@@ -34408,8 +34351,8 @@ packages:
     resolution: {integrity: sha512-raRj6r0gPzopFm5XWBJZr/NuV4EEnT4iE+U3dp5FV5pCb588Gmm3zLIp/j9yqqcMiHH8VNQlerLTgOqL7krh6w==}
     dev: false
 
-  /zen-observable-ts/1.2.3:
-    resolution: {integrity: sha512-hc/TGiPkAWpByykMwDcem3SdUgA4We+0Qb36bItSuJC9xD0XVBZoFHYoadAomDSNf64CG8Ydj0Qb8Od8BUWz5g==}
+  /zen-observable-ts/1.2.5:
+    resolution: {integrity: sha512-QZWQekv6iB72Naeake9hS1KxHlotfRpe+WGNbNx5/ta+R3DNjVO2bswf63gXlWDcs+EMd7XY8HfVQyP1X6T4Zg==}
     dependencies:
       zen-observable: 0.8.15
 

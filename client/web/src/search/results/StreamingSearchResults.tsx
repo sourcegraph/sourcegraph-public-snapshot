@@ -1,7 +1,7 @@
 import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
-import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
 import { limitHit, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/branded'
@@ -18,7 +18,6 @@ import { LATEST_VERSION, StreamSearchOptions } from '@sourcegraph/shared/src/sea
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useDeepMemo } from '@sourcegraph/wildcard'
 
 import { SearchAggregationProps, SearchStreamingProps } from '..'
@@ -51,7 +50,6 @@ export interface StreamingSearchResultsProps
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'settings' | 'requestGraphQL' | 'sourcegraphURL'>,
         TelemetryProps,
-        ThemeProps,
         CodeInsightsProps,
         SearchAggregationProps,
         CodeMonitoringProps {

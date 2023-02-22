@@ -31,7 +31,11 @@ func (s *grpcService) LocalCodeIntel(ctx context.Context, request *proto.LocalCo
 
 	payload, err := squirrelService.LocalCodeIntel(ctx, args)
 	if err != nil {
-		return nil, err
+		// TODO(camdencheek): This ignores errors from LocalCodeIntel to match the behavior found here:
+		// https://sourcegraph.com/github.com/sourcegraph/sourcegraph@a1631d58604815917096acc3356447c55baebf22/-/blob/cmd/symbols/squirrel/http_handlers.go?L57-57
+		//
+		// This is weird, and maybe not intentional, but things break if we return an error.
+		return nil, nil
 	}
 
 	var response proto.LocalCodeIntelResponse

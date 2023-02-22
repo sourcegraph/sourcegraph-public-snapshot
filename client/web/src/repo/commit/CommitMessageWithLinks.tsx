@@ -51,15 +51,27 @@ export const CommitMessageWithLinks = ({
             const index = remainingMessage.indexOf(issueNumber, match.index - skippedCharacters)
             const before = remainingMessage.slice(0, index)
 
-            linkSegments.push(<Link {...commitLinkProps}>{before}</Link>)
-            linkSegments.push(<Link to={`${github.url}/pull/${issueNumber.replace('#', '')}`}>{issueNumber}</Link>)
+            linkSegments.push(
+                <Link key={linkSegments.length} {...commitLinkProps}>
+                    {before}
+                </Link>
+            )
+            linkSegments.push(
+                <Link key={linkSegments.length} to={`${github.url}/pull/${issueNumber.replace('#', '')}`}>
+                    {issueNumber}
+                </Link>
+            )
 
             const nextIndex = index + issueNumber.length
             remainingMessage = remainingMessage.slice(index + issueNumber.length)
             skippedCharacters += nextIndex
         }
 
-        linkSegments.push(<Link {...commitLinkProps}>{remainingMessage}</Link>)
+        linkSegments.push(
+            <Link key={linkSegments.length} {...commitLinkProps}>
+                {remainingMessage}
+            </Link>
+        )
 
         return <>{linkSegments}</>
     }

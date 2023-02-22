@@ -3,7 +3,7 @@ import * as React from 'react'
 import { mdiMessageTextOutline, mdiCog, mdiDelete, mdiPlus } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
-import { useLocation } from 'react-router-dom-v5-compat'
+import { useLocation } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, mapTo, switchMap } from 'rxjs/operators'
 import { useCallbackRef } from 'use-callback-ref'
@@ -154,7 +154,7 @@ export const SavedSearchListPage: React.FunctionComponent<Props> = props => {
             <PageHeader
                 description="Manage notifications and alerts for specific search queries."
                 actions={
-                    <Button to="searches/add" className="test-add-saved-search-button" variant="primary" as={Link}>
+                    <Button to="add" className="test-add-saved-search-button" variant="primary" as={Link}>
                         <Icon aria-hidden={true} svgPath={mdiPlus} /> Add saved search
                     </Button>
                 }

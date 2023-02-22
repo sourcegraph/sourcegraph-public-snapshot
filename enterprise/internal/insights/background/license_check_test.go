@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -87,7 +87,7 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("NumFrozen", numFrozen).Equal(t, 4)
+		autogold.Expect(numFrozen).Equal(t, 4)
 
 		setMockLicenseCheck(true)
 		err = checkAndEnforceLicense(ctx, insightsDB, logger)
@@ -98,7 +98,7 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("NumFrozen", numFrozen).Equal(t, 0)
+		autogold.Expect(numFrozen).Equal(t, 0)
 	})
 
 	t.Run("Freezes insights if there is no license and insights are not already frozen", func(t *testing.T) {
@@ -106,7 +106,7 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("NumFrozen", numFrozen).Equal(t, 0)
+		autogold.Expect(numFrozen).Equal(t, 0)
 
 		setMockLicenseCheck(false)
 		checkAndEnforceLicense(ctx, insightsDB, logger)
@@ -114,20 +114,20 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("NumFrozen", numFrozen).Equal(t, 4)
+		autogold.Expect(numFrozen).Equal(t, 4)
 
 		lamDashboardCount, err := getLAMDashboardCount()
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("NumFrozen", lamDashboardCount).Equal(t, 1)
+		autogold.Expect(lamDashboardCount).Equal(t, 1)
 	})
 	t.Run("Does nothing if there is no license and insights are already frozen", func(t *testing.T) {
 		numFrozen, err := getNumFrozenInsights()
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("NumFrozen", numFrozen).Equal(t, 4)
+		autogold.Expect(numFrozen).Equal(t, 4)
 
 		setMockLicenseCheck(false)
 		checkAndEnforceLicense(ctx, insightsDB, logger)
@@ -135,12 +135,12 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("NumFrozen", numFrozen).Equal(t, 4)
+		autogold.Expect(numFrozen).Equal(t, 4)
 
 		lamDashboardCount, err := getLAMDashboardCount()
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("NumFrozen", lamDashboardCount).Equal(t, 1)
+		autogold.Expect(lamDashboardCount).Equal(t, 1)
 	})
 }

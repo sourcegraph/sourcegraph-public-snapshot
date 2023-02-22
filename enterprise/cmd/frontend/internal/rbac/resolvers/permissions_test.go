@@ -12,6 +12,7 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/rbac/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -152,7 +153,7 @@ func TestUserPermissionsListing(t *testing.T) {
 	role, err := db.Roles().Create(ctx, "TEST-ROLE", false)
 	require.NoError(t, err)
 
-	_, err = db.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
+	err = db.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
 		RoleID: role.ID,
 		UserID: userID,
 	})
@@ -164,7 +165,7 @@ func TestUserPermissionsListing(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	_, err = db.RolePermissions().Assign(ctx, database.AssignRolePermissionOpts{
+	err = db.RolePermissions().Assign(ctx, database.AssignRolePermissionOpts{
 		RoleID:       role.ID,
 		PermissionID: p.ID,
 	})
@@ -225,7 +226,7 @@ func TestUserPermissionsListing(t *testing.T) {
 		var response struct{}
 		errs := apitest.Exec(actorCtx, t, s, input, &response, listUserPermissions)
 		require.Len(t, errs, 1)
-		require.Equal(t, errs[0].Message, "must be authenticated as the authorized user or site admin")
+		require.Equal(t, auth.ErrMustBeSiteAdminOrSameUser.Error(), errs[0].Message)
 	})
 }
 

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -41,7 +41,7 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 					},
 				},
 			},
-			want: autogold.Want("no results", []result.Match{}),
+			want: autogold.Expect([]result.Match{}),
 		},
 		{
 			name: "selects only results matching owners",
@@ -64,7 +64,7 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 					"CODEOWNERS": "README.md @test\n",
 				},
 			},
-			want: autogold.Want("results matching ownership", []result.Match{
+			want: autogold.Expect([]result.Match{
 				&result.FileMatch{
 					File: result.File{
 						Path: "README.md",
@@ -88,7 +88,7 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 					"CODEOWNERS": "README.md @test\n",
 				},
 			},
-			want: autogold.Want("results matching ownership", []result.Match{
+			want: autogold.Expect([]result.Match{
 				&result.FileMatch{
 					File: result.File{
 						Path: "README.md",
@@ -112,7 +112,7 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 					"CODEOWNERS": "README.md test@example.com\n",
 				},
 			},
-			want: autogold.Want("results matching ownership", []result.Match{
+			want: autogold.Expect([]result.Match{
 				&result.FileMatch{
 					File: result.File{
 						Path: "README.md",
@@ -141,7 +141,7 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 					"CODEOWNERS": "README.md @test\n",
 				},
 			},
-			want: autogold.Want("results matching ownership", []result.Match{
+			want: autogold.Expect([]result.Match{
 				&result.FileMatch{
 					File: result.File{
 						Path: "package.json",
@@ -165,7 +165,7 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 					"CODEOWNERS": "README.md test@example.com\n",
 				},
 			},
-			want: autogold.Want("no matching results", []result.Match{}),
+			want: autogold.Expect([]result.Match{}),
 		},
 		{
 			name: "selects results with any owner assigned",
@@ -202,7 +202,7 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 					}, "\n"),
 				},
 			},
-			want: autogold.Want("results matching ownership", []result.Match{
+			want: autogold.Expect([]result.Match{
 				&result.FileMatch{
 					File: result.File{
 						Path: "README.md",
@@ -250,7 +250,7 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 					}, "\n"),
 				},
 			},
-			want: autogold.Want("results matching ownership", []result.Match{
+			want: autogold.Expect([]result.Match{
 				&result.FileMatch{
 					File: result.File{
 						Path: "package.json",

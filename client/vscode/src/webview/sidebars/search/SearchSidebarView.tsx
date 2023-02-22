@@ -1,6 +1,6 @@
 import React, { FC, ReactElement, ReactNode, useCallback, useMemo } from 'react'
 
-import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 import create from 'zustand'
 

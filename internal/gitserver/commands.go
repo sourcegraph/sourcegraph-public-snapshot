@@ -2444,10 +2444,7 @@ func (c *clientImplementor) ArchiveReader(
 		return nil, err
 	}
 
-	u, err := c.archiveURL(ctx, repo, options)
-	if err != nil {
-		return nil, err
-	}
+	u := c.archiveURL(repo, options)
 
 	resp, err := c.do(ctx, repo, "POST", u.String(), nil)
 	if err != nil {
