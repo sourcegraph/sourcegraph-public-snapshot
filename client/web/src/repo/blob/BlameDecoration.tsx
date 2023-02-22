@@ -251,13 +251,15 @@ export const BlameDecoration: React.FunctionComponent<BlameDecorationProps> = ({
                                     as={SourceCommitIcon}
                                     className={classNames('mr-2 flex-shrink-0', styles.icon)}
                                 />
-                                <CommitMessageWithLinks
-                                    message={blameHunk.message}
-                                    to={blameHunk.displayInfo.linkURL}
-                                    className={styles.link}
-                                    onClick={logCommitClick}
-                                    externalURLs={externalURLs}
-                                />
+                                <div>
+                                    <CommitMessageWithLinks
+                                        message={blameHunk.message}
+                                        to={blameHunk.displayInfo.linkURL}
+                                        className={styles.link}
+                                        onClick={logCommitClick}
+                                        externalURLs={externalURLs}
+                                    />
+                                </div>
                             </div>
                             {blameHunk.commit.parents.length > 0 && (
                                 <>
