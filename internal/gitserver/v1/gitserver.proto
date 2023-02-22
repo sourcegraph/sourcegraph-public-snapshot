@@ -117,10 +117,10 @@ message BooleanNode {
 }
 
 enum OperatorKind {
-  UNSPECIFIED = 0;
-  AND = 1;
-  OR = 2;
-  NOT = 3;
+  OPERATOR_KIND_UNSPECIFIED = 0;
+  OPERATOR_KIND_AND = 1;
+  OPERATOR_KIND_OR = 2;
+  OPERATOR_KIND_NOT = 3;
 }
 
 message OperatorNode {
