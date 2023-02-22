@@ -8,6 +8,11 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+
+	gocvss20 "github.com/pandatix/go-cvss/20"
+	gocvss30 "github.com/pandatix/go-cvss/30"
+	gocvss31 "github.com/pandatix/go-cvss/31"
 )
 
 // OSV represents the Open Source Vulnerability format.
