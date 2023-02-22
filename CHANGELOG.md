@@ -26,7 +26,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Added Gerrit as an officially supported code host with permissions syncing. [#46763](https://github.com/sourcegraph/sourcegraph/pull/46763)
 - Markdown files now support `<picture>` and `<video>` elements in the rendered view. [#47074](https://github.com/sourcegraph/sourcegraph/pull/47074)
 - Batch Changes: Log outputs from execution steps are now paginated in the web interface. [#46335](https://github.com/sourcegraph/sourcegraph/pull/46335)
-- The environment variable `TELEMETRY_HTTP_PROXY` can be set to use an HTTP proxy for telemetry and update check requests.
+- The environment variable `TELEMETRY_HTTP_PROXY` can be set  on the `sourcegraph-frontend` service, to use an HTTP proxy for telemetry and update check requests.
 
 ### Changed
 
