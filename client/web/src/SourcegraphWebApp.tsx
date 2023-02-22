@@ -35,6 +35,7 @@ import {
     EMPTY_SETTINGS_CASCADE,
     Settings,
     SettingsCascadeOrError,
+    SettingsProvider,
     SettingsSubjectCommonFields,
 } from '@sourcegraph/shared/src/settings/settings'
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
@@ -71,13 +72,7 @@ import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheP
 import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import {
-    setQueryStateFromSettings,
-    setExperimentalFeaturesFromSettings,
-    getExperimentalFeatures,
-    useNavbarQueryState,
-} from './stores'
-import { useThemeProps } from './theme'
+import { setQueryStateFromSettings, setExperimentalFeaturesFromSettings, useNavbarQueryState } from './stores'
 import { eventLogger } from './tracking/eventLogger'
 import type { UserAreaRoute } from './user/area/UserArea'
 import type { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
@@ -134,7 +129,7 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
     const [graphqlClient, setGraphqlClient] = useState<GraphQLClient | null>(null)
     const [temporarySettingsStorage, setTemporarySettingsStorage] = useState<TemporarySettingsStorage | null>(null)
 
-    const [selectedSearchContextSpec, _setSelectedSearchContextSpec] = useState<string | null>(null)
+    const [selectedSearchContextSpec, _setSelectedSearchContextSpec] = useState<string | undefined>()
 
     // NOTE(2022-09-08) Inform the inlined code from
     // sourcegraph/code-intel-extensions about the change of search context.
@@ -213,19 +208,12 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
     useEffect(() => {
         selectedSearchContextSpecRef.current = selectedSearchContextSpec
     }, [selectedSearchContextSpec])
-    const getSelectedSearchContextSpec = useCallback(
-        (): string | undefined =>
-            getExperimentalFeatures().showSearchContext ? selectedSearchContextSpecRef.current ?? undefined : undefined,
-        []
-    )
 
     // TODO: Move all of this initialization outside React so we don't need to
     // handle the optional states everywhere
     useEffect(() => {
         const parsedSearchURL = parseSearchURL(window.location.search)
         const parsedSearchQuery = parsedSearchURL.query || ''
-
-        document.documentElement.classList.add('theme')
 
         getWebGraphQLClient()
             .then(graphqlClient => {
@@ -288,7 +276,7 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
             setSelectedSearchContextSpecToDefault()
         }
 
-        setWorkspaceSearchContext(selectedSearchContextSpec)
+        setWorkspaceSearchContext(selectedSearchContextSpec ?? null)
 
         userRepositoriesUpdates.next()
 
@@ -300,16 +288,14 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
     }, [])
 
     const breadcrumbProps = useBreadcrumbs()
-    const themeProps = useThemeProps()
 
     const context = {
         ...props,
-        ...themeProps,
         ...breadcrumbProps,
         isMacPlatform: isMacPlatform(),
         telemetryService: eventLogger,
         isSourcegraphDotCom: window.context.sourcegraphDotComMode,
-        selectedSearchContextSpec: getSelectedSearchContextSpec(),
+        selectedSearchContextSpec,
         setSelectedSearchContextSpec,
         getUserSearchContextNamespaces,
         fetchSearchContexts,
@@ -382,7 +368,7 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
                     telemetryService={eventLogger}
                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                     searchContextsEnabled={props.searchContextsEnabled}
-                    selectedSearchContextSpec={getSelectedSearchContextSpec()}
+                    selectedSearchContextSpec={selectedSearchContextSpec}
                     setSelectedSearchContextSpec={setSelectedSearchContextSpec}
                     getUserSearchContextNamespaces={getUserSearchContextNamespaces}
                     fetchSearchContexts={fetchSearchContexts}
@@ -398,15 +384,15 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
                     notebooksEnabled={props.notebooksEnabled}
                     codeMonitoringEnabled={props.codeMonitoringEnabled}
                     searchAggregationEnabled={props.searchAggregationEnabled}
-                    themeProps={themeProps}
                 />
             ),
             children: props.routes
                 .map(
-                    ({ condition = () => true, render, path }) =>
+                    ({ condition = () => true, render, path, handle }) =>
                         condition(context) && {
                             path: path.slice(1), // remove leading slash
                             element: render(context),
+                            handle,
                         }
                 )
                 .filter(isTruthy),
@@ -420,6 +406,7 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
                 /* eslint-disable react/no-children-prop, react/jsx-key */
                 <ApolloProvider client={graphqlClient} children={undefined} />,
                 <WildcardThemeContext.Provider value={WILDCARD_THEME} />,
+                <SettingsProvider settingsCascade={settingsCascade} />,
                 <ErrorBoundary location={null} />,
                 <TraceSpanProvider name={SharedSpanName.AppMount} />,
                 <FeatureFlagsProvider />,

@@ -9,7 +9,6 @@ import { takeWhile } from 'rxjs/operators'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     Alert,
     AlertProps,
@@ -49,7 +48,7 @@ import { useReindexPreciseIndex as defaultUseReindexPreciseIndex } from '../hook
 
 import styles from './CodeIntelPreciseIndexPage.module.scss'
 
-export interface CodeIntelPreciseIndexPageProps extends ThemeProps, TelemetryProps {
+export interface CodeIntelPreciseIndexPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     now?: () => Date
     queryDependencyGraph?: typeof defaultQueryDependencyGraph

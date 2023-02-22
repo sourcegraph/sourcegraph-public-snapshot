@@ -82,10 +82,13 @@
 
                     > [role='gridcell'] {
                         padding: 0 0.5rem;
-                        border-left: 1px solid var(--border-color);
 
-                        &:first-child {
-                            border-left: 0;
+                        &:hover {
+                            text-decoration: underline;
+                        }
+
+                        + [role='gridcell'] {
+                            border-left: 1px solid var(--border-color-2);
                         }
                     }
                 }

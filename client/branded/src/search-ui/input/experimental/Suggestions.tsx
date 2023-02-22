@@ -7,7 +7,7 @@ import { isSafari } from '@sourcegraph/common'
 import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { Icon, useWindowSize } from '@sourcegraph/wildcard'
 
-import { Action, CustomRenderer, Group, Option } from './suggestionsExtension'
+import type { Action, CustomRenderer, Group, Option } from './suggestionsExtension'
 
 import styles from './Suggestions.module.scss'
 
@@ -29,7 +29,7 @@ interface SuggesionsProps {
     results: Group[]
     activeRowIndex: number
     open?: boolean
-    onSelect(option: Option): void
+    onSelect(option: Option, action?: Action): void
 }
 
 export const Suggestions: React.FunctionComponent<SuggesionsProps> = ({
@@ -41,14 +41,24 @@ export const Suggestions: React.FunctionComponent<SuggesionsProps> = ({
 }) => {
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
 
+    // Handles mouse clicks on suggestions. The corresponding option is determined by the extracting group and option
+    // indicies from the element ID.
     const handleSelection = useCallback(
         (event: MouseEvent) => {
-            const match = (event.target as HTMLElement).closest('li[role="row"]')?.id.match(/\d+x\d+/)
+            const target = event.target as HTMLElement
+            const match = target.closest('li[role="row"]')?.id.match(/\d+x\d+/)
             if (match) {
                 // Extracts the group and row index from the elements ID to pass
                 // the right option value to the callback.
-                const [group, option] = match[0].split('x')
-                onSelect(results[+group].options[+option])
+                const [groupIndex, optionIndex] = match[0].split('x')
+                const option = results[+groupIndex].options[+optionIndex]
+                // Determine which action was selected.
+                onSelect(
+                    option,
+                    target.closest<HTMLElement>('[data-action]')?.dataset?.action === 'secondary'
+                        ? option.alternativeAction
+                        : option.action
+                )
             }
         },
         [onSelect, results]
@@ -123,9 +133,13 @@ export const Suggestions: React.FunctionComponent<SuggesionsProps> = ({
                                         )}
                                     </div>
                                     <div className={styles.note}>
-                                        <div role="gridcell">{getActionName(option.action)}</div>
+                                        <div role="gridcell" data-action="primary">
+                                            {getActionName(option.action)}
+                                        </div>
                                         {option.alternativeAction && (
-                                            <div role="gridcell">{getActionName(option.alternativeAction)}</div>
+                                            <div role="gridcell" data-action="secondary">
+                                                {getActionName(option.alternativeAction)}
+                                            </div>
                                         )}
                                     </div>
                                 </li>

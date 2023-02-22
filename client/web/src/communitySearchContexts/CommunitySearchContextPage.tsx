@@ -13,7 +13,6 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { QueryState, SearchContextInputProps, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps, Settings } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, useObservable, Link, Card, Icon, Code, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -22,7 +21,6 @@ import { SearchPatternType } from '../graphql-operations'
 import { submitSearch } from '../search/helpers'
 import { SearchPageInput } from '../search/home/SearchPageInput'
 import { useNavbarQueryState } from '../stores'
-import { ThemePreferenceProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { CommunitySearchContextMetadata } from './types'
@@ -31,8 +29,6 @@ import styles from './CommunitySearchContextPage.module.scss'
 
 export interface CommunitySearchContextPageProps
     extends SettingsCascadeProps<Settings>,
-        ThemeProps,
-        ThemePreferenceProps,
         TelemetryProps,
         ExtensionsControllerProps<'executeCommand'>,
         PlatformContextProps<'settings' | 'sourcegraphURL' | 'requestGraphQL'>,

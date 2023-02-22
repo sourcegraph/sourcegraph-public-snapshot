@@ -9195,13 +9195,7 @@ type TeamConnection {
     """
     The total count of items in the connection.
     """
-    totalCount(
-        """
-        If true, the total count of teams, including deeply nested child teams will
-        be returned. Note that those teams will NOT be part of the nodes.
-        """
-        countDeeplyNestedTeams: Boolean = false
-    ): Int!
+    totalCount: Int!
 
     """
     The pagination info for the connection.
@@ -9221,14 +9215,7 @@ type TeamMemberConnection {
     """
     The total count of items in the connection.
     """
-    totalCount(
-        """
-        If true, the total count of members of this team, including deeply nested
-        child teams members will be returned. Note that child team members will NOT
-        be part of the nodes.
-        """
-        countDeeplyNestedTeamMembers: Boolean = false
-    ): Int!
+    totalCount: Int!
 
     """
     The pagination info for the connection.

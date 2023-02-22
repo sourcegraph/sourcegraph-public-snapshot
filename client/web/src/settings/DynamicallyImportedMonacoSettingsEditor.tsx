@@ -5,7 +5,6 @@ import { Subscription } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, BeforeUnloadPrompt } from '@sourcegraph/wildcard'
 
 import { SaveToolbarProps, SaveToolbar, SaveToolbarPropsGenerator } from '../components/SaveToolbar'
@@ -20,9 +19,9 @@ const disposableToFunc = (disposable: _monaco.IDisposable) => () => disposable.d
 
 interface Props<T extends object>
     extends Pick<_monacoSettingsEditorModule.Props, 'id' | 'readOnly' | 'height' | 'jsonSchema' | 'language'>,
-        ThemeProps,
         TelemetryProps {
     value: string
+    isLightTheme: boolean
 
     actions?: EditorAction[]
 
