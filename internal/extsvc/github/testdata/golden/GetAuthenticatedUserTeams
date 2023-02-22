@@ -6,8 +6,7 @@
    "ReposCount": 1,
    "Organization": {
     "id": 65169595,
-    "login": "sourcegraph-vcr-repos",
-    "node_id": "MDEyOk9yZ2FuaXphdGlvbjY1MTY5NTk1"
+    "login": "sourcegraph-vcr-repos"
    }
   },
   {
@@ -17,8 +16,7 @@
    "ReposCount": 2,
    "Organization": {
     "id": 65169595,
-    "login": "sourcegraph-vcr-repos",
-    "node_id": "MDEyOk9yZ2FuaXphdGlvbjY1MTY5NTk1"
+    "login": "sourcegraph-vcr-repos"
    }
   }
  ]
