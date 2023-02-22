@@ -109,7 +109,7 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                 ...formData,
                 expiresAt: endOfDay(event.target.valueAsDate || getEmptyFormData(subscriptionAccount).expiresAt),
             })),
-        []
+        [subscriptionAccount]
     )
 
     const dismissAlert = useCallback(
