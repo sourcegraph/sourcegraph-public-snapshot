@@ -19,7 +19,7 @@ var (
 	_ graphqlbackend.OwnResolver = &ownResolver{}
 )
 
-// ownResolver is a dummy graphqlbackend.OwnResolver that reutns a single owner
+// ownResolver is a dummy graphqlbackend.OwnResolver that returns a single owner
 // that is the author of currently viewed commit, and fake ownership reason
 // pointing at line 42 of the CODEOWNERS file.
 type ownResolver struct{}
@@ -57,7 +57,7 @@ func (r *ownershipConnectionResolver) Nodes(_ context.Context) ([]graphqlbackend
 }
 
 // ownershipResolver provides a dummy implementation of graphqlbackend.OwnershipResolver
-// which just claims the the auhthor of given GitTreeEntryResolver Commit is the owner
+// which just claims the author of given GitTreeEntryResolver Commit is the owner
 // and is supports it by pointing at line 42 of the CODEOWNERS file.
 type ownershipResolver struct {
 	blob *graphqlbackend.GitTreeEntryResolver

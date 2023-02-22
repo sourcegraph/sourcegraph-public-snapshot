@@ -122,6 +122,7 @@ type CodeownersIngestedFile {
 }
 
 extend type Mutation {
+    # todo make it input
     addCodeownersFile(file: String!, repoID: Int!): CodeownersIngestedFile!
     updateCodeownersFile(file: String!, repoID: Int!): CodeownersIngestedFile!
     deleteCodeownersFile(repoID: Int!): EmptyResponse!
@@ -130,6 +131,7 @@ extend type Mutation {
 extend type Query {
     codeownersIngestedFiles(first: Int, after: Int, repoID: Int): [CodeownersIngestedFileConnection!]
 }
+
 type CodeownersIngestedFileConnection {
     """
     The total count of items in the connection.
