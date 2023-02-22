@@ -12,6 +12,9 @@ The Executor host VMs are configured to automatically tear themselves down once 
 
 The VM should now persist after all jobs are satisfied.
 
+**Note:** this prevents the VM from tearing itself down, however the instance group may still auto-scale the VM to zero. If you need longer to debug, please consider adjusting the minimum number of available VMs to at least 1.
+
+
 ## Creating a Debug Firecracker VM
 > NOTE: if the host VM is provisioned with the [Sourcegraph terraform modules](https://docs.sourcegraph.com/admin/deploy_executors_terraform), the VMs may be configured to sotp automatically. Refer to [Disabling the auto-deletion of Executor VMs](#disabling-the-auto-deletion-of-executor-vms) for information to prevent this.
 
