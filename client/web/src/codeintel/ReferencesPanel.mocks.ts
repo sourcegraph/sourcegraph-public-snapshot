@@ -321,7 +321,11 @@ export const defaultProps: ReferencesPanelProps = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
     settingsCascade: {
         subjects: null,
-        final: null,
+        final: {
+            experimentalFeatures: {
+                enableCodeMirrorFileView: false,
+            },
+        },
     },
     platformContext: NOOP_PLATFORM_CONTEXT as any,
     isLightTheme: false,

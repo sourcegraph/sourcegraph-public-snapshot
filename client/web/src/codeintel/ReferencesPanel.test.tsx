@@ -5,12 +5,14 @@ import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shar
 import '@sourcegraph/shared/dev/mockReactVisibilitySensor'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
+import { setExperimentalFeaturesFromSettings } from '../stores'
 import { ReferencesPanel } from './ReferencesPanel'
 import { buildReferencePanelMocks, defaultProps } from './ReferencesPanel.mocks'
 
 describe('ReferencesPanel', () => {
     async function renderReferencesPanel() {
         const { url, requestMocks } = buildReferencePanelMocks()
+        setExperimentalFeaturesFromSettings(defaultProps.settingsCascade)
 
         const result = renderWithBrandedContext(
             <MockedTestProvider mocks={requestMocks}>
