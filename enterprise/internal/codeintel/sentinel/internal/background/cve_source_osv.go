@@ -97,6 +97,18 @@ func osvToVuln(o OSV, dataSourceHandler DataSourceHandler) (vuln shared.Vulnerab
 		return v, err
 	}
 
+	if len(o.Severity) > 1 {
+		fmt.Printf("Data warning: %s has >1 severity (actual: %d)\n", v.SourceID, len(o.Severity))
+	}
+	for _, severity := range o.Severity {
+		v.CVSSVector = severity.Score
+
+		v.CVSSScore, v.Severity, err = parseCVSS(v.CVSSVector)
+		if err != nil {
+			fmt.Printf("Data warning: %s could not parse CVSS vector '%s': %s\n", v.SourceID, v.CVSSVector, err)
+		}
+	}
+
 	var pas []shared.AffectedPackage
 	for _, affected := range o.Affected {
 		var ap shared.AffectedPackage
@@ -149,4 +161,42 @@ func osvToVuln(o OSV, dataSourceHandler DataSourceHandler) (vuln shared.Vulnerab
 	v.AffectedPackages = pas
 
 	return v, nil
+}
+
+var cvssTrailingSlash = lazyregexp.New(`/$`)
+
+func parseCVSS(cvssVector string) (score string, severity string, err error) {
+	// Some data sources include trailing slashes
+	cleanCvssVector := string(cvssTrailingSlash.ReplaceAll([]byte(cvssVector), []byte{}))
+
+	var baseScore float64
+	switch strings.Split(cvssVector, "/")[0] {
+	case "CVSS:2.0":
+		cvss, err := gocvss20.ParseVector(cleanCvssVector)
+		if err != nil {
+			return "", "", err
+		}
+		baseScore = cvss.BaseScore()
+	case "CVSS:3.0":
+		cvss, err := gocvss30.ParseVector(cleanCvssVector)
+		if err != nil {
+			return "", "", err
+		}
+		baseScore = cvss.BaseScore()
+	case "CVSS:3.1":
+		cvss, err := gocvss31.ParseVector(cleanCvssVector)
+		if err != nil {
+			return "", "", err
+		}
+		baseScore = cvss.BaseScore()
+	}
+
+	// Implementation of rating is the same across all CVSS versions
+	severity, err = gocvss31.Rating(baseScore)
+	if err != nil {
+		return "", "", err
+	}
+
+	score = fmt.Sprintf("%.1f", baseScore)
+	return score, severity, nil
 }
