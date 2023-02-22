@@ -81,7 +81,7 @@ func addrForKey(key string, addrs []string) string {
 
 type GitserverConns struct {
 	GitserverAddresses
-	// invariant: there is one conn for every
+	// invariant: there is one conn for every gitserver address
 	grpcConns map[string]connAndErr
 }
 
