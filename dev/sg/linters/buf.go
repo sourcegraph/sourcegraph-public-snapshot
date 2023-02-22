@@ -34,6 +34,10 @@ var bufFormat = &linter{
 			return errors.Wrapf(err, "finding .proto files")
 		}
 
+		if len(protoFiles) == 0 {
+			return errors.New("no .proto files found")
+		}
+
 		bufArgs := []string{
 			"format",
 			"--diff",
@@ -189,8 +193,7 @@ var bufGenerate = &linter{
 		}
 
 		if len(generatedFiles) == 0 {
-			// no generated files, nothing to check
-			return nil
+			return errors.New("no generated files found")
 		}
 
 		gitArgs := []string{
