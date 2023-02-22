@@ -7469,7 +7469,7 @@
         {
           "Name": "contents_proto",
           "Index": 3,
-          "TypeName": "json",
+          "TypeName": "bytea",
           "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,

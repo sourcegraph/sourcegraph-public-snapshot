@@ -961,7 +961,7 @@ Foreign-key constraints:
 ----------------+--------------------------+-----------+----------+----------------------------------------
  id             | integer                  |           | not null | nextval('codeowners_id_seq'::regclass)
  contents       | text                     |           | not null | 
- contents_proto | json                     |           | not null | 
+ contents_proto | bytea                    |           | not null | 
  repo_id        | integer                  |           | not null | 
  created_at     | timestamp with time zone |           | not null | now()
  updated_at     | timestamp with time zone |           | not null | now()
