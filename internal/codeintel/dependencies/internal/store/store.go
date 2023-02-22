@@ -342,61 +342,37 @@ CREATE TEMPORARY TABLE t_package_repo_versions (
 const transferPackageRepoRefsQuery = `
 INSERT INTO lsif_dependency_repos (scheme, name)
 SELECT scheme, name
-FROM (
+FROM t_package_repo_refs t
+WHERE NOT EXISTS (
 	SELECT scheme, name
-	FROM t_package_repo_refs t
-	-- we reduce all package repo refs before insert, so nothing in
-	-- t_package_repo_refs to dedupe
-	EXCEPT ALL
-	(
-		SELECT scheme, name
-		FROM lsif_dependency_repos
-	)
-	-- we order by ID in list as we use ID-based pagination,
-	-- but unit tests rely on name ordering when paginating
-) diff
+	FROM lsif_dependency_repos
+	WHERE scheme = t.scheme AND
+	name = t.name
+)
 ORDER BY name
 RETURNING id, scheme, name
 `
 
-// USE THIS INSTEAD!!!!!
-const x = `
-SELECT scheme, name
-FROM (
-	SELECT scheme, name
-	FROM t_package_repo_refs t
-	WHERE NOT EXISTS (
-		SELECT scheme, name
-		FROM lsif_dependency_repos
-		WHERE scheme = t.scheme AND
-		name = t.name
-	)
-) diff
-ORDER BY name
-`
-
 const transferPackageRepoRefVersionsQuery = `
 INSERT INTO package_repo_versions (package_id, version)
-SELECT package_id, version
-FROM t_package_repo_versions
 -- we dont reduce package repo versions,
--- so omit 'ALL' here to avoid conflict
-EXCEPT
-(
+-- so DISTINCT here to avoid conflict
+SELECT DISTINCT package_id, version
+FROM t_package_repo_versions t
+WHERE NOT EXISTS (
 	SELECT package_id, version
 	FROM package_repo_versions
+	WHERE package_id = t.package_id AND
+	version = t.version
 )
 -- unit tests rely on a certain order
 ORDER BY package_id, version
 RETURNING id, package_id, version
 `
 
-// Always use the lowest ID for a given (scheme,name), like in the migration
-// migrations/frontend/1674669326_package_repos_separate_versions_table/up.sql#L41
 const getAttemptedInsertDependencyReposQuery = `
-SELECT MIN(id) FROM lsif_dependency_repos
+SELECT id FROM lsif_dependency_repos
 WHERE (scheme, name) IN (VALUES %s)
-GROUP BY (scheme, name)
 ORDER BY (scheme, name)
 `
 
