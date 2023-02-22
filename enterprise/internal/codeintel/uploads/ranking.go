@@ -2,7 +2,9 @@ package uploads
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
+	"time"
 
 	"cloud.google.com/go/storage"
 	"github.com/sourcegraph/log"
@@ -197,7 +199,11 @@ func (s *Service) MapRankingGraph(ctx context.Context, numRankingRoutines int, r
 		return nil
 	}
 
-	if err := s.store.InsertPathCountInputs(ctx, rankingGraphKey, rankingMapReduceBatchSize); err != nil {
+	if err := s.store.InsertPathCountInputs(
+		ctx,
+		getCurrentGraphKey(time.Now()),
+		rankingMapReduceBatchSize,
+	); err != nil {
 		return err
 	}
 
@@ -218,7 +224,7 @@ func (s *Service) ReduceRankingGraph(
 
 	numPathRanksInserted, numPathCountInputsProcessed, err = s.store.InsertPathRanks(
 		ctx,
-		rankingGraphKey,
+		getCurrentGraphKey(time.Now()),
 		rankingMapReduceBatchSize,
 	)
 	if err != nil {
@@ -226,4 +232,20 @@ func (s *Service) ReduceRankingGraph(
 	}
 
 	return numPathRanksInserted, numPathCountInputsProcessed, nil
+}
+
+// TODO - move this to config
+var interval = time.Second * 5
+
+// TODO - test
+
+// getCurrentGraphKey returns a derivative key from the configured parent used for exports
+// as well as the current "bucket" of time containing the current instant. Each bucket of
+// time is the same configurable length, packed end-to-end since the Unix epoch.
+//
+// Constructing a graph key for the mapper and reducer jobs in this way ensures that begin
+// a fresh map/reduce job on a periodic cadence (equal to the bucket length). Changing the
+// parent graph key will also create a new map/reduce job (without switching buckets).
+func getCurrentGraphKey(now time.Time) string {
+	return fmt.Sprintf("%s-%d", rankingGraphKey, now.UTC().UnixNano()/interval.Nanoseconds())
 }

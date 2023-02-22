@@ -18,14 +18,13 @@ func NewRankingGraphExporter(
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		context.Background(),
-		"rank.graph-exporter", "exports SCIP data to ranking defintions and reference tables",
+		"rank.graph-exporter", "exports SCIP data to ranking definitions and reference tables",
 		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			if err := uploadsService.ExportRankingGraph(ctx, numRankingRoutines, batchSize, rankingJobEnabled); err != nil {
 				return err
 			}
 
-			// Need to replace this pre-deployment
 			if err := uploadsService.VacuumRankingGraph(ctx); err != nil {
 				return err
 			}
@@ -75,7 +74,6 @@ func NewRankingGraphReducer(
 
 			operations.numPathCountsInputsRowsProcessed.Add(numPathCountsInputsProcessed)
 			operations.numPathRanksInserted.Add(numPathRanksInserted)
-
 			return nil
 		}),
 	)
