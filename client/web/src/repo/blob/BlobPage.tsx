@@ -124,13 +124,10 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     let renderMode = getModeFromURL(location)
     const { repoID, repoName, revision, commitID, filePath, useBreadcrumb, mode } = props
     const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? true)
-    const experimentalCodeNavigation = useExperimentalFeatures(features => features.codeNavigation)
     const enableLazyBlobSyntaxHighlighting = useExperimentalFeatures(
         features => features.enableLazyBlobSyntaxHighlighting ?? false
     )
     const [enableOwnershipPanel] = useFeatureFlag('search-ownership')
-
-    const enableSelectionDrivenCodeNavigation = experimentalCodeNavigation !== 'hover-only'
 
     const lineOrRange = useMemo(
         () => parseQueryAndHash(location.search, location.hash),
@@ -574,7 +571,6 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                         isBlameVisible={isBlameVisible}
                         blameHunks={blameHunks}
                         overrideBrowserSearchKeybinding={true}
-                        enableSelectionDrivenCodeNavigation={enableSelectionDrivenCodeNavigation}
                     />
                 </TraceSpanProvider>
             )}

@@ -70,9 +70,6 @@ export interface BlobProps
     // and clicking on any line should navigate to that specific line.
     navigateToLineOnAnyClick?: boolean
 
-    // Enables experimental navigation by making interactive tokens selectable on click.
-    enableSelectionDrivenCodeNavigation?: boolean
-
     // If set, nav is called when a user clicks on a token highlighted by
     // WebHoverOverlay
     nav?: (url: string) => void
@@ -176,7 +173,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         extensionsController,
         isBlameVisible,
         blameHunks,
-        enableSelectionDrivenCodeNavigation,
 
         // Reference panel specific props
         navigateToLineOnAnyClick,
@@ -280,10 +276,9 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 onSelection,
                 initialSelection: position.line !== undefined ? position : null,
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
-                enableSelectionDrivenCodeNavigation,
             }),
             codeFoldingExtension(),
-            enableSelectionDrivenCodeNavigation ? tokenSelectionExtension() : [],
+            tokenSelectionExtension(),
             syntaxHighlight.of(blobInfo),
             languageSupport.of(blobInfo),
             pin.init(() => (hasPin ? position : null)),
@@ -292,7 +287,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                       blobInfo,
                       initialSelection: position,
                       extensionsController,
-                      enableSelectionDrivenCodeNavigation,
                   })
                 : [],
             blobPropsCompartment.of(blobProps),
@@ -334,10 +328,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             // any existing state should be discarded.
             const state = EditorState.create({ doc: blobInfo.content, extensions })
             editor.setState(state)
-
-            if (!enableSelectionDrivenCodeNavigation) {
-                return
-            }
 
             // Sync editor selection/focus with the URL so that triggering
             // `history.goBack/goForward()` works similar to the "Go back"
