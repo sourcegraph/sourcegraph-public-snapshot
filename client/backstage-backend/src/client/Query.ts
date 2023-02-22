@@ -2,6 +2,7 @@ import { gql } from '@apollo/client'
 import type { DocumentNode } from '@apollo/client'
 
 export interface Query<T> {
+  toString(): string
   gql(): DocumentNode
   vars(): string
   marshal(data: any): T
@@ -17,7 +18,7 @@ export interface SearchResult {
 
 export class SearchQuery implements Query<SearchResults> {
   private readonly query: string
-  static raw: string = `
+  static gql: DocumentNode = gql(`
             query ($search: String!) {
                 search(query: $search) {
                     results {
@@ -36,7 +37,7 @@ export class SearchQuery implements Query<SearchResults> {
                     }
                 }
             }
-        `
+        `)
 
   constructor(query: string) {
     this.query = query
@@ -67,12 +68,16 @@ export class SearchQuery implements Query<SearchResults> {
   }
 
   gql(): DocumentNode {
-    return gql(SearchQuery.raw)
+    return SearchQuery.gql
+  }
+
+  toString(): string {
+    return this.query
   }
 }
 
 export class SearchRepoQuery extends SearchQuery {
-  static raw: string = `
+  static gql: DocumentNode = gql(`
             query ($search: String!) {
                 search(query: $search) {
                     results {
@@ -85,32 +90,32 @@ export class SearchRepoQuery extends SearchQuery {
                     }
                 }
             }
-        `
+        `)
 
   constructor(query: string) {
     super(query)
   }
 
   gql(): DocumentNode {
-    return gql(SearchRepoQuery.raw)
+    return SearchRepoQuery.gql
   }
 }
 
 export class UserQuery implements Query<string> {
-  static raw: string = `
+  static gql: DocumentNode = gql(`
             query {
                 currentUser {
                     username
                 }
             }
-        `
+        `)
 
   vars(): any {
     return {}
   }
 
   gql(): DocumentNode {
-    return gql(UserQuery.raw)
+    return UserQuery.gql
   }
 
   marshal(data: any): string {
@@ -119,5 +124,9 @@ export class UserQuery implements Query<string> {
       return currentUser.username
     }
     throw new Error('currentUser field missing')
+  }
+
+  toString(): string {
+    return ""
   }
 }
