@@ -39,20 +39,9 @@ go run ./cmd/download
 echo '--- :one: clearing existing state'
 go run ./cmd/clear
 
-# Disable migration #20 (LSIF -> SCIP)
-echo '--- :two: Disabling LSIF -> SCIP migration'
-"${root_dir}/init-sg" oobmigration -id T3V0T2ZCYW5kTWlncmF0aW9uOjIw -down
-
-echo '--- :three: integration test ./dev/codeintel-qa/cmd/upload'
+echo '--- :two: integration test ./dev/codeintel-qa/cmd/upload'
 env PATH="${root_dir}/.bin:${PATH}" go run ./cmd/upload --timeout=5m
 
-echo '--- :four: integration test ./dev/codeintel-qa/cmd/query'
-go run ./cmd/query
-
-# Enable migration #20 (LSIF -> SCIP) and wait for it to complete
-echo '--- :five: Running LSIF -> SCIP migration'
-"${root_dir}/init-sg" oobmigration -id T3V0T2ZCYW5kTWlncmF0aW9uOjIw
-
-echo '--- :six: integration test ./dev/codeintel-qa/cmd/query'
+echo '--- :three: integration test ./dev/codeintel-qa/cmd/query'
 go run ./cmd/query
 popd

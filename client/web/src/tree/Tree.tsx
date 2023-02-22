@@ -2,7 +2,7 @@
 import * as React from 'react'
 
 import { isEqual } from 'lodash'
-import { Location, NavigateFunction } from 'react-router-dom-v5-compat'
+import { Location, NavigateFunction } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, startWith } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'

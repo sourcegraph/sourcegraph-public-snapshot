@@ -5,6 +5,7 @@ import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import MonitorStarIcon from 'mdi-react/MonitorStarIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
+import { isPackagesEnabled } from './flags'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
 export const analyticsGroup: SiteAdminSideBarGroup = {
@@ -87,6 +88,11 @@ export const repositoriesGroup: SiteAdminSideBarGroup = {
         {
             label: 'Repositories',
             to: '/site-admin/repositories',
+        },
+        {
+            label: 'Packages',
+            to: '/site-admin/packages',
+            condition: isPackagesEnabled,
         },
     ],
 }

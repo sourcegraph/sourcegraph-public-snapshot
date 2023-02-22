@@ -1,20 +1,20 @@
 import {
-    useRef,
     Ref,
     createContext,
+    ComponentType,
     FC,
-    ReactNode,
     HTMLAttributes,
     useMemo,
     useContext,
     useCallback,
     useEffect,
+    useState,
 } from 'react'
 
 import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import { createPortal } from 'react-dom'
-import { useLocation, useNavigate, Routes, Route, Navigate, matchPath } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate, Routes, Route, Navigate, matchPath } from 'react-router-dom'
 
 import { Button, Icon } from '@sourcegraph/wildcard'
 
@@ -24,7 +24,7 @@ export interface StepConfiguration {
     id: string
     path: string
     name: string
-    render: () => ReactNode
+    component: ComponentType<{ className?: string }>
 }
 
 interface SetupStepsContextData {
@@ -55,7 +55,7 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
 
     const navigate = useNavigate()
     const location = useLocation()
-    const nextButtonPortalRef = useRef<HTMLDivElement>(null)
+    const [nextButtonPortal, setNextButtonPortal] = useState<HTMLDivElement | null>(null)
 
     // Resolve current setup step and its index by URL matches
     const { currentStep, activeStepIndex } = useMemo<SetupStepURLContext>(() => {
@@ -114,28 +114,30 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
     const cachedContext = useMemo(
         () => ({
             steps,
-            nextButtonPortalElement: nextButtonPortalRef.current,
+            nextButtonPortalElement: nextButtonPortal,
             onNextStep: handleGoToNextStep,
         }),
-        [handleGoToNextStep, steps]
+        [handleGoToNextStep, steps, nextButtonPortal]
     )
 
     return (
         <SetupStepsContext.Provider value={cachedContext}>
             <div className={styles.root}>
                 <SetupStepsHeader steps={steps} activeStepIndex={activeStepIndex} />
-                <div className={styles.content}>
-                    <Routes>
-                        {steps.map(step => (
-                            <Route key="hardcoded-key" path={step.path} element={step.render()} />
-                        ))}
-                        <Route path="*" element={<Navigate to={currentStep.path} />} />
-                    </Routes>
-                </div>
+                <Routes>
+                    {steps.map(({ path, component: Component }) => (
+                        <Route
+                            key="hardcoded-key"
+                            path={`${path}/*`}
+                            element={<Component className={styles.content} />}
+                        />
+                    ))}
+                    <Route path="*" element={<Navigate to={currentStep.path} />} />
+                </Routes>
                 <SetupStepsFooter
                     steps={steps}
                     activeStepIndex={activeStepIndex}
-                    nextButtonPortalRef={nextButtonPortalRef}
+                    nextButtonPortalRef={setNextButtonPortal}
                     onPrevStep={handleGoToPrevStep}
                     onNextStep={handleGoToNextStep}
                 />
@@ -164,7 +166,14 @@ export const SetupStepsHeader: FC<SetupStepsHeaderProps> = props => {
                     >
                         {index + 1}
                     </span>
-                    <small className={styles.headerStepLabel}>{step.name}</small>
+                    <small
+                        data-label-text={step.name}
+                        className={classNames(styles.headerStepLabel, {
+                            [styles.headerStepLabelActive]: index === activeStepIndex,
+                        })}
+                    >
+                        {step.name}
+                    </small>
                 </div>
             ))}
         </header>

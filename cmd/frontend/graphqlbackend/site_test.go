@@ -5,11 +5,14 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -172,4 +175,60 @@ diff in IDs: %s,\n
 		})
 	}
 
+}
+
+func TestIsRequiredOutOfBandMigration(t *testing.T) {
+	tests := []struct {
+		name      string
+		version   oobmigration.Version
+		migration oobmigration.Migration
+		want      bool
+	}{
+		{
+			name:      "not deprecated",
+			version:   oobmigration.Version{Major: 4, Minor: 3},
+			migration: oobmigration.Migration{},
+			want:      false,
+		},
+		{
+			name:    "deprecated but finished",
+			version: oobmigration.Version{Major: 4, Minor: 3},
+			migration: oobmigration.Migration{
+				Deprecated: &oobmigration.Version{Major: 3, Minor: 43},
+				Progress:   1,
+			},
+			want: false,
+		},
+		{
+			name:    "deprecated after the current",
+			version: oobmigration.Version{Major: 4, Minor: 3},
+			migration: oobmigration.Migration{
+				Deprecated: &oobmigration.Version{Major: 4, Minor: 4},
+			},
+			want: false,
+		},
+
+		{
+			name:    "deprecated at current and unfinished",
+			version: oobmigration.Version{Major: 4, Minor: 3},
+			migration: oobmigration.Migration{
+				Deprecated: &oobmigration.Version{Major: 4, Minor: 3},
+			},
+			want: true,
+		},
+		{
+			name:    "deprecated prior to current and unfinished",
+			version: oobmigration.Version{Major: 4, Minor: 3},
+			migration: oobmigration.Migration{
+				Deprecated: &oobmigration.Version{Major: 3, Minor: 43},
+			},
+			want: true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := isRequiredOutOfBandMigration(test.version, test.migration)
+			assert.Equal(t, test.want, got)
+		})
+	}
 }

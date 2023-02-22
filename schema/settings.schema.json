@@ -63,22 +63,6 @@
             "pointer": true
           }
         },
-        "searchStreaming": {
-          "description": "DEPRECATED: This feature is now permanently enabled. Enables streaming search support.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "showSearchContext": {
-          "description": "Enables the search context dropdown.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "showMultilineSearchConsole": {
           "description": "Enables the multiline search console at search/console",
           "type": "boolean",

@@ -133,6 +133,6 @@
   component: frontend-db.changesets
   description: Populate external_fork_name column for existing changesets published on Bitbucket Server and Cloud.
   non_destructive: true
-  is_enterprise: false
+  is_enterprise: true
   introduced_version_major: 4
   introduced_version_minor: 5

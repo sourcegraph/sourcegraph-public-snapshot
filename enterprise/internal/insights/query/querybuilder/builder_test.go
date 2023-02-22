@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -437,94 +437,108 @@ func TestAggregationQuery(t *testing.T) {
 		want       autogold.Value
 	}{
 		{
+			name:       "basic query",
 			inputQuery: `test`,
 			count:      "all",
-			want:       autogold.Want("basic query", BasicQuery("count:all timeout:2s test")),
+			want:       autogold.Expect(BasicQuery("count:all timeout:2s test")),
 		},
 		{
+			name:       "multiplan query",
 			inputQuery: `(repo:^github\.com/sourcegraph/sourcegraph$ test) OR (repo:^github\.com/sourcegraph/sourcegraph$ todo)`,
 			count:      "all",
-			want:       autogold.Want("multiplan query", BasicQuery("(repo:^github\\.com/sourcegraph/sourcegraph$ count:all timeout:2s test OR repo:^github\\.com/sourcegraph/sourcegraph$ count:all timeout:2s todo)")),
+			want:       autogold.Expect(BasicQuery("(repo:^github\\.com/sourcegraph/sourcegraph$ count:all timeout:2s test OR repo:^github\\.com/sourcegraph/sourcegraph$ count:all timeout:2s todo)")),
 		},
 		{
+			name:       "multiplan query overwrite",
 			inputQuery: `(repo:^github\.com/sourcegraph/sourcegraph$ test) OR (repo:^github\.com/sourcegraph/sourcegraph$ todo) count:2000`,
 			count:      "all",
-			want:       autogold.Want("multiplan query overwrite", BasicQuery("(repo:^github\\.com/sourcegraph/sourcegraph$ count:all timeout:2s test OR repo:^github\\.com/sourcegraph/sourcegraph$ count:all timeout:2s todo)")),
+			want:       autogold.Expect(BasicQuery("(repo:^github\\.com/sourcegraph/sourcegraph$ count:all timeout:2s test OR repo:^github\\.com/sourcegraph/sourcegraph$ count:all timeout:2s todo)")),
 		},
 		{
+			name:       "overwrite existing",
 			inputQuery: `test count:1000`,
 			count:      "all",
-			want:       autogold.Want("overwrite existing", BasicQuery("count:all timeout:2s test")),
+			want:       autogold.Expect(BasicQuery("count:all timeout:2s test")),
 		},
 		{
+			name:       "overwrite existing",
 			inputQuery: `test count:1000`,
 			count:      "50000",
-			want:       autogold.Want("overwrite existing", BasicQuery("count:50000 timeout:2s test")),
+			want:       autogold.Expect(BasicQuery("count:50000 timeout:2s test")),
 		},
 	}
 	for _, test := range tests {
-		t.Run(test.want.Name(), func(t *testing.T) {
+		t.Run(test.name, func(t *testing.T) {
 			got, _ := AggregationQuery(BasicQuery(test.inputQuery), 2, test.count)
 			test.want.Equal(t, got)
-
 		})
 	}
 }
 
 func Test_addAuthorFilter(t *testing.T) {
 	tests := []struct {
+		name   string
 		input  string
 		author string
 		want   autogold.Value
 	}{
 		{
+			name:   "no initial author field in commit search",
 			input:  "myquery repo:myrepo type:commit",
 			author: "santa",
-			want:   autogold.Want("no initial author field in commit search", BasicQuery("repo:myrepo type:commit author:^santa$ myquery")),
+			want:   autogold.Expect(BasicQuery("repo:myrepo type:commit author:^santa$ myquery")),
 		},
 		{
+			name:   "ensure author is escaped",
 			input:  "myquery repo:myrepo type:commit",
 			author: "xtreme[username]",
-			want:   autogold.Want("ensure author is escaped", BasicQuery("repo:myrepo type:commit author:^xtreme\\[username\\]$ myquery")),
+			want:   autogold.Expect(BasicQuery("repo:myrepo type:commit author:^xtreme\\[username\\]$ myquery")),
 		},
 		{
+			name:   "one initial author field in commit search",
 			input:  "myquery repo:myrepo type:commit author:claus",
 			author: "santa",
-			want:   autogold.Want("one initial author field in commit search", BasicQuery("repo:myrepo type:commit author:claus author:^santa$ myquery")),
+			want:   autogold.Expect(BasicQuery("repo:myrepo type:commit author:claus author:^santa$ myquery")),
 		},
 		{
+			name:   "no initial author field in diff search",
 			input:  "myquery repo:myrepo type:diff",
 			author: "santa",
-			want:   autogold.Want("no initial author field in diff search", BasicQuery("repo:myrepo type:diff author:^santa$ myquery")),
+			want:   autogold.Expect(BasicQuery("repo:myrepo type:diff author:^santa$ myquery")),
 		},
 		{
+			name:   "one initial author field in diff search",
 			input:  "myquery repo:myrepo type:diff author:claus",
 			author: "santa",
-			want:   autogold.Want("one initial author field in diff search", BasicQuery("repo:myrepo type:diff author:claus author:^santa$ myquery")),
+			want:   autogold.Expect(BasicQuery("repo:myrepo type:diff author:claus author:^santa$ myquery")),
 		},
 		{
+			name:   "invalid adding to file search - should error",
 			input:  "myquery repo:myrepo type:file author:claus",
 			author: "santa",
-			want:   autogold.Want("invalid adding to file search - should error", "your query contains the field 'author', which requires type:commit or type:diff in the query"),
+			want:   autogold.Expect("your query contains the field 'author', which requires type:commit or type:diff in the query"),
 		},
 		{
+			name:   "invalid adding to repo search - should return input",
 			input:  "myquery repo:myrepo type:repo",
 			author: "santa",
-			want:   autogold.Want("invalid adding to repo search - should return input", BasicQuery("repo:myrepo type:repo myquery")),
+			want:   autogold.Expect(BasicQuery("repo:myrepo type:repo myquery")),
 		},
 		{
+			name:   "compound query where one side is author and one side is repo",
 			input:  "(myquery repo:myrepo type:repo) or (type:diff repo:asdf findme)",
 			author: "santa",
-			want:   autogold.Want("compound query where one side is author and one side is repo", BasicQuery("(repo:myrepo type:repo myquery OR type:diff repo:asdf author:^santa$ findme)")),
+			want:   autogold.Expect(BasicQuery("(repo:myrepo type:repo myquery OR type:diff repo:asdf author:^santa$ findme)")),
 		},
 		{
+			name:   "author with whitespace in name",
 			input:  "insights type:commit",
 			author: "Santa Claus",
-			want:   autogold.Want("author with whitespace in name", BasicQuery("type:commit author:(^Santa Claus$) insights")),
+			want:   autogold.Expect(BasicQuery("type:commit author:(^Santa Claus$) insights")),
 		},
 	}
 	for _, test := range tests {
-		t.Run(test.want.Name(), func(t *testing.T) {
+		t.Run(test.name, func(t *testing.T) {
 			got, err := AddAuthorFilter(BasicQuery(test.input), test.author)
 			if err != nil {
 				test.want.Equal(t, err.Error())
@@ -537,28 +551,32 @@ func Test_addAuthorFilter(t *testing.T) {
 
 func Test_addRepoFilter(t *testing.T) {
 	tests := []struct {
+		name  string
 		input string
 		repo  string
 		want  autogold.Value
 	}{
 		{
+			name:  "no initial repo filter",
 			input: "myquery",
 			repo:  "github.com/sourcegraph/sourcegraph",
-			want:  autogold.Want("no initial repo filter", BasicQuery("repo:^github\\.com/sourcegraph/sourcegraph$ myquery")),
+			want:  autogold.Expect(BasicQuery("repo:^github\\.com/sourcegraph/sourcegraph$ myquery")),
 		},
 		{
+			name:  "one initial repo filter",
 			input: "myquery repo:supergreat",
 			repo:  "github.com/sourcegraph/sourcegraph",
-			want:  autogold.Want("one initial repo filter", BasicQuery("repo:supergreat repo:^github\\.com/sourcegraph/sourcegraph$ myquery")),
+			want:  autogold.Expect(BasicQuery("repo:supergreat repo:^github\\.com/sourcegraph/sourcegraph$ myquery")),
 		},
 		{
+			name:  "compound query adding repo",
 			input: "(myquery repo:supergreat) or (big repo:asdf)",
 			repo:  "github.com/sourcegraph/sourcegraph",
-			want:  autogold.Want("compound query adding repo", BasicQuery("(repo:supergreat repo:^github\\.com/sourcegraph/sourcegraph$ myquery OR repo:asdf repo:^github\\.com/sourcegraph/sourcegraph$ big)")),
+			want:  autogold.Expect(BasicQuery("(repo:supergreat repo:^github\\.com/sourcegraph/sourcegraph$ myquery OR repo:asdf repo:^github\\.com/sourcegraph/sourcegraph$ big)")),
 		},
 	}
 	for _, test := range tests {
-		t.Run(test.want.Name(), func(t *testing.T) {
+		t.Run(test.name, func(t *testing.T) {
 			got, err := AddRepoFilter(BasicQuery(test.input), test.repo)
 			if err != nil {
 				test.want.Equal(t, err.Error())
@@ -571,28 +589,32 @@ func Test_addRepoFilter(t *testing.T) {
 
 func Test_addFileFilter(t *testing.T) {
 	tests := []struct {
+		name  string
 		input string
 		file  string
 		want  autogold.Value
 	}{
 		{
+			name:  "no initial repo filter",
 			input: "myquery",
 			file:  "some/directory/file.md",
-			want:  autogold.Want("no initial repo filter", BasicQuery("file:^some/directory/file\\.md$ myquery")),
+			want:  autogold.Expect(BasicQuery("file:^some/directory/file\\.md$ myquery")),
 		},
 		{
+			name:  "one initial repo filter",
 			input: "myquery repo:supergreat",
 			file:  "some/directory/file.md",
-			want:  autogold.Want("one initial repo filter", BasicQuery("repo:supergreat file:^some/directory/file\\.md$ myquery")),
+			want:  autogold.Expect(BasicQuery("repo:supergreat file:^some/directory/file\\.md$ myquery")),
 		},
 		{
+			name:  "compound query adding file",
 			input: "(myquery repo:supergreat file:abcdef) or (big repo:asdf)",
 			file:  "some/directory/file.md",
-			want:  autogold.Want("compound query adding file", BasicQuery("(repo:supergreat file:abcdef file:^some/directory/file\\.md$ myquery OR repo:asdf file:^some/directory/file\\.md$ big)")),
+			want:  autogold.Expect(BasicQuery("(repo:supergreat file:abcdef file:^some/directory/file\\.md$ myquery OR repo:asdf file:^some/directory/file\\.md$ big)")),
 		},
 	}
 	for _, test := range tests {
-		t.Run(test.want.Name(), func(t *testing.T) {
+		t.Run(test.name, func(t *testing.T) {
 			got, err := AddFileFilter(BasicQuery(test.input), test.file)
 			if err != nil {
 				test.want.Equal(t, err.Error())
@@ -605,24 +627,28 @@ func Test_addFileFilter(t *testing.T) {
 
 func TestRepositoryScopeQuery(t *testing.T) {
 	tests := []struct {
+		name  string
 		input string
 		want  autogold.Value
 	}{
 		{
+			"basic query",
 			"repo:sourcegraph",
-			autogold.Want("basic query", BasicQuery("fork:yes archived:yes count:all repo:sourcegraph")),
+			autogold.Expect(BasicQuery("fork:yes archived:yes count:all repo:sourcegraph")),
 		},
 		{
+			"compound query",
 			"repo:s or repo:l",
-			autogold.Want("compound query", BasicQuery("(fork:yes archived:yes count:all repo:s OR fork:yes archived:yes count:all repo:l)")),
+			autogold.Expect(BasicQuery("(fork:yes archived:yes count:all repo:s OR fork:yes archived:yes count:all repo:l)")),
 		},
 		{
+			"overwrites fork: values",
 			"repo:a fork:n",
-			autogold.Want("overwrites fork: values", BasicQuery("fork:yes archived:yes count:all repo:a")),
+			autogold.Expect(BasicQuery("fork:yes archived:yes count:all repo:a")),
 		},
 	}
 	for _, test := range tests {
-		t.Run(test.want.Name(), func(t *testing.T) {
+		t.Run(test.name, func(t *testing.T) {
 			got, err := RepositoryScopeQuery(test.input)
 			if err != nil {
 				test.want.Equal(t, err.Error())
@@ -635,28 +661,33 @@ func TestRepositoryScopeQuery(t *testing.T) {
 
 func TestWithCount(t *testing.T) {
 	tests := []struct {
+		name  string
 		input BasicQuery
 		want  autogold.Value
 	}{
 		{
+			"adds count",
 			BasicQuery("repo:sourcegraph"),
-			autogold.Want("adds count", BasicQuery("repo:sourcegraph count:99")),
+			autogold.Expect(BasicQuery("repo:sourcegraph count:99")),
 		},
 		{
+			"compound query",
 			BasicQuery("repo:s or repo:l"),
-			autogold.Want("compound query", BasicQuery("(repo:s count:99 OR repo:l count:99)")),
+			autogold.Expect(BasicQuery("(repo:s count:99 OR repo:l count:99)")),
 		},
 		{
+			"overwrites count values",
 			BasicQuery("repo:a count:1"),
-			autogold.Want("overwrites count values", BasicQuery("repo:a count:99")),
+			autogold.Expect(BasicQuery("repo:a count:99")),
 		},
 		{
+			"overwrites count all",
 			BasicQuery("repo:a count:all"),
-			autogold.Want("overwrites count all", BasicQuery("repo:a count:99")),
+			autogold.Expect(BasicQuery("repo:a count:99")),
 		},
 	}
 	for _, test := range tests {
-		t.Run(test.want.Name(), func(t *testing.T) {
+		t.Run(test.name, func(t *testing.T) {
 			got, err := test.input.WithCount("99")
 			if err != nil {
 				test.want.Equal(t, err.Error())
@@ -669,43 +700,50 @@ func TestWithCount(t *testing.T) {
 
 func TestMakeQueryWithRepoFilters(t *testing.T) {
 	tests := []struct {
+		name  string
 		repos string
 		query string
 		want  autogold.Value
 	}{
 		{
+			"simple repo with simple query",
 			"repo:sourcegraph",
 			"insights",
-			autogold.Want("simple repo with simple query", BasicQuery("repo:sourcegraph fork:no archived:no patterntype:literal count:99999999 insights")),
+			autogold.Expect(BasicQuery("repo:sourcegraph fork:no archived:no patterntype:literal count:99999999 insights")),
 		},
 		{
+			"compound repo with simple query",
 			"repo:sourcegraph or repo:handbook",
 			"insights",
-			autogold.Want("compound repo with simple query", BasicQuery("(repo:sourcegraph OR repo:handbook) fork:no archived:no patterntype:literal count:99999999 insights")),
+			autogold.Expect(BasicQuery("(repo:sourcegraph OR repo:handbook) fork:no archived:no patterntype:literal count:99999999 insights")),
 		},
 		{
+			"simple repo with compound query",
 			"repo:sourcegraph",
 			"insights or todo",
-			autogold.Want("simple repo with compound query", BasicQuery("repo:sourcegraph (fork:no archived:no patterntype:literal insights OR fork:no archived:no patterntype:literal count:99999999 todo)")),
+			autogold.Expect(BasicQuery("repo:sourcegraph (fork:no archived:no patterntype:literal insights OR fork:no archived:no patterntype:literal count:99999999 todo)")),
 		},
 		{
+			"compound repo with compound query",
 			"repo:sourcegraph or repo:has.file(content:sourcegraph)",
 			"insights or todo",
-			autogold.Want("compound repo with compound query", BasicQuery("(repo:sourcegraph OR repo:has.file(content:sourcegraph)) (fork:no archived:no patterntype:literal insights OR fork:no archived:no patterntype:literal count:99999999 todo)")),
+			autogold.Expect(BasicQuery("(repo:sourcegraph OR repo:has.file(content:sourcegraph)) (fork:no archived:no patterntype:literal insights OR fork:no archived:no patterntype:literal count:99999999 todo)")),
 		},
 		{
+			"compound repo with fork:yes query",
 			"repo:test or repo:handbook",
 			"insights fork:yes",
-			autogold.Want("compound repo with fork:yes query", BasicQuery("(repo:test OR repo:handbook) archived:no patterntype:literal fork:yes count:99999999 insights")),
+			autogold.Expect(BasicQuery("(repo:test OR repo:handbook) archived:no patterntype:literal fork:yes count:99999999 insights")),
 		},
 		{
+			"regexp query",
 			"repo:regex",
 			`I\slove patterntype:regexp`,
-			autogold.Want("regexp query", BasicQuery(`repo:regex fork:no archived:no patterntype:regexp count:99999999 I\slove`)),
+			autogold.Expect(BasicQuery(`repo:regex fork:no archived:no patterntype:regexp count:99999999 I\slove`)),
 		},
 	}
 	for _, test := range tests {
-		t.Run(test.want.Name(), func(t *testing.T) {
+		t.Run(test.name, func(t *testing.T) {
 			got, err := MakeQueryWithRepoFilters(test.repos, BasicQuery(test.query), true, CodeInsightsQueryDefaults(true)...)
 			if err != nil {
 				test.want.Equal(t, err.Error())
@@ -717,53 +755,58 @@ func TestMakeQueryWithRepoFilters(t *testing.T) {
 }
 
 func TestPointDiffQuery(t *testing.T) {
-
 	before := time.Date(2022, time.February, 1, 1, 1, 0, 0, time.UTC)
 	after := time.Date(2022, time.January, 1, 1, 1, 0, 0, time.UTC)
 	repoSearch := "repo:.*"
 	complexRepoSearch := "repo:sourcegraph or repo:about"
 
 	tests := []struct {
+		name string
 		opts PointDiffQueryOpts
 		want autogold.Value
 	}{
 		{
+			"multiple includes or together",
 			PointDiffQueryOpts{
 				Before:             before,
 				After:              &after,
 				FilterRepoIncludes: []string{"repo1", "repo2"},
 				SearchQuery:        BasicQuery("insights"),
 			},
-			autogold.Want("multiple includes or together", BasicQuery("repo:repo1|repo2 after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
+			autogold.Expect(BasicQuery("repo:repo1|repo2 after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
 		},
 		{
+			"multiple excludes or together",
 			PointDiffQueryOpts{
 				Before:             before,
 				After:              &after,
 				FilterRepoExcludes: []string{"repo1", "repo2"},
 				SearchQuery:        BasicQuery("insights"),
 			},
-			autogold.Want("multiple excludes or together", BasicQuery("-repo:repo1|repo2 after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
+			autogold.Expect(BasicQuery("-repo:repo1|repo2 after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
 		},
 		{
+			"repo list escaped and or together",
 			PointDiffQueryOpts{
 				Before:      before,
 				After:       &after,
 				RepoList:    []string{"github.com/sourcegraph/sourcegraph", "github.com/sourcegraph/about"},
 				SearchQuery: BasicQuery("insights"),
 			},
-			autogold.Want("repo list escaped and or together", BasicQuery("repo:^(github\\.com/sourcegraph/sourcegraph|github\\.com/sourcegraph/about)$ after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
+			autogold.Expect(BasicQuery("repo:^(github\\.com/sourcegraph/sourcegraph|github\\.com/sourcegraph/about)$ after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
 		},
 		{
+			"repo search added",
 			PointDiffQueryOpts{
 				Before:      before,
 				After:       &after,
 				RepoSearch:  &repoSearch,
 				SearchQuery: BasicQuery("insights"),
 			},
-			autogold.Want("repo search added", BasicQuery("repo:.* after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
+			autogold.Expect(BasicQuery("repo:.* after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
 		},
 		{
+			"include and excluded can be used together",
 			PointDiffQueryOpts{
 				Before:             before,
 				After:              &after,
@@ -771,16 +814,18 @@ func TestPointDiffQuery(t *testing.T) {
 				FilterRepoExcludes: []string{"repo1", "repo2"},
 				SearchQuery:        BasicQuery("insights"),
 			},
-			autogold.Want("include and excluded can be used together", BasicQuery("repo:repoa|repob -repo:repo1|repo2 after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
+			autogold.Expect(BasicQuery("repo:repoa|repob -repo:repo1|repo2 after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
 		},
 		{
+			"after isn't needed",
 			PointDiffQueryOpts{
 				Before:      before,
 				SearchQuery: BasicQuery("insights"),
 			},
-			autogold.Want("after isn't needed", BasicQuery("before:2022-02-01T01:01:00Z type:diff insights")),
+			autogold.Expect(BasicQuery("before:2022-02-01T01:01:00Z type:diff insights")),
 		},
 		{
+			"compound repo search and include/exclude",
 			PointDiffQueryOpts{
 				Before:             before,
 				After:              &after,
@@ -789,20 +834,21 @@ func TestPointDiffQuery(t *testing.T) {
 				SearchQuery:        BasicQuery("insights or worker"),
 				RepoSearch:         &complexRepoSearch,
 			},
-			autogold.Want("compound repo search and include/exclude", BasicQuery("(repo:sourcegraph OR repo:about) repo:sourcegraph|about -repo:mega|multierr after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff (insights OR worker)")),
+			autogold.Expect(BasicQuery("(repo:sourcegraph OR repo:about) repo:sourcegraph|about -repo:mega|multierr after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff (insights OR worker)")),
 		},
 		{
+			"regex in include",
 			PointDiffQueryOpts{
 				Before:             before,
 				After:              &after,
 				FilterRepoIncludes: []string{"repo1|repo2"},
 				SearchQuery:        BasicQuery("insights"),
 			},
-			autogold.Want("regex in include", BasicQuery("repo:repo1|repo2 after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
+			autogold.Expect(BasicQuery("repo:repo1|repo2 after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
 		},
 	}
 	for _, test := range tests {
-		t.Run(test.want.Name(), func(t *testing.T) {
+		t.Run(test.name, func(t *testing.T) {
 			got, err := PointDiffQuery(test.opts)
 			if err != nil {
 				test.want.Equal(t, err.Error())

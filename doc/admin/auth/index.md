@@ -524,12 +524,12 @@ At the time of signing in with the new account, any of the email addresses confi
 
 Usernames on Sourcegraph are normalized according to the following rules.
 
-- Any characters not in `[a-zA-Z0-9-.]` are replaced with `-`
+- Any characters not in `[a-zA-Z0-9-._]` are replaced with `-`
 - Usernames with exactly one `@` character are interpreted as an email address, so the username will be extracted by truncating at the `@` character.
 - Usernames with two or more `@` characters are not considered an email address, so the `@` will be treated as a non-standard character and be replaced with `-`
-- Usernames with consecutive `-` or `.` characters are not allowed
-- Usernames that start or end with `.` are not allowed
-- Usernames that start with `-` are not allowed
+- Usernames with consecutive `-` or `.` characters are not allowed, so they are replaced with a single `-` or `.`
+- Usernames that start with `.` or `-` are not allowed, starting periods and dashes are removed
+- Usernames that end with `.` are not allowed, ending periods are removed
 
 Usernames from authentication providers are normalized before being used in Sourcegraph. Usernames chosen by users are rejected if they do not meet these criteria.
 
