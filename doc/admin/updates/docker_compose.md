@@ -28,7 +28,7 @@ This release introduces a background job that will convert all LSIF data into SC
 
 ## v4.3 ➔ v4.4.1
 
-- Users attempting a multi-version upgrade to v4.4.0 may be affected by a [known bug](https://github.com/sourcegraph/sourcegraph/pull/46969) in which an outdated schema migration is included in the upgrade process.
+- Users attempting a multi-version upgrade to v4.4.0 may be affected by a [known bug](https://github.com/sourcegraph/sourcegraph/pull/46969) in which an outdated schema migration is included in the upgrade process. _This issue is fixed in patch v4.4.2_
 
   - The error will be encountered while running `upgrade`, and contains the following text: `"frontend": failed to apply migration 1648115472`. 
     - To resolve this issue run migrator with the args `'add-log', '-db=frontend', '-version=1648115472'`. 
