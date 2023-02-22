@@ -455,9 +455,7 @@ func (r *externalServiceNamespaceConnectionResolver) compute(ctx context.Context
 			return
 		}
 
-		for _, namespace := range res.Namespaces {
-			r.nodes = append(r.nodes, namespace)
-		}
+		r.nodes = append(r.nodes, res.Namespaces...)
 		r.totalCount = int32(len(r.nodes))
 	})
 
