@@ -198,9 +198,14 @@ func (s *Service) MapRankingGraph(ctx context.Context, numRankingRoutines int, r
 func (s *Service) ReduceRankingGraph(
 	ctx context.Context,
 	numRankingRoutines int,
+	rankingJobEnabled bool,
 ) (numPathRanksInserted float64, numPathCountInputsProcessed float64, err error) {
 	ctx, _, endObservation := s.operations.reduceRankingGraph.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
+
+	if !rankingJobEnabled {
+		return 0, 0, nil
+	}
 
 	numPathRanksInserted, numPathCountInputsProcessed, err = s.store.InsertPathRanks(
 		ctx,

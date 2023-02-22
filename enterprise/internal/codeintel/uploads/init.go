@@ -221,6 +221,7 @@ func NewGraphExporters(observationCtx *observation.Context, uploadSvc *Service) 
 			uploadSvc,
 			ConfigExportInst.NumRankingRoutines,
 			ConfigExportInst.RankingInterval,
+			ConfigExportInst.RankingJobsEnabled,
 		),
 	}
 }

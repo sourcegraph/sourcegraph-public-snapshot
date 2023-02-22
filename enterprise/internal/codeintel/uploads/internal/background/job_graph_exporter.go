@@ -60,6 +60,7 @@ func NewRankingGraphReducer(
 	uploadsService UploadService,
 	numRankingRoutines int,
 	interval time.Duration,
+	rankingJobEnabled bool,
 ) goroutine.BackgroundRoutine {
 	operations := newRankingOperations(observationCtx)
 	return goroutine.NewPeriodicGoroutine(
@@ -67,7 +68,7 @@ func NewRankingGraphReducer(
 		"rank.graph-reducer", "reduces path_counts_inputs into a count of paths per repository and stores it in path_ranks table in lsifstore.",
 		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			numPathRanksInserted, numPathCountsInputsProcessed, err := uploadsService.ReduceRankingGraph(ctx, numRankingRoutines)
+			numPathRanksInserted, numPathCountsInputsProcessed, err := uploadsService.ReduceRankingGraph(ctx, numRankingRoutines, rankingJobEnabled)
 			if err != nil {
 				return err
 			}
