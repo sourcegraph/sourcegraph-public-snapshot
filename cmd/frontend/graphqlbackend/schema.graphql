@@ -844,6 +844,23 @@ type Mutation {
     the file on disk, and marking it as not-cloned in the database.
     """
     deleteRepositoryFromDisk(repo: ID!): EmptyResponse!
+
+    addPackageRepoMatcher(
+        """
+        Whether the matcher should be for allowlisting or blocklisting.
+        """
+        behaviour: PackageMatchBehaviour!
+        """
+        The ecosystem of the package repo reference this matcher should apply to.
+        Maps to the external service whos config would be updated when used in the
+        set query.
+        """
+        packageReferenceKind: PackageRepoReferenceKind!
+        """
+        The package repo reference matcher to persist.
+        """
+        matcher: PackageVersionOrNameMatcher!
+    ): EmptyResponse!
 }
 
 """
@@ -1440,7 +1457,7 @@ type Query {
         """
         name: String
         """
-        Returns the first n external services from the list.
+        Returns the first n package repo references from the list.
         """
         first: Int
         """
@@ -1449,10 +1466,26 @@ type Query {
         after: String
     ): PackageRepoReferenceConnection!
 
+    """
+    Returns either a list of package repo references,
+    or the versions of a single package repo reference,
+    that match the provided matcher.
+    """
     packageReposMatches(
+        """
+        The ecosystem of the package repo reference this matcher should apply to.
+        Maps to the external service whos config would be updated when used in the
+        set query.
+        """
+        packageReferenceKind: PackageRepoReferenceKind!
+        """
+        The matcher for which to return matching results.
+        """
         matcher: PackageVersionOrNameMatcher!
+        """
+        Returns the first n package/package version matches from the list.
+        """
         first: Int
-        after: String
     ): PackageRepoReferenceConnection!
 
     """
@@ -3660,8 +3693,14 @@ type PackageRepoReferenceVersion {
     version: String!
 }
 
+enum PackageMatchBehaviour {
+    BLOCK
+    ALLOW
+}
+
+"""
+"""
 input PackageVersionOrNameMatcher {
-    packageReferenceKind: PackageRepoReferenceKind!
     nameMatcher: PackageNameMatcher
     versionMatcher: PackageVersionMatcher
 }

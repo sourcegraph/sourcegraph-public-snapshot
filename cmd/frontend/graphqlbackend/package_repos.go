@@ -6,6 +6,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -20,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type PackageRepoReferenceConnectionArgs struct {
@@ -224,8 +226,7 @@ func dependencyRepoToRepoName(dep dependencies.PackageRepoReference) (repoName a
 }
 
 type packageMatcher struct {
-	PackageReferenceKind string
-	NameMatcher          *struct {
+	NameMatcher *struct {
 		PackageGlob string
 	}
 	VersionMatcher *struct {
@@ -235,7 +236,8 @@ type packageMatcher struct {
 }
 
 func (r *schemaResolver) PackageReposMatches(ctx context.Context, args struct {
-	Matcher packageMatcher
+	PackageReferenceKind string
+	Matcher              packageMatcher
 	graphqlutil.ConnectionArgs
 	After *string
 },
@@ -244,7 +246,11 @@ func (r *schemaResolver) PackageReposMatches(ctx context.Context, args struct {
 		return nil, errors.New("must provide either nameMatcher or versionMatcher")
 	}
 
-	kinds := []string{args.Matcher.PackageReferenceKind}
+	if args.Matcher.NameMatcher != nil && args.Matcher.VersionMatcher != nil {
+		return nil, errors.New("cannot provide both a name matcher and version matcher")
+	}
+
+	kinds := []string{args.PackageReferenceKind}
 
 	extsvcs, err := r.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{Kinds: kinds})
 	if err != nil {
@@ -252,7 +258,7 @@ func (r *schemaResolver) PackageReposMatches(ctx context.Context, args struct {
 	}
 
 	if len(extsvcs) == 0 {
-		return nil, errors.Newf("no external service configured of kind %q", args.Matcher.PackageReferenceKind)
+		return nil, errors.Newf("no external service configured of kind %q", args.PackageReferenceKind)
 	}
 
 	var (
@@ -278,7 +284,7 @@ func (r *schemaResolver) PackageReposMatches(ctx context.Context, args struct {
 		}
 	}
 
-	packageRepoScheme := externalServiceToPackageSchemeMap[args.Matcher.PackageReferenceKind]
+	packageRepoScheme := externalServiceToPackageSchemeMap[args.PackageReferenceKind]
 
 	depsService := dependencies.NewService(observation.NewContext(r.logger), r.db)
 
@@ -346,4 +352,88 @@ func (r *schemaResolver) PackageReposMatches(ctx context.Context, args struct {
 		// bit of a lie lol
 		total: len(matchingPkgs),
 	}, nil
+}
+
+func (s *schemaResolver) AddPackageRepoMatcher(ctx context.Context, args struct {
+	Behaviour            string
+	PackageReferenceKind string
+	Matcher              packageMatcher
+},
+) (*EmptyResponse, error) {
+	if args.Matcher.NameMatcher == nil && args.Matcher.VersionMatcher == nil {
+		return nil, errors.New("must provide either nameMatcher or versionMatcher")
+	}
+
+	if args.Matcher.NameMatcher != nil && args.Matcher.VersionMatcher != nil {
+		return nil, errors.New("cannot provide both a name matcher and version matcher")
+	}
+
+	extsvcs, err := s.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{Kinds: []string{args.PackageReferenceKind}})
+	if err != nil {
+		return nil, errors.Wrap(err, "error finding matching external service")
+	}
+
+	if len(extsvcs) == 0 {
+		return nil, errors.Newf("no matching external service for kind %q", args.PackageReferenceKind)
+	}
+
+	config, err := extsvcs[0].Configuration(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to fetch external service configuration")
+	}
+
+	switch args.PackageReferenceKind {
+	case extsvc.KindJVMPackages:
+		config := config.(*schema.JVMPackagesConnection)
+		err = addMatcherToConfig(&config.Maven.Allowlist, &config.Maven.Blocklist, args.Behaviour, args.Matcher)
+	default:
+		return nil, errors.Newf("external service of kind %q does not support allow-/block-lists", args.PackageReferenceKind)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.db.ExternalServices().Upsert(ctx, extsvcs[0]); err != nil {
+		return nil, errors.Wrap(err, "failed to update external service")
+	}
+
+	return &EmptyResponse{}, nil
+}
+
+var matcherAlreadyExists = errors.New("matcher already exists in config")
+
+func addMatcherToConfig(allowlist, blocklist *[]any, behaviour string, matcher packageMatcher) error {
+	// the format expected by the JSON schema, because 'anyOf'
+	m := make(map[string]interface{})
+	if matcher.NameMatcher != nil {
+		m["packageGlob"] = matcher.NameMatcher.PackageGlob
+	} else {
+		m["package"] = matcher.VersionMatcher.PackageName
+		m["versionGlob"] = matcher.VersionMatcher.VersionGlob
+	}
+
+	if behaviour == "BLOCK" {
+		if matcherAlreadyInConfig(*blocklist, matcher) {
+			return matcherAlreadyExists
+		}
+		*blocklist = append(*blocklist, matcher)
+	} else {
+		if matcherAlreadyInConfig(*blocklist, matcher) {
+			return matcherAlreadyExists
+		}
+		*allowlist = append(*allowlist, matcher)
+	}
+
+	return nil
+}
+
+func matcherAlreadyInConfig(list []any, matcher packageMatcher) bool {
+	return slices.ContainsFunc(list, func(m any) bool {
+		m1 := m.(map[string]interface{})
+		return (matcher.NameMatcher != nil &&
+			matcher.NameMatcher.PackageGlob == m1["packageGlob"]) || (matcher.VersionMatcher != nil &&
+			matcher.VersionMatcher.PackageName == m1["package"] &&
+			matcher.VersionMatcher.VersionGlob == m1["versionGlob"])
+	})
 }
