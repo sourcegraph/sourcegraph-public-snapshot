@@ -27,6 +27,8 @@ interface ConnectionNodesSummaryProps<C extends Connection<N>, N, NP = {}, HP = 
     compact?: boolean
 
     centered?: boolean
+
+    className?: string
 }
 
 /**
@@ -45,9 +47,15 @@ export const ConnectionSummary = <C extends Connection<N>, N, NP = {}, HP = {}>(
     first,
     compact,
     centered,
+    className,
 }: ConnectionNodesSummaryProps<C, N, NP, HP>): JSX.Element | null => {
     const shouldShowSummary = !noSummaryIfAllNodesVisible || connection.nodes.length === 0 || hasNextPage
-    const summaryClassName = classNames(compact && styles.compact, centered && styles.centered, styles.normal)
+    const summaryClassName = classNames(
+        compact && styles.compact,
+        centered && styles.centered,
+        styles.normal,
+        className
+    )
 
     if (!shouldShowSummary) {
         return null

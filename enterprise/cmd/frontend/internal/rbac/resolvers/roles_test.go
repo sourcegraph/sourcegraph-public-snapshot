@@ -12,6 +12,7 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/rbac/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -209,7 +210,7 @@ func TestUserRoleListing(t *testing.T) {
 		var response struct{}
 		errs := apitest.Exec(actorCtx, t, s, input, &response, listUserRoles)
 		assert.Len(t, errs, 1)
-		assert.Equal(t, errs[0].Message, "must be authenticated as the authorized user or site admin")
+		assert.Equal(t, auth.ErrMustBeSiteAdminOrSameUser.Error(), errs[0].Message)
 	})
 }
 

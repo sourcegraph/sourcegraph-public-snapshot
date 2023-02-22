@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
 
@@ -41,7 +41,7 @@ func Test_unquotePatterns(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run("unquote patterns", func(t *testing.T) {
-			autogold.Equal(t, autogold.Raw(test(c)))
+			autogold.ExpectFile(t, autogold.Raw(test(c)))
 		})
 	}
 
@@ -59,7 +59,7 @@ func Test_unorderedPatterns(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run("AND patterns", func(t *testing.T) {
-			autogold.Equal(t, autogold.Raw(test(c)))
+			autogold.ExpectFile(t, autogold.Raw(test(c)))
 		})
 	}
 
@@ -78,7 +78,7 @@ func Test_langPatterns(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run("lang patterns", func(t *testing.T) {
-			autogold.Equal(t, autogold.Raw(test(c)))
+			autogold.ExpectFile(t, autogold.Raw(test(c)))
 		})
 	}
 
@@ -97,7 +97,7 @@ func Test_symbolPatterns(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run("symbol patterns", func(t *testing.T) {
-			autogold.Equal(t, autogold.Raw(test(c)))
+			autogold.ExpectFile(t, autogold.Raw(test(c)))
 		})
 	}
 
@@ -117,7 +117,7 @@ func Test_typePatterns(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run("type patterns", func(t *testing.T) {
-			autogold.Equal(t, autogold.Raw(test(c)))
+			autogold.ExpectFile(t, autogold.Raw(test(c)))
 		})
 	}
 
@@ -138,7 +138,7 @@ func Test_regexpPatterns(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run("regexp patterns", func(t *testing.T) {
-			autogold.Equal(t, autogold.Raw(test(c)))
+			autogold.ExpectFile(t, autogold.Raw(test(c)))
 		})
 	}
 }
@@ -161,7 +161,7 @@ func Test_patternsToCodeHostFilters(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run("URL patterns", func(t *testing.T) {
-			autogold.Equal(t, autogold.Raw(test(c)))
+			autogold.ExpectFile(t, autogold.Raw(test(c)))
 		})
 	}
 }
@@ -183,7 +183,7 @@ func Test_rewriteRepoFilter(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run("rewrite repo filter", func(t *testing.T) {
-			autogold.Equal(t, autogold.Raw(test(c)))
+			autogold.ExpectFile(t, autogold.Raw(test(c)))
 		})
 	}
 }

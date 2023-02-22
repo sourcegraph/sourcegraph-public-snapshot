@@ -2,7 +2,7 @@ import React, { useRef } from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { useLocation, Routes, Route } from 'react-router-dom-v5-compat'
+import { useLocation, Routes, Route } from 'react-router-dom'
 
 import { SiteSettingFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'

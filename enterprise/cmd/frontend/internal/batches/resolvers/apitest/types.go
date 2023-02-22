@@ -140,6 +140,7 @@ type Changeset struct {
 	ExternalID         string
 	ExternalURL        ExternalURL
 	ForkNamespace      string
+	ForkName           string
 	ReviewState        string
 	CheckState         string
 	Events             ChangesetEventConnection

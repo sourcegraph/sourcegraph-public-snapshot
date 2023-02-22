@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
-import { useParams } from 'react-router-dom-v5-compat'
+import { useParams } from 'react-router-dom'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'

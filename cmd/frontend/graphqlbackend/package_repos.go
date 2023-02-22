@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/syncx"
@@ -25,13 +26,35 @@ type PackageRepoReferenceConnectionArgs struct {
 	Name   *string
 }
 
+var externalServiceToPackageSchemeMap = map[string]string{
+	extsvc.KindJVMPackages:    dependencies.JVMPackagesScheme,
+	extsvc.KindNpmPackages:    dependencies.NpmPackagesScheme,
+	extsvc.KindGoPackages:     dependencies.GoPackagesScheme,
+	extsvc.KindPythonPackages: dependencies.PythonPackagesScheme,
+	extsvc.KindRustPackages:   dependencies.RustPackagesScheme,
+	extsvc.KindRubyPackages:   dependencies.RubyPackagesScheme,
+}
+
+var packageSchemeToExternalServiceMap = map[string]string{
+	dependencies.JVMPackagesScheme:    extsvc.KindJVMPackages,
+	dependencies.NpmPackagesScheme:    extsvc.KindNpmPackages,
+	dependencies.GoPackagesScheme:     extsvc.KindGoPackages,
+	dependencies.PythonPackagesScheme: extsvc.KindPythonPackages,
+	dependencies.RustPackagesScheme:   extsvc.KindRustPackages,
+	dependencies.RubyPackagesScheme:   extsvc.KindRubyPackages,
+}
+
 func (r *schemaResolver) PackageRepoReferences(ctx context.Context, args *PackageRepoReferenceConnectionArgs) (_ *packageRepoReferenceConnectionResolver, err error) {
 	depsService := dependencies.NewService(observation.NewContext(r.logger), r.db)
 
 	var opts dependencies.ListDependencyReposOpts
 
 	if args.Scheme != nil {
-		opts.Scheme = *args.Scheme
+		packageScheme, ok := externalServiceToPackageSchemeMap[*args.Scheme]
+		if !ok {
+			return nil, errors.Errorf("unknown package scheme %q", *args.Scheme)
+		}
+		opts.Scheme = packageScheme
 	}
 
 	if args.Name != nil {
@@ -119,7 +142,7 @@ func (r *packageRepoReferenceResolver) ID() graphql.ID {
 }
 
 func (r *packageRepoReferenceResolver) Scheme() string {
-	return r.dep.Scheme
+	return packageSchemeToExternalServiceMap[r.dep.Scheme]
 }
 
 func (r *packageRepoReferenceResolver) Name() string {
