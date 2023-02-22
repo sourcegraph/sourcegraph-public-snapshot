@@ -83,7 +83,10 @@ func (f fileInfo) Mode() os.FileMode {
 func (f fileInfo) ModTime() time.Time { return time.Now() }
 func (f fileInfo) Sys() any           { return any(nil) }
 
-func TestBlobOwnershipPanelQuery(t *testing.T) {
+// TestBlobOwnershipPanelQueryPersonUnresolved mimics the blob ownership panel graphQL
+// query, where the owner is unresolved. In that case if we have a handle, we only return
+// it as `displayName`.
+func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 	fs := fakedb.New()
 	db := database.NewMockDB()
 	fs.Wire(db)

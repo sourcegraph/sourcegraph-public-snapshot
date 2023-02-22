@@ -19,7 +19,7 @@ func Init(
 	ctx context.Context,
 	observationCtx *observation.Context,
 	db database.DB,
-	s codeintel.Services,
+	_ codeintel.Services,
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
