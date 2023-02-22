@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -34,6 +35,7 @@ var errDisabledSourcegraphDotCom = errors.New("not enabled on sourcegraph.com")
 type Resolver struct {
 	logger log.Logger
 	db     edb.EnterpriseDB
+	ossDB  database.DB
 }
 
 // checkLicense returns a user-facing error if the provided feature is not purchased
@@ -55,6 +57,7 @@ func NewResolver(observationCtx *observation.Context, db database.DB) graphqlbac
 	return &Resolver{
 		logger: observationCtx.Logger.Scoped("authz.Resolver", ""),
 		db:     edb.NewEnterpriseDB(db),
+		ossDB:  db,
 	}
 }
 
@@ -519,12 +522,17 @@ func getOrDefault[T any](ptr *T) T {
 }
 
 type permissionsInfoResolver struct {
+	db           edb.EnterpriseDB
+	ossDB        database.DB
+	userID       int32
+	repoID       int32
 	perms        authz.Perms
 	syncedAt     time.Time
 	updatedAt    time.Time
 	unrestricted bool
 }
 
+// NOTE(naman): deprecated as r.perms is always "READ", making the info redundant.
 func (r *permissionsInfoResolver) Permissions() []string {
 	return strings.Split(strings.ToUpper(r.perms.String()), ",")
 }
@@ -542,6 +550,91 @@ func (r *permissionsInfoResolver) UpdatedAt() gqlutil.DateTime {
 
 func (r *permissionsInfoResolver) Unrestricted() bool {
 	return r.unrestricted
+}
+
+var permissionsInfoRepositoryConnectionMaxPageSize = 100
+
+var permissionsInfoRepositoryConnectionOptions = &graphqlutil.ConnectionResolverOptions{
+	OrderBy:     database.OrderBy{{Field: "repo.name"}},
+	Ascending:   true,
+	MaxPageSize: &permissionsInfoRepositoryConnectionMaxPageSize,
+}
+
+func (r *permissionsInfoResolver) Repositories(ctx context.Context, args graphqlbackend.PermissionsInfoRepositoriesArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.PermissionsInfoRepositoryResolver], error) {
+	if r.userID == 0 {
+		return nil, nil
+	}
+
+	query := ""
+	if args.Query != nil {
+		query = *args.Query
+	}
+
+	connectionStore := &permissionsInfoRepositoriesStore{
+		userID: r.userID,
+		db:     r.db,
+		ossDB:  r.ossDB,
+		query:  query,
+	}
+
+	return graphqlutil.NewConnectionResolver[graphqlbackend.PermissionsInfoRepositoryResolver](connectionStore, &args.ConnectionResolverArgs, permissionsInfoRepositoryConnectionOptions)
+}
+
+type permissionsInfoRepositoriesStore struct {
+	userID int32
+	db     edb.EnterpriseDB
+	ossDB  database.DB
+	query  string
+}
+
+func (s *permissionsInfoRepositoriesStore) MarshalCursor(node graphqlbackend.PermissionsInfoRepositoryResolver, _ database.OrderBy) (*string, error) {
+	cursor := string(node.Repository().Name())
+
+	return &cursor, nil
+}
+
+func (s *permissionsInfoRepositoriesStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+	return &cursor, nil
+}
+
+func (s *permissionsInfoRepositoriesStore) ComputeTotal(ctx context.Context) (*int32, error) {
+	total := int32(20)
+	return &total, nil
+}
+
+func (s *permissionsInfoRepositoriesStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.PermissionsInfoRepositoryResolver, error) {
+	permissions, err := s.db.Perms().ListUserPermissions(ctx, s.userID, &edb.ListUserPermissionsArgs{Query: s.query, PaginationArgs: args})
+	if err != nil {
+		return nil, err
+	}
+
+	var permissionResolvers []graphqlbackend.PermissionsInfoRepositoryResolver
+	for _, perm := range permissions {
+		permissionResolvers = append(permissionResolvers, permissionsInfoRepositoryResolver{perm: perm, ossDB: s.ossDB})
+	}
+
+	return permissionResolvers, nil
+}
+
+type permissionsInfoRepositoryResolver struct {
+	ossDB database.DB
+	perm  *edb.UserPermission
+}
+
+func (r permissionsInfoRepositoryResolver) ID() graphql.ID {
+	return graphqlbackend.MarshalRepositoryID(r.perm.Repo.ID)
+}
+
+func (r permissionsInfoRepositoryResolver) Repository() *graphqlbackend.RepositoryResolver {
+	return graphqlbackend.NewRepositoryResolver(r.ossDB, gitserver.NewClient(), r.perm.Repo)
+}
+
+func (r permissionsInfoRepositoryResolver) Reason() string {
+	return string(r.perm.Reason)
+}
+
+func (r permissionsInfoRepositoryResolver) UpdatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.perm.UpdatedAt}
 }
 
 func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID) (graphqlbackend.PermissionsInfoResolver, error) {
@@ -573,6 +666,9 @@ func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID)
 	}
 
 	return &permissionsInfoResolver{
+		db:           r.db,
+		ossDB:        r.ossDB,
+		repoID:       int32(repoID),
 		perms:        p.Perm,
 		syncedAt:     p.SyncedAt,
 		updatedAt:    p.UpdatedAt,
@@ -611,6 +707,9 @@ func (r *Resolver) UserPermissionsInfo(ctx context.Context, id graphql.ID) (grap
 	}
 
 	return &permissionsInfoResolver{
+		db:        r.db,
+		ossDB:     r.ossDB,
+		userID:    userID,
 		perms:     p.Perm,
 		syncedAt:  p.SyncedAt,
 		updatedAt: p.UpdatedAt,

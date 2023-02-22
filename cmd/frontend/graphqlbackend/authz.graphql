@@ -293,7 +293,7 @@ type PermissionsInfo {
     """
     The permission levels that a user has on the repository.
     """
-    permissions: [RepositoryPermission!]!
+    permissions: [RepositoryPermission!]! @deprecated(reason: "we only ever use READ permissions.")
     """
     The last complete synced time, the value is updated only after a user- or repo-
     centric sync of permissions. It is null when the complete sync never happened.
@@ -309,6 +309,70 @@ type PermissionsInfo {
     It will always be false for users.
     """
     unrestricted: Boolean!
+
+    """
+    The connection for repository permissions avilable to the user. It will return
+    no results for repo parent.
+    """
+    repositories(
+        """
+        Number of nodes returned during forward pagination. Maximum number of returned nodes is 100. Up to 20 nodes are returned by default.
+        """
+        first: Int
+        """
+        Number of nodes returned during backward pagination. Maximum number of returned nodes is 100. Up to 20 nodes are returned by default.
+        """
+        last: Int
+        """
+        Opaque pagination cursor to be used when paginating forwards.
+        """
+        after: String
+        """
+        Opaque pagination cursor to be used when paginating backwards.
+        """
+        before: String
+        """
+        Search query to filter repositories based on name.
+        """
+        query: String
+    ): PermissionsInfoRepositoriesConnection 
+}
+
+"""
+Connection for repository permissions available to the current user
+"""
+type PermissionsInfoRepositoriesConnection implements Connection {
+    """
+    List of repository permission info nodes
+    """
+    nodes: [PermissionsInfoRepositoryNode!]!
+    """
+    The total number of repository permission info nodes in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: ConnectionPageInfo!
+}
+
+type PermissionsInfoRepositoryNode {
+  """
+  The ID of the repository.
+  """
+  id: ID!
+  """
+  The repository corresponding to the permission.
+  """
+  repository: Repository!
+  """
+  The reason why the current user has permission to access the repository.
+  """
+  reason: String!
+  """
+  The timestamp when the permission was last updated at.
+  """
+  updatedAt: DateTime!
 }
 
 """

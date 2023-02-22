@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -21,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -226,6 +228,8 @@ type PermsStore interface {
 	// It filters out empty bindIDs and only returns users that exist in the database.
 	// If a bind id doesn't map to any user, it is ignored.
 	MapUsers(ctx context.Context, bindIDs []string, mapping *schema.PermissionsUserMapping) (map[string]int32, error)
+	// ListUserPermissions returns list of repository permissions info the user has access to.
+	ListUserPermissions(ctx context.Context, userID int32, args *ListUserPermissionsArgs) (perms []*UserPermission, err error)
 }
 
 // It is concurrency-safe and maintains data consistency over the 'user_permissions',
@@ -2041,4 +2045,150 @@ func sliceToSet[T comparable](s []T) map[T]struct{} {
 		m[n] = struct{}{}
 	}
 	return m
+}
+
+// ListUserPermissions gets the list of accessible repos for the provided user, along with the reason
+// and timestamp for each permission.
+func (s *permsStore) ListUserPermissions(ctx context.Context, userID int32, args *ListUserPermissionsArgs) (perms []*UserPermission, err error) {
+	ctx, save := s.observe(ctx, "ListUserPermissions", "")
+	defer save(&err)
+
+	// Set actor with provided userID to context.
+	ctx = actor.WithActor(ctx, actor.FromUser(userID))
+
+	db := database.NewDBWith(s.logger, s.Store)
+
+	// NOTE(naman): `List` uses the actor from ctx to apply authz conds
+	// to fetch list of repos which are visible to the actor.
+	repos, err := db.Repos().List(ctx, database.ReposListOptions{
+		PaginationArgs: args.PaginationArgs,
+		Query:          args.Query,
+	})
+
+	authzParams, err := database.GetAuthzQueryParameters(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+
+	if authzParams.BypassAuthz {
+		// NOTE(naman): If Authz conds were bypassed then no need to fetch
+		// perm details for the repos. Show permission reason as "Site Admin"
+		// or "Authentication Bypassed" based on query params used.
+
+		reason := UserRepoPermissionReasonAuthzBypass
+
+		if authzParams.BypassAuthzReason == database.BypassAuthzReasonSiteAdmin {
+			reason = UserRepoPermissionReasonSiteAdmin
+		}
+
+		for _, repo := range repos {
+			perms = append(perms, &UserPermission{Repo: repo, Reason: reason})
+		}
+	} else {
+		// NOTE(naman): If Authz conds were not bypassed then find perm details
+		// for each of the repos and show correct reason and updatedAt.
+
+		repoIDs := []int32{}
+		for _, repo := range repos {
+			repoIDs = append(repoIDs, int32(repo.ID))
+		}
+
+		permissionsInfoMap, err := s.getRepoPermissionInfoForIDs(ctx, userID, repoIDs)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, repo := range repos {
+			var updatedAt time.Time
+			reason := UserRepoPermissionReasonUnrestricted
+
+			info := permissionsInfoMap[int32(repo.ID)]
+			if info != nil {
+				reason = info.Reason
+				updatedAt = info.UpdatedAt
+			}
+
+			perms = append(perms, &UserPermission{Repo: repo, Reason: reason, UpdatedAt: updatedAt})
+		}
+	}
+
+	return perms, err
+}
+
+type UserPermission struct {
+	Repo      *types.Repo
+	Reason    UserRepoPermissionReason
+	UpdatedAt time.Time
+}
+
+type UserRepoPermissionReason string
+
+// UserRepoPermissionReason constants.
+const (
+	UserRepoPermissionReasonAuthzBypass    UserRepoPermissionReason = "Authentication Bypassed"
+	UserRepoPermissionReasonSiteAdmin      UserRepoPermissionReason = "Site Admin"
+	UserRepoPermissionReasonUnrestricted   UserRepoPermissionReason = "Unrestricted"
+	UserRepoPermissionReasonPermissionSync UserRepoPermissionReason = "Permission Sync"
+)
+
+type ListUserPermissionsArgs struct {
+	Query          string
+	PaginationArgs *database.PaginationArgs
+}
+
+func (s *permsStore) getRepoPermissionInfoForIDs(ctx context.Context, userID int32, repoIDs []int32) (map[int32]*repoPermissionInfo, error) {
+	permissionInfoQuery := sqlf.Sprintf(permissionInfoQueryFmt, userID, pq.Array(repoIDs))
+	rows, err := s.Query(ctx, permissionInfoQuery)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	infoMap := make(map[int32]*repoPermissionInfo, len(repoIDs))
+	for rows.Next() {
+		info, err := scanRepoPermInfo(rows)
+		if err != nil {
+			return infoMap, err
+		}
+
+		infoMap[info.RepoID] = info
+	}
+
+	return infoMap, nil
+}
+
+const permissionInfoQueryFmt = `
+SELECT
+	id,
+	up.updated_at AS permission_updated_at,
+	CASE 
+		WHEN up.user_id IS NOT NULL THEN 'Permission Sync'
+		ELSE 'Unrestricted'
+	END AS permission_reason
+FROM
+	repo
+	LEFT JOIN user_permissions AS up ON up.user_id = %d
+		AND up.object_ids_ints @> INTSET (repo.id)
+WHERE
+	repo.id = ANY (%s)
+`
+
+type repoPermissionInfo struct {
+	RepoID    int32
+	Reason    UserRepoPermissionReason
+	UpdatedAt time.Time
+}
+
+func scanRepoPermInfo(s dbutil.Scanner) (*repoPermissionInfo, error) {
+	info := &repoPermissionInfo{}
+
+	if err := s.Scan(
+		&info.RepoID,
+		&dbutil.NullTime{Time: &info.UpdatedAt},
+		&info.Reason,
+	); err != nil {
+		return nil, err
+	}
+
+	return info, nil
 }
