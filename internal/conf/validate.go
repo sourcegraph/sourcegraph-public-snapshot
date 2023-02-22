@@ -219,6 +219,7 @@ var siteConfigSecrets = []struct {
 	{readPath: `auth\.unlockAccountLinkSigningKey`, editPaths: []string{"auth.unlockAccountLinkSigningKey"}},
 	{readPath: `dotcom.srcCliVersionCache.github.token`, editPaths: []string{"dotcom", "srcCliVersionCache", "github", "token"}},
 	{readPath: `dotcom.srcCliVersionCache.github.webhookSecret`, editPaths: []string{"dotcom", "srcCliVersionCache", "github", "webhookSecret"}},
+	{readPath: `embeddings.accessToken`, editPaths: []string{"embeddings", "accessToken"}},
 }
 
 // UnredactSecrets unredacts unchanged secrets back to their original value for
