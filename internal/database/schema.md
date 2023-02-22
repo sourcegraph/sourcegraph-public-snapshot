@@ -972,26 +972,6 @@ Foreign-key constraints:
 
 ```
 
-<<<<<<< HEAD
-# Table "public.codeowners"
-```
-     Column     |           Type           | Collation | Nullable |                Default                 
-----------------+--------------------------+-----------+----------+----------------------------------------
- id             | integer                  |           | not null | nextval('codeowners_id_seq'::regclass)
- contents       | text                     |           | not null | 
- contents_proto | bytea                    |           | not null | 
- repo_id        | integer                  |           | not null | 
- created_at     | timestamp with time zone |           | not null | now()
- updated_at     | timestamp with time zone |           | not null | now()
-Indexes:
-    "codeowners_pkey" PRIMARY KEY, btree (id)
-    "codeowners_repo_id_key" UNIQUE CONSTRAINT, btree (repo_id)
-Foreign-key constraints:
-    "codeowners_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
-
-```
-
-=======
 # Table "public.codeintel_ranking_path_counts_inputs"
 ```
     Column     |  Type   | Collation | Nullable |                             Default                              
@@ -1025,7 +1005,24 @@ Indexes:
 
 References for a given upload proceduced by background job consuming SCIP indexes.
 
->>>>>>> main
+# Table "public.codeowners"
+```
+     Column     |           Type           | Collation | Nullable |                Default                 
+----------------+--------------------------+-----------+----------+----------------------------------------
+ id             | integer                  |           | not null | nextval('codeowners_id_seq'::regclass)
+ contents       | text                     |           | not null | 
+ contents_proto | bytea                    |           | not null | 
+ repo_id        | integer                  |           | not null | 
+ created_at     | timestamp with time zone |           | not null | now()
+ updated_at     | timestamp with time zone |           | not null | now()
+Indexes:
+    "codeowners_pkey" PRIMARY KEY, btree (id)
+    "codeowners_repo_id_key" UNIQUE CONSTRAINT, btree (repo_id)
+Foreign-key constraints:
+    "codeowners_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+
+```
+
 # Table "public.configuration_policies_audit_logs"
 ```
        Column       |           Type           | Collation | Nullable |                          Default                           

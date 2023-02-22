@@ -1729,19 +1729,6 @@ CREATE SEQUENCE codeintel_ranking_exports_id_seq
 
 ALTER SEQUENCE codeintel_ranking_exports_id_seq OWNED BY codeintel_ranking_exports.id;
 
-<<<<<<< HEAD
-CREATE TABLE codeowners (
-    id integer NOT NULL,
-    contents text NOT NULL,
-    contents_proto bytea NOT NULL,
-    repo_id integer NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-CREATE SEQUENCE codeowners_id_seq
-    AS integer
-=======
 CREATE TABLE codeintel_ranking_path_counts_inputs (
     id bigint NOT NULL,
     repository text NOT NULL,
@@ -1752,16 +1739,12 @@ CREATE TABLE codeintel_ranking_path_counts_inputs (
 );
 
 CREATE SEQUENCE codeintel_ranking_path_counts_inputs_id_seq
->>>>>>> main
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
 
-<<<<<<< HEAD
-ALTER SEQUENCE codeowners_id_seq OWNED BY codeowners.id;
-=======
 ALTER SEQUENCE codeintel_ranking_path_counts_inputs_id_seq OWNED BY codeintel_ranking_path_counts_inputs.id;
 
 CREATE TABLE codeintel_ranking_references (
@@ -1782,7 +1765,25 @@ CREATE SEQUENCE codeintel_ranking_references_id_seq
     CACHE 1;
 
 ALTER SEQUENCE codeintel_ranking_references_id_seq OWNED BY codeintel_ranking_references.id;
->>>>>>> main
+
+CREATE TABLE codeowners (
+    id integer NOT NULL,
+    contents text NOT NULL,
+    contents_proto bytea NOT NULL,
+    repo_id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE codeowners_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE codeowners_id_seq OWNED BY codeowners.id;
 
 CREATE TABLE configuration_policies_audit_logs (
     log_timestamp timestamp with time zone DEFAULT clock_timestamp(),
@@ -4223,13 +4224,11 @@ ALTER TABLE ONLY codeintel_ranking_definitions ALTER COLUMN id SET DEFAULT nextv
 
 ALTER TABLE ONLY codeintel_ranking_exports ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_exports_id_seq'::regclass);
 
-<<<<<<< HEAD
-ALTER TABLE ONLY codeowners ALTER COLUMN id SET DEFAULT nextval('codeowners_id_seq'::regclass);
-=======
 ALTER TABLE ONLY codeintel_ranking_path_counts_inputs ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_path_counts_inputs_id_seq'::regclass);
 
 ALTER TABLE ONLY codeintel_ranking_references ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_references_id_seq'::regclass);
->>>>>>> main
+
+ALTER TABLE ONLY codeowners ALTER COLUMN id SET DEFAULT nextval('codeowners_id_seq'::regclass);
 
 ALTER TABLE ONLY configuration_policies_audit_logs ALTER COLUMN sequence SET DEFAULT nextval('configuration_policies_audit_logs_seq'::regclass);
 
@@ -4467,19 +4466,17 @@ ALTER TABLE ONLY codeintel_ranking_definitions
 ALTER TABLE ONLY codeintel_ranking_exports
     ADD CONSTRAINT codeintel_ranking_exports_pkey PRIMARY KEY (id);
 
-<<<<<<< HEAD
-ALTER TABLE ONLY codeowners
-    ADD CONSTRAINT codeowners_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY codeowners
-    ADD CONSTRAINT codeowners_repo_id_key UNIQUE (repo_id);
-=======
 ALTER TABLE ONLY codeintel_ranking_path_counts_inputs
     ADD CONSTRAINT codeintel_ranking_path_counts_inputs_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY codeintel_ranking_references
     ADD CONSTRAINT codeintel_ranking_references_pkey PRIMARY KEY (id);
->>>>>>> main
+
+ALTER TABLE ONLY codeowners
+    ADD CONSTRAINT codeowners_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY codeowners
+    ADD CONSTRAINT codeowners_repo_id_key UNIQUE (repo_id);
 
 ALTER TABLE ONLY critical_and_site_config
     ADD CONSTRAINT critical_and_site_config_pkey PRIMARY KEY (id);
