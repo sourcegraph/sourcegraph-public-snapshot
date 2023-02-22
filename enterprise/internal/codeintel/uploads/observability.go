@@ -67,10 +67,12 @@ type operations struct {
 	mapRankingGraph    *observation.Operation
 	reduceRankingGraph *observation.Operation
 
-	numUploadsRead         prometheus.Counter
-	numBytesUploaded       prometheus.Counter
-	numStaleRecordsDeleted prometheus.Counter
-	numBytesDeleted        prometheus.Counter
+	numUploadsRead                   prometheus.Counter
+	numBytesUploaded                 prometheus.Counter
+	numStaleRecordsDeleted           prometheus.Counter
+	numStaleDefinitionRecordsDeleted prometheus.Counter
+	numStaleReferenceRecordsDeleted  prometheus.Counter
+	numBytesDeleted                  prometheus.Counter
 }
 
 var (
@@ -127,6 +129,14 @@ func newOperations(observationCtx *observation.Context) *operations {
 	numStaleRecordsDeleted := counter(
 		"src_codeintel_uploads_ranking_stale_uploads_removed_total",
 		"The number of stale upload records removed from GCS.",
+	)
+	numStaleDefinitionRecordsDeleted := counter(
+		"src_codeintel_uploads_num_stale_definition_records_deleted",
+		"The number of stale definition records removed from Postgres.",
+	)
+	numStaleReferenceRecordsDeleted := counter(
+		"src_codeintel_uploads_num_stale_reference_records_deleted",
+		"The number of stale reference records removed from Postgres.",
 	)
 	numBytesDeleted := counter(
 		"src_codeintel_uploads_ranking_bytes_deleted_total",
@@ -186,10 +196,12 @@ func newOperations(observationCtx *observation.Context) *operations {
 		mapRankingGraph:    op("MapRankingGraph"),
 		reduceRankingGraph: op("ReduceRankingGraph"),
 
-		numUploadsRead:         numUploadsRead,
-		numBytesUploaded:       numBytesUploaded,
-		numStaleRecordsDeleted: numStaleRecordsDeleted,
-		numBytesDeleted:        numBytesDeleted,
+		numUploadsRead:                   numUploadsRead,
+		numBytesUploaded:                 numBytesUploaded,
+		numStaleRecordsDeleted:           numStaleRecordsDeleted,
+		numStaleDefinitionRecordsDeleted: numStaleDefinitionRecordsDeleted,
+		numStaleReferenceRecordsDeleted:  numStaleReferenceRecordsDeleted,
+		numBytesDeleted:                  numBytesDeleted,
 	}
 }
 
