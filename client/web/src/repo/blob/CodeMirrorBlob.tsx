@@ -25,8 +25,7 @@ import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
-import { BlobStencilFields, ExternalLinkFields, Scalars } from '../../graphql-operations'
-import { useExperimentalFeatures } from '../../stores'
+import { ExternalLinkFields, Scalars } from '../../graphql-operations'
 import { BlameHunkData } from '../blame/useBlameHunks'
 import { HoverThresholdProps } from '../RepoContainer'
 
@@ -45,7 +44,6 @@ import { selectOccurrence } from './codemirror/token-selection/code-intel-toolti
 import { tokenSelectionExtension } from './codemirror/token-selection/extension'
 import { languageSupport } from './codemirror/token-selection/languageSupport'
 import { selectionFromLocation } from './codemirror/token-selection/selections'
-import { tokensAsLinks } from './codemirror/tokens-as-links'
 import { isValidLineRange } from './codemirror/utils'
 import { setBlobEditView } from './use-blob-store'
 
@@ -72,8 +70,6 @@ export interface BlobProps
     // and clicking on any line should navigate to that specific line.
     navigateToLineOnAnyClick?: boolean
 
-    // Enables experimental navigation by rendering links for all interactive tokens.
-    enableLinkDrivenCodeNavigation?: boolean
     // Enables experimental navigation by making interactive tokens selectable on click.
     enableSelectionDrivenCodeNavigation?: boolean
 
@@ -105,8 +101,6 @@ export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
 
     /** LSIF syntax-highlighting data */
     lsif?: string
-
-    stencil?: BlobStencilFields[]
 
     /** If present, the file is stored in Git LFS (large file storage). */
     lfs?: { byteSize: Scalars['BigInt'] } | null
@@ -182,7 +176,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         extensionsController,
         isBlameVisible,
         blameHunks,
-        enableLinkDrivenCodeNavigation,
         enableSelectionDrivenCodeNavigation,
 
         // Reference panel specific props
@@ -232,8 +225,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         () => createBlameDecorationsExtension(!!isBlameVisible, blameHunks, isLightTheme),
         [isBlameVisible, blameHunks, isLightTheme]
     )
-
-    const preloadGoToDefinition = useExperimentalFeatures(features => features.preloadGoToDefinition ?? false)
 
     // Keep history and location in a ref so that we can use the latest value in
     // the onSelection callback without having to recreate it and having to
@@ -293,9 +284,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             }),
             codeFoldingExtension(),
             enableSelectionDrivenCodeNavigation ? tokenSelectionExtension() : [],
-            enableLinkDrivenCodeNavigation
-                ? tokensAsLinks({ navigate: navigateRef.current, blobInfo, preloadGoToDefinition })
-                : [],
             syntaxHighlight.of(blobInfo),
             languageSupport.of(blobInfo),
             pin.init(() => (hasPin ? position : null)),

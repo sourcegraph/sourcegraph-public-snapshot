@@ -67,7 +67,7 @@ import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleOwnershipPanel } from './actions/ToggleOwnershipPanel'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
-import { fetchBlob, fetchStencil } from './backend'
+import { fetchBlob } from './backend'
 import { BlobLoadingSpinner } from './BlobLoadingSpinner'
 import { CodeMirrorBlob, type BlobInfo } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
@@ -130,8 +130,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     )
     const [enableOwnershipPanel] = useFeatureFlag('search-ownership')
 
-    const enableSelectionDrivenCodeNavigation = experimentalCodeNavigation === 'selection-driven'
-    const enableLinkDrivenCodeNavigation = experimentalCodeNavigation === 'link-driven'
+    const enableSelectionDrivenCodeNavigation = experimentalCodeNavigation !== 'hover-only'
 
     const lineOrRange = useMemo(
         () => parseQueryAndHash(location.search, location.hash),
@@ -286,22 +285,6 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                 ),
             [repoName, revision, filePath, enableCodeMirror, mode]
         )
-    )
-
-    // Fetches stencil ranges for the current document.  Only used for
-    // link-driven keyboard navigatio.
-    const stencil = useObservable(
-        useMemo(() => {
-            if (!enableLinkDrivenCodeNavigation) {
-                return of(undefined)
-            }
-
-            return fetchStencil({
-                repoName,
-                revision,
-                filePath,
-            })
-        }, [enableLinkDrivenCodeNavigation, filePath, repoName, revision])
     )
 
     const blobInfoOrError = enableLazyBlobSyntaxHighlighting
@@ -579,7 +562,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                     <BlobComponent
                         data-testid="repo-blob"
                         className={classNames(styles.blob, styles.border)}
-                        blobInfo={{ ...blobInfoOrError, commitID, stencil }}
+                        blobInfo={{ ...blobInfoOrError, commitID }}
                         wrapCode={wrapCode}
                         platformContext={props.platformContext}
                         extensionsController={props.extensionsController}
@@ -591,7 +574,6 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                         isBlameVisible={isBlameVisible}
                         blameHunks={blameHunks}
                         overrideBrowserSearchKeybinding={true}
-                        enableLinkDrivenCodeNavigation={enableLinkDrivenCodeNavigation}
                         enableSelectionDrivenCodeNavigation={enableSelectionDrivenCodeNavigation}
                     />
                 </TraceSpanProvider>
