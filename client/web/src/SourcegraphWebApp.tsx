@@ -35,6 +35,7 @@ import {
     EMPTY_SETTINGS_CASCADE,
     Settings,
     SettingsCascadeOrError,
+    SettingsProvider,
     SettingsSubjectCommonFields,
 } from '@sourcegraph/shared/src/settings/settings'
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
@@ -393,10 +394,11 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
             ),
             children: props.routes
                 .map(
-                    ({ condition = () => true, render, path }) =>
+                    ({ condition = () => true, render, path, handle }) =>
                         condition(context) && {
                             path: path.slice(1), // remove leading slash
                             element: render(context),
+                            handle,
                         }
                 )
                 .filter(isTruthy),
@@ -410,6 +412,7 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
                 /* eslint-disable react/no-children-prop, react/jsx-key */
                 <ApolloProvider client={graphqlClient} children={undefined} />,
                 <WildcardThemeContext.Provider value={WILDCARD_THEME} />,
+                <SettingsProvider settingsCascade={settingsCascade} />,
                 <ErrorBoundary location={null} />,
                 <TraceSpanProvider name={SharedSpanName.AppMount} />,
                 <FeatureFlagsProvider />,
