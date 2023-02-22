@@ -18,6 +18,7 @@ import { GlobalNavbar, GlobalNavbarProps } from './GlobalNavbar'
 
 const getDefaultProps = (props: ThemeProps): GlobalNavbarProps => ({
     isSourcegraphDotCom: false,
+    isSourcegraphApp: false,
     settingsCascade: {
         final: null,
         subjects: null,

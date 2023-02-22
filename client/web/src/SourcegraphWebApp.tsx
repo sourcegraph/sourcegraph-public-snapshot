@@ -309,6 +309,7 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
         isMacPlatform: isMacPlatform(),
         telemetryService: eventLogger,
         isSourcegraphDotCom: window.context.sourcegraphDotComMode,
+        isSourcegraphApp: window.context.sourcegraphAppMode,
         selectedSearchContextSpec: getSelectedSearchContextSpec(),
         setSelectedSearchContextSpec,
         getUserSearchContextNamespaces,

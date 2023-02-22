@@ -19,6 +19,7 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     authenticatedUser: null,
     extensionsController,
     isSourcegraphDotCom: false,
+    isSourcegraphApp: false,
     onThemePreferenceChange: () => undefined,
     isLightTheme: true,
     themePreference: ThemePreference.Light,
