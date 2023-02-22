@@ -24,11 +24,12 @@ import {
     Container,
     Text,
     ErrorAlert,
-    Heading,
     Button,
     Collapse,
     CollapseHeader,
     CollapsePanel,
+    H3,
+    H4,
 } from '@sourcegraph/wildcard'
 
 import { LogOutput } from '../components/LogOutput'
@@ -145,14 +146,13 @@ const SiteUpgradeReadiness: FunctionComponent<React.PropsWithChildren<SiteUpgrad
     const [isExpanded, setIsExpanded] = useState(true)
     return (
         <>
-            {' '}
             <PageHeader path={[{ text: 'Upgrade readiness' }]} headingElement="h2" className="mb-3 mt-3" />
-            <Container className="mb-2">
+            <Container className="mb-3">
                 {error && !loading && <ErrorAlert error={error} />}
                 {loading && !error && <LoadingSpinner />}
                 {data && (
                     <>
-                        <Heading as="h4">Schema drift</Heading>
+                        <H3 as={H4}>Schema drift</H3>
                         {data.site.upgradeReadiness.schemaDrift.length > 0 ? (
                             <Collapse isOpen={isExpanded} onOpenChange={setIsExpanded} openByDefault={false}>
                                 <CollapseHeader
@@ -174,12 +174,12 @@ const SiteUpgradeReadiness: FunctionComponent<React.PropsWithChildren<SiteUpgrad
                                 </CollapsePanel>
                             </Collapse>
                         ) : (
-                            <span>✅ There is no schema drift detected.</span>
+                            <Text>✅ There is no schema drift detected.</Text>
                         )}
 
-                        <Heading as="h4" className="mt-3">
+                        <H3 as={H4} className="mt-3">
                             Required out-of-band migrations
-                        </Heading>
+                        </H3>
                         {data.site.upgradeReadiness.requiredOutOfBandMigrations.length > 0 ? (
                             <>
                                 <span>
@@ -193,13 +193,12 @@ const SiteUpgradeReadiness: FunctionComponent<React.PropsWithChildren<SiteUpgrad
                                         <li key={oobm.id}>{oobm.description}</li>
                                     ))}
                                 </ul>
-                                {/* TODO: Show a list */}
                             </>
                         ) : (
-                            <span>
+                            <Text>
                                 ✅ There are no pending out-of-band migrations that are deprecated in the current
                                 version.
-                            </span>
+                            </Text>
                         )}
                     </>
                 )}
