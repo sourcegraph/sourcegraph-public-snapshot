@@ -301,11 +301,18 @@ func TestClient_P4Exec(t *testing.T) {
 			password: "pa$$word",
 			args:     []string{"protects"},
 			handler: func(w http.ResponseWriter, r *http.Request) {
+				if r.ProtoMajor == 2 {
+					// Ignore attempted gRPC connections
+					w.WriteHeader(http.StatusNotImplemented)
+					return
+				}
+
 				body, err := io.ReadAll(r.Body)
 				if err != nil {
 					t.Fatal(err)
 				}
 
+				println("got body", string(body))
 				wantBody := `{"p4port":"ssl:111.222.333.444:1666","p4user":"admin","p4passwd":"pa$$word","args":["protects"]}`
 				if diff := cmp.Diff(wantBody, string(body)); diff != "" {
 					t.Fatalf("Mismatch (-want +got):\n%s", diff)
@@ -320,6 +327,12 @@ func TestClient_P4Exec(t *testing.T) {
 		{
 			name: "error response",
 			handler: func(w http.ResponseWriter, r *http.Request) {
+				if r.ProtoMajor == 2 {
+					// Ignore attempted gRPC connections
+					w.WriteHeader(http.StatusNotImplemented)
+					return
+				}
+
 				w.WriteHeader(http.StatusBadRequest)
 				_, _ = w.Write([]byte("example error"))
 			},
