@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/fs"
 	"net/url"
 	"os"
@@ -404,7 +403,6 @@ func (r *GitTreeEntryResolver) LFS(ctx context.Context) (*lfsResolver, error) {
 }
 
 func (r *GitTreeEntryResolver) Ownership(ctx context.Context, args ListOwnershipArgs) (OwnershipConnectionResolver, error) {
-	fmt.Println("BLOB")
 	_, ok := r.ToGitBlob()
 	if !ok {
 		return nil, nil

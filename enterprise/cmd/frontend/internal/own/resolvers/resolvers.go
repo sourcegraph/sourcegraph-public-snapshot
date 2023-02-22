@@ -4,7 +4,6 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -34,18 +33,14 @@ type ownResolver struct {
 }
 
 func (r *ownResolver) GitBlobOwnership(ctx context.Context, blob *graphqlbackend.GitTreeEntryResolver, args graphqlbackend.ListOwnershipArgs) (graphqlbackend.OwnershipConnectionResolver, error) {
-	fmt.Println("OWNERSHIP")
 	repoName := blob.Repository().RepoName()
 	commitID := api.CommitID(blob.Commit().OID())
 	file, err := r.ownService.OwnersFile(ctx, repoName, commitID)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("OWNERS FILE", file.String())
 	owners := file.FindOwners(blob.Path())
-	fmt.Println("OWNERS", owners)
 	resolvedOwners, err := r.ownService.ResolveOwnersWithType(ctx, owners)
-	fmt.Println("RESOLVED", resolvedOwners)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +133,6 @@ func (r *ownerResolver) ToTeam() (*graphqlbackend.TeamResolver, bool) {
 
 func (r *ownerResolver) ToUnknownOwner() (graphqlbackend.UnknownOwnerResolver, bool) {
 	owner, ok := r.resolvedOwner.(*codeowners.UnknownOwner)
-	fmt.Println("TO UNKNOWN OWNER", owner, ok)
 	if !ok || r.resolvedOwner.Type() != codeowners.OwnerTypeUnknown {
 		return nil, false
 	}
@@ -151,7 +145,6 @@ type unknownOwnerResolver struct {
 
 func (r *unknownOwnerResolver) Handle() *string {
 	h := r.owner.Handle
-	fmt.Println("UNKNOWN HANDLE", h)
 	if h == "" {
 		return nil
 	}
@@ -160,7 +153,6 @@ func (r *unknownOwnerResolver) Handle() *string {
 
 func (r *unknownOwnerResolver) Email() *string {
 	e := r.owner.Email
-	fmt.Println("UNKNOWN EMAIL", e)
 	if e == "" {
 		return nil
 	}

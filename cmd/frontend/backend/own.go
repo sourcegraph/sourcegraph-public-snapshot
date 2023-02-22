@@ -3,7 +3,6 @@ package backend
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"os"
 	"sync"
 
@@ -89,7 +88,6 @@ func (s *ownService) OwnersFile(ctx context.Context, repoName api.RepoName, comm
 
 func (s *ownService) ResolveOwnersWithType(ctx context.Context, protoOwners []*codeownerspb.Owner) ([]codeowners.ResolvedOwner, error) {
 	resolved := make([]codeowners.ResolvedOwner, 0, len(protoOwners))
-	fmt.Println("RESOLVE OWNERS")
 	// We have to look up owner by owner because of the branching conditions:
 	// We first try to find a user given the owner information. If we cannot find a user, we try to match a team.
 	// If all fails, we return an unknown owner type with the information we have from the proto.
