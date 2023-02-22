@@ -743,6 +743,14 @@ func check(logger log.Logger, db database.DB) {
 	mu.Unlock()
 }
 
+// Check if update check is enabled, running at every interval so that it can be
+// switched on/off at runtime.
+func isUpdateCheckCurrentlyEnabled() bool {
+	// Disabled when running in App mode.
+	// TODO: re-enable in App mode when authenticated.
+	return !deploy.IsDeployTypeSingleProgram(deploy.Type())
+}
+
 var started bool
 
 // Start starts checking for software updates periodically.
@@ -759,7 +767,9 @@ func Start(logger log.Logger, db database.DB) {
 	const delay = 30 * time.Minute
 	scopedLog := logger.Scoped("updatecheck", "checks for updates of services and updates usage telemetry")
 	for {
-		check(scopedLog, db)
+		if isUpdateCheckCurrentlyEnabled() {
+			check(scopedLog, db)
+		}
 
 		// Randomize sleep to prevent thundering herds.
 		randomDelay := time.Duration(rand.Intn(600)) * time.Second
