@@ -16,3 +16,28 @@
     grid-template-columns: repeat(2, 1fr);
     width: 100%;
 }
+
+.select {
+    width: 10rem;
+}
+
+/*************** Inherited styles ***********/
+.icon {
+    flex-shrink: 0;
+    width: 1rem;
+    height: 1rem;
+}
+
+.hint {
+    padding: 0.25rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--gray-04);
+}
+
+.spacer {
+    margin-left: 0.25rem;
+}
+
+.selected {
+    background-color: var(--gray-04);
+}

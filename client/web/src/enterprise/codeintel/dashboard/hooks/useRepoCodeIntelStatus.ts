@@ -42,7 +42,7 @@ export const useRepoCodeIntelStatus = ({
     } = useQuery<RepoCodeIntelStatusResult, RepoCodeIntelStatusVariables>(repoCodeIntelStatusQuery, {
         variables,
         notifyOnNetworkStatusChange: false,
-        fetchPolicy: 'no-cache',
+        fetchPolicy: 'cache-first', // TODO: Think about invalidation, especially after fixing
     })
 
     const repo = rawData?.repository
