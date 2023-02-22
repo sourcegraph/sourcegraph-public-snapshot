@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -61,11 +61,16 @@ func (s *codeownersStore) CreateCodeownersFile(ctx context.Context, file *types.
 			file.UpdatedAt = file.CreatedAt
 		}
 
+		protoBytes, err := proto.Marshal(file.Proto)
+		if err != nil {
+			return err
+		}
+
 		q := sqlf.Sprintf(
 			createCodeownersQueryFmtStr,
 			sqlf.Join(codeownersColumns, ","),
 			file.Contents,
-			file.Proto,
+			protoBytes,
 			file.RepoID,
 			file.CreatedAt,
 			file.UpdatedAt,
@@ -109,10 +114,15 @@ func (s *codeownersStore) UpdateCodeownersFile(ctx context.Context, file *types.
 			sqlf.Sprintf("repo_id = %s", file.RepoID),
 		}
 
+		protoBytes, err := proto.Marshal(file.Proto)
+		if err != nil {
+			return err
+		}
+
 		q := sqlf.Sprintf(
 			updateCodeownersQueryFmtStr,
 			file.Contents,
-			file.Proto,
+			protoBytes,
 			file.UpdatedAt,
 			sqlf.Join(conds, "AND"),
 		)
@@ -265,15 +275,15 @@ var scanCodeowners = basestore.NewSliceScanner(func(s dbutil.Scanner) (*types.Co
 })
 
 func scanCodeownersRow(sc dbutil.Scanner, c *types.CodeownersFile) error {
-	var protoString string
+	var protoBytes []byte
 	if err := sc.Scan(
 		&c.Contents,
-		&protoString,
+		&protoBytes,
 		&c.RepoID,
 		&c.CreatedAt,
 		&c.UpdatedAt,
 	); err != nil {
 		return err
 	}
-	return jsonpb.UnmarshalString(protoString, c.Proto)
+	return proto.Unmarshal(protoBytes, c.Proto)
 }

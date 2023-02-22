@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/testing/protocmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -129,14 +130,18 @@ func TestCodeowners_GetList(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			require.Equal(t, repo1Codeowners, got)
+			if diff := cmp.Diff(repo1Codeowners, got, protocmp.Transform()); diff != "" {
+				t.Fatal(diff)
+			}
 		})
 		t.Run("get by repo ID after update", func(t *testing.T) {
 			got, err := store.GetCodeownersForRepo(ctx, api.RepoID(2))
 			if err != nil {
 				t.Fatal(err)
 			}
-			require.Equal(t, repo2Codeowners, got)
+			if diff := cmp.Diff(repo2Codeowners, got, protocmp.Transform()); diff != "" {
+				t.Fatal(diff)
+			}
 			repo2Codeowners.UpdatedAt = timeutil.Now()
 			if err := store.UpdateCodeownersFile(ctx, repo2Codeowners); err != nil {
 				t.Fatal(err)
@@ -145,7 +150,9 @@ func TestCodeowners_GetList(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			require.Equal(t, repo2Codeowners, got)
+			if diff := cmp.Diff(repo2Codeowners, got, protocmp.Transform()); diff != "" {
+				t.Fatal(diff)
+			}
 		})
 	})
 
@@ -157,7 +164,10 @@ func TestCodeowners_GetList(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		require.Equal(t, all, have)
+		if diff := cmp.Diff(all, have, protocmp.Transform()); diff != "" {
+			t.Fatal(diff)
+		}
+		//require.Equal(t, all, have)
 		if cursor != 0 {
 			t.Fatal("incorrect cursor returned")
 		}
@@ -172,8 +182,9 @@ func TestCodeowners_GetList(t *testing.T) {
 					t.Fatal(err)
 				}
 				lastCursor = c
-				fmt.Println(cf[0])
-				assert.Equal(t, all[i], cf[0])
+				if diff := cmp.Diff(all[i], cf[0], protocmp.Transform()); diff != "" {
+					t.Error(diff)
+				}
 			})
 		}
 	})
