@@ -39,20 +39,31 @@ To know more about each method that we support, please follow the link above.
 ## Supported code hosts
 
 Support for repository permissions accross different code hosts is different. The following table captures current state of support (ordered alphabetically):
-| Code host | Permission Syncing | Webhooks for Permissions | Explicit API |
-| -------- | -------- | -------- | -------- | 
-| Bitbucket Cloud <span class="badge badge-beta">Beta</span> | ✓ | ✗ | ✓ |
-| Bitbucket Server | ✓ | ✗ | ✓ |
-| Gerrit <span class="badge badge-beta">Beta</span> | ✓ | ✗ | ✓ |
-| GitHub   | ✓ | ✓ | ✓ |
-| GitHub Enterprise | ✓ | ✓ | ✓ |
-| GitLab | ✓ | ✗ | ✓ |
-| GitLab Self-Managed | ✓ | ✗ | ✓ |
-| Perforce <span class="badge badge-experimental">Experimental</span> | Yes <span class="badge">(with file-level permissions)</span> | ✓ | ✓ |
+| Code host | [Permission Syncing](syncing.md) | (Webhooks for Permissions](webhooks.md) | [Explicit API](api.md) | [Scale supported](#supported-scale) |
+| -------- | -------- | -------- | -------- | -------- |
+| Bitbucket Cloud <span class="badge badge-beta">Beta</span> | ✓ | ✗ | ✓ | 10k users, 100k repositories
+| Bitbucket Server | ✓ | ✗ | ✓ | 10k users, 100k repositories
+| Gerrit <span class="badge badge-beta">Beta</span> | ✓ | ✗ | ✓ | 10k users, 100k repositories |
+| GitHub   | ✓ | ✓ | ✓ | 40k users, 200k repositories |
+| GitHub Enterprise | ✓ | ✓ | ✓ | 40k users, 200k repositories |
+| GitLab | ✓ | ✗ | ✓ | 40k users, 200k repositories |
+| GitLab Self-Managed | ✓ | ✗ | ✓ | 40k users, 200k repositories |
+| Perforce <span class="badge badge-experimental">Experimental</span> | Yes <span class="badge">(with file-level permissions)</span> | ✓ | ✓ | 10k users, 250k repositories |
 
-All the other code hosts only support [Explicit permissions API](./api.md).
+All the other code hosts only support [Explicit permissions API](./api.md). 
 
-// TODO: @milan make sure the table is representing real state
+<span class="virtual-br"></span>
+
+> NOTE: If your desired code host is not yet supported, please [open a feature request](https://github.com/sourcegraph/sourcegraph/issues/new?template=feature_request.md).
+
+### Supported scale
+
+If not otherwise stated, all code hosts should support up to 10k users and 100k repositories for permission syncing. 
+This in general is a threshold that was tested in a testing environment or on a customer instance.
+
+The difference today are other Code hosts, where Sourcegraph was tested to confidently support 40k users and 200k repositories for permission syncing.
+
+> NOTE: Sourcegraph *may* be able to support higher numbers than specified, but was not rigorously tested to do so.
 ## Licensing
 
 To have permission syncing available, the Sourcegraph instance needs to be configured with a license that has `acls` feature enabled.

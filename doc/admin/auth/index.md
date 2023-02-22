@@ -330,7 +330,7 @@ Sourcegraph instance:
 - Callback URL: `https://sourcegraph.example.com/.auth/bitbucketcloud/callback`
 - Permissions: 
   - `Account`: `Read`
-  - `Repositories`: `Read` (if [permissions syncing](../repo/permissions.md) is desired)
+  - `Repositories`: `Read` (more information in [repository permissions section](../permissions/index.md))
 
 After the consumer is created, you will need the `Key` and the `Secret`, which can be found by expanding OAuth consumer in the list.
 Then add the following lines to your [site configuration](config/site_config.md):
@@ -511,7 +511,7 @@ Let's say the email field in your Sourcegraph account was kept blank when a site
 Exceptions to this rule are [HTTP Proxies](#http-authentication-proxies), where there's an option to make the link via username only.
 For [Bitbucket](../config/authorization_and_authentication.md#bitbucket-server-bitbucket-data-center-authorization), we don't support OAuth. Still, the match between the chosen auth provider used with Bitbucket and a user's Bitbucket account happens via username.
 
-Using only a username to match a Sourcegraph account to an auth provider account is not recommended, as you can see [here](../repo/permissions.md#username), for example.
+Using only a username to match a Sourcegraph account to an auth provider account is not recommended, as you can see [here](../external_service/gitlab.md#username), for example.
 Usernames in Sourcegraph are mutable, so a malicious user could change a username, elevating their privileges.
 
 ## Linking accounts from multiple auth providers
