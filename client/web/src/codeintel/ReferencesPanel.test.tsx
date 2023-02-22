@@ -6,6 +6,7 @@ import '@sourcegraph/shared/dev/mockReactVisibilitySensor'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { setExperimentalFeaturesFromSettings } from '../stores'
+
 import { ReferencesPanel } from './ReferencesPanel'
 import { buildReferencePanelMocks, defaultProps } from './ReferencesPanel.mocks'
 
