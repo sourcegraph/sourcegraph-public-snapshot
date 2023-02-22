@@ -32,7 +32,7 @@ This release introduces a background job that will convert all LSIF data into SC
 
   - The error will be encountered while running `upgrade`, and contains the following text: `"frontend": failed to apply migration 1648115472`. 
     - To resolve this issue run migrator with the args `'add-log', '-db=frontend', '-version=1648115472'`. 
-    - If migrator was stopped while running `upgrade` the next run of upgrade will encounter drift, this drift should be disregarded with by providing migrator with the `--skip-drift-check` flag.
+    - If migrator was stopped while running `upgrade` the next run of upgrade will encounter drift, this drift should be disregarded by providing migrator with the `--skip-drift-check` flag.
 
 ## v4.2 ➔ v4.3.1
 
