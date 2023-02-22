@@ -15,7 +15,14 @@ func TestUpdateFromEvent(t *testing.T) {
 	commit := "78926a5b3b836a8a104a5d5adf891e5626b1e405"
 	pipelineID := "sourcegraph"
 	msg := "this is a test"
-	job := newJob("job 1", 0)
+	jobName := "new job"
+	jobExit := 0
+	job := Job{
+		buildkite.Job{
+			Name:       &jobName,
+			ExitStatus: &jobExit,
+		},
+	}
 
 	event := Event{
 		Name: "build.finished",
