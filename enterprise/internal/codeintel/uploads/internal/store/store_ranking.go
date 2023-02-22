@@ -3,6 +3,7 @@ package store
 import (
 	"bytes"
 	"context"
+	"fmt"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -276,46 +277,81 @@ func (s *store) InsertPathCountInputs(
 	ctx, _, endObservation := s.operations.insertPathCountInputs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	if err = s.db.Exec(ctx, sqlf.Sprintf(insertPathCountInputsQuery, rankingGraphKey, batchSize)); err != nil {
+	fmt.Printf("MAP %v\n", rankingGraphKey)
+
+	if err = s.db.Exec(ctx, sqlf.Sprintf(
+		insertPathCountInputsQuery,
+		rankingGraphKey,
+		rankingGraphKey,
+		batchSize,
+		rankingGraphKey,
+		rankingGraphKey,
+		rankingGraphKey,
+	)); err != nil {
 		return err
 	}
 
 	return nil
 }
 
+// CREATE TABLE IF NOT EXISTS codeintel_ranking_references_processed (
+//     id                              SERIAL PRIMARY KEY,
+//     graph_key                       TEXT NOT NULL,
+//     codeintel_ranking_reference_id  INT NOT NULL,
+
+//     CONSTRAINT fk_codeintel_ranking_reference FOREIGN KEY (codeintel_ranking_reference_id) REFERENCES codeintel_ranking_references(id) ON DELETE CASCADE
+// );
+
+// CREATE UNIQUE INDEX IF NOT EXISTS codeintel_ranking_references_processed_graph_key_codeintel_ranking_reference_id ON codeintel_ranking_references_processed(graph_key, codeintel_ranking_reference_id);
+
 const insertPathCountInputsQuery = `
 WITH
- refs AS (
+refs AS (
 	SELECT
-		id,
-		symbol_names
+		rr.id,
+		rr.symbol_names
 	FROM codeintel_ranking_references rr
-	WHERE rr.graph_key = %s AND NOT rr.processed
-	ORDER BY rr.symbol_names, rr.id
-	FOR UPDATE
+	WHERE
+		%s LIKE rr.graph_key || '%%' AND
+		NOT EXISTS (
+			SELECT 1
+			FROM codeintel_ranking_references_processed rrp
+			WHERE
+				rrp.graph_key = %s AND
+				rrp.codeintel_ranking_reference_id = rr.id
+		)
+	ORDER BY rr.id
 	LIMIT %s
 ),
-definitions AS (
-	SELECT
-		repository,
-		document_path,
-		graph_key
-	FROM codeintel_ranking_definitions
-	WHERE symbol_name IN (SELECT unnest(symbol_names) FROM refs)
+locked_refs AS (
+	INSERT INTO codeintel_ranking_references_processed (graph_key, codeintel_ranking_reference_id)
+	SELECT %s, r.id FROM refs r
+	ON CONFLICT DO NOTHING
+	RETURNING codeintel_ranking_reference_id
 ),
-processed AS (
-    UPDATE codeintel_ranking_references
-    SET processed = true
-    WHERE id IN (SELECT r.id FROM refs r)
+referenced_symbols AS (
+	SELECT unnest(symbol_names) AS symbol_name
+	FROM refs
+	WHERE id IN (SELECT id FROM locked_refs)
+),
+referenced_definitions AS (
+	SELECT
+		rd.repository,
+		rd.document_path,
+		rd.graph_key
+	FROM codeintel_ranking_definitions rd
+	WHERE
+		%s LIKE rd.graph_key || '%%' AND
+		rd.symbol_name IN (SELECT symbol_name FROM referenced_symbols)
 )
 INSERT INTO codeintel_ranking_path_counts_inputs (repository, document_path, count, graph_key)
 SELECT
-	repository,
-	document_path,
+	rd.repository,
+	rd.document_path,
 	COUNT(*),
-	graph_key
-FROM definitions
-GROUP BY repository, document_path, graph_key
+	%s
+FROM referenced_definitions rd
+GROUP BY rd.repository, rd.document_path, rd.graph_key
 `
 
 func (s *store) InsertPathRanks(
@@ -331,6 +367,8 @@ func (s *store) InsertPathRanks(
 		}},
 	)
 	defer endObservation(1, observation.Args{})
+
+	fmt.Printf("REDUCE %v\n", graphKey)
 
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(insertPathRanksQuery, graphKey, batchSize))
 	if err != nil {
@@ -351,22 +389,24 @@ func (s *store) InsertPathRanks(
 
 const insertPathRanksQuery = `
 WITH input_ranks AS (
-    SELECT
-        id,
-        (SELECT id FROM repo WHERE name = repository) AS repository_id,
-        document_path AS path,
-        count
-    FROM codeintel_ranking_path_counts_inputs
-    WHERE graph_key = %s::text AND NOT processed
-    ORDER BY graph_key, repository, id
-    LIMIT %s
-    FOR UPDATE SKIP LOCKED
+	SELECT
+		id,
+		(SELECT id FROM repo WHERE name = repository) AS repository_id,
+		document_path AS path,
+		count
+	FROM codeintel_ranking_path_counts_inputs
+	WHERE
+		graph_key = %s AND
+		NOT processed
+	ORDER BY graph_key, repository, id
+	LIMIT %s
+	FOR UPDATE SKIP LOCKED
 ),
 processed AS (
-    UPDATE codeintel_ranking_path_counts_inputs
-    SET processed = true
-    WHERE id IN (SELECT ir.id FROM input_ranks ir)
-    RETURNING 1
+	UPDATE codeintel_ranking_path_counts_inputs
+	SET processed = true
+	WHERE id IN (SELECT ir.id FROM input_ranks ir)
+	RETURNING 1
 ),
 inserted AS (
 	INSERT INTO codeintel_path_ranks AS pr (repository_id, precision, payload)
@@ -393,12 +433,13 @@ inserted AS (
 						SELECT jsonb_build_object(key, SUM(value::int)) AS row
 						FROM
 							(
-							SELECT * FROM jsonb_each(pr.payload)
-							UNION
-							SELECT * FROM jsonb_each(EXCLUDED.payload)
+								SELECT * FROM jsonb_each(pr.payload)
+								UNION
+								SELECT * FROM jsonb_each(EXCLUDED.payload)
 							) AS both_payloads
 						GROUP BY key
-				) AS combined_json)
+					) AS combined_json
+				)
 			END
 	RETURNING 1
 )

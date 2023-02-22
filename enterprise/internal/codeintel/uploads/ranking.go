@@ -234,9 +234,6 @@ func (s *Service) ReduceRankingGraph(
 	return numPathRanksInserted, numPathCountInputsProcessed, nil
 }
 
-// TODO - move this to config
-var interval = time.Second * 5
-
 // TODO - test
 
 // getCurrentGraphKey returns a derivative key from the configured parent used for exports
@@ -247,5 +244,5 @@ var interval = time.Second * 5
 // a fresh map/reduce job on a periodic cadence (equal to the bucket length). Changing the
 // parent graph key will also create a new map/reduce job (without switching buckets).
 func getCurrentGraphKey(now time.Time) string {
-	return fmt.Sprintf("%s-%d", rankingGraphKey, now.UTC().UnixNano()/interval.Nanoseconds())
+	return fmt.Sprintf("%s-%d", rankingGraphKey, now.UTC().UnixNano()/RankingConfigInst.Interval.Nanoseconds())
 }
