@@ -99,6 +99,12 @@ type Store interface {
 
 	GetUploadsForRanking(ctx context.Context, graphKey, objectPrefix string, batchSize int) ([]ExportedUpload, error)
 
+	VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string) (
+		metadataRecordsDeleted int,
+		inputRecordsDeleted int,
+		err error,
+	)
+
 	VacuumStaleDefinitionsAndReferences(ctx context.Context, graphKey string) (
 		numStaleDefinitionRecordsDeleted int,
 		numStaleReferenceRecordsDeleted int,

@@ -136,17 +136,22 @@ func (s *Service) setDefinitionsAndReferencesForUpload(
 }
 
 // TODO - update grafana dashboards
-// TODO - update graph key generation for map/reduce
-// TODO - vacuum needs to cleanup map/reduce junk
 
 func (s *Service) VacuumRankingGraph(ctx context.Context) error {
 	numStaleDefinitionRecordsDeleted, numStaleReferenceRecordsDeleted, err := s.store.VacuumStaleDefinitionsAndReferences(ctx, rankingGraphKey)
 	if err != nil {
 		return err
 	}
-
 	s.operations.numStaleDefinitionRecordsDeleted.Add(float64(numStaleDefinitionRecordsDeleted))
 	s.operations.numStaleReferenceRecordsDeleted.Add(float64(numStaleReferenceRecordsDeleted))
+
+	numMetadataRecordsDeleted, numInputRecordsDeleted, err := s.store.VacuumStaleGraphs(ctx, getCurrentGraphKey(time.Now()))
+	if err != nil {
+		return err
+	}
+	s.operations.numMetadataRecordsDeleted.Add(float64(numMetadataRecordsDeleted))
+	s.operations.numInputRecordsDeleted.Add(float64(numInputRecordsDeleted))
+
 	return nil
 }
 

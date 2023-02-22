@@ -3,7 +3,7 @@ package store
 import (
 	"bytes"
 	"context"
-	"fmt"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -77,6 +77,63 @@ deleted_references AS (
 SELECT
 	(SELECT COUNT(*) FROM locked_definitions),
 	(SELECT COUNT(*) FROM deleted_references)
+`
+
+// TODO - test
+func (s *store) VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string) (
+	metadataRecordsDeleted int,
+	inputRecordsDeleted int,
+	err error,
+) {
+	// TODO - observability
+
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(vacuumStaleGraphsQuery, derivativeGraphKey, derivativeGraphKey))
+	if err != nil {
+		return 0, 0, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		if err := rows.Scan(
+			&metadataRecordsDeleted,
+			&inputRecordsDeleted,
+		); err != nil {
+			return 0, 0, err
+		}
+	}
+
+	return metadataRecordsDeleted, inputRecordsDeleted, nil
+}
+
+const vacuumStaleGraphsQuery = `
+WITH
+locked_references_processed AS (
+	SELECT id
+	FROM codeintel_ranking_references_processed
+	WHERE graph_key != %s
+	ORDER BY id
+	FOR UPDATE
+),
+locked_path_counts_inputs AS (
+	SELECT id
+	FROM codeintel_ranking_path_counts_inputs
+	WHERE graph_key != %s
+	ORDER BY id
+	FOR UPDATE
+),
+deleted_references_processed AS (
+	DELETE FROM codeintel_ranking_references_processed
+	WHERE id IN (SELECT id FROM locked_references_processed)
+	RETURNING 1
+),
+deleted_path_counts_inputs AS (
+	DELETE FROM codeintel_ranking_path_counts_inputs
+	WHERE id IN (SELECT id FROM locked_path_counts_inputs)
+	RETURNING 1
+)
+SELECT
+	(SELECT COUNT(*) FROM deleted_references_processed),
+	(SELECT COUNT(*) FROM deleted_path_counts_inputs)
 `
 
 func (s *store) InsertDefinitionsAndReferencesForDocument(
@@ -271,38 +328,28 @@ func (s *store) InsertReferencesForRanking(
 
 func (s *store) InsertPathCountInputs(
 	ctx context.Context,
-	rankingGraphKey string,
+	derivativeGraphKey string,
 	batchSize int,
 ) (err error) {
 	ctx, _, endObservation := s.operations.insertPathCountInputs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	fmt.Printf("MAP %v\n", rankingGraphKey)
+	parentGraphKey := strings.Split(derivativeGraphKey, "-")[0]
 
 	if err = s.db.Exec(ctx, sqlf.Sprintf(
 		insertPathCountInputsQuery,
-		rankingGraphKey,
-		rankingGraphKey,
+		parentGraphKey,
+		derivativeGraphKey,
 		batchSize,
-		rankingGraphKey,
-		rankingGraphKey,
-		rankingGraphKey,
+		derivativeGraphKey,
+		parentGraphKey,
+		derivativeGraphKey,
 	)); err != nil {
 		return err
 	}
 
 	return nil
 }
-
-// CREATE TABLE IF NOT EXISTS codeintel_ranking_references_processed (
-//     id                              SERIAL PRIMARY KEY,
-//     graph_key                       TEXT NOT NULL,
-//     codeintel_ranking_reference_id  INT NOT NULL,
-
-//     CONSTRAINT fk_codeintel_ranking_reference FOREIGN KEY (codeintel_ranking_reference_id) REFERENCES codeintel_ranking_references(id) ON DELETE CASCADE
-// );
-
-// CREATE UNIQUE INDEX IF NOT EXISTS codeintel_ranking_references_processed_graph_key_codeintel_ranking_reference_id ON codeintel_ranking_references_processed(graph_key, codeintel_ranking_reference_id);
 
 const insertPathCountInputsQuery = `
 WITH
@@ -312,7 +359,7 @@ refs AS (
 		rr.symbol_names
 	FROM codeintel_ranking_references rr
 	WHERE
-		%s LIKE rr.graph_key || '%%' AND
+		rr.graph_key = %s AND
 		NOT EXISTS (
 			SELECT 1
 			FROM codeintel_ranking_references_processed rrp
@@ -341,7 +388,7 @@ referenced_definitions AS (
 		rd.graph_key
 	FROM codeintel_ranking_definitions rd
 	WHERE
-		%s LIKE rd.graph_key || '%%' AND
+		rd.graph_key = %s AND
 		rd.symbol_name IN (SELECT symbol_name FROM referenced_symbols)
 )
 INSERT INTO codeintel_ranking_path_counts_inputs (repository, document_path, count, graph_key)
@@ -356,21 +403,19 @@ GROUP BY rd.repository, rd.document_path, rd.graph_key
 
 func (s *store) InsertPathRanks(
 	ctx context.Context,
-	graphKey string,
+	derivativeGraphKey string,
 	batchSize int,
 ) (numPathRanksInserted float64, numInputsProcessed float64, err error) {
 	ctx, _, endObservation := s.operations.insertPathRanks.With(
 		ctx,
 		&err,
 		observation.Args{LogFields: []otlog.Field{
-			otlog.String("graphKey", graphKey),
+			otlog.String("derivativeGraphKey", derivativeGraphKey),
 		}},
 	)
 	defer endObservation(1, observation.Args{})
 
-	fmt.Printf("REDUCE %v\n", graphKey)
-
-	rows, err := s.db.Query(ctx, sqlf.Sprintf(insertPathRanksQuery, graphKey, batchSize))
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(insertPathRanksQuery, derivativeGraphKey, batchSize))
 	if err != nil {
 		return 0, 0, err
 	}
