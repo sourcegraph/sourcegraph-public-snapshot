@@ -59,6 +59,7 @@ type Services struct {
 	ComputeResolver             graphqlbackend.ComputeResolver
 	InsightsAggregationResolver graphqlbackend.InsightsAggregationResolver
 	WebhooksResolver            graphqlbackend.WebhooksResolver
+	EmbeddingsResolver          graphqlbackend.EmbeddingsResolver
 	RBACResolver                graphqlbackend.RBACResolver
 	OwnResolver                 graphqlbackend.OwnResolver
 }
