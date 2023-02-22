@@ -312,7 +312,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                     >
                                         Sign in
                                     </Button>
-                                    {!isSourcegraphDotCom && (
+                                    {!isSourcegraphDotCom && window.context.allowSignup && (
                                         <ButtonLink to="/sign-up" variant="primary" size="sm">
                                             Sign up
                                         </ButtonLink>
