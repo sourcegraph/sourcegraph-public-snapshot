@@ -19,11 +19,12 @@ func TestDial(t *testing.T) {
 	client := NewGitserverServiceClient(conn)
 
 	for {
-		ctx, _ := context.WithTimeout(context.Background(), time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		_, err := client.Exec(ctx, nil)
 		if err != nil {
+			cancel()
 			fmt.Println(err.Error())
 		}
+		cancel()
 	}
-
 }
