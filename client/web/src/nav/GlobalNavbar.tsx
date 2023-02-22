@@ -271,7 +271,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         <ButtonLink
                             variant="secondary"
                             outline={true}
-                            to={buildCloudTrialURL(props.authenticatedUser)}
+                            to={'https://about.sourcegraph.com'}
                             size="sm"
                             onClick={() =>
                                 eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NavBarSourcegraphApp' })
