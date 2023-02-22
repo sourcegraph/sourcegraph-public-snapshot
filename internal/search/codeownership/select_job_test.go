@@ -6,7 +6,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -123,7 +123,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		}
 		want := []result.Match{
 			&result.OwnerMatch{
-				ResolvedOwner: &codeowners.Person{User: personOwnerByEmail, OwnerIdentifier: "user@email.com"},
+				ResolvedOwner: &codeowners.Person{User: personOwnerByEmail, Email: "user@email.com"},
 				InputRev:      nil,
 				Repo:          types.MinimalRepo{},
 				CommitID:      "",
@@ -131,7 +131,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 				LimitHit:      0,
 			},
 			&result.OwnerMatch{
-				ResolvedOwner: &codeowners.UnknownOwner{Handle: "unknown"},
+				ResolvedOwner: &codeowners.Person{Handle: "unknown"},
 				InputRev:      nil,
 				Repo:          types.MinimalRepo{},
 				CommitID:      "",
@@ -139,7 +139,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 				LimitHit:      0,
 			},
 			&result.OwnerMatch{
-				ResolvedOwner: &codeowners.Person{User: personOwnerByHandle, OwnerIdentifier: "testUserHandle"},
+				ResolvedOwner: &codeowners.Person{User: personOwnerByHandle, Handle: "testUserHandle"},
 				InputRev:      nil,
 				Repo:          types.MinimalRepo{},
 				CommitID:      "",
@@ -147,7 +147,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 				LimitHit:      0,
 			},
 			&result.OwnerMatch{
-				ResolvedOwner: &codeowners.Team{Team: teamOwner, OwnerIdentifier: "testTeamHandle"},
+				ResolvedOwner: &codeowners.Team{Team: teamOwner, Handle: "testTeamHandle"},
 				InputRev:      nil,
 				Repo:          types.MinimalRepo{},
 				CommitID:      "",
@@ -161,7 +161,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		sort.Slice(want, func(x, y int) bool {
 			return want[x].Key().Less(want[y].Key())
 		})
-		autogold.Want("owner matches are as expected", want).Equal(t, matches)
+		autogold.Expect(want).Equal(t, matches)
 	})
 	t.Run("deduplicates owner matches", func(t *testing.T) {
 		// See result/owner.go:55 for comment.
@@ -182,12 +182,5 @@ func newTestTeam(teamName string) *types.Team {
 		ID:          1,
 		Name:        teamName,
 		DisplayName: "Team " + teamName,
-	}
-}
-
-func newTestUnknownOwner(handle, email string) codeowners.ResolvedOwner {
-	return &codeowners.UnknownOwner{
-		Handle: handle,
-		Email:  email,
 	}
 }

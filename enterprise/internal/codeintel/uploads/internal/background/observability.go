@@ -102,3 +102,35 @@ func newOperations(observationCtx *observation.Context) *operations {
 		numReconcileDeletesFromCodeIntelDB: numReconcileDeletesFromCodeIntelDB,
 	}
 }
+
+type rankingOperations struct {
+	numPathCountsInputsRowsProcessed prometheus.Counter
+	numPathRanksInserted             prometheus.Counter
+}
+
+func newRankingOperations(observationCtx *observation.Context) *rankingOperations {
+	counter := func(name, help string) prometheus.Counter {
+		counter := prometheus.NewCounter(prometheus.CounterOpts{
+			Name: name,
+			Help: help,
+		})
+
+		observationCtx.Registerer.MustRegister(counter)
+		return counter
+	}
+
+	numPathCountInputsRowsProcessed := counter(
+		"src_codeintel_ranking_path_count_inputs_rows_processed_total",
+		"The number of input row records merged into document scores for a single repo.",
+	)
+
+	numPathRanksInserted := counter(
+		"src_codeintel_ranking_path_ranks_inserted_total",
+		"The number of path ranks inserted and merged in for a single repo.",
+	)
+
+	return &rankingOperations{
+		numPathCountsInputsRowsProcessed: numPathCountInputsRowsProcessed,
+		numPathRanksInserted:             numPathRanksInserted,
+	}
+}

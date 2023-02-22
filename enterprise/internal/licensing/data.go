@@ -1,7 +1,5 @@
 package licensing
 
-import "fmt"
-
 // The list of plans.
 const (
 	// PlanOldEnterpriseStarter is the old "Enterprise Starter" plan.
@@ -22,11 +20,14 @@ const (
 	// PlanEnterpriseExtension is for customers who require an extended trial on a new Sourcegraph 4.4.2 instance.
 	PlanEnterpriseExtension Plan = "enterprise-extension"
 
-	// PlanFree0 is the default plan if no license key is set.
+	// PlanFree0 is the default plan if no license key is set before 4.5.
 	PlanFree0 Plan = "free-0"
+
+	// PlanFree1 is the default plan if no license key is set from 4.5 onwards.
+	PlanFree1 Plan = "free-1"
 )
 
-var allPlans = []Plan{
+var AllPlans = []Plan{
 	PlanOldEnterpriseStarter,
 	PlanOldEnterprise,
 	PlanTeam0,
@@ -36,6 +37,7 @@ var allPlans = []Plan{
 	PlanEnterprise1,
 	PlanEnterpriseExtension,
 	PlanFree0,
+	PlanFree1,
 }
 
 // The list of features. For each feature, add a new const here and the checking logic in
@@ -82,41 +84,18 @@ const (
 	FeatureCodeInsights BasicFeature = "code-insights"
 )
 
-// FeatureBatchChanges is whether Batch Changes on this Sourcegraph instance has been purchased.
-type FeatureBatchChanges struct {
-	// If true, there is no limit to the number of changesets that can be created.
-	Unrestricted bool
-	// Maximum number of changesets that can be created per batch change. If Unrestricted is true, this is ignored.
-	MaxNumChangesets int
-}
-
-func (*FeatureBatchChanges) FeatureName() string {
-	return "batch-changes"
-}
-
-func (f *FeatureBatchChanges) Check(info *Info) error {
-	if info == nil {
-		return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", f.FeatureName()))
-	}
-
-	// If the deprecated campaigns are enabled, use unrestricted batch changes
-	if FeatureCampaigns.Check(info) == nil && !info.IsExpired() {
-		f.Unrestricted = true
-		return nil
-	}
-
-	// If the batch changes tag exists on the license, use unrestricted batch changes
-	if info.HasTag(f.FeatureName()) && !info.IsExpired() {
-		f.Unrestricted = true
-		return nil
-	}
-
-	// Otherwise, check the default batch changes feature
-	if info.Plan().HasFeature(f, info.IsExpired()) {
-		return nil
-	}
-
-	return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", f.FeatureName()))
+var AllFeatures = []Feature{
+	FeatureSSO,
+	FeatureACLs,
+	FeatureExplicitPermissionsAPI,
+	FeatureExtensionRegistry,
+	FeatureRemoteExtensionsAllowDisallow,
+	FeatureBranding,
+	FeatureCampaigns,
+	FeatureMonitoring,
+	FeatureBackupAndRestore,
+	FeatureCodeInsights,
+	&FeatureBatchChanges{},
 }
 
 type PlanDetails struct {
@@ -130,6 +109,7 @@ var planDetails = map[Plan]PlanDetails{
 	PlanOldEnterpriseStarter: {
 		Features: []Feature{
 			&FeatureBatchChanges{MaxNumChangesets: 10},
+			&FeaturePrivateRepositories{Unrestricted: true},
 		},
 		ExpiredFeatures: []Feature{
 			FeatureACLs,
@@ -146,6 +126,7 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureBranding,
 			FeatureCampaigns,
 			&FeatureBatchChanges{Unrestricted: true},
+			&FeaturePrivateRepositories{Unrestricted: true},
 			FeatureMonitoring,
 			FeatureBackupAndRestore,
 			FeatureCodeInsights,
@@ -161,6 +142,7 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureExplicitPermissionsAPI,
 			FeatureSSO,
 			&FeatureBatchChanges{MaxNumChangesets: 10},
+			&FeaturePrivateRepositories{Unrestricted: true},
 		},
 		ExpiredFeatures: []Feature{
 			FeatureACLs,
@@ -173,6 +155,7 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureExplicitPermissionsAPI,
 			FeatureSSO,
 			&FeatureBatchChanges{MaxNumChangesets: 10},
+			&FeaturePrivateRepositories{Unrestricted: true},
 		},
 		ExpiredFeatures: []Feature{
 			FeatureACLs,
@@ -185,6 +168,7 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureACLs,
 			FeatureCampaigns,
 			&FeatureBatchChanges{Unrestricted: true},
+			&FeaturePrivateRepositories{Unrestricted: true},
 			FeatureCodeInsights,
 			FeatureSSO,
 		},
@@ -199,6 +183,7 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureCampaigns,
 			FeatureCodeInsights,
 			&FeatureBatchChanges{Unrestricted: true},
+			&FeaturePrivateRepositories{Unrestricted: true},
 			FeatureExplicitPermissionsAPI,
 			FeatureSSO,
 		},
@@ -213,6 +198,7 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureCampaigns,
 			FeatureCodeInsights,
 			&FeatureBatchChanges{Unrestricted: true},
+			&FeaturePrivateRepositories{Unrestricted: true},
 			FeatureExplicitPermissionsAPI,
 			FeatureSSO,
 		},
@@ -221,9 +207,30 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureSSO,
 		},
 	},
-	PlanFree0: {Features: []Feature{
-		FeatureSSO,
-		FeatureMonitoring,
-		&FeatureBatchChanges{MaxNumChangesets: 10},
-	}},
+	PlanFree0: {
+		Features: []Feature{
+			FeatureSSO,
+			FeatureMonitoring,
+			&FeatureBatchChanges{MaxNumChangesets: 10},
+			&FeaturePrivateRepositories{Unrestricted: true},
+		},
+		ExpiredFeatures: []Feature{
+			FeatureSSO,
+			FeatureMonitoring,
+			&FeatureBatchChanges{MaxNumChangesets: 10},
+			&FeaturePrivateRepositories{Unrestricted: true},
+		},
+	},
+	PlanFree1: {
+		Features: []Feature{
+			FeatureMonitoring,
+			&FeatureBatchChanges{MaxNumChangesets: 10},
+			&FeaturePrivateRepositories{MaxNumPrivateRepos: 1},
+		},
+		ExpiredFeatures: []Feature{
+			FeatureMonitoring,
+			&FeatureBatchChanges{MaxNumChangesets: 10},
+			&FeaturePrivateRepositories{MaxNumPrivateRepos: 1},
+		},
+	},
 }

@@ -45,6 +45,7 @@ describe('Search contexts', () => {
             user: {
                 experimentalFeatures: {
                     showSearchContext: true,
+                    searchQueryInput: 'v1',
                 },
             },
         }),

@@ -35,7 +35,6 @@ body.theme-dark .markdown-body ul li:before {
 <a class="btn" href="https://github.com/sourcegraph/sourcegraph/issues">Issue Tracker</a>
 </div>
 
-
 ## [Setup](setup/index.md)
 
 <p class="subtitle">Learn how to develop Sourcegraph on your machine.</p>
@@ -109,6 +108,10 @@ Clarification and discussion about key concepts, architecture, and development s
     - [Testing web code](background-information/testing_web_code.md)
 - [Building p4-fusion](background-information/build_p4_fusion.md)
 - [The `gitserver` API](background-information/gitserver-api.md)
+
+## Git
+
+- [`git gc` and its modes of operations in Sourcegraph](./git_gc.md)
 
 ### [Languages](background-information/languages/index.md)
 

@@ -420,9 +420,11 @@ interface CodeIntelReindexUploadProps {
 }
 
 const CodeIntelReindexUpload: FunctionComponent<CodeIntelReindexUploadProps> = ({ reindexUpload, reindexOrError }) => (
-    <Button type="button" variant="secondary" onClick={reindexUpload} disabled={reindexOrError === 'loading'}>
-        <Icon aria-hidden={true} svgPath={mdiRedo} /> Mark index as replaceable by autoindexing
-    </Button>
+    <Tooltip content="Allow Sourcegraph to re-index this commit in the future and replace this data.">
+        <Button type="button" variant="secondary" onClick={reindexUpload} disabled={reindexOrError === 'loading'}>
+            <Icon aria-hidden={true} svgPath={mdiRedo} /> Mark index as replaceable by autoindexing
+        </Button>
+    </Tooltip>
 )
 
 interface CodeIntelDeleteUploadProps {

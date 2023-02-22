@@ -52,12 +52,16 @@ func (p Plan) tag() string { return planTagPrefix + string(p) }
 
 // isKnown reports whether the plan is a known plan.
 func (p Plan) isKnown() bool {
-	for _, plan := range allPlans {
+	for _, plan := range AllPlans {
 		if p == plan {
 			return true
 		}
 	}
 	return false
+}
+
+func (p Plan) IsFree() bool {
+	return p == PlanFree0 || p == PlanFree1
 }
 
 // Plan is the pricing plan of the license.

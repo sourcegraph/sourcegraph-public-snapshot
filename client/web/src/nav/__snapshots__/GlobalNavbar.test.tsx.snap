@@ -259,20 +259,6 @@ exports[`GlobalNavbar default 1`] = `
         </a>
       </li>
       <li
-        class="action d-sm-flex d-none"
-      >
-        <button
-          aria-expanded="false"
-          aria-label="Feedback"
-          class="btn btnSecondary btnOutline btnSm feedbackTrigger"
-          type="button"
-        >
-          <span>
-            Feedback
-          </span>
-        </button>
-      </li>
-      <li
         class="action"
       >
         <div>

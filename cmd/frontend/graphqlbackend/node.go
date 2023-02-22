@@ -324,8 +324,8 @@ func (r *NodeResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, b
 	return n, ok
 }
 
-func (r *NodeResolver) ToPermissionsSyncJob() (PermissionsSyncJobResolver, bool) {
-	n, ok := r.Node.(PermissionsSyncJobResolver)
+func (r *NodeResolver) ToPermissionSyncJob() (PermissionSyncJobResolver, bool) {
+	n, ok := r.Node.(PermissionSyncJobResolver)
 	return n, ok
 }
 

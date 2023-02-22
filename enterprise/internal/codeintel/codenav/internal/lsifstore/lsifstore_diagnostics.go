@@ -28,8 +28,6 @@ func (s *store) GetDiagnostics(ctx context.Context, bundleID int, prefix string,
 		diagnosticsQuery,
 		bundleID,
 		prefix+"%",
-		bundleID,
-		prefix+"%",
 	)))
 	if err != nil {
 		return nil, 0, err
@@ -38,62 +36,42 @@ func (s *store) GetDiagnostics(ctx context.Context, bundleID int, prefix string,
 
 	totalCount := 0
 	for _, documentData := range documentData {
-		if documentData.SCIPData != nil {
-			for _, occurrence := range documentData.SCIPData.Occurrences {
-				totalCount += len(occurrence.Diagnostics)
-			}
-		} else {
-			totalCount += len(documentData.LSIFData.Diagnostics)
+		for _, occurrence := range documentData.SCIPData.Occurrences {
+			totalCount += len(occurrence.Diagnostics)
 		}
 	}
 	trace.AddEvent("found", attribute.Int("totalCount", totalCount))
 
 	diagnostics := make([]shared.Diagnostic, 0, limit)
 	for _, documentData := range documentData {
-		if documentData.SCIPData != nil {
-		occurrenceLoop:
-			for _, occurrence := range documentData.SCIPData.Occurrences {
-				if len(occurrence.Diagnostics) == 0 {
-					continue
-				}
-
-				r := scip.NewRange(occurrence.Range)
-
-				for _, diagnostic := range occurrence.Diagnostics {
-					offset--
-
-					if offset < 0 && len(diagnostics) < limit {
-						diagnostics = append(diagnostics, shared.Diagnostic{
-							DumpID: bundleID,
-							Path:   documentData.Path,
-							DiagnosticData: precise.DiagnosticData{
-								Severity:       int(diagnostic.Severity),
-								Code:           diagnostic.Code,
-								Message:        diagnostic.Message,
-								Source:         diagnostic.Source,
-								StartLine:      int(r.Start.Line),
-								StartCharacter: int(r.Start.Character),
-								EndLine:        int(r.End.Line),
-								EndCharacter:   int(r.End.Character),
-							},
-						})
-					} else {
-						break occurrenceLoop
-					}
-				}
+	occurrenceLoop:
+		for _, occurrence := range documentData.SCIPData.Occurrences {
+			if len(occurrence.Diagnostics) == 0 {
+				continue
 			}
-		} else {
-			for _, diagnostic := range documentData.LSIFData.Diagnostics {
+
+			r := scip.NewRange(occurrence.Range)
+
+			for _, diagnostic := range occurrence.Diagnostics {
 				offset--
 
 				if offset < 0 && len(diagnostics) < limit {
 					diagnostics = append(diagnostics, shared.Diagnostic{
-						DumpID:         bundleID,
-						Path:           documentData.Path,
-						DiagnosticData: diagnostic,
+						DumpID: bundleID,
+						Path:   documentData.Path,
+						DiagnosticData: precise.DiagnosticData{
+							Severity:       int(diagnostic.Severity),
+							Code:           diagnostic.Code,
+							Message:        diagnostic.Message,
+							Source:         diagnostic.Source,
+							StartLine:      int(r.Start.Line),
+							StartCharacter: int(r.Start.Character),
+							EndLine:        int(r.End.Line),
+							EndCharacter:   int(r.End.Character),
+						},
 					})
 				} else {
-					break
+					break occurrenceLoop
 				}
 			}
 		}
@@ -103,39 +81,14 @@ func (s *store) GetDiagnostics(ctx context.Context, bundleID int, prefix string,
 }
 
 const diagnosticsQuery = `
-(
-	SELECT
-		sd.id,
-		sid.document_path,
-		NULL AS data,
-		NULL AS ranges,
-		NULL AS hovers,
-		NULL AS monikers,
-		NULL AS packages,
-		NULL AS diagnostics,
-		sd.raw_scip_payload AS scip_document
-	FROM codeintel_scip_document_lookup sid
-	JOIN codeintel_scip_documents sd ON sd.id = sid.document_id
-	WHERE
-		sid.upload_id = %s AND
-		sid.document_path = %s
-	LIMIT 1
-) UNION (
-	SELECT
-		dump_id,
-		path,
-		data,
-		NULL AS ranges,
-		NULL AS hovers,
-		NULL AS monikers,
-		NULL AS packages,
-		diagnostics,
-		NULL AS scip_document
-	FROM
-		lsif_data_documents
-	WHERE
-		dump_id = %s AND
-		path LIKE %s
-	ORDER BY path
-)
+SELECT
+	sd.id,
+	sid.document_path,
+	sd.raw_scip_payload
+FROM codeintel_scip_document_lookup sid
+JOIN codeintel_scip_documents sd ON sd.id = sid.document_id
+WHERE
+	sid.upload_id = %s AND
+	sid.document_path = %s
+LIMIT 1
 `
