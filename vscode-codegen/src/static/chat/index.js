@@ -74,7 +74,11 @@ class ChatController {
 			.map(message => getMessageBubble(message.speaker, message.displayText, message.timestamp, message.contextFiles))
 
 		const messageInProgressElement = messageInProgress
-			? getMessageInProgressBubble(messageInProgress.speaker, messageInProgress.displayText, messageInProgress.contextFiles)
+			? getMessageInProgressBubble(
+					messageInProgress.speaker,
+					messageInProgress.displayText,
+					messageInProgress.contextFiles
+			  )
 			: ''
 
 		if (messageInProgress) {
@@ -164,7 +168,12 @@ function getMessageBubble(author, text, timestamp, contextFiles) {
 	return messageBubbleTemplate
 		.replace(/{type}/g, bubbleType)
 		.replace('{text}', text)
-		.replace('{contextFiles}', contextFiles && contextFiles.length > 0 ? `<span style="font-style: italic;">Cody read ${contextFiles.join(', ')}</span>` : '')
+		.replace(
+			'{contextFiles}',
+			contextFiles && contextFiles.length > 0
+				? `<span style="font-style: italic;">Cody read ${contextFiles.join(', ')}</span>`
+				: ''
+		)
 		.replace('{footer}', timestamp ? `${authorName} &middot; ${timestamp}` : `<i>${authorName} is writing...</i>`)
 }
 
