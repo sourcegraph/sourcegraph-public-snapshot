@@ -12,6 +12,9 @@ import { buildReferencePanelMocks, defaultProps } from './ReferencesPanel.mocks'
 describe('ReferencesPanel', () => {
     async function renderReferencesPanel() {
         const { url, requestMocks } = buildReferencePanelMocks()
+
+        // TODO: we won't need to set experimental features explicitly once we cover CodeMirror side blob view with tests:
+        // https://github.com/sourcegraph/sourcegraph/issues/48049
         setExperimentalFeaturesFromSettings(defaultProps.settingsCascade)
 
         const result = renderWithBrandedContext(
