@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -141,8 +142,8 @@ func TestSetupFirecracker(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	logger := NewMockLogger()
-	if _, err := setupFirecracker(context.Background(), runner, logger, "deadbeef", "/dev/loopX", tmpDir, options, operations); err != nil {
+	l := NewMockLogger()
+	if _, err = setupFirecracker(context.Background(), runner, l, "deadbeef", "/dev/loopX", tmpDir, options, operations); err != nil {
 		t.Fatalf("unexpected error setting up virtual machine: %s", err)
 	}
 
@@ -175,7 +176,7 @@ func TestTeardownFirecracker(t *testing.T) {
 	runner := NewMockCommandRunner()
 	operations := NewOperations(&observation.TestContext)
 
-	if err := teardownFirecracker(context.Background(), runner, nil, "deadbeef", "/tmp/firecracker123", operations); err != nil {
+	if err := teardownFirecracker(context.Background(), logtest.Scoped(t), runner, nil, "deadbeef", "/tmp/firecracker123", operations); err != nil {
 		t.Fatalf("unexpected error tearing down virtual machine: %s", err)
 	}
 
