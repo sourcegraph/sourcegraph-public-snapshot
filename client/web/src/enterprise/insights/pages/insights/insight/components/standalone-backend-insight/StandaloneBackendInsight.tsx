@@ -1,11 +1,11 @@
 import React, { useContext, useState } from 'react'
 
 import classNames from 'classnames'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Card, CardBody, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
+import { Card, CardBody, useDebounce, useDeepMemo, FormChangeEvent } from '@sourcegraph/wildcard'
 
 import {
     GetInsightViewResult,
@@ -14,7 +14,7 @@ import {
     SeriesDisplayOptionsInput,
 } from '../../../../../../../graphql-operations'
 import { useSeriesToggle } from '../../../../../../../insights/utils/use-series-toggle'
-import { InsightCard, InsightCardHeader, InsightCardLoading, FormChangeEvent } from '../../../../../components'
+import { InsightCard, InsightCardHeader, InsightCardLoading } from '../../../../../components'
 import {
     DrillDownInsightFilters,
     FilterSectionVisualMode,

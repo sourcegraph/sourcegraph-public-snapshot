@@ -2,7 +2,7 @@ import React, { createContext, Dispatch, SetStateAction, useContext, useEffect, 
 
 import { Remote } from 'comlink'
 import { isEqual } from 'lodash'
-import { useNavigationType, useLocation } from 'react-router-dom-v5-compat'
+import { useNavigationType, useLocation } from 'react-router-dom'
 import { merge, of } from 'rxjs'
 import { last, share, throttleTime } from 'rxjs/operators'
 

@@ -2,14 +2,22 @@ import { FC, useContext, useMemo } from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { useParams, useNavigate } from 'react-router-dom-v5-compat'
+import { useParams, useNavigate } from 'react-router-dom'
 
-import { Button, Container, LoadingSpinner, PageHeader, useObservable, Link } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Container,
+    LoadingSpinner,
+    PageHeader,
+    useObservable,
+    Link,
+    SubmissionErrors,
+} from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../components/HeroPage'
 import { LoaderButton } from '../../../../../components/LoaderButton'
 import { PageTitle } from '../../../../../components/PageTitle'
-import { CodeInsightsIcon, CodeInsightsPage, SubmissionErrors } from '../../../components'
+import { CodeInsightsIcon, CodeInsightsPage } from '../../../components'
 import {
     CodeInsightsBackendContext,
     CustomInsightDashboard,

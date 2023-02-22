@@ -27,6 +27,42 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func (s *store) GetIndexers(ctx context.Context, opts shared.GetIndexersOptions) (_ []string, err error) {
+	ctx, _, endObservation := s.operations.getIndexers.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", opts.RepositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	var conds []*sqlf.Query
+	if opts.RepositoryID != 0 {
+		conds = append(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
+	}
+
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
+	if err != nil {
+		return nil, err
+	}
+	conds = append(conds, authzConds)
+
+	return basestore.ScanStrings(s.db.Query(ctx, sqlf.Sprintf(getIndexersQuery, sqlf.Join(conds, "AND"))))
+}
+
+const getIndexersQuery = `
+WITH
+combined_indexers AS (
+	SELECT u.indexer, u.repository_id FROM lsif_uploads u
+	UNION
+	SELECT u.indexer, u.repository_id FROM lsif_indexes u
+)
+SELECT DISTINCT u.indexer
+FROM combined_indexers u
+JOIN repo r ON r.id = u.repository_id
+WHERE
+	%s AND
+	r.deleted_at IS NULL AND
+	r.blocked IS NULL
+`
+
 // GetUploads returns a list of uploads and the total count of records matching the given conditions.
 func (s *store) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error) {
 	ctx, trace, endObservation := s.operations.getUploads.With(ctx, &err, observation.Args{LogFields: buildGetUploadsLogFields(opts)})
@@ -2049,6 +2085,15 @@ func buildGetConditionsAndCte(opts shared.GetUploadsOptions) (*sqlf.Query, []*sq
 				r.dump_id != rd.pkg_id
 			WHERE rd.pkg_id = %s AND rd.rank = 1
 		)`, opts.DependentOf))
+	}
+
+	if len(opts.IndexerNames) != 0 {
+		var indexerConds []*sqlf.Query
+		for _, indexerName := range opts.IndexerNames {
+			indexerConds = append(indexerConds, sqlf.Sprintf("u.indexer ILIKE %s", "%"+indexerName+"%"))
+		}
+
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(indexerConds, " OR ")))
 	}
 
 	sourceTableExpr := sqlf.Sprintf("lsif_uploads u")

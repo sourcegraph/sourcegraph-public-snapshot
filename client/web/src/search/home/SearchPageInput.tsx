@@ -1,13 +1,13 @@
 import React, { useCallback, useMemo, useRef } from 'react'
 
-import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'
 
 import { SearchBox, Toggles } from '@sourcegraph/branded'
 // The experimental search input should be shown on the search home page
 // eslint-disable-next-line no-restricted-imports
-import { LazyCodeMirrorQueryInput, searchHistoryExtension } from '@sourcegraph/branded/src/search-ui/experimental'
+import { LazyCodeMirrorQueryInput } from '@sourcegraph/branded/src/search-ui/experimental'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
@@ -23,7 +23,7 @@ import {
 } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Form } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -35,17 +35,14 @@ import {
     setSearchPatternType,
     setSearchMode,
 } from '../../stores'
-import { ThemePreferenceProps } from '../../theme'
 import { submitSearch } from '../helpers'
-import { createSuggestionsSource } from '../input/suggestions'
+import { useLazyCreateSuggestions, useLazyHistoryExtension } from '../input/lazy'
 import { useRecentSearches } from '../input/useRecentSearches'
 
 import styles from './SearchPageInput.module.scss'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
-        ThemeProps,
-        ThemePreferenceProps,
         TelemetryProps,
         PlatformContextProps<'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
         Pick<SubmitSearchParameters, 'source'>,
@@ -72,6 +69,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
     const location = useLocation()
     const navigate = useNavigate()
 
+    const isLightTheme = useIsLightTheme()
     const { caseSensitive, patternType, searchMode } = useNavbarQueryState(queryStateSelector, shallow)
     const experimentalQueryInput = useExperimentalFeatures(features => features.searchQueryInput === 'experimental')
     const applySuggestionsOnEnter =
@@ -130,39 +128,30 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
     const isTouchOnlyDevice =
         !window.matchMedia('(any-pointer:fine)').matches && window.matchMedia('(any-hover:none)').matches
 
-    const suggestionSource = useMemo(
-        () =>
-            createSuggestionsSource({
+    const suggestionSource = useLazyCreateSuggestions(
+        experimentalQueryInput,
+        useMemo(
+            () => ({
                 platformContext: props.platformContext,
                 authenticatedUser: props.authenticatedUser,
                 fetchSearchContexts: props.fetchSearchContexts,
                 getUserSearchContextNamespaces: props.getUserSearchContextNamespaces,
                 isSourcegraphDotCom: props.isSourcegraphDotCom,
             }),
-        [
-            props.platformContext,
-            props.authenticatedUser,
-            props.fetchSearchContexts,
-            props.getUserSearchContextNamespaces,
-            props.isSourcegraphDotCom,
-        ]
+            [
+                props.platformContext,
+                props.authenticatedUser,
+                props.fetchSearchContexts,
+                props.getUserSearchContextNamespaces,
+                props.isSourcegraphDotCom,
+            ]
+        )
     )
 
-    const experimentalExtensions = useMemo(
-        () =>
-            experimentalQueryInput
-                ? [
-                      searchHistoryExtension({
-                          mode: {
-                              name: 'History',
-                              placeholder: 'Filter history',
-                          },
-                          source: () => recentSearchesRef.current ?? [],
-                          submitQuery: query => submitSearchOnChangeRef.current({ query }),
-                      }),
-                  ]
-                : [],
-        [experimentalQueryInput, recentSearchesRef, submitSearchOnChangeRef]
+    const experimentalExtensions = useLazyHistoryExtension(
+        experimentalQueryInput,
+        recentSearchesRef,
+        submitSearchOnChangeRef
     )
 
     const input = experimentalQueryInput ? (
@@ -172,7 +161,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
             queryState={props.queryState}
             onChange={props.setQueryState}
             onSubmit={onSubmit}
-            isLightTheme={props.isLightTheme}
+            isLightTheme={isLightTheme}
             placeholder="Search for code or files..."
             suggestionSource={suggestionSource}
             extensions={experimentalExtensions}

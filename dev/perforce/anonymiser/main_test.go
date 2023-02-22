@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 )
 
 func TestAnonymiser(t *testing.T) {
@@ -24,7 +24,7 @@ func TestAnonymiser(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := autogold.Want("anonymised", `
+	want := autogold.Expect(`
 Update: 2021/03/26 18:56:46
 
 Protections:

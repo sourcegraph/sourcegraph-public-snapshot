@@ -2,12 +2,16 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "codeowners",
-    srcs = ["parse.go"],
+    srcs = [
+        "owner_types.go",
+        "parse.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/own/codeowners",
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/lazyregexp",
         "//internal/own/codeowners/v1:codeowners",
+        "//internal/types",
         "//lib/errors",
     ],
 )

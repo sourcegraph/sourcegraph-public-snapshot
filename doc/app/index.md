@@ -22,28 +22,24 @@ Learn more about [how this fits into our product strategy](https://handbook.sour
 brew install sourcegraph/sourcegraph-app/sourcegraph
 ```
 
-**Linux:** via [deb pkg](https://storage.googleapis.com/sourcegraph-app-releases/0.0.196391-snapshot+20230131-f10a97/sourcegraph_0.0.196391-snapshot+20230131-f10a97_linux_amd64.deb) installer:
+**Linux:** via [deb pkg](https://storage.googleapis.com/sourcegraph-app-releases/0.0.200198-snapshot+20230220-35357c/sourcegraph_0.0.200198-snapshot+20230220-35357c_linux_amd64.deb) installer:
 
 ```sh
-dpkg -i sourcegraph_0.0.196391-snapshot+20230131-f10a97_linux_amd64.deb
+dpkg -i <file>.deb
 ```
 
 **Single-binary zip download:**
 
-* [macOS (universal)](https://storage.googleapis.com/sourcegraph-app-releases/0.0.196391-snapshot+20230131-f10a97/sourcegraph_0.0.196391-snapshot+20230131-f10a97_darwin_all.zip)
-* [linux (x64)](https://storage.googleapis.com/sourcegraph-app-releases/0.0.196391-snapshot+20230131-f10a97/sourcegraph_0.0.196391-snapshot+20230131-f10a97_linux_amd64.zip)
+* [macOS (universal)](https://storage.googleapis.com/sourcegraph-app-releases/0.0.200198-snapshot+20230220-35357c/sourcegraph_0.0.200198-snapshot+20230220-35357c_darwin_all.zip)
+* [linux (x64)](https://storage.googleapis.com/sourcegraph-app-releases/0.0.200198-snapshot+20230220-35357c/sourcegraph_0.0.200198-snapshot+20230220-35357c_linux_amd64.zip)
 
 ## Prerequisites
 
 Ensure you have the following:
 
-1. `src` CLI available on your PATH ([installation](https://github.com/sourcegraph/src-cli))
-2. `docker` is installed and on your PATH
-3. Redis is running, e.g. via Docker:
-
-```sh
-docker run -p 127.0.0.1:6379:6379 -d redis redis-server --save 60 1 --loglevel warning
-```
+1. `git` CLI available on your PATH
+2. `src` CLI available on your PATH ([installation](https://github.com/sourcegraph/src-cli))
+3. `docker` is installed and on your PATH
 
 ## Usage
 
@@ -53,13 +49,14 @@ Start Sourcegraph by running the following in a terminal:
 sourcegraph
 ```
 
-Navigate to http://localhost:3080 and you can add your remote repositories from there (we're still working on ability to add local code.)
+Navigate to http://localhost:3080 in your browser.
+
+Sourcegraph will automatically add any repositories found below the directory you run `sourcegraph` - you can also add your remote repositories from the UI.
 
 ### Troubleshooting
 
 If it doesn't start, make sure:
 
-* Redis is running on port 6379
 * `docker` and `git` are installed and on your path
 * `src` is installed and on your path 
 
@@ -73,10 +70,19 @@ If it doesn't start, make sure:
 
 ### Known issues
 
-* Can't add local code yet, only remote code
-* Syntax highlighting is broken
-* We're working on eliminating the Redis, `src` CLI, and Docker dependencies
+* We're working on improving the "add local code" experience
+* We're working on eliminating the `src` CLI and Docker dependencies
 * macOS binaries are not code-signed yet, so you may need to right-click -> open the binary if you do not use Homebrew.
+
+### Upgrading
+
+**On macOS:** upgrade using Homebrew:
+
+```
+brew update && brew upgrade sourcegraph/sourcegraph-app/sourcegraph
+```
+
+**On Linux:** we do not have a PPA yet, so you will need to rerun the installation steps above to get the latest version.
 
 ## Feedback
 

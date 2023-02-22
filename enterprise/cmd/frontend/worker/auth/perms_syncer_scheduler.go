@@ -82,8 +82,7 @@ func (p *permissionSyncJobScheduler) Routines(_ context.Context, observationCtx 
 			goroutine.HandlerFunc(
 				func(ctx context.Context) error {
 					if !permssync.PermissionSyncWorkerEnabled(ctx, db, logger) || permissionSyncingDisabled() {
-						// TODO(naman): convert log to debug level post testing
-						logger.Info("disabled")
+						logger.Debug("new scheduler disabled due to either permission syncing disabled or feature flag not enabled")
 						return nil
 					}
 
@@ -109,7 +108,7 @@ func scheduleJobs(ctx context.Context, db database.DB, logger log.Logger) (int, 
 		return 0, err
 	}
 
-	logger.Info("scheduling permission syncs", log.Int("users", len(schedule.Users)), log.Int("repos", len(schedule.Repos)))
+	logger.Debug("scheduling permission syncs", log.Int("users", len(schedule.Users)), log.Int("repos", len(schedule.Repos)))
 
 	for _, u := range schedule.Users {
 		opts := database.PermissionSyncJobOpts{Reason: u.reason, Priority: u.priority, NoPerms: u.noPerms}

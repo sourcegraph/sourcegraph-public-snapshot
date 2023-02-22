@@ -18,6 +18,7 @@ go_library(
         "frontend.go",
         "gitserver.go",
         "go.go",
+        "grpc.go",
         "http.go",
         "kubernetes.go",
         "node_exporter.go",
