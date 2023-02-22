@@ -136,8 +136,8 @@ class SuggestionView {
     private container: HTMLDivElement
     private root: Root
 
-    private onSelect = (option: Option): void => {
-        applyAction(this.view, option.action, option)
+    private onSelect = (option: Option, action?: Action): void => {
+        applyAction(this.view, action ?? option.action, option)
         // Query input looses focus when option is selected via
         // mousedown/click. This is a necessary hack to re-focus the query
         // input.
