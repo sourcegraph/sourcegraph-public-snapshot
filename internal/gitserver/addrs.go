@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"golang.org/x/exp/slices"
 	"google.golang.org/grpc"
 )
@@ -37,7 +36,8 @@ func NewGitserverAddressesFromConf(cfg *conf.Unified) GitserverAddresses {
 func newTestGitserverConns(addrs []string) *GitserverConns {
 	conns := make(map[string]connAndErr)
 	for _, addr := range addrs {
-		conns[addr] = connAndErr{err: errors.New("conns not available in tests")}
+		conn, err := grpc.Dial(addr, defaults.DialOptions()...)
+		conns[addr] = connAndErr{conn: conn, err: err}
 	}
 	return &GitserverConns{
 		GitserverAddresses: GitserverAddresses{
