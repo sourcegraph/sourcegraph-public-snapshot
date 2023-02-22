@@ -69,7 +69,7 @@ func (r *dockerRunner) Run(ctx context.Context, command Spec) error {
 // formatRawOrDockerCommand constructs the command to run on the host in order to
 // invoke the given spec. If the spec does not specify an image, then the command
 // will be run _directly_ on the host. Otherwise, the command will be run inside
-// of a one-shot docker container subject to the resource limits specified in the
+// a one-shot docker container subject to the resource limits specified in the
 // given options.
 func formatRawOrDockerCommand(spec Spec, dir string, options Options, dockerConfigPath string) command {
 	// TODO - remove this once src-cli is not required anymore for SSBC.
