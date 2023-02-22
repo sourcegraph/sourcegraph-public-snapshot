@@ -6,11 +6,11 @@ import classNames from 'classnames'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Container, Icon, Link, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { CallToActionBanner } from '../../components/CallToActionBanner'
 import { EnterprisePageRoutes } from '../../routes.constants'
-import { useTheme, ThemePreference } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import styles from './NotebooksGettingStartedTab.module.scss'
@@ -69,7 +69,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
         return canAutoplay ? { autoPlay: true, loop: true, controls: false } : { controls: true }
     }, [])
 
-    const isLightTheme = useTheme().enhancedThemePreference === ThemePreference.Light
+    const isLightTheme = useIsLightTheme()
 
     return (
         <>

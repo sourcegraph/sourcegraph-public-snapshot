@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { FC } from 'react'
 
 import classNames from 'classnames'
 import * as jsonc from 'jsonc-parser'
@@ -8,7 +9,7 @@ import { delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
 import { logger } from '@sourcegraph/common'
 import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     Button,
     LoadingSpinner,
@@ -209,7 +210,9 @@ const quickConfigureActions: {
     },
 ]
 
-interface Props extends ThemeProps, TelemetryProps {}
+interface Props extends TelemetryProps {
+    isLightTheme: boolean
+}
 
 interface State {
     site?: SiteResult['site']
@@ -223,10 +226,14 @@ interface State {
 
 const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
 
+export const SiteAdminConfigurationPage: FC<TelemetryProps> = props => (
+    <SiteAdminConfigurationContent {...props} isLightTheme={useIsLightTheme()} />
+)
+
 /**
  * A page displaying the site configuration.
  */
-export class SiteAdminConfigurationPage extends React.Component<Props, State> {
+class SiteAdminConfigurationContent extends React.Component<Props, State> {
     public state: State = {
         loading: true,
         restartToApply: window.context.needServerRestart,

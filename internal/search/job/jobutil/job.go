@@ -87,7 +87,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		// a basic query rather than first being expanded into
 		// flat queries.
 		resultTypes := computeResultTypes(b, inputs.PatternType)
-		fileMatchLimit := int32(computeFileMatchLimit(b, inputs.Protocol))
+		fileMatchLimit := int32(computeFileMatchLimit(b, inputs.Protocol, inputs.Features))
 		selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
 		repoOptions := toRepoOptions(b, inputs.UserSettings)
 		repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, repoOptions, resultTypes, inputs.PatternType, inputs.OnSourcegraphDotCom)
@@ -186,7 +186,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 	}
 
 	{ // Apply code ownership post-search filter
-		if includeOwners, excludeOwners := b.FileHasOwner(); inputs.Features.CodeOwnershipSearch && (len(includeOwners) > 0 || len(excludeOwners) > 0) {
+		if includeOwners, excludeOwners, ok := isOwnershipSearch(b, inputs.Features); ok {
 			basicJob = codeownershipjob.New(basicJob, includeOwners, excludeOwners)
 		}
 	}
@@ -506,7 +506,23 @@ func getPathRegexpsFromTextPatternInfo(patternInfo *search.TextPatternInfo) (pat
 	return pathRegexps
 }
 
-func computeFileMatchLimit(b query.Basic, p search.Protocol) int {
+func computeFileMatchLimit(b query.Basic, p search.Protocol, features *search.Features) int {
+	// Temporary fix:
+	// If doing ownership search, we post-filter results so we may need more than
+	// b.Count() results from the search backends to end up with enough results
+	// sent down the stream.
+	//
+	// This is actually a more general problem with other post-filters, too but
+	// keeps the scope of this change minimal.
+	// The proper fix will likely be to establish proper result streaming and cancel
+	// the stream once enough results have been consumed. We will revisit this
+	// post-Starship March 2023 as part of search performance improvements for
+	// ownership search.
+	if _, _, ok := isOwnershipSearch(b, features); ok {
+		// This is the int equivalent of count:all.
+		return query.CountAllLimit
+	}
+
 	if count := b.Count(); count != nil {
 		return *count
 	}
@@ -518,6 +534,13 @@ func computeFileMatchLimit(b query.Basic, p search.Protocol) int {
 		return limits.DefaultMaxSearchResultsStreaming
 	}
 	panic("unreachable")
+}
+
+func isOwnershipSearch(b query.Basic, features *search.Features) (include, exclude []string, ok bool) {
+	if includeOwners, excludeOwners := b.FileHasOwner(); features.CodeOwnershipSearch && (len(includeOwners) > 0 || len(excludeOwners) > 0) {
+		return includeOwners, excludeOwners, true
+	}
+	return nil, nil, false
 }
 
 func timeoutDuration(b query.Basic) time.Duration {

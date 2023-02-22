@@ -281,7 +281,6 @@ exports[`GlobalNavbar default 1`] = `
       selectedsearchcontextspec=""
       settingscascade="[object Object]"
       telemetryservice="[object Object]"
-      themepreference="light"
     />
   </div>
 </DocumentFragment>

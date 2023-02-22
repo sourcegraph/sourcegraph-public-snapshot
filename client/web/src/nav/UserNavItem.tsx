@@ -1,11 +1,11 @@
-import React, { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, ChangeEventHandler, FC } from 'react'
 
 import { mdiChevronDown, mdiChevronUp, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useTheme, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import {
     Menu,
     MenuButton,
@@ -22,65 +22,67 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
-import { ThemePreferenceProps, ThemePreference } from '../theme'
 import { UserAvatar } from '../user/UserAvatar'
 
 import styles from './UserNavItem.module.scss'
 
 const MAX_VISIBLE_ORGS = 5
-export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps {
-    authenticatedUser: Pick<
-        AuthenticatedUser,
-        'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName'
-    >
+
+type MinimalAuthenticatedUser = Pick<
+    AuthenticatedUser,
+    'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName'
+>
+
+export interface UserNavItemProps {
+    authenticatedUser: MinimalAuthenticatedUser
     isSourcegraphDotCom: boolean
     codeHostIntegrationMessaging: 'browser-extension' | 'native-integration'
-    position?: Position
     menuButtonRef?: React.Ref<HTMLButtonElement>
-    showKeyboardShortcutsHelp: () => void
     showFeedbackModal: () => void
+    showKeyboardShortcutsHelp: () => void
 }
 
 /**
  * Displays the user's avatar and/or username in the navbar and exposes a dropdown menu with more options for
  * authenticated viewers.
  */
-export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNavItemProps>> = props => {
+export const UserNavItem: FC<UserNavItemProps> = props => {
     const {
-        menuButtonRef,
-        themePreference,
-        onThemePreferenceChange,
+        authenticatedUser,
+        isSourcegraphDotCom,
         codeHostIntegrationMessaging,
-        position = Position.bottomEnd,
+        menuButtonRef,
+        showFeedbackModal,
+        showKeyboardShortcutsHelp,
     } = props
+
+    const { themeSetting, setThemeSetting } = useTheme()
+    const keyboardShortcutSwitchTheme = useKeyboardShortcut('switchTheme')
 
     const supportsSystemTheme = useMemo(
         () => Boolean(window.matchMedia?.('not all and (prefers-color-scheme), (prefers-color-scheme)').matches),
         []
     )
 
-    const onThemeChange: React.ChangeEventHandler<HTMLSelectElement> = useCallback(
+    const onThemeChange: ChangeEventHandler<HTMLSelectElement> = useCallback(
         event => {
-            onThemePreferenceChange(event.target.value as ThemePreference)
+            setThemeSetting(event.target.value as ThemeSetting)
         },
-        [onThemePreferenceChange]
+        [setThemeSetting]
     )
 
     const onThemeCycle = useCallback((): void => {
-        onThemePreferenceChange(themePreference === ThemePreference.Dark ? ThemePreference.Light : ThemePreference.Dark)
-    }, [onThemePreferenceChange, themePreference])
+        setThemeSetting(themeSetting === ThemeSetting.Dark ? ThemeSetting.Light : ThemeSetting.Dark)
+    }, [setThemeSetting, themeSetting])
 
-    // Target ID for tooltip
-    const targetID = 'target-user-avatar'
-    const keyboardShortcutSwitchTheme = useKeyboardShortcut('switchTheme')
-    const organizations = props.authenticatedUser.organizations.nodes
+    const organizations = authenticatedUser.organizations.nodes
 
     return (
         <>
             {keyboardShortcutSwitchTheme?.keybindings.map((keybinding, index) => (
                 // `Shortcut` doesn't update its states when `onMatch` changes
                 // so we put `themePreference` in `key` binding to make it
-                <Shortcut key={`${themePreference}-${index}`} {...keybinding} onMatch={onThemeCycle} />
+                <Shortcut key={`${themeSetting}-${index}`} {...keybinding} onMatch={onThemeCycle} />
             ))}
             <Menu>
                 {({ isExpanded }) => (
@@ -94,22 +96,22 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                         >
                             <div className="position-relative">
                                 <div className="align-items-center d-flex">
-                                    <UserAvatar
-                                        user={props.authenticatedUser}
-                                        targetID={targetID}
-                                        className={styles.avatar}
-                                    />
+                                    <UserAvatar user={authenticatedUser} className={styles.avatar} />
                                     <Icon svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} aria-hidden={true} />
                                 </div>
                             </div>
                         </MenuButton>
 
-                        <MenuList position={position} className={styles.dropdownMenu} aria-label="User. Open menu">
+                        <MenuList
+                            position={Position.bottomEnd}
+                            className={styles.dropdownMenu}
+                            aria-label="User. Open menu"
+                        >
                             <MenuHeader className={styles.dropdownHeader}>
-                                Signed in as <strong>@{props.authenticatedUser.username}</strong>
+                                Signed in as <strong>@{authenticatedUser.username}</strong>
                             </MenuHeader>
                             <MenuDivider className={styles.dropdownDivider} />
-                            <MenuLink as={Link} to={props.authenticatedUser.settingsURL!}>
+                            <MenuLink as={Link} to={authenticatedUser.settingsURL!}>
                                 Settings
                             </MenuLink>
                             <MenuDivider />
@@ -122,15 +124,15 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                         selectSize="sm"
                                         data-testid="theme-toggle"
                                         onChange={onThemeChange}
-                                        value={props.themePreference}
+                                        value={themeSetting}
                                         className="mb-0 flex-1"
                                     >
-                                        <option value={ThemePreference.Light}>Light</option>
-                                        <option value={ThemePreference.Dark}>Dark</option>
-                                        <option value={ThemePreference.System}>System</option>
+                                        <option value={ThemeSetting.Light}>Light</option>
+                                        <option value={ThemeSetting.Dark}>Dark</option>
+                                        <option value={ThemeSetting.System}>System</option>
                                     </Select>
                                 </div>
-                                {props.themePreference === ThemePreference.System && !supportsSystemTheme && (
+                                {themeSetting === ThemeSetting.System && !supportsSystemTheme && (
                                     <div className="text-wrap">
                                         <small>
                                             <AnchorLink
@@ -155,14 +157,14 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                         </MenuLink>
                                     ))}
                                     {organizations.length > MAX_VISIBLE_ORGS && (
-                                        <MenuLink as={Link} to={props.authenticatedUser.settingsURL!}>
+                                        <MenuLink as={Link} to={authenticatedUser.settingsURL!}>
                                             Show all organizations
                                         </MenuLink>
                                     )}
                                 </>
                             )}
                             <MenuDivider className={styles.dropdownDivider} />
-                            {props.authenticatedUser.siteAdmin && (
+                            {authenticatedUser.siteAdmin && (
                                 <MenuLink as={Link} to="/site-admin">
                                     Site admin
                                 </MenuLink>
@@ -171,17 +173,17 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                 Help <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                             </MenuLink>
 
-                            <MenuItem onSelect={props.showFeedbackModal}>Feedback</MenuItem>
+                            <MenuItem onSelect={showFeedbackModal}>Feedback</MenuItem>
 
-                            <MenuItem onSelect={props.showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
+                            <MenuItem onSelect={showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
 
-                            {props.authenticatedUser.session?.canSignOut && (
+                            {authenticatedUser.session?.canSignOut && (
                                 <MenuLink as={AnchorLink} to="/-/sign-out">
                                     Sign out
                                 </MenuLink>
                             )}
                             <MenuDivider className={styles.dropdownDivider} />
-                            {props.isSourcegraphDotCom && (
+                            {isSourcegraphDotCom && (
                                 <MenuLink
                                     as={AnchorLink}
                                     to="https://about.sourcegraph.com"

@@ -6,15 +6,13 @@ import {
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { WebStory } from '../../components/WebStory'
 import { MockedFeatureFlagsProvider } from '../../featureFlags/MockedFeatureFlagsProvider'
-import { ThemePreference } from '../../theme'
 
 import { SearchPage, SearchPageProps } from './SearchPage'
 
-const defaultProps = (props: ThemeProps): SearchPageProps => ({
+const defaultProps: SearchPageProps = {
     isSourcegraphDotCom: false,
     settingsCascade: {
         final: null,
@@ -22,18 +20,15 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     },
     extensionsController,
     telemetryService: NOOP_TELEMETRY_SERVICE,
-    themePreference: ThemePreference.Light,
-    onThemePreferenceChange: () => undefined,
     authenticatedUser: null,
     globbing: false,
     platformContext: {} as any,
     searchContextsEnabled: true,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => {},
-    isLightTheme: props.isLightTheme,
     fetchSearchContexts: mockFetchSearchContexts,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
-})
+}
 
 window.context.allowSignup = true
 
@@ -50,20 +45,20 @@ const config: Meta = {
 
 export default config
 export const CloudAuthedHome: Story = () => (
-    <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />}</WebStory>
+    <WebStory>{() => <SearchPage {...defaultProps} isSourcegraphDotCom={true} />}</WebStory>
 )
 
 CloudAuthedHome.storyName = 'Cloud authenticated home'
 
-export const ServerHome: Story = () => <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} />}</WebStory>
+export const ServerHome: Story = () => <WebStory>{() => <SearchPage {...defaultProps} />}</WebStory>
 
 ServerHome.storyName = 'Server home'
 
 export const CloudMarketingHome: Story = () => (
     <WebStory>
-        {webProps => (
+        {() => (
             <MockedFeatureFlagsProvider overrides={{}}>
-                <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} authenticatedUser={null} />
+                <SearchPage {...defaultProps} isSourcegraphDotCom={true} authenticatedUser={null} />
             </MockedFeatureFlagsProvider>
         )}
     </WebStory>
