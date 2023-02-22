@@ -55,6 +55,7 @@ import { HeroPage } from './components/HeroPage'
 import { FeatureFlagsProvider } from './featureFlags/FeatureFlagsProvider'
 import type { CodeInsightsProps } from './insights/types'
 import { Layout } from './Layout'
+import { LegacyLayoutRouteComponentProps, LegacyRoute, LegacyRouteContext } from './LegacyRouteContext'
 import { NotebookProps } from './notebooks'
 import type { OrgAreaRoute } from './org/area/OrgArea'
 import type { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
@@ -66,7 +67,7 @@ import type { RepoHeaderActionButton } from './repo/RepoHeader'
 import type { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import type { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import type { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
-import type { LayoutRouteProps, LegacyLayoutRouteComponentProps } from './routes'
+import type { LayoutRouteProps } from './routes'
 import { parseSearchURL, SearchAggregationProps } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
@@ -357,51 +358,8 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
 
     const router = createBrowserRouter([
         {
-            element: (
-                <Layout
-                    authenticatedUser={resolvedAuthenticatedUser}
-                    viewerSubject={viewerSubject}
-                    settingsCascade={settingsCascade}
-                    batchChangesEnabled={props.batchChangesEnabled}
-                    batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(settingsCascade)}
-                    batchChangesWebhookLogsEnabled={window.context.batchChangesWebhookLogsEnabled}
-                    // Search query
-                    fetchHighlightedFileLineRanges={_fetchHighlightedFileLineRanges}
-                    // Extensions
-                    platformContext={platformContext}
-                    extensionsController={null}
-                    telemetryService={eventLogger}
-                    isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                    searchContextsEnabled={props.searchContextsEnabled}
-                    selectedSearchContextSpec={selectedSearchContextSpec}
-                    setSelectedSearchContextSpec={setSelectedSearchContextSpec}
-                    getUserSearchContextNamespaces={getUserSearchContextNamespaces}
-                    fetchSearchContexts={fetchSearchContexts}
-                    fetchSearchContextBySpec={fetchSearchContextBySpec}
-                    fetchSearchContext={fetchSearchContext}
-                    createSearchContext={createSearchContext}
-                    updateSearchContext={updateSearchContext}
-                    deleteSearchContext={deleteSearchContext}
-                    isSearchContextSpecAvailable={isSearchContextSpecAvailable}
-                    globbing={globbing}
-                    streamSearch={aggregateStreamingSearch}
-                    codeIntelligenceEnabled={!!props.codeInsightsEnabled}
-                    notebooksEnabled={props.notebooksEnabled}
-                    codeMonitoringEnabled={props.codeMonitoringEnabled}
-                    searchAggregationEnabled={props.searchAggregationEnabled}
-                    themeProps={themeProps}
-                />
-            ),
-            children: props.routes
-                .map(
-                    ({ condition = () => true, render, path, handle }) =>
-                        condition(context) && {
-                            path: path.slice(1), // remove leading slash
-                            element: render(context),
-                            handle,
-                        }
-                )
-                .filter(isTruthy),
+            element: <LegacyRoute render={props => <Layout {...props} />} />,
+            children: props.routes.filter(isTruthy),
         },
     ])
 
@@ -420,6 +378,7 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
                 <TemporarySettingsProvider temporarySettingsStorage={temporarySettingsStorage} />,
                 <SearchResultsCacheProvider />,
                 <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState} />,
+                <LegacyRouteContext.Provider value={context} />,
                 /* eslint-enable react/no-children-prop, react/jsx-key */
             ]}
         >
