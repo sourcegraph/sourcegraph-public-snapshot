@@ -2163,6 +2163,8 @@ type SettingsExperimentalFeatures struct {
 	PreloadGoToDefinition bool `json:"preloadGoToDefinition,omitempty"`
 	// ProactiveSearchResultsAggregations description: Search results aggregations are triggered automatically with a search.
 	ProactiveSearchResultsAggregations *bool `json:"proactiveSearchResultsAggregations,omitempty"`
+	// SearchContextsQuery description: DEPRECATED: This feature is now permanently enabled. Enables query based search contexts
+	SearchContextsQuery *bool `json:"searchContextsQuery,omitempty"`
 	// SearchQueryInput description: Specify which version of the search query input to use
 	SearchQueryInput *string `json:"searchQueryInput,omitempty"`
 	// SearchResultsAggregations description: Display aggregations for your search results on the search screen.
@@ -2236,6 +2238,7 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "goCodeCheckerTemplates")
 	delete(m, "preloadGoToDefinition")
 	delete(m, "proactiveSearchResultsAggregations")
+	delete(m, "searchContextsQuery")
 	delete(m, "searchQueryInput")
 	delete(m, "searchResultsAggregations")
 	delete(m, "searchStats")
