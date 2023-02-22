@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -156,7 +155,7 @@ func (s AzureDevOpsSource) CreateDraftChangeset(ctx context.Context, cs *Changes
 
 // UndraftChangeset will update the Changeset on the source to be not in draft mode anymore.
 func (s AzureDevOpsSource) UndraftChangeset(ctx context.Context, cs *Changeset) error {
-	input := s.changesetToUpdatePullRequestInput(cs)
+	input := s.changesetToUpdatePullRequestInput(cs, false)
 	input.IsDraft = false
 	repo := cs.TargetRepo.Metadata.(*azuredevops.Repository)
 	args, err := s.createCommonPullRequestArgs(*repo, *cs)
@@ -192,13 +191,30 @@ func (s AzureDevOpsSource) CloseChangeset(ctx context.Context, cs *Changeset) er
 
 // UpdateChangeset can update Changesets.
 func (s AzureDevOpsSource) UpdateChangeset(ctx context.Context, cs *Changeset) error {
-	input := s.changesetToUpdatePullRequestInput(cs)
 	repo := cs.TargetRepo.Metadata.(*azuredevops.Repository)
 	args, err := s.createCommonPullRequestArgs(*repo, *cs)
 	if err != nil {
 		return err
 	}
 
+	// ADO does not support updating the target branch alongside other fields, so we have
+	// to check it separately, and make 2 calls id there is a change.
+	pr, err := s.client.GetPullRequest(ctx, args)
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			return ChangesetNotFoundError{Changeset: cs}
+		}
+		return errors.Wrap(err, "getting pull request")
+	}
+	if pr.TargetRefName != cs.BaseRef {
+		input := s.changesetToUpdatePullRequestInput(cs, true)
+		_, err := s.client.UpdatePullRequest(ctx, args, input)
+		if err != nil {
+			return errors.Wrap(err, "updating pull request")
+		}
+	}
+
+	input := s.changesetToUpdatePullRequestInput(cs, false)
 	updated, err := s.client.UpdatePullRequest(ctx, args, input)
 	if err != nil {
 		return errors.Wrap(err, "updating pull request")
@@ -425,15 +441,17 @@ func (s AzureDevOpsSource) changesetToPullRequestInput(cs *Changeset) azuredevop
 	return input
 }
 
-func (s AzureDevOpsSource) changesetToUpdatePullRequestInput(cs *Changeset) azuredevops.PullRequestUpdateInput {
-	destBranch := gitdomain.AbbreviateRef(cs.BaseRef)
-	input := azuredevops.PullRequestUpdateInput{
-		Title:         &cs.Title,
-		Description:   &cs.Body,
-		TargetRefName: &destBranch,
+func (s AzureDevOpsSource) changesetToUpdatePullRequestInput(cs *Changeset, targetRefChanged bool) azuredevops.PullRequestUpdateInput {
+	if targetRefChanged {
+		return azuredevops.PullRequestUpdateInput{
+			TargetRefName: &cs.BaseRef,
+		}
 	}
 
-	return input
+	return azuredevops.PullRequestUpdateInput{
+		Title:       &cs.Title,
+		Description: &cs.Body,
+	}
 }
 
 func (s AzureDevOpsSource) createCommonPullRequestArgs(repo azuredevops.Repository, cs Changeset) (azuredevops.PullRequestCommonArgs, error) {
