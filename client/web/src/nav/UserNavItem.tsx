@@ -33,7 +33,7 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps {
         AuthenticatedUser,
         'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName'
     >
-    showDotComMarketing: boolean
+    isSourcegraphDotCom: boolean
     codeHostIntegrationMessaging: 'browser-extension' | 'native-integration'
     position?: Position
     menuButtonRef?: React.Ref<HTMLButtonElement>
@@ -181,7 +181,7 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                 </MenuLink>
                             )}
                             <MenuDivider className={styles.dropdownDivider} />
-                            {props.showDotComMarketing && (
+                            {props.isSourcegraphDotCom && (
                                 <MenuLink
                                     as={AnchorLink}
                                     to="https://about.sourcegraph.com"

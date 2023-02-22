@@ -27,7 +27,7 @@ const config: Meta = {
         },
     },
     argTypes: {
-        showDotComMarketing: {
+        isSourcegraphDotCom: {
             control: { type: 'boolean' },
             defaultValue: true,
         },
@@ -73,7 +73,7 @@ const commonProps = (props: Args): UserNavItemProps => ({
     themePreference: ThemePreference.Light,
     isLightTheme: true,
     onThemePreferenceChange,
-    showDotComMarketing: props.showDotComMarketing,
+    isSourcegraphDotCom: props.isSourcegraphDotCom,
     codeHostIntegrationMessaging: props.codeHostIntegrationMessaging,
     authenticatedUser,
     position: Position.bottomStart,

@@ -5,10 +5,9 @@ import classNames from 'classnames'
 
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { buildCloudTrialURL } from '@sourcegraph/shared/src/util/url'
 import { Link, Button, CardBody, Card, Icon, H2, H3, H4, Text } from '@sourcegraph/wildcard'
 
-import { CloudCtaBanner } from '../../components/CloudCtaBanner'
+import { CallToActionBanner } from '../../components/CallToActionBanner'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import styles from './CodeMonitoringGettingStarted.module.scss'
@@ -104,20 +103,18 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
             </Card>
 
             {isSourcegraphDotCom && (
-                <CloudCtaBanner variant="filled">
+                <CallToActionBanner variant="filled">
                     To monitor changes across your team's private repositories,{' '}
                     <Link
-                        to={buildCloudTrialURL(authenticatedUser, 'monitoring')}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        to="https://about.sourcegraph.com"
                         onClick={() =>
-                            eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'MonitoringGettingStarted' })
+                            eventLogger.log('ClickedOnEnterpriseCTA', { location: 'MonitoringGettingStarted' })
                         }
                     >
-                        try Sourcegraph Cloud
+                        get Sourcegraph Enterprise
                     </Link>
                     .
-                </CloudCtaBanner>
+                </CallToActionBanner>
             )}
 
             <div>
