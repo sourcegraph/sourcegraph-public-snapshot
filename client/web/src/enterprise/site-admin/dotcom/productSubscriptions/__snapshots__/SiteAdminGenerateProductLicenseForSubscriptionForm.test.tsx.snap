@@ -13,7 +13,7 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
         class="alert alertInfo"
         role="alert"
       >
-        Please read the
+        Please read the 
         <a
           class="anchorLink"
           href="https://handbook.sourcegraph.com/ce/license_keys#how-to-create-a-license-key-for-a-new-prospect-or-new-customer"
@@ -136,7 +136,7 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
           class="label"
           for="site-admin-create-product-subscription-page__expiresAt"
         >
-          Valid for (days)
+          Expires At
         </label>
         <div
           class="container loader-input loaderInput"
@@ -145,7 +145,7 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
             class="form-control with-invalid-icon"
             id="site-admin-create-product-subscription-page__expiresAt"
             max="2011-06-25"
-            min="2006-01-031"
+            min="2006-01-03"
             type="date"
             value="2007-01-03"
           />
@@ -160,7 +160,7 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
         <small
           class="form-text text-muted d-block mt-1"
         >
-          Set to
+          Set to 
           <button
             class="btn btnLink btnSm p-0 mr-2"
             type="button"
