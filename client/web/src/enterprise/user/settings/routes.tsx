@@ -17,7 +17,6 @@ export const enterpriseUserSettingsAreaRoutes: readonly UserSettingsAreaRoute[] 
     {
         path: 'permissions',
         render: lazyComponent(() => import('./auth/UserSettingsPermissionsPage'), 'UserSettingsPermissionsPage'),
-        condition: ({ authenticatedUser }) => authenticatedUser.siteAdmin,
     },
     {
         path: 'event-log',

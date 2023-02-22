@@ -13,7 +13,6 @@ import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { gqlToCascade, SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, PageHeader, ErrorMessage } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -26,7 +25,7 @@ import { mergeSettingsSchemas } from './configuration'
 import { SettingsPage } from './SettingsPage'
 
 /** Props shared by SettingsArea and its sub-pages. */
-interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCascadeProps, ThemeProps, TelemetryProps {
+interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCascadeProps, TelemetryProps {
     /** The subject whose settings to edit. */
     subject: Pick<SettingsSubject, '__typename' | 'id'>
 
@@ -34,6 +33,8 @@ interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCasc
      * The currently authenticated user, NOT (necessarily) the user who is the subject of the page.
      */
     authenticatedUser: AuthenticatedUser | null
+
+    isLightTheme: boolean
 }
 
 interface SettingsData {

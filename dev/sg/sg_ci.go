@@ -383,7 +383,10 @@ sg ci build --help
 		Name:      "build",
 		ArgsUsage: "[runtype] <argument>",
 		Usage:     "Manually request a build for the currently checked out commit and branch (e.g. to trigger builds on forks or with special run types)",
-		Description: fmt.Sprintf(`Optionally provide a run type to build with.
+		Description: fmt.Sprintf(`
+Reference to all pipeline run types can be found at: https://docs.sourcegraph.com/dev/background-information/ci/reference
+
+Optionally provide a run type to build with.
 
 This command is useful when:
 
@@ -395,9 +398,7 @@ Supported run types when providing an argument for 'sg ci build [runtype]':
 * %s
 
 For run types that require branch arguments, you will be prompted for an argument, or you
-can provide it directly (for example, 'sg ci build [runtype] <argument>').
-
-Learn more about pipeline run types in https://docs.sourcegraph.com/dev/background-information/ci/reference.`,
+can provide it directly (for example, 'sg ci build [runtype] <argument>').`,
 			strings.Join(getAllowedBuildTypeArgs(), "\n* ")),
 		UsageText: `
 # Start a main-dry-run build
@@ -408,6 +409,9 @@ sg ci build docker-images-patch
 
 # Publish a custom Prometheus image build without running tests
 sg ci build docker-images-patch-notest prometheus
+
+# Publish all images without testing
+sg ci build docker-images-candidates-notest
 `,
 		BashComplete: completions.CompleteOptions(getAllowedBuildTypeArgs),
 		Flags: []cli.Flag{
@@ -758,7 +762,8 @@ func getAllowedBuildTypeArgs() []string {
 	var results []string
 	for _, rt := range runtype.RunTypes() {
 		if rt.Matcher().IsBranchPrefixMatcher() {
-			results = append(results, strings.TrimSuffix(rt.Matcher().Branch, "/"))
+			display := fmt.Sprintf("%s - %s", strings.TrimSuffix(rt.Matcher().Branch, "/"), rt.String())
+			results = append(results, display)
 		}
 	}
 	return results

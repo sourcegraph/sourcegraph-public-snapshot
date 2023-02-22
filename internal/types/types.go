@@ -622,6 +622,13 @@ type ExternalServiceSyncJob struct {
 	ReposUnmodified int32
 }
 
+// ExternalServiceNamespace represents a namespace on an external service that can have ownership over repositories
+type ExternalServiceNamespace struct {
+	ID         int    `json:"id"`
+	Name       string `json:"name"`
+	ExternalID string `json:"external_id"`
+}
+
 // URN returns a unique resource identifier of this external service,
 // used as the key in a repo's Sources map as well as the SourceInfo ID.
 func (e *ExternalService) URN() string {
@@ -881,15 +888,14 @@ type NamespacePermission struct {
 	ID         int64
 	Namespace  PermissionNamespace
 	ResourceID int64
-	Action     string
 	UserID     int32
 	CreatedAt  time.Time
 }
 
 func (n *NamespacePermission) DisplayName() string {
 	// Based on the zanzibar representation for data relations:
-	// <namespace>:<object_id>#<relation>@<user_id | user_group>
-	return fmt.Sprintf("%s:%d#%s@%d", n.Namespace, n.ResourceID, n.Action, n.UserID)
+	// <namespace>:<object_id>#@<user_id | user_group>
+	return fmt.Sprintf("%s:%d@%d", n.Namespace, n.ResourceID, n.UserID)
 }
 
 type OrgMemberAutocompleteSearchItem struct {

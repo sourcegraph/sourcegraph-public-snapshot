@@ -287,6 +287,21 @@ Referenced by:
 
 ```
 
+# Table "public.cached_available_indexers"
+```
+       Column       |  Type   | Collation | Nullable |                        Default                        
+--------------------+---------+-----------+----------+-------------------------------------------------------
+ id                 | integer |           | not null | nextval('cached_available_indexers_id_seq'::regclass)
+ repository_id      | integer |           | not null | 
+ num_events         | integer |           | not null | 
+ available_indexers | jsonb   |           | not null | 
+Indexes:
+    "cached_available_indexers_pkey" PRIMARY KEY, btree (id)
+    "cached_available_indexers_repository_id" UNIQUE, btree (repository_id)
+    "cached_available_indexers_num_events" btree (num_events DESC) WHERE available_indexers::text <> '{}'::text
+
+```
+
 # Table "public.changeset_events"
 ```
     Column    |           Type           | Collation | Nullable |                   Default                    
@@ -923,6 +938,23 @@ Triggers:
 
 ```
 
+# Table "public.codeintel_ranking_definitions"
+```
+    Column     |  Type   | Collation | Nullable |                          Default                          
+---------------+---------+-----------+----------+-----------------------------------------------------------
+ id            | bigint  |           | not null | nextval('codeintel_ranking_definitions_id_seq'::regclass)
+ upload_id     | integer |           | not null | 
+ symbol_name   | text    |           | not null | 
+ repository    | text    |           | not null | 
+ document_path | text    |           | not null | 
+ graph_key     | text    |           | not null | 
+Indexes:
+    "codeintel_ranking_definitions_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_definitions_symbol_name" btree (symbol_name)
+    "codeintel_ranking_definitions_upload_id" btree (upload_id)
+
+```
+
 # Table "public.codeintel_ranking_exports"
 ```
     Column     |           Type           | Collation | Nullable |                        Default                        
@@ -939,6 +971,39 @@ Foreign-key constraints:
     "codeintel_ranking_exports_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL
 
 ```
+
+# Table "public.codeintel_ranking_path_counts_inputs"
+```
+    Column     |  Type   | Collation | Nullable |                             Default                              
+---------------+---------+-----------+----------+------------------------------------------------------------------
+ id            | bigint  |           | not null | nextval('codeintel_ranking_path_counts_inputs_id_seq'::regclass)
+ repository    | text    |           | not null | 
+ document_path | text    |           | not null | 
+ count         | integer |           | not null | 
+ graph_key     | text    |           | not null | 
+ processed     | boolean |           | not null | false
+Indexes:
+    "codeintel_ranking_path_counts_inputs_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_path_counts_inputs_graph_key_and_repository" btree (graph_key, repository)
+
+```
+
+# Table "public.codeintel_ranking_references"
+```
+    Column    |  Type   | Collation | Nullable |                         Default                          
+--------------+---------+-----------+----------+----------------------------------------------------------
+ id           | bigint  |           | not null | nextval('codeintel_ranking_references_id_seq'::regclass)
+ upload_id    | integer |           | not null | 
+ symbol_names | text[]  |           | not null | 
+ graph_key    | text    |           | not null | 
+ processed    | boolean |           | not null | false
+Indexes:
+    "codeintel_ranking_references_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_references_upload_id" btree (upload_id)
+
+```
+
+References for a given upload proceduced by background job consuming SCIP indexes.
 
 # Table "public.configuration_policies_audit_logs"
 ```
@@ -1755,7 +1820,7 @@ Foreign-key constraints:
 ---------+--------+-----------+----------+---------------------------------------------------
  id      | bigint |           | not null | nextval('lsif_dependency_repos_id_seq'::regclass)
  name    | text   |           | not null | 
- version | text   |           | not null | 
+ version | text   |           | not null | '👁️temporary_sentinel_value👁️'::text
  scheme  | text   |           | not null | 
 Indexes:
     "lsif_dependency_repos_pkey" PRIMARY KEY, btree (id)
@@ -2275,14 +2340,12 @@ Foreign-key constraints:
  id          | integer                  |           | not null | nextval('namespace_permissions_id_seq'::regclass)
  namespace   | text                     |           | not null | 
  resource_id | integer                  |           | not null | 
- action      | text                     |           | not null | 
  user_id     | integer                  |           | not null | 
  created_at  | timestamp with time zone |           | not null | now()
 Indexes:
     "namespace_permissions_pkey" PRIMARY KEY, btree (id)
-    "unique_resource_permission" UNIQUE CONSTRAINT, btree (namespace, resource_id, action, user_id)
+    "unique_resource_permission" UNIQUE, btree (namespace, resource_id, user_id)
 Check constraints:
-    "action_not_blank" CHECK (action <> ''::text)
     "namespace_not_blank" CHECK (namespace <> ''::text)
 Foreign-key constraints:
     "namespace_permissions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE

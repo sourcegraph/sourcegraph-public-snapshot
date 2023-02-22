@@ -177,7 +177,7 @@ describe('useShowMorePagination', () => {
             expect(queries.getByText('repo-A')).toBeVisible()
             expect(queries.getByText('Total count: 4')).toBeVisible()
             expect(queries.getByText('Fetch more')).toBeVisible()
-            expect(queries.history.location.search).toBe('')
+            expect(queries.locationRef.current?.search).toBe('')
         })
 
         it('fetches next page of results correctly', async () => {
@@ -194,7 +194,7 @@ describe('useShowMorePagination', () => {
             expect(queries.getByText('Fetch more')).toBeVisible()
 
             // URL updates to match visible results
-            expect(queries.history.location.search).toBe('?visible=2')
+            expect(queries.locationRef.current?.search).toBe('?visible=2')
         })
 
         it('fetches final page of results correctly', async () => {
@@ -217,7 +217,7 @@ describe('useShowMorePagination', () => {
             expect(queries.queryByText('Fetch more')).not.toBeInTheDocument()
 
             // URL updates to match visible results
-            expect(queries.history.location.search).toBe('?visible=4')
+            expect(queries.locationRef.current?.search).toBe('?visible=4')
         })
 
         it('fetches correct amount of results when navigating directly with a URL', async () => {
@@ -249,7 +249,7 @@ describe('useShowMorePagination', () => {
             expect(queries.getByText('Total count: 4')).toBeVisible()
 
             // URL should be overidden
-            expect(queries.history.location.search).toBe('?visible=4')
+            expect(queries.locationRef.current?.search).toBe('?visible=4')
         })
     })
 
@@ -290,7 +290,7 @@ describe('useShowMorePagination', () => {
             expect(queries.getByText('repo-A')).toBeVisible()
             expect(queries.getByText('Total count: 4')).toBeVisible()
             expect(queries.getByText('Fetch more')).toBeVisible()
-            expect(queries.history.location.search).toBe('')
+            expect(queries.locationRef.current?.search).toBe('')
         })
 
         it('fetches next page of results correctly', async () => {
@@ -307,7 +307,7 @@ describe('useShowMorePagination', () => {
             expect(queries.getByText('Fetch more')).toBeVisible()
 
             // URL updates to match the new request
-            expect(queries.history.location.search).toBe('?first=2')
+            expect(queries.locationRef.current?.search).toBe('?first=2')
         })
 
         it('fetches final page of results correctly', async () => {
@@ -329,7 +329,7 @@ describe('useShowMorePagination', () => {
             expect(queries.queryByText('Fetch more')).not.toBeInTheDocument()
 
             // URL updates to match the new request
-            expect(queries.history.location.search).toBe('?first=4')
+            expect(queries.locationRef.current?.search).toBe('?first=4')
         })
 
         it('fetches correct amount of results when navigating directly with a URL', async () => {
@@ -349,7 +349,7 @@ describe('useShowMorePagination', () => {
             expect(queries.getByText('Total count: 4')).toBeVisible()
 
             // URL should be overidden
-            expect(queries.history.location.search).toBe('?first=4')
+            expect(queries.locationRef.current?.search).toBe('?first=4')
         })
     })
 })

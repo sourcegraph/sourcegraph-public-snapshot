@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo } from 'react'
 
 import { parseISO } from 'date-fns'
-import { useParams } from 'react-router-dom-v5-compat'
+import { useParams } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
 import { validate as validateUUID } from 'uuid'

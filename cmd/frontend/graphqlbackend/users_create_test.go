@@ -20,7 +20,7 @@ import (
 type mockFuncs struct {
 	dB             *database.MockDB
 	authzStore     *database.MockAuthzStore
-	userRoleStore  *database.MockUserRoleStore
+	usersStore     *database.MockUserStore
 	userEmailStore *database.MockUserEmailsStore
 }
 
@@ -34,24 +34,17 @@ func makeUsersCreateTestDB(t *testing.T) mockFuncs {
 	authz := database.NewMockAuthzStore()
 	authz.GrantPendingPermissionsFunc.SetDefaultReturn(nil)
 
-	userRoles := database.NewMockUserRoleStore()
-	userRoles.BulkAssignSystemRolesToUserFunc.SetDefaultReturn([]*types.UserRole{}, nil)
-
 	userEmails := database.NewMockUserEmailsStore()
 
 	db := database.NewMockDB()
-	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
-		return f(db)
-	})
 	db.UsersFunc.SetDefaultReturn(users)
 	db.AuthzFunc.SetDefaultReturn(authz)
-	db.UserRolesFunc.SetDefaultReturn(userRoles)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
 	return mockFuncs{
 		dB:             db,
+		usersStore:     users,
 		authzStore:     authz,
-		userRoleStore:  userRoles,
 		userEmailStore: userEmails,
 	}
 }
@@ -84,7 +77,7 @@ func TestCreateUser(t *testing.T) {
 	})
 
 	mockrequire.CalledOnce(t, mocks.authzStore.GrantPendingPermissionsFunc)
-	mockrequire.CalledOnce(t, mocks.userRoleStore.BulkAssignSystemRolesToUserFunc)
+	mockrequire.CalledOnce(t, mocks.usersStore.CreateFunc)
 }
 
 func TestCreateUserResetPasswordURL(t *testing.T) {

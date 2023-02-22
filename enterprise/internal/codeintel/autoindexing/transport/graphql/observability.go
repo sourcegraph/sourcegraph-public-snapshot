@@ -15,6 +15,7 @@ type operations struct {
 	deleteLsifIndexes             *observation.Operation
 	reindexLsifIndex              *observation.Operation
 	reindexLsifIndexes            *observation.Operation
+	inferAutoIndexJobsForRepo     *observation.Operation
 	queueAutoIndexJobsForRepo     *observation.Operation
 	lsifIndexByID                 *observation.Operation
 	lsifIndexes                   *observation.Operation
@@ -22,16 +23,13 @@ type operations struct {
 	indexConfiguration            *observation.Operation
 	updateIndexConfiguration      *observation.Operation
 
-	// Index Configuration
-	inferedIndexConfiguration      *observation.Operation
-	inferedIndexConfigurationHints *observation.Operation
-
 	// Language Support
 	requestLanguageSupport    *observation.Operation
 	requestedLanguageSupport  *observation.Operation
 	setRequestLanguageSupport *observation.Operation
 
 	// Misc
+	summary              *observation.Operation
 	repositorySummary    *observation.Operation
 	getSupportedByCtags  *observation.Operation
 	gitBlobCodeIntelInfo *observation.Operation
@@ -64,6 +62,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		// Indexes
 		getRecentIndexesSummary:       op("GetRecentIndexesSummary"),
 		getLastIndexScanForRepository: op("GetLastIndexScanForRepository"),
+		inferAutoIndexJobsForRepo:     op("InferAutoIndexJobsForRepo"),
 		queueAutoIndexJobsForRepo:     op("QueueAutoIndexJobsForRepo"),
 		deleteLsifIndex:               op("DeleteLsifIndex"),
 		deleteLsifIndexes:             op("DeleteLsifIndexes"),
@@ -75,16 +74,13 @@ func newOperations(observationCtx *observation.Context) *operations {
 		indexConfiguration:            op("IndexConfiguration"),
 		updateIndexConfiguration:      op("UpdateIndexConfiguration"),
 
-		// Index Configuration
-		inferedIndexConfiguration:      op("InferedIndexConfiguration"),
-		inferedIndexConfigurationHints: op("InferedIndexConfigurationHints"),
-
 		// Language Support
 		requestLanguageSupport:    op("RequestLanguageSupport"),
 		requestedLanguageSupport:  op("RequestedLanguageSupport"),
 		setRequestLanguageSupport: op("SetRequestLanguageSupport"),
 
 		// Misc
+		summary:              op("Summary"),
 		repositorySummary:    op("RepositorySummary"),
 		getSupportedByCtags:  op("GetSupportedByCtags"),
 		gitBlobCodeIntelInfo: op("GitBlobCodeIntelInfo"),

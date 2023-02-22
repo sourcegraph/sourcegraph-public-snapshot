@@ -174,7 +174,7 @@ func runJobsTest(t *testing.T, ctx context.Context, logger log.Logger, db databa
 	require.NoError(t, err)
 	require.Equal(t, len(wantJobs), count)
 
-	jobs, err := store.List(ctx, database.ListPermissionSyncJobOpts{State: "queued"})
+	jobs, err := store.List(ctx, database.ListPermissionSyncJobOpts{State: database.PermissionSyncJobStateQueued})
 	require.NoError(t, err)
 	require.Len(t, jobs, len(wantJobs))
 

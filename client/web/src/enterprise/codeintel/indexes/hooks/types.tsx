@@ -1,5 +1,13 @@
 import { gql } from '@sourcegraph/http-client'
 
+export const codeIntelIndexerFieldsFragment = gql`
+    fragment CodeIntelIndexerFields on CodeIntelIndexer {
+        key
+        name
+        url
+    }
+`
+
 export const preciseIndexFieldsFragment = gql`
     fragment PreciseIndexFields on PreciseIndex {
         __typename
@@ -22,8 +30,7 @@ export const preciseIndexFieldsFragment = gql`
         inputRoot
         inputIndexer
         indexer {
-            name
-            url
+            ...CodeIntelIndexerFields
         }
         state
         queuedAt
@@ -91,6 +98,8 @@ export const preciseIndexFieldsFragment = gql`
         }
         operation
     }
+
+    ${codeIntelIndexerFieldsFragment}
 `
 
 export const preciseIndexConnectionFieldsFragment = gql`

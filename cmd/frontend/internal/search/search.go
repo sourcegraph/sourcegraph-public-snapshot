@@ -522,23 +522,26 @@ func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.Sear
 func fromOwner(owner *result.OwnerMatch) streamhttp.EventMatch {
 	switch v := owner.ResolvedOwner.(type) {
 	case *codeowners.Person:
-		return &streamhttp.EventPersonMatch{
-			Type:        streamhttp.PersonMatchType,
-			Username:    v.User.Username,
-			DisplayName: v.User.DisplayName,
-			AvatarURL:   v.User.AvatarURL,
+		person := &streamhttp.EventPersonMatch{
+			Type:   streamhttp.PersonMatchType,
+			Handle: v.Handle,
+			Email:  v.Email,
 		}
+		if v.User != nil {
+			person.User = &streamhttp.UserMetadata{
+				Username:    v.User.Username,
+				DisplayName: v.User.DisplayName,
+				AvatarURL:   v.User.AvatarURL,
+			}
+		}
+		return person
 	case *codeowners.Team:
 		return &streamhttp.EventTeamMatch{
 			Type:        streamhttp.TeamMatchType,
+			Handle:      v.Handle,
+			Email:       v.Email,
 			Name:        v.Team.Name,
 			DisplayName: v.Team.DisplayName,
-		}
-	case *codeowners.UnknownOwner:
-		return &streamhttp.EventUnknownOwnerMatch{
-			Type:   streamhttp.UnknownOwnerMatchType,
-			Handle: v.Handle,
-			Email:  v.Email,
 		}
 	default:
 		panic(fmt.Sprintf("unknown owner match type %T", v))
