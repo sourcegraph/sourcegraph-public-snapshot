@@ -128,14 +128,31 @@ In the GraphQL API, `syncedAt` indicates the last complete sync and `updatedAt` 
 
 When syncing permissions from code hosts with large numbers of users and repositories, it can take a lot of time to complete syncing all permissions from a code host for every user and every repository. Typically due to internal rate limits imposed by Sourcegraph and external rate limits imposed by the code host, it can be hours or days. 
 
-Let's call the time difference between applying the change on code host and the change taking effect on Sourcegraph as **lag time**. 
+For initial setup of instance, when the initial sync for all repositories and users is running, users will gradually see more and more search results from repositories they have access to.
+
+### Lag-time
+
+Let's call the time difference between applying the permissions change on code host and the change taking effect on Sourcegraph as **lag time**. 
 For security reasons, we strive to make the lag time as low as possible. 
 
 However given the way the system works, we need to be aware of the worst case:
 
 > IMPORTANT: If there is a change in permissions on the code host, in the worst case the lag time is as long as the time it takes to completely sync all user or repository permissions.
 
-For initial setup of instance, when the initial sync for all repositories and users is running, users will gradually see more and more search results from repositories they have access to.
+**Example**
+There are `5 000` users, `40 000` repositories and the github.com API is paginated on `100` items per page. 
+On average, every user has read access to `300` repositories and on average a repository is accessible by `75` users.
+
+User `alice` is removed from repository `horsegraph/not-so-global` at 15:02. How long does it take for this change to take effect on Sourcegraph side?
+
+Let's say rate limiting is not slowing down permission syncing and default settings for permission syncing are used (scheduler runs every 15 seconds and it schedules 10 users with oldest permissions). That means, we schedule 40 users per minute to be synced. To sync all the users takes $5000 / 40 = 125$ minutes.
+
+- Worst case scenario:
+  User `alice` has synced the permissions at 15:01, just one minute before the change is made. This means, `alice` will be scheduled the permissions sync in about 124 minutes again.
+- Best case scenario:
+  User `alice` has synced permissions at 12:58. Next permission sync for `alice` is going to be scheduled at 15:03. So in this case it takes just 1 minute.
+
+So the answer to the question of how long the *lag-time* is, in the worst case 125 minutes (as long as the full user-permission syncing cycle takes).
 
 ### Request count
 
