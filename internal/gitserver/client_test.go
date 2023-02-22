@@ -7,9 +7,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-
-	"github.com/sourcegraph/log/logtest"
-
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -22,18 +19,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"google.golang.org/grpc"
-
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
-
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -41,6 +32,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -447,45 +441,6 @@ func TestClient_ResolveRevisions(t *testing.T) {
 		})
 	}
 
-}
-
-func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
-	client := gitserver.NewClient()
-	setAddrs([]string{"gitserver1", "gitserver2"}, map[string]string{"repo1": "gitserver2"})
-
-	addr := client.AddrForRepo("repo1")
-	require.Equal(t, "gitserver2", addr)
-
-	// simulate config change - site admin manually changes the pinned repo config
-	setAddrs([]string{"gitserver1", "gitserver2"}, map[string]string{"repo1": "gitserver1"})
-
-	// config changes do not propagate immediately.
-	// Ensure that it shows up in a reasonable amount of time
-	timeout := time.After(time.Second)
-	for {
-		select {
-		case <-timeout:
-			t.Fatalf("expected addr to eventually change to %s, but got %s", "gitserver1", client.AddrForRepo("repo1"))
-		case <-time.After(time.Millisecond):
-			if client.AddrForRepo("repo1") == "gitserver1" {
-				// Success!
-				return
-			}
-		}
-	}
-}
-
-func setAddrs(addrs []string, pinned map[string]string) {
-	conf.Mock(&conf.Unified{
-		ServiceConnectionConfig: conftypes.ServiceConnections{
-			GitServers: addrs,
-		},
-		SiteConfiguration: schema.SiteConfiguration{
-			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				GitServerPinnedRepos: pinned,
-			},
-		},
-	})
 }
 
 func TestClient_BatchLog(t *testing.T) {

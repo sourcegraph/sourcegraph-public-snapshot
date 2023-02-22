@@ -13,6 +13,7 @@ import (
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )
 
@@ -84,5 +85,40 @@ func TestClient_GRPCRouting(t *testing.T) {
 
 	if !(!m1.called && m2.called) {
 		t.Fatalf("expected repo 'b' to hit srv2, got %v, %v", m1.called, m2.called)
+	}
+}
+
+func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
+	client := NewClient()
+
+	cfg := newConfig(
+		[]string{"gitserver1", "gitserver2"},
+		map[string]string{"repo1": "gitserver2"},
+	)
+	conns.update(cfg)
+
+	addr := client.AddrForRepo("repo1")
+	require.Equal(t, "gitserver2", addr)
+
+	// simulate config change - site admin manually changes the pinned repo config
+	cfg = newConfig(
+		[]string{"gitserver1", "gitserver2"},
+		map[string]string{"repo1": "gitserver1"},
+	)
+	conns.update(cfg)
+
+	require.Equal(t, "gitserver1", client.AddrForRepo("repo1"))
+}
+
+func newConfig(addrs []string, pinned map[string]string) *conf.Unified {
+	return &conf.Unified{
+		ServiceConnectionConfig: conftypes.ServiceConnections{
+			GitServers: addrs,
+		},
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				GitServerPinnedRepos: pinned,
+			},
+		},
 	}
 }
