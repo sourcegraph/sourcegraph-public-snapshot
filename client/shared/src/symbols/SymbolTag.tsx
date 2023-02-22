@@ -25,9 +25,6 @@ export const getSymbolInitial = (kind: SymbolKind): string => (kind as string)[0
 interface SymbolTagProps {
     kind: SymbolKind
     className?: string
-    // A tabIndex overwrite is used only for the symbol tree, where the Tree
-    // component is expected to take over all of the keyboard navigation.
-    tabIndex?: number
 }
 
 function getSymbolClassName(kind: SymbolKind): string {
@@ -74,14 +71,9 @@ function getSymbolClassName(kind: SymbolKind): string {
     }
 }
 
-export const SymbolTag: React.FunctionComponent<React.PropsWithChildren<SymbolTagProps>> = ({
-    kind,
-    className,
-    tabIndex,
-}) => (
+export const SymbolTag: React.FunctionComponent<React.PropsWithChildren<SymbolTagProps>> = ({ kind, className }) => (
     <Tooltip content={getSymbolTooltip(kind)}>
         <span
-            tabIndex={tabIndex}
             className={classNames(getSymbolClassName(kind), className, styles.tag)}
             aria-label={`Symbol kind ${kind.toLowerCase()}`}
         >

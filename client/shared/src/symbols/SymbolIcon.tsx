@@ -14,9 +14,6 @@ import styles from './SymbolIcon.module.scss'
 interface SymbolIconProps {
     kind: SymbolKind
     className?: string
-    // A tabIndex overwrite is used only for the symbol tree, where the Tree
-    // component is expected to take over all of the keyboard navigation.
-    tabIndex?: number
 }
 function getSymbolIconClassName(kind: SymbolKind): string | undefined {
     return (styles as Record<string, string>)[`symbolIconKind${upperFirst(kind.toLowerCase())}`]
@@ -28,11 +25,9 @@ function getSymbolIconClassName(kind: SymbolKind): string | undefined {
 export const SymbolIcon: React.FunctionComponent<React.PropsWithChildren<SymbolIconProps>> = ({
     kind,
     className = '',
-    tabIndex,
 }) => (
     <Tooltip content={kind.toLowerCase()}>
         <Icon
-            tabIndex={tabIndex}
             data-testid="symbol-icon"
             data-symbol-kind={kind.toLowerCase()}
             className={classNames(getSymbolIconClassName(kind), className)}

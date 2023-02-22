@@ -137,7 +137,7 @@ export const RepoRevisionSidebarSymbolTree: React.FC<Props> = ({
                             handleSelect(event)
                         }}
                     >
-                        <SymbolKind kind={kind} className="mr-1" symbolKindTags={symbolKindTags} tabIndex={-1} />
+                        <SymbolKind kind={kind} className="mr-1" symbolKindTags={symbolKindTags} />
                         {element.name}
                     </Link>
                 )
