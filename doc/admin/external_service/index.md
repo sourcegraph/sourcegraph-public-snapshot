@@ -153,7 +153,7 @@ We recognize there are other code hosts including CVS, Azure Dev Ops, SVN, and m
 - [GitLab](gitlab.md)
 - [Bitbucket Cloud](bitbucket_cloud.md)
 - [Bitbucket Server / Bitbucket Data Center](bitbucket_server.md)
-- [Gerrit](gerrit.md) <span class="badge badge-beta">Beta</span>
+- [Gerrit](gerrit/gerrit.md) <span class="badge badge-beta">Beta</span>
 - [Other Git code hosts (using a Git URL)](other.md)
 - [Non-Git code hosts](non-git.md)
   - [Perforce](../repo/perforce.md)
