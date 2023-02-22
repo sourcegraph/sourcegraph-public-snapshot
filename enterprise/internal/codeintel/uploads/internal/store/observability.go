@@ -82,6 +82,8 @@ type operations struct {
 	reindexUploadByID *observation.Operation
 
 	// Ranking
+	vacuumStaleDefinitionsAndReferences       *observation.Operation
+	vacuumStaleGraphs                         *observation.Operation
 	insertDefinitionsAndReferencesForDocument *observation.Operation
 	insertDefintionsForRanking                *observation.Operation
 	insertReferencesForRanking                *observation.Operation
@@ -185,6 +187,8 @@ func newOperations(observationCtx *observation.Context) *operations {
 		reindexUploadByID: op("ReindexUploadByID"),
 
 		// Ranking
+		vacuumStaleDefinitionsAndReferences:       op("VacuumStaleDefinitionsAndReferences"),
+		vacuumStaleGraphs:                         op("VacuumStaleGraphs"),
 		insertDefinitionsAndReferencesForDocument: op("InsertDefinitionsAndReferencesForDocument"),
 		insertDefintionsForRanking:                op("InsertDefintionsForRanking"),
 		insertReferencesForRanking:                op("InsertReferencesForRanking"),

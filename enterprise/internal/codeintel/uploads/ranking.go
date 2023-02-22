@@ -249,5 +249,5 @@ func (s *Service) ReduceRankingGraph(
 // a fresh map/reduce job on a periodic cadence (equal to the bucket length). Changing the
 // parent graph key will also create a new map/reduce job (without switching buckets).
 func getCurrentGraphKey(now time.Time) string {
-	return fmt.Sprintf("%s-%d", rankingGraphKey, now.UTC().UnixNano()/RankingConfigInst.Interval.Nanoseconds())
+	return fmt.Sprintf("%s-%d", rankingGraphKey, now.UTC().Unix()/int64(RankingConfigInst.Interval.Seconds()))
 }

@@ -24,7 +24,8 @@ func (s *store) VacuumStaleDefinitionsAndReferences(ctx context.Context, graphKe
 	numStaleReferenceRecordsDeleted int,
 	err error,
 ) {
-	// TODO - observability
+	ctx, _, endObservation := s.operations.vacuumStaleDefinitionsAndReferences.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	defer endObservation(1, observation.Args{})
 
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(vacuumStaleDefinitionsAndReferencesQuery, graphKey, graphKey))
 	if err != nil {
@@ -85,7 +86,8 @@ func (s *store) VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string
 	inputRecordsDeleted int,
 	err error,
 ) {
-	// TODO - observability
+	ctx, _, endObservation := s.operations.vacuumStaleGraphs.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	defer endObservation(1, observation.Args{})
 
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(vacuumStaleGraphsQuery, derivativeGraphKey, derivativeGraphKey))
 	if err != nil {

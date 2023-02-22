@@ -15,7 +15,7 @@ type rankingConfig struct {
 var RankingConfigInst = &rankingConfig{}
 
 func (c *rankingConfig) Load() {
-	c.Interval = c.GetInterval("CODEINTEL_RANKING_RECALCULATION_INTERVAL", "10s", "The maximum age of document reference count values used for ranking before being considered stale.")
+	c.Interval = c.GetInterval("CODEINTEL_RANKING_RECALCULATION_INTERVAL", "1h", "The maximum age of document reference count values used for ranking before being considered stale.")
 }
 
 type backfillConfig struct {
