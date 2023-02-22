@@ -11,6 +11,7 @@ import useResizeObserver from 'use-resize-observer'
 import * as uuid from 'uuid'
 
 import { HistoryOrNavigate } from '@sourcegraph/common'
+import { useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { QueryChangeSource, QueryState } from '@sourcegraph/shared/src/search'
@@ -21,10 +22,11 @@ import { singleLine, placeholder as placeholderExtension } from '../codemirror'
 import { parseInputAsQuery, tokens } from '../codemirror/parsedQuery'
 import { querySyntaxHighlighting } from '../codemirror/syntax-highlighting'
 import { tokenInfo } from '../codemirror/token-info'
+import { useUpdateEditorFromQueryState } from '../CodeMirrorQueryInput'
 
 import { filterHighlight } from './codemirror/syntax-highlighting'
 import { modeScope, useInputMode } from './modes'
-import { editorConfigFacet, Source, suggestions } from './suggestionsExtension'
+import { editorConfigFacet, Source, suggestions, startCompletion } from './suggestionsExtension'
 
 import styles from './CodeMirrorQueryInputWrapper.module.scss'
 
@@ -157,94 +159,70 @@ function configureQueryExtensions({
     return parseInputAsQuery({ patternType, interpretComments })
 }
 
-function createEditor(
-    parent: HTMLDivElement,
-    popoverID: string,
-    queryState: QueryState,
-    extensions: Extension,
-    queryExtensions: Extension
-): EditorView {
-    return new EditorView({
-        state: EditorState.create({
-            doc: queryState.query,
-            selection: { anchor: queryState.query.length },
-            extensions: [
-                singleLine,
-                drawSelection(),
-                EditorView.contentAttributes.of({
-                    role: 'combobox',
-                    'aria-controls': popoverID,
-                    'aria-owns': popoverID,
-                    'aria-haspopup': 'grid',
-                }),
-                keymap.of(historyKeymap),
-                keymap.of(defaultKeymap),
-                codemirrorHistory(),
-                Prec.low([querySyntaxHighlighting, modeScope([filterHighlight, tokenInfo()], [null])]),
-                EditorView.baseTheme({
-                    '&': {
-                        flex: 1,
-                        backgroundColor: 'var(--input-bg)',
-                        borderRadius: 'var(--border-radius)',
-                        borderColor: 'var(--border-color)',
-                        // To ensure that the input doesn't overflow the parent
-                        minWidth: 0,
-                        marginRight: '0.5rem',
-                    },
-                    '&.cm-editor.cm-focused': {
-                        outline: 'none',
-                    },
-                    '.cm-scroller': {
-                        overflowX: 'hidden',
-                    },
-                    '.cm-content': {
-                        caretColor: 'var(--search-query-text-color)',
-                        color: 'var(--search-query-text-color)',
-                        fontFamily: 'var(--code-font-family)',
-                        fontSize: 'var(--code-font-size)',
-                        padding: 0,
-                        paddingLeft: '0.25rem',
-                    },
-                    '.cm-content.focus-visible': {
-                        boxShadow: 'none',
-                    },
-                    '.cm-line': {
-                        padding: 0,
-                    },
-                    '.sg-token-hover': {
-                        backgroundColor: 'var(--gray-02)',
-                        borderRadius: '3px',
-                    },
-                    '&dark .sg-token-hover': {
-                        backgroundColor: 'var(--gray-08)',
-                    },
-                }),
-                querySettingsCompartment.of(queryExtensions),
-                extensionsCompartment.of(extensions),
-            ],
+function createInitialExtensions(popoverID: string): Extension {
+    return [
+        singleLine,
+        drawSelection(),
+        EditorView.contentAttributes.of({
+            role: 'combobox',
+            'aria-controls': popoverID,
+            'aria-owns': popoverID,
+            'aria-haspopup': 'grid',
         }),
-        parent,
-    })
+        keymap.of(historyKeymap),
+        keymap.of(defaultKeymap),
+        codemirrorHistory(),
+        Prec.low([querySyntaxHighlighting, modeScope([filterHighlight, tokenInfo()], [null])]),
+        EditorView.baseTheme({
+            '&': {
+                flex: 1,
+                backgroundColor: 'var(--input-bg)',
+                borderRadius: 'var(--border-radius)',
+                borderColor: 'var(--border-color)',
+                // To ensure that the input doesn't overflow the parent
+                minWidth: 0,
+                marginRight: '0.5rem',
+            },
+            '&.cm-editor.cm-focused': {
+                outline: 'none',
+            },
+            '.cm-scroller': {
+                overflowX: 'hidden',
+            },
+            '.cm-content': {
+                caretColor: 'var(--search-query-text-color)',
+                color: 'var(--search-query-text-color)',
+                fontFamily: 'var(--code-font-family)',
+                fontSize: 'var(--code-font-size)',
+                padding: 0,
+                paddingLeft: '0.25rem',
+            },
+            '.cm-content.focus-visible': {
+                boxShadow: 'none',
+            },
+            '.cm-line': {
+                padding: 0,
+            },
+            '.sg-token-hover': {
+                backgroundColor: 'var(--gray-02)',
+                borderRadius: '3px',
+            },
+            '&dark .sg-token-hover': {
+                backgroundColor: 'var(--gray-08)',
+            },
+        }),
+    ]
 }
 
-function updateExtensions(editor: EditorView | null, extensions: Extension): void {
+function updateExtensions(editor: EditorView | undefined, extensions: Extension): void {
     if (editor) {
         editor.dispatch({ effects: extensionsCompartment.reconfigure(extensions) })
     }
 }
 
-function updateQueryExtensions(editor: EditorView | null, extensions: Extension): void {
+function updateQueryExtensions(editor: EditorView | undefined, extensions: Extension): void {
     if (editor) {
         editor.dispatch({ effects: querySettingsCompartment.reconfigure(extensions) })
-    }
-}
-
-function updateValueIfNecessary(editor: EditorView | null, queryState: QueryState): void {
-    if (editor && queryState.changeSource !== QueryChangeSource.userInput) {
-        editor.dispatch({
-            changes: { from: 0, to: editor.state.doc.length, insert: queryState.query },
-            selection: { anchor: queryState.query.length },
-        })
     }
 }
 
@@ -292,8 +270,8 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
     const hasSubmitHandler = !!onSubmit
 
     // Update extensions whenever any of these props change
-    const extensions = useMemo(
-        () => [
+    const dynamicExtensions = useMemo(
+        () =>
             configureExtensions({
                 popoverID,
                 isLightTheme,
@@ -304,9 +282,6 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
                 suggestionSource,
                 historyOrNavigate: navigate,
             }),
-            externalExtensions,
-            modeNotifierExtension,
-        ],
         [
             popoverID,
             isLightTheme,
@@ -317,9 +292,12 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
             suggestionsContainer,
             suggestionSource,
             navigate,
-            externalExtensions,
-            modeNotifierExtension,
         ]
+    )
+
+    const extensions = useMemo(
+        () => [dynamicExtensions, externalExtensions, modeNotifierExtension],
+        [dynamicExtensions, externalExtensions, modeNotifierExtension]
     )
 
     // Update query extensions whenever any of these props change
@@ -328,25 +306,29 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
         [patternType, interpretComments]
     )
 
-    const editor = useMemo(
-        () => (container ? createEditor(container, popoverID, queryState, extensions, queryExtensions) : null),
-        // Should only run once when the component is created, not when
-        // extensions for state update (this is handled in separate hooks)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [container]
+    const editor = useCodeMirror(
+        container,
+        queryState.query,
+        // Those extensions are static. The compartments are initialized with empty
+        // extensions because they are updated below via `useEffect`
+        useMemo(
+            () => [createInitialExtensions(popoverID), extensionsCompartment.of([]), querySettingsCompartment.of([])],
+            [popoverID]
+        )
     )
     const editorRef = useRef(editor)
     useEffect(() => {
         editorRef.current = editor
     }, [editor])
+    // Clean up editor on unmount
     useEffect(() => () => editor?.destroy(), [editor])
 
-    // Update editor content whenever query state changes
-    useEffect(() => updateValueIfNecessary(editorRef.current, queryState), [queryState])
+    // Update editor sate whenever query state changes
+    useUpdateEditorFromQueryState(editor, queryState, startCompletion)
 
     // Update editor configuration whenever extensions change
-    useEffect(() => updateExtensions(editorRef.current, extensions), [extensions])
-    useEffect(() => updateQueryExtensions(editorRef.current, queryExtensions), [queryExtensions])
+    useEffect(() => updateExtensions(editor, extensions), [editor, extensions])
+    useEffect(() => updateQueryExtensions(editor, queryExtensions), [editor, queryExtensions])
 
     const focus = useCallback(() => {
         editorRef.current?.contentDOM.focus()

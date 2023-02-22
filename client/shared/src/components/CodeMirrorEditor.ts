@@ -1,5 +1,5 @@
 /* eslint-disable jsdoc/check-indentation */
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import {
@@ -51,6 +51,7 @@ export function useCodeMirror(
     }
 ): EditorView | undefined {
     const [view, setView] = useState<EditorView>()
+    const viewRef = useRef(view)
 
     useEffect(() => {
         if (!container) {
@@ -62,8 +63,10 @@ export function useCodeMirror(
             parent: container,
         })
         setView(view)
+        viewRef.current = view
         return () => {
             setView(undefined)
+            viewRef.current = undefined
             view.destroy()
         }
         // Extensions and value are updated via transactions below
@@ -73,26 +76,20 @@ export function useCodeMirror(
     // Update editor value if necessary. This also sets the intial value of the
     // editor.
     useEffect(() => {
-        if (view && options?.updateValueOnChange !== false) {
-            const changes = replaceValue(view, value ?? '')
+        if (viewRef.current && options?.updateValueOnChange !== false) {
+            const changes = replaceValue(viewRef.current, value ?? '')
 
             if (changes) {
-                view.dispatch({ changes })
+                viewRef.current.dispatch({ changes })
             }
         }
-        // View is not provided because this should only be triggered after the view
-        // was created.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [value, options?.updateValueOnChange])
+    }, [viewRef, value, options?.updateValueOnChange])
 
     useEffect(() => {
-        if (view && extensions && options?.updateOnExtensionChange !== false) {
-            view.dispatch({ effects: StateEffect.reconfigure.of(extensions) })
+        if (viewRef.current && extensions && options?.updateOnExtensionChange !== false) {
+            viewRef.current.dispatch({ effects: StateEffect.reconfigure.of(extensions) })
         }
-        // View is not provided because this should only be triggered after the view
-        // was created.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [extensions, options?.updateOnExtensionChange])
+    }, [viewRef, extensions, options?.updateOnExtensionChange])
 
     return view
 }

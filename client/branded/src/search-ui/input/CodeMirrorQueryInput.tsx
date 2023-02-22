@@ -21,7 +21,12 @@ import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { useCodeMirror, createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import { EditorHint, QueryChangeSource, SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
+import {
+    EditorHint,
+    QueryChangeSource,
+    type QueryState,
+    type SearchPatternTypeProps,
+} from '@sourcegraph/shared/src/search'
 import { Diagnostic, getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
 import { resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/query/token'
@@ -253,37 +258,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<CodeMirrorQueryInpu
         }
     }, [editor, autoFocus])
 
-    // Update the editor's selection and cursor depending on how the search
-    // query was changed.
-    useEffect(() => {
-        if (!editor) {
-            return
-        }
-
-        if (queryState.changeSource === QueryChangeSource.userInput) {
-            // Don't react to user input
-            return
-        }
-
-        editor.dispatch({
-            selection: queryState.selectionRange
-                ? // Select the specified range (most of the time this will be a
-                  // placeholder filter value).
-                  EditorSelection.range(queryState.selectionRange.start, queryState.selectionRange.end)
-                : // Place the cursor at the end of the query.
-                  EditorSelection.cursor(editor.state.doc.length),
-            scrollIntoView: true,
-        })
-
-        if (queryState.hint) {
-            if ((queryState.hint & EditorHint.Focus) === EditorHint.Focus) {
-                editor.focus()
-            }
-            if ((queryState.hint & EditorHint.ShowSuggestions) === EditorHint.ShowSuggestions) {
-                startCompletion(editor)
-            }
-        }
-    }, [editor, queryState])
+    useUpdateEditorFromQueryState(editor, queryState, startCompletion)
 
     // It looks like <Shortcut ... /> needs a stable onMatch callback, hence we
     // are storing the editor in a ref so that `globalFocus` is stable.
@@ -409,6 +384,52 @@ export const CodeMirrorQueryInput: React.FunctionComponent<CodeMirrorQueryInputP
         )
     }
 )
+
+/**
+ * Update the editor's selection and cursor depending on how the search
+ * query was changed.
+ */
+export function useUpdateEditorFromQueryState(
+    editor: EditorView | undefined,
+    queryState: QueryState,
+    startCompletion: (view: EditorView) => void
+): void {
+    const startCompletionRef = useRef(startCompletion)
+
+    useEffect(() => {
+        startCompletionRef.current = startCompletion
+    }, [startCompletion])
+
+    useEffect(() => {
+        if (!editor) {
+            return
+        }
+
+        if (queryState.changeSource === QueryChangeSource.userInput) {
+            // Don't react to user input
+            return
+        }
+
+        editor.dispatch({
+            selection: queryState.selectionRange
+                ? // Select the specified range (most of the time this will be a
+                  // placeholder filter value).
+                  EditorSelection.range(queryState.selectionRange.start, queryState.selectionRange.end)
+                : // Place the cursor at the end of the query.
+                  EditorSelection.cursor(editor.state.doc.length),
+            scrollIntoView: true,
+        })
+
+        if (queryState.hint) {
+            if ((queryState.hint & EditorHint.Focus) === EditorHint.Focus) {
+                editor.focus()
+            }
+            if ((queryState.hint & EditorHint.ShowSuggestions) === EditorHint.ShowSuggestions) {
+                startCompletionRef.current(editor)
+            }
+        }
+    }, [editor, queryState])
+}
 
 // The remainder of the file defines all the extensions that provide the query
 // editor behavior. Here is also a brief overview over CodeMirror's architecture
