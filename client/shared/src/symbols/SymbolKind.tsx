@@ -9,8 +9,10 @@ export const SymbolKind: React.FC<{
     kind: SymbolKindEnum
     className?: string
     symbolKindTags?: boolean
-}> = ({ symbolKindTags, ...props }) => {
+    // A tabIndex overwrite is used only for the symbol tree, where the Tree
+    // component is expected to take over all of the keyboard navigation.
+    tabIndex?: number
+}> = ({ symbolKindTags, tabIndex, className, kind }) => {
     const Component = symbolKindTags ? SymbolTag : SymbolIcon
-
-    return <Component {...props} />
+    return <Component kind={kind} className={className} tabIndex={tabIndex} />
 }
