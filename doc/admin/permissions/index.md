@@ -76,6 +76,5 @@ By default, site-admins bypass all of the permissions checks. Which means, all s
 The default can be changed by setting the site config option `authz.enforceForSiteAdmins` to `true`.
 
 > NOTE: However, we recommend to be cautious with this option, as it might make some operations for site admins more complicated or impossible. 
-
 E.g. trying to figure out if a specific repository is syncing source code to Sourcegraph correctly 
 might become an impossible task if the site admin cannot access that repository.
