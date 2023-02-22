@@ -102,14 +102,19 @@ func (s *ownService) ResolveOwnersWithType(ctx context.Context, protoOwners []*c
 			resolved = append(resolved, cached)
 			continue
 		}
-
+		if po.Handle == "" && po.Email == "" {
+			// This is a safeguard in case somehow neither email nor handle are set.
+			continue
+		}
 		resolvedOwner, err := s.resolveOwner(ctx, po.Handle, po.Email)
 		if err != nil {
 			return nil, err
 		}
 		if resolvedOwner == nil {
-			// This is a safeguard in case somehow neither email nor handle are set.
-			continue
+			resolvedOwner = &codeowners.UnknownOwner{
+				Handle: po.Handle,
+				Email:  po.Email,
+			}
 		}
 		resolved = append(resolved, resolvedOwner)
 		s.mu.Lock()

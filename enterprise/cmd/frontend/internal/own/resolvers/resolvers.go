@@ -51,15 +51,19 @@ func (r *ownResolver) GitBlobOwnership(ctx context.Context, blob *graphqlbackend
 	}
 	return &ownershipConnectionResolver{r.db, resolvedOwners}, nil
 }
+
 func (r *ownResolver) PersonOwnerField(person *graphqlbackend.PersonResolver) string {
 	return "owner"
 }
+
 func (r *ownResolver) UserOwnerField(user *graphqlbackend.UserResolver) string {
 	return "owner"
 }
+
 func (r *ownResolver) TeamOwnerField(team *graphqlbackend.TeamResolver) string {
 	return "owner"
 }
+
 func (r *ownResolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 	return map[string]graphqlbackend.NodeByIDFunc{}
 }
@@ -74,9 +78,11 @@ type ownershipConnectionResolver struct {
 func (r *ownershipConnectionResolver) TotalCount(_ context.Context) (int32, error) {
 	return int32(len(r.resolvedOwners)), nil
 }
+
 func (r *ownershipConnectionResolver) PageInfo(_ context.Context) (*graphqlutil.PageInfo, error) {
 	return graphqlutil.HasNextPage(false), nil
 }
+
 func (r *ownershipConnectionResolver) Nodes(_ context.Context) ([]graphqlbackend.OwnershipResolver, error) {
 	var resolvers []graphqlbackend.OwnershipResolver
 	for _, resolvedOwner := range r.resolvedOwners {
@@ -102,6 +108,7 @@ func (r *ownershipResolver) Owner(ctx context.Context) (graphqlbackend.OwnerReso
 		resolvedOwner: r.resolvedOwner,
 	}, nil
 }
+
 func (r *ownershipResolver) Reasons(_ context.Context) ([]graphqlbackend.OwnershipReasonResolver, error) {
 	return []graphqlbackend.OwnershipReasonResolver{&codeownersFileEntryResolver{}}, nil
 }
@@ -124,8 +131,40 @@ func (r *ownerResolver) ToPerson() (*graphqlbackend.PersonResolver, bool) {
 	includeUserInfo := true
 	return graphqlbackend.NewPersonResolver(r.db, person.Handle, person.Email, includeUserInfo), true
 }
+
 func (r *ownerResolver) ToTeam() (*graphqlbackend.TeamResolver, bool) {
 	return nil, false
+}
+
+func (r *ownerResolver) ToUnknownOwner() (graphqlbackend.UnknownOwnerResolver, bool) {
+	if r.resolvedOwner.Type() != codeowners.OwnerTypeUnknown {
+		return nil, false
+	}
+	owner, ok := r.resolvedOwner.(*codeowners.UnknownOwner)
+	if !ok {
+		return nil, false
+	}
+	return &unknownOwnerResolver{owner: owner}, false
+}
+
+type unknownOwnerResolver struct {
+	owner *codeowners.UnknownOwner
+}
+
+func (r *unknownOwnerResolver) Handle() *string {
+	h := r.owner.Handle
+	if h == "" {
+		return nil
+	}
+	return &h
+}
+
+func (r *unknownOwnerResolver) Email() *string {
+	e := r.owner.Email
+	if e == "" {
+		return nil
+	}
+	return &e
 }
 
 type codeownersFileEntryResolver struct{}
@@ -133,13 +172,17 @@ type codeownersFileEntryResolver struct{}
 func (r *codeownersFileEntryResolver) ToCodeownersFileEntry() (graphqlbackend.CodeownersFileEntryResolver, bool) {
 	return r, true
 }
+
 func (r *codeownersFileEntryResolver) Title(_ context.Context) (string, error) {
 	return "CodeOwners", nil
 }
+
 func (r *codeownersFileEntryResolver) Description(_ context.Context) (string, error) {
 	return "Dummy code owners file entry.", nil
 }
+
 func (r *codeownersFileEntryResolver) CodeownersFile(_ context.Context) (graphqlbackend.FileResolver, error) {
 	return nil, nil
 }
+
 func (r *codeownersFileEntryResolver) RuleLineMatch(_ context.Context) (int32, error) { return 42, nil }

@@ -62,7 +62,16 @@ type OwnershipConnection {
 """
 An owner is any entity that can own other resources.
 """
-union Owner = Person | Team
+union Owner = Person | Team | UnknownOwner
+
+"""
+An owner type that cannot be correlated with either person or a team,
+but yet is recognised as an owner. Specifies either handle or email.
+"""
+type UnknownOwner {
+    handle: String
+    email: String
+}
 
 """
 Ownership is the collection of data points that make Sourcegraph suggest the contained

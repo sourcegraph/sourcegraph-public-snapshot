@@ -42,6 +42,12 @@ type OwnerResolver interface {
 
 	ToPerson() (*PersonResolver, bool)
 	ToTeam() (*TeamResolver, bool)
+	ToUnknownOwner() (UnknownOwnerResolver, bool)
+}
+
+type UnknownOwnerResolver interface {
+	Handle() *string
+	Email() *string
 }
 
 type OwnershipReasonResolver interface {

@@ -18,8 +18,9 @@ var (
 type OwnerType string
 
 const (
-	OwnerTypePerson OwnerType = "person"
-	OwnerTypeTeam   OwnerType = "team"
+	OwnerTypePerson  OwnerType = "person"
+	OwnerTypeTeam    OwnerType = "team"
+	OwnerTypeUnknown OwnerType = "unknown"
 )
 
 type Person struct {
@@ -60,6 +61,24 @@ func (t *Team) Identifier() string {
 }
 
 func (t *Team) SetOwnerData(handle, email string) {
+	t.Handle = handle
+	t.Email = email
+}
+
+type UnknownOwner struct {
+	Handle string
+	Email  string
+}
+
+func (t *UnknownOwner) Type() OwnerType {
+	return OwnerTypeUnknown
+}
+
+func (t *UnknownOwner) Identifier() string {
+	return t.Handle + t.Email
+}
+
+func (t *UnknownOwner) SetOwnerData(handle, email string) {
 	t.Handle = handle
 	t.Email = email
 }
