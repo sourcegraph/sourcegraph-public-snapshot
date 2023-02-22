@@ -45,8 +45,8 @@ RUN mkdir /sg_config_grafana/provisioning/plugins && chown grafana:root /sg_conf
 RUN apk add --upgrade --no-cache \
     'apk-tools>=2.12' \
     'krb5-libs>=1.18.4' \
-    'libssl1.1>=1.1.1l' \
-    'openssl>=1.1.1l' \
+    'libssl1.1>=1.1.1s-r0' \
+    'openssl>=1.1.1s-r0' \
     'busybox>=1.32.1' \
     'ncurses-libs>=6.2_p20210109-r1' \
     'ncurses-terminfo-base>=6.2_p20210109-r1' \
