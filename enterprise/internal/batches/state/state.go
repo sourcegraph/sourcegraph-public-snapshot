@@ -641,11 +641,7 @@ func computeSingleChangesetReviewState(c *btypes.Changeset) (s btypes.ChangesetR
 			case 10:
 				states[btypes.ChangesetReviewStateApproved] = true
 			case 5, -5:
-				states[btypes.ChangesetReviewStateCommented] = true
-			case 0:
-				states[btypes.ChangesetReviewStatePending] = true
-			case -10:
-				states[btypes.ChangesetReviewStateDismissed] = true
+				states[btypes.ChangesetReviewStateChangesRequested] = true
 			default:
 				states[btypes.ChangesetReviewStatePending] = true
 			}
