@@ -629,9 +629,6 @@ export const SITE_UPGRADE_READINESS = gql`
                 requiredOutOfBandMigrations {
                     id
                     description
-                    progress
-                    deprecated
-                    component
                 }
             }
         }
