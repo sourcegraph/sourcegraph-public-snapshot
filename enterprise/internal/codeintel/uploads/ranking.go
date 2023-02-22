@@ -195,6 +195,25 @@ func (s *Service) MapRankingGraph(ctx context.Context, numRankingRoutines int, r
 	return nil
 }
 
+func (s *Service) ReduceRankingGraph(
+	ctx context.Context,
+	numRankingRoutines int,
+) (numPathRanksInserted float64, numPathCountInputsProcessed float64, err error) {
+	ctx, _, endObservation := s.operations.reduceRankingGraph.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	numPathRanksInserted, numPathCountInputsProcessed, err = s.store.InsertPathRanks(
+		ctx,
+		rankingGraphKey,
+		rankingMapReduceBatchSize,
+	)
+	if err != nil {
+		return numPathCountInputsProcessed, numPathCountInputsProcessed, err
+	}
+
+	return numPathRanksInserted, numPathCountInputsProcessed, nil
+}
+
 const maxBytesPerObject = 1024 * 1024 * 1024 // 1GB
 
 func (s *Service) serializeAndPersistRankingGraphForUpload(
