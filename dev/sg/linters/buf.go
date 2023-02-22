@@ -128,6 +128,10 @@ var bufLint = &linter{
 			return errors.Wrapf(err, "finding buf module files")
 		}
 
+		if len(bufModules) == 0 {
+			return errors.New("no buf modules found")
+		}
+
 		for _, file := range bufModules {
 			file, err := filepath.Rel(rootDir, file)
 			if err != nil {
