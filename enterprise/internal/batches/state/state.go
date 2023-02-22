@@ -636,6 +636,7 @@ func computeSingleChangesetReviewState(c *btypes.Changeset) (s btypes.ChangesetR
 			}
 		}
 	case *azuredevops.AnnotatedPullRequest:
+		m.Reviewers
 		// TODO: @varsanojidan implement this.
 
 	default:

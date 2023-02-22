@@ -314,12 +314,29 @@ func TestAzureDevOpsSource_CloseChangeset(t *testing.T) {
 func TestAzureDevOpsSource_UpdateChangeset(t *testing.T) {
 	ctx := context.Background()
 
+	t.Run("error getting pull request", func(t *testing.T) {
+		cs, _ := mockAzureDevOpsChangeset()
+		s, client := mockAzureDevOpsSource()
+		want := errors.New("error")
+		client.GetPullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
+			assert.Equal(t, testCommonPullRequestArgs, r)
+			return azuredevops.PullRequest{}, want
+		})
+
+		err := s.UpdateChangeset(ctx, cs)
+		assert.NotNil(t, err)
+		assert.ErrorIs(t, err, want)
+	})
+
 	t.Run("error updating pull request", func(t *testing.T) {
 		cs, _ := mockAzureDevOpsChangeset()
 		s, client := mockAzureDevOpsSource()
-
-		pr := mockAzureDevOpsPullRequest(&testRepository)
 		want := errors.New("error")
+		pr := mockAzureDevOpsPullRequest(&testRepository)
+		client.GetPullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
+			assert.Equal(t, testCommonPullRequestArgs, r)
+			return *pr, nil
+		})
 		client.UpdatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs, pri azuredevops.PullRequestUpdateInput) (azuredevops.PullRequest, error) {
 			assert.Equal(t, testCommonPullRequestArgs, r)
 			assert.Equal(t, cs.Title, *pri.Title)
@@ -338,6 +355,10 @@ func TestAzureDevOpsSource_UpdateChangeset(t *testing.T) {
 		want := mockAzureDevOpsAnnotatePullRequestError(client)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
+		client.GetPullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
+			assert.Equal(t, testCommonPullRequestArgs, r)
+			return *pr, nil
+		})
 		client.UpdatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs, pri azuredevops.PullRequestUpdateInput) (azuredevops.PullRequest, error) {
 			assert.Equal(t, testCommonPullRequestArgs, r)
 			assert.Equal(t, cs.Title, *pri.Title)
@@ -356,6 +377,10 @@ func TestAzureDevOpsSource_UpdateChangeset(t *testing.T) {
 		mockAzureDevOpsAnnotatePullRequestSuccess(client)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
+		client.GetPullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
+			assert.Equal(t, testCommonPullRequestArgs, r)
+			return *pr, nil
+		})
 		client.UpdatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs, pri azuredevops.PullRequestUpdateInput) (azuredevops.PullRequest, error) {
 			assert.Equal(t, testCommonPullRequestArgs, r)
 			assert.Equal(t, cs.Title, *pri.Title)
@@ -770,6 +795,7 @@ func mockAzureDevOpsChangeset() (*Changeset, *types.Repo) {
 		},
 		RemoteRepo: repo,
 		TargetRepo: repo,
+		BaseRef:    "refs/heads/targetbranch",
 	}
 
 	return cs, repo

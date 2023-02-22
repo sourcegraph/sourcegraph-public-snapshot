@@ -2,6 +2,7 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -208,6 +209,7 @@ func (s AzureDevOpsSource) UpdateChangeset(ctx context.Context, cs *Changeset) e
 	}
 	if pr.TargetRefName != cs.BaseRef {
 		input := s.changesetToUpdatePullRequestInput(cs, true)
+		fmt.Printf("%+v\n", *input.TargetRefName)
 		_, err := s.client.UpdatePullRequest(ctx, args, input)
 		if err != nil {
 			return errors.Wrap(err, "updating pull request")
