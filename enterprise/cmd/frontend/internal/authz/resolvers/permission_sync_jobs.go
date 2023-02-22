@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 	"strconv"
-	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -11,22 +10,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
-var _ graphqlbackend.PermissionSyncJobsResolver = &permissionSyncJobsResolver{}
-
-type permissionSyncJobsResolver struct {
-	db database.DB
-}
-
-func NewPermissionSyncJobsResolver(db database.DB) graphqlbackend.PermissionSyncJobsResolver {
-	return &permissionSyncJobsResolver{db: db}
-}
-
-func (r *permissionSyncJobsResolver) PermissionSyncJobs(_ context.Context, args graphqlbackend.ListPermissionSyncJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.PermissionSyncJobResolver], error) {
+func NewPermissionSyncJobsResolver(db database.DB, args graphqlbackend.ListPermissionSyncJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.PermissionSyncJobResolver], error) {
 	store := &permissionSyncJobConnectionStore{
-		db:   r.db,
+		db:   db,
 		args: args,
 	}
 	return graphqlutil.NewConnectionResolver[graphqlbackend.PermissionSyncJobResolver](store, &args.ConnectionResolverArgs, nil)
@@ -54,12 +44,41 @@ func (s *permissionSyncJobConnectionStore) ComputeNodes(ctx context.Context, arg
 
 	resolvers := make([]graphqlbackend.PermissionSyncJobResolver, 0, len(jobs))
 	for _, job := range jobs {
+		syncSubject, err := s.resolveSubject(ctx, job)
+		if err != nil {
+			return nil, err
+		}
 		resolvers = append(resolvers, &permissionSyncJobResolver{
-			db:  s.db,
-			job: job,
+			db:          s.db,
+			job:         job,
+			syncSubject: syncSubject,
 		})
 	}
 	return resolvers, nil
+}
+
+func (s *permissionSyncJobConnectionStore) resolveSubject(ctx context.Context, job *database.PermissionSyncJob) (graphqlbackend.PermissionSyncJobSubject, error) {
+	var repoResolver *graphqlbackend.RepositoryResolver
+	var userResolver *graphqlbackend.UserResolver
+
+	if job.UserID > 0 {
+		user, err := s.db.Users().GetByID(ctx, int32(job.UserID))
+		if err != nil {
+			return nil, err
+		}
+		userResolver = graphqlbackend.NewUserResolver(s.db, user)
+	} else {
+		repo, err := s.db.Repos().Get(ctx, api.RepoID(job.RepositoryID))
+		if err != nil {
+			return nil, err
+		}
+		repoResolver = graphqlbackend.NewRepositoryResolver(s.db, gitserver.NewClient(), repo)
+	}
+
+	return &subject{
+		repo: repoResolver,
+		user: userResolver,
+	}, nil
 }
 
 func (s *permissionSyncJobConnectionStore) MarshalCursor(node graphqlbackend.PermissionSyncJobResolver, _ database.OrderBy) (*string, error) {
@@ -76,8 +95,9 @@ func (s *permissionSyncJobConnectionStore) UnmarshalCursor(cursor string, _ data
 }
 
 type permissionSyncJobResolver struct {
-	db  database.DB
-	job *database.PermissionSyncJob
+	db          database.DB
+	job         *database.PermissionSyncJob
+	syncSubject graphqlbackend.PermissionSyncJobSubject
 }
 
 func (p *permissionSyncJobResolver) ID() graphql.ID {
@@ -92,48 +112,58 @@ func (p *permissionSyncJobResolver) FailureMessage() *string {
 	return p.job.FailureMessage
 }
 
-func (p *permissionSyncJobResolver) Reason() database.PermissionSyncJobReason {
-	return p.job.Reason
+func (p *permissionSyncJobResolver) Reason() graphqlbackend.PermissionSyncJobReasonResolver {
+	reason := p.job.Reason
+	return permissionSyncJobReasonResolver{group: reason.ResolveGroup(), message: string(reason)}
 }
 
 func (p *permissionSyncJobResolver) CancellationReason() *string {
 	return p.job.CancellationReason
 }
 
-func (p *permissionSyncJobResolver) TriggeredByUserID() int32 {
-	return p.job.TriggeredByUserID
+func (p *permissionSyncJobResolver) TriggeredByUser(ctx context.Context) (*graphqlbackend.UserResolver, error) {
+	userID := p.job.TriggeredByUserID
+	if userID == 0 {
+		return nil, nil
+	}
+	return graphqlbackend.UserByIDInt32(ctx, p.db, userID)
 }
 
-func (p *permissionSyncJobResolver) QueuedAt() time.Time {
-	return p.job.QueuedAt
+func (p *permissionSyncJobResolver) QueuedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: p.job.QueuedAt}
 }
 
-func (p *permissionSyncJobResolver) StartedAt() time.Time {
-	return p.job.StartedAt
+func (p *permissionSyncJobResolver) StartedAt() *gqlutil.DateTime {
+	return gqlutil.FromTime(p.job.StartedAt)
 }
 
-func (p *permissionSyncJobResolver) FinishedAt() time.Time {
-	return p.job.FinishedAt
+func (p *permissionSyncJobResolver) FinishedAt() *gqlutil.DateTime {
+	return gqlutil.FromTime(p.job.FinishedAt)
 }
 
-func (p *permissionSyncJobResolver) ProcessAfter() time.Time {
-	return p.job.ProcessAfter
+func (p *permissionSyncJobResolver) ProcessAfter() *gqlutil.DateTime {
+	return gqlutil.FromTime(p.job.ProcessAfter)
 }
 
-func (p *permissionSyncJobResolver) NumResets() int {
-	return p.job.NumResets
+func (p *permissionSyncJobResolver) RanForMs() *int32 {
+	var ranFor int32
+	if !p.job.FinishedAt.IsZero() {
+		// Job runtime in ms shouldn't take more than a 32-bit int value.
+		ranFor = int32(p.job.FinishedAt.Sub(p.job.StartedAt).Milliseconds())
+	}
+	return &ranFor
 }
 
-func (p *permissionSyncJobResolver) NumFailures() int {
-	return p.job.NumFailures
+func (p *permissionSyncJobResolver) NumResets() *int32 {
+	return intToInt32Ptr(p.job.NumResets)
 }
 
-func (p *permissionSyncJobResolver) LastHeartbeatAt() time.Time {
-	return p.job.LastHeartbeatAt
+func (p *permissionSyncJobResolver) NumFailures() *int32 {
+	return intToInt32Ptr(p.job.NumFailures)
 }
 
-func (p *permissionSyncJobResolver) ExecutionLogs() []executor.ExecutionLogEntry {
-	return p.job.ExecutionLogs
+func (p *permissionSyncJobResolver) LastHeartbeatAt() *gqlutil.DateTime {
+	return gqlutil.FromTime(p.job.LastHeartbeatAt)
 }
 
 func (p *permissionSyncJobResolver) WorkerHostname() string {
@@ -144,16 +174,12 @@ func (p *permissionSyncJobResolver) Cancel() bool {
 	return p.job.Cancel
 }
 
-func (p *permissionSyncJobResolver) RepositoryID() graphql.ID {
-	return graphqlbackend.MarshalRepositoryID(api.RepoID(p.job.RepositoryID))
+func (p *permissionSyncJobResolver) Subject() graphqlbackend.PermissionSyncJobSubject {
+	return p.syncSubject
 }
 
-func (p *permissionSyncJobResolver) UserID() graphql.ID {
-	return graphqlbackend.MarshalUserID(int32(p.job.UserID))
-}
-
-func (p *permissionSyncJobResolver) Priority() database.PermissionSyncJobPriority {
-	return p.job.Priority
+func (p *permissionSyncJobResolver) Priority() string {
+	return p.job.Priority.ToString()
 }
 
 func (p *permissionSyncJobResolver) NoPerms() bool {
@@ -164,16 +190,69 @@ func (p *permissionSyncJobResolver) InvalidateCaches() bool {
 	return p.job.InvalidateCaches
 }
 
-func (p *permissionSyncJobResolver) PermissionsAdded() int {
-	return p.job.PermissionsAdded
+func (p *permissionSyncJobResolver) PermissionsAdded() int32 {
+	return int32(p.job.PermissionsAdded)
 }
 
-func (p *permissionSyncJobResolver) PermissionsRemoved() int {
-	return p.job.PermissionsRemoved
+func (p *permissionSyncJobResolver) PermissionsRemoved() int32 {
+	return int32(p.job.PermissionsRemoved)
 }
 
-func (p *permissionSyncJobResolver) PermissionsFound() int {
-	return p.job.PermissionsFound
+func (p *permissionSyncJobResolver) PermissionsFound() int32 {
+	return int32(p.job.PermissionsFound)
+}
+
+func (p *permissionSyncJobResolver) CodeHostStates() []graphqlbackend.CodeHostStateResolver {
+	resolvers := make([]graphqlbackend.CodeHostStateResolver, 0, len(p.job.CodeHostStates))
+	for _, state := range p.job.CodeHostStates {
+		resolvers = append(resolvers, codeHostStateResolver{state: state})
+	}
+	return resolvers
+}
+
+type codeHostStateResolver struct {
+	state database.PermissionSyncCodeHostState
+}
+
+func (c codeHostStateResolver) ProviderID() string {
+	return c.state.ProviderID
+}
+
+func (c codeHostStateResolver) ProviderType() string {
+	return c.state.ProviderType
+}
+
+func (c codeHostStateResolver) Status() string {
+	return c.state.Status
+}
+
+func (c codeHostStateResolver) Message() string {
+	return c.state.Message
+}
+
+type permissionSyncJobReasonResolver struct {
+	group   database.PermissionSyncJobReasonGroup
+	message string
+}
+
+func (p permissionSyncJobReasonResolver) Group() string {
+	return string(p.group)
+}
+func (p permissionSyncJobReasonResolver) Message() string {
+	return p.message
+}
+
+type subject struct {
+	repo *graphqlbackend.RepositoryResolver
+	user *graphqlbackend.UserResolver
+}
+
+func (s subject) ToRepository() (*graphqlbackend.RepositoryResolver, bool) {
+	return s.repo, s.repo != nil
+}
+
+func (s subject) ToUser() (*graphqlbackend.UserResolver, bool) {
+	return s.user, s.user != nil
 }
 
 func marshalPermissionSyncJobID(id int) graphql.ID {
@@ -183,4 +262,9 @@ func marshalPermissionSyncJobID(id int) graphql.ID {
 func unmarshalPermissionSyncJobID(id graphql.ID) (jobID int, err error) {
 	err = relay.UnmarshalSpec(id, &jobID)
 	return
+}
+
+func intToInt32Ptr(value int) *int32 {
+	int32Value := int32(value)
+	return &int32Value
 }

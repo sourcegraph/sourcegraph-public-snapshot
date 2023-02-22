@@ -1,20 +1,12 @@
 import { Navigate } from 'react-router-dom'
 
-import { isErrorLike } from '@sourcegraph/common'
-import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import { LayoutRouteProps, routes } from '../routes'
-import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
-import { useExperimentalFeatures } from '../stores'
+import { EnterprisePageRoutes } from '../routes.constants'
 
-const NotebookPage = lazyComponent(() => import('../notebooks/notebookPage/NotebookPage'), 'NotebookPage')
-const CreateNotebookPage = lazyComponent(
-    () => import('../notebooks/createPage/CreateNotebookPage'),
-    'CreateNotebookPage'
-)
-const NotebooksListPage = lazyComponent(() => import('../notebooks/listPage/NotebooksListPage'), 'NotebooksListPage')
+const GlobalNotebooksArea = lazyComponent(() => import('../notebooks/GlobalNotebooksArea'), 'GlobalNotebooksArea')
 const GlobalBatchChangesArea = lazyComponent(
     () => import('./batches/global/GlobalBatchChangesArea'),
     'GlobalBatchChangesArea'
@@ -39,9 +31,6 @@ const EditSearchContextPage = lazyComponent(
 const SearchContextPage = lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage')
 const GlobalCodyArea = lazyComponent(() => import('./cody/GlobalCodyArea'), 'GlobalCodyArea')
 
-const isSearchContextsManagementEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
-    !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.showSearchContext !== false
-
 export const enterpriseRoutes: readonly LayoutRouteProps[] = [
     {
         path: EnterprisePageRoutes.BatchChanges,
@@ -63,52 +52,26 @@ export const enterpriseRoutes: readonly LayoutRouteProps[] = [
     {
         path: EnterprisePageRoutes.Contexts,
         render: props => <SearchContextsListPage {...props} />,
-        condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
     },
     {
         path: EnterprisePageRoutes.CreateContext,
         render: props => <CreateSearchContextPage {...props} />,
-        condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
     },
     {
         path: EnterprisePageRoutes.EditContext,
         render: props => <EditSearchContextPage {...props} />,
-        condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
     },
     {
         path: EnterprisePageRoutes.Context,
         render: props => <SearchContextPage {...props} />,
-        condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
     },
     {
         path: EnterprisePageRoutes.SearchNotebook,
         render: () => <Navigate to={EnterprisePageRoutes.Notebooks} replace={true} />,
     },
     {
-        path: EnterprisePageRoutes.NotebookCreate,
-        render: props =>
-            useExperimentalFeatures.getState().showSearchNotebook && props.authenticatedUser ? (
-                <CreateNotebookPage {...props} authenticatedUser={props.authenticatedUser} />
-            ) : (
-                <Navigate to={EnterprisePageRoutes.Notebooks} replace={true} />
-            ),
-    },
-    {
-        path: EnterprisePageRoutes.Notebook,
-        render: props => {
-            const { showSearchNotebook } = useExperimentalFeatures.getState()
-
-            return showSearchNotebook ? <NotebookPage {...props} /> : <Navigate to={PageRoutes.Search} replace={true} />
-        },
-    },
-    {
-        path: EnterprisePageRoutes.Notebooks,
-        render: props =>
-            useExperimentalFeatures.getState().showSearchNotebook ? (
-                <NotebooksListPage {...props} />
-            ) : (
-                <Navigate to={PageRoutes.Search} replace={true} />
-            ),
+        path: EnterprisePageRoutes.Notebooks + '/*',
+        render: props => <GlobalNotebooksArea {...props} />,
     },
     {
         path: EnterprisePageRoutes.Cody,

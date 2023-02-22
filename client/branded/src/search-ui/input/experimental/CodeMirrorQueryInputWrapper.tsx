@@ -17,6 +17,7 @@ import { getTokenLength } from '@sourcegraph/shared/src/search/query/utils'
 import { singleLine, placeholder as placeholderExtension } from '../codemirror'
 import { parseInputAsQuery, tokens } from '../codemirror/parsedQuery'
 import { querySyntaxHighlighting } from '../codemirror/syntax-highlighting'
+import { tokenInfo } from '../codemirror/token-info'
 
 import { filterHighlight } from './codemirror/syntax-highlighting'
 import { modeScope } from './modes'
@@ -84,7 +85,6 @@ function configureExtensions({
     historyOrNavigate,
 }: ExtensionConfig): Extension {
     const extensions = [
-        singleLine,
         EditorView.darkTheme.of(isLightTheme === false),
         EditorView.updateListener.of(update => {
             if (update.docChanged) {
@@ -166,6 +166,7 @@ function createEditor(
             doc: queryState.query,
             selection: { anchor: queryState.query.length },
             extensions: [
+                singleLine,
                 drawSelection(),
                 EditorView.lineWrapping,
                 EditorView.contentAttributes.of({
@@ -177,7 +178,7 @@ function createEditor(
                 keymap.of(historyKeymap),
                 keymap.of(defaultKeymap),
                 codemirrorHistory(),
-                Prec.low([querySyntaxHighlighting, modeScope(filterHighlight, [null])]),
+                Prec.low([querySyntaxHighlighting, modeScope([filterHighlight, tokenInfo()], [null])]),
                 EditorView.theme({
                     '&': {
                         flex: 1,
@@ -199,7 +200,19 @@ function createEditor(
                     '.cm-line': {
                         padding: 0,
                     },
+                    '.sg-token-hover': {
+                        backgroundColor: 'var(--gray-02)',
+                        borderRadius: '3px',
+                    },
                 }),
+                EditorView.theme(
+                    {
+                        '.sg-token-hover': {
+                            backgroundColor: 'var(--gray-08)',
+                        },
+                    },
+                    { dark: true }
+                ),
                 querySettingsCompartment.of(queryExtensions),
                 extensionsCompartment.of(extensions),
             ],
