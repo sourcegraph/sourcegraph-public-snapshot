@@ -1,19 +1,17 @@
 import { useEffect } from 'react'
 
-import { Navigate } from 'react-router-dom-v5-compat'
+import { Navigate } from 'react-router-dom'
 
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { BatchChangesProps } from './batches'
 import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
-import type { LayoutProps } from './Layout'
+import type { LegacyLayoutProps } from './LegacyLayout'
 import { PageRoutes } from './routes.constants'
 import { SearchPageWrapper } from './search/SearchPageWrapper'
 import { getExperimentalFeatures } from './stores'
-import { ThemePreferenceProps } from './theme'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
@@ -37,10 +35,8 @@ const UserArea = lazyComponent(() => import('./user/area/UserArea'), 'UserArea')
 const SurveyPage = lazyComponent(() => import('./marketing/page/SurveyPage'), 'SurveyPage')
 const RepoContainer = lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer')
 
-export interface LayoutRouteComponentProps
-    extends Omit<LayoutProps, 'match'>,
-        ThemeProps,
-        ThemePreferenceProps,
+export interface LegacyLayoutRouteComponentProps
+    extends Omit<LegacyLayoutProps, 'match'>,
         BreadcrumbsProps,
         BreadcrumbSetters,
         CodeIntelligenceProps,
@@ -51,14 +47,15 @@ export interface LayoutRouteComponentProps
 
 export interface LayoutRouteProps {
     path: string
-    render: (props: LayoutRouteComponentProps) => React.ReactNode
+    render: (props: LegacyLayoutRouteComponentProps) => React.ReactNode
+    handle?: {}
 
     /**
      * A condition function that needs to return true if the route should be rendered
      *
      * @default () => true
      */
-    condition?: (props: LayoutRouteComponentProps) => boolean
+    condition?: (props: LegacyLayoutRouteComponentProps) => boolean
 }
 
 // Force a hard reload so that we delegate to the serverside HTTP handler for a route.
@@ -173,6 +170,11 @@ export const routes: readonly LayoutRouteProps[] = (
         {
             path: PageRoutes.RepoContainer,
             render: props => <RepoContainer {...props} />,
+            // In RR6, the useMatches hook will only give you the location that is matched
+            // by the path rule and not the path rule instead. Since we need to be able to
+            // detect if we're inside the repo container reliably inside the Layout, we
+            // expose this information in the handle object instead.
+            handle: { isRepoContainer: true },
         },
     ] as readonly (LayoutRouteProps | undefined)[]
 ).filter(Boolean) as readonly LayoutRouteProps[]

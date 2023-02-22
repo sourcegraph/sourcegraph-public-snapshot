@@ -3,20 +3,32 @@ package oobmigration
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const devVersionFlag = "+dev"
+
 type Version struct {
 	Major int
 	Minor int
+	Dev   bool // Indicates whether the version string comes with the dev flag.
 }
 
 func NewVersion(major, minor int) Version {
 	return Version{
 		Major: major,
 		Minor: minor,
+	}
+}
+
+func newDevVersion(major, minor int) Version {
+	return Version{
+		Major: major,
+		Minor: minor,
+		Dev:   true,
 	}
 }
 
@@ -29,11 +41,17 @@ func NewVersionFromString(v string) (Version, bool) {
 	return version, ok
 }
 
-// NewVersionFromString parses the major and minor version from the given string. If
-// the string does not look like a parseable version, a false-valued flag is returned.
-// If the input string also supplies a patch version, it is returned. If a patch is
-// not supplied this value is zero.
+// NewVersionAndPatchFromString parses the major and minor version from the given
+// string. If the string does not look like a parseable version, a false-valued
+// flag is returned. If the input string also supplies a patch version, it is
+// returned. If a patch is not supplied this value is zero.
 func NewVersionAndPatchFromString(v string) (Version, int, bool) {
+	newVersion := NewVersion
+	if strings.HasSuffix(v, devVersionFlag) {
+		v = strings.TrimSuffix(v, devVersionFlag)
+		newVersion = newDevVersion
+	}
+
 	matches := versionPattern.FindStringSubmatch(v)
 	if len(matches) < 3 {
 		return Version{}, 0, false
@@ -43,11 +61,11 @@ func NewVersionAndPatchFromString(v string) (Version, int, bool) {
 	minor, _ := strconv.Atoi(matches[2])
 
 	if len(matches) == 3 {
-		return NewVersion(major, minor), 0, true
+		return newVersion(major, minor), 0, true
 	}
 
 	patch, _ := strconv.Atoi(matches[3])
-	return NewVersion(major, minor), patch, true
+	return newVersion(major, minor), patch, true
 }
 
 func (v Version) String() string {

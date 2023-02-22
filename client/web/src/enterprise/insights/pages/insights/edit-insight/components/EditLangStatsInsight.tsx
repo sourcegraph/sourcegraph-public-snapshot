@@ -1,11 +1,8 @@
 import { FC, useMemo } from 'react'
 
-import {
-    CodeInsightCreationMode,
-    CodeInsightsCreationActions,
-    FORM_ERROR,
-    SubmissionErrors,
-} from '../../../../components'
+import { FORM_ERROR, SubmissionErrors } from '@sourcegraph/wildcard'
+
+import { CodeInsightCreationMode, CodeInsightsCreationActions } from '../../../../components'
 import { MinimalLangStatsInsightData, LangStatsInsight } from '../../../../core'
 import { LangStatsCreationFormFields } from '../../creation/lang-stats'
 import { LangStatsInsightCreationContent } from '../../creation/lang-stats/components/LangStatsInsightCreationContent'

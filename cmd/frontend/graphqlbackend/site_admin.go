@@ -61,6 +61,7 @@ func (r *schemaResolver) RecoverUsers(ctx context.Context, args *RecoverUsersReq
 
 	return &EmptyResponse{}, nil
 }
+
 func (r *schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	User graphql.ID
 	Hard *bool
@@ -184,6 +185,7 @@ func (r *schemaResolver) DeleteUsers(ctx context.Context, args *struct {
 	// NOTE: Practically, we don't reuse the ID for any new users, and the situation of left-over pending permissions
 	// is possible but highly unlikely. Therefore, there is no need to roll back user deletion even if this step failed.
 	// This call is purely for the purpose of cleanup.
+	// TODO: Add user deletion and this to a transaction. See SCIM's user_delete.go for an example.
 	if err := r.db.Authz().RevokeUserPermissionsList(ctx, revokeUserPermissionsArgsList); err != nil {
 		return nil, err
 	}
@@ -269,13 +271,12 @@ type roleChangeEventArgs struct {
 	Reason string `json:"reason"`
 }
 
+var errRefuseToSetCurrentUserSiteAdmin = errors.New("refusing to set current user site admin status")
+
 func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 	UserID    graphql.ID
 	SiteAdmin bool
 }) (response *EmptyResponse, err error) {
-	// 🚨 SECURITY: Only site admins can promote other users to site admin (or demote from site
-	// admin).
-
 	// Set default values for event args.
 	eventArgs := roleChangeEventArgs{
 		From: "role_user",
@@ -314,12 +315,14 @@ func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 	eventName := database.SecurityEventNameRoleChangeDenied
 	defer logRoleChangeAttempt(ctx, r.db, &eventName, &eventArgs, &err)
 
+	// 🚨 SECURITY: Only site admins can promote other users to site admin (or demote from site
+	// admin).
 	if err = auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
 	if userResolver.ID() == args.UserID {
-		return nil, errors.New("refusing to set current user site admin status")
+		return nil, errRefuseToSetCurrentUserSiteAdmin
 	}
 
 	if err = r.db.Users().SetIsSiteAdmin(ctx, affectedUserID, args.SiteAdmin); err != nil {

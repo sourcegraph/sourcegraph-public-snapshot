@@ -183,7 +183,7 @@ func (c *NotificationClient) createMessageBlocks(logger log.Logger, build *Build
 
 	jobSection := ""
 	for group, groupJobs := range filteredJobs {
-		jobSection := fmt.Sprintf("*%s jobs:*\n\n", group)
+		jobSection = fmt.Sprintf("*%s jobs:*\n\n", group)
 		// if there are more than JobShowLimit of failed jobs, we cannot print all of it
 		// since the message will to big and slack will reject the message with "invalid_blocks"
 		if len(groupJobs) > JobShowLimit {

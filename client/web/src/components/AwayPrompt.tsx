@@ -1,16 +1,12 @@
-import { FC, useEffect, useState, useRef } from 'react'
+import { FC, useState, useCallback } from 'react'
 
-import * as H from 'history'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { Location, useNavigate, unstable_useBlocker as useBlocker, unstable_BlockerFunction } from 'react-router-dom'
 
 import { Button, Modal, H3 } from '@sourcegraph/wildcard'
 
-import { globalHistory } from '../util/globalHistory'
-
-type Func = () => void
 interface Props {
     message: string
-    when: Func | boolean
+    when: boolean | (() => boolean)
     header?: string
     button_ok_text?: string
     button_cancel_text?: string
@@ -22,41 +18,41 @@ export const AwayPrompt: FC<Props> = props => {
     const { message, when, header = 'Navigate away?', button_ok_text = 'OK', button_cancel_text = 'Cancel' } = props
 
     const navigate = useNavigate()
-    const [pendingLocation, setPendingLocation] = useState<H.Location>()
-    const unblock = useRef<() => void>()
+    const [pendingLocation, setPendingLocation] = useState<Location>()
+
+    const blocker = useBlocker(
+        useCallback<unstable_BlockerFunction>(
+            ({ currentLocation, nextLocation }) => {
+                if (nextLocation.state === ALLOW_NAVIGATION) {
+                    return false
+                }
+
+                const shouldBlock = typeof when === 'boolean' ? when : when()
+
+                if (shouldBlock) {
+                    setPendingLocation(nextLocation)
+
+                    // prevent navigation for now - pop-up is shown
+                    return true
+                }
+
+                return false
+            },
+            [when]
+        )
+    )
 
     const closeModal = (shouldNavigate: boolean): void => {
         // close modal
         setPendingLocation(undefined)
 
         if (pendingLocation && shouldNavigate) {
-            unblock.current?.()
+            if (blocker.state === 'blocked') {
+                blocker.reset()
+            }
             navigate(pendingLocation)
         }
     }
-
-    useEffect(() => {
-        unblock.current = globalHistory.block(location => {
-            if (location.state === ALLOW_NAVIGATION) {
-                return unblock.current?.()
-            }
-
-            const shouldBlock = typeof when === 'boolean' ? when : when()
-
-            if (shouldBlock) {
-                setPendingLocation(location)
-
-                // prevent navigation for now - pop-up is shown
-                return false
-            }
-
-            return unblock.current?.()
-        })
-
-        return () => {
-            unblock.current?.()
-        }
-    }, [when])
 
     return pendingLocation ? (
         <Modal aria-labelledby={header}>

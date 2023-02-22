@@ -3,7 +3,7 @@ import { FC, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 're
 import classNames from 'classnames'
 import { Remote } from 'comlink'
 import { isEqual } from 'lodash'
-import { useLocation, useNavigate, createPath } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate, createPath } from 'react-router-dom'
 import {
     BehaviorSubject,
     combineLatest,
@@ -130,7 +130,6 @@ const domFunctions = {
  */
 export const LegacyBlob: FC<BlobProps> = props => {
     const {
-        isLightTheme,
         extensionsController,
         blobInfo,
         platformContext,
@@ -668,7 +667,6 @@ export const LegacyBlob: FC<BlobProps> = props => {
                     isBlameVisible={props.isBlameVisible}
                     blameHunks={props.blameHunks}
                     codeViewElements={codeViewElements}
-                    isLightTheme={isLightTheme}
                 />
             </div>
         </>

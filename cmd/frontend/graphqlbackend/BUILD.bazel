@@ -89,6 +89,7 @@ go_library(
         "outbound_requests.go",
         "outbound_webhook_logs.go",
         "outbound_webhooks.go",
+        "own.go",
         "package_repos.go",
         "parse_search_query.go",
         "permission_sync_jobs.go",
@@ -176,6 +177,7 @@ go_library(
         "search_contexts.graphql",
         "outbound_webhooks.graphql",
         "rbac.graphql",
+        "own.graphql",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend",
     deps = [
