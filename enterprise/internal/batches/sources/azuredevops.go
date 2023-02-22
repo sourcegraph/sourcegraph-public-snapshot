@@ -2,10 +2,11 @@ package sources
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 
 	azuredevops2 "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
