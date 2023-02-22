@@ -125,20 +125,20 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                 </div>
                 {props.context.allowSignup ? (
                     <Text>
-                        New to Sourcegraph?{' '}
-                        {props.isSourcegraphDotCom ? (
-                            <Link
-                                to="https://signup.sourcegraph.com"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={() =>
-                                    eventLogger.log('ClickedOnCloudCTA', { cloudCtaType: 'NavBarLoggedOut' })
-                                }
-                            >
-                                Sign up
-                            </Link>
-                        ) : (
-                            <Link to="/sign-up">Sign up</Link>
+                        New to Sourcegraph? <Link to="/sign-up">Sign up.</Link>{' '}
+                        {props.isSourcegraphDotCom && (
+                            <>
+                                To use Sourcegraph on private repositories,
+                                <Link
+                                    to="https://signup.sourcegraph.com"
+                                    onClick={() =>
+                                        eventLogger.log('ClickedOnEnterpriseCTA', { location: 'SignInPage' })
+                                    }
+                                >
+                                    get Sourcegraph Enterprise
+                                </Link>
+                                .
+                            </>
                         )}
                     </Text>
                 ) : (

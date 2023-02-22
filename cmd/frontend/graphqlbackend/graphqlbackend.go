@@ -164,7 +164,7 @@ func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, oper
 	}
 }
 
-func (requestTracer) TraceField(ctx context.Context, label, typeName, fieldName string, trivial bool, args map[string]any) (context.Context, trace.TraceFieldFinishFunc) {
+func (requestTracer) TraceField(ctx context.Context, _, typeName, fieldName string, _ bool, _ map[string]any) (context.Context, trace.TraceFieldFinishFunc) {
 	// We don't call into t.OpenTracingTracer.TraceField since it generates too many spans which is really hard to read.
 	start := time.Now()
 	return ctx, func(err *gqlerrors.QueryError) {
@@ -466,9 +466,6 @@ func NewSchema(
 		EnterpriseResolvers.authzResolver = authz
 		resolver.AuthzResolver = authz
 		schemas = append(schemas, authzSchema)
-		for kind, res := range authz.NodeResolvers() {
-			resolver.nodeByIDFns[kind] = res
-		}
 	}
 
 	if codeMonitors != nil {

@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -10,7 +10,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { WebStory } from '../../components/WebStory'
 import { MockedFeatureFlagsProvider } from '../../featureFlags/MockedFeatureFlagsProvider'
-import { useExperimentalFeatures } from '../../stores'
 import { ThemePreference } from '../../theme'
 
 import { SearchPage, SearchPageProps } from './SearchPage'
@@ -38,14 +37,8 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
 
 window.context.allowSignup = true
 
-const decorator: DecoratorFn = Story => {
-    useExperimentalFeatures.setState({ showSearchContext: false })
-    return <Story />
-}
-
 const config: Meta = {
     title: 'web/search/home/SearchPage',
-    decorators: [decorator],
     parameters: {
         design: {
             type: 'figma',

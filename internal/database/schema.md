@@ -938,6 +938,23 @@ Triggers:
 
 ```
 
+# Table "public.codeintel_ranking_definitions"
+```
+    Column     |  Type   | Collation | Nullable |                          Default                          
+---------------+---------+-----------+----------+-----------------------------------------------------------
+ id            | bigint  |           | not null | nextval('codeintel_ranking_definitions_id_seq'::regclass)
+ upload_id     | integer |           | not null | 
+ symbol_name   | text    |           | not null | 
+ repository    | text    |           | not null | 
+ document_path | text    |           | not null | 
+ graph_key     | text    |           | not null | 
+Indexes:
+    "codeintel_ranking_definitions_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_definitions_symbol_name" btree (symbol_name)
+    "codeintel_ranking_definitions_upload_id" btree (upload_id)
+
+```
+
 # Table "public.codeintel_ranking_exports"
 ```
     Column     |           Type           | Collation | Nullable |                        Default                        
@@ -955,6 +972,7 @@ Foreign-key constraints:
 
 ```
 
+<<<<<<< HEAD
 # Table "public.codeowners"
 ```
      Column     |           Type           | Collation | Nullable |                Default                 
@@ -973,6 +991,41 @@ Foreign-key constraints:
 
 ```
 
+=======
+# Table "public.codeintel_ranking_path_counts_inputs"
+```
+    Column     |  Type   | Collation | Nullable |                             Default                              
+---------------+---------+-----------+----------+------------------------------------------------------------------
+ id            | bigint  |           | not null | nextval('codeintel_ranking_path_counts_inputs_id_seq'::regclass)
+ repository    | text    |           | not null | 
+ document_path | text    |           | not null | 
+ count         | integer |           | not null | 
+ graph_key     | text    |           | not null | 
+ processed     | boolean |           | not null | false
+Indexes:
+    "codeintel_ranking_path_counts_inputs_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_path_counts_inputs_graph_key_and_repository" btree (graph_key, repository)
+
+```
+
+# Table "public.codeintel_ranking_references"
+```
+    Column    |  Type   | Collation | Nullable |                         Default                          
+--------------+---------+-----------+----------+----------------------------------------------------------
+ id           | bigint  |           | not null | nextval('codeintel_ranking_references_id_seq'::regclass)
+ upload_id    | integer |           | not null | 
+ symbol_names | text[]  |           | not null | 
+ graph_key    | text    |           | not null | 
+ processed    | boolean |           | not null | false
+Indexes:
+    "codeintel_ranking_references_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_references_upload_id" btree (upload_id)
+
+```
+
+References for a given upload proceduced by background job consuming SCIP indexes.
+
+>>>>>>> main
 # Table "public.configuration_policies_audit_logs"
 ```
        Column       |           Type           | Collation | Nullable |                          Default                           
@@ -1788,7 +1841,7 @@ Foreign-key constraints:
 ---------+--------+-----------+----------+---------------------------------------------------
  id      | bigint |           | not null | nextval('lsif_dependency_repos_id_seq'::regclass)
  name    | text   |           | not null | 
- version | text   |           | not null | 
+ version | text   |           | not null | '👁️temporary_sentinel_value👁️'::text
  scheme  | text   |           | not null | 
 Indexes:
     "lsif_dependency_repos_pkey" PRIMARY KEY, btree (id)

@@ -63,7 +63,7 @@ export async function getActiveRelease(config: ReleaseConfig): Promise<ActiveRel
         previous: new SemVer(rel.previous),
         ...(def as ReleaseDates),
         ...(def as ReleaseCaptainInformation),
-        branch: `${version.minor}.${version.minor}`,
+        branch: `${version.major}.${version.minor}`,
     }
 }
 

@@ -3,6 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { defaultKeymap, historyKeymap, history as codemirrorHistory } from '@codemirror/commands'
 import { Compartment, EditorState, Extension, Prec } from '@codemirror/state'
 import { EditorView, keymap, drawSelection } from '@codemirror/view'
+import { mdiClockOutline } from '@mdi/js'
+import classNames from 'classnames'
 import inRange from 'lodash/inRange'
 import { useNavigate } from 'react-router-dom'
 import useResizeObserver from 'use-resize-observer'
@@ -13,13 +15,15 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { QueryChangeSource, QueryState } from '@sourcegraph/shared/src/search'
 import { getTokenLength } from '@sourcegraph/shared/src/search/query/utils'
+import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { singleLine, placeholder as placeholderExtension } from '../codemirror'
 import { parseInputAsQuery, tokens } from '../codemirror/parsedQuery'
 import { querySyntaxHighlighting } from '../codemirror/syntax-highlighting'
+import { tokenInfo } from '../codemirror/token-info'
 
 import { filterHighlight } from './codemirror/syntax-highlighting'
-import { modeScope } from './modes'
+import { modeScope, useInputMode } from './modes'
 import { editorConfigFacet, Source, suggestions } from './suggestionsExtension'
 
 import styles from './CodeMirrorQueryInputWrapper.module.scss'
@@ -84,7 +88,6 @@ function configureExtensions({
     historyOrNavigate,
 }: ExtensionConfig): Extension {
     const extensions = [
-        singleLine,
         EditorView.darkTheme.of(isLightTheme === false),
         EditorView.updateListener.of(update => {
             if (update.docChanged) {
@@ -166,8 +169,8 @@ function createEditor(
             doc: queryState.query,
             selection: { anchor: queryState.query.length },
             extensions: [
+                singleLine,
                 drawSelection(),
-                EditorView.lineWrapping,
                 EditorView.contentAttributes.of({
                     role: 'combobox',
                     'aria-controls': popoverID,
@@ -177,27 +180,43 @@ function createEditor(
                 keymap.of(historyKeymap),
                 keymap.of(defaultKeymap),
                 codemirrorHistory(),
-                Prec.low([querySyntaxHighlighting, modeScope(filterHighlight, [null])]),
-                EditorView.theme({
+                Prec.low([querySyntaxHighlighting, modeScope([filterHighlight, tokenInfo()], [null])]),
+                EditorView.baseTheme({
                     '&': {
                         flex: 1,
                         backgroundColor: 'var(--input-bg)',
                         borderRadius: 'var(--border-radius)',
                         borderColor: 'var(--border-color)',
+                        // To ensure that the input doesn't overflow the parent
+                        minWidth: 0,
+                        marginRight: '0.5rem',
                     },
                     '&.cm-editor.cm-focused': {
                         outline: 'none',
                     },
+                    '.cm-scroller': {
+                        overflowX: 'hidden',
+                    },
                     '.cm-content': {
                         caretColor: 'var(--search-query-text-color)',
+                        color: 'var(--search-query-text-color)',
                         fontFamily: 'var(--code-font-family)',
                         fontSize: 'var(--code-font-size)',
-                        color: 'var(--search-query-text-color)',
                         padding: 0,
                         paddingLeft: '0.25rem',
                     },
+                    '.cm-content.focus-visible': {
+                        boxShadow: 'none',
+                    },
                     '.cm-line': {
                         padding: 0,
+                    },
+                    '.sg-token-hover': {
+                        backgroundColor: 'var(--gray-02)',
+                        borderRadius: '3px',
+                    },
+                    '&dark .sg-token-hover': {
+                        backgroundColor: 'var(--gray-08)',
                     },
                 }),
                 querySettingsCompartment.of(queryExtensions),
@@ -262,11 +281,14 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
     const focusContainerRef = useRef<HTMLDivElement | null>(null)
     const [suggestionsContainer, setSuggestionsContainer] = useState<HTMLDivElement | null>(null)
     const popoverID = useMemo(() => uuid.v4(), [])
+    const [mode, setMode, modeNotifierExtension] = useInputMode()
 
     // Wraps the onSubmit prop because that one changes whenever the input
     // value changes causing unnecessary reconfiguration of the extensions
     const onSubmitRef = useRef(onSubmit)
-    onSubmitRef.current = onSubmit
+    useEffect(() => {
+        onSubmitRef.current = onSubmit
+    }, [onSubmit])
     const hasSubmitHandler = !!onSubmit
 
     // Update extensions whenever any of these props change
@@ -283,6 +305,7 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
                 historyOrNavigate: navigate,
             }),
             externalExtensions,
+            modeNotifierExtension,
         ],
         [
             popoverID,
@@ -295,6 +318,7 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
             suggestionSource,
             navigate,
             externalExtensions,
+            modeNotifierExtension,
         ]
     )
 
@@ -312,7 +336,9 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
         [container]
     )
     const editorRef = useRef(editor)
-    editorRef.current = editor
+    useEffect(() => {
+        editorRef.current = editor
+    }, [editor])
     useEffect(() => () => editor?.destroy(), [editor])
 
     // Update editor content whenever query state changes
@@ -326,6 +352,13 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
         editorRef.current?.contentDOM.focus()
     }, [editorRef])
 
+    const toggleHistoryMode = useCallback(() => {
+        if (editorRef.current) {
+            setMode(editorRef.current, mode => (mode === 'History' ? null : 'History'))
+            editorRef.current.focus()
+        }
+    }, [setMode])
+
     const { ref: spacerRef, height: spacerHeight } = useResizeObserver({
         ref: focusContainerRef,
     })
@@ -336,6 +369,14 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<
             <div className={styles.spacer} style={{ height: `${spacerHeight}px` }} />
             <div className={styles.root}>
                 <div ref={spacerRef} className={styles.focusContainer}>
+                    <div className={classNames(styles.modeSection, !!mode && styles.active)}>
+                        <Tooltip content="Recent searches">
+                            <Button variant="icon" onClick={toggleHistoryMode} aria-label="Open search history">
+                                <Icon svgPath={mdiClockOutline} aria-hidden="true" />
+                            </Button>
+                        </Tooltip>
+                        {mode && <span className="ml-1">{mode}:</span>}
+                    </div>
                     <div ref={setContainer} className="d-contents" />
                     {children}
                 </div>

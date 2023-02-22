@@ -355,8 +355,8 @@ CREATE TEMPORARY TABLE t_package_repo_versions (
 `
 
 const transferPackageRepoRefsQuery = `
-INSERT INTO lsif_dependency_repos (scheme, name, version)
-SELECT scheme, name, '👁️temporary_sentinel_value👁️'
+INSERT INTO lsif_dependency_repos (scheme, name)
+SELECT scheme, name
 FROM (
 	SELECT scheme, name
 	FROM t_package_repo_refs t

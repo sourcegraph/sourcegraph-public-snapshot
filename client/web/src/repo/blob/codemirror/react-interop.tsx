@@ -1,10 +1,11 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 
-import { BrowserRouter } from 'react-router-dom'
+import { BrowserRouter, NavigateFunction, useLocation } from 'react-router-dom'
 
 import { WildcardThemeContext } from '@sourcegraph/wildcard'
 
 interface CodeMirrorContainerProps {
+    navigate: NavigateFunction
     onMount?: () => void
     onRender?: () => void
 }
@@ -14,6 +15,7 @@ interface CodeMirrorContainerProps {
  * CodeMirror.
  */
 export const CodeMirrorContainer: React.FunctionComponent<React.PropsWithChildren<CodeMirrorContainerProps>> = ({
+    navigate,
     onMount,
     onRender,
     children,
@@ -25,7 +27,26 @@ export const CodeMirrorContainer: React.FunctionComponent<React.PropsWithChildre
 
     return (
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
-            <BrowserRouter>{children}</BrowserRouter>
+            <BrowserRouter>
+                {children}
+                <SyncInnerRouterWithParent navigate={navigate} />
+            </BrowserRouter>
         </WildcardThemeContext.Provider>
     )
+}
+
+const SyncInnerRouterWithParent: React.FC<{ navigate: NavigateFunction }> = ({ navigate }) => {
+    const initialLocation = useState(useLocation())[0]
+    const location = useLocation()
+    useEffect(() => {
+        if (
+            location.hash === initialLocation.hash &&
+            location.pathname === initialLocation.pathname &&
+            location.search === initialLocation.search
+        ) {
+            return
+        }
+        navigate(location)
+    }, [location, navigate, initialLocation])
+    return null
 }

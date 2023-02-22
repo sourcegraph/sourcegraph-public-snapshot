@@ -43,6 +43,7 @@ import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
 import { selectOccurrence } from './codemirror/token-selection/code-intel-tooltips'
 import { tokenSelectionExtension } from './codemirror/token-selection/extension'
+import { languageSupport } from './codemirror/token-selection/languageSupport'
 import { selectionFromLocation } from './codemirror/token-selection/selections'
 import { tokensAsLinks } from './codemirror/tokens-as-links'
 import { isValidLineRange } from './codemirror/utils'
@@ -297,6 +298,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 ? tokensAsLinks({ navigate: navigateRef.current, blobInfo, preloadGoToDefinition })
                 : [],
             syntaxHighlight.of(blobInfo),
+            languageSupport.of(blobInfo),
             pin.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick
                 ? sourcegraphExtensions({

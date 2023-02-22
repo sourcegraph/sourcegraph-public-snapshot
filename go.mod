@@ -13,6 +13,7 @@ require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PuerkitoBio/rehttp v1.1.0
 	github.com/RoaringBitmap/roaring v1.2.3
+	github.com/XSAM/otelsql v0.18.0
 	github.com/agext/levenshtein v1.2.3
 	github.com/amit7itz/goset v1.0.1
 	github.com/aws/aws-sdk-go-v2 v1.17.4
@@ -186,8 +187,6 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
-require github.com/XSAM/otelsql v0.15.0
-
 require (
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.14.1 // indirect
@@ -223,7 +222,7 @@ require (
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	github.com/zenazn/goji v1.0.1 // indirect
-	go.opentelemetry.io/otel/metric v0.34.0 // indirect
+	go.opentelemetry.io/otel/metric v0.35.0 // indirect
 	go.uber.org/goleak v1.2.0 // indirect
 )
 
@@ -261,7 +260,10 @@ require (
 )
 
 replace (
-	github.com/fergusstrange/embedded-postgres => github.com/sourcegraph/embedded-postgres v1.19.1-0.20230113234230-bb62ad58a1e1
+	// We maintain a potentially long-term fork of embedded-postgres for
+	// Sourcegraph App. We add features like unix sockets. If this replace
+	// directive still exists in 2024, lets consider hard forking.
+	github.com/fergusstrange/embedded-postgres => github.com/sourcegraph/embedded-postgres v1.19.1-0.20230222065424-1cc470c429e1
 
 	// As of https://github.com/grpc-ecosystem/go-grpc-middleware/blob/7ac0846398432dee083fd8bc4ad7abacf8147ff2/providers/openmetrics/go.mod#L7,
 	// the latest release of the gRPC Prometheus middleware depends on a version of go-grpc-middleware that is two years old, and
@@ -274,7 +276,7 @@ replace (
 )
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20230216134043-e3a85ad21637
+	github.com/sourcegraph/zoekt v0.0.0-20230222090137-23121817690d
 	github.com/stretchr/objx v0.5.0 // indirect
 )
 
@@ -455,8 +457,8 @@ require (
 	go.mongodb.org/mongo-driver v1.10.2 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/collector/pdata v0.56.0 // indirect
-	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.37.0
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.36.4
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.38.0
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.38.0
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.13.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.13.0
 	go.opentelemetry.io/proto/otlp v0.19.0
@@ -502,8 +504,6 @@ replace (
 // These entries indicate temporary replace directives due to a pending pull request upstream
 // or issues with specific versions.
 replace (
-	// Forked until PR is merged upstream TODO @jhchabran
-	github.com/XSAM/otelsql => github.com/sourcegraph/otelsql v0.0.0-20220905085252-74375c884fff
 	// Pending: https://github.com/crewjam/saml/pull/450
 	github.com/crewjam/saml => github.com/sourcegraph/saml v0.0.0-20220728002234-ab6b53f6f94d
 	// Pending: https://github.com/ghodss/yaml/pull/65
