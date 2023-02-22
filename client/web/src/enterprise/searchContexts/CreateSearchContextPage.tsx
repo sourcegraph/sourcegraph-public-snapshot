@@ -13,7 +13,6 @@ import {
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -25,8 +24,7 @@ import { parseSearchURLQuery } from '../../search'
 import { SearchContextForm } from './SearchContextForm'
 
 export interface CreateSearchContextPageProps
-    extends ThemeProps,
-        TelemetryProps,
+    extends TelemetryProps,
         Pick<SearchContextProps, 'createSearchContext' | 'deleteSearchContext'>,
         PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser

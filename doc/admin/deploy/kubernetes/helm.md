@@ -933,10 +933,47 @@ A [multi-version upgrade](../../updates/index.md#multi-version-upgrades) is a do
 - Read our [update policy](../../updates/index.md#update-policy) to learn about Sourcegraph updates.
 - Find the entries that apply to the version range you're passing through in the [update notes for Sourcegraph with Kubernetes](../../updates/kubernetes.md#multi-version-upgrade-procedure).
 
-To perform a multi-version upgrade on a Sourcegraph instance running on Kubernetes with Helm:
+### Multi-version upgrade procedure
 
-1. Follow the steps to perform a [multi-version upgrade for Kubernetes](update.md#multi-version-upgrades).
-1. Follow the [standard upgrade for Kubernetes with Helm](#standard-upgrades) to upgrade the remaining infrastructure (e.g., `helm upgrade ...`).
+1. **Scale down `deployments` and `statefulSets` that access the database**, _this step prevents services from accessing the database while schema migrations are in process._ 
+  The following services must have their replicas scaled to 0:
+    - Deployments (e.g., `kubectl scale deployment <name> --replicas=0`)
+      - precise-code-intel-worker
+      - repo-updater
+      - searcher
+      - sourcegraph-frontend
+      - sourcegraph-frontend-internal
+      - symbols
+      - worker
+    - Stateful sets (e.g., `kubectl scale sts <name> --replicas=0`):
+      - gitserver
+      - indexed-search
+
+    The following convenience commands provide an example of scaling down the necessary services in a single command:
+
+    Deployments:
+    ```
+    kubectl get -n sourcegraph deploy --no-headers | awk '{print $1}' | xargs -n 1 -P 8 -I % kubectl -n sourcegraph scale deployment % --replicas=0
+    ```
+    StatefulSets: 
+    ```
+    kubectl -n sourcegraph get sts --selector 'app.kubernetes.io/component!=codeinsights-db,app.kubernetes.io/component!=codeintel-db,app.kubernetes.io/component!=pgsql' --no-headers | awk '{print $1}' | xargs -n 1 -P 8 -I % kubectl -n sourcegraph scale sts % --replicas=0
+    ```
+
+    > NOTE: The commands above use the `sourcegraph` namespace and are specific to the kubernetes-helm deployment.
+2. **Run the migrator `upgrade` command**
+  - The following command is the general template for running an upgrade
+    ```
+    helm upgrade --install -n <your namespace> --set "migrator.args={upgrade,--from=<current version>,--to=<version to upgrade to>}" sourcegraph-migrator sourcegraph/sourcegraph-migrator --version <migrator image version> 
+    ```
+    > NOTE: The command above is general and you'll need to substitute in your own namespace, target sourcegraph version, and desired migrator image version. In general run the most recent version of migrator.
+
+    You can learn more about running migrator operations in helm in the [migrator operations doc](../../how-to/manual_database_migrations.md#helm-kubernetes).
+3. **Upgrade your instance via `helm upgrade`**
+  - Now that the databases have been migrated to the latest versions, services can be scaled up and upgrade via the [standard procedure](#standard-upgrades). For example:
+    ```
+    helm upgrade -n <your namespace> --install -f override.yaml --version <sourcegraph version> sourcegraph sourcegraph/sourcegraph
+    ```
 
 ### Rollback
 

@@ -268,13 +268,6 @@ exports[`GlobalNavbar default 1`] = `
           >
             Sign in
           </a>
-          <a
-            class="anchorLink btn btnPrimary btnSm"
-            href="/sign-up"
-            tabindex="0"
-          >
-            Sign up
-          </a>
         </div>
       </li>
     </ul>
@@ -288,7 +281,6 @@ exports[`GlobalNavbar default 1`] = `
       selectedsearchcontextspec=""
       settingscascade="[object Object]"
       telemetryservice="[object Object]"
-      themepreference="light"
     />
   </div>
 </DocumentFragment>

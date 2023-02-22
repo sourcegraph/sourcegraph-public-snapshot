@@ -8,7 +8,6 @@ import { LazyQueryInput } from '@sourcegraph/branded'
 import { QueryState } from '@sourcegraph/shared/src/search'
 import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, Card, Icon, Checkbox, Code, H3, Tooltip } from '@sourcegraph/wildcard'
 
@@ -17,7 +16,7 @@ import { useExperimentalFeatures } from '../../../stores'
 
 import styles from './FormTriggerArea.module.scss'
 
-interface TriggerAreaProps extends ThemeProps {
+interface TriggerAreaProps {
     query: string
     onQueryChange: (query: string) => void
     triggerCompleted: boolean
@@ -94,7 +93,6 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
     cardClassName,
     cardBtnClassName,
     cardLinkClassName,
-    isLightTheme,
     isSourcegraphDotCom,
 }) => {
     const [expanded, setExpanded] = useState(startExpanded)
@@ -237,7 +235,6 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                             >
                                 <LazyQueryInput
                                     className="test-trigger-input"
-                                    isLightTheme={isLightTheme}
                                     patternType={SearchPatternType.standard}
                                     isSourcegraphDotCom={isSourcegraphDotCom}
                                     caseSensitive={false}

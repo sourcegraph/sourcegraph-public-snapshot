@@ -8,7 +8,6 @@ import { catchError, map } from 'rxjs/operators'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     PageHeader,
     LoadingSpinner,
@@ -33,7 +32,7 @@ import { CodeMonitoringGettingStarted } from './CodeMonitoringGettingStarted'
 import { CodeMonitoringLogs } from './CodeMonitoringLogs'
 import { CodeMonitorList } from './CodeMonitorList'
 
-export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings>, ThemeProps {
+export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings> {
     authenticatedUser: AuthenticatedUser | null
     fetchUserCodeMonitors?: typeof _fetchUserCodeMonitors
     toggleCodeMonitorEnabled?: typeof _toggleCodeMonitorEnabled
@@ -46,7 +45,6 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
     authenticatedUser,
     fetchUserCodeMonitors = _fetchUserCodeMonitors,
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
-    isLightTheme,
     testForceTab,
 }) => {
     const userHasCodeMonitors = useObservable(
@@ -188,10 +186,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                     </div>
 
                     {currentTab === 'getting-started' && (
-                        <CodeMonitoringGettingStarted
-                            isLightTheme={isLightTheme}
-                            authenticatedUser={authenticatedUser}
-                        />
+                        <CodeMonitoringGettingStarted authenticatedUser={authenticatedUser} />
                     )}
 
                     {currentTab === 'logs' && <CodeMonitoringLogs />}
