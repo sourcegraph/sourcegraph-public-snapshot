@@ -1,6 +1,7 @@
 package query
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/grafana/regexp"
@@ -39,11 +40,16 @@ func LowercaseFieldNames(nodes []Node) []Node {
 	})
 }
 
+const CountAllLimit = 99999999
+
+var countAllLimitStr = strconv.Itoa(CountAllLimit)
+
 // SubstituteCountAll replaces count:all with count:99999999.
 func SubstituteCountAll(nodes []Node) []Node {
 	return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
 		if field == FieldCount && strings.ToLower(value) == "all" {
-			return Parameter{Field: field, Value: "99999999", Negated: negated, Annotation: annotation}
+			c := countAllLimitStr
+			return Parameter{Field: field, Value: c, Negated: negated, Annotation: annotation}
 		}
 		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
 	})
