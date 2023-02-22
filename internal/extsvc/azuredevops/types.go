@@ -87,7 +87,12 @@ type ForkRef struct {
 }
 
 type Reviewer struct {
-	ID string `json:"id"`
+	// 10 - approved, 5 - approved with suggestions, 0 - no vote, -5 - waiting for author, -10 - rejected
+	Vote        int    `json:"vote"`
+	ID          string `json:"id"`
+	HasDeclined bool   `json:"hasDeclined"`
+	IsRequired  bool   `json:"isRequired"`
+	UniqueName  string `json:"uniqueName"`
 }
 
 type PullRequestCommonArgs struct {

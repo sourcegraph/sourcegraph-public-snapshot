@@ -636,9 +636,20 @@ func computeSingleChangesetReviewState(c *btypes.Changeset) (s btypes.ChangesetR
 			}
 		}
 	case *azuredevops.AnnotatedPullRequest:
-
-		// TODO: @varsanojidan implement this.
-
+		for _, reviewer := range m.Reviewers {
+			switch reviewer.Vote {
+			case 10:
+				states[btypes.ChangesetReviewStateApproved] = true
+			case 5, -5:
+				states[btypes.ChangesetReviewStateCommented] = true
+			case 0:
+				states[btypes.ChangesetReviewStatePending] = true
+			case -10:
+				states[btypes.ChangesetReviewStateDismissed] = true
+			default:
+				states[btypes.ChangesetReviewStatePending] = true
+			}
+		}
 	default:
 		return "", errors.New("unknown changeset type")
 	}
