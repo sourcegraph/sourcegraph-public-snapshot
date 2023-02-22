@@ -4,7 +4,6 @@ import VisuallyHidden from '@reach/visually-hidden'
 
 import { pluralize } from '@sourcegraph/common'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageHeader, H2, useObservable, Text, H4 } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
@@ -28,7 +27,7 @@ import {
 } from './backend'
 import { RepoBatchChanges } from './RepoBatchChanges'
 
-interface BatchChangeRepoPageProps extends ThemeProps {
+interface BatchChangeRepoPageProps {
     repo: RepositoryFields
     /** For testing only. */
     queryRepoBatchChangeStats?: typeof _queryRepoBatchChangeStats

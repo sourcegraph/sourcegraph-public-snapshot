@@ -94,6 +94,151 @@ func TestInsertDefinition(t *testing.T) {
 	}
 }
 
+func TestInsertPathRanks(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	// Insert defintions
+	mockDefinitions := []shared.RankingDefintions{
+		{
+			UploadID:     1,
+			SymbolName:   "foo",
+			Repository:   "deadbeef",
+			DocumentPath: "foo.go",
+		},
+		{
+			UploadID:     1,
+			SymbolName:   "bar",
+			Repository:   "deadbeef",
+			DocumentPath: "bar.go",
+		},
+		{
+			UploadID:     1,
+			SymbolName:   "foo",
+			Repository:   "deadbeef",
+			DocumentPath: "foo.go",
+		},
+	}
+	if err := store.InsertDefintionsForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockDefinitions); err != nil {
+		t.Fatalf("unexpected error inserting definitions: %s", err)
+	}
+
+	// Insert references
+	mockReferences := shared.RankingReferences{
+		UploadID: 1,
+		SymbolNames: []string{
+			mockDefinitions[0].SymbolName,
+			mockDefinitions[1].SymbolName,
+			mockDefinitions[2].SymbolName,
+		},
+	}
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockReferences); err != nil {
+		t.Fatalf("unexpected error inserting references: %s", err)
+	}
+
+	// Test InsertPathCountInputs
+	if err := store.InsertPathCountInputs(ctx, mockRankingGraphKey, 1000); err != nil {
+		t.Fatalf("unexpected error inserting path count inputs: %s", err)
+	}
+
+	// Insert repos
+	if _, err := db.ExecContext(ctx, fmt.Sprintf(`INSERT INTO repo (id, name) VALUES (1, 'deadbeef')`)); err != nil {
+		t.Fatalf("failed to insert repos: %s", err)
+	}
+
+	// Finally! Test InsertPathRanks
+	numPathRanksInserted, numInputsProcessed, err := store.InsertPathRanks(ctx, mockRankingGraphKey, 10)
+	if err != nil {
+		t.Fatalf("unexpected error inserting path ranks: %s", err)
+	}
+
+	if numPathRanksInserted != 2 {
+		t.Fatalf("unexpected number of path ranks inserted. want=%d have=%f", 2, numPathRanksInserted)
+	}
+
+	if numInputsProcessed != 1 {
+		t.Fatalf("unexpected number of inputs processed. want=%d have=%f", 1, numInputsProcessed)
+	}
+}
+
+func TestInsertPathCountInputs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	// Insert defintions
+	mockDefinitions := []shared.RankingDefintions{
+		{
+			UploadID:     1,
+			SymbolName:   "foo",
+			Repository:   "deadbeef",
+			DocumentPath: "foo.go",
+		},
+		{
+			UploadID:     1,
+			SymbolName:   "bar",
+			Repository:   "deadbeef",
+			DocumentPath: "bar.go",
+		},
+		{
+			UploadID:     1,
+			SymbolName:   "foo",
+			Repository:   "deadbeef",
+			DocumentPath: "foo.go",
+		},
+	}
+	if err := store.InsertDefintionsForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockDefinitions); err != nil {
+		t.Fatalf("unexpected error inserting definitions: %s", err)
+	}
+
+	// Insert references
+	mockReferences := shared.RankingReferences{
+		UploadID: 1,
+		SymbolNames: []string{
+			mockDefinitions[0].SymbolName,
+			mockDefinitions[1].SymbolName,
+			mockDefinitions[2].SymbolName,
+		},
+	}
+	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchNumber, mockReferences); err != nil {
+		t.Fatalf("unexpected error inserting references: %s", err)
+	}
+
+	// Test InsertPathCountInputs
+	if err := store.InsertPathCountInputs(ctx, mockRankingGraphKey, 1000); err != nil {
+		t.Fatalf("unexpected error inserting path count inputs: %s", err)
+	}
+
+	// Test path count inputs where inserted
+	repository, documentPath, count, err := getRankingPathCountsInputs(ctx, t, db, mockRankingGraphKey)
+	if err != nil {
+		t.Fatalf("unexpected error getting path count inputs: %s", err)
+	}
+
+	if repository != "deadbeef" {
+		t.Fatalf("unexpected repository. want=%s have=%s", "deadbeef", repository)
+	}
+
+	if documentPath != "foo.go" {
+		t.Fatalf("unexpected document path. want=%s have=%s", "foo.go", documentPath)
+	}
+
+	if count != 2 {
+		t.Fatalf("unexpected count. want=%d have=%d", 2, count)
+	}
+}
+
 func getRankingDefinitions(
 	ctx context.Context,
 	t *testing.T,
@@ -166,4 +311,32 @@ func getRankingReferences(
 	}()
 
 	return references, nil
+}
+
+func getRankingPathCountsInputs(
+	ctx context.Context,
+	t *testing.T,
+	db database.DB,
+	graphKey string,
+) (repository, documentPath string, count int, err error) {
+	query := fmt.Sprintf(
+		`SELECT repository, document_path, count FROM codeintel_ranking_path_counts_inputs WHERE graph_key = '%s'`,
+		graphKey,
+	)
+	rows, err := db.QueryContext(ctx, query)
+	if err != nil {
+		return "", "", 0, err
+	}
+
+	for rows.Next() {
+		err = rows.Scan(&repository, &documentPath, &count)
+		if err != nil {
+			return "", "", 0, err
+		}
+	}
+	defer func() {
+		err = basestore.CloseRows(rows, err)
+	}()
+
+	return repository, documentPath, count, nil
 }

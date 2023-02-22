@@ -85,6 +85,8 @@ type operations struct {
 	insertDefinitionsAndReferencesForDocument *observation.Operation
 	insertDefintionsForRanking                *observation.Operation
 	insertReferencesForRanking                *observation.Operation
+	insertPathCountInputs                     *observation.Operation
+	insertPathRanks                           *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -186,5 +188,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		insertDefinitionsAndReferencesForDocument: op("InsertDefinitionsAndReferencesForDocument"),
 		insertDefintionsForRanking:                op("InsertDefintionsForRanking"),
 		insertReferencesForRanking:                op("InsertReferencesForRanking"),
+		insertPathCountInputs:                     op("InsertPathCountInputs"),
+		insertPathRanks:                           op("InsertPathRanks"),
 	}
 }

@@ -120,7 +120,6 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
                     <div className={styles.editor}>
                         <CodeMirrorQueryInput
                             className="d-flex flex-column overflow-hidden"
-                            isLightTheme={props.isLightTheme}
                             patternType={patternType}
                             interpretComments={true}
                             value={searchQuery.value}

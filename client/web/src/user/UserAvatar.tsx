@@ -15,7 +15,6 @@ interface Props {
         username?: Maybe<string>
     }
     className?: string
-    targetID?: string
     alt?: string
     /**
      * Whether to render with icon-inline className
@@ -23,17 +22,12 @@ interface Props {
     inline?: boolean
 }
 
-/**
- * UserAvatar displays the avatar of a user.
- */
-// eslint-disable-next-line react/display-name
 export const UserAvatar = React.forwardRef(
     (
         {
             size,
             user,
             className,
-            targetID,
             inline,
             // Exclude children since neither <img /> nor mdi-react icons receive them
             children,
@@ -56,7 +50,6 @@ export const UserAvatar = React.forwardRef(
             const imgProps = {
                 className: classNames(styles.userAvatar, className),
                 src: url,
-                id: targetID,
                 role: 'presentation',
                 ...otherProps,
             }
@@ -86,7 +79,6 @@ export const UserAvatar = React.forwardRef(
         }
 
         const props = {
-            id: targetID,
             className: classNames(styles.userAvatar, className),
             children: <span className={styles.initials}>{getInitials(name)}</span>,
         }

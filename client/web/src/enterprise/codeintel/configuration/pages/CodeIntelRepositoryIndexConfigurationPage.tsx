@@ -1,7 +1,6 @@
 import { FunctionComponent, useEffect } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
@@ -9,7 +8,7 @@ import { PageTitle } from '../../../../components/PageTitle'
 import { CodeIntelConfigurationPageHeader } from '../components/CodeIntelConfigurationPageHeader'
 import { ConfigurationEditor } from '../components/ConfigurationEditor'
 
-export interface CodeIntelRepositoryIndexConfigurationPageProps extends ThemeProps, TelemetryProps {
+export interface CodeIntelRepositoryIndexConfigurationPageProps extends TelemetryProps {
     repo: { id: string }
     authenticatedUser: AuthenticatedUser | null
 }
