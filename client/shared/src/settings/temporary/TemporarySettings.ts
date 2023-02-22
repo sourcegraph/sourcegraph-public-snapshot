@@ -52,6 +52,7 @@ export interface TemporarySettingsSchema {
     'search.results.collapseSmartSearch': boolean
     'search.input.recentSearches': RecentSearch[]
     'search.input.usedInlineHistory': boolean
+    'search.input.experimental': boolean
     // TODO #41002: Remove this temporary setting.
     // This temporary setting is now turned on by default with no UI to toggle it off.
     'coreWorkflowImprovements.enabled_deprecated': boolean

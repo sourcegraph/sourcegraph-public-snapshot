@@ -38,6 +38,7 @@ import {
 import { submitSearch } from '../helpers'
 import { useLazyCreateSuggestions, useLazyHistoryExtension } from '../input/lazy'
 import { useRecentSearches } from '../input/useRecentSearches'
+import { useExperimentalQueryInput } from '../useExperimentalSearchInput'
 
 import styles from './SearchPageInput.module.scss'
 
@@ -71,7 +72,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
 
     const isLightTheme = useIsLightTheme()
     const { caseSensitive, patternType, searchMode } = useNavbarQueryState(queryStateSelector, shallow)
-    const experimentalQueryInput = useExperimentalFeatures(features => features.searchQueryInput === 'experimental')
+    const [experimentalQueryInput] = useExperimentalQueryInput()
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
