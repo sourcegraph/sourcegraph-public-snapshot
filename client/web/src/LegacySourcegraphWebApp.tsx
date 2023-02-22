@@ -37,7 +37,11 @@ import {
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
-import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import {
+    EMPTY_SETTINGS_CASCADE,
+    SettingsCascadeProps,
+    SettingsProvider,
+} from '@sourcegraph/shared/src/settings/settings'
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
@@ -340,6 +344,7 @@ export class LegacySourcegraphWebApp extends React.Component<
                     /* eslint-disable react/no-children-prop, react/jsx-key */
                     <ApolloProvider client={graphqlClient} children={undefined} />,
                     <WildcardThemeContext.Provider value={WILDCARD_THEME} />,
+                    <SettingsProvider settingsCascade={this.state.settingsCascade} />,
                     <ErrorBoundary location={null} />,
                     <TraceSpanProvider name={SharedSpanName.AppMount} />,
                     <FeatureFlagsProvider />,
