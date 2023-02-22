@@ -23,6 +23,5 @@ const sanitizeOptions = {
 
 export function renderMarkdown(text: string): string {
 	registerHighlightContributions()
-
 	return sanitize(marked.parse(text, { gfm: true, highlight: highlightCode }), sanitizeOptions)
 }

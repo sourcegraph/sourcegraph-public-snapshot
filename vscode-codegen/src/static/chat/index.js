@@ -162,14 +162,39 @@ const messageBubbleTemplate = `
 </div>
 `
 
-function getContextFilesString(contextFiles) {
+function toggleContextFilesExpand(event) {
+	const contextFilesStr = event.target.dataset.contextfiles
+	if (!contextFilesStr) {
+		return
+	}
+	const contextFiles = JSON.parse(contextFilesStr)
+
+	const isExpanded = JSON.parse(event.target.dataset.isexpanded || "false")
+	const willExpand = !isExpanded
+	if (willExpand) {
+		event.target.innerHTML = getContextFilesString(contextFiles, true)
+	} else {
+		event.target.innerHTML = getContextFilesString(contextFiles, false)
+	}
+	event.target.dataset.isexpanded = `${willExpand}`
+}
+
+function getContextFilesString(contextFiles, expand) {
+	contextFiles = contextFiles.map(f => f.replace(/^\.\//, ''))
+	if (expand) {
+		return `Cody read:\n<ul>${contextFiles.map(f => "<li>" + f + "</li>").join("\n")}</ul>`
+	}
+	return `Cody read ${contextFiles[0]} and ${contextFiles.length - 1} other files`
+}
+
+function getContextFilesHTML(contextFiles, expand) {
 	if (!contextFiles || contextFiles.length === 0) {
 		return ''
 	}
 	if (contextFiles.length === 1) {
 		return `<span style="font-style: italic;">Cody read ${contextFiles[0]}</span>`
 	}
-	return `<span style="font-style: italic;" title="${contextFiles.join("\n")}">Cody read ${contextFiles[0]} and ${contextFiles.length - 1} other files</span>`
+	return `<p data-contextfiles='${JSON.stringify(contextFiles)}' style="font-style: italic;">${getContextFilesString(contextFiles, expand)}</p>`
 }
 
 function getMessageBubble(author, text, timestamp, contextFiles) {
@@ -178,7 +203,7 @@ function getMessageBubble(author, text, timestamp, contextFiles) {
 	return messageBubbleTemplate
 		.replace(/{type}/g, bubbleType)
 		.replace('{text}', text)
-		.replace('{contextFiles}', getContextFilesString(contextFiles))
+		.replace('{contextFiles}', getContextFilesHTML(contextFiles, false))
 		.replace('{footer}', timestamp ? `${authorName} &middot; ${timestamp}` : `<i>${authorName} is writing...</i>`)
 }
 
@@ -217,3 +242,4 @@ function renderDebugLog(debugMessages) {
 
 window.addEventListener('message', onMessage)
 document.addEventListener('DOMContentLoaded', onInitialize)
+document.addEventListener('click', toggleContextFilesExpand)
