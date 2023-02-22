@@ -312,7 +312,6 @@ func TestClient_P4Exec(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				println("got body", string(body))
 				wantBody := `{"p4port":"ssl:111.222.333.444:1666","p4user":"admin","p4passwd":"pa$$word","args":["protects"]}`
 				if diff := cmp.Diff(wantBody, string(body)); diff != "" {
 					t.Fatalf("Mismatch (-want +got):\n%s", diff)
