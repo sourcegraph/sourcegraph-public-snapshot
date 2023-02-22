@@ -1,7 +1,9 @@
 import React from 'react'
 
+import { mdiAccountPlus } from '@mdi/js'
+
 import { useQuery } from '@sourcegraph/http-client'
-import { ButtonLink, Badge } from '@sourcegraph/wildcard'
+import { ButtonLink, Text, Icon } from '@sourcegraph/wildcard'
 
 import { AccessRequestsCountResult, AccessRequestsCountVariables } from '../../graphql-operations'
 import { SourcegraphContext } from '../../jscontext'
@@ -15,7 +17,7 @@ interface AccessRequestsGlobalNavItemProps {
 }
 
 /**
- * A link to the access requests page that shows a badge with the number of pending requests.
+ * A link to the access requests page that the number of pending requests.
  * Does not render anything if request access is not allowed or there are no pending requests.
  */
 export const AccessRequestsGlobalNavItem: React.FunctionComponent<AccessRequestsGlobalNavItemProps> = props => {
@@ -35,11 +37,12 @@ export const AccessRequestsGlobalNavItem: React.FunctionComponent<AccessRequests
     }
 
     return (
-        <ButtonLink variant="danger" outline={true} size="sm" to="/site-admin/access-requests">
-            Access requests
-            <Badge variant="danger" pill={true} small={true} className="ml-1">
+        <ButtonLink variant="success" size="sm" to="/site-admin/access-requests" className="d-flex align-items-center py-1">
+            <Icon svgPath={mdiAccountPlus} size="md" aria-label="Account requests icons" color="var(--success-2)" />
+            <Text className="mx-1" weight="bold" as="span">
                 {data?.accessRequests.totalCount}
-            </Badge>
+            </Text>
+            Account requests
         </ButtonLink>
     )
 }

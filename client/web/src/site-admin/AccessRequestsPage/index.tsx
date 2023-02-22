@@ -1,9 +1,10 @@
 import React, { Fragment, useEffect, useCallback, useState } from 'react'
 
+import { mdiAccount } from '@mdi/js'
 import { formatDistanceToNowStrict } from 'date-fns'
 
 import { useLazyQuery, useMutation, useQuery } from '@sourcegraph/http-client'
-import { H1, Card, Text, Button, Grid, Alert } from '@sourcegraph/wildcard'
+import { Card, Text, Button, Grid, Alert } from '@sourcegraph/wildcard'
 
 import {
     PendingAccessRequestsListResult,
@@ -21,6 +22,7 @@ import { useURLSyncedState } from '../../hooks'
 import { eventLogger } from '../../tracking/eventLogger'
 import { AccountCreatedAlert } from '../components/AccountCreatedAlert'
 import { DropdownPagination } from '../components/DropdownPagination'
+import { SiteAdminPageTitle } from '../components/SiteAdminPageTitle'
 
 import {
     APPROVE_ACCESS_REQUEST,
@@ -185,9 +187,10 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
 
     return (
         <>
-            <div className="d-flex justify-content-between align-items-center mb-4 mt-2">
-                <H1 className="d-flex align-items-center mb-0">Access Requests</H1>
-            </div>
+            <SiteAdminPageTitle icon={{ svgPath: mdiAccount, ariaLabel: 'Account requests icon' }}>
+                <span>Users</span>
+                <span>Account requests</span>
+            </SiteAdminPageTitle>
             <Card className="p-3">
                 {[queryError, error].filter(Boolean).map((err, index) => (
                     <Alert variant="danger" key={index}>
@@ -229,16 +232,15 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                                 {additionalInfo}
                             </Text>
                             <div className="d-flex justify-content-end align-items-start">
+                                <Button variant="link" onClick={() => handleReject(id)}>
+                                    Reject
+                                </Button>
                                 <Button
                                     variant="success"
-                                    size="sm"
-                                    className="mr-2"
+                                    className="ml-2"
                                     onClick={() => handleApprove(id, name, email)}
                                 >
                                     Approve
-                                </Button>
-                                <Button variant="danger" size="sm" onClick={() => handleReject(id)}>
-                                    Reject
                                 </Button>
                             </div>
                         </Fragment>
