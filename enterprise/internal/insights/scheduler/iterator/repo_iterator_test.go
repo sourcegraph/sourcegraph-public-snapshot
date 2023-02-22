@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/derision-test/glock"
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -95,7 +95,7 @@ func TestForNextAndFinish(t *testing.T) {
 			return true
 		})
 		jsonify, _ := json.Marshal(got)
-		autogold.Want("iterate with no errors and no interruptions", `{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:05Z","RuntimeDuration":5000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":5,"Cursor":5}`).Equal(t, string(jsonify))
+		autogold.Expect(`{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:05Z","RuntimeDuration":5000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":5,"Cursor":5}`).Equal(t, string(jsonify))
 	})
 
 	t.Run("iterate with one error and no interruptions", func(t *testing.T) {
@@ -118,16 +118,16 @@ func TestForNextAndFinish(t *testing.T) {
 			return true
 		})
 		jsonify, _ := json.Marshal(got)
-		autogold.Want("iterate with 1 error and no interruptions", `{"Id":2,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:05Z","RuntimeDuration":5000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":4,"Cursor":5}`).Equal(t, string(jsonify))
-		autogold.Want("iterate with 1 error and no interruptions error check", errorMap{6: &IterationError{
+		autogold.Expect(`{"Id":2,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:05Z","RuntimeDuration":5000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":4,"Cursor":5}`).Equal(t, string(jsonify))
+		autogold.Expect(errorMap{6: &IterationError{
 			id:            1,
 			RepoId:        6,
 			FailureCount:  1,
 			ErrorMessages: []string{"this repo errored"},
 		}}).Equal(t, got.errors)
 
-		autogold.Want("iterate with 1 error and no interruptions no config has no more", false).Equal(t, got.HasMore())
-		autogold.Want("iterate with 1 error and no interruptions no config has errors to retry", true).Equal(t, got.HasErrors())
+		autogold.Expect(false).Equal(t, got.HasMore())
+		autogold.Expect(true).Equal(t, got.HasErrors())
 	})
 
 	t.Run("iterate with one error no interruptions and MaxFailures configured", func(t *testing.T) {
@@ -150,15 +150,15 @@ func TestForNextAndFinish(t *testing.T) {
 			return true
 		})
 		jsonify, _ := json.Marshal(got)
-		autogold.Want("iterate with one error no interruptions and MaxFailures configured", `{"Id":3,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:05Z","RuntimeDuration":5000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":4,"Cursor":5}`).Equal(t, string(jsonify))
-		autogold.Want("iterate with one error no interruptions and MaxFailures configured error check", errorMap{6: &IterationError{
+		autogold.Expect(`{"Id":3,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:05Z","RuntimeDuration":5000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":4,"Cursor":5}`).Equal(t, string(jsonify))
+		autogold.Expect(errorMap{6: &IterationError{
 			id:            2,
 			RepoId:        6,
 			FailureCount:  1,
 			ErrorMessages: []string{"this repo errored"},
 		}}).Equal(t, got.errors)
-		autogold.Want("iterate with one error no interruptions and MaxFailures configured has no more", false).Equal(t, got.HasMore())
-		autogold.Want("iterate with one error no interruptions and MaxFailures configured has errors to retry", true).Equal(t, got.HasErrors())
+		autogold.Expect(false).Equal(t, got.HasMore())
+		autogold.Expect(true).Equal(t, got.HasErrors())
 	})
 
 	t.Run("iterate with one error no interruptions finished if MaxFailures reached", func(t *testing.T) {
@@ -181,15 +181,15 @@ func TestForNextAndFinish(t *testing.T) {
 			return true
 		})
 		jsonify, _ := json.Marshal(got)
-		autogold.Want("iterate with one error no interruptions finished if MaxFailures reached", `{"Id":4,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:05Z","RuntimeDuration":5000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":4,"Cursor":5}`).Equal(t, string(jsonify))
-		autogold.Want("iterate with one error no interruptions finished if MaxFailures reached error check", errorMap{6: &IterationError{
+		autogold.Expect(`{"Id":4,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:05Z","RuntimeDuration":5000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":4,"Cursor":5}`).Equal(t, string(jsonify))
+		autogold.Expect(errorMap{6: &IterationError{
 			id:            3,
 			RepoId:        6,
 			FailureCount:  1,
 			ErrorMessages: []string{"this repo errored"},
 		}}).Equal(t, got.errors)
-		autogold.Want("iterate with one error no interruptions finished if MaxFailures reached has no more", false).Equal(t, got.HasMore())
-		autogold.Want("iterate with one error no interruptions finished if MaxFailures reached has no errors to retry", true).Equal(t, got.HasErrors())
+		autogold.Expect(false).Equal(t, got.HasMore())
+		autogold.Expect(true).Equal(t, got.HasErrors())
 	})
 
 	t.Run("iterate with no errors and one interruption", func(t *testing.T) {
@@ -223,7 +223,7 @@ func TestForNextAndFinish(t *testing.T) {
 		// now iterate from the starting position _after_ reloading from the db
 		secondItr, _ := testForNextAndFinish(t, store, reloaded, IterationConfig{}, seen, do)
 		jsonify, _ := json.Marshal(secondItr)
-		autogold.Want("iterate with no error and 1 interruptions", `{"Id":5,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:06Z","RuntimeDuration":5000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":5,"Cursor":5}`).Equal(t, string(jsonify))
+		autogold.Expect(`{"Id":5,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:06Z","RuntimeDuration":5000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":5,"Cursor":5}`).Equal(t, string(jsonify))
 	})
 
 	t.Run("iterate twice and verify progress updates", func(t *testing.T) {
@@ -254,7 +254,7 @@ func TestForNextAndFinish(t *testing.T) {
 			t.Fatal(err)
 		}
 		jsonify, _ := json.Marshal(reloaded)
-		autogold.Want("iterate twice and verify progress", `{"Id":6,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":0.4,"TotalCount":5,"SuccessCount":2,"Cursor":2}`).Equal(t, string(jsonify))
+		autogold.Expect(`{"Id":6,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":0.4,"TotalCount":5,"SuccessCount":2,"Cursor":2}`).Equal(t, string(jsonify))
 	})
 
 	//test paging
@@ -274,7 +274,7 @@ func TestForNextAndFinish(t *testing.T) {
 			return true
 		})
 		jsonify, _ := json.Marshal(got)
-		autogold.Want("iterate page with no errors and no interruptions", `{"Id":7,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:03Z","RuntimeDuration":3000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":5,"Cursor":5}`).Equal(t, string(jsonify))
+		autogold.Expect(`{"Id":7,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:03Z","RuntimeDuration":3000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":5,"Cursor":5}`).Equal(t, string(jsonify))
 	})
 
 	t.Run("iterate page with one error and no interruptions", func(t *testing.T) {
@@ -300,15 +300,15 @@ func TestForNextAndFinish(t *testing.T) {
 			return true
 		})
 		jsonify, _ := json.Marshal(got)
-		autogold.Want("iterate page with 1 error and no interruptions", `{"Id":8,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:03Z","RuntimeDuration":3000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":4,"Cursor":5}`).Equal(t, string(jsonify))
-		autogold.Want("iterate page with 1 error and no interruptions error check", errorMap{6: &IterationError{
+		autogold.Expect(`{"Id":8,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:03Z","RuntimeDuration":3000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":4,"Cursor":5}`).Equal(t, string(jsonify))
+		autogold.Expect(errorMap{6: &IterationError{
 			id:            4,
 			RepoId:        6,
 			FailureCount:  1,
 			ErrorMessages: []string{"this repo errored"},
 		}}).Equal(t, got.errors)
-		autogold.Want("iterate page with 1 error and no interruptions HasMore", false).Equal(t, got.HasMore())
-		autogold.Want("iterate page with 1 error and no interruptions HasErrors", true).Equal(t, got.HasErrors())
+		autogold.Expect(false).Equal(t, got.HasMore())
+		autogold.Expect(true).Equal(t, got.HasErrors())
 	})
 
 	t.Run("iterate page with no errors and one interruption", func(t *testing.T) {
@@ -345,7 +345,7 @@ func TestForNextAndFinish(t *testing.T) {
 		// now iterate from the starting position _after_ reloading from the db
 		secondItr, _ := testForNextNAndFinish(t, store, reloaded, IterationConfig{}, 2, seen, do)
 		jsonify, _ := json.Marshal(secondItr)
-		autogold.Want("iterate page with no error and 1 interruptions", `{"Id":9,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:04Z","RuntimeDuration":3000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":5,"Cursor":5}`).Equal(t, string(jsonify))
+		autogold.Expect(`{"Id":9,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:04Z","RuntimeDuration":3000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":5,"Cursor":5}`).Equal(t, string(jsonify))
 	})
 
 	t.Run("iterate two pages and verify progress updates", func(t *testing.T) {
@@ -376,7 +376,7 @@ func TestForNextAndFinish(t *testing.T) {
 			t.Fatal(err)
 		}
 		jsonify, _ := json.Marshal(reloaded)
-		autogold.Want("iterate two pages and verify progress", `{"Id":10,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":0.8,"TotalCount":5,"SuccessCount":4,"Cursor":4}`).Equal(t, string(jsonify))
+		autogold.Expect(`{"Id":10,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":0.8,"TotalCount":5,"SuccessCount":4,"Cursor":4}`).Equal(t, string(jsonify))
 	})
 
 	t.Run("iterate pages with one error no interruptions and MaxFailures configured", func(t *testing.T) {
@@ -402,15 +402,15 @@ func TestForNextAndFinish(t *testing.T) {
 			return true
 		})
 		jsonify, _ := json.Marshal(got)
-		autogold.Want("iterate pages with one error no interruptions and MaxFailures configured", `{"Id":11,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:03Z","RuntimeDuration":3000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":4,"Cursor":5}`).Equal(t, string(jsonify))
-		autogold.Want("iterate pages with one error no interruptions and MaxFailures configured error check", errorMap{6: &IterationError{
+		autogold.Expect(`{"Id":11,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:03Z","RuntimeDuration":3000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":4,"Cursor":5}`).Equal(t, string(jsonify))
+		autogold.Expect(errorMap{6: &IterationError{
 			id:            5,
 			RepoId:        6,
 			FailureCount:  1,
 			ErrorMessages: []string{"this repo errored"},
 		}}).Equal(t, got.errors)
-		autogold.Want("iterate pages with one error no interruptions and MaxFailures configured has no more", false).Equal(t, got.HasMore())
-		autogold.Want("iterate pages with one error no interruptions and MaxFailures configured has errors to retry", true).Equal(t, got.HasErrors())
+		autogold.Expect(false).Equal(t, got.HasMore())
+		autogold.Expect(true).Equal(t, got.HasErrors())
 	})
 
 	t.Run("iterate page with one error no interruptions finished if MaxFailures reached", func(t *testing.T) {
@@ -436,15 +436,15 @@ func TestForNextAndFinish(t *testing.T) {
 			return true
 		})
 		jsonify, _ := json.Marshal(got)
-		autogold.Want("iterate page with one error no interruptions finished if MaxFailures reached", `{"Id":12,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:03Z","RuntimeDuration":3000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":4,"Cursor":5}`).Equal(t, string(jsonify))
-		autogold.Want("iterate page with one error no interruptions finished if MaxFailures reached error check", errorMap{6: &IterationError{
+		autogold.Expect(`{"Id":12,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:03Z","RuntimeDuration":3000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":4,"Cursor":5}`).Equal(t, string(jsonify))
+		autogold.Expect(errorMap{6: &IterationError{
 			id:            6,
 			RepoId:        6,
 			FailureCount:  1,
 			ErrorMessages: []string{"this repo errored"},
 		}}).Equal(t, got.errors)
-		autogold.Want("iterate page with one error no interruptions finished if MaxFailures reached has no more", false).Equal(t, got.HasMore())
-		autogold.Want("iterate page with one error no interruptions finished if MaxFailures reached has no errors to retry", true).Equal(t, got.HasErrors())
+		autogold.Expect(false).Equal(t, got.HasMore())
+		autogold.Expect(true).Equal(t, got.HasErrors())
 	})
 }
 
@@ -496,7 +496,7 @@ func TestForNextRetryAndFinish(t *testing.T) {
 			return true
 		}, IterationConfig{})
 		jsonify, _ := json.Marshal(got)
-		autogold.Want("iterate retry with one error after retry iterator", `{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":1000000000,"PercentComplete":0.2,"TotalCount":5,"SuccessCount":1,"Cursor":1}`).Equal(t, string(jsonify))
+		autogold.Expect(`{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":1000000000,"PercentComplete":0.2,"TotalCount":5,"SuccessCount":1,"Cursor":1}`).Equal(t, string(jsonify))
 	})
 
 	t.Run("ensure retries are reloaded", func(t *testing.T) {
@@ -548,7 +548,7 @@ func TestForNextRetryAndFinish(t *testing.T) {
 		require.Equal(t, 2, currentErrors[0].FailureCount)
 
 		jsonify, _ := json.Marshal(reloaded)
-		autogold.Want("ensure retries are reloaded after reload", `{"Id":2,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":2000000000,"PercentComplete":0.5,"TotalCount":2,"SuccessCount":1,"Cursor":2}`).Equal(t, string(jsonify))
+		autogold.Expect(`{"Id":2,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":2000000000,"PercentComplete":0.5,"TotalCount":2,"SuccessCount":1,"Cursor":2}`).Equal(t, string(jsonify))
 	})
 	t.Run("ensure retries complete", func(t *testing.T) {
 		clock := glock.NewMockClock()
@@ -578,7 +578,7 @@ func TestForNextRetryAndFinish(t *testing.T) {
 		require.Equal(t, 0, len(itr.errors))
 
 		jsonify, _ := json.Marshal(itr)
-		autogold.Want("ensure retries complete", `{"Id":3,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":2000000000,"PercentComplete":1,"TotalCount":2,"SuccessCount":2,"Cursor":2}`).Equal(t, string(jsonify))
+		autogold.Expect(`{"Id":3,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":2000000000,"PercentComplete":1,"TotalCount":2,"SuccessCount":2,"Cursor":2}`).Equal(t, string(jsonify))
 	})
 	t.Run("ensure retry that exceeds max attempts calls back", func(t *testing.T) {
 		clock := glock.NewMockClock()
@@ -614,7 +614,7 @@ func TestForNextRetryAndFinish(t *testing.T) {
 		require.Equal(t, 2, terminalCount)
 
 		jsonify, _ := json.Marshal(itr)
-		autogold.Want("ensure retry that exceeds max attempts calls back", `{"Id":4,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":2000000000,"PercentComplete":0,"TotalCount":2,"SuccessCount":0,"Cursor":2}`).Equal(t, string(jsonify))
+		autogold.Expect(`{"Id":4,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":2000000000,"PercentComplete":0,"TotalCount":2,"SuccessCount":0,"Cursor":2}`).Equal(t, string(jsonify))
 	})
 
 	t.Run("ensure retry with all terminal errors has no errors to continue", func(t *testing.T) {
@@ -649,7 +649,7 @@ func TestForNextRetryAndFinish(t *testing.T) {
 		require.Equal(t, float64(0), itr.PercentComplete)
 
 		jsonify, _ := json.Marshal(itr)
-		autogold.Want("ensure retry with only terminal errors reports no errors", `{"Id":5,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":0,"TotalCount":2,"SuccessCount":0,"Cursor":2}`).Equal(t, string(jsonify))
+		autogold.Expect(`{"Id":5,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":0,"TotalCount":2,"SuccessCount":0,"Cursor":2}`).Equal(t, string(jsonify))
 	})
 }
 
@@ -680,14 +680,14 @@ func TestReset(t *testing.T) {
 		return true
 	}, IterationConfig{})
 	jsonify, _ := json.Marshal(itrAfterStep)
-	autogold.Want("iterate once with an error", `{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":1000000000,"PercentComplete":0.2,"TotalCount":5,"SuccessCount":1,"Cursor":1}`).Equal(t, string(jsonify))
+	autogold.Expect(`{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":1000000000,"PercentComplete":0.2,"TotalCount":5,"SuccessCount":1,"Cursor":1}`).Equal(t, string(jsonify))
 
 	err := itrAfterStep.Restart(ctx, store)
 	require.NoError(t, err, "restart should not error")
 	reloaded, err := LoadWithClock(ctx, store, itrAfterStep.Id, clock)
 	require.NoError(t, err, "load should not error")
 	resetJson, _ := json.Marshal(reloaded)
-	autogold.Want("iterator should reset to starting position", `{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"0001-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":0,"TotalCount":5,"SuccessCount":0,"Cursor":0}`).Equal(t, string(resetJson))
+	autogold.Expect(`{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"0001-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":0,"TotalCount":5,"SuccessCount":0,"Cursor":0}`).Equal(t, string(resetJson))
 
 }
 

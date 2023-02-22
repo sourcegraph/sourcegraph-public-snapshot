@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import { mdiPlus } from '@mdi/js'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 import { concat, Subject } from 'rxjs'
 import { catchError, concatMap, tap } from 'rxjs/operators'
 

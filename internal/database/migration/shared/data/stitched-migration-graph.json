@@ -640,6 +640,45 @@
 				],
 				"IsCreateIndexConcurrently": false,
 				"IndexMetadata": null
+			},
+			{
+				"ID": 1674474174,
+				"Name": "remove_dirty_queries_table",
+				"UpQuery": "DROP TABLE IF EXISTS insight_dirty_queries;",
+				"DownQuery": "CREATE TABLE IF NOT EXISTS insight_dirty_queries (\n    id integer PRIMARY KEY,\n    insight_series_id integer,\n    query text NOT NULL,\n    dirty_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,\n    reason text NOT NULL,\n    for_time timestamp without time zone NOT NULL\n);\n\n\nCREATE SEQUENCE IF NOT EXISTS insight_dirty_queries_id_seq\n    AS integer\n    START WITH 1\n    INCREMENT BY 1\n    NO MINVALUE\n    NO MAXVALUE\n    CACHE 1;\n\nALTER SEQUENCE IF EXISTS insight_dirty_queries_id_seq OWNED BY insight_dirty_queries.id;\n\nALTER TABLE IF EXISTS insight_dirty_queries ALTER COLUMN id SET DEFAULT nextval('insight_dirty_queries_id_seq'::regclass);\n\nALTER TABLE IF EXISTS insight_dirty_queries DROP CONSTRAINT IF EXISTS insight_dirty_queries_insight_series_id_fkey;\nALTER TABLE IF EXISTS insight_dirty_queries\n    ADD CONSTRAINT insight_dirty_queries_insight_series_id_fkey FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE;\n\nCREATE INDEX IF NOT EXISTS insight_dirty_queries_insight_series_id_fk_idx ON insight_dirty_queries USING btree (insight_series_id);",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1672921606
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1675113463,
+				"Name": "backfill_repo_query_selector",
+				"UpQuery": "UPDATE insight_series\nSET repository_criteria = 'repo:.*'\nWHERE (CARDINALITY(repositories) = 0 AND generation_method != 'lang_stats' AND repository_criteria IS NULL);",
+				"DownQuery": "-- no need for a down migration, this is entirely new data",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1674474174
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1675347548,
+				"Name": "add_insight_view_num_samples",
+				"UpQuery": "ALTER TABLE IF EXISTS insight_view\n\tADD COLUMN IF NOT EXISTS series_num_samples INT;",
+				"DownQuery": "ALTER TABLE IF EXISTS insight_view\n\tDROP COLUMN IF EXISTS series_num_samples;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1675113463
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
 			}
 		],
 		"BoundsByRev": {
@@ -837,6 +876,13 @@
 				"RootID": 1000000027,
 				"LeafIDs": [
 					1672921606
+				],
+				"PreCreation": false
+			},
+			"v4.5.0": {
+				"RootID": 1000000027,
+				"LeafIDs": [
+					1675347548
 				],
 				"PreCreation": false
 			}
@@ -1684,6 +1730,13 @@
 				"PreCreation": false
 			},
 			"v4.4.0": {
+				"RootID": 1000000033,
+				"LeafIDs": [
+					1671059396
+				],
+				"PreCreation": false
+			},
+			"v4.5.0": {
 				"RootID": 1000000033,
 				"LeafIDs": [
 					1671059396
@@ -8008,6 +8061,51 @@
 				"IndexMetadata": null
 			},
 			{
+				"ID": 1671159453,
+				"Name": "outbound webhooks",
+				"UpQuery": "-- Create the basic outbound webhook registry table.\nCREATE TABLE IF NOT EXISTS outbound_webhooks (\n    id BIGSERIAL NOT NULL PRIMARY KEY,\n    created_by INTEGER NULL REFERENCES users (id) ON DELETE SET NULL,\n    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),\n    updated_by INTEGER NULL REFERENCES users (id) ON DELETE SET NULL,\n    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),\n    encryption_key_id TEXT NULL,\n    url BYTEA NOT NULL,\n    secret BYTEA NOT NULL\n);\n\n-- Each webhook can have one or many event types associated with it, so we'll\n-- use a separate table to track that.\nCREATE TABLE IF NOT EXISTS outbound_webhook_event_types (\n    id BIGSERIAL NOT NULL PRIMARY KEY,\n    outbound_webhook_id BIGINT NOT NULL REFERENCES outbound_webhooks (id) ON DELETE CASCADE ON UPDATE CASCADE,\n    event_type TEXT NOT NULL,\n    scope TEXT NULL\n);\n\nCREATE INDEX IF NOT EXISTS outbound_webhook_event_types_event_type_idx\nON outbound_webhook_event_types (event_type, scope);\n\nDROP VIEW IF EXISTS outbound_webhooks_with_event_types;\n\n-- Most of the time we interact with webhooks from code, we want to also hydrate\n-- the event types. This view does exactly that.\nCREATE VIEW outbound_webhooks_with_event_types AS\nSELECT\n    id,\n    created_by,\n    created_at,\n    updated_by,\n    updated_at,\n    encryption_key_id,\n    url,\n    secret,\n    array_to_json(\n        array(\n            SELECT\n                json_build_object(\n                    'id', id,\n                    'outbound_webhook_id', outbound_webhook_id,\n                    'event_type', event_type,\n                    'scope', scope\n                )\n            FROM\n                outbound_webhook_event_types\n            WHERE\n                outbound_webhook_id = outbound_webhooks.id\n        )\n     ) AS event_types\nFROM\n    outbound_webhooks;\n\n-- Create a table to track outbound webhook worker jobs.\nCREATE TABLE IF NOT EXISTS outbound_webhook_jobs (\n    id BIGSERIAL NOT NULL PRIMARY KEY,\n\n    -- Requirements to send a payload.\n    event_type TEXT NOT NULL,\n    scope TEXT NULL,\n    encryption_key_id TEXT NULL,\n    payload BYTEA NOT NULL,\n\n    -- Generic worker fields.\n    state TEXT NOT NULL DEFAULT 'queued',\n    failure_message TEXT,\n    queued_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),\n    started_at TIMESTAMP WITH TIME ZONE,\n    finished_at TIMESTAMP WITH TIME ZONE,\n    process_after TIMESTAMP WITH TIME ZONE,\n    num_resets INTEGER NOT NULL DEFAULT 0,\n    num_failures INTEGER NOT NULL DEFAULT 0,\n    last_heartbeat_at TIMESTAMP WITH TIME ZONE NULL,\n    execution_logs JSON[],\n    worker_hostname TEXT NOT NULL DEFAULT '',\n    cancel BOOLEAN NOT NULL DEFAULT FALSE\n);\n\nCREATE INDEX IF NOT EXISTS outbound_webhook_jobs_state_idx\nON outbound_webhook_jobs (state);\n\nCREATE INDEX IF NOT EXISTS outbound_webhook_payload_process_after_idx\nON outbound_webhook_jobs (process_after);\n\n-- Create a table to store outbound webhook logs.\nCREATE TABLE IF NOT EXISTS outbound_webhook_logs (\n    id BIGSERIAL NOT NULL PRIMARY KEY,\n    job_id BIGINT NOT NULL REFERENCES outbound_webhook_jobs (id) ON DELETE CASCADE ON UPDATE CASCADE,\n    outbound_webhook_id BIGINT NOT NULL REFERENCES outbound_webhooks (id) ON DELETE CASCADE ON UPDATE CASCADE,\n    sent_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),\n    status_code INTEGER NOT NULL,\n    encryption_key_id TEXT NULL,\n    request BYTEA NOT NULL,\n    response BYTEA NOT NULL,\n    error BYTEA NOT NULL\n);\n\nCREATE INDEX IF NOT EXISTS outbound_webhook_logs_outbound_webhook_id_idx\nON outbound_webhook_logs (outbound_webhook_id);\n\nCREATE INDEX IF NOT EXISTS outbound_webhooks_logs_status_code_idx\nON outbound_webhook_logs (status_code);",
+				"DownQuery": "DROP TABLE IF EXISTS outbound_webhook_logs;\nDROP TABLE IF EXISTS outbound_webhook_jobs;\n\nDROP VIEW IF EXISTS outbound_webhooks_with_event_types;\n\nDROP TABLE IF EXISTS outbound_webhook_event_types;\nDROP TABLE IF EXISTS outbound_webhooks;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1669645608,
+					1670600028,
+					1670870072
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1671463799,
+				"Name": "Teams",
+				"UpQuery": "CREATE TABLE IF NOT EXISTS teams (\n    id SERIAL PRIMARY KEY,\n    name citext NOT NULL CONSTRAINT teams_name_max_length CHECK (char_length(name::text) \u003c= 255) CONSTRAINT teams_name_valid_chars CHECK (name ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext),\n    display_name text CONSTRAINT teams_display_name_max_length CHECK (char_length(display_name) \u003c= 255),\n    readonly boolean NOT NULL DEFAULT false,\n    parent_team_id integer REFERENCES teams(id) ON DELETE CASCADE,\n    creator_id integer NOT NULL REFERENCES users(id) ON DELETE SET NULL,\n    created_at timestamp with time zone NOT NULL DEFAULT now(),\n    updated_at timestamp with time zone NOT NULL DEFAULT now()\n);\n\nCREATE UNIQUE INDEX IF NOT EXISTS teams_name ON teams(name);\n\nCREATE TABLE IF NOT EXISTS team_members (\n    team_id integer NOT NULL REFERENCES teams(id) ON DELETE CASCADE,\n    user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n    created_at timestamp with time zone NOT NULL DEFAULT now(),\n    updated_at timestamp with time zone NOT NULL DEFAULT now(),\n    CONSTRAINT team_members_team_id_user_id_key UNIQUE (team_id, user_id),\n    PRIMARY KEY(team_id, user_id)\n);\n\nALTER TABLE names ADD COLUMN IF NOT EXISTS team_id integer REFERENCES teams(id) ON UPDATE CASCADE ON DELETE CASCADE;\nALTER TABLE names DROP CONSTRAINT IF EXISTS names_check;\nALTER TABLE names ADD CONSTRAINT names_check CHECK (user_id IS NOT NULL OR org_id IS NOT NULL OR team_id IS NOT NULL);",
+				"DownQuery": "ALTER TABLE names DROP CONSTRAINT IF EXISTS names_check;\n\nALTER TABLE names DROP COLUMN IF EXISTS team_id;\n\nALTER TABLE names ADD CONSTRAINT names_check CHECK (user_id IS NOT NULL OR org_id IS NOT NULL);\n\nDROP TABLE IF EXISTS team_members;\n\nDROP TABLE IF EXISTS teams;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1669645608,
+					1670600028,
+					1670870072
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1671543381,
+				"Name": "add_default_roles",
+				"UpQuery": "-- system roles that come with every sourcegraph instance\nINSERT INTO\n    roles (id, name, created_at, deleted_at, readonly)\nVALUES\n    (1, 'USER', '2023-01-04 16:29:41.195966+00', NULL, TRUE),\n    (2, 'SITE_ADMINISTRATOR', '2023-01-04 16:29:41.195966+00', NULL, TRUE)\nON CONFLICT (id) DO NOTHING;\n\nSELECT pg_catalog.setval('roles_id_seq', 3, true);",
+				"DownQuery": "DELETE FROM roles WHERE id IN (1, 2);",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1669645608,
+					1670600028,
+					1670870072
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
 				"ID": 1672884222,
 				"Name": "create_namespace_permissions_table",
 				"UpQuery": "CREATE TABLE IF NOT EXISTS namespace_permissions (\n    id SERIAL PRIMARY KEY,\n    namespace text NOT NULL,\n    resource_id integer NOT NULL,\n    action text NOT NULL,\n\n    user_id integer REFERENCES users(id) ON DELETE CASCADE DEFERRABLE,\n\n    created_at timestamp with time zone DEFAULT now() NOT NULL,\n\n    CONSTRAINT namespace_not_blank CHECK (namespace \u003c\u003e ''::text),\n    CONSTRAINT action_not_blank CHECK (action \u003c\u003e ''::text),\n\n    CONSTRAINT unique_resource_permission UNIQUE (namespace, resource_id, action, user_id)\n);",
@@ -8104,6 +8202,314 @@
 				"Parents": [
 					1673351808,
 					1673871310
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1674035302,
+				"Name": "remove webhook_build_jobs table",
+				"UpQuery": "DROP INDEX IF EXISTS webhook_build_jobs_queued_at_idx;\nDROP INDEX IF EXISTS webhook_build_jobs_state;\nDROP TABLE IF EXISTS webhook_build_jobs;\nDROP SEQUENCE IF EXISTS webhook_build_jobs_id_seq;",
+				"DownQuery": "CREATE SEQUENCE IF NOT EXISTS webhook_build_jobs_id_seq\n    START WITH 1\n    INCREMENT BY 1\n    NO MINVALUE\n    NO MAXVALUE\n    CACHE 1;\n\nCREATE TABLE IF NOT EXISTS webhook_build_jobs (\n    repo_id integer,\n    repo_name text,\n    extsvc_kind text,\n    queued_at timestamp with time zone DEFAULT now(),\n    id integer DEFAULT nextval('webhook_build_jobs_id_seq'::regclass) NOT NULL,\n    state text DEFAULT 'queued'::text NOT NULL,\n    failure_message text,\n    started_at timestamp with time zone,\n    finished_at timestamp with time zone,\n    process_after timestamp with time zone,\n    num_resets integer DEFAULT 0 NOT NULL,\n    num_failures integer DEFAULT 0 NOT NULL,\n    execution_logs json[],\n    last_heartbeat_at timestamp with time zone,\n    worker_hostname text DEFAULT ''::text NOT NULL,\n    org text,\n    extsvc_id integer,\n    cancel boolean DEFAULT false NOT NULL\n);\n\nCREATE INDEX IF NOT EXISTS webhook_build_jobs_queued_at_idx ON webhook_build_jobs USING btree (queued_at);\nCREATE INDEX IF NOT EXISTS webhook_build_jobs_state ON webhook_build_jobs USING btree (state);",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1671159453,
+					1673897709
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1674041632,
+				"Name": "add constraints to permission_sync_jobs table",
+				"UpQuery": "-- We are changing the schema and we don't expect any rows yet so we can just drop\n-- the old table.\nDROP TABLE IF EXISTS permission_sync_jobs;\n\nCREATE TABLE permission_sync_jobs\n(\n    id                   SERIAL PRIMARY KEY,\n    state                TEXT                     DEFAULT 'queued',\n    reason               TEXT    NOT NULL,\n    failure_message      TEXT,\n    queued_at            TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n    started_at           TIMESTAMP WITH TIME ZONE,\n    finished_at          TIMESTAMP WITH TIME ZONE,\n    process_after        TIMESTAMP WITH TIME ZONE,\n    num_resets           INTEGER NOT NULL         DEFAULT 0,\n    num_failures         INTEGER NOT NULL         DEFAULT 0,\n    last_heartbeat_at    TIMESTAMP WITH TIME ZONE,\n    execution_logs       JSON[],\n    worker_hostname      TEXT    NOT NULL         DEFAULT '',\n    cancel               BOOLEAN NOT NULL         DEFAULT FALSE,\n\n    repository_id        INTEGER,\n    user_id              INTEGER,\n    triggered_by_user_id INTEGER REFERENCES users (id) ON DELETE SET NULL DEFERRABLE,\n\n    high_priority        BOOLEAN NOT NULL         DEFAULT FALSE,\n    invalidate_caches    BOOLEAN NOT NULL         DEFAULT FALSE,\n    CONSTRAINT permission_sync_jobs_for_repo_or_user CHECK (((user_id IS NULL) \u003c\u003e (repository_id IS NULL)))\n);\n\nCREATE INDEX IF NOT EXISTS permission_sync_jobs_state ON permission_sync_jobs (state);\nCREATE INDEX IF NOT EXISTS permission_sync_jobs_process_after ON permission_sync_jobs (process_after);\nCREATE INDEX IF NOT EXISTS permission_sync_jobs_repository_id ON permission_sync_jobs (repository_id);\nCREATE INDEX IF NOT EXISTS permission_sync_jobs_user_id ON permission_sync_jobs (user_id);\n\n-- this index is used as a last resort if deduplication logic fails to work.\n-- we should not enqueue more that one high priority immediate sync job (process_after IS NULL) for given repo/user.\nCREATE UNIQUE INDEX IF NOT EXISTS permission_sync_jobs_unique ON permission_sync_jobs\n    USING btree (high_priority, user_id, repository_id, cancel, process_after)\n    WHERE (state = 'queued');\n\nCOMMENT ON COLUMN permission_sync_jobs.reason IS 'Specifies why permissions sync job was triggered.';\nCOMMENT ON COLUMN permission_sync_jobs.triggered_by_user_id IS 'Specifies an ID of a user who triggered a sync.';",
+				"DownQuery": "-- We are changing the schema and we don't expect any rows yet so we can just drop\n-- the old table.\nDROP TABLE IF EXISTS permission_sync_jobs;\n\nCREATE TABLE IF NOT EXISTS permission_sync_jobs\n(\n    id                SERIAL PRIMARY KEY,\n    state             text                     DEFAULT 'queued',\n    failure_message   text,\n    queued_at         timestamp with time zone DEFAULT NOW(),\n    started_at        timestamp with time zone,\n    finished_at       timestamp with time zone,\n    process_after     timestamp with time zone,\n    num_resets        integer not null         default 0,\n    num_failures      integer not null         default 0,\n    last_heartbeat_at timestamp with time zone,\n    execution_logs    json[],\n    worker_hostname   text    not null         default '',\n    cancel            boolean not null         default false,\n\n    repository_id     integer,\n    user_id           integer,\n\n    high_priority     boolean not null         default false,\n    invalidate_caches boolean not null         default false\n);\n\nCREATE INDEX IF NOT EXISTS permission_sync_jobs_state ON permission_sync_jobs (state);\nCREATE INDEX IF NOT EXISTS permission_sync_jobs_process_after ON permission_sync_jobs (process_after);\nCREATE INDEX IF NOT EXISTS permission_sync_jobs_repository_id ON permission_sync_jobs (repository_id);\nCREATE INDEX IF NOT EXISTS permission_sync_jobs_user_id ON permission_sync_jobs (user_id);\n\nALTER TABLE permission_sync_jobs\n    ADD COLUMN IF NOT EXISTS reason               TEXT,\n    ADD COLUMN IF NOT EXISTS triggered_by_user_id INTEGER,\n    ADD FOREIGN KEY (triggered_by_user_id) REFERENCES users (id) ON DELETE SET NULL DEFERRABLE;\n\nCOMMENT ON COLUMN permission_sync_jobs.reason IS 'Specifies why permissions sync job was triggered.';\nCOMMENT ON COLUMN permission_sync_jobs.triggered_by_user_id IS 'Specifies an ID of a user who triggered a sync.';",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1671159453,
+					1673897709
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1674047296,
+				"Name": "rename_roles_readonly_column_to_system",
+				"UpQuery": "-- ALTER TABLE IF EXISTS\n--     roles\n-- RENAME COLUMN readonly TO system;\n\n-- The above query isn't idempotent because `RENAME COLUMN` doesn't have an `IF EXISTS`\n-- clause that checks for the existence of the column in question.\n\nDO $$\nBEGIN\n    ALTER TABLE IF EXISTS\n        roles\n    RENAME COLUMN readonly TO system;\nEXCEPTION\n    WHEN undefined_column THEN RAISE NOTICE 'column readonly does not exist in table roles';\nEND $$;",
+				"DownQuery": "-- ALTER TABLE IF EXISTS\n--     roles\n-- RENAME COLUMN system TO readonly;\n\n-- The above query isn't idempotent because `RENAME COLUMN` doesn't have an `IF EXISTS`\n-- clause that checks for the existence of the column in question.\n\nDO $$\nBEGIN\n    ALTER TABLE IF EXISTS\n        roles\n    RENAME COLUMN system TO readonly;\nEXCEPTION\n    WHEN undefined_column THEN RAISE NOTICE 'column system does not exist in table roles';\nEND $$;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1671543381,
+					1673897709
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1674455760,
+				"Name": "add cancellation_reason to permission_sync_jobs table",
+				"UpQuery": "ALTER TABLE permission_sync_jobs ADD COLUMN IF NOT EXISTS cancellation_reason TEXT;\n\nCOMMENT ON COLUMN permission_sync_jobs.cancellation_reason IS 'Specifies why permissions sync job was cancelled.';",
+				"DownQuery": "ALTER TABLE permission_sync_jobs\n    DROP COLUMN IF EXISTS reason,\n    DROP COLUMN IF EXISTS triggered_by_user_id;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1674041632,
+					1674047296
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1674480050,
+				"Name": "add column redacted_contents to critical_and_site_config",
+				"UpQuery": "ALTER TABLE critical_and_site_config\n      ADD COLUMN IF NOT EXISTS redacted_contents text;\nCOMMENT ON COLUMN critical_and_site_config.redacted_contents IS 'This column stores the contents but redacts all secrets. The redacted form is a sha256 hash of the secret appended to the REDACTED string. This is used to generate diffs between two subsequent changes in a way that allows us to detect changes to any secrets while also ensuring that we do not leak it in the diff. A null value indicates that this config was added before this column was added or redacting the secrets during write failed so we skipped writing to this column instead of a hard failure.';",
+				"DownQuery": "ALTER TABLE critical_and_site_config\n      DROP COLUMN IF EXISTS redacted_contents;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1674035302,
+					1674455760
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1674669326,
+				"Name": "package_repos_separate_versions_table",
+				"UpQuery": "-- This will be a two-step migration:\n-- 1. Create the new table and make versions column in old table nullable\n-- This is so that during a migration, an instance on vX-1 can still read \u0026 write without incorrect data.\n-- Then when the instance is on vX, it will read \u0026 write to the new+old tables but not the version\n-- column from the old table.\n-- 2. Drop version column in old table and flatten remaining duplicates\n-- The instance on vX is not using this column, and the read queries should be designed to\n-- handle both flattened and non-flattened\n\nCREATE TABLE IF NOT EXISTS package_repo_versions (\n    id BIGSERIAL PRIMARY KEY,\n    package_id BIGINT NOT NULL,\n    version TEXT NOT NULL,\n\n    CONSTRAINT package_id_fk FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos (id) ON DELETE CASCADE\n);\n\nCREATE INDEX IF NOT EXISTS package_repo_versions_fk_idx ON package_repo_versions (package_id);\nCREATE UNIQUE INDEX IF NOT EXISTS package_repo_versions_unique_version_per_package ON package_repo_versions (package_id, version);\n\nCREATE INDEX IF NOT EXISTS lsif_dependency_repos_name_idx ON lsif_dependency_repos (name);\n\n-- if any rows were inserted into lsif_dependency_repos an instance on a version older than this\n-- schema after the migration happened but before the instance was ugpraded, then we need this trigger\n-- to copy over anything added _after_ the migration but before the _instance upgrade_\nCREATE OR REPLACE FUNCTION func_lsif_dependency_repos_backfill() RETURNS TRIGGER AS $$\n    BEGIN\n        INSERT INTO package_repo_versions (package_id, version)\n        VALUES (NEW.id, NEW.version);\n\n        RETURN NULL;\n    END;\n$$ LANGUAGE plpgsql;\n\nDROP TRIGGER IF EXISTS lsif_dependency_repos_backfill ON lsif_dependency_repos;\nCREATE TRIGGER lsif_dependency_repos_backfill AFTER INSERT ON lsif_dependency_repos\nFOR EACH ROW\nWHEN (NEW.version \u003c\u003e '👁️temporary_sentinel_value👁️')\nEXECUTE FUNCTION func_lsif_dependency_repos_backfill();\n\n-- for every existing triplet, we use the lowest ID for a given (scheme,name) tuple\n-- and insert the (version) using that ID into package_repo_versions\nINSERT INTO package_repo_versions (package_id, version)\nSELECT (\n    SELECT MIN(id)\n    FROM lsif_dependency_repos\n    WHERE\n        scheme = lr.scheme AND\n        name = lr.name\n) AS package_id, version\nFROM lsif_dependency_repos lr;",
+				"DownQuery": "DO $$\nBEGIN\n    IF EXISTS (\n        SELECT 1 FROM information_schema.tables\n        WHERE\n            table_name = 'package_repo_versions' AND\n            table_schema = current_schema()\n    ) THEN\n        WITH matched_triplets AS (\n            SELECT lr.scheme, lr.name, rpv.version\n            FROM package_repo_versions rpv\n            JOIN lsif_dependency_repos lr\n            ON rpv.package_id = lr.id\n        )\n        INSERT INTO lsif_dependency_repos (scheme, name, version)\n        SELECT * FROM matched_triplets\n        ON CONFLICT DO NOTHING;\n    END IF;\nEND\n$$;\n\nDELETE FROM lsif_dependency_repos\nWHERE version = '👁️temporary_sentinel_value👁️';\n\nDROP INDEX IF EXISTS package_repo_versions_fk_idx;\nDROP INDEX IF EXISTS package_repo_versions_unique_version_per_package;\n\nDROP INDEX IF EXISTS lsif_dependency_repos_name_idx;\n\nDROP TABLE IF EXISTS package_repo_versions;\n\nDROP TRIGGER IF EXISTS lsif_dependency_repos_backfill ON lsif_dependency_repos;\nDROP FUNCTION IF EXISTS func_lsif_dependency_repos_backfill;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1674480050
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1674642349,
+				"Name": "add_priority_to_permission_sync_jobs",
+				"UpQuery": "ALTER TABLE permission_sync_jobs ADD COLUMN IF NOT EXISTS priority INTEGER NOT NULL DEFAULT 0;\nCOMMENT ON COLUMN permission_sync_jobs.priority IS 'Specifies numeric priority for the permissions sync job.';\n\nALTER TABLE permission_sync_jobs DROP COLUMN IF EXISTS high_priority;\n\n-- this index is used as a last resort if deduplication logic fails to work.\n-- we should not enqueue more that one high priority immediate sync job (process_after IS NULL) for given repo/user.\nCREATE UNIQUE INDEX IF NOT EXISTS permission_sync_jobs_unique ON permission_sync_jobs\n    USING btree (priority, user_id, repository_id, cancel, process_after)\n    WHERE (state = 'queued');",
+				"DownQuery": "ALTER TABLE permission_sync_jobs ADD COLUMN IF NOT EXISTS high_priority BOOLEAN NOT NULL DEFAULT FALSE;\nCOMMENT ON COLUMN permission_sync_jobs.high_priority IS 'Specifies if the permissions sync job is high priority.';\n\nALTER TABLE permission_sync_jobs DROP COLUMN IF EXISTS priority;\n\n-- this index is used as a last resort if deduplication logic fails to work.\n-- we should not enqueue more that one high priority immediate sync job (process_after IS NULL) for given repo/user.\nCREATE UNIQUE INDEX IF NOT EXISTS permission_sync_jobs_unique ON permission_sync_jobs\n    USING btree (high_priority, user_id, repository_id, cancel, process_after)\n    WHERE (state = 'queued');",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1674035302,
+					1674455760
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1674669794,
+				"Name": "add_foreign_keys_to_permission_sync_jobs",
+				"UpQuery": "-- We are changing the schema and we don't expect any rows yet so we can just drop\n-- the old table.\nDROP TABLE IF EXISTS permission_sync_jobs;\n\nCREATE TABLE permission_sync_jobs\n(\n    id                   SERIAL PRIMARY KEY,\n    state                TEXT                     DEFAULT 'queued',\n    reason               TEXT    NOT NULL,\n    failure_message      TEXT,\n    queued_at            TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n    started_at           TIMESTAMP WITH TIME ZONE,\n    finished_at          TIMESTAMP WITH TIME ZONE,\n    process_after        TIMESTAMP WITH TIME ZONE,\n    num_resets           INTEGER NOT NULL         DEFAULT 0,\n    num_failures         INTEGER NOT NULL         DEFAULT 0,\n    last_heartbeat_at    TIMESTAMP WITH TIME ZONE,\n    execution_logs       JSON[],\n    worker_hostname      TEXT    NOT NULL         DEFAULT '',\n    cancel               BOOLEAN NOT NULL         DEFAULT FALSE,\n\n    repository_id        INTEGER REFERENCES repo (id) ON DELETE CASCADE,\n    user_id              INTEGER REFERENCES users (id) ON DELETE CASCADE,\n    triggered_by_user_id INTEGER REFERENCES users (id) ON DELETE SET NULL DEFERRABLE,\n\n    priority             INTEGER NOT NULL         DEFAULT 0,\n    invalidate_caches    BOOLEAN NOT NULL         DEFAULT FALSE,\n    cancellation_reason  TEXT,\n    CONSTRAINT permission_sync_jobs_for_repo_or_user CHECK (((user_id IS NULL) \u003c\u003e (repository_id IS NULL)))\n);\n\nCREATE INDEX IF NOT EXISTS permission_sync_jobs_state ON permission_sync_jobs (state);\nCREATE INDEX IF NOT EXISTS permission_sync_jobs_process_after ON permission_sync_jobs (process_after);\nCREATE INDEX IF NOT EXISTS permission_sync_jobs_repository_id ON permission_sync_jobs (repository_id);\nCREATE INDEX IF NOT EXISTS permission_sync_jobs_user_id ON permission_sync_jobs (user_id);\n\n-- this index is used as a last resort if deduplication logic fails to work.\n-- we should not enqueue more that one high priority immediate sync job (process_after IS NULL) for given repo/user.\nCREATE UNIQUE INDEX IF NOT EXISTS permission_sync_jobs_unique ON permission_sync_jobs\n    USING btree (priority, user_id, repository_id, cancel, process_after)\n    WHERE (state = 'queued');\n\nCOMMENT ON COLUMN permission_sync_jobs.reason IS 'Specifies why permissions sync job was triggered.';\nCOMMENT ON COLUMN permission_sync_jobs.triggered_by_user_id IS 'Specifies an ID of a user who triggered a sync.';\nCOMMENT ON COLUMN permission_sync_jobs.cancellation_reason IS 'Specifies why permissions sync job was cancelled.';\nCOMMENT ON COLUMN permission_sync_jobs.priority IS 'Specifies numeric priority for the permissions sync job.';",
+				"DownQuery": "-- We are changing the schema and we don't expect any rows yet so we can just drop\n-- the old table.\nDROP TABLE IF EXISTS permission_sync_jobs;\n\nCREATE TABLE permission_sync_jobs\n(\n    id                   SERIAL PRIMARY KEY,\n    state                TEXT                     DEFAULT 'queued',\n    reason               TEXT    NOT NULL,\n    failure_message      TEXT,\n    queued_at            TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n    started_at           TIMESTAMP WITH TIME ZONE,\n    finished_at          TIMESTAMP WITH TIME ZONE,\n    process_after        TIMESTAMP WITH TIME ZONE,\n    num_resets           INTEGER NOT NULL         DEFAULT 0,\n    num_failures         INTEGER NOT NULL         DEFAULT 0,\n    last_heartbeat_at    TIMESTAMP WITH TIME ZONE,\n    execution_logs       JSON[],\n    worker_hostname      TEXT    NOT NULL         DEFAULT '',\n    cancel               BOOLEAN NOT NULL         DEFAULT FALSE,\n\n    repository_id        INTEGER,\n    user_id              INTEGER,\n    triggered_by_user_id INTEGER REFERENCES users (id) ON DELETE SET NULL DEFERRABLE,\n\n    priority             INTEGER NOT NULL         DEFAULT 0,\n    invalidate_caches    BOOLEAN NOT NULL         DEFAULT FALSE,\n    cancellation_reason  TEXT,\n    CONSTRAINT permission_sync_jobs_for_repo_or_user CHECK (((user_id IS NULL) \u003c\u003e (repository_id IS NULL)))\n);\n\nCREATE INDEX IF NOT EXISTS permission_sync_jobs_state ON permission_sync_jobs (state);\nCREATE INDEX IF NOT EXISTS permission_sync_jobs_process_after ON permission_sync_jobs (process_after);\nCREATE INDEX IF NOT EXISTS permission_sync_jobs_repository_id ON permission_sync_jobs (repository_id);\nCREATE INDEX IF NOT EXISTS permission_sync_jobs_user_id ON permission_sync_jobs (user_id);\n\n-- this index is used as a last resort if deduplication logic fails to work.\n-- we should not enqueue more that one high priority immediate sync job (process_after IS NULL) for given repo/user.\nCREATE UNIQUE INDEX IF NOT EXISTS permission_sync_jobs_unique ON permission_sync_jobs\n    USING btree (priority, user_id, repository_id, cancel, process_after)\n    WHERE (state = 'queued');\n\nCOMMENT ON COLUMN permission_sync_jobs.reason IS 'Specifies why permissions sync job was triggered.';\nCOMMENT ON COLUMN permission_sync_jobs.triggered_by_user_id IS 'Specifies an ID of a user who triggered a sync.';\nCOMMENT ON COLUMN permission_sync_jobs.cancellation_reason IS 'Specifies why permissions sync job was cancelled.';\nCOMMENT ON COLUMN permission_sync_jobs.priority IS 'Specifies numeric priority for the permissions sync job.';",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1674480050,
+					1674642349
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1674814035,
+				"Name": "add_user_repo_permissions_table_for_unified_permissions",
+				"UpQuery": "CREATE TABLE IF NOT EXISTS user_repo_permissions(\n    id SERIAL PRIMARY KEY,\n    user_id INT NULL REFERENCES users(id) ON DELETE CASCADE,\n    repo_id INT NOT NULL REFERENCES repo(id) ON DELETE CASCADE,\n    user_external_account_id INT NULL REFERENCES user_external_accounts(id) ON DELETE CASCADE,\n    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),\n    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),\n    source TEXT NOT NULL DEFAULT 'sync'\n);\n\nCREATE INDEX IF NOT EXISTS user_repo_permissions_user_id_idx ON user_repo_permissions(user_id);\nCREATE INDEX IF NOT EXISTS user_repo_permissions_repo_id_idx ON user_repo_permissions(repo_id);\nCREATE INDEX IF NOT EXISTS user_repo_permissions_user_external_account_id_idx ON user_repo_permissions(user_external_account_id);\nCREATE INDEX IF NOT EXISTS user_repo_permissions_updated_at_idx ON user_repo_permissions(updated_at);\nCREATE INDEX IF NOT EXISTS user_repo_permissions_source_idx ON user_repo_permissions(source);\nCREATE UNIQUE INDEX IF NOT EXISTS user_repo_permissions_perms_unique_idx ON user_repo_permissions(user_id, user_external_account_id, repo_id);",
+				"DownQuery": "DROP TABLE IF EXISTS user_repo_permissions;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1674669794
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1674952295,
+				"Name": "make_user_id_namespace_permissions_non_nullable",
+				"UpQuery": "ALTER TABLE namespace_permissions ALTER COLUMN user_id SET NOT NULL;",
+				"DownQuery": "ALTER TABLE namespace_permissions ALTER COLUMN user_id DROP NOT NULL;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1674669794
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1675155867,
+				"Name": "add no_perms column to permission_sync_jobs table",
+				"UpQuery": "-- We are changing the schema and we don't expect any rows yet so we can just drop\n-- the old table.\nDROP TABLE IF EXISTS permission_sync_jobs;\n\nCREATE TABLE permission_sync_jobs\n(\n    id                   SERIAL PRIMARY KEY,\n    state                TEXT                     DEFAULT 'queued',\n    reason               TEXT    NOT NULL,\n    failure_message      TEXT,\n    queued_at            TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n    started_at           TIMESTAMP WITH TIME ZONE,\n    finished_at          TIMESTAMP WITH TIME ZONE,\n    process_after        TIMESTAMP WITH TIME ZONE,\n    num_resets           INTEGER NOT NULL         DEFAULT 0,\n    num_failures         INTEGER NOT NULL         DEFAULT 0,\n    last_heartbeat_at    TIMESTAMP WITH TIME ZONE,\n    execution_logs       JSON[],\n    worker_hostname      TEXT    NOT NULL         DEFAULT '',\n    cancel               BOOLEAN NOT NULL         DEFAULT FALSE,\n\n    repository_id        INTEGER REFERENCES repo (id) ON DELETE CASCADE,\n    user_id              INTEGER REFERENCES users (id) ON DELETE CASCADE,\n    triggered_by_user_id INTEGER REFERENCES users (id) ON DELETE SET NULL DEFERRABLE,\n\n    priority             INTEGER NOT NULL         DEFAULT 0,\n    invalidate_caches    BOOLEAN NOT NULL         DEFAULT FALSE,\n    cancellation_reason  TEXT,\n    no_perms             BOOLEAN NOT NULL         DEFAULT FALSE\n    CONSTRAINT permission_sync_jobs_for_repo_or_user CHECK (((user_id IS NULL) \u003c\u003e (repository_id IS NULL)))\n);\n\nCREATE INDEX IF NOT EXISTS permission_sync_jobs_state ON permission_sync_jobs (state);\nCREATE INDEX IF NOT EXISTS permission_sync_jobs_process_after ON permission_sync_jobs (process_after);\nCREATE INDEX IF NOT EXISTS permission_sync_jobs_repository_id ON permission_sync_jobs (repository_id);\nCREATE INDEX IF NOT EXISTS permission_sync_jobs_user_id ON permission_sync_jobs (user_id);\n\n-- this index is used as a last resort if deduplication logic fails to work.\n-- we should not enqueue more that one high priority immediate sync job (process_after IS NULL) for given repo/user.\nCREATE UNIQUE INDEX IF NOT EXISTS permission_sync_jobs_unique ON permission_sync_jobs\n    USING btree (priority, user_id, repository_id, cancel, process_after)\n    WHERE (state = 'queued');\n\nCOMMENT ON COLUMN permission_sync_jobs.reason IS 'Specifies why permissions sync job was triggered.';\nCOMMENT ON COLUMN permission_sync_jobs.triggered_by_user_id IS 'Specifies an ID of a user who triggered a sync.';\nCOMMENT ON COLUMN permission_sync_jobs.cancellation_reason IS 'Specifies why permissions sync job was cancelled.';\nCOMMENT ON COLUMN permission_sync_jobs.priority IS 'Specifies numeric priority for the permissions sync job.';",
+				"DownQuery": "-- We are changing the schema and we don't expect any rows yet so we can just drop\n-- the old table.\n-- We are changing the schema and we don't expect any rows yet so we can just drop\n-- the old table.\nDROP TABLE IF EXISTS permission_sync_jobs;\n\nCREATE TABLE permission_sync_jobs\n(\n    id                   SERIAL PRIMARY KEY,\n    state                TEXT                     DEFAULT 'queued',\n    reason               TEXT    NOT NULL,\n    failure_message      TEXT,\n    queued_at            TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n    started_at           TIMESTAMP WITH TIME ZONE,\n    finished_at          TIMESTAMP WITH TIME ZONE,\n    process_after        TIMESTAMP WITH TIME ZONE,\n    num_resets           INTEGER NOT NULL         DEFAULT 0,\n    num_failures         INTEGER NOT NULL         DEFAULT 0,\n    last_heartbeat_at    TIMESTAMP WITH TIME ZONE,\n    execution_logs       JSON[],\n    worker_hostname      TEXT    NOT NULL         DEFAULT '',\n    cancel               BOOLEAN NOT NULL         DEFAULT FALSE,\n\n    repository_id        INTEGER REFERENCES repo (id) ON DELETE CASCADE,\n    user_id              INTEGER REFERENCES users (id) ON DELETE CASCADE,\n    triggered_by_user_id INTEGER REFERENCES users (id) ON DELETE SET NULL DEFERRABLE,\n\n    priority             INTEGER NOT NULL         DEFAULT 0,\n    invalidate_caches    BOOLEAN NOT NULL         DEFAULT FALSE,\n    cancellation_reason  TEXT,\n    CONSTRAINT permission_sync_jobs_for_repo_or_user CHECK (((user_id IS NULL) \u003c\u003e (repository_id IS NULL)))\n);\n\nCREATE INDEX IF NOT EXISTS permission_sync_jobs_state ON permission_sync_jobs (state);\nCREATE INDEX IF NOT EXISTS permission_sync_jobs_process_after ON permission_sync_jobs (process_after);\nCREATE INDEX IF NOT EXISTS permission_sync_jobs_repository_id ON permission_sync_jobs (repository_id);\nCREATE INDEX IF NOT EXISTS permission_sync_jobs_user_id ON permission_sync_jobs (user_id);\n\n-- this index is used as a last resort if deduplication logic fails to work.\n-- we should not enqueue more that one high priority immediate sync job (process_after IS NULL) for given repo/user.\nCREATE UNIQUE INDEX IF NOT EXISTS permission_sync_jobs_unique ON permission_sync_jobs\n    USING btree (priority, user_id, repository_id, cancel, process_after)\n    WHERE (state = 'queued');\n\nCOMMENT ON COLUMN permission_sync_jobs.reason IS 'Specifies why permissions sync job was triggered.';\nCOMMENT ON COLUMN permission_sync_jobs.triggered_by_user_id IS 'Specifies an ID of a user who triggered a sync.';\nCOMMENT ON COLUMN permission_sync_jobs.cancellation_reason IS 'Specifies why permissions sync job was cancelled.';\nCOMMENT ON COLUMN permission_sync_jobs.priority IS 'Specifies numeric priority for the permissions sync job.';",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1671463799,
+					1674952295
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1675257827,
+				"Name": "redis_key_value",
+				"UpQuery": "-- Perform migration here.\n\nCREATE TABLE IF NOT EXISTS redis_key_value (\n    namespace TEXT NOT NULL,\n    key TEXT NOT NULL,\n    value BYTEA NOT NULL,\n    PRIMARY KEY (namespace, key) INCLUDE (value)\n);",
+				"DownQuery": "-- Undo the changes made in the up migration\n\nDROP TABLE IF EXISTS redis_key_value;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1675155867
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1675194688,
+				"Name": "Fix should_reindex in views",
+				"UpQuery": "DROP VIEW IF EXISTS lsif_uploads_with_repository_name;\nCREATE VIEW lsif_uploads_with_repository_name AS \nSELECT\n    u.id,\n    u.commit,\n    u.root,\n    u.queued_at,\n    u.uploaded_at,\n    u.state,\n    u.failure_message,\n    u.started_at,\n    u.finished_at,\n    u.repository_id,\n    u.indexer,\n    u.indexer_version,\n    u.num_parts,\n    u.uploaded_parts,\n    u.process_after,\n    u.num_resets,\n    u.upload_size,\n    u.num_failures,\n    u.associated_index_id,\n    u.content_type,\n    u.should_reindex,\n    u.expired,\n    u.last_retention_scan_at,\n    r.name AS repository_name,\n    u.uncompressed_size\nFROM lsif_uploads u\nJOIN repo r ON r.id = u.repository_id\nWHERE r.deleted_at IS NULL;",
+				"DownQuery": "DROP VIEW IF EXISTS lsif_uploads_with_repository_name;\nCREATE VIEW lsif_uploads_with_repository_name AS \nSELECT\n    u.id,\n    u.commit,\n    u.root,\n    u.queued_at,\n    u.uploaded_at,\n    u.state,\n    u.failure_message,\n    u.started_at,\n    u.finished_at,\n    u.repository_id,\n    u.indexer,\n    u.indexer_version,\n    u.num_parts,\n    u.uploaded_parts,\n    u.process_after,\n    u.num_resets,\n    u.upload_size,\n    u.num_failures,\n    u.associated_index_id,\n    u.content_type,\n    u.expired,\n    u.last_retention_scan_at,\n    r.name AS repository_name,\n    u.uncompressed_size\nFROM lsif_uploads u\nJOIN repo r ON r.id = u.repository_id\nWHERE r.deleted_at IS NULL;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1671463799,
+					1674669794
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1675277218,
+				"Name": "Add lsif_uploads_uploaded_at_id",
+				"UpQuery": "CREATE INDEX CONCURRENTLY IF NOT EXISTS lsif_uploads_uploaded_at_id ON lsif_uploads(uploaded_at desc, id) WHERE state != 'deleted';",
+				"DownQuery": "DROP INDEX IF EXISTS lsif_uploads_uploaded_at_id;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1675155867,
+					1675194688
+				],
+				"IsCreateIndexConcurrently": true,
+				"IndexMetadata": {
+					"TableName": "lsif_uploads",
+					"IndexName": "lsif_uploads_uploaded_at_id"
+				}
+			},
+			{
+				"ID": 1675277500,
+				"Name": "Drop lsif_uploads_uploaded_at",
+				"UpQuery": "DROP INDEX IF EXISTS lsif_uploads_uploaded_at;",
+				"DownQuery": "CREATE INDEX IF NOt EXISTS lsif_uploads_uploaded_at ON lsif_uploads(uploaded_at);",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1675277218
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1675277968,
+				"Name": "Drop lsif_indexes_queued_at",
+				"UpQuery": "CREATE INDEX CONCURRENTLY IF NOT EXISTS lsif_indexes_queued_at_id ON lsif_indexes(queued_at DESC, id);",
+				"DownQuery": "DROP INDEX IF EXISTS lsif_indexes_queued_at_id;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1675277500
+				],
+				"IsCreateIndexConcurrently": true,
+				"IndexMetadata": {
+					"TableName": "lsif_indexes",
+					"IndexName": "lsif_indexes_queued_at_id"
+				}
+			},
+			{
+				"ID": 1675296942,
+				"Name": "add column to changesets for external fork name",
+				"UpQuery": "-- Note that we have to regenerate the reconciler_changesets view, as the SELECT\n-- statement in the view definition isn't refreshed when the fields change within the\n-- changesets table.\nDROP VIEW IF EXISTS\n    reconciler_changesets;\n\nALTER TABLE\n  changesets\nADD COLUMN IF NOT EXISTS\n  external_fork_name CITEXT NULL;\n\nCREATE VIEW reconciler_changesets AS\nSELECT c.id,\n    c.batch_change_ids,\n    c.repo_id,\n    c.queued_at,\n    c.created_at,\n    c.updated_at,\n    c.metadata,\n    c.external_id,\n    c.external_service_type,\n    c.external_deleted_at,\n    c.external_branch,\n    c.external_updated_at,\n    c.external_state,\n    c.external_review_state,\n    c.external_check_state,\n    c.diff_stat_added,\n    c.diff_stat_deleted,\n    c.sync_state,\n    c.current_spec_id,\n    c.previous_spec_id,\n    c.publication_state,\n    c.owned_by_batch_change_id,\n    c.reconciler_state,\n    c.computed_state,\n    c.failure_message,\n    c.started_at,\n    c.finished_at,\n    c.process_after,\n    c.num_resets,\n    c.closing,\n    c.num_failures,\n    c.log_contents,\n    c.execution_logs,\n    c.syncer_error,\n    c.external_title,\n    c.worker_hostname,\n    c.ui_publication_state,\n    c.last_heartbeat_at,\n    c.external_fork_name,\n    c.external_fork_namespace,\n    c.detached_at\nFROM changesets c\nJOIN repo r ON r.id = c.repo_id\nWHERE r.deleted_at IS NULL AND EXISTS (\n    SELECT 1\n    FROM batch_changes\n        LEFT JOIN users namespace_user ON batch_changes.namespace_user_id = namespace_user.id\n        LEFT JOIN orgs namespace_org ON batch_changes.namespace_org_id = namespace_org.id\n    WHERE c.batch_change_ids ? batch_changes.id::text AND namespace_user.deleted_at IS NULL AND namespace_org.deleted_at IS NULL\n    );",
+				"DownQuery": "-- Note that we have to regenerate the reconciler_changesets view, as the SELECT\n-- statement in the view definition isn't refreshed when the fields change within the\n-- changesets table.\nDROP VIEW IF EXISTS\n    reconciler_changesets;\n\nALTER TABLE\n  changesets\nDROP COLUMN IF EXISTS\n  external_fork_name;\n\nCREATE VIEW reconciler_changesets AS\nSELECT c.id,\n    c.batch_change_ids,\n    c.repo_id,\n    c.queued_at,\n    c.created_at,\n    c.updated_at,\n    c.metadata,\n    c.external_id,\n    c.external_service_type,\n    c.external_deleted_at,\n    c.external_branch,\n    c.external_updated_at,\n    c.external_state,\n    c.external_review_state,\n    c.external_check_state,\n    c.diff_stat_added,\n    c.diff_stat_deleted,\n    c.sync_state,\n    c.current_spec_id,\n    c.previous_spec_id,\n    c.publication_state,\n    c.owned_by_batch_change_id,\n    c.reconciler_state,\n    c.computed_state,\n    c.failure_message,\n    c.started_at,\n    c.finished_at,\n    c.process_after,\n    c.num_resets,\n    c.closing,\n    c.num_failures,\n    c.log_contents,\n    c.execution_logs,\n    c.syncer_error,\n    c.external_title,\n    c.worker_hostname,\n    c.ui_publication_state,\n    c.last_heartbeat_at,\n    c.external_fork_namespace,\n    c.detached_at\nFROM changesets c\nJOIN repo r ON r.id = c.repo_id\nWHERE r.deleted_at IS NULL AND EXISTS (\n    SELECT 1\n    FROM batch_changes\n        LEFT JOIN users namespace_user ON batch_changes.namespace_user_id = namespace_user.id\n        LEFT JOIN orgs namespace_org ON batch_changes.namespace_org_id = namespace_org.id\n    WHERE c.batch_change_ids ? batch_changes.id::text AND namespace_user.deleted_at IS NULL AND namespace_org.deleted_at IS NULL\n    );",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1675277968
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1675367314,
+				"Name": "add_results_to_permission_sync_jobs",
+				"UpQuery": "ALTER TABLE permission_sync_jobs ADD COLUMN IF NOT EXISTS permissions_added integer NOT NULL DEFAULT 0;\nALTER TABLE permission_sync_jobs ADD COLUMN IF NOT EXISTS permissions_removed integer NOT NULL DEFAULT 0;\nALTER TABLE permission_sync_jobs ADD COLUMN IF NOT EXISTS permissions_found integer NOT NULL DEFAULT 0;",
+				"DownQuery": "ALTER TABLE permission_sync_jobs DROP COLUMN IF EXISTS permissions_added;\nALTER TABLE permission_sync_jobs DROP COLUMN IF EXISTS permissions_removed;\nALTER TABLE permission_sync_jobs DROP COLUMN IF EXISTS permissions_found;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1675277968
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1675647612,
+				"Name": "remove_roles_deleted_at",
+				"UpQuery": "ALTER TABLE roles DROP COLUMN IF EXISTS deleted_at;",
+				"DownQuery": "ALTER TABLE roles\nADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1674669326,
+					1674814035,
+					1675257827,
+					1675367314
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1675962678,
+				"Name": "remove_action_namespace_perms",
+				"UpQuery": "ALTER TABLE namespace_permissions DROP COLUMN IF EXISTS action;\n\nALTER TABLE namespace_permissions DROP CONSTRAINT IF EXISTS unique_resource_permission;\n\nCREATE UNIQUE INDEX IF NOT EXISTS unique_resource_permission ON namespace_permissions (namespace, resource_id, user_id);",
+				"DownQuery": "ALTER TABLE namespace_permissions\n    ADD COLUMN IF NOT EXISTS action text NOT NULL;\n\nALTER TABLE namespace_permissions DROP CONSTRAINT IF EXISTS unique_resource_permission;\n\nCREATE UNIQUE INDEX IF NOT EXISTS unique_resource_permission ON namespace_permissions (namespace, resource_id, action, user_id);",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1675647612
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1676996650,
+				"Name": "package_repos_separate_versions_table_patch1",
+				"UpQuery": "ALTER TABLE lsif_dependency_repos\nALTER COLUMN version SET DEFAULT '👁️temporary_sentinel_value👁️';",
+				"DownQuery": "ALTER TABLE lsif_dependency_repos\nALTER COLUMN version DROP DEFAULT;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1675962678
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1675864432,
+				"Name": "add code_host_states to permission_sync_jobs table",
+				"UpQuery": "ALTER TABLE permission_sync_jobs ADD COLUMN IF NOT EXISTS code_host_states JSON[];",
+				"DownQuery": "ALTER TABLE permission_sync_jobs DROP COLUMN IF EXISTS code_host_states;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1674669326,
+					1674814035,
+					1675257827,
+					1675367314
 				],
 				"IsCreateIndexConcurrently": false,
 				"IndexMetadata": null
@@ -8321,6 +8727,15 @@
 				"RootID": 1648051770,
 				"LeafIDs": [
 					1673897709
+				],
+				"PreCreation": false
+			},
+			"v4.5.0": {
+				"RootID": 1648051770,
+				"LeafIDs": [
+					1675296942,
+					1676996650,
+					1675864432
 				],
 				"PreCreation": false
 			}

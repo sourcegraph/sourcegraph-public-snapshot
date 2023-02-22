@@ -40,7 +40,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
     authenticatedUser,
     platformContext,
     settingsCascade,
-    theme,
     context,
     instanceURL,
 }) => {
@@ -348,7 +347,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     fetchStreamSuggestions={fetchStreamSuggestions}
                     settingsCascade={settingsCascade}
                     globbing={globbing}
-                    isLightTheme={theme === 'theme-light'}
                     telemetryService={platformContext.telemetryService}
                     platformContext={platformContext}
                     className={classNames('flex-grow-1 flex-shrink-past-contents', styles.searchBox)}
@@ -396,7 +394,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     )}
                     <MatchHandlersContext.Provider value={{ ...matchHandlers, instanceURL }}>
                         <StreamingSearchResultsList
-                            isLightTheme={theme === 'theme-light'}
                             settingsCascade={settingsCascade}
                             telemetryService={platformContext.telemetryService}
                             allExpanded={allExpanded}

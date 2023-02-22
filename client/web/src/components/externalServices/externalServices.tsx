@@ -15,7 +15,7 @@ import NpmIcon from 'mdi-react/NpmIcon'
 
 import { hasProperty } from '@sourcegraph/common'
 import { PerforceIcon, PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
-import { Link, Code, Text } from '@sourcegraph/wildcard'
+import { Link, Code, Text, setLinkComponent, RouterLink } from '@sourcegraph/wildcard'
 
 import awsCodeCommitSchemaJSON from '../../../../../schema/aws_codecommit.schema.json'
 import azureDevOpsSchemaJSON from '../../../../../schema/azuredevops.schema.json'
@@ -44,6 +44,8 @@ import {
 import { EditorAction } from '../../settings/EditorActionsGroup'
 
 import { GerritIcon } from './GerritIcon'
+
+setLinkComponent(RouterLink)
 
 /**
  * Metadata associated with adding a given external service.
@@ -1535,7 +1537,7 @@ export const defaultExternalServices: Record<ExternalServiceKind, AddExternalSer
 }
 
 export const externalRepoIcon = (
-    externalRepo: ExternalRepositoryFields
+    externalRepo: Pick<ExternalRepositoryFields, 'serviceType'>
 ): React.ComponentType<{ className?: string }> | undefined => {
     const externalServiceKind = externalRepo.serviceType.toUpperCase() as ExternalServiceKind
     return defaultExternalServices[externalServiceKind]?.icon ?? undefined

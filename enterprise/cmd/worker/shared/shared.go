@@ -44,6 +44,7 @@ var additionalJobs = map[string]job.Job{
 	"export-usage-telemetry":        telemetry.NewTelemetryJob(),
 
 	"codeintel-policies-repository-matcher":       codeintel.NewPoliciesRepositoryMatcherJob(),
+	"codeintel-autoindexing-summary-builder":      codeintel.NewAutoindexingSummaryBuilder(),
 	"codeintel-autoindexing-dependency-scheduler": codeintel.NewAutoindexingDependencySchedulerJob(),
 	"codeintel-autoindexing-janitor":              codeintel.NewAutoindexingJanitorJob(),
 	"codeintel-autoindexing-scheduler":            codeintel.NewAutoindexingSchedulerJob(),

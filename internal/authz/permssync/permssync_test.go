@@ -21,7 +21,7 @@ func TestSchedulePermsSync_UserPermsTest(t *testing.T) {
 	permsSyncStore.CreateRepoSyncJobFunc.SetDefaultReturn(nil)
 
 	featureFlags := database.NewMockFeatureFlagStore()
-	featureFlags.GetGlobalFeatureFlagsFunc.SetDefaultReturn(map[string]bool{featureFlagName: true}, nil)
+	featureFlags.GetGlobalFeatureFlagsFunc.SetDefaultReturn(map[string]bool{}, nil)
 
 	db := database.NewMockDB()
 	db.PermissionSyncJobsFunc.SetDefaultReturn(permsSyncStore)

@@ -44,6 +44,8 @@ export interface TooltipProps {
     /** The open state of the tooltip when it is initially rendered. Defaults to `false`. */
     defaultOpen?: boolean
 
+    debounce?: number
+
     /**
      * The preferred side of the trigger to render against when open. Will be reversed if
      * a collision is detected. Defaults to `bottom`.
@@ -76,7 +78,15 @@ export interface TooltipProps {
  * it must have an `aria-label`.
  */
 export const Tooltip: FC<TooltipProps> = props => {
-    const { children, content, open, defaultOpen = false, placement = 'bottom', onOpenChange = noop } = props
+    const {
+        children,
+        content,
+        open,
+        defaultOpen = false,
+        placement = 'bottom',
+        debounce = 100,
+        onOpenChange = noop,
+    } = props
 
     const [target, setTarget] = useState<HTMLElement | null>(null)
     const [tail, setTail] = useState<HTMLDivElement | null>(null)
@@ -152,7 +162,7 @@ export const Tooltip: FC<TooltipProps> = props => {
     }
 
     const tooltipId = `tooltip-${useId()}`
-    const isOpenDebounced = useDebounce(isOpen, 100)
+    const isOpenDebounced = useDebounce(isOpen, debounce)
 
     return (
         <>

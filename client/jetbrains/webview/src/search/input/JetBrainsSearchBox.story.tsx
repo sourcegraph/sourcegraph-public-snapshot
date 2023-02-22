@@ -2,12 +2,12 @@ import { useEffect, useRef } from 'react'
 
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { BrowserRouter } from 'react-router-dom'
-import { CompatRouter } from 'react-router-dom-v5-compat'
 import { EMPTY, NEVER } from 'rxjs'
 import { useDarkMode } from 'storybook-dark-mode'
 
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeContext, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import { WildcardThemeContext } from '@sourcegraph/wildcard'
 import { usePrependStyles } from '@sourcegraph/wildcard/src/stories'
 
@@ -44,8 +44,8 @@ export const JetBrainsSearchBoxStory: Story = () => {
 
     return (
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
-            <BrowserRouter>
-                <CompatRouter>
+            <ThemeContext.Provider value={{ themeSetting: !isDarkTheme ? ThemeSetting.Light : ThemeSetting.Dark }}>
+                <BrowserRouter>
                     <div ref={rootElementRef}>
                         <div className="d-flex justify-content-center">
                             <div className="mx-6">
@@ -72,7 +72,6 @@ export const JetBrainsSearchBoxStory: Story = () => {
                                     fetchStreamSuggestions={() => NEVER}
                                     settingsCascade={EMPTY_SETTINGS_CASCADE}
                                     globbing={false}
-                                    isLightTheme={!isDarkTheme}
                                     telemetryService={NOOP_TELEMETRY_SERVICE}
                                     platformContext={{ requestGraphQL: () => EMPTY }}
                                     className=""
@@ -83,8 +82,8 @@ export const JetBrainsSearchBoxStory: Story = () => {
                             </div>
                         </div>
                     </div>
-                </CompatRouter>
-            </BrowserRouter>
+                </BrowserRouter>
+            </ThemeContext.Provider>
         </WildcardThemeContext.Provider>
     )
 }

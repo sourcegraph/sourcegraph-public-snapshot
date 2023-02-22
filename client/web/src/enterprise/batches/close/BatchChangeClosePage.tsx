@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react'
 
 import { subDays } from 'date-fns'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import { useParams } from 'react-router-dom-v5-compat'
+import { useParams } from 'react-router-dom'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { PageHeader, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'

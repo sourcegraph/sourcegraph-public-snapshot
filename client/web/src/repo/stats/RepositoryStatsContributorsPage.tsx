@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
-import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { numberWithCommas, pluralize } from '@sourcegraph/common'

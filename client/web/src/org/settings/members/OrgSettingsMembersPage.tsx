@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
-import { useNavigate } from 'react-router-dom-v5-compat'
+import { useNavigate } from 'react-router-dom'
 
 import { pluralize } from '@sourcegraph/common'
 import { useMutation } from '@sourcegraph/http-client'
