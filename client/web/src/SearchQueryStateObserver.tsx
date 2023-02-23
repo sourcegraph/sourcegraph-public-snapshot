@@ -65,6 +65,7 @@ export const SearchQueryStateObserver: FC<SearchQueryStateObserverProps> = props
                     setSelectedSearchContextSpec(parsedSearchURLAndContext.searchContextSpec.spec)
                 }
 
+                // TODO (#48103): Remove/simplify when new search input is released
                 const processedQuery =
                     !enableExperimentalSearchInput &&
                     parsedSearchURLAndContext.searchContextSpec &&

@@ -113,6 +113,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
         submitSearchOnChangeRef
     )
 
+    // TODO (#48103): Remove/simplify when new search input is released
     if (experimentalQueryInput) {
         return (
             <Form

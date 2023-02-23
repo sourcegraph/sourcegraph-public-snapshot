@@ -155,6 +155,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
         submitSearchOnChangeRef
     )
 
+    // TODO (#48103): Remove/simplify when new search input is released
     const input = experimentalQueryInput ? (
         <LazyCodeMirrorQueryInput
             patternType={patternType}

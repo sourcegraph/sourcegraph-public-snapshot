@@ -57,6 +57,9 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
     })
 
     useEffect(() => {
+        // TODO (#48103): Remove/simplify when new search input is released
+        // Because the current and the new search input handle the context: selector differently
+        // we need properly "translate" the queries when switching between the both versions
         if (props.selectedSearchContextSpec) {
             setQueryState(state => {
                 if (experimentalQueryInput) {
