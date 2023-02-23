@@ -35,6 +35,13 @@ All notable changes to Sourcegraph are documented in this file.
 - The experimental setting `authz.syncJobsRecordsLimit` has been removed. [#47933](https://github.com/sourcegraph/sourcegraph/pull/47933)
 - Storing permissions sync jobs statuses in Redis has been removed as now all permissions sync related data is stored in a database. [#47933](https://github.com/sourcegraph/sourcegraph/pull/47933)
 
+## 4.5.1
+
+### Changed
+
+- Updated git to version 2.39.2 to address [reported security vulnerabilities](https://github.blog/2023-02-14-git-security-vulnerabilities-announced-3/) [#47892](https://github.com/sourcegraph/sourcegraph/pull/47892/files)
+- Updated curl to 7.88.1 to address [reported security vulnerabilities](https://curl.se/docs/CVE-2022-42915.html) [#48144](https://github.com/sourcegraph/sourcegraph/pull/48144)
+
 ## 4.5.0
 
 ### Added
