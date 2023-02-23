@@ -1,8 +1,8 @@
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { isPackagesEnabled } from './flags'
-import { SiteAdminAreaRoute } from './SiteAdminArea'
 import { PermissionsSyncJobsTable } from './permissions-center/PermissionsSyncJobsTable'
+import { SiteAdminAreaRoute } from './SiteAdminArea'
 
 const AnalyticsOverviewPage = lazyComponent(() => import('./analytics/AnalyticsOverviewPage'), 'AnalyticsOverviewPage')
 const AnalyticsSearchPage = lazyComponent(() => import('./analytics/AnalyticsSearchPage'), 'AnalyticsSearchPage')

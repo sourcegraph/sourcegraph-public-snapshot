@@ -3,7 +3,6 @@ import React, { useEffect } from 'react'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, H5, PageSwitcher } from '@sourcegraph/wildcard'
 
-
 import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import {
     ConnectionContainer,

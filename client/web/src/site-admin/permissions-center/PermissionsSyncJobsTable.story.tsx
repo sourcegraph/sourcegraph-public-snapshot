@@ -123,10 +123,23 @@ export const FiveSyncJobsFound: Story = () => (
 
 FiveSyncJobsFound.storyName = 'Five sync jobs'
 
-interface repo { __typename: 'Repository'; name: string }
-interface user { __typename: 'User'; username: string }
+interface repo {
+    __typename: 'Repository'
+    name: string
+}
+
+interface user {
+    __typename: 'User'
+    username: string
+}
+
 type subject = repo | user
-interface reason { __typename?: 'PermissionSyncJobReason'; group: PermissionSyncJobReasonGroup; message: string }
+
+interface reason {
+    __typename?: 'PermissionSyncJobReason'
+    group: PermissionSyncJobReasonGroup
+    message: string
+}
 
 function createSyncJobMock(
     id: string,
