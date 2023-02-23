@@ -109,11 +109,13 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
             )
         }
 
-        const { className, ...otherProps } = this.props
+        const { className, blockNavigationIfDirty, ...otherProps } = this.props
 
         return (
             <div className={className || ''}>
-                <BeforeUnloadPrompt when={this.props.loading || this.isDirty} message="Discard changes?" />
+                {blockNavigationIfDirty && (
+                    <BeforeUnloadPrompt when={this.props.loading || this.isDirty} message="Discard changes?" />
+                )}
                 {this.props.actions && (
                     <EditorActionsGroup actions={this.props.actions} onClick={this.runAction.bind(this)} />
                 )}

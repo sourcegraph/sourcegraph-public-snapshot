@@ -6,8 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApolloProvider } from '@apollo/client'
 import ServerIcon from 'mdi-react/ServerIcon'
 import { RouterProvider, createBrowserRouter } from 'react-router-dom'
-import { combineLatest, from, Subscription, fromEvent, of, Subject, Observable } from 'rxjs'
-import { startWith, switchMap } from 'rxjs/operators'
+import { combineLatest, from, Subscription, fromEvent, Subject, Observable } from 'rxjs'
 
 import { isTruthy, isMacPlatform, logger } from '@sourcegraph/common'
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
@@ -43,7 +42,7 @@ import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/tempo
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { FeedbackText, setLinkComponent, RouterLink, WildcardThemeContext, WildcardTheme } from '@sourcegraph/wildcard'
 
-import { authenticatedUser, AuthenticatedUser } from './auth'
+import { authenticatedUser as authenticatedUserSubject, AuthenticatedUser, authenticatedUserValue } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
 import { BatchChangesProps, isBatchChangesExecutionEnabled } from './batches'
 import type { CodeIntelligenceProps } from './codeintel'
@@ -121,7 +120,9 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
     const [userRepositoriesUpdates] = useState(() => new Subject<void>())
     const [platformContext] = useState(() => createPlatformContext())
 
-    const [resolvedAuthenticatedUser, setResolvedAuthenticatedUser] = useState<AuthenticatedUser | null>(null)
+    const [resolvedAuthenticatedUser, setResolvedAuthenticatedUser] = useState<AuthenticatedUser | null>(
+        authenticatedUserValue
+    )
     const [settingsCascade, setSettingsCascade] = useState<SettingsCascadeOrError<Settings>>(EMPTY_SETTINGS_CASCADE)
     const [viewerSubject, setViewerSubject] = useState<SettingsSubjectCommonFields>(() => siteSubjectNoAdmin())
     const [globbing, setGlobbing] = useState(false)
@@ -227,11 +228,7 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
             })
 
         subscriptions.add(
-            combineLatest([
-                from(platformContext.settings),
-                // Start with `undefined` while we don't know if the viewer is authenticated or not.
-                authenticatedUser.pipe(startWith(undefined)),
-            ]).subscribe(
+            combineLatest([from(platformContext.settings), authenticatedUserSubject]).subscribe(
                 ([settingsCascade, authenticatedUser]) => {
                     setExperimentalFeaturesFromSettings(settingsCascade)
                     setQueryStateFromSettings(settingsCascade)
@@ -239,8 +236,7 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
                     setResolvedAuthenticatedUser(authenticatedUser ?? null)
                     setGlobbing(globbingEnabledFromSettings(settingsCascade))
                     setViewerSubject(viewerSubjectFromSettings(settingsCascade, authenticatedUser))
-                },
-                () => setResolvedAuthenticatedUser(null)
+                }
             )
         )
 
@@ -250,19 +246,15 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
          * Don't subscribe to this event when there wasn't an authenticated user,
          * as it could lead to an infinite loop of 401 -> reload -> 401
          */
-        subscriptions.add(
-            authenticatedUser
-                .pipe(
-                    switchMap(authenticatedUser =>
-                        authenticatedUser ? fromEvent<ErrorEvent>(window, 'error') : of(null)
-                    )
-                )
-                .subscribe(event => {
+        if (window.context.isAuthenticatedUser) {
+            subscriptions.add(
+                fromEvent<ErrorEvent>(window, 'error').subscribe(event => {
                     if (event?.error instanceof HTTPStatusError && event.error.status === 401) {
                         location.reload()
                     }
                 })
-        )
+            )
+        }
 
         if (parsedSearchQuery && !filterExists(parsedSearchQuery, FilterType.context)) {
             // If a context filter does not exist in the query, we have to switch the selected context
@@ -346,7 +338,7 @@ export const SourcegraphWebApp: React.FC<SourcegraphWebAppProps> = props => {
         return <HeroPage icon={ServerIcon} title={`${statusCode}: ${statusText}`} subtitle={subtitle} />
     }
 
-    if (authenticatedUser === null || graphqlClient === null || temporarySettingsStorage === null) {
+    if (graphqlClient === null || temporarySettingsStorage === null) {
         return null
     }
 
