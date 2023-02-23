@@ -116,7 +116,7 @@ const CodeHostEditView: FC<CodeHostEditViewProps> = props => {
 
     const initialValues: CodeHostConnectFormFields = {
         displayName,
-        configuration,
+        config: configuration,
     }
 
     if (codeHostKind === ExternalServiceKind.GITHUB) {

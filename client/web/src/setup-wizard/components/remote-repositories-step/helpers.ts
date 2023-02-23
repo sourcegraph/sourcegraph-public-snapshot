@@ -1,4 +1,4 @@
-import { mdiBitbucket, mdiGithub, mdiGitlab, mdiAws } from '@mdi/js'
+import { mdiBitbucket, mdiGithub, mdiGitlab, mdiAws, mdiGit } from '@mdi/js'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 
@@ -12,7 +12,10 @@ export const getCodeHostIcon = (codeHostType: ExternalServiceKind | null): strin
             return mdiBitbucket
         case ExternalServiceKind.AWSCODECOMMIT:
             return mdiAws
-
+        case ExternalServiceKind.AZUREDEVOPS:
+            return mdiGit
+        case ExternalServiceKind.BITBUCKETSERVER:
+            return mdiBitbucket
         default:
             // TODO: Add support for other code host
             return ''

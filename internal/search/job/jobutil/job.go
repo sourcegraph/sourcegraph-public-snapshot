@@ -191,21 +191,22 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		}
 	}
 
-	{ // Apply selectors
-		if v, _ := b.ToParseTree().StringValue(query.FieldSelect); v != "" {
-			sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
-			basicJob = NewSelectJob(sp, basicJob)
-			// the select owners job is ran separately as it requires state and can return multiple owners from one match.
-			if inputs.Features.CodeOwnershipSearch && sp.Root() == filter.File && len(sp) == 2 && sp[1] == "owners" {
-				basicJob = codeownershipjob.NewSelectOwnersSearch(basicJob)
-			}
-		}
-	}
-
 	{ // Apply subrepo permissions checks
 		checker := authz.DefaultSubRepoPermsChecker
 		if authz.SubRepoEnabled(checker) {
 			basicJob = NewFilterJob(basicJob)
+		}
+	}
+
+	{ // Apply selectors
+		if v, _ := b.ToParseTree().StringValue(query.FieldSelect); v != "" {
+			sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
+			if isSelectOwnersSearch(sp, inputs.Features) {
+				// the select owners job is ran separately as it requires state and can return multiple owners from one match.
+				basicJob = codeownershipjob.NewSelectOwners(basicJob)
+			} else {
+				basicJob = NewSelectJob(sp, basicJob)
+			}
 		}
 	}
 
@@ -522,6 +523,13 @@ func computeFileMatchLimit(b query.Basic, p search.Protocol, features *search.Fe
 		// This is the int equivalent of count:all.
 		return query.CountAllLimit
 	}
+	if v, _ := b.ToParseTree().StringValue(query.FieldSelect); v != "" {
+		sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
+		if isSelectOwnersSearch(sp, features) {
+			// This is the int equivalent of count:all.
+			return query.CountAllLimit
+		}
+	}
 
 	if count := b.Count(); count != nil {
 		return *count
@@ -541,6 +549,12 @@ func isOwnershipSearch(b query.Basic, features *search.Features) (include, exclu
 		return includeOwners, excludeOwners, true
 	}
 	return nil, nil, false
+}
+
+func isSelectOwnersSearch(sp filter.SelectPath, features *search.Features) bool {
+	// If the feature flag is enabled, and the filter is for file.owners, this is
+	// a select:file.owners search and we should apply special limits.
+	return features.CodeOwnershipSearch && sp.Root() == filter.File && len(sp) == 2 && sp[1] == "owners"
 }
 
 func timeoutDuration(b query.Basic) time.Duration {

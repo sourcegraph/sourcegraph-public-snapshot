@@ -321,7 +321,13 @@ export const defaultProps: ReferencesPanelProps = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
     settingsCascade: {
         subjects: null,
-        final: null,
+        final: {
+            // TODO: we won't need to set experimental features explicitly once we cover CodeMirror side blob view with tests:
+            // https://github.com/sourcegraph/sourcegraph/issues/48049
+            experimentalFeatures: {
+                enableCodeMirrorFileView: false,
+            },
+        },
     },
     platformContext: NOOP_PLATFORM_CONTEXT as any,
     fetchHighlightedFileLineRanges: args => {

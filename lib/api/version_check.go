@@ -6,7 +6,7 @@ import (
 	"github.com/Masterminds/semver"
 )
 
-var buildDate = regexp.MustCompile(`\d+_(\d{4}-\d{2}-\d{2})_[a-z0-9]{7,}(_patch)?$`)
+var buildDate = regexp.MustCompile(`\d+_(\d{4}-\d{2}-\d{2})_(\d+\.\d+-)?[a-z0-9]{7,}(_patch)?$`)
 
 // NOTE: A version with a prerelease suffix (e.g. the "-rc.3" of "3.35.1-rc.3") is not
 // considered by semver to satisfy a constraint without a prerelease suffix, regardless of

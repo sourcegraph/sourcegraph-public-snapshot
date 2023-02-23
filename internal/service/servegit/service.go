@@ -50,12 +50,6 @@ func (s svc) Configure() (env.Config, []debugserver.Endpoint) {
 }
 
 func (s svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, configI env.Config) (err error) {
-	defer func() {
-		if err == nil {
-			ready()
-		}
-	}()
-
 	config := configI.(*Config)
 
 	if config.ReposRoot == "" {
