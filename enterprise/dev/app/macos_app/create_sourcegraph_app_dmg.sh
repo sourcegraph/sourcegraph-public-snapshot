@@ -57,7 +57,10 @@ dmg_width=$(sips -g pixelWidth "${DMG_BACKGROUND_IMG}" | grep -Eo '[0-9]+')
 echo "dmg dimensions: ${dmg_width}x${dmg_height}"
 
 # tell the Finder to resize the window, set the background,
-#  change the icon size, place the icons in the right position, etc.
+# change the icon size, place the icons in the right position, etc.
+# the container window height is the height of the background image + a fudge factor of 27 pixels
+# which fudge factor is (approx) the height of the title bar. Without that fudge factor,
+# there's a scroll bar on the dmg window.
 echo '
    tell application "Finder"
      tell disk "'${VOL_NAME}'"
@@ -65,7 +68,7 @@ echo '
            set current view of container window to icon view
            set toolbar visible of container window to false
            set statusbar visible of container window to false
-           set the bounds of container window to {400, 100, '$((400 + dmg_width))', '$((100 + dmg_height))'}
+           set the bounds of container window to {400, 100, '$((400 + dmg_width))', '$((100 + dmg_height + 27))'}
            set viewOptions to the icon view options of container window
            set arrangement of viewOptions to not arranged
            set icon size of viewOptions to 150
@@ -90,9 +93,14 @@ sleep 2
 echo "Creating compressed image"
 hdiutil convert "${DMG_TMP}" -format UDZO -imagekey zlib-level=9 -o "${DMG_FINAL}"
 
+# find the name of the icon bundle in the app
+# defaults requires an absolute path; use `realpath` to get that
+iconfile=$(defaults read "$(realpath "${apppath}/Contents/Info.plist")" CFBundleIconFile)
+[ -n "${iconfile}" ] || iconfile=icon.icns
+
 # set the file icon
 # brew install fileicon
-fileicon set "${DMG_FINAL}" "${apppath}/Contents/Resources/icon.icns"
+fileicon set "${DMG_FINAL}" "${apppath}/Contents/Resources/${iconfile}"
 
 # clean up
 rm -rf "${DMG_TMP}"
