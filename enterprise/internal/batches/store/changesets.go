@@ -1676,6 +1676,7 @@ func getChangesetsStatsQuery(batchChangeID int64) *sqlf.Query {
 		archived, archived,
 		archived, archived,
 		archived, archived,
+		archived,
 		sqlf.Join(preds, " AND "),
 	)
 }
