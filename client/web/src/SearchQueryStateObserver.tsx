@@ -35,8 +35,6 @@ export const SearchQueryStateObserver: FC<SearchQueryStateObserverProps> = props
     // This ensures that the query stays unmodified until we know
     // whether the feature flag is set or not.
     const enableExperimentalSearchInput = isInitialized ? searchQueryInput === 'experimental' : true
-    const enableExperimentalSearchInputRef = useRef(enableExperimentalSearchInput)
-    enableExperimentalSearchInputRef.current = enableExperimentalSearchInput
 
     // Create `locationSubject` once on mount. New values are provided in the `useEffect` hook.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -72,7 +70,7 @@ export const SearchQueryStateObserver: FC<SearchQueryStateObserverProps> = props
                 }
 
                 const processedQuery =
-                    !enableExperimentalSearchInputRef.current &&
+                    !enableExperimentalSearchInput &&
                     parsedSearchURLAndContext.searchContextSpec &&
                     searchContextsEnabled
                         ? omitFilter(
@@ -91,7 +89,7 @@ export const SearchQueryStateObserver: FC<SearchQueryStateObserverProps> = props
         platformContext,
         searchContextsEnabled,
         selectedSearchContextSpecRef,
-        enableExperimentalSearchInputRef,
+        enableExperimentalSearchInput,
         setSelectedSearchContextSpec,
     ])
 
