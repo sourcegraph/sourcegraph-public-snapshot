@@ -15,7 +15,7 @@ import (
 // Runtime describe how to run a job in a specific runtime environment.
 type Runtime interface {
 	// Name returns the name of the runtime.
-	Name() string
+	Name() Name
 	// PrepareWorkspace sets up the workspace for the Job.
 	PrepareWorkspace(ctx context.Context, logger command.Logger, job types.Job) (workspace.Workspace, error)
 	// NewRunner creates a runner that will execute the steps.
@@ -55,3 +55,9 @@ func New(
 
 // ErrNoRuntime is the error when there is no runtime configured.
 var ErrNoRuntime = errors.New("runtime is not configured: use SetupRuntime to configure the runtime")
+
+type Name string
+
+const (
+	NameDocker Name = "docker"
+)

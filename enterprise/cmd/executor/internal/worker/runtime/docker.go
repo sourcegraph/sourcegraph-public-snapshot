@@ -17,8 +17,8 @@ type dockerRuntime struct {
 	cloneOptions workspace.CloneOptions
 }
 
-func (d *dockerRuntime) Name() string {
-	return "docker"
+func (d *dockerRuntime) Name() Name {
+	return NameDocker
 }
 
 func (d *dockerRuntime) PrepareWorkspace(ctx context.Context, logger command.Logger, job types.Job) (workspace.Workspace, error) {

@@ -16,6 +16,10 @@ type fakeCmdRunner struct {
 	mock.Mock
 }
 
+func (f *fakeCmdRunner) CommandContext(ctx context.Context, name string, args ...string) *exec.Cmd {
+	panic("not neeeded")
+}
+
 func (f *fakeCmdRunner) CombinedOutput(ctx context.Context, name string, args ...string) ([]byte, error) {
 	cs := []string{"-test.run=TestExecCommandHelper", "--"}
 	cs = append(cs, args...)

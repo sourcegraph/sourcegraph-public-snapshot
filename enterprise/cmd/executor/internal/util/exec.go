@@ -11,6 +11,8 @@ import (
 
 // CmdRunner is an interface for running commands.
 type CmdRunner interface {
+	// CommandContext returns the Cmd struct to execute the named program with the given arguments.
+	CommandContext(ctx context.Context, name string, args ...string) *exec.Cmd
 	// CombinedOutput runs the command and returns its combined standard output and standard error.
 	CombinedOutput(ctx context.Context, name string, args ...string) ([]byte, error)
 	// LookPath looks for an executable named file in the directories named by the PATH environment variable.
@@ -20,8 +22,14 @@ type CmdRunner interface {
 // RealCmdRunner is a CmdRunner that actually runs commands.
 type RealCmdRunner struct{}
 
+var _ CmdRunner = &RealCmdRunner{}
+
+func (r *RealCmdRunner) CommandContext(ctx context.Context, name string, args ...string) *exec.Cmd {
+	return exec.CommandContext(ctx, name, args...)
+}
+
 func (r *RealCmdRunner) CombinedOutput(ctx context.Context, name string, args ...string) ([]byte, error) {
-	return exec.CommandContext(ctx, name, args...).CombinedOutput()
+	return r.CommandContext(ctx, name, args...).CombinedOutput()
 }
 
 func (r *RealCmdRunner) LookPath(file string) (string, error) {
