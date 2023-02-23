@@ -8,7 +8,7 @@ export interface FuzzyRepoRevision {
 export function fuzzyRepoRevisionSearchFilter({ repositoryName, revision }: FuzzyRepoRevision): string {
     const escapedRepositoryName = escapeRegExp(repositoryName)
     if (repositoryName && revision) {
-        return `repo:^${escapedRepositoryName}@${revision}$ `
+        return `repo:^${escapedRepositoryName}$@${revision} `
     }
     if (repositoryName) {
         return `repo:^${escapedRepositoryName}$ `
