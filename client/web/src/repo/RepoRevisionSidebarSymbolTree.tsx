@@ -62,14 +62,12 @@ export const RepoRevisionSidebarSymbolTree: React.FC<Props> = ({
             //
             // Note: React errors when calling flushSync from lifecycle method, so we move this into
             // an async timeout instead.
-            setTimeout(
-                () =>
-                    flushSync(() => {
-                        onClick()
-                        setSelectedSymbolUrl(element.url)
-                        navigate(element.url)
-                    }),
-                0
+            queueMicrotask(() =>
+                flushSync(() => {
+                    onClick()
+                    setSelectedSymbolUrl(element.url)
+                    navigate(element.url)
+                })
             )
         },
         [navigate, onClick, selectedSymbolUrl, setSelectedSymbolUrl]
