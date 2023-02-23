@@ -1,7 +1,7 @@
 # Permission syncing
 
-Permission syncing is a polling mechanism, that periodically checks via an API call to the code host to determine, what are the permissions of a specific entity.
-From the point of view of which entity we ask for, we do have 2 ways to sync permissions and both are on by default, resulting in double polling:
+Permission syncing is a polling mechanism, that periodically checks via an API call to the code host to determine which permissions of a specific entity has.
+We have 2 ways to sync permissions. Both are on by default, resulting in double polling:
 
 - **user-centric** permission syncing, where we ask the code host for a list of repositories that a specific user has read access to
 - **repo-centric** permission syncing, where we ask the code host for a list of users that can access a specific repository
@@ -48,7 +48,7 @@ mutation {
 - `bob` has access to repositories `horsegraph/global` and `horsegraph/bob` on the code host.
 - an on-demand request is made to sync repository permissions of `bob`, this job is added to the queue with high priority, so it will be processed
   quicker than jobs with lower priority
-- by the time `bob` actually logs into sourcegraph, the permissions should already be synced with this on-demand job.
+- by the time `bob` actually logs into Sourcegraph, the permissions should already be synced with this on-demand job.
 
 ### Scheduling
 
@@ -74,7 +74,7 @@ Priority queue is needed to process the sync jobs in the order of most important
 
 To identify which Sourcegraph users or repositories the permissions relate to, we need to map the users identifiers from code host with userIDs on Sourcegraph and similarly for repository identifiers from code host to repoIDs on Sourcegraph side. 
 
-> WARNING: For this process to work correctly, the user needs to have an external account from code host mapped to the user account on sourcegraph, otherwise the code host identifier cannot be matched and repository permissions cannot be enforced. 
+> WARNING: For this process to work correctly, the user needs to have an external account from code host mapped to the user account on Sourcegraph, otherwise the code host identifier cannot be matched and repository permissions cannot be enforced. 
 
 This is the main reason to require users to connect to their code host. This can be done on the Account security settings page: `/users/$USER/settings/security`.
 
@@ -84,7 +84,8 @@ There might be cases, when the identifiers on the code host do not match any use
 In that case, Sourcegraph still stores the permission information in the internal database as **pending permissions**
 In case that an entity with the same code host identifier is added later, Sourcegraph applies these pending permissions.
 
-> NOTE: Sourcegraph only keeps pending permissions for repositories that were added to Sourcegraph. We will never store information about repositories that are not shared with us.
+** Sourcegraph only keeps pending permissions for repositories that were added to Sourcegraph.**
+We will never store information about repositories that are not shared with us.
 
 If everything works correctly in such a case, [on-demand sync request](#on-demand-sync) is not strictly needed. 
 But the permissions of the entity might have changed in the time since the last sync of these pending permissions, 
@@ -126,7 +127,9 @@ In the GraphQL API, `syncedAt` indicates the last complete sync and `updatedAt` 
 
 ## Sync duration
 
-When syncing permissions from code hosts with large numbers of users and repositories, it can take a lot of time to complete syncing all permissions from a code host for every user and every repository. Typically due to internal rate limits imposed by Sourcegraph and external rate limits imposed by the code host, it can be hours or days. 
+When syncing permissions from code hosts with large numbers of users and repositories, it can take a lot of time to complete syncing all permissions from a code host for every user and every repository. 
+Typically due to internal rate limits imposed by Sourcegraph and external rate limits imposed by the code host, it can take hours for customers with large amounts of users or repositories.
+Please contact the support team for further assistance. 
 
 For initial setup of instance, when the initial sync for all repositories and users is running, users will gradually see more and more search results from repositories they have access to.
 
@@ -139,7 +142,7 @@ However given the way the system works, we need to be aware of the worst case:
 
 > IMPORTANT: If there is a change in permissions on the code host, in the worst case the lag time is as long as the time it takes to completely sync all user or repository permissions.
 
-**Example**
+**Example**:
 There are `5 000` users, `40 000` repositories and the github.com API is paginated on `100` items per page. 
 On average, every user has read access to `300` repositories and on average a repository is accessible by `75` users.
 
@@ -206,8 +209,8 @@ Internal rate limiter settings are described on each code host configuration pag
 
 ### Recommendations
 
-#### Count users << Count repositories
-If there are much less users, than repositories, it is better to rely on user-centric perms sync instead of repo-centric sync. In that case, we recommend:
+#### Less users than repositories
+If there are a lot less users, than repositories, it is better to rely on user-centric perms sync instead of repo-centric sync. In that case, we recommend:
 ```json
   "permissions.syncOldestUsers": 20,
   "permissions.syncOldestRepos": 1,
@@ -221,10 +224,10 @@ There are `10 000` users, `40 000` repositories and the desired time to do a ful
 That means we need to sync 5000 users an hour. If we keep the `syncScheduleInterval` to `15s` (the default), we schedule 4-times a minute. `5000/(4 * 60) = 20.8`, so the scheduler needs to schedule 21 users on each iteration to get under the 2 hour mark.
 
 The rate limit for the code host would need to be changed to support the load. In that case the recommendation is to set it to 2x of the amount of [requests expected from permission syncing](#request-count).
-#### Count repositories << Count users
+#### More users than repositories
 
-If the situation is reversed, it is recommended to the opposite than the above. 
-Prefer repo-centric permission sync in these situations.
+If the situation is reversed, it is recommended to do the opposite than above. 
+Prefer repo-centric permission sync in these situations:
 
 ```json
   "permissions.syncOldestUsers": 1,
@@ -235,4 +238,5 @@ Prefer repo-centric permission sync in these situations.
 There are `10 000` users, `5000` repositories and the desired time for a full permission sync cycle is `2 hours`.
 That means we need to sync 2500 repositories an hour. If we keep the `syncScheduleInterval` to `15s`(the default), we schedule 4-times a minute. `2500/(4 * 60) = 10.4`, so the scheduler needs to schedule 11 repositories on each iteration to get under the 2 hour mark.
 
-The rate limit for the code host would need to be changed to support the load. In that case the recommendation is to set it to 2x of the amount of [requests expected from permission syncing](#request-count).
+The rate limit for the code host needs to be changed to support the load. 
+In that case the recommendation is to set it to 2x of the amount of [requests expected from permission syncing](#request-count).

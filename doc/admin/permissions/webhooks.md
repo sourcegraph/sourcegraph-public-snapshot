@@ -10,7 +10,7 @@ Currently the only supported code host for webhooks is [Github](../external_serv
 Sourcegraph exposes endpoints to receive webhooks. These endpoints are authenticated, so we make sure the requests come from a trusted source.
 
 1. Sourcegraph receives a webhook request with one of the supported events
-1. Based on the event data, sourcegraph schedules a permission sync job
+1. Based on the event data, Sourcegraph schedules a permission sync job
 1. Standard permission syncing mechanism handles the scheduled job, leading to a sync of permissions of the relevant user or repository from the code host
 
 ## Advantages

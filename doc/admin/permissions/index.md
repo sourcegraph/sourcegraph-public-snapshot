@@ -1,14 +1,13 @@
 # Permissions
 
 Sourcegraph can be configured to enforce the same access to repositories and underlying source files as your code host.
-If this is configured, Sourcegraph will only allow the user to see the entities that they can see on the code host.
-These permissions are enforced accross the product for all the use cases that need to read data from a repository, including
-the existence of such repository on the code host.
+If configured, Sourcegraph will allow the user to only see the entities that they can see on the code host.
+These permissions are enforced accross the product for all the use cases that need to read data from a repository, 
+including the existence of such repository on the code host.
 
-> NOTE: historically, we have called this with different names: "authorization", "repository permissions", "code 
-host permissions". All of these terms were used interchangeably, but in general we do call it permissions or repository permissions.
-
-> NOTE: not to be confused with in-product permissions, e.g. determine who can create a batch change or who is a site admin.
+> NOTE: Historically, we have referred to permissions-related features under different names: "authorization", "repository permissions", "code 
+host permissions". All of these terms were used interchangeably, but in general we do call it permissions or repository permissions. 
+That's not to be confused with in-product permissions, which determine who can, for example, create a batch change or who is a site admin.
 
 ## Example
 
@@ -17,9 +16,9 @@ Imagine a scenario, with 2 users, `alice` and `bob`.
 - `alice` can access repositories `horsegraph/global` and `horsegraph/alice` on the code host
 - `bob` has access to repositories `horsegraph/global` and `horsegraph/docs` on the code host
 - there is also a public repository `horsegraph/public`
-- all of the mentioned repositories are synced to sourcegraph
+- all of the mentioned repositories are synced to Sourcegraph
 
-If `alice` tries to run a search on sourcegraph, the result set will only contain data from the public `horsegraph/global` repository 
+If `alice` tries to run a search on Sourcegraph, the results will only contain data from the public `horsegraph/global` repository 
 and the ones she has access to (`horsegraph/global` and `horsegraph/alice`). `alice` will not be able to see results
 from the `horsegraph/docs`. If `alice` creates a code insight, she will only see results from the repositories she has access to.
 
@@ -28,7 +27,7 @@ Sourcegraph, since `bob` does not have access to it on the code host.
 
 ## Supported methods to sync permissions
 
-Today, we support 3 different methods to get the permission data from code host to sourcegraph:
+Today, we support 3 different methods to get the permission data from code host to Sourcegraph:
 
 1. [Background permission syncing from the code host](syncing.md)
 1. [Webhooks for getting permission events from code host](webhooks.md)
@@ -58,13 +57,13 @@ All the other code hosts only support [Explicit permissions API](./api.md).
 
 ### Supported scale
 
-If not otherwise stated, all code hosts should support up to 10k users and 100k repositories for permission syncing. 
-This in general is a threshold that was tested in a testing environment or on a customer instance.
+If not otherwise stated in the table above, all code hosts should support up to 10k users and 100k repositories for permission syncing. 
 
-The difference today are other Code hosts, where Sourcegraph was tested to confidently support 40k users and 200k repositories for permission syncing.
+These numbers come from testing the supported scale in a testing environment or running on a customer instance.
 
-> NOTE: Sourcegraph *may* be able to support higher numbers than specified, but was not rigorously tested to do so.
-## Licensing
+> NOTE: Sourcegraph might be able to support higher scale than specified, but was not rigorously tested to do so. 
+Please contact support if you want to discuss bigger scale than specified.
+## License requirements
 
 To have permission syncing available, the Sourcegraph instance needs to be configured with a license that has `acls` feature enabled.
 If it is not present, Sourcegraph will not enforce repository permissions and each repository will be treated as 

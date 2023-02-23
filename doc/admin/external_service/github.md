@@ -115,6 +115,7 @@ Then, add or edit the GitHub connection as described above and include the `auth
   // The GitHub URL used to set up the GitHub authentication provider must match this URL.
   "url": "https://github.com",
   "token": "$PERSONAL_ACCESS_TOKEN",
+  // ...
   "authorization": {}
 }
 ```
@@ -131,7 +132,7 @@ A [token that has the prerequisite scopes](#github-api-token-and-access) and bot
 
 <span class="virtual-br"></span>
 
-> WARNING: It can take some time to complete [the full sync of repository permissions](../permissions/syncing.md#sync-duration) from a code host.
+> NOTE: It can take some time to complete full cycle of repository permissions sync if you have a large number of users or repositories. [See sync duration time](../permissions/syncing.md#sync-duration) for more information.
 
 ### Trigger permissions sync from GitHub webhooks
 
@@ -139,7 +140,7 @@ Follow the link to [configure webhooks for permissions for Github](../config/web
 
 ### Teams and organizations permissions caching
 
-<span class="badge badge-experimental">Experimental</span> <span class="badge badge-note">Sourcegraph 3.31+</span>
+<span class="badge badge-experimental">Experimental</span>
 
 > WARNING: The following section is experimental and might not work properly anymore on new Sourcegraph versions (post 4.0+). Please prefer [configuring webhooks for permissions instead](../config/webhooks.md#user-permissions)
 
@@ -186,8 +187,6 @@ Cache invaldiation happens automatically on certain webhook events, so it is rec
 Caches can also be [manually invalidated](#manually-invalidate-caches) if necessary.
 
 #### Manually invalidate caches
-
-<span class="badge badge-experimental">Experimental</span> <span class="badge badge-note">Sourcegraph 3.31+</span>
 
 To force a bypass of caches during a sync, you can manually queue users or repositories for sync with the `invalidateCaches` options via the Sourcegraph GraphQL API:
 

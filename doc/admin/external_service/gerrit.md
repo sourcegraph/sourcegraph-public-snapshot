@@ -35,9 +35,12 @@ Then, add or edit a Gerrit connection as described above and include the `author
   "url": "https://gerrit.example.com",
   "username": "<admin username>",
   "password": "<admin password>",
+  // ...
   "authorization": {}
 }
 ```
+
+> NOTE: It can take some time to complete full cycle of repository permissions sync if you have a large number of users or repositories. [See sync duration time](../permissions/syncing.md#sync-duration) for more information.
 
 ## User authentication
 

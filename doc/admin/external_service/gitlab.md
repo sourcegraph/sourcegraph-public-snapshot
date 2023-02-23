@@ -67,7 +67,7 @@ GitLab permissions can be configured in three ways:
 3. Assume username equivalency between Sourcegraph and GitLab (warning: this is generally unsafe and
    should only be used if you are using strictly `http-header` authentication).
 
-> WARNING: It can take some time to complete [a full cycle of repository permissions sync](../permissions/#sync-duration) from a code host.
+> NOTE: It can take some time to complete full cycle of repository permissions sync if you have a large number of users or repositories. [See sync duration time](../permissions/syncing.md#sync-duration) for more information.
 
 ### OAuth application
 
@@ -79,6 +79,7 @@ Then, [add or edit a GitLab connection](#repository-syncing) and include the `au
 {
   "url": "https://gitlab.com",
   "token": "$PERSONAL_ACCESS_TOKEN",
+  // ...
   "authorization": {
     "identityProvider": {
       "type": "oauth"
@@ -100,6 +101,7 @@ Then, [add or edit a GitLab connection](#repository-syncing) using an administra
 {
   "url": "https://gitlab.com",
   "token": "$PERSONAL_ACCESS_TOKEN",
+  // ...
   "authorization": {
     "identityProvider": {
       "type": "external",
@@ -130,6 +132,7 @@ because Sourcegraph usernames are mutable.
 {
   "url": "https://gitlab.com",
   "token": "$PERSONAL_ACCESS_TOKEN",
+  // ...
   "authorization": {
     "identityProvider": {
       "type": "username"

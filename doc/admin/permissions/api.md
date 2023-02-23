@@ -1,14 +1,12 @@
 # Explicit permissions API
 
-Sourcegraph exposes a set of GraphQL APIs to explicitly set repository permissions as an alternative to other mechanisms of getting the permissions directly from the code host.
+Sourcegraph's GraphQL API allows users to explicitly set repository permissions. This is an alternative to other mechanisms, which involve directly talking to the code host.
 
 <span class="virtual-br"></span>
 
-> NOTE: If the permissions API is enabled, all the other repository permissions mechanisms are disabled.
+**If the permissions API is enabled, all the other repository permissions mechanisms are disabled.**
 
-> NOTE: If you're using Sourcegraph with multiple code hosts, it's not possible to use the explicit permissions API for some repositories and inherit code host permissions for others.
-
-Both of the above behaviors are subject to change in the future as part of improving experience for Sourcegraph administrators.
+> NOTE: If you're using Sourcegraph with multiple code hosts, it's not possible to use the explicit permissions API for one code host and use other mechanisms for getting permissions for others.
 
 ## Recommendations
 
@@ -38,7 +36,7 @@ To enable the permissions API, add the following to the [site configuration](../
 The `bindID` value specifies how to uniquely identify users when setting permissions:
 
 - `username`: You can [set permissions](#setting-repository-permissions-for-users) for users by specifying their Sourcegraph usernames. Using usernames is **preferred**, as usernames are required to be unique for each user.
-- `email`: You can [set permissions](#setting-repository-permissions-for-users) for users by specifying their email addresses (which must be verified emails associated with their Sourcegraph user account). This method can lead to unexpected results if there are multiple sourcegraph user accounts with the same verified email address.
+- `email`: You can [set permissions](#setting-repository-permissions-for-users) for users by specifying their email addresses (which must be verified emails associated with their Sourcegraph user account). This method can lead to unexpected results if there are multiple Sourcegraph user accounts with the same verified email address.
 
 After you enable the permissions API, you must [set permissions](#setting-repository-permissions-for-users) to allow users to view repositories (site admins bypass all permissions checks and can always view all repositories).
 

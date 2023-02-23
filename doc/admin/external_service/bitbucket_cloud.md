@@ -50,9 +50,12 @@ Then, add or edit a Bitbucket Cloud connection as described above and include th
   "url": "https://bitbucket.com",
   "username": "horsten",
   "appPassword": "$APP_PASSWORD",
+  // ...
   "authorization": {}
 }
 ```
+
+> NOTE: It can take some time to complete full cycle of repository permissions sync if you have a large number of users or repositories. [See sync duration time](../permissions/syncing.md#sync-duration) for more information.
 
 ## Configuration
 

@@ -40,7 +40,7 @@ Please consult [this page](../config/webhooks.md) in order to configure webhooks
 
 Enforcing Bitbucket Server / Bitbucket Data Center permissions can be configured via the `authorization` setting in its configuration.
 
-> WARNING: It can take some time to complete [full cycle of repository permissions sync](../permissions/syncing.md#sync-duration) from a code host.
+> NOTE: It can take some time to complete full cycle of repository permissions sync if you have a large number of users or repositories. [See sync duration time](../permissions/syncing.md#sync-duration) for more information.
 
 ### Prerequisites
 
