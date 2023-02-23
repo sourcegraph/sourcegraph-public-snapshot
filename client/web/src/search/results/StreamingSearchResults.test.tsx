@@ -47,7 +47,6 @@ describe('StreamingSearchResults', () => {
         streamSearch: () => of(MULTIPLE_SEARCH_RESULT),
 
         fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_REQUEST,
-        isLightTheme: true,
         isSourcegraphDotCom: false,
         searchContextsEnabled: true,
         searchAggregationEnabled: false,

@@ -130,12 +130,11 @@ func newBridgeTracers(logger log.Logger, provider *oteltracesdk.TracerProvider, 
 
 	// Set up otBridgeTracer for converting OpenTracing API calls to OpenTelemetry, and
 	// otelTracerProvider for the inverse.
-	//
-	// TODO: Unfortunately, this wrapped tracer provider discards the name provided to
-	// the Tracer() constructor on it, since it uses a fixed tracer that we provide it.
-	// This is implemented in https://github.com/sourcegraph/sourcegraph/pull/40945
-	otBridgeTracer, otelTracerProvider := otelbridge.NewTracerPair(provider.Tracer("internal/tracer/otel"))
+	otBridgeTracer := otelbridge.NewBridgeTracer()
 	otBridgeTracer.SetTextMapPropagator(compositePropagator)
+	otelTracerProvider := otelbridge.NewTracerProvider(otBridgeTracer, provider)
+	otBridgeTracer.SetOpenTelemetryTracer(
+		otelTracerProvider.Tracer("sourcegraph/internal/tracer.opentracing-bridge"))
 
 	// Set up logging
 	otelLogger := logger.AddCallerSkip(2).Scoped("otel", "OpenTelemetry library")

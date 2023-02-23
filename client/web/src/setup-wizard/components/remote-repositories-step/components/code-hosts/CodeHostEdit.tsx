@@ -1,6 +1,6 @@
 import { FC, ReactNode } from 'react'
 
-import { gql, useQuery } from '@apollo/client'
+import { useQuery } from '@apollo/client'
 import { useParams } from 'react-router-dom'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
@@ -8,37 +8,41 @@ import { Alert, Button, ErrorAlert, H4, Link, LoadingSpinner } from '@sourcegrap
 
 import { defaultExternalServices } from '../../../../../components/externalServices/externalServices'
 import { GetExternalServiceByIdResult, GetExternalServiceByIdVariables } from '../../../../../graphql-operations'
+import { GET_CODE_HOST_BY_ID } from '../../queries'
 
 import { CodeHostConnectFormFields, CodeHostJSONForm, CodeHostJSONFormState } from './common'
 import { GithubConnectView } from './github/GithubConnectView'
 
 import styles from './CodeHostCreation.module.scss'
 
-const GET_EXTERNAL_SERVICE_BY_ID = gql`
-    query GetExternalServiceById($id: ID!) {
-        node(id: $id) {
-            ... on ExternalService {
-                id
-                __typename
-                kind
-                displayName
-                config
-            }
-        }
-    }
-`
+/**
+ * Manually created type based on gql query schema, auto-generated tool can't infer
+ * proper type for ExternalServices (because of problems with gql schema itself, node
+ * type implementation problem that leads to have a massive union if when you use specific
+ * type fragment)
+ */
+interface EditableCodeHost {
+    __typename: 'ExternalService'
+    id: string
+    kind: ExternalServiceKind
+    displayName: string
+    config: string
+}
 
-interface CodeHostEditProps {}
+interface CodeHostEditProps {
+    onCodeHostDelete: (codeHost: EditableCodeHost) => void
+}
 
 /**
  * Renders edit UI for any supported code host type. (Github, Gitlab, ...)
  * Also performs edit, delete actions over opened code host connection
  */
-export const CodeHostEdit: FC<CodeHostEditProps> = () => {
+export const CodeHostEdit: FC<CodeHostEditProps> = props => {
+    const { onCodeHostDelete } = props
     const { codehostId } = useParams()
 
     const { data, loading, error, refetch } = useQuery<GetExternalServiceByIdResult, GetExternalServiceByIdVariables>(
-        GET_EXTERNAL_SERVICE_BY_ID,
+        GET_CODE_HOST_BY_ID,
         {
             fetchPolicy: 'cache-and-network',
             variables: { id: codehostId! },
@@ -86,7 +90,12 @@ export const CodeHostEdit: FC<CodeHostEditProps> = () => {
                         Update
                     </Button>
 
-                    <Button variant="danger" size="sm" type="submit">
+                    <Button
+                        variant="danger"
+                        size="sm"
+                        type="submit"
+                        onClick={() => onCodeHostDelete(data.node as EditableCodeHost)}
+                    >
                         Delete
                     </Button>
 
@@ -116,7 +125,7 @@ const CodeHostEditView: FC<CodeHostEditViewProps> = props => {
 
     const initialValues: CodeHostConnectFormFields = {
         displayName,
-        configuration,
+        config: configuration,
     }
 
     if (codeHostKind === ExternalServiceKind.GITHUB) {

@@ -2,14 +2,15 @@ package uploads
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
+	"time"
 
 	"cloud.google.com/go/storage"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"google.golang.org/api/iterator"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/group"
@@ -35,7 +36,7 @@ func (s *Service) ExportRankingGraph(
 
 	g := group.New().WithContext(ctx)
 
-	sharedUploads := make(chan store.ExportedUpload, len(uploads))
+	sharedUploads := make(chan shared.ExportedUpload, len(uploads))
 	for _, upload := range uploads {
 		sharedUploads <- upload
 	}
@@ -44,7 +45,7 @@ func (s *Service) ExportRankingGraph(
 	for i := 0; i < numRankingRoutines; i++ {
 		g.Go(func(ctx context.Context) error {
 			for upload := range sharedUploads {
-				if err := s.store.InsertDefinitionsAndReferencesForDocument(ctx, upload, rankingGraphKey, numBatchSize, s.setDefinitionsAndReferencesForUpload); err != nil {
+				if err := s.lsifstore.InsertDefinitionsAndReferencesForDocument(ctx, upload, rankingGraphKey, numBatchSize, s.setDefinitionsAndReferencesForUpload); err != nil {
 					s.logger.Error(
 						"Failed to process upload for ranking graph",
 						log.Int("id", upload.ID),
@@ -78,20 +79,20 @@ func (s *Service) ExportRankingGraph(
 
 func (s *Service) setDefinitionsAndReferencesForUpload(
 	ctx context.Context,
-	upload store.ExportedUpload,
+	upload shared.ExportedUpload,
 	rankingBatchNumber int,
 	rankingGraphKey, path string,
 	document *scip.Document,
 ) error {
 	seenDefinitions := map[string]struct{}{}
-	definitions := []shared.RankingDefintions{}
+	definitions := []shared.RankingDefinitions{}
 	for _, occ := range document.Occurrences {
 		if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) {
 			continue
 		}
 
 		if scip.SymbolRole_Definition.Matches(occ) {
-			definitions = append(definitions, shared.RankingDefintions{
+			definitions = append(definitions, shared.RankingDefinitions{
 				UploadID:     upload.ID,
 				SymbolName:   occ.Symbol,
 				Repository:   upload.Repo,
@@ -116,9 +117,11 @@ func (s *Service) setDefinitionsAndReferencesForUpload(
 	}
 
 	if len(definitions) > 0 {
-		if err := s.store.InsertDefintionsForRanking(ctx, rankingGraphKey, rankingBatchNumber, definitions); err != nil {
+		if err := s.store.InsertDefinitionsForRanking(ctx, rankingGraphKey, rankingBatchNumber, definitions); err != nil {
 			return err
 		}
+
+		s.operations.numDefinitionsInserted.Add(float64(len(definitions)))
 	}
 
 	if len(references) > 0 {
@@ -128,12 +131,32 @@ func (s *Service) setDefinitionsAndReferencesForUpload(
 		}); err != nil {
 			return err
 		}
+
+		s.operations.numReferencesInserted.Add(float64(len(references)))
 	}
 
 	return nil
 }
 
 func (s *Service) VacuumRankingGraph(ctx context.Context) error {
+	numStaleDefinitionRecordsDeleted, numStaleReferenceRecordsDeleted, err := s.store.VacuumStaleDefinitionsAndReferences(ctx, rankingGraphKey)
+	if err != nil {
+		return err
+	}
+	s.operations.numStaleDefinitionRecordsDeleted.Add(float64(numStaleDefinitionRecordsDeleted))
+	s.operations.numStaleReferenceRecordsDeleted.Add(float64(numStaleReferenceRecordsDeleted))
+
+	numMetadataRecordsDeleted, numInputRecordsDeleted, err := s.store.VacuumStaleGraphs(ctx, getCurrentGraphKey(time.Now()))
+	if err != nil {
+		return err
+	}
+	s.operations.numMetadataRecordsDeleted.Add(float64(numMetadataRecordsDeleted))
+	s.operations.numInputRecordsDeleted.Add(float64(numInputRecordsDeleted))
+
+	return nil
+}
+
+func (s *Service) VacuumRankingGraphOld(ctx context.Context) error {
 	if s.rankingBucket == nil {
 		return nil
 	}
@@ -174,19 +197,23 @@ func (s *Service) VacuumRankingGraph(ctx context.Context) error {
 	return nil
 }
 
-func (s *Service) MapRankingGraph(ctx context.Context, numRankingRoutines int, rankingJobEnabled bool) (err error) {
+func (s *Service) MapRankingGraph(ctx context.Context, numRankingRoutines int, rankingJobEnabled bool) (
+	numReferenceRecordsProcessed int,
+	numInputsInserted int,
+	err error,
+) {
 	ctx, _, endObservation := s.operations.mapRankingGraph.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	if !rankingJobEnabled {
-		return nil
+		return 0, 0, nil
 	}
 
-	if err := s.store.InsertPathCountInputs(ctx, rankingGraphKey, rankingMapReduceBatchSize); err != nil {
-		return err
-	}
-
-	return nil
+	return s.store.InsertPathCountInputs(
+		ctx,
+		getCurrentGraphKey(time.Now()),
+		rankingMapReduceBatchSize,
+	)
 }
 
 func (s *Service) ReduceRankingGraph(
@@ -203,7 +230,7 @@ func (s *Service) ReduceRankingGraph(
 
 	numPathRanksInserted, numPathCountInputsProcessed, err = s.store.InsertPathRanks(
 		ctx,
-		rankingGraphKey,
+		getCurrentGraphKey(time.Now()),
 		rankingMapReduceBatchSize,
 	)
 	if err != nil {
@@ -211,4 +238,15 @@ func (s *Service) ReduceRankingGraph(
 	}
 
 	return numPathRanksInserted, numPathCountInputsProcessed, nil
+}
+
+// getCurrentGraphKey returns a derivative key from the configured parent used for exports
+// as well as the current "bucket" of time containing the current instant. Each bucket of
+// time is the same configurable length, packed end-to-end since the Unix epoch.
+//
+// Constructing a graph key for the mapper and reducer jobs in this way ensures that begin
+// a fresh map/reduce job on a periodic cadence (equal to the bucket length). Changing the
+// parent graph key will also create a new map/reduce job (without switching buckets).
+func getCurrentGraphKey(now time.Time) string {
+	return fmt.Sprintf("%s-%d", rankingGraphKey, now.UTC().Unix()/int64(RankingConfigInst.Interval.Seconds()))
 }

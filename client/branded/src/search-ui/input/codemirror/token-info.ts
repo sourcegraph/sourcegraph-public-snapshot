@@ -11,43 +11,54 @@ import { resolveFilterMemoized } from '@sourcegraph/shared/src/search/query/util
 import { decoratedTokens, parsedQuery } from './parsedQuery'
 
 // Defines decorators for syntax highlighting
-const tokenHoverDecoration = Decoration.mark({ class: 'sg-token-hover' })
+const tokenHoverDecoration = Decoration.mark({ class: 'sg-decorated-token-hover' })
 
-// Overwrite styles for built-in hover element
-const hoverStyle = EditorView.baseTheme({
-    '.cm-tooltip': {
-        padding: '0.25rem',
-        color: 'var(--search-query-text-color)',
-        backgroundColor: 'var(--color-bg-1)',
-        border: '1px solid var(--border-color)',
-        borderRadius: 'var(--border-radius)',
-        boxShadow: 'var(--box-shadow)',
-        maxWidth: '50vw',
-    },
+const hoverStyle = [
+    // Overwrite styles for built-in hover element
+    EditorView.theme({
+        '.cm-tooltip': {
+            padding: '0.25rem',
+            color: 'var(--search-query-text-color)',
+            backgroundColor: 'var(--color-bg-1)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--border-radius)',
+            boxShadow: 'var(--box-shadow)',
+            maxWidth: '50vw',
+        },
 
-    '.cm-tooltip p:last-child': {
-        marginBottom: 0,
-    },
+        '.cm-tooltip p:last-child': {
+            marginBottom: 0,
+        },
 
-    '.cm-tooltip code': {
-        backgroundColor: 'rgba(220, 220, 220, 0.4)',
-        borderRadius: 'var(--border-radius)',
-        padding: '0 0.4em',
-    },
+        '.cm-tooltip code': {
+            backgroundColor: 'rgba(220, 220, 220, 0.4)',
+            borderRadius: 'var(--border-radius)',
+            padding: '0 0.4em',
+        },
 
-    '.cm-tooltip-section': {
-        paddingBottom: '0.25rem',
-        borderTopColor: 'var(--border-color)',
-    },
+        '.cm-tooltip-section': {
+            paddingBottom: '0.25rem',
+            borderTopColor: 'var(--border-color)',
+        },
 
-    '.cm-tooltip-section:last-child': {
-        paddingTop: '0.25rem',
-        paddingBottom: 0,
-    },
-    '.cm-tooltip-section:last-child:first-child': {
-        padding: 0,
-    },
-})
+        '.cm-tooltip-section:last-child': {
+            paddingTop: '0.25rem',
+            paddingBottom: 0,
+        },
+        '.cm-tooltip-section:last-child:first-child': {
+            padding: 0,
+        },
+    }),
+    // Base style for custom classes
+    EditorView.baseTheme({
+        '.sg-decorated-token-hover': {
+            backgroundColor: 'var(--gray-02)',
+        },
+        '&dark .sg-decorated-token-hover': {
+            backgroundColor: 'var(--gray-08)',
+        },
+    }),
+]
 
 /**
  * Extension for providing token information. This includes showing a popover

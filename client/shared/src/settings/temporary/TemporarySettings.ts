@@ -52,6 +52,10 @@ export interface TemporarySettingsSchema {
     'search.results.collapseSmartSearch': boolean
     'search.input.recentSearches': RecentSearch[]
     'search.input.usedInlineHistory': boolean
+    // This is a temporary (no pun intended) setting to allow users to easily
+    // switch been the current and the new search input. It's only used when
+    // the feature flag `"searchQueryInput": "experimental"` is set.
+    'search.input.experimental': boolean
     // TODO #41002: Remove this temporary setting.
     // This temporary setting is now turned on by default with no UI to toggle it off.
     'coreWorkflowImprovements.enabled_deprecated': boolean

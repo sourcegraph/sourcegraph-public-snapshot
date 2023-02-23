@@ -51,7 +51,7 @@ async function authorize(credentials: OAuth2ClientOptions): Promise<OAuth2Client
         const { port } = server.address() as AddressInfo
         const oauth2Client = new OAuth2Client({
             clientId: credentials.installed.client_id,
-            clientSecret: credentials.installed.client_id,
+            clientSecret: credentials.installed.client_secret,
             redirectUri: `http://localhost:${port}`,
         })
 

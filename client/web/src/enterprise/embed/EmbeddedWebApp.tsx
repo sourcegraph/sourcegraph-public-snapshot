@@ -1,8 +1,9 @@
-import { FC, Suspense, useEffect, useMemo } from 'react'
+import { FC, Suspense, useEffect, useLayoutEffect, useMemo } from 'react'
 
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
 import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/createSyncLoadedController'
+import { useTheme, Theme, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Alert, LoadingSpinner, setLinkComponent, WildcardTheme, WildcardThemeContext } from '@sourcegraph/wildcard'
 
@@ -10,7 +11,6 @@ import '../../SourcegraphWebApp.scss'
 
 import { GlobalContributions } from '../../contributions'
 import { createPlatformContext } from '../../platform/context'
-import { useTheme, ThemePreference } from '../../theme'
 
 import { OpenNewTabAnchorLink } from './OpenNewTabAnchorLink'
 
@@ -33,21 +33,23 @@ const EmbeddedNotebookPage = lazyComponent(
 const EMPTY_SETTINGS_CASCADE = { final: {}, subjects: [] }
 
 export const EmbeddedWebApp: FC = () => {
-    const { enhancedThemePreference, setThemePreference } = useTheme()
-    const isLightTheme = enhancedThemePreference === ThemePreference.Light
+    const { theme, setThemeSetting } = useTheme()
+
+    useLayoutEffect(() => {
+        const isLightTheme = theme === Theme.Light
+
+        document.documentElement.classList.add('theme')
+        document.documentElement.classList.toggle('theme-light', isLightTheme)
+        document.documentElement.classList.toggle('theme-dark', !isLightTheme)
+    }, [theme])
 
     useEffect(() => {
         const query = new URLSearchParams(window.location.search)
         const theme = query.get('theme')
-        setThemePreference(
-            theme === 'dark' ? ThemePreference.Dark : theme === 'light' ? ThemePreference.Light : ThemePreference.System
+        setThemeSetting(
+            theme === 'dark' ? ThemeSetting.Dark : theme === 'light' ? ThemeSetting.Light : ThemeSetting.System
         )
-    }, [setThemePreference])
-
-    useEffect(() => {
-        document.documentElement.classList.toggle('theme-light', isLightTheme)
-        document.documentElement.classList.toggle('theme-dark', !isLightTheme)
-    }, [isLightTheme])
+    }, [setThemeSetting])
 
     const platformContext = useMemo(() => createPlatformContext(), [])
     const extensionsController = useMemo(() => createExtensionsController(platformContext), [platformContext])
@@ -77,12 +79,12 @@ export const EmbeddedWebApp: FC = () => {
                                         searchContextsEnabled={true}
                                         isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                                         authenticatedUser={null}
-                                        isLightTheme={isLightTheme}
                                         settingsCascade={EMPTY_SETTINGS_CASCADE}
                                         platformContext={platformContext}
                                     />
                                 }
                             />
+                            Ï
                             <Route
                                 path="*"
                                 element={

@@ -1765,7 +1765,7 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 		r := &Resolver{db: db}
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := r.PermissionSyncJobs(ctx, graphqlbackend.ListPermissionSyncJobsArgs{})
+		result, err := r.PermissionsSyncJobs(ctx, graphqlbackend.ListPermissionsSyncJobsArgs{})
 
 		require.ErrorIs(t, err, auth.ErrMustBeSiteAdmin)
 		require.Nil(t, result)
@@ -1803,7 +1803,7 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 			NumFailures:        0,
 			WorkerHostname:     "worker.hostname",
 			Cancel:             false,
-			Priority:           database.HighPriorityPermissionSync,
+			Priority:           database.HighPriorityPermissionsSync,
 			NoPerms:            false,
 			InvalidateCaches:   false,
 			PermissionsAdded:   1337,
@@ -1820,7 +1820,7 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 			StartedAt:        queuedAt,
 			WorkerHostname:   "worker.hostname",
 			Cancel:           false,
-			Priority:         database.HighPriorityPermissionSync,
+			Priority:         database.HighPriorityPermissionsSync,
 			NoPerms:          false,
 			InvalidateCaches: false,
 			CodeHostStates:   []database.PermissionSyncCodeHostState{},
@@ -1849,7 +1849,7 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 			Schema:  parsedSchema,
 			Query: `
 query {
-  permissionSyncJobs(first:2) {
+  permissionsSyncJobs(first:2) {
 	totalCount
 	pageInfo { hasNextPage }
     nodes {
@@ -1894,10 +1894,10 @@ query {
 					`,
 			ExpectedResult: `
 {
-	"permissionSyncJobs": {
+	"permissionsSyncJobs": {
 		"nodes": [
 			{
-				"id": "UGVybWlzc2lvblN5bmNKb2I6Mw==",
+				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjM=",
 				"state": "COMPLETED",
 				"failureMessage": null,
 				"reason": {
@@ -1930,7 +1930,7 @@ query {
 				"codeHostStates": []
 			},
 			{
-				"id": "UGVybWlzc2lvblN5bmNKb2I6NA==",
+				"id": "UGVybWlzc2lvbnNTeW5jSm9iOjQ=",
 				"state": "QUEUED",
 				"failureMessage": null,
 				"reason": {
