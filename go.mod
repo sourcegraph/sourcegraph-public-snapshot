@@ -276,7 +276,7 @@ replace (
 )
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20230222090137-23121817690d
+	github.com/sourcegraph/zoekt v0.0.0-20230222091349-b65e3e6bceef
 	github.com/stretchr/objx v0.5.0 // indirect
 )
 

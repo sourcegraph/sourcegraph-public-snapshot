@@ -14,6 +14,7 @@ import (
 	"syscall"
 
 	"github.com/sourcegraph/log"
+	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -174,6 +175,7 @@ type RemoteGitCommand struct {
 type execer interface {
 	httpPost(ctx context.Context, repo api.RepoName, op string, payload any) (resp *http.Response, err error)
 	AddrForRepo(repo api.RepoName) string
+	ConnForRepo(repo api.RepoName) (*grpc.ClientConn, error)
 }
 
 // DividedOutput runs the command and returns its standard output and standard error.

@@ -12,7 +12,6 @@ import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, ErrorMessage } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -90,7 +89,6 @@ export interface OrgAreaRoute extends RouteV6Descriptor<OrgAreaRouteContext> {
 export interface OrgAreaProps
     extends PlatformContextProps,
         SettingsCascadeProps,
-        ThemeProps,
         TelemetryProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
@@ -124,7 +122,6 @@ interface State extends BreadcrumbSetters {
 export interface OrgAreaRouteContext
     extends PlatformContextProps,
         SettingsCascadeProps,
-        ThemeProps,
         TelemetryProps,
         NamespaceProps,
         BreadcrumbsProps,
@@ -237,7 +234,6 @@ export class OrgArea extends React.Component<OrgAreaProps> {
             onOrganizationUpdate: this.onDidUpdateOrganization,
             platformContext: this.props.platformContext,
             settingsCascade: this.props.settingsCascade,
-            isLightTheme: this.props.isLightTheme,
             namespace: this.state.orgOrError,
             telemetryService: this.props.telemetryService,
             isSourcegraphDotCom: this.props.isSourcegraphDotCom,

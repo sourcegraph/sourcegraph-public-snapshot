@@ -9,7 +9,6 @@ import { catchError } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable, ErrorMessage } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -23,13 +22,13 @@ import { RepoSettingsSidebar, RepoSettingsSideBarGroups } from './RepoSettingsSi
 
 import styles from './RepoSettingsArea.module.scss'
 
-export interface RepoSettingsAreaRouteContext extends ThemeProps, TelemetryProps {
+export interface RepoSettingsAreaRouteContext extends TelemetryProps {
     repo: SettingsAreaRepositoryFields
 }
 
 export interface RepoSettingsAreaRoute extends RouteV6Descriptor<RepoSettingsAreaRouteContext> {}
 
-interface Props extends BreadcrumbSetters, ThemeProps, TelemetryProps {
+interface Props extends BreadcrumbSetters, TelemetryProps {
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: RepoSettingsSideBarGroups
     repoName: string
@@ -82,7 +81,6 @@ export const RepoSettingsArea: React.FunctionComponent<React.PropsWithChildren<P
 
     const context: RepoSettingsAreaRouteContext = {
         repo: repoOrError,
-        isLightTheme: props.isLightTheme,
         telemetryService: props.telemetryService,
     }
 
