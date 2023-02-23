@@ -14,6 +14,7 @@ import { mdiClose } from '@mdi/js'
 import { TabsProps } from '@reach/tabs'
 import classNames from 'classnames'
 import * as H from 'history'
+import { escapeRegExp } from 'lodash'
 
 import { pluralize } from '@sourcegraph/common'
 import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
@@ -47,7 +48,6 @@ import { fuzzyErrors, FuzzyState, FuzzyTabs, FuzzyTabKey, FuzzyScope } from './F
 import { HighlightedLink, HighlightedLinkProps, linkStyle } from './HighlightedLink'
 
 import styles from './FuzzyModal.module.scss'
-import { escapeRegExp } from 'lodash'
 
 const FUZZY_MODAL_RESULTS = 'fuzzy-modal-results'
 
