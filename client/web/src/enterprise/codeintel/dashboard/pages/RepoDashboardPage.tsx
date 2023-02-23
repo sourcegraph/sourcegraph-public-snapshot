@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { mdiFolderOpenOutline, mdiFolderOutline, mdiWrench } from '@mdi/js'
 import classNames from 'classnames'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Location, useLocation, useNavigate } from 'react-router-dom'
 
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -12,10 +13,13 @@ import {
     ErrorAlert,
     H3,
     Icon,
+    Label,
     Link,
     LoadingSpinner,
     PageHeader,
+    RadioButton,
     Select,
+    Text,
     Tree,
 } from '@sourcegraph/wildcard'
 
@@ -26,8 +30,7 @@ import { useRepoCodeIntelStatus } from '../hooks/useRepoCodeIntelStatus'
 import { buildTreeData, descendentNames } from '../components/tree/tree'
 import { IndexStateBadge } from '../components/IndexStateBadge'
 import { ConfigurationStateBadge, IndexerDescription } from '../components/ConfigurationStateBadge'
-import { mdiFolderOpenOutline, mdiFolderOutline } from '@mdi/js'
-import { byKey, groupBy, sanitizePath } from '../components/tree/util'
+import { byKey, getIndexerKey, groupBy, sanitizePath, getIndexRoot } from '../components/tree/util'
 
 import styles from './RepoDashboardPage.module.scss'
 
@@ -38,28 +41,70 @@ export interface RepoDashboardPageProps extends TelemetryProps {
     // queryCommitGraph?: typeof defaultQueryCommitGraph
 }
 
-// TODO: Understand more
-function getIndexRoot(index: PreciseIndexFields): string {
-    return sanitizePath(index.projectRoot?.path || index.inputRoot)
-}
-
-// TODO: Understand more
-function getIndexerKey(index: PreciseIndexFields): string {
-    return index.indexer?.key || index.inputIndexer
-}
-
-// TODO: Understand more
 const completedStates = new Set<PreciseIndexState>([PreciseIndexState.COMPLETED])
 const failureStates = new Set<PreciseIndexState>([
     PreciseIndexState.INDEXING_ERRORED,
     PreciseIndexState.PROCESSING_ERRORED,
 ])
 
-type ShowFilter = 'all' | 'errors' | 'suggestions'
-type IndexerFilter = 'all' | string
-interface FilterState {
-    show: ShowFilter
-    indexer: IndexerFilter
+type ShowFilter = 'all' | 'indexes' | 'suggestions'
+type IndexFilter = 'all' | 'success' | 'error'
+type LanguageFilter = 'all' | string
+interface DefaultFilterState {
+    show: Extract<ShowFilter, 'all' | 'indexes'>
+    indexState: IndexFilter
+    language: LanguageFilter
+}
+interface SuggestionFilterState {
+    show: Extract<ShowFilter, 'suggestions'>
+    language: LanguageFilter
+}
+type FilterState = SuggestionFilterState | DefaultFilterState
+
+/**
+ * Build a valid FilterState
+ * Used to allow other pages to easily link to a configured dashboard
+ **/
+export const buildParamsFromFilterState = (filterState: FilterState): URLSearchParams => {
+    const params = new URLSearchParams()
+
+    if (filterState.show === 'suggestions') {
+        params.set('show', 'suggestions')
+    } else {
+        params.set('show', filterState.show)
+        params.set('indexState', filterState.indexState)
+    }
+
+    params.set('language', filterState.language)
+
+    return params
+}
+
+/**
+ * Parse search parameters and build a valid FilterState.
+ * Used to manage the state of the dashboard
+ */
+const buildFilterStateFromParams = ({ search }: Location): FilterState => {
+    const queryParameters = new URLSearchParams(search)
+
+    const show = queryParameters.get('show') || 'all'
+    const language = queryParameters.get('language') || 'all'
+
+    if (show === 'suggestions') {
+        // Clean up URL
+        queryParameters.delete('indexState')
+
+        return {
+            show,
+            language,
+        }
+    }
+
+    return {
+        show: show as DefaultFilterState['show'],
+        language,
+        indexState: (queryParameters.get('indexState') || 'all') as IndexFilter,
+    }
 }
 
 export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> = ({ telemetryService, repo }) => {
@@ -72,27 +117,16 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
 
     const { data, loading, error } = useRepoCodeIntelStatus({ variables: { repository: repo.name } })
 
-    // TODO: Smart filters that adapt to the data
-    const [filterState, setFilterState] = useState<FilterState>({
-        show: 'all',
-        indexer: 'all',
-    })
+    const [filterState, setFilterState] = useState<FilterState>(buildFilterStateFromParams(location))
 
     useEffect(() => {
-        const queryParameters = new URLSearchParams(location.search)
-
-        // TODO: Better type safety
-        setFilterState(previous => ({
-            ...previous,
-            ...(queryParameters.has('show') ? { show: queryParameters.get('show') as ShowFilter } : {}),
-            ...(queryParameters.has('indexer') ? { indexer: queryParameters.get('indexer') as IndexerFilter } : {}),
-        }))
-    }, [location.search])
+        setFilterState(buildFilterStateFromParams(location))
+    }, [location])
 
     const handleFilterChange = useCallback(
-        (event: React.ChangeEvent<HTMLSelectElement>, paramKey: keyof FilterState) => {
+        (value: string, paramKey: keyof SuggestionFilterState | keyof DefaultFilterState) => {
             const queryParameters = new URLSearchParams(location.search)
-            queryParameters.set(paramKey, event.target.value)
+            queryParameters.set(paramKey, value)
             navigate({ search: queryParameters.toString() }, { replace: true })
         },
         [location.search, navigate]
@@ -100,19 +134,23 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
 
     const shouldDisplayIndex = useCallback(
         (index: PreciseIndexFields): boolean =>
-            // Valid indexer filter
-            (filterState.indexer === 'all' || filterState.indexer === getIndexerKey(index)) &&
             // Valid show filter
-            (filterState.show === 'all' || (filterState.show === 'errors' && failureStates.has(index.state))),
+            (filterState.show === 'all' || filterState.show === 'indexes') &&
+            // Valid language filter
+            (filterState.language === 'all' || filterState.language === getIndexerKey(index)) &&
+            // Valid indexState filter
+            (filterState.indexState === 'all' ||
+                (filterState.indexState === 'error' && failureStates.has(index.state)) ||
+                (filterState.indexState === 'success' && completedStates.has(index.state))),
         [filterState]
     )
 
     const shouldDisplayIndexerSuggestion = useCallback(
         (indexer: CodeIntelIndexerFields): boolean =>
-            // Valid indexer filter
-            (filterState.indexer === 'all' || filterState.indexer === indexer.key) &&
             // Valid show filter
-            (filterState.show === 'all' || filterState.show === 'suggestions'),
+            (filterState.show === 'all' || filterState.show === 'suggestions') &&
+            // Valid language filter
+            (filterState.language === 'all' || filterState.language === indexer.key),
         [filterState]
     )
 
@@ -160,7 +198,7 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
             {
                 label: 'Unconfigured projects',
                 value: numUnconfiguredProjects,
-                valueClassName: 'text-merged',
+                valueClassName: 'text-primary',
             },
         ]
     }, [indexes, suggestedIndexers])
@@ -199,38 +237,74 @@ export const RepoDashboardPage: React.FunctionComponent<RepoDashboardPageProps> 
             </Container>
             <Container className="mt-3">
                 <div className="d-flex justify-content-end">
-                    <Select
-                        id="show-filter"
-                        label="Show:"
-                        value={filterState.show}
-                        onChange={event => handleFilterChange(event, 'show')}
-                        className="d-flex align-items-center mr-3"
-                        selectClassName={styles.select}
-                        labelClassName="mb-0 mr-2"
-                        isCustomStyle={true}
-                    >
-                        <option value="all">All</option>
-                        <option value="errors">Errors</option>
-                        <option value="suggestions">Suggestions</option>
-                    </Select>
-
-                    <Select
-                        id="indexer-filter"
-                        label="Indexer:"
-                        value={filterState.indexer}
-                        onChange={event => handleFilterChange(event, 'indexer')}
-                        className="d-flex align-items-center"
-                        selectClassName={styles.select}
-                        labelClassName="mb-0 mr-2"
-                        isCustomStyle={true}
-                    >
-                        <option value="all">All</option>
-                        {[...languageKeys].sort().map(key => (
-                            <option key={key} value={key}>
-                                {key}
-                            </option>
-                        ))}
-                    </Select>
+                    <div className={styles.summaryContainer}>
+                        <div>
+                            <Label className={styles.radioGroup}>
+                                Show:
+                                <RadioButton
+                                    name="show-filter"
+                                    id="show-all"
+                                    value="all"
+                                    checked={filterState.show === 'all'}
+                                    onChange={event => handleFilterChange(event.target.value, 'show')}
+                                    label="All"
+                                    wrapperClassName="ml-2 mr-3"
+                                />
+                                <RadioButton
+                                    name="show-filter"
+                                    id="show-indexes"
+                                    value="indexes"
+                                    checked={filterState.show === 'indexes'}
+                                    onChange={event => handleFilterChange(event.target.value, 'show')}
+                                    label="Indexes"
+                                    wrapperClassName="mr-3"
+                                />
+                                <RadioButton
+                                    name="show-filter"
+                                    id="show-suggestions"
+                                    value="suggestions"
+                                    checked={filterState.show === 'suggestions'}
+                                    onChange={event => handleFilterChange(event.target.value, 'show')}
+                                    label="Suggestions"
+                                />
+                            </Label>
+                        </div>
+                        <div className="d-flex">
+                            <Select
+                                id="language-filter"
+                                label="Language:"
+                                value={filterState.language}
+                                onChange={event => handleFilterChange(event.target.value, 'language')}
+                                className="d-flex align-items-center mb-0"
+                                selectClassName={styles.select}
+                                labelClassName="mb-0 mr-2"
+                                isCustomStyle={true}
+                            >
+                                <option value="all">All</option>
+                                {[...languageKeys].sort().map(key => (
+                                    <option key={key} value={key}>
+                                        {key}
+                                    </option>
+                                ))}
+                            </Select>
+                            {'indexState' in filterState && (
+                                <Select
+                                    id="index-filter"
+                                    label="Indexes:"
+                                    value={filterState.indexState}
+                                    onChange={event => handleFilterChange(event.target.value, 'indexState')}
+                                    className="d-flex align-items-center mb-0 ml-3"
+                                    selectClassName={styles.select}
+                                    labelClassName="mb-0 mr-2"
+                                    isCustomStyle={true}
+                                >
+                                    <option value="all">Latest</option>
+                                    <option value="success">Latest successful</option>
+                                    <option value="error">Latest failures</option>
+                                </Select>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
                 {filteredTreeData.length > 1 ? (
@@ -304,7 +378,7 @@ const TreeNode: React.FunctionComponent<TreeNodeProps> = ({
 }) => (
     // We already handle accessibility events for expansion in the <TreeView />
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
-    <div className={classNames(styles.treeNode, !isBranch && styles.treeNodeBland)} onClick={onClick}>
+    <div className={styles.treeNode} onClick={onClick}>
         <div className={classNames('d-inline', !isBranch ? styles.spacer : '')}>
             <Icon
                 svgPath={isBranch && isExpanded ? mdiFolderOpenOutline : mdiFolderOutline}
@@ -315,7 +389,7 @@ const TreeNode: React.FunctionComponent<TreeNodeProps> = ({
             {isBranch && !isExpanded && (numDescendentConfigurable > 0 || numDescendentErrors > 0) && (
                 <>
                     {numDescendentConfigurable > 0 && (
-                        <Badge variant="merged" className="ml-2" pill={true} small={true}>
+                        <Badge variant="primary" className="ml-2" pill={true} small={true}>
                             {numDescendentConfigurable}
                         </Badge>
                     )}
@@ -330,16 +404,22 @@ const TreeNode: React.FunctionComponent<TreeNodeProps> = ({
 
         <div className="d-flex align-items-center">
             {[...indexesByIndexerNameForRoot?.entries()].sort(byKey).map(([indexerName, indexes]) => (
-                <IndexStateBadge key={indexerName} indexes={indexes} />
+                <IndexStateBadge
+                    key={indexerName}
+                    indexes={indexes}
+                    className={classNames('text-muted', styles.badge)}
+                />
             ))}
 
             {availableIndexersForRoot.map(indexer => (
                 <Badge
+                    as={Link}
+                    to="../index-configuration"
                     variant="outlineSecondary"
-                    href="../configuration" // TODO: Fix
                     key={indexer.key}
-                    className={classNames('p-1 text-muted', styles.badge)}
+                    className={classNames('text-muted', styles.badge)}
                 >
+                    <Icon svgPath={mdiWrench} aria-hidden={true} className="mr-1 text-primary" />
                     Configure {indexer.key}
                 </Badge>
             ))}

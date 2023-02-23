@@ -54,7 +54,7 @@ export const GlobalDashboardPage: React.FunctionComponent<GlobalDashboardPagePro
             {
                 label: `Configurable ${countConfigurable === 1 ? 'repository' : 'repositories'}`,
                 value: countConfigurable,
-                valueClassName: 'text-merged',
+                valueClassName: 'text-primary',
             },
         ]
     }, [data])

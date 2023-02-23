@@ -17,6 +17,22 @@
     width: 100%;
 }
 
+.summary-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    border: 1px solid var(--border-color);
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 0.5rem;
+}
+
+.radio-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.25rem;
+}
+
 .select {
     width: 10rem;
 }
@@ -27,16 +43,24 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-
-    &-bland {
-        &:hover {
-            background-color: var(--color-bg-1);
-        }
-    }
 }
 
 .badge {
     border-radius: 0.5rem;
+    margin-right: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    display: flex;
+    align-items: center;
+
+    &:last-of-type {
+        margin-right: 0.25rem;
+    }
+
+    // Clip extra long badges
+    max-width: 10rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /*************** Inherited styles ***********/

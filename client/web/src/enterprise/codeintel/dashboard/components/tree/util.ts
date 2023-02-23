@@ -1,5 +1,7 @@
 import { isDefined } from '@sourcegraph/common'
 
+import { PreciseIndexFields } from '../../../../../graphql-operations'
+
 // Strip leading/trailing slashes and add a single leading slash
 export function sanitizePath(root: string): string {
     return `/${root.replaceAll(/(^\/+)|(\/+$)/g, '')}`
@@ -26,4 +28,12 @@ export function keysMatchingPredicate<K, V>(map: Map<K, V>, predFn: (value: V) =
 // Return true if the given slices for a proper (pairwise) subset < superset relation
 export function checkSubset(subset: string[], superset: string[]): boolean {
     return subset.length < superset.length && subset.filter((value, index) => value !== superset[index]).length === 0
+}
+
+export function getIndexerKey(index: PreciseIndexFields): string {
+    return index.indexer?.key || index.inputIndexer
+}
+
+export function getIndexRoot(index: PreciseIndexFields): string {
+    return sanitizePath(index.projectRoot?.path || index.inputRoot)
 }
