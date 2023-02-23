@@ -13,6 +13,7 @@ import (
 	"os"
 	"reflect"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/inconshreveable/log15"
@@ -89,11 +90,11 @@ func TestRepository(t *testing.T) {
 func TestRecloneRepository(t *testing.T) {
 	resetMocks()
 
-	gitserverCalled := false
+	var gitserverCalled atomic.Bool
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		resp := protocol.RepoUpdateResponse{}
-		gitserverCalled = true
+		gitserverCalled.Store(true)
 		json.NewEncoder(w).Encode(&resp)
 	}))
 	defer srv.Close()
@@ -146,7 +147,7 @@ func TestRecloneRepository(t *testing.T) {
 	})
 
 	assert.True(t, *called)
-	assert.True(t, gitserverCalled)
+	assert.True(t, gitserverCalled.Load())
 }
 
 func TestDeleteRepositoryFromDisk(t *testing.T) {

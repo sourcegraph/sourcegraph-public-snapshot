@@ -127,7 +127,6 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 				InputRev:      nil,
 				Repo:          types.MinimalRepo{},
 				CommitID:      "",
-				Path:          "code.go",
 				LimitHit:      0,
 			},
 			&result.OwnerMatch{
@@ -135,7 +134,6 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 				InputRev:      nil,
 				Repo:          types.MinimalRepo{},
 				CommitID:      "",
-				Path:          "code.go",
 				LimitHit:      0,
 			},
 			&result.OwnerMatch{
@@ -143,7 +141,6 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 				InputRev:      nil,
 				Repo:          types.MinimalRepo{},
 				CommitID:      "",
-				Path:          "README.md",
 				LimitHit:      0,
 			},
 			&result.OwnerMatch{
@@ -151,7 +148,6 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 				InputRev:      nil,
 				Repo:          types.MinimalRepo{},
 				CommitID:      "",
-				Path:          "README.md",
 				LimitHit:      0,
 			},
 		}
@@ -162,9 +158,6 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 			return want[x].Key().Less(want[y].Key())
 		})
 		autogold.Expect(want).Equal(t, matches)
-	})
-	t.Run("deduplicates owner matches", func(t *testing.T) {
-		// See result/owner.go:55 for comment.
 	})
 }
 

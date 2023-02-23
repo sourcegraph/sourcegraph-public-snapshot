@@ -549,6 +549,7 @@ function staticFilterValueOptions(
     } else {
         options = resolvedFilter.definition.discreteValues(token.value, false).map(value => ({
             label: value.label,
+            description: value.description,
             action: {
                 type: 'completion',
                 from,
@@ -585,6 +586,7 @@ function staticFilterPredicateOptions(type: 'repo' | 'file', value: Literal | un
     const fzf = new Fzf(predicateCompletion(type), predicateFzfOption)
     return fzf.find(value?.value || '').map(({ item, positions }) => ({
         label: item.label,
+        description: item.description,
         matches: positions,
         action: {
             type: 'completion',

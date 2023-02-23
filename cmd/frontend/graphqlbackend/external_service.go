@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -438,3 +439,62 @@ func (r *externalServiceSyncJobResolver) ReposDeleted() int32 { return r.job.Rep
 func (r *externalServiceSyncJobResolver) ReposModified() int32 { return r.job.ReposModified }
 
 func (r *externalServiceSyncJobResolver) ReposUnmodified() int32 { return r.job.ReposUnmodified }
+
+func (r *externalServiceNamespaceConnectionResolver) compute(ctx context.Context) ([]*types.ExternalServiceNamespace, int32, error) {
+	r.once.Do(func() {
+		config, err := NewSourceConfiguration(r.args.Kind, r.args.Url, r.args.Token)
+		if err != nil {
+			r.err = err
+			return
+		}
+
+		args := protocol.ExternalServiceNamespacesArgs{Kind: r.args.Kind, Config: config}
+		res, err := r.repoupdaterClient.ExternalServiceNamespaces(ctx, args)
+		if err != nil {
+			r.err = err
+			return
+		}
+
+		r.nodes = append(r.nodes, res.Namespaces...)
+		r.totalCount = int32(len(r.nodes))
+	})
+
+	return r.nodes, r.totalCount, r.err
+}
+
+func (r *externalServiceNamespaceConnectionResolver) Nodes(ctx context.Context) ([]*externalServiceNamespaceResolver, error) {
+	namespaces, totalCount, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	nodes := make([]*externalServiceNamespaceResolver, totalCount)
+	for i, j := range namespaces {
+		nodes[i] = &externalServiceNamespaceResolver{
+			namespace: j,
+		}
+	}
+
+	return nodes, nil
+}
+
+func (r *externalServiceNamespaceConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	_, totalCount, err := r.compute(ctx)
+	return totalCount, err
+}
+
+type externalServiceNamespaceResolver struct {
+	namespace *types.ExternalServiceNamespace
+}
+
+func (r *externalServiceNamespaceResolver) ID() graphql.ID {
+	return relay.MarshalID("ExternalServiceNamespace", r.namespace)
+}
+
+func (r *externalServiceNamespaceResolver) Name() string {
+	return r.namespace.Name
+}
+
+func (r *externalServiceNamespaceResolver) ExternalID() string {
+	return r.namespace.ExternalID
+}

@@ -8,7 +8,7 @@ This page provides more tips on debugging why blobstore may not be working prope
 
 ## Can I disable blobstore?
 
-Today, Sourcegraph uses blobstore for storing precise code intel (LSIF/SCIP) uploads. You can also configure Sourcegraph to use [S3 or GCS for object storage](../external-services/object_storage.md) if you prefer.
+Today, Sourcegraph uses blobstore for storing precise code intel (LSIF/SCIP) uploads. You can also configure Sourcegraph to use [S3 or GCS for object storage](../external_services/object_storage.md) if you prefer.
 
 In the near future, other Sourcegraph features like Batch Changes may also rely on object storage and so, if possible, it's best to make sure it is working.
 

@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { pluralize } from '@sourcegraph/common'
 import { useMutation } from '@sourcegraph/http-client'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import {
     Container,
     PageHeader,
@@ -32,7 +33,6 @@ import {
 } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { userURL } from '../../../user'
-import { UserAvatar } from '../../../user/UserAvatar'
 import { OrgAreaRouteContext } from '../../area/OrgArea'
 import { ORGANIZATION_MEMBERS_QUERY, REMOVE_USER_FROM_ORGANIZATION_QUERY } from '../../backend'
 
