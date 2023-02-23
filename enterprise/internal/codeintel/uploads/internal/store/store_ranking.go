@@ -3,6 +3,7 @@ package store
 import (
 	"bytes"
 	"context"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -70,13 +71,13 @@ WHERE sid.upload_id = %s
 ORDER BY sid.document_path
 `
 
-func (s *store) InsertDefintionsForRanking(
+func (s *store) InsertDefinitionsForRanking(
 	ctx context.Context,
 	rankingGraphKey string,
 	rankingBatchNumber int,
-	defintions []shared.RankingDefintions,
+	definitions []shared.RankingDefinitions,
 ) (err error) {
-	ctx, _, endObservation := s.operations.insertDefintionsForRanking.With(
+	ctx, _, endObservation := s.operations.insertDefinitionsForRanking.With(
 		ctx,
 		&err,
 		observation.Args{},
@@ -90,15 +91,15 @@ func (s *store) InsertDefintionsForRanking(
 	defer func() { err = tx.Done(err) }()
 
 	inserter := func(inserter *batch.Inserter) error {
-		batchDefinitions := make([]shared.RankingDefintions, 0, rankingBatchNumber)
-		for _, def := range defintions {
+		batchDefinitions := make([]shared.RankingDefinitions, 0, rankingBatchNumber)
+		for _, def := range definitions {
 			batchDefinitions = append(batchDefinitions, def)
 
 			if len(batchDefinitions) == rankingBatchNumber {
 				if err := insertDefinitions(ctx, inserter, rankingGraphKey, batchDefinitions); err != nil {
 					return err
 				}
-				batchDefinitions = make([]shared.RankingDefintions, 0, rankingBatchNumber)
+				batchDefinitions = make([]shared.RankingDefinitions, 0, rankingBatchNumber)
 			}
 		}
 
@@ -135,7 +136,7 @@ func insertDefinitions(
 	ctx context.Context,
 	inserter *batch.Inserter,
 	rankingGraphKey string,
-	definitions []shared.RankingDefintions,
+	definitions []shared.RankingDefinitions,
 ) error {
 	for _, def := range definitions {
 		if err := inserter.Insert(
@@ -209,69 +210,115 @@ func (s *store) InsertReferencesForRanking(
 
 func (s *store) InsertPathCountInputs(
 	ctx context.Context,
-	rankingGraphKey string,
+	derivativeGraphKey string,
 	batchSize int,
-) (err error) {
+) (
+	numReferenceRecordsProcessed int,
+	numInputsInserted int,
+	err error,
+) {
 	ctx, _, endObservation := s.operations.insertPathCountInputs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	if err = s.db.Exec(ctx, sqlf.Sprintf(insertPathCountInputsQuery, rankingGraphKey, batchSize)); err != nil {
-		return err
+	parentGraphKey := strings.Split(derivativeGraphKey, "-")[0]
+
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(
+		insertPathCountInputsQuery,
+		parentGraphKey,
+		derivativeGraphKey,
+		batchSize,
+		derivativeGraphKey,
+		parentGraphKey,
+		derivativeGraphKey,
+	))
+	if err != nil {
+		return 0, 0, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		if err := rows.Scan(
+			&numReferenceRecordsProcessed,
+			&numInputsInserted,
+		); err != nil {
+			return 0, 0, err
+		}
 	}
 
-	return nil
+	return numReferenceRecordsProcessed, numInputsInserted, nil
 }
 
 const insertPathCountInputsQuery = `
 WITH
- refs AS (
+refs AS (
 	SELECT
-		id,
-		symbol_names
+		rr.id,
+		rr.symbol_names
 	FROM codeintel_ranking_references rr
-	WHERE rr.graph_key = %s AND NOT rr.processed
-	ORDER BY rr.symbol_names, rr.id
-	FOR UPDATE
+	WHERE
+		rr.graph_key = %s AND
+		NOT EXISTS (
+			SELECT 1
+			FROM codeintel_ranking_references_processed rrp
+			WHERE
+				rrp.graph_key = %s AND
+				rrp.codeintel_ranking_reference_id = rr.id
+		)
+	ORDER BY rr.id
 	LIMIT %s
 ),
-definitions AS (
-	SELECT
-		repository,
-		document_path,
-		graph_key
-	FROM codeintel_ranking_definitions
-	WHERE symbol_name IN (SELECT unnest(symbol_names) FROM refs)
+locked_refs AS (
+	INSERT INTO codeintel_ranking_references_processed (graph_key, codeintel_ranking_reference_id)
+	SELECT %s, r.id FROM refs r
+	ON CONFLICT DO NOTHING
+	RETURNING codeintel_ranking_reference_id
 ),
-processed AS (
-    UPDATE codeintel_ranking_references
-    SET processed = true
-    WHERE id IN (SELECT r.id FROM refs r)
+referenced_symbols AS (
+	SELECT unnest(symbol_names) AS symbol_name
+	FROM refs
+	WHERE id IN (SELECT id FROM locked_refs)
+),
+referenced_definitions AS (
+	SELECT
+		rd.repository,
+		rd.document_path,
+		rd.graph_key
+	FROM codeintel_ranking_definitions rd
+	WHERE
+		rd.graph_key = %s AND
+		rd.symbol_name IN (SELECT symbol_name FROM referenced_symbols)
+),
+ins AS (
+	INSERT INTO codeintel_ranking_path_counts_inputs (repository, document_path, count, graph_key)
+	SELECT
+		rd.repository,
+		rd.document_path,
+		COUNT(*),
+		%s
+	FROM referenced_definitions rd
+	GROUP BY rd.repository, rd.document_path, rd.graph_key
+	RETURNING 1
 )
-INSERT INTO codeintel_ranking_path_counts_inputs (repository, document_path, count, graph_key)
 SELECT
-	repository,
-	document_path,
-	COUNT(*),
-	graph_key
-FROM definitions
-GROUP BY repository, document_path, graph_key
+	(SELECT COUNT(*) FROM locked_refs),
+	(SELECT COUNT(*) FROM ins)
 `
 
 func (s *store) InsertPathRanks(
 	ctx context.Context,
-	graphKey string,
+	derivativeGraphKey string,
 	batchSize int,
 ) (numPathRanksInserted float64, numInputsProcessed float64, err error) {
 	ctx, _, endObservation := s.operations.insertPathRanks.With(
 		ctx,
 		&err,
 		observation.Args{LogFields: []otlog.Field{
-			otlog.String("graphKey", graphKey),
+			otlog.String("derivativeGraphKey", derivativeGraphKey),
 		}},
 	)
 	defer endObservation(1, observation.Args{})
 
-	rows, err := s.db.Query(ctx, sqlf.Sprintf(insertPathRanksQuery, graphKey, batchSize))
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(insertPathRanksQuery, derivativeGraphKey, batchSize))
 	if err != nil {
 		return 0, 0, err
 	}
@@ -290,22 +337,24 @@ func (s *store) InsertPathRanks(
 
 const insertPathRanksQuery = `
 WITH input_ranks AS (
-    SELECT
-        id,
-        (SELECT id FROM repo WHERE name = repository) AS repository_id,
-        document_path AS path,
-        count
-    FROM codeintel_ranking_path_counts_inputs
-    WHERE graph_key = %s::text AND NOT processed
-    ORDER BY graph_key, repository, id
-    LIMIT %s
-    FOR UPDATE SKIP LOCKED
+	SELECT
+		id,
+		(SELECT id FROM repo WHERE name = repository) AS repository_id,
+		document_path AS path,
+		count
+	FROM codeintel_ranking_path_counts_inputs
+	WHERE
+		graph_key = %s AND
+		NOT processed
+	ORDER BY graph_key, repository, id
+	LIMIT %s
+	FOR UPDATE SKIP LOCKED
 ),
 processed AS (
-    UPDATE codeintel_ranking_path_counts_inputs
-    SET processed = true
-    WHERE id IN (SELECT ir.id FROM input_ranks ir)
-    RETURNING 1
+	UPDATE codeintel_ranking_path_counts_inputs
+	SET processed = true
+	WHERE id IN (SELECT ir.id FROM input_ranks ir)
+	RETURNING 1
 ),
 inserted AS (
 	INSERT INTO codeintel_path_ranks AS pr (repository_id, precision, payload)
@@ -332,16 +381,135 @@ inserted AS (
 						SELECT jsonb_build_object(key, SUM(value::int)) AS row
 						FROM
 							(
-							SELECT * FROM jsonb_each(pr.payload)
-							UNION
-							SELECT * FROM jsonb_each(EXCLUDED.payload)
+								SELECT * FROM jsonb_each(pr.payload)
+								UNION
+								SELECT * FROM jsonb_each(EXCLUDED.payload)
 							) AS both_payloads
 						GROUP BY key
-				) AS combined_json)
+					) AS combined_json
+				)
 			END
 	RETURNING 1
 )
 SELECT
 	(SELECT COUNT(*) FROM processed) AS num_processed,
 	(SELECT COUNT(*) FROM inserted) AS num_inserted
+`
+
+func (s *store) VacuumStaleDefinitionsAndReferences(ctx context.Context, graphKey string) (
+	numStaleDefinitionRecordsDeleted int,
+	numStaleReferenceRecordsDeleted int,
+	err error,
+) {
+	ctx, _, endObservation := s.operations.vacuumStaleDefinitionsAndReferences.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	defer endObservation(1, observation.Args{})
+
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(vacuumStaleDefinitionsAndReferencesQuery, graphKey, graphKey))
+	if err != nil {
+		return 0, 0, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		if err := rows.Scan(
+			&numStaleDefinitionRecordsDeleted,
+			&numStaleReferenceRecordsDeleted,
+		); err != nil {
+			return 0, 0, err
+		}
+	}
+
+	return numStaleDefinitionRecordsDeleted, numStaleReferenceRecordsDeleted, nil
+}
+
+const vacuumStaleDefinitionsAndReferencesQuery = `
+WITH
+locked_definitions AS (
+	SELECT id
+	FROM codeintel_ranking_definitions
+	WHERE
+		upload_id NOT IN (SELECT uvt.upload_id FROM lsif_uploads_visible_at_tip uvt WHERE uvt.is_default_branch) AND
+		graph_key = %s
+	ORDER BY id
+	FOR UPDATE
+),
+locked_references AS (
+	SELECT id
+	FROM codeintel_ranking_references
+	WHERE
+		upload_id NOT IN (SELECT uvt.upload_id FROM lsif_uploads_visible_at_tip uvt WHERE uvt.is_default_branch) AND
+		graph_key = %s
+	ORDER BY id
+	FOR UPDATE
+),
+deleted_definitions AS (
+	DELETE FROM codeintel_ranking_definitions
+	WHERE id IN (SELECT id FROM locked_definitions)
+	RETURNING 1
+),
+deleted_references AS (
+	DELETE FROM codeintel_ranking_references
+	WHERE id IN (SELECT id FROM locked_references)
+	RETURNING 1
+)
+SELECT
+	(SELECT COUNT(*) FROM deleted_definitions),
+	(SELECT COUNT(*) FROM deleted_references)
+`
+
+func (s *store) VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string) (
+	metadataRecordsDeleted int,
+	inputRecordsDeleted int,
+	err error,
+) {
+	ctx, _, endObservation := s.operations.vacuumStaleGraphs.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	defer endObservation(1, observation.Args{})
+
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(vacuumStaleGraphsQuery, derivativeGraphKey, derivativeGraphKey))
+	if err != nil {
+		return 0, 0, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		if err := rows.Scan(
+			&metadataRecordsDeleted,
+			&inputRecordsDeleted,
+		); err != nil {
+			return 0, 0, err
+		}
+	}
+
+	return metadataRecordsDeleted, inputRecordsDeleted, nil
+}
+
+const vacuumStaleGraphsQuery = `
+WITH
+locked_references_processed AS (
+	SELECT id
+	FROM codeintel_ranking_references_processed
+	WHERE graph_key != %s
+	ORDER BY id
+	FOR UPDATE
+),
+locked_path_counts_inputs AS (
+	SELECT id
+	FROM codeintel_ranking_path_counts_inputs
+	WHERE graph_key != %s
+	ORDER BY id
+	FOR UPDATE
+),
+deleted_references_processed AS (
+	DELETE FROM codeintel_ranking_references_processed
+	WHERE id IN (SELECT id FROM locked_references_processed)
+	RETURNING 1
+),
+deleted_path_counts_inputs AS (
+	DELETE FROM codeintel_ranking_path_counts_inputs
+	WHERE id IN (SELECT id FROM locked_path_counts_inputs)
+	RETURNING 1
+)
+SELECT
+	(SELECT COUNT(*) FROM deleted_references_processed),
+	(SELECT COUNT(*) FROM deleted_path_counts_inputs)
 `

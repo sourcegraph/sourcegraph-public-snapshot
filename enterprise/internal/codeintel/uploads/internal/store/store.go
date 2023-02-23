@@ -99,6 +99,18 @@ type Store interface {
 
 	GetUploadsForRanking(ctx context.Context, graphKey, objectPrefix string, batchSize int) ([]ExportedUpload, error)
 
+	VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string) (
+		metadataRecordsDeleted int,
+		inputRecordsDeleted int,
+		err error,
+	)
+
+	VacuumStaleDefinitionsAndReferences(ctx context.Context, graphKey string) (
+		numStaleDefinitionRecordsDeleted int,
+		numStaleReferenceRecordsDeleted int,
+		err error,
+	)
+
 	ProcessStaleExportedUploads(
 		ctx context.Context,
 		graphKey string,
@@ -111,9 +123,9 @@ type Store interface {
 
 	// Ranking
 	InsertDefinitionsAndReferencesForDocument(ctx context.Context, upload ExportedUpload, rankingGraphKey string, rankingBatchSize int, f func(ctx context.Context, upload ExportedUpload, rankingBatchSize int, rankingGraphKey, path string, document *scip.Document) error) (err error)
-	InsertDefintionsForRanking(ctx context.Context, rankingGraphKey string, rankingBatchSize int, defintions []shared.RankingDefintions) (err error)
+	InsertDefinitionsForRanking(ctx context.Context, rankingGraphKey string, rankingBatchSize int, definitions []shared.RankingDefinitions) (err error)
 	InsertReferencesForRanking(ctx context.Context, rankingGraphKey string, rankingBatchSize int, references shared.RankingReferences) (err error)
-	InsertPathCountInputs(ctx context.Context, rankingGraphKey string, batchSize int) (err error)
+	InsertPathCountInputs(ctx context.Context, rankingGraphKey string, batchSize int) (numReferenceRecordsProcessed int, numInputsInserted int, err error)
 	InsertPathRanks(ctx context.Context, graphKey string, batchSize int) (numPathRanksInserted float64, numInputsProcessed float64, err error)
 }
 

@@ -205,7 +205,7 @@ type UploadLog struct {
 	Operation         string
 }
 
-type RankingDefintions struct {
+type RankingDefinitions struct {
 	UploadID     int
 	SymbolName   string
 	Repository   string

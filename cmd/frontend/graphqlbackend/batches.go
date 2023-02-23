@@ -782,6 +782,8 @@ type ExternalChangesetResolver interface {
 	Author() (*PersonResolver, error)
 	ExternalURL() (*externallink.Resolver, error)
 
+	OwnedByBatchChange() *graphql.ID
+
 	// If the changeset is a fork, this corresponds to the namespace of the fork.
 	ForkNamespace() *string
 	// If the changeset is a fork, this corresponds to the name of the fork.

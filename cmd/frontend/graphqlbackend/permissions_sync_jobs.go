@@ -8,15 +8,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
-// PermissionSyncJobResolver is used to resolve permission sync jobs.
+// PermissionsSyncJobResolver is used to resolve permission sync jobs.
 //
-// TODO(sashaostrikov) add PermissionSyncJobProvider when it is persisted in the
+// TODO(sashaostrikov) add PermissionsSyncJobProvider when it is persisted in the
 // db.
-type PermissionSyncJobResolver interface {
+type PermissionsSyncJobResolver interface {
 	ID() graphql.ID
 	State() string
 	FailureMessage() *string
-	Reason() PermissionSyncJobReasonResolver
+	Reason() PermissionsSyncJobReasonResolver
 	CancellationReason() *string
 	TriggeredByUser(ctx context.Context) (*UserResolver, error)
 	QueuedAt() gqlutil.DateTime
@@ -29,7 +29,7 @@ type PermissionSyncJobResolver interface {
 	LastHeartbeatAt() *gqlutil.DateTime
 	WorkerHostname() string
 	Cancel() bool
-	Subject() PermissionSyncJobSubject
+	Subject() PermissionsSyncJobSubject
 	Priority() string
 	NoPerms() bool
 	InvalidateCaches() bool
@@ -39,7 +39,7 @@ type PermissionSyncJobResolver interface {
 	CodeHostStates() []CodeHostStateResolver
 }
 
-type PermissionSyncJobReasonResolver interface {
+type PermissionsSyncJobReasonResolver interface {
 	Group() string
 	Message() string
 }
@@ -51,11 +51,11 @@ type CodeHostStateResolver interface {
 	Message() string
 }
 
-type PermissionSyncJobSubject interface {
+type PermissionsSyncJobSubject interface {
 	ToRepository() (*RepositoryResolver, bool)
 	ToUser() (*UserResolver, bool)
 }
 
-type ListPermissionSyncJobsArgs struct {
+type ListPermissionsSyncJobsArgs struct {
 	graphqlutil.ConnectionResolverArgs
 }
