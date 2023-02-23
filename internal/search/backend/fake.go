@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
@@ -41,6 +42,17 @@ func (ss *FakeStreamer) StreamSearch(ctx context.Context, q zoektquery.Q, opts *
 	if ss.SearchError != nil {
 		return ss.SearchError
 	}
+
+	// Send out a stats-only event, to mimic a common approach in Zoekt
+	z.Send(&zoekt.SearchResult{
+		Stats: zoekt.Stats{
+			Crashes: 0,
+			Wait:    2 * time.Millisecond,
+		},
+		Progress: zoekt.Progress{
+			MaxPendingPriority: 0,
+		},
+	})
 
 	for _, r := range ss.Results {
 		// Make sure to copy results before sending
